@@ -230,10 +230,9 @@ void Mesh::flush_impl(
                 MeshRecordComponent &mrc = at(RecordComponent::SCALAR);
                 mrc.parent() = parent();
                 mrc.flush(name, flushParams);
-                IOHandler()->flush(flushParams);
-                writable().abstractFilePosition =
-                    mrc.writable().abstractFilePosition;
-                written() = true;
+                Parameter<Operation::KEEP_SYNCHRONOUS> pSynchronize;
+                pSynchronize.otherWritable = &mrc.writable();
+                IOHandler()->enqueue(IOTask(this, pSynchronize));
             }
             else
             {

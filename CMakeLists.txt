@@ -469,6 +469,7 @@ set(CORE_SOURCE
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
         src/helper/list_series.cpp)
 set(IO_SOURCE
+        src/IO/AbstractIOHandlerImpl.cpp
         src/IO/AbstractIOHandlerHelper.cpp
         src/IO/DummyIOHandler.cpp
         src/IO/IOTask.cpp

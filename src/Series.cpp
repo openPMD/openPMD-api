@@ -575,11 +575,11 @@ std::future<void> Series::flush_impl(
         {
             using IE = IterationEncoding;
         case IE::fileBased:
-            flushFileBased(begin, end, flushParams);
+            flushFileBased(begin, end, flushParams, flushIOHandler);
             break;
         case IE::groupBased:
         case IE::variableBased:
-            flushGorVBased(begin, end, flushParams);
+            flushGorVBased(begin, end, flushParams, flushIOHandler);
             break;
         }
         if (flushIOHandler)
@@ -601,7 +601,8 @@ std::future<void> Series::flush_impl(
 void Series::flushFileBased(
     iterations_iterator begin,
     iterations_iterator end,
-    internal::FlushParams flushParams)
+    internal::FlushParams flushParams,
+    bool flushIOHandler)
 {
     auto &series = get();
     if (end == begin)
@@ -633,7 +634,10 @@ void Series::flushFileBased(
             }
 
             // Phase 3
-            IOHandler()->flush(flushParams);
+            if (flushIOHandler)
+            {
+                IOHandler()->flush(flushParams);
+            }
         }
     else
     {
@@ -678,8 +682,10 @@ void Series::flushFileBased(
             }
 
             // Phase 3
-            IOHandler()->flush(flushParams);
-
+            if (flushIOHandler)
+            {
+                IOHandler()->flush(flushParams);
+            }
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
              */
@@ -692,7 +698,8 @@ void Series::flushFileBased(
 void Series::flushGorVBased(
     iterations_iterator begin,
     iterations_iterator end,
-    internal::FlushParams flushParams)
+    internal::FlushParams flushParams,
+    bool flushIOHandler)
 {
     auto &series = get();
     if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
@@ -719,7 +726,10 @@ void Series::flushGorVBased(
             }
 
             // Phase 3
-            IOHandler()->flush(flushParams);
+            if (flushIOHandler)
+            {
+                IOHandler()->flush(flushParams);
+            }
         }
     else
     {
@@ -774,7 +784,10 @@ void Series::flushGorVBased(
         }
 
         flushAttributes(flushParams);
-        IOHandler()->flush(flushParams);
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
+        }
     }
 }
 
