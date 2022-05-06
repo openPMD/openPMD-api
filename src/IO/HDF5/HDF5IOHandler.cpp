@@ -258,7 +258,8 @@ void HDF5IOHandlerImpl::createFile(
             break;
         case Access::READ_ONLY:
             // condition has been checked above
-            throw std::runtime_error("Control flow error");
+            throw std::runtime_error(
+                "[HDF5] Control flow error in createFile backend access mode.");
         }
 
         hid_t id{};
@@ -470,8 +471,8 @@ void HDF5IOHandlerImpl::createDataset(
                 status = H5Ldelete(node_id, name.c_str(), H5P_DEFAULT);
                 VERIFY(
                     status == 0,
-                    "[HDF5] Internal error: Failed to delete old dataset from "
-                    "group for overwriting.");
+                    "[HDF5] Internal error: Failed to delete old dataset '" +
+                        name + "' from group for overwriting.");
                 break;
             }
         }

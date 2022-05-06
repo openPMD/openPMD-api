@@ -47,7 +47,10 @@ namespace error
     {}
 
     Internal::Internal(std::string const &what)
-        : Error("Internal error: " + what + "\nThis is a bug. Please report.")
+        : Error(
+              "Internal error: " + what +
+              "\nThis is a bug. Please report at ' "
+              "https://github.com/openPMD/openPMD-api/issues'.")
     {}
 } // namespace error
 } // namespace openPMD
