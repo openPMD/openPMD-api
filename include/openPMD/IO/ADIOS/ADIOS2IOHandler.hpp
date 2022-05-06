@@ -124,8 +124,6 @@ class ADIOS2IOHandlerImpl
     friend struct detail::BufferedActions;
     friend struct detail::BufferedAttributeRead;
 
-    static constexpr bool ADIOS2_DEBUG_MODE = false;
-
 public:
 #if openPMD_HAVE_MPI
 

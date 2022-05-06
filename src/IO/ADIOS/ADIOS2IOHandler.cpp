@@ -71,7 +71,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     json::TracingJSON cfg,
     std::string engineType)
     : AbstractIOHandlerImplCommon(handler)
-    , m_ADIOS{communicator, ADIOS2_DEBUG_MODE}
+    , m_ADIOS{communicator}
     , m_engineType(std::move(engineType))
 {
     init(std::move(cfg));
@@ -82,7 +82,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler *handler, json::TracingJSON cfg, std::string engineType)
     : AbstractIOHandlerImplCommon(handler)
-    , m_ADIOS{ADIOS2_DEBUG_MODE}
+    , m_ADIOS{}
     , m_engineType(std::move(engineType))
 {
     init(std::move(cfg));
