@@ -46,13 +46,16 @@ Record &Record::setUnitDimension(std::map<UnitDimension, double> const &udim)
 void Record::flush_impl(
     std::string const &name, internal::FlushParams const &flushParams)
 {
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
     {
+    case Access::READ_ONLY: {
         for (auto &comp : *this)
             comp.second.flush(comp.first, flushParams);
+        break;
     }
-    else
-    {
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         if (!written())
         {
             if (scalar())
@@ -90,6 +93,8 @@ void Record::flush_impl(
         }
 
         flushAttributes(flushParams);
+        break;
+    }
     }
 }
 

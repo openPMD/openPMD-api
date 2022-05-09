@@ -237,13 +237,41 @@ void HDF5IOHandlerImpl::createFile(
         std::string name = m_handler->directory + parameters.name;
         if (!auxiliary::ends_with(name, ".h5"))
             name += ".h5";
-        unsigned flags;
-        if (m_handler->m_backendAccess == Access::CREATE)
+        unsigned flags{};
+        switch (m_handler->m_backendAccess)
+        {
+        case Access::CREATE:
             flags = H5F_ACC_TRUNC;
-        else
+            break;
+        case Access::APPEND:
+            if (auxiliary::file_exists(name))
+            {
+                flags = H5F_ACC_RDWR;
+            }
+            else
+            {
+                flags = H5F_ACC_TRUNC;
+            }
+            break;
+        case Access::READ_WRITE:
             flags = H5F_ACC_EXCL;
-        hid_t id =
-            H5Fcreate(name.c_str(), flags, H5P_DEFAULT, m_fileAccessProperty);
+            break;
+        case Access::READ_ONLY:
+            // condition has been checked above
+            throw std::runtime_error(
+                "[HDF5] Control flow error in createFile backend access mode.");
+        }
+
+        hid_t id{};
+        if (flags == H5F_ACC_RDWR)
+        {
+            id = H5Fopen(name.c_str(), flags, m_fileAccessProperty);
+        }
+        else
+        {
+            id = H5Fcreate(
+                name.c_str(), flags, H5P_DEFAULT, m_fileAccessProperty);
+        }
         VERIFY(id >= 0, "[HDF5] Internal error: Failed to create HDF5 file");
 
         writable->written = true;
@@ -408,6 +436,36 @@ void HDF5IOHandlerImpl::createDataset(
             node_id >= 0,
             "[HDF5] Internal error: Failed to open HDF5 group during dataset "
             "creation");
+
+        if (m_handler->m_backendAccess == Access::APPEND)
+        {
+            // The dataset might already exist in the file from a previous run
+            // We delete it, otherwise we could not create it again with
+            // possibly different parameters.
+            if (htri_t link_id = H5Lexists(node_id, name.c_str(), H5P_DEFAULT);
+                link_id > 0)
+            {
+                // This only unlinks, but does not delete the dataset
+                // Deleting the actual dataset physically is now up to HDF5:
+                // > when removing an object with H5Ldelete, the HDF5 library
+                // > should be able to detect and recycle the file space when no
+                // > other reference to the deleted object exists
+                // https://github.com/openPMD/openPMD-api/pull/1007#discussion_r867223316
+                herr_t status = H5Ldelete(node_id, name.c_str(), H5P_DEFAULT);
+                VERIFY(
+                    status == 0,
+                    "[HDF5] Internal error: Failed to delete old dataset '" +
+                        name + "' from group for overwriting.");
+            }
+            else if (link_id < 0)
+            {
+                throw std::runtime_error(
+                    "[HDF5] Internal error: Failed to check for link existence "
+                    "of '" +
+                    name + "' inside group for overwriting.");
+            }
+            // else: link_id == 0: Link does not exist, nothing to do
+        }
 
         Datatype d = parameters.dtype;
         if (d == Datatype::UNDEFINED)
@@ -702,7 +760,14 @@ void HDF5IOHandlerImpl::openFile(
     Access at = m_handler->m_backendAccess;
     if (at == Access::READ_ONLY)
         flags = H5F_ACC_RDONLY;
-    else if (at == Access::READ_WRITE || at == Access::CREATE)
+    /*
+     * Within the HDF5 backend, APPEND and READ_WRITE mode are
+     * equivalent, but the openPMD frontend exposes no reading
+     * functionality in APPEND mode.
+     */
+    else if (
+        at == Access::READ_WRITE || at == Access::CREATE ||
+        at == Access::APPEND)
         flags = H5F_ACC_RDWR;
     else
         throw std::runtime_error("[HDF5] Unknown file Access");

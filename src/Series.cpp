@@ -301,6 +301,7 @@ Series &Series::setIterationEncoding(IterationEncoding ie)
         setAttribute("iterationEncoding", std::string("variableBased"));
         break;
     }
+    IOHandler()->setIterationEncoding(ie);
     return *this;
 }
 
@@ -469,6 +470,56 @@ bool Series::reparseExpansionPattern(std::string filenameWithExtension)
     return true;
 }
 
+namespace
+{
+    /*
+     * Negative return values:
+     * -1: No padding detected, just keep the default from the file name
+     * -2: Contradicting paddings detected
+     */
+    template <typename MappingFunction>
+    int autoDetectPadding(
+        std::function<Match(std::string const &)> isPartOfSeries,
+        std::string const &directory,
+        MappingFunction &&mappingFunction)
+    {
+        bool isContained;
+        int padding;
+        uint64_t iterationIndex;
+        std::set<int> paddings;
+        for (auto const &entry : auxiliary::list_directory(directory))
+        {
+            std::tie(isContained, padding, iterationIndex) =
+                isPartOfSeries(entry);
+            if (isContained)
+            {
+                paddings.insert(padding);
+                // no std::forward as this is called repeatedly
+                mappingFunction(iterationIndex, entry);
+            }
+        }
+        if (paddings.size() == 1u)
+            return *paddings.begin();
+        else if (paddings.empty())
+            return -1;
+        else
+            return -2;
+    }
+
+    int autoDetectPadding(
+        std::function<Match(std::string const &)> isPartOfSeries,
+        std::string const &directory)
+    {
+        return autoDetectPadding(
+            std::move(isPartOfSeries),
+            directory,
+            [](uint64_t index, std::string const &filename) {
+                (void)index;
+                (void)filename;
+            });
+    }
+} // namespace
+
 void Series::init(
     std::shared_ptr<AbstractIOHandler> ioHandler,
     std::unique_ptr<Series::ParsedInput> input)
@@ -501,9 +552,10 @@ Given file pattern: ')END"
                   << series.m_name << "'" << std::endl;
     }
 
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY ||
-        IOHandler()->m_frontendAccess == Access::READ_WRITE)
+    switch (IOHandler()->m_frontendAccess)
     {
+    case Access::READ_ONLY:
+    case Access::READ_WRITE: {
         /* Allow creation of values in Containers and setting of Attributes
          * Would throw for Access::READ_ONLY */
         auto oldType = IOHandler()->m_frontendAccess;
@@ -528,11 +580,43 @@ Given file pattern: ')END"
         }
 
         *newType = oldType;
+        break;
     }
-    else
-    {
+    case Access::CREATE: {
         initDefaults(input->iterationEncoding);
         setIterationEncoding(input->iterationEncoding);
+        break;
+    }
+    case Access::APPEND: {
+        initDefaults(input->iterationEncoding);
+        setIterationEncoding(input->iterationEncoding);
+        if (input->iterationEncoding != IterationEncoding::fileBased)
+        {
+            break;
+        }
+        int padding = autoDetectPadding(
+            matcher(
+                series.m_filenamePrefix,
+                series.m_filenamePadding,
+                series.m_filenamePostfix,
+                series.m_format),
+            IOHandler()->directory);
+        switch (padding)
+        {
+        case -2:
+            throw std::runtime_error(
+                "Cannot write to a series with inconsistent iteration padding. "
+                "Please specify '%0<N>T' or open as read-only.");
+        case -1:
+            std::cerr << "No matching iterations found: " << name()
+                      << std::endl;
+            break;
+        default:
+            series.m_filenamePadding = padding;
+            break;
+        }
+        break;
+    }
     }
     series.m_lastFlushSuccessful = true;
 }
@@ -609,7 +693,9 @@ void Series::flushFileBased(
         throw std::runtime_error(
             "fileBased output can not be written with no iterations.");
 
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
+    {
+    case Access::READ_ONLY:
         for (auto it = begin; it != end; ++it)
         {
             // Phase 1
@@ -639,8 +725,10 @@ void Series::flushFileBased(
                 IOHandler()->flush(flushParams);
             }
         }
-    else
-    {
+        break;
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         bool allDirty = dirty();
         for (auto it = begin; it != end; ++it)
         {
@@ -692,6 +780,8 @@ void Series::flushFileBased(
             dirty() = allDirty;
         }
         dirty() = false;
+        break;
+    }
     }
 }
 
@@ -702,7 +792,9 @@ void Series::flushGorVBased(
     bool flushIOHandler)
 {
     auto &series = get();
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
+    {
+    case Access::READ_ONLY:
         for (auto it = begin; it != end; ++it)
         {
             // Phase 1
@@ -731,8 +823,10 @@ void Series::flushGorVBased(
                 IOHandler()->flush(flushParams);
             }
         }
-    else
-    {
+        break;
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         if (!written())
         {
             Parameter<Operation::CREATE_FILE> fCreate;
@@ -788,6 +882,8 @@ void Series::flushGorVBased(
         {
             IOHandler()->flush(flushParams);
         }
+        break;
+    }
     }
 }
 
@@ -827,23 +923,15 @@ void Series::readFileBased()
         series.m_filenamePadding,
         series.m_filenamePostfix,
         series.m_format);
-    bool isContained;
-    int padding;
-    uint64_t iterationIndex;
-    std::set<int> paddings;
-    for (auto const &entry : auxiliary::list_directory(IOHandler()->directory))
-    {
-        std::tie(isContained, padding, iterationIndex) = isPartOfSeries(entry);
-        if (isContained)
-        {
-            Iteration &i = series.iterations[iterationIndex];
-            i.deferParseAccess(
-                {std::to_string(iterationIndex), iterationIndex, true, entry});
-            // TODO skip if the padding is exact the number of chars in an
-            // iteration?
-            paddings.insert(padding);
-        }
-    }
+
+    int padding = autoDetectPadding(
+        std::move(isPartOfSeries),
+        IOHandler()->directory,
+        // foreach found file with `filename` and `index`:
+        [&series](uint64_t index, std::string const &filename) {
+            Iteration &i = series.iterations[index];
+            i.deferParseAccess({std::to_string(index), index, true, filename});
+        });
 
     if (series.iterations.empty())
     {
@@ -885,14 +973,15 @@ void Series::readFileBased()
         }
     }
 
-    if (paddings.size() == 1u)
-        series.m_filenamePadding = *paddings.begin();
+    if (padding > 0)
+        series.m_filenamePadding = padding;
 
-    /* Frontend access type might change during Series::read() to allow
-     * parameter modification. Backend access type stays unchanged for the
-     * lifetime of a Series. */
-    if (paddings.size() > 1u &&
-        IOHandler()->m_backendAccess == Access::READ_WRITE)
+    /* Frontend access type might change during SeriesInterface::read() to allow
+     parameter modification.
+     * Backend access type stays unchanged for the lifetime of a Series.
+       autoDetectPadding() announces contradicting paddings with return status
+       -2. */
+    if (padding == -2 && IOHandler()->m_backendAccess == Access::READ_WRITE)
         throw std::runtime_error(
             "Cannot write to a series with inconsistent iteration padding. "
             "Please specify '%0<N>T' or open as read-only.");
@@ -1638,6 +1727,10 @@ namespace internal
             {
                 Series impl{{this, [](auto const *) {}}};
                 impl.flush();
+            }
+            if (m_writeIterations.has_value())
+            {
+                m_writeIterations = std::optional<WriteIterations>();
             }
         }
         catch (std::exception const &ex)

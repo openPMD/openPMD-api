@@ -298,15 +298,18 @@ void Iteration::flushVariableBased(
 
 void Iteration::flush(internal::FlushParams const &flushParams)
 {
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
     {
+    case Access::READ_ONLY: {
         for (auto &m : meshes)
             m.second.flush(m.first, flushParams);
         for (auto &species : particles)
             species.second.flush(species.first, flushParams);
+        break;
     }
-    else
-    {
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         /* Find the root point [Series] of this file,
          * meshesPath and particlesPath are stored there */
         Series s = retrieveSeries();
@@ -344,6 +347,8 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         }
 
         flushAttributes(flushParams);
+        break;
+    }
     }
 }
 
@@ -591,15 +596,26 @@ AdvanceStatus Iteration::beginStep(bool reread)
         (this->IOHandler()->m_frontendAccess == Access::READ_ONLY ||
          this->IOHandler()->m_frontendAccess == Access::READ_WRITE))
     {
-        bool previous = series.iterations.written();
-        series.iterations.written() = false;
-        auto oldType = this->IOHandler()->m_frontendAccess;
-        auto newType =
-            const_cast<Access *>(&this->IOHandler()->m_frontendAccess);
-        *newType = Access::READ_WRITE;
-        series.readGorVBased(false);
-        *newType = oldType;
-        series.iterations.written() = previous;
+        switch (IOHandler()->m_frontendAccess)
+        {
+        case Access::READ_ONLY:
+        case Access::READ_WRITE: {
+            bool previous = series.iterations.written();
+            series.iterations.written() = false;
+            auto oldType = this->IOHandler()->m_frontendAccess;
+            auto newType =
+                const_cast<Access *>(&this->IOHandler()->m_frontendAccess);
+            *newType = Access::READ_WRITE;
+            series.readGorVBased(false);
+            *newType = oldType;
+            series.iterations.written() = previous;
+            break;
+        }
+        case Access::CREATE:
+        case Access::APPEND:
+            // no re-reading necessary
+            break;
+        }
     }
 
     return status;
@@ -696,42 +712,49 @@ void Iteration::linkHierarchy(Writable &w)
 
 void Iteration::runDeferredParseAccess()
 {
-    if (IOHandler()->m_frontendAccess == Access::CREATE)
+    switch (IOHandler()->m_frontendAccess)
     {
-        return;
-    }
-
-    auto &it = get();
-    if (!it.m_deferredParseAccess.has_value())
-    {
-        return;
-    }
-    auto const &deferred = it.m_deferredParseAccess.value();
-
-    auto oldAccess = IOHandler()->m_frontendAccess;
-    auto newAccess = const_cast<Access *>(&IOHandler()->m_frontendAccess);
-    *newAccess = Access::READ_WRITE;
-    try
-    {
-        if (deferred.fileBased)
+    case Access::READ_ONLY:
+    case Access::READ_WRITE: {
+        auto &it = get();
+        if (!it.m_deferredParseAccess.has_value())
         {
-            readFileBased(deferred.filename, deferred.path, deferred.beginStep);
+            return;
         }
-        else
+        auto const &deferred = it.m_deferredParseAccess.value();
+
+        auto oldAccess = IOHandler()->m_frontendAccess;
+        auto newAccess = const_cast<Access *>(&IOHandler()->m_frontendAccess);
+        *newAccess = Access::READ_WRITE;
+        try
         {
-            readGorVBased(deferred.path, deferred.beginStep);
+            if (deferred.fileBased)
+            {
+                readFileBased(
+                    deferred.filename, deferred.path, deferred.beginStep);
+            }
+            else
+            {
+                readGorVBased(deferred.path, deferred.beginStep);
+            }
         }
-    }
-    catch (...)
-    {
+        catch (...)
+        {
+            // reset this thing
+            it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
+            *newAccess = oldAccess;
+            throw;
+        }
         // reset this thing
         it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
         *newAccess = oldAccess;
-        throw;
+        break;
     }
-    // reset this thing
-    it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
-    *newAccess = oldAccess;
+    case Access::CREATE:
+    case Access::APPEND:
+        // no parsing in those modes
+        return;
+    }
 }
 
 template float Iteration::time<float>() const;

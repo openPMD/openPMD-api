@@ -121,6 +121,23 @@ namespace internal
  */
 class AbstractIOHandler
 {
+    friend class Series;
+
+private:
+    void setIterationEncoding(IterationEncoding encoding)
+    {
+        /*
+         * In file-based iteration encoding, the APPEND mode is handled entirely
+         * by the frontend, the backend should just treat it as CREATE mode
+         */
+        if (encoding == IterationEncoding::fileBased &&
+            m_backendAccess == Access::APPEND)
+        {
+            // do we really want to have those as const members..?
+            *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
+        }
+    }
+
 public:
 #if openPMD_HAVE_MPI
     AbstractIOHandler(std::string path, Access at, MPI_Comm)
@@ -153,6 +170,7 @@ public:
     virtual std::string backendName() const = 0;
 
     std::string const directory;
+    // why do these need to be separate?
     Access const m_backendAccess;
     Access const m_frontendAccess;
     std::queue<IOTask> m_work;
