@@ -21,7 +21,6 @@ jobs:
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DCMAKE_C_COMPILER=$(which icc)    \
           -DCMAKE_CXX_COMPILER=$(which icpc) \
@@ -44,7 +43,6 @@ jobs:
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DCMAKE_C_COMPILER=$(which icx)    \
           -DCMAKE_CXX_COMPILER=$(which icpx) \

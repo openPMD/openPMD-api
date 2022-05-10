@@ -28,7 +28,6 @@ jobs:
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy);-system-headers=0" \
           -DopenPMD_USE_INVASIVE_TESTS=ON
@@ -59,7 +58,6 @@ jobs:
         spack install
         SOURCEPATH="$(pwd)"
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         export LDFLAGS="${LDFLAGS} -fsanitize=address,undefined -shared-libsan"
         export CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan"
         cmake -S . -B build               \
