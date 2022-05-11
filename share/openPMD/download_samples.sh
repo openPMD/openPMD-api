@@ -40,4 +40,12 @@ unzip diags.zip
 mv diags/hdf5/data00000050.h5 samples/issue-sample/empty_alternate_fbpic_00000050.h5
 rm -rf diags.zip diags
 
+# make sure we do not need write access when reading data
+chmod u-w samples/git-sample/*.h5
+chmod u-w samples/git-sample/thetaMode/*.h5
+chmod u-w samples/samples/issue-sample/*.h5
+chmod u-w samples/samples/issue-sample/no_fields/*.h5
+chmod u-w samples/samples/issue-sample/no_particles/*.h5
+find samples/git-sample/3d-bp4 -type f -exec chmod u-w {} \;
+
 cd ${orgdir}

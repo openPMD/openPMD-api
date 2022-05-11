@@ -30,7 +30,6 @@ jobs:
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build        \
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=OFF    \
@@ -67,7 +66,6 @@ jobs:
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
@@ -104,7 +102,6 @@ jobs:
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
@@ -139,7 +136,6 @@ jobs:
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
@@ -176,7 +172,6 @@ jobs:
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
@@ -228,7 +223,6 @@ jobs:
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \
@@ -253,7 +247,6 @@ jobs:
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
       run: |
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \
@@ -278,7 +271,6 @@ jobs:
       env: {CXXFLAGS: -Werror}
       run: |
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
@@ -313,7 +305,6 @@ jobs:
         source activate openpmd-api-dev
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \
