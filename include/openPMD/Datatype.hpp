@@ -776,36 +776,6 @@ inline bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
     return false;
 }
 
-namespace detail
-{
-    template <typename T>
-    struct BasicDatatypeHelper
-    {
-        Datatype m_dt = determineDatatype<T>();
-    };
-
-    template <typename T>
-    struct BasicDatatypeHelper<std::vector<T>>
-    {
-        Datatype m_dt = BasicDatatypeHelper<T>{}.m_dt;
-    };
-
-    template <typename T, std::size_t n>
-    struct BasicDatatypeHelper<std::array<T, n>>
-    {
-        Datatype m_dt = BasicDatatypeHelper<T>{}.m_dt;
-    };
-
-    struct BasicDatatype
-    {
-        template <typename T>
-        static Datatype call();
-
-        template <int n>
-        static Datatype call();
-    };
-} // namespace detail
-
 /**
  * @brief basicDatatype Strip openPMD Datatype of std::vector, std::array et.
  * al.

@@ -20,6 +20,7 @@
  */
 #include "openPMD/Datatype.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Datatype_internal.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -232,51 +233,11 @@ std::vector<Datatype> openPMD_Datatypes{
 
 Datatype basicDatatype(Datatype dt)
 {
-    return switchType<detail::BasicDatatype>(dt);
+    return switchType<detail::BasicDatatype<Datatype>>(dt);
 }
 
 Datatype toVectorType(Datatype dt)
 {
-    auto initializer = []() {
-        std::map<Datatype, Datatype> res;
-        for (Datatype d : openPMD_Datatypes)
-        {
-            if (d == Datatype::ARR_DBL_7 || d == Datatype::UNDEFINED)
-                continue;
-            Datatype basic = basicDatatype(d);
-            if (basic == d)
-                continue;
-            res[basic] = d;
-        }
-        return res;
-    };
-    static auto map(initializer());
-    auto it = map.find(dt);
-    if (it != map.end())
-    {
-        return it->second;
-    }
-    else
-    {
-        std::cerr << "Encountered non-basic type " << dt << ", aborting."
-                  << std::endl;
-        throw std::runtime_error("toVectorType: passed non-basic type.");
-    }
+    return switchType<detail::ToVectorType<Datatype>>(dt);
 }
-
-namespace detail
-{
-    template <typename T>
-    Datatype BasicDatatype::call()
-    {
-        static auto res = BasicDatatypeHelper<T>{}.m_dt;
-        return res;
-    }
-
-    template <int n>
-    Datatype BasicDatatype::call()
-    {
-        throw std::runtime_error("basicDatatype: received unknown datatype.");
-    }
-} // namespace detail
 } // namespace openPMD
