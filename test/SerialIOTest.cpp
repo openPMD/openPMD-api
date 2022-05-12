@@ -2292,7 +2292,7 @@ TEST_CASE("deletion_test", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        if (t == "bp")
+        if (t == "bp" || t == "bp4" || t == "bp5")
         {
             continue; // deletion not implemented in ADIOS1 backend
         }
@@ -5794,7 +5794,7 @@ void append_mode(
     }
     {
         Series read(filename, Access::READ_ONLY);
-        if (variableBased)
+        if (variableBased || extension == "bp5")
         {
             // in variable-based encodings, iterations are not parsed ahead of
             // time but as they go
@@ -5825,7 +5825,7 @@ TEST_CASE("append_mode", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        if (t == "bp")
+        if (t == "bp" || t == "bp4" || t == "bp5")
         {
             std::string jsonConfigOld = R"END(
 {

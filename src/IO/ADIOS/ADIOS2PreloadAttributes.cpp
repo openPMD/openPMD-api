@@ -154,7 +154,7 @@ namespace
 using AttributeLocation = PreloadAdiosAttributes::AttributeLocation;
 
 AttributeLocation::AttributeLocation(
-    adios2::Dims shape_in, size_t offset_in, Datatype dt_in)
+    adios2::Dims shape_in, size_t offset_in, ADIOS2Datatype dt_in)
     : shape(std::move(shape_in)), offset(offset_in), dt(dt_in)
 {}
 
@@ -199,18 +199,19 @@ void PreloadAdiosAttributes::preloadAttributes(
     adios2::IO &IO, adios2::Engine &engine)
 {
     m_offsets.clear();
-    std::map<Datatype, std::vector<std::string> > attributesByType;
-    auto addAttribute = [&attributesByType](Datatype dt, std::string name) {
-        constexpr size_t reserve = 10;
-        auto it = attributesByType.find(dt);
-        if (it == attributesByType.end())
-        {
-            it = attributesByType.emplace_hint(
-                it, dt, std::vector<std::string>());
-            it->second.reserve(reserve);
-        }
-        it->second.push_back(std::move(name));
-    };
+    std::map<ADIOS2Datatype, std::vector<std::string> > attributesByType;
+    auto addAttribute =
+        [&attributesByType](ADIOS2Datatype dt, std::string name) {
+            constexpr size_t reserve = 10;
+            auto it = attributesByType.find(dt);
+            if (it == attributesByType.end())
+            {
+                it = attributesByType.emplace_hint(
+                    it, dt, std::vector<std::string>());
+                it->second.reserve(reserve);
+            }
+            it->second.push_back(std::move(name));
+        };
     // PHASE 1: collect names of available attributes by ADIOS datatype
     for (auto &variable : IO.AvailableVariables())
     {
@@ -219,7 +220,7 @@ void PreloadAdiosAttributes::preloadAttributes(
             continue;
         }
         // this will give us basic types only, no fancy vectors or similar
-        Datatype dt = fromADIOS2Type(IO.VariableType(variable.first));
+        ADIOS2Datatype dt = fromADIOS2Type(IO.VariableType(variable.first));
         addAttribute(dt, std::move(variable.first));
     }
 
@@ -268,12 +269,13 @@ void PreloadAdiosAttributes::preloadAttributes(
     }
 }
 
-Datatype PreloadAdiosAttributes::attributeType(std::string const &name) const
+ADIOS2Datatype
+PreloadAdiosAttributes::attributeType(std::string const &name) const
 {
     auto it = m_offsets.find(name);
     if (it == m_offsets.end())
     {
-        return Datatype::UNDEFINED;
+        return ADIOS2Datatype::UNDEFINED;
     }
     return it->second.dt;
 }

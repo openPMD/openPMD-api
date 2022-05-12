@@ -231,13 +231,28 @@ std::vector<Datatype> openPMD_Datatypes{
     Datatype::VEC_STRING,   Datatype::ARR_DBL_7,   Datatype::BOOL,
     Datatype::UNDEFINED};
 
+namespace
+{
+    struct DoDetermineDatatype
+    {
+        using DT_enum = Datatype;
+
+        template <typename T>
+        static constexpr Datatype call()
+        {
+            return determineDatatype<T>();
+        }
+    };
+} // namespace
+
 Datatype basicDatatype(Datatype dt)
 {
-    return switchType<detail::BasicDatatype<Datatype>>(dt);
+    return switchType<detail::BasicDatatype<DoDetermineDatatype>>(dt);
 }
 
 Datatype toVectorType(Datatype dt)
 {
-    return switchType<detail::ToVectorType<Datatype>>(dt);
+    using DT_enum = Datatype;
+    return switchType<detail::ToVectorType<DoDetermineDatatype>>(dt);
 }
 } // namespace openPMD

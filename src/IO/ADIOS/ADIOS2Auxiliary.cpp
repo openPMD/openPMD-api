@@ -22,12 +22,28 @@
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Datatype_internal.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 
 #include <iostream>
 
 namespace openPMD::detail
 {
+namespace
+{
+    struct DoDetermineDatatype
+    {
+        using DT_enum = ADIOS2Datatype;
+
+        template <typename T>
+        static constexpr ADIOS2Datatype call()
+        {
+            return determineAdios2Datatype<T>();
+        }
+    };
+} // namespace
+
 template <typename T>
 std::string ToDatatypeHelper<T>::type()
 {
@@ -35,7 +51,7 @@ std::string ToDatatypeHelper<T>::type()
 }
 
 template <typename T>
-std::string ToDatatypeHelper<std::vector<T> >::type()
+std::string ToDatatypeHelper<std::vector<T>>::type()
 {
     return
 
@@ -43,7 +59,7 @@ std::string ToDatatypeHelper<std::vector<T> >::type()
 }
 
 template <typename T, size_t n>
-std::string ToDatatypeHelper<std::array<T, n> >::type()
+std::string ToDatatypeHelper<std::array<T, n>>::type()
 {
     return
 
@@ -67,37 +83,37 @@ std::string ToDatatype::operator()()
     return "";
 }
 
-Datatype fromADIOS2Type(std::string const &dt, bool verbose)
+ADIOS2Datatype fromADIOS2Type(std::string const &dt, bool verbose)
 {
-    static std::map<std::string, Datatype> map{
-        {"string", Datatype::STRING},
-        {"char", Datatype::CHAR},
-        {"signed char", Datatype::CHAR},
-        {"unsigned char", Datatype::UCHAR},
-        {"short", Datatype::SHORT},
-        {"unsigned short", Datatype::USHORT},
-        {"int", Datatype::INT},
-        {"unsigned int", Datatype::UINT},
-        {"long int", Datatype::LONG},
-        {"unsigned long int", Datatype::ULONG},
-        {"long long int", Datatype::LONGLONG},
-        {"unsigned long long int", Datatype::ULONGLONG},
-        {"float", Datatype::FLOAT},
-        {"double", Datatype::DOUBLE},
-        {"long double", Datatype::LONG_DOUBLE},
-        {"float complex", Datatype::CFLOAT},
-        {"double complex", Datatype::CDOUBLE},
+    static std::map<std::string, ADIOS2Datatype> map{
+        {"string", ADIOS2Datatype::STRING},
+        {"char", ADIOS2Datatype::CHAR},
+        {"signed char", ADIOS2Datatype::SCHAR},
+        {"unsigned char", ADIOS2Datatype::UCHAR},
+        {"short", ADIOS2Datatype::SHORT},
+        {"unsigned short", ADIOS2Datatype::USHORT},
+        {"int", ADIOS2Datatype::INT},
+        {"unsigned int", ADIOS2Datatype::UINT},
+        {"long int", ADIOS2Datatype::LONG},
+        {"unsigned long int", ADIOS2Datatype::ULONG},
+        {"long long int", ADIOS2Datatype::LONGLONG},
+        {"unsigned long long int", ADIOS2Datatype::ULONGLONG},
+        {"float", ADIOS2Datatype::FLOAT},
+        {"double", ADIOS2Datatype::DOUBLE},
+        {"long double", ADIOS2Datatype::LONG_DOUBLE},
+        {"float complex", ADIOS2Datatype::CFLOAT},
+        {"double complex", ADIOS2Datatype::CDOUBLE},
         {"long double complex",
-         Datatype::CLONG_DOUBLE}, // does not exist as of 2.7.0 but might come
-                                  // later
-        {"uint8_t", Datatype::UCHAR},
-        {"int8_t", Datatype::CHAR},
-        {"uint16_t", determineDatatype<uint16_t>()},
-        {"int16_t", determineDatatype<int16_t>()},
-        {"uint32_t", determineDatatype<uint32_t>()},
-        {"int32_t", determineDatatype<int32_t>()},
-        {"uint64_t", determineDatatype<uint64_t>()},
-        {"int64_t", determineDatatype<int64_t>()}};
+         ADIOS2Datatype::CLONG_DOUBLE}, // does not exist as of 2.7.0 but might
+                                        // come later
+        {"uint8_t", ADIOS2Datatype::UCHAR},
+        {"int8_t", ADIOS2Datatype::SCHAR},
+        {"uint16_t", determineAdios2Datatype<uint16_t>()},
+        {"int16_t", determineAdios2Datatype<int16_t>()},
+        {"uint32_t", determineAdios2Datatype<uint32_t>()},
+        {"int32_t", determineAdios2Datatype<int32_t>()},
+        {"uint64_t", determineAdios2Datatype<uint64_t>()},
+        {"int64_t", determineAdios2Datatype<int64_t>()}};
     auto it = map.find(dt);
     if (it != map.end())
     {
@@ -112,7 +128,7 @@ Datatype fromADIOS2Type(std::string const &dt, bool verbose)
                    " defaulting to UNDEFINED."
                 << std::endl;
         }
-        return Datatype::UNDEFINED;
+        return ADIOS2Datatype::UNDEFINED;
     }
 }
 
@@ -158,7 +174,7 @@ Extent AttributeInfo::call(Params &&...)
     return {0};
 }
 
-Datatype attributeInfo(
+ADIOS2Datatype attributeInfo(
     adios2::IO &IO,
     std::string const &attributeName,
     bool verbose,
@@ -182,11 +198,11 @@ Datatype attributeInfo(
                       << attributeName << " has no type in backend."
                       << std::endl;
         }
-        return Datatype::UNDEFINED;
+        return ADIOS2Datatype::UNDEFINED;
     }
     else
     {
-        Datatype basicType = fromADIOS2Type(type);
+        ADIOS2Datatype basicType = fromADIOS2Type(type);
         Extent shape = switchAdios2AttributeType<AttributeInfo>(
             basicType, IO, attributeName, voa);
 
@@ -194,10 +210,11 @@ Datatype attributeInfo(
         {
         case VariableOrAttribute::Attribute: {
             auto size = shape[0];
-            Datatype openPmdType = size == 1 ? basicType
-                : size == 7 && basicType == Datatype::DOUBLE
-                ? Datatype::ARR_DBL_7
-                : toVectorType(basicType);
+            ADIOS2Datatype openPmdType = size == 1 ? basicType
+                : size == 7 && basicType == ADIOS2Datatype::DOUBLE
+                ? ADIOS2Datatype::ARR_DBL_7
+                : switchAdios2Datatype<ToVectorType<DoDetermineDatatype>>(
+                      basicType);
             return openPmdType;
         }
         case VariableOrAttribute::Variable: {
@@ -209,17 +226,20 @@ Datatype attributeInfo(
             else if (shape.size() == 1)
             {
                 auto size = shape[0];
-                Datatype openPmdType =
-                    size == 7 && basicType == Datatype::DOUBLE
-                    ? Datatype::ARR_DBL_7
-                    : toVectorType(basicType);
+                ADIOS2Datatype openPmdType =
+                    size == 7 && basicType == ADIOS2Datatype::DOUBLE
+                    ? ADIOS2Datatype::ARR_DBL_7
+                    : switchAdios2Datatype<ToVectorType<DoDetermineDatatype>>(
+                          basicType);
                 return openPmdType;
             }
             else if (
                 shape.size() == 2 &&
-                (basicType == Datatype::CHAR || basicType == Datatype::UCHAR))
+                (basicType == ADIOS2Datatype::CHAR ||
+                 basicType == ADIOS2Datatype::SCHAR ||
+                 basicType == ADIOS2Datatype::UCHAR))
             {
-                return Datatype::VEC_STRING;
+                return ADIOS2Datatype::VEC_STRING;
             }
             else
             {
@@ -230,13 +250,46 @@ Datatype attributeInfo(
                 {
                     errorMsg << std::to_string(ext) << ", ";
                 }
-                errorMsg << "] of type " << datatypeToString(basicType);
+                errorMsg
+                    << "] of type "; // @todo << datatypeToString(basicType);
                 throw std::runtime_error(errorMsg.str());
             }
         }
         }
         throw std::runtime_error("Unreachable!");
     }
+}
+
+struct FromPublicType
+{
+    template <typename T>
+    static constexpr ADIOS2Datatype call()
+    {
+        return determineAdios2Datatype<T>();
+    }
+
+    static constexpr char const *errorMsg = "FromPublicType";
+};
+
+ADIOS2Datatype fromPublicType(Datatype type)
+{
+    return switchType<FromPublicType>(type);
+}
+
+struct ToPublicType
+{
+    template <typename T>
+    static constexpr Datatype call()
+    {
+        return determineDatatype<T>();
+    }
+
+    static constexpr char const *errorMsg = "ToPublicType";
+};
+
+Datatype toPublicType(ADIOS2Datatype type)
+{
+    return switchAdios2Datatype<ToPublicType>(type);
 }
 } // namespace openPMD::detail
 #endif

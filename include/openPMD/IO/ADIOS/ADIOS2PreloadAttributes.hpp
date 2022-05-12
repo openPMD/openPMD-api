@@ -31,6 +31,7 @@
 #include <type_traits>
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 
 namespace openPMD
 {
@@ -72,11 +73,12 @@ namespace detail
         {
             adios2::Dims shape;
             size_t offset;
-            Datatype dt;
+            ADIOS2Datatype dt;
             char *destroy = nullptr;
 
             AttributeLocation() = delete;
-            AttributeLocation(adios2::Dims shape, size_t offset, Datatype dt);
+            AttributeLocation(
+                adios2::Dims shape, size_t offset, ADIOS2Datatype dt);
 
             AttributeLocation(AttributeLocation const &other) = delete;
             AttributeLocation &
@@ -135,7 +137,7 @@ namespace detail
         template <typename T>
         AttributeWithShape<T> getAttribute(std::string const &name) const;
 
-        Datatype attributeType(std::string const &name) const;
+        ADIOS2Datatype attributeType(std::string const &name) const;
     };
 
     template <typename T>
@@ -149,19 +151,12 @@ namespace detail
                 "[ADIOS2] Requested attribute not found: " + name);
         }
         AttributeLocation const &location = it->second;
-        Datatype determinedDatatype = determineDatatype<T>();
-        if (std::is_same<T, signed char>::value)
-        {
-            // workaround: we use Datatype::CHAR to represent ADIOS2 signed char
-            // (ADIOS2 does not have chars with unspecified signed-ness
-            // anyway)
-            determinedDatatype = Datatype::CHAR;
-        }
+        ADIOS2Datatype determinedDatatype = determineAdios2Datatype<T>();
         if (location.dt != determinedDatatype)
         {
             std::stringstream errorMsg;
             errorMsg << "[ADIOS2] Wrong datatype for attribute: " << name
-                     << "(location.dt=" << location.dt
+                     << "(location.dt=" << detail::toPublicType(location.dt)
                      << ", T=" << determineDatatype<T>() << ")";
             throw std::runtime_error(errorMsg.str());
         }
