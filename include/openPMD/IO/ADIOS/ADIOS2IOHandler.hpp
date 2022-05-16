@@ -575,7 +575,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             T value);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -614,7 +614,7 @@ namespace detail
                 "attribute types");
         }
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string,
             std::shared_ptr<Attribute::resource>)
@@ -647,7 +647,7 @@ namespace detail
                 "vector attribute types");
         }
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string,
             std::shared_ptr<Attribute::resource>)
@@ -675,7 +675,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             const std::vector<T> &value);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -713,7 +713,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             const std::vector<std::string> &vec);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -751,7 +751,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             const std::array<T, n> &value);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -816,7 +816,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             bool value);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);

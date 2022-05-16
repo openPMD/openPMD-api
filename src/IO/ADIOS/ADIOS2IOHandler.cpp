@@ -1413,6 +1413,18 @@ namespace detail
             throw std::runtime_error(
                 "Observed boolean attribute. ADIOS2 does not have these?");
         }
+        else if constexpr (std::is_same_v<T, signed char>)
+        {
+            auto attr = IO.InquireAttribute<signed char>(name);
+            if (!attr)
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" +
+                    name + "'.");
+            }
+            *resource = static_cast<char>(attr.Data()[0]);
+            return Datatype::CHAR;
+        }
         else
         {
             auto attr = IO.InquireAttribute<T>(name);
@@ -1468,21 +1480,13 @@ namespace detail
                 auto attr = IO.InquireAttribute<rep>(metaAttr);
                 if (attr.Data().size() == 1 && attr.Data()[0] == 1)
                 {
-                    AttributeTypes<bool>::readAttribute(
+                    return AttributeTypes<bool>::readAttribute(
                         preloadedAttributes, name, resource);
-                    return determineDatatype<bool>();
                 }
             }
         }
-        AttributeTypes<T>::readAttribute(preloadedAttributes, name, resource);
-        if constexpr (std::is_same_v<T, std::vector<signed char>>)
-        {
-            return Datatype::VEC_CHAR;
-        }
-        else
-        {
-            return determineDatatype<T>();
-        }
+        return AttributeTypes<T>::readAttribute(
+            preloadedAttributes, name, resource);
     }
 
     template <int n, typename... Params>
@@ -1795,7 +1799,7 @@ namespace detail
     }
 
     template <typename T>
-    void AttributeTypes<T>::readAttribute(
+    Datatype AttributeTypes<T>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -1809,7 +1813,16 @@ namespace detail
                 "[ADIOS2] Expecting scalar ADIOS variable, got " +
                 std::to_string(attr.shape.size()) + "D: " + name);
         }
-        *resource = *attr.data;
+        if constexpr (std::is_same_v<T, signed char>)
+        {
+            *resource = static_cast<char>(*attr.data);
+            return Datatype::CHAR;
+        }
+        else
+        {
+            *resource = *attr.data;
+            return determineDatatype<T>();
+        }
     }
 
     template <typename T>
@@ -1836,7 +1849,7 @@ namespace detail
     }
 
     template <typename T>
-    void AttributeTypes<std::vector<T>>::readAttribute(
+    Datatype AttributeTypes<std::vector<T>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -1853,12 +1866,14 @@ namespace detail
             std::vector<char> res(attr.shape[0]);
             std::copy_n(attr.data, attr.shape[0], res.data());
             *resource = std::move(res);
+            return Datatype::VEC_CHAR;
         }
         else
         {
             std::vector<T> res(attr.shape[0]);
             std::copy_n(attr.data, attr.shape[0], res.data());
             *resource = std::move(res);
+            return determineDatatype<std::vector<T>>();
         }
     }
 
@@ -1907,7 +1922,7 @@ namespace detail
             attr, params.bufferForVecString.data(), adios2::Mode::Deferred);
     }
 
-    void AttributeTypes<std::vector<std::string>>::readAttribute(
+    Datatype AttributeTypes<std::vector<std::string>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -2013,10 +2028,10 @@ namespace detail
         }
         default: {
             throw std::runtime_error(
-                "[ADIOS2] Expecting 2D ADIOS variable of "
-                "type signed or unsigned char.");
+                "[ADIOS2] Expecting 2D ADIOS variable of any char type.");
         }
         }
+        return Datatype::VEC_STRING;
     }
 
     template <typename T, size_t n>
@@ -2042,7 +2057,7 @@ namespace detail
     }
 
     template <typename T, size_t n>
-    void AttributeTypes<std::array<T, n>>::readAttribute(
+    Datatype AttributeTypes<std::array<T, n>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -2059,6 +2074,7 @@ namespace detail
         std::array<T, n> res;
         std::copy_n(attr.data, n, res.data());
         *resource = std::move(res);
+        return determineDatatype<std::array<T, n>>();
     }
 
     void AttributeTypes<bool>::createAttribute(
@@ -2073,7 +2089,7 @@ namespace detail
             IO, engine, params, toRep(value));
     }
 
-    void AttributeTypes<bool>::readAttribute(
+    Datatype AttributeTypes<bool>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -2089,6 +2105,7 @@ namespace detail
         }
 
         *resource = fromRep(*attr.data);
+        return Datatype::BOOL;
     }
 
     void BufferedGet::run(BufferedActions &ba)
