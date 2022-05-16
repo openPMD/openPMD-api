@@ -34,7 +34,11 @@ namespace
 {
     struct DoDetermineDatatype
     {
-        using DT_enum = ADIOS2Datatype;
+        /*
+         * Suppress wrong compiler warnings.
+         * The typedef is needed in instantiation.
+         */
+        using DT_enum [[maybe_unused]] = ADIOS2Datatype;
 
         template <typename T>
         static constexpr ADIOS2Datatype call()

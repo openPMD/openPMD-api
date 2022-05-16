@@ -235,7 +235,11 @@ namespace
 {
     struct DoDetermineDatatype
     {
-        using DT_enum = Datatype;
+        /*
+         * Suppress wrong compiler warnings.
+         * The typedef is needed in instantiation.
+         */
+        using DT_enum [[maybe_unused]] = Datatype;
 
         template <typename T>
         static constexpr Datatype call()
@@ -252,7 +256,6 @@ Datatype basicDatatype(Datatype dt)
 
 Datatype toVectorType(Datatype dt)
 {
-    using DT_enum = Datatype;
     return switchType<detail::ToVectorType<DoDetermineDatatype>>(dt);
 }
 } // namespace openPMD
