@@ -43,6 +43,9 @@ void MeshRecordComponent::read()
     else if (
         *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE)
         setPosition(a.get<std::vector<long double> >());
+    // conversion cast if a backend reports an integer type
+    else if (auto val = a.getOptional<std::vector<double> >(); val.has_value())
+        setPosition(val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'position'");

@@ -341,6 +341,9 @@ void Mesh::read()
     else if (
         *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE)
         setGridSpacing(a.get<std::vector<long double> >());
+    // conversion cast if a backend reports an integer type
+    else if (auto val = a.getOptional<std::vector<double> >(); val.has_value())
+        setGridSpacing(val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'gridSpacing'");
@@ -348,9 +351,10 @@ void Mesh::read()
     aRead.name = "gridGlobalOffset";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE)
-        setGridGlobalOffset(
-            Attribute(*aRead.resource).get<std::vector<double> >());
+    if (auto val =
+            Attribute(*aRead.resource).getOptional<std::vector<double> >();
+        val.has_value())
+        setGridGlobalOffset(val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'gridGlobalOffset'");
@@ -358,8 +362,9 @@ void Mesh::read()
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::DOUBLE)
-        setGridUnitSI(Attribute(*aRead.resource).get<double>());
+    if (auto val = Attribute(*aRead.resource).getOptional<double>();
+        val.has_value())
+        setGridUnitSI(val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'gridUnitSI'");

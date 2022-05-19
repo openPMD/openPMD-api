@@ -126,8 +126,9 @@ void PatchRecordComponent::read()
     aRead.name = "unitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == Datatype::DOUBLE)
-        setUnitSI(Attribute(*aRead.resource).get<double>());
+    if (auto val = Attribute(*aRead.resource).getOptional<double>();
+        val.has_value())
+        setUnitSI(val.value());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 

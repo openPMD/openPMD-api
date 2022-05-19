@@ -63,11 +63,10 @@ void PatchRecord::read()
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
 
-    if (*aRead.dtype == Datatype::ARR_DBL_7 ||
-        *aRead.dtype == Datatype::VEC_DOUBLE)
-        this->setAttribute(
-            "unitDimension",
-            Attribute(*aRead.resource).template get<std::array<double, 7> >());
+    if (auto val =
+            Attribute(*aRead.resource).getOptional<std::array<double, 7> >();
+        val.has_value())
+        this->setAttribute("unitDimension", val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'unitDimension'");

@@ -425,6 +425,10 @@ void Iteration::read_impl(std::string const &groupPath)
         setDt(Attribute(*aRead.resource).get<double>());
     else if (*aRead.dtype == DT::LONG_DOUBLE)
         setDt(Attribute(*aRead.resource).get<long double>());
+    // conversion cast if a backend reports an integer type
+    else if (auto val = Attribute(*aRead.resource).getOptional<double>();
+             val.has_value())
+        setDt(val.value());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
 
@@ -437,14 +441,19 @@ void Iteration::read_impl(std::string const &groupPath)
         setTime(Attribute(*aRead.resource).get<double>());
     else if (*aRead.dtype == DT::LONG_DOUBLE)
         setTime(Attribute(*aRead.resource).get<long double>());
+    // conversion cast if a backend reports an integer type
+    else if (auto val = Attribute(*aRead.resource).getOptional<double>();
+             val.has_value())
+        setTime(val.value());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'time'");
 
     aRead.name = "timeUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::DOUBLE)
-        setTimeUnitSI(Attribute(*aRead.resource).get<double>());
+    if (auto val = Attribute(*aRead.resource).getOptional<double>();
+        val.has_value())
+        setTimeUnitSI(val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'timeUnitSI'");

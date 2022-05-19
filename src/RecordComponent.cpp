@@ -326,11 +326,9 @@ void RecordComponent::readBase()
         Extent e;
 
         // uint64_t check
-        Datatype const attrDtype = *aRead.dtype;
-        if (isSame(attrDtype, determineDatatype<std::vector<uint64_t> >()) ||
-            isSame(attrDtype, determineDatatype<uint64_t>()))
-            for (auto const &val : a.get<std::vector<uint64_t> >())
-                e.push_back(val);
+        if (auto val = a.getOptional<std::vector<uint64_t> >(); val.has_value())
+            for (auto const &shape : val.value())
+                e.push_back(shape);
         else
         {
             std::ostringstream oss;
@@ -348,8 +346,9 @@ void RecordComponent::readBase()
     aRead.name = "unitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::DOUBLE)
-        setUnitSI(Attribute(*aRead.resource).get<double>());
+    if (auto val = Attribute(*aRead.resource).getOptional<double>();
+        val.has_value())
+        setUnitSI(val.value());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 

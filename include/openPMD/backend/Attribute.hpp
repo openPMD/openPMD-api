@@ -29,6 +29,7 @@
 #include <complex>
 #include <cstdint>
 #include <iterator>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -119,6 +120,20 @@ public:
      */
     template <typename U>
     U get() const;
+
+    /** Retrieve a stored specific Attribute and cast if convertible.
+     *  Like Attribute::get<>(), but returns an empty std::optional if no
+     *  conversion is possible instead of throwing an exception.
+     *
+     * @note This performs a static_cast and might introduce precision loss if
+     *       requested. Check dtype explicitly beforehand if needed.
+     *
+     * @tparam  U   Type of the object to be casted to.
+     * @return  Copy of the retrieved object, casted to type U.
+     *          An empty std::optional if no conversion is possible.
+     */
+    template <typename U>
+    std::optional<U> getOptional() const;
 };
 
 template <typename T, typename U>
@@ -228,6 +243,110 @@ auto doConvert(T *pv) -> U
 }
 #endif
 
+template <typename T, typename U>
+auto doConvertOptional(T *pv) -> std::optional<U>
+{
+    (void)pv;
+    if constexpr (std::is_convertible_v<T, U>)
+    {
+        return static_cast<U>(*pv);
+    }
+    else if constexpr (auxiliary::IsVector_v<T> && auxiliary::IsVector_v<U>)
+    {
+        if constexpr (std::is_convertible_v<
+                          typename T::value_type,
+                          typename U::value_type>)
+        {
+            U res{};
+            res.reserve(pv->size());
+            std::copy(pv->begin(), pv->end(), std::back_inserter(res));
+            return res;
+        }
+        else
+        {
+            return {};
+        }
+    }
+    // conversion cast: array to vector
+    // if a backend reports a std::array<> for something where
+    // the frontend expects a vector
+    else if constexpr (auxiliary::IsArray_v<T> && auxiliary::IsVector_v<U>)
+    {
+        if constexpr (std::is_convertible_v<
+                          typename T::value_type,
+                          typename U::value_type>)
+        {
+            U res{};
+            res.reserve(pv->size());
+            std::copy(pv->begin(), pv->end(), std::back_inserter(res));
+            return res;
+        }
+        else
+        {
+            return {};
+        }
+    }
+    // conversion cast: vector to array
+    // if a backend reports a std::vector<> for something where
+    // the frontend expects an array
+    else if constexpr (auxiliary::IsVector_v<T> && auxiliary::IsArray_v<U>)
+    {
+        if constexpr (std::is_convertible_v<
+                          typename T::value_type,
+                          typename U::value_type>)
+        {
+            U res{};
+            if (res.size() != pv->size())
+            {
+                throw std::runtime_error(
+                    "getCast: no vector to array conversion possible (wrong "
+                    "requested array size).");
+            }
+            for (size_t i = 0; i < res.size(); ++i)
+            {
+                res[i] = static_cast<typename U::value_type>((*pv)[i]);
+            }
+            return res;
+        }
+        else
+        {
+            return {};
+        }
+    }
+    // conversion cast: turn a single value into a 1-element vector
+    else if constexpr (auxiliary::IsVector_v<U>)
+    {
+        if constexpr (std::is_convertible_v<T, typename U::value_type>)
+        {
+            U res{};
+            res.reserve(1);
+            res.push_back(static_cast<typename U::value_type>(*pv));
+            return res;
+        }
+        else
+        {
+            return {};
+        }
+    }
+    else
+    {
+        return {};
+    }
+#if defined(__INTEL_COMPILER)
+/*
+ * ICPC has trouble with if constexpr, thinking that return statements are
+ * missing afterwards. Deactivate the warning.
+ * Note that putting a statement here will not help to fix this since it will
+ * then complain about unreachable code.
+ * https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
+ */
+#pragma warning(disable : 1011)
+}
+#pragma warning(default : 1011)
+#else
+}
+#endif
+
 /** Retrieve a stored specific Attribute and cast if convertible.
  *
  * @throw   std::runtime_error if stored object is not static castable to U.
@@ -253,4 +372,16 @@ U Attribute::get() const
     return getCast<U>(Variant::getResource());
 }
 
+template <typename U>
+std::optional<U> Attribute::getOptional() const
+{
+    auto v = Variant::getResource();
+
+    return std::visit(
+        [](auto &&containedValue) -> U {
+            using containedType = std::decay_t<decltype(containedValue)>;
+            return doConvert<containedType, U>(&containedValue);
+        },
+        v);
+}
 } // namespace openPMD

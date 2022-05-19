@@ -1334,22 +1334,23 @@ std::optional<std::deque<uint64_t>> Series::readGorVBased(bool do_init)
 void Series::readBase()
 {
     auto &series = get();
-    using DT = Datatype;
     Parameter<Operation::READ_ATT> aRead;
 
     aRead.name = "openPMD";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::STRING)
-        setOpenPMD(Attribute(*aRead.resource).get<std::string>());
+    if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+        val.has_value())
+        setOpenPMD(val.value());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
 
     aRead.name = "openPMDextension";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == determineDatatype<uint32_t>())
-        setOpenPMDextension(Attribute(*aRead.resource).get<uint32_t>());
+    if (auto val = Attribute(*aRead.resource).getOptional<uint32_t>();
+        val.has_value())
+        setOpenPMDextension(val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'openPMDextension'");
@@ -1357,8 +1358,9 @@ void Series::readBase()
     aRead.name = "basePath";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::STRING)
-        setAttribute("basePath", Attribute(*aRead.resource).get<std::string>());
+    if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+        val.has_value())
+        setAttribute("basePath", val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'basePath'");
@@ -1373,13 +1375,14 @@ void Series::readBase()
         aRead.name = "meshesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
-        if (*aRead.dtype == DT::STRING)
+        if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+            val.has_value())
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
                 it.second.meshes.written() = false;
 
-            setMeshesPath(Attribute(*aRead.resource).get<std::string>());
+            setMeshesPath(val.value());
 
             for (auto &it : series.iterations)
                 it.second.meshes.written() = true;
@@ -1397,13 +1400,14 @@ void Series::readBase()
         aRead.name = "particlesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
-        if (*aRead.dtype == DT::STRING)
+        if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+            val.has_value())
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
                 it.second.particles.written() = false;
 
-            setParticlesPath(Attribute(*aRead.resource).get<std::string>());
+            setParticlesPath(val.value());
 
             for (auto &it : series.iterations)
                 it.second.particles.written() = true;
