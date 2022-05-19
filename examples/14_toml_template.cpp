@@ -1,3 +1,4 @@
+#include <openPMD/auxiliary/TemplateFile.hpp>
 #include <openPMD/openPMD.hpp>
 
 std::string backendEnding()
@@ -101,7 +102,23 @@ void read()
         "../samples/tomlTemplate." + backendEnding(),
         openPMD::Access::READ_LINEAR);
     read.readIterations(); // @todo change to read.parseBase()
-    openPMD::helper::listSeries(read);
+
+    std::string jsonConfig = R"(
+{
+  "iteration_encoding": "variable_based",
+  "json": {
+    "mode": "template"
+  }
+}
+)";
+    openPMD::Series cloned(
+        "../samples/jsonTemplate.json", openPMD::Access::CREATE, jsonConfig);
+    openPMD::auxiliary::initializeFromTemplate(cloned, read, 0);
+    // Have to define the dataset for E/z as it is not defined in the template
+    // @todo check that the dataset is defined only upon destruction, not at
+    // flushing already
+    cloned.writeIterations()[0].meshes["E"]["z"].resetDataset(
+        {openPMD::Datatype::INT});
 }
 
 int main()
