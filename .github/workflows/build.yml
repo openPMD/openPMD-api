@@ -43,15 +43,15 @@ jobs:
             arch: "x86_64"
             env:
               MACOSX_DEPLOYMENT_TARGET: 10.9
-          # not really needed separately, yet arm64 also creates a wheel for
-          # CPython 3.8:
-          #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
-          #   https://github.com/pypa/cibuildwheel/pull/704
-          - os: macos-11
-            arch: "arm64"
-            env:
-              CMAKE_OSX_ARCHITECTURES: "arm64"
-              MACOSX_DEPLOYMENT_TARGET: 11.0
+          # Apple Silicon M1 arm64 builds:
+          #   TODO HDF5 cross-compilation builds still tricky
+          # https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
+          # https://github.com/pypa/cibuildwheel/pull/704
+          #- os: macos-11
+          #  arch: "arm64"
+          #  env:
+          #    CMAKE_OSX_ARCHITECTURES: "arm64"
+          #    MACOSX_DEPLOYMENT_TARGET: 11.0
           # Needs extra treatment of all librarys that are not CMake controlled
           # the dependencies:
           #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
