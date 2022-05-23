@@ -261,7 +261,7 @@ build_blosc
 build_zfp
 build_hdf5
 # skip for macOS universal builds
-if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64;x86_64" ]]; then
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64;x86_64" ]]; then
     build_adios1
 fi
 build_adios2
