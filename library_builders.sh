@@ -220,34 +220,62 @@ function build_zfp {
 function build_hdf5 {
     if [ -e hdf5-stamp ]; then return; fi
 
-    curl -sLo hdf5-1.12.0.tar.gz \
-        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/src/hdf5-1.12.0.tar.gz
+    curl -sLo hdf5-1.12.2.tar.gz \
+        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz
     file hdf5*.tar.gz
     tar -xzf hdf5*.tar.gz
     rm hdf5*.tar.gz
+    cd hdf5-*
 
-    CMAKE_CROSSCOMPILING_EMULATOR=""
+    HOST_ARG=""
+    # macOS cross-compile
+    #   https://github.com/conda-forge/hdf5-feedstock/blob/cbbd57d58f7f5350ca679eaad49354c11dd32b95/recipe/build.sh#L53-L80
     if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
-        CMAKE_CROSSCOMPILING_EMULATOR="qemu-system-aarch64;-M;virt"
+        # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh
+        # from https://github.com/conda-forge/hdf5-feedstock/commit/2cb83b63965985fa8795b0a13150bf0fd2525ebd
+        export ac_cv_sizeof_long_double=8
+        export hdf5_cv_ldouble_to_long_special=no
+        export hdf5_cv_long_to_ldouble_special=no
+        export hdf5_cv_ldouble_to_llong_accurate=yes
+        export hdf5_cv_llong_to_ldouble_correct=yes
+        export hdf5_cv_disable_some_ldouble_conv=no
+        export hdf5_cv_system_scope_threads=yes
+        export hdf5_cv_printf_ll="l"
+
+        export HOST_ARG="--host=aarch64-apple-darwin"
+
+        curl -sLo osx_cross_configure.patch \
+            https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_configure.patch
+        python3 -m patch -p 0 -d . osx_cross_configure.patch
+
+        curl -sLo osx_cross_src_makefile.patch \
+            https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_src_makefile.patch
+        #python3 -m patch -p 0 -d . osx_cross_src_makefile.patch
+        patch -p 0 < osx_cross_src_makefile.patch
     fi
 
-    PY_BIN=$(which python3)
-    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake          \
-      -S hdf5-*                              \
-      -B build-hdf5                          \
-      -DBUILD_TESTING=OFF                    \
-      -DBUILD_SHARED_LIBS=OFF                \
-      -DBUILD_STATIC_LIBS=ON                 \
-      -DHDF5_BUILD_EXAMPLES=OFF              \
-      -DHDF5_BUILD_FORTRAN=OFF               \
-      -DHDF5_BUILD_TOOLS=OFF                 \
-      -DHDF5_BUILD_UTILS=OFF                 \
-      -DHDF5_INSTALL_CMAKE_DIR=share/cmake/hdf5 \
-      -DCMAKE_CROSSCOMPILING_EMULATOR="${CMAKE_CROSSCOMPILING_EMULATOR}" \
-      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
-    cmake --build build-hdf5 -j ${CPU_COUNT}
-    cmake --build build-hdf5 --target install
+    ./configure \
+        --disable-parallel \
+        --disable-shared   \
+        --enable-static    \
+        --enable-tests=no  \
+        ${HOST_ARG}        \
+        --prefix=${BUILD_PREFIX}
+
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh - build_h5detect
+        mkdir -p native-build/bin
+        pushd native-build/bin
+        CFLAGS= $CC ../../src/H5detect.c -I ../../src/ -o H5detect
+        CFLAGS= $CC ../../src/H5make_libsettings.c -I ../../src/ -o H5make_libsettings
+        popd
+
+        export PATH="$(pwd)/native-build/bin:$PATH"
+    fi
+
+    make -j${CPU_COUNT}
+    make install
+    cd ..
 
     touch hdf5-stamp
 }
@@ -255,6 +283,16 @@ function build_hdf5 {
 # static libs need relocatable symbols for linking to shared python lib
 export CFLAGS+=" -fPIC"
 export CXXFLAGS+=" -fPIC"
+
+# compiler hints for macOS cross-compiles
+#   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+    export CC="/usr/bin/clang"
+    export CXX="/usr/bin/clang++"
+    export CFLAGS="$CFLAGS -arch arm64"
+    export CPPFLAGS="$CPPFLAGS -arch arm64"
+    export CXXFLAGS="$CXXFLAGS -arch arm64"
+fi
 
 install_buildessentials
 build_blosc
