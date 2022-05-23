@@ -100,14 +100,14 @@ function build_adios2 {
         https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
     python3 -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
 
-    # DILL macOS universal2 binary
+    # DILL macOS arm64 or universal2 binary
     #   https://github.com/ornladios/ADIOS2/issues/3116
     #   needs rebase (or use ADIOS2-2.8.0)
     #curl -sLo dill-universal.patch \
     #    https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/3118.patch
     #python3 -m patch -p 1 -d ADIOS2-2.7.1 dill-universal.patch
     ADIOS2_USE_SST=ON
-    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64;x86_64" ]]; then
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
         ADIOS2_USE_SST=OFF
     fi
 
@@ -260,8 +260,5 @@ install_buildessentials
 build_blosc
 build_zfp
 build_hdf5
-# skip for macOS universal builds
-if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64;x86_64" ]]; then
-    build_adios1
-fi
+build_adios1
 build_adios2
