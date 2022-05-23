@@ -74,7 +74,14 @@ function build_adios1 {
     tar -xzf adios*.tar.gz
     rm adios*.tar.gz
     cd adios-*
-    ./configure --enable-static --disable-shared --disable-fortran --without-mpi --prefix=${BUILD_PREFIX} --with-blosc=/usr
+
+    # Cross-Compile hints for autotools based builds
+    HOST_ARG=""
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        HOST_ARG="--host=aarch64-apple-darwin"
+    fi
+
+    ./configure --enable-static --disable-shared --disable-fortran --without-mpi ${HOST_ARG} --prefix=${BUILD_PREFIX} --with-blosc=/usr
     make -j${CPU_COUNT}
     make install
     cd -
@@ -227,8 +234,8 @@ function build_hdf5 {
     rm hdf5*.tar.gz
     cd hdf5-*
 
-    HOST_ARG=""
     # macOS cross-compile
+    HOST_ARG=""
     #   https://github.com/conda-forge/hdf5-feedstock/blob/cbbd57d58f7f5350ca679eaad49354c11dd32b95/recipe/build.sh#L53-L80
     if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
         # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh
@@ -242,7 +249,7 @@ function build_hdf5 {
         export hdf5_cv_system_scope_threads=yes
         export hdf5_cv_printf_ll="l"
 
-        export HOST_ARG="--host=aarch64-apple-darwin"
+        HOST_ARG="--host=aarch64-apple-darwin"
 
         curl -sLo osx_cross_configure.patch \
             https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_configure.patch
@@ -298,5 +305,8 @@ install_buildessentials
 build_blosc
 build_zfp
 build_hdf5
-build_adios1
+# skip ADIOS1 build for M1
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" ]]; then
+    build_adios1
+fi
 build_adios2
