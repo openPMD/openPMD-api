@@ -143,14 +143,14 @@ exit /b 0
 :build_zlib
   if exist zlib-stamp exit /b 0
 
-  curl -sLo zlib-1.2.11.zip ^
-    https://github.com/madler/zlib/archive/v1.2.11.zip
-  powershell Expand-Archive zlib-1.2.11.zip -DestinationPath dep-zlib
+  curl -sLo zlib-1.2.12.zip ^
+    https://github.com/madler/zlib/archive/v1.2.12.zip
+  powershell Expand-Archive zlib-1.2.12.zip -DestinationPath dep-zlib
 
-  cmake -S dep-zlib/zlib-1.2.11 -B build-zlib ^
-    -DBUILD_SHARED_LIBS=OFF
+  cmake -S dep-zlib/zlib-1.2.12 -B build-zlib ^
+    -DBUILD_SHARED_LIBS=OFF ^
+    -DCMAKE_BUILD_TYPE=Release
   if errorlevel 1 exit 1
-  :: TODO: zlib 1.2.11 ignores -DCMAKE_BUILD_TYPE=Release
 
   cmake --build build-zlib --parallel %CPU_COUNT%
   if errorlevel 1 exit 1

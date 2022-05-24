@@ -224,6 +224,32 @@ function build_zfp {
     touch zfp-stamp
 }
 
+function build_zlib {
+    if [ -e zlib-stamp ]; then return; fi
+
+    ZLIB_VERSION="1.2.12"
+
+    curl -sLO https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
+    file zlib*.tar.gz
+    tar xzf zlib-$ZLIB_VERSION.tar.gz
+    rm zlib*.tar.gz
+
+    PY_BIN=$(which python3)
+    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    PATH=${CMAKE_BIN}:${PATH} cmake \
+      -S zlib-*     \
+      -B build-zlib \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
+
+    PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --parallel ${CPU_COUNT}
+    PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --target install
+    rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so
+
+    touch zlib-stamp
+}
+
 function build_hdf5 {
     if [ -e hdf5-stamp ]; then return; fi
 
@@ -266,6 +292,7 @@ function build_hdf5 {
         --disable-shared   \
         --enable-static    \
         --enable-tests=no  \
+        --with-zlib=${BUILD_PREFIX} \
         ${HOST_ARG}        \
         --prefix=${BUILD_PREFIX}
 
@@ -296,12 +323,13 @@ export CXXFLAGS+=" -fPIC"
 if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
     export CC="/usr/bin/clang"
     export CXX="/usr/bin/clang++"
-    export CFLAGS="$CFLAGS -arch arm64"
-    export CPPFLAGS="$CPPFLAGS -arch arm64"
-    export CXXFLAGS="$CXXFLAGS -arch arm64"
+    export CFLAGS+=" -arch arm64"
+    export CPPFLAGS+=" -arch arm64"
+    export CXXFLAGS+=" -arch arm64"
 fi
 
 install_buildessentials
+build_zlib
 build_blosc
 build_zfp
 build_hdf5
