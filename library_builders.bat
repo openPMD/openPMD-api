@@ -84,11 +84,11 @@ exit /b 0
 :build_hdf5
   if exist hdf5-stamp exit /b 0
 
-  curl -sLo hdf5-1.12.0.zip ^
-    https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/src/hdf5-1.12.0.zip
-  powershell Expand-Archive hdf5-1.12.0.zip -DestinationPath dep-hdf5
+  curl -sLo hdf5-1.12.2.zip ^
+    https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.zip
+  powershell Expand-Archive hdf5-1.12.2.zip -DestinationPath dep-hdf5
 
-  cmake -S dep-hdf5/hdf5-1.12.0 -B build-hdf5 ^
+  cmake -S dep-hdf5/hdf5-1.12.2 -B build-hdf5 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DCMAKE_VERBOSE_MAKEFILE=ON ^
     -DBUILD_SHARED_LIBS=OFF     ^
@@ -143,14 +143,14 @@ exit /b 0
 :build_zlib
   if exist zlib-stamp exit /b 0
 
-  curl -sLo zlib-1.2.11.zip ^
-    https://github.com/madler/zlib/archive/v1.2.11.zip
-  powershell Expand-Archive zlib-1.2.11.zip -DestinationPath dep-zlib
+  curl -sLo zlib-1.2.12.zip ^
+    https://github.com/madler/zlib/archive/v1.2.12.zip
+  powershell Expand-Archive zlib-1.2.12.zip -DestinationPath dep-zlib
 
-  cmake -S dep-zlib/zlib-1.2.11 -B build-zlib ^
-    -DBUILD_SHARED_LIBS=OFF
+  cmake -S dep-zlib/zlib-1.2.12 -B build-zlib ^
+    -DBUILD_SHARED_LIBS=OFF ^
+    -DCMAKE_BUILD_TYPE=Release
   if errorlevel 1 exit 1
-  :: TODO: zlib 1.2.11 ignores -DCMAKE_BUILD_TYPE=Release
 
   cmake --build build-zlib --parallel %CPU_COUNT%
   if errorlevel 1 exit 1

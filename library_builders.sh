@@ -9,10 +9,10 @@ CPU_COUNT="${CPU_COUNT:-2}"
 function install_buildessentials {
     if [ -e buildessentials-stamp ]; then return; fi
 
-    # Cleanup:
-    #   - Travis-CI macOS ships a pre-installed HDF5
     if [ "$(uname -s)" = "Darwin" ]
     then
+        # Cleanup:
+        #   - Travis-CI macOS ships a pre-installed HDF5
         brew unlink hdf5 || true
         brew uninstall --ignore-dependencies hdf5 || true
         rm -rf /usr/local/Cellar/hdf5
@@ -74,10 +74,21 @@ function build_adios1 {
     tar -xzf adios*.tar.gz
     rm adios*.tar.gz
     cd adios-*
-    ./configure --enable-static --disable-shared --disable-fortran --without-mpi --prefix=${BUILD_PREFIX} --with-blosc=/usr
+
+    # Cross-Compile hints for autotools based builds
+    HOST_ARG=""
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        HOST_ARG="--host=aarch64-apple-darwin"
+    fi
+
+    ./configure --enable-static --disable-shared --disable-fortran --without-mpi ${HOST_ARG} --prefix=${BUILD_PREFIX} --with-blosc=/usr
     make -j${CPU_COUNT}
     make install
     cd -
+
+    # note: for universal binaries on macOS
+    #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
+    #lipo -create -output universal_app x86_app arm_app
 
     touch adios1-stamp
 }
@@ -95,6 +106,17 @@ function build_adios2 {
     curl -sLo adios-pthread.patch \
         https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
     python3 -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
+
+    # DILL macOS arm64 or universal2 binary
+    #   https://github.com/ornladios/ADIOS2/issues/3116
+    #   needs rebase (or use ADIOS2-2.8.0)
+    #curl -sLo dill-universal.patch \
+    #    https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/3118.patch
+    #python3 -m patch -p 1 -d ADIOS2-2.7.1 dill-universal.patch
+    ADIOS2_USE_SST=ON
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        ADIOS2_USE_SST=OFF
+    fi
 
     mkdir build-ADIOS2
     cd build-ADIOS2
@@ -117,6 +139,7 @@ function build_adios2 {
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
+        -DADIOS2_USE_SST=${ADIOS2_USE_SST}        \
         -DADIOS2_USE_ZFP=ON                       \
         -DADIOS2_RUN_INSTALL_TEST=OFF             \
         -DEVPATH_USE_ZPL_ENET=${EVPATH_ZPL}       \
@@ -147,12 +170,21 @@ function build_blosc {
         https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
     python3 -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
 
+    # SSE2 support
+    #   https://github.com/Blosc/c-blosc/issues/334
+    DEACTIVATE_SSE2=OFF
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
+      # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
+      DEACTIVATE_SSE2=ON
+    fi
+
     mkdir build-c-blosc
     cd build-c-blosc
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake          \
       -DDEACTIVATE_SNAPPY=ON                 \
+      -DDEACTIVATE_SSE2=${DEACTIVATE_SSE2}   \
       -DBUILD_SHARED=OFF                     \
       -DBUILD_TESTS=OFF                      \
       -DBUILD_BENCHMARKS=OFF                 \
@@ -192,19 +224,92 @@ function build_zfp {
     touch zfp-stamp
 }
 
+function build_zlib {
+    if [ -e zlib-stamp ]; then return; fi
+
+    ZLIB_VERSION="1.2.12"
+
+    curl -sLO https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
+    file zlib*.tar.gz
+    tar xzf zlib-$ZLIB_VERSION.tar.gz
+    rm zlib*.tar.gz
+
+    PY_BIN=$(which python3)
+    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    PATH=${CMAKE_BIN}:${PATH} cmake \
+      -S zlib-*     \
+      -B build-zlib \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
+
+    PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --parallel ${CPU_COUNT}
+    PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --target install
+    rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so
+
+    touch zlib-stamp
+}
+
 function build_hdf5 {
     if [ -e hdf5-stamp ]; then return; fi
 
-    curl -sLo hdf5-1.12.0.tar.gz \
-        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/src/hdf5-1.12.0.tar.gz
+    curl -sLo hdf5-1.12.2.tar.gz \
+        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz
     file hdf5*.tar.gz
     tar -xzf hdf5*.tar.gz
     rm hdf5*.tar.gz
     cd hdf5-*
-    ./configure --disable-parallel --disable-shared --enable-static --prefix ${BUILD_PREFIX}
+
+    # macOS cross-compile
+    HOST_ARG=""
+    #   https://github.com/conda-forge/hdf5-feedstock/blob/cbbd57d58f7f5350ca679eaad49354c11dd32b95/recipe/build.sh#L53-L80
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh
+        # from https://github.com/conda-forge/hdf5-feedstock/commit/2cb83b63965985fa8795b0a13150bf0fd2525ebd
+        export ac_cv_sizeof_long_double=8
+        export hdf5_cv_ldouble_to_long_special=no
+        export hdf5_cv_long_to_ldouble_special=no
+        export hdf5_cv_ldouble_to_llong_accurate=yes
+        export hdf5_cv_llong_to_ldouble_correct=yes
+        export hdf5_cv_disable_some_ldouble_conv=no
+        export hdf5_cv_system_scope_threads=yes
+        export hdf5_cv_printf_ll="l"
+
+        HOST_ARG="--host=aarch64-apple-darwin"
+
+        curl -sLo osx_cross_configure.patch \
+            https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_configure.patch
+        python3 -m patch -p 0 -d . osx_cross_configure.patch
+
+        curl -sLo osx_cross_src_makefile.patch \
+            https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_src_makefile.patch
+        #python3 -m patch -p 0 -d . osx_cross_src_makefile.patch
+        patch -p 0 < osx_cross_src_makefile.patch
+    fi
+
+    ./configure \
+        --disable-parallel \
+        --disable-shared   \
+        --enable-static    \
+        --enable-tests=no  \
+        --with-zlib=${BUILD_PREFIX} \
+        ${HOST_ARG}        \
+        --prefix=${BUILD_PREFIX}
+
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh - build_h5detect
+        mkdir -p native-build/bin
+        pushd native-build/bin
+        CFLAGS= $CC ../../src/H5detect.c -I ../../src/ -o H5detect
+        CFLAGS= $CC ../../src/H5make_libsettings.c -I ../../src/ -o H5make_libsettings
+        popd
+
+        export PATH="$(pwd)/native-build/bin:$PATH"
+    fi
+
     make -j${CPU_COUNT}
     make install
-    cd -
+    cd ..
 
     touch hdf5-stamp
 }
@@ -213,9 +318,23 @@ function build_hdf5 {
 export CFLAGS+=" -fPIC"
 export CXXFLAGS+=" -fPIC"
 
+# compiler hints for macOS cross-compiles
+#   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+    export CC="/usr/bin/clang"
+    export CXX="/usr/bin/clang++"
+    export CFLAGS+=" -arch arm64"
+    export CPPFLAGS+=" -arch arm64"
+    export CXXFLAGS+=" -arch arm64"
+fi
+
 install_buildessentials
+build_zlib
 build_blosc
 build_zfp
 build_hdf5
-build_adios1
+# skip ADIOS1 build for M1
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" ]]; then
+    build_adios1
+fi
 build_adios2

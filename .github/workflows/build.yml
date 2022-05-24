@@ -41,14 +41,29 @@ jobs:
 
           - os: macos-10.15
             arch: "x86_64"
-          # not really needed separately, yet arm64 also creates a wheel for
-          # CPython 3.8:
+            env:
+              MACOSX_DEPLOYMENT_TARGET: 10.9
+
+          # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
           #   https://github.com/pypa/cibuildwheel/pull/704
-          - os: macos-10.15
+          - os: macos-11
             arch: "arm64"
-          - os: macos-10.15
-            arch: "universal2"
+            env:
+              CMAKE_OSX_ARCHITECTURES: "arm64"
+              MACOSX_DEPLOYMENT_TARGET: 11.0
+
+          # Apple universal builds that contain x86-64 and arm64 binary code
+          #   Needs extra treatment of all librarys that are not CMake
+          #   controlled the dependencies:
+          #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
+          # ADIOS1 tricky to build and HDF5 even with CMake as well (as of 1.12)
+          # We could build them twice and use `lipo` to combine the lib artifacts.
+          #- os: macos-11
+          #  arch: "universal2"
+          #  env:
+          #    CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+          #    MACOSX_DEPLOYMENT_TARGET: 11.0
 
     steps:
     - uses: actions/checkout@v2
@@ -107,7 +122,9 @@ jobs:
         # C++11 & 14 support in macOS 10.9+
         # C++17 support in macOS 10.13+/10.14+
         #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
-        MACOSX_DEPLOYMENT_TARGET: 10.9
+        # arm64 Python interpreters are built with 11.0
+        MACOSX_DEPLOYMENT_TARGET: "${{ matrix.env.MACOSX_DEPLOYMENT_TARGET }}"
+        CMAKE_OSX_ARCHITECTURES: "${{ matrix.env.CMAKE_OSX_ARCHITECTURES }}"
         # Show a bit more output (pip -v)
         CIBW_BUILD_VERBOSITY: 1
       run: |
