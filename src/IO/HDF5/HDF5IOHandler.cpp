@@ -1247,6 +1247,7 @@ void HDF5IOHandlerImpl::writeDataset(
     case DT::ULONGLONG:
     case DT::CHAR:
     case DT::UCHAR:
+    case DT::SCHAR:
     case DT::BOOL:
         status = H5Dwrite(
             dataset_id,
@@ -1376,6 +1377,11 @@ void HDF5IOHandlerImpl::writeAttribute(
         status = H5Awrite(attribute_id, dataType, &u);
         break;
     }
+    case DT::SCHAR: {
+        auto u = att.get<signed char>();
+        status = H5Awrite(attribute_id, dataType, &u);
+        break;
+    }
     case DT::SHORT: {
         auto i = att.get<short>();
         status = H5Awrite(attribute_id, dataType, &i);
@@ -1475,6 +1481,12 @@ void HDF5IOHandlerImpl::writeAttribute(
             attribute_id,
             dataType,
             att.get<std::vector<unsigned char> >().data());
+        break;
+    case DT::VEC_SCHAR:
+        status = H5Awrite(
+            attribute_id,
+            dataType,
+            att.get<std::vector<signed char> >().data());
         break;
     case DT::VEC_USHORT:
         status = H5Awrite(

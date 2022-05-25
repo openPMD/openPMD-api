@@ -86,6 +86,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
     {
     case DT::CHAR:
     case DT::VEC_CHAR:
+    case DT::SCHAR:
+    case DT::VEC_SCHAR:
         return adios_byte;
     case DT::UCHAR:
     case DT::VEC_UCHAR:

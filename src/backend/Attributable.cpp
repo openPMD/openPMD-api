@@ -333,6 +333,12 @@ void Attributable::readAttributes(ReadMode mode)
                 a.get<unsigned char>(),
                 internal::SetAttributeMode::WhileReadingAttributes);
             break;
+        case DT::SCHAR:
+            setAttributeImpl(
+                att,
+                a.get<signed char>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
+            break;
         case DT::SHORT:
             setAttributeImpl(
                 att,
@@ -508,6 +514,12 @@ void Attributable::readAttributes(ReadMode mode)
             setAttributeImpl(
                 att,
                 a.get<std::vector<std::complex<long double> > >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
+            break;
+        case DT::VEC_SCHAR:
+            setAttributeImpl(
+                att,
+                a.get<std::vector<signed char> >(),
                 internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_STRING:

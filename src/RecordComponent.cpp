@@ -287,6 +287,20 @@ void RecordComponent::read()
     readBase();
 }
 
+namespace
+{
+    struct MakeConstant
+    {
+        template <typename T>
+        static void call(RecordComponent rc, Attribute const &attr)
+        {
+            rc.makeConstant(attr.get<T>());
+        }
+
+        static constexpr char const *errorMsg = "Unexpected constant datatype";
+    };
+} // namespace
+
 void RecordComponent::readBase()
 {
     using DT = Datatype;
@@ -302,62 +316,7 @@ void RecordComponent::readBase()
         Attribute a(*aRead.resource);
         DT dtype = *aRead.dtype;
         written() = false;
-        switch (dtype)
-        {
-        case DT::LONG_DOUBLE:
-            makeConstant(a.get<long double>());
-            break;
-        case DT::DOUBLE:
-            makeConstant(a.get<double>());
-            break;
-        case DT::FLOAT:
-            makeConstant(a.get<float>());
-            break;
-        case DT::CLONG_DOUBLE:
-            makeConstant(a.get<std::complex<long double> >());
-            break;
-        case DT::CDOUBLE:
-            makeConstant(a.get<std::complex<double> >());
-            break;
-        case DT::CFLOAT:
-            makeConstant(a.get<std::complex<float> >());
-            break;
-        case DT::SHORT:
-            makeConstant(a.get<short>());
-            break;
-        case DT::INT:
-            makeConstant(a.get<int>());
-            break;
-        case DT::LONG:
-            makeConstant(a.get<long>());
-            break;
-        case DT::LONGLONG:
-            makeConstant(a.get<long long>());
-            break;
-        case DT::USHORT:
-            makeConstant(a.get<unsigned short>());
-            break;
-        case DT::UINT:
-            makeConstant(a.get<unsigned int>());
-            break;
-        case DT::ULONG:
-            makeConstant(a.get<unsigned long>());
-            break;
-        case DT::ULONGLONG:
-            makeConstant(a.get<unsigned long long>());
-            break;
-        case DT::CHAR:
-            makeConstant(a.get<char>());
-            break;
-        case DT::UCHAR:
-            makeConstant(a.get<unsigned char>());
-            break;
-        case DT::BOOL:
-            makeConstant(a.get<bool>());
-            break;
-        default:
-            throw std::runtime_error("Unexpected constant datatype");
-        }
+        switchNonVectorType<MakeConstant>(dtype, *this, a);
         written() = true;
 
         aRead.name = "shape";

@@ -133,6 +133,11 @@ namespace auxiliary
             data = new unsigned char[numPoints];
             del = [](void *p) { delete[] static_cast<unsigned char *>(p); };
             break;
+        case DT::VEC_SCHAR:
+        case DT::SCHAR:
+            data = new signed char[numPoints];
+            del = [](void *p) { delete[] static_cast<signed char *>(p); };
+            break;
         case DT::BOOL:
             data = new bool[numPoints];
             del = [](void *p) { delete[] static_cast<bool *>(p); };

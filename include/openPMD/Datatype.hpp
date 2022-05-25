@@ -42,7 +42,8 @@ namespace openPMD
 enum class Datatype : int
 {
     CHAR,
-    UCHAR, // SCHAR,
+    UCHAR,
+    SCHAR,
     SHORT,
     INT,
     LONG,
@@ -74,6 +75,7 @@ enum class Datatype : int
     VEC_CFLOAT,
     VEC_CDOUBLE,
     VEC_CLONG_DOUBLE,
+    VEC_SCHAR,
     VEC_STRING,
     ARR_DBL_7,
 
@@ -123,6 +125,10 @@ inline constexpr Datatype determineDatatype()
     else if (decay_equiv<T, unsigned char>::value)
     {
         return DT::UCHAR;
+    }
+    else if (decay_equiv<T, signed char>::value)
+    {
+        return DT::SCHAR;
     }
     else if (decay_equiv<T, short>::value)
     {
@@ -207,6 +213,10 @@ inline constexpr Datatype determineDatatype()
     else if (decay_equiv<T, std::vector<unsigned char>>::value)
     {
         return DT::VEC_UCHAR;
+    }
+    else if (decay_equiv<T, std::vector<signed char>>::value)
+    {
+        return DT::VEC_SCHAR;
     }
     else if (decay_equiv<T, std::vector<unsigned short>>::value)
     {
@@ -276,6 +286,10 @@ inline constexpr Datatype determineDatatype(std::shared_ptr<T>)
     {
         return DT::UCHAR;
     }
+    else if (decay_equiv<T, signed char>::value)
+    {
+        return DT::SCHAR;
+    }
     else if (decay_equiv<T, short>::value)
     {
         return DT::SHORT;
@@ -359,6 +373,10 @@ inline constexpr Datatype determineDatatype(std::shared_ptr<T>)
     else if (decay_equiv<T, std::vector<unsigned char>>::value)
     {
         return DT::VEC_UCHAR;
+    }
+    else if (decay_equiv<T, std::vector<signed char>>::value)
+    {
+        return DT::VEC_SCHAR;
     }
     else if (decay_equiv<T, std::vector<unsigned short>>::value)
     {
@@ -434,9 +452,9 @@ inline size_t toBytes(Datatype d)
     case DT::UCHAR:
     case DT::VEC_UCHAR:
         return sizeof(unsigned char);
-    // case DT::SCHAR:
-    // case DT::VEC_SCHAR:
-    //     return sizeof(signed char);
+    case DT::SCHAR:
+    case DT::VEC_SCHAR:
+        return sizeof(signed char);
     case DT::SHORT:
     case DT::VEC_SHORT:
         return sizeof(short);

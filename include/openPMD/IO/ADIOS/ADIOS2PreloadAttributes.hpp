@@ -73,12 +73,11 @@ namespace detail
         {
             adios2::Dims shape;
             size_t offset;
-            ADIOS2Datatype dt;
+            Datatype dt;
             char *destroy = nullptr;
 
             AttributeLocation() = delete;
-            AttributeLocation(
-                adios2::Dims shape, size_t offset, ADIOS2Datatype dt);
+            AttributeLocation(adios2::Dims shape, size_t offset, Datatype dt);
 
             AttributeLocation(AttributeLocation const &other) = delete;
             AttributeLocation &
@@ -137,7 +136,7 @@ namespace detail
         template <typename T>
         AttributeWithShape<T> getAttribute(std::string const &name) const;
 
-        ADIOS2Datatype attributeType(std::string const &name) const;
+        Datatype attributeType(std::string const &name) const;
     };
 
     template <typename T>
@@ -151,12 +150,12 @@ namespace detail
                 "[ADIOS2] Requested attribute not found: " + name);
         }
         AttributeLocation const &location = it->second;
-        ADIOS2Datatype determinedDatatype = determineAdios2Datatype<T>();
+        Datatype determinedDatatype = determineDatatype<T>();
         if (location.dt != determinedDatatype)
         {
             std::stringstream errorMsg;
             errorMsg << "[ADIOS2] Wrong datatype for attribute: " << name
-                     << "(location.dt=" << detail::toPublicType(location.dt)
+                     << "(location.dt=" << location.dt
                      << ", T=" << determineDatatype<T>() << ")";
             throw std::runtime_error(errorMsg.str());
         }

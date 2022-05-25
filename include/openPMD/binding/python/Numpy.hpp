@@ -136,6 +136,8 @@ inline pybind11::dtype dtype_to_numpy(Datatype const dt)
     {
     case DT::CHAR:
     case DT::VEC_CHAR:
+    case DT::SCHAR:
+    case DT::VEC_SCHAR:
     case DT::STRING:
     case DT::VEC_STRING:
         return pybind11::dtype("b");

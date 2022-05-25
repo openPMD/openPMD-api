@@ -1237,6 +1237,8 @@ inline void dtype_test(const std::string &backend)
         s.setAttribute("char", c);
         unsigned char uc = 'u';
         s.setAttribute("uchar", uc);
+        signed char sc = 's';
+        s.setAttribute("schar", sc);
         int16_t i16 = 16;
         s.setAttribute("int16", i16);
         int32_t i32 = 32;
@@ -1268,7 +1270,9 @@ inline void dtype_test(const std::string &backend)
             "vecInt64",
             std::vector<int64_t>({9223372036854775806, 9223372036854775807}));
         s.setAttribute(
-            "vecUchar", std::vector<char>({'u', 'c', 'h', 'a', 'r'}));
+            "vecUchar", std::vector<unsigned char>({'u', 'c', 'h', 'a', 'r'}));
+        s.setAttribute(
+            "vecSchar", std::vector<signed char>({'s', 'c', 'h', 'a', 'r'}));
         s.setAttribute("vecUint16", std::vector<uint16_t>({65534u, 65535u}));
         s.setAttribute(
             "vecUint32", std::vector<uint32_t>({4294967294u, 4294967295u}));
@@ -1349,6 +1353,7 @@ inline void dtype_test(const std::string &backend)
 
     REQUIRE(s.getAttribute("char").get<char>() == 'c');
     REQUIRE(s.getAttribute("uchar").get<unsigned char>() == 'u');
+    REQUIRE(s.getAttribute("schar").get<signed char>() == 's');
     REQUIRE(s.getAttribute("int16").get<int16_t>() == 16);
     REQUIRE(s.getAttribute("int32").get<int32_t>() == 32);
     REQUIRE(s.getAttribute("int64").get<int64_t>() == 64);
@@ -1375,8 +1380,11 @@ inline void dtype_test(const std::string &backend)
         s.getAttribute("vecInt64").get<std::vector<int64_t> >() ==
         std::vector<int64_t>({9223372036854775806, 9223372036854775807}));
     REQUIRE(
-        s.getAttribute("vecUchar").get<std::vector<char> >() ==
-        std::vector<char>({'u', 'c', 'h', 'a', 'r'}));
+        s.getAttribute("vecUchar").get<std::vector<unsigned char> >() ==
+        std::vector<unsigned char>({'u', 'c', 'h', 'a', 'r'}));
+    REQUIRE(
+        s.getAttribute("vecSchar").get<std::vector<signed char> >() ==
+        std::vector<signed char>({'s', 'c', 'h', 'a', 'r'}));
     REQUIRE(
         s.getAttribute("vecUint16").get<std::vector<uint16_t> >() ==
         std::vector<uint16_t>({65534u, 65535u}));

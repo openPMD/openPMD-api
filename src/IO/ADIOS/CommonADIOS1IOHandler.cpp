@@ -108,6 +108,9 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::flush_attribute(
     case DT::VEC_UCHAR:
         nelems = att.get<std::vector<unsigned char> >().size();
         break;
+    case DT::VEC_SCHAR:
+        nelems = att.get<std::vector<signed char> >().size();
+        break;
     case DT::VEC_USHORT:
         nelems = att.get<std::vector<unsigned short> >().size();
         break;
@@ -154,6 +157,11 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::flush_attribute(
     case DT::UCHAR: {
         auto ptr = reinterpret_cast<unsigned char *>(values.get());
         *ptr = att.get<unsigned char>();
+        break;
+    }
+    case DT::SCHAR: {
+        auto ptr = reinterpret_cast<signed char *>(values.get());
+        *ptr = att.get<signed char>();
         break;
     }
     case DT::SHORT: {
@@ -270,6 +278,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::flush_attribute(
     case DT::VEC_UCHAR: {
         auto ptr = reinterpret_cast<unsigned char *>(values.get());
         auto const &vec = att.get<std::vector<unsigned char> >();
+        for (size_t i = 0; i < vec.size(); ++i)
+            ptr[i] = vec[i];
+        break;
+    }
+    case DT::VEC_SCHAR: {
+        auto ptr = reinterpret_cast<signed char *>(values.get());
+        auto const &vec = att.get<std::vector<signed char> >();
         for (size_t i = 0; i < vec.size(); ++i)
             ptr[i] = vec[i];
         break;
@@ -1149,6 +1164,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readDataset(
     case DT::ULONGLONG:
     case DT::CHAR:
     case DT::UCHAR:
+    case DT::SCHAR:
     case DT::BOOL:
         break;
     case DT::UNDEFINED:
