@@ -35,9 +35,16 @@ jobs:
           #- os: ubuntu-20.04
           #  arch: "s390x"
 
+          # x86-64 (64bit)
           - os: windows-2019
             arch: "AMD64"
-            # x86 (32bit)
+
+          # x86 (32bit)
+          - os: windows-2019
+            arch: "x86"
+            env:
+              CMAKE_GENERATOR: "Visual Studio 16 2019"
+              CMAKE_GENERATOR_PLATFORM: "Win32"
 
           - os: macos-10.15
             arch: "x86_64"
@@ -100,15 +107,14 @@ jobs:
 
     - name: Build wheel
       env:
-        # (1) CMake/Pybind11 scripts not clever enough to build 32bit Windows with 64bit compiler
-        # (2) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
+        # (1) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
         #     https://github.com/pypa/manylinux/issues/543
         #       variant.hpp:2241:9: internal compiler error:
         #       unexpected expression ‘I’ of kind template_parm_index
         #       typename T = lib::type_pack_element_t<I, Ts...>,
-        # (3) Disable PyPy (manylinux image: yum repo issues)
+        # (2) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
-        CIBW_SKIP: "*-win32 *-manylinux_i686 pp*-manylinux*"
+        CIBW_SKIP: "*-manylinux_i686 pp*-manylinux*"
         CIBW_ARCHS: "${{ matrix.arch }}"
         CIBW_PROJECT_REQUIRES_PYTHON: ">=3.6"
         # Install dependencies
@@ -125,6 +131,9 @@ jobs:
         # arm64 Python interpreters are built with 11.0
         MACOSX_DEPLOYMENT_TARGET: "${{ matrix.env.MACOSX_DEPLOYMENT_TARGET }}"
         CMAKE_OSX_ARCHITECTURES: "${{ matrix.env.CMAKE_OSX_ARCHITECTURES }}"
+        # Windows cross-compilation
+        CMAKE_GENERATOR: "${{ matrix.env.CMAKE_GENERATOR }}"
+        CMAKE_GENERATOR_PLATFORM: "${{ matrix.env.CMAKE_GENERATOR_PLATFORM }}"
         # Show a bit more output (pip -v)
         CIBW_BUILD_VERBOSITY: 1
       run: |
