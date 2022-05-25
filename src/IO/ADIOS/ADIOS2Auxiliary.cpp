@@ -107,9 +107,9 @@ ADIOS2Datatype fromADIOS2Type(std::string const &dt, bool verbose)
         {"long double", ADIOS2Datatype::LONG_DOUBLE},
         {"float complex", ADIOS2Datatype::CFLOAT},
         {"double complex", ADIOS2Datatype::CDOUBLE},
-        {"long double complex",
-         ADIOS2Datatype::CLONG_DOUBLE}, // does not exist as of 2.7.0 but might
-                                        // come later
+        // does not exist as of 2.7.0 but might come later
+        // {"long double complex",
+        //  ADIOS2Datatype::CLONG_DOUBLE},
         {"uint8_t", ADIOS2Datatype::UCHAR},
         {"int8_t", ADIOS2Datatype::SCHAR},
         {"uint16_t", determineAdios2Datatype<uint16_t>()},

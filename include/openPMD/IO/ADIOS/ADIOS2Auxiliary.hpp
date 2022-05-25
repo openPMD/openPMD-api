@@ -58,7 +58,8 @@ enum class ADIOS2Datatype : int
     LONG_DOUBLE,
     CFLOAT,
     CDOUBLE,
-    CLONG_DOUBLE,
+    // unsupported by ADIOS2
+    // CLONG_DOUBLE,
     STRING,
     VEC_CHAR,
     VEC_UCHAR,
@@ -76,7 +77,8 @@ enum class ADIOS2Datatype : int
     VEC_LONG_DOUBLE,
     VEC_CFLOAT,
     VEC_CDOUBLE,
-    VEC_CLONG_DOUBLE,
+    // unsupported by ADIOS2
+    // VEC_CLONG_DOUBLE,
     VEC_STRING,
     ARR_DBL_7,
 
@@ -153,10 +155,10 @@ inline constexpr ADIOS2Datatype determineAdios2Datatype()
     {
         return DT::CDOUBLE;
     }
-    else if (decay_equiv<T, std::complex<long double>>::value)
-    {
-        return DT::CLONG_DOUBLE;
-    }
+    // else if (decay_equiv<T, std::complex<long double>>::value)
+    // {
+    //     return DT::CLONG_DOUBLE;
+    // }
     else if (decay_equiv<T, std::string>::value)
     {
         return DT::STRING;
@@ -229,10 +231,10 @@ inline constexpr ADIOS2Datatype determineAdios2Datatype()
     {
         return DT::VEC_CDOUBLE;
     }
-    else if (decay_equiv<T, std::vector<std::complex<long double>>>::value)
-    {
-        return DT::VEC_CLONG_DOUBLE;
-    }
+    // else if (decay_equiv<T, std::vector<std::complex<long double>>>::value)
+    // {
+    //     return DT::VEC_CLONG_DOUBLE;
+    // }
     else if (decay_equiv<T, std::vector<std::string>>::value)
     {
         return DT::VEC_STRING;
