@@ -19,7 +19,7 @@ namespace openPMD
  */
 enum class AdvanceStatus : unsigned char
 {
-    OK,  /* stream goes on */
+    OK, /* stream goes on */
     OVER /* stream is over */
 };
 
@@ -44,6 +44,6 @@ enum class AdvanceMode : unsigned char
 enum class StepStatus : unsigned char
 {
     DuringStep, /* step is currently active */
-    NoStep      /* no step is currently active */
+    NoStep /* no step is currently active */
 };
 } // namespace openPMD

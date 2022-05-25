@@ -24,12 +24,11 @@
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
 
-#include <string>
 #include <map>
 #include <sstream>
+#include <string>
 
 namespace py = pybind11;
-
 
 // forward declarations of exposed classes
 void init_Access(py::module &);
@@ -54,8 +53,8 @@ void init_RecordComponent(py::module &);
 void init_Series(py::module &);
 void init_UnitDimension(py::module &);
 
-
-PYBIND11_MODULE(openpmd_api_cxx, m) {
+PYBIND11_MODULE(openpmd_api_cxx, m)
+{
     m.doc() = R"pbdoc(
             openPMD-api
             -----------
@@ -127,4 +126,3 @@ PYBIND11_MODULE(openpmd_api_cxx, m) {
     // TODO allow to query runtime versions of all dependencies
     //      (also needed in C++ frontend)
 }
-

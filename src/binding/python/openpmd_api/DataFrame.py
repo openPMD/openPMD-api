@@ -6,7 +6,9 @@ Authors: Axel Huebl
 License: LGPLv3+
 """
 import math
+
 import numpy as np
+
 try:
     import pandas as pd
     found_pandas = True

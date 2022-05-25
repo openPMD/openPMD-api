@@ -6,9 +6,8 @@ Copyright 2018-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
-import openpmd_api as io
 import numpy as np
-
+import openpmd_api as io
 
 if __name__ == "__main__":
     # user input: size of matrix to write, default 3x3

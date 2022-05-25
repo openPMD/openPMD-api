@@ -26,10 +26,10 @@
 #include <nlohmann/json.hpp>
 
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
+#include <mpi.h>
 #endif
 
-#include <memory>  // std::shared_ptr
+#include <memory> // std::shared_ptr
 #include <utility> // std::forward
 
 namespace openPMD
@@ -53,21 +53,20 @@ namespace auxiliary
     {
     public:
         TracingJSON();
-        TracingJSON( nlohmann::json );
+        TracingJSON(nlohmann::json);
 
         /**
          * @brief Access the underlying JSON value
          *
          * @return nlohmann::json&
          */
-        inline nlohmann::json &
-        json()
+        inline nlohmann::json &json()
         {
             return *m_positionInOriginal;
         }
 
-        template< typename Key >
-        TracingJSON operator[]( Key && key );
+        template <typename Key>
+        TracingJSON operator[](Key &&key);
 
         /**
          * @brief Get the "shadow", i.e. a copy of the original JSON value
@@ -75,8 +74,7 @@ namespace auxiliary
          *
          * @return nlohmann::json const&
          */
-        nlohmann::json const &
-        getShadow();
+        nlohmann::json const &getShadow();
 
         /**
          * @brief Invert the "shadow", i.e. a copy of the original JSON value
@@ -84,15 +82,13 @@ namespace auxiliary
          *
          * @return nlohmann::json
          */
-        nlohmann::json
-        invertShadow();
+        nlohmann::json invertShadow();
 
         /**
          * @brief Declare all keys of the current object read.
          *
          */
-        void
-        declareFullyRead();
+        void declareFullyRead();
 
     private:
         /**
@@ -101,7 +97,7 @@ namespace auxiliary
          *        operator[]() in order to avoid use-after-free situations.
          *
          */
-        std::shared_ptr< nlohmann::json > m_originalJSON;
+        std::shared_ptr<nlohmann::json> m_originalJSON;
         /**
          * @brief A JSON object keeping track of all accessed indices within the
          *        original JSON object. Initially an empty JSON object,
@@ -111,44 +107,43 @@ namespace auxiliary
          *        operator[]() in order to avoid use-after-free situations.
          *
          */
-        std::shared_ptr< nlohmann::json > m_shadow;
+        std::shared_ptr<nlohmann::json> m_shadow;
         /**
          * @brief The sub-expression within m_originalJSON corresponding with
          *        the current instance.
          *
          */
-        nlohmann::json * m_positionInOriginal;
+        nlohmann::json *m_positionInOriginal;
         /**
          * @brief The sub-expression within m_positionInOriginal corresponding
          *        with the current instance.
          *
          */
-        nlohmann::json * m_positionInShadow;
+        nlohmann::json *m_positionInShadow;
         bool m_trace = true;
 
-        void
-        invertShadow( nlohmann::json & result, nlohmann::json const & shadow );
+        void invertShadow(nlohmann::json &result, nlohmann::json const &shadow);
 
         TracingJSON(
-            std::shared_ptr< nlohmann::json > originalJSON,
-            std::shared_ptr< nlohmann::json > shadow,
-            nlohmann::json * positionInOriginal,
-            nlohmann::json * positionInShadow,
-            bool trace );
+            std::shared_ptr<nlohmann::json> originalJSON,
+            std::shared_ptr<nlohmann::json> shadow,
+            nlohmann::json *positionInOriginal,
+            nlohmann::json *positionInShadow,
+            bool trace);
     };
 
-    template< typename Key >
-    TracingJSON TracingJSON::operator[]( Key && key )
+    template <typename Key>
+    TracingJSON TracingJSON::operator[](Key &&key)
     {
-        nlohmann::json * newPositionInOriginal =
-            &m_positionInOriginal->operator[]( key );
+        nlohmann::json *newPositionInOriginal =
+            &m_positionInOriginal->operator[](key);
         // If accessing a leaf in the JSON tree from an object (not an array!)
         // erase the corresponding key
         static nlohmann::json nullvalue;
-        nlohmann::json * newPositionInShadow = &nullvalue;
-        if( m_trace && m_positionInOriginal->is_object() )
+        nlohmann::json *newPositionInShadow = &nullvalue;
+        if (m_trace && m_positionInOriginal->is_object())
         {
-            newPositionInShadow = &m_positionInShadow->operator[]( key );
+            newPositionInShadow = &m_positionInShadow->operator[](key);
         }
         bool traceFurther = newPositionInOriginal->is_object();
         return TracingJSON(
@@ -156,7 +151,7 @@ namespace auxiliary
             m_shadow,
             newPositionInOriginal,
             newPositionInShadow,
-            traceFurther );
+            traceFurther);
     }
 
     /**
@@ -166,14 +161,14 @@ namespace auxiliary
      *
      * @param options as a parsed JSON object.
      */
-    nlohmann::json parseOptions( std::string const & options );
+    nlohmann::json parseOptions(std::string const &options);
 
 #if openPMD_HAVE_MPI
 
     /**
      * Parallel version of parseOptions(). MPI-collective.
      */
-    nlohmann::json parseOptions( std::string const & options, MPI_Comm comm );
+    nlohmann::json parseOptions(std::string const &options, MPI_Comm comm);
 
 #endif
 

@@ -22,26 +22,26 @@
 
 #include <array>
 #include <ctime>
-#include <string>
 #include <sstream>
-
+#include <string>
 
 namespace openPMD
 {
 namespace auxiliary
 {
-    std::string getDateString( std::string const & format )
+    std::string getDateString(std::string const &format)
     {
         constexpr size_t maxLen = 30u;
-        std::array< char, maxLen > buffer;
+        std::array<char, maxLen> buffer;
 
         time_t rawtime;
-        time( &rawtime );
-        struct tm* timeinfo;
+        time(&rawtime);
+        struct tm *timeinfo;
         // https://github.com/openPMD/openPMD-api/pull/657#issuecomment-574424885
-        timeinfo = localtime( &rawtime );  // lgtm[cpp/potentially-dangerous-function]
+        timeinfo =
+            localtime(&rawtime); // lgtm[cpp/potentially-dangerous-function]
 
-        strftime( buffer.data(), maxLen, format.c_str(), timeinfo );
+        strftime(buffer.data(), maxLen, format.c_str(), timeinfo);
 
         std::stringstream dateString;
         dateString << buffer.data();

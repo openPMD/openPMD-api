@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-import openpmd_api as io
 import sys
+
+import openpmd_api as io
 
 if __name__ == "__main__":
     if 'adios2' not in io.variants or not io.variants['adios2']:

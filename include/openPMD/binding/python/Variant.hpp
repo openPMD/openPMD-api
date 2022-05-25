@@ -30,21 +30,25 @@
 //   https://pybind11.readthedocs.io/en/stable/advanced/cast/stl.html
 // in C++17 mode already defined in <pybind11/stl.h>
 #if __cplusplus < 201703L
-namespace pybind11 {
-namespace detail {
-    template< typename... Ts >
-    struct type_caster< variantSrc::variant< Ts... > > :
-        variant_caster< variantSrc::variant< Ts... > >
+namespace pybind11
+{
+namespace detail
+{
+    template <typename... Ts>
+    struct type_caster<variantSrc::variant<Ts...> >
+        : variant_caster<variantSrc::variant<Ts...> >
     {};
 
     template <>
-    struct visit_helper< variantSrc::variant > {
+    struct visit_helper<variantSrc::variant>
+    {
         template <typename... Args>
-        static auto call(Args &&...args) -> decltype( variantSrc::visit(std::forward<Args>(args)...) ) {
+        static auto call(Args &&...args)
+            -> decltype(variantSrc::visit(std::forward<Args>(args)...))
+        {
             return variantSrc::visit(std::forward<Args>(args)...);
         }
     };
 } // namespace detail
 } // namespace pybind11
 #endif
-

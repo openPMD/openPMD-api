@@ -24,34 +24,34 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <string>
 #include <stdexcept>
-
+#include <string>
 
 namespace openPMD
 {
 namespace auxiliary
 {
-    inline std::string getEnvString( std::string const & key, std::string const defaultValue )
+    inline std::string
+    getEnvString(std::string const &key, std::string const defaultValue)
     {
-        char const * env = std::getenv( key.c_str( ) );
-        if ( env != nullptr )
+        char const *env = std::getenv(key.c_str());
+        if (env != nullptr)
             return std::string{env};
         else
             return defaultValue;
     }
 
-    inline int getEnvNum( std::string const & key, int defaultValue )
+    inline int getEnvNum(std::string const &key, int defaultValue)
     {
-        char const * env = std::getenv( key.c_str( ) );
-        if ( env != nullptr )
+        char const *env = std::getenv(key.c_str());
+        if (env != nullptr)
         {
             std::string env_string{env};
             try
             {
-                return std::stoi( env_string );
+                return std::stoi(env_string);
             }
-            catch ( std::invalid_argument const & )
+            catch (std::invalid_argument const &)
             {
                 return defaultValue;
             }

@@ -23,33 +23,27 @@
 #include <sstream>
 #include <string>
 
-
-std::string
-openPMD::getVersion( )
+std::string openPMD::getVersion()
 {
     std::stringstream api;
-    api << OPENPMDAPI_VERSION_MAJOR << "."
-        << OPENPMDAPI_VERSION_MINOR << "."
+    api << OPENPMDAPI_VERSION_MAJOR << "." << OPENPMDAPI_VERSION_MINOR << "."
         << OPENPMDAPI_VERSION_PATCH;
-    if( std::string( OPENPMDAPI_VERSION_LABEL ).size() > 0 )
+    if (std::string(OPENPMDAPI_VERSION_LABEL).size() > 0)
         api << "-" << OPENPMDAPI_VERSION_LABEL;
     std::string const apistr = api.str();
     return apistr;
 }
 
-std::string
-openPMD::getStandard( )
+std::string openPMD::getStandard()
 {
     std::stringstream standard;
-    standard << OPENPMD_STANDARD_MAJOR << "."
-             << OPENPMD_STANDARD_MINOR << "."
+    standard << OPENPMD_STANDARD_MAJOR << "." << OPENPMD_STANDARD_MINOR << "."
              << OPENPMD_STANDARD_PATCH;
     std::string const standardstr = standard.str();
     return standardstr;
 }
 
-std::string
-openPMD::getStandardMinimum( )
+std::string openPMD::getStandardMinimum()
 {
     std::stringstream standardMin;
     standardMin << OPENPMD_STANDARD_MIN_MAJOR << "."

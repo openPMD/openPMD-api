@@ -27,8 +27,8 @@
 namespace py = pybind11;
 using namespace openPMD;
 
-
-void init_Datatype(py::module &m) {
+void init_Datatype(py::module &m)
+{
     py::enum_<Datatype>(m, "Datatype", py::arithmetic())
         .value("CHAR", Datatype::CHAR)
         .value("UCHAR", Datatype::UCHAR)
@@ -61,13 +61,12 @@ void init_Datatype(py::module &m) {
         .value("ARR_DBL_7", Datatype::ARR_DBL_7)
         .value("BOOL", Datatype::BOOL)
         .value("DATATYPE", Datatype::DATATYPE)
-        .value("UNDEFINED", Datatype::UNDEFINED)
-    ;
+        .value("UNDEFINED", Datatype::UNDEFINED);
 
     m.def("determine_datatype", [](py::dtype const dt) {
-        return dtype_from_numpy( dt );
+        return dtype_from_numpy(dt);
     });
-    m.def("determine_datatype", [](py::array const & a) {
-        return dtype_from_numpy( a.dtype() );
+    m.def("determine_datatype", [](py::array const &a) {
+        return dtype_from_numpy(a.dtype());
     });
 }

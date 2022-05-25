@@ -23,15 +23,14 @@
 #include "openPMD/Datatype.hpp"
 
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <vector>
-#include <string>
-
 
 namespace openPMD
 {
-using Extent = std::vector< std::uint64_t >;
-using Offset = std::vector< std::uint64_t >;
+using Extent = std::vector<std::uint64_t>;
+using Offset = std::vector<std::uint64_t>;
 
 class Dataset
 {
@@ -46,12 +45,12 @@ public:
      * Helpful for resizing datasets, since datatypes need not be given twice.
      *
      */
-    Dataset( Extent );
+    Dataset(Extent);
 
-    Dataset& extend(Extent newExtent);
-    Dataset& setChunkSize(Extent const&);
-    Dataset& setCompression(std::string const&, uint8_t const);
-    Dataset& setCustomTransform(std::string const&);
+    Dataset &extend(Extent newExtent);
+    Dataset &setChunkSize(Extent const &);
+    Dataset &setCompression(std::string const &, uint8_t const);
+    Dataset &setCustomTransform(std::string const &);
 
     Extent extent;
     Datatype dtype;

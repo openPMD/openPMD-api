@@ -80,7 +80,7 @@ In order to update the *latest* Doxygen C++ API docs, located under http://www.o
    # assuming a clean source tree
    git checkout gh-pages
 
-   # stash anything that the regular branches have in `.gitignore`
+   # stash anything that the regular branches have in ``.gitignore``
    git stash --include-untracked
 
    # optional first argument is branch/tag on mainline repo, default: dev

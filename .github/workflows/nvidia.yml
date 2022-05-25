@@ -63,4 +63,3 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
-

@@ -22,30 +22,27 @@
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 
-
 namespace openPMD
 {
-    Writable::Writable(internal::AttributableData* a)
-            : abstractFilePosition{nullptr},
-              IOHandler{nullptr},
-              attributable{a},
-              parent{nullptr},
-              dirty{true},
-              written{false}
-    { }
+Writable::Writable(internal::AttributableData *a)
+    : abstractFilePosition{nullptr}
+    , IOHandler{nullptr}
+    , attributable{a}
+    , parent{nullptr}
+    , dirty{true}
+    , written{false}
+{}
 
-    void
-    Writable::seriesFlush()
-    {
-        seriesFlush( FlushLevel::UserFlush );
-    }
+void Writable::seriesFlush()
+{
+    seriesFlush(FlushLevel::UserFlush);
+}
 
-    void
-    Writable::seriesFlush( FlushLevel level )
-    {
-        auto & series = AttributableInterface( attributable ).retrieveSeries();
-        series.flush_impl(
-            series.iterations.begin(), series.iterations.end(), level );
-    }
+void Writable::seriesFlush(FlushLevel level)
+{
+    auto &series = AttributableInterface(attributable).retrieveSeries();
+    series.flush_impl(
+        series.iterations.begin(), series.iterations.end(), level);
+}
 
-} // openPMD
+} // namespace openPMD

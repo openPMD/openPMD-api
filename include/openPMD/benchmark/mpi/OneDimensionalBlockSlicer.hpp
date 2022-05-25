@@ -24,24 +24,16 @@
 #include "openPMD/Dataset.hpp"
 #include "openPMD/benchmark/mpi/BlockSlicer.hpp"
 
-
 namespace openPMD
 {
-    class OneDimensionalBlockSlicer :
-        public BlockSlicer
-    {
-    public:
-        Extent::value_type m_dim;
+class OneDimensionalBlockSlicer : public BlockSlicer
+{
+public:
+    Extent::value_type m_dim;
 
-        explicit OneDimensionalBlockSlicer( Extent::value_type dim = 0 );
+    explicit OneDimensionalBlockSlicer(Extent::value_type dim = 0);
 
-        std::pair<
-            Offset,
-            Extent
-        > sliceBlock(
-            Extent & totalExtent,
-            int size,
-            int rank
-        ) override;
-    };
-}
+    std::pair<Offset, Extent>
+    sliceBlock(Extent &totalExtent, int size, int rank) override;
+};
+} // namespace openPMD

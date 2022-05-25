@@ -23,16 +23,16 @@
 
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_ADIOS2
-# include "openPMD/Dataset.hpp"
-# include "openPMD/Datatype.hpp"
-# include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Dataset.hpp"
+#include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 
-# include <adios2.h>
+#include <adios2.h>
 
-# include <complex>
-# include <stdexcept>
-# include <utility>
-# include <vector>
+#include <complex>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace openPMD
 {
@@ -43,33 +43,37 @@ namespace detail
     // we represent booleans as unsigned chars
     using bool_representation = unsigned char;
 
-    template < typename T > struct ToDatatypeHelper
+    template <typename T>
+    struct ToDatatypeHelper
     {
-        static std::string type( );
+        static std::string type();
     };
 
-    template < typename T > struct ToDatatypeHelper< std::vector< T > >
+    template <typename T>
+    struct ToDatatypeHelper<std::vector<T> >
     {
-        static std::string type( );
+        static std::string type();
     };
 
-    template < typename T, size_t n >
-    struct ToDatatypeHelper< std::array< T, n > >
+    template <typename T, size_t n>
+    struct ToDatatypeHelper<std::array<T, n> >
     {
-        static std::string type( );
+        static std::string type();
     };
 
-    template <> struct ToDatatypeHelper< bool >
+    template <>
+    struct ToDatatypeHelper<bool>
     {
-        static std::string type( );
+        static std::string type();
     };
 
     struct ToDatatype
     {
-        template < typename T > std::string operator( )( );
+        template <typename T>
+        std::string operator()();
 
-
-        template < int n > std::string operator( )( );
+        template <int n>
+        std::string operator()();
     };
 
     /**
@@ -78,7 +82,7 @@ namespace detail
      * @param verbose If false, don't print warnings.
      * @return
      */
-    Datatype fromADIOS2Type( std::string const & dt, bool verbose = true );
+    Datatype fromADIOS2Type(std::string const &dt, bool verbose = true);
 
     enum class VariableOrAttribute : unsigned char
     {
@@ -88,15 +92,14 @@ namespace detail
 
     struct AttributeInfo
     {
-        template< typename T >
-        Extent
-        operator()(
+        template <typename T>
+        Extent operator()(
             adios2::IO &,
-            std::string const & attributeName,
-            VariableOrAttribute );
+            std::string const &attributeName,
+            VariableOrAttribute);
 
-        template < int n, typename... Params >
-        Extent operator( )( Params &&... );
+        template <int n, typename... Params>
+        Extent operator()(Params &&...);
     };
 
     /**
@@ -111,15 +114,14 @@ namespace detail
      * @return The openPMD datatype corresponding to the type of the attribute.
      *         UNDEFINED if attribute is not found.
      */
-    Datatype
-    attributeInfo(
-        adios2::IO & IO,
-        std::string const & attributeName,
+    Datatype attributeInfo(
+        adios2::IO &IO,
+        std::string const &attributeName,
         bool verbose,
-        VariableOrAttribute voa = VariableOrAttribute::Attribute );
+        VariableOrAttribute voa = VariableOrAttribute::Attribute);
 } // namespace detail
 
-#if defined( _MSC_VER ) && !defined( __INTEL_COMPILER ) && !defined( __clang__ )
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(__clang__)
 #define OPENPMD_TEMPLATE_OPERATOR operator
 #else
 #define OPENPMD_TEMPLATE_OPERATOR template operator
@@ -143,90 +145,85 @@ namespace detail
  * the passed arguments and the template parameter type corresponding to the
  * openPMD type.
  */
-template< typename Action, typename... Args >
-auto switchAdios2AttributeType( Datatype dt, Action action, Args &&... args )
-    -> decltype(
-        action.OPENPMD_TEMPLATE_OPERATOR() < char >
-        ( std::forward< Args >( args )... ) )
+template <typename Action, typename... Args>
+auto switchAdios2AttributeType(Datatype dt, Action action, Args &&...args)
+    -> decltype(action.OPENPMD_TEMPLATE_OPERATOR() < char > (std::forward<Args>(args)...))
 {
-    using ReturnType = decltype(
-        action.OPENPMD_TEMPLATE_OPERATOR() < char >
-        ( std::forward< Args >( args )... ) );
-    switch( dt )
+    using ReturnType =
+        decltype(action.OPENPMD_TEMPLATE_OPERATOR() < char > (std::forward<Args>(args)...));
+    switch (dt)
     {
     case Datatype::CHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< char >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<char>(
+            std::forward<Args>(args)...);
     case Datatype::UCHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned char >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned char>(
+            std::forward<Args>(args)...);
     case Datatype::SHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< short >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<short>(
+            std::forward<Args>(args)...);
     case Datatype::INT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< int >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<int>(
+            std::forward<Args>(args)...);
     case Datatype::LONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<long>(
+            std::forward<Args>(args)...);
     case Datatype::LONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long long >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<long long>(
+            std::forward<Args>(args)...);
     case Datatype::USHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned short >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned short>(
+            std::forward<Args>(args)...);
     case Datatype::UINT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned int >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned int>(
+            std::forward<Args>(args)...);
     case Datatype::ULONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned long>(
+            std::forward<Args>(args)...);
     case Datatype::ULONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long long >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned long long>(
+            std::forward<Args>(args)...);
     case Datatype::FLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< float >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<float>(
+            std::forward<Args>(args)...);
     case Datatype::DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< double >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<double>(
+            std::forward<Args>(args)...);
     case Datatype::LONG_DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long double >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<long double>(
+            std::forward<Args>(args)...);
     case Datatype::CFLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< float > >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<std::complex<float> >(
+            std::forward<Args>(args)...);
     case Datatype::CDOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< double > >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<std::complex<double> >(
+            std::forward<Args>(args)...);
     // missing std::complex< long double > type in ADIOS2 v2.6.0
     // case Datatype::CLONG_DOUBLE:
     //     return action
     //         .OPENPMD_TEMPLATE_OPERATOR()< std::complex< long double > >(
     //             std::forward< Args >( args )... );
     case Datatype::STRING:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::string >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<std::string>(
+            std::forward<Args>(args)...);
     case Datatype::DATATYPE:
         return detail::CallUndefinedDatatype<
             HIGHEST_DATATYPE,
             ReturnType,
             Action,
             void,
-            Args &&... >::
-            call( std::move( action ), std::forward< Args >( args )... );
+            Args &&...>::call(std::move(action), std::forward<Args>(args)...);
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
             LOWEST_DATATYPE,
             ReturnType,
             Action,
             void,
-            Args &&... >::
-            call( std::move( action ), std::forward< Args >( args )... );
+            Args &&...>::call(std::move(action), std::forward<Args>(args)...);
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
-            std::to_string( static_cast< int >( dt ) ) );
+            std::to_string(static_cast<int>(dt)));
     }
 }
 
@@ -249,62 +246,59 @@ auto switchAdios2AttributeType( Datatype dt, Action action, Args &&... args )
  * the passed arguments and the template parameter type corresponding to the
  * openPMD type.
  */
-template< typename Action, typename... Args >
-auto switchAdios2VariableType( Datatype dt, Action action, Args &&... args )
-    -> decltype(
-        action.OPENPMD_TEMPLATE_OPERATOR() < char >
-        ( std::forward< Args >( args )... ) )
+template <typename Action, typename... Args>
+auto switchAdios2VariableType(Datatype dt, Action action, Args &&...args)
+    -> decltype(action.OPENPMD_TEMPLATE_OPERATOR() < char > (std::forward<Args>(args)...))
 {
-    using ReturnType = decltype(
-        action.OPENPMD_TEMPLATE_OPERATOR() < char >
-        ( std::forward< Args >( args )... ) );
-    switch( dt )
+    using ReturnType =
+        decltype(action.OPENPMD_TEMPLATE_OPERATOR() < char > (std::forward<Args>(args)...));
+    switch (dt)
     {
     case Datatype::CHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< char >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<char>(
+            std::forward<Args>(args)...);
     case Datatype::UCHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned char >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned char>(
+            std::forward<Args>(args)...);
     case Datatype::SHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< short >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<short>(
+            std::forward<Args>(args)...);
     case Datatype::INT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< int >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<int>(
+            std::forward<Args>(args)...);
     case Datatype::LONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<long>(
+            std::forward<Args>(args)...);
     case Datatype::LONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long long >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<long long>(
+            std::forward<Args>(args)...);
     case Datatype::USHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned short >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned short>(
+            std::forward<Args>(args)...);
     case Datatype::UINT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned int >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned int>(
+            std::forward<Args>(args)...);
     case Datatype::ULONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned long>(
+            std::forward<Args>(args)...);
     case Datatype::ULONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long long >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<unsigned long long>(
+            std::forward<Args>(args)...);
     case Datatype::FLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< float >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<float>(
+            std::forward<Args>(args)...);
     case Datatype::DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< double >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<double>(
+            std::forward<Args>(args)...);
     case Datatype::LONG_DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long double >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<long double>(
+            std::forward<Args>(args)...);
     case Datatype::CFLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< float > >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<std::complex<float> >(
+            std::forward<Args>(args)...);
     case Datatype::CDOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< double > >(
-            std::forward< Args >( args )... );
+        return action.OPENPMD_TEMPLATE_OPERATOR()<std::complex<double> >(
+            std::forward<Args>(args)...);
     // missing std::complex< long double > type in ADIOS2 v2.6.0
     // case Datatype::CLONG_DOUBLE:
     //     return action
@@ -316,20 +310,18 @@ auto switchAdios2VariableType( Datatype dt, Action action, Args &&... args )
             ReturnType,
             Action,
             void,
-            Args &&... >::
-            call( std::move( action ), std::forward< Args >( args )... );
+            Args &&...>::call(std::move(action), std::forward<Args>(args)...);
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
             LOWEST_DATATYPE,
             ReturnType,
             Action,
             void,
-            Args &&... >::
-            call( std::move( action ), std::forward< Args >( args )... );
+            Args &&...>::call(std::move(action), std::forward<Args>(args)...);
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
-            std::to_string( static_cast< int >( dt ) ) );
+            std::to_string(static_cast<int>(dt)));
     }
 }
 

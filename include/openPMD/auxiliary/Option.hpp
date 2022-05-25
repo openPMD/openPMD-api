@@ -23,9 +23,8 @@
 
 #include "VariantSrc.hpp"
 
-#include <utility> // std::forward, std::move
 #include <type_traits>
-
+#include <utility> // std::forward, std::move
 
 namespace openPMD
 {
@@ -34,8 +33,7 @@ namespace auxiliary
     namespace detail
     {
         struct Empty
-        {
-        };
+        {};
     } // namespace detail
 
     /**
@@ -43,67 +41,62 @@ namespace auxiliary
      *
      * @tparam T Type that can be optionally stored in an Optional object.
      */
-    template< typename T >
+    template <typename T>
     class Option
     {
-        using data_t = variantSrc::variant< T, detail::Empty >;
+        using data_t = variantSrc::variant<T, detail::Empty>;
         data_t m_data;
 
     public:
         /** Create an empty Option.
          */
-        explicit Option() : m_data( detail::Empty() )
-        {
-        }
+        explicit Option() : m_data(detail::Empty())
+        {}
 
         /** Create a full Option.
          *
          * @param data The object to emplace in the Option.
          */
-        Option( T data ) : m_data( std::move( data ) )
-        {
-        }
+        Option(T data) : m_data(std::move(data))
+        {}
 
-        Option( Option const & other ) = default;
+        Option(Option const &other) = default;
 
-        Option &
-        operator=( Option && other )
+        Option &operator=(Option &&other)
         {
-            if( other.has_value() )
+            if (other.has_value())
             {
-                m_data.template emplace< 0 >( std::move( other.get() ) );
+                m_data.template emplace<0>(std::move(other.get()));
             }
             else
             {
-                m_data.template emplace< 1 >( detail::Empty() );
+                m_data.template emplace<1>(detail::Empty());
             }
             return *this;
         }
 
-        Option &
-        operator=( Option const & other )
+        Option &operator=(Option const &other)
         {
-            if( other.has_value() )
+            if (other.has_value())
             {
-                m_data.template emplace< 0 >( other.get() );
+                m_data.template emplace<0>(other.get());
             }
             else
             {
-                m_data.template emplace< 1 >( detail::Empty() );
+                m_data.template emplace<1>(detail::Empty());
             }
             return *this;
         }
 
-        bool
-        operator==( Option const & other ) const
+        bool operator==(Option const &other) const
         {
-            if( has_value() )
+            if (has_value())
             {
                 return !other.has_value();
             }
             else
             {
-                if( !other.has_value() )
+                if (!other.has_value())
                 {
                     return false;
                 }
@@ -114,17 +107,15 @@ namespace auxiliary
             }
         }
 
-        bool
-        operator!=( Option const & other ) const
+        bool operator!=(Option const &other) const
         {
-            return !( *this == other );
+            return !(*this == other);
         }
 
         /**
          * @return Is an object constantly stored in this?
          */
-        bool
-        has_value() const
+        bool has_value() const
         {
             return m_data.index() == 0;
         }
@@ -143,10 +134,9 @@ namespace auxiliary
          * @throw std::bad_variant_access if no object is present.
          * @return The emplaced object.
          */
-        T const &
-        get() const
+        T const &get() const
         {
-            return variantSrc::template get< T >( m_data );
+            return variantSrc::template get<T>(m_data);
         }
 
         /**
@@ -155,19 +145,16 @@ namespace auxiliary
          * @throw std::bad_variant_access if no object is present.
          * @return The emplaced object.
          */
-        T &
-        get()
+        T &get()
         {
-            return variantSrc::template get< T >( m_data );
+            return variantSrc::template get<T>(m_data);
         }
     };
 
-    template< typename T >
-    Option< typename std::decay< T >::type >
-    makeOption( T && val )
+    template <typename T>
+    Option<typename std::decay<T>::type> makeOption(T &&val)
     {
-        return Option< typename std::decay< T >::type >(
-            std::forward< T >( val ) );
+        return Option<typename std::decay<T>::type>(std::forward<T>(val));
     }
 } // namespace auxiliary
 } // namespace openPMD

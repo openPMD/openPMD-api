@@ -26,36 +26,36 @@ namespace openPMD
 {
 namespace detail
 {
-template<>
-std::vector< std::string > keyAsString< std::string const & >(
-    std::string const & key, std::vector< std::string > const & parentKey )
-{
-    if( key == RecordComponent::SCALAR )
+    template <>
+    std::vector<std::string> keyAsString<std::string const &>(
+        std::string const &key, std::vector<std::string> const &parentKey)
     {
-        auto ret = parentKey;
-        ret.emplace_back( RecordComponent::SCALAR );
-        return ret;
+        if (key == RecordComponent::SCALAR)
+        {
+            auto ret = parentKey;
+            ret.emplace_back(RecordComponent::SCALAR);
+            return ret;
+        }
+        else
+        {
+            return {key};
+        }
     }
-    else
-    {
-        return { key };
-    }
-}
 
-template<>
-std::vector< std::string > keyAsString< std::string >(
-    std::string && key, std::vector< std::string > const & parentKey )
-{
-    if( key == RecordComponent::SCALAR )
+    template <>
+    std::vector<std::string> keyAsString<std::string>(
+        std::string &&key, std::vector<std::string> const &parentKey)
     {
-        auto ret = parentKey;
-        ret.emplace_back( RecordComponent::SCALAR );
-        return ret;
+        if (key == RecordComponent::SCALAR)
+        {
+            auto ret = parentKey;
+            ret.emplace_back(RecordComponent::SCALAR);
+            return ret;
+        }
+        else
+        {
+            return {std::move(key)};
+        }
     }
-    else
-    {
-        return { std::move( key ) };
-    }
-}
-}
-}
+} // namespace detail
+} // namespace openPMD

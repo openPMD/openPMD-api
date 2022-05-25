@@ -22,21 +22,20 @@
 
 #include <ostream>
 
-
-std::ostream&
-openPMD::operator<<(std::ostream& os, openPMD::IterationEncoding const& ie)
+std::ostream &
+openPMD::operator<<(std::ostream &os, openPMD::IterationEncoding const &ie)
 {
-    switch( ie )
+    switch (ie)
     {
-        case openPMD::IterationEncoding::fileBased:
-            os << "fileBased";
-            break;
-        case openPMD::IterationEncoding::groupBased:
-            os << "groupBased";
-            break;
-        case openPMD::IterationEncoding::variableBased:
-            os << "variableBased";
-            break;
+    case openPMD::IterationEncoding::fileBased:
+        os << "fileBased";
+        break;
+    case openPMD::IterationEncoding::groupBased:
+        os << "groupBased";
+        break;
+    case openPMD::IterationEncoding::variableBased:
+        os << "variableBased";
+        break;
     }
     return os;
 }

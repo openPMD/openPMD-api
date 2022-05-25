@@ -8,10 +8,11 @@ Copyright 2021 openPMD contributors
 Authors: Franz Poeschel
 License: LGPLv3+
 """
-from .. import openpmd_api_cxx as io
 import argparse
 import os  # os.path.basename
 import sys  # sys.stderr.write
+
+from .. import openpmd_api_cxx as io
 
 # MPI is an optional dependency
 if io.variants['mpi']:

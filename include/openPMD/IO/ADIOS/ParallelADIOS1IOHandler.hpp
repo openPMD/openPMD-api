@@ -20,46 +20,48 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
-#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/auxiliary/Export.hpp"
+#include "openPMD/config.hpp"
 
 #include <future>
 #include <memory>
 #include <string>
 #if openPMD_HAVE_ADIOS1
-#   include <queue>
+#include <queue>
 #endif
-
 
 namespace openPMD
 {
-    class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl;
+class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl;
 
-    class OPENPMDAPI_EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
+class OPENPMDAPI_EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
+{
+    friend class ParallelADIOS1IOHandlerImpl;
+
+public:
+#if openPMD_HAVE_MPI
+    ParallelADIOS1IOHandler(std::string path, Access, MPI_Comm);
+#else
+    ParallelADIOS1IOHandler(std::string path, Access);
+#endif
+    ~ParallelADIOS1IOHandler() override;
+
+    std::string backendName() const override
     {
-        friend class ParallelADIOS1IOHandlerImpl;
+        return "MPI_ADIOS1";
+    }
 
-    public:
-#   if openPMD_HAVE_MPI
-        ParallelADIOS1IOHandler(std::string path, Access, MPI_Comm);
-#   else
-        ParallelADIOS1IOHandler(std::string path, Access);
-#   endif
-        ~ParallelADIOS1IOHandler() override;
-
-        std::string backendName() const override { return "MPI_ADIOS1"; }
-
-        std::future< void > flush() override;
+    std::future<void> flush() override;
 #if openPMD_HAVE_ADIOS1
-        void enqueue(IOTask const&) override;
+    void enqueue(IOTask const &) override;
 #endif
 
-    private:
+private:
 #if openPMD_HAVE_ADIOS1
-        std::queue< IOTask > m_setup;
+    std::queue<IOTask> m_setup;
 #endif
-        std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
-    }; // ParallelADIOS1IOHandler
+    std::unique_ptr<ParallelADIOS1IOHandlerImpl> m_impl;
+}; // ParallelADIOS1IOHandler
 
-} // openPMD
+} // namespace openPMD

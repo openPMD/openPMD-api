@@ -23,62 +23,75 @@
 #include "openPMD/auxiliary/Environment.hpp"
 
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
+#include <mpi.h>
 #endif
 
 #include <iostream>
 #include <sstream>
 
-
 namespace openPMD
 {
 #if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-#   if openPMD_USE_VERIFY
-#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
-#   else
-#       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
-#   endif
+#if openPMD_USE_VERIFY
+#define VERIFY(CONDITION, TEXT)                                                \
+    {                                                                          \
+        if (!(CONDITION))                                                      \
+            throw std::runtime_error((TEXT));                                  \
+    }
+#else
+#define VERIFY(CONDITION, TEXT)                                                \
+    do                                                                         \
+    {                                                                          \
+        (void)sizeof(CONDITION);                                               \
+    } while (0)
+#endif
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(
-    std::string path, Access at, MPI_Comm comm, nlohmann::json config )
-        : AbstractIOHandler(std::move(path), at, comm),
-          m_impl{new ParallelHDF5IOHandlerImpl(this, comm, std::move(config))}
-{ }
+    std::string path, Access at, MPI_Comm comm, nlohmann::json config)
+    : AbstractIOHandler(std::move(path), at, comm)
+    , m_impl{new ParallelHDF5IOHandlerImpl(this, comm, std::move(config))}
+{}
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
-std::future< void >
-ParallelHDF5IOHandler::flush()
+std::future<void> ParallelHDF5IOHandler::flush()
 {
     return m_impl->flush();
 }
 
 ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
-    AbstractIOHandler* handler, MPI_Comm comm, nlohmann::json config )
-        : HDF5IOHandlerImpl{handler, std::move(config)},
-          m_mpiComm{comm},
-          m_mpiInfo{MPI_INFO_NULL} /* MPI 3.0+: MPI_INFO_ENV */
+    AbstractIOHandler *handler, MPI_Comm comm, nlohmann::json config)
+    : HDF5IOHandlerImpl{handler, std::move(config)}
+    , m_mpiComm{comm}
+    , m_mpiInfo{MPI_INFO_NULL} /* MPI 3.0+: MPI_INFO_ENV */
 {
     m_datasetTransferProperty = H5Pcreate(H5P_DATASET_XFER);
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
     m_fileCreateProperty = H5Pcreate(H5P_FILE_CREATE);
 
-#if H5_VERSION_GE(1,10,1)
-    auto const hdf5_spaced_allocation = auxiliary::getEnvString( "OPENPMD_HDF5_PAGED_ALLOCATION", "ON" );
-    if( hdf5_spaced_allocation == "ON" ) {
-        auto const strPageSize = auxiliary::getEnvString( "OPENPMD_HDF5_PAGED_ALLOCATION_SIZE", "33554432" );
+#if H5_VERSION_GE(1, 10, 1)
+    auto const hdf5_spaced_allocation =
+        auxiliary::getEnvString("OPENPMD_HDF5_PAGED_ALLOCATION", "ON");
+    if (hdf5_spaced_allocation == "ON")
+    {
+        auto const strPageSize = auxiliary::getEnvString(
+            "OPENPMD_HDF5_PAGED_ALLOCATION_SIZE", "33554432");
         std::stringstream tstream(strPageSize);
         hsize_t page_size;
         tstream >> page_size;
 
-        H5Pset_file_space_strategy(m_fileCreateProperty, H5F_FSPACE_STRATEGY_PAGE, 0, (hsize_t)0);
+        H5Pset_file_space_strategy(
+            m_fileCreateProperty, H5F_FSPACE_STRATEGY_PAGE, 0, (hsize_t)0);
         H5Pset_file_space_page_size(m_fileCreateProperty, page_size);
     }
 #endif
 
-    auto const hdf5_defer_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_DEFER_METADATA", "ON" );
-    if( hdf5_defer_metadata == "ON" ) {
-        auto const strMetaSize = auxiliary::getEnvString( "OPENPMD_HDF5_DEFER_METADATA_SIZE", "33554432" );
+    auto const hdf5_defer_metadata =
+        auxiliary::getEnvString("OPENPMD_HDF5_DEFER_METADATA", "ON");
+    if (hdf5_defer_metadata == "ON")
+    {
+        auto const strMetaSize = auxiliary::getEnvString(
+            "OPENPMD_HDF5_DEFER_METADATA_SIZE", "33554432");
         std::stringstream tstream(strMetaSize);
         hsize_t meta_size;
         tstream >> meta_size;
@@ -96,81 +109,96 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     }
 
     H5FD_mpio_xfer_t xfer_mode = H5FD_MPIO_COLLECTIVE;
-    auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "ON" );
-    if( hdf5_collective == "ON" )
+    auto const hdf5_collective =
+        auxiliary::getEnvString("OPENPMD_HDF5_INDEPENDENT", "ON");
+    if (hdf5_collective == "ON")
         xfer_mode = H5FD_MPIO_INDEPENDENT;
     else
     {
-        VERIFY(hdf5_collective == "OFF", "[HDF5] Internal error: OPENPMD_HDF5_INDEPENDENT property must be either ON or OFF");
+        VERIFY(
+            hdf5_collective == "OFF",
+            "[HDF5] Internal error: OPENPMD_HDF5_INDEPENDENT property must be "
+            "either ON or OFF");
     }
 
     herr_t status;
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
 
-#if H5_VERSION_GE(1,10,0)
-    status = H5Pset_all_coll_metadata_ops(m_fileAccessProperty, m_hdf5_collective_metadata);
-    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata read HDF5 file access property");
+#if H5_VERSION_GE(1, 10, 0)
+    status = H5Pset_all_coll_metadata_ops(
+        m_fileAccessProperty, m_hdf5_collective_metadata);
+    VERIFY(
+        status >= 0,
+        "[HDF5] Internal error: Failed to set metadata read HDF5 file access "
+        "property");
 
-    status = H5Pset_coll_metadata_write(m_fileAccessProperty, m_hdf5_collective_metadata);
-    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata write HDF5 file access property");
+    status = H5Pset_coll_metadata_write(
+        m_fileAccessProperty, m_hdf5_collective_metadata);
+    VERIFY(
+        status >= 0,
+        "[HDF5] Internal error: Failed to set metadata write HDF5 file access "
+        "property");
 #endif
 
-    auto const strByte = auxiliary::getEnvString( "OPENPMD_HDF5_ALIGNMENT", "1" );
+    auto const strByte = auxiliary::getEnvString("OPENPMD_HDF5_ALIGNMENT", "1");
     std::stringstream sstream(strByte);
     hsize_t bytes;
     sstream >> bytes;
 
-    auto const strThreshold = auxiliary::getEnvString( "OPENPMD_HDF5_THRESHOLD", "0" );
+    auto const strThreshold =
+        auxiliary::getEnvString("OPENPMD_HDF5_THRESHOLD", "0");
     std::stringstream tstream(strThreshold);
     hsize_t threshold;
     tstream >> threshold;
 
-    if ( bytes > 1 )
-         H5Pset_alignment(m_fileAccessProperty, threshold, bytes);
+    if (bytes > 1)
+        H5Pset_alignment(m_fileAccessProperty, threshold, bytes);
 
-    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 dataset transfer property");
+    VERIFY(
+        status >= 0,
+        "[HDF5] Internal error: Failed to set HDF5 dataset transfer property");
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
-    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 file access property");
+    VERIFY(
+        status >= 0,
+        "[HDF5] Internal error: Failed to set HDF5 file access property");
 }
 
 ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
 {
     herr_t status;
-    while( !m_openFileIDs.empty() )
+    while (!m_openFileIDs.empty())
     {
         auto file = m_openFileIDs.begin();
         status = H5Fclose(*file);
-        if( status < 0 )
-            std::cerr << "Internal error: Failed to close HDF5 file (parallel)\n";
+        if (status < 0)
+            std::cerr
+                << "Internal error: Failed to close HDF5 file (parallel)\n";
         m_openFileIDs.erase(file);
     }
 }
 #else
-#   if openPMD_HAVE_MPI
-ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
-                                             Access at,
-                                             MPI_Comm comm,
-                                             nlohmann::json /* config */)
-        : AbstractIOHandler(std::move(path), at, comm)
+#if openPMD_HAVE_MPI
+ParallelHDF5IOHandler::ParallelHDF5IOHandler(
+    std::string path, Access at, MPI_Comm comm, nlohmann::json /* config */)
+    : AbstractIOHandler(std::move(path), at, comm)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }
-#   else
-ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
-                                             Access at,
-                                             nlohmann::json /* config */)
-        : AbstractIOHandler(std::move(path), at)
+#else
+ParallelHDF5IOHandler::ParallelHDF5IOHandler(
+    std::string path, Access at, nlohmann::json /* config */)
+    : AbstractIOHandler(std::move(path), at)
 {
-    throw std::runtime_error("openPMD-api built without parallel support and without HDF5 support");
+    throw std::runtime_error(
+        "openPMD-api built without parallel support and without HDF5 support");
 }
-#   endif
+#endif
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
-std::future< void >
-ParallelHDF5IOHandler::flush()
+std::future<void> ParallelHDF5IOHandler::flush()
 {
-    return std::future< void >();
+    return std::future<void>();
 }
 #endif
-} // openPMD
+} // namespace openPMD

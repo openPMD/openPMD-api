@@ -20,34 +20,35 @@
  */
 #pragma once
 
-
-#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/config.hpp"
 
 namespace openPMD
 {
 #if openPMD_HAVE_MPI
 
-    /** Construct an appropriate specific IOHandler for the desired IO mode that may be MPI-aware.
-     *
-     * @param   path        Path to root folder for all operations associated with the desired handler.
-     * @param   access      Access mode describing desired operations and permissions of the desired handler.
-     * @param   format      Format describing the IO backend of the desired handler.
-     * @param   comm        MPI communicator used for IO.
-     * @param   options     JSON-formatted option string, to be interpreted by
-     *                      the backend.
-     * @tparam  JSON        Substitute for nlohmann::json. Templated to avoid
-                            including nlohmann::json in a .hpp file.
-     * @return  Smart pointer to created IOHandler.
-     */
-template< typename JSON >
-std::shared_ptr< AbstractIOHandler >
-createIOHandler(
+/** Construct an appropriate specific IOHandler for the desired IO mode that may
+ be MPI-aware.
+ *
+ * @param   path        Path to root folder for all operations associated with
+ the desired handler.
+ * @param   access      Access mode describing desired operations and
+ permissions of the desired handler.
+ * @param   format      Format describing the IO backend of the desired handler.
+ * @param   comm        MPI communicator used for IO.
+ * @param   options     JSON-formatted option string, to be interpreted by
+ *                      the backend.
+ * @tparam  JSON        Substitute for nlohmann::json. Templated to avoid
+                        including nlohmann::json in a .hpp file.
+ * @return  Smart pointer to created IOHandler.
+ */
+template <typename JSON>
+std::shared_ptr<AbstractIOHandler> createIOHandler(
     std::string path,
     Access access,
     Format format,
     MPI_Comm comm,
-    JSON options );
+    JSON options);
 #endif
 
 /** Construct an appropriate specific IOHandler for the desired IO mode.
@@ -63,18 +64,11 @@ createIOHandler(
                         including nlohmann::json in a .hpp file.
  * @return  Smart pointer to created IOHandler.
  */
-template< typename JSON >
-std::shared_ptr< AbstractIOHandler >
-createIOHandler(
-    std::string path,
-    Access access,
-    Format format,
-    JSON options = JSON() );
+template <typename JSON>
+std::shared_ptr<AbstractIOHandler> createIOHandler(
+    std::string path, Access access, Format format, JSON options = JSON());
 
 // version without configuration to use in AuxiliaryTest
-std::shared_ptr< AbstractIOHandler >
-createIOHandler(
-    std::string path,
-    Access access,
-    Format format );
+std::shared_ptr<AbstractIOHandler>
+createIOHandler(std::string path, Access access, Format format);
 } // namespace openPMD

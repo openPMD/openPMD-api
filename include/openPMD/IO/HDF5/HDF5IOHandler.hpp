@@ -28,7 +28,6 @@
 #include <memory>
 #include <string>
 
-
 namespace openPMD
 {
 class HDF5IOHandlerImpl;
@@ -39,11 +38,14 @@ public:
     HDF5IOHandler(std::string path, Access, nlohmann::json config);
     ~HDF5IOHandler() override;
 
-    std::string backendName() const override { return "HDF5"; }
+    std::string backendName() const override
+    {
+        return "HDF5";
+    }
 
-    std::future< void > flush() override;
+    std::future<void> flush() override;
 
 private:
-    std::unique_ptr< HDF5IOHandlerImpl > m_impl;
+    std::unique_ptr<HDF5IOHandlerImpl> m_impl;
 }; // HDF5IOHandler
-} // openPMD
+} // namespace openPMD
