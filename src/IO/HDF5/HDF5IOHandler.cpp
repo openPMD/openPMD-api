@@ -1832,8 +1832,9 @@ void HDF5IOHandlerImpl::readAttribute(
                 char *m1 = H5Tget_member_name(attr_type, 1);
                 char *m2 = H5Tget_member_name(attr_type, 2);
                 if (m0 == nullptr || m1 == nullptr || m2 == nullptr)
-                    isLegacyLibSplashAttr =
-                        false; // NOLINT(bugprone-branch-clone)
+                    // clang-format off
+                    isLegacyLibSplashAttr = false;  // NOLINT(bugprone-branch-clone)
+                // clang-format on
                 else if (
                     strcmp("x", m0) != 0 || strcmp("y", m1) != 0 ||
                     strcmp("z", m2) != 0)
