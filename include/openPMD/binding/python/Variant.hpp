@@ -29,7 +29,7 @@
 //   https://github.com/pybind/pybind11/pull/811
 //   https://pybind11.readthedocs.io/en/stable/advanced/cast/stl.html
 // in C++17 mode already defined in <pybind11/stl.h>
-#if __cplusplus < 201703L
+#if openPMD_HAS_CXX17 == 0
 namespace pybind11
 {
 namespace detail
