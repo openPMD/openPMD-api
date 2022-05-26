@@ -33,6 +33,7 @@ dependencies:
   - pandas
   - pkg-config
   - pip
+  - pre-commit
   - pyarrow  # for dask
 #  - pybind11  # shipped internally
   - python>=3.6
