@@ -996,43 +996,44 @@ void SeriesInterface::readGorVBased(bool do_init)
     IOHandler()->enqueue(IOTask(&series.iterations, pList));
     IOHandler()->flush(internal::defaultFlushParams);
 
-    auto readSingleIteration =
-        [&series, &pOpen, this](
-            uint64_t index, std::string path, bool guardAgainstRereading,
+    auto readSingleIteration = [&series, &pOpen, this](
+                                   uint64_t index,
+                                   std::string path,
+                                   bool guardAgainstRereading,
                                    bool beginStep) {
-            if (series.iterations.contains(index))
+        if (series.iterations.contains(index))
+        {
+            // maybe re-read
+            auto &i = series.iterations.at(index);
+            // i.written(): the iteration has already been parsed
+            // reparsing is not needed
+            if (guardAgainstRereading && i.written())
             {
-                // maybe re-read
-                auto &i = series.iterations.at(index);
-                // i.written(): the iteration has already been parsed
-                // reparsing is not needed
-                if (guardAgainstRereading && i.written())
-                {
-                    return;
-                }
-                if (*i.m_closed != Iteration::CloseStatus::ParseAccessDeferred)
-                {
-                    pOpen.path = path;
-                    IOHandler()->enqueue(IOTask(&i, pOpen));
-                    i.reread(path);
-                }
+                return;
+            }
+            if (*i.m_closed != Iteration::CloseStatus::ParseAccessDeferred)
+            {
+                pOpen.path = path;
+                IOHandler()->enqueue(IOTask(&i, pOpen));
+                i.reread(path);
+            }
+        }
+        else
+        {
+            // parse for the first time, resp. delay the parsing process
+            Iteration &i = series.iterations[index];
+            i.deferParseAccess({path, index, false, "", beginStep});
+            if (!series.m_parseLazily)
+            {
+                i.runDeferredParseAccess();
+                *i.m_closed = Iteration::CloseStatus::Open;
             }
             else
             {
-                // parse for the first time, resp. delay the parsing process
-                Iteration &i = series.iterations[index];
-                i.deferParseAccess({path, index, false, "", beginStep});
-                if (!series.m_parseLazily)
-                {
-                    i.runDeferredParseAccess();
-                    *i.m_closed = Iteration::CloseStatus::Open;
-                }
-                else
-                {
-                    *i.m_closed = Iteration::CloseStatus::ParseAccessDeferred;
-                }
+                *i.m_closed = Iteration::CloseStatus::ParseAccessDeferred;
             }
-        };
+        }
+    };
 
     switch (iterationEncoding())
     {
