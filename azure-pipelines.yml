@@ -874,6 +874,25 @@ jobs:
       python -m openpmd_api.ls --help
       openpmd-ls --help
 
+# spack -----------------------------------------------------------------------
+# timeout: >60min
+- job: win_spack
+  displayName: Windows spack
+  timeoutInMinutes: 120
+  pool:
+    vmImage: windows-latest
+  steps:
+  - script: |
+      git clone https://github.com/spack/spack.git
+      call spack\bin\spack_cmd.bat
+      spack compiler find
+      spack external find cmake
+      spack external find ninja
+
+      spack install -v --fail-fast openpmd-api
+      spack load openpmd-api
+      openpmd-ls --help
+
 # source ----------------------------------------------------------------------
 # TODO
 
