@@ -61,7 +61,9 @@ public:
  * @brief Determine what items should be flushed upon Series::flush()
  *
  */
-enum class FlushLevel : unsigned char
+// do not write `enum class FlushLevel : unsigned char` here since NVHPC
+// does not compile it correctly
+enum class FlushLevel
 {
     /**
      * Flush operation that was triggered by user code.
@@ -84,8 +86,30 @@ enum class FlushLevel : unsigned char
      * CREATE_DATASET tasks.
      * Attributes may or may not be flushed yet.
      */
-    SkeletonOnly
+    SkeletonOnly,
+    /**
+     * Only creates/opens files, nothing more
+     */
+    CreateOrOpenFiles
 };
+
+namespace internal
+{
+    /**
+     * Parameters recursively passed through the openPMD hierarchy when
+     * flushing.
+     *
+     */
+    struct FlushParams
+    {
+        FlushLevel flushLevel = FlushLevel::InternalFlush;
+    };
+
+    /*
+     * To be used for reading
+     */
+    constexpr FlushParams defaultFlushParams{};
+} // namespace internal
 
 /** Interface for communicating between logical and physically persistent data.
  *
@@ -123,7 +147,7 @@ public:
      * @return  Future indicating the completion state of the operation for
      * backends that decide to implement this operation asynchronously.
      */
-    virtual std::future<void> flush() = 0;
+    virtual std::future<void> flush(internal::FlushParams const &) = 0;
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;
@@ -132,7 +156,6 @@ public:
     Access const m_backendAccess;
     Access const m_frontendAccess;
     std::queue<IOTask> m_work;
-    FlushLevel m_flushLevel = FlushLevel::InternalFlush;
 }; // AbstractIOHandler
 
 } // namespace openPMD

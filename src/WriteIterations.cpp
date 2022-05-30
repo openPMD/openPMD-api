@@ -68,7 +68,7 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
     auto &res = shared->iterations[std::move(key)];
     if (res.getStepStatus() == StepStatus::NoStep)
     {
-        res.beginStep();
+        res.beginStep(/* reread = */ false);
         res.setStepStatus(StepStatus::DuringStep);
     }
     return res;

@@ -408,16 +408,19 @@ public:
      *
      * @param begin Start of the range of iterations to flush.
      * @param end End of the range of iterations to flush.
-     * @param level Flush level, as documented in AbstractIOHandler.hpp.
+     * @param flushParams Flush params, as documented in AbstractIOHandler.hpp.
      * @param flushIOHandler Tasks will always be enqueued to the backend.
      *     If this flag is true, tasks will be flushed to the backend.
      */
     std::future<void> flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
-        FlushLevel level,
+        internal::FlushParams flushParams,
         bool flushIOHandler = true);
-    void flushFileBased(iterations_iterator begin, iterations_iterator end);
+    void flushFileBased(
+        iterations_iterator begin,
+        iterations_iterator end,
+        internal::FlushParams flushParams);
     /*
      * Group-based and variable-based iteration layouts share a lot of logic
      * (realistically, the variable-based iteration layout only throws out
@@ -425,7 +428,10 @@ public:
      * As a convention, methods that deal with both layouts are called
      * .*GorVBased, short for .*GroupOrVariableBased
      */
-    void flushGorVBased(iterations_iterator begin, iterations_iterator end);
+    void flushGorVBased(
+        iterations_iterator begin,
+        iterations_iterator end,
+        internal::FlushParams flushParams);
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased();

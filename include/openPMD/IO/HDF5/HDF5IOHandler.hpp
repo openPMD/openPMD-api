@@ -43,7 +43,7 @@ public:
         return "HDF5";
     }
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::FlushParams const &) override;
 
 private:
     std::unique_ptr<HDF5IOHandlerImpl> m_impl;

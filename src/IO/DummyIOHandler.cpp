@@ -32,7 +32,7 @@ DummyIOHandler::DummyIOHandler(std::string path, Access at)
 void DummyIOHandler::enqueue(IOTask const &)
 {}
 
-std::future<void> DummyIOHandler::flush()
+std::future<void> DummyIOHandler::flush(internal::FlushParams const &)
 {
     return std::future<void>();
 }

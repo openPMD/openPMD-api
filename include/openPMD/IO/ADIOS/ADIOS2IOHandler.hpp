@@ -140,7 +140,7 @@ public:
 
     ~ADIOS2IOHandlerImpl() override;
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::FlushParams const &);
 
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
@@ -1323,7 +1323,7 @@ public:
         // we must not throw in a destructor
         try
         {
-            this->flush();
+            this->flush(internal::defaultFlushParams);
         }
         catch (std::exception const &ex)
         {
@@ -1362,6 +1362,6 @@ public:
         return "ADIOS2";
     }
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::FlushParams const &) override;
 }; // ADIOS2IOHandler
 } // namespace openPMD

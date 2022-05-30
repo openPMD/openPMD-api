@@ -38,7 +38,7 @@ void ParticleSpecies::read()
     /* obtain all non-scalar records */
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(this, pList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     auto map = eraseStaleEntries();
 
@@ -61,7 +61,7 @@ void ParticleSpecies::read()
             aList.attributes->clear();
             IOHandler()->enqueue(IOTask(&r, pOpen));
             IOHandler()->enqueue(IOTask(&r, aList));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
 
             auto att_begin = aList.attributes->begin();
             auto att_end = aList.attributes->end();
@@ -73,7 +73,7 @@ void ParticleSpecies::read()
                 RecordComponent &rc = scalarMap[RecordComponent::SCALAR];
                 rc.parent() = r.parent();
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
-                IOHandler()->flush();
+                IOHandler()->flush(internal::defaultFlushParams);
                 *rc.m_isConstant = true;
             }
             r.read();
@@ -90,7 +90,7 @@ void ParticleSpecies::read()
     /* obtain all scalar records */
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     Parameter<Operation::OPEN_DATASET> dOpen;
     for (auto const &record_name : *dList.datasets)
@@ -100,12 +100,12 @@ void ParticleSpecies::read()
             Record &r = map[record_name];
             dOpen.name = record_name;
             IOHandler()->enqueue(IOTask(&r, dOpen));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
             auto scalarMap = r.eraseStaleEntries();
             RecordComponent &rc = scalarMap[RecordComponent::SCALAR];
             rc.parent() = r.parent();
             IOHandler()->enqueue(IOTask(&rc, dOpen));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;
@@ -138,14 +138,15 @@ namespace
     }
 } // namespace
 
-void ParticleSpecies::flush(std::string const &path)
+void ParticleSpecies::flush(
+    std::string const &path, internal::FlushParams const &flushParams)
 {
     if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
     {
         for (auto &record : *this)
-            record.second.flush(record.first);
+            record.second.flush(record.first, flushParams);
         for (auto &patch : particlePatches)
-            patch.second.flush(patch.first);
+            patch.second.flush(patch.first, flushParams);
     }
     else
     {
@@ -156,16 +157,16 @@ void ParticleSpecies::flush(std::string const &path)
         if (it != end())
             it->second.setUnitDimension({{UnitDimension::L, 1}});
 
-        Container<Record>::flush(path);
+        Container<Record>::flush(path, flushParams);
 
         for (auto &record : *this)
-            record.second.flush(record.first);
+            record.second.flush(record.first, flushParams);
 
         if (flushParticlePatches(particlePatches))
         {
-            particlePatches.flush("particlePatches");
+            particlePatches.flush("particlePatches", flushParams);
             for (auto &patch : particlePatches)
-                patch.second.flush(patch.first);
+                patch.second.flush(patch.first, flushParams);
         }
     }
 }

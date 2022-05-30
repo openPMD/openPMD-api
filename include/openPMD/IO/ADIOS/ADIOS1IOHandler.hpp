@@ -49,7 +49,7 @@ public:
         return "ADIOS1";
     }
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::FlushParams const &) override;
 
     void enqueue(IOTask const &) override;
 
@@ -71,7 +71,7 @@ public:
         return "DUMMY_ADIOS1";
     }
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::FlushParams const &) override;
 
 private:
     std::unique_ptr<ADIOS1IOHandlerImpl> m_impl;

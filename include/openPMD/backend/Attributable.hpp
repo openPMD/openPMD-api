@@ -264,9 +264,9 @@ public:
     Iteration &containingIteration();
     /** @} */
 
-    void seriesFlush(FlushLevel);
+    void seriesFlush(internal::FlushParams);
 
-    void flushAttributes();
+    void flushAttributes(internal::FlushParams const &);
     enum ReadMode
     {
         /**

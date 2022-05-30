@@ -50,7 +50,7 @@ public:
 
     virtual void init();
 
-    std::future<void> flush() override;
+    std::future<void> flush();
 
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;

@@ -67,7 +67,8 @@ PatchRecordComponent::PatchRecordComponent()
     setUnitSI(1);
 }
 
-void PatchRecordComponent::flush(std::string const &name)
+void PatchRecordComponent::flush(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
     if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
     {
@@ -98,7 +99,7 @@ void PatchRecordComponent::flush(std::string const &name)
             m_chunks->pop();
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
     }
 }
 
@@ -108,7 +109,7 @@ void PatchRecordComponent::read()
 
     aRead.name = "unitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == Datatype::DOUBLE)
         setUnitSI(Attribute(*aRead.resource).get<double>());
     else

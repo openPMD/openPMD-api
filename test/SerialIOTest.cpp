@@ -4516,6 +4516,12 @@ void variableBasedSeries(std::string const &file)
             std::vector<int> data(1000, i);
             E_x.storeChunk(data, {0}, {1000});
 
+            if (i > 2)
+            {
+                iteration.setAttribute(
+                    "iteration_is_larger_than_two", "it truly is");
+            }
+
             // this tests changing extents and dimensionalities
             // across iterations
             auto E_y = iteration.meshes["E"]["y"];
@@ -4549,6 +4555,18 @@ void variableBasedSeries(std::string const &file)
         size_t last_iteration_index = 0;
         for (auto iteration : readSeries.readIterations())
         {
+            if (iteration.iterationIndex > 2)
+            {
+                REQUIRE(
+                    iteration.getAttribute("iteration_is_larger_than_two")
+                        .get<std::string>() == "it truly is");
+            }
+            else
+            {
+                REQUIRE_FALSE(iteration.containsAttribute(
+                    "iteration_is_larger_than_two"));
+            }
+
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 1);
             REQUIRE(E_x.getExtent()[0] == extent);

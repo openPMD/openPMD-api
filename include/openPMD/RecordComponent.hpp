@@ -250,7 +250,7 @@ public:
     std::shared_ptr<bool> m_hasBeenExtended = std::make_shared<bool>(false);
 
 private:
-    void flush(std::string const &);
+    void flush(std::string const &, internal::FlushParams const &);
     virtual void read();
 
     /**

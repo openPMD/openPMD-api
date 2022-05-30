@@ -66,7 +66,7 @@ public:
     OPENPMD_private:
     PatchRecordComponent();
 
-    void flush(std::string const &);
+    void flush(std::string const &, internal::FlushParams const &);
     void read();
 
     std::shared_ptr<std::queue<IOTask> > m_chunks;

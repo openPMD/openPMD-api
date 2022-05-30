@@ -62,7 +62,7 @@ SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
              * the step after parsing the file is ok.
              */
             openIteration();
-            status = it->second.beginStep();
+            status = it->second.beginStep(/* reread = */ true);
             break;
         case IterationEncoding::groupBased:
         case IterationEncoding::variableBased:
@@ -71,7 +71,7 @@ SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
              * access to the file until now. Better to begin a step right away,
              * otherwise we might get another step's data.
              */
-            status = it->second.beginStep();
+            status = it->second.beginStep(/* reread = */ true);
             openIteration();
             break;
         }
@@ -106,7 +106,8 @@ SeriesIterator &SeriesIterator::operator++()
     case IE::variableBased: {
         // since we are in group-based iteration layout, it does not
         // matter which iteration we begin a step upon
-        AdvanceStatus status = currentIteration.beginStep();
+        AdvanceStatus status{};
+        status = currentIteration.beginStep(/* reread = */ true);
         if (status == AdvanceStatus::OVER)
         {
             *this = end();
@@ -141,7 +142,8 @@ SeriesIterator &SeriesIterator::operator++()
         using IE = IterationEncoding;
     case IE::fileBased: {
         auto &iteration = series.iterations[m_currentIteration];
-        AdvanceStatus status = iteration.beginStep();
+        AdvanceStatus status{};
+        status = iteration.beginStep(/* reread = */ true);
         if (status == AdvanceStatus::OVER)
         {
             *this = end();

@@ -65,7 +65,7 @@ ChunkTable BaseRecordComponent::availableChunks()
     Parameter<Operation::AVAILABLE_CHUNKS> param;
     IOTask task(this, param);
     IOHandler()->enqueue(task);
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     return std::move(*param.chunks);
 }
 } // namespace openPMD

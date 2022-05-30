@@ -210,7 +210,7 @@ public:
 
     void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
 
-    std::future<void> flush() override;
+    std::future<void> flush();
 
 private:
     using FILEHANDLE = std::fstream;

@@ -344,7 +344,7 @@ public:
             Parameter<Operation::DELETE_PATH> pDelete;
             pDelete.path = ".";
             IOHandler()->enqueue(IOTask(&res->second, pDelete));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
         }
         return m_container->erase(key);
     }
@@ -361,7 +361,7 @@ public:
             Parameter<Operation::DELETE_PATH> pDelete;
             pDelete.path = ".";
             IOHandler()->enqueue(IOTask(&res->second, pDelete));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
         }
         return m_container->erase(res);
     }
@@ -389,7 +389,8 @@ public:
         m_container->clear();
     }
 
-    virtual void flush(std::string const &path)
+    virtual void
+    flush(std::string const &path, internal::FlushParams const &flushParams)
     {
         if (!written())
         {
@@ -398,7 +399,7 @@ public:
             IOHandler()->enqueue(IOTask(this, pCreate));
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
     }
 
     std::shared_ptr<InternalContainer> m_container;

@@ -123,7 +123,7 @@ public:
             // might need to update
             m_recordComponent.IOHandler()->enqueue(
                 IOTask(&m_recordComponent, m_param));
-            m_recordComponent.IOHandler()->flush();
+            m_recordComponent.IOHandler()->flush(internal::defaultFlushParams);
         }
         return Span<T>{static_cast<T *>(m_param.out->ptr), m_size};
     }

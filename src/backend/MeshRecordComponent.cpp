@@ -34,7 +34,7 @@ void MeshRecordComponent::read()
 
     aRead.name = "position";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     Attribute a = Attribute(*aRead.resource);
     if (*aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT)
         setPosition(a.get<std::vector<float> >());

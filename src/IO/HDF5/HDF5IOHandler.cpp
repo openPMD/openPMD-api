@@ -2285,7 +2285,7 @@ HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json config)
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 
-std::future<void> HDF5IOHandler::flush()
+std::future<void> HDF5IOHandler::flush(internal::FlushParams const &)
 {
     return m_impl->flush();
 }
@@ -2299,7 +2299,7 @@ HDF5IOHandler::HDF5IOHandler(
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 
-std::future<void> HDF5IOHandler::flush()
+std::future<void> HDF5IOHandler::flush(internal::FlushParams const &)
 {
     return std::future<void>();
 }

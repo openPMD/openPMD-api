@@ -40,7 +40,7 @@ public:
 
     virtual ~AbstractIOHandlerImpl() = default;
 
-    virtual std::future<void> flush()
+    std::future<void> flush()
     {
         using namespace auxiliary;
 

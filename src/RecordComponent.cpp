@@ -170,9 +170,10 @@ bool RecordComponent::empty() const
     return *m_isEmpty;
 }
 
-void RecordComponent::flush(std::string const &name)
+void RecordComponent::flush(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
-    if (IOHandler()->m_flushLevel == FlushLevel::SkeletonOnly)
+    if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
     {
         *this->m_name = name;
         return;
@@ -249,7 +250,7 @@ void RecordComponent::flush(std::string const &name)
             m_chunks->pop();
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
     }
 }
 
@@ -267,7 +268,7 @@ void RecordComponent::readBase()
     {
         aRead.name = "value";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         Attribute a(*aRead.resource);
         DT dtype = *aRead.dtype;
@@ -332,7 +333,7 @@ void RecordComponent::readBase()
 
         aRead.name = "shape";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         a = Attribute(*aRead.resource);
         Extent e;
 
@@ -358,7 +359,7 @@ void RecordComponent::readBase()
 
     aRead.name = "unitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::DOUBLE)
         setUnitSI(Attribute(*aRead.resource).get<double>());
     else

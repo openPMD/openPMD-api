@@ -64,7 +64,7 @@ bool AttributableInterface::deleteAttribute(std::string const &key)
         Parameter<Operation::DELETE_ATT> aDelete;
         aDelete.name = key;
         IOHandler()->enqueue(IOTask(this, aDelete));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         attri.m_attributes.erase(it);
         return true;
     }
@@ -210,16 +210,22 @@ auto AttributableInterface::myPath() const -> MyPath
     return res;
 }
 
-void AttributableInterface::seriesFlush(FlushLevel level)
+void Attributable::seriesFlush(internal::FlushParams flushParams)
 {
-    writable().seriesFlush(level);
+    writable().seriesFlush(flushParams);
 }
 
-void AttributableInterface::flushAttributes()
+void Attributable::flushAttributes(internal::FlushParams const &flushParams)
 {
-    if (IOHandler()->m_flushLevel == FlushLevel::SkeletonOnly)
+    switch (flushParams.flushLevel)
     {
+    case FlushLevel::SkeletonOnly:
+    case FlushLevel::CreateOrOpenFiles:
         return;
+    case FlushLevel::InternalFlush:
+    case FlushLevel::UserFlush:
+        // pass
+        break;
     }
     if (dirty())
     {
@@ -241,7 +247,7 @@ void AttributableInterface::readAttributes(ReadMode mode)
     auto &attri = get();
     Parameter<Operation::LIST_ATTS> aList;
     IOHandler()->enqueue(IOTask(this, aList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     std::vector<std::string> written_attributes = attributes();
 
     /* std::set_difference requires sorted ranges */
@@ -281,7 +287,7 @@ void AttributableInterface::readAttributes(ReadMode mode)
         IOHandler()->enqueue(IOTask(this, aRead));
         try
         {
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
         }
         catch (unsupported_data_error const &e)
         {
