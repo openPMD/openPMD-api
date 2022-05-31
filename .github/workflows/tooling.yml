@@ -52,7 +52,7 @@ jobs:
         python3 -m pip install -U numpy
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-10, OMPI_CXX: clang++-10, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
+      env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-10, OMPI_CXX: clang++-10, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100, SKIP_ADIOS2_FILE_ENDINGS_TEST: 0}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad1_ad2/)
         spack install
