@@ -29,8 +29,33 @@
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 
+#include <memory>
+#include <utility>
+
 namespace openPMD
 {
+
+namespace
+{
+    template <typename Backend, bool enabled, typename... Args>
+    std::shared_ptr<Backend>
+    constructIOHandler(std::string const &backendName, Args &&...args)
+    {
+        if /* constexpr */ (enabled)
+        {
+            return std::make_shared<Backend>(std::forward<Args>(args)...);
+        }
+        else
+        {
+            throw std::runtime_error(
+                "openPMD-api built without support for "
+                "backend '" +
+                backendName + "'.");
+        }
+        throw "Unreachable";
+    }
+} // namespace
+
 #if openPMD_HAVE_MPI
 template <>
 std::shared_ptr<AbstractIOHandler> createIOHandler<nlohmann::json>(
@@ -44,23 +69,24 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<nlohmann::json>(
     switch (format)
     {
     case Format::HDF5:
-        return std::make_shared<ParallelHDF5IOHandler>(
-            path, access, comm, std::move(options));
+        return constructIOHandler<ParallelHDF5IOHandler, openPMD_HAVE_HDF5>(
+            "HDF5", path, access, comm, std::move(options));
     case Format::ADIOS1:
 #if openPMD_HAVE_ADIOS1
-        return std::make_shared<ParallelADIOS1IOHandler>(path, access, comm);
+        return constructIOHandler<ParallelADIOS1IOHandler, openPMD_HAVE_ADIOS1>(
+            "ADIOS1", path, access, comm);
 #else
         throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #endif
     case Format::ADIOS2:
-        return std::make_shared<ADIOS2IOHandler>(
-            path, access, comm, std::move(options), "bp4");
+        return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
+            "ADIOS2", path, access, comm, std::move(options), "bp4");
     case Format::ADIOS2_SST:
-        return std::make_shared<ADIOS2IOHandler>(
-            path, access, comm, std::move(options), "sst");
+        return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
+            "ADIOS2", path, access, comm, std::move(options), "sst");
     case Format::ADIOS2_SSC:
-        return std::make_shared<ADIOS2IOHandler>(
-            path, access, comm, std::move(options), "ssc");
+        return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
+            "ADIOS2", path, access, comm, std::move(options), "ssc");
     default:
         throw std::runtime_error(
             "Unknown file format! Did you specify a file ending?");
@@ -76,27 +102,29 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<nlohmann::json>(
     switch (format)
     {
     case Format::HDF5:
-        return std::make_shared<HDF5IOHandler>(
-            path, access, std::move(options));
+        return constructIOHandler<HDF5IOHandler, openPMD_HAVE_HDF5>(
+            "HDF5", path, access, std::move(options));
     case Format::ADIOS1:
 #if openPMD_HAVE_ADIOS1
-        return std::make_shared<ADIOS1IOHandler>(path, access);
+        return constructIOHandler<ADIOS1IOHandler, openPMD_HAVE_ADIOS1>(
+            "ADIOS1", path, access);
 #else
         throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #endif
 #if openPMD_HAVE_ADIOS2
     case Format::ADIOS2:
-        return std::make_shared<ADIOS2IOHandler>(
-            path, access, std::move(options), "bp4");
+        return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
+            "ADIOS2", path, access, std::move(options), "bp4");
     case Format::ADIOS2_SST:
-        return std::make_shared<ADIOS2IOHandler>(
-            path, access, std::move(options), "sst");
+        return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
+            "ADIOS2", path, access, std::move(options), "sst");
     case Format::ADIOS2_SSC:
-        return std::make_shared<ADIOS2IOHandler>(
-            path, access, std::move(options), "ssc");
-#endif // openPMD_HAVE_ADIOS2
+        return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
+            "ADIOS2", path, access, std::move(options), "ssc");
+#endif
     case Format::JSON:
-        return std::make_shared<JSONIOHandler>(path, access);
+        return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
+            "JSON", path, access);
     default:
         throw std::runtime_error(
             "Unknown file format! Did you specify a file ending?");

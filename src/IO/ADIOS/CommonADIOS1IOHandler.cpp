@@ -639,7 +639,7 @@ void CommonADIOS1IOHandlerImpl::closeFile(
                 "dataset reading");
 
             for (auto &sel : scheduled->second)
-                adios_selection_delete(sel);
+                adios_selection_delete(sel.selection);
             m_scheduledReads.erase(scheduled);
         }
         close(handle_read->second);
@@ -1083,7 +1083,7 @@ void CommonADIOS1IOHandlerImpl::readDataset(
         "[ADIOS1] Internal error: Failed to schedule ADIOS read during dataset "
         "reading");
 
-    m_scheduledReads[f].push_back(sel);
+    m_scheduledReads[f].push_back({sel, parameters.data});
 }
 
 void CommonADIOS1IOHandlerImpl::readAttribute(

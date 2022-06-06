@@ -309,96 +309,183 @@ void AttributableInterface::readAttributes(ReadMode mode)
                 }
                 std::array<double, 7> arr;
                 std::copy_n(vector.begin(), 7, arr.begin());
-                setAttribute(key, std::move(arr));
+                setAttributeImpl(
+                    key,
+                    std::move(arr),
+                    internal::SetAttributeMode::WhileReadingAttributes);
             }
             else
             {
-                setAttribute(key, std::move(vector));
+                setAttributeImpl(
+                    key,
+                    std::move(vector),
+                    internal::SetAttributeMode::WhileReadingAttributes);
             }
         };
 
         switch (*aRead.dtype)
         {
         case DT::CHAR:
-            setAttribute(att, a.get<char>());
+            setAttributeImpl(
+                att,
+                a.get<char>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::UCHAR:
-            setAttribute(att, a.get<unsigned char>());
+            setAttributeImpl(
+                att,
+                a.get<unsigned char>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::SHORT:
-            setAttribute(att, a.get<short>());
+            setAttributeImpl(
+                att,
+                a.get<short>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::INT:
-            setAttribute(att, a.get<int>());
+            setAttributeImpl(
+                att,
+                a.get<int>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::LONG:
-            setAttribute(att, a.get<long>());
+            setAttributeImpl(
+                att,
+                a.get<long>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::LONGLONG:
-            setAttribute(att, a.get<long long>());
+            setAttributeImpl(
+                att,
+                a.get<long long>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::USHORT:
-            setAttribute(att, a.get<unsigned short>());
+            setAttributeImpl(
+                att,
+                a.get<unsigned short>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::UINT:
-            setAttribute(att, a.get<unsigned int>());
+            setAttributeImpl(
+                att,
+                a.get<unsigned int>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::ULONG:
-            setAttribute(att, a.get<unsigned long>());
+            setAttributeImpl(
+                att,
+                a.get<unsigned long>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::ULONGLONG:
-            setAttribute(att, a.get<unsigned long long>());
+            setAttributeImpl(
+                att,
+                a.get<unsigned long long>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::FLOAT:
-            setAttribute(att, a.get<float>());
+            setAttributeImpl(
+                att,
+                a.get<float>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::DOUBLE:
-            setAttribute(att, a.get<double>());
+            setAttributeImpl(
+                att,
+                a.get<double>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::LONG_DOUBLE:
-            setAttribute(att, a.get<long double>());
+            setAttributeImpl(
+                att,
+                a.get<long double>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::CFLOAT:
-            setAttribute(att, a.get<std::complex<float> >());
+            setAttributeImpl(
+                att,
+                a.get<std::complex<float> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::CDOUBLE:
-            setAttribute(att, a.get<std::complex<double> >());
+            setAttributeImpl(
+                att,
+                a.get<std::complex<double> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::CLONG_DOUBLE:
-            setAttribute(att, a.get<std::complex<long double> >());
+            setAttributeImpl(
+                att,
+                a.get<std::complex<long double> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::STRING:
-            setAttribute(att, a.get<std::string>());
+            setAttributeImpl(
+                att,
+                a.get<std::string>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_CHAR:
-            setAttribute(att, a.get<std::vector<char> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<char> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_SHORT:
-            setAttribute(att, a.get<std::vector<short> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<short> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_INT:
-            setAttribute(att, a.get<std::vector<int> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<int> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_LONG:
-            setAttribute(att, a.get<std::vector<long> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<long> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_LONGLONG:
-            setAttribute(att, a.get<std::vector<long long> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<long long> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_UCHAR:
-            setAttribute(att, a.get<std::vector<unsigned char> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<unsigned char> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_USHORT:
-            setAttribute(att, a.get<std::vector<unsigned short> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<unsigned short> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_UINT:
-            setAttribute(att, a.get<std::vector<unsigned int> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<unsigned int> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_ULONG:
-            setAttribute(att, a.get<std::vector<unsigned long> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<unsigned long> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_ULONGLONG:
-            setAttribute(att, a.get<std::vector<unsigned long long> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<unsigned long long> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_FLOAT:
             guardUnitDimension(att, a.get<std::vector<float> >());
@@ -410,23 +497,40 @@ void AttributableInterface::readAttributes(ReadMode mode)
             guardUnitDimension(att, a.get<std::vector<long double> >());
             break;
         case DT::VEC_CFLOAT:
-            setAttribute(att, a.get<std::vector<std::complex<float> > >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<std::complex<float> > >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_CDOUBLE:
-            setAttribute(att, a.get<std::vector<std::complex<double> > >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<std::complex<double> > >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_CLONG_DOUBLE:
-            setAttribute(
-                att, a.get<std::vector<std::complex<long double> > >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<std::complex<long double> > >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_STRING:
-            setAttribute(att, a.get<std::vector<std::string> >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<std::string> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::ARR_DBL_7:
-            setAttribute(att, a.get<std::array<double, 7> >());
+            setAttributeImpl(
+                att,
+                a.get<std::array<double, 7> >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::BOOL:
-            setAttribute(att, a.get<bool>());
+            setAttributeImpl(
+                att,
+                a.get<bool>(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::DATATYPE:
         case DT::UNDEFINED:

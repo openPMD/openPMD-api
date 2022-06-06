@@ -383,6 +383,15 @@ TEST_CASE("available_chunks_test_json", "[serial][json]")
 TEST_CASE("multiple_series_handles_test", "[serial]")
 {
     /*
+     * clang also understands these pragmas.
+     */
+#if defined(__GNUC_MINOR__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    /*
      * First test: No premature flushes through destructor when another copy
      * is still around
      */
@@ -424,6 +433,11 @@ TEST_CASE("multiple_series_handles_test", "[serial]")
          */
         series_ptr->flush();
     }
+#if defined(__GNUC_MINOR__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic pop
+#elif defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 }
 
 void close_iteration_test(std::string file_ending)
