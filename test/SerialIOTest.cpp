@@ -89,7 +89,7 @@ TEST_CASE("adios2_char_portability", "[serial][adios2]")
         writeAttribute("/openPMD", std::string("1.1.0"));
         writeAttribute("/openPMDextension", uint32_t(0));
         writeAttribute("/software", std::string("openPMD-api"));
-        writeAttribute("/softwareVersion", std::string("0.14.4"));
+        writeAttribute("/softwareVersion", std::string("0.14.5"));
 
         IO.DefineAttribute<uint64_t>(
             "__openPMD_internal/openPMD2_adios2_schema", 20210209);
