@@ -7,7 +7,7 @@ In the following section we explain how to contribute to this documentation.
 
 If you are reading the HTML version on http://openPMD-api.readthedocs.io and want to improve or correct existing pages, check the "Edit on GitHub" link on the right upper corner of each document.
 
-Alternatively, go to `docs/source` in our source code and follow the directory structure of `reStructuredText`_ (``.rst``) files there.
+Alternatively, go to ``docs/source`` in our source code and follow the directory structure of `reStructuredText`_ (``.rst``) files there.
 For intrusive changes, like structural changes to chapters, please open an issue to discuss them beforehand.
 
 .. _reStructuredText: http://www.sphinx-doc.org/en/stable/rest.html
@@ -46,7 +46,7 @@ Please check your documentation build is successful and renders as you expected 
     # skip this if you are still in docs/
     cd docs/
 
-    # render the `.rst` files and replace their macros within
+    # render the ``.rst`` files and replace their macros within
     #   enjoy the breathe errors on things it does not understand from doxygen :)
     make html
 
@@ -66,4 +66,3 @@ Useful Links
  * `A primer on writing restFUL files for sphinx <http://www.sphinx-doc.org/en/stable/rest.html>`_
  * `Why You Shouldn't Use "Markdown" for Documentation <http://ericholscher.com/blog/2016/mar/15/dont-use-markdown-for-technical-docs/>`_
  * `Markdown Limitations in Sphinx <https://docs.readthedocs.io/en/latest/getting_started.html#in-markdown>`_
-

@@ -25,54 +25,51 @@
 
 namespace openPMD
 {
-WriteIterations::SharedResources::SharedResources( iterations_t _iterations )
-    : iterations( std::move( _iterations ) )
-{
-}
+WriteIterations::SharedResources::SharedResources(iterations_t _iterations)
+    : iterations(std::move(_iterations))
+{}
 
 WriteIterations::SharedResources::~SharedResources()
 {
-    if( currentlyOpen.has_value() &&
-        iterations.retrieveSeries().get().m_lastFlushSuccessful )
+    if (currentlyOpen.has_value() &&
+        iterations.retrieveSeries().get().m_lastFlushSuccessful)
     {
         auto lastIterationIndex = currentlyOpen.get();
-        auto & lastIteration = iterations.at( lastIterationIndex );
-        if( !lastIteration.closed() )
+        auto &lastIteration = iterations.at(lastIterationIndex);
+        if (!lastIteration.closed())
         {
             lastIteration.close();
         }
     }
 }
 
-WriteIterations::WriteIterations( iterations_t iterations )
-    : shared{ std::make_shared< SharedResources >( std::move( iterations ) ) }
-{
-}
+WriteIterations::WriteIterations(iterations_t iterations)
+    : shared{std::make_shared<SharedResources>(std::move(iterations))}
+{}
 
-WriteIterations::mapped_type &
-WriteIterations::operator[]( key_type const & key )
+WriteIterations::mapped_type &WriteIterations::operator[](key_type const &key)
 {
     // make a copy
     // explicit cast so MSVC can figure out how to do it correctly
-    return operator[]( static_cast< key_type && >( key_type{ key } ) );
+    return operator[](static_cast<key_type &&>(key_type{key}));
 }
-WriteIterations::mapped_type & WriteIterations::operator[]( key_type && key )
+WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
 {
-    if( shared->currentlyOpen.has_value() )
+    if (shared->currentlyOpen.has_value())
     {
         auto lastIterationIndex = shared->currentlyOpen.get();
-        auto & lastIteration = shared->iterations.at( lastIterationIndex );
-        if( lastIterationIndex != key && !lastIteration.closed() )
+        auto &lastIteration = shared->iterations.at(lastIterationIndex);
+        if (lastIterationIndex != key && !lastIteration.closed())
         {
             lastIteration.close();
         }
     }
     shared->currentlyOpen = key;
-    auto & res = shared->iterations[ std::move( key ) ];
-    if( res.getStepStatus() == StepStatus::NoStep )
+    auto &res = shared->iterations[std::move(key)];
+    if (res.getStepStatus() == StepStatus::NoStep)
     {
-        res.beginStep();
-        res.setStepStatus( StepStatus::DuringStep );
+        res.beginStep(/* reread = */ false);
+        res.setStepStatus(StepStatus::DuringStep);
     }
     return res;
 }

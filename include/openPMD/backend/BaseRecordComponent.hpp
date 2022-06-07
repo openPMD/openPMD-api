@@ -20,33 +20,27 @@
  */
 #pragma once
 
-#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/backend/Attributable.hpp"
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
-#   define OPENPMD_protected protected
+#define OPENPMD_protected protected
 #endif
-
 
 namespace openPMD
 {
 class BaseRecordComponent : public LegacyAttributable
 {
-    template<
-        typename T,
-        typename T_key,
-        typename T_container
-    >
-    friend
-    class Container;
+    template <typename T, typename T_key, typename T_container>
+    friend class Container;
 
 public:
     ~BaseRecordComponent() = default;
 
     double unitSI() const;
 
-    BaseRecordComponent& resetDatatype(Datatype);
+    BaseRecordComponent &resetDatatype(Datatype);
 
     Datatype getDatatype() const;
 
@@ -76,42 +70,39 @@ public:
      * may additionally wish to use to store user-defined, backend-independent
      * chunking information on particle datasets.
      */
-    ChunkTable
-    availableChunks();
+    ChunkTable availableChunks();
 
     OPENPMD_protected : BaseRecordComponent();
 
-    std::shared_ptr< Dataset > m_dataset;
-    std::shared_ptr< bool > m_isConstant;
+    std::shared_ptr<Dataset> m_dataset;
+    std::shared_ptr<bool> m_isConstant;
 }; // BaseRecordComponent
 
 namespace detail
 {
-/**
- * Functor template to be used in combination with switchType::operator()
- * to set a default value for constant record components via the
- * respective type's default constructor.
- * Used to implement empty datasets in subclasses of BaseRecordComponent
- * (currently RecordComponent).
- * @param T_RecordComponent
- */
-template< typename T_RecordComponent >
-struct DefaultValue
-{
-    template< typename T >
-    void
-    operator()( T_RecordComponent & rc )
+    /**
+     * Functor template to be used in combination with switchType::operator()
+     * to set a default value for constant record components via the
+     * respective type's default constructor.
+     * Used to implement empty datasets in subclasses of BaseRecordComponent
+     * (currently RecordComponent).
+     * @param T_RecordComponent
+     */
+    template <typename T_RecordComponent>
+    struct DefaultValue
     {
-        rc.makeConstant( T() );
-    }
+        template <typename T>
+        void operator()(T_RecordComponent &rc)
+        {
+            rc.makeConstant(T());
+        }
 
-    template< unsigned n, typename... Args >
-    void
-    operator()( Args &&... )
-    {
-        throw std::runtime_error(
-            "makeEmpty: Datatype not supported by openPMD." );
-    }
-};
+        template <unsigned n, typename... Args>
+        void operator()(Args &&...)
+        {
+            throw std::runtime_error(
+                "makeEmpty: Datatype not supported by openPMD.");
+        }
+    };
 } // namespace detail
 } // namespace openPMD

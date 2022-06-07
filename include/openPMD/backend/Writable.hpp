@@ -22,37 +22,36 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
-#   define OPENPMD_private private
+#define OPENPMD_private private
 #endif
-
 
 namespace openPMD
 {
 namespace test
 {
-struct TestHelper;
+    struct TestHelper;
 } // namespace test
 class AbstractFilePosition;
 class AbstractIOHandler;
 struct ADIOS2FilePosition;
 template <typename FilePositionType>
 class AbstractIOHandlerImplCommon;
-template<typename>
+template <typename>
 class Span;
 
 namespace internal
 {
-class AttributableData;
+    class AttributableData;
 }
 
-
-/** @brief Layer to mirror structure of logical data and persistent data in file.
+/** @brief Layer to mirror structure of logical data and persistent data in
+ * file.
  *
  * Hierarchy of objects (datasets, groups, attributes, ...) in openPMD is
  * managed in this class.
@@ -65,13 +64,9 @@ class Writable final
 {
     friend class internal::AttributableData;
     friend class AttributableInterface;
-    template< typename T_elem >
+    template <typename T_elem>
     friend class BaseRecord;
-    template<
-            typename T,
-            typename T_key,
-            typename T_container
-    >
+    template <typename T, typename T_key, typename T_container>
     friend class Container;
     friend class Iteration;
     friend class Mesh;
@@ -86,21 +81,21 @@ class Writable final
     friend class AbstractIOHandlerImplCommon<ADIOS2FilePosition>;
     friend class JSONIOHandlerImpl;
     friend struct test::TestHelper;
-    friend std::string concrete_h5_file_position(Writable*);
-    friend std::string concrete_bp1_file_position(Writable*);
-    template<typename>
+    friend std::string concrete_h5_file_position(Writable *);
+    friend std::string concrete_bp1_file_position(Writable *);
+    template <typename>
     friend class Span;
 
 private:
-    Writable( internal::AttributableData * );
+    Writable(internal::AttributableData *);
 
 public:
     ~Writable() = default;
 
-    Writable( Writable const & other ) = delete;
-    Writable( Writable && other ) = delete;
-    Writable & operator=( Writable const & other ) = delete;
-    Writable & operator=( Writable && other ) = delete;
+    Writable(Writable const &other) = delete;
+    Writable(Writable &&other) = delete;
+    Writable &operator=(Writable const &other) = delete;
+    Writable &operator=(Writable &&other) = delete;
 
     /** Flush the corresponding Series object
      *
@@ -111,24 +106,24 @@ public:
      */
     void seriesFlush();
 
-OPENPMD_private:
-    void seriesFlush( FlushLevel );
+    OPENPMD_private:
+    void seriesFlush(internal::FlushParams);
     /*
      * These members need to be shared pointers since distinct instances of
      * Writable may share them.
      */
-    std::shared_ptr< AbstractFilePosition > abstractFilePosition;
-    std::shared_ptr< AbstractIOHandler > IOHandler;
-    internal::AttributableData* attributable;
-    Writable* parent;
-    bool dirty;
+    std::shared_ptr<AbstractFilePosition> abstractFilePosition = nullptr;
+    std::shared_ptr<AbstractIOHandler> IOHandler = nullptr;
+    internal::AttributableData *attributable = nullptr;
+    Writable *parent = nullptr;
+    bool dirty = true;
     /**
      * If parent is not null, then this is a vector of keys such that:
      * &(*parent)[key_1]...[key_n] == this
      * (Notice that scalar record components do not link their direct parent,
      * but instead their parent's parent, hence a vector of keys)
      */
-    std::vector< std::string > ownKeyWithinParent;
+    std::vector<std::string> ownKeyWithinParent;
     /**
      * @brief Whether a Writable has been written to the backend.
      *
@@ -144,6 +139,6 @@ OPENPMD_private:
      * Writable and its meaning within the current dataset.
      *
      */
-    bool written;
+    bool written = false;
 };
 } // namespace openPMD

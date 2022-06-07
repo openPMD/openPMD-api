@@ -21,29 +21,26 @@
 
 #pragma once
 
-
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 
-
 namespace openPMD
 {
-    class JSONIOHandler :
-        public AbstractIOHandler
+class JSONIOHandler : public AbstractIOHandler
+{
+public:
+    JSONIOHandler(std::string path, Access at);
+
+    ~JSONIOHandler() override;
+
+    std::string backendName() const override
     {
-    public:
-        JSONIOHandler(
-            std::string path,
-            Access at
-        );
+        return "JSON";
+    }
 
-        ~JSONIOHandler( ) override;
+    std::future<void> flush(internal::FlushParams const &) override;
 
-        std::string backendName() const override { return "JSON"; }
-
-        std::future< void > flush( ) override;
-
-    private:
-        JSONIOHandlerImpl m_impl;
-    };
-} // openPMD
+private:
+    JSONIOHandlerImpl m_impl;
+};
+} // namespace openPMD

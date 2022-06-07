@@ -20,24 +20,25 @@
  */
 #pragma once
 
-
 namespace openPMD
 {
-    /** File access mode to use during IO.
-     */
-    enum class Access
-    {
-        READ_ONLY,  //!< open series as read-only, fails if series is not found
-        READ_WRITE, //!< open existing series as writable
-        CREATE      //!< create new series and truncate existing (files)
-    }; // Access
+/** File access mode to use during IO.
+ */
+enum class Access
+{
+    READ_ONLY, //!< open series as read-only, fails if series is not found
+    READ_WRITE, //!< open existing series as writable
+    CREATE //!< create new series and truncate existing (files)
+}; // Access
 
-
-    // deprecated name (used prior to 0.12.0)
-    // note: "using old [[deprecated(msg)]] = new;" is still badly supported, thus using typedef
-    //       https://en.cppreference.com/w/cpp/language/attributes/deprecated
-    //   - NVCC < 11.0.167 works but noisy "warning: attribute does not apply to any entity"
-    //     Nvidia bug report: 2991260
-    //   - Intel C++ 19.1.0.20200306 bug report: 04651484
-    [[deprecated("AccessType is deprecated, use Access instead.")]] typedef Access AccessType;
+// deprecated name (used prior to 0.12.0)
+// note: "using old [[deprecated(msg)]] = new;" is still badly supported, thus
+// using typedef
+//       https://en.cppreference.com/w/cpp/language/attributes/deprecated
+//   - NVCC < 11.0.167 works but noisy "warning: attribute does not apply to any
+//   entity"
+//     Nvidia bug report: 2991260
+//   - Intel C++ 19.1.0.20200306 bug report: 04651484
+[[deprecated("AccessType is deprecated, use Access instead.")]] typedef Access
+    AccessType;
 } // namespace openPMD

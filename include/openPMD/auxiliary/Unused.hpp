@@ -21,15 +21,14 @@
  */
 #pragma once
 
-
 #if __cplusplus >= 201703L
-#   define OPENPMDAPI_UNUSED [[maybe_unused]]
+#define OPENPMDAPI_UNUSED [[maybe_unused]]
 #else
-#   ifdef __clang__
-#       define OPENPMDAPI_UNUSED __attribute__((unused))
-#   elif defined(__GNUC__) && defined(__GNUC_PATCHLEVEL__)
-#       define OPENPMDAPI_UNUSED [[gnu::unused]]
-#   else
-#       define OPENPMDAPI_UNUSED
-#   endif
+#ifdef __clang__
+#define OPENPMDAPI_UNUSED __attribute__((unused))
+#elif defined(__GNUC__) && defined(__GNUC_PATCHLEVEL__)
+#define OPENPMDAPI_UNUSED [[gnu::unused]]
+#else
+#define OPENPMDAPI_UNUSED
+#endif
 #endif

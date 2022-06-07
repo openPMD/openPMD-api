@@ -24,25 +24,26 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/IOTask.hpp"
 
-#include <string>
 #include <future>
-
+#include <string>
 
 namespace openPMD
 {
-    /** Dummy handler without any IO operations.
-    */
-    class DummyIOHandler : public AbstractIOHandler
-    {
-    public:
-        DummyIOHandler(std::string, Access);
-        ~DummyIOHandler() override = default;
+/** Dummy handler without any IO operations.
+ */
+class DummyIOHandler : public AbstractIOHandler
+{
+public:
+    DummyIOHandler(std::string, Access);
+    ~DummyIOHandler() override = default;
 
-        /** No-op consistent with the IOHandler interface to enable library use without IO.
-        */
-        void enqueue(IOTask const&) override;
-        /** No-op consistent with the IOHandler interface to enable library use without IO.
-        */
-        std::future< void > flush() override;
-    }; // DummyIOHandler
+    /** No-op consistent with the IOHandler interface to enable library use
+     * without IO.
+     */
+    void enqueue(IOTask const &) override;
+    /** No-op consistent with the IOHandler interface to enable library use
+     * without IO.
+     */
+    std::future<void> flush(internal::FlushParams const &) override;
+}; // DummyIOHandler
 } // namespace openPMD

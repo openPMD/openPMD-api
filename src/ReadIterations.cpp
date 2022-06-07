@@ -27,36 +27,32 @@ namespace openPMD
 {
 
 SeriesIterator::SeriesIterator() : m_series()
-{
-}
+{}
 
-SeriesIterator::SeriesIterator( Series series )
-    : m_series( std::move( series ) )
+SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
 {
     auto it = series.get().iterations.begin();
-    if( it == series.get().iterations.end() )
+    if (it == series.get().iterations.end())
     {
         *this = end();
         return;
     }
     else
     {
-        auto openIteration = [ &it ]()
-        {
+        auto openIteration = [&it]() {
             /*
              * @todo
              * Is that really clean?
              * Use case: See Python ApiTest testListSeries:
              * Call listSeries twice.
              */
-            if( *it->second.m_closed !=
-                Iteration::CloseStatus::ClosedInBackend )
+            if (*it->second.m_closed != Iteration::CloseStatus::ClosedInBackend)
             {
                 it->second.open();
             }
         };
         AdvanceStatus status{};
-        switch( series.iterationEncoding() )
+        switch (series.iterationEncoding())
         {
         case IterationEncoding::fileBased:
             /*
@@ -66,7 +62,7 @@ SeriesIterator::SeriesIterator( Series series )
              * the step after parsing the file is ok.
              */
             openIteration();
-            status = it->second.beginStep();
+            status = it->second.beginStep(/* reread = */ true);
             break;
         case IterationEncoding::groupBased:
         case IterationEncoding::variableBased:
@@ -75,83 +71,85 @@ SeriesIterator::SeriesIterator( Series series )
              * access to the file until now. Better to begin a step right away,
              * otherwise we might get another step's data.
              */
-            status = it->second.beginStep();
+            status = it->second.beginStep(/* reread = */ true);
             openIteration();
             break;
         }
-        if( status == AdvanceStatus::OVER )
+        if (status == AdvanceStatus::OVER)
         {
             *this = end();
             return;
         }
-        it->second.setStepStatus( StepStatus::DuringStep );
+        it->second.setStepStatus(StepStatus::DuringStep);
     }
     m_currentIteration = it->first;
 }
 
-SeriesIterator & SeriesIterator::operator++()
+SeriesIterator &SeriesIterator::operator++()
 {
-    if( !m_series.has_value() )
+    if (!m_series.has_value())
     {
         *this = end();
         return *this;
     }
-    Series & series = m_series.get();
-    auto & iterations = series.iterations;
-    auto & currentIteration = iterations[ m_currentIteration ];
-    if( !currentIteration.closed() )
+    Series &series = m_series.get();
+    auto &iterations = series.iterations;
+    auto &currentIteration = iterations[m_currentIteration];
+    if (!currentIteration.closed())
     {
         currentIteration.close();
     }
-    switch( series.iterationEncoding() )
+    switch (series.iterationEncoding())
     {
         using IE = IterationEncoding;
     case IE::groupBased:
     case IE::variableBased: {
         // since we are in group-based iteration layout, it does not
         // matter which iteration we begin a step upon
-        AdvanceStatus status = currentIteration.beginStep();
-        if( status == AdvanceStatus::OVER )
+        AdvanceStatus status{};
+        status = currentIteration.beginStep(/* reread = */ true);
+        if (status == AdvanceStatus::OVER)
         {
             *this = end();
             return *this;
         }
-        currentIteration.setStepStatus( StepStatus::DuringStep );
+        currentIteration.setStepStatus(StepStatus::DuringStep);
         break;
     }
     default:
         break;
     }
-    auto it = iterations.find( m_currentIteration );
+    auto it = iterations.find(m_currentIteration);
     auto itEnd = iterations.end();
-    if( it == itEnd )
+    if (it == itEnd)
     {
         *this = end();
         return *this;
     }
     ++it;
-    if( it == itEnd )
+    if (it == itEnd)
     {
         *this = end();
         return *this;
     }
     m_currentIteration = it->first;
-    if( *it->second.m_closed != Iteration::CloseStatus::ClosedInBackend )
+    if (*it->second.m_closed != Iteration::CloseStatus::ClosedInBackend)
     {
         it->second.open();
     }
-    switch( series.iterationEncoding() )
+    switch (series.iterationEncoding())
     {
         using IE = IterationEncoding;
     case IE::fileBased: {
-        auto & iteration = series.iterations[ m_currentIteration ];
-        AdvanceStatus status = iteration.beginStep();
-        if( status == AdvanceStatus::OVER )
+        auto &iteration = series.iterations[m_currentIteration];
+        AdvanceStatus status{};
+        status = iteration.beginStep(/* reread = */ true);
+        if (status == AdvanceStatus::OVER)
         {
             *this = end();
             return *this;
         }
-        iteration.setStepStatus( StepStatus::DuringStep );
+        iteration.setStepStatus(StepStatus::DuringStep);
         break;
     }
     default:
@@ -163,18 +161,18 @@ SeriesIterator & SeriesIterator::operator++()
 IndexedIteration SeriesIterator::operator*()
 {
     return IndexedIteration(
-        m_series.get().iterations[ m_currentIteration ], m_currentIteration );
+        m_series.get().iterations[m_currentIteration], m_currentIteration);
 }
 
-bool SeriesIterator::operator==( SeriesIterator const & other ) const
+bool SeriesIterator::operator==(SeriesIterator const &other) const
 {
     return this->m_currentIteration == other.m_currentIteration &&
         this->m_series.has_value() == other.m_series.has_value();
 }
 
-bool SeriesIterator::operator!=( SeriesIterator const & other ) const
+bool SeriesIterator::operator!=(SeriesIterator const &other) const
 {
-    return !operator==( other );
+    return !operator==(other);
 }
 
 SeriesIterator SeriesIterator::end()
@@ -182,14 +180,12 @@ SeriesIterator SeriesIterator::end()
     return SeriesIterator{};
 }
 
-ReadIterations::ReadIterations( Series series )
-    : m_series( std::move( series ) )
-{
-}
+ReadIterations::ReadIterations(Series series) : m_series(std::move(series))
+{}
 
 ReadIterations::iterator_t ReadIterations::begin()
 {
-    return iterator_t{ m_series };
+    return iterator_t{m_series};
 }
 
 ReadIterations::iterator_t ReadIterations::end()

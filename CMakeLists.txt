@@ -2,7 +2,7 @@
 #
 cmake_minimum_required(VERSION 3.15.0)
 
-project(openPMD VERSION 0.14.4) # LANGUAGES CXX
+project(openPMD VERSION 0.14.5) # LANGUAGES CXX
 
 # the openPMD "markup"/"schema" standard version
 set(openPMD_STANDARD_VERSION 1.1.0)
@@ -681,8 +681,15 @@ if(openPMD_HAVE_PYTHON)
     endif()
     unset(_USE_PY_LTO)
 
-    pybind11_extension(openPMD.py)
-    pybind11_strip(openPMD.py)
+    if(EMSCRIPTEN)
+        set_target_properties(openPMD.py PROPERTIES
+            PREFIX "")
+    else()
+        pybind11_extension(openPMD.py)
+    endif()
+    if(NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
+        pybind11_strip(openPMD.py)
+    endif()
 
     set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
                                                 CUDA_VISIBILITY_PRESET "hidden")
@@ -890,11 +897,11 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         #                     /usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
         # at runtime when used with symbol-hidden code (e.g. pybind11 module)
 
-        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code ${CMAKE_CXX_FLAGS}")
+        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code -Wsign-compare ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
         set(CMAKE_CXX_FLAGS "-w3 -wd193,383,1572 ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wunreachable-code ${CMAKE_CXX_FLAGS}")
+        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wunreachable-code -Wsign-compare ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         # Warning C4503: "decorated name length exceeded, name was truncated"
         # Symbols longer than 4096 chars are truncated (and hashed instead)

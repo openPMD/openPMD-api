@@ -21,19 +21,18 @@
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
-
 namespace openPMD
 {
-Writable*
-getWritable(AttributableInterface* a)
-{ return &a->writable(); }
+Writable *getWritable(AttributableInterface *a)
+{
+    return &a->writable();
+}
 
 namespace internal
 {
-    std::string
-    operationAsString( Operation op )
+    std::string operationAsString(Operation op)
     {
-        switch( op )
+        switch (op)
         {
         case Operation::CREATE_FILE:
             return "CREATE_FILE";
@@ -109,5 +108,5 @@ namespace internal
             break;
         }
     }
-}
-} // openPMD
+} // namespace internal
+} // namespace openPMD

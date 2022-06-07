@@ -14,14 +14,13 @@ sudo apt-get install -y \
     pkg-config          \
     wget
 
-wget -q https://developer.download.nvidia.com/hpc-sdk/21.5/nvhpc-21-5_21.5_amd64.deb \
-        https://developer.download.nvidia.com/hpc-sdk/21.5/nvhpc-2021_21.5_amd64.deb
-sudo apt-get update
-sudo apt-get install -y ./nvhpc-21-5_21.5_amd64.deb ./nvhpc-2021_21.5_amd64.deb
-rm -rf ./nvhpc-21-5_21.5_amd64.deb ./nvhpc-2021_21.5_amd64.deb
+echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | \
+  sudo tee /etc/apt/sources.list.d/nvhpc.list
+sudo apt-get update -y
+sudo apt-get install -y --no-install-recommends nvhpc-21-11
 
 # things should reside in /opt/nvidia/hpc_sdk now
 
 # activation via:
 #   source /etc/profile.d/modules.sh
-#   module load /opt/nvidia/hpc_sdk/modulefiles/nvhpc/20.7
+#   module load /opt/nvidia/hpc_sdk/modulefiles/nvhpc/21.11

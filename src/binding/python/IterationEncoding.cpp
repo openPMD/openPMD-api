@@ -26,11 +26,10 @@
 namespace py = pybind11;
 using namespace openPMD;
 
-
-void init_IterationEncoding(py::module &m) {
+void init_IterationEncoding(py::module &m)
+{
     py::enum_<IterationEncoding>(m, "Iteration_Encoding")
         .value("file_based", IterationEncoding::fileBased)
         .value("group_based", IterationEncoding::groupBased)
-        .value("variable_based", IterationEncoding::variableBased)
-    ;
+        .value("variable_based", IterationEncoding::variableBased);
 }

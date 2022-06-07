@@ -20,21 +20,20 @@
  */
 #pragma once
 
-#include "openPMD/backend/Attributable.hpp"
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/Record.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
 
 #include <string>
-
 
 namespace openPMD
 {
 
-class ParticleSpecies : public Container< Record >
+class ParticleSpecies : public Container<Record>
 {
-    friend class Container< ParticleSpecies >;
-    friend class Container< Record >;
+    friend class Container<ParticleSpecies>;
+    friend class Container<Record>;
     friend class Iteration;
 
 public:
@@ -44,7 +43,7 @@ private:
     ParticleSpecies();
 
     void read();
-    void flush(std::string const &) override;
+    void flush(std::string const &, internal::FlushParams const &) override;
 
     /**
      * @brief Check recursively whether this ParticleSpecies is dirty.
@@ -54,29 +53,28 @@ private:
      * @return true If dirty.
      * @return false Otherwise.
      */
-    bool
-    dirtyRecursive() const;
+    bool dirtyRecursive() const;
 };
 
 namespace traits
 {
-    template<>
-    struct GenerationPolicy< ParticleSpecies >
+    template <>
+    struct GenerationPolicy<ParticleSpecies>
     {
-        template< typename T >
-        void operator()(T & ret)
+        template <typename T>
+        void operator()(T &ret)
         {
             ret.particlePatches.linkHierarchy(ret.writable());
 
-            auto& np = ret.particlePatches["numParticles"];
-            auto& npc = np[RecordComponent::SCALAR];
+            auto &np = ret.particlePatches["numParticles"];
+            auto &npc = np[RecordComponent::SCALAR];
             npc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
             npc.parent() = np.parent();
-            auto& npo = ret.particlePatches["numParticlesOffset"];
-            auto& npoc = npo[RecordComponent::SCALAR];
+            auto &npo = ret.particlePatches["numParticlesOffset"];
+            auto &npoc = npo[RecordComponent::SCALAR];
             npoc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
             npoc.parent() = npo.parent();
         }
     };
-} // traits
-} // openPMD
+} // namespace traits
+} // namespace openPMD

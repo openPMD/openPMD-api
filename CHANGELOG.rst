@@ -3,6 +3,73 @@
 Changelog
 =========
 
+0.14.5
+------
+**Date:** 2022-06-07
+
+Improve Series Parsing, Python & Fix Backend Bugs
+
+This release improves reading back iterations that overflow the specified zero-pattern.
+ADIOS1, ADIOS2 and HDF5 backend stability and performance were improved.
+Python bindings got additional wheel platform support and various smaller issues were fixed.
+
+Changes to "0.14.4"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- Series and iterations:
+
+  - fix read of overflowing zero patterns #1173 #1253
+  - fix for opening an iteration #1239
+- ADIOS1:
+
+  - fix use-after-free in ``ADIOS1IOHandler`` #1224
+  - Remove task from IO queue if it fails with exception #1179
+- ADIOS2:
+
+  - Remove deprecated debug parameter in ADIOS2 #1269
+  - Add memory leak suppression: ``ps_make_timer_name_`` #1235
+  - Don't safeguard empty strings while reading #1223
+- HDF5:
+
+  - missing HDF5 include #1236
+- Python:
+
+  - Wheels: Fix macOS arm64 (M1) builds #1233
+  - Python Iteration: Fix ``__repr__`` (time) #1242
+  - Increase reference count also in other ``load_chunk`` overload #1225
+  - Do Not Strip Symbols In Debug #1219
+  - Patch MSVC pybind11 debug bug #1209
+
+Other
+"""""
+
+- HDF5:
+
+  - Improve write time by disabling fill #1192
+  - Update documented HDF5 versions with collective metadata issues #1250
+- Print warning if mpi4py is not found in ``openpmd-pipe`` #1186
+- Pass-through flushing parameters #1226
+- Clang-Format #1032 #1222
+- Warnings:
+
+  - Avoid copying std::string in for loop #1268
+  - SerialIOTest: Fix GCC Pragma Check #1213 #1260
+  - Fix ``-Wsign-compare`` #1202
+- CI:
+
+  - Fix Conda Build - <3 Mamba #1261
+  - Fix Spack #1244
+  - Update CUDA repo key #1256
+  - NVHPC New Apt Repo #1241
+- Python:
+
+  - ``setup.py``: Extra CMake Arg Control #1199
+  - sign compare warning #1198
+
+
 0.14.4
 ------
 **Date:** 2022-01-21

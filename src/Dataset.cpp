@@ -20,71 +20,72 @@
  */
 #include "openPMD/Dataset.hpp"
 
-#include <iostream>
 #include <cstddef>
-
+#include <iostream>
 
 namespace openPMD
 {
 Dataset::Dataset(Datatype d, Extent e, std::string options_in)
-        : extent{e},
-          dtype{d},
-          rank{static_cast<uint8_t>(e.size())},
-          chunkSize{e},
-          options{std::move(options_in)}
-{ }
+    : extent{e}
+    , dtype{d}
+    , rank{static_cast<uint8_t>(e.size())}
+    , chunkSize{e}
+    , options{std::move(options_in)}
+{}
 
-Dataset::Dataset( Extent e ) : Dataset( Datatype::UNDEFINED, std::move( e ) )
-{
-}
+Dataset::Dataset(Extent e) : Dataset(Datatype::UNDEFINED, std::move(e))
+{}
 
-Dataset &
-Dataset::extend( Extent newExtents )
+Dataset &Dataset::extend(Extent newExtents)
 {
-    if( newExtents.size() != rank )
-        throw std::runtime_error("Dimensionality of extended Dataset must match the original dimensionality");
-    for( size_t i = 0; i < newExtents.size(); ++i )
-        if( newExtents[i] < extent[i] )
-            throw std::runtime_error("New Extent must be equal or greater than previous Extent");
+    if (newExtents.size() != rank)
+        throw std::runtime_error(
+            "Dimensionality of extended Dataset must match the original "
+            "dimensionality");
+    for (size_t i = 0; i < newExtents.size(); ++i)
+        if (newExtents[i] < extent[i])
+            throw std::runtime_error(
+                "New Extent must be equal or greater than previous Extent");
 
     extent = newExtents;
     return *this;
 }
 
-Dataset&
-Dataset::setChunkSize(Extent const& cs)
+Dataset &Dataset::setChunkSize(Extent const &cs)
 {
-    if( extent.size() != rank )
-        throw std::runtime_error("Dimensionality of extended Dataset must match the original dimensionality");
-    for( size_t i = 0; i < cs.size(); ++i )
-        if( cs[i] > extent[i] )
-            throw std::runtime_error("Dataset chunk size must be equal or smaller than Extent");
+    if (extent.size() != rank)
+        throw std::runtime_error(
+            "Dimensionality of extended Dataset must match the original "
+            "dimensionality");
+    for (size_t i = 0; i < cs.size(); ++i)
+        if (cs[i] > extent[i])
+            throw std::runtime_error(
+                "Dataset chunk size must be equal or smaller than Extent");
 
     chunkSize = cs;
     return *this;
 }
 
-Dataset&
-Dataset::setCompression(std::string const& format, uint8_t const level)
+Dataset &Dataset::setCompression(std::string const &format, uint8_t const level)
 {
-    if(format == "zlib" || format == "gzip" || format == "deflate")
+    if (format == "zlib" || format == "gzip" || format == "deflate")
     {
-        if(level > 9)
-            throw std::runtime_error("Compression level out of range for " + format);
+        if (level > 9)
+            throw std::runtime_error(
+                "Compression level out of range for " + format);
     }
     else
         std::cerr << "Unknown compression format " << format
                   << ". This might mean that compression will not be enabled."
                   << std::endl;
 
-    compression = format + ':' + std::to_string(static_cast< int >(level));
+    compression = format + ':' + std::to_string(static_cast<int>(level));
     return *this;
 }
 
-Dataset&
-Dataset::setCustomTransform(std::string const& parameter)
+Dataset &Dataset::setCustomTransform(std::string const &parameter)
 {
     transform = parameter;
     return *this;
 }
-} // openPMD
+} // namespace openPMD

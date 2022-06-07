@@ -20,67 +20,68 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/Option.hpp"
-#include "openPMD/auxiliary/Variant.hpp"
-#include "openPMD/backend/Attributable.hpp"
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Streaming.hpp"
-
+#include "openPMD/auxiliary/Option.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
 
 namespace openPMD
 {
-/** @brief  Logical compilation of data from one snapshot (e.g. a single simulation cycle).
+/** @brief  Logical compilation of data from one snapshot (e.g. a single
+ * simulation cycle).
  *
- * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
+ * @see
+ * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
 class Iteration : public LegacyAttributable
 {
-    template<
-            typename T,
-            typename T_key,
-            typename T_container
-    >
+    template <typename T, typename T_key, typename T_container>
     friend class Container;
     friend class SeriesInterface;
     friend class WriteIterations;
     friend class SeriesIterator;
 
 public:
-    Iteration( Iteration const & ) = default;
-    Iteration & operator=( Iteration const & ) = default;
+    Iteration(Iteration const &) = default;
+    Iteration &operator=(Iteration const &) = default;
 
     /**
-     * @tparam  T   Floating point type of user-selected precision (e.g. float, double).
+     * @tparam  T   Floating point type of user-selected precision (e.g. float,
+     * double).
      * @return  Global reference time for this iteration.
      */
-    template< typename T >
+    template <typename T>
     T time() const;
     /** Set the global reference time for this iteration.
      *
-     * @tparam  T       Floating point type of user-selected precision (e.g. float, double).
+     * @tparam  T       Floating point type of user-selected precision (e.g.
+     * float, double).
      * @param   newTime Global reference time for this iteration.
      * @return  Reference to modified iteration.
      */
-    template< typename T >
-    Iteration& setTime(T newTime);
+    template <typename T>
+    Iteration &setTime(T newTime);
 
     /**
-     * @tparam  T   Floating point type of user-selected precision (e.g. float, double).
+     * @tparam  T   Floating point type of user-selected precision (e.g. float,
+     * double).
      * @return  Time step used to reach this iteration.
      */
-    template< typename T >
+    template <typename T>
     T dt() const;
     /** Set the time step used to reach this iteration.
      *
-     * @tparam  T     Floating point type of user-selected precision (e.g. float, double).
+     * @tparam  T     Floating point type of user-selected precision (e.g.
+     * float, double).
      * @param   newDt Time step used to reach this iteration.
      * @return  Reference to modified iteration.
      */
-    template< typename T >
-    Iteration& setDt(T newDt);
+    template <typename T>
+    Iteration &setDt(T newDt);
 
     /**
      * @return Conversion factor to convert time and dt to seconds.
@@ -91,7 +92,7 @@ public:
      * @param  newTimeUnitSI new value for timeUnitSI
      * @return Reference to modified iteration.
      */
-    Iteration& setTimeUnitSI(double newTimeUnitSI);
+    Iteration &setTimeUnitSI(double newTimeUnitSI);
 
     /** Close an iteration
      *
@@ -108,8 +109,7 @@ public:
      * API. Currently, disallowing to reopen closed iterations satisfies
      * the requirements of the streaming API.
      */
-    Iteration &
-    close( bool flush = true );
+    Iteration &close(bool flush = true);
 
     /** Open an iteration
      *
@@ -124,8 +124,7 @@ public:
      *
      * @return Reference to iteration.
      */
-    Iteration &
-    open();
+    Iteration &open();
 
     /**
      * @brief Has the iteration been closed?
@@ -133,8 +132,7 @@ public:
      *
      * @return Whether the iteration has been closed.
      */
-    bool
-    closed() const;
+    bool closed() const;
 
     /**
      * @brief Has the iteration been closed by the writer?
@@ -147,13 +145,13 @@ public:
      * @return Whether the iteration has been explicitly closed (yet) by the
      *         writer.
      */
-    bool
-    closedByWriter() const;
+    bool closedByWriter() const;
 
-    Container< Mesh > meshes;
-    Container< ParticleSpecies > particles; //particleSpecies?
+    Container<Mesh> meshes;
+    Container<ParticleSpecies> particles; // particleSpecies?
 
     virtual ~Iteration() = default;
+
 private:
     Iteration();
 
@@ -179,35 +177,39 @@ private:
          * containing this iteration.
          */
         std::string filename;
+        bool beginStep = false;
     };
 
-    void flushFileBased(std::string const&, uint64_t);
-    void flushGroupBased(uint64_t);
-    void flushVariableBased(uint64_t);
-    void flush();
-    void deferParseAccess( DeferredParseAccess );
+    void flushFileBased(
+        std::string const &, uint64_t, internal::FlushParams const &);
+    void flushGroupBased(uint64_t, internal::FlushParams const &);
+    void flushVariableBased(uint64_t, internal::FlushParams const &);
+    void flush(internal::FlushParams const &);
+    void deferParseAccess(DeferredParseAccess);
     /*
-     * Control flow for read(), readFileBased(), readGroupBased() and
-     * read_impl():
-     * read() is called as the entry point. File-based and group-based
+     * Control flow for runDeferredParseAccess(), readFileBased(),
+     * readGroupBased() and read_impl():
+     * runDeferredParseAccess() is called as the entry point.
+     * File-based and group-based
      * iteration layouts need to be parsed slightly differently:
      * In file-based iteration layout, each iteration's file also contains
      * attributes for the /data group. In group-based layout, those have
      * already been parsed during opening of the Series.
-     * Hence, read() will call either readFileBased() or readGroupBased() to
+     * Hence, runDeferredParseAccess() will call either readFileBased() or
+     * readGroupBased() to
      * allow for those different control flows.
      * Finally, read_impl() is called which contains the common parsing
      * logic for an iteration.
-     * 
+     *
      * reread() reads again an Iteration that has been previously read.
      * Calling it on an Iteration not yet parsed is an error.
      *
      */
-    void read();
-    void reread( std::string const & path );
-    void readFileBased( std::string filePath, std::string const & groupPath );
-    void readGorVBased( std::string const & groupPath );
-    void read_impl( std::string const & groupPath );
+    void reread(std::string const &path);
+    void readFileBased(
+        std::string filePath, std::string const &groupPath, bool beginStep);
+    void readGorVBased(std::string const &groupPath, bool beginStep);
+    void read_impl(std::string const &groupPath);
 
     /**
      * @brief Whether an iteration has been closed yet.
@@ -216,7 +218,7 @@ private:
     enum class CloseStatus
     {
         ParseAccessDeferred, //!< The reader has not yet parsed this iteration
-        Open,             //!< Iteration has not been closed
+        Open, //!< Iteration has not been closed
         ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
                                been propagated to the backend */
         ClosedInBackend, /*!< Iteration has been closed and task has been
@@ -233,8 +235,8 @@ private:
      * Once an iteration has been closed, no further flushes shall be performed.
      * If flushing a closed file, the old file may otherwise be overwritten.
      */
-    std::shared_ptr< CloseStatus > m_closed =
-        std::make_shared< CloseStatus >( CloseStatus::Open );
+    std::shared_ptr<CloseStatus> m_closed =
+        std::make_shared<CloseStatus>(CloseStatus::Open);
 
     /**
      * Whether a step is currently active for this iteration.
@@ -243,13 +245,18 @@ private:
      * Access via stepStatus() method to automatically select the correct
      * one among both flags.
      */
-    std::shared_ptr< StepStatus > m_stepStatus =
-        std::make_shared< StepStatus >( StepStatus::NoStep );
+    std::shared_ptr<StepStatus> m_stepStatus =
+        std::make_shared<StepStatus>(StepStatus::NoStep);
 
-    std::shared_ptr< auxiliary::Option< DeferredParseAccess > >
+    std::shared_ptr<auxiliary::Option<DeferredParseAccess> >
         m_deferredParseAccess =
-            std::make_shared< auxiliary::Option< DeferredParseAccess > >(
-                auxiliary::Option< DeferredParseAccess >() );
+            std::make_shared<auxiliary::Option<DeferredParseAccess> >(
+                auxiliary::Option<DeferredParseAccess>());
+
+    std::shared_ptr<auxiliary::Option<std::string> >
+        m_overrideFilebasedFilename =
+            std::make_shared<auxiliary::Option<std::string> >(
+                auxiliary::Option<std::string>());
 
     /**
      * @brief Begin an IO step on the IO file (or file-like object)
@@ -258,8 +265,7 @@ private:
      *
      * @return AdvanceStatus
      */
-    AdvanceStatus
-    beginStep();
+    AdvanceStatus beginStep(bool reread);
 
     /**
      * @brief End an IO step on the IO file (or file-like object)
@@ -268,8 +274,7 @@ private:
      *
      * @return AdvanceStatus
      */
-    void
-    endStep();
+    void endStep();
 
     /**
      * @brief Is a step currently active for this iteration?
@@ -279,8 +284,7 @@ private:
      * in case of file-based iteration layout, it is local (member of this very
      * object).
      */
-    StepStatus
-    getStepStatus();
+    StepStatus getStepStatus();
 
     /**
      * @brief Set step activity status for this iteration.
@@ -290,7 +294,7 @@ private:
      * in case of file-based iteration layout, it is set locally (member of
      * this very object).
      */
-    void setStepStatus( StepStatus );
+    void setStepStatus(StepStatus);
 
     /*
      * @brief Check recursively whether this Iteration is dirty.
@@ -300,56 +304,44 @@ private:
      * @return true If dirty.
      * @return false Otherwise.
      */
-    bool
-    dirtyRecursive() const;
+    bool dirtyRecursive() const;
 
     /**
      * @brief Link with parent.
-     * 
+     *
      * @param w The Writable representing the parent.
      */
-    virtual void linkHierarchy(Writable& w);
+    virtual void linkHierarchy(Writable &w);
 
     /**
      * @brief Access an iteration in read mode that has potentially not been
      *      parsed yet.
-     * 
+     *
      */
     void runDeferredParseAccess();
-};  // Iteration
+}; // Iteration
 
-extern template
-float
-Iteration::time< float >() const;
+extern template float Iteration::time<float>() const;
 
-extern template
-double
-Iteration::time< double >() const;
+extern template double Iteration::time<double>() const;
 
-extern template
-long double
-Iteration::time< long double >() const;
+extern template long double Iteration::time<long double>() const;
 
-template< typename T >
-inline T
-Iteration::time() const
-{ return this->readFloatingpoint< T >("time"); }
+template <typename T>
+inline T Iteration::time() const
+{
+    return this->readFloatingpoint<T>("time");
+}
 
+extern template float Iteration::dt<float>() const;
 
-extern template
-float
-Iteration::dt< float >() const;
+extern template double Iteration::dt<double>() const;
 
-extern template
-double
-Iteration::dt< double >() const;
+extern template long double Iteration::dt<long double>() const;
 
-extern template
-long double
-Iteration::dt< long double >() const;
-
-template< typename T >
-inline T
-Iteration::dt() const
-{ return this->readFloatingpoint< T >("dt"); }
-} // openPMD
+template <typename T>
+inline T Iteration::dt() const
+{
+    return this->readFloatingpoint<T>("dt");
+}
+} // namespace openPMD

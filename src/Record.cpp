@@ -24,7 +24,6 @@
 
 #include <iostream>
 
-
 namespace openPMD
 {
 Record::Record()
@@ -32,101 +31,103 @@ Record::Record()
     setTimeOffset(0.f);
 }
 
-Record&
-Record::setUnitDimension(std::map< UnitDimension, double > const& udim)
+Record &Record::setUnitDimension(std::map<UnitDimension, double> const &udim)
 {
-    if( !udim.empty() )
+    if (!udim.empty())
     {
-        std::array< double, 7 > tmpUnitDimension = this->unitDimension();
-        for( auto const& entry : udim )
+        std::array<double, 7> tmpUnitDimension = this->unitDimension();
+        for (auto const &entry : udim)
             tmpUnitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
 }
 
-void
-Record::flush_impl(std::string const& name)
+void Record::flush_impl(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
-    if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
+    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
     {
-        for( auto& comp : *this )
-            comp.second.flush(comp.first);
-    } else
+        for (auto &comp : *this)
+            comp.second.flush(comp.first, flushParams);
+    }
+    else
     {
-        if( !written() )
+        if (!written())
         {
-            if( scalar() )
+            if (scalar())
             {
-                RecordComponent& rc = at(RecordComponent::SCALAR);
+                RecordComponent &rc = at(RecordComponent::SCALAR);
                 rc.parent() = parent();
-                rc.flush(name);
-                IOHandler()->flush();
-                writable().abstractFilePosition = rc.writable().abstractFilePosition;
+                rc.flush(name, flushParams);
+                IOHandler()->flush(flushParams);
+                writable().abstractFilePosition =
+                    rc.writable().abstractFilePosition;
                 written() = true;
-            } else
+            }
+            else
             {
-                Parameter< Operation::CREATE_PATH > pCreate;
+                Parameter<Operation::CREATE_PATH> pCreate;
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
-                for( auto& comp : *this )
+                for (auto &comp : *this)
                     comp.second.parent() = getWritable(this);
             }
         }
 
-        if( scalar() )
+        if (scalar())
         {
-            for( auto& comp : *this )
+            for (auto &comp : *this)
             {
-                comp.second.flush(name);
+                comp.second.flush(name, flushParams);
                 writable().abstractFilePosition =
                     comp.second.writable().abstractFilePosition;
             }
         }
         else
         {
-            for( auto& comp : *this )
-                comp.second.flush(comp.first);
+            for (auto &comp : *this)
+                comp.second.flush(comp.first, flushParams);
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
     }
 }
 
-void
-Record::read()
+void Record::read()
 {
-    if( scalar() )
+    if (scalar())
     {
         /* using operator[] will incorrectly update parent */
         this->at(RecordComponent::SCALAR).read();
-    } else
+    }
+    else
     {
-        Parameter< Operation::LIST_PATHS > pList;
+        Parameter<Operation::LIST_PATHS> pList;
         IOHandler()->enqueue(IOTask(this, pList));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
-        Parameter< Operation::OPEN_PATH > pOpen;
-        for( auto const& component : *pList.paths )
+        Parameter<Operation::OPEN_PATH> pOpen;
+        for (auto const &component : *pList.paths)
         {
-            RecordComponent& rc = (*this)[component];
+            RecordComponent &rc = (*this)[component];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
             rc.read();
         }
 
-        Parameter< Operation::LIST_DATASETS > dList;
+        Parameter<Operation::LIST_DATASETS> dList;
         IOHandler()->enqueue(IOTask(this, dList));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
-        Parameter< Operation::OPEN_DATASET > dOpen;
-        for( auto const& component : *dList.datasets )
+        Parameter<Operation::OPEN_DATASET> dOpen;
+        for (auto const &component : *dList.datasets)
         {
-            RecordComponent & rc = ( *this )[ component ];
+            RecordComponent &rc = (*this)[component];
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;
@@ -136,10 +137,10 @@ Record::read()
 
     readBase();
 
-    readAttributes( ReadMode::FullyReread );
+    readAttributes(ReadMode::FullyReread);
 }
 
 template <>
-BaseRecord<RecordComponent>::mapped_type&
-BaseRecord<RecordComponent>::operator[](std::string&& key);
-} // openPMD
+BaseRecord<RecordComponent>::mapped_type &
+BaseRecord<RecordComponent>::operator[](std::string &&key);
+} // namespace openPMD

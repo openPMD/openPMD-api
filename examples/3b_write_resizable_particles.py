@@ -6,9 +6,8 @@ Copyright 2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
-import openpmd_api as io
 import numpy as np
-
+import openpmd_api as io
 
 if __name__ == "__main__":
     # open file for writing

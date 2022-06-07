@@ -29,35 +29,39 @@
 namespace py = pybind11;
 using namespace openPMD;
 
-
-void init_Dataset(py::module &m) {
+void init_Dataset(py::module &m)
+{
     py::class_<Dataset>(m, "Dataset")
 
-        .def(py::init<Datatype, Extent>(),
-            py::arg("dtype"), py::arg("extent")
-        )
+        .def(py::init<Datatype, Extent>(), py::arg("dtype"), py::arg("extent"))
         .def(py::init<Extent>(), py::arg("extent"))
-        .def(py::init( [](py::dtype dt, Extent e) {
-            auto const d = dtype_from_numpy( dt );
-            return new Dataset{d, e};
-        }),
-            py::arg("dtype"), py::arg("extent")
-        )
-        .def(py::init<Datatype, Extent, std::string>(),
-            py::arg("dtype"), py::arg("extent"), py::arg("options")
-        )
-        .def(py::init( [](py::dtype dt, Extent e, std::string options) {
-            auto const d = dtype_from_numpy( dt );
-            return new Dataset{d, e, std::move(options)};
-        }),
-            py::arg("dtype"), py::arg("extent"), py::arg("options")
-        )
+        .def(
+            py::init([](py::dtype dt, Extent e) {
+                auto const d = dtype_from_numpy(dt);
+                return new Dataset{d, e};
+            }),
+            py::arg("dtype"),
+            py::arg("extent"))
+        .def(
+            py::init<Datatype, Extent, std::string>(),
+            py::arg("dtype"),
+            py::arg("extent"),
+            py::arg("options"))
+        .def(
+            py::init([](py::dtype dt, Extent e, std::string options) {
+                auto const d = dtype_from_numpy(dt);
+                return new Dataset{d, e, std::move(options)};
+            }),
+            py::arg("dtype"),
+            py::arg("extent"),
+            py::arg("options"))
 
-        .def("__repr__",
+        .def(
+            "__repr__",
             [](const Dataset &d) {
-                return "<openPMD.Dataset of rank '" + std::to_string(d.rank) + "'>";
-            }
-        )
+                return "<openPMD.Dataset of rank '" + std::to_string(d.rank) +
+                    "'>";
+            })
 
         .def_readonly("extent", &Dataset::extent)
         .def("extend", &Dataset::extend)
@@ -68,10 +72,7 @@ void init_Dataset(py::module &m) {
         .def_readonly("transform", &Dataset::transform)
         .def("set_custom_transform", &Dataset::setCustomTransform)
         .def_readonly("rank", &Dataset::rank)
-        .def_property_readonly("dtype", [](const Dataset &d) {
-            return dtype_to_numpy( d.dtype );
-        })
-        .def_readwrite("options", &Dataset::options)
-    ;
+        .def_property_readonly(
+            "dtype", [](const Dataset &d) { return dtype_to_numpy(d.dtype); })
+        .def_readwrite("options", &Dataset::options);
 }
-

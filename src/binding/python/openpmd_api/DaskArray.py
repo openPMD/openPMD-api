@@ -6,7 +6,9 @@ Authors: Axel Huebl
 License: LGPLv3+
 """
 import math
+
 import numpy as np
+
 try:
     from dask.array import from_array
     found_dask = True

@@ -24,7 +24,6 @@
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Container.hpp"
 
-
 namespace openPMD
 {
 class Series;
@@ -44,13 +43,13 @@ class Series;
  * not possible once it has been closed.
  *
  */
-class WriteIterations : private Container< Iteration, uint64_t >
+class WriteIterations : private Container<Iteration, uint64_t>
 {
     friend class Series;
 
 private:
-    using iterations_t = Container< Iteration, uint64_t >;
-    
+    using iterations_t = Container<Iteration, uint64_t>;
+
 public:
     using key_type = typename iterations_t::key_type;
     using mapped_type = typename iterations_t::mapped_type;
@@ -61,19 +60,19 @@ private:
     struct SharedResources
     {
         iterations_t iterations;
-        auxiliary::Option< uint64_t > currentlyOpen;
+        auxiliary::Option<uint64_t> currentlyOpen;
 
-        SharedResources( iterations_t );
+        SharedResources(iterations_t);
         ~SharedResources();
     };
 
-    WriteIterations( iterations_t );
+    WriteIterations(iterations_t);
     explicit WriteIterations() = default;
     //! Index of the last opened iteration
-    std::shared_ptr< SharedResources > shared;
+    std::shared_ptr<SharedResources> shared;
 
 public:
-    mapped_type & operator[]( key_type const & key ) override;
-    mapped_type & operator[]( key_type && key ) override;
+    mapped_type &operator[](key_type const &key) override;
+    mapped_type &operator[](key_type &&key) override;
 };
 } // namespace openPMD

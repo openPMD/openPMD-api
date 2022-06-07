@@ -20,13 +20,13 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/config.hpp"
 
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
+#include <mpi.h>
 #endif
 
 #include <future>
@@ -35,32 +35,35 @@
 #include <stdexcept>
 #include <string>
 
-
 namespace openPMD
 {
 class no_such_file_error : public std::runtime_error
 {
 public:
-    no_such_file_error(std::string const& what_arg)
-            : std::runtime_error(what_arg)
-    { }
-    virtual ~no_such_file_error() { }
+    no_such_file_error(std::string const &what_arg)
+        : std::runtime_error(what_arg)
+    {}
+    virtual ~no_such_file_error()
+    {}
 };
 
 class unsupported_data_error : public std::runtime_error
 {
 public:
-    unsupported_data_error(std::string const& what_arg)
-            : std::runtime_error(what_arg)
-    { }
-    virtual ~unsupported_data_error() { }
+    unsupported_data_error(std::string const &what_arg)
+        : std::runtime_error(what_arg)
+    {}
+    virtual ~unsupported_data_error()
+    {}
 };
 
 /**
  * @brief Determine what items should be flushed upon Series::flush()
  *
  */
-enum class FlushLevel : unsigned char
+// do not write `enum class FlushLevel : unsigned char` here since NVHPC
+// does not compile it correctly
+enum class FlushLevel
 {
     /**
      * Flush operation that was triggered by user code.
@@ -83,9 +86,30 @@ enum class FlushLevel : unsigned char
      * CREATE_DATASET tasks.
      * Attributes may or may not be flushed yet.
      */
-    SkeletonOnly
+    SkeletonOnly,
+    /**
+     * Only creates/opens files, nothing more
+     */
+    CreateOrOpenFiles
 };
 
+namespace internal
+{
+    /**
+     * Parameters recursively passed through the openPMD hierarchy when
+     * flushing.
+     *
+     */
+    struct FlushParams
+    {
+        FlushLevel flushLevel = FlushLevel::InternalFlush;
+    };
+
+    /*
+     * To be used for reading
+     */
+    constexpr FlushParams defaultFlushParams{};
+} // namespace internal
 
 /** Interface for communicating between logical and physically persistent data.
  *
@@ -100,32 +124,30 @@ class AbstractIOHandler
 public:
 #if openPMD_HAVE_MPI
     AbstractIOHandler(std::string path, Access at, MPI_Comm)
-        : directory{std::move(path)},
-          m_backendAccess{at},
-          m_frontendAccess{at}
-    { }
+        : directory{std::move(path)}, m_backendAccess{at}, m_frontendAccess{at}
+    {}
 #endif
     AbstractIOHandler(std::string path, Access at)
-        : directory{std::move(path)},
-          m_backendAccess{at},
-          m_frontendAccess{at}
-    { }
+        : directory{std::move(path)}, m_backendAccess{at}, m_frontendAccess{at}
+    {}
     virtual ~AbstractIOHandler() = default;
 
     /** Add provided task to queue according to FIFO.
      *
-     * @param   iotask  Task to be executed after all previously enqueued IOTasks complete.
+     * @param   iotask  Task to be executed after all previously enqueued
+     * IOTasks complete.
      */
-    virtual void enqueue(IOTask const& iotask)
+    virtual void enqueue(IOTask const &iotask)
     {
         m_work.push(iotask);
     }
 
     /** Process operations in queue according to FIFO.
      *
-     * @return  Future indicating the completion state of the operation for backends that decide to implement this operation asynchronously.
+     * @return  Future indicating the completion state of the operation for
+     * backends that decide to implement this operation asynchronously.
      */
-    virtual std::future< void > flush() = 0;
+    virtual std::future<void> flush(internal::FlushParams const &) = 0;
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;
@@ -133,8 +155,7 @@ public:
     std::string const directory;
     Access const m_backendAccess;
     Access const m_frontendAccess;
-    std::queue< IOTask > m_work;
-    FlushLevel m_flushLevel = FlushLevel::InternalFlush;
+    std::queue<IOTask> m_work;
 }; // AbstractIOHandler
 
 } // namespace openPMD

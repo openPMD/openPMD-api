@@ -8,7 +8,6 @@ License: LGPLv3+
 """
 import openpmd_api as io
 
-
 if __name__ == "__main__":
     series = io.Series("../samples/git-sample/data%T.h5",
                        io.Access.read_only)

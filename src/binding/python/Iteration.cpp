@@ -23,29 +23,41 @@
 
 #include "openPMD/Iteration.hpp"
 
+#include <ios>
+#include <sstream>
 #include <string>
 
 namespace py = pybind11;
 using namespace openPMD;
 
-
-void init_Iteration(py::module &m) {
+void init_Iteration(py::module &m)
+{
     py::class_<Iteration, Attributable>(m, "Iteration")
         .def(py::init<Iteration const &>())
 
-        .def("__repr__",
-            [](Iteration const & it) {
-                return "<openPMD.Iteration at t = '" + std::to_string(it.template time<double>() * it.timeUnitSI()) + " s'>";
-            }
-        )
+        .def(
+            "__repr__",
+            [](Iteration const &it) {
+                std::stringstream ss;
+                ss << "<openPMD.Iteration at t = '" << std::scientific
+                   << it.template time<double>() * it.timeUnitSI() << " s'>";
+                return ss.str();
+            })
 
-        .def_property("time", &Iteration::time<float>, &Iteration::setTime<float>)
-        .def_property("time", &Iteration::time<double>, &Iteration::setTime<double>)
-        .def_property("time", &Iteration::time<long double>, &Iteration::setTime<long double>)
+        .def_property(
+            "time", &Iteration::time<float>, &Iteration::setTime<float>)
+        .def_property(
+            "time", &Iteration::time<double>, &Iteration::setTime<double>)
+        .def_property(
+            "time",
+            &Iteration::time<long double>,
+            &Iteration::setTime<long double>)
         .def_property("dt", &Iteration::dt<float>, &Iteration::setDt<float>)
         .def_property("dt", &Iteration::dt<double>, &Iteration::setDt<double>)
-        .def_property("dt", &Iteration::dt<long double>, &Iteration::setDt<long double>)
-        .def_property("time_unit_SI", &Iteration::timeUnitSI, &Iteration::setTimeUnitSI)
+        .def_property(
+            "dt", &Iteration::dt<long double>, &Iteration::setDt<long double>)
+        .def_property(
+            "time_unit_SI", &Iteration::timeUnitSI, &Iteration::setTimeUnitSI)
         .def("open", &Iteration::open)
         .def("close", &Iteration::close, py::arg("flush") = true)
 
@@ -58,13 +70,16 @@ void init_Iteration(py::module &m) {
         .def("set_dt", &Iteration::setDt<long double>)
         .def("set_time_unit_SI", &Iteration::setTimeUnitSI)
 
-        .def_readwrite("meshes", &Iteration::meshes,
+        .def_readwrite(
+            "meshes",
+            &Iteration::meshes,
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Iteration
             py::keep_alive<1, 0>())
-        .def_readwrite("particles", &Iteration::particles,
+        .def_readwrite(
+            "particles",
+            &Iteration::particles,
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Iteration
-            py::keep_alive<1, 0>())
-    ;
+            py::keep_alive<1, 0>());
 }

@@ -21,20 +21,18 @@
 
 #pragma once
 
-#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractFilePosition.hpp"
+#include "openPMD/config.hpp"
 
 #include <nlohmann/json.hpp>
 
-
 namespace openPMD
 {
-    struct JSONFilePosition :
-        public AbstractFilePosition
-    {
-        using json = nlohmann::json;
-        json::json_pointer id;
+struct JSONFilePosition : public AbstractFilePosition
+{
+    using json = nlohmann::json;
+    json::json_pointer id;
 
-        JSONFilePosition( json::json_pointer ptr = json::json_pointer( ) );
-    };
-} // openPMD
+    JSONFilePosition(json::json_pointer ptr = json::json_pointer());
+};
+} // namespace openPMD

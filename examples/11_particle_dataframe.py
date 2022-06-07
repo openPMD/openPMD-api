@@ -6,9 +6,11 @@ Copyright 2021 openPMD contributors
 Authors: Axel Huebl, Dmitry Ganyushin
 License: LGPLv3+
 """
-import openpmd_api as io
-import numpy as np
 import sys
+
+import numpy as np
+import openpmd_api as io
+
 try:
     import pandas as pd
 except ImportError:
@@ -16,9 +18,9 @@ except ImportError:
     sys.exit()
 found_dask = False
 try:
-    from dask.delayed import delayed
-    import dask.array as da
     import dask
+    import dask.array as da
+    from dask.delayed import delayed
     found_dask = True
 except ImportError:
     print("dask NOT found. Install dask to run the 2nd example.")

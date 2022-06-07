@@ -23,25 +23,24 @@
 #include <cassert>
 #include <iostream>
 #if __cplusplus >= 201703L
-#   include <variant> // IWYU pragma: export
+#include <variant> // IWYU pragma: export
 #else
-#   error "Not a C++17 implementation"
+#error "Not a C++17 implementation"
 #endif
-
 
 int main()
 {
-    std::variant< int, float > v;
+    std::variant<int, float> v;
     v = 42;
-    int i = std::get< int >(v);
+    int i = std::get<int>(v);
     assert(42 == i);
-    assert(42 == std::get< 0 >(v));
+    assert(42 == std::get<0>(v));
 
     try
     {
-      std::get< float >(v);
+        std::get<float>(v);
     }
-    catch( std::bad_variant_access const & ex )
+    catch (std::bad_variant_access const &ex)
     {
         std::cout << ex.what() << std::endl;
     }

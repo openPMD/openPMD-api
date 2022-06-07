@@ -34,69 +34,62 @@ namespace openPMD
 {
 namespace auxiliary
 {
-    TracingJSON::TracingJSON() : TracingJSON( nlohmann::json() )
-    {
-    }
+    TracingJSON::TracingJSON() : TracingJSON(nlohmann::json())
+    {}
 
-    TracingJSON::TracingJSON( nlohmann::json originalJSON )
+    TracingJSON::TracingJSON(nlohmann::json originalJSON)
         : m_originalJSON(
-              std::make_shared< nlohmann::json >( std::move( originalJSON ) ) ),
-          m_shadow( std::make_shared< nlohmann::json >() ),
-          m_positionInOriginal( &*m_originalJSON ),
-          m_positionInShadow( &*m_shadow )
-    {
-    }
+              std::make_shared<nlohmann::json>(std::move(originalJSON)))
+        , m_shadow(std::make_shared<nlohmann::json>())
+        , m_positionInOriginal(&*m_originalJSON)
+        , m_positionInShadow(&*m_shadow)
+    {}
 
-    nlohmann::json const &
-    TracingJSON::getShadow()
+    nlohmann::json const &TracingJSON::getShadow()
     {
         return *m_positionInShadow;
     }
 
-    nlohmann::json
-    TracingJSON::invertShadow()
+    nlohmann::json TracingJSON::invertShadow()
     {
         nlohmann::json inverted = *m_positionInOriginal;
-        invertShadow( inverted, *m_positionInShadow );
+        invertShadow(inverted, *m_positionInShadow);
         return inverted;
     }
 
-    void
-    TracingJSON::invertShadow(
-        nlohmann::json & result,
-        nlohmann::json const & shadow )
+    void TracingJSON::invertShadow(
+        nlohmann::json &result, nlohmann::json const &shadow)
     {
-        if( !shadow.is_object() )
+        if (!shadow.is_object())
         {
             return;
         }
-        std::vector< std::string > toRemove;
-        for( auto it = shadow.begin(); it != shadow.end(); ++it )
+        std::vector<std::string> toRemove;
+        for (auto it = shadow.begin(); it != shadow.end(); ++it)
         {
-            nlohmann::json & partialResult = result[ it.key() ];
-            if( partialResult.is_object() )
+            nlohmann::json &partialResult = result[it.key()];
+            if (partialResult.is_object())
             {
-                invertShadow( partialResult, it.value() );
-                if( partialResult.size() == 0 )
+                invertShadow(partialResult, it.value());
+                if (partialResult.size() == 0)
                 {
-                    toRemove.emplace_back( it.key() );
+                    toRemove.emplace_back(it.key());
                 }
             }
             else
             {
-                toRemove.emplace_back( it.key() );
+                toRemove.emplace_back(it.key());
             }
         }
-        for( auto const & key : toRemove )
+        for (auto const &key : toRemove)
         {
-            result.erase( key );
+            result.erase(key);
         }
     }
 
-    void
-    TracingJSON::declareFullyRead()
+    void TracingJSON::declareFullyRead()
     {
-        if( m_trace )
+        if (m_trace)
         {
             // copy over
             *m_positionInShadow = *m_positionInOriginal;
@@ -104,76 +97,74 @@ namespace auxiliary
     }
 
     TracingJSON::TracingJSON(
-        std::shared_ptr< nlohmann::json > originalJSON,
-        std::shared_ptr< nlohmann::json > shadow,
-        nlohmann::json * positionInOriginal,
-        nlohmann::json * positionInShadow,
-        bool trace )
-        : m_originalJSON( std::move( originalJSON ) ),
-          m_shadow( std::move( shadow ) ),
-          m_positionInOriginal( positionInOriginal ),
-          m_positionInShadow( positionInShadow ),
-          m_trace( trace )
-    {
-    }
+        std::shared_ptr<nlohmann::json> originalJSON,
+        std::shared_ptr<nlohmann::json> shadow,
+        nlohmann::json *positionInOriginal,
+        nlohmann::json *positionInShadow,
+        bool trace)
+        : m_originalJSON(std::move(originalJSON))
+        , m_shadow(std::move(shadow))
+        , m_positionInOriginal(positionInOriginal)
+        , m_positionInShadow(positionInShadow)
+        , m_trace(trace)
+    {}
 
-    namespace {
-    auxiliary::Option< std::string >
-    extractFilename( std::string const & unparsed )
+    namespace
     {
-        std::string trimmed = auxiliary::trim(
-            unparsed, []( char c ) { return std::isspace( c ); } );
-        if( trimmed.at( 0 ) == '@' )
+        auxiliary::Option<std::string>
+        extractFilename(std::string const &unparsed)
         {
-            trimmed = trimmed.substr( 1 );
-            trimmed = auxiliary::trim(
-                trimmed, []( char c ) { return std::isspace( c ); } );
-            return auxiliary::makeOption( trimmed );
+            std::string trimmed = auxiliary::trim(
+                unparsed, [](char c) { return std::isspace(c); });
+            if (trimmed.at(0) == '@')
+            {
+                trimmed = trimmed.substr(1);
+                trimmed = auxiliary::trim(
+                    trimmed, [](char c) { return std::isspace(c); });
+                return auxiliary::makeOption(trimmed);
+            }
+            else
+            {
+                return auxiliary::Option<std::string>{};
+            }
         }
-        else
-        {
-            return auxiliary::Option< std::string >{};
-        }
-    }
-    }
+    } // namespace
 
-    nlohmann::json
-    parseOptions( std::string const & options )
+    nlohmann::json parseOptions(std::string const &options)
     {
-        auto filename = extractFilename( options );
-        if( filename.has_value() )
+        auto filename = extractFilename(options);
+        if (filename.has_value())
         {
             std::fstream handle;
-            handle.open( filename.get(), std::ios_base::in );
+            handle.open(filename.get(), std::ios_base::in);
             nlohmann::json res;
             handle >> res;
-            if( !handle.good() )
+            if (!handle.good())
             {
                 throw std::runtime_error(
                     "Failed reading JSON config from file " + filename.get() +
-                    "." );
+                    ".");
             }
             return res;
         }
         else
         {
-            return nlohmann::json::parse( options );
+            return nlohmann::json::parse(options);
         }
     }
 
 #if openPMD_HAVE_MPI
-    nlohmann::json
-    parseOptions( std::string const & options, MPI_Comm comm )
+    nlohmann::json parseOptions(std::string const &options, MPI_Comm comm)
     {
-        auto filename = extractFilename( options );
-        if( filename.has_value() )
+        auto filename = extractFilename(options);
+        if (filename.has_value())
         {
             return nlohmann::json::parse(
-                auxiliary::collective_file_read( filename.get(), comm ) );
+                auxiliary::collective_file_read(filename.get(), comm));
         }
         else
         {
-            return nlohmann::json::parse( options );
+            return nlohmann::json::parse(options);
         }
     }
 #endif

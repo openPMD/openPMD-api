@@ -1,12 +1,12 @@
 import os
-import re
-import sys
 import platform
+import re
 import subprocess
-
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
+import sys
 from distutils.version import LooseVersion
+
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
 
 class CMakeExtension(Extension):
@@ -79,6 +79,8 @@ class CMakeBuild(build_ext):
             #   just as well win32 & cygwin (although Windows has no RPaths)
             cmake_args.append('-DCMAKE_INSTALL_RPATH=$ORIGIN')
 
+        cmake_args += extra_cmake_args
+
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
 
@@ -139,6 +141,16 @@ BUILD_EXAMPLES = os.environ.get('openPMD_BUILD_EXAMPLES',
 CMAKE_INTERPROCEDURAL_OPTIMIZATION = os.environ.get(
     'CMAKE_INTERPROCEDURAL_OPTIMIZATION', None)
 
+# extra CMake arguments
+extra_cmake_args = []
+for k, v in os.environ.items():
+    extra_cmake_args_prefix = "openPMD_CMAKE_"
+    if k.startswith(extra_cmake_args_prefix) and \
+       len(k) > len(extra_cmake_args_prefix):
+        extra_cmake_args.append("-D{0}={1}".format(
+            k[len(extra_cmake_args_prefix):],
+            v))
+
 # https://cmake.org/cmake/help/v3.0/command/if.html
 if openPMD_USE_MPI.upper() in ['1', 'ON', 'TRUE', 'YES']:
     openPMD_USE_MPI = "ON"
@@ -156,7 +168,7 @@ with open('./requirements.txt') as f:
 setup(
     name='openPMD-api',
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
-    version='0.14.4',
+    version='0.14.5',
     author='Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu',
     author_email='axelhuebl@lbl.gov, f.poeschel@hzdr.de',
     maintainer='Axel Huebl',

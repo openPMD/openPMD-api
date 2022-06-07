@@ -23,13 +23,13 @@
 #include "openPMD/config.hpp"
 
 #if openPMD_HAS_CXX17
-#   include <variant> // IWYU pragma: export
+#include <variant> // IWYU pragma: export
 namespace variantSrc = std;
 #else
-    // see: https://github.com/mpark/variant/pull/76
-#   if defined(__EXCEPTIONS)
-#      define MPARK_EXCEPTIONS
-#   endif
-#   include <mpark/variant.hpp> // IWYU pragma: export
+// see: https://github.com/mpark/variant/pull/76
+#if defined(__EXCEPTIONS)
+#define MPARK_EXCEPTIONS
+#endif
+#include <mpark/variant.hpp> // IWYU pragma: export
 namespace variantSrc = mpark;
 #endif

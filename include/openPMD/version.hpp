@@ -29,11 +29,12 @@
  */
 #define OPENPMDAPI_VERSION_MAJOR 0
 #define OPENPMDAPI_VERSION_MINOR 14
-#define OPENPMDAPI_VERSION_PATCH 4
+#define OPENPMDAPI_VERSION_PATCH 5
 #define OPENPMDAPI_VERSION_LABEL ""
 /** @} */
 
-/** maximum supported version of the openPMD standard (read & write, compile-time)
+/** maximum supported version of the openPMD standard (read & write,
+ * compile-time)
  * @{
  */
 #define OPENPMD_STANDARD_MAJOR 1
@@ -51,49 +52,51 @@
 
 /** convert major, minor, patch version into a 1000th-interleaved number
  */
-#define OPENPMDAPI_VERSIONIFY(major,minor,patch) (major * 1000000 + minor * 1000 + patch)
+#define OPENPMDAPI_VERSIONIFY(major, minor, patch)                             \
+    (major * 1000000 + minor * 1000 + patch)
 
 /** Compare if the library version is greater or equal than major,minor,patch
  */
-#define OPENPMDAPI_VERSION_GE(major,minor,patch) \
-    (OPENPMDAPI_VERSIONIFY(OPENPMDAPI_VERSION_MAJOR,OPENPMDAPI_VERSION_MINOR,OPENPMDAPI_VERSION_PATCH) >= \
-     OPENPMDAPI_VERSIONIFY(major,minor,patch))
+#define OPENPMDAPI_VERSION_GE(major, minor, patch)                             \
+    (OPENPMDAPI_VERSIONIFY(                                                    \
+         OPENPMDAPI_VERSION_MAJOR,                                             \
+         OPENPMDAPI_VERSION_MINOR,                                             \
+         OPENPMDAPI_VERSION_PATCH) >=                                          \
+     OPENPMDAPI_VERSIONIFY(major, minor, patch))
 
 namespace openPMD
 {
-    /** Return the version of the openPMD-api library (run-time)
-     *
-     * @return std::string API version (dot separated)
-     */
-    std::string
-    getVersion( );
+/** Return the version of the openPMD-api library (run-time)
+ *
+ * @return std::string API version (dot separated)
+ */
+std::string getVersion();
 
-    /** Return the maximum supported version of the openPMD standard (read & write, run-time)
-     *
-     * @return std::string openPMD standard version (dot separated)
-     */
-    std::string
-    getStandard( );
+/** Return the maximum supported version of the openPMD standard (read & write,
+ * run-time)
+ *
+ * @return std::string openPMD standard version (dot separated)
+ */
+std::string getStandard();
 
-    /** Return the minimum supported version of the openPMD standard (read, run-time)
-     *
-     * @return std::string minimum openPMD standard version (dot separated)
-     */
-    std::string
-    getStandardMinimum( );
+/** Return the minimum supported version of the openPMD standard (read,
+ * run-time)
+ *
+ * @return std::string minimum openPMD standard version (dot separated)
+ */
+std::string getStandardMinimum();
 
-    /** Return the feature variants of the openPMD-api library (run-time)
-     *
-     * @return std::map< std::string, bool > with variants such as backends
-     */
-    std::map< std::string, bool >
-    getVariants( );
+/** Return the feature variants of the openPMD-api library (run-time)
+ *
+ * @return std::map< std::string, bool > with variants such as backends
+ */
+std::map<std::string, bool> getVariants();
 
-    /** Return the file extensions supported in this variant of the openPMD-api library (run-time)
-     *
-     * @return std::vector< std::string > with file extensions
-     */
-    std::vector< std::string >
-    getFileExtensions( );
+/** Return the file extensions supported in this variant of the openPMD-api
+ * library (run-time)
+ *
+ * @return std::vector< std::string > with file extensions
+ */
+std::vector<std::string> getFileExtensions();
 
 } // namespace openPMD

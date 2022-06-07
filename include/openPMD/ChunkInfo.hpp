@@ -24,7 +24,6 @@
 
 #include <vector>
 
-
 namespace openPMD
 {
 /**
@@ -41,10 +40,9 @@ struct ChunkInfo
      * If rank is smaller than zero, will be converted to zero.
      */
     explicit ChunkInfo() = default;
-    ChunkInfo( Offset, Extent );
+    ChunkInfo(Offset, Extent);
 
-    bool
-    operator==( ChunkInfo const & other ) const;
+    bool operator==(ChunkInfo const &other) const;
 };
 
 /**
@@ -68,12 +66,11 @@ struct WrittenChunkInfo : ChunkInfo
     /*
      * If rank is smaller than zero, will be converted to zero.
      */
-    WrittenChunkInfo( Offset, Extent, int sourceID );
-    WrittenChunkInfo( Offset, Extent );
+    WrittenChunkInfo(Offset, Extent, int sourceID);
+    WrittenChunkInfo(Offset, Extent);
 
-    bool
-    operator==( WrittenChunkInfo const & other ) const;
+    bool operator==(WrittenChunkInfo const &other) const;
 };
 
-using ChunkTable = std::vector< WrittenChunkInfo >;
+using ChunkTable = std::vector<WrittenChunkInfo>;
 } // namespace openPMD
