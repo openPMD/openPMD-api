@@ -134,6 +134,8 @@ public:
     Iteration(Iteration const &) = default;
     Iteration &operator=(Iteration const &) = default;
 
+    using IterationIndex_t = uint64_t;
+
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float,
      * double).
@@ -255,9 +257,9 @@ private:
     }
 
     void flushFileBased(
-        std::string const &, uint64_t, internal::FlushParams const &);
-    void flushGroupBased(uint64_t, internal::FlushParams const &);
-    void flushVariableBased(uint64_t, internal::FlushParams const &);
+        std::string const &, IterationIndex_t, internal::FlushParams const &);
+    void flushGroupBased(IterationIndex_t, internal::FlushParams const &);
+    void flushVariableBased(IterationIndex_t, internal::FlushParams const &);
     void flush(internal::FlushParams const &);
     void deferParseAccess(internal::DeferredParseAccess);
     /*
