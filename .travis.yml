@@ -6,7 +6,7 @@ branches:
 
 env:
   global:
-    - OPENPMD_GIT_REF="0.14.4"
+    - OPENPMD_GIT_REF="0.14.5"
 
     - CIBW_PROJECT_REQUIRES_PYTHON=">=3.6"
     # Install dependencies on Linux and OSX
@@ -134,13 +134,13 @@ install:
   - python3 -m pip install "patch==1.*"
 
 # Download & Apply Patches
-#before_script:
-#  - mkdir -p src/.patch
-#  - cd src/.patch
-#  - curl -sOL https://gist.githubusercontent.com/ax3l/4db2f1744e0e28e6c013ee4e752b3cb7/raw/324bdb60894d51608a48890573654e10e1b1c3a0/setupversion.patch
-#  - cd ..
-#  - python3 -m patch .patch/setupversion.patch
-#  - cd ..
+before_script:
+  - mkdir -p src/.patch
+  - cd src/.patch
+  - curl -sOL https://github.com/ax3l/openPMD-api/commit/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
+  - cd ..
+  - python3 -m patch .patch/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
+  - cd ..
 
 script:
   - cd src
