@@ -200,18 +200,16 @@ void RecordComponent::flush(
         rc.m_name = name;
         return;
     }
-    switch (IOHandler()->m_frontendAccess)
+    if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-    case Access::READ_ONLY:
         while (!rc.m_chunks.empty())
         {
             IOHandler()->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
-        break;
-    case Access::READ_WRITE:
-    case Access::CREATE:
-    case Access::APPEND: {
+    }
+    else
+    {
         /*
          * This catches when a user forgets to use resetDataset.
          */
@@ -277,8 +275,6 @@ void RecordComponent::flush(
         }
 
         flushAttributes(flushParams);
-        break;
-    }
     }
 }
 

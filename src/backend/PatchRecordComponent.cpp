@@ -84,19 +84,16 @@ void PatchRecordComponent::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {
     auto &rc = get();
-    switch (IOHandler()->m_frontendAccess)
+    if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-    case Access::READ_ONLY: {
         while (!rc.m_chunks.empty())
         {
             IOHandler()->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
-        break;
     }
-    case Access::READ_WRITE:
-    case Access::CREATE:
-    case Access::APPEND: {
+    else
+    {
         if (!written())
         {
             Parameter<Operation::CREATE_DATASET> dCreate;
@@ -114,8 +111,6 @@ void PatchRecordComponent::flush(
         }
 
         flushAttributes(flushParams);
-        break;
-    }
     }
 }
 

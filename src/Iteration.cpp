@@ -306,18 +306,15 @@ void Iteration::flushVariableBased(
 
 void Iteration::flush(internal::FlushParams const &flushParams)
 {
-    switch (IOHandler()->m_frontendAccess)
+    if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-    case Access::READ_ONLY: {
         for (auto &m : meshes)
             m.second.flush(m.first, flushParams);
         for (auto &species : particles)
             species.second.flush(species.first, flushParams);
-        break;
     }
-    case Access::READ_WRITE:
-    case Access::CREATE:
-    case Access::APPEND: {
+    else
+    {
         /* Find the root point [Series] of this file,
          * meshesPath and particlesPath are stored there */
         Series s = retrieveSeries();
@@ -355,8 +352,6 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         }
 
         flushAttributes(flushParams);
-        break;
-    }
     }
 }
 
@@ -743,36 +738,24 @@ auto Iteration::beginStep(
     if (reread && status != AdvanceStatus::RANDOMACCESS &&
         (series.iterationEncoding() == IE::groupBased ||
          series.iterationEncoding() == IE::variableBased) &&
-        (IOHandl->m_frontendAccess == Access::READ_ONLY ||
-         IOHandl->m_frontendAccess == Access::READ_WRITE))
+        access::read(series.IOHandler()->m_frontendAccess))
     {
-        switch (IOHandl->m_frontendAccess)
+        bool previous = series.iterations.written();
+        series.iterations.written() = false;
+        auto oldStatus = IOHandl->m_seriesStatus;
+        IOHandl->m_seriesStatus = internal::SeriesStatus::Parsing;
+        try
         {
-        case Access::READ_ONLY:
-        case Access::READ_WRITE: {
-            bool previous = series.iterations.written();
-            series.iterations.written() = false;
-            auto oldStatus = IOHandl->m_seriesStatus;
-            IOHandl->m_seriesStatus = internal::SeriesStatus::Parsing;
-            try
-            {
-                res.iterationsInOpenedStep = series.readGorVBased(
-                    /* do_always_throw_errors = */ true, /* init = */ false);
-            }
-            catch (...)
-            {
-                IOHandl->m_seriesStatus = oldStatus;
-                throw;
-            }
+            res.iterationsInOpenedStep = series.readGorVBased(
+                /* do_always_throw_errors = */ true, /* init = */ false);
+        }
+        catch (...)
+        {
             IOHandl->m_seriesStatus = oldStatus;
-            series.iterations.written() = previous;
-            break;
+            throw;
         }
-        case Access::CREATE:
-        case Access::APPEND:
-            // no re-reading necessary
-            break;
-        }
+        IOHandl->m_seriesStatus = oldStatus;
+        series.iterations.written() = previous;
     }
 
     res.stepStatus = status;
@@ -871,10 +854,8 @@ void Iteration::linkHierarchy(Writable &w)
 
 void Iteration::runDeferredParseAccess()
 {
-    switch (IOHandler()->m_frontendAccess)
+    if (access::read(IOHandler()->m_frontendAccess))
     {
-    case Access::READ_ONLY:
-    case Access::READ_WRITE: {
         auto &it = get();
         if (!it.m_deferredParseAccess.has_value())
         {
@@ -906,12 +887,6 @@ void Iteration::runDeferredParseAccess()
         // reset this thing
         it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
         IOHandler()->m_seriesStatus = oldStatus;
-        break;
-    }
-    case Access::CREATE:
-    case Access::APPEND:
-        // no parsing in those modes
-        return;
     }
 }
 

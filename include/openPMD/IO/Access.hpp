@@ -27,10 +27,53 @@ namespace openPMD
 enum class Access
 {
     READ_ONLY, //!< open series as read-only, fails if series is not found
+    READ_RANDOM_ACCESS = READ_ONLY,
+    READ_LINEAR,
     READ_WRITE, //!< open existing series as writable
     CREATE, //!< create new series and truncate existing (files)
     APPEND //!< write new iterations to an existing series without reading
 }; // Access
+
+namespace access
+{
+    inline bool readOnly(Access access)
+    {
+        switch (access)
+        {
+        case Access::READ_LINEAR:
+        case Access::READ_ONLY:
+            return true;
+        case Access::READ_WRITE:
+        case Access::CREATE:
+        case Access::APPEND:
+            return false;
+        }
+    }
+
+    inline bool write(Access access)
+    {
+        return !readOnly(access);
+    }
+
+    inline bool writeOnly(Access access)
+    {
+        switch (access)
+        {
+        case Access::READ_LINEAR:
+        case Access::READ_ONLY:
+        case Access::READ_WRITE:
+            return false;
+        case Access::CREATE:
+        case Access::APPEND:
+            return true;
+        }
+    }
+
+    inline bool read(Access access)
+    {
+        return !writeOnly(access);
+    }
+} // namespace access
 
 // deprecated name (used prior to 0.12.0)
 // note: "using old [[deprecated(msg)]] = new;" is still badly supported, thus

@@ -64,7 +64,7 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
         close(f.second);
     m_openReadFileHandles.clear();
 
-    if (this->m_handler->m_backendAccess != Access::READ_ONLY)
+    if (access::write(m_handler->m_backendAccess))
     {
         for (auto &group : m_attributeWrites)
             for (auto &att : group.second)

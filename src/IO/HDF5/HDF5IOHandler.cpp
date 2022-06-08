@@ -220,7 +220,7 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
 void HDF5IOHandlerImpl::createFile(
     Writable *writable, Parameter<Operation::CREATE_FILE> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Creating a file in read-only mode is not possible.");
 
@@ -258,6 +258,7 @@ void HDF5IOHandlerImpl::createFile(
             flags = H5F_ACC_EXCL;
             break;
         case Access::READ_ONLY:
+        case Access::READ_LINEAR:
             // condition has been checked above
             throw std::runtime_error(
                 "[HDF5] Control flow error in createFile backend access mode.");
@@ -322,7 +323,7 @@ void HDF5IOHandlerImpl::checkFile(
 void HDF5IOHandlerImpl::createPath(
     Writable *writable, Parameter<Operation::CREATE_PATH> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Creating a path in a file opened as read only is not "
             "possible.");
@@ -413,7 +414,7 @@ void HDF5IOHandlerImpl::createPath(
 void HDF5IOHandlerImpl::createDataset(
     Writable *writable, Parameter<Operation::CREATE_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Creating a dataset in a file opened as read only is not "
             "possible.");
@@ -652,7 +653,7 @@ void HDF5IOHandlerImpl::createDataset(
 void HDF5IOHandlerImpl::extendDataset(
     Writable *writable, Parameter<Operation::EXTEND_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Extending a dataset in a file opened as read only is not "
             "possible.");
@@ -796,19 +797,16 @@ void HDF5IOHandlerImpl::openFile(
 
     unsigned flags;
     Access at = m_handler->m_backendAccess;
-    if (at == Access::READ_ONLY)
+    if (access::readOnly(at))
         flags = H5F_ACC_RDONLY;
     /*
      * Within the HDF5 backend, APPEND and READ_WRITE mode are
      * equivalent, but the openPMD frontend exposes no reading
      * functionality in APPEND mode.
      */
-    else if (
-        at == Access::READ_WRITE || at == Access::CREATE ||
-        at == Access::APPEND)
-        flags = H5F_ACC_RDWR;
     else
-        throw std::runtime_error("[HDF5] Unknown file Access");
+        flags = H5F_ACC_RDWR;
+
     hid_t file_id;
     file_id = H5Fopen(name.c_str(), flags, m_fileAccessProperty);
     if (file_id < 0)
@@ -1066,7 +1064,7 @@ void HDF5IOHandlerImpl::openDataset(
 void HDF5IOHandlerImpl::deleteFile(
     Writable *writable, Parameter<Operation::DELETE_FILE> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Deleting a file opened as read only is not possible.");
 
@@ -1100,7 +1098,7 @@ void HDF5IOHandlerImpl::deleteFile(
 void HDF5IOHandlerImpl::deletePath(
     Writable *writable, Parameter<Operation::DELETE_PATH> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Deleting a path in a file opened as read only is not "
             "possible.");
@@ -1152,7 +1150,7 @@ void HDF5IOHandlerImpl::deletePath(
 void HDF5IOHandlerImpl::deleteDataset(
     Writable *writable, Parameter<Operation::DELETE_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Deleting a path in a file opened as read only is not "
             "possible.");
@@ -1204,7 +1202,7 @@ void HDF5IOHandlerImpl::deleteDataset(
 void HDF5IOHandlerImpl::deleteAttribute(
     Writable *writable, Parameter<Operation::DELETE_ATT> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Deleting an attribute in a file opened as read only is not "
             "possible.");
@@ -1239,7 +1237,7 @@ void HDF5IOHandlerImpl::deleteAttribute(
 void HDF5IOHandlerImpl::writeDataset(
     Writable *writable, Parameter<Operation::WRITE_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Writing into a dataset in a file opened as read only is "
             "not possible.");
@@ -1366,7 +1364,7 @@ void HDF5IOHandlerImpl::writeAttribute(
         // cannot do this
         return;
     }
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Writing an attribute in a file opened as read only is not "
             "possible.");
