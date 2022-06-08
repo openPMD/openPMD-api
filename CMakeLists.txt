@@ -488,13 +488,15 @@ set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
-        src/IO/ADIOS/ADIOS1IOHandler.cpp)
+        src/IO/ADIOS/ADIOS1IOHandler.cpp
+        src/IO/IOTask.cpp)
 set(IO_ADIOS1_SOURCE
         src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
-        src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
+        src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
+        src/IO/IOTask.cpp)
 
 # library
 if(openPMD_BUILD_SHARED_LIBS)
