@@ -105,7 +105,7 @@ public:
         std::string jsonConfig,
         std::string backend,
         Datatype dt,
-        typename decltype(Series::iterations)::key_type iterations,
+        Series::IterationIndex_t iterations,
         int threadSize);
 
     /**
@@ -123,7 +123,7 @@ public:
         std::string jsonConfig,
         std::string backend,
         Datatype dt,
-        typename decltype(Series::iterations)::key_type iterations);
+        Series::IterationIndex_t iterations);
 
     void resetConfigurations();
 
@@ -146,7 +146,7 @@ private:
         std::string,
         int,
         Datatype,
-        typename decltype(Series::iterations)::key_type>>
+        Series::IterationIndex_t>>
         m_configurations;
 
     enum Config
@@ -194,7 +194,7 @@ private:
             Extent &extent,
             std::string const &extension,
             std::shared_ptr<DatasetFiller<T>> datasetFiller,
-            typename decltype(Series::iterations)::key_type iterations);
+            Series::IterationIndex_t iterations);
 
         /**
          * Execute a single read benchmark.
@@ -210,7 +210,7 @@ private:
             Offset &offset,
             Extent &extent,
             std::string extension,
-            typename decltype(Series::iterations)::key_type iterations);
+            Series::IterationIndex_t iterations);
 
         template <typename T>
         static void call(
@@ -278,7 +278,7 @@ void MPIBenchmark<DatasetFillerProvider>::addConfiguration(
     std::string jsonConfig,
     std::string backend,
     Datatype dt,
-    typename decltype(Series::iterations)::key_type iterations,
+    Series::IterationIndex_t iterations,
     int threadSize)
 {
     this->m_configurations.emplace_back(
@@ -290,7 +290,7 @@ void MPIBenchmark<DatasetFillerProvider>::addConfiguration(
     std::string jsonConfig,
     std::string backend,
     Datatype dt,
-    typename decltype(Series::iterations)::key_type iterations)
+    Series::IterationIndex_t iterations)
 {
     int size;
     MPI_Comm_size(communicator, &size);
@@ -313,7 +313,7 @@ MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::writeBenchmark(
     Extent &extent,
     std::string const &extension,
     std::shared_ptr<DatasetFiller<T>> datasetFiller,
-    typename decltype(Series::iterations)::key_type iterations)
+    Series::IterationIndex_t iterations)
 {
     MPI_Barrier(m_benchmark->communicator);
     auto start = Clock::now();
@@ -325,8 +325,7 @@ MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::writeBenchmark(
         m_benchmark->communicator,
         jsonConfig);
 
-    for (typename decltype(Series::iterations)::key_type i = 0; i < iterations;
-         i++)
+    for (Series::IterationIndex_t i = 0; i < iterations; i++)
     {
         auto writeData = datasetFiller->produceData();
 
@@ -348,8 +347,7 @@ MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::writeBenchmark(
     auto end = Clock::now();
 
     // deduct the time needed for data generation
-    for (typename decltype(Series::iterations)::key_type i = 0; i < iterations;
-         i++)
+    for (Series::IterationIndex_t i = 0; i < iterations; i++)
     {
         datasetFiller->produceData();
     }
@@ -366,7 +364,7 @@ MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::readBenchmark(
     Offset &offset,
     Extent &extent,
     std::string extension,
-    typename decltype(Series::iterations)::key_type iterations)
+    Series::IterationIndex_t iterations)
 {
     MPI_Barrier(m_benchmark->communicator);
     // let every thread measure time
@@ -377,8 +375,7 @@ MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::readBenchmark(
         Access::READ_ONLY,
         m_benchmark->communicator);
 
-    for (typename decltype(Series::iterations)::key_type i = 0; i < iterations;
-         i++)
+    for (Series::IterationIndex_t i = 0; i < iterations; i++)
     {
         MeshRecordComponent id =
             series.iterations[i].meshes["id"][MeshRecordComponent::SCALAR];
@@ -409,7 +406,7 @@ void MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::call(
         std::string backend;
         int size;
         Datatype dt2;
-        typename decltype(Series::iterations)::key_type iterations;
+        Series::IterationIndex_t iterations;
         std::tie(jsonConfig, backend, size, dt2, iterations) = config;
 
         if (dt != dt2)

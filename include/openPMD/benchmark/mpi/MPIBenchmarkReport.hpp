@@ -57,7 +57,7 @@ struct MPIBenchmarkReport
             std::string, // extension
             int, // thread size
             Datatype,
-            typename decltype(Series::iterations)::key_type>,
+            Series::IterationIndex_t>,
         std::pair<Duration, Duration> >
         durations;
 
@@ -89,7 +89,7 @@ struct MPIBenchmarkReport
         std::string extension,
         int threadSize,
         Datatype dt,
-        typename decltype(Series::iterations)::key_type iterations,
+        Series::IterationIndex_t iterations,
         std::pair<Duration, Duration> const &report);
 
     /** Retrieve the time measured for a certain compression strategy.
@@ -108,7 +108,7 @@ struct MPIBenchmarkReport
         std::string extension,
         int threadSize,
         Datatype dt,
-        typename decltype(Series::iterations)::key_type iterations);
+        Series::IterationIndex_t iterations);
 
 private:
     template <typename D, typename Dummy = D>
@@ -189,7 +189,7 @@ void MPIBenchmarkReport<Duration>::addReport(
     std::string extension,
     int threadSize,
     Datatype dt,
-    typename decltype(Series::iterations)::key_type iterations,
+    Series::IterationIndex_t iterations,
     std::pair<Duration, Duration> const &report)
 {
     using rep = typename Duration::rep;
@@ -257,7 +257,7 @@ std::pair<Duration, Duration> MPIBenchmarkReport<Duration>::getReport(
     std::string extension,
     int threadSize,
     Datatype dt,
-    typename decltype(Series::iterations)::key_type iterations)
+    Series::IterationIndex_t iterations)
 {
     auto it = this->durations.find(std::make_tuple(
         rank, jsonConfig, extension, threadSize, dt, iterations));
