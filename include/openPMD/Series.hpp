@@ -77,7 +77,8 @@ namespace internal
         SeriesData &operator=(SeriesData &&) = delete;
 
         using IterationIndex_t = Iteration::IterationIndex_t;
-        Container<Iteration, IterationIndex_t> iterations{};
+        using IterationsContainer_t = Container<Iteration, IterationIndex_t>;
+        IterationsContainer_t iterations{};
 
         /**
          * For each instance of Series, there is only one instance
@@ -215,7 +216,11 @@ public:
      * An unsigned integer type, used to identify Iterations in a Series.
      */
     using IterationIndex_t = Iteration::IterationIndex_t;
-    Container<Iteration, IterationIndex_t> iterations;
+    /**
+     * Type for a container of Iterations indexed by IterationIndex_t.
+     */
+    using IterationsContainer_t = internal::SeriesData::IterationsContainer_t;
+    IterationsContainer_t iterations;
 
     /**
      * @brief Is this a usable Series object?

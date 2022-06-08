@@ -33,6 +33,7 @@
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Record.hpp"
+#include "openPMD/Series.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -135,7 +136,7 @@ bind_container(py::handle scope, std::string const &name, Args &&...args)
 }
 } // namespace detail
 
-using PyIterationContainer = Container<Iteration, uint64_t>;
+using PyIterationContainer = Series::IterationsContainer_t;
 using PyMeshContainer = Container<Mesh>;
 using PyPartContainer = Container<ParticleSpecies>;
 using PyPatchContainer = Container<ParticlePatches>;

@@ -49,25 +49,26 @@ class WriteIterations
     friend class Series;
 
 private:
-    using iterations_t = Container<Iteration, uint64_t>;
+    using IterationsContainer_t =
+        Container<Iteration, Iteration::IterationIndex_t>;
 
 public:
-    using key_type = typename iterations_t::key_type;
-    using mapped_type = typename iterations_t::mapped_type;
-    using value_type = typename iterations_t::value_type;
-    using reference = typename iterations_t::reference;
+    using key_type = IterationsContainer_t::key_type;
+    using mapped_type = IterationsContainer_t::mapped_type;
+    using value_type = IterationsContainer_t::value_type;
+    using reference = IterationsContainer_t::reference;
 
 private:
     struct SharedResources
     {
-        iterations_t iterations;
-        std::optional<uint64_t> currentlyOpen;
+        IterationsContainer_t iterations;
+        std::optional<Iteration::IterationIndex_t> currentlyOpen;
 
-        SharedResources(iterations_t);
+        SharedResources(IterationsContainer_t);
         ~SharedResources();
     };
 
-    WriteIterations(iterations_t);
+    WriteIterations(IterationsContainer_t);
     explicit WriteIterations() = default;
     //! Index of the last opened iteration
     std::shared_ptr<SharedResources> shared;
