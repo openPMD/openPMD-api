@@ -295,8 +295,6 @@ private:
      * @brief End an IO step on the IO file (or file-like object)
      *        containing this iteration. In case of group-based iteration
      *        layout, this will be the complete Series.
-     *
-     * @return AdvanceStatus
      */
     void endStep();
 
