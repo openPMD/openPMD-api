@@ -21,7 +21,6 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
-#include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 

@@ -6614,8 +6614,8 @@ void groupbased_read_write(std::string const &ext)
         auto E_y = write.iterations[0].meshes["E"]["y"];
         E_x.resetDataset(ds);
         E_y.resetDataset(ds);
-        E_x.storeChunk(shareRaw(&data), {0}, {1});
-        E_y.storeChunk(shareRaw(&data), {0}, {1});
+        E_x.storeChunkRaw(&data, {0}, {1});
+        E_y.storeChunkRaw(&data, {0}, {1});
 
         E_x.setAttribute("updated_in_run", 0);
         E_y.setAttribute("updated_in_run", 0);
@@ -6632,8 +6632,8 @@ void groupbased_read_write(std::string const &ext)
 
         data = 1;
 
-        E_x.storeChunk(shareRaw(&data), {0}, {1});
-        E_y.storeChunk(shareRaw(&data), {0}, {1});
+        E_x.storeChunkRaw(&data, {0}, {1});
+        E_y.storeChunkRaw(&data, {0}, {1});
 
         E_x.setAttribute("updated_in_run", 1);
         E_y.setAttribute("updated_in_run", 1);
@@ -6669,7 +6669,7 @@ void groupbased_read_write(std::string const &ext)
 
         data = 2;
 
-        E_x.storeChunk(shareRaw(&data), {0}, {1});
+        E_x.storeChunkRaw(&data, {0}, {1});
         E_x.setAttribute("updated_in_run", 2);
     }
 
