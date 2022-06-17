@@ -21,6 +21,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
@@ -28,6 +29,20 @@
 
 namespace py = pybind11;
 using namespace openPMD;
+
+namespace
+{
+struct Prc_Load
+{
+    template <typename T>
+    static void call(PatchRecordComponent &prc, py::array &a)
+    {
+        prc.load<T>(shareRaw((T *)a.mutable_data()));
+    }
+
+    static constexpr char const *errorMsg = "Datatype not known in 'load'!";
+};
+} // namespace
 
 void init_PatchRecordComponent(py::module &m)
 {
@@ -49,44 +64,7 @@ void init_PatchRecordComponent(py::module &m)
                 auto const dtype = dtype_to_numpy(prc.getDatatype());
                 auto a = py::array(dtype, prc.getExtent()[0]);
 
-                if (prc.getDatatype() == Datatype::CHAR)
-                    prc.load<char>(shareRaw((char *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::UCHAR)
-                    prc.load<unsigned char>(
-                        shareRaw((unsigned char *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::SHORT)
-                    prc.load<short>(shareRaw((short *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::INT)
-                    prc.load<int>(shareRaw((int *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::LONG)
-                    prc.load<long>(shareRaw((long *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::LONGLONG)
-                    prc.load<long long>(
-                        shareRaw((long long *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::USHORT)
-                    prc.load<unsigned short>(
-                        shareRaw((unsigned short *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::UINT)
-                    prc.load<unsigned int>(
-                        shareRaw((unsigned int *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::ULONG)
-                    prc.load<unsigned long>(
-                        shareRaw((unsigned long *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::ULONGLONG)
-                    prc.load<unsigned long long>(
-                        shareRaw((unsigned long long *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::LONG_DOUBLE)
-                    prc.load<long double>(
-                        shareRaw((long double *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::DOUBLE)
-                    prc.load<double>(shareRaw((double *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::FLOAT)
-                    prc.load<float>(shareRaw((float *)a.mutable_data()));
-                else if (prc.getDatatype() == Datatype::BOOL)
-                    prc.load<bool>(shareRaw((bool *)a.mutable_data()));
-                else
-                    throw std::runtime_error(
-                        std::string("Datatype not known in 'load'!"));
+                switchNonVectorType<Prc_Load>(prc.getDatatype(), prc, a);
 
                 return a;
             })

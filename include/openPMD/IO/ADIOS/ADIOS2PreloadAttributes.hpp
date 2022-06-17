@@ -31,6 +31,7 @@
 #include <type_traits>
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 
 namespace openPMD
 {
@@ -150,13 +151,6 @@ namespace detail
         }
         AttributeLocation const &location = it->second;
         Datatype determinedDatatype = determineDatatype<T>();
-        if (std::is_same<T, signed char>::value)
-        {
-            // workaround: we use Datatype::CHAR to represent ADIOS2 signed char
-            // (ADIOS2 does not have chars with unspecified signed-ness
-            // anyway)
-            determinedDatatype = Datatype::CHAR;
-        }
         if (location.dt != determinedDatatype)
         {
             std::stringstream errorMsg;

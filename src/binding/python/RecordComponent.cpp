@@ -558,6 +558,8 @@ void load_chunk(
         load_data((char)0);
     else if (r.getDatatype() == Datatype::UCHAR)
         load_data((unsigned char)0);
+    else if (r.getDatatype() == Datatype::SCHAR)
+        load_data((signed char)0);
     else if (r.getDatatype() == Datatype::SHORT)
         load_data((short)0);
     else if (r.getDatatype() == Datatype::INT)
@@ -664,6 +666,8 @@ inline void load_chunk(
         load_data(char());
     else if (r.getDatatype() == Datatype::UCHAR)
         load_data((unsigned char)0);
+    else if (r.getDatatype() == Datatype::SCHAR)
+        load_data((signed char)0);
     else if (r.getDatatype() == Datatype::SHORT)
         load_data(short());
     else if (r.getDatatype() == Datatype::INT)

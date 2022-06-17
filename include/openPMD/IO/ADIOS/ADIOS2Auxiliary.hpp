@@ -50,13 +50,13 @@ namespace detail
     };
 
     template <typename T>
-    struct ToDatatypeHelper<std::vector<T> >
+    struct ToDatatypeHelper<std::vector<T>>
     {
         static std::string type();
     };
 
     template <typename T, size_t n>
-    struct ToDatatypeHelper<std::array<T, n> >
+    struct ToDatatypeHelper<std::array<T, n>>
     {
         static std::string type();
     };
@@ -149,6 +149,8 @@ auto switchAdios2AttributeType(Datatype dt, Args &&...args)
     case Datatype::UCHAR:
         return Action::template call<unsigned char>(
             std::forward<Args>(args)...);
+    case Datatype::SCHAR:
+        return Action::template call<signed char>(std::forward<Args>(args)...);
     case Datatype::SHORT:
         return Action::template call<short>(std::forward<Args>(args)...);
     case Datatype::INT:
@@ -175,10 +177,10 @@ auto switchAdios2AttributeType(Datatype dt, Args &&...args)
     case Datatype::LONG_DOUBLE:
         return Action::template call<long double>(std::forward<Args>(args)...);
     case Datatype::CFLOAT:
-        return Action::template call<std::complex<float> >(
+        return Action::template call<std::complex<float>>(
             std::forward<Args>(args)...);
     case Datatype::CDOUBLE:
-        return Action::template call<std::complex<double> >(
+        return Action::template call<std::complex<double>>(
             std::forward<Args>(args)...);
     // missing std::complex< long double > type in ADIOS2 v2.6.0
     // case Datatype::CLONG_DOUBLE:
@@ -227,6 +229,8 @@ auto switchAdios2VariableType(Datatype dt, Args &&...args)
     case Datatype::UCHAR:
         return Action::template call<unsigned char>(
             std::forward<Args>(args)...);
+    case Datatype::SCHAR:
+        return Action::template call<signed char>(std::forward<Args>(args)...);
     case Datatype::SHORT:
         return Action::template call<short>(std::forward<Args>(args)...);
     case Datatype::INT:
@@ -253,10 +257,10 @@ auto switchAdios2VariableType(Datatype dt, Args &&...args)
     case Datatype::LONG_DOUBLE:
         return Action::template call<long double>(std::forward<Args>(args)...);
     case Datatype::CFLOAT:
-        return Action::template call<std::complex<float> >(
+        return Action::template call<std::complex<float>>(
             std::forward<Args>(args)...);
     case Datatype::CDOUBLE:
-        return Action::template call<std::complex<double> >(
+        return Action::template call<std::complex<double>>(
             std::forward<Args>(args)...);
     // missing std::complex< long double > type in ADIOS2 v2.6.0
     // case Datatype::CLONG_DOUBLE:

@@ -166,10 +166,10 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
     m_schema = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", m_schema);
 }
 
-std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> >
+std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator>>
 ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
 {
-    using ret_t = std::optional<std::vector<ParameterizedOperator> >;
+    using ret_t = std::optional<std::vector<ParameterizedOperator>>;
     std::vector<ParameterizedOperator> res;
     if (!cfg.json().contains("dataset"))
     {
@@ -222,7 +222,7 @@ ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
     return std::make_optional(std::move(res));
 }
 
-std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> >
+std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator>>
 ADIOS2IOHandlerImpl::getOperators()
 {
     return getOperators(m_config);
@@ -1436,14 +1436,13 @@ namespace detail
                 auto attr = IO.InquireAttribute<rep>(metaAttr);
                 if (attr.Data().size() == 1 && attr.Data()[0] == 1)
                 {
-                    AttributeTypes<bool>::readAttribute(
+                    return AttributeTypes<bool>::readAttribute(
                         preloadedAttributes, name, resource);
-                    return determineDatatype<bool>();
                 }
             }
         }
-        AttributeTypes<T>::readAttribute(preloadedAttributes, name, resource);
-        return determineDatatype<T>();
+        return AttributeTypes<T>::readAttribute(
+            preloadedAttributes, name, resource);
     }
 
     template <int n, typename... Params>
@@ -1756,7 +1755,7 @@ namespace detail
     }
 
     template <typename T>
-    void AttributeTypes<T>::readAttribute(
+    Datatype AttributeTypes<T>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -1771,10 +1770,11 @@ namespace detail
                 std::to_string(attr.shape.size()) + "D: " + name);
         }
         *resource = *attr.data;
+        return determineDatatype<T>();
     }
 
     template <typename T>
-    void AttributeTypes<std::vector<T> >::createAttribute(
+    void AttributeTypes<std::vector<T>>::createAttribute(
         adios2::IO &IO,
         adios2::Engine &engine,
         detail::BufferedAttributeWrite &params,
@@ -1797,7 +1797,7 @@ namespace detail
     }
 
     template <typename T>
-    void AttributeTypes<std::vector<T> >::readAttribute(
+    Datatype AttributeTypes<std::vector<T>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -1812,9 +1812,10 @@ namespace detail
         std::vector<T> res(attr.shape[0]);
         std::copy_n(attr.data, attr.shape[0], res.data());
         *resource = std::move(res);
+        return determineDatatype<std::vector<T>>();
     }
 
-    void AttributeTypes<std::vector<std::string> >::createAttribute(
+    void AttributeTypes<std::vector<std::string>>::createAttribute(
         adios2::IO &IO,
         adios2::Engine &engine,
         detail::BufferedAttributeWrite &params,
@@ -1859,7 +1860,7 @@ namespace detail
             attr, params.bufferForVecString.data(), adios2::Mode::Deferred);
     }
 
-    void AttributeTypes<std::vector<std::string> >::readAttribute(
+    Datatype AttributeTypes<std::vector<std::string>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -1935,9 +1936,10 @@ namespace detail
             *resource = res;
         };
         /*
-         * If writing char variables in ADIOS2, they might become either int8_t
-         * or uint8_t on disk depending on the platform.
-         * So allow reading from both types.
+         * If writing char variables in ADIOS2, they might become either int8_t,
+         * uint8_t or char on disk depending on platform, ADIOS2 version and
+         * ADIOS2 engine.
+         * So allow reading from all these types.
          */
         switch (preloadedAttributes.attributeType(name))
         {
@@ -1946,10 +1948,10 @@ namespace detail
          * ADIOS2 does not have an explicit char type,
          * we don't have an explicit schar type.
          * Until this is fixed, we use CHAR to represent ADIOS signed char.
+         * @todo revisit this workaround and its necessity
          */
         case Datatype::CHAR: {
-            using schar_t = signed char;
-            loadFromDatatype(schar_t{});
+            loadFromDatatype(char{});
             break;
         }
         case Datatype::UCHAR: {
@@ -1957,16 +1959,21 @@ namespace detail
             loadFromDatatype(uchar_t{});
             break;
         }
+        case Datatype::SCHAR: {
+            using schar_t = signed char;
+            loadFromDatatype(schar_t{});
+            break;
+        }
         default: {
             throw std::runtime_error(
-                "[ADIOS2] Expecting 2D ADIOS variable of "
-                "type signed or unsigned char.");
+                "[ADIOS2] Expecting 2D ADIOS variable of any char type.");
         }
         }
+        return Datatype::VEC_STRING;
     }
 
     template <typename T, size_t n>
-    void AttributeTypes<std::array<T, n> >::createAttribute(
+    void AttributeTypes<std::array<T, n>>::createAttribute(
         adios2::IO &IO,
         adios2::Engine &engine,
         detail::BufferedAttributeWrite &params,
@@ -1988,7 +1995,7 @@ namespace detail
     }
 
     template <typename T, size_t n>
-    void AttributeTypes<std::array<T, n> >::readAttribute(
+    Datatype AttributeTypes<std::array<T, n>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -2005,6 +2012,7 @@ namespace detail
         std::array<T, n> res;
         std::copy_n(attr.data, n, res.data());
         *resource = std::move(res);
+        return determineDatatype<std::array<T, n>>();
     }
 
     void AttributeTypes<bool>::createAttribute(
@@ -2019,7 +2027,7 @@ namespace detail
             IO, engine, params, toRep(value));
     }
 
-    void AttributeTypes<bool>::readAttribute(
+    Datatype AttributeTypes<bool>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -2035,6 +2043,7 @@ namespace detail
         }
 
         *resource = fromRep(*attr.data);
+        return Datatype::BOOL;
     }
 
     void BufferedGet::run(BufferedActions &ba)

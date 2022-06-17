@@ -20,6 +20,7 @@
  */
 #include "openPMD/Datatype.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Datatype_internal.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -45,6 +46,9 @@ std::ostream &operator<<(std::ostream &os, openPMD::Datatype const &d)
         break;
     case DT::UCHAR:
         os << "UCHAR";
+        break;
+    case DT::SCHAR:
+        os << "SCHAR";
         break;
     case DT::SHORT:
         os << "SHORT";
@@ -139,6 +143,9 @@ std::ostream &operator<<(std::ostream &os, openPMD::Datatype const &d)
     case DT::VEC_CLONG_DOUBLE:
         os << "VEC_CLONG_DOUBLE";
         break;
+    case DT::VEC_SCHAR:
+        os << "VEC_SCHAR";
+        break;
     case DT::VEC_STRING:
         os << "VEC_STRING";
         break;
@@ -161,6 +168,7 @@ Datatype stringToDatatype(std::string s)
     static std::unordered_map<std::string, Datatype> m{
         {"CHAR", Datatype::CHAR},
         {"UCHAR", Datatype::UCHAR},
+        {"SCHAR", Datatype::SCHAR},
         {"SHORT", Datatype::SHORT},
         {"INT", Datatype::INT},
         {"LONG", Datatype::LONG},
@@ -192,6 +200,7 @@ Datatype stringToDatatype(std::string s)
         {"VEC_CFLOAT", Datatype::VEC_CFLOAT},
         {"VEC_CDOUBLE", Datatype::VEC_CDOUBLE},
         {"VEC_CLONG_DOUBLE", Datatype::VEC_CLONG_DOUBLE},
+        {"VEC_SCHAR", Datatype::VEC_SCHAR},
         {"VEC_STRING", Datatype::VEC_STRING},
         {"ARR_DBL_7", Datatype::ARR_DBL_7},
         {"BOOL", Datatype::BOOL},
@@ -216,67 +225,71 @@ std::string datatypeToString(openPMD::Datatype dt)
 }
 
 std::vector<Datatype> openPMD_Datatypes{
-    Datatype::CHAR,         Datatype::UCHAR,       Datatype::SHORT,
-    Datatype::INT,          Datatype::LONG,        Datatype::LONGLONG,
-    Datatype::USHORT,       Datatype::UINT,        Datatype::ULONG,
-    Datatype::ULONGLONG,    Datatype::FLOAT,       Datatype::DOUBLE,
-    Datatype::LONG_DOUBLE,  Datatype::CFLOAT,      Datatype::CDOUBLE,
-    Datatype::CLONG_DOUBLE, Datatype::STRING,      Datatype::VEC_CHAR,
-    Datatype::VEC_SHORT,    Datatype::VEC_INT,     Datatype::VEC_LONG,
-    Datatype::VEC_LONGLONG, Datatype::VEC_UCHAR,   Datatype::VEC_USHORT,
-    Datatype::VEC_UINT,     Datatype::VEC_ULONG,   Datatype::VEC_ULONGLONG,
-    Datatype::VEC_FLOAT,    Datatype::VEC_DOUBLE,  Datatype::VEC_LONG_DOUBLE,
-    Datatype::VEC_CFLOAT,   Datatype::VEC_CDOUBLE, Datatype::VEC_CLONG_DOUBLE,
-    Datatype::VEC_STRING,   Datatype::ARR_DBL_7,   Datatype::BOOL,
+    Datatype::CHAR,
+    Datatype::UCHAR,
+    Datatype::SCHAR,
+    Datatype::SHORT,
+    Datatype::INT,
+    Datatype::LONG,
+    Datatype::LONGLONG,
+    Datatype::USHORT,
+    Datatype::UINT,
+    Datatype::ULONG,
+    Datatype::ULONGLONG,
+    Datatype::FLOAT,
+    Datatype::DOUBLE,
+    Datatype::LONG_DOUBLE,
+    Datatype::CFLOAT,
+    Datatype::CDOUBLE,
+    Datatype::CLONG_DOUBLE,
+    Datatype::STRING,
+    Datatype::VEC_CHAR,
+    Datatype::VEC_SHORT,
+    Datatype::VEC_INT,
+    Datatype::VEC_LONG,
+    Datatype::VEC_LONGLONG,
+    Datatype::VEC_UCHAR,
+    Datatype::VEC_USHORT,
+    Datatype::VEC_UINT,
+    Datatype::VEC_ULONG,
+    Datatype::VEC_ULONGLONG,
+    Datatype::VEC_FLOAT,
+    Datatype::VEC_DOUBLE,
+    Datatype::VEC_LONG_DOUBLE,
+    Datatype::VEC_CFLOAT,
+    Datatype::VEC_CDOUBLE,
+    Datatype::VEC_CLONG_DOUBLE,
+    Datatype::VEC_SCHAR,
+    Datatype::VEC_STRING,
+    Datatype::ARR_DBL_7,
+    Datatype::BOOL,
     Datatype::UNDEFINED};
+
+namespace
+{
+    struct DoDetermineDatatype
+    {
+        /*
+         * Suppress wrong compiler warnings.
+         * The typedef is needed in instantiation.
+         */
+        using DT_enum [[maybe_unused]] = Datatype;
+
+        template <typename T>
+        static constexpr Datatype call()
+        {
+            return determineDatatype<T>();
+        }
+    };
+} // namespace
 
 Datatype basicDatatype(Datatype dt)
 {
-    return switchType<detail::BasicDatatype>(dt);
+    return switchType<detail::BasicDatatype<DoDetermineDatatype>>(dt);
 }
 
 Datatype toVectorType(Datatype dt)
 {
-    auto initializer = []() {
-        std::map<Datatype, Datatype> res;
-        for (Datatype d : openPMD_Datatypes)
-        {
-            if (d == Datatype::ARR_DBL_7 || d == Datatype::UNDEFINED)
-                continue;
-            Datatype basic = basicDatatype(d);
-            if (basic == d)
-                continue;
-            res[basic] = d;
-        }
-        return res;
-    };
-    static auto map(initializer());
-    auto it = map.find(dt);
-    if (it != map.end())
-    {
-        return it->second;
-    }
-    else
-    {
-        std::cerr << "Encountered non-basic type " << dt << ", aborting."
-                  << std::endl;
-        throw std::runtime_error("toVectorType: passed non-basic type.");
-    }
+    return switchType<detail::ToVectorType<DoDetermineDatatype>>(dt);
 }
-
-namespace detail
-{
-    template <typename T>
-    Datatype BasicDatatype::call()
-    {
-        static auto res = BasicDatatypeHelper<T>{}.m_dt;
-        return res;
-    }
-
-    template <int n>
-    Datatype BasicDatatype::call()
-    {
-        throw std::runtime_error("basicDatatype: received unknown datatype.");
-    }
-} // namespace detail
 } // namespace openPMD

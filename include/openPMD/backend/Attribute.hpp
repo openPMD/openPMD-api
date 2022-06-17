@@ -53,7 +53,8 @@ class Attribute
     : public auxiliary::Variant<
           Datatype,
           char,
-          unsigned char, // signed char,
+          unsigned char,
+          signed char,
           short,
           int,
           long,
@@ -85,6 +86,7 @@ class Attribute
           std::vector<std::complex<float> >,
           std::vector<std::complex<double> >,
           std::vector<std::complex<long double> >,
+          std::vector<signed char>,
           std::vector<std::string>,
           std::array<double, 7>,
           bool>
