@@ -816,7 +816,7 @@ void ADIOS2IOHandlerImpl::deleteAttribute(
 }
 
 void ADIOS2IOHandlerImpl::writeDataset(
-    Writable *writable, const Parameter<Operation::WRITE_DATASET> &parameters)
+    Writable *writable, Parameter<Operation::WRITE_DATASET> &parameters)
 {
     VERIFY_ALWAYS(
         access::write(m_handler->m_backendAccess),
@@ -826,7 +826,7 @@ void ADIOS2IOHandlerImpl::writeDataset(
     detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
     detail::BufferedPut bp;
     bp.name = nameOfVariable(writable);
-    bp.param = parameters;
+    bp.param = std::move(parameters);
     ba.enqueue(std::move(bp));
     m_dirty.emplace(std::move(file));
     writable->written = true; // TODO erst nach dem Schreiben?
@@ -1947,7 +1947,7 @@ namespace detail
             access::write(impl->m_handler->m_backendAccess),
             "[ADIOS2] Cannot write data in read-only mode.");
 
-        auto ptr = std::static_pointer_cast<const T>(bp.param.data).get();
+        auto ptr = static_cast<T const *>(bp.param.data.get());
 
         adios2::Variable<T> var = impl->verifyDataset<T>(
             bp.param.offset, bp.param.extent, IO, bp.name);

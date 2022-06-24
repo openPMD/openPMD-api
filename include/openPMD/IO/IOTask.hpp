@@ -429,9 +429,9 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_DATASET>
     Parameter() = default;
 
     Parameter(Parameter &&) = default;
-    Parameter(Parameter const &) = default;
+    Parameter(Parameter const &) = delete;
     Parameter &operator=(Parameter &&) = default;
-    Parameter &operator=(Parameter const &) = default;
+    Parameter &operator=(Parameter const &) = delete;
 
     std::unique_ptr<AbstractParameter> to_heap() && override
     {
@@ -442,7 +442,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_DATASET>
     Extent extent = {};
     Offset offset = {};
     Datatype dtype = Datatype::UNDEFINED;
-    std::shared_ptr<void const> data = nullptr;
+    auxiliary::WriteBuffer data;
 };
 
 template <>

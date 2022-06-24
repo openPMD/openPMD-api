@@ -218,6 +218,6 @@ inline void PatchRecordComponent::store(uint64_t idx, T data)
     dWrite.dtype = dtype;
     dWrite.data = std::make_shared<T>(data);
     auto &rc = get();
-    rc.m_chunks.push(IOTask(this, dWrite));
+    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
 }
 } // namespace openPMD

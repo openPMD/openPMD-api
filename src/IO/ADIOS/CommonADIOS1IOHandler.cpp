@@ -1097,7 +1097,7 @@ int64_t CommonADIOS1IOHandlerImpl<ChildClass>::GetFileHandle(Writable *writable)
 
 template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::writeDataset(
-    Writable *writable, Parameter<Operation::WRITE_DATASET> const &parameters)
+    Writable *writable, Parameter<Operation::WRITE_DATASET> &parameters)
 {
     if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(

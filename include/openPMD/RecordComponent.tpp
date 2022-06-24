@@ -238,7 +238,7 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::static_pointer_cast< void const >(data);
     auto & rc = get();
-    rc.m_chunks.push(IOTask(this, dWrite));
+    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
 }
 
 template <typename T>
