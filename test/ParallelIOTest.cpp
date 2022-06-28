@@ -154,8 +154,7 @@ void write_test_zero_extent(
                 position_global.begin(), position_global.end(), [&pos] {
                     return pos++;
                 });
-            std::shared_ptr<double> position_local(
-                new double[rank], [](double const *p) { delete[] p; });
+            std::shared_ptr<double[]> position_local(new double[rank]);
             uint64_t offset;
             if (rank != 0)
                 offset = ((rank - 1) * (rank - 1) + (rank - 1)) / 2;
@@ -171,8 +170,8 @@ void write_test_zero_extent(
                 positionOffset_global.begin(),
                 positionOffset_global.end(),
                 [&posOff] { return posOff++; });
-            std::shared_ptr<uint64_t> positionOffset_local(
-                new uint64_t[rank], [](uint64_t const *p) { delete[] p; });
+            std::shared_ptr<uint64_t[]> positionOffset_local(
+                new uint64_t[rank]);
 
             e["positionOffset"]["x"].resetDataset(
                 Dataset(determineDatatype(positionOffset_local), {num_cells}));

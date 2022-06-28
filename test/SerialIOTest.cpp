@@ -668,8 +668,7 @@ void close_and_copy_attributable_test(std::string file_ending)
     constexpr unsigned long length = 10ul;
     Extent global_extent = {length};
     Dataset dataset = Dataset(datatype, global_extent);
-    std::shared_ptr<position_t> local_data(
-        new position_t[length], [](position_t const *ptr) { delete[] ptr; });
+    std::shared_ptr<position_t[]> local_data(new position_t[length]);
 
     std::unique_ptr<Iteration> iteration_ptr;
     for (size_t i = 0; i < 100; i += 10)
@@ -897,8 +896,7 @@ inline void constant_scalar(std::string file_ending)
         E_x.makeConstant(static_cast<float>(13.37));
         auto E_y = s.iterations[1].meshes["E"]["y"];
         E_y.resetDataset(Dataset(Datatype::UINT, {1, 2, 3}));
-        std::shared_ptr<unsigned int> E(
-            new unsigned int[6], [](unsigned int const *p) { delete[] p; });
+        std::shared_ptr<unsigned int[]> E(new unsigned int[6]);
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
         E_y.storeChunk(E, {0, 0, 0}, {1, 2, 3});
@@ -932,9 +930,7 @@ inline void constant_scalar(std::string file_ending)
         vel_x.makeConstant(static_cast<short>(-1));
         auto vel_y = s.iterations[1].particles["e"]["velocity"]["y"];
         vel_y.resetDataset(Dataset(Datatype::ULONGLONG, {3, 2, 1}));
-        std::shared_ptr<unsigned long long> vel(
-            new unsigned long long[6],
-            [](unsigned long long const *p) { delete[] p; });
+        std::shared_ptr<unsigned long long[]> vel(new unsigned long long[6]);
         unsigned long long v{0};
         std::generate(vel.get(), vel.get() + 6, [&v] { return v++; });
         vel_y.storeChunk(vel, {0, 0, 0}, {3, 2, 1});
@@ -1117,10 +1113,7 @@ TEST_CASE("flush_without_position_positionOffset", "[serial]")
         RecordComponent weighting = e["weighting"][RecordComponent::SCALAR];
         weighting.resetDataset(Dataset(Datatype::FLOAT, Extent{2, 2}));
         weighting.storeChunk(
-            std::shared_ptr<float>(
-                new float[4](), [](float const *ptr) { delete[] ptr; }),
-            {0, 0},
-            {2, 2});
+            std::shared_ptr<float[]>(new float[4]()), {0, 0}, {2, 2});
 
         s.flush();
 
@@ -1131,10 +1124,7 @@ TEST_CASE("flush_without_position_positionOffset", "[serial]")
                 RecordComponent rc = e[key][dim];
                 rc.resetDataset(Dataset(Datatype::FLOAT, Extent{2, 2}));
                 rc.storeChunk(
-                    std::shared_ptr<float>(
-                        new float[4](), [](float const *ptr) { delete[] ptr; }),
-                    {0, 0},
-                    {2, 2});
+                    std::shared_ptr<float[]>(new float[4]()), {0, 0}, {2, 2});
             }
         }
     }
@@ -2109,11 +2099,8 @@ inline void sample_write_thetaMode(std::string file_ending)
     unsigned int const N_r = 20;
     unsigned int const N_z = 64;
 
-    std::shared_ptr<float> E_r_data(
-        new float[num_fields * N_r * N_z], [](float const *p) { delete[] p; });
-    std::shared_ptr<double> E_t_data(
-        new double[num_fields * N_r * N_z],
-        [](double const *p) { delete[] p; });
+    std::shared_ptr<float[]> E_r_data(new float[num_fields * N_r * N_z]);
+    std::shared_ptr<double[]> E_t_data(new double[num_fields * N_r * N_z]);
     float e_r{0};
     std::generate(
         E_r_data.get(), E_r_data.get() + num_fields * N_r * N_z, [&e_r] {
@@ -5411,9 +5398,7 @@ void variableBasedParticleData()
         Datatype datatype = determineDatatype<position_t>();
         Extent global_extent = {length};
         Dataset dataset = Dataset(datatype, global_extent);
-        std::shared_ptr<position_t> local_data(
-            new position_t[length],
-            [](position_t const *ptr) { delete[] ptr; });
+        std::shared_ptr<position_t[]> local_data(new position_t[length]);
 
         WriteIterations iterations = series.writeIterations();
         for (size_t i = 0; i < 10; ++i)
@@ -5511,16 +5496,14 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
         E_uncompressed.storeChunk<int>(
             {0}, {10}, [&spanWorkaround](size_t size) {
                 spanWorkaround = true;
-                return std::shared_ptr<int>(
-                    new int[size]{}, [](auto *ptr) { delete[] ptr; });
+                return std::shared_ptr<int[]>(new int[size]{});
             });
 
         REQUIRE(!spanWorkaround);
 
         E_compressed.storeChunk<int>({0}, {10}, [&spanWorkaround](size_t size) {
             spanWorkaround = true;
-            return std::shared_ptr<int>(
-                new int[size]{}, [](auto *ptr) { delete[] ptr; });
+            return std::shared_ptr<int[]>(new int[size]{});
         });
 
         REQUIRE(spanWorkaround);
@@ -5562,8 +5545,7 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
         E_uncompressed.storeChunk<int>(
             {0}, {10}, [&spanWorkaround](size_t size) {
                 spanWorkaround = true;
-                return std::shared_ptr<int>(
-                    new int[size]{}, [](auto *ptr) { delete[] ptr; });
+                return std::shared_ptr<int[]>(new int[size]{});
             });
 
         REQUIRE(!spanWorkaround);
@@ -5573,8 +5555,7 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
             E_compressed.storeChunk<int>(
                 {0}, {10}, [&spanWorkaround](size_t size) {
                     spanWorkaround = true;
-                    return std::shared_ptr<int>(
-                        new int[size]{}, [](auto *ptr) { delete[] ptr; });
+                    return std::shared_ptr<int[]>(new int[size]{});
                 });
         }
         catch (std::invalid_argument const &e)
@@ -5626,8 +5607,7 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
         E_uncompressed.storeChunk<int>(
             {0}, {10}, [&spanWorkaround](size_t size) {
                 spanWorkaround = true;
-                return std::shared_ptr<int>(
-                    new int[size]{}, [](auto *ptr) { delete[] ptr; });
+                return std::shared_ptr<int[]>(new int[size]{});
             });
 
         REQUIRE(spanWorkaround);
@@ -5635,8 +5615,7 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
         spanWorkaround = false;
         E_compressed.storeChunk<int>({0}, {10}, [&spanWorkaround](size_t size) {
             spanWorkaround = true;
-            return std::shared_ptr<int>(
-                new int[size]{}, [](auto *ptr) { delete[] ptr; });
+            return std::shared_ptr<int[]>(new int[size]{});
         });
 
         REQUIRE(spanWorkaround);
@@ -5684,8 +5663,7 @@ void iterate_nonstreaming_series(
                  */
                 [&taskSupportedByBackend](size_t size) {
                     taskSupportedByBackend = false;
-                    return std::shared_ptr<int>{
-                        new int[size], [](auto *ptr) { delete[] ptr; }};
+                    return std::shared_ptr<int[]>{new int[size]};
                 });
             if (writeSeries.backend() == "ADIOS2")
             {
