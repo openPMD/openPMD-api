@@ -241,6 +241,9 @@ public:
     template <typename T>
     void storeChunk(std::shared_ptr<T>, Offset, Extent);
 
+    template <typename T>
+    void storeChunk(std::shared_ptr<T[]>, Offset, Extent);
+
     template <typename T_ContiguousContainer>
     typename std::enable_if<
         traits::IsContiguousContainer<T_ContiguousContainer>::value>::type

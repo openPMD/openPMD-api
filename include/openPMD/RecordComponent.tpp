@@ -208,6 +208,16 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
     rc.m_chunks.push(IOTask(this, dWrite));
 }
 
+template <typename T>
+inline void
+RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
+{
+    storeChunk(
+        std::static_pointer_cast<T>(std::move(data)),
+        std::move(o),
+        std::move(e));
+}
+
 template< typename T_ContiguousContainer >
 inline typename std::enable_if<
     traits::IsContiguousContainer< T_ContiguousContainer >::value
@@ -310,6 +320,8 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
     auto &out = *getBufferView.out;
     if (!out.backendManagedBuffer)
     {
+        // note that data might have either
+        // type shared_ptr<T> or shared_ptr<T[]>
         auto data = std::forward<F>(createBuffer)(size);
         out.ptr = static_cast<void *>(data.get());
         storeChunk(std::move(data), std::move(o), std::move(e));
@@ -326,8 +338,7 @@ RecordComponent::storeChunk( Offset offset, Extent extent )
         std::move( extent ),
         []( size_t size )
         {
-            return std::shared_ptr< T >{
-                new T[ size ], []( auto * ptr ) { delete[] ptr; } };
+            return std::shared_ptr< T[] >{ new T[ size ] };
         } );
 }
 }
