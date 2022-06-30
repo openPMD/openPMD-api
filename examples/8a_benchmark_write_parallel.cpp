@@ -180,10 +180,10 @@ private:
  */
 
 template <typename T>
-std::shared_ptr<T[]>
+std::shared_ptr<T>
 createDataCPU(const unsigned long &size, const T &val, const T &increment)
 {
-    auto E = std::shared_ptr<T[]>{new T[size]};
+    auto E = std::shared_ptr<T>{new T[size], [](T *d) { delete[] d; }};
 
     for (unsigned long i = 0ul; i < size; i++)
     {
@@ -197,7 +197,7 @@ createDataCPU(const unsigned long &size, const T &val, const T &increment)
 
 #if openPMD_HAVE_CUDA_EXAMPLES
 template <typename T>
-std::shared_ptr<T[]>
+std::shared_ptr<T>
 createDataGPU(const unsigned long &size, const T &val, const T &increment)
 {
     auto myCudaMalloc = [](size_t mySize) {
@@ -206,7 +206,7 @@ createDataGPU(const unsigned long &size, const T &val, const T &increment)
         return ptr;
     };
     auto deleter = [](T *ptr) { cudaFree(ptr); };
-    auto E = std::shared_ptr<T[]>{(T *)myCudaMalloc(size * sizeof(T)), deleter};
+    auto E = std::shared_ptr<T>{(T *)myCudaMalloc(size * sizeof(T)), deleter};
 
     T *data = new T[size];
     for (unsigned long i = 0ul; i < size; i++)
@@ -222,7 +222,7 @@ createDataGPU(const unsigned long &size, const T &val, const T &increment)
 #endif
 
 template <typename T>
-std::shared_ptr<T[]>
+std::shared_ptr<T>
 createData(const unsigned long &size, const T &val, const T &increment)
 {
 #if openPMD_HAVE_CUDA_EXAMPLES

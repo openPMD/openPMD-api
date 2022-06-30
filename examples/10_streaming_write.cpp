@@ -26,7 +26,8 @@ int main()
     constexpr unsigned long length = 10ul;
     Extent global_extent = {length};
     Dataset dataset = Dataset(datatype, global_extent);
-    std::shared_ptr<position_t[]> local_data(new position_t[length]);
+    std::shared_ptr<position_t> local_data(
+        new position_t[length], [](position_t const *ptr) { delete[] ptr; });
 
     WriteIterations iterations = series.writeIterations();
     for (size_t i = 0; i < 100; ++i)

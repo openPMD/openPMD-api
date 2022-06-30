@@ -178,7 +178,7 @@ template <typename T>
 std::shared_ptr<T>
 createData(const unsigned long &size, const T &val, bool increment = false)
 {
-    auto E = std::shared_ptr<T[]>{new T[size]};
+    auto E = std::shared_ptr<T>{new T[size], [](T *d) { delete[] d; }};
 
     for (unsigned long i = 0ul; i < size; i++)
     {
