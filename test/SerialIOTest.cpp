@@ -899,11 +899,11 @@ inline void constant_scalar(std::string file_ending)
         E_x.makeConstant(static_cast<float>(13.37));
         auto E_y = s.iterations[1].meshes["E"]["y"];
         E_y.resetDataset(Dataset(Datatype::UINT, {1, 2, 3}));
-        std::shared_ptr<unsigned int> E(
+        OpenpmdUniquePtr<unsigned int> E(
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
-        E_y.storeChunk(E, {0, 0, 0}, {1, 2, 3});
+        E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.iterations[1].meshes["E"];
@@ -934,12 +934,12 @@ inline void constant_scalar(std::string file_ending)
         vel_x.makeConstant(static_cast<short>(-1));
         auto vel_y = s.iterations[1].particles["e"]["velocity"]["y"];
         vel_y.resetDataset(Dataset(Datatype::ULONGLONG, {3, 2, 1}));
-        std::shared_ptr<unsigned long long> vel(
+        OpenpmdUniquePtr<unsigned long long> vel(
             new unsigned long long[6],
             [](unsigned long long const *p) { delete[] p; });
         unsigned long long v{0};
         std::generate(vel.get(), vel.get() + 6, [&v] { return v++; });
-        vel_y.storeChunk(vel, {0, 0, 0}, {3, 2, 1});
+        vel_y.storeChunk(std::move(vel), {0, 0, 0}, {3, 2, 1});
     }
 
     {

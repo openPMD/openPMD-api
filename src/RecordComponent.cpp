@@ -377,4 +377,49 @@ bool RecordComponent::dirtyRecursive() const
     }
     return !get().m_chunks.empty();
 }
+
+void RecordComponent::storeChunk(
+    auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
+{
+    if (constant())
+        throw std::runtime_error(
+            "Chunks cannot be written for a constant RecordComponent.");
+    if (empty())
+        throw std::runtime_error(
+            "Chunks cannot be written for an empty RecordComponent.");
+    if (dtype != getDatatype())
+    {
+        std::ostringstream oss;
+        oss << "Datatypes of chunk data (" << dtype
+            << ") and record component (" << getDatatype() << ") do not match.";
+        throw std::runtime_error(oss.str());
+    }
+    uint8_t dim = getDimensionality();
+    if (e.size() != dim || o.size() != dim)
+    {
+        std::ostringstream oss;
+        oss << "Dimensionality of chunk ("
+            << "offset=" << o.size() << "D, "
+            << "extent=" << e.size() << "D) "
+            << "and record component (" << int(dim) << "D) "
+            << "do not match.";
+        throw std::runtime_error(oss.str());
+    }
+    Extent dse = getExtent();
+    for (uint8_t i = 0; i < dim; ++i)
+        if (dse[i] < o[i] + e[i])
+            throw std::runtime_error(
+                "Chunk does not reside inside dataset (Dimension on index " +
+                std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
+
+    Parameter<Operation::WRITE_DATASET> dWrite;
+    dWrite.offset = o;
+    dWrite.extent = e;
+    dWrite.dtype = dtype;
+    /* std::static_pointer_cast correctly reference-counts the pointer */
+    dWrite.data = std::move(buffer);
+    auto &rc = get();
+    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
+}
 } // namespace openPMD

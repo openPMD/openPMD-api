@@ -21,7 +21,9 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
+#include "openPMD/auxiliary/UniquePtr.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <array>
@@ -291,6 +293,21 @@ public:
     template <typename T>
     void storeChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
 
+    /** Store a chunk of data from a chunk of memory, unique pointer version.
+     *
+     * @param data   Preallocated, contiguous buffer, large enough to read the
+     *               the specified data from it.
+     *               The unique pointer must own and manage the buffer.
+     *               Optimizations might be implemented based on this
+     *               assumption (e.g. further deferring the operation if the
+     *               backend is the unique owner).
+     *               For raw pointers, use storeChunkRaw().
+     * @param offset Offset within the dataset.
+     * @param extent Extent within the dataset, counted from the offset.
+     */
+    template <typename T>
+    void storeChunk(OpenpmdUniquePtr<T> data, Offset offset, Extent extent);
+
     /** Store a chunk of data from a chunk of memory, raw pointer version.
      *
      * @param data   Preallocated, contiguous buffer, large enough to read the
@@ -386,6 +403,9 @@ private:
      * @return Reference to this RecordComponent instance.
      */
     RecordComponent &makeEmpty(Dataset d);
+
+    void storeChunk(
+        auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
 
     /**
      * @brief Check recursively whether this RecordComponent is dirty.

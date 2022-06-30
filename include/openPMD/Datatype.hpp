@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/auxiliary/TypeTraits.hpp"
+#include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <array>
 #include <climits>
@@ -276,31 +277,26 @@ inline constexpr Datatype determineDatatype()
         return Datatype::UNDEFINED;
 }
 
-template <typename T>
-inline constexpr Datatype determineDatatype(std::shared_ptr<T>)
-{
-    return determineDatatype<T>();
-}
-
-template <typename T>
-inline constexpr Datatype determineDatatype(T *)
-{
-    return determineDatatype<T>();
-}
-
-/*
- * Catch-all overload for unsupported types, with static_assert errors
- * triggered at compile-time.
+/**
+ * @brief Determine datatype of passed value
+ *
+ * @param val Value whose type to evaluate
+ * @tparam T Type of the passed value
+ * @return If T is of a pointer type, then the type of the contained value.
+ *         Otherwise, a compile-time error detailing the use of this function.
  */
-template <typename T_ContiguousContainer>
-inline constexpr Datatype determineDatatype(T_ContiguousContainer &&)
+template <typename T>
+inline constexpr Datatype determineDatatype(T &&val)
 {
-    using T_ContiguousContainer_stripped =
-        std::remove_reference_t<T_ContiguousContainer>;
-    if constexpr (auxiliary::IsContiguousContainer_v<
-                      T_ContiguousContainer_stripped>)
+    (void)val; // don't need this, it only has a name for Doxygen
+    using T_stripped = std::remove_cv_t<std::remove_reference_t<T>>;
+    if constexpr (auxiliary::IsPointer_v<T_stripped>)
     {
-        static_assert(auxiliary::dependent_false_v<T_ContiguousContainer>, R"(
+        return determineDatatype<auxiliary::IsPointer_t<T_stripped>>();
+    }
+    else if constexpr (auxiliary::IsContiguousContainer_v<T_stripped>)
+    {
+        static_assert(auxiliary::dependent_false_v<T_stripped>, R"(
 Error: Passed a contiguous container type to determineDatatype<>().
 These types are not directly supported due to colliding semantics.
 Assuming a vector object `std::vector<float> vec;`,
@@ -322,15 +318,14 @@ use one of the following alternatives:
     }
     else
     {
-        static_assert(auxiliary::dependent_false_v<T_ContiguousContainer>, R"(
+        static_assert(auxiliary::dependent_false_v<T_stripped>, R"(
 Error: Unknown datatype passed to determineDatatype<>().
 For a direct translation from C++ type to the openPMD::Datatype enum, use:
 `auto determineDatatype<T>() -> Datatype`.
 
 For detecting the contained datatpye of a pointer type (shared or raw pointer),
-use either of the following overloads:
-`auto determineDatatype<T>(std::shared_ptr<T>) -> Datatype` or
-`auto determineDatatype<T>(T *) -> Datatype`.
+use this following template (i.e. `auto determineDatatype<T>(T &&) -> Datatype`)
+which accepts pointer-type parameters (raw, shared or unique).
         )");
     }
     // Unreachable, but C++ does not know it

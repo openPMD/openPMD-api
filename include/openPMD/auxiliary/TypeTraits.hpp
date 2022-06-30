@@ -21,8 +21,11 @@
 
 #pragma once
 
+#include "openPMD/auxiliary/UniquePtr.hpp"
+
 #include <array>
 #include <cstddef> // size_t
+#include <memory>
 #include <vector>
 
 namespace openPMD::auxiliary
@@ -36,7 +39,7 @@ namespace detail
     };
 
     template <typename T>
-    struct IsVector<std::vector<T> >
+    struct IsVector<std::vector<T>>
     {
         static constexpr bool value = true;
     };
@@ -48,9 +51,43 @@ namespace detail
     };
 
     template <typename T, size_t n>
-    struct IsArray<std::array<T, n> >
+    struct IsArray<std::array<T, n>>
     {
         static constexpr bool value = true;
+    };
+
+    template <typename T>
+    struct IsPointer
+    {
+        constexpr static bool value = false;
+    };
+
+    template <typename T>
+    struct IsPointer<T *>
+    {
+        constexpr static bool value = true;
+        using type = T;
+    };
+
+    template <typename T>
+    struct IsPointer<std::shared_ptr<T>>
+    {
+        constexpr static bool value = true;
+        using type = T;
+    };
+
+    template <typename T, typename Del>
+    struct IsPointer<std::unique_ptr<T, Del>>
+    {
+        constexpr static bool value = true;
+        using type = T;
+    };
+
+    template <typename T>
+    struct IsPointer<OpenpmdUniquePtr<T>>
+    {
+        constexpr static bool value = true;
+        using type = T;
     };
 } // namespace detail
 
@@ -59,6 +96,12 @@ inline constexpr bool IsVector_v = detail::IsVector<T>::value;
 
 template <typename T>
 inline constexpr bool IsArray_v = detail::IsArray<T>::value;
+
+template <typename T>
+inline constexpr bool IsPointer_v = detail::IsPointer<T>::value;
+
+template <typename T>
+using IsPointer_t = typename detail::IsPointer<T>::type;
 
 /** Emulate in the C++ concept ContiguousContainer
  *
