@@ -338,7 +338,12 @@ RecordComponent::storeChunk( Offset offset, Extent extent )
         std::move( extent ),
         []( size_t size )
         {
+#if defined(__clang_major__) && __clang_major__ < 7
+            return std::shared_ptr< T >{
+                new T[ size ], []( auto * ptr ) { delete[] ptr; } };
+#else
             return std::shared_ptr< T[] >{ new T[ size ] };
+#endif
         } );
 }
 }
