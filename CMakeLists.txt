@@ -414,6 +414,7 @@ set(CORE_SOURCE
         src/auxiliary/Mpi.cpp
         src/auxiliary/UniquePtr.cpp
         src/auxiliary/Variant.cpp
+        src/auxiliary/TemplateFile.cpp
         src/backend/Attributable.cpp
         src/backend/Attribute.cpp
         src/backend/BaseRecord.cpp

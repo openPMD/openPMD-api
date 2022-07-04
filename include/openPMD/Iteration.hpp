@@ -134,6 +134,15 @@ namespace internal
          * Otherwise empty.
          */
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
+
+        enum TernaryBool
+        {
+            Undefined,
+            True,
+            False
+        };
+        TernaryBool hasMeshes = TernaryBool::Undefined;
+        TernaryBool hasParticles = TernaryBool::Undefined;
     };
 } // namespace internal
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
@@ -270,6 +279,9 @@ public:
 
     Container<Mesh> meshes{};
     Container<ParticleSpecies> particles{}; // particleSpecies?
+
+    bool hasMeshes() const;
+    bool hasParticles() const;
 
     virtual ~Iteration() = default;
 
