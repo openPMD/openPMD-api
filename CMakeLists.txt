@@ -469,6 +469,7 @@ set(CORE_SOURCE
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp
         src/auxiliary/Mpi.cpp
+        src/auxiliary/TemplateFile.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
         src/backend/MeshRecordComponent.cpp

@@ -12,6 +12,7 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/TemplateFile.hpp"
 #include "openPMD/openPMD.hpp"
 
 #include <catch2/catch.hpp>
@@ -1487,6 +1488,12 @@ inline void dtype_test(
 
     if (activateTemplateMode.has_value())
     {
+        Series out(
+            "../samples/dtype_test_from_template." + backend,
+            Access::CREATE,
+            activateTemplateMode.value());
+        auxiliary::initializeFromTemplate(out, s, 1000);
+        out.flush();
         return;
     }
     // same implementation types (not necessary aliases) detection
