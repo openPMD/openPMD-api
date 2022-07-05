@@ -260,6 +260,64 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
 
     detail::BufferedActions::ADIOS2FlushParams adios2FlushParams{
         flushParams.flushLevel};
+    if (flushParams.backendConfig.json().contains("adios2"))
+    {
+        auto adios2Config = flushParams.backendConfig["adios2"];
+        if (adios2Config.json().contains("engine"))
+        {
+            auto engineConfig = adios2Config["engine"];
+            if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
+            {
+                auto target = json::asLowerCaseStringDynamic(
+                    engineConfig[ADIOS2Defaults::str_flushtarget].json());
+                if (!target.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        "Flush target must be either 'disk' or 'buffer', but "
+                        "was non-literal type.");
+                }
+                if (target.value() == "disk")
+                {
+                    adios2FlushParams.flushTarget =
+                        detail::BufferedActions::FlushTarget::Disk;
+                }
+                else if (target.value() == "buffer")
+                {
+                    adios2FlushParams.flushTarget =
+                        detail::BufferedActions::FlushTarget::Buffer;
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        "Flush target must be either 'disk' or 'buffer', but "
+                        "was " +
+                            target.value() + ".");
+                }
+            }
+        }
+
+        if (auto shadow = adios2Config.invertShadow(); shadow.size() > 0)
+        {
+            switch (adios2Config.originallySpecifiedAs)
+            {
+            case json::SupportedLanguages::JSON:
+                std::cerr << "Warning: parts of the backend configuration for "
+                             "ADIOS2 remain unused:\n"
+                          << shadow << std::endl;
+                break;
+            case json::SupportedLanguages::TOML: {
+                auto asToml = json::jsonToToml(shadow);
+                std::cerr << "Warning: parts of the backend configuration for "
+                             "ADIOS2 remain unused:\n"
+                          << asToml << std::endl;
+                break;
+            }
+            }
+        }
+    }
+
     for (auto &p : m_fileData)
     {
         if (m_dirty.find(p.first) != m_dirty.end())
@@ -2312,6 +2370,35 @@ namespace detail
                 streamStatus = bool(tmp) ? StreamStatus::OutsideOfStep
                                          : StreamStatus::NoStream;
             }
+
+            if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
+            {
+                auto target = json::asLowerCaseStringDynamic(
+                    engineConfig[ADIOS2Defaults::str_flushtarget].json());
+                if (!target.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        "Flush target must be either 'disk' or 'buffer', but "
+                        "was non-literal type.");
+                }
+                if (target.value() == "disk")
+                {
+                    flushDuringStep = true;
+                }
+                else if (target.value() == "buffer")
+                {
+                    flushDuringStep = false;
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        "Flush target must be either 'disk' or 'buffer', but "
+                        "was " +
+                            target.value() + ".");
+                }
+            }
         }
 
         auto shadow = impl.m_config.invertShadow();
@@ -2687,14 +2774,50 @@ namespace detail
     void
     BufferedActions::flush(ADIOS2FlushParams flushParams, bool writeAttributes)
     {
+        auto decideFlushAPICall = [this, flushTarget = flushParams.flushTarget](
+                                      adios2::Engine &engine) {
+#if ADIOS2_VERSION_MAJOR * 1000000000 + ADIOS2_VERSION_MINOR * 100000000 +     \
+        ADIOS2_VERSION_PATCH * 1000000 + ADIOS2_VERSION_TWEAK >=               \
+    2701001223
+            bool performDataWrite{};
+            switch (flushTarget)
+            {
+            case FlushTarget::Default:
+                performDataWrite = flushDuringStep;
+                break;
+            case FlushTarget::Disk:
+                performDataWrite = true;
+                break;
+            case FlushTarget::Buffer:
+                performDataWrite = false;
+                break;
+            }
+            performDataWrite = performDataWrite && m_engineType == "bp5";
+
+            if (performDataWrite)
+            {
+                engine.PerformDataWrite();
+            }
+            else
+            {
+                engine.PerformPuts();
+            }
+#else
+            (void)this;
+            (void)flushTarget;
+            engine.PerformPuts();
+#endif
+        };
+
         flush(
             flushParams,
-            [](BufferedActions &ba, adios2::Engine &eng) {
+            [decideFlushAPICall = std::move(decideFlushAPICall)](
+                BufferedActions &ba, adios2::Engine &eng) {
                 switch (ba.m_mode)
                 {
                 case adios2::Mode::Write:
                 case adios2::Mode::Append:
-                    eng.PerformPuts();
+                    decideFlushAPICall(eng);
                     break;
                 case adios2::Mode::Read:
                     eng.PerformGets();

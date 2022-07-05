@@ -413,6 +413,7 @@ namespace ADIOS2Defaults
     constexpr const_str str_type = "type";
     constexpr const_str str_params = "parameters";
     constexpr const_str str_usesteps = "usesteps";
+    constexpr const_str str_flushtarget = "preferred_flush_target";
     constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
     constexpr const_str str_adios2Schema =
         "__openPMD_internal/openPMD2_adios2_schema";
@@ -1040,12 +1041,20 @@ namespace detail
         template <typename BA>
         void enqueue(BA &&ba, decltype(m_buffer) &);
 
+        enum class FlushTarget : unsigned char
+        {
+            Default,
+            Buffer,
+            Disk
+        };
+
         struct ADIOS2FlushParams
         {
             /*
              * Only execute performPutsGets if UserFlush.
              */
             FlushLevel level;
+            FlushTarget flushTarget = FlushTarget::Default;
 
             ADIOS2FlushParams(FlushLevel level_in) : level(level_in)
             {}
@@ -1244,6 +1253,8 @@ namespace detail
          * finalize() will set this true to avoid running twice.
          */
         bool finalized = false;
+
+        bool flushDuringStep = true;
 
         inline SupportedSchema schema() const
         {
