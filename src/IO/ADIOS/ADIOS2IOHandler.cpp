@@ -253,13 +253,73 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
     }
 }
 
+using FlushTarget = ADIOS2IOHandlerImpl::FlushTarget;
+static FlushTarget flushTargetFromString(std::string const &str)
+{
+    if (str == "buffer")
+    {
+        return FlushTarget::Buffer;
+    }
+    else if (str == "disk")
+    {
+        return FlushTarget::Disk;
+    }
+    else if (str == "buffer_override")
+    {
+        return FlushTarget::Buffer_Override;
+    }
+    else if (str == "disk_override")
+    {
+        return FlushTarget::Disk_Override;
+    }
+    else
+    {
+        throw error::BackendConfigSchema(
+            {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+            "Flush target must be either 'disk' or 'buffer', but "
+            "was " +
+                str + ".");
+    }
+}
+
+static FlushTarget &
+overrideFlushTarget(FlushTarget &inplace, FlushTarget new_val)
+{
+    auto allowsOverride = [](FlushTarget ft) {
+        switch (ft)
+        {
+        case FlushTarget::Buffer:
+        case FlushTarget::Disk:
+            return true;
+        case FlushTarget::Buffer_Override:
+        case FlushTarget::Disk_Override:
+            return false;
+        }
+        return true;
+    };
+
+    if (allowsOverride(inplace))
+    {
+        inplace = new_val;
+    }
+    else
+    {
+        if (!allowsOverride(new_val))
+        {
+            inplace = new_val;
+        }
+        // else { keep the old value, no-op }
+    }
+    return inplace;
+}
+
 std::future<void>
 ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
 {
     auto res = AbstractIOHandlerImpl::flush();
 
     detail::BufferedActions::ADIOS2FlushParams adios2FlushParams{
-        flushParams.flushLevel};
+        flushParams.flushLevel, m_flushTarget};
     if (flushParams.backendConfig.json().contains("adios2"))
     {
         auto adios2Config = flushParams.backendConfig["adios2"];
@@ -277,24 +337,9 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
                         "Flush target must be either 'disk' or 'buffer', but "
                         "was non-literal type.");
                 }
-                if (target.value() == "disk")
-                {
-                    adios2FlushParams.flushTarget =
-                        detail::BufferedActions::FlushTarget::Disk;
-                }
-                else if (target.value() == "buffer")
-                {
-                    adios2FlushParams.flushTarget =
-                        detail::BufferedActions::FlushTarget::Buffer;
-                }
-                else
-                {
-                    throw error::BackendConfigSchema(
-                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
-                        "Flush target must be either 'disk' or 'buffer', but "
-                        "was " +
-                            target.value() + ".");
-                }
+                overrideFlushTarget(
+                    adios2FlushParams.flushTarget,
+                    flushTargetFromString(target.value()));
             }
         }
 
@@ -2382,22 +2427,9 @@ namespace detail
                         "Flush target must be either 'disk' or 'buffer', but "
                         "was non-literal type.");
                 }
-                if (target.value() == "disk")
-                {
-                    flushDuringStep = true;
-                }
-                else if (target.value() == "buffer")
-                {
-                    flushDuringStep = false;
-                }
-                else
-                {
-                    throw error::BackendConfigSchema(
-                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
-                        "Flush target must be either 'disk' or 'buffer', but "
-                        "was " +
-                            target.value() + ".");
-                }
+                overrideFlushTarget(
+                    m_impl->m_flushTarget,
+                    flushTargetFromString(target.value()));
             }
         }
 
@@ -2782,13 +2814,12 @@ namespace detail
             bool performDataWrite{};
             switch (flushTarget)
             {
-            case FlushTarget::Default:
-                performDataWrite = flushDuringStep;
-                break;
             case FlushTarget::Disk:
+            case FlushTarget::Disk_Override:
                 performDataWrite = true;
                 break;
             case FlushTarget::Buffer:
+            case FlushTarget::Buffer_Override:
                 performDataWrite = false;
                 break;
             }

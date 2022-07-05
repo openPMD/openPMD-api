@@ -3954,11 +3954,19 @@ TEST_CASE("git_adios2_early_chunk_query", "[serial][adios2]")
 }
 
 /*
- * Require Gnu compiler 11 or younger because this test needs the
- * <filesystem> header.
+ * Require __unix__ since we need all that filestat stuff for this test.
  */
 #if defined(__unix__) && defined(ADIOS2_HAVE_BP5)
-void adios2_bp5_flush(std::string const &cfg, bool flushDuringStep)
+
+enum class FlushDuringStep
+{
+    Never,
+    Default_No,
+    Default_Yes,
+    Always
+};
+
+void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
 {
     constexpr size_t size = 1024 * 1024;
 
@@ -4015,9 +4023,10 @@ void adios2_bp5_flush(std::string const &cfg, bool flushDuringStep)
         }
 
         auto currentSize = getsize();
-        if (flushDuringStep)
+        if (flushDuringStep == FlushDuringStep::Default_Yes ||
+            flushDuringStep == FlushDuringStep::Always)
         {
-            // should be roughly within 1% of 4Gb
+            // should be roughly within 1% of 4Mb
             REQUIRE(std::abs(1 - double(currentSize) / (4 * size)) <= 0.01);
         }
         else
@@ -4035,9 +4044,10 @@ void adios2_bp5_flush(std::string const &cfg, bool flushDuringStep)
         }
 
         currentSize = getsize();
-        if (flushDuringStep)
+        if (flushDuringStep == FlushDuringStep::Default_Yes ||
+            flushDuringStep == FlushDuringStep::Always)
         {
-            // should still be roughly within 1% of 4Gb
+            // should still be roughly within 1% of 4Mb
             REQUIRE(std::abs(1 - double(currentSize) / (4 * size)) <= 0.01);
         }
         else
@@ -4048,9 +4058,10 @@ void adios2_bp5_flush(std::string const &cfg, bool flushDuringStep)
 
         write.flush();
         currentSize = getsize();
-        if (flushDuringStep)
+        if (flushDuringStep == FlushDuringStep::Default_Yes ||
+            flushDuringStep == FlushDuringStep::Always)
         {
-            // should now be roughly within 1% of 8Gb
+            // should now be roughly within 1% of 8Mb
             REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
         }
         else
@@ -4069,11 +4080,15 @@ void adios2_bp5_flush(std::string const &cfg, bool flushDuringStep)
             component.seriesFlush(
                 "adios2.engine.preferred_flush_target = \"buffer\"");
         }
-        // everything should be the same as before
         currentSize = getsize();
-        if (flushDuringStep)
+        if (flushDuringStep == FlushDuringStep::Always)
         {
-            // should now be roughly within 1% of 8Gb
+            // should now be roughly within 1% of 12Mb
+            REQUIRE(std::abs(1 - double(currentSize) / (12 * size)) <= 0.01);
+        }
+        else if (flushDuringStep == FlushDuringStep::Default_Yes)
+        {
+            // should now be roughly within 1% of 8Mb
             REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
         }
         else
@@ -4093,11 +4108,19 @@ void adios2_bp5_flush(std::string const &cfg, bool flushDuringStep)
                 "adios2.engine.preferred_flush_target = \"disk\"");
         }
         currentSize = getsize();
-        // should now indiscriminately be roughly within 1% of 16Gb
-        REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
+        if (flushDuringStep != FlushDuringStep::Never)
+        {
+            // should now be roughly within 1% of 16Mb
+            REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
+        }
+        else
+        {
+            // should be roughly zero
+            REQUIRE(currentSize <= 4096);
+        }
     }
     auto currentSize = getsize();
-    // should still be indiscriminately be roughly within 1% of 8Gb after
+    // should now be indiscriminately be roughly within 1% of 8Mb after
     // closing the Series
     REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
 }
@@ -4120,7 +4143,8 @@ NumAggregators = 1
 BufferChunkSize = 2147483646 # 2^31 - 2
 )";
 
-    adios2_bp5_flush(cfg1, /* flushDuringStep = */ true);
+    adios2_bp5_flush(
+        cfg1, /* flushDuringStep = */ FlushDuringStep::Default_Yes);
 
     std::string cfg2 = R"(
 [adios2]
@@ -4138,7 +4162,7 @@ NumAggregators = 1
 BufferChunkSize = 2147483646 # 2^31 - 2
 )";
 
-    adios2_bp5_flush(cfg2, /* flushDuringStep = */ false);
+    adios2_bp5_flush(cfg2, /* flushDuringStep = */ FlushDuringStep::Default_No);
 
     std::string cfg3 = R"(
 [adios2]
@@ -4156,7 +4180,44 @@ NumAggregators = 1
 BufferChunkSize = 2147483646 # 2^31 - 2
 )";
 
-    adios2_bp5_flush(cfg3, /* flushDuringStep = */ true);
+    adios2_bp5_flush(
+        cfg3, /* flushDuringStep = */ FlushDuringStep::Default_Yes);
+
+    std::string cfg4 = R"(
+[adios2]
+
+[adios2.engine]
+usesteps = true
+type = "bp5"
+preferred_flush_target = "buffer_override"
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(cfg4, /* flushDuringStep = */ FlushDuringStep::Never);
+
+    std::string cfg5 = R"(
+[adios2]
+
+[adios2.engine]
+usesteps = true
+type = "bp5"
+preferred_flush_target = "disk_override"
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(cfg5, /* flushDuringStep = */ FlushDuringStep::Always);
 }
 #endif
 

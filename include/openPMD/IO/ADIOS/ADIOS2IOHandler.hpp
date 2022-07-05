@@ -210,6 +210,16 @@ public:
      */
     adios2::Mode adios2AccessMode(std::string const &fullPath);
 
+    enum class FlushTarget : unsigned char
+    {
+        Buffer,
+        Buffer_Override,
+        Disk,
+        Disk_Override
+    };
+
+    FlushTarget m_flushTarget = FlushTarget::Disk;
+
 private:
     adios2::ADIOS m_ADIOS;
     /*
@@ -929,6 +939,8 @@ namespace detail
         friend struct BufferedGet;
         friend struct BufferedPut;
 
+        using FlushTarget = ADIOS2IOHandlerImpl::FlushTarget;
+
         BufferedActions(BufferedActions const &) = delete;
 
         /**
@@ -1041,22 +1053,19 @@ namespace detail
         template <typename BA>
         void enqueue(BA &&ba, decltype(m_buffer) &);
 
-        enum class FlushTarget : unsigned char
-        {
-            Default,
-            Buffer,
-            Disk
-        };
-
         struct ADIOS2FlushParams
         {
             /*
              * Only execute performPutsGets if UserFlush.
              */
             FlushLevel level;
-            FlushTarget flushTarget = FlushTarget::Default;
+            FlushTarget flushTarget = FlushTarget::Disk;
 
             ADIOS2FlushParams(FlushLevel level_in) : level(level_in)
+            {}
+
+            ADIOS2FlushParams(FlushLevel level_in, FlushTarget flushTarget_in)
+                : level(level_in), flushTarget(flushTarget_in)
             {}
         };
 
@@ -1253,8 +1262,6 @@ namespace detail
          * finalize() will set this true to avoid running twice.
          */
         bool finalized = false;
-
-        bool flushDuringStep = true;
 
         inline SupportedSchema schema() const
         {
