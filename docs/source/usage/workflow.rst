@@ -63,3 +63,12 @@ Attributes are (currently) unaffected by this:
 
 *   In writing, attributes are stored internally by value and can afterwards not be accessed by the user.
 *   In reading, attributes are parsed upon opening the Series / an iteration and are available to read right-away.
+
+.. attention::
+
+    Note that the concrete implementation of ``Series::flush()`` and ``Attributable::seriesFlush()`` is backend-specific.
+    Using these calls does neither guarantee that data is moved to storage/transport nor that it can be accessed by independent readers at this point.
+
+    Some backends (e.g. the BP5 engine of ADIOS2) have multiple implementations for the openPMD-api-level guarantees of flush points.
+    For user-guided selection of such implementations, ``Series::flush`` and ``Attributable::seriesFlush()`` take an optional JSON/TOML string as a parameter.
+    See the section on :ref:`backend-specific configuration <backendconfig>` for details.

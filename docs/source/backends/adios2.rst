@@ -130,7 +130,13 @@ This buffer is drained to storage only at specific times:
 
 The usage pattern of openPMD, especially the choice of iteration encoding influences the memory use of ADIOS2.
 The following graphs are created from a real-world application using openPMD (PIConGPU) using KDE Heaptrack.
-Ignore the 30GB initialization phases.
+
+BP4 file engine
+***************
+
+The internal data structure of BP4 is one large buffer that holds all data written by a process.
+It is drained to the disk upon ending a step or closing the engine (in parallel applications, data will usually be aggregated at the node-level before this).
+This approach enables a very high IO performance by requiring only very few, very large IO operations, at the cost of a high memory consumption and some common usage pitfalls as detailed below:
 
 * **file-based iteration encoding:** A new ADIOS2 engine is opened for each iteration and closed upon ``Iteration::close()``.
   Each iteration has its own buffer:
@@ -159,6 +165,87 @@ Ignore the 30GB initialization phases.
 
 .. image:: ./memory_groupbased_nosteps.png
   :alt: Memory usage of group-based iteration without using steps
+
+SST staging engine
+******************
+
+Like the BP4 engine, the SST engine uses one large buffer as an internal data structure.
+
+Unlike the BP4 engine, however, a new buffer is allocated for each IO step, leading to a memory profile with clearly distinct IO steps:
+
+.. image:: ./memory_sst_easy.png
+  :alt: Ideal memory usage of the SST engine
+
+The SST engine performs all IO asynchronously in the background and releases memory only as soon as the reader is done interacting with an IO step.
+With slow readers, this can lead to a buildup of past IO steps in memory and subsequently to an out-of-memory condition:
+
+.. image:: ./memory_sst_congested.png
+  :alt: Memory congestion in SST due to a slow reader
+
+This can be avoided by specifying the `ADIOS2 parameter <https://adios2.readthedocs.io/en/latest/engines/engines.html#bp5>`_ ``QueueLimit``:
+
+.. code:: cpp
+
+  std::string const adios2Config = R"(
+    {"adios2": {"engine": {"parameters": {"QueueLimit": 1}}}}
+  )";
+  Series series("simData.sst", Access::CREATE, adios2Config);
+
+By default, the openPMD-api configures a queue limit of 2.
+Depending on the value of the ADIOS2 parameter ``QueueFullPolicy``, the SST engine will either ``"Discard"`` steps or ``"Block"`` the writer upon reaching the queue limit.
+
+BP5 file engine
+***************
+
+The BP5 file engine internally uses a linked list of equally-sized buffers.
+The size of each buffer can be specified up to a maximum of 2GB with the `ADIOS2 parameter <https://adios2.readthedocs.io/en/latest/engines/engines.html#bp5>`_ ``BufferChunkSize``:
+
+.. code:: cpp
+
+  std::string const adios2Config = R"(
+    {"adios2": {"engine": {"parameters": {"BufferChunkSize": 2147381248}}}}
+  )";
+  Series series("simData.bp5", Access::CREATE, adios2Config);
+
+This approach implies a sligthly lower IO performance due to more frequent and smaller writes, but it lets users control memory usage better and avoids out-of-memory issues when configuring ADIOS2 incorrectly.
+
+The buffer is drained upon closing a step or the engine, but draining to the filesystem can also be triggered manually.
+In the openPMD-api, this can be done by specifying backend-specific parameters to the ``Series::flush()`` or ``Attributable::seriesFlush()`` calls:
+
+.. code:: cpp
+
+  series.flush(R"({"adios2": {"preferred_flush_target": "disk"}})")
+
+The memory consumption of this approach shows that the 2GB buffer is first drained and then recreated after each ``flush()``:
+
+.. image:: ./memory_bp5_yes_flush.png
+  :alt: Memory usage of BP5 when flushing directly to disk
+
+.. note::
+
+  KDE Heaptrack tracks the **virtual memory** consumption.
+  While the BP4 engine uses ``std::vector<char>`` for its internal buffer, BP5 uses plain ``malloc()`` (hence the 2GB limit), which does not initialize memory.
+  Memory pages will only be allocated to physical memory upon writing.
+  In applications with small IO sizes on systems with virtual memory, the physical memory usage will stay well below 2GB even if specifying the BufferChunkSize as 2GB.
+
+  **=> Specifying the buffer chunk size as 2GB as shown above is a good idea in most cases.**
+
+Alternatively, data can be flushed to the buffer.
+Note that this involves data copies that can be avoided by either flushing directly to disk or by entirely avoiding to flush until ``Iteration::close()``:
+
+.. code:: cpp
+
+  series.flush(R"({"adios2": {"preferred_flush_target": "buffer"}})")
+
+With this strategy, the BP5 engine will slowly build up its buffer until ending the step.
+Rather than by reallocation as in BP4, this is done by appending a new chunk, leading to a clearly more acceptable memory profile:
+
+.. image:: ./memory_bp5_no_flush.png
+  :alt: Memory usage of BP5 when flushing to the engine buffer
+
+The default is to flush to disk, but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
+
+
 
 
 Known Issues

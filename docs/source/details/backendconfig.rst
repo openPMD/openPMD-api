@@ -37,7 +37,10 @@ The configuration string may refer to the complete ``openPMD::Series`` or may ad
 This reflects the fact that certain backend-specific parameters may refer to the whole Series (such as storage engines and their parameters) and others refer to actual datasets (such as compression).
 Dataset-specific configurations are (currently) only available during dataset creation, but not when reading datasets.
 
-A JSON/TOML configuration may either be specified as an inline string that can be parsed as a JSON/TOML object, or  alternatively as a path to a JSON/TOML-formatted text file (only in the constructor of ``openPMD::Series``):
+Additionally, some backends may provide different implementations to the ``Series::flush()`` and ``Attributable::flushSeries()`` calls.
+JSON/TOML strings may be passed to these calls as optional parameters.
+
+A JSON/TOML configuration may either be specified as an inline string that can be parsed as a JSON/TOML object, or  alternatively as a path to a JSON/TOML-formatted text file (only in the constructor of ``openPMD::Series``, all other API calls that accept a JSON/TOML specification require in-line datasets):
 
 * File paths are distinguished by prepending them with an at-sign ``@``.
   JSON and TOML are then distinguished by the filename extension ``.json`` or ``.toml``.
@@ -119,6 +122,12 @@ Explanation of the single keys:
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for the available engine parameters.
   The openPMD-api does not interpret these values and instead simply forwards them to ADIOS2.
 * ``adios2.engine.usesteps``: Described more closely in the documentation for the :ref:`ADIOS2 backend<backends-adios2>` (usesteps).
+* ``adios2.engine.preferred_flush_target`` Only relevant for BP5 engine, possible values are ``"disk"`` and ``"buffer"`` (default: ``"disk"``).
+
+  * If ``"disk"``, data will be moved to disk on every flush.
+  * If ``"buffer"``, then only upon ending an IO step or closing an engine.
+
+  This behavior can be overridden on a per-flush basis by specifying this JSON/TOML key as an optional parameter to the ``Series::flush()`` or ``Attributable::seriesFlush()`` methods.
 * ``adios2.dataset.operators``: This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
   Each object in the list has two keys:
 
