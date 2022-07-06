@@ -119,6 +119,8 @@ private:
     std::optional<SeriesIterator *> loopBody();
 
     void deactivateDeadIteration(iteration_index_t);
+
+    void initSeriesInLinearReadMode();
 };
 
 /**

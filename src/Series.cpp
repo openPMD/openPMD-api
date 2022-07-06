@@ -334,10 +334,17 @@ Series &Series::setIterationFormat(std::string const &i)
 
     if (iterationEncoding() == IterationEncoding::groupBased ||
         iterationEncoding() == IterationEncoding::variableBased)
-        if (basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0"))
+    {
+        if (!containsAttribute("basePath"))
+        {
+            setBasePath(i);
+        }
+        else if (
+            basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0"))
             throw std::invalid_argument(
                 "iterationFormat must not differ from basePath " + basePath() +
                 " for group- or variableBased data");
+    }
 
     setAttribute("iterationFormat", i);
     return *this;
@@ -576,8 +583,13 @@ Given file pattern: ')END"
 
     switch (IOHandler()->m_frontendAccess)
     {
+    case Access::READ_LINEAR:
+        // don't parse anything here
+        // no data accessible before opening the first step
+        // setIterationEncoding(input->iterationEncoding);
+        series.m_iterationEncoding = input->iterationEncoding;
+        break;
     case Access::READ_ONLY:
-    case Access::READ_LINEAR: // @todo don't parse the whole thing here
     case Access::READ_WRITE: {
         /* Allow creation of values in Containers and setting of Attributes
          * Would throw for Access::READ_ONLY */
@@ -1309,7 +1321,28 @@ auto Series::readGorVBased(bool do_always_throw_errors, bool do_init)
             if (encoding == "groupBased")
                 series.m_iterationEncoding = IterationEncoding::groupBased;
             else if (encoding == "variableBased")
+            {
                 series.m_iterationEncoding = IterationEncoding::variableBased;
+                if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+                {
+                    std::cerr << R"(
+The opened Series uses variable-based encoding, but is being accessed by
+READ_ONLY mode which operates in random-access manner.
+Random-access is (currently) unsupported by variable-based encoding
+and some iterations may not be found by this access mode.
+Consider using Access::READ_LINEAR and Series::readIterations().)"
+                              << std::endl;
+                }
+                else if (IOHandler()->m_frontendAccess == Access::READ_WRITE)
+                {
+                    throw error::WrongAPIUsage(R"(
+The opened Series uses variable-based encoding, but is being accessed by
+READ_WRITE mode which does not (yet) support variable-based encoding.
+Please choose either Access::READ_LINEAR for reading or Access::APPEND for
+creating new iterations.
+                    )");
+                }
+            }
             else if (encoding == "fileBased")
             {
                 series.m_iterationEncoding = IterationEncoding::fileBased;
@@ -1444,9 +1477,6 @@ auto Series::readGorVBased(bool do_always_throw_errors, bool do_init)
         return std::nullopt;
     };
 
-    /*
-     * @todo in BP5, a BeginStep() might be necessary before this
-     */
     auto currentSteps = currentSnapshot();
 
     switch (iterationEncoding())
@@ -1562,7 +1592,22 @@ void Series::readBase()
     IOHandler()->flush(internal::defaultFlushParams);
     if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
         val.has_value())
+    {
+        if ( // might have been previously initialized in READ_LINEAR access
+             // mode
+            containsAttribute("basePath") &&
+            getAttribute("basePath").get<std::string>() != val.value())
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Value for 'basePath' ('" + val.value() +
+                    "') does not match expected value '" +
+                    getAttribute("basePath").get<std::string>() + "'.");
+        }
         setAttribute("basePath", val.value());
+    }
     else
         throw error::ReadError(
             error::AffectedObject::Attribute,

@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include <stdexcept>
+
 namespace openPMD
 {
 /** File access mode to use during IO.
@@ -48,6 +50,7 @@ namespace access
         case Access::APPEND:
             return false;
         }
+        throw std::runtime_error("Unreachable!");
     }
 
     inline bool write(Access access)
@@ -67,6 +70,7 @@ namespace access
         case Access::APPEND:
             return true;
         }
+        throw std::runtime_error("Unreachable!");
     }
 
     inline bool read(Access access)

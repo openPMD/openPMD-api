@@ -151,7 +151,10 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
 {
     Parameter() = default;
     Parameter(Parameter const &p)
-        : AbstractParameter(), name(p.name), encoding(p.encoding)
+        : AbstractParameter()
+        , name(p.name)
+        , encoding(p.encoding)
+        , out_parsePreference(p.out_parsePreference)
     {}
 
     std::unique_ptr<AbstractParameter> clone() const override
@@ -167,6 +170,13 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
      * variableBased encoding.
      */
     IterationEncoding encoding = IterationEncoding::groupBased;
+    enum class ParsePreference : char
+    {
+        UpFront,
+        PerStep
+    };
+    std::shared_ptr<ParsePreference> out_parsePreference =
+        std::make_shared<ParsePreference>(ParsePreference::UpFront);
 };
 
 template <>

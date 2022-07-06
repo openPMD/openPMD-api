@@ -31,8 +31,59 @@ namespace openPMD
 SeriesIterator::SeriesIterator() : m_series()
 {}
 
+void SeriesIterator::initSeriesInLinearReadMode()
+{
+    auto &series = *m_series;
+    series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
+    try
+    {
+        switch (series.iterationEncoding())
+        {
+            using IE = IterationEncoding;
+        case IE::fileBased:
+            series.readFileBased();
+            break;
+        case IE::groupBased:
+        case IE::variableBased: {
+            Parameter<Operation::OPEN_FILE> fOpen;
+            fOpen.name = series.get().m_name;
+            fOpen.encoding = series.iterationEncoding();
+            series.IOHandler()->enqueue(IOTask(&series, fOpen));
+            series.IOHandler()->flush(internal::defaultFlushParams);
+            switch (*fOpen.out_parsePreference)
+            {
+                using PP = Parameter<Operation::OPEN_FILE>::ParsePreference;
+            case PP::PerStep:
+                series.advance(AdvanceMode::BEGINSTEP);
+                series.readGorVBased(
+                    /* do_always_throw_errors = */ false, /* init = */ true);
+                break;
+            case PP::UpFront:
+                series.readGorVBased(
+                    /* do_always_throw_errors = */ false, /* init = */ true);
+                series.advance(AdvanceMode::BEGINSTEP);
+                break;
+            }
+            break;
+        }
+        }
+    }
+    catch (...)
+    {
+        series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
+        throw;
+    }
+    series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
+}
+
 SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
 {
+    if (m_series->IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
+        m_series->iterations.empty())
+    {
+        initSeriesInLinearReadMode();
+    }
+
     auto it = series.get().iterations.begin();
     if (it == series.get().iterations.end())
     {
