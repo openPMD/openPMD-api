@@ -2827,7 +2827,13 @@ namespace detail
 
             if (performDataWrite)
             {
+                // should we really do this now?
+                for (auto &pair : m_attributeWrites)
+                {
+                    pair.second.run(*this);
+                }
                 engine.PerformDataWrite();
+                m_attributeWrites.clear();
             }
             else
             {
