@@ -164,7 +164,7 @@ public:
     void extendDataset(
         Writable *, Parameter<Operation::EXTEND_DATASET> const &) override;
 
-    void openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) override;
+    void openFile(Writable *, Parameter<Operation::OPEN_FILE> &) override;
 
     void
     closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) override;

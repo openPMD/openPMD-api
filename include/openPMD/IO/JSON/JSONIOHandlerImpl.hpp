@@ -174,7 +174,7 @@ public:
     void availableChunks(
         Writable *, Parameter<Operation::AVAILABLE_CHUNKS> &) override;
 
-    void openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) override;
+    void openFile(Writable *, Parameter<Operation::OPEN_FILE> &) override;
 
     void
     closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) override;

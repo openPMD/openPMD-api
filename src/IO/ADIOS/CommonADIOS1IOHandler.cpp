@@ -664,7 +664,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::extendDataset(
 
 template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::openFile(
-    Writable *writable, Parameter<Operation::OPEN_FILE> const &parameters)
+    Writable *writable, Parameter<Operation::OPEN_FILE> &parameters)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
         error::throwReadError(

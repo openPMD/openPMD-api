@@ -354,8 +354,7 @@ public:
      * root group "/" of the hierarchy in the opened file. The Writable should
      * be marked written when the operation completes successfully.
      */
-    virtual void
-    openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) = 0;
+    virtual void openFile(Writable *, Parameter<Operation::OPEN_FILE> &) = 0;
     /** Open all contained groups in a path, possibly recursively.
      *
      * The operation should overwrite existing file positions, even when the

@@ -772,7 +772,7 @@ void HDF5IOHandlerImpl::availableChunks(
 }
 
 void HDF5IOHandlerImpl::openFile(
-    Writable *writable, Parameter<Operation::OPEN_FILE> const &parameters)
+    Writable *writable, Parameter<Operation::OPEN_FILE> &parameters)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
         throw error::ReadError(

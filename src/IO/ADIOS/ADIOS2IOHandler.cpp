@@ -691,7 +691,7 @@ void ADIOS2IOHandlerImpl::extendDataset(
 }
 
 void ADIOS2IOHandlerImpl::openFile(
-    Writable *writable, const Parameter<Operation::OPEN_FILE> &parameters)
+    Writable *writable, Parameter<Operation::OPEN_FILE> &parameters)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
     {

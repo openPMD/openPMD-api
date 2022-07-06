@@ -526,7 +526,7 @@ void JSONIOHandlerImpl::availableChunks(
 }
 
 void JSONIOHandlerImpl::openFile(
-    Writable *writable, Parameter<Operation::OPEN_FILE> const &parameter)
+    Writable *writable, Parameter<Operation::OPEN_FILE> &parameter)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
     {
