@@ -134,6 +134,10 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
         m_engineType.end(),
         m_engineType.begin(),
         [](unsigned char c) { return std::tolower(c); });
+
+    // environment-variable based configuration
+    m_schema = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", m_schema);
+
     if (cfg.json().contains("adios2"))
     {
         m_config = cfg["adios2"];
@@ -179,8 +183,6 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
             defaultOperators = std::move(operators.value());
         }
     }
-    // environment-variable based configuration
-    m_schema = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", m_schema);
 }
 
 std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator>>
