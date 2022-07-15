@@ -103,7 +103,7 @@ Required:
 * C++17 capable compiler, e.g., g++ 7+, clang 7+, MSVC 19.15+, icpc 19+, icpx
 
 Shipped internally in `share/openPMD/thirdParty/`:
-* [Catch2](https://github.com/catchorg/Catch2) 2.13.4+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
+* [Catch2](https://github.com/catchorg/Catch2) 2.13.9+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.9.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 * [toml11](https://github.com/ToruNiina/toml11) 3.7.1+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
@@ -271,7 +271,7 @@ The following options allow to switch to external installs:
 
 | CMake Option                    | Values     | Library       | Version |
 |---------------------------------|------------|---------------|---------|
-| `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.4+ |
+| `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.9+ |
 | `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.9.1+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.9.1+ |
 | `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |  3.7.1+ |
