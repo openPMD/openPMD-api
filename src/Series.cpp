@@ -502,15 +502,18 @@ namespace
         int padding;
         uint64_t iterationIndex;
         std::set<int> paddings;
-        for (auto const &entry : auxiliary::list_directory(directory))
+        if (auxiliary::directory_exists(directory))
         {
-            std::tie(isContained, padding, iterationIndex) =
-                isPartOfSeries(entry);
-            if (isContained)
+            for (auto const &entry : auxiliary::list_directory(directory))
             {
-                paddings.insert(padding);
-                // no std::forward as this is called repeatedly
-                mappingFunction(iterationIndex, entry);
+                std::tie(isContained, padding, iterationIndex) =
+                    isPartOfSeries(entry);
+                if (isContained)
+                {
+                    paddings.insert(padding);
+                    // no std::forward as this is called repeatedly
+                    mappingFunction(iterationIndex, entry);
+                }
             }
         }
         if (paddings.size() == 1u)
@@ -624,8 +627,10 @@ Given file pattern: ')END"
                 "Cannot write to a series with inconsistent iteration padding. "
                 "Please specify '%0<N>T' or open as read-only.");
         case -1:
-            std::cerr << "No matching iterations found: " << name()
-                      << std::endl;
+            /*
+             * No matching iterations found, will create a new Series using
+             * specified padding.
+             */
             break;
         default:
             series.m_filenamePadding = padding;
