@@ -82,6 +82,8 @@ namespace internal
          * the same instance.
          */
         std::optional<WriteIterations> m_writeIterations;
+
+        Attributable mockedDefaults;
         /**
          * Needed if reading a single iteration of a file-based series.
          * Users may specify the concrete filename of one iteration instead of
@@ -534,7 +536,7 @@ OPENPMD_private
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
     void init(std::shared_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
-    void initDefaults(IterationEncoding);
+    void initDefaults(IterationEncoding, bool initAll = false);
     /**
      * @brief Internal call for flushing a Series.
      *

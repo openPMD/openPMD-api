@@ -627,10 +627,8 @@ Given file pattern: ')END"
                 "Cannot write to a series with inconsistent iteration padding. "
                 "Please specify '%0<N>T' or open as read-only.");
         case -1:
-            /*
-             * No matching iterations found, will create a new Series using
-             * specified padding.
-             */
+            std::cerr << "No matching iterations found: " << name()
+                      << std::endl;
             break;
         default:
             series.m_filenamePadding = padding;
@@ -642,12 +640,8 @@ Given file pattern: ')END"
     series.m_lastFlushSuccessful = true;
 }
 
-void Series::initDefaults(IterationEncoding ie)
+void Series::initDefaults(IterationEncoding ie, bool initAll)
 {
-    if (!containsAttribute("openPMD"))
-        setOpenPMD(getStandard());
-    if (!containsAttribute("openPMDextension"))
-        setOpenPMDextension(0);
     if (!containsAttribute("basePath"))
     {
         if (ie == IterationEncoding::variableBased)
@@ -660,6 +654,21 @@ void Series::initDefaults(IterationEncoding ie)
             setAttribute("basePath", std::string(BASEPATH));
         }
     }
+    if (!containsAttribute("openPMD"))
+        setOpenPMD(getStandard());
+    /*
+     * In Append mode, only init the rest of the defaults after checking that
+     * the file does not yet exist to avoid overriding more than needed.
+     * In file-based iteration encoding, files are always truncated in Append
+     * mode (Append mode works on a per-iteration basis).
+     */
+    if (!initAll && IOHandler()->m_frontendAccess == Access::APPEND &&
+        ie != IterationEncoding::fileBased)
+    {
+        return;
+    }
+    if (!containsAttribute("openPMDextension"))
+        setOpenPMDextension(0);
     if (!containsAttribute("date"))
         setDate(auxiliary::getDateString());
     if (!containsAttribute("software"))
@@ -850,6 +859,23 @@ void Series::flushGorVBased(
     case Access::APPEND: {
         if (!written())
         {
+            if (IOHandler()->m_frontendAccess == Access::APPEND)
+            {
+                Parameter<Operation::CHECK_FILE> param;
+                param.name = series.m_name;
+                IOHandler()->enqueue(IOTask(this, param));
+                IOHandler()->flush(internal::defaultFlushParams);
+                switch (*param.fileExists)
+                {
+                    using FE = Parameter<Operation::CHECK_FILE>::FileExists;
+                case FE::DontKnow:
+                case FE::No:
+                    initDefaults(iterationEncoding(), /* initAll = */ true);
+                    break;
+                case FE::Yes:
+                    break;
+                }
+            }
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
             fCreate.encoding = iterationEncoding();
