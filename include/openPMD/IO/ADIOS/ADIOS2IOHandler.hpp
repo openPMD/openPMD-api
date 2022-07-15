@@ -31,6 +31,7 @@
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 
@@ -150,6 +151,8 @@ public:
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
 
+    void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
+
     void
     createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
 
@@ -226,6 +229,7 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
+    std::optional<auxiliary::Mock_MPI_Comm> m_communicator;
     /*
      * If the iteration encoding is variableBased, we default to using the
      * 2021_02_09 schema since it allows mutable attributes.
@@ -329,7 +333,7 @@ private:
     // use m_config
     std::optional<std::vector<ParameterizedOperator> > getOperators();
 
-    std::string fileSuffix() const;
+    std::string fileSuffix(bool verbose = true) const;
 
     /*
      * We need to give names to IO objects. These names are irrelevant

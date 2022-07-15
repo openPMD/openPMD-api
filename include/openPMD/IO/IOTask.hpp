@@ -44,7 +44,8 @@ Writable *getWritable(Attributable *);
 /** Type of IO operation between logical and persistent data.
  */
 OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
-    CREATE_FILE,      OPEN_FILE,      CLOSE_FILE,    DELETE_FILE,
+    CREATE_FILE,      CHECK_FILE,     OPEN_FILE,     CLOSE_FILE,
+    DELETE_FILE,
 
     CREATE_PATH,      CLOSE_PATH,     OPEN_PATH,     DELETE_PATH,
     LIST_PATHS,
@@ -116,6 +117,32 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_FILE>
 
     std::string name = "";
     IterationEncoding encoding = IterationEncoding::groupBased;
+};
+
+template <>
+struct OPENPMDAPI_EXPORT Parameter<Operation::CHECK_FILE>
+    : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter(Parameter const &p)
+        : AbstractParameter(), name(p.name), fileExists(p.fileExists)
+    {}
+
+    std::unique_ptr<AbstractParameter> clone() const override
+    {
+        return std::unique_ptr<AbstractParameter>(
+            new Parameter<Operation::CHECK_FILE>(*this));
+    }
+
+    std::string name = "";
+    enum class FileExists
+    {
+        DontKnow,
+        Yes,
+        No
+    };
+    std::shared_ptr<FileExists> fileExists =
+        std::make_shared<FileExists>(FileExists::DontKnow);
 };
 
 template <>

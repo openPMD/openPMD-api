@@ -140,6 +140,22 @@ void JSONIOHandlerImpl::createFile(
     }
 }
 
+void JSONIOHandlerImpl::checkFile(
+    Writable *, Parameter<Operation::CHECK_FILE> &parameters)
+{
+    std::string name = parameters.name;
+    if (!auxiliary::ends_with(name, ".json"))
+    {
+        name += ".json";
+    }
+    name = fullPath(name);
+    using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
+    *parameters.fileExists =
+        (auxiliary::file_exists(name) || auxiliary::directory_exists(name))
+        ? FileExists::Yes
+        : FileExists::No;
+}
+
 void JSONIOHandlerImpl::createPath(
     Writable *writable, Parameter<Operation::CREATE_PATH> const &parameter)
 {

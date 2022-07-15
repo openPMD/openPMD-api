@@ -27,6 +27,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 
@@ -73,6 +74,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     std::string specifiedExtension)
     : AbstractIOHandlerImplCommon(handler)
     , m_ADIOS{communicator}
+    , m_communicator{communicator}
     , m_engineType(std::move(engineType))
     , m_userSpecifiedExtension{std::move(specifiedExtension)}
 {
@@ -245,7 +247,7 @@ ADIOS2IOHandlerImpl::getOperators()
 
 using AcceptedEndingsForEngine = std::map<std::string, std::string>;
 
-std::string ADIOS2IOHandlerImpl::fileSuffix() const
+std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
 {
     // SST engine adds its suffix unconditionally
     // so we don't add it
@@ -267,7 +269,8 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
         if (auto ending = acceptedEndings.find(m_userSpecifiedExtension);
             ending != acceptedEndings.end())
         {
-            if ((m_engineType == "file" || m_engineType == "filestream") &&
+            if (verbose &&
+                (m_engineType == "file" || m_engineType == "filestream") &&
                 (m_userSpecifiedExtension == ".bp3" ||
                  m_userSpecifiedExtension == ".bp4" ||
                  m_userSpecifiedExtension == ".bp5"))
@@ -288,7 +291,7 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
         {
             std::cerr << "[ADIOS2] No file ending specified. Will not add one."
                       << std::endl;
-            if (m_engineType == "bp3")
+            if (verbose && m_engineType == "bp3")
             {
                 std::cerr
                     << "Note that the ADIOS2 BP3 engine will add its "
@@ -300,19 +303,22 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
         }
         else
         {
-            std::cerr << "[ADIOS2] Specified ending '"
-                      << m_userSpecifiedExtension
-                      << "' does not match the selected engine '"
-                      << m_engineType
-                      << "'. Will use the specified ending anyway."
-                      << std::endl;
-            if (m_engineType == "bp3")
+            if (verbose)
             {
-                std::cerr
-                    << "Note that the ADIOS2 BP3 engine will add its "
-                       "ending '.bp' if not specified (e.g. 'simData.bp3' "
-                       "will appear on disk as 'simData.bp3.bp')."
-                    << std::endl;
+                std::cerr << "[ADIOS2] Specified ending '"
+                          << m_userSpecifiedExtension
+                          << "' does not match the selected engine '"
+                          << m_engineType
+                          << "'. Will use the specified ending anyway."
+                          << std::endl;
+                if (m_engineType == "bp3")
+                {
+                    std::cerr
+                        << "Note that the ADIOS2 BP3 engine will add its "
+                           "ending '.bp' if not specified (e.g. 'simData.bp3' "
+                           "will appear on disk as 'simData.bp3.bp')."
+                        << std::endl;
+                }
             }
             return m_userSpecifiedExtension;
         }
@@ -494,6 +500,40 @@ void ADIOS2IOHandlerImpl::createFile(
         // lazy opening is deathly in parallel situations
         getFileData(shared_name, IfFileNotOpen::OpenImplicitly);
     }
+}
+
+void ADIOS2IOHandlerImpl::checkFile(
+    Writable *, Parameter<Operation::CHECK_FILE> &parameters)
+{
+    std::string name =
+        fullPath(parameters.name + fileSuffix(/* verbose = */ false));
+
+    if (m_engineType == "bp3")
+    {
+        if (!auxiliary::ends_with(name, ".bp"))
+        {
+            /*
+             * BP3 will add this ending if not specified
+             */
+            name += ".bp";
+        }
+    }
+    else if (m_engineType == "sst")
+    {
+        /*
+         * SST will add this ending indiscriminately
+         */
+        name += ".sst";
+    }
+
+    char fileExists = false;
+    auxiliary::runOnRankZero(m_communicator, [&fileExists, &name]() {
+        fileExists =
+            auxiliary::file_exists(name) || auxiliary::directory_exists(name);
+    });
+    auxiliary::MPI_Bcast_fromRankZero(m_communicator, &fileExists);
+    using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
+    *parameters.fileExists = fileExists ? FileExists::Yes : FileExists::No;
 }
 
 void ADIOS2IOHandlerImpl::createPath(

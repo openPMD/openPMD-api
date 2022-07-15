@@ -104,6 +104,12 @@ std::future<void> ADIOS1IOHandlerImpl::flush()
                     deref_dynamic_cast<Parameter<Operation::CREATE_FILE> >(
                         i.parameter.get()));
                 break;
+            case O::CHECK_FILE:
+                checkFile(
+                    i.writable,
+                    deref_dynamic_cast<Parameter<Operation::CHECK_FILE> >(
+                        i.parameter.get()));
+                break;
             case O::CREATE_PATH:
                 createPath(
                     i.writable,
@@ -346,6 +352,7 @@ void ADIOS1IOHandler::enqueue(IOTask const &i)
     switch (i.operation)
     {
     case Operation::CREATE_FILE:
+    case Operation::CHECK_FILE:
     case Operation::CREATE_PATH:
     case Operation::OPEN_PATH:
     case Operation::CREATE_DATASET:

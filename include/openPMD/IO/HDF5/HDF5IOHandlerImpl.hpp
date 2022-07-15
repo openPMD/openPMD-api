@@ -25,6 +25,7 @@
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 
 #include <hdf5.h>
 #include <optional>
@@ -43,6 +44,7 @@ public:
 
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
+    void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
     void
     createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
     void createDataset(
@@ -91,6 +93,9 @@ public:
     hid_t m_H5T_CFLOAT;
     hid_t m_H5T_CDOUBLE;
     hid_t m_H5T_CLONG_DOUBLE;
+
+protected:
+    std::optional<auxiliary::Mock_MPI_Comm> m_mockedMpiComm;
 
 private:
     json::TracingJSON m_config;

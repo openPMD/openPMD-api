@@ -450,6 +450,14 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::createFile(
 }
 
 template <typename ChildClass>
+void CommonADIOS1IOHandlerImpl<ChildClass>::checkFile(
+    Writable *, Parameter<Operation::CHECK_FILE> &parameter)
+{
+    *parameter.fileExists =
+        Parameter<Operation::CHECK_FILE>::FileExists::DontKnow;
+}
+
+template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::createPath(
     Writable *writable, Parameter<Operation::CREATE_PATH> const &parameters)
 {
