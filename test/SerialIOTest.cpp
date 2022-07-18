@@ -6322,9 +6322,14 @@ void append_mode(
     std::string jsonConfig = "{}")
 {
 
-    std::string filename = (variableBased ? "../samples/append_variablebased."
-                                          : "../samples/append_groupbased.") +
+    std::string filename =
+        (variableBased ? "../samples/append/append_variablebased."
+                       : "../samples/append/append_groupbased.") +
         extension;
+    if (auxiliary::directory_exists("../samples/append"))
+    {
+        auxiliary::remove_directory("../samples/append");
+    }
     std::vector<int> data(10, 0);
     auto writeSomeIterations = [&data](
                                    WriteIterations &&writeIterations,
@@ -6340,7 +6345,7 @@ void append_mode(
         }
     };
     {
-        Series write(filename, Access::CREATE, jsonConfig);
+        Series write(filename, Access::APPEND, jsonConfig);
         if (variableBased)
         {
             if (write.backend() != "ADIOS2")

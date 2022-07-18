@@ -102,11 +102,12 @@ void JSONIOHandlerImpl::createFile(
         }
 
         auto res_pair = getPossiblyExisting(name);
+        auto fullPathToFile = fullPath(std::get<0>(res_pair));
         File shared_name = File(name);
         VERIFY_ALWAYS(
             !(m_handler->m_backendAccess == Access::READ_WRITE &&
               (!std::get<2>(res_pair) ||
-               auxiliary::file_exists(fullPath(std::get<0>(res_pair))))),
+               auxiliary::file_exists(fullPathToFile))),
             "[JSON] Can only overwrite existing file in CREATE mode.");
 
         if (!std::get<2>(res_pair))
@@ -127,9 +128,12 @@ void JSONIOHandlerImpl::createFile(
         associateWithFile(writable, shared_name);
         this->m_dirty.emplace(shared_name);
 
-        if (m_handler->m_backendAccess != Access::APPEND)
+        if (m_handler->m_backendAccess != Access::APPEND ||
+            !auxiliary::file_exists(fullPathToFile))
         {
-            // make sure to overwrite!
+            // if in create mode: make sure to overwrite
+            // if in append mode and the file does not exist: create an empty
+            // dataset
             this->m_jsonVals[shared_name] = std::make_shared<nlohmann::json>();
         }
         // else: the JSON value is not available in m_jsonVals and will be
