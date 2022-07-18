@@ -2311,11 +2311,14 @@ namespace detail
         : m_file(impl.fullPath(std::move(file)))
         , m_IOName(std::to_string(impl.nameCounter++))
         , m_ADIOS(impl.m_ADIOS)
-        , m_IO(impl.m_ADIOS.DeclareIO(m_IOName))
-        , m_mode(impl.adios2AccessMode(m_file))
         , m_impl(&impl)
         , m_engineType(impl.m_engineType)
     {
+        // Declaring these members in the constructor body to avoid
+        // initialization order hazards. Need the IO_ prefix since in some
+        // situation there seems to be trouble with number-only IO names
+        m_IO = impl.m_ADIOS.DeclareIO("IO_" + m_IOName);
+        m_mode = impl.adios2AccessMode(m_file);
         if (!m_IO)
         {
             throw std::runtime_error(
