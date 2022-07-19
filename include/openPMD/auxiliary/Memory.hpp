@@ -22,17 +22,21 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <complex>
 #include <functional>
+#include <iostream>
 #include <memory>
+#include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace openPMD
 {
 namespace auxiliary
 {
-    inline std::unique_ptr<void, std::function<void(void *)> >
+    inline std::unique_ptr<void, std::function<void(void *)>>
     allocatePtr(Datatype dtype, uint64_t numPoints)
     {
         void *data = nullptr;
@@ -151,10 +155,10 @@ namespace auxiliary
                 "Unknown Attribute datatype (Pointer allocation)");
         }
 
-        return std::unique_ptr<void, std::function<void(void *)> >(data, del);
+        return std::unique_ptr<void, std::function<void(void *)>>(data, del);
     }
 
-    inline std::unique_ptr<void, std::function<void(void *)> >
+    inline std::unique_ptr<void, std::function<void(void *)>>
     allocatePtr(Datatype dtype, Extent const &e)
     {
         uint64_t numPoints = 1u;
@@ -163,5 +167,51 @@ namespace auxiliary
         return allocatePtr(dtype, numPoints);
     }
 
+    /*
+     * A buffer for the WRITE_DATASET task that can either be a std::shared_ptr
+     * or a std::unique_ptr.
+     */
+    struct WriteBuffer
+    {
+        using EligibleTypes =
+            std::variant<std::shared_ptr<void const>, OpenpmdUniquePtr<void>>;
+        EligibleTypes m_buffer;
+
+        WriteBuffer() : m_buffer(OpenpmdUniquePtr<void>())
+        {}
+
+        template <typename... Args>
+        explicit WriteBuffer(Args &&...args)
+            : m_buffer(std::forward<Args>(args)...)
+        {}
+
+        WriteBuffer(WriteBuffer &&) = default;
+        WriteBuffer(WriteBuffer const &) = delete;
+        WriteBuffer &operator=(WriteBuffer &&) = default;
+        WriteBuffer &operator=(WriteBuffer const &) = delete;
+
+        WriteBuffer const &operator=(std::shared_ptr<void const> ptr)
+        {
+            m_buffer = std::move(ptr);
+            return *this;
+        }
+
+        WriteBuffer const &operator=(OpenpmdUniquePtr<void const> ptr)
+        {
+            m_buffer = std::move(ptr);
+            return *this;
+        }
+
+        inline void const *get() const
+        {
+            return std::visit(
+                [](auto const &arg) {
+                    // unique_ptr and shared_ptr both have the get() member, so
+                    // we're being sneaky and don't distinguish the types here
+                    return static_cast<void const *>(arg.get());
+                },
+                m_buffer);
+        }
+    };
 } // namespace auxiliary
 } // namespace openPMD
