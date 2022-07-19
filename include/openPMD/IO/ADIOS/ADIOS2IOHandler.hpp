@@ -82,6 +82,7 @@ namespace detail
     struct BufferedGet;
     struct BufferedAttributeRead;
     struct BufferedAttributeWrite;
+    struct RunUniquePtrPut;
 } // namespace detail
 
 namespace ADIOS2Schema
@@ -124,6 +125,7 @@ class ADIOS2IOHandlerImpl
     friend struct detail::WriteDataset;
     friend struct detail::BufferedActions;
     friend struct detail::BufferedAttributeRead;
+    friend struct detail::RunUniquePtrPut;
 
 public:
 #if openPMD_HAVE_MPI
@@ -544,11 +546,7 @@ namespace detail
     struct WriteDataset
     {
         template <typename T>
-        static void call(
-            ADIOS2IOHandlerImpl *impl,
-            BufferedPut &bp,
-            adios2::IO &IO,
-            adios2::Engine &engine);
+        static void call(BufferedActions &ba, BufferedPut &bp);
 
         template <int n, typename... Params>
         static void call(Params &&...);
@@ -916,6 +914,17 @@ namespace detail
         void run(BufferedActions &) override;
     };
 
+    struct BufferedUniquePtrPut
+    {
+        std::string name;
+        Offset offset;
+        Extent extent;
+        OpenpmdUniquePtr<void> data;
+        Datatype dtype;
+
+        void run(BufferedActions &);
+    };
+
     struct OldBufferedAttributeRead : BufferedAction
     {
         Parameter<Operation::READ_ATT> param;
@@ -967,6 +976,8 @@ namespace detail
     {
         friend struct BufferedGet;
         friend struct BufferedPut;
+        friend struct RunUniquePtrPut;
+        friend struct WriteDataset;
 
         using FlushTarget = ADIOS2IOHandlerImpl::FlushTarget;
 
@@ -1023,6 +1034,13 @@ namespace detail
          * penalty, once preloadAttributes has been filled.
          */
         std::vector<BufferedAttributeRead> m_attributeReads;
+        /**
+         * When receiving a unique_ptr, we know that the buffer is ours and
+         * ours alone. So, for performance reasons, show the buffer to ADIOS2 as
+         * late as possible and avoid unnecessary data copies in BP5 triggered
+         * by PerformDataWrites().
+         */
+        std::vector<BufferedUniquePtrPut> m_uniquePtrPuts;
         /**
          * This contains deferred actions that have already been enqueued into
          * ADIOS2, but not yet performed in ADIOS2.
@@ -1116,8 +1134,10 @@ namespace detail
          *     * adios2::Engine::EndStep
          *     * adios2::Engine::Perform(Puts|Gets)
          *     * adios2::Engine::Close
-         * @param writeAttributes If using the new attribute layout, perform
-         *     deferred attribute writes now.
+         * @param writeLatePuts Some things are deferred until right before
+         *        Engine::EndStep() or Engine::Close():
+         *        1) Writing attributes in new ADIOS2 schema.
+         *        2) Running unique_ptr Put()s.
          * @param flushUnconditionally Whether to run the functor even if no
          *     deferred IO tasks had been queued.
          */
@@ -1125,7 +1145,7 @@ namespace detail
         void flush_impl(
             ADIOS2FlushParams flushParams,
             F &&performPutsGets,
-            bool writeAttributes,
+            bool writeLatePuts,
             bool flushUnconditionally);
 
         /**
@@ -1133,7 +1153,7 @@ namespace detail
          * and does not flush unconditionally.
          *
          */
-        void flush_impl(ADIOS2FlushParams, bool writeAttributes = false);
+        void flush_impl(ADIOS2FlushParams, bool writeLatePuts = false);
 
         /**
          * @brief Begin or end an ADIOS step.

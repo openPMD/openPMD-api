@@ -463,7 +463,7 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
     {
         if (m_dirty.find(p.first) != m_dirty.end())
         {
-            p.second->flush(adios2FlushParams, /* writeAttributes = */ false);
+            p.second->flush(adios2FlushParams, /* writeLatePuts = */ false);
         }
         else
         {
@@ -744,7 +744,7 @@ void ADIOS2IOHandlerImpl::closeFile(
                 [](detail::BufferedActions &ba, adios2::Engine &) {
                     ba.finalize();
                 },
-                /* writeAttributes = */ true,
+                /* writeLatePuts = */ true,
                 /* flushUnconditionally = */ false);
             m_fileData.erase(it);
         }
@@ -1936,23 +1936,59 @@ namespace detail
             shape.begin(), shape.end(), std::back_inserter(*parameters.extent));
     }
 
+    template <class>
+    inline constexpr bool always_false_v = false;
+
     template <typename T>
-    void WriteDataset::call(
-        ADIOS2IOHandlerImpl *impl,
-        detail::BufferedPut &bp,
-        adios2::IO &IO,
-        adios2::Engine &engine)
+    void WriteDataset::call(BufferedActions &ba, detail::BufferedPut &bp)
     {
         VERIFY_ALWAYS(
-            access::write(impl->m_handler->m_backendAccess),
+            access::write(ba.m_impl->m_handler->m_backendAccess),
             "[ADIOS2] Cannot write data in read-only mode.");
 
-        auto ptr = static_cast<T const *>(bp.param.data.get());
+        std::visit(
+            [&](auto &&arg) {
+                using ptr_type = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<
+                                  ptr_type,
+                                  std::shared_ptr<void const>>)
+                {
+                    auto ptr = static_cast<T const *>(arg.get());
 
-        adios2::Variable<T> var = impl->verifyDataset<T>(
-            bp.param.offset, bp.param.extent, IO, bp.name);
+                    adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
+                        bp.param.offset, bp.param.extent, ba.m_IO, bp.name);
 
-        engine.Put(var, ptr);
+                    ba.getEngine().Put(var, ptr);
+                }
+                else if constexpr (std::is_same_v<
+                                       ptr_type,
+                                       OpenpmdUniquePtr<void>>)
+                {
+                    BufferedUniquePtrPut bput;
+                    bput.name = std::move(bp.name);
+                    bput.offset = std::move(bp.param.offset);
+                    bput.extent = std::move(bp.param.extent);
+                    /*
+                     * Note: Moving is required here since it's a unique_ptr.
+                     * std::forward<>() would theoretically work, but it
+                     * requires the type parameter and we don't have that
+                     * inside the lambda.
+                     * (ptr_type does not work for this case).
+                     */
+                    // clang-format off
+                    bput.data = std::move(arg); // NOLINT(bugprone-move-forwarding-reference)
+                    // clang-format on
+                    bput.dtype = bp.param.dtype;
+                    ba.m_uniquePtrPuts.push_back(std::move(bput));
+                }
+                else
+                {
+                    static_assert(
+                        always_false_v<ptr_type>,
+                        "Unhandled std::variant branch");
+                }
+            },
+            bp.param.data.m_buffer);
     }
 
     template <int n, typename... Params>
@@ -2388,8 +2424,29 @@ namespace detail
 
     void BufferedPut::run(BufferedActions &ba)
     {
-        switchAdios2VariableType<detail::WriteDataset>(
-            param.dtype, ba.m_impl, *this, ba.m_IO, ba.getEngine());
+        switchAdios2VariableType<detail::WriteDataset>(param.dtype, ba, *this);
+    }
+
+    struct RunUniquePtrPut
+    {
+        template <typename T>
+        static void call(BufferedUniquePtrPut &bufferedPut, BufferedActions &ba)
+        {
+            auto ptr = static_cast<T const *>(bufferedPut.data.get());
+            adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
+                bufferedPut.offset,
+                bufferedPut.extent,
+                ba.m_IO,
+                bufferedPut.name);
+            ba.getEngine().Put(var, ptr);
+        }
+
+        static constexpr char const *errorMsg = "RunUniquePtrPut";
+    };
+
+    void BufferedUniquePtrPut::run(BufferedActions &ba)
+    {
+        switchAdios2VariableType<RunUniquePtrPut>(dtype, *this, ba);
     }
 
     void OldBufferedAttributeRead::run(BufferedActions &ba)
@@ -2481,20 +2538,20 @@ namespace detail
         }
         // if write accessing, ensure that the engine is opened
         // and that all attributes are written
-        // (attributes are written upon closing a step or a file
-        // which users might never do)
-        bool needToWriteAttributes = !m_attributeWrites.empty();
-        if ((needToWriteAttributes || !m_engine) &&
-            m_mode != adios2::Mode::Read)
+        // (attributes and unique_ptr datasets are written upon closing a step
+        // or a file which users might never do)
+        bool needToWrite =
+            !m_attributeWrites.empty() || !m_uniquePtrPuts.empty();
+        if ((needToWrite || !m_engine) && m_mode != adios2::Mode::Read)
         {
-            auto &engine = getEngine();
-            if (needToWriteAttributes)
+            getEngine();
+            for (auto &pair : m_attributeWrites)
             {
-                for (auto &pair : m_attributeWrites)
-                {
-                    pair.second.run(*this);
-                }
-                engine.PerformPuts();
+                pair.second.run(*this);
+            }
+            for (auto &entry : m_uniquePtrPuts)
+            {
+                entry.run(*this);
             }
         }
         if (m_engine)
@@ -3260,7 +3317,7 @@ namespace detail
     void BufferedActions::flush_impl(
         ADIOS2FlushParams flushParams,
         F &&performPutGets,
-        bool writeAttributes,
+        bool writeLatePuts,
         bool flushUnconditionally)
     {
         auto level = flushParams.level;
@@ -3280,7 +3337,8 @@ namespace detail
         if (streamStatus == StreamStatus::OutsideOfStep)
         {
             if (m_buffer.empty() &&
-                (!writeAttributes || m_attributeWrites.empty()) &&
+                (!writeLatePuts ||
+                 (m_attributeWrites.empty() && m_uniquePtrPuts.empty())) &&
                 m_attributeReads.empty())
             {
                 if (flushUnconditionally)
@@ -3306,11 +3364,15 @@ namespace detail
             initializedDefaults = true;
         }
 
-        if (writeAttributes)
+        if (writeLatePuts)
         {
             for (auto &pair : m_attributeWrites)
             {
                 pair.second.run(*this);
+            }
+            for (auto &entry : m_uniquePtrPuts)
+            {
+                entry.run(*this);
             }
         }
 
@@ -3331,9 +3393,10 @@ namespace detail
             m_updateSpans.clear();
             m_buffer.clear();
             m_alreadyEnqueued.clear();
-            if (writeAttributes)
+            if (writeLatePuts)
             {
                 m_attributeWrites.clear();
+                m_uniquePtrPuts.clear();
             }
 
             for (BufferedAttributeRead &task : m_attributeReads)
@@ -3355,16 +3418,11 @@ namespace detail
             {
                 m_alreadyEnqueued.emplace_back(std::move(task));
             }
-            if (writeAttributes)
+            if (writeLatePuts)
             {
-                for (auto &task : m_attributeWrites)
-                {
-                    m_alreadyEnqueued.emplace_back(
-                        std::unique_ptr<BufferedAction>{
-                            new BufferedAttributeWrite{
-                                std::move(task.second)}});
-                }
-                m_attributeWrites.clear();
+                throw error::Internal(
+                    "ADIOS2 backend: Flush of late writes was requested at the "
+                    "wrong time.");
             }
             m_buffer.clear();
             break;
@@ -3372,7 +3430,7 @@ namespace detail
     }
 
     void BufferedActions::flush_impl(
-        ADIOS2FlushParams flushParams, bool writeAttributes)
+        ADIOS2FlushParams flushParams, bool writeLatePuts)
     {
         auto decideFlushAPICall = [this, flushTarget = flushParams.flushTarget](
                                       adios2::Engine &engine) {
@@ -3395,7 +3453,21 @@ namespace detail
 
             if (performDataWrite)
             {
+                /*
+                 * Deliberately don't write buffered attributes now since
+                 * readers won't be able to see them before EndStep anyway,
+                 * so there's no use. In fact, writing them now is harmful
+                 * because they can't be overwritten after this anymore in the
+                 * current step.
+                 * Draining the uniquePtrPuts now is good however, since we
+                 * should use this chance to free the memory.
+                 */
+                for (auto &entry : m_uniquePtrPuts)
+                {
+                    entry.run(*this);
+                }
                 engine.PerformDataWrite();
+                m_uniquePtrPuts.clear();
             }
             else
             {
@@ -3429,7 +3501,7 @@ namespace detail
                     break;
                 }
             },
-            writeAttributes,
+            writeLatePuts,
             /* flushUnconditionally = */ false);
     }
 
@@ -3454,7 +3526,7 @@ namespace detail
             }
             flush(
                 ADIOS2FlushParams{FlushLevel::UserFlush},
-                /* writeAttributes = */ false);
+                /* writeLatePuts = */ false);
             return AdvanceStatus::RANDOMACCESS;
         }
 
@@ -3499,7 +3571,7 @@ namespace detail
             flush(
                 ADIOS2FlushParams{FlushLevel::UserFlush},
                 [](BufferedActions &, adios2::Engine &eng) { eng.EndStep(); },
-                /* writeAttributes = */ true,
+                /* writeLatePuts = */ true,
                 /* flushUnconditionally = */ true);
             uncommittedAttributes.clear();
             m_updateSpans.clear();
