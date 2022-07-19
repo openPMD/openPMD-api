@@ -4104,6 +4104,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         return res;
     };
     std::vector<int32_t> data(size, 10);
+    Datatype dtype = determineDatatype<int32_t>();
     {
         Series write("../samples/bp5_flush.bp", Access::CREATE, cfg);
 
@@ -4111,7 +4112,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["e_chargeDensity"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush();
@@ -4134,7 +4135,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["i_chargeDensity"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
         }
 
@@ -4169,7 +4170,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["temperature"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush(
@@ -4192,12 +4193,19 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             REQUIRE(currentSize <= 4096);
         }
 
+        bool has_been_deleted = false;
+        OpenpmdUniquePtr<int32_t> copied_as_unique(
+            new int[size], [&has_been_deleted](int const *ptr) {
+                delete[] ptr;
+                has_been_deleted = true;
+            });
+        std::copy_n(data.data(), size, copied_as_unique.get());
         {
             auto component =
                 write.writeIterations()[0]
                     .meshes["temperature"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
-            component.storeChunk(data, {0}, {size});
+            component.resetDataset({dtype, {size}});
+            component.storeChunk(std::move(copied_as_unique), {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush(
                 "adios2.engine.preferred_flush_target = \"disk\"");
@@ -4207,11 +4215,13 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         {
             // should now be roughly within 1% of 16Mb
             REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
+            REQUIRE(has_been_deleted);
         }
         else
         {
             // should be roughly zero
             REQUIRE(currentSize <= 4096);
+            REQUIRE(!has_been_deleted);
         }
     }
     auto currentSize = getsize();
