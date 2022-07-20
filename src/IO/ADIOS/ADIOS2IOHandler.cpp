@@ -508,14 +508,20 @@ void ADIOS2IOHandlerImpl::checkFile(
     std::string name =
         fullPath(parameters.name + fileSuffix(/* verbose = */ false));
 
+    using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
+    *parameters.fileExists = checkFile(name) ? FileExists::Yes : FileExists::No;
+}
+
+bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
+{
     if (m_engineType == "bp3")
     {
-        if (!auxiliary::ends_with(name, ".bp"))
+        if (!auxiliary::ends_with(fullFilePath, ".bp"))
         {
             /*
              * BP3 will add this ending if not specified
              */
-            name += ".bp";
+            fullFilePath += ".bp";
         }
     }
     else if (m_engineType == "sst")
@@ -523,17 +529,15 @@ void ADIOS2IOHandlerImpl::checkFile(
         /*
          * SST will add this ending indiscriminately
          */
-        name += ".sst";
+        fullFilePath += ".sst";
     }
-
     char fileExists = false;
-    auxiliary::runOnRankZero(m_communicator, [&fileExists, &name]() {
-        fileExists =
-            auxiliary::file_exists(name) || auxiliary::directory_exists(name);
+    auxiliary::runOnRankZero(m_communicator, [&fileExists, &fullFilePath]() {
+        fileExists = auxiliary::file_exists(fullFilePath) ||
+            auxiliary::directory_exists(fullFilePath);
     });
     auxiliary::MPI_Bcast_fromRankZero(m_communicator, &fileExists);
-    using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
-    *parameters.fileExists = fileExists ? FileExists::Yes : FileExists::No;
+    return fileExists;
 }
 
 void ADIOS2IOHandlerImpl::createPath(
@@ -2659,9 +2663,20 @@ namespace detail
     {
         if (!m_engine)
         {
+            auto tempMode = m_mode;
             switch (m_mode)
             {
             case adios2::Mode::Append:
+#ifdef _WIN32
+                /*
+                 * On Windows, ADIOS2 Append mode only works with existing
+                 * files. So, we first check for file existence and switch to
+                 * create mode if it does not exist.
+                 */
+                tempMode = m_impl->checkFile(m_file) ? adios2::Mode::Append
+                                                     : adios2::Mode::Write;
+                [[fallthrough]];
+#endif
             case adios2::Mode::Write: {
                 // usesSteps attribute only written upon ::advance()
                 // this makes sure that the attribute is only put in case
@@ -2669,7 +2684,7 @@ namespace detail
                 m_IO.DefineAttribute<ADIOS2Schema::schema_t>(
                     ADIOS2Defaults::str_adios2Schema, m_impl->m_schema);
                 m_engine = std::make_optional(
-                    adios2::Engine(m_IO.Open(m_file, m_mode)));
+                    adios2::Engine(m_IO.Open(m_file, tempMode)));
                 break;
             }
             case adios2::Mode::Read: {

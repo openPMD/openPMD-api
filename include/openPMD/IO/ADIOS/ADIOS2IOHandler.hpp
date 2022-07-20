@@ -153,6 +153,9 @@ public:
 
     void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
 
+    // MPI Collective
+    bool checkFile(std::string fullFilePath) const;
+
     void
     createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
 
