@@ -141,6 +141,10 @@ std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
 {
     using ret_t = std::optional<SeriesIterator *>;
 
+    if (m_iterationsInCurrentStep.empty())
+    {
+        return ret_t{};
+    }
     m_iterationsInCurrentStep.pop_front();
     if (m_iterationsInCurrentStep.empty())
     {
@@ -199,16 +203,55 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep()
         auto itEnd = series.iterations.end();
         if (it == itEnd)
         {
-            *this = end();
-            return {this};
+            if (status == AdvanceStatus::RANDOMACCESS ||
+                status == AdvanceStatus::OVER)
+            {
+                *this = end();
+                return {this};
+            }
+            else
+            {
+                /*
+                 * Stream still going but there was no iteration found in the
+                 * current IO step?
+                 * Might be a duplicate iteration resulting from appending,
+                 * will skip such iterations and hope to find something in a
+                 * later IO step. No need to finish right now.
+                 */
+                m_iterationsInCurrentStep = {};
+                m_series->advance(AdvanceMode::ENDSTEP);
+            }
         }
-        ++it;
-        if (it == itEnd)
+        else
         {
-            *this = end();
-            return {this};
+            ++it;
+
+            if (it == itEnd)
+            {
+                if (status == AdvanceStatus::RANDOMACCESS ||
+                    status == AdvanceStatus::OVER)
+                {
+                    *this = end();
+                    return {this};
+                }
+                else
+                {
+                    /*
+                     * Stream still going but there was no iteration found in
+                     * the current IO step? Might be a duplicate iteration
+                     * resulting from appending, will skip such iterations and
+                     * hope to find something in a later IO step. No need to
+                     * finish right now.
+                     */
+                    m_iterationsInCurrentStep = {};
+                    m_series->advance(AdvanceMode::ENDSTEP);
+                }
+            }
+            else
+            {
+                m_iterationsInCurrentStep = {it->first};
+            }
         }
-        m_iterationsInCurrentStep = {it->first};
     }
 
     if (status == AdvanceStatus::OVER)
