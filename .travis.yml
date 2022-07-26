@@ -13,7 +13,7 @@ env:
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
     # for the openPMD-api build, CMake shall search for
     # static dependencies of HDF5 and ADIOS1 (see setup.py)
-    - CIBW_ENVIRONMENT="HDF5_USE_STATIC_LIBRARIES='ON' ADIOS_USE_STATIC_LIBS='ON'"
+    - CIBW_ENVIRONMENT="HDF5_USE_STATIC_LIBRARIES='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS1='ON'" openPMD_CMAKE_openPMD_USE_ADIOS2='ON'"
     # Show a bit more output (pip -v)
     - CIBW_BUILD_VERBOSITY="1"
 
