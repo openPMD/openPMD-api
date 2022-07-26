@@ -88,128 +88,6 @@ std::vector<std::string> testedFileExtensions()
     return {allExtensions.begin(), newEnd};
 }
 
-#if openPMD_HAVE_ADIOS2
-TEST_CASE("adios2_char_portability", "[serial][adios2]")
-{
-    /*
-     * This tests portability of char attributes in ADIOS2 in schema 20210209.
-     */
-
-    if (auxiliary::getEnvString("OPENPMD_NEW_ATTRIBUTE_LAYOUT", "NOT_SET") ==
-        "NOT_SET")
-    {
-        /*
-         * @todo As soon as we have added automatic detection for the new
-         *       layout, this environment variable should be ignore read-side.
-         *       Then we can delete this if condition again.
-         */
-        return;
-    }
-    // @todo remove new_attribute_layout key as soon as schema-based versioning
-    //       is merged
-    std::string const config = R"END(
-{
-    "adios2":
-    {
-        "new_attribute_layout": true,
-        "schema": 20210209
-    }
-})END";
-    {
-        adios2::ADIOS adios;
-        auto IO = adios.DeclareIO("IO");
-        auto engine = IO.Open(
-            "../samples/adios2_char_portability.bp", adios2::Mode::Write);
-        engine.BeginStep();
-
-        // write default openPMD attributes
-        auto writeAttribute = [&engine,
-                               &IO](std::string const &name, auto value) {
-            using variable_type = decltype(value);
-            engine.Put(IO.DefineVariable<variable_type>(name), value);
-        };
-        writeAttribute("/basePath", std::string("/data/%T/"));
-        writeAttribute("/date", std::string("2021-02-22 11:14:00 +0000"));
-        writeAttribute("/iterationEncoding", std::string("groupBased"));
-        writeAttribute("/iterationFormat", std::string("/data/%T/"));
-        writeAttribute("/openPMD", std::string("1.1.0"));
-        writeAttribute("/openPMDextension", uint32_t(0));
-        writeAttribute("/software", std::string("openPMD-api"));
-        writeAttribute("/softwareVersion", std::string("0.14.0-dev"));
-
-        IO.DefineAttribute<uint64_t>(
-            "__openPMD_internal/openPMD2_adios2_schema", 20210209);
-        IO.DefineAttribute<unsigned char>("__openPMD_internal/useSteps", 1);
-
-        // write char things that should be read back properly
-
-        std::string baseString = "abcdefghi";
-        // null termination not necessary, ADIOS knows the size of its variables
-        std::vector<signed char> signedVector(9);
-        std::vector<unsigned char> unsignedVector(9);
-        for (unsigned i = 0; i < 9; ++i)
-        {
-            signedVector[i] = baseString[i];
-            unsignedVector[i] = baseString[i];
-        }
-        engine.Put(
-            IO.DefineVariable<signed char>(
-                "/signedVector", {3, 3}, {0, 0}, {3, 3}),
-            signedVector.data());
-        engine.Put(
-            IO.DefineVariable<unsigned char>(
-                "/unsignedVector", {3, 3}, {0, 0}, {3, 3}),
-            unsignedVector.data());
-        engine.Put(
-            IO.DefineVariable<char>(
-                "/unspecifiedVector", {3, 3}, {0, 0}, {3, 3}),
-            baseString.c_str());
-
-        writeAttribute("/signedChar", (signed char)'a');
-        writeAttribute("/unsignedChar", (unsigned char)'a');
-        writeAttribute("/char", (char)'a');
-
-        engine.EndStep();
-        engine.Close();
-    }
-
-    {
-        Series read(
-            "../samples/adios2_char_portability.bp", Access::READ_ONLY, config);
-        auto signedVectorAttribute = read.getAttribute("signedVector");
-        REQUIRE(signedVectorAttribute.dtype == Datatype::VEC_STRING);
-        auto unsignedVectorAttribute = read.getAttribute("unsignedVector");
-        REQUIRE(unsignedVectorAttribute.dtype == Datatype::VEC_STRING);
-        auto unspecifiedVectorAttribute =
-            read.getAttribute("unspecifiedVector");
-        REQUIRE(unspecifiedVectorAttribute.dtype == Datatype::VEC_STRING);
-        std::vector<std::string> desiredVector{"abc", "def", "ghi"};
-        REQUIRE(
-            signedVectorAttribute.get<std::vector<std::string> >() ==
-            desiredVector);
-        REQUIRE(
-            unsignedVectorAttribute.get<std::vector<std::string> >() ==
-            desiredVector);
-        REQUIRE(
-            unspecifiedVectorAttribute.get<std::vector<std::string> >() ==
-            desiredVector);
-
-        auto signedCharAttribute = read.getAttribute("signedChar");
-        // we don't have that datatype yet
-        // REQUIRE(unsignedCharAttribute.dtype == Datatype::SCHAR);
-        auto unsignedCharAttribute = read.getAttribute("unsignedChar");
-        REQUIRE(unsignedCharAttribute.dtype == Datatype::UCHAR);
-        auto charAttribute = read.getAttribute("char");
-        // might currently report Datatype::UCHAR on some platforms
-        // REQUIRE(unsignedCharAttribute.dtype == Datatype::CHAR);
-
-        REQUIRE(signedCharAttribute.get<char>() == char('a'));
-        REQUIRE(unsignedCharAttribute.get<char>() == char('a'));
-        REQUIRE(charAttribute.get<char>() == char('a'));
-    }
-}
-#endif
-
 namespace detail
 {
 template <typename Char>
@@ -5025,6 +4903,7 @@ TEST_CASE("bp4_steps", "[serial][adios2]")
     //     dontUseSteps,
     //     Access::READ_LINEAR);
 
+    return; // @todo use Schema 2022
     /*
      * Do this whole thing once more, but this time use the new attribute
      * layout.
@@ -6103,6 +5982,7 @@ void adios2_bp5_no_steps(bool usesteps)
 
 TEST_CASE("adios2_bp5_no_steps", "[serial][adios2]")
 {
+    return; // @todo use Schema 2022
     adios2_bp5_no_steps(/* usesteps = */ false);
     adios2_bp5_no_steps(/* usesteps = */ true);
 }
@@ -6393,6 +6273,7 @@ void chaotic_stream(std::string filename, bool variableBased)
      * We will write iterations in the following order.
      */
     std::vector<uint64_t> iterations{5, 9, 1, 3, 4, 6, 7, 8, 2, 0};
+    return; // @todo use Schema 2022
     std::string jsonConfig = R"(
 {
     "adios2": {
@@ -6571,6 +6452,7 @@ TEST_CASE("unfinished_iteration_test", "[serial]")
 #if openPMD_HAVE_ADIOS2
     unfinished_iteration_test(
         "bp", IterationEncoding::groupBased, R"({"backend": "adios2"})");
+#if 0 // @todo use schema 2022
     unfinished_iteration_test(
         "bp",
         IterationEncoding::variableBased,
@@ -6583,6 +6465,7 @@ TEST_CASE("unfinished_iteration_test", "[serial]")
       }
     }
     )");
+#endif
     unfinished_iteration_test(
         "bp", IterationEncoding::fileBased, R"({"backend": "adios2"})");
 #endif
@@ -7069,22 +6952,22 @@ TEST_CASE("append_mode", "[serial]")
                 false,
                 ParseMode::LinearWithoutSnapshot,
                 jsonConfigOld);
-            append_mode(
-                "../samples/append/append_groupbased." + t,
-                false,
-                ParseMode::WithSnapshot,
-                jsonConfigNew);
+            // append_mode(
+            //     "../samples/append/append_groupbased." + t,
+            //     false,
+            //     ParseMode::WithSnapshot,
+            //     jsonConfigNew);
             // This test config does not make sense
             // append_mode(
             //     "../samples/append/append_variablebased." + t,
             //     true,
             //     ParseMode::WithSnapshot,
             //     jsonConfigOld);
-            append_mode(
-                "../samples/append/append_variablebased." + t,
-                true,
-                ParseMode::WithSnapshot,
-                jsonConfigNew);
+            // append_mode(
+            //     "../samples/append/append_variablebased." + t,
+            //     true,
+            //     ParseMode::WithSnapshot,
+            //     jsonConfigNew);
         }
         else
         {

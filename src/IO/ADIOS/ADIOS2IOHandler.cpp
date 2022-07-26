@@ -835,9 +835,9 @@ void ADIOS2IOHandlerImpl::writeDataset(
 void ADIOS2IOHandlerImpl::writeAttribute(
     Writable *writable, const Parameter<Operation::WRITE_ATT> &parameters)
 {
-    switch (attributeLayout())
+    switch (schema())
     {
-    case AttributeLayout::ByAdiosAttributes:
+    case SupportedSchema::s_0000_00_00:
         if (parameters.changesOverSteps)
         {
             // cannot do this
@@ -846,33 +846,12 @@ void ADIOS2IOHandlerImpl::writeAttribute(
         switchType<detail::OldAttributeWriter>(
             parameters.dtype, this, writable, parameters);
         break;
-    case AttributeLayout::ByAdiosVariables: {
-        VERIFY_ALWAYS(
-            access::write(m_handler->m_backendAccess),
-            "[ADIOS2] Cannot write attribute in read-only mode.");
-        auto pos = setAndGetFilePosition(writable);
-        auto file =
-            refreshFileFromParent(writable, /* preferParentFile = */ false);
-        auto fullName = nameOfAttribute(writable, parameters.name);
-        auto prefix = filePositionToString(pos);
-
-        auto &filedata = getFileData(file, IfFileNotOpen::ThrowError);
-        if (parameters.changesOverSteps &&
-            filedata.streamStatus ==
-                detail::BufferedActions::StreamStatus::NoStream)
-        {
-            // cannot do this
-            return;
-        }
-        filedata.requireActiveStep();
-        filedata.invalidateAttributesMap();
-        m_dirty.emplace(std::move(file));
-
-        // this intentionally overwrites previous writes
-        auto &bufferedWrite = filedata.m_attributeWrites[fullName];
-        bufferedWrite.name = fullName;
-        bufferedWrite.dtype = parameters.dtype;
-        bufferedWrite.resource = parameters.resource;
+    case SupportedSchema::s_2022_07_26: {
+        throw std::runtime_error("Unimplemented!");
+        /*
+         * Should be fairly similar to old implementation, merely ensure
+         * overwriting and changesOverSteps both work.
+         */
         break;
     }
     default:
@@ -1033,26 +1012,10 @@ void ADIOS2IOHandlerImpl::readAttribute(
     auto pos = setAndGetFilePosition(writable);
     detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
     ba.requireActiveStep();
-    switch (attributeLayout())
-    {
-        using AL = AttributeLayout;
-    case AL::ByAdiosAttributes: {
-        detail::OldBufferedAttributeRead bar;
-        bar.name = nameOfAttribute(writable, parameters.name);
-        bar.param = parameters;
-        ba.enqueue(std::move(bar));
-        break;
-    }
-    case AL::ByAdiosVariables: {
-        detail::BufferedAttributeRead bar;
-        bar.name = nameOfAttribute(writable, parameters.name);
-        bar.param = parameters;
-        ba.m_attributeReads.push_back(std::move(bar));
-        break;
-    }
-    default:
-        throw std::runtime_error("Unreachable!");
-    }
+    detail::OldBufferedAttributeRead bar;
+    bar.name = nameOfAttribute(writable, parameters.name);
+    bar.param = parameters;
+    ba.enqueue(std::move(bar));
     m_dirty.emplace(std::move(file));
 }
 
@@ -1093,45 +1056,9 @@ void ADIOS2IOHandlerImpl::listPaths(
      */
     std::vector<std::string> delete_me;
 
-    switch (attributeLayout())
+    switch (schema())
     {
-        using AL = AttributeLayout;
-    case AL::ByAdiosVariables: {
-        std::vector<std::string> vars =
-            fileData.availableVariablesPrefixed(myName);
-        for (auto var : vars)
-        {
-            // since current Writable is a group and no dataset,
-            // var == "__data__" is not possible
-            if (auxiliary::ends_with(var, "/__data__"))
-            {
-                // here be datasets
-                var = auxiliary::replace_last(var, "/__data__", "");
-                auto firstSlash = var.find_first_of('/');
-                if (firstSlash != std::string::npos)
-                {
-                    var = var.substr(0, firstSlash);
-                    subdirs.emplace(std::move(var));
-                }
-                else
-                { // var is a dataset at the current level
-                    delete_me.push_back(std::move(var));
-                }
-            }
-            else
-            {
-                // here be attributes
-                auto firstSlash = var.find_first_of('/');
-                if (firstSlash != std::string::npos)
-                {
-                    var = var.substr(0, firstSlash);
-                    subdirs.emplace(std::move(var));
-                }
-            }
-        }
-        break;
-    }
-    case AL::ByAdiosAttributes: {
+    case SupportedSchema::s_0000_00_00: {
         std::vector<std::string> vars =
             fileData.availableVariablesPrefixed(myName);
         for (auto var : vars)
@@ -1158,6 +1085,10 @@ void ADIOS2IOHandlerImpl::listPaths(
                 subdirs.emplace(std::move(attr));
             }
         }
+        break;
+    }
+    case SupportedSchema::s_2022_07_26: {
+        throw std::runtime_error("Unimplemented!");
         break;
     }
     }
@@ -1196,33 +1127,31 @@ void ADIOS2IOHandlerImpl::listDatasets(
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
     fileData.requireActiveStep();
 
-    std::unordered_set<std::string> subdirs;
-    for (auto var : fileData.availableVariablesPrefixed(myName))
+    switch (schema())
     {
-        if (attributeLayout() == AttributeLayout::ByAdiosVariables)
+    case SupportedSchema::s_0000_00_00: {
+        std::unordered_set<std::string> subdirs;
+        for (auto var : fileData.availableVariablesPrefixed(myName))
         {
-            // since current Writable is a group and no dataset,
-            // var == "__data__" is not possible
-            if (!auxiliary::ends_with(var, "/__data__"))
+            // if string still contains a slash, variable is a dataset below the
+            // current group
+            // we only want datasets contained directly within the current group
+            // let's ensure that
+            auto firstSlash = var.find_first_of('/');
+            if (firstSlash == std::string::npos)
             {
-                continue;
+                subdirs.emplace(std::move(var));
             }
-            // variable is now definitely a dataset, let's strip the suffix
-            var = auxiliary::replace_last(var, "/__data__", "");
         }
-        // if string still contains a slash, variable is a dataset below the
-        // current group
-        // we only want datasets contained directly within the current group
-        // let's ensure that
-        auto firstSlash = var.find_first_of('/');
-        if (firstSlash == std::string::npos)
+        for (auto &dataset : subdirs)
         {
-            subdirs.emplace(std::move(var));
+            parameters.datasets->emplace_back(std::move(dataset));
         }
     }
-    for (auto &dataset : subdirs)
-    {
-        parameters.datasets->emplace_back(std::move(dataset));
+    break;
+    case SupportedSchema::s_2022_07_26:
+        throw std::runtime_error("Unsupported!");
+        break;
     }
 }
 
@@ -1243,25 +1172,11 @@ void ADIOS2IOHandlerImpl::listAttributes(
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
     ba.requireActiveStep(); // make sure that the attributes are present
 
-    std::vector<std::string> attrs;
-    switch (attributeLayout())
-    {
-        using AL = AttributeLayout;
-    case AL::ByAdiosAttributes:
-        attrs = ba.availableAttributesPrefixed(attributePrefix);
-        break;
-    case AL::ByAdiosVariables:
-        attrs = ba.availableVariablesPrefixed(attributePrefix);
-        break;
-    }
+    std::vector<std::string> attrs =
+        ba.availableAttributesPrefixed(attributePrefix);
+
     for (auto &rawAttr : attrs)
     {
-        if (attributeLayout() == AttributeLayout::ByAdiosVariables &&
-            (auxiliary::ends_with(rawAttr, "/__data__") ||
-             rawAttr == "__data__"))
-        {
-            continue;
-        }
         auto attr = auxiliary::removeSlashes(rawAttr);
         if (attr.find_last_of('/') == std::string::npos)
         {
@@ -1436,29 +1351,7 @@ ADIOS2IOHandlerImpl::getCompressionOperator(std::string const &compression)
 std::string ADIOS2IOHandlerImpl::nameOfVariable(Writable *writable)
 {
     auto filepos = setAndGetFilePosition(writable);
-    auto res = filePositionToString(filepos);
-    if (attributeLayout() == AttributeLayout::ByAdiosAttributes)
-    {
-        return res;
-    }
-    switch (filepos->gd)
-    {
-    case ADIOS2FilePosition::GD::GROUP:
-        return res;
-    case ADIOS2FilePosition::GD::DATASET:
-        if (auxiliary::ends_with(res, '/'))
-        {
-            return res + "__data__";
-        }
-        else
-        {
-            // By convention, this path should always be taken
-            // But let's be safe
-            return res + "/__data__";
-        }
-    default:
-        throw std::runtime_error("[ADIOS2IOHandlerImpl] Unreachable!");
-    }
+    return filePositionToString(filepos);
 }
 
 std::string
@@ -1694,55 +1587,6 @@ namespace detail
     }
 
     template <typename T>
-    Datatype AttributeReader::call(
-        adios2::IO &IO,
-        detail::PreloadAdiosAttributes const &preloadedAttributes,
-        std::string name,
-        std::shared_ptr<Attribute::resource> resource)
-    {
-        /*
-         * If we store an attribute of boolean type, we store an additional
-         * attribute prefixed with '__is_boolean__' to indicate this information
-         * that would otherwise be lost. Check whether this has been done.
-         */
-        using rep = AttributeTypes<bool>::rep;
-        if constexpr (std::is_same<T, rep>::value)
-        {
-            std::string metaAttr =
-                ADIOS2Defaults::str_isBooleanNewLayout + name;
-            /*
-             * In verbose mode, attributeInfo will yield a warning if not
-             * finding the requested attribute. Since we expect the attribute
-             * not to be present in many cases (i.e. when it is actually not
-             * a boolean), let's tell attributeInfo to be quiet.
-             */
-            auto type = attributeInfo(
-                IO,
-                ADIOS2Defaults::str_isBooleanNewLayout + name,
-                /* verbose = */ false);
-            if (type == determineDatatype<rep>())
-            {
-                auto attr = IO.InquireAttribute<rep>(metaAttr);
-                if (attr.Data().size() == 1 && attr.Data()[0] == 1)
-                {
-                    return AttributeTypes<bool>::readAttribute(
-                        preloadedAttributes, name, resource);
-                }
-            }
-        }
-        return AttributeTypes<T>::readAttribute(
-            preloadedAttributes, name, resource);
-    }
-
-    template <int n, typename... Params>
-    Datatype AttributeReader::call(Params &&...)
-    {
-        throw std::runtime_error(
-            "[ADIOS2] Internal error: Unknown datatype while "
-            "trying to read an attribute.");
-    }
-
-    template <typename T>
     void OldAttributeWriter::call(
         ADIOS2IOHandlerImpl *impl,
         Writable *writable,
@@ -1876,25 +1720,6 @@ namespace detail
 
     template <int n, typename... Params>
     void OldAttributeWriter::call(Params &&...)
-    {
-        throw std::runtime_error(
-            "[ADIOS2] Internal error: Unknown datatype while "
-            "trying to write an attribute.");
-    }
-
-    template <typename T>
-    void AttributeWriter::call(
-        detail::BufferedAttributeWrite &params, BufferedActions &fileData)
-    {
-        AttributeTypes<T>::createAttribute(
-            fileData.m_IO,
-            fileData.requireActiveStep(),
-            params,
-            std::get<T>(params.resource));
-    }
-
-    template <int n, typename... Params>
-    void AttributeWriter::call(Params &&...)
     {
         throw std::runtime_error(
             "[ADIOS2] Internal error: Unknown datatype while "
@@ -2100,322 +1925,6 @@ namespace detail
         // variable has not been found, so we don't fill in any blocks
     }
 
-    template <typename T>
-    void AttributeTypes<T>::createAttribute(
-        adios2::IO &IO,
-        adios2::Engine &engine,
-        detail::BufferedAttributeWrite &params,
-        const T value)
-    {
-        auto attr = IO.InquireVariable<T>(params.name);
-        // @todo check size
-        if (!attr)
-        {
-            // std::cout << "DATATYPE OF " << name << ": "
-            //     << IO.VariableType( name ) << std::endl;
-            attr = IO.DefineVariable<T>(params.name);
-        }
-        if (!attr)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining variable '" +
-                params.name + "'.");
-        }
-        engine.Put(attr, value, adios2::Mode::Deferred);
-    }
-
-    template <typename T>
-    Datatype AttributeTypes<T>::readAttribute(
-        detail::PreloadAdiosAttributes const &preloadedAttributes,
-        std::string name,
-        std::shared_ptr<Attribute::resource> resource)
-    {
-        detail::AttributeWithShape<T> attr =
-            preloadedAttributes.getAttribute<T>(name);
-        if (!(attr.shape.size() == 0 ||
-              (attr.shape.size() == 1 && attr.shape[0] == 1)))
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Expecting scalar ADIOS variable, got " +
-                std::to_string(attr.shape.size()) + "D: " + name);
-        }
-        *resource = *attr.data;
-        return determineDatatype<T>();
-    }
-
-    template <typename T>
-    void AttributeTypes<std::vector<T>>::createAttribute(
-        adios2::IO &IO,
-        adios2::Engine &engine,
-        detail::BufferedAttributeWrite &params,
-        const std::vector<T> &value)
-    {
-        auto size = value.size();
-        auto attr = IO.InquireVariable<T>(params.name);
-        // @todo check size
-        if (!attr)
-        {
-            attr = IO.DefineVariable<T>(params.name, {size}, {0}, {size});
-        }
-        if (!attr)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining variable '" +
-                params.name + "'.");
-        }
-        engine.Put(attr, value.data(), adios2::Mode::Deferred);
-    }
-
-    template <typename T>
-    Datatype AttributeTypes<std::vector<T>>::readAttribute(
-        detail::PreloadAdiosAttributes const &preloadedAttributes,
-        std::string name,
-        std::shared_ptr<Attribute::resource> resource)
-    {
-        detail::AttributeWithShape<T> attr =
-            preloadedAttributes.getAttribute<T>(name);
-        if (attr.shape.size() != 1)
-        {
-            throw std::runtime_error("[ADIOS2] Expecting 1D ADIOS variable");
-        }
-
-        std::vector<T> res(attr.shape[0]);
-        std::copy_n(attr.data, attr.shape[0], res.data());
-        *resource = std::move(res);
-        return determineDatatype<std::vector<T>>();
-    }
-
-    void AttributeTypes<std::vector<std::string>>::createAttribute(
-        adios2::IO &IO,
-        adios2::Engine &engine,
-        detail::BufferedAttributeWrite &params,
-        const std::vector<std::string> &vec)
-    {
-        size_t width = 0;
-        for (auto const &str : vec)
-        {
-            width = std::max(width, str.size());
-        }
-        ++width; // null delimiter
-        size_t const height = vec.size();
-
-        auto attr = IO.InquireVariable<char>(params.name);
-        // @todo check size
-        if (!attr)
-        {
-            attr = IO.DefineVariable<char>(
-                params.name, {height, width}, {0, 0}, {height, width});
-        }
-        if (!attr)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining variable '" +
-                params.name + "'.");
-        }
-
-        // write this thing to the params, so we don't get a use after free
-        // due to deferred writing
-        params.bufferForVecString = std::vector<char>(width * height, 0);
-        for (size_t i = 0; i < height; ++i)
-        {
-            size_t start = i * width;
-            std::string const &str = vec[i];
-            std::copy(
-                str.begin(),
-                str.end(),
-                params.bufferForVecString.begin() + start);
-        }
-
-        engine.Put(
-            attr, params.bufferForVecString.data(), adios2::Mode::Deferred);
-    }
-
-    Datatype AttributeTypes<std::vector<std::string>>::readAttribute(
-        detail::PreloadAdiosAttributes const &preloadedAttributes,
-        std::string name,
-        std::shared_ptr<Attribute::resource> resource)
-    {
-        /*
-         * char_type parameter only for specifying the "template" type.
-         */
-        auto loadFromDatatype = [&preloadedAttributes, &name, &resource](
-                                    auto char_type) {
-            using char_t = decltype(char_type);
-            detail::AttributeWithShape<char_t> attr =
-                preloadedAttributes.getAttribute<char_t>(name);
-            if (attr.shape.size() != 2)
-            {
-                throw std::runtime_error(
-                    "[ADIOS2] Expecting 2D ADIOS variable");
-            }
-            char_t const *loadedData = attr.data;
-            size_t height = attr.shape[0];
-            size_t width = attr.shape[1];
-
-            std::vector<std::string> res(height);
-            if (std::is_signed<char>::value == std::is_signed<char_t>::value)
-            {
-                /*
-                 * This branch is chosen if the signedness of the
-                 * ADIOS variable corresponds with the signedness of the
-                 * char type on the current platform.
-                 * In this case, the C++ standard guarantees that the
-                 * representations for char and (un)signed char are
-                 * identical, reinterpret_cast-ing the loadedData to
-                 * char in order to construct our strings will be fine.
-                 */
-                for (size_t i = 0; i < height; ++i)
-                {
-                    size_t start = i * width;
-                    char const *start_ptr =
-                        reinterpret_cast<char const *>(loadedData + start);
-                    size_t j = 0;
-                    while (j < width && start_ptr[j] != 0)
-                    {
-                        ++j;
-                    }
-                    std::string &str = res[i];
-                    str.append(start_ptr, start_ptr + j);
-                }
-            }
-            else
-            {
-                /*
-                 * This branch is chosen if the signedness of the
-                 * ADIOS variable is different from the signedness of the
-                 * char type on the current platform.
-                 * In this case, we play it safe, and explicitly convert
-                 * the loadedData to char pointwise.
-                 */
-                std::vector<char> converted(width);
-                for (size_t i = 0; i < height; ++i)
-                {
-                    size_t start = i * width;
-                    auto const *start_ptr = loadedData + start;
-                    size_t j = 0;
-                    while (j < width && start_ptr[j] != 0)
-                    {
-                        converted[j] = start_ptr[j];
-                        ++j;
-                    }
-                    std::string &str = res[i];
-                    str.append(converted.data(), converted.data() + j);
-                }
-            }
-
-            *resource = res;
-        };
-        /*
-         * If writing char variables in ADIOS2, they might become either int8_t,
-         * uint8_t or char on disk depending on platform, ADIOS2 version and
-         * ADIOS2 engine.
-         * So allow reading from all these types.
-         */
-        switch (preloadedAttributes.attributeType(name))
-        {
-        /*
-         * Workaround for two bugs at once:
-         * ADIOS2 does not have an explicit char type,
-         * we don't have an explicit schar type.
-         * Until this is fixed, we use CHAR to represent ADIOS signed char.
-         * @todo revisit this workaround and its necessity
-         */
-        case Datatype::CHAR: {
-            loadFromDatatype(char{});
-            break;
-        }
-        case Datatype::UCHAR: {
-            using uchar_t = unsigned char;
-            loadFromDatatype(uchar_t{});
-            break;
-        }
-        case Datatype::SCHAR: {
-            using schar_t = signed char;
-            loadFromDatatype(schar_t{});
-            break;
-        }
-        default: {
-            throw std::runtime_error(
-                "[ADIOS2] Expecting 2D ADIOS variable of any char type.");
-        }
-        }
-        return Datatype::VEC_STRING;
-    }
-
-    template <typename T, size_t n>
-    void AttributeTypes<std::array<T, n>>::createAttribute(
-        adios2::IO &IO,
-        adios2::Engine &engine,
-        detail::BufferedAttributeWrite &params,
-        const std::array<T, n> &value)
-    {
-        auto attr = IO.InquireVariable<T>(params.name);
-        // @todo check size
-        if (!attr)
-        {
-            attr = IO.DefineVariable<T>(params.name, {n}, {0}, {n});
-        }
-        if (!attr)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining variable '" +
-                params.name + "'.");
-        }
-        engine.Put(attr, value.data(), adios2::Mode::Deferred);
-    }
-
-    template <typename T, size_t n>
-    Datatype AttributeTypes<std::array<T, n>>::readAttribute(
-        detail::PreloadAdiosAttributes const &preloadedAttributes,
-        std::string name,
-        std::shared_ptr<Attribute::resource> resource)
-    {
-        detail::AttributeWithShape<T> attr =
-            preloadedAttributes.getAttribute<T>(name);
-        if (attr.shape.size() != 1 || attr.shape[0] != n)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Expecting 1D ADIOS variable of extent " +
-                std::to_string(n));
-        }
-
-        std::array<T, n> res;
-        std::copy_n(attr.data, n, res.data());
-        *resource = std::move(res);
-        return determineDatatype<std::array<T, n>>();
-    }
-
-    void AttributeTypes<bool>::createAttribute(
-        adios2::IO &IO,
-        adios2::Engine &engine,
-        detail::BufferedAttributeWrite &params,
-        const bool value)
-    {
-        IO.DefineAttribute<bool_representation>(
-            ADIOS2Defaults::str_isBooleanNewLayout + params.name, 1);
-        AttributeTypes<bool_representation>::createAttribute(
-            IO, engine, params, toRep(value));
-    }
-
-    Datatype AttributeTypes<bool>::readAttribute(
-        detail::PreloadAdiosAttributes const &preloadedAttributes,
-        std::string name,
-        std::shared_ptr<Attribute::resource> resource)
-    {
-        detail::AttributeWithShape<rep> attr =
-            preloadedAttributes.getAttribute<rep>(name);
-        if (!(attr.shape.size() == 0 ||
-              (attr.shape.size() == 1 && attr.shape[0] == 1)))
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Expecting scalar ADIOS variable, got " +
-                std::to_string(attr.shape.size()) + "D: " + name);
-        }
-
-        *resource = fromRep(*attr.data);
-        return Datatype::BOOL;
-    }
-
     void BufferedGet::run(BufferedActions &ba)
     {
         switchAdios2VariableType<detail::DatasetReader>(
@@ -2467,33 +1976,6 @@ namespace detail
         *param.dtype = ret;
     }
 
-    void BufferedAttributeRead::run(BufferedActions &ba)
-    {
-        auto type = attributeInfo(
-            ba.m_IO,
-            name,
-            /* verbose = */ true,
-            VariableOrAttribute::Variable);
-
-        if (type == Datatype::UNDEFINED)
-        {
-            throw error::ReadError(
-                error::AffectedObject::Attribute,
-                error::Reason::NotFound,
-                "ADIOS2",
-                name);
-        }
-
-        Datatype ret = switchType<detail::AttributeReader>(
-            type, ba.m_IO, ba.preloadAttributes, name, param.resource);
-        *param.dtype = ret;
-    }
-
-    void BufferedAttributeWrite::run(BufferedActions &fileData)
-    {
-        switchType<detail::AttributeWriter>(dtype, *this, fileData);
-    }
-
     BufferedActions::BufferedActions(
         ADIOS2IOHandlerImpl &impl, InvalidatableFile file)
         : m_file(impl.fullPath(std::move(file)))
@@ -2537,18 +2019,17 @@ namespace detail
             return;
         }
         // if write accessing, ensure that the engine is opened
-        // and that all attributes are written
+        // and that all datasets are written
         // (attributes and unique_ptr datasets are written upon closing a step
         // or a file which users might never do)
-        bool needToWrite =
-            !m_attributeWrites.empty() || !m_uniquePtrPuts.empty();
-        if ((needToWrite || !m_engine) && m_mode != adios2::Mode::Read)
+        bool needToWrite = !m_uniquePtrPuts.empty();
+        if ((needToWrite || !m_engine) && m_mode != adios2::Mode::Read
+#if HAS_ADIOS_2_8
+            && m_mode != adios2::Mode::ReadRandomAccess
+#endif
+        )
         {
             getEngine();
-            for (auto &pair : m_attributeWrites)
-            {
-                pair.second.run(*this);
-            }
             for (auto &entry : m_uniquePtrPuts)
             {
                 entry.run(*this);
@@ -2678,7 +2159,7 @@ namespace detail
                 {
                 case SupportedSchema::s_0000_00_00:
                     return false;
-                case SupportedSchema::s_2021_02_09:
+                case SupportedSchema::s_2022_07_26:
                     return true;
                 }
                 break;
@@ -2818,7 +2299,7 @@ namespace detail
             switch (m_impl->m_iterationEncoding)
             {
             case IterationEncoding::variableBased:
-                m_impl->m_schema = ADIOS2Schema::schema_2021_02_09;
+                m_impl->m_schema = ADIOS2Schema::schema_2022_07_26;
                 break;
             case IterationEncoding::groupBased:
             case IterationEncoding::fileBased:
@@ -3226,11 +2707,6 @@ namespace detail
                 default:
                     throw std::runtime_error("[ADIOS2] Control flow error!");
                 }
-
-                if (attributeLayout() == AttributeLayout::ByAdiosVariables)
-                {
-                    preloadAttributes.preloadAttributes(m_IO, m_engine.value());
-                }
                 break;
             }
             default:
@@ -3264,11 +2740,6 @@ namespace detail
             case AdvanceStatus::RANDOMACCESS:
                 // pass
                 break;
-            }
-            if (m_mode == adios2::Mode::Read &&
-                attributeLayout() == AttributeLayout::ByAdiosVariables)
-            {
-                preloadAttributes.preloadAttributes(m_IO, m_engine.value());
             }
             streamStatus = StreamStatus::DuringStep;
         }
@@ -3311,21 +2782,6 @@ namespace detail
                 m_alreadyEnqueued.emplace_back(std::move(task));
             }
             m_buffer.clear();
-
-            // m_attributeWrites and m_attributeReads are for implementing the
-            // 2021 ADIOS2 schema which will go anyway.
-            // So, this ugliness here is temporary.
-            for (auto &task : m_attributeWrites)
-            {
-                m_alreadyEnqueued.emplace_back(std::unique_ptr<BufferedAction>{
-                    new BufferedAttributeWrite{std::move(task.second)}});
-            }
-            m_attributeWrites.clear();
-            /*
-             * An AttributeRead is not a deferred action, so we can clear it
-             * immediately.
-             */
-            m_attributeReads.clear();
             throw;
         }
     }
@@ -3353,10 +2809,7 @@ namespace detail
          */
         if (streamStatus == StreamStatus::OutsideOfStep)
         {
-            if (m_buffer.empty() &&
-                (!writeLatePuts ||
-                 (m_attributeWrites.empty() && m_uniquePtrPuts.empty())) &&
-                m_attributeReads.empty())
+            if (m_buffer.empty() && (!writeLatePuts || m_uniquePtrPuts.empty()))
             {
                 if (flushUnconditionally)
                 {
@@ -3383,10 +2836,6 @@ namespace detail
 
         if (writeLatePuts)
         {
-            for (auto &pair : m_attributeWrites)
-            {
-                pair.second.run(*this);
-            }
             for (auto &entry : m_uniquePtrPuts)
             {
                 entry.run(*this);
@@ -3412,15 +2861,9 @@ namespace detail
             m_alreadyEnqueued.clear();
             if (writeLatePuts)
             {
-                m_attributeWrites.clear();
                 m_uniquePtrPuts.clear();
             }
 
-            for (BufferedAttributeRead &task : m_attributeReads)
-            {
-                task.run(*this);
-            }
-            m_attributeReads.clear();
             break;
 
         case FlushLevel::InternalFlush:
@@ -3601,12 +3044,6 @@ namespace detail
             if (streamStatus != StreamStatus::DuringStep)
             {
                 adiosStatus = getEngine().BeginStep();
-                if (adiosStatus == adios2::StepStatus::OK &&
-                    m_mode == adios2::Mode::Read &&
-                    attributeLayout() == AttributeLayout::ByAdiosVariables)
-                {
-                    preloadAttributes.preloadAttributes(m_IO, m_engine.value());
-                }
             }
             else
             {
