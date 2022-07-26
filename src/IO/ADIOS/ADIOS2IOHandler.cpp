@@ -595,8 +595,8 @@ void ADIOS2IOHandlerImpl::createPath(
      * They are implicitly created with the paths of variables/attributes. */
 
     writable->written = true;
-    writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>(
-        path, ADIOS2FilePosition::GD::GROUP);
+    writable->abstractFilePosition =
+        std::make_shared<ADIOS2FilePosition>(path, GroupOrDataset::GROUP);
 }
 
 void ADIOS2IOHandlerImpl::createDataset(
@@ -616,7 +616,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         auto const file =
             refreshFileFromParent(writable, /* preferParentFile = */ true);
         auto filePos = setAndGetFilePosition(writable, name);
-        filePos->gd = ADIOS2FilePosition::GD::DATASET;
+        filePos->gd = GroupOrDataset::DATASET;
         auto const varName = nameOfVariable(writable);
 
         std::vector<ParameterizedOperator> operators;
@@ -768,7 +768,7 @@ void ADIOS2IOHandlerImpl::openPath(
      * They are implicitly created with the paths of variables/attributes. */
 
     writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>(
-        prefix + infix + suffix, ADIOS2FilePosition::GD::GROUP);
+        prefix + infix + suffix, GroupOrDataset::GROUP);
     writable->written = true;
 }
 
@@ -778,7 +778,7 @@ void ADIOS2IOHandlerImpl::openDataset(
     auto name = auxiliary::removeSlashes(parameters.name);
     writable->abstractFilePosition.reset();
     auto pos = setAndGetFilePosition(writable, name);
-    pos->gd = ADIOS2FilePosition::GD::DATASET;
+    pos->gd = GroupOrDataset::DATASET;
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ true);
     auto varName = nameOfVariable(writable);
     *parameters.dtype =
@@ -1362,7 +1362,7 @@ ADIOS2IOHandlerImpl::nameOfAttribute(Writable *writable, std::string attribute)
         extendFilePosition(pos, auxiliary::removeSlashes(attribute)));
 }
 
-ADIOS2FilePosition::GD ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
+GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
 {
     return setAndGetFilePosition(writable)->gd;
 }

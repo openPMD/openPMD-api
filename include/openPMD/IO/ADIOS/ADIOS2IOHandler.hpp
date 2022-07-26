@@ -395,7 +395,7 @@ private:
      * Figure out whether the Writable corresponds with a
      * group or a dataset.
      */
-    ADIOS2FilePosition::GD groupOrDataset(Writable *);
+    GroupOrDataset groupOrDataset(Writable *);
 
     enum class IfFileNotOpen : bool
     {
