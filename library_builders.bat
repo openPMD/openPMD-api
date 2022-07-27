@@ -1,6 +1,6 @@
 set CURRENTDIR="%cd%"
 
-:: BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
+set BUILD_PREFIX="C:/Program Files (x86)"
 set CPU_COUNT="2"
 
 echo "CFLAGS: %CFLAGS%"
@@ -100,7 +100,8 @@ exit /b 0
     -DHDF5_BUILD_TOOLS=OFF      ^
     -DHDF5_ENABLE_PARALLEL=OFF  ^
     -DHDF5_ENABLE_SZIP_SUPPORT=OFF ^
-    -DHDF5_ENABLE_Z_LIB_SUPPORT=ON
+    -DHDF5_ENABLE_Z_LIB_SUPPORT=ON ^
+    -DCMAKE_INSTALL_PREFIX=%BUILD_PREFIX%/HDF5
   if errorlevel 1 exit 1
 
   cmake --build build-hdf5 --parallel %CPU_COUNT%
@@ -151,6 +152,8 @@ exit /b 0
     -DBUILD_SHARED_LIBS=OFF ^
     -DCMAKE_BUILD_TYPE=Release
   if errorlevel 1 exit 1
+:: Manually-specified variables were not used by the project:
+::   CMAKE_BUILD_TYPE
 
   cmake --build build-zlib --parallel %CPU_COUNT%
   if errorlevel 1 exit 1
