@@ -561,7 +561,13 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
      * otherwise writing should be skipped.
      * The frontend is responsible for handling both situations.
      */
-    bool changesOverSteps = false;
+    enum class ChangesOverSteps
+    {
+        No,
+        Yes,
+        IfPossible
+    };
+    ChangesOverSteps changesOverSteps = ChangesOverSteps::No;
     Attribute::resource resource;
 };
 

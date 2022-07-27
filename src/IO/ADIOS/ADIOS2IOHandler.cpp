@@ -838,7 +838,8 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     switch (schema())
     {
     case SupportedSchema::s_0000_00_00:
-        if (parameters.changesOverSteps)
+        if (parameters.changesOverSteps ==
+            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
         {
             // cannot do this
             return;
