@@ -138,8 +138,10 @@ before_script:
   - mkdir -p src/.patch
   - cd src/.patch
   - curl -sOL https://github.com/ax3l/openPMD-api/commit/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
+  - curl -sOL https://gist.githubusercontent.com/ax3l/4db2f1744e0e28e6c013ee4e752b3cb7/raw/ceb03d11a10e2e2f8cd9c74bff524a21ba8eb92b/setupversion.patch
   - cd ..
   - python3 -m patch .patch/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
+  - python3 -m patch .patch/setupversion.patch
   - cd ..
 
 script:

@@ -92,18 +92,29 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cibuildwheel==2.2.2
 
-    - name: Download Patch 1/1
+    # 0.14.5: macOS ADIOS1 Linker Error
+    # https://github.com/openPMD/openPMD-api/issues/1287
+    - name: Download Patch 1/2
       uses: suisei-cn/actions-download-file@v1
-      id: setupversion
+      id: adiosbuild
       with:
         url: "https://github.com/ax3l/openPMD-api/commit/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch"
         target: src/.patch/
 
-    - name: Apply Patch
+    # 0.14.5.post1 bump
+    - name: Download Patch 2/2
+      uses: suisei-cn/actions-download-file@v1
+      id: setupversion
+      with:
+        url: "https://gist.githubusercontent.com/ax3l/4db2f1744e0e28e6c013ee4e752b3cb7/raw/ceb03d11a10e2e2f8cd9c74bff524a21ba8eb92b/setupversion.patch"
+        target: src/.patch/
+
+    - name: Apply Patches
       run: |
         python -m pip install "patch==1.*"
         cd src
         python -m patch .patch/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
+        python -m patch .patch/setupversion.patch
 
     - name: Build wheel
       env:
