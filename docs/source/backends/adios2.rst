@@ -141,7 +141,7 @@ This approach enables a very high IO performance by requiring only very few, ver
 * **file-based iteration encoding:** A new ADIOS2 engine is opened for each iteration and closed upon ``Iteration::close()``.
   Each iteration has its own buffer:
 
-.. image:: ./memory_filebased.png
+.. figure:: https://user-images.githubusercontent.com/14241876/181477396-746ee21d-6efe-450b-bb2f-f53d49945fb9.png
   :alt: Memory usage of file-based iteration encoding
 
 * **variable-based iteration encoding and group-based iteration encoding with steps**:
@@ -153,17 +153,17 @@ This approach enables a very high IO performance by requiring only very few, ver
   These memory spikes can easily lead to out-of-memory (OOM) situations, motivating that the ``InitialBufferSize`` should not be chosen too small.
   Both behaviors are depicted in the following two pictures:
 
-.. image:: ./memory_variablebased.png
+.. figure:: https://user-images.githubusercontent.com/14241876/181477405-0439b017-256b-48d6-a169-014b3fe3aeb3.png
   :alt: Memory usage of variable-based iteration encoding
 
-.. image:: ./memory_variablebased_initialization.png
+.. figure:: https://user-images.githubusercontent.com/14241876/181477406-f6e2a173-2ec1-48df-a417-0cb97a160c91.png
   :alt: Memory usage of variable-based iteration encoding with bad ``InitialBufferSize``
 
 * **group-based iteration encoding without steps:**
   This encoding **should be avoided** in ADIOS2.
   No data will be written to disk before closing the ``Series``, leading to a continuous buildup of memory, and most likely to an OOM situation:
 
-.. image:: ./memory_groupbased_nosteps.png
+.. figure:: https://user-images.githubusercontent.com/14241876/181477397-4d923061-7051-48c4-ae3a-a9efa10dcac7.png
   :alt: Memory usage of group-based iteration without using steps
 
 SST staging engine
@@ -173,13 +173,13 @@ Like the BP4 engine, the SST engine uses one large buffer as an internal data st
 
 Unlike the BP4 engine, however, a new buffer is allocated for each IO step, leading to a memory profile with clearly distinct IO steps:
 
-.. image:: ./memory_sst_easy.png
+.. figure:: https://user-images.githubusercontent.com/14241876/181477403-7ed7810b-dedf-48b8-b17b-8ce89fd3c34a.png
   :alt: Ideal memory usage of the SST engine
 
 The SST engine performs all IO asynchronously in the background and releases memory only as soon as the reader is done interacting with an IO step.
 With slow readers, this can lead to a buildup of past IO steps in memory and subsequently to an out-of-memory condition:
 
-.. image:: ./memory_sst_congested.png
+.. figure:: https://user-images.githubusercontent.com/14241876/181477400-f342135f-612e-464f-b0e7-c1978ef47a94.png
   :alt: Memory congestion in SST due to a slow reader
 
 This can be avoided by specifying the `ADIOS2 parameter <https://adios2.readthedocs.io/en/latest/engines/engines.html#bp5>`_ ``QueueLimit``:
@@ -218,7 +218,7 @@ In the openPMD-api, this can be done by specifying backend-specific parameters t
 
 The memory consumption of this approach shows that the 2GB buffer is first drained and then recreated after each ``flush()``:
 
-.. image:: ./memory_bp5_yes_flush.png
+.. figure:: https://user-images.githubusercontent.com/14241876/181477392-7eff2020-7bfb-4ddb-b31c-27b9937e088a.png
   :alt: Memory usage of BP5 when flushing directly to disk
 
 .. note::
@@ -240,7 +240,7 @@ Note that this involves data copies that can be avoided by either flushing direc
 With this strategy, the BP5 engine will slowly build up its buffer until ending the step.
 Rather than by reallocation as in BP4, this is done by appending a new chunk, leading to a clearly more acceptable memory profile:
 
-.. image:: ./memory_bp5_no_flush.png
+.. figure:: https://user-images.githubusercontent.com/14241876/181477384-ce4ea8ab-3bde-4210-991b-2e627dfcc7c9.png
   :alt: Memory usage of BP5 when flushing to the engine buffer
 
 The default is to flush to disk, but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
