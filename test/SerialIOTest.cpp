@@ -30,6 +30,14 @@
 #include <tuple>
 #include <vector>
 
+#ifdef __unix__
+#include <dirent.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 using namespace openPMD;
 
 struct BackendSelection
@@ -3944,6 +3952,274 @@ TEST_CASE("git_adios2_early_chunk_query", "[serial][adios2]")
         600,
         R"({"backend": "adios2"})");
 }
+
+/*
+ * Require __unix__ since we need all that filestat stuff for this test.
+ */
+#if defined(__unix__) && defined(ADIOS2_HAVE_BP5)
+
+enum class FlushDuringStep
+{
+    Never,
+    Default_No,
+    Default_Yes,
+    Always
+};
+
+void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
+{
+    constexpr size_t size = 1024 * 1024;
+
+    auto getsize = []() {
+        off_t res = 0;
+        int dirfd = open("../samples/bp5_flush.bp", O_RDONLY);
+        if (dirfd < 0)
+        {
+            throw std::system_error(
+                std::error_code(errno, std::system_category()));
+        }
+        DIR *directory = fdopendir(dirfd);
+        if (!directory)
+        {
+            close(dirfd);
+            throw std::system_error(
+                std::error_code(errno, std::system_category()));
+        }
+        dirent *entry;
+        struct stat statbuf;
+        while ((entry = readdir(directory)) != nullptr)
+        {
+            if (strcmp(entry->d_name, ".") == 0 ||
+                strcmp(entry->d_name, "..") == 0)
+            {
+                continue;
+            }
+            int err = fstatat(dirfd, entry->d_name, &statbuf, 0);
+            if (err != 0)
+            {
+                closedir(directory);
+                close(dirfd);
+                throw std::system_error(
+                    std::error_code(errno, std::system_category()));
+            }
+            res += statbuf.st_size;
+        }
+        closedir(directory);
+        close(dirfd);
+        return res;
+    };
+    std::vector<int32_t> data(size, 10);
+    {
+        Series write("../samples/bp5_flush.bp", Access::CREATE, cfg);
+
+        {
+            auto component =
+                write.writeIterations()[0]
+                    .meshes["e_chargeDensity"][RecordComponent::SCALAR];
+            component.resetDataset({Datatype::INT, {size}});
+            component.storeChunk(data, {0}, {size});
+            // component.seriesFlush(FlushMode::NonCollective);
+            component.seriesFlush();
+        }
+
+        auto currentSize = getsize();
+        if (flushDuringStep == FlushDuringStep::Default_Yes ||
+            flushDuringStep == FlushDuringStep::Always)
+        {
+            // should be roughly within 1% of 4Mb
+            REQUIRE(std::abs(1 - double(currentSize) / (4 * size)) <= 0.01);
+        }
+        else
+        {
+            // should be roughly zero
+            REQUIRE(currentSize <= 4096);
+        }
+
+        {
+            auto component =
+                write.writeIterations()[0]
+                    .meshes["i_chargeDensity"][RecordComponent::SCALAR];
+            component.resetDataset({Datatype::INT, {size}});
+            component.storeChunk(data, {0}, {size});
+        }
+
+        currentSize = getsize();
+        if (flushDuringStep == FlushDuringStep::Default_Yes ||
+            flushDuringStep == FlushDuringStep::Always)
+        {
+            // should still be roughly within 1% of 4Mb
+            REQUIRE(std::abs(1 - double(currentSize) / (4 * size)) <= 0.01);
+        }
+        else
+        {
+            // should be roughly zero
+            REQUIRE(currentSize <= 4096);
+        }
+
+        write.flush();
+        currentSize = getsize();
+        if (flushDuringStep == FlushDuringStep::Default_Yes ||
+            flushDuringStep == FlushDuringStep::Always)
+        {
+            // should now be roughly within 1% of 8Mb
+            REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
+        }
+        else
+        {
+            // should be roughly zero
+            REQUIRE(currentSize <= 4096);
+        }
+
+        {
+            auto component =
+                write.writeIterations()[0]
+                    .meshes["temperature"][RecordComponent::SCALAR];
+            component.resetDataset({Datatype::INT, {size}});
+            component.storeChunk(data, {0}, {size});
+            // component.seriesFlush(FlushMode::NonCollective);
+            component.seriesFlush(
+                "adios2.engine.preferred_flush_target = \"buffer\"");
+        }
+        currentSize = getsize();
+        if (flushDuringStep == FlushDuringStep::Always)
+        {
+            // should now be roughly within 1% of 12Mb
+            REQUIRE(std::abs(1 - double(currentSize) / (12 * size)) <= 0.01);
+        }
+        else if (flushDuringStep == FlushDuringStep::Default_Yes)
+        {
+            // should now be roughly within 1% of 8Mb
+            REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
+        }
+        else
+        {
+            // should be roughly zero
+            REQUIRE(currentSize <= 4096);
+        }
+
+        {
+            auto component =
+                write.writeIterations()[0]
+                    .meshes["temperature"][RecordComponent::SCALAR];
+            component.resetDataset({Datatype::INT, {size}});
+            component.storeChunk(data, {0}, {size});
+            // component.seriesFlush(FlushMode::NonCollective);
+            component.seriesFlush(
+                "adios2.engine.preferred_flush_target = \"disk\"");
+        }
+        currentSize = getsize();
+        if (flushDuringStep != FlushDuringStep::Never)
+        {
+            // should now be roughly within 1% of 16Mb
+            REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
+        }
+        else
+        {
+            // should be roughly zero
+            REQUIRE(currentSize <= 4096);
+        }
+    }
+    auto currentSize = getsize();
+    // should now be indiscriminately be roughly within 1% of 8Mb after
+    // closing the Series
+    REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
+}
+
+TEST_CASE("adios2_bp5_flush", "[serial][adios2]")
+{
+    std::string cfg1 = R"(
+[adios2]
+
+[adios2.engine]
+usesteps = true
+type = "bp5"
+preferred_flush_target = "disk"
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(
+        cfg1, /* flushDuringStep = */ FlushDuringStep::Default_Yes);
+
+    std::string cfg2 = R"(
+[adios2]
+
+[adios2.engine]
+usesteps = true
+type = "bp5"
+preferred_flush_target = "buffer"
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(cfg2, /* flushDuringStep = */ FlushDuringStep::Default_No);
+
+    std::string cfg3 = R"(
+[adios2]
+
+[adios2.engine]
+usesteps = true
+type = "bp5"
+# preferred_flush_target = <default>
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(
+        cfg3, /* flushDuringStep = */ FlushDuringStep::Default_Yes);
+
+    std::string cfg4 = R"(
+[adios2]
+
+[adios2.engine]
+usesteps = true
+type = "bp5"
+preferred_flush_target = "buffer_override"
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(cfg4, /* flushDuringStep = */ FlushDuringStep::Never);
+
+    std::string cfg5 = R"(
+[adios2]
+
+[adios2.engine]
+usesteps = true
+type = "bp5"
+preferred_flush_target = "disk_override"
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(cfg5, /* flushDuringStep = */ FlushDuringStep::Always);
+}
+#endif
 
 TEST_CASE("serial_adios2_backend_config", "[serial][adios2]")
 {

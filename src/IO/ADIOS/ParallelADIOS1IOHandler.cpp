@@ -355,7 +355,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(
 
 ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler() = default;
 
-std::future<void> ParallelADIOS1IOHandler::flush(internal::FlushParams const &)
+std::future<void> ParallelADIOS1IOHandler::flush(internal::ParsedFlushParams &)
 {
     return m_impl->flush();
 }
@@ -478,7 +478,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(
 
 ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler() = default;
 
-std::future<void> ParallelADIOS1IOHandler::flush(internal::FlushParams const &)
+std::future<void> ParallelADIOS1IOHandler::flush(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

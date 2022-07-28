@@ -371,7 +371,10 @@ void init_Attributable(py::module &m)
                 return "<openPMD.Attributable with '" +
                     std::to_string(attr.numAttributes()) + "' attributes>";
             })
-        .def("series_flush", py::overload_cast<>(&Attributable::seriesFlush))
+        .def(
+            "series_flush",
+            py::overload_cast<std::string>(&Attributable::seriesFlush),
+            py::arg("backend_config") = "{}")
 
         .def_property_readonly(
             "attributes",

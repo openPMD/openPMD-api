@@ -442,8 +442,13 @@ public:
     std::string backend() const;
 
     /** Execute all required remaining IO operations to write or read data.
+     *
+     * @param backendConfig Further backend-specific instructions on how to
+     *                      implement this flush call.
+     *                      Must be provided in-line, configuration is not read
+     *                      from files.
      */
-    void flush();
+    void flush(std::string backendConfig = "{}");
 
     /**
      * @brief Entry point to the reading end of the streaming API.

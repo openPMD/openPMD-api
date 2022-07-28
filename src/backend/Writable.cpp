@@ -27,9 +27,9 @@ namespace openPMD
 Writable::Writable(internal::AttributableData *a) : attributable{a}
 {}
 
-void Writable::seriesFlush()
+void Writable::seriesFlush(std::string backendConfig)
 {
-    seriesFlush({FlushLevel::UserFlush});
+    seriesFlush({FlushLevel::UserFlush, std::move(backendConfig)});
 }
 
 void Writable::seriesFlush(internal::FlushParams flushParams)

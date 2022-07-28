@@ -106,9 +106,9 @@ Attributable &Attributable::setComment(std::string const &c)
     return *this;
 }
 
-void Attributable::seriesFlush()
+void Attributable::seriesFlush(std::string backendConfig)
 {
-    writable().seriesFlush();
+    writable().seriesFlush(std::move(backendConfig));
 }
 
 Series Attributable::retrieveSeries() const

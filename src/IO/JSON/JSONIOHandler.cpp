@@ -29,7 +29,7 @@ JSONIOHandler::JSONIOHandler(std::string path, Access at)
     : AbstractIOHandler{path, at}, m_impl{JSONIOHandlerImpl{this}}
 {}
 
-std::future<void> JSONIOHandler::flush(internal::FlushParams const &)
+std::future<void> JSONIOHandler::flush(internal::ParsedFlushParams &)
 {
     return m_impl.flush();
 }

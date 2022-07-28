@@ -48,7 +48,7 @@ public:
         return "MPI_HDF5";
     }
 
-    std::future<void> flush(internal::FlushParams const &) override;
+    std::future<void> flush(internal::ParsedFlushParams &) override;
 
 private:
     std::unique_ptr<ParallelHDF5IOHandlerImpl> m_impl;

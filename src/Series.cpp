@@ -372,13 +372,13 @@ std::string Series::backend() const
     return IOHandler()->backendName();
 }
 
-void Series::flush()
+void Series::flush(std::string backendConfig)
 {
     auto &series = get();
     flush_impl(
         series.iterations.begin(),
         series.iterations.end(),
-        {FlushLevel::UserFlush});
+        {FlushLevel::UserFlush, std::move(backendConfig)});
 }
 
 std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
@@ -1354,7 +1354,7 @@ AdvanceStatus Series::advance(
     iterations_iterator begin,
     Iteration &iteration)
 {
-    constexpr internal::FlushParams flushParams = {FlushLevel::UserFlush};
+    internal::FlushParams const flushParams = {FlushLevel::UserFlush};
     auto &series = get();
     auto end = begin;
     ++end;

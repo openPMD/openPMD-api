@@ -253,16 +253,121 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
     }
 }
 
+using FlushTarget = ADIOS2IOHandlerImpl::FlushTarget;
+static FlushTarget flushTargetFromString(std::string const &str)
+{
+    if (str == "buffer")
+    {
+        return FlushTarget::Buffer;
+    }
+    else if (str == "disk")
+    {
+        return FlushTarget::Disk;
+    }
+    else if (str == "buffer_override")
+    {
+        return FlushTarget::Buffer_Override;
+    }
+    else if (str == "disk_override")
+    {
+        return FlushTarget::Disk_Override;
+    }
+    else
+    {
+        throw error::BackendConfigSchema(
+            {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+            "Flush target must be either 'disk' or 'buffer', but "
+            "was " +
+                str + ".");
+    }
+}
+
+static FlushTarget &
+overrideFlushTarget(FlushTarget &inplace, FlushTarget new_val)
+{
+    auto allowsOverride = [](FlushTarget ft) {
+        switch (ft)
+        {
+        case FlushTarget::Buffer:
+        case FlushTarget::Disk:
+            return true;
+        case FlushTarget::Buffer_Override:
+        case FlushTarget::Disk_Override:
+            return false;
+        }
+        return true;
+    };
+
+    if (allowsOverride(inplace))
+    {
+        inplace = new_val;
+    }
+    else
+    {
+        if (!allowsOverride(new_val))
+        {
+            inplace = new_val;
+        }
+        // else { keep the old value, no-op }
+    }
+    return inplace;
+}
+
 std::future<void>
-ADIOS2IOHandlerImpl::flush(internal::FlushParams const &flushParams)
+ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
 {
     auto res = AbstractIOHandlerImpl::flush();
+
+    detail::BufferedActions::ADIOS2FlushParams adios2FlushParams{
+        flushParams.flushLevel, m_flushTarget};
+    if (flushParams.backendConfig.json().contains("adios2"))
+    {
+        auto adios2Config = flushParams.backendConfig["adios2"];
+        if (adios2Config.json().contains("engine"))
+        {
+            auto engineConfig = adios2Config["engine"];
+            if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
+            {
+                auto target = json::asLowerCaseStringDynamic(
+                    engineConfig[ADIOS2Defaults::str_flushtarget].json());
+                if (!target.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        "Flush target must be either 'disk' or 'buffer', but "
+                        "was non-literal type.");
+                }
+                overrideFlushTarget(
+                    adios2FlushParams.flushTarget,
+                    flushTargetFromString(target.value()));
+            }
+        }
+
+        if (auto shadow = adios2Config.invertShadow(); shadow.size() > 0)
+        {
+            switch (adios2Config.originallySpecifiedAs)
+            {
+            case json::SupportedLanguages::JSON:
+                std::cerr << "Warning: parts of the backend configuration for "
+                             "ADIOS2 remain unused:\n"
+                          << shadow << std::endl;
+                break;
+            case json::SupportedLanguages::TOML: {
+                auto asToml = json::jsonToToml(shadow);
+                std::cerr << "Warning: parts of the backend configuration for "
+                             "ADIOS2 remain unused:\n"
+                          << asToml << std::endl;
+                break;
+            }
+            }
+        }
+    }
+
     for (auto &p : m_fileData)
     {
         if (m_dirty.find(p.first) != m_dirty.end())
         {
-            p.second->flush(
-                flushParams.flushLevel, /* writeAttributes = */ false);
+            p.second->flush(adios2FlushParams, /* writeAttributes = */ false);
         }
         else
         {
@@ -2310,6 +2415,22 @@ namespace detail
                 streamStatus = bool(tmp) ? StreamStatus::OutsideOfStep
                                          : StreamStatus::NoStream;
             }
+
+            if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
+            {
+                auto target = json::asLowerCaseStringDynamic(
+                    engineConfig[ADIOS2Defaults::str_flushtarget].json());
+                if (!target.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        "Flush target must be either 'disk' or 'buffer', but "
+                        "was non-literal type.");
+                }
+                overrideFlushTarget(
+                    m_impl->m_flushTarget,
+                    flushTargetFromString(target.value()));
+            }
         }
 
         auto shadow = impl.m_config.invertShadow();
@@ -2581,11 +2702,12 @@ namespace detail
 
     template <typename F>
     void BufferedActions::flush(
-        FlushLevel level,
+        ADIOS2FlushParams flushParams,
         F &&performPutGets,
         bool writeAttributes,
         bool flushUnconditionally)
     {
+        auto level = flushParams.level;
         if (streamStatus == StreamStatus::StreamOver)
         {
             if (flushUnconditionally)
@@ -2681,16 +2803,52 @@ namespace detail
         }
     }
 
-    void BufferedActions::flush(FlushLevel level, bool writeAttributes)
+    void
+    BufferedActions::flush(ADIOS2FlushParams flushParams, bool writeAttributes)
     {
+        auto decideFlushAPICall = [this, flushTarget = flushParams.flushTarget](
+                                      adios2::Engine &engine) {
+#if ADIOS2_VERSION_MAJOR * 1000000000 + ADIOS2_VERSION_MINOR * 100000000 +     \
+        ADIOS2_VERSION_PATCH * 1000000 + ADIOS2_VERSION_TWEAK >=               \
+    2701001223
+            bool performDataWrite{};
+            switch (flushTarget)
+            {
+            case FlushTarget::Disk:
+            case FlushTarget::Disk_Override:
+                performDataWrite = true;
+                break;
+            case FlushTarget::Buffer:
+            case FlushTarget::Buffer_Override:
+                performDataWrite = false;
+                break;
+            }
+            performDataWrite = performDataWrite && m_engineType == "bp5";
+
+            if (performDataWrite)
+            {
+                engine.PerformDataWrite();
+            }
+            else
+            {
+                engine.PerformPuts();
+            }
+#else
+            (void)this;
+            (void)flushTarget;
+            engine.PerformPuts();
+#endif
+        };
+
         flush(
-            level,
-            [](BufferedActions &ba, adios2::Engine &eng) {
+            flushParams,
+            [decideFlushAPICall = std::move(decideFlushAPICall)](
+                BufferedActions &ba, adios2::Engine &eng) {
                 switch (ba.m_mode)
                 {
                 case adios2::Mode::Write:
                 case adios2::Mode::Append:
-                    eng.PerformPuts();
+                    decideFlushAPICall(eng);
                     break;
                 case adios2::Mode::Read:
                     eng.PerformGets();
@@ -2717,7 +2875,7 @@ namespace detail
         {
             m_IO.DefineAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute, 0);
-            flush(FlushLevel::UserFlush, /* writeAttributes = */ false);
+            flush({FlushLevel::UserFlush}, /* writeAttributes = */ false);
             return AdvanceStatus::OK;
         }
 
@@ -2757,7 +2915,7 @@ namespace detail
                 }
             }
             flush(
-                FlushLevel::UserFlush,
+                {FlushLevel::UserFlush},
                 [](BufferedActions &, adios2::Engine &eng) { eng.EndStep(); },
                 /* writeAttributes = */ true,
                 /* flushUnconditionally = */ true);
@@ -2917,7 +3075,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 {}
 
 std::future<void>
-ADIOS2IOHandler::flush(internal::FlushParams const &flushParams)
+ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 {
     return m_impl.flush(flushParams);
 }
@@ -2937,7 +3095,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     : AbstractIOHandler(std::move(path), at)
 {}
 
-std::future<void> ADIOS2IOHandler::flush(internal::FlushParams const &)
+std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }
