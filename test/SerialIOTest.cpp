@@ -55,7 +55,10 @@ std::vector<BackendSelection> testedBackends()
 {
     auto variants = getVariants();
     std::map<std::string, std::string> extensions{
-        {"json", "json"}, {"adios1", "bp1"}, {"adios2", "bp"}, {"hdf5", "h5"}};
+        {"json", "json"},
+        {"adios1", "adios1.bp"},
+        {"adios2", "bp"},
+        {"hdf5", "h5"}};
     std::vector<BackendSelection> res;
     for (auto const &pair : variants)
     {
@@ -77,7 +80,9 @@ std::vector<std::string> testedFileExtensions()
     auto allExtensions = getFileExtensions();
     auto newEnd = std::remove_if(
         allExtensions.begin(), allExtensions.end(), [](std::string const &ext) {
-            return ext == "sst" || ext == "ssc";
+            // sst and ssc need a receiver for testing
+            // bp4 is already tested via bp
+            return ext == "sst" || ext == "ssc" || ext == "bp4";
         });
     return {allExtensions.begin(), newEnd};
 }
@@ -279,6 +284,10 @@ TEST_CASE("write_and_read_many_iterations", "[serial]")
         auxiliary::remove_directory("../samples/many_iterations");
     for (auto const &t : testedFileExtensions())
     {
+        if (t == "bp4" || t == "bp5")
+        {
+            continue;
+        }
         write_and_read_many_iterations(t, intermittentFlushes);
         intermittentFlushes = !intermittentFlushes;
     }
@@ -1484,7 +1493,9 @@ inline void dtype_test(const std::string &backend)
 TEST_CASE("dtype_test", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
+    {
         dtype_test(t);
+    }
 }
 
 inline void write_test(const std::string &backend)
@@ -1604,7 +1615,8 @@ void test_complex(const std::string &backend)
             "../samples/serial_write_complex." + backend, Access::CREATE);
         o.setAttribute("lifeIsComplex", std::complex<double>(4.56, 7.89));
         o.setAttribute("butComplexFloats", std::complex<float>(42.3, -99.3));
-        if (backend != "bp")
+        if (o.backend() != "ADIOS2" && o.backend() != "ADIOS1" &&
+            o.backend() != "MPI_ADIOS1")
             o.setAttribute(
                 "longDoublesYouSay", std::complex<long double>(5.5, -4.55));
 
@@ -1625,7 +1637,8 @@ void test_complex(const std::string &backend)
         Cdbl.storeChunk(cdoubles, {0});
 
         std::vector<std::complex<long double> > cldoubles(3);
-        if (backend != "bp")
+        if (o.backend() != "ADIOS2" && o.backend() != "ADIOS1" &&
+            o.backend() != "MPI_ADIOS1")
         {
             auto Cldbl =
                 o.iterations[0].meshes["Cldbl"][RecordComponent::SCALAR];
@@ -1649,7 +1662,8 @@ void test_complex(const std::string &backend)
         REQUIRE(
             i.getAttribute("butComplexFloats").get<std::complex<float> >() ==
             std::complex<float>(42.3, -99.3));
-        if (backend != "bp")
+        if (i.backend() != "ADIOS2" && i.backend() != "ADIOS1" &&
+            i.backend() != "MPI_ADIOS1")
         {
             REQUIRE(
                 i.getAttribute("longDoublesYouSay")
@@ -1668,7 +1682,8 @@ void test_complex(const std::string &backend)
         REQUIRE(rcflt.get()[1] == std::complex<float>(-3., 4.));
         REQUIRE(rcdbl.get()[2] == std::complex<double>(6, -5.));
 
-        if (backend != "bp")
+        if (i.backend() != "ADIOS2" && i.backend() != "ADIOS1" &&
+            i.backend() != "MPI_ADIOS1")
         {
             auto rcldbl = i.iterations[0]
                               .meshes["Cldbl"][RecordComponent::SCALAR]
@@ -2176,8 +2191,8 @@ inline void bool_test(const std::string &backend)
         Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
 
         REQUIRE_THROWS_AS(o.setAuthor(""), std::runtime_error);
-        o.setAttribute("Bool attribute (true)", true);
-        o.setAttribute("Bool attribute (false)", false);
+        o.setAttribute("Bool attribute true", true);
+        o.setAttribute("Bool attribute false", false);
     }
     {
         Series o =
@@ -2185,13 +2200,12 @@ inline void bool_test(const std::string &backend)
 
         auto attrs = o.attributes();
         REQUIRE(
-            std::count(attrs.begin(), attrs.end(), "Bool attribute (true)") ==
-            1);
+            std::count(attrs.begin(), attrs.end(), "Bool attribute true") == 1);
         REQUIRE(
-            std::count(attrs.begin(), attrs.end(), "Bool attribute (false)") ==
+            std::count(attrs.begin(), attrs.end(), "Bool attribute false") ==
             1);
-        REQUIRE(o.getAttribute("Bool attribute (true)").get<bool>() == true);
-        REQUIRE(o.getAttribute("Bool attribute (false)").get<bool>() == false);
+        REQUIRE(o.getAttribute("Bool attribute true").get<bool>() == true);
+        REQUIRE(o.getAttribute("Bool attribute false").get<bool>() == false);
     }
     {
         Series list{"../samples/serial_bool." + backend, Access::READ_ONLY};
@@ -4221,6 +4235,309 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 }
 #endif
 
+TEST_CASE("adios2_engines_and_file_endings")
+{
+    size_t filenameCounter = 0;
+    auto groupbased_test_explicit_backend =
+        [&filenameCounter](
+            std::string const &ext,
+            bool directory,
+            std::string const &requiredEngine,
+            std::string const &filesystemExt,
+            std::string const &jsonCfg = "{}") mutable {
+            // Env. var. OPENPMD_BP_BACKEND does not matter for this test as
+            // we always override it in the JSON config
+            auto basename = "../samples/file_endings/groupbased" +
+                std::to_string(filenameCounter++);
+            auto name = basename + ext;
+            std::cout << "Writing to file '" << name << "', should be engine "
+                      << requiredEngine << " (explicit backend)." << std::endl;
+            auto filesystemname =
+                filesystemExt.empty() ? name : basename + filesystemExt;
+            {
+                Series write(
+                    name,
+                    Access::CREATE,
+                    json::merge("backend = \"adios2\"", jsonCfg));
+            }
+            if (directory)
+            {
+                REQUIRE(auxiliary::directory_exists(filesystemname));
+            }
+            else
+            {
+                REQUIRE(auxiliary::file_exists(filesystemname));
+            }
+            {
+                Series read(
+                    name,
+                    Access::READ_ONLY,
+                    "backend = \"adios2\"\nadios2.engine.type = \"" +
+                        requiredEngine + "\"");
+            }
+        };
+
+    groupbased_test_explicit_backend(".bp", true, "file", "");
+    groupbased_test_explicit_backend(".bp4", true, "bp4", "");
+    groupbased_test_explicit_backend(
+        ".bp", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    groupbased_test_explicit_backend(
+        ".bp4", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    groupbased_test_explicit_backend(
+        ".bp5", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    groupbased_test_explicit_backend(
+        ".bp", false, "bp3", "", "adios2.engine.type = \"bp3\"");
+    groupbased_test_explicit_backend(
+        ".sst", false, "bp3", ".sst.bp", "adios2.engine.type = \"bp3\"");
+    groupbased_test_explicit_backend(
+        "", false, "bp3", ".bp", "adios2.engine.type = \"bp3\"");
+    groupbased_test_explicit_backend(
+        "", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+
+#ifdef ADIOS2_HAVE_BP5
+    // BP5 tests
+    groupbased_test_explicit_backend(".bp5", true, "bp5", "");
+    groupbased_test_explicit_backend(
+        ".bp", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    groupbased_test_explicit_backend(
+        ".bp4", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    groupbased_test_explicit_backend(
+        ".bp5", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    groupbased_test_explicit_backend(
+        "", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+#endif
+
+    auto groupbased_test_no_explicit_backend =
+        [&filenameCounter](
+            std::string const &ext,
+            bool directory,
+            std::string const &requiredEngine,
+            std::string const &filesystemExt,
+            std::string const &jsonCfg = "{}") mutable {
+            auto basename = "../samples/file_endings/groupbased" +
+                std::to_string(filenameCounter++);
+            auto name = basename + ext;
+            std::cout << "Writing to file '" << name << "', should be engine "
+                      << requiredEngine << " (no explicit backend)."
+                      << std::endl;
+            auto filesystemname =
+                filesystemExt.empty() ? name : basename + filesystemExt;
+            {
+                Series write(name, Access::CREATE, jsonCfg);
+            }
+            bool isThisADIOS1 =
+                auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1" &&
+                ext == ".bp";
+            if (directory && !isThisADIOS1)
+            {
+                REQUIRE(auxiliary::directory_exists(filesystemname));
+            }
+            else
+            {
+                REQUIRE(auxiliary::file_exists(filesystemname));
+            }
+            {
+                Series read(
+                    name,
+                    Access::READ_ONLY,
+                    isThisADIOS1
+                        ? "backend = \"adios1\""
+                        : "backend = \"adios2\"\nadios2.engine.type = \"" +
+                            requiredEngine + "\"");
+            }
+        };
+
+    groupbased_test_no_explicit_backend(".bp", true, "file", "");
+    groupbased_test_no_explicit_backend(".bp4", true, "bp4", "");
+    groupbased_test_no_explicit_backend(
+        ".bp", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    groupbased_test_no_explicit_backend(
+        ".bp4", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    groupbased_test_no_explicit_backend(
+        ".bp5", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    groupbased_test_no_explicit_backend(
+        ".bp", false, "bp3", "", "adios2.engine.type = \"bp3\"");
+    groupbased_test_no_explicit_backend(
+        ".sst", false, "bp3", ".sst.bp", "adios2.engine.type = \"bp3\"");
+    REQUIRE_THROWS(groupbased_test_no_explicit_backend(
+        "", false, "bp3", ".bp", "adios2.engine.type = \"bp3\""));
+    REQUIRE_THROWS(groupbased_test_no_explicit_backend(
+        "", true, "bp4", "", "adios2.engine.type = \"bp4\""));
+
+#ifdef ADIOS2_HAVE_BP5
+    // BP5 tests
+    groupbased_test_no_explicit_backend(".bp5", true, "bp5", "");
+    groupbased_test_no_explicit_backend(
+        ".bp", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    groupbased_test_no_explicit_backend(
+        ".bp4", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    groupbased_test_no_explicit_backend(
+        ".bp5", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    REQUIRE_THROWS(groupbased_test_no_explicit_backend(
+        "", true, "bp5", "", "adios2.engine.type = \"bp5\""));
+#endif
+
+    filenameCounter = 0;
+    auto filebased_test_explicit_backend =
+        [&filenameCounter](
+            std::string const &ext,
+            bool directory,
+            std::string const &requiredEngine,
+            std::string const &filesystemExt,
+            std::string const &jsonCfg = "{}") mutable {
+            auto basename = "../samples/file_endings/filebased" +
+                std::to_string(filenameCounter++);
+            auto name = basename + "_%T" + ext;
+            std::cout << "Writing to file '" << name << "', should be engine "
+                      << requiredEngine << " (explicit backend)." << std::endl;
+            auto filesystemname =
+                basename + "_0" + (filesystemExt.empty() ? ext : filesystemExt);
+            {
+                Series write(
+                    name,
+                    Access::CREATE,
+                    json::merge("backend = \"adios2\"", jsonCfg));
+                write.writeIterations()[0];
+            }
+            if (directory)
+            {
+                REQUIRE(auxiliary::directory_exists(filesystemname));
+            }
+            else
+            {
+                REQUIRE(auxiliary::file_exists(filesystemname));
+            }
+            {
+                if (requiredEngine == "bp3" &&
+                    !auxiliary::ends_with(name, ".bp"))
+                {
+                    /*
+                     * File-based parsing procedures are not aware that BP3
+                     * engine adds its ending and won't find the iterations if
+                     * we don't give it a little nudge.
+                     */
+                    name += ".bp";
+                }
+                Series read(
+                    name,
+                    Access::READ_ONLY,
+                    "backend = \"adios2\"\nadios2.engine.type = \"" +
+                        requiredEngine + "\"");
+            }
+        };
+
+    filebased_test_explicit_backend(".bp", true, "file", "");
+    filebased_test_explicit_backend(".bp4", true, "bp4", "");
+    filebased_test_explicit_backend(
+        ".bp", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    filebased_test_explicit_backend(
+        ".bp4", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    filebased_test_explicit_backend(
+        ".bp5", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    filebased_test_explicit_backend(
+        ".bp", false, "bp3", "", "adios2.engine.type = \"bp3\"");
+    filebased_test_explicit_backend(
+        ".sst", false, "bp3", ".sst.bp", "adios2.engine.type = \"bp3\"");
+    filebased_test_explicit_backend(
+        "", false, "bp3", ".bp", "adios2.engine.type = \"bp3\"");
+    filebased_test_explicit_backend(
+        "", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+
+#ifdef ADIOS2_HAVE_BP5
+    // BP5 tests
+    filebased_test_explicit_backend(".bp5", true, "bp5", "");
+    filebased_test_explicit_backend(
+        ".bp", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    filebased_test_explicit_backend(
+        ".bp4", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    filebased_test_explicit_backend(
+        ".bp5", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    filebased_test_explicit_backend(
+        "", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+#endif
+
+    auto filebased_test_no_explicit_backend =
+        [&filenameCounter](
+            std::string const &ext,
+            bool directory,
+            std::string const &requiredEngine,
+            std::string const &filesystemExt,
+            std::string const &jsonCfg = "{}") mutable {
+            auto basename = "../samples/file_endings/filebased" +
+                std::to_string(filenameCounter++);
+            auto name = basename + "_%T" + ext;
+            std::cout << "Writing to file '" << name << "', should be engine "
+                      << requiredEngine << " (no explicit backend)."
+                      << std::endl;
+            auto filesystemname =
+                basename + "_0" + (filesystemExt.empty() ? ext : filesystemExt);
+            {
+                Series write(name, Access::CREATE, jsonCfg);
+                write.writeIterations()[0];
+            }
+            bool isThisADIOS1 =
+                auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1" &&
+                ext == ".bp";
+            if (directory && !isThisADIOS1)
+            {
+                REQUIRE(auxiliary::directory_exists(filesystemname));
+            }
+            else
+            {
+                REQUIRE(auxiliary::file_exists(filesystemname));
+            }
+            {
+                if (requiredEngine == "bp3" &&
+                    !auxiliary::ends_with(name, ".bp"))
+                {
+                    /*
+                     * File-based parsing procedures are not aware that BP3
+                     * engine adds its ending and won't find the iterations if
+                     * we don't give it a little nudge.
+                     */
+                    name += ".bp";
+                }
+                Series read(
+                    name,
+                    Access::READ_ONLY,
+                    isThisADIOS1
+                        ? "backend = \"adios1\""
+                        : "backend = \"adios2\"\nadios2.engine.type = \"" +
+                            requiredEngine + "\"");
+            }
+        };
+
+    filebased_test_no_explicit_backend(".bp", true, "file", "");
+    filebased_test_no_explicit_backend(".bp4", true, "bp4", "");
+    filebased_test_no_explicit_backend(
+        ".bp", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    filebased_test_no_explicit_backend(
+        ".bp4", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    filebased_test_no_explicit_backend(
+        ".bp5", true, "bp4", "", "adios2.engine.type = \"bp4\"");
+    filebased_test_no_explicit_backend(
+        ".bp", false, "bp3", "", "adios2.engine.type = \"bp3\"");
+    filebased_test_no_explicit_backend(
+        ".sst", false, "bp3", ".sst.bp", "adios2.engine.type = \"bp3\"");
+    REQUIRE_THROWS(filebased_test_no_explicit_backend(
+        "", false, "bp3", ".bp", "adios2.engine.type = \"bp3\""));
+    REQUIRE_THROWS(filebased_test_no_explicit_backend(
+        "", true, "bp4", "", "adios2.engine.type = \"bp4\""));
+
+#ifdef ADIOS2_HAVE_BP5
+    // BP5 tests
+    filebased_test_no_explicit_backend(".bp5", true, "bp5", "");
+    filebased_test_no_explicit_backend(
+        ".bp", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    filebased_test_no_explicit_backend(
+        ".bp4", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    filebased_test_no_explicit_backend(
+        ".bp5", true, "bp5", "", "adios2.engine.type = \"bp5\"");
+    REQUIRE_THROWS(filebased_test_no_explicit_backend(
+        "", true, "bp5", "", "adios2.engine.type = \"bp5\""));
+#endif
+}
+
 TEST_CASE("serial_adios2_backend_config", "[serial][adios2]")
 {
     if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1")
@@ -5867,7 +6184,6 @@ void no_explicit_flush(std::string filename)
     "adios2": {
         "schema": 20210209,
         "engine": {
-            "type": "bp4",
             "usesteps": true
         }
     }
@@ -6103,6 +6419,54 @@ void append_mode(
          */
         helper::listSeries(read);
     }
+#if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
+        10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
+    208002700
+    // AppendAfterSteps has a bug before that version
+    if (extension == "bp5")
+    {
+        {
+            Series write(
+                filename,
+                Access::APPEND,
+                json::merge(
+                    jsonConfig,
+                    R"({"adios2":{"engine":{"parameters":{"AppendAfterSteps":-3}}}})"));
+            if (variableBased)
+            {
+                write.setIterationEncoding(IterationEncoding::variableBased);
+            }
+            if (write.backend() == "ADIOS1")
+            {
+                REQUIRE_THROWS_WITH(
+                    write.flush(),
+                    Catch::Equals(
+                        "Operation unsupported in ADIOS1: Appending to "
+                        "existing "
+                        "file on disk (use Access::CREATE to overwrite)"));
+                // destructor will be noisy now
+                return;
+            }
+
+            writeSomeIterations(
+                write.writeIterations(), std::vector<uint64_t>{4, 5});
+            write.flush();
+        }
+        {
+            Series read(filename, Access::READ_ONLY);
+            // in variable-based encodings, iterations are not parsed ahead of
+            // time but as they go
+            unsigned counter = 0;
+            for (auto const &iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == counter);
+                ++counter;
+            }
+            REQUIRE(counter == 6);
+            helper::listSeries(read);
+        }
+    }
+#endif
 }
 
 TEST_CASE("append_mode", "[serial]")

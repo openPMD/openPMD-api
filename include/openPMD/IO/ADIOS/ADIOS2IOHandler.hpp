@@ -132,12 +132,16 @@ public:
         AbstractIOHandler *,
         MPI_Comm,
         json::TracingJSON config,
-        std::string engineType);
+        std::string engineType,
+        std::string specifiedExtension);
 
 #endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(
-        AbstractIOHandler *, json::TracingJSON config, std::string engineType);
+        AbstractIOHandler *,
+        json::TracingJSON config,
+        std::string engineType,
+        std::string specifiedExtension);
 
     ~ADIOS2IOHandlerImpl() override;
 
@@ -231,6 +235,11 @@ private:
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
     std::string m_engineType;
+    /*
+     * The filename extension specified by the user.
+     */
+    std::string m_userSpecifiedExtension;
+
     ADIOS2Schema::schema_t m_schema = ADIOS2Schema::schema_0000_00_00;
 
     enum class UseSpan : char
@@ -1320,7 +1329,8 @@ public:
         Access,
         MPI_Comm,
         json::TracingJSON options,
-        std::string engineType);
+        std::string engineType,
+        std::string specifiedExtension);
 
 #endif
 
@@ -1328,7 +1338,8 @@ public:
         std::string path,
         Access,
         json::TracingJSON options,
-        std::string engineType);
+        std::string engineType,
+        std::string specifiedExtension);
 
     std::string backendName() const override
     {

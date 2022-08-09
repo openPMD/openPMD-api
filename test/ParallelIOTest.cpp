@@ -1066,7 +1066,10 @@ void adios2_streaming(bool variableBasedLayout)
     if (rank == 0)
     {
         // write
-        Series writeSeries("../samples/adios2_stream.sst", Access::CREATE);
+        Series writeSeries(
+            "../samples/adios2_stream.sst",
+            Access::CREATE,
+            "adios2.engine.type = \"sst\"");
         if (variableBasedLayout)
         {
             writeSeries.setIterationEncoding(IterationEncoding::variableBased);
@@ -1109,7 +1112,8 @@ void adios2_streaming(bool variableBasedLayout)
         Series readSeries(
             "../samples/adios2_stream.sst",
             Access::READ_ONLY,
-            "defer_iteration_parsing = true"); // inline TOML
+            // inline TOML
+            R"(defer_iteration_parsing = true)");
 
         size_t last_iteration_index = 0;
         for (auto iteration : readSeries.readIterations())

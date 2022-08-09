@@ -109,6 +109,11 @@ namespace internal
          */
         std::string m_filenamePostfix;
         /**
+         * Filename extension as specified by the user.
+         * (Not necessarily the backend's default suffix)
+         */
+        std::string m_filenameExtension;
+        /**
          * The padding in file-based iteration encoding.
          * 0 if no padding is given (%T pattern).
          * -1 if no expansion pattern has been parsed.

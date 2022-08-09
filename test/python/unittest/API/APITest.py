@@ -167,7 +167,7 @@ class APITest(unittest.TestCase):
             series.set_attribute("longdouble", np.longdouble(1.23456789))
             series.set_attribute("csingle", np.complex64(1.+2.j))
             series.set_attribute("cdouble", np.complex128(3.+4.j))
-            if file_ending != "bp":
+            if file_ending not in ["bp", "bp4", "bp5"]:
                 series.set_attribute("clongdouble", np.clongdouble(5.+6.j))
             # array of ...
             series.set_attribute("arr_int16", (np.int16(23), np.int16(26), ))
@@ -202,7 +202,7 @@ class APITest(unittest.TestCase):
             # series.set_attribute("l_cdouble",
             #                      [np.complex_(6.7+6.8j),
             #                       np.complex_(7.1+7.2j)])
-            # if file_ending != "bp":
+            # if file_ending not in ["bp", "bp4", "bp5"]:
             #     series.set_attribute("l_clongdouble",
             #                          [np.clongfloat(7.8e9-6.5e9j),
             #                           np.clongfloat(8.2e3-9.1e3j)])
@@ -231,7 +231,7 @@ class APITest(unittest.TestCase):
                 series.set_attribute("nparr_cdouble",
                                      np.array([4.5 + 1.1j, 6.7 - 2.2j],
                                               dtype=np.complex128))
-            if file_ending != "bp":
+            if file_ending not in ["bp", "bp4", "bp5"]:
                 series.set_attribute("nparr_clongdouble",
                                      np.array([8.9 + 7.8j, 7.6 + 9.2j],
                                               dtype=np.clongdouble))
@@ -286,7 +286,7 @@ class APITest(unittest.TestCase):
                                            np.complex64(1.+2.j))
             self.assertAlmostEqual(series.get_attribute("cdouble"),
                                    3.+4.j)
-            if file_ending != "bp":
+            if file_ending not in ["bp", "bp4", "bp5"]:
                 self.assertAlmostEqual(series.get_attribute("clongdouble"),
                                        5.+6.j)
             # array of ... (will be returned as list)
@@ -315,7 +315,7 @@ class APITest(unittest.TestCase):
             # self.assertListEqual(series.get_attribute("l_cdouble"),
             #                      [np.complex128(6.7 + 6.8j),
             #                       np.double(7.1 + 7.2j)])
-            # if file_ending != "bp":
+            # if file_ending not in ["bp", "bp4", "bp5"]:
             #     self.assertListEqual(series.get_attribute("l_clongdouble"),
             #                          [np.clongdouble(7.8e9 - 6.5e9j),
             #                           np.clongdouble(8.2e3 - 9.1e3j)])
@@ -342,7 +342,8 @@ class APITest(unittest.TestCase):
                 np.testing.assert_almost_equal(
                     series.get_attribute("nparr_cdouble"),
                     [4.5 + 1.1j, 6.7 - 2.2j])
-            if file_ending != "bp":  # not in ADIOS 1.13.1 nor ADIOS 2.7.0
+            # not in ADIOS 1.13.1 nor ADIOS 2.7.0
+            if file_ending not in ["bp", "bp4", "bp5"]:
                 np.testing.assert_almost_equal(
                     series.get_attribute("nparr_clongdouble"),
                     [8.9 + 7.8j, 7.6 + 9.2j])
@@ -453,7 +454,7 @@ class APITest(unittest.TestCase):
                 DS(np.dtype("complex128"), extent))
             ms["complex128"][SCALAR].make_constant(
                 np.complex128(1.234567 + 2.345678j))
-            if file_ending != "bp":
+            if file_ending not in ["bp", "bp4", "bp5"]:
                 ms["clongdouble"][SCALAR].reset_dataset(
                     DS(np.dtype("clongdouble"), extent))
                 ms["clongdouble"][SCALAR].make_constant(
@@ -534,7 +535,7 @@ class APITest(unittest.TestCase):
                             == np.dtype('complex64'))
             self.assertTrue(ms["complex128"][SCALAR].load_chunk(o, e).dtype
                             == np.dtype('complex128'))
-            if file_ending != "bp":
+            if file_ending not in ["bp", "bp4", "bp5"]:
                 self.assertTrue(ms["clongdouble"][SCALAR].load_chunk(o, e)
                                 .dtype == np.dtype('clongdouble'))
 
@@ -561,7 +562,7 @@ class APITest(unittest.TestCase):
                              np.complex64(1.234 + 2.345j))
             self.assertEqual(ms["complex128"][SCALAR].load_chunk(o, e),
                              np.complex128(1.234567 + 2.345678j))
-            if file_ending != "bp":
+            if file_ending not in ["bp", "bp4", "bp5"]:
                 self.assertEqual(ms["clongdouble"][SCALAR].load_chunk(o, e),
                                  np.clongdouble(1.23456789 + 2.34567890j))
 
@@ -600,7 +601,7 @@ class APITest(unittest.TestCase):
         ms["complex128"][SCALAR].store_chunk(
             np.ones(extent, dtype=np.complex128) *
             np.complex128(1.234567 + 2.345678j))
-        if file_ending != "bp":
+        if file_ending not in ["bp", "bp4", "bp5"]:
             ms["clongdouble"][SCALAR].reset_dataset(
                 DS(np.dtype("clongdouble"), extent))
             ms["clongdouble"][SCALAR].store_chunk(
@@ -630,12 +631,12 @@ class APITest(unittest.TestCase):
 
         dc64 = ms["complex64"][SCALAR].load_chunk(o, e)
         dc128 = ms["complex128"][SCALAR].load_chunk(o, e)
-        if file_ending != "bp":
+        if file_ending not in ["bp", "bp4", "bp5"]:
             dc256 = ms["clongdouble"][SCALAR].load_chunk(o, e)
 
         self.assertTrue(dc64.dtype == np.dtype('complex64'))
         self.assertTrue(dc128.dtype == np.dtype('complex128'))
-        if file_ending != "bp":
+        if file_ending not in ["bp", "bp4", "bp5"]:
             self.assertTrue(
                 dc256.dtype == np.dtype('clongdouble'))
 
@@ -645,7 +646,7 @@ class APITest(unittest.TestCase):
                          np.complex64(1.234 + 2.345j))
         self.assertEqual(dc128,
                          np.complex128(1.234567 + 2.345678j))
-        if file_ending != "bp":
+        if file_ending not in ["bp", "bp4", "bp5"]:
             self.assertEqual(dc256,
                              np.clongdouble(1.23456789 + 2.34567890j))
 

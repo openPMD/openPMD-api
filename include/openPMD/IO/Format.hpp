@@ -30,7 +30,9 @@ enum class Format
 {
     HDF5,
     ADIOS1,
-    ADIOS2,
+    ADIOS2_BP,
+    ADIOS2_BP4,
+    ADIOS2_BP5,
     ADIOS2_SST,
     ADIOS2_SSC,
     JSON,

@@ -10,12 +10,43 @@ For further information, check out the :ref:`installation guide <install>`,
 :ref:`build dependencies <development-dependencies>` and the :ref:`build options <development-buildoptions>`.
 
 
-I/O Method
-----------
+I/O Method and Engine Selection
+-------------------------------
 
 ADIOS2 has several engines for alternative file formats and other kinds of backends, yet natively writes to ``.bp`` files.
-The openPMD API uses the BP4 engine as the default file engine and the SST engine for streaming support.
-We currently leverage the default ADIOS2 transport parameters, i.e. ``POSIX`` on Unix systems and ``FStream`` on Windows.
+The openPMD API uses the File meta engine as the default file engine and the SST engine for streaming support.
+
+The ADIOS2 engine can be selected in different ways:
+
+1. Automatic detection via the selected file ending
+2. Explicit selection of an engine by specifying the environment variable ``OPENPMD_ADIOS2_ENGINE`` (case-independent).
+   This overrides the automatically detected engine.
+3. Explicit selection of an engine by specifying the JSON/TOML key ``adios2.engine.type`` as a case-independent string.
+   This overrides both previous options.
+
+Automatic engine detection supports the following extensions:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Extension
+     - Selected ADIOS2 Engine
+   * - ``.bp``
+     - ``"file"``
+   * - ``.bp4``
+     - ``"bp4"``
+   * - ``.bp5``
+     - ``"bp5"``
+   * - ``.sst``
+     - ``"sst"``
+   * - ``.ssc``
+     - ``"ssc"``
+
+Specifying any of these extensions will automatically activate the ADIOS2 backend.
+The ADIOS2 backend will create file system paths exactly as they were specified and not change file extensions.
+Exceptions to this are the BP3 and SST engines which require their endings ``.bp`` and ``.sst`` respectively.
+
+For file engines, we currently leverage the default ADIOS2 transport parameters, i.e. ``POSIX`` on Unix systems and ``FStream`` on Windows.
 
 Steps
 -----
