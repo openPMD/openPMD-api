@@ -674,7 +674,7 @@ jobs:
 # timeout: >60min
 - job: macOS_spack
   displayName: macOS spack
-  timeoutInMinutes: 120
+  timeoutInMinutes: 180
   pool:
     vmImage: macOS-latest
   steps:
@@ -755,7 +755,7 @@ jobs:
 - job: win_pip_pypi
   displayName: Windows pip from PyPI
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -773,7 +773,7 @@ jobs:
 - job: win_pip_pypi_nobin
   displayName: Windows pip from PyPI w/o binary
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -791,9 +791,8 @@ jobs:
 - job: win_pip_dev
   displayName: Windows pip from dev
   pool:
-#   vmImage: windows-latest
+   vmImage: windows-latest
 #   vmImage: windows-2019
-    vmImage: vs2017-win2016
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -814,7 +813,7 @@ jobs:
 - job: win_conda
   displayName: Windows conda
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda command to PATH
@@ -845,7 +844,7 @@ jobs:
 - job: win_mamba
   displayName: Windows mamba
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda command to PATH
