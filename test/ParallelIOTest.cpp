@@ -1222,10 +1222,13 @@ doshuffle = "BLOSC_BITSHUFFLE"
     write("../samples/jsonConfiguredBP4Parallel.bp", writeConfigBP4);
     write("../samples/jsonConfiguredBP3Parallel.bp", writeConfigBP3);
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // BP3 engine writes files, BP4 writes directories
-    REQUIRE(openPMD::auxiliary::file_exists("../samples/jsonConfiguredBP3.bp"));
+    REQUIRE(openPMD::auxiliary::file_exists(
+        "../samples/jsonConfiguredBP3Parallel.bp"));
     REQUIRE(openPMD::auxiliary::directory_exists(
-        "../samples/jsonConfiguredBP4.bp"));
+        "../samples/jsonConfiguredBP4Parallel.bp"));
 
     std::string readConfigBP3 = R"END(
 {
