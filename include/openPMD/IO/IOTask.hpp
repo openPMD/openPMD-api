@@ -67,7 +67,7 @@ namespace internal
      * The returned strings are compile-time constants, so no worries about
      * pointer validity.
      */
-    std::string operationAsString(Operation);
+    OPENPMDAPI_EXPORT std::string operationAsString(Operation);
 } // namespace internal
 
 struct OPENPMDAPI_EXPORT AbstractParameter
