@@ -2171,6 +2171,18 @@ namespace detail
         }
     } // namespace
 
+    size_t BufferedActions::currentStep()
+    {
+        if (nonpersistentEngine(m_engineType))
+        {
+            return m_currentStep;
+        }
+        else
+        {
+            return getEngine().CurrentStep();
+        }
+    }
+
     void BufferedActions::configure_IO_Read(
         std::optional<bool> userSpecifiedUsesteps)
     {
@@ -3037,6 +3049,7 @@ namespace detail
             uncommittedAttributes.clear();
             m_updateSpans.clear();
             streamStatus = StreamStatus::OutsideOfStep;
+            ++m_currentStep;
             return AdvanceStatus::OK;
         }
         case AdvanceMode::BEGINSTEP: {

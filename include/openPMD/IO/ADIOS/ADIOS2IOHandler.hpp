@@ -1109,6 +1109,8 @@ namespace detail
         };
         StreamStatus streamStatus = StreamStatus::OutsideOfStep;
 
+        size_t currentStep();
+
     private:
         ADIOS2IOHandlerImpl *m_impl;
         std::optional<adios2::Engine> m_engine; //! ADIOS engine
@@ -1116,6 +1118,12 @@ namespace detail
          * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
          */
         std::string m_engineType;
+
+        /*
+         * Not all engines support the CurrentStep() call, so we have to
+         * implement this manually.
+         */
+        size_t m_currentStep = 0;
 
         /*
          * ADIOS2 does not give direct access to its internal attribute and
