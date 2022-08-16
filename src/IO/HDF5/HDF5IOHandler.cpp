@@ -299,9 +299,10 @@ void HDF5IOHandlerImpl::checkFile(
 #if openPMD_HAVE_MPI
     if (m_communicator.has_value())
     {
+        bool fileExistsRes = false;
         int status = MPI_Allreduce(
             &fileExists,
-            &fileExists,
+            &fileExistsRes,
             1,
             MPI_C_BOOL,
             MPI_LOR, // logical or
@@ -310,6 +311,7 @@ void HDF5IOHandlerImpl::checkFile(
         {
             throw std::runtime_error("MPI Reduction failed!");
         }
+        fileExists = fileExistsRes;
     }
 #endif
 

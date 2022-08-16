@@ -537,9 +537,10 @@ bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
 #if openPMD_HAVE_MPI
     if (m_communicator.has_value())
     {
+        bool fileExistsRes = false;
         int status = MPI_Allreduce(
             &fileExists,
-            &fileExists,
+            &fileExistsRes,
             1,
             MPI_C_BOOL,
             MPI_LOR, // logical or
@@ -548,6 +549,7 @@ bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
         {
             throw std::runtime_error("MPI Reduction failed!");
         }
+        fileExists = fileExistsRes;
     }
 #endif
 
