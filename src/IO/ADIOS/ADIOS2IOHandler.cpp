@@ -531,12 +531,26 @@ bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
          */
         fullFilePath += ".sst";
     }
-    char fileExists = false;
-    auxiliary::runOnRankZero(m_communicator, [&fileExists, &fullFilePath]() {
-        fileExists = auxiliary::file_exists(fullFilePath) ||
-            auxiliary::directory_exists(fullFilePath);
-    });
-    auxiliary::MPI_Bcast_fromRankZero(m_communicator, &fileExists);
+    bool fileExists = auxiliary::directory_exists(fullFilePath) ||
+        auxiliary::file_exists(fullFilePath);
+
+#if openPMD_HAVE_MPI
+    if (m_communicator.has_value())
+    {
+        int status = MPI_Allreduce(
+            &fileExists,
+            &fileExists,
+            1,
+            MPI_C_BOOL,
+            MPI_LOR, // logical or
+            m_communicator.value());
+        if (status != 0)
+        {
+            throw std::runtime_error("MPI Reduction failed!");
+        }
+    }
+#endif
+
     return fileExists;
 }
 

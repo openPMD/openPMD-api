@@ -95,7 +95,13 @@ public:
     hid_t m_H5T_CLONG_DOUBLE;
 
 protected:
-    std::optional<auxiliary::Mock_MPI_Comm> m_mockedMpiComm;
+#if openPMD_HAVE_MPI
+    /*
+     * Not defined in ParallelHDF5IOHandlerImpl, so we don't have to write
+     * some methods twice.
+     */
+    std::optional<MPI_Comm> m_communicator;
+#endif
 
 private:
     json::TracingJSON m_config;

@@ -232,7 +232,9 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
-    std::optional<auxiliary::Mock_MPI_Comm> m_communicator;
+#if openPMD_HAVE_MPI
+    std::optional<MPI_Comm> m_communicator;
+#endif
     /*
      * If the iteration encoding is variableBased, we default to using the
      * 2021_02_09 schema since it allows mutable attributes.

@@ -293,12 +293,26 @@ void HDF5IOHandlerImpl::checkFile(
     {
         name += ".h5";
     }
-    char fileExists = false;
-    auxiliary::runOnRankZero(m_mockedMpiComm, [&fileExists, &name]() {
-        fileExists =
-            auxiliary::file_exists(name) || auxiliary::directory_exists(name);
-    });
-    auxiliary::MPI_Bcast_fromRankZero(m_mockedMpiComm, &fileExists);
+    bool fileExists =
+        auxiliary::file_exists(name) || auxiliary::directory_exists(name);
+
+#if openPMD_HAVE_MPI
+    if (m_communicator.has_value())
+    {
+        int status = MPI_Allreduce(
+            &fileExists,
+            &fileExists,
+            1,
+            MPI_C_BOOL,
+            MPI_LOR, // logical or
+            m_communicator.value());
+        if (status != 0)
+        {
+            throw std::runtime_error("MPI Reduction failed!");
+        }
+    }
+#endif
+
     using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
     *parameters.fileExists = fileExists ? FileExists::Yes : FileExists::No;
 }
