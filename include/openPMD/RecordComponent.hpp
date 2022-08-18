@@ -270,7 +270,7 @@ public:
      * @param extent Extent within the dataset, counted from the offset.
      */
     template <typename T>
-    void storeChunk(std::shared_ptr<T[]>, Offset, Extent);
+    void storeChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
 
     /** Store a chunk of data from a chunk of memory, raw pointer version.
      *
