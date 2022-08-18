@@ -5403,6 +5403,17 @@ void variableBasedSeries(std::string const &file)
             // in others
             iteration.meshes["E"].setAttribute("attr_" + std::to_string(i), i);
 
+            auto constantMesh =
+                iteration.meshes["changing_constant"][RecordComponent::SCALAR];
+            constantMesh.resetDataset({Datatype::INT, {i}});
+            constantMesh.makeConstant(i);
+
+            auto constantParticles =
+                iteration.particles["changing_constant"]["position"]
+                                   [RecordComponent::SCALAR];
+            constantParticles.resetDataset({Datatype::INT, {i}});
+            constantParticles.makeConstant(i);
+
             iteration.close();
         }
         REQUIRE(auxiliary::directory_exists(file));
@@ -5487,6 +5498,25 @@ void variableBasedSeries(std::string const &file)
                     .getAttribute(
                         "attr_" + std::to_string(iteration.iterationIndex))
                     .get<int>() == int(iteration.iterationIndex));
+
+            auto constantMesh =
+                iteration.meshes["changing_constant"][RecordComponent::SCALAR];
+            REQUIRE(
+                constantMesh.getExtent() ==
+                std::vector{iteration.iterationIndex});
+            REQUIRE(
+                constantMesh.getAttribute("value").get<unsigned>() ==
+                iteration.iterationIndex);
+
+            auto constantParticles =
+                iteration.particles["changing_constant"]["position"]
+                                   [RecordComponent::SCALAR];
+            REQUIRE(
+                constantParticles.getExtent() ==
+                std::vector{iteration.iterationIndex});
+            REQUIRE(
+                constantParticles.getAttribute("value").get<unsigned>() ==
+                iteration.iterationIndex);
 
             last_iteration_index = iteration.iterationIndex;
         }
