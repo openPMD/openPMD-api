@@ -1,8 +1,10 @@
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/openPMD.hpp"
 
 #include <catch2/catch.hpp>
 
+#include <fstream>
 #include <variant>
 
 using namespace openPMD;
@@ -171,4 +173,89 @@ TEST_CASE("json_merging", "auxiliary")
     REQUIRE(
         json::merge(defaultVal, overwrite) ==
         json::parseOptions(expect, false).config.dump());
+}
+
+/*
+ * This tests two things about the /data/snapshot attribute:
+ *
+ * 1) Reading a variable-based series without the snapshot attribute should be
+ *    possible by assuming a default /data/snapshot = 0.
+ * 2) The snapshot attribute might be a vector of iterations. The Read API
+ *    should then return the same iteration multiple times, with different
+ *    indices.
+ *
+ * Such files are currently not created by the openPMD-api (the API currently
+ * supports creating a variable-based series with a scalar snapshot attribute).
+ * But the standard will allow both options above, so reading should at least
+ * be possible.
+ * This test creates a variable-based JSON series and then uses the nlohmann
+ * json library to modifiy the resulting series for testing purposes.
+ */
+TEST_CASE("variableBasedModifiedSnapshot", "[auxiliary]")
+{
+    constexpr auto file = "../samples/variableBasedModifiedSnapshot.json";
+    {
+        Series writeSeries(file, Access::CREATE);
+        writeSeries.setIterationEncoding(IterationEncoding::variableBased);
+        REQUIRE(
+            writeSeries.iterationEncoding() ==
+            IterationEncoding::variableBased);
+        auto iterations = writeSeries.writeIterations();
+        auto iteration = iterations[10];
+        auto E_z = iteration.meshes["E"]["x"];
+        E_z.resetDataset({Datatype::INT, {1}});
+        E_z.makeConstant(72);
+
+        iteration.close();
+    }
+
+    {
+        nlohmann::json series;
+        {
+            std::fstream fstream;
+            fstream.open(file, std::ios_base::in);
+            fstream >> series;
+        }
+        series["data"]["attributes"].erase("snapshot");
+        {
+            std::fstream fstream;
+            fstream.open(file, std::ios_base::out | std::ios_base::trunc);
+            fstream << series;
+        }
+    }
+
+    /*
+     * Need generic capture here since the compilers are being
+     * annoying otherwise.
+     */
+    auto testRead = [&](std::vector<size_t> const &requiredIterations) {
+        Series readSeries(file, Access::READ_ONLY);
+        size_t counter = 0;
+        for (auto const &iteration : readSeries.readIterations())
+        {
+            REQUIRE(iteration.iterationIndex == requiredIterations[counter++]);
+        }
+        REQUIRE(counter == requiredIterations.size());
+    };
+    testRead(std::vector<size_t>{0});
+
+    {
+        nlohmann::json series;
+        {
+            std::fstream fstream;
+            fstream.open(file, std::ios_base::in);
+            fstream >> series;
+        }
+        series["data"]["attributes"].erase("snapshot");
+        auto &snapshot = series["data"]["attributes"]["snapshot"];
+        snapshot["datatype"] = "VEC_ULONG";
+        snapshot["value"] = std::vector{1, 2, 3, 4, 5};
+        {
+            std::fstream fstream;
+            fstream.open(file, std::ios_base::out | std::ios_base::trunc);
+            fstream << series;
+        }
+    }
+
+    testRead(std::vector<size_t>{1, 2, 3, 4, 5});
 }
