@@ -869,6 +869,10 @@ if(openPMD_BUILD_TESTING)
 
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
+        set_target_properties(
+            ${testname}Tests
+            PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${openPMD_RUNTIME_OUTPUT_DIRECTORY}")
         openpmd_cxx_required(${testname}Tests)
 
         if(openPMD_USE_INVASIVE_TESTS)
@@ -892,6 +896,10 @@ endif()
 if(openPMD_BUILD_CLI_TOOLS)
     foreach(toolname ${openPMD_CLI_TOOL_NAMES})
         add_executable(openpmd-${toolname} src/cli/${toolname}.cpp)
+        set_target_properties(
+            openpmd-${toolname}
+            PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${openPMD_RUNTIME_OUTPUT_DIRECTORY}")
         openpmd_cxx_required(openpmd-${toolname})
         target_link_libraries(openpmd-${toolname} PRIVATE openPMD)
     endforeach()
@@ -905,6 +913,10 @@ if(openPMD_BUILD_EXAMPLES)
         endif()
 
         add_executable(${examplename} examples/${examplename}.cpp)
+        set_target_properties(
+            ${examplename}
+            PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${openPMD_RUNTIME_OUTPUT_DIRECTORY}")
         if (openPMD_HAVE_CUDA_EXAMPLES)
            set_source_files_properties(examples/${examplename}.cpp
                PROPERTIES LANGUAGE CUDA)
