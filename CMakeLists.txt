@@ -51,8 +51,11 @@ if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
         CACHE PATH "Build directory for libraries")
 endif()
-if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+if(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    set(openPMD_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        CACHE PATH "Build directory for binaries")
+else()
+    set(openPMD_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         CACHE PATH "Build directory for binaries")
 endif()
 # install directories
@@ -1176,14 +1179,14 @@ if(openPMD_BUILD_TESTING)
         if(${testname} MATCHES "^Parallel.*$")
             if(openPMD_HAVE_MPI)
                 add_test(NAME MPI.${testname}
-                    COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
-                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                    COMMAND ${MPI_TEST_EXE} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+                    WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )
             endif()
         else()
             add_test(NAME Serial.${testname}
-                COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
-                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                COMMAND ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+                WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             )
         endif()
     endforeach()
@@ -1196,11 +1199,11 @@ if(openPMD_BUILD_TESTING)
                     COMMAND ${Python_EXECUTABLE}
                         ${openPMD_SOURCE_DIR}/test/python/unittest/Test.py -v
                     WORKING_DIRECTORY
-                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                        ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )
                 if(WIN32)
                     string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
                     string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
                     string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
                     set_property(TEST Unittest.py
@@ -1230,14 +1233,14 @@ if(openPMD_BUILD_TESTING)
                     elseif(${examplename} MATCHES "^.*_parallel$")
                         if(openPMD_HAVE_MPI)
                             add_test(NAME MPI.${examplename}
-                                    COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
-                                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                                    COMMAND ${MPI_TEST_EXE} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+                                    WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                                     )
                         endif()
                     else()
                         add_test(NAME Serial.${examplename}
                                 COMMAND ${examplename}
-                                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                                WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                                 )
                     endif()
                 endforeach()
@@ -1246,7 +1249,7 @@ if(openPMD_BUILD_TESTING)
         if(openPMD_HAVE_ADIOS2)
             add_test(NAME Asynchronous.10_streaming
                      COMMAND sh -c "$<TARGET_FILE:10_streaming_write> & sleep 1; $<TARGET_FILE:10_streaming_read>"
-                     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                     WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
         endif()
     endif()
 
@@ -1256,13 +1259,13 @@ if(openPMD_BUILD_TESTING)
         foreach(toolname ${openPMD_CLI_TOOL_NAMES})
             add_test(NAME CLI.help.${toolname}
                 COMMAND openpmd-${toolname} --help
-                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             )
         endforeach()
         if(openPMD_HAVE_HDF5 AND EXAMPLE_DATA_FOUND)
             add_test(NAME CLI.ls
                 COMMAND openpmd-ls ../samples/git-sample/data%08T.h5
-                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             )
         endif()
     endif()
@@ -1289,7 +1292,7 @@ if(openPMD_BUILD_TESTING)
         foreach(pymodulename ${openPMD_PYTHON_CLI_MODULE_NAMES})
              add_test(NAME CLI.py.help.${pymodulename}
                  COMMAND ${Python_EXECUTABLE} -m openpmd_api.${pymodulename} --help
-                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                 WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             )
             test_set_pythonpath(CLI.py.help.${pymodulename})
         endforeach()
@@ -1301,13 +1304,13 @@ if(openPMD_BUILD_TESTING)
         foreach(toolname ${openPMD_PYTHON_CLI_TOOL_NAMES})
             configure_file(
                 ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
-                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}
+                ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}
                 COPYONLY
             )
             add_test(NAME CLI.help.${toolname}.py
                 COMMAND ${Python_EXECUTABLE}
-                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname} --help
-                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                    ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname} --help
+                WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             )
             test_set_pythonpath(CLI.help.${toolname}.py)
         endforeach()
@@ -1327,41 +1330,41 @@ if(openPMD_BUILD_TESTING)
                 add_test(NAME CLI.pipe.py
                     COMMAND sh -c
                         "${MPI_TEST_EXE} ${Python_EXECUTABLE}                      \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
+                            ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/data%T.h5               \
                             --outfile ../samples/git-sample/data%T.bp &&           \
                                                                                    \
                         ${MPI_TEST_EXE} ${Python_EXECUTABLE}                       \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
+                            ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.h5     \
                             --outfile ../samples/git-sample/thetaMode/data.bp &&   \
                                                                                    \
                         ${Python_EXECUTABLE}                                       \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
+                            ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data.bp       \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
                         "
-                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                    WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )
             else()
                 add_test(NAME CLI.pipe.py
                     COMMAND sh -c
                         "${Python_EXECUTABLE}                                      \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
+                            ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/data%T.h5               \
                             --outfile ../samples/git-sample/data%T.bp &&           \
                                                                                    \
                         ${Python_EXECUTABLE}                                       \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
+                            ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.h5     \
                             --outfile ../samples/git-sample/thetaMode/data%T.bp && \
                                                                                    \
                         ${Python_EXECUTABLE}                                       \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
+                            ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.bp     \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
                         "
-                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                    WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )
             endif()
             test_set_pythonpath(CLI.pipe.py)
@@ -1371,7 +1374,7 @@ if(openPMD_BUILD_TESTING)
     function(configure_python_test testname)
         if(WIN32)
             string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
-            string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
             string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
             string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
             set_property(TEST ${testname}
@@ -1395,7 +1398,7 @@ if(openPMD_BUILD_TESTING)
             foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
                 configure_file(
                     ${openPMD_SOURCE_DIR}/examples/${examplename}.py
-                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                    ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
                     COPYONLY
                 )
                 if(openPMD_BUILD_TESTING)
@@ -1407,8 +1410,8 @@ if(openPMD_BUILD_TESTING)
                             # see https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
                             add_test(NAME Example.py.${examplename}
                                 COMMAND ${MPI_TEST_EXE} ${Python_EXECUTABLE} -m mpi4py
-                                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
-                                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                                    ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                                WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                             )
                         else()
                             continue()
@@ -1416,9 +1419,9 @@ if(openPMD_BUILD_TESTING)
                     else()
                         add_test(NAME Example.py.${examplename}
                             COMMAND ${Python_EXECUTABLE}
-                                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                                ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
                             WORKING_DIRECTORY
-                                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                                ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                         )
                     endif()
                     configure_python_test(Example.py.${examplename})
@@ -1426,8 +1429,8 @@ if(openPMD_BUILD_TESTING)
             endforeach()
             if(openPMD_HAVE_ADIOS2 AND openPMD_BUILD_TESTING AND NOT WIN32)
                 add_test(NAME Asynchronous.10_streaming.py
-                        COMMAND sh -c "${Python_EXECUTABLE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_write.py & sleep 1; ${Python_EXECUTABLE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_read.py"
-                        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                        COMMAND sh -c "${Python_EXECUTABLE} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_write.py & sleep 1; ${Python_EXECUTABLE} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_read.py"
+                        WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
                 configure_python_test(Asynchronous.10_streaming.py)
             endif()
         endif()
