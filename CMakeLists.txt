@@ -1166,7 +1166,7 @@ if(openPMD_BUILD_TESTING)
         if(${testname} MATCHES "^Parallel.*$")
             if(openPMD_HAVE_MPI)
                 add_test(NAME MPI.${testname}
-                    COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+                    COMMAND ${MPI_TEST_EXE}  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
                     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                 )
             endif()
