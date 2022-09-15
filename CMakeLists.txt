@@ -740,16 +740,16 @@ if(openPMD_HAVE_PYTHON)
 
     if(WIN32)
         set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
-            "${CMAKE_INSTALL_LIBDIR}/site-packages"
-        )
+            "${CMAKE_INSTALL_LIBDIR}/site-packages")
     else()
         set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
             "${CMAKE_INSTALL_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
         )
     endif()
+    # Location for installed python package
     set(CMAKE_INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR_DEFAULT}")
-    set(CMAKE_PYTHON_OUTPUT_DIRECTORY
-        "${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}")
+    # Build directory for python modules
+    set(CMAKE_PYTHON_OUTPUT_DIRECTORY "${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}")
     set_target_properties(openPMD.py PROPERTIES
         ARCHIVE_OUTPUT_NAME openpmd_api_cxx
         LIBRARY_OUTPUT_NAME openpmd_api_cxx
