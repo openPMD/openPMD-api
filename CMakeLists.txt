@@ -58,7 +58,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/openPMD")
     if(WIN32)
         set(CMAKE_INSTALL_LIBDIR Lib)
-        set_property(CMAKE_INSTALL_CMAKEDIR PROPERTY VALUE "cmake")
+        set(CMAKE_INSTALL_CMAKEDIR "cmake")
     endif()
 endif()
 
