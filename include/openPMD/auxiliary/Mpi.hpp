@@ -22,11 +22,6 @@
 
 #include "openPMD/config.hpp"
 
-#include <optional>
-#include <stdexcept>
-#include <type_traits>
-#include <utility>
-
 #if openPMD_HAVE_MPI
 #include <mpi.h>
 #endif

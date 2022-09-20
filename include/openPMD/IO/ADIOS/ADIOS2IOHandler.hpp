@@ -31,7 +31,6 @@
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
-#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 
