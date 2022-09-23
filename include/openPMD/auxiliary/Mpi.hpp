@@ -26,50 +26,51 @@
 #include <mpi.h>
 #endif
 
+#include <type_traits>
+
 namespace openPMD::auxiliary
 {
 #if openPMD_HAVE_MPI
 
+namespace detail
+{
+    namespace
+    {
+        // see https://en.cppreference.com/w/cpp/language/if
+        template <typename>
+        inline constexpr bool dependent_false_v = false;
+    } // namespace
+} // namespace detail
+
 namespace
 {
-    template <typename>
-    struct MPI_Types;
-
-    template <>
-    struct MPI_Types<unsigned long>
+    template <typename T>
+    MPI_Datatype openPMD_MPI_type()
     {
-        static MPI_Datatype const value;
-    };
-
-    template <>
-    struct MPI_Types<unsigned long long>
-    {
-        static MPI_Datatype const value;
-    };
-
-    template <>
-    struct MPI_Types<unsigned>
-    {
-        static MPI_Datatype const value;
-    };
-
-    template <>
-    struct MPI_Types<char>
-    {
-        static MPI_Datatype const value;
-    };
-
-    /*
-     * Only some of these are actually instanciated,
-     * so suppress warnings for the others.
-     */
-    [[maybe_unused]] MPI_Datatype const MPI_Types<unsigned>::value =
-        MPI_UNSIGNED;
-    [[maybe_unused]] MPI_Datatype const MPI_Types<unsigned long>::value =
-        MPI_UNSIGNED_LONG;
-    [[maybe_unused]] MPI_Datatype const MPI_Types<unsigned long long>::value =
-        MPI_UNSIGNED_LONG_LONG;
-    [[maybe_unused]] MPI_Datatype const MPI_Types<char>::value = MPI_CHAR;
+        using T_decay = std::decay_t<T>;
+        if constexpr (std::is_same_v<T_decay, char>)
+        {
+            return MPI_CHAR;
+        }
+        else if constexpr (std::is_same_v<T_decay, unsigned>)
+        {
+            return MPI_UNSIGNED;
+        }
+        else if constexpr (std::is_same_v<T_decay, unsigned long>)
+        {
+            return MPI_UNSIGNED_LONG;
+        }
+        else if constexpr (std::is_same_v<T_decay, unsigned long long>)
+        {
+            return MPI_UNSIGNED_LONG_LONG;
+        }
+        else
+        {
+            static_assert(
+                detail::dependent_false_v<T>,
+                "openPMD_MPI_type: Unsupported type.");
+        }
+    }
 } // namespace
 
 #endif

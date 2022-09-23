@@ -198,7 +198,7 @@ std::string collective_file_read(std::string const &path, MPI_Comm comm)
         }
         stringLength = res.size() + 1;
     }
-    MPI_Datatype datatype = MPI_Types<size_t>::value;
+    MPI_Datatype datatype = openPMD_MPI_type<size_t>();
     int err = MPI_Bcast(&stringLength, 1, datatype, 0, comm);
     if (err)
     {
