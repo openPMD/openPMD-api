@@ -30,7 +30,6 @@ namespace openPMD::auxiliary
 {
 #if openPMD_HAVE_MPI
 
-
 namespace
 {
     template <typename>
