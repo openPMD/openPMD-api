@@ -45,7 +45,7 @@ namespace detail
 namespace
 {
     template <typename T>
-    MPI_Datatype openPMD_MPI_type()
+    constexpr MPI_Datatype openPMD_MPI_type()
     {
         using T_decay = std::decay_t<T>;
         if constexpr (std::is_same_v<T_decay, char>)
