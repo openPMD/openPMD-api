@@ -30,7 +30,6 @@ namespace openPMD::auxiliary
 {
 #if openPMD_HAVE_MPI
 
-using Mock_MPI_Comm = MPI_Comm;
 
 namespace
 {
