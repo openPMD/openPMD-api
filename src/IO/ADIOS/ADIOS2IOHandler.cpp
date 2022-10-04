@@ -2685,9 +2685,11 @@ namespace detail
             case adios2::Mode::Append:
 #ifdef _WIN32
                 /*
-                 * On Windows, ADIOS2 Append mode only works with existing
+                 * On Windows, ADIOS2 v2.8. Append mode only works with existing
                  * files. So, we first check for file existence and switch to
                  * create mode if it does not exist.
+                 *
+                 * See issue: https://github.com/ornladios/ADIOS2/issues/3358
                  */
                 tempMode = m_impl->checkFile(m_file) ? adios2::Mode::Append
                                                      : adios2::Mode::Write;
