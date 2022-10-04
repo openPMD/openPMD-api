@@ -73,23 +73,29 @@ void Record::flush_impl(
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
                 for (auto &comp : *this)
+                {
                     comp.second.parent() = getWritable(this);
-            }
-        }
-
-        if (scalar())
-        {
-            for (auto &comp : *this)
-            {
-                comp.second.flush(name, flushParams);
-                writable().abstractFilePosition =
-                    comp.second.writable().abstractFilePosition;
+                    comp.second.flush(comp.first, flushParams);
+                }
             }
         }
         else
         {
-            for (auto &comp : *this)
-                comp.second.flush(comp.first, flushParams);
+
+            if (scalar())
+            {
+                for (auto &comp : *this)
+                {
+                    comp.second.flush(name, flushParams);
+                    writable().abstractFilePosition =
+                        comp.second.writable().abstractFilePosition;
+                }
+            }
+            else
+            {
+                for (auto &comp : *this)
+                    comp.second.flush(comp.first, flushParams);
+            }
         }
 
         flushAttributes(flushParams);
