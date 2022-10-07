@@ -29,6 +29,7 @@
 #include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
 
@@ -282,6 +283,40 @@ void HDF5IOHandlerImpl::createFile(
         m_fileNamesWithID[std::move(name)] = id;
         m_openFileIDs.insert(id);
     }
+}
+
+void HDF5IOHandlerImpl::checkFile(
+    Writable *, Parameter<Operation::CHECK_FILE> &parameters)
+{
+    std::string name = m_handler->directory + parameters.name;
+    if (!auxiliary::ends_with(name, ".h5"))
+    {
+        name += ".h5";
+    }
+    bool fileExists =
+        auxiliary::file_exists(name) || auxiliary::directory_exists(name);
+
+#if openPMD_HAVE_MPI
+    if (m_communicator.has_value())
+    {
+        bool fileExistsRes = false;
+        int status = MPI_Allreduce(
+            &fileExists,
+            &fileExistsRes,
+            1,
+            MPI_C_BOOL,
+            MPI_LOR, // logical or
+            m_communicator.value());
+        if (status != 0)
+        {
+            throw std::runtime_error("MPI Reduction failed!");
+        }
+        fileExists = fileExistsRes;
+    }
+#endif
+
+    using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
+    *parameters.fileExists = fileExists ? FileExists::Yes : FileExists::No;
 }
 
 void HDF5IOHandlerImpl::createPath(

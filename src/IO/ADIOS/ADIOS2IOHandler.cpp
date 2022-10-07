@@ -27,6 +27,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 
@@ -73,6 +74,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     std::string specifiedExtension)
     : AbstractIOHandlerImplCommon(handler)
     , m_ADIOS{communicator}
+    , m_communicator{communicator}
     , m_engineType(std::move(engineType))
     , m_userSpecifiedExtension{std::move(specifiedExtension)}
 {
@@ -245,7 +247,7 @@ ADIOS2IOHandlerImpl::getOperators()
 
 using AcceptedEndingsForEngine = std::map<std::string, std::string>;
 
-std::string ADIOS2IOHandlerImpl::fileSuffix() const
+std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
 {
     // SST engine adds its suffix unconditionally
     // so we don't add it
@@ -267,7 +269,8 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
         if (auto ending = acceptedEndings.find(m_userSpecifiedExtension);
             ending != acceptedEndings.end())
         {
-            if ((m_engineType == "file" || m_engineType == "filestream") &&
+            if (verbose &&
+                (m_engineType == "file" || m_engineType == "filestream") &&
                 (m_userSpecifiedExtension == ".bp3" ||
                  m_userSpecifiedExtension == ".bp4" ||
                  m_userSpecifiedExtension == ".bp5"))
@@ -288,7 +291,7 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
         {
             std::cerr << "[ADIOS2] No file ending specified. Will not add one."
                       << std::endl;
-            if (m_engineType == "bp3")
+            if (verbose && m_engineType == "bp3")
             {
                 std::cerr
                     << "Note that the ADIOS2 BP3 engine will add its "
@@ -300,19 +303,22 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
         }
         else
         {
-            std::cerr << "[ADIOS2] Specified ending '"
-                      << m_userSpecifiedExtension
-                      << "' does not match the selected engine '"
-                      << m_engineType
-                      << "'. Will use the specified ending anyway."
-                      << std::endl;
-            if (m_engineType == "bp3")
+            if (verbose)
             {
-                std::cerr
-                    << "Note that the ADIOS2 BP3 engine will add its "
-                       "ending '.bp' if not specified (e.g. 'simData.bp3' "
-                       "will appear on disk as 'simData.bp3.bp')."
-                    << std::endl;
+                std::cerr << "[ADIOS2] Specified ending '"
+                          << m_userSpecifiedExtension
+                          << "' does not match the selected engine '"
+                          << m_engineType
+                          << "'. Will use the specified ending anyway."
+                          << std::endl;
+                if (m_engineType == "bp3")
+                {
+                    std::cerr
+                        << "Note that the ADIOS2 BP3 engine will add its "
+                           "ending '.bp' if not specified (e.g. 'simData.bp3' "
+                           "will appear on disk as 'simData.bp3.bp')."
+                        << std::endl;
+                }
             }
             return m_userSpecifiedExtension;
         }
@@ -494,6 +500,60 @@ void ADIOS2IOHandlerImpl::createFile(
         // lazy opening is deathly in parallel situations
         getFileData(shared_name, IfFileNotOpen::OpenImplicitly);
     }
+}
+
+void ADIOS2IOHandlerImpl::checkFile(
+    Writable *, Parameter<Operation::CHECK_FILE> &parameters)
+{
+    std::string name =
+        fullPath(parameters.name + fileSuffix(/* verbose = */ false));
+
+    using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
+    *parameters.fileExists = checkFile(name) ? FileExists::Yes : FileExists::No;
+}
+
+bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
+{
+    if (m_engineType == "bp3")
+    {
+        if (!auxiliary::ends_with(fullFilePath, ".bp"))
+        {
+            /*
+             * BP3 will add this ending if not specified
+             */
+            fullFilePath += ".bp";
+        }
+    }
+    else if (m_engineType == "sst")
+    {
+        /*
+         * SST will add this ending indiscriminately
+         */
+        fullFilePath += ".sst";
+    }
+    bool fileExists = auxiliary::directory_exists(fullFilePath) ||
+        auxiliary::file_exists(fullFilePath);
+
+#if openPMD_HAVE_MPI
+    if (m_communicator.has_value())
+    {
+        bool fileExistsRes = false;
+        int status = MPI_Allreduce(
+            &fileExists,
+            &fileExistsRes,
+            1,
+            MPI_C_BOOL,
+            MPI_LOR, // logical or
+            m_communicator.value());
+        if (status != 0)
+        {
+            throw std::runtime_error("MPI Reduction failed!");
+        }
+        fileExists = fileExistsRes;
+    }
+#endif
+
+    return fileExists;
 }
 
 void ADIOS2IOHandlerImpl::createPath(
@@ -2271,11 +2331,14 @@ namespace detail
         : m_file(impl.fullPath(std::move(file)))
         , m_IOName(std::to_string(impl.nameCounter++))
         , m_ADIOS(impl.m_ADIOS)
-        , m_IO(impl.m_ADIOS.DeclareIO(m_IOName))
-        , m_mode(impl.adios2AccessMode(m_file))
         , m_impl(&impl)
         , m_engineType(impl.m_engineType)
     {
+        // Declaring these members in the constructor body to avoid
+        // initialization order hazards. Need the IO_ prefix since in some
+        // situation there seems to be trouble with number-only IO names
+        m_IO = impl.m_ADIOS.DeclareIO("IO_" + m_IOName);
+        m_mode = impl.adios2AccessMode(m_file);
         if (!m_IO)
         {
             throw std::runtime_error(
@@ -2616,9 +2679,22 @@ namespace detail
     {
         if (!m_engine)
         {
+            auto tempMode = m_mode;
             switch (m_mode)
             {
             case adios2::Mode::Append:
+#ifdef _WIN32
+                /*
+                 * On Windows, ADIOS2 v2.8. Append mode only works with existing
+                 * files. So, we first check for file existence and switch to
+                 * create mode if it does not exist.
+                 *
+                 * See issue: https://github.com/ornladios/ADIOS2/issues/3358
+                 */
+                tempMode = m_impl->checkFile(m_file) ? adios2::Mode::Append
+                                                     : adios2::Mode::Write;
+                [[fallthrough]];
+#endif
             case adios2::Mode::Write: {
                 // usesSteps attribute only written upon ::advance()
                 // this makes sure that the attribute is only put in case
@@ -2626,7 +2702,7 @@ namespace detail
                 m_IO.DefineAttribute<ADIOS2Schema::schema_t>(
                     ADIOS2Defaults::str_adios2Schema, m_impl->m_schema);
                 m_engine = std::make_optional(
-                    adios2::Engine(m_IO.Open(m_file, m_mode)));
+                    adios2::Engine(m_IO.Open(m_file, tempMode)));
                 break;
             }
             case adios2::Mode::Read: {

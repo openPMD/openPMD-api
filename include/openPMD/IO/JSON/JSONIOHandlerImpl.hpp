@@ -160,6 +160,8 @@ public:
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
 
+    void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
+
     void
     createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
 

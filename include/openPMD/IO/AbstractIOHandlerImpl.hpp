@@ -58,6 +58,12 @@ public:
                         deref_dynamic_cast<Parameter<Operation::CREATE_FILE> >(
                             i.parameter.get()));
                     break;
+                case O::CHECK_FILE:
+                    checkFile(
+                        i.writable,
+                        deref_dynamic_cast<Parameter<Operation::CHECK_FILE> >(
+                            i.parameter.get()));
+                    break;
                 case O::CREATE_PATH:
                     createPath(
                         i.writable,
@@ -219,6 +225,17 @@ public:
      */
     virtual void
     closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) = 0;
+
+    /**
+     * Check if the file specified by the parameter is already present on disk.
+     * The Writable is irrelevant for this method.
+     * A backend can choose to ignore this task and specify FileExists::DontKnow
+     * in the out parameter.
+     * The consequence will be that some top-level attributes might be defined
+     * a second time when appending to an existing file, because the frontend
+     * cannot be sure that the file already has these attributes.
+     */
+    virtual void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) = 0;
 
     /** Advance the file/stream that this writable belongs to.
      *

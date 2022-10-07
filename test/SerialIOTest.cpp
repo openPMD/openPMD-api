@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <complex>
 #include <fstream>
@@ -27,6 +28,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -6320,9 +6322,14 @@ void append_mode(
     std::string jsonConfig = "{}")
 {
 
-    std::string filename = (variableBased ? "../samples/append_variablebased."
-                                          : "../samples/append_groupbased.") +
+    std::string filename =
+        (variableBased ? "../samples/append/append_variablebased."
+                       : "../samples/append/append_groupbased.") +
         extension;
+    if (auxiliary::directory_exists("../samples/append"))
+    {
+        auxiliary::remove_directory("../samples/append");
+    }
     std::vector<int> data(10, 0);
     auto writeSomeIterations = [&data](
                                    WriteIterations &&writeIterations,
@@ -6338,7 +6345,7 @@ void append_mode(
         }
     };
     {
-        Series write(filename, Access::CREATE, jsonConfig);
+        Series write(filename, Access::APPEND, jsonConfig);
         if (variableBased)
         {
             if (write.backend() != "ADIOS2")
@@ -6372,6 +6379,13 @@ void append_mode(
         write.flush();
     }
     {
+        using namespace std::chrono_literals;
+        /*
+         * Put a little sleep here to trigger writing of a different /date
+         * attribute. ADIOS2 v2.7 does not like that so this test ensures that
+         * we deal with it.
+         */
+        std::this_thread::sleep_for(1s);
         Series write(filename, Access::APPEND, jsonConfig);
         if (variableBased)
         {
@@ -6540,8 +6554,8 @@ void append_mode_filebased(std::string const &extension)
     }
     {
         Series write(
-            "../samples/append/append_%T." + extension,
-            Access::CREATE,
+            "../samples/append/append_%06T." + extension,
+            Access::APPEND,
             jsonConfig);
         writeSomeIterations(
             write.writeIterations(), std::vector<uint64_t>{0, 1});

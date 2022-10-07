@@ -150,6 +150,11 @@ public:
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
 
+    void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
+
+    // MPI Collective
+    bool checkFile(std::string fullFilePath) const;
+
     void
     createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
 
@@ -226,6 +231,9 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
+#if openPMD_HAVE_MPI
+    std::optional<MPI_Comm> m_communicator;
+#endif
     /*
      * If the iteration encoding is variableBased, we default to using the
      * 2021_02_09 schema since it allows mutable attributes.
@@ -329,7 +337,7 @@ private:
     // use m_config
     std::optional<std::vector<ParameterizedOperator> > getOperators();
 
-    std::string fileSuffix() const;
+    std::string fileSuffix(bool verbose = true) const;
 
     /*
      * We need to give names to IO objects. These names are irrelevant

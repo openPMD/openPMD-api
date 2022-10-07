@@ -534,7 +534,7 @@ OPENPMD_private
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
     void init(std::shared_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
-    void initDefaults(IterationEncoding);
+    void initDefaults(IterationEncoding, bool initAll = false);
     /**
      * @brief Internal call for flushing a Series.
      *

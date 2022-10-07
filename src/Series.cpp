@@ -502,15 +502,18 @@ namespace
         int padding;
         uint64_t iterationIndex;
         std::set<int> paddings;
-        for (auto const &entry : auxiliary::list_directory(directory))
+        if (auxiliary::directory_exists(directory))
         {
-            std::tie(isContained, padding, iterationIndex) =
-                isPartOfSeries(entry);
-            if (isContained)
+            for (auto const &entry : auxiliary::list_directory(directory))
             {
-                paddings.insert(padding);
-                // no std::forward as this is called repeatedly
-                mappingFunction(iterationIndex, entry);
+                std::tie(isContained, padding, iterationIndex) =
+                    isPartOfSeries(entry);
+                if (isContained)
+                {
+                    paddings.insert(padding);
+                    // no std::forward as this is called repeatedly
+                    mappingFunction(iterationIndex, entry);
+                }
             }
         }
         if (paddings.size() == 1u)
@@ -637,12 +640,8 @@ Given file pattern: ')END"
     series.m_lastFlushSuccessful = true;
 }
 
-void Series::initDefaults(IterationEncoding ie)
+void Series::initDefaults(IterationEncoding ie, bool initAll)
 {
-    if (!containsAttribute("openPMD"))
-        setOpenPMD(getStandard());
-    if (!containsAttribute("openPMDextension"))
-        setOpenPMDextension(0);
     if (!containsAttribute("basePath"))
     {
         if (ie == IterationEncoding::variableBased)
@@ -655,6 +654,21 @@ void Series::initDefaults(IterationEncoding ie)
             setAttribute("basePath", std::string(BASEPATH));
         }
     }
+    if (!containsAttribute("openPMD"))
+        setOpenPMD(getStandard());
+    /*
+     * In Append mode, only init the rest of the defaults after checking that
+     * the file does not yet exist to avoid overriding more than needed.
+     * In file-based iteration encoding, files are always truncated in Append
+     * mode (Append mode works on a per-iteration basis).
+     */
+    if (!initAll && IOHandler()->m_frontendAccess == Access::APPEND &&
+        ie != IterationEncoding::fileBased)
+    {
+        return;
+    }
+    if (!containsAttribute("openPMDextension"))
+        setOpenPMDextension(0);
     if (!containsAttribute("date"))
         setDate(auxiliary::getDateString());
     if (!containsAttribute("software"))
@@ -845,6 +859,23 @@ void Series::flushGorVBased(
     case Access::APPEND: {
         if (!written())
         {
+            if (IOHandler()->m_frontendAccess == Access::APPEND)
+            {
+                Parameter<Operation::CHECK_FILE> param;
+                param.name = series.m_name;
+                IOHandler()->enqueue(IOTask(this, param));
+                IOHandler()->flush(internal::defaultFlushParams);
+                switch (*param.fileExists)
+                {
+                    using FE = Parameter<Operation::CHECK_FILE>::FileExists;
+                case FE::DontKnow:
+                case FE::No:
+                    initDefaults(iterationEncoding(), /* initAll = */ true);
+                    break;
+                case FE::Yes:
+                    break;
+                }
+            }
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
             fCreate.encoding = iterationEncoding();
