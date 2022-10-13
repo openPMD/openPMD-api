@@ -303,8 +303,8 @@ public:
      * @param extent Extent within the dataset, counted from the offset.
      */
     template <typename T_ContiguousContainer>
-    typename std::enable_if<
-        auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>::type
+    typename std::enable_if_t<
+        auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>
     storeChunk(
         T_ContiguousContainer &data,
         Offset offset = {0u},
