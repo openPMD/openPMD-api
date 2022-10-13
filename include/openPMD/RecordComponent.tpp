@@ -78,9 +78,16 @@ inline std::shared_ptr< T > RecordComponent::loadChunk(
     for( auto const& dimensionSize : extent )
         numPoints *= dimensionSize;
 
-    auto newData = std::shared_ptr<T>(new T[numPoints], []( T *p ){ delete [] p; });
+#if defined(__clang_major__) && __clang_major__ < 7
+    auto newData =
+        std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
     loadChunk(newData, offset, extent);
     return newData;
+#else
+    auto newData = std::shared_ptr<T[]>(new T[numPoints]);
+    loadChunk(newData, offset, extent);
+    return std::static_pointer_cast<T>(std::move(newData));
+#endif
 }
 
 template< typename T >
@@ -157,6 +164,16 @@ inline void RecordComponent::loadChunk(
         dRead.data = std::static_pointer_cast< void >(data);
         rc.m_chunks.push(IOTask(this, dRead));
     }
+}
+
+template <typename T>
+inline void RecordComponent::loadChunk(
+    std::shared_ptr<T[]> ptr, Offset offset, Extent extent)
+{
+    loadChunk(
+        std::static_pointer_cast<T>(std::move(ptr)),
+        std::move(offset),
+        std::move(extent));
 }
 
 template <typename T>
