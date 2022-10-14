@@ -70,4 +70,11 @@ inline constexpr bool IsArray_v = detail::IsArray<T>::value;
  */
 template <typename T>
 inline constexpr bool IsContiguousContainer_v = IsVector_v<T> || IsArray_v<T>;
+
+namespace
+{
+    // see https://en.cppreference.com/w/cpp/language/if
+    template <typename>
+    inline constexpr bool dependent_false_v = false;
+} // namespace
 } // namespace openPMD::auxiliary

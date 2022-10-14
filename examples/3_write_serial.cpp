@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     cout << "Created a scalar mesh Record with all required openPMD "
             "attributes\n";
 
-    Datatype datatype = determineDatatypeContiguous(global_data);
+    Datatype datatype = determineDatatype(global_data.data());
     Extent extent = {size, size};
     Dataset dataset = Dataset(datatype, extent);
     cout << "Created a Dataset of size " << dataset.extent[0] << 'x'

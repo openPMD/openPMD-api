@@ -283,26 +283,58 @@ inline constexpr Datatype determineDatatype(std::shared_ptr<T>)
 }
 
 template <typename T>
-inline constexpr Datatype determineDatatypeRaw(T const *)
+inline constexpr Datatype determineDatatype(T *)
 {
     return determineDatatype<T>();
 }
 
+/*
+ * Catch-all overload for unsupported types, with static_assert errors
+ * triggered at compile-time.
+ */
 template <typename T_ContiguousContainer>
-inline constexpr Datatype determineDatatypeContiguous(T_ContiguousContainer &&)
+inline constexpr Datatype determineDatatype(T_ContiguousContainer &&)
 {
     using T_ContiguousContainer_stripped =
         std::remove_reference_t<T_ContiguousContainer>;
     if constexpr (auxiliary::IsContiguousContainer_v<
                       T_ContiguousContainer_stripped>)
     {
-        return determineDatatype<
-            typename T_ContiguousContainer_stripped::value_type>();
+        static_assert(auxiliary::dependent_false_v<T_ContiguousContainer>, R"(
+Error: Passed a contiguous container type to determineDatatype<>().
+These types are not directly supported due to colliding semantics.
+Assuming a vector object `std::vector<float> vec;`,
+use one of the following alternatives:
+
+1) If what you want is a direct openPMD::Datatype equivalent
+   of the container type, use:
+   `determineDatatype<decltype(vec)>()`
+   OR
+   `determineDatatype<std::vector<float>>()`.
+   The result will be `Datatype::VECTOR_FLOAT`.
+2) If what you want is the openPMD::Datatype equivalent of the *contained type*,
+   use the raw pointer overload by:
+   `determineDatatype(vec.data())`
+   The result will be `Datatype::FLOAT`.
+   This is the variant that you likely wish to use if intending to write data
+   from the vector via `storeChunk()`, e.g. `storeChunk(vec, {0}, {10})`.
+        )");
     }
     else
     {
-        return Datatype::UNDEFINED;
+        static_assert(auxiliary::dependent_false_v<T_ContiguousContainer>, R"(
+Error: Unknown datatype passed to determineDatatype<>().
+For a direct translation from C++ type to the openPMD::Datatype enum, use:
+`auto determineDatatype<T>() -> Datatype`.
+
+For detecting the contained datatpye of a pointer type (shared or raw pointer),
+use either of the following overloads:
+`auto determineDatatype<T>(std::shared_ptr<T>) -> Datatype` or
+`auto determineDatatype<T>(T *) -> Datatype`.
+        )");
     }
+    // Unreachable, but C++ does not know it
+    return Datatype::UNDEFINED;
 }
 
 /** Return number of bytes representing a Datatype
