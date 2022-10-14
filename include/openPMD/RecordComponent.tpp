@@ -256,8 +256,8 @@ void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
 }
 
 template< typename T_ContiguousContainer >
-inline typename std::enable_if<
-    auxiliary::IsContiguousContainer_v<T_ContiguousContainer> >::type
+inline typename std::enable_if_t<
+    auxiliary::IsContiguousContainer_v<T_ContiguousContainer> >
 RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
