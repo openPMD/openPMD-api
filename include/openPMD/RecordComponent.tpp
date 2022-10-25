@@ -23,6 +23,8 @@
 
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
+#include "openPMD/auxiliary/ShareRawInternal.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 
 namespace openPMD
 {
@@ -76,9 +78,16 @@ inline std::shared_ptr< T > RecordComponent::loadChunk(
     for( auto const& dimensionSize : extent )
         numPoints *= dimensionSize;
 
-    auto newData = std::shared_ptr<T>(new T[numPoints], []( T *p ){ delete [] p; });
+#if defined(__clang_major__) && __clang_major__ < 7
+    auto newData =
+        std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
     loadChunk(newData, offset, extent);
     return newData;
+#else
+    auto newData = std::shared_ptr<T[]>(new T[numPoints]);
+    loadChunk(newData, offset, extent);
+    return std::static_pointer_cast<T>(std::move(newData));
+#endif
 }
 
 template< typename T >
@@ -157,6 +166,25 @@ inline void RecordComponent::loadChunk(
     }
 }
 
+template <typename T>
+inline void RecordComponent::loadChunk(
+    std::shared_ptr<T[]> ptr, Offset offset, Extent extent)
+{
+    loadChunk(
+        std::static_pointer_cast<T>(std::move(ptr)),
+        std::move(offset),
+        std::move(extent));
+}
+
+template <typename T>
+inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
+{
+    loadChunk(
+        auxiliary::shareRaw(ptr),
+        std::move(offset),
+        std::move(extent));
+}
+
 template< typename T >
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
@@ -218,11 +246,19 @@ RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
         std::move(e));
 }
 
+template <typename T>
+void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
+{
+    storeChunk(
+        auxiliary::shareRaw(ptr),
+        std::move(offset),
+        std::move(extent));
+}
+
 template< typename T_ContiguousContainer >
-inline typename std::enable_if<
-    traits::IsContiguousContainer< T_ContiguousContainer >::value
->::type
-RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
+inline typename std::enable_if_t<
+    auxiliary::IsContiguousContainer_v<T_ContiguousContainer> >
+RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
 
@@ -241,7 +277,10 @@ RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
     else
         extent = e;
 
-    storeChunk(shareRaw(data), offset, extent);
+    storeChunk(
+        auxiliary::shareRaw(data.data()),
+        offset,
+        extent);
 }
 
 template< typename T, typename F >

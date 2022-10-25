@@ -25,7 +25,14 @@
 #include <type_traits>
 #include <vector>
 
-namespace openPMD
+/*
+ * This header copies ShareRaw.hpp, but:
+ * 1. without deprecation markings
+ * 2. for internal usage only
+ * 3. inside auxiliary namespace
+ */
+
+namespace openPMD::auxiliary
 {
 //! @{
 /** Share ownership with a raw pointer
@@ -42,29 +49,18 @@ namespace openPMD
  *          reference counting.
  */
 template <typename T>
-[[deprecated(
-    "For storing/loading data via raw pointers use "
-    "storeChunkRaw<>()/loadChunkRaw<>()")]] //
-std::shared_ptr<T>
-shareRaw(T *x)
+std::shared_ptr<T> shareRaw(T *x)
 {
     return std::shared_ptr<T>(x, [](T *) {});
 }
 
 template <typename T>
-[[deprecated(
-    "For storing/loading data via raw pointers use "
-    "storeChunkRaw<>()/loadChunkRaw<>()")]] //
-std::shared_ptr<T const>
-shareRaw(T const *x)
+std::shared_ptr<T const> shareRaw(T const *x)
 {
     return std::shared_ptr<T const>(x, [](T const *) {});
 }
 
 template <typename T>
-[[deprecated(
-    "For storing/loading data via raw pointers use "
-    "storeChunkRaw<>()/loadChunkRaw<>()")]] //
 auto shareRaw(T &c)
     -> std::shared_ptr<typename std::remove_pointer<decltype(c.data())>::type>
 {
@@ -73,9 +69,6 @@ auto shareRaw(T &c)
 }
 
 template <typename T>
-[[deprecated(
-    "For storing/loading data via raw pointers use "
-    "storeChunkRaw<>()/loadChunkRaw<>()")]] //
 auto shareRaw(T const &c)
     -> std::shared_ptr<typename std::remove_pointer<decltype(c.data())>::type>
 {
@@ -83,4 +76,4 @@ auto shareRaw(T const &c)
     return std::shared_ptr<value_type>(c.data(), [](value_type *) {});
 }
 //! @}
-} // namespace openPMD
+} // namespace openPMD::auxiliary

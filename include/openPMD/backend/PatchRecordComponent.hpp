@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <sstream>
@@ -85,6 +86,12 @@ public:
     void load(std::shared_ptr<T>);
 
     template <typename T>
+    void load(std::shared_ptr<T[]>);
+
+    template <typename T>
+    void loadRaw(T *);
+
+    template <typename T>
     void store(uint64_t idx, T);
 
     // clang-format off
@@ -137,10 +144,16 @@ template <typename T>
 inline std::shared_ptr<T> PatchRecordComponent::load()
 {
     uint64_t numPoints = getExtent()[0];
+#if defined(__clang_major__) && __clang_major__ < 7
     auto newData =
         std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
     load(newData);
     return newData;
+#else
+    auto newData = std::shared_ptr<T[]>(new T[numPoints]);
+    load(newData);
+    return std::static_pointer_cast<T>(std::move(newData));
+#endif
 }
 
 template <typename T>
@@ -167,6 +180,18 @@ inline void PatchRecordComponent::load(std::shared_ptr<T> data)
     dRead.data = std::static_pointer_cast<void>(data);
     auto &rc = get();
     rc.m_chunks.push(IOTask(this, dRead));
+}
+
+template <typename T>
+inline void PatchRecordComponent::load(std::shared_ptr<T[]> data)
+{
+    load(std::static_pointer_cast<T>(std::move(data)));
+}
+
+template <typename T>
+inline void PatchRecordComponent::loadRaw(T *data)
+{
+    load<T>(auxiliary::shareRaw(data));
 }
 
 template <typename T>

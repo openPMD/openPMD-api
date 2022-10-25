@@ -22,6 +22,8 @@
 
 #include "openPMD/config.hpp"
 
+#include "openPMD/auxiliary/TypeTraits.hpp"
+
 #if openPMD_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -31,16 +33,6 @@
 namespace openPMD::auxiliary
 {
 #if openPMD_HAVE_MPI
-
-namespace detail
-{
-    namespace
-    {
-        // see https://en.cppreference.com/w/cpp/language/if
-        template <typename>
-        inline constexpr bool dependent_false_v = false;
-    } // namespace
-} // namespace detail
 
 namespace
 {
@@ -67,8 +59,7 @@ namespace
         else
         {
             static_assert(
-                detail::dependent_false_v<T>,
-                "openPMD_MPI_type: Unsupported type.");
+                dependent_false_v<T>, "openPMD_MPI_type: Unsupported type.");
         }
     }
 } // namespace

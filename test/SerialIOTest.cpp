@@ -1814,8 +1814,7 @@ inline void fileBased_write_test(const std::string &backend)
         for (uint64_t i = 0; i < 4; ++i)
         {
             double const position_local_2 = position_global.at(i);
-            e_2["position"]["x"].storeChunk(
-                shareRaw(&position_local_2), {i}, {1});
+            e_2["position"]["x"].storeChunkRaw(&position_local_2, {i}, {1});
             *positionOffset_local_2 = positionOffset_global[i];
             e_2["positionOffset"]["x"].storeChunk(
                 positionOffset_local_2, {i}, {1});
@@ -3572,7 +3571,7 @@ TEST_CASE("hzdr_hdf5_sample_content_test", "[serial][hdf5]")
             isSame(e_extent_z.getDatatype(), determineDatatype<uint64_t>()));
 
         std::vector<uint64_t> data(e_patches.size());
-        e_extent_z.load(shareRaw(data.data()));
+        e_extent_z.loadRaw(data.data());
         species_e.seriesFlush();
         REQUIRE(data.at(0) == static_cast<uint64_t>(80));
         REQUIRE(data.at(1) == static_cast<uint64_t>(80));
@@ -3594,7 +3593,7 @@ TEST_CASE("hzdr_hdf5_sample_content_test", "[serial][hdf5]")
             e_numParticles_scalar.getDatatype(),
             determineDatatype<uint64_t>()));
 
-        e_numParticles_scalar.load(shareRaw(data.data()));
+        e_numParticles_scalar.loadRaw(data.data());
         o.flush();
         REQUIRE(data.at(0) == static_cast<uint64_t>(512000));
         REQUIRE(data.at(1) == static_cast<uint64_t>(819200));
@@ -3640,7 +3639,7 @@ TEST_CASE("hzdr_hdf5_sample_content_test", "[serial][hdf5]")
         REQUIRE(
             isSame(e_offset_y.getDatatype(), determineDatatype<uint64_t>()));
 
-        e_offset_y.load(shareRaw(data.data()));
+        e_offset_y.loadRaw(data.data());
         o.flush();
         REQUIRE(data.at(0) == static_cast<uint64_t>(0));
         REQUIRE(data.at(1) == static_cast<uint64_t>(128));
@@ -6615,8 +6614,8 @@ void groupbased_read_write(std::string const &ext)
         auto E_y = write.iterations[0].meshes["E"]["y"];
         E_x.resetDataset(ds);
         E_y.resetDataset(ds);
-        E_x.storeChunk(shareRaw(&data), {0}, {1});
-        E_y.storeChunk(shareRaw(&data), {0}, {1});
+        E_x.storeChunkRaw(&data, {0}, {1});
+        E_y.storeChunkRaw(&data, {0}, {1});
 
         E_x.setAttribute("updated_in_run", 0);
         E_y.setAttribute("updated_in_run", 0);
@@ -6633,8 +6632,8 @@ void groupbased_read_write(std::string const &ext)
 
         data = 1;
 
-        E_x.storeChunk(shareRaw(&data), {0}, {1});
-        E_y.storeChunk(shareRaw(&data), {0}, {1});
+        E_x.storeChunkRaw(&data, {0}, {1});
+        E_y.storeChunkRaw(&data, {0}, {1});
 
         E_x.setAttribute("updated_in_run", 1);
         E_y.setAttribute("updated_in_run", 1);
@@ -6670,7 +6669,7 @@ void groupbased_read_write(std::string const &ext)
 
         data = 2;
 
-        E_x.storeChunk(shareRaw(&data), {0}, {1});
+        E_x.storeChunkRaw(&data, {0}, {1});
         E_x.setAttribute("updated_in_run", 2);
     }
 
