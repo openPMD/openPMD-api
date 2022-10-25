@@ -577,28 +577,34 @@ Given file pattern: ')END"
     case Access::READ_WRITE: {
         /* Allow creation of values in Containers and setting of Attributes
          * Would throw for Access::READ_ONLY */
-        auto oldType = IOHandler()->m_frontendAccess;
-        auto newType = const_cast<Access *>(&IOHandler()->m_frontendAccess);
-        *newType = Access::READ_WRITE;
+        IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
 
-        if (input->iterationEncoding == IterationEncoding::fileBased)
-            readFileBased();
-        else
-            readGorVBased();
-
-        if (series.iterations.empty())
+        try
         {
-            /* Access::READ_WRITE can be used to create a new Series
-             * allow setting attributes in that case */
-            written() = false;
+            if (input->iterationEncoding == IterationEncoding::fileBased)
+                readFileBased();
+            else
+                readGorVBased();
 
-            initDefaults(input->iterationEncoding);
-            setIterationEncoding(input->iterationEncoding);
+            if (series.iterations.empty())
+            {
+                /* Access::READ_WRITE can be used to create a new Series
+                 * allow setting attributes in that case */
+                written() = false;
 
-            written() = true;
+                initDefaults(input->iterationEncoding);
+                setIterationEncoding(input->iterationEncoding);
+
+                written() = true;
+            }
+        }
+        catch (...)
+        {
+            IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
+            throw;
         }
 
-        *newType = oldType;
+        IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
         break;
     }
     case Access::CREATE: {
@@ -732,10 +738,15 @@ void Series::flushFileBased(
             switch (openIterationIfDirty(it->first, it->second))
             {
                 using IO = IterationOpened;
-            case IO::HasBeenOpened:
-                it->second.flush(flushParams);
-                break;
             case IO::RemainsClosed:
+                // we might need to proceed further if the close status is
+                // ClosedInFrontend
+                // hence no continue here
+                // otherwise, we might forget to close files physically
+                break;
+            case IO::HasBeenOpened:
+                // continue below
+                it->second.flush(flushParams);
                 break;
             }
 
@@ -769,13 +780,21 @@ void Series::flushFileBased(
             case IO::HasBeenOpened: {
                 /* as there is only one series,
                  * emulate the file belonging to each iteration as not yet
-                 * written
+                 * written, even if the iteration itself is already written
+                 * (to ensure that the Series gets reassociated with the
+                 * current iteration)
                  */
                 written() = false;
                 series.iterations.written() = false;
 
                 dirty() |= it->second.dirty();
                 std::string filename = iterationFilename(it->first);
+
+                if (!it->second.written())
+                {
+                    series.m_currentlyActiveIterations.emplace(it->first);
+                }
+
                 it->second.flushFileBased(filename, it->first, flushParams);
 
                 series.iterations.flush(
@@ -831,10 +850,14 @@ void Series::flushGorVBased(
             switch (openIterationIfDirty(it->first, it->second))
             {
                 using IO = IterationOpened;
-            case IO::HasBeenOpened:
-                it->second.flush(flushParams);
-                break;
             case IO::RemainsClosed:
+                // we might need to proceed further if the close status is
+                // ClosedInFrontend
+                // hence no continue here
+                break;
+            case IO::HasBeenOpened:
+                // continue below
+                it->second.flush(flushParams);
                 break;
             }
 
@@ -895,6 +918,7 @@ void Series::flushGorVBased(
                 if (!it->second.written())
                 {
                     it->second.parent() = getWritable(&series.iterations);
+                    series.m_currentlyActiveIterations.emplace(it->first);
                 }
                 switch (iterationEncoding())
                 {
@@ -1115,7 +1139,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     series.iterations.readAttributes(ReadMode::OverrideExisting);
 }
 
-void Series::readGorVBased(bool do_init)
+std::optional<std::deque<uint64_t>> Series::readGorVBased(bool do_init)
 {
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
@@ -1187,16 +1211,35 @@ void Series::readGorVBased(bool do_init)
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
     readAttributes(ReadMode::IgnoreExisting);
+
+    auto withRWAccess = [this](auto &&functor) {
+        auto oldStatus = IOHandler()->m_seriesStatus;
+        IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
+        try
+        {
+            std::forward<decltype(functor)>(functor)();
+        }
+        catch (...)
+        {
+            IOHandler()->m_seriesStatus = oldStatus;
+            throw;
+        }
+        IOHandler()->m_seriesStatus = oldStatus;
+    };
+
     /*
      * 'snapshot' changes over steps, so reread that.
      */
-    series.iterations.readAttributes(ReadMode::OverrideExisting);
+    withRWAccess([&series]() {
+        series.iterations.readAttributes(ReadMode::OverrideExisting);
+    });
+
     /* obtain all paths inside the basepath (i.e. all iterations) */
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(&series.iterations, pList));
     IOHandler()->flush(internal::defaultFlushParams);
 
-    auto readSingleIteration = [&series, &pOpen, this](
+    auto readSingleIteration = [&series, &pOpen, this, withRWAccess](
                                    uint64_t index,
                                    std::string path,
                                    bool guardAgainstRereading,
@@ -1215,7 +1258,7 @@ void Series::readGorVBased(bool do_init)
             {
                 pOpen.path = path;
                 IOHandler()->enqueue(IOTask(&i, pOpen));
-                i.reread(path);
+                withRWAccess([&i, &path]() { i.reread(path); });
             }
         }
         else
@@ -1235,13 +1278,18 @@ void Series::readGorVBased(bool do_init)
         }
     };
 
+    /*
+     * @todo in BP5, a BeginStep() might be necessary before this
+     */
+    auto currentSteps = currentSnapshot();
+
     switch (iterationEncoding())
     {
     case IterationEncoding::groupBased:
     /*
      * Sic! This happens when a file-based Series is opened in group-based mode.
      */
-    case IterationEncoding::fileBased:
+    case IterationEncoding::fileBased: {
         for (auto const &it : *pList.paths)
         {
             uint64_t index = std::stoull(it);
@@ -1250,23 +1298,37 @@ void Series::readGorVBased(bool do_init)
              * (beginStep = false)
              * A streaming read mode might come in a future API addition.
              */
-            readSingleIteration(index, it, true, false);
+            withRWAccess(
+                [&]() { readSingleIteration(index, it, true, false); });
         }
-        break;
-    case IterationEncoding::variableBased: {
-        uint64_t index = 0;
-        if (series.iterations.containsAttribute("snapshot"))
+        if (currentSteps.has_value())
         {
-            index = series.iterations.getAttribute("snapshot").get<uint64_t>();
+            auto const &vec = currentSteps.value();
+            return std::deque<uint64_t>{vec.begin(), vec.end()};
         }
-        /*
-         * Variable-based iteration encoding relies on steps, so parsing must
-         * happen after opening the first step.
-         */
-        readSingleIteration(index, "", false, true);
-        break;
+        else
+        {
+            return std::optional<std::deque<uint64_t>>();
+        }
+    }
+    case IterationEncoding::variableBased: {
+        std::deque<uint64_t> res = {0};
+        if (currentSteps.has_value() && !currentSteps.value().empty())
+        {
+            res = {currentSteps.value().begin(), currentSteps.value().end()};
+        }
+        for (auto it : res)
+        {
+            /*
+             * Variable-based iteration encoding relies on steps, so parsing
+             * must happen after opening the first step.
+             */
+            withRWAccess([&]() { readSingleIteration(it, "", false, true); });
+        }
+        return res;
     }
     }
+    throw std::runtime_error("Unreachable!");
 }
 
 void Series::readBase()
@@ -1458,7 +1520,13 @@ AdvanceStatus Series::advance(
          * opening an iteration's file by beginning a step on it.
          * So, return now.
          */
+        iteration.get().m_closed = internal::CloseStatus::ClosedInBackend;
         return AdvanceStatus::OK;
+    }
+
+    if (mode == AdvanceMode::ENDSTEP)
+    {
+        flushStep(/* doFlush = */ false);
     }
 
     Parameter<Operation::ADVANCE> param;
@@ -1515,6 +1583,92 @@ AdvanceStatus Series::advance(
     IOHandler()->flush(flushParams);
 
     return *param.status;
+}
+
+AdvanceStatus Series::advance(AdvanceMode mode)
+{
+    auto &series = get();
+    if (series.m_iterationEncoding == IterationEncoding::fileBased)
+    {
+        throw error::Internal(
+            "Advancing a step in file-based iteration encoding is "
+            "iteration-specific.");
+    }
+    internal::FlushParams const flushParams = {FlushLevel::UserFlush};
+    /*
+     * We call flush_impl() with flushIOHandler = false, meaning that tasks are
+     * not yet propagated to the backend.
+     * We will append ADVANCE and CLOSE_FILE tasks manually and then flush the
+     * IOHandler manually.
+     * In order to avoid having those tasks automatically appended by
+     * flush_impl(), set CloseStatus to Open for now.
+     */
+
+    auto begin = iterations.end();
+    auto end = iterations.end();
+
+    switch (mode)
+    {
+    case AdvanceMode::ENDSTEP:
+        flush_impl(begin, end, flushParams, /* flushIOHandler = */ false);
+        break;
+    case AdvanceMode::BEGINSTEP:
+        /*
+         * When beginning a step, there is nothing to flush yet.
+         * Data is not written in between steps.
+         * So only make sure that files are accessed.
+         */
+        flush_impl(
+            begin,
+            end,
+            {FlushLevel::CreateOrOpenFiles},
+            /* flushIOHandler = */ false);
+        break;
+    }
+
+    if (mode == AdvanceMode::ENDSTEP)
+    {
+        flushStep(/* doFlush = */ false);
+    }
+
+    Parameter<Operation::ADVANCE> param;
+    param.mode = mode;
+    IOTask task(&series.m_writable, param);
+    IOHandler()->enqueue(task);
+
+    // We cannot call Series::flush now, since the IO handler is still filled
+    // from calling flush(Group|File)based, but has not been emptied yet
+    // Do that manually
+    IOHandler()->flush(flushParams);
+
+    return *param.status;
+}
+
+void Series::flushStep(bool doFlush)
+{
+    auto &series = get();
+    if (!series.m_currentlyActiveIterations.empty() &&
+        IOHandler()->m_frontendAccess != Access::READ_ONLY)
+    {
+        /*
+         * Warning: changing attribute extents over time (probably) unsupported
+         * by this so far.
+         * Not (yet) needed as there is no way to pack several iterations within
+         * one IO step.
+         */
+        Parameter<Operation::WRITE_ATT> wAttr;
+        wAttr.changesOverSteps = true;
+        wAttr.name = "snapshot";
+        wAttr.resource = std::vector<unsigned long long>{
+            series.m_currentlyActiveIterations.begin(),
+            series.m_currentlyActiveIterations.end()};
+        wAttr.dtype = Datatype::VEC_ULONGLONG;
+        IOHandler()->enqueue(IOTask(&series.iterations, wAttr));
+        if (doFlush)
+        {
+            IOHandler()->flush(internal::defaultFlushParams);
+        }
+    }
 }
 
 auto Series::openIterationIfDirty(uint64_t index, Iteration iteration)
@@ -1795,6 +1949,7 @@ namespace internal
             {
                 Series impl{{this, [](auto const *) {}}};
                 impl.flush();
+                impl.flushStep(/* doFlush = */ true);
             }
             if (m_writeIterations.has_value())
             {
@@ -1884,6 +2039,46 @@ WriteIterations Series::writeIterations()
         series.m_writeIterations = WriteIterations(this->iterations);
     }
     return series.m_writeIterations.value();
+}
+
+std::optional<std::vector<uint64_t>> Series::currentSnapshot() const
+{
+    using vec_t = std::vector<uint64_t>;
+    auto &series = get();
+    /*
+     * In variable-based iteration encoding, iterations have no distinct
+     * group within `series.iterations`, meaning that the `snapshot`
+     * attribute is not found at `/data/0/snapshot`, but at
+     * `/data/snapshot`. This makes it possible to retrieve it from
+     * `series.iterations`.
+     */
+    if (series.iterations.containsAttribute("snapshot"))
+    {
+        auto const &attribute = series.iterations.getAttribute("snapshot");
+        switch (attribute.dtype)
+        {
+        case Datatype::ULONGLONG:
+        case Datatype::VEC_ULONGLONG: {
+            auto const &vec = attribute.get<std::vector<unsigned long long>>();
+            return vec_t{vec.begin(), vec.end()};
+        }
+        case Datatype::ULONG:
+        case Datatype::VEC_ULONG: {
+            auto const &vec = attribute.get<std::vector<unsigned long>>();
+            return vec_t{vec.begin(), vec.end()};
+        }
+        default: {
+            std::stringstream s;
+            s << "Unexpected datatype for '/data/snapshot': " << attribute.dtype
+              << std::endl;
+            throw std::runtime_error(s.str());
+        }
+        }
+    }
+    else
+    {
+        return std::optional<std::vector<uint64_t>>{};
+    }
 }
 
 namespace

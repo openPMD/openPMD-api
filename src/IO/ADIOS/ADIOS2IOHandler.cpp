@@ -134,6 +134,10 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
         m_engineType.end(),
         m_engineType.begin(),
         [](unsigned char c) { return std::tolower(c); });
+
+    // environment-variable based configuration
+    m_schema = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", m_schema);
+
     if (cfg.json().contains("adios2"))
     {
         m_config = cfg["adios2"];
@@ -179,8 +183,6 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
             defaultOperators = std::move(operators.value());
         }
     }
-    // environment-variable based configuration
-    m_schema = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", m_schema);
 }
 
 std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator>>
@@ -815,6 +817,11 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     switch (attributeLayout())
     {
     case AttributeLayout::ByAdiosAttributes:
+        if (parameters.changesOverSteps)
+        {
+            // cannot do this
+            return;
+        }
         switchType<detail::OldAttributeWriter>(
             parameters.dtype, this, writable, parameters);
         break;
@@ -829,6 +836,13 @@ void ADIOS2IOHandlerImpl::writeAttribute(
         auto prefix = filePositionToString(pos);
 
         auto &filedata = getFileData(file, IfFileNotOpen::ThrowError);
+        if (parameters.changesOverSteps &&
+            filedata.streamStatus ==
+                detail::BufferedActions::StreamStatus::NoStream)
+        {
+            // cannot do this
+            return;
+        }
         filedata.requireActiveStep();
         filedata.invalidateAttributesMap();
         m_dirty.emplace(std::move(file));
@@ -2802,6 +2816,7 @@ namespace detail
                     "[ADIOS2] Operation requires active step but no step is "
                     "left.");
             case AdvanceStatus::OK:
+            case AdvanceStatus::RANDOMACCESS:
                 // pass
                 break;
             }
@@ -3005,7 +3020,7 @@ namespace detail
             m_IO.DefineAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute, 0);
             flush({FlushLevel::UserFlush}, /* writeAttributes = */ false);
-            return AdvanceStatus::OK;
+            return AdvanceStatus::RANDOMACCESS;
         }
 
         /*

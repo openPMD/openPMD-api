@@ -4900,8 +4900,10 @@ void serial_iterator(std::string const &file)
     Series readSeries(file, Access::READ_ONLY);
 
     size_t last_iteration_index = 0;
+    size_t numberOfIterations = 0;
     for (auto iteration : readSeries.readIterations())
     {
+        ++numberOfIterations;
         auto E_x = iteration.meshes["E"]["x"];
         REQUIRE(E_x.getDimensionality() == 1);
         REQUIRE(E_x.getExtent()[0] == extent);
@@ -4914,6 +4916,7 @@ void serial_iterator(std::string const &file)
         last_iteration_index = iteration.iterationIndex;
     }
     REQUIRE(last_iteration_index == 9);
+    REQUIRE(numberOfIterations == 10);
 }
 
 TEST_CASE("serial_iterator", "[serial][adios2]")
@@ -5665,7 +5668,8 @@ void iterate_nonstreaming_series(
             auto E_x = iteration.meshes["E"]["x"];
             E_x.resetDataset(
                 openPMD::Dataset(openPMD::Datatype::INT, {2, extent}));
-            std::vector<int> data(extent, i);
+            int value = variableBasedLayout ? 0 : i;
+            std::vector<int> data(extent, value);
             E_x.storeChunk(data, {0, 0}, {1, extent});
             bool taskSupportedByBackend = true;
             DynamicMemoryView<int> memoryView;
@@ -5753,9 +5757,10 @@ void iterate_nonstreaming_series(
             iteration.close();
         }
 
+        int value = variableBasedLayout ? 0 : iteration.iterationIndex;
         for (size_t i = 0; i < extent; ++i)
         {
-            REQUIRE(chunk.get()[i] == int(iteration.iterationIndex));
+            REQUIRE(chunk.get()[i] == value);
             REQUIRE(chunk2.get()[i] == int(i));
         }
         last_iteration_index = iteration.iterationIndex;
@@ -6175,11 +6180,12 @@ TEST_CASE("deferred_parsing", "[serial]")
     }
 }
 
-// @todo merge this back with the chaotic_stream test of PR #949
-// (bug noticed while working on that branch)
-void no_explicit_flush(std::string filename)
+void chaotic_stream(std::string filename, bool variableBased)
 {
-    std::vector<uint64_t> sampleData{5, 9, 1, 3, 4, 6, 7, 8, 2, 0};
+    /*
+     * We will write iterations in the following order.
+     */
+    std::vector<uint64_t> iterations{5, 9, 1, 3, 4, 6, 7, 8, 2, 0};
     std::string jsonConfig = R"(
 {
     "adios2": {
@@ -6190,16 +6196,31 @@ void no_explicit_flush(std::string filename)
     }
 })";
 
+    bool weirdOrderWhenReading{};
+
     {
         Series series(filename, Access::CREATE, jsonConfig);
-        for (uint64_t currentIteration = 0; currentIteration < 10;
-             ++currentIteration)
+        /*
+         * When using ADIOS2 steps, iterations are read not by logical order
+         * (iteration index), but by order of writing.
+         */
+        weirdOrderWhenReading = series.backend() == "ADIOS2" &&
+            series.iterationEncoding() != IterationEncoding::fileBased;
+        if (variableBased)
+        {
+            if (series.backend() != "ADIOS2")
+            {
+                return;
+            }
+            series.setIterationEncoding(IterationEncoding::variableBased);
+        }
+        for (auto currentIteration : iterations)
         {
             auto dataset =
                 series.writeIterations()[currentIteration]
                     .meshes["iterationOrder"][MeshRecordComponent::SCALAR];
             dataset.resetDataset({determineDatatype<uint64_t>(), {10}});
-            dataset.storeChunk(sampleData, {0}, {10});
+            dataset.storeChunk(iterations, {0}, {10});
             // series.writeIterations()[ currentIteration ].close();
         }
     }
@@ -6209,19 +6230,27 @@ void no_explicit_flush(std::string filename)
         size_t index = 0;
         for (const auto &iteration : series.readIterations())
         {
-            REQUIRE(iteration.iterationIndex == index);
+            if (weirdOrderWhenReading)
+            {
+                REQUIRE(iteration.iterationIndex == iterations[index]);
+            }
+            else
+            {
+                REQUIRE(iteration.iterationIndex == index);
+            }
             ++index;
         }
-        REQUIRE(index == 10);
+        REQUIRE(index == iterations.size());
     }
 }
 
-TEST_CASE("no_explicit_flush", "[serial]")
+TEST_CASE("chaotic_stream", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        no_explicit_flush("../samples/no_explicit_flush_filebased_%T." + t);
-        no_explicit_flush("../samples/no_explicit_flush." + t);
+        chaotic_stream("../samples/chaotic_stream_filebased_%T." + t, false);
+        chaotic_stream("../samples/chaotic_stream." + t, false);
+        chaotic_stream("../samples/chaotic_stream_vbased." + t, true);
     }
 }
 
@@ -6315,9 +6344,48 @@ TEST_CASE("varying_zero_pattern", "[serial]")
     }
 }
 
+enum class ParseMode
+{
+    /*
+     * Conventional workflow. Just parse the whole thing and yield iterations
+     * in rising order.
+     */
+    NoSteps,
+    /*
+     * NOTE: This mode is only temporary until the topic-linear-read PR,
+     * no longer necessary after that.
+     * The Series is parsed ahead of time upon opening, but it has steps.
+     * Parsing ahead of time is the conventional workflow to support
+     * random-access.
+     * Reading such a Series with the streaming API is only possible if all
+     * steps are in ascending order, otherwise the openPMD-api has no way of
+     * associating IO steps with interation indices.
+     * Reading such a Series with the Streaming API will become possible with
+     * the Linear read mode to be introduced by #1291.
+     */
+    AheadOfTimeWithoutSnapshot,
+    /*
+     * A Series of the BP5 engine is not parsed ahead of time, but step-by-step,
+     * giving the openPMD-api a way to associate IO steps with iterations.
+     * No snapshot attribute exists, so the fallback mode is chosen:
+     * Iterations are returned in ascending order.
+     * If an IO step returns an iteration whose index is lower than the
+     * last one, it will be skipped.
+     * This mode of parsing will be generalized into the Linear read mode with
+     * PR #1291.
+     */
+    LinearWithoutSnapshot,
+    /*
+     * Snapshot attribute exists and dictates the iteration index returned by
+     * an IO step. Duplicate iterations will be skipped.
+     */
+    WithSnapshot
+};
+
 void append_mode(
     std::string const &extension,
     bool variableBased,
+    ParseMode parseMode,
     std::string jsonConfig = "{}")
 {
 
@@ -6402,35 +6470,94 @@ void append_mode(
         }
 
         writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{4, 3});
+            write.writeIterations(), std::vector<uint64_t>{4, 3, 10});
+        write.flush();
+    }
+    {
+        Series write(filename, Access::APPEND, jsonConfig);
+        if (variableBased)
+        {
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
+        if (write.backend() == "ADIOS1")
+        {
+            REQUIRE_THROWS_AS(
+                write.flush(), error::OperationUnsupportedInBackend);
+            // destructor will be noisy now
+            return;
+        }
+
+        writeSomeIterations(
+            write.writeIterations(), std::vector<uint64_t>{7, 1, 11});
         write.flush();
     }
     {
         Series read(filename, Access::READ_ONLY);
-        if (variableBased || extension == "bp5")
+        switch (parseMode)
         {
+        case ParseMode::NoSteps: {
+            unsigned counter = 0;
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
+            for (auto const &iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                ++counter;
+            }
+            REQUIRE(counter == 8);
+        }
+        break;
+        case ParseMode::LinearWithoutSnapshot: {
+            unsigned counter = 0;
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10, 11};
+            for (auto const &iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                ++counter;
+            }
+            REQUIRE(counter == 7);
+        }
+        break;
+        case ParseMode::WithSnapshot: {
             // in variable-based encodings, iterations are not parsed ahead of
             // time but as they go
             unsigned counter = 0;
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10, 7, 11};
             for (auto const &iteration : read.readIterations())
             {
-                REQUIRE(iteration.iterationIndex == counter);
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
                 ++counter;
             }
-            REQUIRE(counter == 5);
+            REQUIRE(counter == 8);
+            // Cannot do listSeries here because the Series is already drained
+            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
         }
-        else
-        {
-            REQUIRE(read.iterations.size() == 5);
+        break;
+        case ParseMode::AheadOfTimeWithoutSnapshot: {
+            REQUIRE(read.iterations.size() == 8);
+            unsigned counter = 0;
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
+            /*
+             * Use conventional read API since streaming API is not possible
+             * without Linear read mode.
+             * (See also comments inside ParseMode enum).
+             */
+            for (auto const &iteration : read.iterations)
+            {
+                REQUIRE(iteration.first == iterationOrder[counter]);
+                ++counter;
+            }
+            REQUIRE(counter == 8);
+            /*
+             * Roadmap: for now, reading this should work by ignoring the last
+             * duplicate iteration.
+             * After merging https://github.com/openPMD/openPMD-api/pull/949, we
+             * should see both instances when reading.
+             * Final goal: Read only the last instance.
+             */
+            helper::listSeries(read);
         }
-        /*
-         * Roadmap: for now, reading this should work by ignoring the last
-         * duplicate iteration.
-         * After merging https://github.com/openPMD/openPMD-api/pull/949, we
-         * should see both instances when reading.
-         * Final goal: Read only the last instance.
-         */
-        helper::listSeries(read);
+        break;
+        }
     }
 #if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
         10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
@@ -6467,16 +6594,47 @@ void append_mode(
         }
         {
             Series read(filename, Access::READ_ONLY);
-            // in variable-based encodings, iterations are not parsed ahead of
-            // time but as they go
-            unsigned counter = 0;
-            for (auto const &iteration : read.readIterations())
+            switch (parseMode)
             {
-                REQUIRE(iteration.iterationIndex == counter);
-                ++counter;
+            case ParseMode::LinearWithoutSnapshot: {
+                uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10};
+                unsigned counter = 0;
+                for (auto const &iteration : read.readIterations())
+                {
+                    REQUIRE(
+                        iteration.iterationIndex == iterationOrder[counter]);
+                    ++counter;
+                }
+                REQUIRE(counter == 6);
+                // Cannot do listSeries here because the Series is already
+                // drained
+                REQUIRE_THROWS_AS(
+                    helper::listSeries(read), error::WrongAPIUsage);
             }
-            REQUIRE(counter == 6);
-            helper::listSeries(read);
+            break;
+            case ParseMode::WithSnapshot: {
+                // in variable-based encodings, iterations are not parsed ahead
+                // of time but as they go
+                unsigned counter = 0;
+                uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10, 7, 5};
+                for (auto const &iteration : read.readIterations())
+                {
+                    REQUIRE(
+                        iteration.iterationIndex == iterationOrder[counter]);
+                    ++counter;
+                }
+                REQUIRE(counter == 8);
+                // Cannot do listSeries here because the Series is already
+                // drained
+                REQUIRE_THROWS_AS(
+                    helper::listSeries(read), error::WrongAPIUsage);
+            }
+            break;
+            case ParseMode::NoSteps:
+            case ParseMode::AheadOfTimeWithoutSnapshot:
+                throw std::runtime_error("Test configured wrong.");
+                break;
+            }
         }
     }
 #endif
@@ -6486,9 +6644,7 @@ TEST_CASE("append_mode", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        if (t == "bp" || t == "bp4" || t == "bp5")
-        {
-            std::string jsonConfigOld = R"END(
+        std::string jsonConfigOld = R"END(
 {
     "adios2":
     {
@@ -6499,7 +6655,7 @@ TEST_CASE("append_mode", "[serial]")
         }
     }
 })END";
-            std::string jsonConfigNew = R"END(
+        std::string jsonConfigNew = R"END(
 {
     "adios2":
     {
@@ -6510,14 +6666,25 @@ TEST_CASE("append_mode", "[serial]")
         }
     }
 })END";
-            append_mode(t, false, jsonConfigOld);
-            append_mode(t, false, jsonConfigNew);
-            append_mode(t, true, jsonConfigOld);
-            append_mode(t, true, jsonConfigNew);
+        if (t == "bp5")
+        {
+            append_mode(
+                t, false, ParseMode::LinearWithoutSnapshot, jsonConfigOld);
+            append_mode(t, false, ParseMode::WithSnapshot, jsonConfigNew);
+            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigOld);
+            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigNew);
+        }
+        else if (t == "bp" || t == "bp4" || t == "bp5")
+        {
+            append_mode(
+                t, false, ParseMode::AheadOfTimeWithoutSnapshot, jsonConfigOld);
+            append_mode(t, false, ParseMode::WithSnapshot, jsonConfigNew);
+            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigOld);
+            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigNew);
         }
         else
         {
-            append_mode(t, false);
+            append_mode(t, false, ParseMode::NoSteps);
         }
     }
 }

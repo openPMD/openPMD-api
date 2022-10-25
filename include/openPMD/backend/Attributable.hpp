@@ -463,7 +463,9 @@ inline bool Attributable::setAttributeImpl(
     internal::attr_value_check(key, value, setAttributeMode);
 
     auto &attri = get();
-    if (IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess)
+    if (IOHandler() &&
+        IOHandler()->m_seriesStatus == internal::SeriesStatus::Default &&
+        Access::READ_ONLY == IOHandler()->m_frontendAccess)
     {
         auxiliary::OutOfRangeMsg const out_of_range_msg(
             "Attribute", "can not be set (read-only).");

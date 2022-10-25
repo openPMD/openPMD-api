@@ -121,6 +121,28 @@ namespace internal
     FlushParams const defaultFlushParams{};
 
     struct ParsedFlushParams;
+
+    /**
+     * Some parts of the openPMD object model are read-only when accessing
+     * a Series in Access::READ_ONLY mode, notably Containers and Attributes.
+     * They are filled at parse time and not modified afterwards.
+     * Such state-changing operations are hence allowed under either of two
+     * conditions:
+     * 1) The Series is opened in an open mode that allows writing in any way.
+     *    (Currently any but Access::READ_ONLY).
+     * 2) The Series is in Parsing state. This way, modifying the open mode
+     *    during parsing can be avoided.
+     */
+    enum class SeriesStatus : unsigned char
+    {
+        Default, ///< Mutability of objects in the openPMD object model is
+                 ///< determined by the open mode (Access enum), normal state in
+                 ///< which the user interacts with the Series.
+        Parsing ///< All objects in the openPMD object model are temporarily
+                ///< mutable to allow inserting newly-parsed data.
+                ///< Special state only active while internal routines are
+                ///< running.
+    };
 } // namespace internal
 
 /** Interface for communicating between logical and physically persistent data.
@@ -192,6 +214,7 @@ public:
     // why do these need to be separate?
     Access const m_backendAccess;
     Access const m_frontendAccess;
+    internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
     std::queue<IOTask> m_work;
 }; // AbstractIOHandler
 
