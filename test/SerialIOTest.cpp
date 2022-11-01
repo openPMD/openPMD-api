@@ -6383,16 +6383,11 @@ enum class ParseMode
 };
 
 void append_mode(
-    std::string const &extension,
+    std::string const &filename,
     bool variableBased,
     ParseMode parseMode,
     std::string jsonConfig = "{}")
 {
-
-    std::string filename =
-        (variableBased ? "../samples/append/append_variablebased."
-                       : "../samples/append/append_groupbased.") +
-        extension;
     if (auxiliary::directory_exists("../samples/append"))
     {
         auxiliary::remove_directory("../samples/append");
@@ -6559,11 +6554,11 @@ void append_mode(
         break;
         }
     }
+    // AppendAfterSteps has a bug before that version
 #if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
         10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
     208002700
-    // AppendAfterSteps has a bug before that version
-    if (extension == "bp5")
+    if (auxiliary::ends_with(filename, ".bp5"))
     {
         {
             Series write(
@@ -6669,22 +6664,55 @@ TEST_CASE("append_mode", "[serial]")
         if (t == "bp5")
         {
             append_mode(
-                t, false, ParseMode::LinearWithoutSnapshot, jsonConfigOld);
-            append_mode(t, false, ParseMode::WithSnapshot, jsonConfigNew);
-            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigOld);
-            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigNew);
+                "../samples/append/groupbased." + t,
+                false,
+                ParseMode::LinearWithoutSnapshot,
+                jsonConfigOld);
+            append_mode(
+                "../samples/append/groupbased_newschema." + t,
+                false,
+                ParseMode::WithSnapshot,
+                jsonConfigNew);
+            append_mode(
+                "../samples/append/variablebased." + t,
+                true,
+                ParseMode::WithSnapshot,
+                jsonConfigOld);
+            append_mode(
+                "../samples/append/variablebased_newschema." + t,
+                true,
+                ParseMode::WithSnapshot,
+                jsonConfigNew);
         }
-        else if (t == "bp" || t == "bp4" || t == "bp5")
+        else if (t == "bp" || t == "bp4")
         {
             append_mode(
-                t, false, ParseMode::AheadOfTimeWithoutSnapshot, jsonConfigOld);
-            append_mode(t, false, ParseMode::WithSnapshot, jsonConfigNew);
-            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigOld);
-            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigNew);
+                "../samples/append/append_groupbased." + t,
+                false,
+                ParseMode::AheadOfTimeWithoutSnapshot,
+                jsonConfigOld);
+            append_mode(
+                "../samples/append/append_groupbased." + t,
+                false,
+                ParseMode::WithSnapshot,
+                jsonConfigNew);
+            append_mode(
+                "../samples/append/append_variablebased." + t,
+                true,
+                ParseMode::WithSnapshot,
+                jsonConfigOld);
+            append_mode(
+                "../samples/append/append_variablebased." + t,
+                true,
+                ParseMode::WithSnapshot,
+                jsonConfigNew);
         }
         else
         {
-            append_mode(t, false, ParseMode::NoSteps);
+            append_mode(
+                "../samples/append/append_groupbased." + t,
+                false,
+                ParseMode::NoSteps);
         }
     }
 }

@@ -317,24 +317,10 @@ inline void BaseRecord<T_elem>::readBase()
     aRead.name = "unitDimension";
     this->IOHandler()->enqueue(IOTask(this, aRead));
     this->IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::ARR_DBL_7)
-        this->setAttribute(
-            "unitDimension",
-            Attribute(*aRead.resource).template get<std::array<double, 7> >());
-    else if (*aRead.dtype == DT::VEC_DOUBLE)
-    {
-        auto vec =
-            Attribute(*aRead.resource).template get<std::vector<double> >();
-        if (vec.size() == 7)
-        {
-            std::array<double, 7> arr;
-            std::copy(vec.begin(), vec.end(), arr.begin());
-            this->setAttribute("unitDimension", arr);
-        }
-        else
-            throw std::runtime_error(
-                "Unexpected Attribute datatype for 'unitDimension'");
-    }
+    if (auto val =
+            Attribute(*aRead.resource).getOptional<std::array<double, 7> >();
+        val.has_value())
+        this->setAttribute("unitDimension", val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'unitDimension'");
@@ -344,10 +330,14 @@ inline void BaseRecord<T_elem>::readBase()
     this->IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::FLOAT)
         this->setAttribute(
-            "timeOffset", Attribute(*aRead.resource).template get<float>());
+            "timeOffset", Attribute(*aRead.resource).get<float>());
     else if (*aRead.dtype == DT::DOUBLE)
         this->setAttribute(
-            "timeOffset", Attribute(*aRead.resource).template get<double>());
+            "timeOffset", Attribute(*aRead.resource).get<double>());
+    // conversion cast if a backend reports an integer type
+    else if (auto val = Attribute(*aRead.resource).getOptional<double>();
+             val.has_value())
+        this->setAttribute("timeOffset", val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'timeOffset'");
