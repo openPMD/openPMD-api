@@ -25,6 +25,7 @@ jobs:
         brew install adios2 || true
         brew install hdf5-mpi || true
         brew install python || true
+        python3 -m pip install -U mpi4py numpy pandas
         set -e
     - name: Build
       env: {CXXFLAGS: -Werror -DTOML11_DISABLE_STD_FILESYSTEM, MACOSX_DEPLOYMENT_TARGET: 10.13}
@@ -41,7 +42,7 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
-        ctest --test-dir build --output-on-failure
+        ctest --test-dir build --verbose
 
 # TODO: apple_conda_ompi_all (similar to conda_ompi_all on Linux)
 #   both OpenMPI and MPICH cause startup (MPI_Init) issues on GitHub Actions
