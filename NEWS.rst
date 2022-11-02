@@ -9,7 +9,7 @@ Upgrade Guide
 Building openPMD-api now requires a compiler that supports C++17 or newer.
 ``MPark.Variant`` is not a dependency anymore (kudos and thanks for the great time!).
 
-Python 3.10 is now supported.
+Python 3.10 & 3.11 are now supported, Python 3.6 is removed.
 openPMD-api now depends on `toml11 <https://github.com/ToruNiina/toml11>`__ 3.7.1+.
 pybind11 2.10.1 is now the minimally supported version for Python support.
 Catch2 2.13.9 is now the minimally supported version for tests.
