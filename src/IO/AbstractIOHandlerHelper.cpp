@@ -74,10 +74,10 @@ namespace
     Conversion of data from one backend to another may optionally be achieved
     by using the `openpmd-pipe` tool.)
 
-    Suppress this warning via `export OPENPMD_WARNING_SUPPRESS_ADIOS1_DEPRECATED=1`.)";
+    Suppress this warning via `export OPENPMD_ADIOS_SUPPRESS_DEPRECATED_WARNING=1`.)";
 
     constexpr char const *suppressAdios1DeprecationWarning =
-        "OPENPMD_WARNING_SUPPRESS_ADIOS1_DEPRECATED";
+        "OPENPMD_ADIOS_SUPPRESS_DEPRECATED_WARNING";
 } // namespace
 
 #if openPMD_HAVE_MPI
