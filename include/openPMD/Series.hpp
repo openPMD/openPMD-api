@@ -158,6 +158,8 @@ namespace internal
          * The destructor will only attempt flushing again if this is true.
          */
         bool m_lastFlushSuccessful = false;
+
+        void close();
     }; // SeriesData
 
     class SeriesInternal;
@@ -500,6 +502,8 @@ public:
      */
     WriteIterations writeIterations();
 
+    void close();
+
     // clang-format off
 OPENPMD_private
     // clang-format on
@@ -552,7 +556,7 @@ OPENPMD_private
     void parseJsonOptions(TracingJSON &options, ParsedInput &);
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
-    void init(std::shared_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
+    void init(std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
     void initDefaults(IterationEncoding, bool initAll = false);
     /**
      * @brief Internal call for flushing a Series.

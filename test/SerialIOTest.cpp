@@ -6198,32 +6198,31 @@ void chaotic_stream(std::string filename, bool variableBased)
 
     bool weirdOrderWhenReading{};
 
+    Series series(filename, Access::CREATE, jsonConfig);
+    /*
+     * When using ADIOS2 steps, iterations are read not by logical order
+     * (iteration index), but by order of writing.
+     */
+    weirdOrderWhenReading = series.backend() == "ADIOS2" &&
+        series.iterationEncoding() != IterationEncoding::fileBased;
+    if (variableBased)
     {
-        Series series(filename, Access::CREATE, jsonConfig);
-        /*
-         * When using ADIOS2 steps, iterations are read not by logical order
-         * (iteration index), but by order of writing.
-         */
-        weirdOrderWhenReading = series.backend() == "ADIOS2" &&
-            series.iterationEncoding() != IterationEncoding::fileBased;
-        if (variableBased)
+        if (series.backend() != "ADIOS2")
         {
-            if (series.backend() != "ADIOS2")
-            {
-                return;
-            }
-            series.setIterationEncoding(IterationEncoding::variableBased);
+            return;
         }
-        for (auto currentIteration : iterations)
-        {
-            auto dataset =
-                series.writeIterations()[currentIteration]
-                    .meshes["iterationOrder"][MeshRecordComponent::SCALAR];
-            dataset.resetDataset({determineDatatype<uint64_t>(), {10}});
-            dataset.storeChunk(iterations, {0}, {10});
-            // series.writeIterations()[ currentIteration ].close();
-        }
+        series.setIterationEncoding(IterationEncoding::variableBased);
     }
+    for (auto currentIteration : iterations)
+    {
+        auto dataset =
+            series.writeIterations()[currentIteration]
+                .meshes["iterationOrder"][MeshRecordComponent::SCALAR];
+        dataset.resetDataset({determineDatatype<uint64_t>(), {10}});
+        dataset.storeChunk(iterations, {0}, {10});
+        // series.writeIterations()[ currentIteration ].close();
+    }
+    series.close();
 
     {
         Series series(filename, Access::READ_ONLY);

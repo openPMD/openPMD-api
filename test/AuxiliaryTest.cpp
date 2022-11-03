@@ -34,7 +34,8 @@ struct TestHelper : public Attributable
     TestHelper()
     {
         writable().IOHandler =
-            createIOHandler(".", Access::CREATE, Format::JSON, ".json");
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                createIOHandler(".", Access::CREATE, Format::JSON, ".json"));
     }
 };
 } // namespace openPMD::test

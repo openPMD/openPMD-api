@@ -48,7 +48,8 @@ class Span;
 namespace internal
 {
     class AttributableData;
-}
+    class SeriesData;
+} // namespace internal
 
 /** @brief Layer to mirror structure of logical data and persistent data in
  * file.
@@ -63,6 +64,7 @@ namespace internal
 class Writable final
 {
     friend class internal::AttributableData;
+    friend class internal::SeriesData;
     friend class Attributable;
     template <typename T_elem>
     friend class BaseRecord;
@@ -121,7 +123,14 @@ OPENPMD_private
      * Writable may share them.
      */
     std::shared_ptr<AbstractFilePosition> abstractFilePosition = nullptr;
-    std::shared_ptr<AbstractIOHandler> IOHandler = nullptr;
+    /*
+     * shared_ptr since the IOHandler is shared by multiple Writable instances.
+     * optional to make it possible to release the IOHandler, without first
+     * having to destroy every single Writable.
+     * unique_ptr since AbstractIOHandler is an abstract class.
+     */
+    std::shared_ptr<std::optional<std::unique_ptr<AbstractIOHandler>>>
+        IOHandler = nullptr;
     internal::AttributableData *attributable = nullptr;
     Writable *parent = nullptr;
     bool dirty = true;
