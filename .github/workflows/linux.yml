@@ -116,23 +116,26 @@ jobs:
 # TODO
 #  clang7_py36_nompi_h5_ad1_ad2_libstdc++
 
-  clang12_py38_nompi_h5_ad1_ad2:
-    runs-on: ubuntu-20.04
+  clang14_py311_nompi_h5_ad1_ad2:
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang12_py38_nompi_h5_ad1_ad2_v2 }
+      with: {path: /opt/spack, key: clang14_py311_nompi_h5_ad1_ad2_v2 }
     - name: Install
       run: |
-        sudo apt-get update
-        sudo apt-get install clang-12 libhdf5-dev python3 python3-pip python3-numpy python3-pandas
+        sudo apt update
+        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
+        wget https://bootstrap.pypa.io/get-pip.py
+        python3.11 get-pip.py
+        python3.11 -m pip install numpy pandas
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-12, CXX: clang++-12, CXXFLAGS: -Werror}
+      env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang12_py38_nompi_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang14_py311_nompi_h5_ad1_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -143,7 +146,8 @@ jobs:
           -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DCMAKE_VERBOSE_MAKEFILE=ON
+          -DCMAKE_VERBOSE_MAKEFILE=ON     \
+          -DPython_EXECUTABLE=$(which python3.11)
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 

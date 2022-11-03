@@ -323,7 +323,6 @@ std::vector<hsize_t> openPMD::getOptimalChunkDims(
     constexpr std::array<size_t, 7u> CHUNK_SIZES_KiB{
         {4096u, 2048u, 1024u, 512u, 256u, 128u, 64u}};
 
-    size_t total_data_size = typeSize;
     size_t max_chunk_size = typeSize;
     size_t target_chunk_size = 0u;
 
@@ -343,7 +342,6 @@ std::vector<hsize_t> openPMD::getOptimalChunkDims(
 
         // compute sizes
         max_chunk_size *= (half_dim > 0) ? half_dim : 1;
-        total_data_size *= dims[i];
     }
 
     // compute the target chunk size

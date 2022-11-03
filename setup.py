@@ -190,7 +190,7 @@ setup(
     cmdclass=dict(build_ext=CMakeBuild),
     # scripts=['openpmd-ls'],
     zip_safe=False,
-    python_requires='>=3.6, <3.11',
+    python_requires='>=3.7',
     # tests_require=['pytest'],
     install_requires=install_requires,
     # see: src/bindings/python/cli
@@ -219,11 +219,11 @@ setup(
         'Topic :: Database :: Front-Ends',
         'Programming Language :: C++',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         ('License :: OSI Approved :: '
          'GNU Lesser General Public License v3 or later (LGPLv3+)'),
     ],

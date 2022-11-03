@@ -5,8 +5,8 @@ FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
 # FROM       quay.io/pypa/manylinux1_x86_64 as build-env
 ENV        DEBIAN_FRONTEND noninteractive
 
-# Python 3.6-3.10 via "36m 37m 38 39 310"
-ARG        PY_VERSIONS="36m 37m 38 39 310"
+# Python 3.7-3.11 via "37m 38 39 311"
+ARG        PY_VERSIONS="37m 38 39 310 311"
 
 # static libs need relocatable symbols for linking to shared python lib
 ENV        CFLAGS="-fPIC ${CFLAGS}"
@@ -159,20 +159,6 @@ RUN        python3.8 -c "import openpmd_api as io; print(io.__version__); print(
 RUN        python3.8 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
-# test in fresh env: Ubuntu:18.04 + Python 3.6
-FROM       ubuntu:18.04
-ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp36-cp36m-manylinux2010_x86_64.whl .
-RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3 python3-pip \
-           && rm -rf /var/lib/apt/lists/*
-RUN        python3 --version \
-           && python3 -m pip install -U pip \
-           && python3 -m pip install openPMD_api-*-cp36-cp36m-manylinux2010_x86_64.whl
-RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3 -m openpmd_api.ls --help
-RUN        openpmd-ls --help
-
 # test in fresh env: Debian:Bullseye + Python 3.9
 FROM       debian:bullseye
 ENV        DEBIAN_FRONTEND noninteractive
@@ -203,6 +189,20 @@ RUN        python3.10 -c "import openpmd_api as io; print(io.__version__); print
 RUN        python3.10 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
+# test in fresh env: Debian:Bullseye + Python 3.11
+FROM       debian:bullseye
+ENV        DEBIAN_FRONTEND noninteractive
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp311-cp311-manylinux2010_x86_64.whl .
+RUN        apt-get update \
+           && apt-get install -y --no-install-recommends python3.10 python3-distutils ca-certificates curl \
+           && rm -rf /var/lib/apt/lists/*
+RUN        python3.11 --version \
+           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+           && python3.11 get-pip.py \
+           && python3.11 -m pip install openPMD_api-*-cp311-cp311-manylinux2010_x86_64.whl
+RUN        python3.11 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
+RUN        python3.11 -m openpmd_api.ls --help
+RUN        openpmd-ls --help
 
 # copy binary artifacts (wheels)
 FROM       quay.io/pypa/manylinux2010_x86_64
