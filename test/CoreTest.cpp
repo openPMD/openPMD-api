@@ -10,6 +10,10 @@
 
 #include <catch2/catch.hpp>
 
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <algorithm>
 #include <array>
 #include <complex>
@@ -1356,6 +1360,7 @@ TEST_CASE("unavailable_backend", "[core]")
 #endif
 
 #if openPMD_HAVE_MPI
+    MPI_Init(nullptr, nullptr);
 #if !openPMD_HAVE_ADIOS1
     {
         auto fail = []() {
@@ -1412,5 +1417,6 @@ TEST_CASE("unavailable_backend", "[core]")
             "'HDF5'.");
     }
 #endif
+    MPI_Finalize();
 #endif
 }
