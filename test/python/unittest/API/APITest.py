@@ -252,7 +252,7 @@ class APITest(unittest.TestCase):
         # TODO init of > e304 ?
         series.set_attribute("longdouble_c", ctypes.c_longdouble(6.e200).value)
 
-        del series
+        series.close()
 
         # read back
         series = io.Series(
@@ -461,7 +461,7 @@ class APITest(unittest.TestCase):
                     np.clongdouble(1.23456789 + 2.34567890j))
 
         # flush and close file
-        del series
+        series.close()
 
         # read back
         series = io.Series(
@@ -609,7 +609,7 @@ class APITest(unittest.TestCase):
                 np.clongdouble(1.23456789 + 2.34567890j))
 
         # flush and close file
-        del series
+        series.close()
 
         # read back
         series = io.Series(
@@ -690,7 +690,7 @@ class APITest(unittest.TestCase):
             ms["np_double"][SCALAR].make_empty(np.dtype("double"), 21)
 
         # flush and close file
-        del series
+        series.close()
 
         # read back
         series = io.Series(
@@ -1607,7 +1607,7 @@ class APITest(unittest.TestCase):
         e.particle_patches["extent"]["y"].store(1, np.single(123.))
 
         # read back
-        del series
+        series.close()
 
         series = io.Series(
             "unittest_py_particle_patches." + file_ending,
@@ -1781,7 +1781,7 @@ class APITest(unittest.TestCase):
             it.close()
             del it
 
-        del series
+        series.close()
 
         # read
 
@@ -1995,7 +1995,7 @@ class APITest(unittest.TestCase):
         E_y.reset_dataset(DS(np.dtype("double"), [1000], local_config))
         E_y.store_chunk(data, [0], [1000])
 
-        del series
+        series.close()
 
         read = io.Series(
             "../samples/unittest_jsonConfiguredBP3.bp",

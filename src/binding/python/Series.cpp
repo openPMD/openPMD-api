@@ -151,6 +151,7 @@ void init_Series(py::module &m)
             py::arg("mpi_communicator"),
             py::arg("options") = "{}")
 #endif
+        .def("close", &Series::close)
 
         .def_property("openPMD", &Series::openPMD, &Series::setOpenPMD)
         .def_property(
