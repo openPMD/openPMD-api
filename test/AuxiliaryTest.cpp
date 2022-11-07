@@ -148,7 +148,8 @@ TEST_CASE("container_default_test", "[auxiliary]")
 #if openPMD_USE_INVASIVE_TESTS
     Container<openPMD::test::S> c = Container<openPMD::test::S>();
     c.writable().IOHandler =
-        createIOHandler(".", Access::CREATE, Format::JSON, ".json");
+        std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+            createIOHandler(".", Access::CREATE, Format::JSON, ".json"));
 
     REQUIRE(c.empty());
     REQUIRE(c.erase("nonExistentKey") == false);
@@ -186,7 +187,8 @@ TEST_CASE("container_retrieve_test", "[auxiliary]")
     using structure = openPMD::test::structure;
     Container<structure> c = Container<structure>();
     c.writable().IOHandler =
-        createIOHandler(".", Access::CREATE, Format::JSON, ".json");
+        std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+            createIOHandler(".", Access::CREATE, Format::JSON, ".json"));
 
     structure s;
     std::string text =
@@ -259,7 +261,8 @@ TEST_CASE("container_access_test", "[auxiliary]")
     using Widget = openPMD::test::Widget;
     Container<Widget> c = Container<Widget>();
     c.writable().IOHandler =
-        createIOHandler(".", Access::CREATE, Format::JSON, ".json");
+        std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+            createIOHandler(".", Access::CREATE, Format::JSON, ".json"));
 
     c["1firstWidget"] = Widget(0);
     REQUIRE(c.size() == 1);
