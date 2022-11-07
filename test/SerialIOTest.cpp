@@ -6224,23 +6224,21 @@ void chaotic_stream(std::string filename, bool variableBased)
     }
     series.close();
 
+    Series read(filename, Access::READ_ONLY);
+    size_t index = 0;
+    for (const auto &iteration : read.readIterations())
     {
-        Series series(filename, Access::READ_ONLY);
-        size_t index = 0;
-        for (const auto &iteration : series.readIterations())
+        if (weirdOrderWhenReading)
         {
-            if (weirdOrderWhenReading)
-            {
-                REQUIRE(iteration.iterationIndex == iterations[index]);
-            }
-            else
-            {
-                REQUIRE(iteration.iterationIndex == index);
-            }
-            ++index;
+            REQUIRE(iteration.iterationIndex == iterations[index]);
         }
-        REQUIRE(index == iterations.size());
+        else
+        {
+            REQUIRE(iteration.iterationIndex == index);
+        }
+        ++index;
     }
+    REQUIRE(index == iterations.size());
 }
 
 TEST_CASE("chaotic_stream", "[serial]")
