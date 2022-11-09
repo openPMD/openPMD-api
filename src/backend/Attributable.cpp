@@ -299,7 +299,10 @@ void Attributable::readAttributes(ReadMode mode)
                 // Some backends may report the wrong type when reading
                 if (vector.size() != 7)
                 {
-                    throw std::runtime_error(
+                    throw error::ReadError(
+                        error::AffectedObject::Attribute,
+                        error::Reason::UnexpectedContent,
+                        {},
                         "[Attributable] "
                         "Unexpected datatype for unitDimension.");
                 }
@@ -541,7 +544,11 @@ void Attributable::readAttributes(ReadMode mode)
                 internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::UNDEFINED:
-            throw std::runtime_error("Invalid Attribute datatype during read");
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Invalid Attribute datatype during read");
         }
     }
 

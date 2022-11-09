@@ -109,7 +109,18 @@ void Record::read()
     if (scalar())
     {
         /* using operator[] will incorrectly update parent */
-        this->at(RecordComponent::SCALAR).read();
+        auto &scalarComponent = this->at(RecordComponent::SCALAR);
+        try
+        {
+            scalarComponent.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read scalar record component and will skip it "
+                         "due to read error:\n"
+                      << err.what() << std::endl;
+            this->container().erase(RecordComponent::SCALAR);
+        }
     }
     else
     {
@@ -124,7 +135,17 @@ void Record::read()
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             rc.get().m_isConstant = true;
-            rc.read();
+            try
+            {
+                rc.read();
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read record component '" << component
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+                this->container().erase(component);
+            }
         }
 
         Parameter<Operation::LIST_DATASETS> dList;
@@ -141,7 +162,17 @@ void Record::read()
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;
-            rc.read();
+            try
+            {
+                rc.read();
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read record component '" << component
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+                this->container().erase(component);
+            }
         }
     }
 

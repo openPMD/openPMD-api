@@ -47,7 +47,10 @@ void MeshRecordComponent::read()
     else if (auto val = a.getOptional<std::vector<double> >(); val.has_value())
         setPosition(val.value());
     else
-        throw std::runtime_error(
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
             "Unexpected Attribute datatype for 'position'");
 
     readBase();

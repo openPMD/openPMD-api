@@ -18,7 +18,11 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "openPMD/ParticlePatches.hpp"
+#include "openPMD/Error.hpp"
+
+#include <iostream>
 
 namespace openPMD
 {
@@ -43,7 +47,17 @@ void ParticlePatches::read()
         PatchRecord &pr = (*this)[record_name];
         pOpen.path = record_name;
         IOHandler()->enqueue(IOTask(&pr, pOpen));
-        pr.read();
+        try
+        {
+            pr.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read patch record '" << record_name
+                      << "' due to read error and will skip it:" << err.what()
+                      << std::endl;
+            this->container().erase(record_name);
+        }
     }
 
     Parameter<Operation::LIST_DATASETS> dList;
@@ -55,9 +69,13 @@ void ParticlePatches::read()
     {
         if (!("numParticles" == component_name ||
               "numParticlesOffset" == component_name))
-            throw std::runtime_error(
-                "Unexpected record component" + component_name +
-                "in particlePatch");
+        {
+
+            std::cerr << "Unexpected record component" + component_name +
+                    "in particlePatch. Will ignore it."
+                      << std::endl;
+            continue;
+        }
 
         PatchRecord &pr = Container<PatchRecord>::operator[](component_name);
         PatchRecordComponent &prc = pr[RecordComponent::SCALAR];
@@ -68,7 +86,10 @@ void ParticlePatches::read()
         IOHandler()->flush(internal::defaultFlushParams);
 
         if (determineDatatype<uint64_t>() != *dOpen.dtype)
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
                 "Unexpected datatype for " + component_name);
 
         /* allow all attributes to be set */
@@ -77,7 +98,18 @@ void ParticlePatches::read()
         prc.written() = true;
 
         pr.dirty() = false;
-        prc.read();
+        try
+        {
+            prc.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr
+                << "Cannot read record component '" << component_name
+                << "' in particle patch and will skip it due to read error:\n"
+                << err.what() << std::endl;
+            Container<PatchRecord>::container().erase(component_name);
+        }
     }
 }
 } // namespace openPMD

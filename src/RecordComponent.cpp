@@ -297,7 +297,15 @@ namespace
             rc.makeConstant(attr.get<T>());
         }
 
-        static constexpr char const *errorMsg = "Unexpected constant datatype";
+        template <unsigned n, typename... Args>
+        static void call(Args &&...)
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Unexpected constant datatype");
+        }
     };
 } // namespace
 
@@ -335,7 +343,11 @@ void RecordComponent::readBase()
             oss << "Unexpected datatype (" << *aRead.dtype
                 << ") for attribute 'shape' (" << determineDatatype<uint64_t>()
                 << " aka uint64_t)";
-            throw std::runtime_error(oss.str());
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                oss.str());
         }
 
         written() = false;
@@ -350,7 +362,11 @@ void RecordComponent::readBase()
         val.has_value())
         setUnitSI(val.value());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'unitSI'");
 
     readAttributes(ReadMode::FullyReread);
 }

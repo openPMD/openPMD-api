@@ -907,6 +907,7 @@ if(openPMD_USE_INVASIVE_TESTS)
         message(WARNING "Invasive tests that redefine class signatures are "
                         "known to fail on Windows!")
     endif()
+    target_compile_definitions(openPMD PRIVATE openPMD_USE_INVASIVE_TESTS=1)
 endif()
 
 if(openPMD_BUILD_TESTING)

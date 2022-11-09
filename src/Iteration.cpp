@@ -430,7 +430,11 @@ void Iteration::read_impl(std::string const &groupPath)
              val.has_value())
         setDt(val.value());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'dt'");
 
     aRead.name = "time";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -446,7 +450,11 @@ void Iteration::read_impl(std::string const &groupPath)
              val.has_value())
         setTime(val.value());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'time'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'time'");
 
     aRead.name = "timeUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -455,7 +463,10 @@ void Iteration::read_impl(std::string const &groupPath)
         val.has_value())
         setTimeUnitSI(val.value());
     else
-        throw std::runtime_error(
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
             "Unexpected Attribute datatype for 'timeUnitSI'");
 
     /* Find the root point [Series] of this file,
@@ -489,62 +500,17 @@ void Iteration::read_impl(std::string const &groupPath)
 
     if (hasMeshes)
     {
-        pOpen.path = s.meshesPath();
-        IOHandler()->enqueue(IOTask(&meshes, pOpen));
-
-        meshes.readAttributes(ReadMode::FullyReread);
-
-        internal::EraseStaleEntries<decltype(meshes)> map{meshes};
-
-        /* obtain all non-scalar meshes */
-        IOHandler()->enqueue(IOTask(&meshes, pList));
-        IOHandler()->flush(internal::defaultFlushParams);
-
-        Parameter<Operation::LIST_ATTS> aList;
-        for (auto const &mesh_name : *pList.paths)
+        try
         {
-            Mesh &m = map[mesh_name];
-            pOpen.path = mesh_name;
-            aList.attributes->clear();
-            IOHandler()->enqueue(IOTask(&m, pOpen));
-            IOHandler()->enqueue(IOTask(&m, aList));
-            IOHandler()->flush(internal::defaultFlushParams);
-
-            auto att_begin = aList.attributes->begin();
-            auto att_end = aList.attributes->end();
-            auto value = std::find(att_begin, att_end, "value");
-            auto shape = std::find(att_begin, att_end, "shape");
-            if (value != att_end && shape != att_end)
-            {
-                MeshRecordComponent &mrc = m[MeshRecordComponent::SCALAR];
-                mrc.parent() = m.parent();
-                IOHandler()->enqueue(IOTask(&mrc, pOpen));
-                IOHandler()->flush(internal::defaultFlushParams);
-                mrc.get().m_isConstant = true;
-            }
-            m.read();
+            readMeshes(s.meshesPath());
         }
-
-        /* obtain all scalar meshes */
-        Parameter<Operation::LIST_DATASETS> dList;
-        IOHandler()->enqueue(IOTask(&meshes, dList));
-        IOHandler()->flush(internal::defaultFlushParams);
-
-        Parameter<Operation::OPEN_DATASET> dOpen;
-        for (auto const &mesh_name : *dList.datasets)
+        catch (error::ReadError const &err)
         {
-            Mesh &m = map[mesh_name];
-            dOpen.name = mesh_name;
-            IOHandler()->enqueue(IOTask(&m, dOpen));
-            IOHandler()->flush(internal::defaultFlushParams);
-            MeshRecordComponent &mrc = m[MeshRecordComponent::SCALAR];
-            mrc.parent() = m.parent();
-            IOHandler()->enqueue(IOTask(&mrc, dOpen));
-            IOHandler()->flush(internal::defaultFlushParams);
-            mrc.written() = false;
-            mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-            mrc.written() = true;
-            m.read();
+            std::cerr << "Cannot read meshes in iteration " << groupPath
+                      << " and will skip them due to read error:\n"
+                      << err.what() << std::endl;
+            meshes = {};
+            meshes.dirty() = false;
         }
     }
     else
@@ -554,24 +520,17 @@ void Iteration::read_impl(std::string const &groupPath)
 
     if (hasParticles)
     {
-        pOpen.path = s.particlesPath();
-        IOHandler()->enqueue(IOTask(&particles, pOpen));
-
-        particles.readAttributes(ReadMode::FullyReread);
-
-        /* obtain all particle species */
-        pList.paths->clear();
-        IOHandler()->enqueue(IOTask(&particles, pList));
-        IOHandler()->flush(internal::defaultFlushParams);
-
-        internal::EraseStaleEntries<decltype(particles)> map{particles};
-        for (auto const &species_name : *pList.paths)
+        try
         {
-            ParticleSpecies &p = map[species_name];
-            pOpen.path = species_name;
-            IOHandler()->enqueue(IOTask(&p, pOpen));
-            IOHandler()->flush(internal::defaultFlushParams);
-            p.read();
+            readParticles(s.particlesPath());
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read particles in iteration " << groupPath
+                      << " and will skip them due to read error:\n"
+                      << err.what() << std::endl;
+            particles = {};
+            particles.dirty() = false;
         }
     }
     else
@@ -580,6 +539,138 @@ void Iteration::read_impl(std::string const &groupPath)
     }
 
     readAttributes(ReadMode::FullyReread);
+#ifdef openPMD_USE_INVASIVE_TESTS
+    if (containsAttribute("__openPMD_internal_fail"))
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::Other,
+            {},
+            "Deliberately failing this iteration for testing purposes");
+    }
+#endif
+}
+
+void Iteration::readMeshes(std::string const &meshesPath)
+{
+    Parameter<Operation::OPEN_PATH> pOpen;
+    Parameter<Operation::LIST_PATHS> pList;
+
+    pOpen.path = meshesPath;
+    IOHandler()->enqueue(IOTask(&meshes, pOpen));
+
+    meshes.readAttributes(ReadMode::FullyReread);
+
+    internal::EraseStaleEntries<decltype(meshes)> map{meshes};
+
+    /* obtain all non-scalar meshes */
+    IOHandler()->enqueue(IOTask(&meshes, pList));
+    IOHandler()->flush(internal::defaultFlushParams);
+
+    Parameter<Operation::LIST_ATTS> aList;
+    for (auto const &mesh_name : *pList.paths)
+    {
+        Mesh &m = map[mesh_name];
+        pOpen.path = mesh_name;
+        aList.attributes->clear();
+        IOHandler()->enqueue(IOTask(&m, pOpen));
+        IOHandler()->enqueue(IOTask(&m, aList));
+        IOHandler()->flush(internal::defaultFlushParams);
+
+        auto att_begin = aList.attributes->begin();
+        auto att_end = aList.attributes->end();
+        auto value = std::find(att_begin, att_end, "value");
+        auto shape = std::find(att_begin, att_end, "shape");
+        if (value != att_end && shape != att_end)
+        {
+            MeshRecordComponent &mrc = m[MeshRecordComponent::SCALAR];
+            mrc.parent() = m.parent();
+            IOHandler()->enqueue(IOTask(&mrc, pOpen));
+            IOHandler()->flush(internal::defaultFlushParams);
+            mrc.get().m_isConstant = true;
+        }
+        m.read();
+        try
+        {
+            m.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read mesh with name '" << mesh_name
+                      << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+            map.forget(mesh_name);
+        }
+    }
+
+    /* obtain all scalar meshes */
+    Parameter<Operation::LIST_DATASETS> dList;
+    IOHandler()->enqueue(IOTask(&meshes, dList));
+    IOHandler()->flush(internal::defaultFlushParams);
+
+    Parameter<Operation::OPEN_DATASET> dOpen;
+    for (auto const &mesh_name : *dList.datasets)
+    {
+        Mesh &m = map[mesh_name];
+        dOpen.name = mesh_name;
+        IOHandler()->enqueue(IOTask(&m, dOpen));
+        IOHandler()->flush(internal::defaultFlushParams);
+        MeshRecordComponent &mrc = m[MeshRecordComponent::SCALAR];
+        mrc.parent() = m.parent();
+        IOHandler()->enqueue(IOTask(&mrc, dOpen));
+        IOHandler()->flush(internal::defaultFlushParams);
+        mrc.written() = false;
+        mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+        mrc.written() = true;
+        try
+        {
+            m.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read mesh with name '" << mesh_name
+                      << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+            map.forget(mesh_name);
+        }
+    }
+}
+
+void Iteration::readParticles(std::string const &particlesPath)
+{
+    Parameter<Operation::OPEN_PATH> pOpen;
+    Parameter<Operation::LIST_PATHS> pList;
+
+    pOpen.path = particlesPath;
+    IOHandler()->enqueue(IOTask(&particles, pOpen));
+
+    particles.readAttributes(ReadMode::FullyReread);
+
+    /* obtain all particle species */
+    pList.paths->clear();
+    IOHandler()->enqueue(IOTask(&particles, pList));
+    IOHandler()->flush(internal::defaultFlushParams);
+
+    internal::EraseStaleEntries<decltype(particles)> map{particles};
+    for (auto const &species_name : *pList.paths)
+    {
+        ParticleSpecies &p = map[species_name];
+        pOpen.path = species_name;
+        IOHandler()->enqueue(IOTask(&p, pOpen));
+        IOHandler()->flush(internal::defaultFlushParams);
+        try
+        {
+            p.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read particle species with name '"
+                      << species_name
+                      << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+            map.forget(species_name);
+        }
+    }
 }
 
 auto Iteration::beginStep(bool reread) -> BeginStepStatus
