@@ -1035,14 +1035,14 @@ void Series::readFileBased()
      * Return true if parsing was successful
      */
     auto readIterationEagerly =
-        [](Iteration &iteration) -> std::optional<std::string> {
+        [](Iteration &iteration) -> std::optional<error::ReadError> {
         try
         {
             iteration.runDeferredParseAccess();
         }
         catch (error::ReadError const &err)
         {
-            return err.what();
+            return err;
         }
         Parameter<Operation::CLOSE_FILE> fClose;
         iteration.IOHandler()->enqueue(IOTask(&iteration, fClose));
@@ -1060,14 +1060,19 @@ void Series::readFileBased()
         }
         // open the first iteration, just to parse Series attributes
         bool atLeastOneIterationSuccessful = false;
+        std::optional<error::ReadError> forwardFirstError;
         for (auto &pair : series.iterations)
         {
             if (auto error = readIterationEagerly(pair.second); error)
             {
                 std::cerr << "Cannot read iteration '" << pair.first
                           << "' and will skip it due to read error:\n"
-                          << *error << std::endl;
+                          << error->what() << std::endl;
                 unparseableIterations.push_back(pair.first);
+                if (!forwardFirstError.has_value())
+                {
+                    forwardFirstError = std::move(error);
+                }
             }
             else
             {
@@ -1077,27 +1082,49 @@ void Series::readFileBased()
         }
         if (!atLeastOneIterationSuccessful)
         {
-            throw error::ReadError(
-                error::AffectedObject::Other,
-                error::Reason::Other,
-                {},
-                "Not a single iteration can be successfully parsed (see above "
-                "errors). Need to access at least one iteration even in "
-                "deferred parsing mode in order to read global Series "
-                "attributes.");
+            if (forwardFirstError.has_value())
+            {
+                auto &firstError = forwardFirstError.value();
+                firstError.description.append(
+                    "\n[Note] Not a single iteration can be successfully "
+                    "parsed (see above "
+                    "errors). Returning the first observed error, for better "
+                    "recoverability in user code. Need to access at least one "
+                    "iteration even in "
+                    "deferred parsing mode in order to read global Series "
+                    "attributes.");
+                throw firstError;
+            }
+            else
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Other,
+                    error::Reason::Other,
+                    {},
+                    "Not a single iteration can be successfully parsed (see "
+                    "above "
+                    "errors). Need to access at least one iteration even in "
+                    "deferred parsing mode in order to read global Series "
+                    "attributes.");
+            }
         }
     }
     else
     {
         bool atLeastOneIterationSuccessful = false;
+        std::optional<error::ReadError> forwardFirstError;
         for (auto &iteration : series.iterations)
         {
             if (auto error = readIterationEagerly(iteration.second); error)
             {
                 std::cerr << "Cannot read iteration '" << iteration.first
                           << "' and will skip it due to read error:\n"
-                          << *error << std::endl;
+                          << error->what() << std::endl;
                 unparseableIterations.push_back(iteration.first);
+                if (!forwardFirstError.has_value())
+                {
+                    forwardFirstError = std::move(error);
+                }
             }
             else
             {
@@ -1106,12 +1133,26 @@ void Series::readFileBased()
         }
         if (!atLeastOneIterationSuccessful)
         {
-            throw error::ReadError(
-                error::AffectedObject::Other,
-                error::Reason::Other,
-                {},
-                "Not a single iteration can be successfully parsed (see above "
-                "warnings).");
+            if (forwardFirstError.has_value())
+            {
+                auto &firstError = forwardFirstError.value();
+                firstError.description.append(
+                    "\n[Note] Not a single iteration can be successfully "
+                    "parsed (see above "
+                    "errors). Returning the first observed error, for better "
+                    "recoverability in user code.");
+                throw firstError;
+            }
+            else
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Other,
+                    error::Reason::Other,
+                    {},
+                    "Not a single iteration can be successfully parsed (see "
+                    "above "
+                    "warnings).");
+            }
         }
     }
 

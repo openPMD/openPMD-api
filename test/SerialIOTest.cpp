@@ -3066,7 +3066,8 @@ TEST_CASE("git_hdf5_sample_fileBased_read_test", "[serial][hdf5]")
     }
     catch (error::ReadError &e)
     {
-        if (e.reason == error::Reason::Inaccessible)
+        if (e.reason == error::Reason::Inaccessible &&
+            e.affectedObject == error::AffectedObject::File)
         {
             std::cerr << "git sample not accessible. (" << e.what() << ")\n";
             return;
