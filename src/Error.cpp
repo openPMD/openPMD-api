@@ -17,6 +17,13 @@ namespace error
         , backend{std::move(backend_in)}
     {}
 
+    void
+    throwOperationUnsupportedInBackend(std::string backend, std::string what)
+    {
+        throw OperationUnsupportedInBackend(
+            std::move(backend), std::move(what));
+    }
+
     WrongAPIUsage::WrongAPIUsage(std::string what)
         : Error("Wrong API usage: " + what)
     {}
@@ -45,6 +52,12 @@ namespace error
               concatVector(errorLocation_in) + "': " + std::move(what))
         , errorLocation(std::move(errorLocation_in))
     {}
+
+    void throwBackendConfigSchema(
+        std::vector<std::string> jsonPath, std::string what)
+    {
+        throw BackendConfigSchema(std::move(jsonPath), std::move(what));
+    }
 
     Internal::Internal(std::string const &what)
         : Error(
@@ -82,6 +95,8 @@ namespace error
                 return "CannotRead";
             case Re::UnexpectedContent:
                 return "UnexpectedContent";
+            case Re::Inaccessible:
+                return "Inaccessible";
             case Re::Other:
                 return "Other";
             }
@@ -105,6 +120,16 @@ namespace error
         , backend(std::move(backend_in))
         , description(std::move(description_in))
     {}
+
+    void throwReadError(
+        AffectedObject affectedObject,
+        Reason reason,
+        std::optional<std::string> backend,
+        std::string description)
+    {
+        throw ReadError(
+            affectedObject, reason, std::move(backend), std::move(description));
+    }
 
     ParseError::ParseError(std::string what) : Error("Parse Error: " + what)
     {}

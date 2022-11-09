@@ -1,10 +1,16 @@
 #pragma once
 
+#include "openPMD/ThrowError.hpp"
+
 #include <exception>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+
+#if defined(OPENPMD_ADIOS1_IMPLEMENTATION)
+static_assert(false, "ADIOS1 implementation must not include Error.hpp");
+#endif
 
 namespace openPMD
 {
@@ -80,22 +86,6 @@ namespace error
     {
     public:
         Internal(std::string const &what);
-    };
-
-    enum class AffectedObject
-    {
-        Attribute,
-        Dataset,
-        Group,
-        Other
-    };
-
-    enum class Reason
-    {
-        NotFound,
-        CannotRead,
-        UnexpectedContent,
-        Other
     };
 
     /*

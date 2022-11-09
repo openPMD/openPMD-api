@@ -1,4 +1,5 @@
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/openPMD.hpp"
 
