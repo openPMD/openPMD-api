@@ -660,7 +660,8 @@ auto Iteration::beginStep(
             IOHandl->m_seriesStatus = internal::SeriesStatus::Parsing;
             try
             {
-                res.iterationsInOpenedStep = series.readGorVBased(false);
+                res.iterationsInOpenedStep = series.readGorVBased(
+                    /* do_always_throw_errors = */ true, /* init = */ false);
             }
             catch (...)
             {

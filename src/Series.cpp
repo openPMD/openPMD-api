@@ -587,7 +587,8 @@ Given file pattern: ')END"
             if (input->iterationEncoding == IterationEncoding::fileBased)
                 readFileBased();
             else
-                readGorVBased();
+                readGorVBased(
+                    /* do_always_throw_errors = */ false, /* init = */ true);
 
             if (series.iterations.empty())
             {
@@ -989,7 +990,10 @@ void Series::readFileBased()
     fOpen.encoding = iterationEncoding();
 
     if (!auxiliary::directory_exists(IOHandler()->directory))
-        throw no_such_file_error(
+        throw error::ReadError(
+            error::AffectedObject::Other,
+            error::Reason::Inaccessible,
+            {},
             "Supplied directory is not valid: " + IOHandler()->directory);
 
     auto isPartOfSeries = matcher(
@@ -1017,19 +1021,36 @@ void Series::readFileBased()
          * parameter modification. Backend access type stays unchanged for the
          * lifetime of a Series. */
         if (IOHandler()->m_backendAccess == Access::READ_ONLY)
-            throw no_such_file_error("No matching iterations found: " + name());
+            throw error::ReadError(
+                error::AffectedObject::Other,
+                error::Reason::Inaccessible,
+                {},
+                "No matching iterations found: " + name());
         else
             std::cerr << "No matching iterations found: " << name()
                       << std::endl;
     }
 
-    auto readIterationEagerly = [](Iteration &iteration) {
-        iteration.runDeferredParseAccess();
+    /*
+     * Return true if parsing was successful
+     */
+    auto readIterationEagerly =
+        [](Iteration &iteration) -> std::optional<std::string> {
+        try
+        {
+            iteration.runDeferredParseAccess();
+        }
+        catch (error::ReadError const &err)
+        {
+            return err.what();
+        }
         Parameter<Operation::CLOSE_FILE> fClose;
         iteration.IOHandler()->enqueue(IOTask(&iteration, fClose));
         iteration.IOHandler()->flush(internal::defaultFlushParams);
         iteration.get().m_closed = internal::CloseStatus::ClosedTemporarily;
+        return {};
     };
+    std::vector<decltype(Series::iterations)::key_type> unparseableIterations;
     if (series.m_parseLazily)
     {
         for (auto &iteration : series.iterations)
@@ -1037,18 +1058,66 @@ void Series::readFileBased()
             iteration.second.get().m_closed =
                 internal::CloseStatus::ParseAccessDeferred;
         }
-        // open the last iteration, just to parse Series attributes
-        auto getLastIteration = series.iterations.end();
-        getLastIteration--;
-        auto &lastIteration = getLastIteration->second;
-        readIterationEagerly(lastIteration);
+        // open the first iteration, just to parse Series attributes
+        bool atLeastOneIterationSuccessful = false;
+        for (auto &pair : series.iterations)
+        {
+            if (auto error = readIterationEagerly(pair.second); error)
+            {
+                std::cerr << "Cannot read iteration '" << pair.first
+                          << "' and will skip it due to read error:\n"
+                          << *error << std::endl;
+                unparseableIterations.push_back(pair.first);
+            }
+            else
+            {
+                atLeastOneIterationSuccessful = true;
+                break;
+            }
+        }
+        if (!atLeastOneIterationSuccessful)
+        {
+            throw error::ReadError(
+                error::AffectedObject::Other,
+                error::Reason::Other,
+                {},
+                "Not a single iteration can be successfully parsed (see above "
+                "errors). Need to access at least one iteration even in "
+                "deferred parsing mode in order to read global Series "
+                "attributes.");
+        }
     }
     else
     {
+        bool atLeastOneIterationSuccessful = false;
         for (auto &iteration : series.iterations)
         {
-            readIterationEagerly(iteration.second);
+            if (auto error = readIterationEagerly(iteration.second); error)
+            {
+                std::cerr << "Cannot read iteration '" << iteration.first
+                          << "' and will skip it due to read error:\n"
+                          << *error << std::endl;
+                unparseableIterations.push_back(iteration.first);
+            }
+            else
+            {
+                atLeastOneIterationSuccessful = true;
+            }
         }
+        if (!atLeastOneIterationSuccessful)
+        {
+            throw error::ReadError(
+                error::AffectedObject::Other,
+                error::Reason::Other,
+                {},
+                "Not a single iteration can be successfully parsed (see above "
+                "warnings).");
+        }
+    }
+
+    for (auto index : unparseableIterations)
+    {
+        series.iterations.container().erase(index);
     }
 
     if (padding > 0)
@@ -1102,14 +1171,21 @@ void Series::readOneIterationFileBased(std::string const &filePath)
              * Unlike if the file were group-based, this one doesn't work
              * at all since the group paths are different.
              */
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Other,
+                error::Reason::Other,
+                {},
                 "Series constructor called with iteration "
                 "regex '%T' suggests loading a "
                 "time series with fileBased iteration "
                 "encoding. Loaded file is variableBased.");
         }
         else
-            throw std::runtime_error("Unknown iterationEncoding: " + encoding);
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Unknown iterationEncoding: " + encoding);
         setAttribute("iterationEncoding", encoding);
     }
     else
@@ -1127,7 +1203,10 @@ void Series::readOneIterationFileBased(std::string const &filePath)
         written() = true;
     }
     else
-        throw std::runtime_error(
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
             "Unexpected Attribute datatype for 'iterationFormat'");
 
     Parameter<Operation::OPEN_PATH> pOpen;
@@ -1142,7 +1221,32 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     series.iterations.readAttributes(ReadMode::OverrideExisting);
 }
 
-auto Series::readGorVBased(bool do_init)
+namespace
+{
+    /*
+     * This function is efficient if subtract is empty and inefficient
+     * otherwise. Use only where an empty subtract vector is the
+     * common case.
+     */
+    template <typename T>
+    void
+    vectorDifference(std::vector<T> &baseVector, std::vector<T> const &subtract)
+    {
+        for (auto const &elem : subtract)
+        {
+            for (auto it = baseVector.begin(); it != baseVector.end(); ++it)
+            {
+                if (*it == elem)
+                {
+                    baseVector.erase(it);
+                    break;
+                }
+            }
+        }
+    }
+} // namespace
+
+auto Series::readGorVBased(bool do_always_throw_errors, bool do_init)
     -> std::optional<std::deque<IterationIndex_t>>
 {
     auto &series = get();
@@ -1184,12 +1288,18 @@ auto Series::readGorVBased(bool do_init)
                 series.m_overrideFilebasedFilename = series.m_name;
             }
             else
-                throw std::runtime_error(
+                throw error::ReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::UnexpectedContent,
+                    {},
                     "Unknown iterationEncoding: " + encoding);
             setAttribute("iterationEncoding", encoding);
         }
         else
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
                 "Unexpected Attribute datatype for 'iterationEncoding'");
 
         aRead.name = "iterationFormat";
@@ -1202,7 +1312,10 @@ auto Series::readGorVBased(bool do_init)
             written() = true;
         }
         else
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
                 "Unexpected Attribute datatype for 'iterationFormat'");
     }
 
@@ -1211,30 +1324,19 @@ auto Series::readGorVBased(bool do_init)
     if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
-        throw std::runtime_error("Unknown openPMD version - " + version);
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unknown openPMD version - " + version);
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
     readAttributes(ReadMode::IgnoreExisting);
 
-    auto withRWAccess = [this](auto &&functor) {
-        auto oldStatus = IOHandler()->m_seriesStatus;
-        IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
-        try
-        {
-            std::forward<decltype(functor)>(functor)();
-        }
-        catch (...)
-        {
-            IOHandler()->m_seriesStatus = oldStatus;
-            throw;
-        }
-        IOHandler()->m_seriesStatus = oldStatus;
-    };
-
     /*
      * 'snapshot' changes over steps, so reread that.
      */
-    withRWAccess([&series]() {
+    internal::withRWAccess(IOHandler()->m_seriesStatus, [&series]() {
         series.iterations.readAttributes(ReadMode::OverrideExisting);
     });
 
@@ -1243,11 +1345,15 @@ auto Series::readGorVBased(bool do_init)
     IOHandler()->enqueue(IOTask(&series.iterations, pList));
     IOHandler()->flush(internal::defaultFlushParams);
 
-    auto readSingleIteration = [&series, &pOpen, this, withRWAccess](
-                                   IterationIndex_t index,
-                                   std::string path,
-                                   bool guardAgainstRereading,
-                                   bool beginStep) {
+    /*
+     * Return error if one is caught.
+     */
+    auto readSingleIteration =
+        [&series, &pOpen, this](
+            IterationIndex_t index,
+            std::string path,
+            bool guardAgainstRereading,
+            bool beginStep) -> std::optional<error::ReadError> {
         if (series.iterations.contains(index))
         {
             // maybe re-read
@@ -1256,13 +1362,16 @@ auto Series::readGorVBased(bool do_init)
             // reparsing is not needed
             if (guardAgainstRereading && i.written())
             {
-                return;
+                return {};
             }
             if (i.get().m_closed != internal::CloseStatus::ParseAccessDeferred)
             {
                 pOpen.path = path;
                 IOHandler()->enqueue(IOTask(&i, pOpen));
-                withRWAccess([&i, &path]() { i.reread(path); });
+                // @todo catch stuff from here too
+                internal::withRWAccess(
+                    IOHandler()->m_seriesStatus,
+                    [&i, &path]() { i.reread(path); });
             }
         }
         else
@@ -1272,7 +1381,18 @@ auto Series::readGorVBased(bool do_init)
             i.deferParseAccess({path, index, false, "", beginStep});
             if (!series.m_parseLazily)
             {
-                i.runDeferredParseAccess();
+                try
+                {
+                    i.runDeferredParseAccess();
+                }
+                catch (error::ReadError const &err)
+                {
+                    std::cerr << "Cannot read iteration '" << index
+                              << "' and will skip it due to read error:\n"
+                              << err.what() << std::endl;
+                    series.iterations.container().erase(index);
+                    return {err};
+                }
                 i.get().m_closed = internal::CloseStatus::Open;
             }
             else
@@ -1280,6 +1400,7 @@ auto Series::readGorVBased(bool do_init)
                 i.get().m_closed = internal::CloseStatus::ParseAccessDeferred;
             }
         }
+        return std::nullopt;
     };
 
     /*
@@ -1294,20 +1415,31 @@ auto Series::readGorVBased(bool do_init)
      * Sic! This happens when a file-based Series is opened in group-based mode.
      */
     case IterationEncoding::fileBased: {
+        std::vector<uint64_t> unreadableIterations;
         for (auto const &it : *pList.paths)
         {
             IterationIndex_t index = std::stoull(it);
-            /*
-             * For now: parse a Series in RandomAccess mode.
-             * (beginStep = false)
-             * A streaming read mode might come in a future API addition.
-             */
-            withRWAccess(
-                [&]() { readSingleIteration(index, it, true, false); });
+            if (auto err = internal::withRWAccess(
+                    IOHandler()->m_seriesStatus,
+                    [&]() {
+                        return readSingleIteration(index, it, true, false);
+                    });
+                err)
+            {
+                std::cerr << "Cannot read iteration " << index
+                          << " and will skip it due to read error:\n"
+                          << err.value().what() << std::endl;
+                if (do_always_throw_errors)
+                {
+                    throw *err;
+                }
+                unreadableIterations.push_back(index);
+            }
         }
         if (currentSteps.has_value())
         {
-            auto const &vec = currentSteps.value();
+            auto &vec = currentSteps.value();
+            vectorDifference(vec, unreadableIterations);
             return std::deque<IterationIndex_t>{vec.begin(), vec.end()};
         }
         else
@@ -1327,7 +1459,21 @@ auto Series::readGorVBased(bool do_init)
              * Variable-based iteration encoding relies on steps, so parsing
              * must happen after opening the first step.
              */
-            withRWAccess([&]() { readSingleIteration(it, "", false, true); });
+            if (auto err = internal::withRWAccess(
+                    IOHandler()->m_seriesStatus,
+                    [&readSingleIteration, it]() {
+                        return readSingleIteration(it, "", false, true);
+                    });
+                err)
+            {
+                /*
+                 * Cannot recover from errors in this place.
+                 * If there is an error in the first iteration, the Series
+                 * cannot be read in variable-based encoding. The read API will
+                 * try to skip other iterations that have errors.
+                 */
+                throw *err;
+            }
         }
         return res;
     }
@@ -1347,7 +1493,11 @@ void Series::readBase()
         val.has_value())
         setOpenPMD(val.value());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'openPMD'");
 
     aRead.name = "openPMDextension";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -1356,7 +1506,10 @@ void Series::readBase()
         val.has_value())
         setOpenPMDextension(val.value());
     else
-        throw std::runtime_error(
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
             "Unexpected Attribute datatype for 'openPMDextension'");
 
     aRead.name = "basePath";
@@ -1366,7 +1519,10 @@ void Series::readBase()
         val.has_value())
         setAttribute("basePath", val.value());
     else
-        throw std::runtime_error(
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
             "Unexpected Attribute datatype for 'basePath'");
 
     Parameter<Operation::LIST_ATTS> aList;
@@ -1392,7 +1548,10 @@ void Series::readBase()
                 it.second.meshes.written() = true;
         }
         else
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
                 "Unexpected Attribute datatype for 'meshesPath'");
     }
 
@@ -1417,7 +1576,10 @@ void Series::readBase()
                 it.second.particles.written() = true;
         }
         else
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
                 "Unexpected Attribute datatype for 'particlesPath'");
     }
 }
@@ -2101,7 +2263,11 @@ auto Series::currentSnapshot() const
             std::stringstream s;
             s << "Unexpected datatype for '/data/snapshot': " << attribute.dtype
               << std::endl;
-            throw std::runtime_error(s.str());
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                s.str());
         }
         }
     }

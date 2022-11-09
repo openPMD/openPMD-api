@@ -141,6 +141,7 @@ class Container : public Attributable
     friend class Series;
     template <typename>
     friend class internal::EraseStaleEntries;
+    friend class SeriesIterator;
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;

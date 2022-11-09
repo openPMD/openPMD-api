@@ -611,9 +611,15 @@ OPENPMD_private
      * Iterations/Records/Record Components etc.
      * If series.iterations contains the attribute `snapshot`, returns its
      * value.
+     * If do_always_throw_errors is false, this method will try to handle errors
+     * and turn them into a warning (useful when parsing a Series, since parsing
+     * should succeed without issue).
+     * If true, the error will always be re-thrown (useful when using
+     * ReadIterations since those methods should be aware when the current step
+     * is broken).
      */
     std::optional<std::deque<IterationIndex_t> >
-    readGorVBased(bool init = true);
+    readGorVBased(bool do_always_throw_errors, bool init);
     void readBase();
     std::string iterationFilename(IterationIndex_t i);
 

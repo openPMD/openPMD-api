@@ -34,6 +34,7 @@
 #include <queue>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 namespace openPMD
 {
@@ -143,6 +144,48 @@ namespace internal
                 ///< Special state only active while internal routines are
                 ///< running.
     };
+
+    // @todo put this somewhere else
+    template <typename Functor, typename... Args>
+    auto withRWAccess(SeriesStatus &status, Functor &&functor, Args &&...args)
+        -> decltype(std::forward<Functor>(functor)(std::forward<Args>(args)...))
+    {
+        using Res = decltype(std::forward<Functor>(functor)(
+            std::forward<Args>(args)...));
+        if constexpr (std::is_void_v<Res>)
+        {
+            auto oldStatus = status;
+            status = internal::SeriesStatus::Parsing;
+            try
+            {
+                std::forward<decltype(functor)>(functor)();
+            }
+            catch (...)
+            {
+                status = oldStatus;
+                throw;
+            }
+            status = oldStatus;
+            return;
+        }
+        else
+        {
+            auto oldStatus = status;
+            status = internal::SeriesStatus::Parsing;
+            Res res;
+            try
+            {
+                res = std::forward<decltype(functor)>(functor)();
+            }
+            catch (...)
+            {
+                status = oldStatus;
+                throw;
+            }
+            status = oldStatus;
+            return res;
+        }
+    }
 } // namespace internal
 
 /** Interface for communicating between logical and physically persistent data.
