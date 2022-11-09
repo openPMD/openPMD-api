@@ -283,10 +283,14 @@ TEST_CASE("git_hdf5_sample_content_test", "[parallel][hdf5]")
                 REQUIRE(raw_ptr[i] == constant_value);
         }
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 }
 
@@ -619,10 +623,14 @@ TEST_CASE("hzdr_adios_sample_content_test", "[parallel][adios1]")
                     REQUIRE(raw_ptr[j * 3 + k] == actual[rank][j][k]);
         }
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 }
 #endif
