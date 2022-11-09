@@ -657,9 +657,11 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openFile(
     Writable *writable, Parameter<Operation::OPEN_FILE> const &parameters)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
-        throw no_such_file_error(
-            "[ADIOS1] Supplied directory is not valid: " +
-            m_handler->directory);
+        error::throwReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "ADIOS1",
+            "Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;
     if (!auxiliary::ends_with(name, ".bp"))

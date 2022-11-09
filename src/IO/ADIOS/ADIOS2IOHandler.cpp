@@ -685,9 +685,11 @@ void ADIOS2IOHandlerImpl::openFile(
 {
     if (!auxiliary::directory_exists(m_handler->directory))
     {
-        throw no_such_file_error(
-            "[ADIOS2] Supplied directory is not valid: " +
-            m_handler->directory);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "ADIOS2",
+            "Supplied directory is not valid: " + m_handler->directory);
     }
 
     std::string name = parameters.name + fileSuffix();

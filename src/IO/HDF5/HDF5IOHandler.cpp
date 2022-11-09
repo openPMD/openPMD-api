@@ -774,8 +774,11 @@ void HDF5IOHandlerImpl::openFile(
     Writable *writable, Parameter<Operation::OPEN_FILE> const &parameters)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
-        throw no_such_file_error(
-            "[HDF5] Supplied directory is not valid: " + m_handler->directory);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "HDF5",
+            "Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;
     if (!auxiliary::ends_with(name, ".h5"))
@@ -809,7 +812,11 @@ void HDF5IOHandlerImpl::openFile(
     hid_t file_id;
     file_id = H5Fopen(name.c_str(), flags, m_fileAccessProperty);
     if (file_id < 0)
-        throw no_such_file_error("[HDF5] Failed to open HDF5 file " + name);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "HDF5",
+            "Failed to open HDF5 file " + name);
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared<HDF5FilePosition>("/");

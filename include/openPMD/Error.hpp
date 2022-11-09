@@ -116,4 +116,10 @@ namespace error
         ParseError(std::string what);
     };
 } // namespace error
+
+/**
+ * @brief Backward-compatibility alias for no_such_file_error.
+ *
+ */
+using no_such_file_error = error::ReadError;
 } // namespace openPMD

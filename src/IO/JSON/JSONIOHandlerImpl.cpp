@@ -530,8 +530,11 @@ void JSONIOHandlerImpl::openFile(
 {
     if (!auxiliary::directory_exists(m_handler->directory))
     {
-        throw no_such_file_error(
-            "[JSON] Supplied directory is not valid: " + m_handler->directory);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "JSON",
+            "Supplied directory is not valid: " + m_handler->directory);
     }
 
     std::string name = parameter.name;

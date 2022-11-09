@@ -40,6 +40,7 @@ enum class AffectedObject
 {
     Attribute,
     Dataset,
+    File,
     Group,
     Other
 };

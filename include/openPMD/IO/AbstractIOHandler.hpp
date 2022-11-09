@@ -38,15 +38,6 @@
 
 namespace openPMD
 {
-class no_such_file_error : public std::runtime_error
-{
-public:
-    no_such_file_error(std::string const &what_arg)
-        : std::runtime_error(what_arg)
-    {}
-    virtual ~no_such_file_error()
-    {}
-};
 
 class unsupported_data_error : public std::runtime_error
 {

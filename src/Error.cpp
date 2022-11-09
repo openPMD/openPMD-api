@@ -77,6 +77,8 @@ namespace error
                 return "Attribute";
             case AO::Dataset:
                 return "Dataset";
+            case AO::File:
+                return "File";
             case AO::Group:
                 return "Group";
             case AO::Other:

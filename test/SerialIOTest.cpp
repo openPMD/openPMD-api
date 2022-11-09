@@ -3139,7 +3139,9 @@ TEST_CASE("git_hdf5_sample_fileBased_read_test", "[serial][hdf5]")
             auxiliary::remove_file(file);
         }
     }
-    catch (error::ReadError &e)
+    // use no_such_file_error here to check that the backward-compatibility
+    // alias works
+    catch (no_such_file_error &e)
     {
         if (e.reason == error::Reason::Inaccessible)
         {
@@ -3147,12 +3149,6 @@ TEST_CASE("git_hdf5_sample_fileBased_read_test", "[serial][hdf5]")
             return;
         }
         throw;
-    }
-    // @todo maybe unify error types
-    catch (no_such_file_error &e)
-    {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
     }
 }
 
