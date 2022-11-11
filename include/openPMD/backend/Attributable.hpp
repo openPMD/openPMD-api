@@ -90,21 +90,37 @@ namespace internal
         A_MAP m_attributes;
     };
 
+    enum class SetAttributeMode : char
+    {
+        WhileReadingAttributes,
+        FromPublicAPICall
+    };
+
     /** Verify values of attributes in the frontend
      *
      * verify string attributes are not empty (backend restriction, e.g., HDF5)
      */
     template <typename T>
-    inline void attr_value_check(std::string const /* key */, T /* value */)
+    inline void attr_value_check(
+        std::string const /* key */, T /* value */, SetAttributeMode)
     {}
 
     template <>
-    inline void attr_value_check(std::string const key, std::string const value)
+    inline void attr_value_check(
+        std::string const key, std::string const value, SetAttributeMode mode)
     {
-        if (value.empty())
-            throw std::runtime_error(
-                "[setAttribute] Value for string attribute '" + key +
-                "' must not be empty!");
+        switch (mode)
+        {
+        case SetAttributeMode::FromPublicAPICall:
+            if (value.empty())
+                throw std::runtime_error(
+                    "[setAttribute] Value for string attribute '" + key +
+                    "' must not be empty!");
+            break;
+        case SetAttributeMode::WhileReadingAttributes:
+            // no checks while reading
+            break;
+        }
     }
 
     template <typename>
@@ -222,8 +238,13 @@ public:
      * of parents. This method will walk up the parent list until it reaches
      * an object that has no parent, which is the Series object, and flush()-es
      * it.
+     *
+     * @param backendConfig Further backend-specific instructions on how to
+     *                      implement this flush call.
+     *                      Must be provided in-line, configuration is not read
+     *                      from files.
      */
-    void seriesFlush();
+    void seriesFlush(std::string backendConfig = "{}");
 
     /** String serialization to describe an Attributable
      *
@@ -273,9 +294,16 @@ OPENPMD_protected
     Iteration &containingIteration();
     /** @} */
 
-    void seriesFlush(FlushLevel);
+    void seriesFlush(internal::FlushParams);
 
-    void flushAttributes();
+    void flushAttributes(internal::FlushParams const &);
+
+    template <typename T>
+    bool setAttributeImpl(
+        std::string const &key, T value, internal::SetAttributeMode);
+    bool setAttributeImpl(
+        std::string const &key, char const value[], internal::SetAttributeMode);
+
     enum ReadMode
     {
         /**
@@ -410,14 +438,34 @@ private:
     virtual void linkHierarchy(Writable &w);
 }; // Attributable
 
-// TODO explicitly instantiate Attributable::setAttribute for all T in Datatype
 template <typename T>
 inline bool Attributable::setAttribute(std::string const &key, T value)
 {
-    internal::attr_value_check(key, value);
+    return setAttributeImpl(
+        key, std::move(value), internal::SetAttributeMode::FromPublicAPICall);
+}
+
+inline bool
+Attributable::setAttribute(std::string const &key, char const value[])
+{
+    return setAttributeImpl(
+        key, value, internal::SetAttributeMode::FromPublicAPICall);
+}
+
+// note: we explicitly instantiate Attributable::setAttributeImpl for all T in
+// Datatype in Attributable.cpp
+template <typename T>
+inline bool Attributable::setAttributeImpl(
+    std::string const &key,
+    T value,
+    internal::SetAttributeMode setAttributeMode)
+{
+    internal::attr_value_check(key, value, setAttributeMode);
 
     auto &attri = get();
-    if (IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess)
+    if (IOHandler() &&
+        IOHandler()->m_seriesStatus == internal::SeriesStatus::Default &&
+        Access::READ_ONLY == IOHandler()->m_frontendAccess)
     {
         auxiliary::OutOfRangeMsg const out_of_range_msg(
             "Attribute", "can not be set (read-only).");
@@ -442,10 +490,12 @@ inline bool Attributable::setAttribute(std::string const &key, T value)
     }
 }
 
-inline bool
-Attributable::setAttribute(std::string const &key, char const value[])
+inline bool Attributable::setAttributeImpl(
+    std::string const &key,
+    char const value[],
+    internal::SetAttributeMode setAttributeMode)
 {
-    return this->setAttribute(key, std::string(value));
+    return this->setAttributeImpl(key, std::string(value), setAttributeMode);
 }
 
 template <typename T>

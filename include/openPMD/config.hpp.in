@@ -41,3 +41,7 @@
 #ifndef openPMD_HAVE_ADIOS2
 #   cmakedefine01 openPMD_HAVE_ADIOS2
 #endif
+
+#ifndef openPMD_HAVE_CUDA_EXAMPLES
+#   cmakedefine01 openPMD_HAVE_CUDA_EXAMPLES
+#endif

@@ -21,7 +21,7 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
-#include "openPMD/auxiliary/ShareRaw.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <array>
@@ -42,34 +42,6 @@
 
 namespace openPMD
 {
-namespace traits
-{
-    /** Emulate in the C++17 concept ContiguousContainer
-     *
-     * Users can implement this trait for a type to signal it can be used as
-     * contiguous container.
-     *
-     * See:
-     *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
-     */
-    template <typename T>
-    struct IsContiguousContainer
-    {
-        static constexpr bool value = false;
-    };
-
-    template <typename T_Value>
-    struct IsContiguousContainer<std::vector<T_Value> >
-    {
-        static constexpr bool value = true;
-    };
-
-    template <typename T_Value, std::size_t N>
-    struct IsContiguousContainer<std::array<T_Value, N> >
-    {
-        static constexpr bool value = true;
-    };
-} // namespace traits
 
 template <typename T>
 class DynamicMemoryView;
@@ -225,26 +197,137 @@ public:
     template <typename T>
     std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
 
-    /** Load a chunk of data into pre-allocated memory
+    /** Load a chunk of data into pre-allocated memory.
      *
-     * shared_ptr for data must be pre-allocated, contiguous and large enough
-     * for extent
-     *
-     * Set offset to {0u} and extent to {-1u} for full selection.
-     *
-     * If offset is non-zero and extent is {-1u} the leftover extent in the
-     * record component will be selected.
+     * @param data   Preallocated, contiguous buffer, large enough to load the
+     *               the requested data into it.
+     *               The shared pointer must either own and manage the buffer
+     *               or have been created via shareRaw().
+     *               If using shareRaw(), it is in the user of this API call's
+     *               responsibility to ensure that the lifetime of the buffer
+     *               exceeds the next <a
+     * href="https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#deferred-data-api-contract">
+     *               flush point</a>.
+     *               Optimizations might be implemented based on this
+     *               assumption (e.g. skipping the operation if the backend
+     *               is the unique owner).
+     *               For raw pointers, use loadChunkRaw().
+     * @param offset Offset within the dataset. Set to {0u} for full selection.
+     * @param extent Extent within the dataset, counted from the offset.
+     *               Set to {-1u} for full selection.
+     *               If offset is non-zero and extent is {-1u} the leftover
+     *               extent in the record component will be selected.
      */
     template <typename T>
-    void loadChunk(std::shared_ptr<T>, Offset, Extent);
+    void loadChunk(std::shared_ptr<T> data, Offset offset, Extent extent);
 
+    /** Load a chunk of data into pre-allocated memory, array version.
+     *
+     * @param data   Preallocated, contiguous buffer, large enough to load the
+     *               the requested data into it.
+     *               The shared pointer must own and manage the buffer.
+     *               Optimizations might be implemented based on this
+     *               assumption (e.g. skipping the operation if the backend
+     *               is the unique owner).
+     *               The array-based overload helps avoid having to manually
+     *               specify the delete[] destructor (C++17 feature).
+     * @param offset Offset within the dataset. Set to {0u} for full selection.
+     * @param extent Extent within the dataset, counted from the offset.
+     *               Set to {-1u} for full selection.
+     *               If offset is non-zero and extent is {-1u} the leftover
+     *               extent in the record component will be selected.
+     */
     template <typename T>
-    void storeChunk(std::shared_ptr<T>, Offset, Extent);
+    void loadChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
 
+    /** Load a chunk of data into pre-allocated memory, raw pointer version.
+     *
+     * @param data   Preallocated, contiguous buffer, large enough to load the
+     *               the requested data into it.
+     *               It is in the user of this API call's responsibility to
+     *               ensure that the lifetime of the buffer exceeds the next
+     *               <a
+     * href="https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#deferred-data-api-contract">
+     *               flush point</a>.
+     * @param offset Offset within the dataset. Set to {0u} for full selection.
+     * @param extent Extent within the dataset, counted from the offset.
+     *               Set to {-1u} for full selection.
+     *               If offset is non-zero and extent is {-1u} the leftover
+     *               extent in the record component will be selected.
+     */
+    template <typename T>
+    void loadChunkRaw(T *data, Offset offset, Extent extent);
+
+    /** Store a chunk of data from a chunk of memory.
+     *
+     * @param data   Preallocated, contiguous buffer, large enough to read the
+     *               the specified data from it.
+     *               The shared pointer must either own and manage the buffer
+     *               or have been created via shareRaw().
+     *               If using shareRaw(), it is in the user of this API call's
+     *               responsibility to ensure that the lifetime of the buffer
+     *               exceeds the next <a
+     * href="https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#deferred-data-api-contract">
+     *               flush point</a>.
+     *               Optimizations might be implemented based on this
+     *               assumption (e.g. further deferring the operation if the
+     *               backend is the unique owner).
+     *               For raw pointers, use storeChunkRaw().
+     * @param offset Offset within the dataset.
+     * @param extent Extent within the dataset, counted from the offset.
+     */
+    template <typename T>
+    void storeChunk(std::shared_ptr<T> data, Offset offset, Extent extent);
+
+    /** Store a chunk of data from a chunk of memory, array version.
+     *
+     * @param data   Preallocated, contiguous buffer, large enough to read the
+     *               the specified data from it.
+     *               The array-based overload helps avoid having to manually
+     *               specify the delete[] destructor (C++17 feature).
+     * @param offset Offset within the dataset.
+     * @param extent Extent within the dataset, counted from the offset.
+     */
+    template <typename T>
+    void storeChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
+
+    /** Store a chunk of data from a chunk of memory, raw pointer version.
+     *
+     * @param data   Preallocated, contiguous buffer, large enough to read the
+     *               the specified data from it.
+     *               It is in the user of this API call's responsibility to
+     *               ensure that the lifetime of the buffer exceeds the next
+     *               <a
+     * href="https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#deferred-data-api-contract">
+     *               flush point</a>.
+     * @param offset Offset within the dataset.
+     * @param extent Extent within the dataset, counted from the offset.
+     */
+    template <typename T>
+    void storeChunkRaw(T *data, Offset offset, Extent extent);
+
+    /** Store a chunk of data from a contiguous container.
+     *
+     * @param data   <a
+     *               href="https://en.cppreference.com/w/cpp/named_req/ContiguousContainer">
+     *               Contiguous container</a>, large enough to read the the
+     *               specified data from it. A contiguous container in here is
+     *               either a std::vector or a std::array.
+     *               It is in the user of this API call's responsibility to
+     *               ensure that the lifetime of the container exceeds the next
+     *               <a
+     * href="https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#deferred-data-api-contract">
+     *               flush point</a>.
+     * @param offset Offset within the dataset.
+     * @param extent Extent within the dataset, counted from the offset.
+     */
     template <typename T_ContiguousContainer>
-    typename std::enable_if<
-        traits::IsContiguousContainer<T_ContiguousContainer>::value>::type
-    storeChunk(T_ContiguousContainer &, Offset = {0u}, Extent = {-1u});
+    typename std::enable_if_t<
+        auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>
+    storeChunk(
+        T_ContiguousContainer &data,
+        Offset offset = {0u},
+        Extent extent = {-1u});
 
     /**
      * @brief Overload of storeChunk() that lets the openPMD API allocate
@@ -254,14 +337,17 @@ public:
      * users a view into its own buffers, avoiding the need to allocate
      * a new buffer.
      *
-     * Data can be written into the returned buffer until the next call to
-     * Series::flush() at which time the data will be read from.
+     * Data can be written into the returned buffer until the next <a
+     * href="https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#deferred-data-api-contract">
+     * flush point </a> at which time the data will be read from.
      *
      * In order to provide a view into backend buffers, this call must possibly
      * create files and datasets in the backend, making it MPI-collective.
      * In order to avoid this, calling Series::flush() prior to this is
      * recommended to flush definitions.
      *
+     * @param offset Offset within the dataset.
+     * @param extent Extent within the dataset, counted from the offset.
      * @param createBuffer If the backend in use has no special support for this
      *        operation, the openPMD API will fall back to creating a buffer,
      *        queuing it for writing and returning a view into that buffer to
@@ -277,7 +363,8 @@ public:
      * @return View into a buffer that can be filled with data.
      */
     template <typename T, typename F>
-    DynamicMemoryView<T> storeChunk(Offset, Extent, F &&createBuffer);
+    DynamicMemoryView<T>
+    storeChunk(Offset offset, Extent extent, F &&createBuffer);
 
     /**
      * Overload of span-based storeChunk() that uses operator new() to create
@@ -289,7 +376,7 @@ public:
     static constexpr char const *const SCALAR = "\vScalar";
 
 private:
-    void flush(std::string const &);
+    void flush(std::string const &, internal::FlushParams const &);
     virtual void read();
 
     /**

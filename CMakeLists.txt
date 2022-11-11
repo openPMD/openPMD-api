@@ -48,26 +48,21 @@ endif()
 #
 # temporary build directories
 if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-        CACHE PATH "Build directory for archives")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 endif()
 if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-        CACHE PATH "Build directory for libraries")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 endif()
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-        CACHE PATH "Build directory for binaries")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endif()
 # install directories
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     include(GNUInstallDirs)
-    set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/openPMD"
-        CACHE PATH "CMake config package location for installed targets")
+    set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/openPMD")
     if(WIN32)
-        set(CMAKE_INSTALL_LIBDIR Lib
-            CACHE PATH "Object code libraries")
-        set_property(CACHE CMAKE_INSTALL_CMAKEDIR PROPERTY VALUE "cmake")
+        set(CMAKE_INSTALL_LIBDIR Lib)
+        set(CMAKE_INSTALL_CMAKEDIR "cmake")
     endif()
 endif()
 
@@ -103,8 +98,7 @@ option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of 
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-        "Choose the build type, e.g. Release or Debug." FORCE)
+    set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 include(CMakeDependentOption)
@@ -149,6 +143,7 @@ if(NOT DEFINED BUILD_EXAMPLES)
 endif()
 option(openPMD_BUILD_CLI_TOOLS "Build the command line tools" ${BUILD_CLI_TOOLS})
 option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
+openpmd_option(CUDA_EXAMPLES   "Use CUDA in examples" OFF)
 
 
 # Helper Functions ############################################################
@@ -160,6 +155,15 @@ function(openpmd_cxx_required target)
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
     )
+endfunction()
+
+# CUDA C++ standard: requirements for a target
+function(openpmd_cuda_required target)
+   target_compile_features(${target} PUBLIC cuda_std_17)
+   set_target_properties(${target} PROPERTIES
+       CUDA_SEPARABLE_COMPILATION ON
+       CUDA_EXTENSIONS OFF
+       CUDA_STANDARD_REQUIRED ON)
 endfunction()
 
 
@@ -216,16 +220,32 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
 
 # external library: toml11
 if(openPMD_USE_INTERNAL_TOML11)
+    set(toml11_INSTALL OFF CACHE INTERNAL "")
     add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11")
-    message(STATUS "toml11: Using INTERNAL version '3.7.0'")
+    message(STATUS "toml11: Using INTERNAL version '3.7.1'")
 else()
-    find_package(toml11 3.7.0 CONFIG REQUIRED)
+    find_package(toml11 3.7.1 CONFIG REQUIRED)
     message(STATUS "toml11: Found version '${toml11_VERSION}'")
 endif()
 add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::toml11
     INTERFACE toml11::toml11)
 
+
+# external: CUDA (optional)
+if(openPMD_BUILD_EXAMPLES)  # currently only used in examples
+    if(openPMD_USE_CUDA_EXAMPLES STREQUAL AUTO)
+       find_package(CUDAToolkit)
+    elseif(openPMD_USE_CUDA_EXAMPLES)
+       find_package(CUDAToolkit REQUIRED)
+    endif()
+endif()
+if(CUDAToolkit_FOUND)
+    enable_language(CUDA)
+    set(openPMD_HAVE_CUDA_EXAMPLES TRUE)
+else()
+    set(openPMD_HAVE_CUDA_EXAMPLES FALSE)
+endif()
 
 # external library: HDF5 (optional)
 #   note: in the new hdf5-cmake.config files, major releases like
@@ -395,14 +415,14 @@ if(CMAKE_VERSION VERSION_LESS 3.18.0)
     set(_PY_DEV_MODULE Development)
 endif()
 if(openPMD_USE_PYTHON STREQUAL AUTO)
-    find_package(Python 3.6.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
+    find_package(Python 3.7.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
     if(Python_FOUND)
         if(openPMD_USE_INTERNAL_PYBIND11)
             add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
             set(openPMD_HAVE_PYTHON TRUE)
-            message(STATUS "pybind11: Using INTERNAL version 2.9.1")
+            message(STATUS "pybind11: Using INTERNAL version 2.10.1")
         else()
-            find_package(pybind11 2.9.1 CONFIG)
+            find_package(pybind11 2.10.1 CONFIG)
             if(pybind11_FOUND)
                 set(openPMD_HAVE_PYTHON TRUE)
                 message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
@@ -418,9 +438,9 @@ elseif(openPMD_USE_PYTHON)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.9.1")
+        message(STATUS "pybind11: Using INTERNAL version 2.10.1")
     else()
-        find_package(pybind11 2.9.1 REQUIRED CONFIG)
+        find_package(pybind11 2.10.1 REQUIRED CONFIG)
         set(openPMD_HAVE_PYTHON TRUE)
         message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
     endif()
@@ -462,9 +482,12 @@ set(CORE_SOURCE
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
         src/helper/list_series.cpp)
 set(IO_SOURCE
+        src/IO/AbstractIOHandler.cpp
+        src/IO/AbstractIOHandlerImpl.cpp
         src/IO/AbstractIOHandlerHelper.cpp
         src/IO/DummyIOHandler.cpp
         src/IO/IOTask.cpp
+        src/IO/FlushParams.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp
         src/IO/HDF5/HDF5Auxiliary.cpp
@@ -480,13 +503,15 @@ set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
-        src/IO/ADIOS/ADIOS1IOHandler.cpp)
+        src/IO/ADIOS/ADIOS1IOHandler.cpp
+        src/IO/IOTask.cpp)
 set(IO_ADIOS1_SOURCE
         src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
-        src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
+        src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
+        src/IO/IOTask.cpp)
 
 # library
 if(openPMD_BUILD_SHARED_LIBS)
@@ -526,9 +551,9 @@ if(openPMD_BUILD_TESTING)
         target_include_directories(openPMD::thirdparty::Catch2 SYSTEM INTERFACE
             $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
         )
-        message(STATUS "Catch2: Using INTERNAL version '2.13.4'")
+        message(STATUS "Catch2: Using INTERNAL version '2.13.9'")
     else()
-        find_package(Catch2 2.13.4 REQUIRED CONFIG)
+        find_package(Catch2 2.13.9 REQUIRED CONFIG)
         target_link_libraries(openPMD::thirdparty::Catch2
             INTERFACE Catch2::Catch2)
         message(STATUS "Catch2: Found version '${Catch2_VERSION}'")
@@ -746,7 +771,9 @@ if(openPMD_HAVE_PYTHON)
     else()
         pybind11_extension(openPMD.py)
     endif()
-    pybind11_strip(openPMD.py)
+    if(NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
+        pybind11_strip(openPMD.py)
+    endif()
 
     set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
                                                 CUDA_VISIBILITY_PRESET "hidden")
@@ -767,20 +794,16 @@ if(openPMD_HAVE_PYTHON)
 
     if(WIN32)
         set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
-            "${CMAKE_INSTALL_LIBDIR}/site-packages"
-        )
+            "${CMAKE_INSTALL_LIBDIR}/site-packages")
     else()
         set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
             "${CMAKE_INSTALL_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
         )
     endif()
-    set(CMAKE_INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR_DEFAULT}"
-        CACHE STRING "Location for installed python package"
-    )
-    set(CMAKE_PYTHON_OUTPUT_DIRECTORY
-        "${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}"
-        CACHE PATH "Build directory for python modules"
-    )
+    # Location for installed python package
+    set(CMAKE_INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR_DEFAULT}")
+    # Build directory for python modules
+    set(CMAKE_PYTHON_OUTPUT_DIRECTORY "${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}")
     set_target_properties(openPMD.py PROPERTIES
         ARCHIVE_OUTPUT_NAME openpmd_api_cxx
         LIBRARY_OUTPUT_NAME openpmd_api_cxx
@@ -917,17 +940,20 @@ endif()
 
 if(openPMD_BUILD_EXAMPLES)
     foreach(examplename ${openPMD_EXAMPLE_NAMES})
-        if(${examplename} MATCHES ".+parallel$")
-            if(openPMD_HAVE_MPI)
-                add_executable(${examplename} examples/${examplename}.cpp)
-                openpmd_cxx_required(${examplename})
-                target_link_libraries(${examplename} PRIVATE openPMD)
-            endif()
-        else()
-            add_executable(${examplename} examples/${examplename}.cpp)
-            openpmd_cxx_required(${examplename})
-            target_link_libraries(${examplename} PRIVATE openPMD)
+        if(${examplename} MATCHES ".+parallel$" AND NOT openPMD_HAVE_MPI)
+            # skip parallel test
+            continue()
         endif()
+
+        add_executable(${examplename} examples/${examplename}.cpp)
+        if (openPMD_HAVE_CUDA_EXAMPLES)
+           set_source_files_properties(examples/${examplename}.cpp
+               PROPERTIES LANGUAGE CUDA)
+           openpmd_cuda_required(${examplename})
+        else()
+           openpmd_cxx_required(${examplename})
+        endif()
+        target_link_libraries(${examplename} PRIVATE openPMD)
     endforeach()
 endif()
 

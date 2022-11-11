@@ -26,6 +26,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
+#include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IterationEncoding.hpp"
@@ -124,8 +125,6 @@ class ADIOS2IOHandlerImpl
     friend struct detail::BufferedActions;
     friend struct detail::BufferedAttributeRead;
 
-    static constexpr bool ADIOS2_DEBUG_MODE = false;
-
 public:
 #if openPMD_HAVE_MPI
 
@@ -133,19 +132,28 @@ public:
         AbstractIOHandler *,
         MPI_Comm,
         json::TracingJSON config,
-        std::string engineType);
+        std::string engineType,
+        std::string specifiedExtension);
 
 #endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(
-        AbstractIOHandler *, json::TracingJSON config, std::string engineType);
+        AbstractIOHandler *,
+        json::TracingJSON config,
+        std::string engineType,
+        std::string specifiedExtension);
 
     ~ADIOS2IOHandlerImpl() override;
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::ParsedFlushParams &);
 
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
+
+    void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
+
+    // MPI Collective
+    bool checkFile(std::string fullFilePath) const;
 
     void
     createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
@@ -211,8 +219,21 @@ public:
      */
     adios2::Mode adios2AccessMode(std::string const &fullPath);
 
+    enum class FlushTarget : unsigned char
+    {
+        Buffer,
+        Buffer_Override,
+        Disk,
+        Disk_Override
+    };
+
+    FlushTarget m_flushTarget = FlushTarget::Disk;
+
 private:
     adios2::ADIOS m_ADIOS;
+#if openPMD_HAVE_MPI
+    std::optional<MPI_Comm> m_communicator;
+#endif
     /*
      * If the iteration encoding is variableBased, we default to using the
      * 2021_02_09 schema since it allows mutable attributes.
@@ -222,6 +243,11 @@ private:
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
     std::string m_engineType;
+    /*
+     * The filename extension specified by the user.
+     */
+    std::string m_userSpecifiedExtension;
+
     ADIOS2Schema::schema_t m_schema = ADIOS2Schema::schema_0000_00_00;
 
     enum class UseSpan : char
@@ -311,7 +337,7 @@ private:
     // use m_config
     std::optional<std::vector<ParameterizedOperator> > getOperators();
 
-    std::string fileSuffix() const;
+    std::string fileSuffix(bool verbose = true) const;
 
     /*
      * We need to give names to IO objects. These names are irrelevant
@@ -414,6 +440,7 @@ namespace ADIOS2Defaults
     constexpr const_str str_type = "type";
     constexpr const_str str_params = "parameters";
     constexpr const_str str_usesteps = "usesteps";
+    constexpr const_str str_flushtarget = "preferred_flush_target";
     constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
     constexpr const_str str_adios2Schema =
         "__openPMD_internal/openPMD2_adios2_schema";
@@ -577,7 +604,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             T value);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -616,7 +643,7 @@ namespace detail
                 "attribute types");
         }
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string,
             std::shared_ptr<Attribute::resource>)
@@ -649,7 +676,7 @@ namespace detail
                 "vector attribute types");
         }
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string,
             std::shared_ptr<Attribute::resource>)
@@ -677,7 +704,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             const std::vector<T> &value);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -715,7 +742,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             const std::vector<std::string> &vec);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -753,7 +780,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             const std::array<T, n> &value);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -818,7 +845,7 @@ namespace detail
             detail::BufferedAttributeWrite &params,
             bool value);
 
-        static void readAttribute(
+        static Datatype readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -928,6 +955,8 @@ namespace detail
     {
         friend struct BufferedGet;
         friend struct BufferedPut;
+
+        using FlushTarget = ADIOS2IOHandlerImpl::FlushTarget;
 
         BufferedActions(BufferedActions const &) = delete;
 
@@ -1041,10 +1070,26 @@ namespace detail
         template <typename BA>
         void enqueue(BA &&ba, decltype(m_buffer) &);
 
+        struct ADIOS2FlushParams
+        {
+            /*
+             * Only execute performPutsGets if UserFlush.
+             */
+            FlushLevel level;
+            FlushTarget flushTarget = FlushTarget::Disk;
+
+            ADIOS2FlushParams(FlushLevel level_in) : level(level_in)
+            {}
+
+            ADIOS2FlushParams(FlushLevel level_in, FlushTarget flushTarget_in)
+                : level(level_in), flushTarget(flushTarget_in)
+            {}
+        };
+
         /**
          * Flush deferred IO actions.
          *
-         * @param level Flush Level. Only execute performPutsGets if UserFlush.
+         * @param flushParams Flush level and target.
          * @param performPutsGets A functor that takes as parameters (1) *this
          *     and (2) the ADIOS2 engine.
          *     Its task is to ensure that ADIOS2 performs Put/Get operations.
@@ -1059,7 +1104,7 @@ namespace detail
          */
         template <typename F>
         void flush(
-            FlushLevel level,
+            ADIOS2FlushParams flushParams,
             F &&performPutsGets,
             bool writeAttributes,
             bool flushUnconditionally);
@@ -1069,15 +1114,21 @@ namespace detail
          * and does not flush unconditionally.
          *
          */
-        void flush(FlushLevel, bool writeAttributes = false);
+        void flush(ADIOS2FlushParams, bool writeAttributes = false);
 
         /**
          * @brief Begin or end an ADIOS step.
          *
          * @param mode Whether to begin or end a step.
+         * @param calledExplicitly True if called due to a public API call.
+         *     False if called from requireActiveStep.
+         *     Some engines (BP5) require that every interaction happens within
+         *     an active step, meaning that we need to call advance()
+         *     implicitly at times. When doing that, do not tag the dataset
+         *     with __openPMD_internal/useSteps (yet).
          * @return AdvanceStatus
          */
-        AdvanceStatus advance(AdvanceMode mode);
+        AdvanceStatus advance(AdvanceMode mode, bool calledExplicitly);
 
         /*
          * Delete all buffered actions without running them.
@@ -1104,13 +1155,6 @@ namespace detail
          */
         void invalidateVariablesMap();
 
-    private:
-        ADIOS2IOHandlerImpl *m_impl;
-        std::optional<adios2::Engine> m_engine; //! ADIOS engine
-        /**
-         * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
-         */
-        std::string m_engineType;
         /*
          * streamStatus is NoStream for file-based ADIOS engines.
          * This is relevant for the method BufferedActions::requireActiveStep,
@@ -1201,7 +1245,14 @@ namespace detail
             Undecided
         };
         StreamStatus streamStatus = StreamStatus::OutsideOfStep;
-        adios2::StepStatus m_lastStepStatus = adios2::StepStatus::OK;
+
+    private:
+        ADIOS2IOHandlerImpl *m_impl;
+        std::optional<adios2::Engine> m_engine; //! ADIOS engine
+        /**
+         * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
+         */
+        std::string m_engineType;
 
         /**
          * See documentation for StreamStatus::Parsing.
@@ -1262,7 +1313,8 @@ public:
         // we must not throw in a destructor
         try
         {
-            this->flush();
+            auto params = internal::defaultParsedFlushParams;
+            this->flush(params);
         }
         catch (std::exception const &ex)
         {
@@ -1286,7 +1338,8 @@ public:
         Access,
         MPI_Comm,
         json::TracingJSON options,
-        std::string engineType);
+        std::string engineType,
+        std::string specifiedExtension);
 
 #endif
 
@@ -1294,13 +1347,14 @@ public:
         std::string path,
         Access,
         json::TracingJSON options,
-        std::string engineType);
+        std::string engineType,
+        std::string specifiedExtension);
 
     std::string backendName() const override
     {
         return "ADIOS2";
     }
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::ParsedFlushParams &) override;
 }; // ADIOS2IOHandler
 } // namespace openPMD

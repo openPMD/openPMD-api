@@ -27,6 +27,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 
@@ -69,10 +70,13 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler *handler,
     MPI_Comm communicator,
     json::TracingJSON cfg,
-    std::string engineType)
+    std::string engineType,
+    std::string specifiedExtension)
     : AbstractIOHandlerImplCommon(handler)
-    , m_ADIOS{communicator, ADIOS2_DEBUG_MODE}
+    , m_ADIOS{communicator}
+    , m_communicator{communicator}
     , m_engineType(std::move(engineType))
+    , m_userSpecifiedExtension{std::move(specifiedExtension)}
 {
     init(std::move(cfg));
 }
@@ -80,10 +84,14 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
-    AbstractIOHandler *handler, json::TracingJSON cfg, std::string engineType)
+    AbstractIOHandler *handler,
+    json::TracingJSON cfg,
+    std::string engineType,
+    std::string specifiedExtension)
     : AbstractIOHandlerImplCommon(handler)
-    , m_ADIOS{ADIOS2_DEBUG_MODE}
+    , m_ADIOS{}
     , m_engineType(std::move(engineType))
+    , m_userSpecifiedExtension(std::move(specifiedExtension))
 {
     init(std::move(cfg));
 }
@@ -118,6 +126,18 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
 
 void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
 {
+    // allow overriding through environment variable
+    m_engineType =
+        auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", m_engineType);
+    std::transform(
+        m_engineType.begin(),
+        m_engineType.end(),
+        m_engineType.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+
+    // environment-variable based configuration
+    m_schema = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", m_schema);
+
     if (cfg.json().contains("adios2"))
     {
         m_config = cfg["adios2"];
@@ -146,6 +166,7 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
                     json::asLowerCaseStringDynamic(engineTypeConfig);
                 if (maybeEngine.has_value())
                 {
+                    // override engine type by JSON/TOML configuration
                     m_engineType = std::move(maybeEngine.value());
                 }
                 else
@@ -162,14 +183,12 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
             defaultOperators = std::move(operators.value());
         }
     }
-    // environment-variable based configuration
-    m_schema = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", m_schema);
 }
 
-std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> >
+std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator>>
 ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
 {
-    using ret_t = std::optional<std::vector<ParameterizedOperator> >;
+    using ret_t = std::optional<std::vector<ParameterizedOperator>>;
     std::vector<ParameterizedOperator> res;
     if (!cfg.json().contains("dataset"))
     {
@@ -222,46 +241,213 @@ ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
     return std::make_optional(std::move(res));
 }
 
-std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> >
+std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator>>
 ADIOS2IOHandlerImpl::getOperators()
 {
     return getOperators(m_config);
 }
 
-std::string ADIOS2IOHandlerImpl::fileSuffix() const
+using AcceptedEndingsForEngine = std::map<std::string, std::string>;
+
+std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
 {
     // SST engine adds its suffix unconditionally
     // so we don't add it
-    static std::map<std::string, std::string> endings{
-        {"sst", ""},
-        {"staging", ""},
-        {"bp4", ".bp"},
-        {"bp5", ".bp"},
-        {"bp3", ".bp"},
-        {"file", ".bp"},
-        {"hdf5", ".h5"},
-        {"nullcore", ".nullcore"},
-        {"ssc", ".ssc"}};
-    auto it = endings.find(m_engineType);
-    if (it != endings.end())
+    static std::map<std::string, AcceptedEndingsForEngine> const endings{
+        {"sst", {{"", ""}, {".sst", ""}}},
+        {"staging", {{"", ""}, {".sst", ""}}},
+        {"filestream", {{".bp", ".bp"}, {".bp4", ".bp4"}, {".bp5", ".bp5"}}},
+        {"bp4", {{".bp4", ".bp4"}, {".bp", ".bp"}}},
+        {"bp5", {{".bp5", ".bp5"}, {".bp", ".bp"}}},
+        {"bp3", {{".bp", ".bp"}}},
+        {"file", {{".bp", ".bp"}, {".bp4", ".bp4"}, {".bp5", ".bp5"}}},
+        {"hdf5", {{".h5", ".h5"}}},
+        {"nullcore", {{".nullcore", ".nullcore"}, {".bp", ".bp"}}},
+        {"ssc", {{".ssc", ".ssc"}}}};
+
+    if (auto engine = endings.find(m_engineType); engine != endings.end())
     {
-        return it->second;
+        auto const &acceptedEndings = engine->second;
+        if (auto ending = acceptedEndings.find(m_userSpecifiedExtension);
+            ending != acceptedEndings.end())
+        {
+            if (verbose &&
+                (m_engineType == "file" || m_engineType == "filestream") &&
+                (m_userSpecifiedExtension == ".bp3" ||
+                 m_userSpecifiedExtension == ".bp4" ||
+                 m_userSpecifiedExtension == ".bp5"))
+            {
+                std::cerr
+                    << "[ADIOS2] Explicit ending '" << m_userSpecifiedExtension
+                    << "' was specified in combination with generic file "
+                       "engine '"
+                    << m_engineType
+                    << "'. ADIOS2 will pick a default file ending "
+                       "independent of specified suffix. (E.g. 'simData.bp5' "
+                       "might actually be written as a BP4 dataset.)"
+                    << std::endl;
+            }
+            return ending->second;
+        }
+        else if (m_userSpecifiedExtension.empty())
+        {
+            std::cerr << "[ADIOS2] No file ending specified. Will not add one."
+                      << std::endl;
+            if (verbose && m_engineType == "bp3")
+            {
+                std::cerr
+                    << "Note that the ADIOS2 BP3 engine will add its "
+                       "ending '.bp' if not specified (e.g. 'simData.bp3' "
+                       "will appear on disk as 'simData.bp3.bp')."
+                    << std::endl;
+            }
+            return "";
+        }
+        else
+        {
+            if (verbose)
+            {
+                std::cerr << "[ADIOS2] Specified ending '"
+                          << m_userSpecifiedExtension
+                          << "' does not match the selected engine '"
+                          << m_engineType
+                          << "'. Will use the specified ending anyway."
+                          << std::endl;
+                if (m_engineType == "bp3")
+                {
+                    std::cerr
+                        << "Note that the ADIOS2 BP3 engine will add its "
+                           "ending '.bp' if not specified (e.g. 'simData.bp3' "
+                           "will appear on disk as 'simData.bp3.bp')."
+                        << std::endl;
+                }
+            }
+            return m_userSpecifiedExtension;
+        }
     }
     else
     {
-        return ".adios2";
+        throw error::WrongAPIUsage(
+            "[ADIOS2] Specified engine '" + m_engineType +
+            "' is not supported by ADIOS2 backend.");
     }
 }
 
-std::future<void> ADIOS2IOHandlerImpl::flush()
+using FlushTarget = ADIOS2IOHandlerImpl::FlushTarget;
+static FlushTarget flushTargetFromString(std::string const &str)
+{
+    if (str == "buffer")
+    {
+        return FlushTarget::Buffer;
+    }
+    else if (str == "disk")
+    {
+        return FlushTarget::Disk;
+    }
+    else if (str == "buffer_override")
+    {
+        return FlushTarget::Buffer_Override;
+    }
+    else if (str == "disk_override")
+    {
+        return FlushTarget::Disk_Override;
+    }
+    else
+    {
+        throw error::BackendConfigSchema(
+            {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+            "Flush target must be either 'disk' or 'buffer', but "
+            "was " +
+                str + ".");
+    }
+}
+
+static FlushTarget &
+overrideFlushTarget(FlushTarget &inplace, FlushTarget new_val)
+{
+    auto allowsOverride = [](FlushTarget ft) {
+        switch (ft)
+        {
+        case FlushTarget::Buffer:
+        case FlushTarget::Disk:
+            return true;
+        case FlushTarget::Buffer_Override:
+        case FlushTarget::Disk_Override:
+            return false;
+        }
+        return true;
+    };
+
+    if (allowsOverride(inplace))
+    {
+        inplace = new_val;
+    }
+    else
+    {
+        if (!allowsOverride(new_val))
+        {
+            inplace = new_val;
+        }
+        // else { keep the old value, no-op }
+    }
+    return inplace;
+}
+
+std::future<void>
+ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
 {
     auto res = AbstractIOHandlerImpl::flush();
+
+    detail::BufferedActions::ADIOS2FlushParams adios2FlushParams{
+        flushParams.flushLevel, m_flushTarget};
+    if (flushParams.backendConfig.json().contains("adios2"))
+    {
+        auto adios2Config = flushParams.backendConfig["adios2"];
+        if (adios2Config.json().contains("engine"))
+        {
+            auto engineConfig = adios2Config["engine"];
+            if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
+            {
+                auto target = json::asLowerCaseStringDynamic(
+                    engineConfig[ADIOS2Defaults::str_flushtarget].json());
+                if (!target.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        "Flush target must be either 'disk' or 'buffer', but "
+                        "was non-literal type.");
+                }
+                overrideFlushTarget(
+                    adios2FlushParams.flushTarget,
+                    flushTargetFromString(target.value()));
+            }
+        }
+
+        if (auto shadow = adios2Config.invertShadow(); shadow.size() > 0)
+        {
+            switch (adios2Config.originallySpecifiedAs)
+            {
+            case json::SupportedLanguages::JSON:
+                std::cerr << "Warning: parts of the backend configuration for "
+                             "ADIOS2 remain unused:\n"
+                          << shadow << std::endl;
+                break;
+            case json::SupportedLanguages::TOML: {
+                auto asToml = json::jsonToToml(shadow);
+                std::cerr << "Warning: parts of the backend configuration for "
+                             "ADIOS2 remain unused:\n"
+                          << asToml << std::endl;
+                break;
+            }
+            }
+        }
+    }
+
     for (auto &p : m_fileData)
     {
         if (m_dirty.find(p.first) != m_dirty.end())
         {
-            p.second->flush(
-                m_handler->m_flushLevel, /* writeAttributes = */ false);
+            p.second->flush(adios2FlushParams, /* writeAttributes = */ false);
         }
         else
         {
@@ -280,12 +466,7 @@ void ADIOS2IOHandlerImpl::createFile(
 
     if (!writable->written)
     {
-        std::string name = parameters.name;
-        std::string suffix(fileSuffix());
-        if (!auxiliary::ends_with(name, suffix))
-        {
-            name += suffix;
-        }
+        std::string name = parameters.name + fileSuffix();
 
         auto res_pair = getPossiblyExisting(name);
         InvalidatableFile shared_name = InvalidatableFile(name);
@@ -314,9 +495,6 @@ void ADIOS2IOHandlerImpl::createFile(
         m_iterationEncoding = parameters.encoding;
         associateWithFile(writable, shared_name);
         this->m_dirty.emplace(shared_name);
-        getFileData(shared_name, IfFileNotOpen::OpenImplicitly).m_mode =
-            adios2::Mode::Write; // WORKAROUND
-        // ADIOS2 does not yet implement ReadWrite Mode
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
@@ -324,6 +502,60 @@ void ADIOS2IOHandlerImpl::createFile(
         // lazy opening is deathly in parallel situations
         getFileData(shared_name, IfFileNotOpen::OpenImplicitly);
     }
+}
+
+void ADIOS2IOHandlerImpl::checkFile(
+    Writable *, Parameter<Operation::CHECK_FILE> &parameters)
+{
+    std::string name =
+        fullPath(parameters.name + fileSuffix(/* verbose = */ false));
+
+    using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
+    *parameters.fileExists = checkFile(name) ? FileExists::Yes : FileExists::No;
+}
+
+bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
+{
+    if (m_engineType == "bp3")
+    {
+        if (!auxiliary::ends_with(fullFilePath, ".bp"))
+        {
+            /*
+             * BP3 will add this ending if not specified
+             */
+            fullFilePath += ".bp";
+        }
+    }
+    else if (m_engineType == "sst")
+    {
+        /*
+         * SST will add this ending indiscriminately
+         */
+        fullFilePath += ".sst";
+    }
+    bool fileExists = auxiliary::directory_exists(fullFilePath) ||
+        auxiliary::file_exists(fullFilePath);
+
+#if openPMD_HAVE_MPI
+    if (m_communicator.has_value())
+    {
+        bool fileExistsRes = false;
+        int status = MPI_Allreduce(
+            &fileExists,
+            &fileExistsRes,
+            1,
+            MPI_C_BOOL,
+            MPI_LOR, // logical or
+            m_communicator.value());
+        if (status != 0)
+        {
+            throw std::runtime_error("MPI Reduction failed!");
+        }
+        fileExists = fileExistsRes;
+    }
+#endif
+
+    return fileExists;
 }
 
 void ADIOS2IOHandlerImpl::createPath(
@@ -458,12 +690,7 @@ void ADIOS2IOHandlerImpl::openFile(
             m_handler->directory);
     }
 
-    std::string name = parameters.name;
-    std::string suffix(fileSuffix());
-    if (!auxiliary::ends_with(name, suffix))
-    {
-        name += suffix;
-    }
+    std::string name = parameters.name + fileSuffix();
 
     auto file = std::get<PE_InvalidatableFile>(getPossiblyExisting(name));
 
@@ -590,6 +817,11 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     switch (attributeLayout())
     {
     case AttributeLayout::ByAdiosAttributes:
+        if (parameters.changesOverSteps)
+        {
+            // cannot do this
+            return;
+        }
         switchType<detail::OldAttributeWriter>(
             parameters.dtype, this, writable, parameters);
         break;
@@ -604,6 +836,14 @@ void ADIOS2IOHandlerImpl::writeAttribute(
         auto prefix = filePositionToString(pos);
 
         auto &filedata = getFileData(file, IfFileNotOpen::ThrowError);
+        if (parameters.changesOverSteps &&
+            filedata.streamStatus ==
+                detail::BufferedActions::StreamStatus::NoStream)
+        {
+            // cannot do this
+            return;
+        }
+        filedata.requireActiveStep();
         filedata.invalidateAttributesMap();
         m_dirty.emplace(std::move(file));
 
@@ -702,7 +942,13 @@ void ADIOS2IOHandlerImpl::getBufferView(
     Writable *writable, Parameter<Operation::GET_BUFFER_VIEW> &parameters)
 {
     // @todo check access mode
-    if (m_engineType != "bp4")
+    std::string optInEngines[] = {"bp4", "bp5", "file", "filestream"};
+    if (std::none_of(
+            begin(optInEngines),
+            end(optInEngines),
+            [this](std::string const &engine) {
+                return engine == this->m_engineType;
+            }))
     {
         parameters.out->backendManagedBuffer = false;
         return;
@@ -763,6 +1009,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
     detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    ba.requireActiveStep();
     switch (attributeLayout())
     {
         using AL = AttributeLayout;
@@ -1005,7 +1252,8 @@ void ADIOS2IOHandlerImpl::advance(
 {
     auto file = m_files[writable];
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    *parameters.status = ba.advance(parameters.mode);
+    *parameters.status =
+        ba.advance(parameters.mode, /* calledExplicitly = */ true);
 }
 
 void ADIOS2IOHandlerImpl::closePath(
@@ -1064,21 +1312,16 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
         if (auxiliary::directory_exists(fullPath) ||
             auxiliary::file_exists(fullPath))
         {
-            std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
-                         "(Append) mode. "
-                      << "Replacing with Read mode." << std::endl;
             return adios2::Mode::Read;
         }
         else
         {
-            std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
-                         "(Append) mode. "
-                      << "Replacing with Write mode." << std::endl;
             return adios2::Mode::Write;
         }
-    default:
-        return adios2::Mode::Undefined;
+    case Access::APPEND:
+        return adios2::Mode::Append;
     }
+    throw std::runtime_error("Unreachable!");
 }
 
 json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = {
@@ -1434,14 +1677,13 @@ namespace detail
                 auto attr = IO.InquireAttribute<rep>(metaAttr);
                 if (attr.Data().size() == 1 && attr.Data()[0] == 1)
                 {
-                    AttributeTypes<bool>::readAttribute(
+                    return AttributeTypes<bool>::readAttribute(
                         preloadedAttributes, name, resource);
-                    return determineDatatype<bool>();
                 }
             }
         }
-        AttributeTypes<T>::readAttribute(preloadedAttributes, name, resource);
-        return determineDatatype<T>();
+        return AttributeTypes<T>::readAttribute(
+            preloadedAttributes, name, resource);
     }
 
     template <int n, typename... Params>
@@ -1469,6 +1711,7 @@ namespace detail
 
         auto &filedata = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
+        filedata.requireActiveStep();
         filedata.invalidateAttributesMap();
         adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace(std::move(file));
@@ -1753,7 +1996,7 @@ namespace detail
     }
 
     template <typename T>
-    void AttributeTypes<T>::readAttribute(
+    Datatype AttributeTypes<T>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -1768,10 +2011,11 @@ namespace detail
                 std::to_string(attr.shape.size()) + "D: " + name);
         }
         *resource = *attr.data;
+        return determineDatatype<T>();
     }
 
     template <typename T>
-    void AttributeTypes<std::vector<T> >::createAttribute(
+    void AttributeTypes<std::vector<T>>::createAttribute(
         adios2::IO &IO,
         adios2::Engine &engine,
         detail::BufferedAttributeWrite &params,
@@ -1794,7 +2038,7 @@ namespace detail
     }
 
     template <typename T>
-    void AttributeTypes<std::vector<T> >::readAttribute(
+    Datatype AttributeTypes<std::vector<T>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -1809,9 +2053,10 @@ namespace detail
         std::vector<T> res(attr.shape[0]);
         std::copy_n(attr.data, attr.shape[0], res.data());
         *resource = std::move(res);
+        return determineDatatype<std::vector<T>>();
     }
 
-    void AttributeTypes<std::vector<std::string> >::createAttribute(
+    void AttributeTypes<std::vector<std::string>>::createAttribute(
         adios2::IO &IO,
         adios2::Engine &engine,
         detail::BufferedAttributeWrite &params,
@@ -1856,7 +2101,7 @@ namespace detail
             attr, params.bufferForVecString.data(), adios2::Mode::Deferred);
     }
 
-    void AttributeTypes<std::vector<std::string> >::readAttribute(
+    Datatype AttributeTypes<std::vector<std::string>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -1932,9 +2177,10 @@ namespace detail
             *resource = res;
         };
         /*
-         * If writing char variables in ADIOS2, they might become either int8_t
-         * or uint8_t on disk depending on the platform.
-         * So allow reading from both types.
+         * If writing char variables in ADIOS2, they might become either int8_t,
+         * uint8_t or char on disk depending on platform, ADIOS2 version and
+         * ADIOS2 engine.
+         * So allow reading from all these types.
          */
         switch (preloadedAttributes.attributeType(name))
         {
@@ -1943,10 +2189,10 @@ namespace detail
          * ADIOS2 does not have an explicit char type,
          * we don't have an explicit schar type.
          * Until this is fixed, we use CHAR to represent ADIOS signed char.
+         * @todo revisit this workaround and its necessity
          */
         case Datatype::CHAR: {
-            using schar_t = signed char;
-            loadFromDatatype(schar_t{});
+            loadFromDatatype(char{});
             break;
         }
         case Datatype::UCHAR: {
@@ -1954,16 +2200,21 @@ namespace detail
             loadFromDatatype(uchar_t{});
             break;
         }
+        case Datatype::SCHAR: {
+            using schar_t = signed char;
+            loadFromDatatype(schar_t{});
+            break;
+        }
         default: {
             throw std::runtime_error(
-                "[ADIOS2] Expecting 2D ADIOS variable of "
-                "type signed or unsigned char.");
+                "[ADIOS2] Expecting 2D ADIOS variable of any char type.");
         }
         }
+        return Datatype::VEC_STRING;
     }
 
     template <typename T, size_t n>
-    void AttributeTypes<std::array<T, n> >::createAttribute(
+    void AttributeTypes<std::array<T, n>>::createAttribute(
         adios2::IO &IO,
         adios2::Engine &engine,
         detail::BufferedAttributeWrite &params,
@@ -1985,7 +2236,7 @@ namespace detail
     }
 
     template <typename T, size_t n>
-    void AttributeTypes<std::array<T, n> >::readAttribute(
+    Datatype AttributeTypes<std::array<T, n>>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -2002,6 +2253,7 @@ namespace detail
         std::array<T, n> res;
         std::copy_n(attr.data, n, res.data());
         *resource = std::move(res);
+        return determineDatatype<std::array<T, n>>();
     }
 
     void AttributeTypes<bool>::createAttribute(
@@ -2016,7 +2268,7 @@ namespace detail
             IO, engine, params, toRep(value));
     }
 
-    void AttributeTypes<bool>::readAttribute(
+    Datatype AttributeTypes<bool>::readAttribute(
         detail::PreloadAdiosAttributes const &preloadedAttributes,
         std::string name,
         std::shared_ptr<Attribute::resource> resource)
@@ -2032,6 +2284,7 @@ namespace detail
         }
 
         *resource = fromRep(*attr.data);
+        return Datatype::BOOL;
     }
 
     void BufferedGet::run(BufferedActions &ba)
@@ -2092,11 +2345,14 @@ namespace detail
         : m_file(impl.fullPath(std::move(file)))
         , m_IOName(std::to_string(impl.nameCounter++))
         , m_ADIOS(impl.m_ADIOS)
-        , m_IO(impl.m_ADIOS.DeclareIO(m_IOName))
-        , m_mode(impl.adios2AccessMode(m_file))
         , m_impl(&impl)
         , m_engineType(impl.m_engineType)
     {
+        // Declaring these members in the constructor body to avoid
+        // initialization order hazards. Need the IO_ prefix since in some
+        // situation there seems to be trouble with number-only IO names
+        m_IO = impl.m_ADIOS.DeclareIO("IO_" + m_IOName);
+        m_mode = impl.adios2AccessMode(m_file);
         if (!m_IO)
         {
             throw std::runtime_error(
@@ -2160,9 +2416,18 @@ namespace detail
     {
         (void)impl;
         static std::set<std::string> streamingEngines = {
-            "sst", "insitumpi", "inline", "staging", "nullcore", "ssc"};
+            "sst",
+            "insitumpi",
+            "inline",
+            "staging",
+            "nullcore",
+            "ssc",
+            "filestream",
+            "bp5"};
+        // diskStreamingEngines is a subset of streamingEngines
+        static std::set<std::string> diskStreamingEngines{"bp5", "filestream"};
         static std::set<std::string> fileEngines = {
-            "bp5", "bp4", "bp3", "hdf5", "file"};
+            "bp4", "bp3", "hdf5", "file"};
 
         // step/variable-based iteration encoding requires the new schema
         if (m_impl->m_iterationEncoding == IterationEncoding::variableBased)
@@ -2173,22 +2438,20 @@ namespace detail
         // set engine type
         bool isStreaming = false;
         {
-            // allow overriding through environment variable
-            m_engineType =
-                auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", m_engineType);
-            std::transform(
-                m_engineType.begin(),
-                m_engineType.end(),
-                m_engineType.begin(),
-                [](unsigned char c) { return std::tolower(c); });
-            impl.m_engineType = this->m_engineType;
             m_IO.SetEngine(m_engineType);
             auto it = streamingEngines.find(m_engineType);
             if (it != streamingEngines.end())
             {
                 isStreaming = true;
                 optimizeAttributesStreaming =
-                    schema() == SupportedSchema::s_0000_00_00;
+                    // Optimizing attributes in streaming mode is not needed in
+                    // the variable-based ADIOS2 schema
+                    schema() == SupportedSchema::s_0000_00_00 &&
+                    // Also, it should only be done when truly streaming, not
+                    // when using a disk-based engine that behaves like a
+                    // streaming engine (otherwise attributes might vanish)
+                    diskStreamingEngines.find(m_engineType) ==
+                        diskStreamingEngines.end();
                 streamStatus = StreamStatus::OutsideOfStep;
             }
             else
@@ -2205,10 +2468,10 @@ namespace detail
                          * file being read.
                          */
                         streamStatus = StreamStatus::Undecided;
-                        // @todo no?? should be default in both modes
                         delayOpeningTheFirstStep = true;
                         break;
                     case adios2::Mode::Write:
+                    case adios2::Mode::Append:
                         /*
                          * File engines, write mode:
                          * Default for old layout is no steps.
@@ -2233,8 +2496,8 @@ namespace detail
                 {
                     throw std::runtime_error(
                         "[ADIOS2IOHandler] Unknown engine type. Please choose "
-                        "one out of "
-                        "[sst, staging, bp4, bp3, hdf5, file, null]");
+                        "one out of [sst, staging, bp4, bp3, hdf5, file, "
+                        "filestream, null]");
                     // not listing unsupported engines
                 }
             }
@@ -2281,6 +2544,22 @@ namespace detail
                 }
                 streamStatus = bool(tmp) ? StreamStatus::OutsideOfStep
                                          : StreamStatus::NoStream;
+            }
+
+            if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
+            {
+                auto target = json::asLowerCaseStringDynamic(
+                    engineConfig[ADIOS2Defaults::str_flushtarget].json());
+                if (!target.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        "Flush target must be either 'disk' or 'buffer', but "
+                        "was non-literal type.");
+                }
+                overrideFlushTarget(
+                    m_impl->m_flushTarget,
+                    flushTargetFromString(target.value()));
             }
         }
 
@@ -2414,8 +2693,22 @@ namespace detail
     {
         if (!m_engine)
         {
+            auto tempMode = m_mode;
             switch (m_mode)
             {
+            case adios2::Mode::Append:
+#ifdef _WIN32
+                /*
+                 * On Windows, ADIOS2 v2.8. Append mode only works with existing
+                 * files. So, we first check for file existence and switch to
+                 * create mode if it does not exist.
+                 *
+                 * See issue: https://github.com/ornladios/ADIOS2/issues/3358
+                 */
+                tempMode = m_impl->checkFile(m_file) ? adios2::Mode::Append
+                                                     : adios2::Mode::Write;
+                [[fallthrough]];
+#endif
             case adios2::Mode::Write: {
                 // usesSteps attribute only written upon ::advance()
                 // this makes sure that the attribute is only put in case
@@ -2423,7 +2716,7 @@ namespace detail
                 m_IO.DefineAttribute<ADIOS2Schema::schema_t>(
                     ADIOS2Defaults::str_adios2Schema, m_impl->m_schema);
                 m_engine = std::make_optional(
-                    adios2::Engine(m_IO.Open(m_file, m_mode)));
+                    adios2::Engine(m_IO.Open(m_file, tempMode)));
                 break;
             }
             case adios2::Mode::Read: {
@@ -2510,9 +2803,23 @@ namespace detail
     adios2::Engine &BufferedActions::requireActiveStep()
     {
         adios2::Engine &eng = getEngine();
+        /*
+         * If streamStatus is Parsing, do NOT open the step.
+         */
         if (streamStatus == StreamStatus::OutsideOfStep)
         {
-            m_lastStepStatus = eng.BeginStep();
+            switch (
+                advance(AdvanceMode::BEGINSTEP, /* calledExplicitly = */ false))
+            {
+            case AdvanceStatus::OVER:
+                throw std::runtime_error(
+                    "[ADIOS2] Operation requires active step but no step is "
+                    "left.");
+            case AdvanceStatus::OK:
+            case AdvanceStatus::RANDOMACCESS:
+                // pass
+                break;
+            }
             if (m_mode == adios2::Mode::Read &&
                 attributeLayout() == AttributeLayout::ByAdiosVariables)
             {
@@ -2539,11 +2846,12 @@ namespace detail
 
     template <typename F>
     void BufferedActions::flush(
-        FlushLevel level,
+        ADIOS2FlushParams flushParams,
         F &&performPutGets,
         bool writeAttributes,
         bool flushUnconditionally)
     {
+        auto level = flushParams.level;
         if (streamStatus == StreamStatus::StreamOver)
         {
             if (flushUnconditionally)
@@ -2613,6 +2921,7 @@ namespace detail
 
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
+        case FlushLevel::CreateOrOpenFiles:
             /*
              * Tasks have been given to ADIOS2, but we don't flush them
              * yet. So, move everything to m_alreadyEnqueued to avoid
@@ -2638,25 +2947,58 @@ namespace detail
         }
     }
 
-    void BufferedActions::flush(FlushLevel level, bool writeAttributes)
+    void
+    BufferedActions::flush(ADIOS2FlushParams flushParams, bool writeAttributes)
     {
+        auto decideFlushAPICall = [this, flushTarget = flushParams.flushTarget](
+                                      adios2::Engine &engine) {
+#if ADIOS2_VERSION_MAJOR * 1000000000 + ADIOS2_VERSION_MINOR * 100000000 +     \
+        ADIOS2_VERSION_PATCH * 1000000 + ADIOS2_VERSION_TWEAK >=               \
+    2701001223
+            bool performDataWrite{};
+            switch (flushTarget)
+            {
+            case FlushTarget::Disk:
+            case FlushTarget::Disk_Override:
+                performDataWrite = true;
+                break;
+            case FlushTarget::Buffer:
+            case FlushTarget::Buffer_Override:
+                performDataWrite = false;
+                break;
+            }
+            performDataWrite = performDataWrite && m_engineType == "bp5";
+
+            if (performDataWrite)
+            {
+                engine.PerformDataWrite();
+            }
+            else
+            {
+                engine.PerformPuts();
+            }
+#else
+            (void)this;
+            (void)flushTarget;
+            engine.PerformPuts();
+#endif
+        };
+
         flush(
-            level,
-            [](BufferedActions &ba, adios2::Engine &eng) {
+            flushParams,
+            [decideFlushAPICall = std::move(decideFlushAPICall)](
+                BufferedActions &ba, adios2::Engine &eng) {
                 switch (ba.m_mode)
                 {
                 case adios2::Mode::Write:
-                    eng.PerformPuts();
+                case adios2::Mode::Append:
+                    decideFlushAPICall(eng);
                     break;
                 case adios2::Mode::Read:
                     eng.PerformGets();
                     break;
-                case adios2::Mode::Append:
-                    // TODO order?
-                    eng.PerformGets();
-                    eng.PerformPuts();
-                    break;
                 default:
+                    throw error::Internal("[ADIOS2] Unexpected access mode.");
                     break;
                 }
             },
@@ -2664,7 +3006,8 @@ namespace detail
             /* flushUnconditionally = */ false);
     }
 
-    AdvanceStatus BufferedActions::advance(AdvanceMode mode)
+    AdvanceStatus
+    BufferedActions::advance(AdvanceMode mode, bool calledExplicitly)
     {
         if (streamStatus == StreamStatus::Undecided)
         {
@@ -2676,12 +3019,24 @@ namespace detail
         {
             m_IO.DefineAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute, 0);
-            flush(FlushLevel::UserFlush, /* writeAttributes = */ false);
-            return AdvanceStatus::OK;
+            flush({FlushLevel::UserFlush}, /* writeAttributes = */ false);
+            return AdvanceStatus::RANDOMACCESS;
         }
 
-        m_IO.DefineAttribute<bool_representation>(
-            ADIOS2Defaults::str_usesstepsAttribute, 1);
+        /*
+         * If advance() is called implicitly (by requireActiveStep()), the
+         * Series is not necessarily using steps (logically).
+         * But in some ADIOS2 engines, at least one step must be opened
+         * (physically) to do anything.
+         * The usessteps tag should only be set when the Series is *logically*
+         * using steps.
+         */
+        if (calledExplicitly)
+        {
+            m_IO.DefineAttribute<bool_representation>(
+                ADIOS2Defaults::str_usesstepsAttribute, 1);
+        }
+
         switch (mode)
         {
         case AdvanceMode::ENDSTEP: {
@@ -2704,7 +3059,7 @@ namespace detail
                 }
             }
             flush(
-                FlushLevel::UserFlush,
+                {FlushLevel::UserFlush},
                 [](BufferedActions &, adios2::Engine &eng) { eng.EndStep(); },
                 /* writeAttributes = */ true,
                 /* flushUnconditionally = */ true);
@@ -2714,27 +3069,21 @@ namespace detail
             return AdvanceStatus::OK;
         }
         case AdvanceMode::BEGINSTEP: {
-            adios2::StepStatus adiosStatus = m_lastStepStatus;
+            adios2::StepStatus adiosStatus{};
 
-            // Step might have been opened implicitly already
-            // by requireActiveStep()
-            // In that case, streamStatus is DuringStep and Adios
-            // return status is stored in m_lastStepStatus
             if (streamStatus != StreamStatus::DuringStep)
             {
-                flush(
-                    FlushLevel::UserFlush,
-                    [&adiosStatus](BufferedActions &, adios2::Engine &engine) {
-                        adiosStatus = engine.BeginStep();
-                    },
-                    /* writeAttributes = */ false,
-                    /* flushUnconditionally = */ true);
+                adiosStatus = getEngine().BeginStep();
                 if (adiosStatus == adios2::StepStatus::OK &&
                     m_mode == adios2::Mode::Read &&
                     attributeLayout() == AttributeLayout::ByAdiosVariables)
                 {
                     preloadAttributes.preloadAttributes(m_IO, m_engine.value());
                 }
+            }
+            else
+            {
+                adiosStatus = adios2::StepStatus::OK;
             }
             AdvanceStatus res = AdvanceStatus::OK;
             switch (adiosStatus)
@@ -2853,9 +3202,15 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     openPMD::Access at,
     MPI_Comm comm,
     json::TracingJSON options,
-    std::string engineType)
+    std::string engineType,
+    std::string specifiedExtension)
     : AbstractIOHandler(std::move(path), at, comm)
-    , m_impl{this, comm, std::move(options), std::move(engineType)}
+    , m_impl{
+          this,
+          comm,
+          std::move(options),
+          std::move(engineType),
+          std::move(specifiedExtension)}
 {}
 
 #endif
@@ -2864,32 +3219,43 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     json::TracingJSON options,
-    std::string engineType)
+    std::string engineType,
+    std::string specifiedExtension)
     : AbstractIOHandler(std::move(path), at)
-    , m_impl{this, std::move(options), std::move(engineType)}
+    , m_impl{
+          this,
+          std::move(options),
+          std::move(engineType),
+          std::move(specifiedExtension)}
 {}
 
-std::future<void> ADIOS2IOHandler::flush()
+std::future<void>
+ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 {
-    return m_impl.flush();
+    return m_impl.flush(flushParams);
 }
 
 #else // openPMD_HAVE_ADIOS2
 
 #if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path, Access at, MPI_Comm comm, json::TracingJSON, std::string)
+    std::string path,
+    Access at,
+    MPI_Comm comm,
+    json::TracingJSON,
+    std::string,
+    std::string)
     : AbstractIOHandler(std::move(path), at, comm)
 {}
 
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path, Access at, json::TracingJSON, std::string)
+    std::string path, Access at, json::TracingJSON, std::string, std::string)
     : AbstractIOHandler(std::move(path), at)
 {}
 
-std::future<void> ADIOS2IOHandler::flush()
+std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

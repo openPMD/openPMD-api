@@ -22,6 +22,8 @@
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Datatype_internal.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 
 #include <iostream>
@@ -35,7 +37,7 @@ std::string ToDatatypeHelper<T>::type()
 }
 
 template <typename T>
-std::string ToDatatypeHelper<std::vector<T> >::type()
+std::string ToDatatypeHelper<std::vector<T>>::type()
 {
     return
 
@@ -43,7 +45,7 @@ std::string ToDatatypeHelper<std::vector<T> >::type()
 }
 
 template <typename T, size_t n>
-std::string ToDatatypeHelper<std::array<T, n> >::type()
+std::string ToDatatypeHelper<std::array<T, n>>::type()
 {
     return
 
@@ -72,7 +74,7 @@ Datatype fromADIOS2Type(std::string const &dt, bool verbose)
     static std::map<std::string, Datatype> map{
         {"string", Datatype::STRING},
         {"char", Datatype::CHAR},
-        {"signed char", Datatype::CHAR},
+        {"signed char", Datatype::SCHAR},
         {"unsigned char", Datatype::UCHAR},
         {"short", Datatype::SHORT},
         {"unsigned short", Datatype::USHORT},
@@ -87,11 +89,11 @@ Datatype fromADIOS2Type(std::string const &dt, bool verbose)
         {"long double", Datatype::LONG_DOUBLE},
         {"float complex", Datatype::CFLOAT},
         {"double complex", Datatype::CDOUBLE},
-        {"long double complex",
-         Datatype::CLONG_DOUBLE}, // does not exist as of 2.7.0 but might come
-                                  // later
+        // does not exist as of 2.7.0 but might come later
+        // {"long double complex",
+        //  Datatype::CLONG_DOUBLE},
         {"uint8_t", Datatype::UCHAR},
-        {"int8_t", Datatype::CHAR},
+        {"int8_t", Datatype::SCHAR},
         {"uint16_t", determineDatatype<uint16_t>()},
         {"int16_t", determineDatatype<int16_t>()},
         {"uint32_t", determineDatatype<uint32_t>()},
@@ -217,7 +219,8 @@ Datatype attributeInfo(
             }
             else if (
                 shape.size() == 2 &&
-                (basicType == Datatype::CHAR || basicType == Datatype::UCHAR))
+                (basicType == Datatype::CHAR || basicType == Datatype::SCHAR ||
+                 basicType == Datatype::UCHAR))
             {
                 return Datatype::VEC_STRING;
             }

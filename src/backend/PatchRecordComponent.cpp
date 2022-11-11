@@ -80,19 +80,23 @@ PatchRecordComponent::PatchRecordComponent(
     : BaseRecordComponent{data}, m_patchRecordComponentData{std::move(data)}
 {}
 
-void PatchRecordComponent::flush(std::string const &name)
+void PatchRecordComponent::flush(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
     auto &rc = get();
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
     {
+    case Access::READ_ONLY: {
         while (!rc.m_chunks.empty())
         {
             IOHandler()->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
+        break;
     }
-    else
-    {
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         if (!written())
         {
             Parameter<Operation::CREATE_DATASET> dCreate;
@@ -109,7 +113,9 @@ void PatchRecordComponent::flush(std::string const &name)
             rc.m_chunks.pop();
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
+        break;
+    }
     }
 }
 
@@ -119,9 +125,10 @@ void PatchRecordComponent::read()
 
     aRead.name = "unitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
-    if (*aRead.dtype == Datatype::DOUBLE)
-        setUnitSI(Attribute(*aRead.resource).get<double>());
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (auto val = Attribute(*aRead.resource).getOptional<double>();
+        val.has_value())
+        setUnitSI(val.value());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 

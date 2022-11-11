@@ -28,7 +28,10 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 
+#include <cstdint>
+#include <deque>
 #include <optional>
+#include <tuple>
 
 namespace openPMD
 {
@@ -72,6 +75,7 @@ namespace internal
          * containing this iteration.
          */
         std::string filename;
+        bool beginStep = false;
     };
 
     class IterationData : public AttributableData
@@ -102,6 +106,14 @@ namespace internal
          * Otherwise empty.
          */
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
+
+        /**
+         * Upon reading a file, set this field to the used file name.
+         * In inconsistent iteration paddings, we must remember the name of the
+         * file since it cannot be reconstructed from the filename pattern
+         * alone.
+         */
+        std::optional<std::string> m_overrideFilebasedFilename{};
     };
 } // namespace internal
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
@@ -242,20 +254,23 @@ private:
         return *m_iterationData;
     }
 
-    void flushFileBased(std::string const &, uint64_t);
-    void flushGroupBased(uint64_t);
-    void flushVariableBased(uint64_t);
-    void flush();
+    void flushFileBased(
+        std::string const &, uint64_t, internal::FlushParams const &);
+    void flushGroupBased(uint64_t, internal::FlushParams const &);
+    void flushVariableBased(uint64_t, internal::FlushParams const &);
+    void flush(internal::FlushParams const &);
     void deferParseAccess(internal::DeferredParseAccess);
     /*
-     * Control flow for read(), readFileBased(), readGroupBased() and
-     * read_impl():
-     * read() is called as the entry point. File-based and group-based
+     * Control flow for runDeferredParseAccess(), readFileBased(),
+     * readGroupBased() and read_impl():
+     * runDeferredParseAccess() is called as the entry point.
+     * File-based and group-based
      * iteration layouts need to be parsed slightly differently:
      * In file-based iteration layout, each iteration's file also contains
      * attributes for the /data group. In group-based layout, those have
      * already been parsed during opening of the Series.
-     * Hence, read() will call either readFileBased() or readGroupBased() to
+     * Hence, runDeferredParseAccess() will call either readFileBased() or
+     * readGroupBased() to
      * allow for those different control flows.
      * Finally, read_impl() is called which contains the common parsing
      * logic for an iteration.
@@ -264,27 +279,68 @@ private:
      * Calling it on an Iteration not yet parsed is an error.
      *
      */
-    void read();
     void reread(std::string const &path);
-    void readFileBased(std::string filePath, std::string const &groupPath);
-    void readGorVBased(std::string const &groupPath);
+    void readFileBased(
+        std::string filePath, std::string const &groupPath, bool beginStep);
+    void readGorVBased(std::string const &groupPath, bool beginStep);
     void read_impl(std::string const &groupPath);
+
+    /**
+     * Status after beginning an IO step. Currently includes:
+     * * The advance status (OK, OVER, RANDOMACCESS)
+     * * The opened iterations, in case the snapshot attribute is found
+     */
+    struct BeginStepStatus
+    {
+        using AvailableIterations_t = std::optional<std::deque<uint64_t> >;
+
+        AdvanceStatus stepStatus{};
+        /*
+         * If the iteration attribute `snapshot` is present, the value of that
+         * attribute. Otherwise empty.
+         */
+        AvailableIterations_t iterationsInOpenedStep;
+
+        /*
+         * Most of the time, the AdvanceStatus part of this struct is what we
+         * need, so let's make it easy to access.
+         */
+        inline operator AdvanceStatus() const
+        {
+            return stepStatus;
+        }
+
+        /*
+         * Support for std::tie()
+         */
+        inline operator std::tuple<AdvanceStatus &, AvailableIterations_t &>()
+        {
+            return std::tuple<AdvanceStatus &, AvailableIterations_t &>{
+                stepStatus, iterationsInOpenedStep};
+        }
+    };
 
     /**
      * @brief Begin an IO step on the IO file (or file-like object)
      *        containing this iteration. In case of group-based iteration
      *        layout, this will be the complete Series.
      *
-     * @return AdvanceStatus
+     * @return BeginStepStatus
      */
-    AdvanceStatus beginStep();
+    BeginStepStatus beginStep(bool reread);
+
+    /*
+     * Iteration-independent variant for beginStep().
+     * Useful in group-based iteration encoding where the Iteration will only
+     * be known after opening the step.
+     */
+    static BeginStepStatus
+    beginStep(std::optional<Iteration> thisObject, Series &series, bool reread);
 
     /**
      * @brief End an IO step on the IO file (or file-like object)
      *        containing this iteration. In case of group-based iteration
      *        layout, this will be the complete Series.
-     *
-     * @return AdvanceStatus
      */
     void endStep();
 

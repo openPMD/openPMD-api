@@ -40,6 +40,18 @@ std::vector<std::string> getBackends()
 
 auto const backends = getBackends();
 
+std::vector<std::string> testedFileExtensions()
+{
+    auto allExtensions = getFileExtensions();
+    auto newEnd = std::remove_if(
+        allExtensions.begin(), allExtensions.end(), [](std::string const &ext) {
+            // sst and ssc need a receiver for testing
+            // bp4 is already tested via bp
+            return ext == "sst" || ext == "ssc" || ext == "bp4" | ext == "json";
+        });
+    return {allExtensions.begin(), newEnd};
+}
+
 #else
 
 TEST_CASE("none", "[parallel]")
@@ -846,7 +858,7 @@ void file_based_write_read(std::string file_ending)
 
             Offset chunk_offset = {0, local_Nz * mpi_rank};
             Extent chunk_extent = {global_Nx, local_Nz};
-            E_x.storeChunk(io::shareRaw(E_x_data), chunk_offset, chunk_extent);
+            E_x.storeChunk(E_x_data, chunk_offset, chunk_extent);
             series.flush();
         }
     }
@@ -1066,7 +1078,10 @@ void adios2_streaming(bool variableBasedLayout)
     if (rank == 0)
     {
         // write
-        Series writeSeries("../samples/adios2_stream.sst", Access::CREATE);
+        Series writeSeries(
+            "../samples/adios2_stream.sst",
+            Access::CREATE,
+            "adios2.engine.type = \"sst\"");
         if (variableBasedLayout)
         {
             writeSeries.setIterationEncoding(IterationEncoding::variableBased);
@@ -1109,7 +1124,8 @@ void adios2_streaming(bool variableBasedLayout)
         Series readSeries(
             "../samples/adios2_stream.sst",
             Access::READ_ONLY,
-            "defer_iteration_parsing = true"); // inline TOML
+            // inline TOML
+            R"(defer_iteration_parsing = true)");
 
         size_t last_iteration_index = 0;
         for (auto iteration : readSeries.readIterations())
@@ -1222,10 +1238,13 @@ doshuffle = "BLOSC_BITSHUFFLE"
     write("../samples/jsonConfiguredBP4Parallel.bp", writeConfigBP4);
     write("../samples/jsonConfiguredBP3Parallel.bp", writeConfigBP3);
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // BP3 engine writes files, BP4 writes directories
-    REQUIRE(openPMD::auxiliary::file_exists("../samples/jsonConfiguredBP3.bp"));
+    REQUIRE(openPMD::auxiliary::file_exists(
+        "../samples/jsonConfiguredBP3Parallel.bp"));
     REQUIRE(openPMD::auxiliary::directory_exists(
-        "../samples/jsonConfiguredBP4.bp"));
+        "../samples/jsonConfiguredBP4Parallel.bp"));
 
     std::string readConfigBP3 = R"END(
 {
@@ -1360,5 +1379,221 @@ void adios2_ssc()
 TEST_CASE("adios2_ssc", "[parallel][adios2]")
 {
     adios2_ssc();
+}
+
+void append_mode(
+    std::string const &extension,
+    bool variableBased,
+    std::string jsonConfig = "{}")
+{
+    std::string filename =
+        (variableBased ? "../samples/append/append_variablebased."
+                       : "../samples/append/append_groupbased.") +
+        extension;
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (auxiliary::directory_exists("../samples/append"))
+    {
+        auxiliary::remove_directory("../samples/append");
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    std::vector<int> data(10, 0);
+    auto writeSomeIterations = [&data](
+                                   WriteIterations &&writeIterations,
+                                   std::vector<uint64_t> indices) {
+        for (auto index : indices)
+        {
+            auto it = writeIterations[index];
+            auto dataset = it.meshes["E"]["x"];
+            dataset.resetDataset({Datatype::INT, {10}});
+            dataset.storeChunk(data, {0}, {10});
+            // test that it works without closing too
+            it.close();
+        }
+    };
+    {
+        Series write(filename, Access::APPEND, MPI_COMM_WORLD, jsonConfig);
+        if (variableBased)
+        {
+            if (write.backend() != "ADIOS2")
+            {
+                return;
+            }
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
+        writeSomeIterations(
+            write.writeIterations(), std::vector<uint64_t>{0, 1});
+    }
+    {
+        Series write(filename, Access::APPEND, MPI_COMM_WORLD, jsonConfig);
+        if (variableBased)
+        {
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
+        if (write.backend() == "MPI_ADIOS1")
+        {
+            REQUIRE_THROWS_WITH(
+                write.flush(),
+                Catch::Equals(
+                    "Operation unsupported in ADIOS1: Appending to existing "
+                    "file on disk (use Access::CREATE to overwrite)"));
+            // destructor will be noisy now
+            return;
+        }
+
+        writeSomeIterations(
+            write.writeIterations(), std::vector<uint64_t>{2, 3});
+        write.flush();
+    }
+    {
+        using namespace std::chrono_literals;
+        /*
+         * Put a little sleep here to trigger writing of a different /date
+         * attribute. ADIOS2 v2.7 does not like that so this test ensures that
+         * we deal with it.
+         */
+        std::this_thread::sleep_for(1s);
+        Series write(filename, Access::APPEND, MPI_COMM_WORLD, jsonConfig);
+        if (variableBased)
+        {
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
+        if (write.backend() == "MPI_ADIOS1")
+        {
+            REQUIRE_THROWS_WITH(
+                write.flush(),
+                Catch::Equals(
+                    "Operation unsupported in ADIOS1: Appending to existing "
+                    "file on disk (use Access::CREATE to overwrite)"));
+            // destructor will be noisy now
+            return;
+        }
+
+        writeSomeIterations(
+            write.writeIterations(), std::vector<uint64_t>{4, 3});
+        write.flush();
+    }
+    {
+        Series read(filename, Access::READ_ONLY, MPI_COMM_WORLD);
+        if (variableBased || extension == "bp5")
+        {
+            // in variable-based encodings, iterations are not parsed ahead of
+            // time but as they go
+            unsigned counter = 0;
+            for (auto const &iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == counter);
+                ++counter;
+            }
+            REQUIRE(counter == 5);
+        }
+        else
+        {
+            REQUIRE(read.iterations.size() == 5);
+            helper::listSeries(read);
+        }
+    }
+#if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
+        10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
+    208002700
+    // AppendAfterSteps has a bug before that version
+    if (extension == "bp5")
+    {
+        {
+            Series write(
+                filename,
+                Access::APPEND,
+                MPI_COMM_WORLD,
+                json::merge(
+                    jsonConfig,
+                    R"({"adios2":{"engine":{"parameters":{"AppendAfterSteps":-3}}}})"));
+            if (variableBased)
+            {
+                write.setIterationEncoding(IterationEncoding::variableBased);
+            }
+            if (write.backend() == "ADIOS1")
+            {
+                REQUIRE_THROWS_WITH(
+                    write.flush(),
+                    Catch::Equals(
+                        "Operation unsupported in ADIOS1: Appending to "
+                        "existing "
+                        "file on disk (use Access::CREATE to overwrite)"));
+                // destructor will be noisy now
+                return;
+            }
+
+            writeSomeIterations(
+                write.writeIterations(), std::vector<uint64_t>{4, 5});
+            write.flush();
+        }
+        {
+            Series read(filename, Access::READ_ONLY, MPI_COMM_WORLD);
+            // in variable-based encodings, iterations are not parsed ahead of
+            // time but as they go
+            unsigned counter = 0;
+            for (auto const &iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == counter);
+                ++counter;
+            }
+            REQUIRE(counter == 6);
+            helper::listSeries(read);
+        }
+    }
+#endif
+}
+
+TEST_CASE("append_mode", "[parallel]")
+{
+    for (auto const &t : testedFileExtensions())
+    {
+        if (t == "bp" || t == "bp4" || t == "bp5")
+        {
+            std::string jsonConfigOld = R"END(
+{
+    "adios2":
+    {
+        "schema": 0,
+        "engine":
+        {
+            "usesteps" : true
+        }
+    }
+})END";
+            std::string jsonConfigNew = R"END(
+{
+    "adios2":
+    {
+        "schema": 20210209,
+        "engine":
+        {
+            "usesteps" : true
+        }
+    }
+})END";
+            /*
+             * Troublesome combination:
+             * 1) ADIOS2 v2.7
+             * 2) Parallel writer
+             * 3) Append mode
+             * 4) Writing to a scalar variable
+             *
+             * 4) is done by schema 2021 which will be phased out, so the tests
+             * are just deactivated.
+             */
+            if (auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", 0) != 0)
+            {
+                continue;
+            }
+            append_mode(t, false, jsonConfigOld);
+            // append_mode(t, true, jsonConfigOld);
+            // append_mode(t, false, jsonConfigNew);
+            // append_mode(t, true, jsonConfigNew);
+        }
+        else
+        {
+            append_mode(t, false);
+        }
+    }
 }
 #endif

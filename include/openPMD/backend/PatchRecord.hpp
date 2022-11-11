@@ -41,7 +41,8 @@ public:
 private:
     PatchRecord() = default;
 
-    void flush_impl(std::string const &) override;
+    void
+    flush_impl(std::string const &, internal::FlushParams const &) override;
     void read() override;
 }; // PatchRecord
 } // namespace openPMD

@@ -36,6 +36,11 @@
 #include <adios2.h>
 #endif
 
+#if openPMD_HAVE_CUDA_EXAMPLES
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
 using std::cout;
 using namespace openPMD;
 
@@ -163,8 +168,9 @@ private:
     int m_Rank = 0;
 };
 
-/**     createData
- *      generate a shared ptr of given size  with given type & default value
+/**     createDataCPU
+ *      generate a shared ptr of given size  with given type & default value on
+ * CPU
  *
  * @param T             data type
  * @param size          data size
@@ -175,19 +181,55 @@ private:
 
 template <typename T>
 std::shared_ptr<T>
-createData(const unsigned long &size, const T &val, const T &increment)
+createDataCPU(const unsigned long &size, const T &val, const T &increment)
 {
     auto E = std::shared_ptr<T>{new T[size], [](T *d) { delete[] d; }};
 
     for (unsigned long i = 0ul; i < size; i++)
     {
         if (increment != 0)
-            // E.get()[i] = val+i;
             E.get()[i] = val + i * increment;
         else
             E.get()[i] = val;
     }
     return E;
+}
+
+#if openPMD_HAVE_CUDA_EXAMPLES
+template <typename T>
+std::shared_ptr<T>
+createDataGPU(const unsigned long &size, const T &val, const T &increment)
+{
+    auto myCudaMalloc = [](size_t mySize) {
+        void *ptr;
+        cudaMalloc((void **)&ptr, mySize);
+        return ptr;
+    };
+    auto deleter = [](T *ptr) { cudaFree(ptr); };
+    auto E = std::shared_ptr<T>{(T *)myCudaMalloc(size * sizeof(T)), deleter};
+
+    T *data = new T[size];
+    for (unsigned long i = 0ul; i < size; i++)
+    {
+        if (increment != 0)
+            data[i] = val + i * increment;
+        else
+            data[i] = val;
+    }
+    cudaMemcpy(E.get(), data, size * sizeof(T), cudaMemcpyHostToDevice);
+    return E;
+}
+#endif
+
+template <typename T>
+std::shared_ptr<T>
+createData(const unsigned long &size, const T &val, const T &increment)
+{
+#if openPMD_HAVE_CUDA_EXAMPLES
+    return createDataGPU(size, val, increment);
+#else
+    return createDataCPU(size, val, increment);
+#endif
 }
 
 /** Find supported backends
@@ -219,6 +261,7 @@ class AbstractPattern
 {
 public:
     AbstractPattern(const TestInput &input);
+
     virtual bool setLayOut(int step) = 0;
     unsigned long
     getNthMeshExtent(unsigned int n, Offset &offset, Extent &count);
@@ -352,6 +395,8 @@ public:
     int m_Steps = 1; //!< num of iterations
     std::string m_Backend = ".bp"; //!< I/O backend by file ending
     bool m_Unbalance = false; //! load is different among processors
+    openPMD::IterationEncoding m_Encoding =
+        openPMD::IterationEncoding::variableBased;
 
     int m_Ratio = 1; //! particle:mesh ratio
     unsigned long m_XFactor = 0; // if not overwritten, use m_MPISize
@@ -390,6 +435,21 @@ void parse(TestInput &input, std::string line)
     {
         if (vec[1].compare("false") == 0)
             input.m_Unbalance = true;
+        return;
+    }
+
+    if (vec.at(0).compare("encoding") == 0)
+    {
+        if (vec.at(1).compare("f") == 0)
+            input.m_Encoding = openPMD::IterationEncoding::fileBased;
+        else if (vec.at(1).compare("g") == 0)
+            input.m_Encoding = openPMD::IterationEncoding::groupBased;
+#if openPMD_HAVE_ADIOS2
+        // BP5 must be matched with a stream engine.
+        if (auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", "BP4") == "BP5")
+            input.m_Encoding = openPMD::IterationEncoding::variableBased;
+#endif
+
         return;
     }
 
@@ -619,6 +679,7 @@ void AbstractPattern::run()
     if (m_Input.m_Unbalance)
         balance = "u";
 
+    if (m_Input.m_Encoding == openPMD::IterationEncoding::fileBased)
     { // file based
         std::ostringstream s;
         s << m_Input.m_Prefix << "/8a_parallel_" << m_GlobalMesh.size() << "D"
@@ -627,7 +688,7 @@ void AbstractPattern::run()
         std::string filename = s.str();
 
         {
-            std::string tag = "Writing: " + filename;
+            std::string tag = "Writing filebased: " + filename;
             Timer kk(tag.c_str(), m_Input.m_MPIRank);
 
             for (int step = 1; step <= m_Input.m_Steps; step++)
@@ -635,26 +696,26 @@ void AbstractPattern::run()
                 setLayOut(step);
                 Series series =
                     Series(filename, Access::CREATE, MPI_COMM_WORLD);
+                series.setIterationEncoding(m_Input.m_Encoding);
                 series.setMeshesPath("fields");
                 store(series, step);
             }
         }
     }
 
-#ifdef NEVER // runs into error for ADIOS. so temporarily disabled
-    { // group based
+    { // group/var based
         std::ostringstream s;
         s << m_Input.m_Prefix << "/8a_parallel_" << m_GlobalMesh.size() << "D"
           << balance << m_Input.m_Backend;
         std::string filename = s.str();
 
         {
-            std::string tag = "Writing: " + filename;
+            std::string tag = "Writing a single file:" + filename;
             Timer kk(tag.c_str(), m_Input.m_MPIRank);
 
             Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+            series.setIterationEncoding(m_Input.m_Encoding);
             series.setMeshesPath("fields");
-
             for (int step = 1; step <= m_Input.m_Steps; step++)
             {
                 setLayOut(step);
@@ -662,7 +723,6 @@ void AbstractPattern::run()
             }
         }
     }
-#endif
 } // run()
 
 /*
@@ -687,10 +747,11 @@ void AbstractPattern::store(Series &series, int step)
     std::string scalar = openPMD::MeshRecordComponent::SCALAR;
     storeMesh(series, step, field_rho, scalar);
 
-    ParticleSpecies &currSpecies = series.iterations[step].particles["ion"];
+    ParticleSpecies &currSpecies =
+        series.writeIterations()[step].particles["ion"];
     storeParticles(currSpecies, step);
 
-    series.iterations[step].close();
+    series.writeIterations()[step].close();
 }
 
 /*
@@ -709,8 +770,7 @@ void AbstractPattern::storeMesh(
     const std::string &compName)
 {
     MeshRecordComponent compA =
-        series.iterations[step].meshes[fieldName][compName];
-
+        series.writeIterations()[step].meshes[fieldName][compName];
     Datatype datatype = determineDatatype<double>();
     Dataset dataset = Dataset(datatype, m_GlobalMesh);
 
@@ -764,8 +824,6 @@ void AbstractPattern::storeParticles(ParticleSpecies &currSpecies, int &step)
     {
         unsigned long offset = 0, count = 0;
         getNthParticleExtent(n, offset, count);
-        // std::cout<<m_Input.m_MPIRank<<"... got p: "<<offset<<",
-        // "<<count<<std::endl;
         if (count > 0)
         {
             auto ids = createData<uint64_t>(count, offset, 1);

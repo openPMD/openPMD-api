@@ -61,7 +61,9 @@ public:
  * @brief Determine what items should be flushed upon Series::flush()
  *
  */
-enum class FlushLevel : unsigned char
+// do not write `enum class FlushLevel : unsigned char` here since NVHPC
+// does not compile it correctly
+enum class FlushLevel
 {
     /**
      * Flush operation that was triggered by user code.
@@ -84,8 +86,64 @@ enum class FlushLevel : unsigned char
      * CREATE_DATASET tasks.
      * Attributes may or may not be flushed yet.
      */
-    SkeletonOnly
+    SkeletonOnly,
+    /**
+     * Only creates/opens files, nothing more
+     */
+    CreateOrOpenFiles
 };
+
+namespace internal
+{
+    /**
+     * Parameters recursively passed through the openPMD hierarchy when
+     * flushing.
+     *
+     */
+    struct FlushParams
+    {
+        FlushLevel flushLevel = FlushLevel::InternalFlush;
+        std::string backendConfig = "{}";
+
+        explicit FlushParams()
+        {}
+        FlushParams(FlushLevel flushLevel_in) : flushLevel(flushLevel_in)
+        {}
+        FlushParams(FlushLevel flushLevel_in, std::string backendConfig_in)
+            : flushLevel(flushLevel_in)
+            , backendConfig{std::move(backendConfig_in)}
+        {}
+    };
+
+    /*
+     * To be used for reading
+     */
+    FlushParams const defaultFlushParams{};
+
+    struct ParsedFlushParams;
+
+    /**
+     * Some parts of the openPMD object model are read-only when accessing
+     * a Series in Access::READ_ONLY mode, notably Containers and Attributes.
+     * They are filled at parse time and not modified afterwards.
+     * Such state-changing operations are hence allowed under either of two
+     * conditions:
+     * 1) The Series is opened in an open mode that allows writing in any way.
+     *    (Currently any but Access::READ_ONLY).
+     * 2) The Series is in Parsing state. This way, modifying the open mode
+     *    during parsing can be avoided.
+     */
+    enum class SeriesStatus : unsigned char
+    {
+        Default, ///< Mutability of objects in the openPMD object model is
+                 ///< determined by the open mode (Access enum), normal state in
+                 ///< which the user interacts with the Series.
+        Parsing ///< All objects in the openPMD object model are temporarily
+                ///< mutable to allow inserting newly-parsed data.
+                ///< Special state only active while internal routines are
+                ///< running.
+    };
+} // namespace internal
 
 /** Interface for communicating between logical and physically persistent data.
  *
@@ -97,6 +155,23 @@ enum class FlushLevel : unsigned char
  */
 class AbstractIOHandler
 {
+    friend class Series;
+
+private:
+    void setIterationEncoding(IterationEncoding encoding)
+    {
+        /*
+         * In file-based iteration encoding, the APPEND mode is handled entirely
+         * by the frontend, the backend should just treat it as CREATE mode
+         */
+        if (encoding == IterationEncoding::fileBased &&
+            m_backendAccess == Access::APPEND)
+        {
+            // do we really want to have those as const members..?
+            *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
+        }
+    }
+
 public:
 #if openPMD_HAVE_MPI
     AbstractIOHandler(std::string path, Access at, MPI_Comm)
@@ -123,16 +198,24 @@ public:
      * @return  Future indicating the completion state of the operation for
      * backends that decide to implement this operation asynchronously.
      */
-    virtual std::future<void> flush() = 0;
+    std::future<void> flush(internal::FlushParams const &);
+
+    /** Process operations in queue according to FIFO.
+     *
+     * @return  Future indicating the completion state of the operation for
+     * backends that decide to implement this operation asynchronously.
+     */
+    virtual std::future<void> flush(internal::ParsedFlushParams &) = 0;
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;
 
     std::string const directory;
+    // why do these need to be separate?
     Access const m_backendAccess;
     Access const m_frontendAccess;
+    internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
     std::queue<IOTask> m_work;
-    FlushLevel m_flushLevel = FlushLevel::InternalFlush;
 }; // AbstractIOHandler
 
 } // namespace openPMD

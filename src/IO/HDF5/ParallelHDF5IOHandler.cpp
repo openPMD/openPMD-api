@@ -54,7 +54,7 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
-std::future<void> ParallelHDF5IOHandler::flush()
+std::future<void> ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &)
 {
     return m_impl->flush();
 }
@@ -65,6 +65,9 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     , m_mpiComm{comm}
     , m_mpiInfo{MPI_INFO_NULL} /* MPI 3.0+: MPI_INFO_ENV */
 {
+    // Set this so the parent class can use the MPI communicator in functions
+    // that are written with special implemenations for MPI-enabled HDF5.
+    m_communicator = m_mpiComm;
     m_datasetTransferProperty = H5Pcreate(H5P_DATASET_XFER);
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
     m_fileCreateProperty = H5Pcreate(H5P_FILE_CREATE);
@@ -196,7 +199,7 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
-std::future<void> ParallelHDF5IOHandler::flush()
+std::future<void> ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

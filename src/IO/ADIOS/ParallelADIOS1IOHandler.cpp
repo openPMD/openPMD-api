@@ -126,6 +126,12 @@ std::future<void> ParallelADIOS1IOHandlerImpl::flush()
                     deref_dynamic_cast<Parameter<Operation::CREATE_FILE> >(
                         i.parameter.get()));
                 break;
+            case O::CHECK_FILE:
+                checkFile(
+                    i.writable,
+                    deref_dynamic_cast<Parameter<Operation::CHECK_FILE> >(
+                        i.parameter.get()));
+                break;
             case O::CREATE_PATH:
                 createPath(
                     i.writable,
@@ -154,6 +160,12 @@ std::future<void> ParallelADIOS1IOHandlerImpl::flush()
                 openFile(
                     i.writable,
                     deref_dynamic_cast<Parameter<O::OPEN_FILE> >(
+                        i.parameter.get()));
+                break;
+            case O::KEEP_SYNCHRONOUS:
+                keepSynchronous(
+                    i.writable,
+                    deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS> >(
                         i.parameter.get()));
                 break;
             default:
@@ -316,7 +328,7 @@ std::future<void> ParallelADIOS1IOHandlerImpl::flush()
             "dataset reading");
 
         for (auto &sel : file.second)
-            adios_selection_delete(sel);
+            adios_selection_delete(sel.selection);
     }
     m_scheduledReads.clear();
 
@@ -349,7 +361,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(
 
 ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler() = default;
 
-std::future<void> ParallelADIOS1IOHandler::flush()
+std::future<void> ParallelADIOS1IOHandler::flush(internal::ParsedFlushParams &)
 {
     return m_impl->flush();
 }
@@ -359,11 +371,13 @@ void ParallelADIOS1IOHandler::enqueue(IOTask const &i)
     switch (i.operation)
     {
     case Operation::CREATE_FILE:
+    case Operation::CHECK_FILE:
     case Operation::CREATE_PATH:
     case Operation::OPEN_PATH:
     case Operation::CREATE_DATASET:
     case Operation::OPEN_FILE:
     case Operation::WRITE_ATT:
+    case Operation::KEEP_SYNCHRONOUS:
         m_setup.push(i);
         return;
     default:
@@ -471,7 +485,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(
 
 ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler() = default;
 
-std::future<void> ParallelADIOS1IOHandler::flush()
+std::future<void> ParallelADIOS1IOHandler::flush(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

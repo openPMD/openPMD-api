@@ -20,6 +20,7 @@
  */
 
 #include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
+#include "openPMD/Error.hpp"
 
 #if openPMD_HAVE_ADIOS1
 
@@ -107,6 +108,9 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::flush_attribute(
     case DT::VEC_UCHAR:
         nelems = att.get<std::vector<unsigned char> >().size();
         break;
+    case DT::VEC_SCHAR:
+        nelems = att.get<std::vector<signed char> >().size();
+        break;
     case DT::VEC_USHORT:
         nelems = att.get<std::vector<unsigned short> >().size();
         break;
@@ -153,6 +157,11 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::flush_attribute(
     case DT::UCHAR: {
         auto ptr = reinterpret_cast<unsigned char *>(values.get());
         *ptr = att.get<unsigned char>();
+        break;
+    }
+    case DT::SCHAR: {
+        auto ptr = reinterpret_cast<signed char *>(values.get());
+        *ptr = att.get<signed char>();
         break;
     }
     case DT::SHORT: {
@@ -269,6 +278,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::flush_attribute(
     case DT::VEC_UCHAR: {
         auto ptr = reinterpret_cast<unsigned char *>(values.get());
         auto const &vec = att.get<std::vector<unsigned char> >();
+        for (size_t i = 0; i < vec.size(); ++i)
+            ptr[i] = vec[i];
+        break;
+    }
+    case DT::VEC_SCHAR: {
+        auto ptr = reinterpret_cast<signed char *>(values.get());
+        auto const &vec = att.get<std::vector<signed char> >();
         for (size_t i = 0; i < vec.size(); ++i)
             ptr[i] = vec[i];
         break;
@@ -406,6 +422,15 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::createFile(
         if (!auxiliary::ends_with(name, ".bp"))
             name += ".bp";
 
+        if (m_handler->m_backendAccess == Access::APPEND &&
+            auxiliary::file_exists(name))
+        {
+            throw error::OperationUnsupportedInBackend(
+                "ADIOS1",
+                "Appending to existing file on disk (use Access::CREATE to "
+                "overwrite)");
+        }
+
         writable->written = true;
         writable->abstractFilePosition =
             std::make_shared<ADIOS1FilePosition>("/");
@@ -422,6 +447,14 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::createFile(
 
         GetFileHandle(writable);
     }
+}
+
+template <typename ChildClass>
+void CommonADIOS1IOHandlerImpl<ChildClass>::checkFile(
+    Writable *, Parameter<Operation::CHECK_FILE> &parameter)
+{
+    *parameter.fileExists =
+        Parameter<Operation::CHECK_FILE>::FileExists::DontKnow;
 }
 
 template <typename ChildClass>
@@ -728,7 +761,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::closeFile(
                 "dataset reading");
 
             for (auto &sel : scheduled->second)
-                adios_selection_delete(sel);
+                adios_selection_delete(sel.selection);
             m_scheduledReads.erase(scheduled);
         }
         close(handle_read->second);
@@ -1096,6 +1129,11 @@ template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::writeAttribute(
     Writable *writable, Parameter<Operation::WRITE_ATT> const &parameters)
 {
+    if (parameters.changesOverSteps)
+    {
+        // cannot do this
+        return;
+    }
     if (m_handler->m_backendAccess == Access::READ_ONLY)
         throw std::runtime_error(
             "[ADIOS1] Writing an attribute in a file opened as read only is "
@@ -1139,6 +1177,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readDataset(
     case DT::ULONGLONG:
     case DT::CHAR:
     case DT::UCHAR:
+    case DT::SCHAR:
     case DT::BOOL:
         break;
     case DT::UNDEFINED:
@@ -1183,7 +1222,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readDataset(
         "[ADIOS1] Internal error: Failed to schedule ADIOS read during dataset "
         "reading");
 
-    m_scheduledReads[f].push_back(sel);
+    m_scheduledReads[f].push_back({sel, parameters.data});
 }
 
 template <typename ChildClass>

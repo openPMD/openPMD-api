@@ -46,16 +46,16 @@ Writing & reading through those backends and their associated files are supporte
 
 auto s = openPMD::Series("samples/git-sample/data%T.h5", openPMD::Access::READ_ONLY);
 
-for( auto const [step, it] : s.iterations ) {
+for( auto const & [step, it] : s.iterations ) {
     std::cout << "Iteration: " << step << "\n";
 
-    for( auto const [name, mesh] : it.meshes ) {
+    for( auto const & [name, mesh] : it.meshes ) {
         std::cout << "  Mesh '" << name << "' attributes:\n";
         for( auto const& val : mesh.attributes() )
             std::cout << "    " << val << '\n';
     }
 
-    for( auto const [name, species] : it.particles ) {
+    for( auto const & [name, species] : it.particles ) {
         std::cout << "  Particle species '" << name << "' attributes:\n";
         for( auto const& val : species.attributes() )
             std::cout << "    " << val << '\n';
@@ -103,10 +103,10 @@ Required:
 * C++17 capable compiler, e.g., g++ 7+, clang 7+, MSVC 19.15+, icpc 19+, icpx
 
 Shipped internally in `share/openPMD/thirdParty/`:
-* [Catch2](https://github.com/catchorg/Catch2) 2.13.4+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.9.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [Catch2](https://github.com/catchorg/Catch2) 2.13.9+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
+* [pybind11](https://github.com/pybind/pybind11) 2.10.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
-* [toml11](https://github.com/ToruNiina/toml11) 3.7.0+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
+* [toml11](https://github.com/ToruNiina/toml11) 3.7.1+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
 
 I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
@@ -119,12 +119,13 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.6 - 3.10
-  * pybind11 2.9.1+
+  * Python 3.7 - 3.11
+  * pybind11 2.10.1+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)
   * dask 2021+ (optional, for dask dataframes)
+* CUDA C++ (optional, currently used only in tests)
 
 ## Installation
 
@@ -270,10 +271,10 @@ The following options allow to switch to external installs:
 
 | CMake Option                    | Values     | Library       | Version |
 |---------------------------------|------------|---------------|---------|
-| `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.4+ |
-| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.9.1+ |
+| `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.9+ |
+| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      | 2.10.1+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.9.1+ |
-| `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |  3.7.0+ |
+| `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |  3.7.1+ |
 
 By default, this will build as a shared library (`libopenPMD.[so|dylib|dll]`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=OFF` to the `cmake` command.
@@ -285,11 +286,12 @@ In order to build with debug symbols, pass `-DCMAKE_BUILD_TYPE=Debug` to your `c
 By default, tests, examples and command line tools are built.
 In order to skip building those, pass ``OFF`` to these ``cmake`` options:
 
-| CMake Option              | Values     | Description              |
-|---------------------------|------------|--------------------------|
-| `openPMD_BUILD_TESTING`   | **ON**/OFF | Build tests              |
-| `openPMD_BUILD_EXAMPLES`  | **ON**/OFF | Build examples           |
-| `openPMD_BUILD_CLI_TOOLS` | **ON**/OFF | Build command-line tools |
+| CMake Option                  | Values     | Description              |
+|-------------------------------|------------|--------------------------|
+| `openPMD_BUILD_TESTING`       | **ON**/OFF | Build tests              |
+| `openPMD_BUILD_EXAMPLES`      | **ON**/OFF | Build examples           |
+| `openPMD_BUILD_CLI_TOOLS`     | **ON**/OFF | Build command-line tools |
+| `openPMD_USE_CUDA_EXAMPLES`   | ON/**OFF** | Use CUDA in examples     |
 
 ## Linking to your project
 
@@ -331,8 +333,9 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(openPMD_BUILD_CLI_TOOLS OFF)
 set(openPMD_BUILD_EXAMPLES OFF)
 set(openPMD_BUILD_TESTING OFF)
-# set(openPMD_BUILD_SHARED_LIBS OFF)  # precedence over BUILD_SHARED_LIBS if needed; or:
-set(openPMD_INSTALL ${BUILD_SHARED_LIBS})  # only install if used as shared a library
+set(openPMD_BUILD_SHARED_LIBS OFF)  # precedence over BUILD_SHARED_LIBS if needed
+set(openPMD_INSTALL OFF)            # or instead use:
+# set(openPMD_INSTALL ${BUILD_SHARED_LIBS})  # only install if used as a shared library
 set(openPMD_USE_PYTHON OFF)
 FetchContent_Declare(openPMD
   GIT_REPOSITORY "https://github.com/openPMD/openPMD-api.git"

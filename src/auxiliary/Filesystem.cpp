@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
 #ifdef _WIN32
@@ -175,41 +176,6 @@ bool remove_file(std::string const &path)
 
 #if openPMD_HAVE_MPI
 
-namespace
-{
-    template <typename>
-    struct MPI_Types;
-
-    template <>
-    struct MPI_Types<unsigned long>
-    {
-        static MPI_Datatype const value;
-    };
-
-    template <>
-    struct MPI_Types<unsigned long long>
-    {
-        static MPI_Datatype const value;
-    };
-
-    template <>
-    struct MPI_Types<unsigned>
-    {
-        static MPI_Datatype const value;
-    };
-
-    /*
-     * Only some of these are actually instanciated,
-     * so suppress warnings for the others.
-     */
-    [[maybe_unused]] MPI_Datatype const MPI_Types<unsigned>::value =
-        MPI_UNSIGNED;
-    [[maybe_unused]] MPI_Datatype const MPI_Types<unsigned long>::value =
-        MPI_UNSIGNED_LONG;
-    [[maybe_unused]] MPI_Datatype const MPI_Types<unsigned long long>::value =
-        MPI_UNSIGNED_LONG_LONG;
-} // namespace
-
 std::string collective_file_read(std::string const &path, MPI_Comm comm)
 {
     int rank, size;
@@ -232,7 +198,7 @@ std::string collective_file_read(std::string const &path, MPI_Comm comm)
         }
         stringLength = res.size() + 1;
     }
-    MPI_Datatype datatype = MPI_Types<size_t>::value;
+    MPI_Datatype datatype = openPMD_MPI_type<size_t>();
     int err = MPI_Bcast(&stringLength, 1, datatype, 0, comm);
     if (err)
     {

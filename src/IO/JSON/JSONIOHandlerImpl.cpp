@@ -102,11 +102,12 @@ void JSONIOHandlerImpl::createFile(
         }
 
         auto res_pair = getPossiblyExisting(name);
+        auto fullPathToFile = fullPath(std::get<0>(res_pair));
         File shared_name = File(name);
         VERIFY_ALWAYS(
             !(m_handler->m_backendAccess == Access::READ_WRITE &&
               (!std::get<2>(res_pair) ||
-               auxiliary::file_exists(fullPath(std::get<0>(res_pair))))),
+               auxiliary::file_exists(fullPathToFile))),
             "[JSON] Can only overwrite existing file in CREATE mode.");
 
         if (!std::get<2>(res_pair))
@@ -117,7 +118,7 @@ void JSONIOHandlerImpl::createFile(
             file.invalidate();
         }
 
-        std::string const dir(m_handler->directory);
+        std::string const &dir(m_handler->directory);
         if (!auxiliary::directory_exists(dir))
         {
             auto success = auxiliary::create_directories(dir);
@@ -126,12 +127,37 @@ void JSONIOHandlerImpl::createFile(
 
         associateWithFile(writable, shared_name);
         this->m_dirty.emplace(shared_name);
-        // make sure to overwrite!
-        this->m_jsonVals[shared_name] = std::make_shared<nlohmann::json>();
+
+        if (m_handler->m_backendAccess != Access::APPEND ||
+            !auxiliary::file_exists(fullPathToFile))
+        {
+            // if in create mode: make sure to overwrite
+            // if in append mode and the file does not exist: create an empty
+            // dataset
+            this->m_jsonVals[shared_name] = std::make_shared<nlohmann::json>();
+        }
+        // else: the JSON value is not available in m_jsonVals and will be
+        // read from the file later on before overwriting
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared<JSONFilePosition>();
     }
+}
+
+void JSONIOHandlerImpl::checkFile(
+    Writable *, Parameter<Operation::CHECK_FILE> &parameters)
+{
+    std::string name = parameters.name;
+    if (!auxiliary::ends_with(name, ".json"))
+    {
+        name += ".json";
+    }
+    name = fullPath(name);
+    using FileExists = Parameter<Operation::CHECK_FILE>::FileExists;
+    *parameters.fileExists =
+        (auxiliary::file_exists(name) || auxiliary::directory_exists(name))
+        ? FileExists::Yes
+        : FileExists::No;
 }
 
 void JSONIOHandlerImpl::createPath(
@@ -771,6 +797,11 @@ void JSONIOHandlerImpl::writeDataset(
 void JSONIOHandlerImpl::writeAttribute(
     Writable *writable, Parameter<Operation::WRITE_ATT> const &parameter)
 {
+    if (parameter.changesOverSteps)
+    {
+        // cannot do this
+        return;
+    }
     if (m_handler->m_backendAccess == Access::READ_ONLY)
     {
         throw std::runtime_error(
@@ -910,13 +941,21 @@ JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
     {
     case Access::CREATE:
     case Access::READ_WRITE:
+    case Access::APPEND:
+        /*
+         * Always truncate when writing, we alway write entire JSON
+         * datasets, never partial ones.
+         * Within the JSON backend, APPEND and READ_WRITE mode are
+         * equivalent, but the openPMD frontend exposes no reading
+         * functionality in APPEND mode.
+         */
         fs->open(path, std::ios_base::out | std::ios_base::trunc);
         break;
     case Access::READ_ONLY:
         fs->open(path, std::ios_base::in);
         break;
     }
-    VERIFY(fs->good(), "[JSON] Failed opening a file");
+    VERIFY(fs->good(), "[JSON] Failed opening a file '" + path + "'");
     return fs;
 }
 

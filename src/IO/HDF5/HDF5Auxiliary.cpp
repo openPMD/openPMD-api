@@ -62,6 +62,9 @@ hid_t openPMD::GetH5DataType::operator()(Attribute const &att)
     case DT::UCHAR:
     case DT::VEC_UCHAR:
         return H5Tcopy(H5T_NATIVE_UCHAR);
+    case DT::SCHAR:
+    case DT::VEC_SCHAR:
+        return H5Tcopy(H5T_NATIVE_SCHAR);
     case DT::SHORT:
     case DT::VEC_SHORT:
         return H5Tcopy(H5T_NATIVE_SHORT);
@@ -145,6 +148,7 @@ hid_t openPMD::getH5DataSpace(Attribute const &att)
     {
     case DT::CHAR:
     case DT::UCHAR:
+    case DT::SCHAR:
     case DT::SHORT:
     case DT::INT:
     case DT::LONG:
@@ -195,6 +199,12 @@ hid_t openPMD::getH5DataSpace(Attribute const &att)
     case DT::VEC_UCHAR: {
         hid_t vec_t_id = H5Screate(H5S_SIMPLE);
         hsize_t dims[1] = {att.get<std::vector<unsigned char> >().size()};
+        H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
+        return vec_t_id;
+    }
+    case DT::VEC_SCHAR: {
+        hid_t vec_t_id = H5Screate(H5S_SIMPLE);
+        hsize_t dims[1] = {att.get<std::vector<signed char> >().size()};
         H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
         return vec_t_id;
     }
@@ -313,7 +323,6 @@ std::vector<hsize_t> openPMD::getOptimalChunkDims(
     constexpr std::array<size_t, 7u> CHUNK_SIZES_KiB{
         {4096u, 2048u, 1024u, 512u, 256u, 128u, 64u}};
 
-    size_t total_data_size = typeSize;
     size_t max_chunk_size = typeSize;
     size_t target_chunk_size = 0u;
 
@@ -333,7 +342,6 @@ std::vector<hsize_t> openPMD::getOptimalChunkDims(
 
         // compute sizes
         max_chunk_size *= (half_dim > 0) ? half_dim : 1;
-        total_data_size *= dims[i];
     }
 
     // compute the target chunk size

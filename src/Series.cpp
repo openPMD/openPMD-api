@@ -44,6 +44,18 @@ namespace openPMD
 {
 namespace
 {
+    struct CleanedFilename
+    {
+        std::string body;
+        std::string extension;
+
+        std::tuple<std::string, std::string> decompose() &&
+        {
+            return std::tuple<std::string, std::string>{
+                std::move(body), std::move(extension)};
+        }
+    };
+
     /** Remove the filename extension of a given storage format.
      *
      * @param   filename    String containing the filename, possibly with
@@ -51,7 +63,8 @@ namespace
      * @param   f           File format to remove filename extension for.
      * @return  String containing the filename without filename extension.
      */
-    std::string cleanFilename(std::string const &filename, Format f);
+    CleanedFilename cleanFilename(
+        std::string const &filename, std::string const &filenameExtension);
 
     /** Compound return type for regex matching of filenames */
     struct Match
@@ -77,7 +90,7 @@ namespace
      * zero, any amount of padding is matched.
      * @param   postfix     String containing tail (i.e. after %T) of desired
      * filename without filename extension.
-     * @param   f           File format to check backend applicability for.
+     * @param   filenameExtension Filename extension to match against
      * @return  Functor returning tuple of bool and int.
      *          bool is True if file could be of type f and matches the
      * iterationEncoding. False otherwise. int is the amount of padding present
@@ -87,7 +100,7 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        Format f);
+        std::string const &extension);
 } // namespace
 
 struct Series::ParsedInput
@@ -98,6 +111,7 @@ struct Series::ParsedInput
     IterationEncoding iterationEncoding;
     std::string filenamePrefix;
     std::string filenamePostfix;
+    std::string filenameExtension;
     int filenamePadding = -1;
 }; // ParsedInput
 
@@ -301,6 +315,7 @@ Series &Series::setIterationEncoding(IterationEncoding ie)
         setAttribute("iterationEncoding", std::string("variableBased"));
         break;
     }
+    IOHandler()->setIterationEncoding(ie);
     return *this;
 }
 
@@ -371,13 +386,13 @@ std::string Series::backend() const
     return IOHandler()->backendName();
 }
 
-void Series::flush()
+void Series::flush(std::string backendConfig)
 {
     auto &series = get();
     flush_impl(
         series.iterations.begin(),
         series.iterations.end(),
-        FlushLevel::UserFlush);
+        {FlushLevel::UserFlush, std::move(backendConfig)});
 }
 
 std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
@@ -442,9 +457,10 @@ std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
             "Can not determine iterationFormat from filename " + input->name);
 
     input->filenamePostfix =
-        cleanFilename(input->filenamePostfix, input->format);
+        cleanFilename(input->filenamePostfix, suffix(input->format)).body;
 
-    input->name = cleanFilename(input->name, input->format);
+    std::tie(input->name, input->filenameExtension) =
+        cleanFilename(input->name, suffix(input->format)).decompose();
 
     return input;
 }
@@ -469,6 +485,59 @@ bool Series::reparseExpansionPattern(std::string filenameWithExtension)
     return true;
 }
 
+namespace
+{
+    /*
+     * Negative return values:
+     * -1: No padding detected, just keep the default from the file name
+     * -2: Contradicting paddings detected
+     */
+    template <typename MappingFunction>
+    int autoDetectPadding(
+        std::function<Match(std::string const &)> isPartOfSeries,
+        std::string const &directory,
+        MappingFunction &&mappingFunction)
+    {
+        bool isContained;
+        int padding;
+        uint64_t iterationIndex;
+        std::set<int> paddings;
+        if (auxiliary::directory_exists(directory))
+        {
+            for (auto const &entry : auxiliary::list_directory(directory))
+            {
+                std::tie(isContained, padding, iterationIndex) =
+                    isPartOfSeries(entry);
+                if (isContained)
+                {
+                    paddings.insert(padding);
+                    // no std::forward as this is called repeatedly
+                    mappingFunction(iterationIndex, entry);
+                }
+            }
+        }
+        if (paddings.size() == 1u)
+            return *paddings.begin();
+        else if (paddings.empty())
+            return -1;
+        else
+            return -2;
+    }
+
+    int autoDetectPadding(
+        std::function<Match(std::string const &)> isPartOfSeries,
+        std::string const &directory)
+    {
+        return autoDetectPadding(
+            std::move(isPartOfSeries),
+            directory,
+            [](uint64_t index, std::string const &filename) {
+                (void)index;
+                (void)filename;
+            });
+    }
+} // namespace
+
 void Series::init(
     std::shared_ptr<AbstractIOHandler> ioHandler,
     std::unique_ptr<Series::ParsedInput> input)
@@ -485,6 +554,7 @@ void Series::init(
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
+    series.m_filenameExtension = input->filenameExtension;
 
     if (series.m_iterationEncoding == IterationEncoding::fileBased &&
         !series.m_filenamePrefix.empty() &&
@@ -501,48 +571,83 @@ Given file pattern: ')END"
                   << series.m_name << "'" << std::endl;
     }
 
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY ||
-        IOHandler()->m_frontendAccess == Access::READ_WRITE)
+    switch (IOHandler()->m_frontendAccess)
     {
+    case Access::READ_ONLY:
+    case Access::READ_WRITE: {
         /* Allow creation of values in Containers and setting of Attributes
          * Would throw for Access::READ_ONLY */
-        auto oldType = IOHandler()->m_frontendAccess;
-        auto newType = const_cast<Access *>(&IOHandler()->m_frontendAccess);
-        *newType = Access::READ_WRITE;
+        IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
 
-        if (input->iterationEncoding == IterationEncoding::fileBased)
-            readFileBased();
-        else
-            readGorVBased();
-
-        if (series.iterations.empty())
+        try
         {
-            /* Access::READ_WRITE can be used to create a new Series
-             * allow setting attributes in that case */
-            written() = false;
+            if (input->iterationEncoding == IterationEncoding::fileBased)
+                readFileBased();
+            else
+                readGorVBased();
 
-            initDefaults(input->iterationEncoding);
-            setIterationEncoding(input->iterationEncoding);
+            if (series.iterations.empty())
+            {
+                /* Access::READ_WRITE can be used to create a new Series
+                 * allow setting attributes in that case */
+                written() = false;
 
-            written() = true;
+                initDefaults(input->iterationEncoding);
+                setIterationEncoding(input->iterationEncoding);
+
+                written() = true;
+            }
+        }
+        catch (...)
+        {
+            IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
+            throw;
         }
 
-        *newType = oldType;
+        IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
+        break;
     }
-    else
-    {
+    case Access::CREATE: {
         initDefaults(input->iterationEncoding);
         setIterationEncoding(input->iterationEncoding);
+        break;
+    }
+    case Access::APPEND: {
+        initDefaults(input->iterationEncoding);
+        setIterationEncoding(input->iterationEncoding);
+        if (input->iterationEncoding != IterationEncoding::fileBased)
+        {
+            break;
+        }
+        int padding = autoDetectPadding(
+            matcher(
+                series.m_filenamePrefix,
+                series.m_filenamePadding,
+                series.m_filenamePostfix,
+                series.m_filenameExtension),
+            IOHandler()->directory);
+        switch (padding)
+        {
+        case -2:
+            throw std::runtime_error(
+                "Cannot write to a series with inconsistent iteration padding. "
+                "Please specify '%0<N>T' or open as read-only.");
+        case -1:
+            std::cerr << "No matching iterations found: " << name()
+                      << std::endl;
+            break;
+        default:
+            series.m_filenamePadding = padding;
+            break;
+        }
+        break;
+    }
     }
     series.m_lastFlushSuccessful = true;
 }
 
-void Series::initDefaults(IterationEncoding ie)
+void Series::initDefaults(IterationEncoding ie, bool initAll)
 {
-    if (!containsAttribute("openPMD"))
-        setOpenPMD(getStandard());
-    if (!containsAttribute("openPMDextension"))
-        setOpenPMDextension(0);
     if (!containsAttribute("basePath"))
     {
         if (ie == IterationEncoding::variableBased)
@@ -555,6 +660,21 @@ void Series::initDefaults(IterationEncoding ie)
             setAttribute("basePath", std::string(BASEPATH));
         }
     }
+    if (!containsAttribute("openPMD"))
+        setOpenPMD(getStandard());
+    /*
+     * In Append mode, only init the rest of the defaults after checking that
+     * the file does not yet exist to avoid overriding more than needed.
+     * In file-based iteration encoding, files are always truncated in Append
+     * mode (Append mode works on a per-iteration basis).
+     */
+    if (!initAll && IOHandler()->m_frontendAccess == Access::APPEND &&
+        ie != IterationEncoding::fileBased)
+    {
+        return;
+    }
+    if (!containsAttribute("openPMDextension"))
+        setOpenPMDextension(0);
     if (!containsAttribute("date"))
         setDate(auxiliary::getDateString());
     if (!containsAttribute("software"))
@@ -564,10 +684,9 @@ void Series::initDefaults(IterationEncoding ie)
 std::future<void> Series::flush_impl(
     iterations_iterator begin,
     iterations_iterator end,
-    FlushLevel level,
+    internal::FlushParams flushParams,
     bool flushIOHandler)
 {
-    IOHandler()->m_flushLevel = level;
     auto &series = get();
     series.m_lastFlushSuccessful = true;
     try
@@ -576,51 +695,58 @@ std::future<void> Series::flush_impl(
         {
             using IE = IterationEncoding;
         case IE::fileBased:
-            flushFileBased(begin, end);
+            flushFileBased(begin, end, flushParams, flushIOHandler);
             break;
         case IE::groupBased:
         case IE::variableBased:
-            flushGorVBased(begin, end);
+            flushGorVBased(begin, end, flushParams, flushIOHandler);
             break;
         }
         if (flushIOHandler)
         {
-            auto res = IOHandler()->flush();
-            IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
-            return res;
+            return IOHandler()->flush(flushParams);
         }
         else
         {
-            IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
             return {};
         }
     }
     catch (...)
     {
-        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
         series.m_lastFlushSuccessful = false;
         throw;
     }
 }
 
-void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
+void Series::flushFileBased(
+    iterations_iterator begin,
+    iterations_iterator end,
+    internal::FlushParams flushParams,
+    bool flushIOHandler)
 {
     auto &series = get();
     if (end == begin)
         throw std::runtime_error(
             "fileBased output can not be written with no iterations.");
 
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
+    {
+    case Access::READ_ONLY:
         for (auto it = begin; it != end; ++it)
         {
             // Phase 1
             switch (openIterationIfDirty(it->first, it->second))
             {
                 using IO = IterationOpened;
-            case IO::HasBeenOpened:
-                it->second.flush();
-                break;
             case IO::RemainsClosed:
+                // we might need to proceed further if the close status is
+                // ClosedInFrontend
+                // hence no continue here
+                // otherwise, we might forget to close files physically
+                break;
+            case IO::HasBeenOpened:
+                // continue below
+                it->second.flush(flushParams);
                 break;
             }
 
@@ -635,10 +761,15 @@ void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
             }
 
             // Phase 3
-            IOHandler()->flush();
+            if (flushIOHandler)
+            {
+                IOHandler()->flush(flushParams);
+            }
         }
-    else
-    {
+        break;
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         bool allDirty = dirty();
         for (auto it = begin; it != end; ++it)
         {
@@ -649,19 +780,28 @@ void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
             case IO::HasBeenOpened: {
                 /* as there is only one series,
                  * emulate the file belonging to each iteration as not yet
-                 * written
+                 * written, even if the iteration itself is already written
+                 * (to ensure that the Series gets reassociated with the
+                 * current iteration)
                  */
                 written() = false;
                 series.iterations.written() = false;
 
                 dirty() |= it->second.dirty();
                 std::string filename = iterationFilename(it->first);
-                it->second.flushFileBased(filename, it->first);
+
+                if (!it->second.written())
+                {
+                    series.m_currentlyActiveIterations.emplace(it->first);
+                }
+
+                it->second.flushFileBased(filename, it->first, flushParams);
 
                 series.iterations.flush(
-                    auxiliary::replace_first(basePath(), "%T/", ""));
+                    auxiliary::replace_first(basePath(), "%T/", ""),
+                    flushParams);
 
-                flushAttributes();
+                flushAttributes(flushParams);
                 break;
             }
             case IO::RemainsClosed:
@@ -679,31 +819,45 @@ void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
             }
 
             // Phase 3
-            IOHandler()->flush();
-
+            if (flushIOHandler)
+            {
+                IOHandler()->flush(flushParams);
+            }
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
              */
             dirty() = allDirty;
         }
         dirty() = false;
+        break;
+    }
     }
 }
 
-void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
+void Series::flushGorVBased(
+    iterations_iterator begin,
+    iterations_iterator end,
+    internal::FlushParams flushParams,
+    bool flushIOHandler)
 {
     auto &series = get();
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
+    {
+    case Access::READ_ONLY:
         for (auto it = begin; it != end; ++it)
         {
             // Phase 1
             switch (openIterationIfDirty(it->first, it->second))
             {
                 using IO = IterationOpened;
-            case IO::HasBeenOpened:
-                it->second.flush();
-                break;
             case IO::RemainsClosed:
+                // we might need to proceed further if the close status is
+                // ClosedInFrontend
+                // hence no continue here
+                break;
+            case IO::HasBeenOpened:
+                // continue below
+                it->second.flush(flushParams);
                 break;
             }
 
@@ -717,12 +871,34 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
             }
 
             // Phase 3
-            IOHandler()->flush();
+            if (flushIOHandler)
+            {
+                IOHandler()->flush(flushParams);
+            }
         }
-    else
-    {
+        break;
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         if (!written())
         {
+            if (IOHandler()->m_frontendAccess == Access::APPEND)
+            {
+                Parameter<Operation::CHECK_FILE> param;
+                param.name = series.m_name;
+                IOHandler()->enqueue(IOTask(this, param));
+                IOHandler()->flush(internal::defaultFlushParams);
+                switch (*param.fileExists)
+                {
+                    using FE = Parameter<Operation::CHECK_FILE>::FileExists;
+                case FE::DontKnow:
+                case FE::No:
+                    initDefaults(iterationEncoding(), /* initAll = */ true);
+                    break;
+                case FE::Yes:
+                    break;
+                }
+            }
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
             fCreate.encoding = iterationEncoding();
@@ -730,7 +906,7 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
         }
 
         series.iterations.flush(
-            auxiliary::replace_first(basePath(), "%T/", ""));
+            auxiliary::replace_first(basePath(), "%T/", ""), flushParams);
 
         for (auto it = begin; it != end; ++it)
         {
@@ -742,15 +918,16 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
                 if (!it->second.written())
                 {
                     it->second.parent() = getWritable(&series.iterations);
+                    series.m_currentlyActiveIterations.emplace(it->first);
                 }
                 switch (iterationEncoding())
                 {
                     using IE = IterationEncoding;
                 case IE::groupBased:
-                    it->second.flushGroupBased(it->first);
+                    it->second.flushGroupBased(it->first, flushParams);
                     break;
                 case IE::variableBased:
-                    it->second.flushVariableBased(it->first);
+                    it->second.flushVariableBased(it->first, flushParams);
                     break;
                 default:
                     throw std::runtime_error(
@@ -771,8 +948,13 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
             }
         }
 
-        flushAttributes();
-        IOHandler()->flush();
+        flushAttributes(flushParams);
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
+        }
+        break;
+    }
     }
 }
 
@@ -811,24 +993,20 @@ void Series::readFileBased()
         series.m_filenamePrefix,
         series.m_filenamePadding,
         series.m_filenamePostfix,
-        series.m_format);
-    bool isContained;
-    int padding;
-    uint64_t iterationIndex;
-    std::set<int> paddings;
-    for (auto const &entry : auxiliary::list_directory(IOHandler()->directory))
-    {
-        std::tie(isContained, padding, iterationIndex) = isPartOfSeries(entry);
-        if (isContained)
-        {
-            Iteration &i = series.iterations[iterationIndex];
+        series.m_filenameExtension);
+
+    int padding = autoDetectPadding(
+        std::move(isPartOfSeries),
+        IOHandler()->directory,
+        // foreach found file with `filename` and `index`:
+        [&series](uint64_t index, std::string const &filename) {
+            Iteration &i = series.iterations[index];
             i.deferParseAccess(
-                {std::to_string(iterationIndex), iterationIndex, true, entry});
-            // TODO skip if the padding is exact the number of chars in an
-            // iteration?
-            paddings.insert(padding);
-        }
-    }
+                {std::to_string(index),
+                 index,
+                 true,
+                 cleanFilename(filename, series.m_filenameExtension).body});
+        });
 
     if (series.iterations.empty())
     {
@@ -846,7 +1024,7 @@ void Series::readFileBased()
         iteration.runDeferredParseAccess();
         Parameter<Operation::CLOSE_FILE> fClose;
         iteration.IOHandler()->enqueue(IOTask(&iteration, fClose));
-        iteration.IOHandler()->flush();
+        iteration.IOHandler()->flush(internal::defaultFlushParams);
         iteration.get().m_closed = internal::CloseStatus::ClosedTemporarily;
     };
     if (series.m_parseLazily)
@@ -870,14 +1048,15 @@ void Series::readFileBased()
         }
     }
 
-    if (paddings.size() == 1u)
-        series.m_filenamePadding = *paddings.begin();
+    if (padding > 0)
+        series.m_filenamePadding = padding;
 
-    /* Frontend access type might change during Series::read() to allow
-     * parameter modification. Backend access type stays unchanged for the
-     * lifetime of a Series. */
-    if (paddings.size() > 1u &&
-        IOHandler()->m_backendAccess == Access::READ_WRITE)
+    /* Frontend access type might change during SeriesInterface::read() to allow
+     parameter modification.
+     * Backend access type stays unchanged for the lifetime of a Series.
+       autoDetectPadding() announces contradicting paddings with return status
+       -2. */
+    if (padding == -2 && IOHandler()->m_backendAccess == Access::READ_WRITE)
         throw std::runtime_error(
             "Cannot write to a series with inconsistent iteration padding. "
             "Please specify '%0<N>T' or open as read-only.");
@@ -892,7 +1071,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 
     fOpen.name = filePath;
     IOHandler()->enqueue(IOTask(this, fOpen));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     series.iterations.parent() = getWritable(this);
 
     readBase();
@@ -900,7 +1079,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     using DT = Datatype;
     aRead.name = "iterationEncoding";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
         std::string encoding = Attribute(*aRead.resource).get<std::string>();
@@ -937,7 +1116,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 
     aRead.name = "iterationFormat";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
         written() = false;
@@ -960,14 +1139,14 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     series.iterations.readAttributes(ReadMode::OverrideExisting);
 }
 
-void Series::readGorVBased(bool do_init)
+std::optional<std::deque<uint64_t>> Series::readGorVBased(bool do_init)
 {
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
     fOpen.name = series.m_name;
     fOpen.encoding = iterationEncoding();
     IOHandler()->enqueue(IOTask(this, fOpen));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     if (do_init)
     {
@@ -977,7 +1156,7 @@ void Series::readGorVBased(bool do_init)
         Parameter<Operation::READ_ATT> aRead;
         aRead.name = "iterationEncoding";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
             std::string encoding =
@@ -1011,7 +1190,7 @@ void Series::readGorVBased(bool do_init)
 
         aRead.name = "iterationFormat";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
             written() = false;
@@ -1032,19 +1211,39 @@ void Series::readGorVBased(bool do_init)
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
     readAttributes(ReadMode::IgnoreExisting);
+
+    auto withRWAccess = [this](auto &&functor) {
+        auto oldStatus = IOHandler()->m_seriesStatus;
+        IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
+        try
+        {
+            std::forward<decltype(functor)>(functor)();
+        }
+        catch (...)
+        {
+            IOHandler()->m_seriesStatus = oldStatus;
+            throw;
+        }
+        IOHandler()->m_seriesStatus = oldStatus;
+    };
+
     /*
      * 'snapshot' changes over steps, so reread that.
      */
-    series.iterations.readAttributes(ReadMode::OverrideExisting);
+    withRWAccess([&series]() {
+        series.iterations.readAttributes(ReadMode::OverrideExisting);
+    });
+
     /* obtain all paths inside the basepath (i.e. all iterations) */
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(&series.iterations, pList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
-    auto readSingleIteration = [&series, &pOpen, this](
+    auto readSingleIteration = [&series, &pOpen, this, withRWAccess](
                                    uint64_t index,
                                    std::string path,
-                                   bool guardAgainstRereading) {
+                                   bool guardAgainstRereading,
+                                   bool beginStep) {
         if (series.iterations.contains(index))
         {
             // maybe re-read
@@ -1059,14 +1258,14 @@ void Series::readGorVBased(bool do_init)
             {
                 pOpen.path = path;
                 IOHandler()->enqueue(IOTask(&i, pOpen));
-                i.reread(path);
+                withRWAccess([&i, &path]() { i.reread(path); });
             }
         }
         else
         {
             // parse for the first time, resp. delay the parsing process
             Iteration &i = series.iterations[index];
-            i.deferParseAccess({path, index, false, ""});
+            i.deferParseAccess({path, index, false, "", beginStep});
             if (!series.m_parseLazily)
             {
                 i.runDeferredParseAccess();
@@ -1079,80 +1278,111 @@ void Series::readGorVBased(bool do_init)
         }
     };
 
+    /*
+     * @todo in BP5, a BeginStep() might be necessary before this
+     */
+    auto currentSteps = currentSnapshot();
+
     switch (iterationEncoding())
     {
     case IterationEncoding::groupBased:
     /*
      * Sic! This happens when a file-based Series is opened in group-based mode.
      */
-    case IterationEncoding::fileBased:
+    case IterationEncoding::fileBased: {
         for (auto const &it : *pList.paths)
         {
             uint64_t index = std::stoull(it);
-            readSingleIteration(index, it, true);
+            /*
+             * For now: parse a Series in RandomAccess mode.
+             * (beginStep = false)
+             * A streaming read mode might come in a future API addition.
+             */
+            withRWAccess(
+                [&]() { readSingleIteration(index, it, true, false); });
         }
-        break;
-    case IterationEncoding::variableBased: {
-        uint64_t index = 0;
-        if (series.iterations.containsAttribute("snapshot"))
+        if (currentSteps.has_value())
         {
-            index = series.iterations.getAttribute("snapshot").get<uint64_t>();
+            auto const &vec = currentSteps.value();
+            return std::deque<uint64_t>{vec.begin(), vec.end()};
         }
-        readSingleIteration(index, "", false);
-        break;
+        else
+        {
+            return std::optional<std::deque<uint64_t>>();
+        }
+    }
+    case IterationEncoding::variableBased: {
+        std::deque<uint64_t> res = {0};
+        if (currentSteps.has_value() && !currentSteps.value().empty())
+        {
+            res = {currentSteps.value().begin(), currentSteps.value().end()};
+        }
+        for (auto it : res)
+        {
+            /*
+             * Variable-based iteration encoding relies on steps, so parsing
+             * must happen after opening the first step.
+             */
+            withRWAccess([&]() { readSingleIteration(it, "", false, true); });
+        }
+        return res;
     }
     }
+    throw std::runtime_error("Unreachable!");
 }
 
 void Series::readBase()
 {
     auto &series = get();
-    using DT = Datatype;
     Parameter<Operation::READ_ATT> aRead;
 
     aRead.name = "openPMD";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
-    if (*aRead.dtype == DT::STRING)
-        setOpenPMD(Attribute(*aRead.resource).get<std::string>());
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+        val.has_value())
+        setOpenPMD(val.value());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
 
     aRead.name = "openPMDextension";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
-    if (*aRead.dtype == determineDatatype<uint32_t>())
-        setOpenPMDextension(Attribute(*aRead.resource).get<uint32_t>());
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (auto val = Attribute(*aRead.resource).getOptional<uint32_t>();
+        val.has_value())
+        setOpenPMDextension(val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'openPMDextension'");
 
     aRead.name = "basePath";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
-    if (*aRead.dtype == DT::STRING)
-        setAttribute("basePath", Attribute(*aRead.resource).get<std::string>());
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+        val.has_value())
+        setAttribute("basePath", val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'basePath'");
 
     Parameter<Operation::LIST_ATTS> aList;
     IOHandler()->enqueue(IOTask(this, aList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (std::count(
             aList.attributes->begin(), aList.attributes->end(), "meshesPath") ==
         1)
     {
         aRead.name = "meshesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
-        if (*aRead.dtype == DT::STRING)
+        IOHandler()->flush(internal::defaultFlushParams);
+        if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+            val.has_value())
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
                 it.second.meshes.written() = false;
 
-            setMeshesPath(Attribute(*aRead.resource).get<std::string>());
+            setMeshesPath(val.value());
 
             for (auto &it : series.iterations)
                 it.second.meshes.written() = true;
@@ -1169,14 +1399,15 @@ void Series::readBase()
     {
         aRead.name = "particlesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
-        if (*aRead.dtype == DT::STRING)
+        IOHandler()->flush(internal::defaultFlushParams);
+        if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+            val.has_value())
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
                 it.second.particles.written() = false;
 
-            setParticlesPath(Attribute(*aRead.resource).get<std::string>());
+            setParticlesPath(val.value());
 
             for (auto &it : series.iterations)
                 it.second.particles.written() = true;
@@ -1189,14 +1420,34 @@ void Series::readBase()
 
 std::string Series::iterationFilename(uint64_t i)
 {
+    /*
+     * The filename might have been overridden at the Series level or at the
+     * Iteration level. See the struct members' documentation for the reasons.
+     */
     auto &series = get();
     if (series.m_overrideFilebasedFilename.has_value())
     {
         return series.m_overrideFilebasedFilename.value();
     }
-    std::stringstream iteration("");
-    iteration << std::setw(series.m_filenamePadding) << std::setfill('0') << i;
-    return series.m_filenamePrefix + iteration.str() + series.m_filenamePostfix;
+    else if (auto iteration = iterations.find(i); //
+             iteration != iterations.end() &&
+             iteration->second.get().m_overrideFilebasedFilename.has_value())
+    {
+        return iteration->second.get().m_overrideFilebasedFilename.value();
+    }
+    else
+    {
+
+        /*
+         * If no filename has been explicitly stored, we use the filename
+         * pattern to compute it.
+         */
+        std::stringstream iterationNr("");
+        iterationNr << std::setw(series.m_filenamePadding) << std::setfill('0')
+                    << i;
+        return series.m_filenamePrefix + iterationNr.str() +
+            series.m_filenamePostfix;
+    }
 }
 
 Series::iterations_iterator Series::indexOf(Iteration const &iteration)
@@ -1220,6 +1471,7 @@ AdvanceStatus Series::advance(
     iterations_iterator begin,
     Iteration &iteration)
 {
+    internal::FlushParams const flushParams = {FlushLevel::UserFlush};
     auto &series = get();
     auto end = begin;
     ++end;
@@ -1238,7 +1490,24 @@ AdvanceStatus Series::advance(
         itData.m_closed = internal::CloseStatus::Open;
     }
 
-    flush_impl(begin, end, FlushLevel::UserFlush, /* flushIOHandler = */ false);
+    switch (mode)
+    {
+    case AdvanceMode::ENDSTEP:
+        flush_impl(begin, end, flushParams, /* flushIOHandler = */ false);
+        break;
+    case AdvanceMode::BEGINSTEP:
+        /*
+         * When beginning a step, there is nothing to flush yet.
+         * Data is not written in between steps.
+         * So only make sure that files are accessed.
+         */
+        flush_impl(
+            begin,
+            end,
+            {FlushLevel::CreateOrOpenFiles},
+            /* flushIOHandler = */ false);
+        break;
+    }
 
     if (oldCloseStatus == internal::CloseStatus::ClosedInFrontend)
     {
@@ -1255,7 +1524,13 @@ AdvanceStatus Series::advance(
          * opening an iteration's file by beginning a step on it.
          * So, return now.
          */
+        iteration.get().m_closed = internal::CloseStatus::ClosedInBackend;
         return AdvanceStatus::OK;
+    }
+
+    if (mode == AdvanceMode::ENDSTEP)
+    {
+        flushStep(/* doFlush = */ false);
     }
 
     Parameter<Operation::ADVANCE> param;
@@ -1309,19 +1584,95 @@ AdvanceStatus Series::advance(
     // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
-    IOHandler()->m_flushLevel = FlushLevel::UserFlush;
-    try
-    {
-        IOHandler()->flush();
-    }
-    catch (...)
-    {
-        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
-        throw;
-    }
-    IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+    IOHandler()->flush(flushParams);
 
     return *param.status;
+}
+
+AdvanceStatus Series::advance(AdvanceMode mode)
+{
+    auto &series = get();
+    if (series.m_iterationEncoding == IterationEncoding::fileBased)
+    {
+        throw error::Internal(
+            "Advancing a step in file-based iteration encoding is "
+            "iteration-specific.");
+    }
+    internal::FlushParams const flushParams = {FlushLevel::UserFlush};
+    /*
+     * We call flush_impl() with flushIOHandler = false, meaning that tasks are
+     * not yet propagated to the backend.
+     * We will append ADVANCE and CLOSE_FILE tasks manually and then flush the
+     * IOHandler manually.
+     * In order to avoid having those tasks automatically appended by
+     * flush_impl(), set CloseStatus to Open for now.
+     */
+
+    auto begin = iterations.end();
+    auto end = iterations.end();
+
+    switch (mode)
+    {
+    case AdvanceMode::ENDSTEP:
+        flush_impl(begin, end, flushParams, /* flushIOHandler = */ false);
+        break;
+    case AdvanceMode::BEGINSTEP:
+        /*
+         * When beginning a step, there is nothing to flush yet.
+         * Data is not written in between steps.
+         * So only make sure that files are accessed.
+         */
+        flush_impl(
+            begin,
+            end,
+            {FlushLevel::CreateOrOpenFiles},
+            /* flushIOHandler = */ false);
+        break;
+    }
+
+    if (mode == AdvanceMode::ENDSTEP)
+    {
+        flushStep(/* doFlush = */ false);
+    }
+
+    Parameter<Operation::ADVANCE> param;
+    param.mode = mode;
+    IOTask task(&series.m_writable, param);
+    IOHandler()->enqueue(task);
+
+    // We cannot call Series::flush now, since the IO handler is still filled
+    // from calling flush(Group|File)based, but has not been emptied yet
+    // Do that manually
+    IOHandler()->flush(flushParams);
+
+    return *param.status;
+}
+
+void Series::flushStep(bool doFlush)
+{
+    auto &series = get();
+    if (!series.m_currentlyActiveIterations.empty() &&
+        IOHandler()->m_frontendAccess != Access::READ_ONLY)
+    {
+        /*
+         * Warning: changing attribute extents over time (probably) unsupported
+         * by this so far.
+         * Not (yet) needed as there is no way to pack several iterations within
+         * one IO step.
+         */
+        Parameter<Operation::WRITE_ATT> wAttr;
+        wAttr.changesOverSteps = true;
+        wAttr.name = "snapshot";
+        wAttr.resource = std::vector<unsigned long long>{
+            series.m_currentlyActiveIterations.begin(),
+            series.m_currentlyActiveIterations.end()};
+        wAttr.dtype = Datatype::VEC_ULONGLONG;
+        IOHandler()->enqueue(IOTask(&series.iterations, wAttr));
+        if (doFlush)
+        {
+            IOHandler()->flush(internal::defaultFlushParams);
+        }
+    }
 }
 
 auto Series::openIterationIfDirty(uint64_t index, Iteration iteration)
@@ -1510,7 +1861,7 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
         std::map<std::string, Format> const backendDescriptors{
             {"hdf5", Format::HDF5},
             {"adios1", Format::ADIOS1},
-            {"adios2", Format::ADIOS2},
+            {"adios2", Format::ADIOS2_BP},
             {"json", Format::JSON}};
         std::string backend;
         getJsonOptionLowerCase(options, "backend", backend);
@@ -1519,7 +1870,20 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
             auto it = backendDescriptors.find(backend);
             if (it != backendDescriptors.end())
             {
-                if (input.format != Format::DUMMY &&
+                if (backend == "adios2" &&
+                    (input.format == Format::ADIOS2_BP4 ||
+                     input.format == Format::ADIOS2_BP5 ||
+                     input.format == Format::ADIOS2_SST ||
+                     input.format == Format::ADIOS2_SSC ||
+                     input.format == Format::ADIOS2_BP))
+                {
+                    // backend = "adios2" should work as a catch-all for all
+                    // different engines, using BP is just the default
+                    // If the file ending was more explicit, keep it.
+                    // -> Nothing to do
+                }
+                else if (
+                    input.format != Format::DUMMY &&
                     suffix(input.format) != suffix(it->second))
                 {
                     std::cerr << "[Warning] Supplied filename extension '"
@@ -1527,8 +1891,12 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
                               << "' contradicts the backend specified via the "
                                  "'backend' key. Will go on with backend "
                               << it->first << "." << std::endl;
+                    input.format = it->second;
                 }
-                input.format = it->second;
+                else
+                {
+                    input.format = it->second;
+                }
             }
             else
             {
@@ -1585,6 +1953,11 @@ namespace internal
             {
                 Series impl{{this, [](auto const *) {}}};
                 impl.flush();
+                impl.flushStep(/* doFlush = */ true);
+            }
+            if (m_writeIterations.has_value())
+            {
+                m_writeIterations = std::optional<WriteIterations>();
             }
         }
         catch (std::exception const &ex)
@@ -1622,8 +1995,13 @@ Series::Series(
         json::parseOptions(options, comm, /* considerFiles = */ true);
     auto input = parseInput(filepath);
     parseJsonOptions(optionsJson, *input);
-    auto handler =
-        createIOHandler(input->path, at, input->format, comm, optionsJson);
+    auto handler = createIOHandler(
+        input->path,
+        at,
+        input->format,
+        input->filenameExtension,
+        comm,
+        optionsJson);
     init(handler, std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
@@ -1639,7 +2017,8 @@ Series::Series(
         json::parseOptions(options, /* considerFiles = */ true);
     auto input = parseInput(filepath);
     parseJsonOptions(optionsJson, *input);
-    auto handler = createIOHandler(input->path, at, input->format, optionsJson);
+    auto handler = createIOHandler(
+        input->path, at, input->format, input->filenameExtension, optionsJson);
     init(handler, std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
@@ -1666,21 +2045,60 @@ WriteIterations Series::writeIterations()
     return series.m_writeIterations.value();
 }
 
+std::optional<std::vector<uint64_t>> Series::currentSnapshot() const
+{
+    using vec_t = std::vector<uint64_t>;
+    auto &series = get();
+    /*
+     * In variable-based iteration encoding, iterations have no distinct
+     * group within `series.iterations`, meaning that the `snapshot`
+     * attribute is not found at `/data/0/snapshot`, but at
+     * `/data/snapshot`. This makes it possible to retrieve it from
+     * `series.iterations`.
+     */
+    if (series.iterations.containsAttribute("snapshot"))
+    {
+        auto const &attribute = series.iterations.getAttribute("snapshot");
+        switch (attribute.dtype)
+        {
+        case Datatype::ULONGLONG:
+        case Datatype::VEC_ULONGLONG: {
+            auto const &vec = attribute.get<std::vector<unsigned long long>>();
+            return vec_t{vec.begin(), vec.end()};
+        }
+        case Datatype::ULONG:
+        case Datatype::VEC_ULONG: {
+            auto const &vec = attribute.get<std::vector<unsigned long>>();
+            return vec_t{vec.begin(), vec.end()};
+        }
+        default: {
+            std::stringstream s;
+            s << "Unexpected datatype for '/data/snapshot': " << attribute.dtype
+              << std::endl;
+            throw std::runtime_error(s.str());
+        }
+        }
+    }
+    else
+    {
+        return std::optional<std::vector<uint64_t>>{};
+    }
+}
+
 namespace
 {
-    std::string cleanFilename(std::string const &filename, Format f)
+    CleanedFilename cleanFilename(
+        std::string const &filename, std::string const &filenameExtension)
     {
-        switch (f)
+        std::string postfix =
+            auxiliary::replace_last(filename, filenameExtension, "");
+        if (postfix == filename)
         {
-        case Format::HDF5:
-        case Format::ADIOS1:
-        case Format::ADIOS2:
-        case Format::ADIOS2_SST:
-        case Format::ADIOS2_SSC:
-        case Format::JSON:
-            return auxiliary::replace_last(filename, suffix(f), "");
-        default:
-            return filename;
+            return {postfix, ""};
+        }
+        else
+        {
+            return {postfix, filenameExtension};
         }
     }
 
@@ -1705,14 +2123,8 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        Format f)
+        std::string const &filenameSuffix)
     {
-        std::string filenameSuffix = suffix(f);
-        if (filenameSuffix.empty())
-        {
-            return [](std::string const &) -> Match { return {false, 0, 0}; };
-        }
-
         std::string nameReg = "^" + prefix;
         if (padding != 0)
         {

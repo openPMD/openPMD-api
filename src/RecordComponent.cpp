@@ -191,24 +191,27 @@ bool RecordComponent::empty() const
     return get().m_isEmpty;
 }
 
-void RecordComponent::flush(std::string const &name)
+void RecordComponent::flush(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
     auto &rc = get();
-    if (IOHandler()->m_flushLevel == FlushLevel::SkeletonOnly)
+    if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
     {
         rc.m_name = name;
         return;
     }
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
     {
+    case Access::READ_ONLY:
         while (!rc.m_chunks.empty())
         {
             IOHandler()->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
-    }
-    else
-    {
+        break;
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         /*
          * This catches when a user forgets to use resetDataset.
          */
@@ -273,7 +276,9 @@ void RecordComponent::flush(std::string const &name)
             rc.m_chunks.pop();
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
+        break;
+    }
     }
 }
 
@@ -281,6 +286,20 @@ void RecordComponent::read()
 {
     readBase();
 }
+
+namespace
+{
+    struct MakeConstant
+    {
+        template <typename T>
+        static void call(RecordComponent rc, Attribute const &attr)
+        {
+            rc.makeConstant(attr.get<T>());
+        }
+
+        static constexpr char const *errorMsg = "Unexpected constant datatype";
+    };
+} // namespace
 
 void RecordComponent::readBase()
 {
@@ -292,81 +311,24 @@ void RecordComponent::readBase()
     {
         aRead.name = "value";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         Attribute a(*aRead.resource);
         DT dtype = *aRead.dtype;
         written() = false;
-        switch (dtype)
-        {
-        case DT::LONG_DOUBLE:
-            makeConstant(a.get<long double>());
-            break;
-        case DT::DOUBLE:
-            makeConstant(a.get<double>());
-            break;
-        case DT::FLOAT:
-            makeConstant(a.get<float>());
-            break;
-        case DT::CLONG_DOUBLE:
-            makeConstant(a.get<std::complex<long double> >());
-            break;
-        case DT::CDOUBLE:
-            makeConstant(a.get<std::complex<double> >());
-            break;
-        case DT::CFLOAT:
-            makeConstant(a.get<std::complex<float> >());
-            break;
-        case DT::SHORT:
-            makeConstant(a.get<short>());
-            break;
-        case DT::INT:
-            makeConstant(a.get<int>());
-            break;
-        case DT::LONG:
-            makeConstant(a.get<long>());
-            break;
-        case DT::LONGLONG:
-            makeConstant(a.get<long long>());
-            break;
-        case DT::USHORT:
-            makeConstant(a.get<unsigned short>());
-            break;
-        case DT::UINT:
-            makeConstant(a.get<unsigned int>());
-            break;
-        case DT::ULONG:
-            makeConstant(a.get<unsigned long>());
-            break;
-        case DT::ULONGLONG:
-            makeConstant(a.get<unsigned long long>());
-            break;
-        case DT::CHAR:
-            makeConstant(a.get<char>());
-            break;
-        case DT::UCHAR:
-            makeConstant(a.get<unsigned char>());
-            break;
-        case DT::BOOL:
-            makeConstant(a.get<bool>());
-            break;
-        default:
-            throw std::runtime_error("Unexpected constant datatype");
-        }
+        switchNonVectorType<MakeConstant>(dtype, *this, a);
         written() = true;
 
         aRead.name = "shape";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         a = Attribute(*aRead.resource);
         Extent e;
 
         // uint64_t check
-        Datatype const attrDtype = *aRead.dtype;
-        if (isSame(attrDtype, determineDatatype<std::vector<uint64_t> >()) ||
-            isSame(attrDtype, determineDatatype<uint64_t>()))
-            for (auto const &val : a.get<std::vector<uint64_t> >())
-                e.push_back(val);
+        if (auto val = a.getOptional<std::vector<uint64_t> >(); val.has_value())
+            for (auto const &shape : val.value())
+                e.push_back(shape);
         else
         {
             std::ostringstream oss;
@@ -383,9 +345,10 @@ void RecordComponent::readBase()
 
     aRead.name = "unitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
-    if (*aRead.dtype == DT::DOUBLE)
-        setUnitSI(Attribute(*aRead.resource).get<double>());
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (auto val = Attribute(*aRead.resource).getOptional<double>();
+        val.has_value())
+        setUnitSI(val.value());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 

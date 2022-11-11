@@ -23,6 +23,8 @@
 
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
+#include "openPMD/auxiliary/ShareRawInternal.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 
 namespace openPMD
 {
@@ -76,9 +78,16 @@ inline std::shared_ptr< T > RecordComponent::loadChunk(
     for( auto const& dimensionSize : extent )
         numPoints *= dimensionSize;
 
-    auto newData = std::shared_ptr<T>(new T[numPoints], []( T *p ){ delete [] p; });
+#if defined(__clang_major__) && __clang_major__ < 7
+    auto newData =
+        std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
     loadChunk(newData, offset, extent);
     return newData;
+#else
+    auto newData = std::shared_ptr<T[]>(new T[numPoints]);
+    loadChunk(newData, offset, extent);
+    return std::static_pointer_cast<T>(std::move(newData));
+#endif
 }
 
 template< typename T >
@@ -157,6 +166,25 @@ inline void RecordComponent::loadChunk(
     }
 }
 
+template <typename T>
+inline void RecordComponent::loadChunk(
+    std::shared_ptr<T[]> ptr, Offset offset, Extent extent)
+{
+    loadChunk(
+        std::static_pointer_cast<T>(std::move(ptr)),
+        std::move(offset),
+        std::move(extent));
+}
+
+template <typename T>
+inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
+{
+    loadChunk(
+        auxiliary::shareRaw(ptr),
+        std::move(offset),
+        std::move(extent));
+}
+
 template< typename T >
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
@@ -208,11 +236,29 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
     rc.m_chunks.push(IOTask(this, dWrite));
 }
 
+template <typename T>
+inline void
+RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
+{
+    storeChunk(
+        std::static_pointer_cast<T>(std::move(data)),
+        std::move(o),
+        std::move(e));
+}
+
+template <typename T>
+void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
+{
+    storeChunk(
+        auxiliary::shareRaw(ptr),
+        std::move(offset),
+        std::move(extent));
+}
+
 template< typename T_ContiguousContainer >
-inline typename std::enable_if<
-    traits::IsContiguousContainer< T_ContiguousContainer >::value
->::type
-RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
+inline typename std::enable_if_t<
+    auxiliary::IsContiguousContainer_v<T_ContiguousContainer> >
+RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
 
@@ -231,7 +277,10 @@ RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
     else
         extent = e;
 
-    storeChunk(shareRaw(data), offset, extent);
+    storeChunk(
+        auxiliary::shareRaw(data.data()),
+        offset,
+        extent);
 }
 
 template< typename T, typename F >
@@ -280,7 +329,7 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
      * Flush the openPMD hierarchy to the backend without flushing any actual
      * data yet.
      */
-    seriesFlush( FlushLevel::SkeletonOnly );
+    seriesFlush({FlushLevel::SkeletonOnly});
 
     size_t size = 1;
     for( auto ext : e )
@@ -305,16 +354,18 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
     getBufferView.offset = o;
     getBufferView.extent = e;
     getBufferView.dtype = getDatatype();
-    IOHandler()->enqueue( IOTask( this, getBufferView ) );
-    IOHandler()->flush();
+    IOHandler()->enqueue(IOTask(this, getBufferView));
+    IOHandler()->flush(internal::defaultFlushParams);
     auto &out = *getBufferView.out;
-    if( !out.backendManagedBuffer )
+    if (!out.backendManagedBuffer)
     {
-        auto data = std::forward< F >( createBuffer )( size );
-        out.ptr = static_cast< void * >( data.get() );
-        storeChunk( std::move( data ), std::move( o ), std::move( e ) );
+        // note that data might have either
+        // type shared_ptr<T> or shared_ptr<T[]>
+        auto data = std::forward<F>(createBuffer)(size);
+        out.ptr = static_cast<void *>(data.get());
+        storeChunk(std::move(data), std::move(o), std::move(e));
     }
-    return DynamicMemoryView< T >{ std::move( getBufferView ), size, *this };
+    return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
 }
 
 template< typename T >
@@ -326,8 +377,12 @@ RecordComponent::storeChunk( Offset offset, Extent extent )
         std::move( extent ),
         []( size_t size )
         {
+#if defined(__clang_major__) && __clang_major__ < 7
             return std::shared_ptr< T >{
                 new T[ size ], []( auto * ptr ) { delete[] ptr; } };
+#else
+            return std::shared_ptr< T[] >{ new T[ size ] };
+#endif
         } );
 }
 }

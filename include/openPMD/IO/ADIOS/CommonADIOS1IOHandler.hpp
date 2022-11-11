@@ -52,6 +52,7 @@ class CommonADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
 public:
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
+    void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
     void
     createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
     void createDataset(
@@ -103,7 +104,12 @@ protected:
         m_openWriteFileHandles;
     std::unordered_map<std::shared_ptr<std::string>, ADIOS_FILE *>
         m_openReadFileHandles;
-    std::unordered_map<ADIOS_FILE *, std::vector<ADIOS_SELECTION *> >
+    struct ScheduledRead
+    {
+        ADIOS_SELECTION *selection;
+        std::shared_ptr<void> data; // needed to avoid early freeing
+    };
+    std::unordered_map<ADIOS_FILE *, std::vector<ScheduledRead> >
         m_scheduledReads;
     std::unordered_map<int64_t, std::unordered_map<std::string, Attribute> >
         m_attributeWrites;

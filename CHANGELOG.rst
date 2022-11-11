@@ -17,14 +17,16 @@ Changes to "0.14.0"
 Features
 """"""""
 
-- include internally shipped toml11 v3.7.0 #1148
-- pybind11: require version 2.9.1+ #1220
+- Python: support of 3.10 and 3.11, removal of 3.6 #1323
+- include internally shipped toml11 v3.7.1 #1148 #1227
+- pybind11: require version 2.10.1+ #1220 #1322
 
 Bug Fixes
 """""""""
 
 Other
 """""
+- Catch2: updated to 2.13.9 #1299
 
 
 0.14.3

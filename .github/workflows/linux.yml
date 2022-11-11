@@ -14,14 +14,14 @@ jobs:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang6_nopy_nompi_h5_libcpp }
+      with: {path: /opt/spack, key: clang6_nopy_nompi_h5_libcpp_v2 }
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get install clang-6.0 libc++-dev libc++abi-dev
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
@@ -30,7 +30,6 @@ jobs:
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build        \
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=OFF    \
@@ -47,23 +46,26 @@ jobs:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp }
+      with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp_v2 }
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get install clang-6.0 libc++-dev libc++abi-dev gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
       run: |
+        cmake --version
+        mpiexec --version
+        perl --version
+        python --version
         eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
@@ -87,20 +89,19 @@ jobs:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad1_ad2 }
+      with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad1_ad2_v2 }
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get install clang-7 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
+      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad1_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
@@ -115,27 +116,29 @@ jobs:
 # TODO
 #  clang7_py36_nompi_h5_ad1_ad2_libstdc++
 
-  clang12_py38_nompi_h5_ad1_ad2:
-    runs-on: ubuntu-20.04
+  clang14_py311_nompi_h5_ad1_ad2:
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang12_py38_nompi_h5_ad1_ad2 }
+      with: {path: /opt/spack, key: clang14_py311_nompi_h5_ad1_ad2_v2 }
     - name: Install
       run: |
-        sudo apt-get update
-        sudo apt-get install clang-12 libhdf5-dev python3 python3-pip python3-numpy python3-pandas
+        sudo apt update
+        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
+        wget https://bootstrap.pypa.io/get-pip.py
+        python3.11 get-pip.py
+        python3.11 -m pip install numpy pandas
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-12, CXX: clang++-12, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang12_py38_nompi_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang14_py311_nompi_h5_ad1_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
@@ -143,10 +146,12 @@ jobs:
           -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DCMAKE_VERBOSE_MAKEFILE=ON
+          -DCMAKE_VERBOSE_MAKEFILE=ON     \
+          -DPython_EXECUTABLE=$(which python3.11)
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
+  # ADIOS2 v2.7.1
   clang8_py38_mpich_h5_ad1_ad2_newLayout:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
@@ -154,20 +159,23 @@ jobs:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang8_py38_mpich_h5_ad1_ad2_newLayout }
+      with: {path: /opt/spack, key: clang8_py38_mpich_h5_ad1_ad2_newLayout_v2 }
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get install clang-8 gfortran libmpich-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-8, CXX: clang++-8, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
+      env: {CC: clang-8, CXX: clang++-8, CXXFLAGS: -Werror, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
+        cmake --version
+        mpiexec --version
+        perl --version
+        python --version
         eval $(spack env activate --sh .github/ci/spack-envs/clang8_py38_mpich_h5_ad1_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
@@ -200,7 +208,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: gcc7_py36_ompi_h5_ad1_ad2 }
+      with: {path: /opt/spack, key: gcc7_py36_ompi_h5_ad1_ad2_v2 }
     - name: Install
       run: |
         sudo apt-get update
@@ -213,13 +221,12 @@ jobs:
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
     - name: Build
-      env: {CC: gcc-7, CXX: g++-7, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CC: gcc-7, CXX: g++-7, CXXFLAGS: -Werror}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/gcc7_py36_ompi_h5_ad1_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \
@@ -251,10 +258,9 @@ jobs:
         # Install libcxxwrap-julia
         cmake-easyinstall git+https://github.com/JuliaInterop/libcxxwrap-julia.git@v0.9.0 -DJulia_EXECUTABLE=/usr/local/julia-1.6.5/bin/julia
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
+      env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
       run: |
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build       \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_Julia=ON  \
@@ -277,10 +283,9 @@ jobs:
         apk add hdf5-dev
         python3.10 -m pip install numpy
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CXXFLAGS: -Werror}
       run: |
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
@@ -306,15 +311,15 @@ jobs:
     - name: Install
       shell: bash -eo pipefail -l {0}
       run: |
-        conda env create --file conda.yml
+        conda install -c conda-forge -y mamba
+        mamba env create --file conda.yml
     - name: Build
       shell: bash -eo pipefail -l {0}
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CXXFLAGS: -Werror}
       run: |
-        conda activate openpmd-api-dev
+        source activate openpmd-api-dev
 
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \

@@ -836,7 +836,7 @@ TEST_CASE("wrapper_test", "[core]")
     MeshRecordComponent mrc2 = o.iterations[4].meshes["E"]["y"];
     REQUIRE(mrc2.constant());
     double loadData;
-    mrc2.loadChunk(shareRaw(&loadData), {0}, {1});
+    mrc2.loadChunkRaw(&loadData, {0}, {1});
     o.flush();
     REQUIRE(loadData == value);
     // TODO: do we want to be able to make data constant after already writing
@@ -846,7 +846,7 @@ TEST_CASE("wrapper_test", "[core]")
         Catch::Equals("A recordComponent can not (yet) be made constant after "
                       "it has been written."));
     std::array<double, 1> moreData = {{112233.}};
-    o.iterations[4].meshes["E"]["y"].loadChunk(shareRaw(moreData), {0}, {1});
+    o.iterations[4].meshes["E"]["y"].loadChunkRaw(moreData.data(), {0}, {1});
     o.flush();
     REQUIRE(moreData[0] == value);
     auto all_data = o.iterations[4].meshes["E"]["y"].loadChunk<double>();
@@ -862,8 +862,7 @@ TEST_CASE("wrapper_test", "[core]")
         Dataset(Datatype::DOUBLE, {1}));
     int wrongData = 42;
     REQUIRE_THROWS_WITH(
-        o.iterations[5].meshes["E"]["y"].storeChunk(
-            shareRaw(&wrongData), {0}, {1}),
+        o.iterations[5].meshes["E"]["y"].storeChunkRaw(&wrongData, {0}, {1}),
         Catch::Equals("Datatypes of chunk data (INT) and record component "
                       "(DOUBLE) do not match."));
     std::shared_ptr<double> storeData = std::make_shared<double>(44);
@@ -1074,12 +1073,24 @@ TEST_CASE("backend_via_json", "[core]")
          * BP4 engine should be selected even if ending .sst is given
          */
         Series series(
-            "../samples/optionsViaJsonOverwritesAutomaticDetection.sst",
+            "../samples/optionsViaJsonOverwritesAutomaticDetectionFile.sst",
+            Access::CREATE,
+            R"({"adios2": {"engine": {"type": "file"}}})");
+    }
+    REQUIRE(auxiliary::directory_exists(
+        "../samples/optionsViaJsonOverwritesAutomaticDetectionFile.sst"));
+
+    {
+        /*
+         * BP4 engine should be selected even if ending .sst is given
+         */
+        Series series(
+            "../samples/optionsViaJsonOverwritesAutomaticDetectionBp4.sst",
             Access::CREATE,
             R"({"adios2": {"engine": {"type": "bp4"}}})");
     }
     REQUIRE(auxiliary::directory_exists(
-        "../samples/optionsViaJsonOverwritesAutomaticDetection.bp"));
+        "../samples/optionsViaJsonOverwritesAutomaticDetectionBp4.sst"));
 
 #if openPMD_HAVE_ADIOS1
     setenv("OPENPMD_BP_BACKEND", "ADIOS1", 1);
@@ -1295,4 +1306,111 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
             attr.get<std::vector<int> >() ==
             std::vector<int>{0, 1, 2, 3, 4, 5, 6});
     }
+}
+
+TEST_CASE("unavailable_backend", "[core]")
+{
+#if !openPMD_HAVE_ADIOS1
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.bp", Access::CREATE, R"({"backend": "ADIOS1"})");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS1'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.bp", Access::CREATE, R"({"backend": "ADIOS2"})");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() { Series("unavailable.bp", Access::CREATE); };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_HDF5
+    {
+        auto fail = []() {
+            Series("unavailable.h5", Access::CREATE, R"({"backend": "HDF5"})");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'HDF5'.");
+    }
+#endif
+
+#if openPMD_HAVE_MPI
+#if !openPMD_HAVE_ADIOS1
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.bp",
+                Access::CREATE,
+                MPI_COMM_WORLD,
+                R"({"backend": "ADIOS1"})");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS1'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.bp",
+                Access::CREATE,
+                MPI_COMM_WORLD,
+                R"({"backend": "ADIOS2"})");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() {
+            Series("unavailable.bp", Access::CREATE, MPI_COMM_WORLD);
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_HDF5
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.h5",
+                Access::CREATE,
+                MPI_COMM_WORLD,
+                R"({"backend": "HDF5"})");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'HDF5'.");
+    }
+#endif
+#endif
 }

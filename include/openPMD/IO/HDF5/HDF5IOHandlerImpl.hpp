@@ -43,6 +43,7 @@ public:
 
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
+    void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
     void
     createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
     void createDataset(
@@ -91,6 +92,15 @@ public:
     hid_t m_H5T_CFLOAT;
     hid_t m_H5T_CDOUBLE;
     hid_t m_H5T_CLONG_DOUBLE;
+
+protected:
+#if openPMD_HAVE_MPI
+    /*
+     * Not defined in ParallelHDF5IOHandlerImpl, so we don't have to write
+     * some methods twice.
+     */
+    std::optional<MPI_Comm> m_communicator;
+#endif
 
 private:
     json::TracingJSON m_config;

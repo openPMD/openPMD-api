@@ -40,7 +40,7 @@ public:
 
     virtual ~AbstractIOHandlerImpl() = default;
 
-    virtual std::future<void> flush()
+    std::future<void> flush()
     {
         using namespace auxiliary;
 
@@ -56,6 +56,12 @@ public:
                     createFile(
                         i.writable,
                         deref_dynamic_cast<Parameter<Operation::CREATE_FILE> >(
+                            i.parameter.get()));
+                    break;
+                case O::CHECK_FILE:
+                    checkFile(
+                        i.writable,
+                        deref_dynamic_cast<Parameter<Operation::CHECK_FILE> >(
                             i.parameter.get()));
                     break;
                 case O::CREATE_PATH:
@@ -190,6 +196,12 @@ public:
                         deref_dynamic_cast<Parameter<O::AVAILABLE_CHUNKS> >(
                             i.parameter.get()));
                     break;
+                case O::KEEP_SYNCHRONOUS:
+                    keepSynchronous(
+                        i.writable,
+                        deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS> >(
+                            i.parameter.get()));
+                    break;
                 }
             }
             catch (...)
@@ -214,6 +226,17 @@ public:
     virtual void
     closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) = 0;
 
+    /**
+     * Check if the file specified by the parameter is already present on disk.
+     * The Writable is irrelevant for this method.
+     * A backend can choose to ignore this task and specify FileExists::DontKnow
+     * in the out parameter.
+     * The consequence will be that some top-level attributes might be defined
+     * a second time when appending to an existing file, because the frontend
+     * cannot be sure that the file already has these attributes.
+     */
+    virtual void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) = 0;
+
     /** Advance the file/stream that this writable belongs to.
      *
      * If the backend is based around usage of IO steps (especially streaming
@@ -229,8 +252,10 @@ public:
      * The advance mode is determined by parameters.mode.
      * The return status code shall be stored as parameters.status.
      */
-    virtual void advance(Writable *, Parameter<Operation::ADVANCE> &)
-    {}
+    virtual void advance(Writable *, Parameter<Operation::ADVANCE> &parameters)
+    {
+        *parameters.status = AdvanceStatus::RANDOMACCESS;
+    }
 
     /** Close an openPMD group.
      *
@@ -260,14 +285,17 @@ public:
      * file.
      *
      * The operation should fail if m_handler->m_frontendAccess is
-     * Access::READ_ONLY. The new file should be located in
-     * m_handler->directory. The new file should have the filename
-     * parameters.name. The filename should include the correct corresponding
-     * filename extension. Any existing file should be overwritten if
-     * m_handler->m_frontendAccess is Access::CREATE. The Writables file
-     * position should correspond to the root group "/" of the hierarchy. The
-     * Writable should be marked written when the operation completes
-     * successfully.
+     * Access::READ_ONLY. If m_handler->m_frontendAccess is Access::APPEND, a
+     * possibly existing file should not be overwritten. Instead, written
+     * updates should then either occur in-place or in form of new IO steps.
+     * Support for reading is not necessary in Append mode.
+     * The new file should be located in m_handler->directory.
+     * The new file should have the filename parameters.name.
+     * The filename should include the correct corresponding filename extension.
+     * Any existing file should be overwritten if m_handler->m_frontendAccess is
+     * Access::CREATE. The Writables file position should correspond to the root
+     * group "/" of the hierarchy. The Writable should be marked written when
+     * the operation completes successfully.
      */
     virtual void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) = 0;
@@ -462,8 +490,13 @@ public:
      * datatype parameters.dtype. Any existing attribute with the same name
      * should be overwritten. If possible, only the value should be changed if
      * the datatype stays the same. The attribute should be written to physical
-     * storage after the operation completes successfully. All datatypes of
-     * Datatype should be supported in a type-safe way.
+     * storage after the operation completes successfully. If the parameter
+     * changesOverSteps is true, then the attribute must be able to hold
+     * different values across IO steps. If the backend does not support IO
+     * steps in such a way, the attribute should not be written. (IO steps are
+     * an optional backend feature and the frontend must implement fallback
+     * measures in such a case) All datatypes of Datatype should be supported in
+     * a type-safe way.
      */
     virtual void
     writeAttribute(Writable *, Parameter<Operation::WRITE_ATT> const &) = 0;
@@ -522,6 +555,14 @@ public:
      */
     virtual void
     listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) = 0;
+
+    /** Treat the current Writable as equivalent to that in the parameter object
+     *
+     * Using the default implementation (which copies the abstractFilePath
+     * into the current writable) should be enough for all backends.
+     */
+    void
+    keepSynchronous(Writable *, Parameter<Operation::KEEP_SYNCHRONOUS> param);
 
     AbstractIOHandler *m_handler;
 }; // AbstractIOHandlerImpl

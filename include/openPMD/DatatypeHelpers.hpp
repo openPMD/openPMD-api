@@ -110,6 +110,8 @@ auto switchType(Datatype dt, Args &&...args)
     case Datatype::UCHAR:
         return Action::template call<unsigned char>(
             std::forward<Args>(args)...);
+    case Datatype::SCHAR:
+        return Action::template call<signed char>(std::forward<Args>(args)...);
     case Datatype::SHORT:
         return Action::template call<short>(std::forward<Args>(args)...);
     case Datatype::INT:
@@ -163,6 +165,9 @@ auto switchType(Datatype dt, Args &&...args)
             std::forward<Args>(args)...);
     case Datatype::VEC_UCHAR:
         return Action::template call<std::vector<unsigned char> >(
+            std::forward<Args>(args)...);
+    case Datatype::VEC_SCHAR:
+        return Action::template call<std::vector<signed char> >(
             std::forward<Args>(args)...);
     case Datatype::VEC_USHORT:
         return Action::template call<std::vector<unsigned short> >(
@@ -241,6 +246,8 @@ auto switchNonVectorType(Datatype dt, Args &&...args)
     case Datatype::UCHAR:
         return Action::template call<unsigned char>(
             std::forward<Args>(args)...);
+    case Datatype::SCHAR:
+        return Action::template call<signed char>(std::forward<Args>(args)...);
     case Datatype::SHORT:
         return Action::template call<short>(std::forward<Args>(args)...);
     case Datatype::INT:

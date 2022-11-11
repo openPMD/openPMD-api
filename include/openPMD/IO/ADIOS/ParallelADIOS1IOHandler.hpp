@@ -54,7 +54,7 @@ public:
         return "MPI_ADIOS1";
     }
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::ParsedFlushParams &) override;
 #if openPMD_HAVE_ADIOS1
     void enqueue(IOTask const &) override;
 #endif

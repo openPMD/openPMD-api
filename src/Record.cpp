@@ -43,26 +43,29 @@ Record &Record::setUnitDimension(std::map<UnitDimension, double> const &udim)
     return *this;
 }
 
-void Record::flush_impl(std::string const &name)
+void Record::flush_impl(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
-    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
+    switch (IOHandler()->m_frontendAccess)
     {
+    case Access::READ_ONLY: {
         for (auto &comp : *this)
-            comp.second.flush(comp.first);
+            comp.second.flush(comp.first, flushParams);
+        break;
     }
-    else
-    {
+    case Access::READ_WRITE:
+    case Access::CREATE:
+    case Access::APPEND: {
         if (!written())
         {
             if (scalar())
             {
                 RecordComponent &rc = at(RecordComponent::SCALAR);
                 rc.parent() = parent();
-                rc.flush(name);
-                IOHandler()->flush();
-                writable().abstractFilePosition =
-                    rc.writable().abstractFilePosition;
-                written() = true;
+                rc.flush(name, flushParams);
+                Parameter<Operation::KEEP_SYNCHRONOUS> pSynchronize;
+                pSynchronize.otherWritable = &rc.writable();
+                IOHandler()->enqueue(IOTask(this, pSynchronize));
             }
             else
             {
@@ -70,26 +73,34 @@ void Record::flush_impl(std::string const &name)
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
                 for (auto &comp : *this)
+                {
                     comp.second.parent() = getWritable(this);
-            }
-        }
-
-        if (scalar())
-        {
-            for (auto &comp : *this)
-            {
-                comp.second.flush(name);
-                writable().abstractFilePosition =
-                    comp.second.writable().abstractFilePosition;
+                    comp.second.flush(comp.first, flushParams);
+                }
             }
         }
         else
         {
-            for (auto &comp : *this)
-                comp.second.flush(comp.first);
+
+            if (scalar())
+            {
+                for (auto &comp : *this)
+                {
+                    comp.second.flush(name, flushParams);
+                    writable().abstractFilePosition =
+                        comp.second.writable().abstractFilePosition;
+                }
+            }
+            else
+            {
+                for (auto &comp : *this)
+                    comp.second.flush(comp.first, flushParams);
+            }
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
+        break;
+    }
     }
 }
 
@@ -104,7 +115,7 @@ void Record::read()
     {
         Parameter<Operation::LIST_PATHS> pList;
         IOHandler()->enqueue(IOTask(this, pList));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         Parameter<Operation::OPEN_PATH> pOpen;
         for (auto const &component : *pList.paths)
@@ -118,7 +129,7 @@ void Record::read()
 
         Parameter<Operation::LIST_DATASETS> dList;
         IOHandler()->enqueue(IOTask(this, dList));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         Parameter<Operation::OPEN_DATASET> dOpen;
         for (auto const &component : *dList.datasets)
@@ -126,7 +137,7 @@ void Record::read()
             RecordComponent &rc = (*this)[component];
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;

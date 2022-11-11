@@ -17,11 +17,15 @@ jobs:
       run: |
         sudo .github/workflows/dependencies/install_icc
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      # Due to compiler bugs in Intel compiler, we need to disable warning 1011
+      # (missing return value), otherwise `if constexpr` functions
+      # don't compile.
+      # See https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
+      # Using a local pragma does not work due to the reasons stated there.
+      env: {CXXFLAGS: -Werror -wd1011}
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DCMAKE_C_COMPILER=$(which icc)    \
           -DCMAKE_CXX_COMPILER=$(which icpc) \
@@ -40,11 +44,10 @@ jobs:
       run: |
         sudo .github/workflows/dependencies/install_icx
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CXXFLAGS: -Werror}
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
         share/openPMD/download_samples.sh build
-        chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
           -DCMAKE_C_COMPILER=$(which icx)    \
           -DCMAKE_CXX_COMPILER=$(which icpx) \

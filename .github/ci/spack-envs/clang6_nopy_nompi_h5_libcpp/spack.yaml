@@ -10,7 +10,7 @@ spack:
 
   packages:
     all:
-      target: ['x86_64']
+      target: [x86_64]
       variants: ~mpi ~fortran
       compiler: [clang@6.0.0]
 
@@ -33,3 +33,6 @@ spack:
 
   config:
     build_jobs: 2
+
+  mirrors:
+    E4S: https://cache.e4s.io

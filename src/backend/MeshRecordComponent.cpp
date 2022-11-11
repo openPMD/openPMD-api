@@ -34,7 +34,7 @@ void MeshRecordComponent::read()
 
     aRead.name = "position";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     Attribute a = Attribute(*aRead.resource);
     if (*aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT)
         setPosition(a.get<std::vector<float> >());
@@ -43,6 +43,9 @@ void MeshRecordComponent::read()
     else if (
         *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE)
         setPosition(a.get<std::vector<long double> >());
+    // conversion cast if a backend reports an integer type
+    else if (auto val = a.getOptional<std::vector<double> >(); val.has_value())
+        setPosition(val.value());
     else
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'position'");

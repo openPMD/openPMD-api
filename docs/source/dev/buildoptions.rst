@@ -68,10 +68,10 @@ The following options allow to switch to external installs of dependencies:
 ================================= =========== ======== ============= ========
 CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
-``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2         2.13.4+
-``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11        2.9.1+
+``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2         2.13.9+
+``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11       2.10.1+
 ``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.9.1+
-``openPMD_USE_INTERNAL_TOML11``   **ON**/OFF  No       toml11          3.7.0+
+``openPMD_USE_INTERNAL_TOML11``   **ON**/OFF  No       toml11          3.7.1+
 ================================= =========== ======== ============= ========
 
 
@@ -81,10 +81,11 @@ Tests, Examples and Command Line Tools
 By default, tests, examples and command line tools are built.
 In order to skip building those, pass ``OFF`` to these ``cmake`` options:
 
-============================== =============== ==================================================
-CMake Option                   Values          Description
-============================== =============== ==================================================
-``openPMD_BUILD_TESTING``      **ON**/OFF      Build tests
-``openPMD_BUILD_EXAMPLES``     **ON**/OFF      Build examples
-``openPMD_BUILD_CLI_TOOLS``    **ON**/OFF      Build command-line tools
-============================== =============== ==================================================
+=============================== =============== ==================================================
+CMake Option                    Values          Description
+=============================== =============== ==================================================
+``openPMD_BUILD_TESTING``       **ON**/OFF      Build tests
+``openPMD_BUILD_EXAMPLES``      **ON**/OFF      Build examples
+``openPMD_BUILD_CLI_TOOLS``     **ON**/OFF      Build command-line tools
+``openPMD_USE_CUDA_EXAMPLES``   ON/**OFF**      Use CUDA in examples
+=============================== =============== ==================================================

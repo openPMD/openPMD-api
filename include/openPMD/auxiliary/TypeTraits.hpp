@@ -59,4 +59,22 @@ inline constexpr bool IsVector_v = detail::IsVector<T>::value;
 
 template <typename T>
 inline constexpr bool IsArray_v = detail::IsArray<T>::value;
+
+/** Emulate in the C++ concept ContiguousContainer
+ *
+ * Users can implement this trait for a type to signal it can be used as
+ * contiguous container.
+ *
+ * See:
+ *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
+ */
+template <typename T>
+inline constexpr bool IsContiguousContainer_v = IsVector_v<T> || IsArray_v<T>;
+
+namespace
+{
+    // see https://en.cppreference.com/w/cpp/language/if
+    template <typename>
+    inline constexpr bool dependent_false_v = false;
+} // namespace
 } // namespace openPMD::auxiliary

@@ -45,7 +45,7 @@ Format determineFormat(std::string const &filename)
         );
 
         if (bp_backend == "ADIOS2")
-            return Format::ADIOS2;
+            return Format::ADIOS2_BP;
         else if (bp_backend == "ADIOS1")
             return Format::ADIOS1;
         else
@@ -54,6 +54,10 @@ Format determineFormat(std::string const &filename)
                 "neither ADIOS1 nor ADIOS2: " +
                 bp_backend);
     }
+    if (auxiliary::ends_with(filename, ".bp4"))
+        return Format::ADIOS2_BP4;
+    if (auxiliary::ends_with(filename, ".bp5"))
+        return Format::ADIOS2_BP5;
     if (auxiliary::ends_with(filename, ".sst"))
         return Format::ADIOS2_SST;
     if (auxiliary::ends_with(filename, ".ssc"))
@@ -72,8 +76,12 @@ std::string suffix(Format f)
     case Format::HDF5:
         return ".h5";
     case Format::ADIOS1:
-    case Format::ADIOS2:
+    case Format::ADIOS2_BP:
         return ".bp";
+    case Format::ADIOS2_BP4:
+        return ".bp4";
+    case Format::ADIOS2_BP5:
+        return ".bp5";
     case Format::ADIOS2_SST:
         return ".sst";
     case Format::ADIOS2_SSC:

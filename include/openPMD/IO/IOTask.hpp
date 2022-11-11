@@ -44,18 +44,21 @@ Writable *getWritable(Attributable *);
 /** Type of IO operation between logical and persistent data.
  */
 OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
-    CREATE_FILE,     OPEN_FILE,      CLOSE_FILE,    DELETE_FILE,
+    CREATE_FILE,      CHECK_FILE,     OPEN_FILE,     CLOSE_FILE,
+    DELETE_FILE,
 
-    CREATE_PATH,     CLOSE_PATH,     OPEN_PATH,     DELETE_PATH,
+    CREATE_PATH,      CLOSE_PATH,     OPEN_PATH,     DELETE_PATH,
     LIST_PATHS,
 
-    CREATE_DATASET,  EXTEND_DATASET, OPEN_DATASET,  DELETE_DATASET,
-    WRITE_DATASET,   READ_DATASET,   LIST_DATASETS, GET_BUFFER_VIEW,
+    CREATE_DATASET,   EXTEND_DATASET, OPEN_DATASET,  DELETE_DATASET,
+    WRITE_DATASET,    READ_DATASET,   LIST_DATASETS, GET_BUFFER_VIEW,
 
-    DELETE_ATT,      WRITE_ATT,      READ_ATT,      LIST_ATTS,
+    DELETE_ATT,       WRITE_ATT,      READ_ATT,      LIST_ATTS,
 
     ADVANCE,
-    AVAILABLE_CHUNKS //!< Query chunks that can be loaded in a dataset
+    AVAILABLE_CHUNKS, //!< Query chunks that can be loaded in a dataset
+    KEEP_SYNCHRONOUS //!< Keep two items in the object model synchronous with
+                     //!< each other
 }; // note: if you change the enum members here, please update
    // docs/source/dev/design.rst
 
@@ -65,7 +68,7 @@ namespace internal
      * The returned strings are compile-time constants, so no worries about
      * pointer validity.
      */
-    std::string operationAsString(Operation);
+    OPENPMDAPI_EXPORT std::string operationAsString(Operation);
 } // namespace internal
 
 struct OPENPMDAPI_EXPORT AbstractParameter
@@ -114,6 +117,32 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_FILE>
 
     std::string name = "";
     IterationEncoding encoding = IterationEncoding::groupBased;
+};
+
+template <>
+struct OPENPMDAPI_EXPORT Parameter<Operation::CHECK_FILE>
+    : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter(Parameter const &p)
+        : AbstractParameter(), name(p.name), fileExists(p.fileExists)
+    {}
+
+    std::unique_ptr<AbstractParameter> clone() const override
+    {
+        return std::unique_ptr<AbstractParameter>(
+            new Parameter<Operation::CHECK_FILE>(*this));
+    }
+
+    std::string name = "";
+    enum class FileExists
+    {
+        DontKnow,
+        Yes,
+        No
+    };
+    std::shared_ptr<FileExists> fileExists =
+        std::make_shared<FileExists>(FileExists::DontKnow);
 };
 
 template <>
@@ -257,8 +286,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_PATHS>
             new Parameter<Operation::LIST_PATHS>(*this));
     }
 
-    std::shared_ptr<std::vector<std::string> > paths =
-        std::make_shared<std::vector<std::string> >();
+    std::shared_ptr<std::vector<std::string>> paths =
+        std::make_shared<std::vector<std::string>>();
 };
 
 template <>
@@ -434,8 +463,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_DATASETS>
             new Parameter<Operation::LIST_DATASETS>(*this));
     }
 
-    std::shared_ptr<std::vector<std::string> > datasets =
-        std::make_shared<std::vector<std::string> >();
+    std::shared_ptr<std::vector<std::string>> datasets =
+        std::make_shared<std::vector<std::string>>();
 };
 
 template <>
@@ -508,6 +537,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
         : AbstractParameter()
         , name(p.name)
         , dtype(p.dtype)
+        , changesOverSteps(p.changesOverSteps)
         , resource(p.resource)
     {}
 
@@ -519,6 +549,13 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
 
     std::string name = "";
     Datatype dtype = Datatype::UNDEFINED;
+    /*
+     * If true, this attribute changes across IO steps.
+     * It should only be written in backends that support IO steps,
+     * otherwise writing should be skipped.
+     * The frontend is responsible for handling both situations.
+     */
+    bool changesOverSteps = false;
     Attribute::resource resource;
 };
 
@@ -569,8 +606,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_ATTS>
             new Parameter<Operation::LIST_ATTS>(*this));
     }
 
-    std::shared_ptr<std::vector<std::string> > attributes =
-        std::make_shared<std::vector<std::string> >();
+    std::shared_ptr<std::vector<std::string>> attributes =
+        std::make_shared<std::vector<std::string>>();
 };
 
 template <>
@@ -617,6 +654,23 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::AVAILABLE_CHUNKS>
 
     // output parameter
     std::shared_ptr<ChunkTable> chunks = std::make_shared<ChunkTable>();
+};
+
+template <>
+struct OPENPMDAPI_EXPORT Parameter<Operation::KEEP_SYNCHRONOUS>
+    : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter(Parameter const &p)
+        : AbstractParameter(), otherWritable(p.otherWritable)
+    {}
+
+    std::unique_ptr<AbstractParameter> clone() const override
+    {
+        return std::make_unique<Parameter<Operation::KEEP_SYNCHRONOUS>>(*this);
+    }
+
+    Writable *otherWritable;
 };
 
 /** @brief Self-contained description of a single IO operation.

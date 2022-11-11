@@ -37,8 +37,11 @@
 #include <mpi.h>
 #endif
 
+#include <cstdint>
+#include <deque>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 
 // expose private and protected members for invasive testing
@@ -82,6 +85,12 @@ namespace internal
          */
         std::optional<WriteIterations> m_writeIterations;
         /**
+         * For writing: Remember which iterations have been written in the
+         * currently active output step. Use this later when writing the
+         * snapshot attribute.
+         */
+        std::set<uint64_t> m_currentlyActiveIterations;
+        /**
          * Needed if reading a single iteration of a file-based series.
          * Users may specify the concrete filename of one iteration instead of
          * the file-based expansion pattern. In that case, the filename must not
@@ -107,6 +116,11 @@ namespace internal
          * Filename after the expansion pattern without filename extension.
          */
         std::string m_filenamePostfix;
+        /**
+         * Filename extension as specified by the user.
+         * (Not necessarily the backend's default suffix)
+         */
+        std::string m_filenameExtension;
         /**
          * The padding in file-based iteration encoding.
          * 0 if no padding is given (%T pattern).
@@ -441,8 +455,13 @@ public:
     std::string backend() const;
 
     /** Execute all required remaining IO operations to write or read data.
+     *
+     * @param backendConfig Further backend-specific instructions on how to
+     *                      implement this flush call.
+     *                      Must be provided in-line, configuration is not read
+     *                      from files.
      */
-    void flush();
+    void flush(std::string backendConfig = "{}");
 
     /**
      * @brief Entry point to the reading end of the streaming API.
@@ -523,7 +542,7 @@ OPENPMD_private
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
     void init(std::shared_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
-    void initDefaults(IterationEncoding);
+    void initDefaults(IterationEncoding, bool initAll = false);
     /**
      * @brief Internal call for flushing a Series.
      *
@@ -531,16 +550,20 @@ OPENPMD_private
      *
      * @param begin Start of the range of iterations to flush.
      * @param end End of the range of iterations to flush.
-     * @param level Flush level, as documented in AbstractIOHandler.hpp.
+     * @param flushParams Flush params, as documented in AbstractIOHandler.hpp.
      * @param flushIOHandler Tasks will always be enqueued to the backend.
      *     If this flag is true, tasks will be flushed to the backend.
      */
     std::future<void> flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
-        FlushLevel level,
+        internal::FlushParams flushParams,
         bool flushIOHandler = true);
-    void flushFileBased(iterations_iterator begin, iterations_iterator end);
+    void flushFileBased(
+        iterations_iterator begin,
+        iterations_iterator end,
+        internal::FlushParams flushParams,
+        bool flushIOHandler = true);
     /*
      * Group-based and variable-based iteration layouts share a lot of logic
      * (realistically, the variable-based iteration layout only throws out
@@ -548,7 +571,11 @@ OPENPMD_private
      * As a convention, methods that deal with both layouts are called
      * .*GorVBased, short for .*GroupOrVariableBased
      */
-    void flushGorVBased(iterations_iterator begin, iterations_iterator end);
+    void flushGorVBased(
+        iterations_iterator begin,
+        iterations_iterator end,
+        internal::FlushParams flushParams,
+        bool flushIOHandler = true);
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased();
@@ -557,8 +584,10 @@ OPENPMD_private
      * Note on re-parsing of a Series:
      * If init == false, the parsing process will seek for new
      * Iterations/Records/Record Components etc.
+     * If series.iterations contains the attribute `snapshot`, returns its
+     * value.
      */
-    void readGorVBased(bool init = true);
+    std::optional<std::deque<uint64_t> > readGorVBased(bool init = true);
     void readBase();
     std::string iterationFilename(uint64_t i);
 
@@ -608,6 +637,22 @@ OPENPMD_private
         internal::AttributableData &file,
         iterations_iterator it,
         Iteration &iteration);
+
+    AdvanceStatus advance(AdvanceMode mode);
+
+    /**
+     * @brief Called at the end of an IO step to store the iterations defined
+     *        in the IO step to the snapshot attribute.
+     *
+     * @param doFlush If true, flush the IO handler.
+     */
+    void flushStep(bool doFlush);
+
+    /*
+     * Returns the current content of the /data/snapshot attribute.
+     * (We could also add this to the public API some time)
+     */
+    std::optional<std::vector<uint64_t> > currentSnapshot() const;
 }; // Series
 } // namespace openPMD
 

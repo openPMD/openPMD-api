@@ -198,7 +198,7 @@ void init_Series(py::module &m)
             &Series::iterationFormat,
             &Series::setIterationFormat)
         .def_property("name", &Series::name, &Series::setName)
-        .def("flush", &Series::flush)
+        .def("flush", &Series::flush, py::arg("backend_config") = "{}")
 
         .def_property_readonly("backend", &Series::backend)
 
