@@ -1715,7 +1715,7 @@ class APITest(unittest.TestCase):
 
             for i in range(len(data)):
                 self.assertEqual(data[i], chunk[i])
-            del read
+            read.close()
 
         it1 = series.iterations[1]
         E_x = it1.meshes["E"]["x"]
@@ -1737,7 +1737,7 @@ class APITest(unittest.TestCase):
 
             for i in range(len(data)):
                 self.assertEqual(data[i], chunk[i])
-            del read
+            read.close()
 
     def testCloseIteration(self):
         for ext in tested_file_extensions:
@@ -1804,7 +1804,7 @@ class APITest(unittest.TestCase):
             self.assertEqual(chunk2[0, 1], 1)
             self.assertEqual(chunk2[1, 0], 2)
             self.assertEqual(chunk2[1, 1], 3)
-        del read
+        read.close()
         self.assertEqual(lastIterationIndex, 9)
 
     def testIterator(self):
@@ -1838,6 +1838,9 @@ class APITest(unittest.TestCase):
         data3 = np.array([[2], [4], [6], [8]], dtype=np.dtype("int"))
         E_x.store_chunk(data3, [6, 0], [4, 1])
 
+        # Cleaner: write.close()
+        # But let's keep this instance to test that that workflow stays
+        # functional.
         del write
 
         read = io.Series(
@@ -1899,7 +1902,7 @@ class APITest(unittest.TestCase):
         self.writeFromTemporaryStore(E_x)
         gc.collect()  # trigger removal of temporary data to check its copied
 
-        del write
+        write.close()
 
         read = io.Series(
             name,
@@ -2051,7 +2054,7 @@ class APITest(unittest.TestCase):
         e_chargeDensity_x.reset_dataset(DS(DT.LONG, [10]))
         e_chargeDensity_x[:] = sample_data
 
-        del write
+        write.close()
 
         read = io.Series("../samples/custom_geometries_python.json",
                          io.Access.read_only)
