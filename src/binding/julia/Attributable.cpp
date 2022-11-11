@@ -9,9 +9,7 @@ void define_julia_Attributable(jlcxx::Module &mod)
 #define USE_TYPE(NAME, ENUM, TYPE)                                             \
     type.method(                                                               \
         "cxx_set_attribute_" NAME "!", &Attributable::setAttribute<TYPE>);
-    {
-        FORALL_OPENPMD_TYPES(USE_TYPE)
-    }
+    {FORALL_OPENPMD_TYPES(USE_TYPE)}
 #undef USE_TYPE
 
     type.method("cxx_get_attribute", &Attributable::getAttribute);
