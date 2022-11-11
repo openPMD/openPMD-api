@@ -39,58 +39,54 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
-    /* note: this scope is intentional to destruct the openPMD::Series object
-     *       prior to MPI_Finalize();
-     */
-    {
-        // global data set to write: [MPI_Size * 10, 300]
-        // each rank writes a 10x300 slice with its MPI rank as values
-        auto const value = float(mpi_size);
-        std::vector<float> local_data(10 * 300, value);
-        if (0 == mpi_rank)
-            cout << "Set up a 2D array with 10x300 elements per MPI rank ("
-                 << mpi_size << "x) that will be written to disk\n";
+    // global data set to write: [MPI_Size * 10, 300]
+    // each rank writes a 10x300 slice with its MPI rank as values
+    auto const value = float(mpi_size);
+    std::vector<float> local_data(10 * 300, value);
+    if (0 == mpi_rank)
+        cout << "Set up a 2D array with 10x300 elements per MPI rank ("
+             << mpi_size << "x) that will be written to disk\n";
 
-        // open file for writing
-        Series series = Series(
-            "../samples/5_parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
-        if (0 == mpi_rank)
-            cout << "Created an empty series in parallel with " << mpi_size
-                 << " MPI ranks\n";
+    // open file for writing
+    Series series = Series(
+        "../samples/5_parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
+    if (0 == mpi_rank)
+        cout << "Created an empty series in parallel with " << mpi_size
+             << " MPI ranks\n";
 
-        MeshRecordComponent mymesh =
-            series.iterations[1].meshes["mymesh"][MeshRecordComponent::SCALAR];
+    MeshRecordComponent mymesh =
+        series.iterations[1].meshes["mymesh"][MeshRecordComponent::SCALAR];
 
-        // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<float>();
-        Extent global_extent = {10ul * mpi_size, 300};
-        Dataset dataset = Dataset(datatype, global_extent);
+    // example 1D domain decomposition in first index
+    Datatype datatype = determineDatatype<float>();
+    Extent global_extent = {10ul * mpi_size, 300};
+    Dataset dataset = Dataset(datatype, global_extent);
 
-        if (0 == mpi_rank)
-            cout << "Prepared a Dataset of size " << dataset.extent[0] << "x"
-                 << dataset.extent[1] << " and Datatype " << dataset.dtype
-                 << '\n';
+    if (0 == mpi_rank)
+        cout << "Prepared a Dataset of size " << dataset.extent[0] << "x"
+             << dataset.extent[1] << " and Datatype " << dataset.dtype << '\n';
 
-        mymesh.resetDataset(dataset);
-        if (0 == mpi_rank)
-            cout << "Set the global Dataset properties for the scalar field "
-                    "mymesh in iteration 1\n";
+    mymesh.resetDataset(dataset);
+    if (0 == mpi_rank)
+        cout << "Set the global Dataset properties for the scalar field "
+                "mymesh in iteration 1\n";
 
-        // example shows a 1D domain decomposition in first index
-        Offset chunk_offset = {10ul * mpi_rank, 0};
-        Extent chunk_extent = {10, 300};
-        mymesh.storeChunk(local_data, chunk_offset, chunk_extent);
-        if (0 == mpi_rank)
-            cout << "Registered a single chunk per MPI rank containing its "
-                    "contribution, "
-                    "ready to write content to disk\n";
+    // example shows a 1D domain decomposition in first index
+    Offset chunk_offset = {10ul * mpi_rank, 0};
+    Extent chunk_extent = {10, 300};
+    mymesh.storeChunk(local_data, chunk_offset, chunk_extent);
+    if (0 == mpi_rank)
+        cout << "Registered a single chunk per MPI rank containing its "
+                "contribution, "
+                "ready to write content to disk\n";
 
-        series.flush();
-        if (0 == mpi_rank)
-            cout << "Dataset content has been fully written to disk\n";
-    }
+    series.flush();
+    if (0 == mpi_rank)
+        cout << "Dataset content has been fully written to disk\n";
 
-    // openPMD::Series MUST be destructed at this point
+    series.close();
+
+    // openPMD::Series MUST be destructed or closed at this point
     MPI_Finalize();
 
     return 0;

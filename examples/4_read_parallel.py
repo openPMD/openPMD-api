@@ -56,10 +56,11 @@ if __name__ == "__main__":
         # this barrier is not necessary but structures the example output
         comm.Barrier()
 
-    # The files in 'series' are still open until the object is destroyed, on
-    # which it cleanly flushes and closes all open file handles.
-    # One can delete the object explicitly (or let it run out of scope) to
-    # trigger this.
+    # The files in 'series' are still open until the series is closed, at which
+    # time it cleanly flushes and closes all open file handles.
+    # One can close the object explicitly to trigger this.
+    # Alternatively, this will automatically happen once the garbage collector
+    # claims (every copy of) the series object.
     # In any case, this must happen before MPI_Finalize() is called
     # (usually in the mpi4py exit hook).
-    del series
+    series.close()
