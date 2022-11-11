@@ -20,6 +20,5 @@ void define_julia_Attributable(jlcxx::Module &mod)
     type.method("cxx_comment", &Attributable::comment);
     type.method("cxx_set_comment!", &Attributable::setComment);
     type.method(
-        "cxx_series_flush",
-        static_cast<void (Attributable::*)()>(&Attributable::seriesFlush));
+        "cxx_series_flush", [](Attributable &attr) { attr.seriesFlush(); });
 }

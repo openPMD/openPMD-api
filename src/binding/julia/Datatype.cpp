@@ -17,7 +17,9 @@ void define_julia_Datatype(jlcxx::Module &mod)
     mod.method("cxx_to_bytes", toBytes);
     mod.method("cxx_to_bits", toBits);
     mod.method("cxx_is_vector", isVector);
-    mod.method("cxx_is_floating_point", (bool (*)(Datatype))isFloatingPoint);
+    mod.method(
+        "cxx_is_floating_point",
+        static_cast<bool (*)(Datatype)>(isFloatingPoint));
     mod.method(
         "cxx_is_complex_floating_point",
         static_cast<bool (*)(Datatype)>(isComplexFloatingPoint));
