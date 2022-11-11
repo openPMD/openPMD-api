@@ -9,7 +9,8 @@ void define_julia_Format(jlcxx::Module &mod)
 
     mod.set_const("FORMAT_HDF5", Format::HDF5);
     mod.set_const("FORMAT_ADIOS1", Format::ADIOS1);
-    mod.set_const("FORMAT_ADIOS2", Format::ADIOS2);
+    mod.set_const("FORMAT_ADIOS2_BP4", Format::ADIOS2_BP4);
+    mod.set_const("FORMAT_ADIOS2_BP5", Format::ADIOS2_BP5);
     mod.set_const("FORMAT_ADIOS2_SST", Format::ADIOS2_SST);
     mod.set_const("FORMAT_ADIOS2_SSC", Format::ADIOS2_SSC);
     mod.set_const("FORMAT_JSON", Format::JSON);
