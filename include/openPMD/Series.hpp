@@ -502,6 +502,14 @@ public:
      */
     WriteIterations writeIterations();
 
+    /**
+     * @brief Close the Series and release the data storage/transport backends.
+     *
+     * This is an explicit API call for what the Series::~Series() destructor
+     * would do otherwise.
+     * All backends are closed after calling this method.
+     * The Series should be treated as destroyed after calling this method.
+     */
     void close();
 
     // clang-format off
