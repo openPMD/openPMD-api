@@ -2066,6 +2066,8 @@ WriteIterations Series::writeIterations()
 void Series::close()
 {
     get().close();
+    m_series.reset();
+    m_attri.reset();
 }
 
 auto Series::currentSnapshot() const
