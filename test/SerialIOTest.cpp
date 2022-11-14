@@ -6331,34 +6331,56 @@ void unfinished_iteration_test(
         auto electron_mass =
             it10.particles["e"]["mass"][RecordComponent::SCALAR];
     }
-    auto tryReading = [&config,
-                       file](std::string const &additionalConfig = "{}") {
-        Series read(
-            file, Access::READ_ONLY, json::merge(config, additionalConfig));
-
-        std::vector<decltype(Series::iterations)::key_type> iterations;
-        std::cout << "Going to list iterations in " << file << ":" << std::endl;
-        for (auto iteration : read.readIterations())
+    auto tryReading = [&config, file, filebased](
+                          std::string const &additionalConfig = "{}") {
         {
-            std::cout << "Seeing iteration " << iteration.iterationIndex
+            Series read(
+                file, Access::READ_ONLY, json::merge(config, additionalConfig));
+
+            std::vector<decltype(Series::iterations)::key_type> iterations;
+            std::cout << "Going to list iterations in " << file << ":"
                       << std::endl;
-            iterations.push_back(iteration.iterationIndex);
+            for (auto iteration : read.readIterations())
+            {
+                std::cout << "Seeing iteration " << iteration.iterationIndex
+                          << std::endl;
+                iterations.push_back(iteration.iterationIndex);
 
-            Parameter<Operation::READ_ATT> readAttribute;
-            readAttribute.name = "this_does_definitely_not_exist";
-            read.IOHandler()->enqueue(IOTask(&iteration, readAttribute));
-            // enqueue a second time to check that the queue is cleared upon
-            // exception
-            read.IOHandler()->enqueue(IOTask(&iteration, readAttribute));
+                Parameter<Operation::READ_ATT> readAttribute;
+                readAttribute.name = "this_does_definitely_not_exist";
+                read.IOHandler()->enqueue(IOTask(&iteration, readAttribute));
+                // enqueue a second time to check that the queue is cleared upon
+                // exception
+                read.IOHandler()->enqueue(IOTask(&iteration, readAttribute));
 
-            REQUIRE_THROWS_AS(
-                read.IOHandler()->flush({FlushLevel::InternalFlush}),
-                error::ReadError);
-            REQUIRE(read.IOHandler()->m_work.empty());
+                REQUIRE_THROWS_AS(
+                    read.IOHandler()->flush({FlushLevel::InternalFlush}),
+                    error::ReadError);
+                REQUIRE(read.IOHandler()->m_work.empty());
+            }
+            REQUIRE(
+                (iterations ==
+                 std::vector<decltype(Series::iterations)::key_type>{0, 10}));
         }
-        REQUIRE(
-            (iterations ==
-             std::vector<decltype(Series::iterations)::key_type>{0, 10}));
+
+        if (filebased)
+        {
+            Series read(
+                file, Access::READ_ONLY, json::merge(config, additionalConfig));
+            if (additionalConfig == "{}")
+            {
+                // Eager parsing, defective iteration has already been removed
+                REQUIRE(!read.iterations.contains(5));
+                read.iterations[0].open();
+                read.iterations[10].open();
+            }
+            else
+            {
+                REQUIRE_THROWS_AS(read.iterations[5].open(), error::ReadError);
+                read.iterations[0].open();
+                read.iterations[10].open();
+            }
+        }
     };
 
     tryReading();
