@@ -54,12 +54,10 @@ using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 
 void init_Series(py::module &m)
 {
-
-    using iterations_key_t = decltype(Series::iterations)::key_type;
     py::class_<WriteIterations>(m, "WriteIterations")
         .def(
             "__getitem__",
-            [](WriteIterations writeIterations, iterations_key_t key) {
+            [](WriteIterations writeIterations, Series::IterationIndex_t key) {
                 return writeIterations[key];
             },
             // keep container alive while iterator exists

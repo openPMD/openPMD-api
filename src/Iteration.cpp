@@ -79,7 +79,7 @@ Iteration &Iteration::setTimeUnitSI(double newTimeUnitSI)
     return *this;
 }
 
-using iterator_t = Container<Iteration, uint64_t>::iterator;
+using iterator_t = Container<Iteration, Iteration::IterationIndex_t>::iterator;
 
 Iteration &Iteration::close(bool _flush)
 {
@@ -194,7 +194,7 @@ bool Iteration::closedByWriter() const
 
 void Iteration::flushFileBased(
     std::string const &filename,
-    uint64_t i,
+    IterationIndex_t i,
     internal::FlushParams const &flushParams)
 {
     /* Find the root point [Series] of this file,
@@ -251,7 +251,7 @@ void Iteration::flushFileBased(
 }
 
 void Iteration::flushGroupBased(
-    uint64_t i, internal::FlushParams const &flushParams)
+    IterationIndex_t i, internal::FlushParams const &flushParams)
 {
     if (!written())
     {
@@ -274,7 +274,7 @@ void Iteration::flushGroupBased(
 }
 
 void Iteration::flushVariableBased(
-    uint64_t i, internal::FlushParams const &flushParams)
+    IterationIndex_t i, internal::FlushParams const &flushParams)
 {
     if (!written())
     {

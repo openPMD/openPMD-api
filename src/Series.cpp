@@ -71,12 +71,13 @@ namespace
     {
         bool isContained{}; //! pattern match successful
         int padding{}; //! number of zeros used for padding of iteration
-        uint64_t iteration{}; //! iteration found in regex pattern (default: 0)
+        Series::IterationIndex_t
+            iteration{}; //! iteration found in regex pattern (default: 0)
 
         // support for std::tie
-        operator std::tuple<bool &, int &, uint64_t &>()
+        operator std::tuple<bool &, int &, Series::IterationIndex_t &>()
         {
-            return std::tuple<bool &, int &, uint64_t &>{
+            return std::tuple<bool &, int &, Series::IterationIndex_t &>{
                 isContained, padding, iteration};
         }
     };
@@ -164,7 +165,7 @@ Series &Series::setMeshesPath(std::string const &mp)
     if (std::any_of(
             series.iterations.begin(),
             series.iterations.end(),
-            [](Container<Iteration, uint64_t>::value_type const &i) {
+            [](Container<Iteration, IterationIndex_t>::value_type const &i) {
                 return i.second.meshes.written();
             }))
         throw std::runtime_error(
@@ -190,7 +191,7 @@ Series &Series::setParticlesPath(std::string const &pp)
     if (std::any_of(
             series.iterations.begin(),
             series.iterations.end(),
-            [](Container<Iteration, uint64_t>::value_type const &i) {
+            [](Container<Iteration, IterationIndex_t>::value_type const &i) {
                 return i.second.particles.written();
             }))
         throw std::runtime_error(
@@ -500,7 +501,7 @@ namespace
     {
         bool isContained;
         int padding;
-        uint64_t iterationIndex;
+        Series::IterationIndex_t iterationIndex;
         std::set<int> paddings;
         if (auxiliary::directory_exists(directory))
         {
@@ -531,7 +532,7 @@ namespace
         return autoDetectPadding(
             std::move(isPartOfSeries),
             directory,
-            [](uint64_t index, std::string const &filename) {
+            [](Series::IterationIndex_t index, std::string const &filename) {
                 (void)index;
                 (void)filename;
             });
@@ -999,7 +1000,7 @@ void Series::readFileBased()
         std::move(isPartOfSeries),
         IOHandler()->directory,
         // foreach found file with `filename` and `index`:
-        [&series](uint64_t index, std::string const &filename) {
+        [&series](IterationIndex_t index, std::string const &filename) {
             Iteration &i = series.iterations[index];
             i.deferParseAccess(
                 {std::to_string(index),
@@ -1139,7 +1140,8 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     series.iterations.readAttributes(ReadMode::OverrideExisting);
 }
 
-std::optional<std::deque<uint64_t>> Series::readGorVBased(bool do_init)
+auto Series::readGorVBased(bool do_init)
+    -> std::optional<std::deque<IterationIndex_t>>
 {
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
@@ -1240,7 +1242,7 @@ std::optional<std::deque<uint64_t>> Series::readGorVBased(bool do_init)
     IOHandler()->flush(internal::defaultFlushParams);
 
     auto readSingleIteration = [&series, &pOpen, this, withRWAccess](
-                                   uint64_t index,
+                                   IterationIndex_t index,
                                    std::string path,
                                    bool guardAgainstRereading,
                                    bool beginStep) {
@@ -1292,7 +1294,7 @@ std::optional<std::deque<uint64_t>> Series::readGorVBased(bool do_init)
     case IterationEncoding::fileBased: {
         for (auto const &it : *pList.paths)
         {
-            uint64_t index = std::stoull(it);
+            IterationIndex_t index = std::stoull(it);
             /*
              * For now: parse a Series in RandomAccess mode.
              * (beginStep = false)
@@ -1304,15 +1306,15 @@ std::optional<std::deque<uint64_t>> Series::readGorVBased(bool do_init)
         if (currentSteps.has_value())
         {
             auto const &vec = currentSteps.value();
-            return std::deque<uint64_t>{vec.begin(), vec.end()};
+            return std::deque<IterationIndex_t>{vec.begin(), vec.end()};
         }
         else
         {
-            return std::optional<std::deque<uint64_t>>();
+            return std::optional<std::deque<IterationIndex_t>>();
         }
     }
     case IterationEncoding::variableBased: {
-        std::deque<uint64_t> res = {0};
+        std::deque<IterationIndex_t> res = {0};
         if (currentSteps.has_value() && !currentSteps.value().empty())
         {
             res = {currentSteps.value().begin(), currentSteps.value().end()};
@@ -1418,7 +1420,7 @@ void Series::readBase()
     }
 }
 
-std::string Series::iterationFilename(uint64_t i)
+std::string Series::iterationFilename(IterationIndex_t i)
 {
     /*
      * The filename might have been overridden at the Series level or at the
@@ -1675,7 +1677,7 @@ void Series::flushStep(bool doFlush)
     }
 }
 
-auto Series::openIterationIfDirty(uint64_t index, Iteration iteration)
+auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
     -> IterationOpened
 {
     /*
@@ -1737,7 +1739,7 @@ auto Series::openIterationIfDirty(uint64_t index, Iteration iteration)
     return IterationOpened::RemainsClosed;
 }
 
-void Series::openIteration(uint64_t index, Iteration iteration)
+void Series::openIteration(IterationIndex_t index, Iteration iteration)
 {
     auto oldStatus = iteration.get().m_closed;
     switch (oldStatus)
@@ -2045,9 +2047,10 @@ WriteIterations Series::writeIterations()
     return series.m_writeIterations.value();
 }
 
-std::optional<std::vector<uint64_t>> Series::currentSnapshot() const
+auto Series::currentSnapshot() const
+    -> std::optional<std::vector<IterationIndex_t>>
 {
-    using vec_t = std::vector<uint64_t>;
+    using vec_t = std::vector<IterationIndex_t>;
     auto &series = get();
     /*
      * In variable-based iteration encoding, iterations have no distinct

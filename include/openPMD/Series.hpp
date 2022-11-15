@@ -37,7 +37,7 @@
 #include <mpi.h>
 #endif
 
-#include <cstdint>
+#include <cstdint> // uint64_t
 #include <deque>
 #include <map>
 #include <optional>
@@ -76,7 +76,9 @@ namespace internal
         SeriesData &operator=(SeriesData const &) = delete;
         SeriesData &operator=(SeriesData &&) = delete;
 
-        Container<Iteration, uint64_t> iterations{};
+        using IterationIndex_t = Iteration::IterationIndex_t;
+        using IterationsContainer_t = Container<Iteration, IterationIndex_t>;
+        IterationsContainer_t iterations{};
 
         /**
          * For each instance of Series, there is only one instance
@@ -90,7 +92,7 @@ namespace internal
          * currently active output step. Use this later when writing the
          * snapshot attribute.
          */
-        std::set<uint64_t> m_currentlyActiveIterations;
+        std::set<IterationIndex_t> m_currentlyActiveIterations;
         /**
          * Needed if reading a single iteration of a file-based series.
          * Users may specify the concrete filename of one iteration instead of
@@ -210,7 +212,15 @@ public:
 
     virtual ~Series() = default;
 
-    Container<Iteration, uint64_t> iterations;
+    /**
+     * An unsigned integer type, used to identify Iterations in a Series.
+     */
+    using IterationIndex_t = Iteration::IterationIndex_t;
+    /**
+     * Type for a container of Iterations indexed by IterationIndex_t.
+     */
+    using IterationsContainer_t = internal::SeriesData::IterationsContainer_t;
+    IterationsContainer_t iterations;
 
     /**
      * @brief Is this a usable Series object?
@@ -588,9 +598,10 @@ OPENPMD_private
      * If series.iterations contains the attribute `snapshot`, returns its
      * value.
      */
-    std::optional<std::deque<uint64_t> > readGorVBased(bool init = true);
+    std::optional<std::deque<IterationIndex_t> >
+    readGorVBased(bool init = true);
     void readBase();
-    std::string iterationFilename(uint64_t i);
+    std::string iterationFilename(IterationIndex_t i);
 
     enum class IterationOpened : bool
     {
@@ -603,14 +614,15 @@ OPENPMD_private
      * Only open if the iteration is dirty and if it is not in deferred
      * parse state.
      */
-    IterationOpened openIterationIfDirty(uint64_t index, Iteration iteration);
+    IterationOpened
+    openIterationIfDirty(IterationIndex_t index, Iteration iteration);
     /*
      * Open an iteration. Ensures that the iteration's m_closed status
      * is set properly and that any files pertaining to the iteration
      * is opened.
      * Does not create files when called in CREATE mode.
      */
-    void openIteration(uint64_t index, Iteration iteration);
+    void openIteration(IterationIndex_t index, Iteration iteration);
 
     /**
      * Find the given iteration in Series::iterations and return an iterator
@@ -653,7 +665,7 @@ OPENPMD_private
      * Returns the current content of the /data/snapshot attribute.
      * (We could also add this to the public API some time)
      */
-    std::optional<std::vector<uint64_t> > currentSnapshot() const;
+    std::optional<std::vector<IterationIndex_t> > currentSnapshot() const;
 }; // Series
 } // namespace openPMD
 
