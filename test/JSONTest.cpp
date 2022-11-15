@@ -174,6 +174,33 @@ TEST_CASE("json_merging", "auxiliary")
     REQUIRE(
         json::merge(defaultVal, overwrite) ==
         json::parseOptions(expect, false).config.dump());
+
+    {
+        std::string leftJson = R"({"left": "val"})";
+        std::string rightJson = R"({"right": "val"})";
+        std::string leftToml = R"(left = "val")";
+        std::string rightToml = R"(right = "val")";
+
+        std::string resJson =
+            nlohmann::json::parse(R"({"left": "val", "right": "val"})").dump();
+        std::string resToml = []() {
+            constexpr char const *raw = R"(
+left = "val"
+right = "val"
+        )";
+            std::istringstream istream(
+                raw, std::ios_base::binary | std::ios_base::in);
+            toml::value tomlVal = toml::parse(istream);
+            std::stringstream sstream;
+            sstream << tomlVal;
+            return sstream.str();
+        }();
+
+        REQUIRE(json::merge(leftJson, rightJson) == resJson);
+        REQUIRE(json::merge(leftJson, rightToml) == resJson);
+        REQUIRE(json::merge(leftToml, rightJson) == resToml);
+        REQUIRE(json::merge(leftToml, rightToml) == resToml);
+    }
 }
 
 /*
