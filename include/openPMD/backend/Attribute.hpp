@@ -145,7 +145,7 @@ namespace detail
         (void)pv;
         if constexpr (std::is_convertible_v<T, U>)
         {
-            return static_cast<U>(*pv);
+            return {static_cast<U>(*pv)};
         }
         else if constexpr (auxiliary::IsVector_v<T> && auxiliary::IsVector_v<U>)
         {
@@ -156,11 +156,12 @@ namespace detail
                 U res{};
                 res.reserve(pv->size());
                 std::copy(pv->begin(), pv->end(), std::back_inserter(res));
-                return res;
+                return {res};
             }
             else
             {
-                return std::runtime_error("getCast: no vector cast possible.");
+                return {
+                    std::runtime_error("getCast: no vector cast possible.")};
             }
         }
         // conversion cast: array to vector
@@ -175,12 +176,12 @@ namespace detail
                 U res{};
                 res.reserve(pv->size());
                 std::copy(pv->begin(), pv->end(), std::back_inserter(res));
-                return res;
+                return {res};
             }
             else
             {
-                return std::runtime_error(
-                    "getCast: no array to vector conversion possible.");
+                return {std::runtime_error(
+                    "getCast: no array to vector conversion possible.")};
             }
         }
         // conversion cast: vector to array
@@ -204,12 +205,12 @@ namespace detail
                 {
                     res[i] = static_cast<typename U::value_type>((*pv)[i]);
                 }
-                return res;
+                return {res};
             }
             else
             {
-                return std::runtime_error(
-                    "getCast: no vector to array conversion possible.");
+                return {std::runtime_error(
+                    "getCast: no vector to array conversion possible.")};
             }
         }
         // conversion cast: turn a single value into a 1-element vector
@@ -220,17 +221,17 @@ namespace detail
                 U res{};
                 res.reserve(1);
                 res.push_back(static_cast<typename U::value_type>(*pv));
-                return res;
+                return {res};
             }
             else
             {
-                return std::runtime_error(
-                    "getCast: no scalar to vector conversion possible.");
+                return {std::runtime_error(
+                    "getCast: no scalar to vector conversion possible.")};
             }
         }
         else
         {
-            return std::runtime_error("getCast: no cast possible.");
+            return {std::runtime_error("getCast: no cast possible.")};
         }
 #if defined(__INTEL_COMPILER)
 /*
