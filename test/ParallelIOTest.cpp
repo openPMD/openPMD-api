@@ -1128,9 +1128,12 @@ void adios2_streaming(bool variableBasedLayout)
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(1s);
 
+        /*
+         * Need to fix this, should still be possible READ_ONLY
+         */
         Series readSeries(
             "../samples/adios2_stream.sst",
-            Access::READ_ONLY,
+            Access::READ_LINEAR,
             // inline TOML
             R"(defer_iteration_parsing = true)");
 

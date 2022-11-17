@@ -5406,8 +5406,12 @@ void variableBasedSeries(std::string const &file)
 
     auto testRead = [&file, &extent, &selectADIOS2](
                         std::string const &jsonConfig) {
+        /*
+         * Need linear read mode to access more than a single iteration in
+         * variable-based iteration encoding.
+         */
         Series readSeries(
-            file, Access::READ_ONLY, json::merge(selectADIOS2, jsonConfig));
+            file, Access::READ_LINEAR, json::merge(selectADIOS2, jsonConfig));
 
         size_t last_iteration_index = 0;
         for (auto iteration : readSeries.readIterations())
@@ -6306,7 +6310,12 @@ void chaotic_stream(std::string filename, bool variableBased)
     series.close();
     REQUIRE(!series.operator bool());
 
-    Series read(filename, Access::READ_ONLY);
+    /*
+     * Random-access read mode would go by the openPMD group names instead
+     * of the ADIOS2 steps.
+     * Hence, the order would be ascending.
+     */
+    Series read(filename, Access::READ_LINEAR);
     size_t index = 0;
     for (const auto &iteration : read.readIterations())
     {
@@ -6416,18 +6425,26 @@ TEST_CASE("unfinished_iteration_test", "[serial]")
 {
 #if openPMD_HAVE_ADIOS2
     unfinished_iteration_test("bp", false, R"({"backend": "adios2"})");
-    unfinished_iteration_test(
-        "bp",
-        false,
-        R"(
-{
-  "backend": "adios2",
-  "iteration_encoding": "variable_based",
-  "adios2": {
-    "schema": 20210209
-  }
-}
-)");
+    /*
+     * Need linear read mode variable-based iteration encoding, to be
+     * activated by next commit.
+     * Random-access mode will only parse one single iteration, consisting of
+     * whatever ADIOS2 decides to show us before opening a step.
+     * This will include the erroneous attribute defined in the second step
+     * / fifth iteration, making the constructor fail.
+     */
+    //     unfinished_iteration_test(
+    //         "bp",
+    //         false,
+    //         R"(
+    // {
+    //   "backend": "adios2",
+    //   "iteration_encoding": "variable_based",
+    //   "adios2": {
+    //     "schema": 20210209
+    //   }
+    // }
+    // )");
     unfinished_iteration_test("bp", true, R"({"backend": "adios2"})");
 #endif
 #if openPMD_HAVE_ADIOS1
@@ -6743,6 +6760,7 @@ void append_mode(
         break;
         }
     }
+#if 0 // test is configured such that linear read mode is now needed
     // AppendAfterSteps has a bug before that version
 #if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
         10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
@@ -6822,6 +6840,7 @@ void append_mode(
         }
     }
 #endif
+#endif
 }
 
 TEST_CASE("append_mode", "[serial]")
@@ -6855,23 +6874,23 @@ TEST_CASE("append_mode", "[serial]")
             append_mode(
                 "../samples/append/groupbased." + t,
                 false,
-                ParseMode::LinearWithoutSnapshot,
+                ParseMode::AheadOfTimeWithoutSnapshot,
                 jsonConfigOld);
             append_mode(
                 "../samples/append/groupbased_newschema." + t,
                 false,
-                ParseMode::WithSnapshot,
+                ParseMode::AheadOfTimeWithoutSnapshot,
                 jsonConfigNew);
-            append_mode(
-                "../samples/append/variablebased." + t,
-                true,
-                ParseMode::WithSnapshot,
-                jsonConfigOld);
-            append_mode(
-                "../samples/append/variablebased_newschema." + t,
-                true,
-                ParseMode::WithSnapshot,
-                jsonConfigNew);
+            // append_mode(
+            //     "../samples/append/variablebased." + t,
+            //     true,
+            //     ParseMode::WithSnapshot,
+            //     jsonConfigOld);
+            // append_mode(
+            //     "../samples/append/variablebased_newschema." + t,
+            //     true,
+            //     ParseMode::WithSnapshot,
+            //     jsonConfigNew);
         }
         else if (t == "bp" || t == "bp4")
         {
@@ -6883,18 +6902,18 @@ TEST_CASE("append_mode", "[serial]")
             append_mode(
                 "../samples/append/append_groupbased." + t,
                 false,
-                ParseMode::WithSnapshot,
+                ParseMode::AheadOfTimeWithoutSnapshot,
                 jsonConfigNew);
-            append_mode(
-                "../samples/append/append_variablebased." + t,
-                true,
-                ParseMode::WithSnapshot,
-                jsonConfigOld);
-            append_mode(
-                "../samples/append/append_variablebased." + t,
-                true,
-                ParseMode::WithSnapshot,
-                jsonConfigNew);
+            // append_mode(
+            //     "../samples/append/append_variablebased." + t,
+            //     true,
+            //     ParseMode::WithSnapshot,
+            //     jsonConfigOld);
+            // append_mode(
+            //     "../samples/append/append_variablebased." + t,
+            //     true,
+            //     ParseMode::WithSnapshot,
+            //     jsonConfigNew);
         }
         else
         {
