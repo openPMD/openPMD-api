@@ -204,7 +204,7 @@ class pipe:
         if not HAVE_MPI or (args.mpi is None and self.comm.size == 1):
             print("Opening data source")
             sys.stdout.flush()
-            inseries = io.Series(self.infile, io.Access.read_only,
+            inseries = io.Series(self.infile, io.Access.read_linear,
                                  self.inconfig)
             print("Opening data sink")
             sys.stdout.flush()
@@ -215,7 +215,7 @@ class pipe:
         else:
             print("Opening data source on rank {}.".format(self.comm.rank))
             sys.stdout.flush()
-            inseries = io.Series(self.infile, io.Access.read_only, self.comm,
+            inseries = io.Series(self.infile, io.Access.read_linear, self.comm,
                                  self.inconfig)
             print("Opening data sink on rank {}.".format(self.comm.rank))
             sys.stdout.flush()
