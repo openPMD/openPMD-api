@@ -5,8 +5,12 @@
 
 #include <catch2/catch.hpp>
 
+#include <algorithm>
 #include <fstream>
+#include <sstream>
+#include <string>
 #include <variant>
+#include <vector>
 
 using namespace openPMD;
 
@@ -176,6 +180,19 @@ TEST_CASE("json_merging", "auxiliary")
         json::parseOptions(expect, false).config.dump());
 
     {
+        // The TOML library doesn't guarantee a specific order of output
+        // so we need to sort lines to compare with expected results
+        auto sort_lines = [](std::string const &s) -> std::vector<std::string> {
+            std::vector<std::string> v;
+            std::istringstream sstream(s);
+            for (std::string line; std::getline(sstream, line);
+                 line = std::string())
+            {
+                v.push_back(std::move(line));
+            }
+            std::sort(v.begin(), v.end());
+            return v;
+        };
         std::string leftJson = R"({"left": "val"})";
         std::string rightJson = R"({"right": "val"})";
         std::string leftToml = R"(left = "val")";
@@ -183,7 +200,7 @@ TEST_CASE("json_merging", "auxiliary")
 
         std::string resJson =
             nlohmann::json::parse(R"({"left": "val", "right": "val"})").dump();
-        std::string resToml = []() {
+        std::vector<std::string> resToml = [&sort_lines]() {
             constexpr char const *raw = R"(
 left = "val"
 right = "val"
@@ -193,13 +210,13 @@ right = "val"
             toml::value tomlVal = toml::parse(istream);
             std::stringstream sstream;
             sstream << tomlVal;
-            return sstream.str();
+            return sort_lines(sstream.str());
         }();
 
         REQUIRE(json::merge(leftJson, rightJson) == resJson);
         REQUIRE(json::merge(leftJson, rightToml) == resJson);
-        REQUIRE(json::merge(leftToml, rightJson) == resToml);
-        REQUIRE(json::merge(leftToml, rightToml) == resToml);
+        REQUIRE(sort_lines(json::merge(leftToml, rightJson)) == resToml);
+        REQUIRE(sort_lines(json::merge(leftToml, rightToml)) == resToml);
     }
 }
 
