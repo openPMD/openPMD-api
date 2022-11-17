@@ -125,6 +125,13 @@ TracingJSON::TracingJSON(
 
 namespace
 {
+#if __NVCOMPILER
+    constexpr std::ios_base::openmode toml_openmode = std::ios_base::in;
+#else
+    constexpr std::ios_base::openmode toml_openmode =
+        std::ios_base::binary | std::ios_base::in;
+#endif
+
     std::optional<std::string> extractFilename(std::string const &unparsed)
     {
         std::string trimmed =
@@ -215,7 +222,8 @@ namespace
         switch (val.type())
         {
         case nlohmann::json::value_t::null:
-            return toml::value();
+            throw error::BackendConfigSchema(
+                currentPath, "TOML does not support null values.");
         case nlohmann::json::value_t::object: {
             toml::value::table_type res;
             for (auto pair = val.begin(); pair != val.end(); ++pair)
@@ -247,7 +255,7 @@ namespace
         case nlohmann::json::value_t::number_unsigned:
             return val.get<nlohmann::json::number_unsigned_t>();
         case nlohmann::json::value_t::number_float:
-            return val.get<nlohmann::json::number_float_t>();
+            return (long double)val.get<nlohmann::json::number_float_t>();
         case nlohmann::json::value_t::binary:
             return val.get<nlohmann::json::binary_t>();
         case nlohmann::json::value_t::discarded:
@@ -293,8 +301,7 @@ namespace
         }
         else
         {
-            std::istringstream istream(
-                options.c_str(), std::ios_base::binary | std::ios_base::in);
+            std::istringstream istream(options.c_str(), toml_openmode);
             toml::value tomlVal =
                 toml::parse(istream, "[inline TOML specification]");
             res.config = json::tomlToJson(tomlVal);
@@ -313,8 +320,7 @@ ParsedConfig parseOptions(std::string const &options, bool considerFiles)
         if (filename.has_value())
         {
             std::fstream handle;
-            handle.open(
-                filename.value(), std::ios_base::binary | std::ios_base::in);
+            handle.open(filename.value(), toml_openmode);
             ParsedConfig res;
             if (auxiliary::ends_with(filename.value(), ".toml"))
             {
@@ -355,9 +361,7 @@ parseOptions(std::string const &options, MPI_Comm comm, bool considerFiles)
                 auxiliary::collective_file_read(filename.value(), comm);
             if (auxiliary::ends_with(filename.value(), ".toml"))
             {
-                std::istringstream istream(
-                    fileContent.c_str(),
-                    std::ios_base::binary | std::ios_base::in);
+                std::istringstream istream(fileContent.c_str(), toml_openmode);
                 res.config = tomlToJson(toml::parse(istream, filename.value()));
                 res.originallySpecifiedAs = SupportedLanguages::TOML;
             }

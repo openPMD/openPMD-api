@@ -205,8 +205,13 @@ TEST_CASE("json_merging", "auxiliary")
 left = "val"
 right = "val"
         )";
-            std::istringstream istream(
-                raw, std::ios_base::binary | std::ios_base::in);
+#if !__NVCOMPILER
+            constexpr std::ios::openmode openmode =
+                std::ios_base::in | std::ios_base::binary;
+#else
+            constexpr std::ios::openmode openmode = std::ios_base::in;
+#endif
+            std::istringstream istream(raw, openmode);
             toml::value tomlVal = toml::parse(istream);
             std::stringstream sstream;
             sstream << tomlVal;
