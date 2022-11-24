@@ -73,7 +73,7 @@ Examples:
 
 args = parse_args(sys.argv[0])
 # MPI is an optional dependency
-if (args.mpi is None or args.mpi) and io.variants['mpi']:
+if io.variants['mpi'] and (args.mpi is None or args.mpi):
     try:
         from mpi4py import MPI
         HAVE_MPI = True
