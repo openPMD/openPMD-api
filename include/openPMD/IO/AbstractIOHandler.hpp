@@ -211,7 +211,21 @@ public:
     virtual std::string backendName() const = 0;
 
     std::string const directory;
-    // why do these need to be separate?
+    /*
+     * Originally, the reason for distinguishing these two was that during
+     * parsing in reading access modes, the access type would be temporarily
+     * const_cast'ed to an access type that would support modifying
+     * the openPMD object model. Then, it would be const_cast'ed back to
+     * READ_ONLY, to disable further modifications.
+     * Due to this approach's tendency to cause subtle bugs, and due to its
+     * difficult debugging properties, this was replaced by the SeriesStatus
+     * enum, defined in this file.
+     * The distinction of backendAccess and frontendAccess stays relevant, since
+     * the frontend can use it in order to pretend to the backend that another
+     * access type is being used. This is used by the file-based append mode,
+     * which is entirely implemented by the frontend, which internally uses
+     * the backend in CREATE mode.
+     */
     Access const m_backendAccess;
     Access const m_frontendAccess;
     internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
