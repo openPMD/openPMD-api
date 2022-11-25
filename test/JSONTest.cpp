@@ -126,6 +126,7 @@ TEST_CASE("json_parsing", "[auxiliary]")
     REQUIRE(jsonUpper.dump() == jsonLower.dump());
 }
 
+#if !__NVCOMPILER // see https://github.com/ToruNiina/toml11/issues/205
 TEST_CASE("json_merging", "auxiliary")
 {
     std::string defaultVal = R"END(
@@ -219,6 +220,7 @@ right = "val"
         REQUIRE(sort_lines(json::merge(leftToml, rightToml)) == resToml);
     }
 }
+#endif
 
 /*
  * This tests two things about the /data/snapshot attribute:
