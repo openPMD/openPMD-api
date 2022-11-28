@@ -305,7 +305,7 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     Series o =
         Series("../samples/parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
 
-    REQUIRE_THROWS_AS(o.setAuthor(""), std::runtime_error);
+    o.setAuthor("");
     o.setAuthor("Parallel HDF5");
     ParticleSpecies &e = o.iterations[1].particles["e"];
 

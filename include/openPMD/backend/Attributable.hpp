@@ -90,39 +90,6 @@ namespace internal
         A_MAP m_attributes;
     };
 
-    enum class SetAttributeMode : char
-    {
-        WhileReadingAttributes,
-        FromPublicAPICall
-    };
-
-    /** Verify values of attributes in the frontend
-     *
-     * verify string attributes are not empty (backend restriction, e.g., HDF5)
-     */
-    template <typename T>
-    inline void attr_value_check(
-        std::string const /* key */, T /* value */, SetAttributeMode)
-    {}
-
-    template <>
-    inline void attr_value_check(
-        std::string const key, std::string const value, SetAttributeMode mode)
-    {
-        switch (mode)
-        {
-        case SetAttributeMode::FromPublicAPICall:
-            if (value.empty())
-                throw std::runtime_error(
-                    "[setAttribute] Value for string attribute '" + key +
-                    "' must not be empty!");
-            break;
-        case SetAttributeMode::WhileReadingAttributes:
-            // no checks while reading
-            break;
-        }
-    }
-
     template <typename>
     class BaseRecordData;
 } // namespace internal
@@ -298,12 +265,6 @@ OPENPMD_protected
 
     void flushAttributes(internal::FlushParams const &);
 
-    template <typename T>
-    bool setAttributeImpl(
-        std::string const &key, T value, internal::SetAttributeMode);
-    bool setAttributeImpl(
-        std::string const &key, char const value[], internal::SetAttributeMode);
-
     enum ReadMode
     {
         /**
@@ -444,30 +405,11 @@ private:
     virtual void linkHierarchy(Writable &w);
 }; // Attributable
 
-template <typename T>
-inline bool Attributable::setAttribute(std::string const &key, T value)
-{
-    return setAttributeImpl(
-        key, std::move(value), internal::SetAttributeMode::FromPublicAPICall);
-}
-
-inline bool
-Attributable::setAttribute(std::string const &key, char const value[])
-{
-    return setAttributeImpl(
-        key, value, internal::SetAttributeMode::FromPublicAPICall);
-}
-
 // note: we explicitly instantiate Attributable::setAttributeImpl for all T in
 // Datatype in Attributable.cpp
 template <typename T>
-inline bool Attributable::setAttributeImpl(
-    std::string const &key,
-    T value,
-    internal::SetAttributeMode setAttributeMode)
+inline bool Attributable::setAttribute(std::string const &key, T value)
 {
-    internal::attr_value_check(key, value, setAttributeMode);
-
     auto &attri = get();
     if (IOHandler() &&
         IOHandler()->m_seriesStatus == internal::SeriesStatus::Default &&
@@ -496,12 +438,10 @@ inline bool Attributable::setAttributeImpl(
     }
 }
 
-inline bool Attributable::setAttributeImpl(
-    std::string const &key,
-    char const value[],
-    internal::SetAttributeMode setAttributeMode)
+inline bool
+Attributable::setAttribute(std::string const &key, char const value[])
 {
-    return this->setAttributeImpl(key, std::string(value), setAttributeMode);
+    return this->setAttribute(key, std::string(value));
 }
 
 template <typename T>
