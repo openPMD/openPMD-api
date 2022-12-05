@@ -16,13 +16,13 @@ Writing & reading through those backends and their associated files is supported
    /* front page: hide chapter titles
     * needed for consistent HTML-PDF-EPUB chapters
     */
-   div#installation.section,
-   div#usage.section,
-   div#api-details.section,
-   div#utilities.section,
-   div#backends.section,
-   div#development.section,
-   div#maintenance.section {
+   section#installation,
+   section#usage,
+   section#api-details,
+   section#utilities,
+   section#backends,
+   section#development,
+   section#maintenance {
        display:none;
    }
    </style>
