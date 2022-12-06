@@ -26,7 +26,7 @@ Bug Fixes
 
 Other
 """""
-- Catch2: updated to 2.13.9 #1299
+- Catch2: updated to 2.13.10 #1299 #...
 
 
 0.14.3
