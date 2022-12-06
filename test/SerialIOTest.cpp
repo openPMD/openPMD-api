@@ -1251,6 +1251,7 @@ inline void dtype_test(const std::string &backend)
     bool test_long_long = (backend != "json") || sizeof(long long) <= 8;
     {
         Series s = Series("../samples/dtype_test." + backend, Access::CREATE);
+        bool adios1 = s.backend() == "ADIOS1" || s.backend() == "MPI_ADIOS1";
 
         char c = 'c';
         s.setAttribute("char", c);
@@ -1281,7 +1282,10 @@ inline void dtype_test(const std::string &backend)
         }
         std::string str = "string";
         s.setAttribute("string", str);
-        s.setAttribute("emptyString", "");
+        if (!adios1)
+        {
+            s.setAttribute("emptyString", "");
+        }
         s.setAttribute("vecChar", std::vector<char>({'c', 'h', 'a', 'r'}));
         s.setAttribute("vecInt16", std::vector<int16_t>({32766, 32767}));
         s.setAttribute(
@@ -1311,9 +1315,13 @@ inline void dtype_test(const std::string &backend)
         }
         s.setAttribute(
             "vecString", std::vector<std::string>({"vector", "of", "strings"}));
-        s.setAttribute("vecEmptyString", std::vector<std::string>{"", "", ""});
-        s.setAttribute(
-            "vecMixedString", std::vector<std::string>{"hi", "", "ho"});
+        if (!adios1)
+        {
+            s.setAttribute(
+                "vecEmptyString", std::vector<std::string>{"", "", ""});
+            s.setAttribute(
+                "vecMixedString", std::vector<std::string>{"hi", "", "ho"});
+        }
         s.setAttribute("bool", true);
         s.setAttribute("boolF", false);
 
@@ -1373,6 +1381,7 @@ inline void dtype_test(const std::string &backend)
     }
 
     Series s = Series("../samples/dtype_test." + backend, Access::READ_ONLY);
+    bool adios1 = s.backend() == "ADIOS1" || s.backend() == "MPI_ADIOS1";
 
     REQUIRE(s.getAttribute("char").get<char>() == 'c');
     REQUIRE(s.getAttribute("uchar").get<unsigned char>() == 'u');
@@ -1390,7 +1399,10 @@ inline void dtype_test(const std::string &backend)
         REQUIRE(s.getAttribute("longdouble").get<long double>() == 1.e80L);
     }
     REQUIRE(s.getAttribute("string").get<std::string>() == "string");
-    REQUIRE(s.getAttribute("emptyString").get<std::string>().empty());
+    if (!adios1)
+    {
+        REQUIRE(s.getAttribute("emptyString").get<std::string>().empty());
+    }
     REQUIRE(
         s.getAttribute("vecChar").get<std::vector<char> >() ==
         std::vector<char>({'c', 'h', 'a', 'r'}));
@@ -1434,12 +1446,15 @@ inline void dtype_test(const std::string &backend)
     REQUIRE(
         s.getAttribute("vecString").get<std::vector<std::string> >() ==
         std::vector<std::string>({"vector", "of", "strings"}));
-    REQUIRE(
-        s.getAttribute("vecEmptyString").get<std::vector<std::string> >() ==
-        std::vector<std::string>({"", "", ""}));
-    REQUIRE(
-        s.getAttribute("vecMixedString").get<std::vector<std::string> >() ==
-        std::vector<std::string>({"hi", "", "ho"}));
+    if (!adios1)
+    {
+        REQUIRE(
+            s.getAttribute("vecEmptyString").get<std::vector<std::string> >() ==
+            std::vector<std::string>({"", "", ""}));
+        REQUIRE(
+            s.getAttribute("vecMixedString").get<std::vector<std::string> >() ==
+            std::vector<std::string>({"hi", "", "ho"}));
+    }
     REQUIRE(s.getAttribute("bool").get<bool>() == true);
     REQUIRE(s.getAttribute("boolF").get<bool>() == false);
 
@@ -2202,7 +2217,6 @@ inline void bool_test(const std::string &backend)
     {
         Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
 
-        o.setAuthor("");
         o.setAttribute("Bool attribute true", true);
         o.setAttribute("Bool attribute false", false);
     }
