@@ -68,7 +68,7 @@ The following options allow to switch to external installs of dependencies:
 ================================= =========== ======== ============= ========
 CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
-``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2         2.13.9+
+``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2        2.13.10+
 ``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11       2.10.1+
 ``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.9.1+
 ``openPMD_USE_INTERNAL_TOML11``   **ON**/OFF  No       toml11          3.7.1+

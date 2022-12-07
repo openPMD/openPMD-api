@@ -12,7 +12,7 @@ Building openPMD-api now requires a compiler that supports C++17 or newer.
 Python 3.10 & 3.11 are now supported, Python 3.6 is removed.
 openPMD-api now depends on `toml11 <https://github.com/ToruNiina/toml11>`__ 3.7.1+.
 pybind11 2.10.1 is now the minimally supported version for Python support.
-Catch2 2.13.9 is now the minimally supported version for tests.
+Catch2 2.13.10 is now the minimally supported version for tests.
 
 The following backend-specific members of the ``Dataset`` class have been removed: ``Dataset::setChunkSize()``, ``Dataset::setCompression()``, ``Dataset::setCustomTransform()``, ``Dataset::chunkSize``, ``Dataset::compression``, ``Dataset::transform``.
 They are replaced by backend-specific options in the JSON-based backend configuration.
