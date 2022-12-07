@@ -24,7 +24,7 @@ set(openPMD_MPI_FOUND ${openPMD_HAVE_MPI})
 
 set(openPMD_HAVE_HDF5 @openPMD_HAVE_HDF5@)
 if(openPMD_HAVE_HDF5)
-    set(HDF5_PREFER_PARALLEL ON)
+    set(HDF5_PREFER_PARALLEL ${openPMD_HAVE_MPI})
     find_dependency(HDF5)
 endif()
 set(openPMD_HDF5_FOUND ${openPMD_HAVE_HDF5})
