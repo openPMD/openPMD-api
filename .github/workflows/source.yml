@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   style:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
     - name: Non-ASCII Characters
@@ -23,7 +23,7 @@ jobs:
         python3 -m flake8 --exclude=thirdParty .
 
   static-analysis:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
         python3 -m pyflakes docs/ examples/ test/ setup.py
 
   documentation:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
     - uses: s-weigand/setup-conda@v1.1.1
