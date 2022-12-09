@@ -5,9 +5,9 @@ python:
     - requirements: docs/requirements.txt
 
 formats:
-    - htmlzip
-    - pdf
-    - epub
+  - htmlzip
+  - pdf
+  - epub
 
 build:
   apt_packages:
