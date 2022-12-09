@@ -43,6 +43,10 @@ jobs:
           python -m pip install --upgrade mpi4py
           python -m pip install --upgrade pytest
 
+      - name: Configure (C++)
+        if: ${{ matrix.language == 'cpp' }}
+        run: $CMAKE -S . -B build
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
@@ -55,9 +59,7 @@ jobs:
 
       - name: Build (C++)
         if: ${{ matrix.language == 'cpp' }}
-        run: |
-            $CMAKE -S . -B build
-            $CMAKE --build build -j 2
+        run: $CMAKE --build build -j 2
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
