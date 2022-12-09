@@ -114,6 +114,12 @@
       "name": "Bez, Jean Luca",
       "orcid": "0000-0002-3915-1135",
       "type": "Other"
+    },
+    {
+      "affiliation": "CERN",
+      "name": "Gruber, Bernhard Manfred",
+      "orcid": "0000-0001-7848-1690",
+      "type": "Other"
     }
   ],
   "title": "C++ & Python API for Scientific I/O with openPMD",
