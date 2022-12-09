@@ -509,6 +509,8 @@ public:
      * would do otherwise.
      * All backends are closed after calling this method.
      * The Series should be treated as destroyed after calling this method.
+     * The Series will be evaluated as false in boolean contexts after calling
+     * this method.
      */
     void close();
 

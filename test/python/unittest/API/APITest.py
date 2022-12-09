@@ -252,7 +252,9 @@ class APITest(unittest.TestCase):
         # TODO init of > e304 ?
         series.set_attribute("longdouble_c", ctypes.c_longdouble(6.e200).value)
 
+        self.assertTrue(series)
         series.close()
+        self.assertFalse(series)
 
         # read back
         series = io.Series(
@@ -461,7 +463,9 @@ class APITest(unittest.TestCase):
                     np.clongdouble(1.23456789 + 2.34567890j))
 
         # flush and close file
+        self.assertTrue(series)
         series.close()
+        self.assertFalse(series)
 
         # read back
         series = io.Series(
@@ -609,7 +613,9 @@ class APITest(unittest.TestCase):
                 np.clongdouble(1.23456789 + 2.34567890j))
 
         # flush and close file
+        self.assertTrue(series)
         series.close()
+        self.assertFalse(series)
 
         # read back
         series = io.Series(
@@ -690,7 +696,9 @@ class APITest(unittest.TestCase):
             ms["np_double"][SCALAR].make_empty(np.dtype("double"), 21)
 
         # flush and close file
+        self.assertTrue(series)
         series.close()
+        self.assertFalse(series)
 
         # read back
         series = io.Series(
@@ -1607,7 +1615,9 @@ class APITest(unittest.TestCase):
         e.particle_patches["extent"]["y"].store(1, np.single(123.))
 
         # read back
+        self.assertTrue(series)
         series.close()
+        self.assertFalse(series)
 
         series = io.Series(
             "unittest_py_particle_patches." + file_ending,
@@ -1715,7 +1725,9 @@ class APITest(unittest.TestCase):
 
             for i in range(len(data)):
                 self.assertEqual(data[i], chunk[i])
+            self.assertTrue(read)
             read.close()
+            self.assertFalse(read)
 
         it1 = series.iterations[1]
         E_x = it1.meshes["E"]["x"]
@@ -1737,7 +1749,9 @@ class APITest(unittest.TestCase):
 
             for i in range(len(data)):
                 self.assertEqual(data[i], chunk[i])
+            self.assertTrue(read)
             read.close()
+            self.assertFalse(read)
 
     def testCloseIteration(self):
         for ext in tested_file_extensions:
@@ -1781,7 +1795,9 @@ class APITest(unittest.TestCase):
             it.close()
             del it
 
+        self.assertTrue(series)
         series.close()
+        self.assertFalse(series)
 
         # read
 
@@ -1804,7 +1820,9 @@ class APITest(unittest.TestCase):
             self.assertEqual(chunk2[0, 1], 1)
             self.assertEqual(chunk2[1, 0], 2)
             self.assertEqual(chunk2[1, 1], 3)
+        self.assertTrue(read)
         read.close()
+        self.assertFalse(read)
         self.assertEqual(lastIterationIndex, 9)
 
     def testIterator(self):
@@ -1902,7 +1920,9 @@ class APITest(unittest.TestCase):
         self.writeFromTemporaryStore(E_x)
         gc.collect()  # trigger removal of temporary data to check its copied
 
+        self.assertTrue(write)
         write.close()
+        self.assertFalse(write)
 
         read = io.Series(
             name,
@@ -1998,7 +2018,9 @@ class APITest(unittest.TestCase):
         E_y.reset_dataset(DS(np.dtype("double"), [1000], local_config))
         E_y.store_chunk(data, [0], [1000])
 
+        self.assertTrue(series)
         series.close()
+        self.assertFalse(series)
 
         read = io.Series(
             "../samples/unittest_jsonConfiguredBP3.bp",
@@ -2054,7 +2076,9 @@ class APITest(unittest.TestCase):
         e_chargeDensity_x.reset_dataset(DS(DT.LONG, [10]))
         e_chargeDensity_x[:] = sample_data
 
+        self.assertTrue(write)
         write.close()
+        self.assertFalse(write)
 
         read = io.Series("../samples/custom_geometries_python.json",
                          io.Access.read_only)

@@ -6222,7 +6222,9 @@ void chaotic_stream(std::string filename, bool variableBased)
         dataset.storeChunk(iterations, {0}, {10});
         // series.writeIterations()[ currentIteration ].close();
     }
+    REQUIRE(series.operator bool());
     series.close();
+    REQUIRE(!series.operator bool());
 
     Series read(filename, Access::READ_ONLY);
     size_t index = 0;

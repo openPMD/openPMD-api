@@ -151,7 +151,15 @@ void init_Series(py::module &m)
             py::arg("mpi_communicator"),
             py::arg("options") = "{}")
 #endif
-        .def("close", &Series::close)
+        .def("__bool__", &Series::operator bool)
+        .def("close", &Series::close, R"(
+Closes the Series and release the data storage/transport backends.
+
+All backends are closed after calling this method.
+The Series should be treated as destroyed after calling this method.
+The Series will be evaluated as false in boolean contexts after calling
+this method.
+        )")
 
         .def_property("openPMD", &Series::openPMD, &Series::setOpenPMD)
         .def_property(
