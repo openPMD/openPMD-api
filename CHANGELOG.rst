@@ -24,6 +24,10 @@ Features
 Bug Fixes
 """""""""
 
+- CMake:
+
+  - MPI: prefer HDF5 in Config package, too #1340
+
 Other
 """""
 - Catch2: updated to 2.13.10 #1299 #...

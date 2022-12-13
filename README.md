@@ -420,6 +420,8 @@ Further thanks go to improvements and contributions from:
   C++ API bug fixes
 * [Jean Luca Bez (LBNL)](https://github.com/jeanbez):
   HDF5 performance tuning
+* [Bernhard Manfred Gruber (CERN)](https://github.com/bernhardmgruber):
+  CMake fix for parallel HDF5
 
 ### Grants
 
