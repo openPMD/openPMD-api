@@ -69,4 +69,4 @@ if __name__ == "__main__":
     f.flush()
 
     # now the file is closed
-    del f
+    f.close()

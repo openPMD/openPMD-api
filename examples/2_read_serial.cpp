@@ -100,6 +100,8 @@ int main()
     /* The files in 'series' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
      * When running out of scope on return, the 'Series' destructor is called.
+     * Alternatively, one can call `series.close()` to the same effect as
+     * calling the destructor, including the release of file handles.
      */
     return 0;
 }

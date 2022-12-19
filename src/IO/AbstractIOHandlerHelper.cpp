@@ -39,12 +39,12 @@ namespace openPMD
 namespace
 {
     template <typename Backend, bool enabled, typename... Args>
-    std::shared_ptr<Backend>
+    std::unique_ptr<Backend>
     constructIOHandler(std::string const &backendName, Args &&...args)
     {
         if constexpr (enabled)
         {
-            return std::make_shared<Backend>(std::forward<Args>(args)...);
+            return std::make_unique<Backend>(std::forward<Args>(args)...);
         }
         else
         {
@@ -59,7 +59,7 @@ namespace
 
 #if openPMD_HAVE_MPI
 template <>
-std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
+std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     std::string path,
     Access access,
     Format format,
@@ -130,7 +130,7 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
 #endif
 
 template <>
-std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
+std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     std::string path,
     Access access,
     Format format,
@@ -195,7 +195,7 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     }
 }
 
-std::shared_ptr<AbstractIOHandler> createIOHandler(
+std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string path,
     Access access,
     Format format,

@@ -375,11 +375,17 @@ OPENPMD_protected
      * through m_writable-> */
     AbstractIOHandler *IOHandler()
     {
-        return m_attri->m_writable.IOHandler.get();
+        return const_cast<AbstractIOHandler *>(
+            static_cast<Attributable const *>(this)->IOHandler());
     }
     AbstractIOHandler const *IOHandler() const
     {
-        return m_attri->m_writable.IOHandler.get();
+        auto &opt = m_attri->m_writable.IOHandler;
+        if (!opt || !opt->has_value())
+        {
+            return nullptr;
+        }
+        return &*opt->value();
     }
     Writable *&parent()
     {

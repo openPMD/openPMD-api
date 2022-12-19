@@ -45,7 +45,7 @@ namespace openPMD
  * @return  Smart pointer to created IOHandler.
  */
 template <typename JSON>
-std::shared_ptr<AbstractIOHandler> createIOHandler(
+std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string path,
     Access access,
     Format format,
@@ -70,7 +70,7 @@ std::shared_ptr<AbstractIOHandler> createIOHandler(
  * @return  Smart pointer to created IOHandler.
  */
 template <typename JSON>
-std::shared_ptr<AbstractIOHandler> createIOHandler(
+std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string path,
     Access access,
     Format format,
@@ -78,7 +78,7 @@ std::shared_ptr<AbstractIOHandler> createIOHandler(
     JSON options = JSON());
 
 // version without configuration to use in AuxiliaryTest
-std::shared_ptr<AbstractIOHandler> createIOHandler(
+std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string path,
     Access access,
     Format format,

@@ -540,11 +540,13 @@ namespace
 } // namespace
 
 void Series::init(
-    std::shared_ptr<AbstractIOHandler> ioHandler,
+    std::unique_ptr<AbstractIOHandler> ioHandler,
     std::unique_ptr<Series::ParsedInput> input)
 {
     auto &series = get();
-    writable().IOHandler = ioHandler;
+    writable().IOHandler =
+        std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+            std::move(ioHandler));
     series.iterations.linkHierarchy(writable());
     series.iterations.writable().ownKeyWithinParent = {"iterations"};
 
@@ -1941,26 +1943,7 @@ namespace internal
         // we must not throw in a destructor
         try
         {
-            // WriteIterations gets the first shot at flushing
-            this->m_writeIterations = std::optional<WriteIterations>();
-            /*
-             * Scenario: A user calls `Series::flush()` but does not check for
-             * thrown exceptions. The exception will propagate further up,
-             * usually thereby popping the stack frame that holds the `Series`
-             * object. `Series::~Series()` will run. This check avoids that the
-             * `Series` is needlessly flushed a second time. Otherwise, error
-             * messages can get very confusing.
-             */
-            if (this->m_lastFlushSuccessful)
-            {
-                Series impl{{this, [](auto const *) {}}};
-                impl.flush();
-                impl.flushStep(/* doFlush = */ true);
-            }
-            if (m_writeIterations.has_value())
-            {
-                m_writeIterations = std::optional<WriteIterations>();
-            }
+            close();
         }
         catch (std::exception const &ex)
         {
@@ -1970,6 +1953,39 @@ namespace internal
         catch (...)
         {
             std::cerr << "[~Series] An error occurred." << std::endl;
+        }
+    }
+
+    void SeriesData::close()
+    {
+        // WriteIterations gets the first shot at flushing
+        this->m_writeIterations = std::optional<WriteIterations>();
+        /*
+         * Scenario: A user calls `Series::flush()` but does not check for
+         * thrown exceptions. The exception will propagate further up,
+         * usually thereby popping the stack frame that holds the `Series`
+         * object. `Series::~Series()` will run. This check avoids that the
+         * `Series` is needlessly flushed a second time. Otherwise, error
+         * messages can get very confusing.
+         */
+        if (this->m_lastFlushSuccessful && m_writable.IOHandler &&
+            m_writable.IOHandler->has_value())
+        {
+            Series impl{{this, [](auto const *) {}}};
+            impl.flush();
+            impl.flushStep(/* doFlush = */ true);
+        }
+        if (m_writeIterations.has_value())
+        {
+            m_writeIterations = std::optional<WriteIterations>();
+        }
+        // Not strictly necessary, but clear the map of iterations
+        // This releases the openPMD hierarchy
+        iterations.container().clear();
+        // Release the IO Handler
+        if (m_writable.IOHandler)
+        {
+            *m_writable.IOHandler = std::nullopt;
         }
     }
 } // namespace internal
@@ -2004,7 +2020,7 @@ Series::Series(
         input->filenameExtension,
         comm,
         optionsJson);
-    init(handler, std::move(input));
+    init(std::move(handler), std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
 #endif
@@ -2021,7 +2037,7 @@ Series::Series(
     parseJsonOptions(optionsJson, *input);
     auto handler = createIOHandler(
         input->path, at, input->format, input->filenameExtension, optionsJson);
-    init(handler, std::move(input));
+    init(std::move(handler), std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
 
@@ -2045,6 +2061,13 @@ WriteIterations Series::writeIterations()
         series.m_writeIterations = WriteIterations(this->iterations);
     }
     return series.m_writeIterations.value();
+}
+
+void Series::close()
+{
+    get().close();
+    m_series.reset();
+    m_attri.reset();
 }
 
 auto Series::currentSnapshot() const

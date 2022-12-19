@@ -158,6 +158,8 @@ namespace internal
          * The destructor will only attempt flushing again if this is true.
          */
         bool m_lastFlushSuccessful = false;
+
+        void close();
     }; // SeriesData
 
     class SeriesInternal;
@@ -500,6 +502,18 @@ public:
      */
     WriteIterations writeIterations();
 
+    /**
+     * @brief Close the Series and release the data storage/transport backends.
+     *
+     * This is an explicit API call for what the Series::~Series() destructor
+     * would do otherwise.
+     * All backends are closed after calling this method.
+     * The Series should be treated as destroyed after calling this method.
+     * The Series will be evaluated as false in boolean contexts after calling
+     * this method.
+     */
+    void close();
+
     // clang-format off
 OPENPMD_private
     // clang-format on
@@ -552,7 +566,7 @@ OPENPMD_private
     void parseJsonOptions(TracingJSON &options, ParsedInput &);
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
-    void init(std::shared_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
+    void init(std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
     void initDefaults(IterationEncoding, bool initAll = false);
     /**
      * @brief Internal call for flushing a Series.
