@@ -112,7 +112,17 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
         sorted.push_back(std::move(pair.second));
     }
     m_fileData.clear();
-    std::sort(
+    /*
+     * Technically, std::sort() is sufficient here, since file names are unique.
+     * Use std::stable_sort() for two reasons:
+     * 1) On some systems (clang 13.0.1, libc++ 13.0.1), std::sort() leads to
+     *    weird inconsisten segfaults here.
+     * 2) Robustness against future changes. stable_sort() might become needed
+     *    in future, and debugging this can be hard.
+     * 3) It does not really matter, this is just the destructor, so we can take
+     *    the extra time.
+     */
+    std::stable_sort(
         sorted.begin(), sorted.end(), [](auto const &left, auto const &right) {
             return left->m_file <= right->m_file;
         });
