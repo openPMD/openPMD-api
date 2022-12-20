@@ -71,18 +71,16 @@ void init_Mesh(py::module &m)
             [](Mesh &mesh, char d) { mesh.setDataOrder(Mesh::DataOrder(d)); },
             "Data Order of the Mesh (deprecated and set to C in openPMD 2)")
         .def_property("axis_labels", &Mesh::axisLabels, &Mesh::setAxisLabels)
-        .def_property(
-            "grid_spacing",
-            &Mesh::gridSpacing<float>,
-            &Mesh::setGridSpacing<float>)
+
+        // note: overloads on types are order-dependent (first wins)
+        //       https://github.com/pybind/pybind11/issues/1512
+        // We specialize `double` here generically and cast in read if needed.
+        // Later on, we could add support for 1D numpy arrays with distinct
+        // type.
         .def_property(
             "grid_spacing",
             &Mesh::gridSpacing<double>,
             &Mesh::setGridSpacing<double>)
-        .def_property(
-            "grid_spacing",
-            &Mesh::gridSpacing<long double>,
-            &Mesh::setGridSpacing<long double>)
         .def_property(
             "grid_global_offset",
             &Mesh::gridGlobalOffset,
@@ -90,16 +88,8 @@ void init_Mesh(py::module &m)
         .def_property("grid_unit_SI", &Mesh::gridUnitSI, &Mesh::setGridUnitSI)
         .def_property(
             "time_offset",
-            &Mesh::timeOffset<float>,
-            &Mesh::setTimeOffset<float>)
-        .def_property(
-            "time_offset",
             &Mesh::timeOffset<double>,
             &Mesh::setTimeOffset<double>)
-        .def_property(
-            "time_offset",
-            &Mesh::timeOffset<long double>,
-            &Mesh::setTimeOffset<long double>)
 
         // TODO remove in future versions (deprecated)
         .def("set_unit_dimension", &Mesh::setUnitDimension)
