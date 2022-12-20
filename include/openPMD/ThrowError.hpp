@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -54,13 +56,13 @@ enum class Reason
     Other
 };
 
-[[noreturn]] void
+[[noreturn]] OPENPMDAPI_EXPORT void
 throwBackendConfigSchema(std::vector<std::string> jsonPath, std::string what);
 
-[[noreturn]] void
+[[noreturn]] OPENPMDAPI_EXPORT void
 throwOperationUnsupportedInBackend(std::string backend, std::string what);
 
-[[noreturn]] void throwReadError(
+[[noreturn]] OPENPMDAPI_EXPORT void throwReadError(
     AffectedObject affectedObject,
     Reason reason_in,
     std::optional<std::string> backend,
