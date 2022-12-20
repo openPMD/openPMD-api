@@ -303,8 +303,10 @@ void Attributable::readAttributes(ReadMode mode)
                         error::AffectedObject::Attribute,
                         error::Reason::UnexpectedContent,
                         {},
-                        "[Attributable] "
-                        "Unexpected datatype for unitDimension.");
+                        "[Attributable] Unexpected datatype for unitDimension "
+                        "(supplied vector has " +
+                            std::to_string(vector.size()) +
+                            " entries, but 7 are expected).");
                 }
                 std::array<double, 7> arr;
                 std::copy_n(vector.begin(), 7, arr.begin());
@@ -548,7 +550,7 @@ void Attributable::readAttributes(ReadMode mode)
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 {},
-                "Invalid Attribute datatype during read");
+                "Undefined Attribute datatype during read");
         }
     }
 

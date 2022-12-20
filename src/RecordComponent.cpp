@@ -304,7 +304,7 @@ namespace
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 {},
-                "Unexpected constant datatype");
+                "Undefined constant datatype.");
         }
     };
 } // namespace
@@ -366,7 +366,9 @@ void RecordComponent::readBase()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'unitSI'");
+            "Unexpected Attribute datatype for 'unitSI' (expected double, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     readAttributes(ReadMode::FullyReread);
 }

@@ -134,7 +134,9 @@ void PatchRecordComponent::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'unitSI'");
+            "Unexpected Attribute datatype for 'unitSI' (expected double, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     readAttributes(ReadMode::FullyReread); // this will set dirty() = false
 }

@@ -116,7 +116,7 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
      * Technically, std::sort() is sufficient here, since file names are unique.
      * Use std::stable_sort() for two reasons:
      * 1) On some systems (clang 13.0.1, libc++ 13.0.1), std::sort() leads to
-     *    weird inconsisten segfaults here.
+     *    weird inconsistent segfaults here.
      * 2) Robustness against future changes. stable_sort() might become needed
      *    in future, and debugging this can be hard.
      * 3) It does not really matter, this is just the destructor, so we can take

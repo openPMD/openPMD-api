@@ -74,7 +74,9 @@ void PatchRecord::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'unitDimension'");
+            "Unexpected Attribute datatype for 'unitDimension' (expected an "
+            "array of seven floating point numbers, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));

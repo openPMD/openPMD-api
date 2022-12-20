@@ -302,7 +302,9 @@ void Mesh::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'geometry'");
+            "Unexpected Attribute datatype for 'geometry' (expected a string, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "dataOrder";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -328,7 +330,9 @@ void Mesh::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'dataOrder'");
+            "Unexpected Attribute datatype for 'dataOrder' (expected char or "
+            "string, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "axisLabels";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -341,7 +345,9 @@ void Mesh::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'axisLabels'");
+            "Unexpected Attribute datatype for 'axisLabels' (expected a vector "
+            "of string, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "gridSpacing";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -362,7 +368,9 @@ void Mesh::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'gridSpacing'");
+            "Unexpected Attribute datatype for 'gridSpacing' (expected a "
+            "vector of double, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "gridGlobalOffset";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -376,7 +384,9 @@ void Mesh::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'gridGlobalOffset'");
+            "Unexpected Attribute datatype for 'gridGlobalOffset' (expected a "
+            "vector of double, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -389,7 +399,9 @@ void Mesh::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'gridUnitSI'");
+            "Unexpected Attribute datatype for 'gridUnitSI' (expected double, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     if (scalar())
     {

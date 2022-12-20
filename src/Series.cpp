@@ -1087,12 +1087,10 @@ void Series::readFileBased()
                 auto &firstError = forwardFirstError.value();
                 firstError.description.append(
                     "\n[Note] Not a single iteration can be successfully "
-                    "parsed (see above "
-                    "errors). Returning the first observed error, for better "
-                    "recoverability in user code. Need to access at least one "
-                    "iteration even in "
-                    "deferred parsing mode in order to read global Series "
-                    "attributes.");
+                    "parsed (see above errors). Returning the first observed "
+                    "error, for better recoverability in user code. Need to "
+                    "access at least one iteration even in deferred parsing "
+                    "mode in order to read global Series attributes.");
                 throw firstError;
             }
             else
@@ -1102,9 +1100,8 @@ void Series::readFileBased()
                     error::Reason::Other,
                     {},
                     "Not a single iteration can be successfully parsed (see "
-                    "above "
-                    "errors). Need to access at least one iteration even in "
-                    "deferred parsing mode in order to read global Series "
+                    "above errors). Need to access at least one iteration even "
+                    "in deferred parsing mode in order to read global Series "
                     "attributes.");
             }
         }
@@ -1138,9 +1135,8 @@ void Series::readFileBased()
                 auto &firstError = forwardFirstError.value();
                 firstError.description.append(
                     "\n[Note] Not a single iteration can be successfully "
-                    "parsed (see above "
-                    "errors). Returning the first observed error, for better "
-                    "recoverability in user code.");
+                    "parsed (see above errors). Returning the first observed "
+                    "error, for better recoverability in user code.");
                 throw firstError;
             }
             else
@@ -1150,8 +1146,7 @@ void Series::readFileBased()
                     error::Reason::Other,
                     {},
                     "Not a single iteration can be successfully parsed (see "
-                    "above "
-                    "warnings).");
+                    "above warnings).");
             }
         }
     }
@@ -1231,8 +1226,9 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     }
     else
         throw std::runtime_error(
-            "Unexpected Attribute datatype "
-            "for 'iterationEncoding'");
+            "Unexpected Attribute datatype for 'iterationEncoding' (expected "
+            "string, found " +
+            datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "iterationFormat";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -1248,7 +1244,9 @@ void Series::readOneIterationFileBased(std::string const &filePath)
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'iterationFormat'");
+            "Unexpected Attribute datatype for 'iterationFormat' (expected "
+            "string, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     Parameter<Operation::OPEN_PATH> pOpen;
     std::string version = openPMD();
@@ -1341,7 +1339,9 @@ auto Series::readGorVBased(bool do_always_throw_errors, bool do_init)
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 {},
-                "Unexpected Attribute datatype for 'iterationEncoding'");
+                "Unexpected Attribute datatype for 'iterationEncoding' "
+                "(expected string, found " +
+                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
         aRead.name = "iterationFormat";
         IOHandler()->enqueue(IOTask(this, aRead));
@@ -1357,7 +1357,9 @@ auto Series::readGorVBased(bool do_always_throw_errors, bool do_init)
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 {},
-                "Unexpected Attribute datatype for 'iterationFormat'");
+                "Unexpected Attribute datatype for 'iterationFormat' (expected "
+                "string, found " +
+                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
     }
 
     Parameter<Operation::OPEN_PATH> pOpen;
@@ -1538,7 +1540,9 @@ void Series::readBase()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'openPMD'");
+            "Unexpected Attribute datatype for 'openPMD' (expected string, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "openPMDextension";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -1551,7 +1555,9 @@ void Series::readBase()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'openPMDextension'");
+            "Unexpected Attribute datatype for 'openPMDextension' (expected "
+            "uint32, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "basePath";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -1564,7 +1570,9 @@ void Series::readBase()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'basePath'");
+            "Unexpected Attribute datatype for 'basePath' (expected string, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     Parameter<Operation::LIST_ATTS> aList;
     IOHandler()->enqueue(IOTask(this, aList));
@@ -1593,7 +1601,9 @@ void Series::readBase()
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 {},
-                "Unexpected Attribute datatype for 'meshesPath'");
+                "Unexpected Attribute datatype for 'meshesPath' (expected "
+                "string, found " +
+                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
     }
 
     if (std::count(
@@ -1621,7 +1631,9 @@ void Series::readBase()
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 {},
-                "Unexpected Attribute datatype for 'particlesPath'");
+                "Unexpected Attribute datatype for 'particlesPath' (expected "
+                "string, found " +
+                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
     }
 }
 
@@ -2303,6 +2315,8 @@ auto Series::currentSnapshot() const
         default: {
             std::stringstream s;
             s << "Unexpected datatype for '/data/snapshot': " << attribute.dtype
+              << " (expected a vector of integer, found " +
+                    datatypeToString(attribute.dtype) + ")"
               << std::endl;
             throw error::ReadError(
                 error::AffectedObject::Attribute,

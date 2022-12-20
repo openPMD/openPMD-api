@@ -97,8 +97,6 @@ void ParticleSpecies::read()
                           << err.what() << std::endl;
 
                 map.forget(record_name);
-                //(*this)[record_name].erase(RecordComponent::SCALAR);
-                // this->erase(record_name);
             }
         }
     }

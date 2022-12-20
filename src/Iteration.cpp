@@ -434,7 +434,8 @@ void Iteration::read_impl(std::string const &groupPath)
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'dt'");
+            "Unexpected Attribute datatype for 'dt' (expected double, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "time";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -454,7 +455,9 @@ void Iteration::read_impl(std::string const &groupPath)
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'time'");
+            "Unexpected Attribute datatype for 'time' (expected double, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "timeUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -467,7 +470,9 @@ void Iteration::read_impl(std::string const &groupPath)
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'timeUnitSI'");
+            "Unexpected Attribute datatype for 'timeUnitSI' (expected double, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */

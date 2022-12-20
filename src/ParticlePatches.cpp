@@ -90,7 +90,9 @@ void ParticlePatches::read()
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 {},
-                "Unexpected datatype for " + component_name);
+                "Unexpected datatype for " + component_name +
+                    "(expected uint64, found " +
+                    datatypeToString(*dOpen.dtype) + ")");
 
         /* allow all attributes to be set */
         prc.written() = false;

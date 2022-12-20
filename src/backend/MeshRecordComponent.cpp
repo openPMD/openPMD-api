@@ -51,7 +51,9 @@ void MeshRecordComponent::read()
             error::AffectedObject::Attribute,
             error::Reason::UnexpectedContent,
             {},
-            "Unexpected Attribute datatype for 'position'");
+            "Unexpected Attribute datatype for 'position' (expected a vector "
+            "of any floating point type, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     readBase();
 }
