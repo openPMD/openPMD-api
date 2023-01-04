@@ -113,4 +113,10 @@ namespace error
  *
  */
 using no_such_file_error = error::ReadError;
+
+/**
+ * @brief Backward-compatibility alias for unsupported_data_error.
+ *
+ */
+using unsupported_data_error = error::OperationUnsupportedInBackend;
 } // namespace openPMD

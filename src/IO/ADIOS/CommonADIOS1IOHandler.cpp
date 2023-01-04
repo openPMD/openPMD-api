@@ -882,9 +882,9 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
         else if (sizeof(long long) == 2u)
             dtype = DT::LONGLONG;
         else
-            throw unsupported_data_error(
-                "[ADIOS1] No native equivalent for Datatype adios_short "
-                "found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1",
+                "No native equivalent for Datatype adios_short found.");
         break;
     case adios_integer:
         if (sizeof(short) == 4u)
@@ -896,9 +896,9 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
         else if (sizeof(long long) == 4u)
             dtype = DT::LONGLONG;
         else
-            throw unsupported_data_error(
-                "[ADIOS1] No native equivalent for Datatype adios_integer "
-                "found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1",
+                "No native equivalent for Datatype adios_integer found.");
         break;
     case adios_long:
         if (sizeof(short) == 8u)
@@ -910,8 +910,9 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
         else if (sizeof(long long) == 8u)
             dtype = DT::LONGLONG;
         else
-            throw unsupported_data_error(
-                "[ADIOS1] No native equivalent for Datatype adios_long found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1",
+                "No native equivalent for Datatype adios_long found.");
         break;
     case adios_unsigned_byte:
         dtype = DT::UCHAR;
@@ -926,9 +927,10 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
         else if (sizeof(unsigned long long) == 2u)
             dtype = DT::ULONGLONG;
         else
-            throw unsupported_data_error(
-                "[ADIOS1] No native equivalent for Datatype "
-                "adios_unsigned_short found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1",
+                "No native equivalent for Datatype adios_unsigned_short "
+                "found.");
         break;
     case adios_unsigned_integer:
         if (sizeof(unsigned short) == 4u)
@@ -940,9 +942,10 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
         else if (sizeof(unsigned long long) == 4u)
             dtype = DT::ULONGLONG;
         else
-            throw unsupported_data_error(
-                "[ADIOS1] No native equivalent for Datatype "
-                "adios_unsigned_integer found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1",
+                "No native equivalent for Datatype adios_unsigned_integer "
+                "found.");
         break;
     case adios_unsigned_long:
         if (sizeof(unsigned short) == 8u)
@@ -954,9 +957,9 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
         else if (sizeof(unsigned long long) == 8u)
             dtype = DT::ULONGLONG;
         else
-            throw unsupported_data_error(
-                "[ADIOS1] No native equivalent for Datatype "
-                "adios_unsigned_long found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1",
+                "No native equivalent for Datatype adios_unsigned_long found.");
         break;
     case adios_real:
         dtype = DT::FLOAT;
@@ -977,7 +980,8 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
     case adios_string:
     case adios_string_array:
     default:
-        throw unsupported_data_error(
+        error::throwOperationUnsupportedInBackend(
+            "ADIOS1",
             "[ADIOS1] Datatype not implemented for ADIOS dataset writing");
     }
     *parameters.dtype = dtype;

@@ -38,17 +38,6 @@
 
 namespace openPMD
 {
-
-class unsupported_data_error : public std::runtime_error
-{
-public:
-    unsupported_data_error(std::string const &what_arg)
-        : std::runtime_error(what_arg)
-    {}
-    virtual ~unsupported_data_error()
-    {}
-};
-
 /**
  * @brief Determine what items should be flushed upon Series::flush()
  *
