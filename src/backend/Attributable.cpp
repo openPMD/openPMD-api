@@ -299,9 +299,14 @@ void Attributable::readAttributes(ReadMode mode)
                 // Some backends may report the wrong type when reading
                 if (vector.size() != 7)
                 {
-                    throw std::runtime_error(
-                        "[Attributable] "
-                        "Unexpected datatype for unitDimension.");
+                    throw error::ReadError(
+                        error::AffectedObject::Attribute,
+                        error::Reason::UnexpectedContent,
+                        {},
+                        "[Attributable] Unexpected datatype for unitDimension "
+                        "(supplied vector has " +
+                            std::to_string(vector.size()) +
+                            " entries, but 7 are expected).");
                 }
                 std::array<double, 7> arr;
                 std::copy_n(vector.begin(), 7, arr.begin());
@@ -541,7 +546,11 @@ void Attributable::readAttributes(ReadMode mode)
                 internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::UNDEFINED:
-            throw std::runtime_error("Invalid Attribute datatype during read");
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Undefined Attribute datatype during read");
         }
     }
 

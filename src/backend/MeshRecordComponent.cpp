@@ -47,8 +47,13 @@ void MeshRecordComponent::read()
     else if (auto val = a.getOptional<std::vector<double> >(); val.has_value())
         setPosition(val.value());
     else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'position'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'position' (expected a vector "
+            "of any floating point type, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     readBase();
 }

@@ -104,9 +104,21 @@ private:
 
     std::optional<SeriesIterator *> nextIterationInStep();
 
-    std::optional<SeriesIterator *> nextStep();
+    /*
+     * When a step cannot successfully be opened, the method nextStep() calls
+     * itself again recursively.
+     * (Recursion massively simplifies the logic here, and it only happens
+     * in case of error.)
+     * After successfully beginning a step, this methods needs to remember, how
+     * many broken steps have been skipped. In case the Series does not use
+     * the /data/snapshot attribute, this helps figuring out which iteration
+     * is now active. Hence, recursion_depth.
+     */
+    std::optional<SeriesIterator *> nextStep(size_t recursion_depth);
 
     std::optional<SeriesIterator *> loopBody();
+
+    void deactivateDeadIteration(iteration_index_t);
 };
 
 /**

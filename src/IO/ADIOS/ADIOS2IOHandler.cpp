@@ -112,7 +112,17 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
         sorted.push_back(std::move(pair.second));
     }
     m_fileData.clear();
-    std::sort(
+    /*
+     * Technically, std::sort() is sufficient here, since file names are unique.
+     * Use std::stable_sort() for two reasons:
+     * 1) On some systems (clang 13.0.1, libc++ 13.0.1), std::sort() leads to
+     *    weird inconsistent segfaults here.
+     * 2) Robustness against future changes. stable_sort() might become needed
+     *    in future, and debugging this can be hard.
+     * 3) It does not really matter, this is just the destructor, so we can take
+     *    the extra time.
+     */
+    std::stable_sort(
         sorted.begin(), sorted.end(), [](auto const &left, auto const &right) {
             return left->m_file <= right->m_file;
         });
@@ -685,9 +695,11 @@ void ADIOS2IOHandlerImpl::openFile(
 {
     if (!auxiliary::directory_exists(m_handler->directory))
     {
-        throw no_such_file_error(
-            "[ADIOS2] Supplied directory is not valid: " +
-            m_handler->directory);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "ADIOS2",
+            "Supplied directory is not valid: " + m_handler->directory);
     }
 
     std::string name = parameters.name + fileSuffix();
@@ -2305,9 +2317,11 @@ namespace detail
 
         if (type == Datatype::UNDEFINED)
         {
-            throw std::runtime_error(
-                "[ADIOS2] Requested attribute (" + name +
-                ") not found in backend.");
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::NotFound,
+                "ADIOS2",
+                name);
         }
 
         Datatype ret = switchType<detail::OldAttributeReader>(
@@ -2325,9 +2339,11 @@ namespace detail
 
         if (type == Datatype::UNDEFINED)
         {
-            throw std::runtime_error(
-                "[ADIOS2] Requested attribute (" + name +
-                ") not found in backend.");
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::NotFound,
+                "ADIOS2",
+                name);
         }
 
         Datatype ret = switchType<detail::AttributeReader>(
@@ -2844,8 +2860,49 @@ namespace detail
             std::unique_ptr<BufferedAction>(new _BA(std::forward<BA>(ba))));
     }
 
+    template <typename... Args>
+    void BufferedActions::flush(Args &&...args)
+    {
+        try
+        {
+            flush_impl(std::forward<Args>(args)...);
+        }
+        catch (error::ReadError const &)
+        {
+            /*
+             * We need to take actions out of the buffer, since an exception
+             * should reset everything from the current IOHandler->flush() call.
+             * However, we cannot simply clear the buffer, since tasks may have
+             * been enqueued to ADIOS2 already and we cannot undo that.
+             * So, we need to keep the memory alive for the benefit of ADIOS2.
+             * Luckily, we have m_alreadyEnqueued for exactly that purpose.
+             */
+            for (auto &task : m_buffer)
+            {
+                m_alreadyEnqueued.emplace_back(std::move(task));
+            }
+            m_buffer.clear();
+
+            // m_attributeWrites and m_attributeReads are for implementing the
+            // 2021 ADIOS2 schema which will go anyway.
+            // So, this ugliness here is temporary.
+            for (auto &task : m_attributeWrites)
+            {
+                m_alreadyEnqueued.emplace_back(std::unique_ptr<BufferedAction>{
+                    new BufferedAttributeWrite{std::move(task.second)}});
+            }
+            m_attributeWrites.clear();
+            /*
+             * An AttributeRead is not a deferred action, so we can clear it
+             * immediately.
+             */
+            m_attributeReads.clear();
+            throw;
+        }
+    }
+
     template <typename F>
-    void BufferedActions::flush(
+    void BufferedActions::flush_impl(
         ADIOS2FlushParams flushParams,
         F &&performPutGets,
         bool writeAttributes,
@@ -2947,8 +3004,8 @@ namespace detail
         }
     }
 
-    void
-    BufferedActions::flush(ADIOS2FlushParams flushParams, bool writeAttributes)
+    void BufferedActions::flush_impl(
+        ADIOS2FlushParams flushParams, bool writeAttributes)
     {
         auto decideFlushAPICall = [this, flushTarget = flushParams.flushTarget](
                                       adios2::Engine &engine) {
@@ -2984,7 +3041,7 @@ namespace detail
 #endif
         };
 
-        flush(
+        flush_impl(
             flushParams,
             [decideFlushAPICall = std::move(decideFlushAPICall)](
                 BufferedActions &ba, adios2::Engine &eng) {
@@ -3019,7 +3076,9 @@ namespace detail
         {
             m_IO.DefineAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute, 0);
-            flush({FlushLevel::UserFlush}, /* writeAttributes = */ false);
+            flush(
+                ADIOS2FlushParams{FlushLevel::UserFlush},
+                /* writeAttributes = */ false);
             return AdvanceStatus::RANDOMACCESS;
         }
 
@@ -3059,7 +3118,7 @@ namespace detail
                 }
             }
             flush(
-                {FlushLevel::UserFlush},
+                ADIOS2FlushParams{FlushLevel::UserFlush},
                 [](BufferedActions &, adios2::Engine &eng) { eng.EndStep(); },
                 /* writeAttributes = */ true,
                 /* flushUnconditionally = */ true);

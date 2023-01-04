@@ -130,7 +130,13 @@ void PatchRecordComponent::read()
         val.has_value())
         setUnitSI(val.value());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'unitSI' (expected double, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     readAttributes(ReadMode::FullyReread); // this will set dirty() = false
 }

@@ -1,9 +1,16 @@
 #pragma once
 
+#include "openPMD/ThrowError.hpp"
+
 #include <exception>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+
+#if defined(OPENPMD_ADIOS1_IMPLEMENTATION)
+static_assert(false, "ADIOS1 implementation must not include Error.hpp");
+#endif
 
 namespace openPMD
 {
@@ -80,5 +87,39 @@ namespace error
     public:
         Internal(std::string const &what);
     };
+
+    /*
+     * Read error concerning a specific object.
+     */
+    class ReadError : public Error
+    {
+    public:
+        AffectedObject affectedObject;
+        Reason reason;
+        // If empty, then the error is thrown by the frontend
+        std::optional<std::string> backend;
+        std::string description; // object path, further details, ...
+
+        ReadError(
+            AffectedObject,
+            Reason,
+            std::optional<std::string> backend_in,
+            std::string description_in);
+    };
+
+    /*
+     * Inrecoverable parse error from the frontend.
+     */
+    class ParseError : public Error
+    {
+    public:
+        ParseError(std::string what);
+    };
 } // namespace error
+
+/**
+ * @brief Backward-compatibility alias for no_such_file_error.
+ *
+ */
+using no_such_file_error = error::ReadError;
 } // namespace openPMD

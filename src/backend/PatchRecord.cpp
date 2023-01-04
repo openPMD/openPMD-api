@@ -21,6 +21,8 @@
 #include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 
+#include <iostream>
+
 namespace openPMD
 {
 PatchRecord &
@@ -68,8 +70,13 @@ void PatchRecord::read()
         val.has_value())
         this->setAttribute("unitDimension", val.value());
     else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'unitDimension'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'unitDimension' (expected an "
+            "array of seven floating point numbers, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));
@@ -86,7 +93,18 @@ void PatchRecord::read()
         prc.written() = false;
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
         prc.written() = true;
-        prc.read();
+        try
+        {
+            prc.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read patch record component '"
+                      << component_name
+                      << "' and will skip it due to read error:" << err.what()
+                      << std::endl;
+            this->container().erase(component_name);
+        }
     }
     dirty() = false;
 }

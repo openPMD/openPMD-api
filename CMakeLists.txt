@@ -540,14 +540,12 @@ set(IO_SOURCE
         src/IO/ADIOS/ADIOS2PreloadAttributes.cpp
         src/IO/InvalidatableFile.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
-        src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp
         src/IO/IOTask.cpp)
 set(IO_ADIOS1_SOURCE
-        src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
@@ -674,6 +672,9 @@ if(openPMD_HAVE_ADIOS1)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_ADIOS1=1)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_MPI=0)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE _NOMPI)  # ADIOS header
+    # This ensures that the ADIOS1 targets don't ever include Error.hpp
+    # To avoid incompatible error types in weird compile configurations
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE OPENPMD_ADIOS1_IMPLEMENTATION)
 
     if(openPMD_HAVE_MPI)
         set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
@@ -711,6 +712,9 @@ if(openPMD_HAVE_ADIOS1)
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE _NOMPI)  # ADIOS header
     endif()
+    # This ensures that the ADIOS1 targets don't ever include Error.hpp
+    # To avoid incompatible error types in weird compile configurations
+    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE OPENPMD_ADIOS1_IMPLEMENTATION)
 
     # Runtime parameter and API status checks ("asserts")
     if(openPMD_USE_VERIFY)
@@ -909,6 +913,7 @@ if(openPMD_USE_INVASIVE_TESTS)
         message(WARNING "Invasive tests that redefine class signatures are "
                         "known to fail on Windows!")
     endif()
+    target_compile_definitions(openPMD PRIVATE openPMD_USE_INVASIVE_TESTS=1)
 endif()
 
 if(openPMD_BUILD_TESTING)

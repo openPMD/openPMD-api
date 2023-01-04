@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Mesh.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
@@ -297,8 +298,13 @@ void Mesh::read()
             setGeometry(tmpGeometry);
     }
     else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'geometry'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'geometry' (expected a string, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "dataOrder";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -313,12 +319,20 @@ void Mesh::read()
         if (tmpDataOrder.size() == 1)
             setDataOrder(static_cast<DataOrder>(tmpDataOrder[0]));
         else
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
                 "Unexpected Attribute value for 'dataOrder': " + tmpDataOrder);
     }
     else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'dataOrder'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'dataOrder' (expected char or "
+            "string, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "axisLabels";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -327,8 +341,13 @@ void Mesh::read()
         setAxisLabels(
             Attribute(*aRead.resource).get<std::vector<std::string> >());
     else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'axisLabels'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'axisLabels' (expected a vector "
+            "of string, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "gridSpacing";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -345,8 +364,13 @@ void Mesh::read()
     else if (auto val = a.getOptional<std::vector<double> >(); val.has_value())
         setGridSpacing(val.value());
     else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'gridSpacing'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'gridSpacing' (expected a "
+            "vector of double, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "gridGlobalOffset";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -356,8 +380,13 @@ void Mesh::read()
         val.has_value())
         setGridGlobalOffset(val.value());
     else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'gridGlobalOffset'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'gridGlobalOffset' (expected a "
+            "vector of double, found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -366,8 +395,13 @@ void Mesh::read()
         val.has_value())
         setGridUnitSI(val.value());
     else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'gridUnitSI'");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            {},
+            "Unexpected Attribute datatype for 'gridUnitSI' (expected double, "
+            "found " +
+                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     if (scalar())
     {
@@ -387,7 +421,17 @@ void Mesh::read()
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             rc.get().m_isConstant = true;
-            rc.read();
+            try
+            {
+                rc.read();
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read record component '" << component
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+                map.forget(component);
+            }
         }
 
         Parameter<Operation::LIST_DATASETS> dList;
@@ -404,7 +448,17 @@ void Mesh::read()
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;
-            rc.read();
+            try
+            {
+                rc.read();
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read record component '" << component
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+                map.forget(component);
+            }
         }
     }
 

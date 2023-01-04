@@ -17,6 +17,13 @@ namespace error
         , backend{std::move(backend_in)}
     {}
 
+    void
+    throwOperationUnsupportedInBackend(std::string backend, std::string what)
+    {
+        throw OperationUnsupportedInBackend(
+            std::move(backend), std::move(what));
+    }
+
     WrongAPIUsage::WrongAPIUsage(std::string what)
         : Error("Wrong API usage: " + what)
     {}
@@ -46,11 +53,87 @@ namespace error
         , errorLocation(std::move(errorLocation_in))
     {}
 
+    void throwBackendConfigSchema(
+        std::vector<std::string> jsonPath, std::string what)
+    {
+        throw BackendConfigSchema(std::move(jsonPath), std::move(what));
+    }
+
     Internal::Internal(std::string const &what)
         : Error(
               "Internal error: " + what +
               "\nThis is a bug. Please report at ' "
               "https://github.com/openPMD/openPMD-api/issues'.")
+    {}
+
+    namespace
+    {
+        std::string asString(AffectedObject obj)
+        {
+            switch (obj)
+            {
+                using AO = AffectedObject;
+            case AO::Attribute:
+                return "Attribute";
+            case AO::Dataset:
+                return "Dataset";
+            case AO::File:
+                return "File";
+            case AO::Group:
+                return "Group";
+            case AO::Other:
+                return "Other";
+            }
+            return "Unreachable";
+        }
+        std::string asString(Reason obj)
+        {
+            switch (obj)
+            {
+                using Re = Reason;
+            case Re::NotFound:
+                return "NotFound";
+            case Re::CannotRead:
+                return "CannotRead";
+            case Re::UnexpectedContent:
+                return "UnexpectedContent";
+            case Re::Inaccessible:
+                return "Inaccessible";
+            case Re::Other:
+                return "Other";
+            }
+            return "Unreachable";
+        }
+    } // namespace
+
+    ReadError::ReadError(
+        AffectedObject affectedObject_in,
+        Reason reason_in,
+        std::optional<std::string> backend_in,
+        std::string description_in)
+        : Error(
+              (backend_in ? ("Read Error in backend " + *backend_in)
+                          : "Read Error in frontend ") +
+              "\nObject type:\t" + asString(affectedObject_in) +
+              "\nError type:\t" + asString(reason_in) +
+              "\nFurther description:\t" + description_in)
+        , affectedObject(affectedObject_in)
+        , reason(reason_in)
+        , backend(std::move(backend_in))
+        , description(std::move(description_in))
+    {}
+
+    void throwReadError(
+        AffectedObject affectedObject,
+        Reason reason,
+        std::optional<std::string> backend,
+        std::string description)
+    {
+        throw ReadError(
+            affectedObject, reason, std::move(backend), std::move(description));
+    }
+
+    ParseError::ParseError(std::string what) : Error("Parse Error: " + what)
     {}
 } // namespace error
 } // namespace openPMD

@@ -179,10 +179,13 @@ std::future<void> ParallelADIOS1IOHandlerImpl::flush()
         {
             std::cerr << "[AbstractIOHandlerImpl] IO Task "
                       << internal::operationAsString(i.operation)
-                      << " failed with exception. Removing task"
-                      << " from IO queue and passing on the exception."
+                      << " failed with exception. Clearing IO queue and "
+                         "passing on the exception."
                       << std::endl;
-            handler->m_setup.pop();
+            while (!m_handler->m_work.empty())
+            {
+                m_handler->m_work.pop();
+            }
             throw;
         }
         handler->m_setup.pop();
@@ -309,10 +312,13 @@ std::future<void> ParallelADIOS1IOHandlerImpl::flush()
         {
             std::cerr << "[AbstractIOHandlerImpl] IO Task "
                       << internal::operationAsString(i.operation)
-                      << " failed with exception. Removing task"
-                      << " from IO queue and passing on the exception."
+                      << " failed with exception. Clearing IO queue and "
+                         "passing on the exception."
                       << std::endl;
-            m_handler->m_work.pop();
+            while (!m_handler->m_work.empty())
+            {
+                m_handler->m_work.pop();
+            }
             throw;
         }
         handler->m_work.pop();

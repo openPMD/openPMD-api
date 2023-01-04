@@ -1070,6 +1070,9 @@ namespace detail
         template <typename BA>
         void enqueue(BA &&ba, decltype(m_buffer) &);
 
+        template <typename... Args>
+        void flush(Args &&...args);
+
         struct ADIOS2FlushParams
         {
             /*
@@ -1103,7 +1106,7 @@ namespace detail
          *     deferred IO tasks had been queued.
          */
         template <typename F>
-        void flush(
+        void flush_impl(
             ADIOS2FlushParams flushParams,
             F &&performPutsGets,
             bool writeAttributes,
@@ -1114,7 +1117,7 @@ namespace detail
          * and does not flush unconditionally.
          *
          */
-        void flush(ADIOS2FlushParams, bool writeAttributes = false);
+        void flush_impl(ADIOS2FlushParams, bool writeAttributes = false);
 
         /**
          * @brief Begin or end an ADIOS step.

@@ -23,8 +23,6 @@
 
 #include "openPMD/config.hpp"
 
-#include "openPMD/Error.hpp"
-
 #include <nlohmann/json.hpp>
 #include <toml.hpp>
 
