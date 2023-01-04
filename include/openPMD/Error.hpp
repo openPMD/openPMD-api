@@ -106,15 +106,6 @@ namespace error
             std::optional<std::string> backend_in,
             std::string description_in);
     };
-
-    /*
-     * Inrecoverable parse error from the frontend.
-     */
-    class ParseError : public Error
-    {
-    public:
-        ParseError(std::string what);
-    };
 } // namespace error
 
 /**

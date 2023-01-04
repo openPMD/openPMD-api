@@ -132,8 +132,5 @@ namespace error
         throw ReadError(
             affectedObject, reason, std::move(backend), std::move(description));
     }
-
-    ParseError::ParseError(std::string what) : Error("Parse Error: " + what)
-    {}
 } // namespace error
 } // namespace openPMD
