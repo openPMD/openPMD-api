@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
@@ -49,16 +50,6 @@ class AbstractFilePosition;
 class Attributable;
 class Iteration;
 class Series;
-
-class no_such_attribute_error : public std::runtime_error
-{
-public:
-    no_such_attribute_error(std::string const &what_arg)
-        : std::runtime_error(what_arg)
-    {}
-    virtual ~no_such_attribute_error()
-    {}
-};
 
 namespace internal
 {
@@ -475,7 +466,7 @@ inline bool Attributable::setAttributeImpl(
     {
         auxiliary::OutOfRangeMsg const out_of_range_msg(
             "Attribute", "can not be set (read-only).");
-        throw no_such_attribute_error(out_of_range_msg(key));
+        error::throwNoSuchAttribute(out_of_range_msg(key));
     }
 
     dirty() = true;

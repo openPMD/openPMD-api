@@ -67,4 +67,7 @@ throwOperationUnsupportedInBackend(std::string backend, std::string what);
     Reason reason_in,
     std::optional<std::string> backend,
     std::string description_in);
+
+[[noreturn]] OPENPMDAPI_EXPORT void
+throwNoSuchAttribute(std::string attributeName);
 } // namespace openPMD::error

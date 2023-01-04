@@ -106,6 +106,12 @@ namespace error
             std::optional<std::string> backend_in,
             std::string description_in);
     };
+
+    class NoSuchAttribute : public Error
+    {
+    public:
+        NoSuchAttribute(std::string attributeName);
+    };
 } // namespace error
 
 /**
@@ -119,4 +125,10 @@ using no_such_file_error = error::ReadError;
  *
  */
 using unsupported_data_error = error::OperationUnsupportedInBackend;
+
+/**
+ * @brief Backward-compatibility alias for no_such_attribute_error.
+ *
+ */
+using no_such_attribute_error = error::NoSuchAttribute;
 } // namespace openPMD

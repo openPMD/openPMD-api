@@ -132,5 +132,14 @@ namespace error
         throw ReadError(
             affectedObject, reason, std::move(backend), std::move(description));
     }
+
+    NoSuchAttribute::NoSuchAttribute(std::string attributeName)
+        : Error(std::move(attributeName))
+    {}
+
+    void throwNoSuchAttribute(std::string attributeName)
+    {
+        throw NoSuchAttribute(std::move(attributeName));
+    }
 } // namespace error
 } // namespace openPMD
