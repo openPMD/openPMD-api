@@ -111,7 +111,7 @@ Shipped internally in `share/openPMD/thirdParty/`:
 I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+ (optional)
-* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+ (optional)
+* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+ (optional, deprecated)
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.7.0+ (optional)
 
 while those can be built either with or without:
