@@ -28,10 +28,53 @@ namespace openPMD
  */
 enum class Access
 {
-    READ_ONLY, //!< open series as read-only, fails if series is not found
-    READ_RANDOM_ACCESS = READ_ONLY,
+    /**
+     * Open Series as read-only, fails if Series is not found.
+     * When to use READ_ONLY or READ_LINEAR:
+     *
+     * * When intending to use Series::readIterations()
+     *   (i.e. step-by-step reading of iterations, e.g. in streaming),
+     *   then Access::READ_LINEAR is preferred and always supported.
+     *   Data is parsed inside Series::readIterations(), no data is available
+     *   right after opening the Series.
+     * * Otherwise (i.e. for random-access workflows), Access::READ_ONLY
+     *   is required, but works only in backends that support random access.
+     *   Data is parsed and available right after opening the Series.
+     *
+     * In both modes, parsing of iterations can be deferred with the JSON/TOML
+     * option `defer_iteration_parsing`.
+     *
+     * Detailed rules:
+     *
+     * 1. In backends that have no notion of IO steps (all except ADIOS2),
+     *    Access::READ_ONLY can always be used.
+     * 2. In backends that can be accessed either in random-access or
+     *    step-by-step, the chosen access mode decides which approach is used.
+     *    Examples are the BP4 and BP5 engines of ADIOS2.
+     * 3. In streaming backends, random-access is not possible.
+     *    When using such a backend, the access mode will be coerced
+     *    automatically to Access::READ_LINEAR. Use of Series::readIterations()
+     *    is mandatory for access.
+     * 4. Reading a variable-based Series is only fully supported with
+     *    Access::READ_LINEAR.
+     *    If using Access::READ_ONLY, the dataset will be considered to only
+     *    have one single step.
+     *    If the dataset only has one single step, this is guaranteed to work
+     *    as expected. Otherwise, it is undefined which step's data is returned.
+     */
+    READ_ONLY,
+    READ_RANDOM_ACCESS = READ_ONLY, //!< more explicit alias for READ_ONLY
+    /*
+     * Open Series as read-only, fails if Series is not found.
+     * This access mode requires use of Series::readIterations()
+     * See Access::READ_ONLY for when to use this.
+     */
     READ_LINEAR,
-    READ_WRITE, //!< open existing series as writable
+    /**
+     * Open existing Series as writable.
+     * Read mode corresponds with Access::READ_RANDOM_ACCESS.
+     */
+    READ_WRITE,
     CREATE, //!< create new series and truncate existing (files)
     APPEND //!< write new iterations to an existing series without reading
 }; // Access

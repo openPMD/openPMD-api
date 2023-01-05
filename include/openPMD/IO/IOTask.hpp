@@ -172,8 +172,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
     IterationEncoding encoding = IterationEncoding::groupBased;
     enum class ParsePreference : char
     {
-        UpFront,
-        PerStep
+        UpFront, //<! Data should be parsed right when opening the dataset
+        PerStep //<! Data should be parsed step by step
     };
     std::shared_ptr<ParsePreference> out_parsePreference =
         std::make_shared<ParsePreference>(ParsePreference::UpFront);
