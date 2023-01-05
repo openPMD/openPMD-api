@@ -142,7 +142,7 @@ endfunction()
 
 openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
-openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
+openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                 OFF)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 

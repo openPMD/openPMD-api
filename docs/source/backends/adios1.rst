@@ -27,14 +27,15 @@ Backend-Specific Controls
 The following environment variables control ADIOS1 I/O behavior at runtime.
 Fine-tuning these is especially useful when running at large scale.
 
-==================================== ========== ================================================================================
-environment variable                 default    description
-==================================== ========== ================================================================================
-``OPENPMD_ADIOS_NUM_AGGREGATORS``    ``1``      Number of I/O aggregator nodes for ADIOS1 ``MPI_AGGREGATE`` transport method.
-``OPENPMD_ADIOS_NUM_OST``            ``0``      Number of I/O OSTs for ADIOS1 ``MPI_AGGREGATE`` transport method.
-``OPENPMD_ADIOS_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
-``OPENPMD_BP_BACKEND``               ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
-==================================== ========== ================================================================================
+============================================== ========== ================================================================================
+environment variable                           default    description
+============================================== ========== ================================================================================
+``OPENPMD_ADIOS_NUM_AGGREGATORS``              ``1``      Number of I/O aggregator nodes for ADIOS1 ``MPI_AGGREGATE`` transport method.
+``OPENPMD_ADIOS_NUM_OST``                      ``0``      Number of I/O OSTs for ADIOS1 ``MPI_AGGREGATE`` transport method.
+``OPENPMD_ADIOS_HAVE_METADATA_FILE``           ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
+``OPENPMD_BP_BACKEND``                         ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
+``OPENPMD_ADIOS_SUPPRESS_DEPRECATED_WARNING``  ``0``      Set to ``1`` to suppress ADIOS1 deprecation warnings.
+============================================== ========== ================================================================================
 
 Please refer to the `ADIOS1 manual, section 6.1.5 <https://users.nccs.gov/~pnorbert/ADIOS-UsersManual-1.13.1.pdf>`_ for details on I/O tuning.
 

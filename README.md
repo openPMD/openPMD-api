@@ -111,7 +111,7 @@ Shipped internally in `share/openPMD/thirdParty/`:
 I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+ (optional)
-* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+ (optional)
+* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+ (optional, deprecated)
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.7.0+ (optional)
 
 while those can be built either with or without:
@@ -254,7 +254,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 |------------------------------|------------------|------------------------------------------------------------------------------|
 | `openPMD_USE_MPI`            | **AUTO**/ON/OFF  | Parallel, Multi-Node I/O for clusters                                        |
 | `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | HDF5 backend (`.h5` files)                                                   |
-| `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | ADIOS1 backend (`.bp` files up to version BP3)                               |
+| `openPMD_USE_ADIOS1`         | AUTO/ON/**OFF**  | ADIOS1 backend (`.bp` files up to version BP3) - deprecated                  |
 | `openPMD_USE_ADIOS2`         | **AUTO**/ON/OFF  | ADIOS2 backend (`.bp` files in BP3, BP4 or higher)                           |
 | `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                                       |
 | `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>1</sup>                       |
