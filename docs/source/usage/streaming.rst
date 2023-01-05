@@ -22,6 +22,7 @@ C++
 ^^^
 
 The reading end of the streaming API is activated through use of ``Series::readIterations()`` instead of accessing the field ``Series::iterations`` directly.
+Use of ``Access::READ_LINEAR`` mode is recommended.
 The returned object of type ``ReadIterations`` can be used in a C++11 range-based for loop to iterate over objects of type ``IndexedIteration``.
 This class extends the ``Iteration`` class with a field ``IndexedIteration::iterationIndex``, denoting this iteration's index.
 
@@ -40,6 +41,7 @@ Python
 ^^^^^^
 
 The reading end of the streaming API is activated through use of ``Series.read_iterations()`` instead of accessing the field ``Series.iterations`` directly.
+Use of ``Access.read_linear`` mode is recommended.
 The returned object of type ``ReadIterations`` can be used in a Python range-based for loop to iterate over objects of type ``IndexedIteration``.
 This class extends the ``Iteration`` class with a field ``IndexedIteration.iteration_index``, denoting this iteration's index.
 
