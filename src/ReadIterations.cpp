@@ -28,12 +28,12 @@
 namespace openPMD
 {
 
-SeriesIterator::SeriesIterator() : m_series()
-{}
+SeriesIterator::SeriesIterator() = default;
 
 void SeriesIterator::initSeriesInLinearReadMode()
 {
-    auto &series = *m_series;
+    auto &data = *m_data;
+    auto &series = *data.series;
     series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
     try
     {
@@ -76,10 +76,14 @@ void SeriesIterator::initSeriesInLinearReadMode()
     series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
 }
 
-SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
+SeriesIterator::SeriesIterator(Series series_in)
+    : m_data{std::make_shared<SharedData>()}
 {
-    if (m_series->IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
-        m_series->iterations.empty())
+    auto &data = *m_data;
+    data.series = std::move(series_in);
+    auto &series = data.series.value();
+    if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
+        series.iterations.empty())
     {
         initSeriesInLinearReadMode();
     }
@@ -125,9 +129,9 @@ SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
 
             openIteration(series.iterations.begin()->second);
             status = it->second.beginStep(/* reread = */ true);
-            for (auto const &pair : m_series.value().iterations)
+            for (auto const &pair : series.iterations)
             {
-                m_iterationsInCurrentStep.push_back(pair.first);
+                data.iterationsInCurrentStep.push_back(pair.first);
             }
             break;
         case IterationEncoding::groupBased:
@@ -150,11 +154,11 @@ SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
             if (availableIterations.has_value() &&
                 status != AdvanceStatus::RANDOMACCESS)
             {
-                m_iterationsInCurrentStep = availableIterations.value();
-                if (!m_iterationsInCurrentStep.empty())
+                data.iterationsInCurrentStep = availableIterations.value();
+                if (!data.iterationsInCurrentStep.empty())
                 {
-                    openIteration(
-                        series.iterations.at(m_iterationsInCurrentStep.at(0)));
+                    openIteration(series.iterations.at(
+                        data.iterationsInCurrentStep.at(0)));
                 }
             }
             else if (!series.iterations.empty())
@@ -163,13 +167,14 @@ SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
                  * Fallback implementation: Assume that each step corresponds
                  * with an iteration in ascending order.
                  */
-                m_iterationsInCurrentStep = {series.iterations.begin()->first};
+                data.iterationsInCurrentStep = {
+                    series.iterations.begin()->first};
                 openIteration(series.iterations.begin()->second);
             }
             else
             {
                 // this is a no-op, but let's keep it explicit
-                m_iterationsInCurrentStep = {};
+                data.iterationsInCurrentStep = {};
             }
 
             break;
@@ -192,20 +197,21 @@ SeriesIterator::SeriesIterator(Series series) : m_series(std::move(series))
 
 std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
 {
+    auto &data = *m_data;
     using ret_t = std::optional<SeriesIterator *>;
 
-    if (m_iterationsInCurrentStep.empty())
+    if (data.iterationsInCurrentStep.empty())
     {
         return ret_t{};
     }
-    m_iterationsInCurrentStep.pop_front();
-    if (m_iterationsInCurrentStep.empty())
+    data.iterationsInCurrentStep.pop_front();
+    if (data.iterationsInCurrentStep.empty())
     {
         return ret_t{};
     }
-    auto oldIterationIndex = m_currentIteration;
-    m_currentIteration = *m_iterationsInCurrentStep.begin();
-    auto &series = m_series.value();
+    auto oldIterationIndex = data.currentIteration;
+    data.currentIteration = *data.iterationsInCurrentStep.begin();
+    auto &series = data.series.value();
 
     switch (series.iterationEncoding())
     {
@@ -222,11 +228,11 @@ std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
 
         try
         {
-            series.iterations[m_currentIteration].open();
+            series.iterations[data.currentIteration].open();
         }
         catch (error::ReadError const &err)
         {
-            std::cerr << "Cannot read iteration '" << m_currentIteration
+            std::cerr << "Cannot read iteration '" << data.currentIteration
                       << "' and will skip it due to read error:\n"
                       << err.what() << std::endl;
             return nextIterationInStep();
@@ -240,12 +246,12 @@ std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
             /*
              * Errors in here might appear due to deferred iteration parsing.
              */
-            series.iterations[m_currentIteration].open();
+            series.iterations[data.currentIteration].open();
             /*
              * Errors in here might appear due to reparsing after opening a
              * new step.
              */
-            series.iterations[m_currentIteration].beginStep(
+            series.iterations[data.currentIteration].beginStep(
                 /* reread = */ true);
         }
         catch (error::ReadError const &err)
@@ -263,6 +269,7 @@ std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
 
 std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
 {
+    auto &data = *m_data;
     // since we are in group-based iteration layout, it does not
     // matter which iteration we begin a step upon
     AdvanceStatus status{};
@@ -270,21 +277,21 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
     try
     {
         std::tie(status, availableIterations) =
-            Iteration::beginStep({}, *m_series, /* reread = */ true);
+            Iteration::beginStep({}, *data.series, /* reread = */ true);
     }
     catch (error::ReadError const &err)
     {
         std::cerr << "[SeriesIterator] Cannot read iteration due to error "
                      "below, will skip it.\n"
                   << err.what() << std::endl;
-        m_series->advance(AdvanceMode::ENDSTEP);
+        data.series->advance(AdvanceMode::ENDSTEP);
         return nextStep(recursion_depth + 1);
     }
 
     if (availableIterations.has_value() &&
         status != AdvanceStatus::RANDOMACCESS)
     {
-        m_iterationsInCurrentStep = availableIterations.value();
+        data.iterationsInCurrentStep = availableIterations.value();
     }
     else
     {
@@ -292,8 +299,8 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
          * Fallback implementation: Assume that each step corresponds
          * with an iteration in ascending order.
          */
-        auto &series = m_series.value();
-        auto it = series.iterations.find(m_currentIteration);
+        auto &series = data.series.value();
+        auto it = series.iterations.find(data.currentIteration);
         auto itEnd = series.iterations.end();
         if (it == itEnd)
         {
@@ -312,8 +319,8 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
                  * will skip such iterations and hope to find something in a
                  * later IO step. No need to finish right now.
                  */
-                m_iterationsInCurrentStep = {};
-                m_series->advance(AdvanceMode::ENDSTEP);
+                data.iterationsInCurrentStep = {};
+                data.series->advance(AdvanceMode::ENDSTEP);
             }
         }
         else
@@ -340,13 +347,13 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
                      * hope to find something in a later IO step. No need to
                      * finish right now.
                      */
-                    m_iterationsInCurrentStep = {};
-                    m_series->advance(AdvanceMode::ENDSTEP);
+                    data.iterationsInCurrentStep = {};
+                    data.series->advance(AdvanceMode::ENDSTEP);
                 }
             }
             else
             {
-                m_iterationsInCurrentStep = {it->first};
+                data.iterationsInCurrentStep = {it->first};
             }
         }
     }
@@ -362,15 +369,16 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
 
 std::optional<SeriesIterator *> SeriesIterator::loopBody()
 {
-    Series &series = m_series.value();
+    auto &data = *m_data;
+    Series &series = data.series.value();
     auto &iterations = series.iterations;
 
     /*
      * Might not be present because parsing might have failed in previous step
      */
-    if (iterations.contains(m_currentIteration))
+    if (iterations.contains(data.currentIteration))
     {
-        auto &currentIteration = iterations[m_currentIteration];
+        auto &currentIteration = iterations[data.currentIteration];
         if (!currentIteration.closed())
         {
             currentIteration.close();
@@ -441,31 +449,33 @@ std::optional<SeriesIterator *> SeriesIterator::loopBody()
 
 void SeriesIterator::deactivateDeadIteration(iteration_index_t index)
 {
-    switch (m_series->iterationEncoding())
+    auto &data = *m_data;
+    switch (data.series->iterationEncoding())
     {
     case IterationEncoding::fileBased: {
         Parameter<Operation::CLOSE_FILE> param;
-        m_series->IOHandler()->enqueue(
-            IOTask(&m_series->iterations[index], std::move(param)));
-        m_series->IOHandler()->flush({FlushLevel::UserFlush});
+        data.series->IOHandler()->enqueue(
+            IOTask(&data.series->iterations[index], std::move(param)));
+        data.series->IOHandler()->flush({FlushLevel::UserFlush});
     }
     break;
     case IterationEncoding::variableBased:
     case IterationEncoding::groupBased: {
         Parameter<Operation::ADVANCE> param;
         param.mode = AdvanceMode::ENDSTEP;
-        m_series->IOHandler()->enqueue(
-            IOTask(&m_series->iterations[index], std::move(param)));
-        m_series->IOHandler()->flush({FlushLevel::UserFlush});
+        data.series->IOHandler()->enqueue(
+            IOTask(&data.series->iterations[index], std::move(param)));
+        data.series->IOHandler()->flush({FlushLevel::UserFlush});
     }
     break;
     }
-    m_series->iterations.container().erase(index);
+    data.series->iterations.container().erase(index);
 }
 
 SeriesIterator &SeriesIterator::operator++()
 {
-    if (!m_series.has_value())
+    auto &data = *m_data;
+    if (!data.series.has_value())
     {
         *this = end();
         return *this;
@@ -493,14 +503,18 @@ SeriesIterator &SeriesIterator::operator++()
 
 IndexedIteration SeriesIterator::operator*()
 {
+    auto &data = *m_data;
     return IndexedIteration(
-        m_series.value().iterations[m_currentIteration], m_currentIteration);
+        data.series.value().iterations[data.currentIteration],
+        data.currentIteration);
 }
 
 bool SeriesIterator::operator==(SeriesIterator const &other) const
 {
-    return this->m_currentIteration == other.m_currentIteration &&
-        this->m_series.has_value() == other.m_series.has_value();
+    return (this->m_data.operator bool() && other.m_data.operator bool() &&
+            (this->m_data->currentIteration ==
+             other.m_data->currentIteration)) ||
+        (!this->m_data.operator bool() && !other.m_data.operator bool());
 }
 
 bool SeriesIterator::operator!=(SeriesIterator const &other) const

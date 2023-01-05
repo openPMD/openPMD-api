@@ -55,9 +55,20 @@ class SeriesIterator
 
     using maybe_series_t = std::optional<Series>;
 
-    maybe_series_t m_series;
-    std::deque<iteration_index_t> m_iterationsInCurrentStep;
-    uint64_t m_currentIteration{};
+    struct SharedData
+    {
+        SharedData() = default;
+        SharedData(SharedData const &) = delete;
+        SharedData(SharedData &&) = delete;
+        SharedData &operator=(SharedData const &) = delete;
+        SharedData &operator=(SharedData &&) = delete;
+
+        maybe_series_t series;
+        std::deque<iteration_index_t> iterationsInCurrentStep;
+        uint64_t currentIteration{};
+    };
+
+    std::shared_ptr<SharedData> m_data;
 
 public:
     //! construct the end() iterator
@@ -78,7 +89,8 @@ public:
 private:
     inline bool setCurrentIteration()
     {
-        if (m_iterationsInCurrentStep.empty())
+        auto &data = *m_data;
+        if (data.iterationsInCurrentStep.empty())
         {
             std::cerr << "[ReadIterations] Encountered a step without "
                          "iterations. Closing the Series."
@@ -86,19 +98,20 @@ private:
             *this = end();
             return false;
         }
-        m_currentIteration = *m_iterationsInCurrentStep.begin();
+        data.currentIteration = *data.iterationsInCurrentStep.begin();
         return true;
     }
 
     inline std::optional<uint64_t> peekCurrentIteration()
     {
-        if (m_iterationsInCurrentStep.empty())
+        auto &data = *m_data;
+        if (data.iterationsInCurrentStep.empty())
         {
             return std::nullopt;
         }
         else
         {
-            return {*m_iterationsInCurrentStep.begin()};
+            return {*data.iterationsInCurrentStep.begin()};
         }
     }
 
