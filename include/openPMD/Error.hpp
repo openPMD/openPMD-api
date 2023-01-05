@@ -107,13 +107,10 @@ namespace error
             std::string description_in);
     };
 
-    /*
-     * Inrecoverable parse error from the frontend.
-     */
-    class ParseError : public Error
+    class NoSuchAttribute : public Error
     {
     public:
-        ParseError(std::string what);
+        NoSuchAttribute(std::string attributeName);
     };
 } // namespace error
 
@@ -122,4 +119,16 @@ namespace error
  *
  */
 using no_such_file_error = error::ReadError;
+
+/**
+ * @brief Backward-compatibility alias for unsupported_data_error.
+ *
+ */
+using unsupported_data_error = error::OperationUnsupportedInBackend;
+
+/**
+ * @brief Backward-compatibility alias for no_such_attribute_error.
+ *
+ */
+using no_such_attribute_error = error::NoSuchAttribute;
 } // namespace openPMD

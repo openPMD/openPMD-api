@@ -133,7 +133,13 @@ namespace error
             affectedObject, reason, std::move(backend), std::move(description));
     }
 
-    ParseError::ParseError(std::string what) : Error("Parse Error: " + what)
+    NoSuchAttribute::NoSuchAttribute(std::string attributeName)
+        : Error(std::move(attributeName))
     {}
+
+    void throwNoSuchAttribute(std::string attributeName)
+    {
+        throw NoSuchAttribute(std::move(attributeName));
+    }
 } // namespace error
 } // namespace openPMD

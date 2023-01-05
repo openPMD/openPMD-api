@@ -15,6 +15,8 @@ void init_Error(py::module &m)
     py::register_exception<error::BackendConfigSchema>(
         m, "ErrorBackendConfigSchema", baseError);
     py::register_exception<error::Internal>(m, "ErrorInternal", baseError);
+    py::register_exception<error::NoSuchAttribute>(
+        m, "ErrorNoSuchAttribute", baseError);
 
 #ifndef NDEBUG
     m.def("test_throw", [](std::string description) {

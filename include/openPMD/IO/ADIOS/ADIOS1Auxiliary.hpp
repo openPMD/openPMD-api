@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
@@ -102,8 +103,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         else if (sizeof(long) == 8u)
             return adios_long;
         else
-            throw unsupported_data_error(
-                "No native equivalent for Datatype::SHORT found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1", "No native equivalent for Datatype::SHORT found.");
     case DT::INT:
     case DT::VEC_INT:
         if (sizeof(int) == 2u)
@@ -113,8 +114,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         else if (sizeof(int) == 8u)
             return adios_long;
         else
-            throw unsupported_data_error(
-                "No native equivalent for Datatype::INT found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1", "No native equivalent for Datatype::INT found.");
     case DT::LONG:
     case DT::VEC_LONG:
         if (sizeof(long) == 2u)
@@ -124,8 +125,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         else if (sizeof(long) == 8u)
             return adios_long;
         else
-            throw unsupported_data_error(
-                "No native equivalent for Datatype::LONG found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1", "No native equivalent for Datatype::LONG found.");
     case DT::LONGLONG:
     case DT::VEC_LONGLONG:
         if (sizeof(long long) == 2u)
@@ -135,8 +136,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         else if (sizeof(long long) == 8u)
             return adios_long;
         else
-            throw unsupported_data_error(
-                "No native equivalent for Datatype::LONGLONG found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1", "No native equivalent for Datatype::LONGLONG found.");
     case DT::USHORT:
     case DT::VEC_USHORT:
         if (sizeof(unsigned short) == 2u)
@@ -146,8 +147,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         else if (sizeof(unsigned long) == 8u)
             return adios_unsigned_long;
         else
-            throw unsupported_data_error(
-                "No native equivalent for Datatype::USHORT found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1", "No native equivalent for Datatype::USHORT found.");
     case DT::UINT:
     case DT::VEC_UINT:
         if (sizeof(unsigned int) == 2u)
@@ -157,8 +158,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         else if (sizeof(unsigned int) == 8u)
             return adios_unsigned_long;
         else
-            throw unsupported_data_error(
-                "No native equivalent for Datatype::UINT found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1", "No native equivalent for Datatype::UINT found.");
     case DT::ULONG:
     case DT::VEC_ULONG:
         if (sizeof(unsigned long) == 2u)
@@ -168,8 +169,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         else if (sizeof(unsigned long) == 8u)
             return adios_unsigned_long;
         else
-            throw unsupported_data_error(
-                "No native equivalent for Datatype::ULONG found.");
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1", "No native equivalent for Datatype::ULONG found.");
     case DT::ULONGLONG:
     case DT::VEC_ULONGLONG:
         if (sizeof(unsigned long long) == 2u)
@@ -179,7 +180,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         else if (sizeof(unsigned long long) == 8u)
             return adios_unsigned_long;
         else
-            throw unsupported_data_error(
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1",
                 "No native equivalent for Datatype::ULONGLONG found.");
     case DT::FLOAT:
     case DT::VEC_FLOAT:
@@ -199,8 +201,8 @@ inline ADIOS_DATATYPES getBP1DataType(Datatype dtype)
         return adios_double_complex;
     case DT::CLONG_DOUBLE:
     case DT::VEC_CLONG_DOUBLE:
-        throw unsupported_data_error(
-            "No native equivalent for Datatype::CLONG_DOUBLE found.");
+        error::throwOperationUnsupportedInBackend(
+            "ADIOS1", "No native equivalent for Datatype::CLONG_DOUBLE found.");
     case DT::STRING:
         return adios_string;
     case DT::VEC_STRING:
