@@ -527,12 +527,23 @@ SeriesIterator SeriesIterator::end()
     return SeriesIterator{};
 }
 
-ReadIterations::ReadIterations(Series series) : m_series(std::move(series))
-{}
+ReadIterations::ReadIterations(Series series, Access access)
+    : m_series(std::move(series))
+{
+    if (access == Access::READ_LINEAR)
+    {
+        // Open the iterator now already, so that metadata may already be read
+        alreadyOpened = iterator_t{m_series};
+    }
+}
 
 ReadIterations::iterator_t ReadIterations::begin()
 {
-    return iterator_t{m_series};
+    if (!alreadyOpened.has_value())
+    {
+        alreadyOpened = iterator_t{m_series};
+    }
+    return alreadyOpened.value();
 }
 
 ReadIterations::iterator_t ReadIterations::end()

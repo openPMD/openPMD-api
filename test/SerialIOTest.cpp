@@ -5382,6 +5382,7 @@ void variableBasedSeries(std::string const &file)
     constexpr Extent::value_type extent = 1000;
     {
         Series writeSeries(file, Access::CREATE, selectADIOS2);
+        writeSeries.setAttribute("some_global", "attribute");
         writeSeries.setIterationEncoding(IterationEncoding::variableBased);
         REQUIRE(
             writeSeries.iterationEncoding() ==
@@ -5438,6 +5439,11 @@ void variableBasedSeries(std::string const &file)
             file, Access::READ_LINEAR, json::merge(selectADIOS2, jsonConfig));
 
         size_t last_iteration_index = 0;
+        REQUIRE(!readSeries.containsAttribute("some_global"));
+        readSeries.readIterations();
+        REQUIRE(
+            readSeries.getAttribute("some_global").get<std::string>() ==
+            "attribute");
         for (auto iteration : readSeries.readIterations())
         {
             if (iteration.iterationIndex > 2)

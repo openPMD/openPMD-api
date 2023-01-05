@@ -66,7 +66,10 @@ enum class Access
     READ_RANDOM_ACCESS = READ_ONLY, //!< more explicit alias for READ_ONLY
     /*
      * Open Series as read-only, fails if Series is not found.
-     * This access mode requires use of Series::readIterations()
+     * This access mode requires use of Series::readIterations().
+     * Global attributes are available directly after calling
+     * Series::readIterations(), Iterations and all their corresponding data
+     * become available by use of the returned Iterator, e.g. in a foreach loop.
      * See Access::READ_ONLY for when to use this.
      */
     READ_LINEAR,

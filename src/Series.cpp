@@ -2308,7 +2308,7 @@ ReadIterations Series::readIterations()
 {
     // Use private constructor instead of copy constructor to avoid
     // object slicing
-    return {this->m_series};
+    return {this->m_series, IOHandler()->m_frontendAccess};
 }
 
 WriteIterations Series::writeIterations()

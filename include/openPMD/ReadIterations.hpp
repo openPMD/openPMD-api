@@ -161,8 +161,9 @@ private:
     using iterator_t = SeriesIterator;
 
     Series m_series;
+    std::optional<SeriesIterator> alreadyOpened;
 
-    ReadIterations(Series);
+    ReadIterations(Series, Access);
 
 public:
     iterator_t begin();
