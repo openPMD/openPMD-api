@@ -23,6 +23,7 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
 
 #if openPMD_HAVE_MPI
@@ -231,4 +232,43 @@ this method.
             "write_iterations",
             &Series::writeIterations,
             py::keep_alive<0, 1>());
+
+    m.def(
+        "merge_json",
+        &json::merge,
+        py::arg("default_value") = "{}",
+        py::arg("overwrite") = "{}",
+        R"END(
+Merge two JSON/TOML datasets into one.
+
+Merging rules:
+1. If both `defaultValue` and `overwrite` are JSON/TOML objects, then the
+resulting JSON/TOML object will contain the union of both objects'
+keys. If a key is specified in both objects, the values corresponding
+to the key are merged recursively. Keys that point to a null value
+after this procedure will be pruned.
+2. In any other case, the JSON/TOML dataset `defaultValue` is replaced in
+its entirety with the JSON/TOML dataset `overwrite`.
+
+Note that item 2 means that datasets of different type will replace each
+other without error.
+It also means that array types will replace each other without any notion
+of appending or merging.
+
+Possible use case:
+An application uses openPMD-api and wants to do the following:
+1. Set some default backend options as JSON/TOML parameters.
+2. Let its users specify custom backend options additionally.
+
+By using the json::merge() function, this application can then allow
+users to overwrite default options, while keeping any other ones.
+
+Parameters:
+* default_value: A string containing either a JSON or a TOML dataset.
+* overwrite:     A string containing either a JSON or TOML dataset (does
+                 not need to be the same as `defaultValue`).
+* returns:       The merged dataset, according to the above rules.
+                 If `defaultValue` was a JSON dataset, then as a JSON string,
+                 otherwise as a TOML string.
+        )END");
 }

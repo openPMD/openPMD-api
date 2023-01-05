@@ -570,8 +570,21 @@ merge(nlohmann::json &defaultVal, nlohmann::json const &overwrite)
 
 std::string merge(std::string const &defaultValue, std::string const &overwrite)
 {
-    auto res = parseOptions(defaultValue, /* considerFiles = */ false).config;
+    auto [res, returnFormat] =
+        parseOptions(defaultValue, /* considerFiles = */ false);
     merge(res, parseOptions(overwrite, /* considerFiles = */ false).config);
-    return res.dump();
+    switch (returnFormat)
+    {
+    case SupportedLanguages::JSON:
+        return res.dump();
+        break;
+    case SupportedLanguages::TOML: {
+        auto asToml = json::jsonToToml(res);
+        std::stringstream sstream;
+        sstream << asToml;
+        return sstream.str();
+    }
+    }
+    throw std::runtime_error("Unreachable!");
 }
 } // namespace openPMD::json
