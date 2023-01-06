@@ -1745,6 +1745,29 @@ namespace detail
             }
             else if (attributeModifiable())
             {
+                if (detail::fromADIOS2Type(t) !=
+                    basicDatatype(determineDatatype<T>()))
+                {
+                    if (impl->m_engineType == "bp5")
+                    {
+                        throw error::OperationUnsupportedInBackend(
+                            "ADIOS2",
+                            "Attempting to change datatype of attribute '" +
+                                fullName +
+                                "'. In the BP5 engine, this will lead to "
+                                "corrupted "
+                                "datasets.");
+                    }
+                    else
+                    {
+                        std::cerr << "[ADIOS2] Attempting to change datatype "
+                                     "of attribute '"
+                                  << fullName
+                                  << "'. This invokes undefined behavior. Will "
+                                     "proceed."
+                                  << std::endl;
+                    }
+                }
                 IO.RemoveAttribute(fullName);
             }
             else
