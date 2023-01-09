@@ -7,6 +7,7 @@
 
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -1358,4 +1359,21 @@ TEST_CASE("unavailable_backend", "[core]")
             "'HDF5'.");
     }
 #endif
+}
+
+TEST_CASE("unique_ptr", "[core]")
+{
+    auto stdptr = std::make_unique<int>(5);
+    OpenpmdUniquePtr<int> ptr = std::move(stdptr);
+    auto stdptr_with_custom_del =
+        std::unique_ptr<int, auxiliary::CustomDelete<int>>{
+            new int{5},
+            auxiliary::CustomDelete<int>{[](int *del_ptr) { delete del_ptr; }}};
+    OpenpmdUniquePtr<int> ptr2 = std::move(stdptr_with_custom_del);
+
+    OpenpmdUniquePtr<int[]> arrptr;
+    // valgrind can detect mismatched new/delete pairs
+    OpenpmdUniquePtr<int[]> arrptrFilled{new int[5]{}};
+    OpenpmdUniquePtr<int[]> arrptrFilledCustom{
+        new int[5]{}, [](int const *p) { delete[] p; }};
 }
