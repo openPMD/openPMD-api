@@ -1369,8 +1369,9 @@ TEST_CASE("unique_ptr", "[core]")
     OpenpmdUniquePtr<int> ptr = std::move(stdptr);
     auto stdptr_with_custom_del =
         std::unique_ptr<int, auxiliary::CustomDelete<int>>{
-            new int{5},
-            auxiliary::CustomDelete<int>{[](int *del_ptr) { delete del_ptr; }}};
+            new int{5}, auxiliary::CustomDelete<int>{[](int const *del_ptr) {
+                delete del_ptr;
+            }}};
     OpenpmdUniquePtr<int> ptr2 = std::move(stdptr_with_custom_del);
 
     OpenpmdUniquePtr<int[]> arrptr;

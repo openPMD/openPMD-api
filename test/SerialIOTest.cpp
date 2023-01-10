@@ -697,7 +697,7 @@ void close_and_copy_attributable_test(std::string file_ending)
         // scalar unique_ptr, default delete
         auto pos_x = electronPositions["x"];
         pos_x.resetDataset(Dataset{datatype, {1}});
-        pos_x.storeChunk(std::unique_ptr<int>{new int{5}}, {0}, {1});
+        pos_x.storeChunk(std::make_unique<int>(5), {0}, {1});
 
         // array unique_ptr, default delete
         auto posOff_x = electronPositionsOffset["x"];
@@ -708,8 +708,7 @@ void close_and_copy_attributable_test(std::string file_ending)
             {global_extent});
 
         using CD = auxiliary::CustomDelete<int>;
-        CD deleter{[](int *ptr) { delete ptr; }};
-        CD array_deleter{[](int *ptr) { delete[] ptr; }};
+        CD array_deleter{[](int const *ptr) { delete[] ptr; }};
 
         // scalar unique_ptr, custom delete
         auto pos_y = electronPositions["y"];
