@@ -225,6 +225,14 @@ RecordComponent::storeChunk(OpenpmdUniquePtr<T> data, Offset o, Extent e)
         std::move(e));
 }
 
+template <typename T, typename Del>
+inline void
+RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
+{
+    storeChunk(
+        OpenpmdUniquePtr<T>(std::move(data)), std::move(o), std::move(e));
+}
+
 template <typename T>
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)

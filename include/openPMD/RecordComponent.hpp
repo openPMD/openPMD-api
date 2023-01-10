@@ -308,6 +308,21 @@ public:
     template <typename T>
     void storeChunk(OpenpmdUniquePtr<T> data, Offset offset, Extent extent);
 
+    /** Store a chunk of data from a chunk of memory, unique pointer version.
+     *
+     * @param data   Preallocated, contiguous buffer, large enough to read the
+     *               the specified data from it.
+     *               The unique pointer must own and manage the buffer.
+     *               Optimizations might be implemented based on this
+     *               assumption (e.g. further deferring the operation if the
+     *               backend is the unique owner).
+     *               For raw pointers, use storeChunkRaw().
+     * @param offset Offset within the dataset.
+     * @param extent Extent within the dataset, counted from the offset.
+     */
+    template <typename T, typename Del>
+    void storeChunk(std::unique_ptr<T, Del> data, Offset offset, Extent extent);
+
     /** Store a chunk of data from a chunk of memory, raw pointer version.
      *
      * @param data   Preallocated, contiguous buffer, large enough to read the

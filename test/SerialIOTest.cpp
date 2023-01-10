@@ -661,7 +661,7 @@ TEST_CASE("close_iteration_interleaved_test", "[serial]")
 
 void close_and_copy_attributable_test(std::string file_ending)
 {
-    using position_t = double;
+    using position_t = int;
 
     // open file for writing
     Series series("electrons." + file_ending, Access::CREATE);
@@ -691,16 +691,81 @@ void close_and_copy_attributable_test(std::string file_ending)
             iteration_ptr->particles["e"]["positionOffset"];
 
         std::iota(local_data.get(), local_data.get() + length, i * length);
-        for (auto const &dim : {"x", "y", "z"})
-        {
-            RecordComponent pos = electronPositions[dim];
-            pos.resetDataset(dataset);
-            pos.storeChunk(local_data, Offset{0}, global_extent);
+        /*
+         * Hijack this test to additionally test the unique_ptr storeChunk API
+         */
+        // scalar unique_ptr, default delete
+        auto pos_x = electronPositions["x"];
+        pos_x.resetDataset(Dataset{datatype, {1}});
+        pos_x.storeChunk(std::unique_ptr<int>{new int{5}}, {0}, {1});
 
-            RecordComponent posOff = electronPositionsOffset[dim];
-            posOff.resetDataset(dataset);
-            posOff.makeConstant(position_t(0.0));
-        }
+        // array unique_ptr, default delete
+        auto posOff_x = electronPositionsOffset["x"];
+        posOff_x.resetDataset(dataset);
+        posOff_x.storeChunk(
+            std::unique_ptr<int[]>{new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}},
+            {0},
+            {global_extent});
+
+        using CD = auxiliary::CustomDelete<int>;
+        CD deleter{[](int *ptr) { delete ptr; }};
+        CD array_deleter{[](int *ptr) { delete[] ptr; }};
+
+        // scalar unique_ptr, custom delete
+        auto pos_y = electronPositions["y"];
+        pos_y.resetDataset(dataset);
+        pos_y.storeChunk(
+            std::unique_ptr<int, CD>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array unique_ptr, custom delete
+        auto posOff_y = electronPositionsOffset["y"];
+        posOff_y.resetDataset(dataset);
+        posOff_y.storeChunk(
+            std::unique_ptr<int[], CD>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // scalar OpenpmdUniquePtr, default delete
+        auto pos_z = electronPositions["z"];
+        pos_z.resetDataset(dataset);
+        pos_z.storeChunk(
+            OpenpmdUniquePtr<int>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array OpenpmdUniquePtr, default delete
+        auto posOff_z = electronPositionsOffset["z"];
+        posOff_z.resetDataset(dataset);
+        posOff_z.storeChunk(
+            OpenpmdUniquePtr<int[]>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // scalar OpenpmdUniquePtr, custom delete
+        // we're playing 4D now
+        auto pos_w = electronPositions["w"];
+        pos_w.resetDataset(dataset);
+        pos_w.storeChunk(
+            OpenpmdUniquePtr<int>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array OpenpmdUniquePtr, custom delete
+        auto posOff_w = electronPositionsOffset["w"];
+        posOff_w.resetDataset(dataset);
+        posOff_w.storeChunk(
+            OpenpmdUniquePtr<int[]>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
         iteration_ptr->close();
         // force re-flush of previous iterations
         series.flush();
