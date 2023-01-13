@@ -701,7 +701,7 @@ void AbstractPattern::run()
                 store(series, step);
             }
         }
-	return;
+        return;
     }
 
     { // group/var based
@@ -1026,20 +1026,20 @@ bool OneDimPattern::setLayOut(int step)
         }
     }
     */
-    if ( 1 == numPartition )
+    if (1 == numPartition)
     {
-      Offset offset = { unitOffset * m_MinBlock[0] };
-      Extent count  = { unitCount * m_MinBlock[0]  };
-      m_InRankMeshLayout.emplace_back(offset, count);
+        Offset offset = {unitOffset * m_MinBlock[0]};
+        Extent count = {unitCount * m_MinBlock[0]};
+        m_InRankMeshLayout.emplace_back(offset, count);
     }
     else
     {
-      Extent count  = { m_MinBlock[0]  };
-      for (unsigned long i=0; i<unitCount; i++)
-      {
-         Offset offset = { (unitOffset+i) * m_MinBlock[0]  };
-         m_InRankMeshLayout.emplace_back(offset, count);
-      }
+        Extent count = {m_MinBlock[0]};
+        for (unsigned long i = 0; i < unitCount; i++)
+        {
+            Offset offset = {(unitOffset + i) * m_MinBlock[0]};
+            m_InRankMeshLayout.emplace_back(offset, count);
+        }
     }
 
     return true;
