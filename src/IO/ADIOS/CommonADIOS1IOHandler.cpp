@@ -235,6 +235,11 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::flush_attribute(
     }
     case DT::STRING: {
         auto const &v = att.get<std::string>();
+        if (v.empty())
+        {
+            error::throwOperationUnsupportedInBackend(
+                "ADIOS1", "Empty string attributes not supported.");
+        }
         values = auxiliary::allocatePtr(Datatype::CHAR, v.length() + 1u);
         strcpy((char *)values.get(), v.c_str());
         break;
@@ -352,6 +357,11 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::flush_attribute(
         auto const &vec = att.get<std::vector<std::string> >();
         for (size_t i = 0; i < vec.size(); ++i)
         {
+            if (vec[i].empty())
+            {
+                error::throwOperationUnsupportedInBackend(
+                    "ADIOS1", "Empty string attributes not supported.");
+            }
             size_t size = vec[i].size() + 1;
             ptr[i] = new char[size];
             strncpy(ptr[i], vec[i].c_str(), size);

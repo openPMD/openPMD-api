@@ -1621,8 +1621,8 @@ void HDF5IOHandlerImpl::writeAttribute(
         auto vs = att.get<std::vector<std::string> >();
         size_t max_len = 0;
         for (std::string const &s : vs)
-            max_len = std::max(max_len, s.size());
-        std::unique_ptr<char[]> c_str(new char[max_len * vs.size()]);
+            max_len = std::max(max_len, s.size() + 1);
+        std::unique_ptr<char[]> c_str(new char[max_len * vs.size()]());
         for (size_t i = 0; i < vs.size(); ++i)
             strncpy(c_str.get() + i * max_len, vs[i].c_str(), max_len);
         status = H5Awrite(attribute_id, dataType, c_str.get());
