@@ -3007,8 +3007,6 @@ namespace detail
                 // usesSteps attribute only written upon ::advance()
                 // this makes sure that the attribute is only put in case
                 // the streaming API was used.
-                m_IO.DefineAttribute<ADIOS2Schema::schema_t>(
-                    ADIOS2Defaults::str_adios2Schema, m_impl->m_schema.value());
                 m_engine = std::make_optional(
                     adios2::Engine(m_IO.Open(m_file, tempMode)));
                 break;
@@ -3268,6 +3266,13 @@ namespace detail
         for (auto &ba : m_buffer)
         {
             ba->run(*this);
+        }
+
+        if (!initializedDefaults)
+        {
+            m_IO.DefineAttribute<ADIOS2Schema::schema_t>(
+                ADIOS2Defaults::str_adios2Schema, m_impl->m_schema.value());
+            initializedDefaults = true;
         }
 
         if (writeAttributes)

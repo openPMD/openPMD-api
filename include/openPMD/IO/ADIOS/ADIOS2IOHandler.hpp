@@ -1285,6 +1285,11 @@ namespace detail
         std::optional<AttributeMap_t> m_availableVariables;
 
         /*
+         * Cannot write attributes right after opening the engine
+         * https://github.com/ornladios/ADIOS2/issues/3433
+         */
+        bool initializedDefaults = false;
+        /*
          * finalize() will set this true to avoid running twice.
          */
         bool finalized = false;
