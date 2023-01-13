@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with: {path: /opt/spack, key: clang6_nopy_nompi_h5_libcpp_v2 }
     - name: Install
       run: |
@@ -45,7 +45,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp_v2 }
     - name: Install
       run: |
@@ -88,7 +88,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad2_v2 }
     - name: Install
       run: |
@@ -122,7 +122,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with: {path: /opt/spack, key: clang14_py311_nompi_h5_ad1_ad2_v2 }
     - name: Install
       run: |
@@ -158,7 +158,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with: {path: /opt/spack, key: clang8_py38_mpich_h5_ad1_ad2_newLayout_v2 }
     - name: Install
       run: |
@@ -207,7 +207,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with: {path: /opt/spack, key: gcc7_py36_ompi_h5_ad1_ad2_v2 }
     - name: Install
       run: |
