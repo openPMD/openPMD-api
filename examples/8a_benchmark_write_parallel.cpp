@@ -1005,7 +1005,7 @@ bool OneDimPattern::setLayOut(int step)
         return true;
 
     auto numPartition = m_Input.GetSeg();
-     
+
     if (1 == numPartition)
     {
         Offset offset = {unitOffset * m_MinBlock[0]};
