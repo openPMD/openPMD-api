@@ -1005,27 +1005,7 @@ bool OneDimPattern::setLayOut(int step)
         return true;
 
     auto numPartition = m_Input.GetSeg();
-    /*
-    if (unitCount < numPartition)
-        numPartition = unitCount;
-
-    auto avg = unitCount / numPartition;
-    for (unsigned int i = 0; i < numPartition; i++)
-    {
-        Offset offset = {unitOffset * m_MinBlock[0]};
-        if (i < (numPartition - 1))
-        {
-            Extent count = {avg * m_MinBlock[0]};
-            m_InRankMeshLayout.emplace_back(offset, count);
-        }
-        else
-        {
-            auto res = unitCount - avg * (numPartition - 1);
-            Extent count = {res * m_MinBlock[0]};
-            m_InRankMeshLayout.emplace_back(offset, count);
-        }
-    }
-    */
+     
     if (1 == numPartition)
     {
         Offset offset = {unitOffset * m_MinBlock[0]};
