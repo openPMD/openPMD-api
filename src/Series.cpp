@@ -1295,7 +1295,10 @@ namespace
     }
 } // namespace
 
-auto Series::readGorVBased(bool do_always_throw_errors, bool do_init)
+auto Series::readGorVBased(
+    bool do_always_throw_errors,
+    bool do_init,
+    std::set<IterationIndex_t> const &ignoreIterations)
     -> std::optional<std::deque<IterationIndex_t>>
 {
     auto &series = get();
@@ -1304,6 +1307,7 @@ auto Series::readGorVBased(bool do_always_throw_errors, bool do_init)
     fOpen.encoding = iterationEncoding();
     IOHandler()->enqueue(IOTask(this, fOpen));
     IOHandler()->flush(internal::defaultFlushParams);
+    series.m_parsePreference = *fOpen.out_parsePreference;
 
     if (do_init)
     {
@@ -1490,6 +1494,10 @@ creating new iterations.
         for (auto const &it : *pList.paths)
         {
             IterationIndex_t index = std::stoull(it);
+            if (ignoreIterations.find(index) != ignoreIterations.end())
+            {
+                continue;
+            }
             if (auto err = internal::withRWAccess(
                     IOHandler()->m_seriesStatus,
                     [&]() {
@@ -1519,10 +1527,20 @@ creating new iterations.
         }
     }
     case IterationEncoding::variableBased: {
-        std::deque<IterationIndex_t> res = {0};
+        std::deque<IterationIndex_t> res{};
         if (currentSteps.has_value() && !currentSteps.value().empty())
         {
-            res = {currentSteps.value().begin(), currentSteps.value().end()};
+            for (auto index : currentSteps.value())
+            {
+                if (ignoreIterations.find(index) == ignoreIterations.end())
+                {
+                    res.push_back(index);
+                }
+            }
+        }
+        else
+        {
+            res = {0};
         }
         for (auto it : res)
         {
@@ -2308,7 +2326,8 @@ ReadIterations Series::readIterations()
 {
     // Use private constructor instead of copy constructor to avoid
     // object slicing
-    return {this->m_series, IOHandler()->m_frontendAccess};
+    return {
+        this->m_series, IOHandler()->m_frontendAccess, get().m_parsePreference};
 }
 
 WriteIterations Series::writeIterations()

@@ -543,9 +543,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::createDataset(
     {
         /* ADIOS variable definitions require the file to be (re-)opened to take
          * effect/not cause errors */
-        auto res = m_filePaths.find(writable);
-        if (res == m_filePaths.end())
-            res = m_filePaths.find(writable->parent);
+        auto res = m_filePaths.find(writable->parent);
 
         int64_t group = m_groups[res->second];
 
@@ -849,9 +847,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
     Writable *writable, Parameter<Operation::OPEN_DATASET> &parameters)
 {
     ADIOS_FILE *f;
-    auto res = m_filePaths.find(writable);
-    if (res == m_filePaths.end())
-        res = m_filePaths.find(writable->parent);
+    auto res = m_filePaths.find(writable->parent);
     f = m_openReadFileHandles.at(res->second);
 
     /* Sanitize name */

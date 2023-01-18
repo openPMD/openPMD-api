@@ -681,8 +681,10 @@ auto Iteration::beginStep(bool reread) -> BeginStepStatus
 }
 
 auto Iteration::beginStep(
-    std::optional<Iteration> thisObject, Series &series, bool reread)
-    -> BeginStepStatus
+    std::optional<Iteration> thisObject,
+    Series &series,
+    bool reread,
+    std::set<IterationIndex_t> const &ignoreIterations) -> BeginStepStatus
 {
     BeginStepStatus res;
     using IE = IterationEncoding;
@@ -747,7 +749,9 @@ auto Iteration::beginStep(
         try
         {
             res.iterationsInOpenedStep = series.readGorVBased(
-                /* do_always_throw_errors = */ true, /* init = */ false);
+                /* do_always_throw_errors = */ true,
+                /* init = */ false,
+                ignoreIterations);
         }
         catch (...)
         {

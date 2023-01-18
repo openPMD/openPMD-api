@@ -20,6 +20,7 @@
  */
 
 #include "openPMD/ReadIterations.hpp"
+#include "openPMD/Error.hpp"
 
 #include "openPMD/Series.hpp"
 
@@ -27,6 +28,31 @@
 
 namespace openPMD
 {
+
+namespace
+{
+    bool reread(std::optional<internal::ParsePreference> parsePreference)
+    {
+        if (parsePreference.has_value())
+        {
+            using PP = Parameter<Operation::OPEN_FILE>::ParsePreference;
+
+            switch (parsePreference.value())
+            {
+            case PP::PerStep:
+                return true;
+            case PP::UpFront:
+                return false;
+            }
+            return false;
+        }
+        else
+        {
+            throw error::Internal(
+                "Group/Variable-based encoding: Parse preference must be set.");
+        }
+    }
+} // namespace
 
 SeriesIterator::SeriesIterator() = default;
 
@@ -50,9 +76,9 @@ void SeriesIterator::initSeriesInLinearReadMode()
             fOpen.encoding = series.iterationEncoding();
             series.IOHandler()->enqueue(IOTask(&series, fOpen));
             series.IOHandler()->flush(internal::defaultFlushParams);
+            using PP = Parameter<Operation::OPEN_FILE>::ParsePreference;
             switch (*fOpen.out_parsePreference)
             {
-                using PP = Parameter<Operation::OPEN_FILE>::ParsePreference;
             case PP::PerStep:
                 series.advance(AdvanceMode::BEGINSTEP);
                 series.readGorVBased(
@@ -64,6 +90,7 @@ void SeriesIterator::initSeriesInLinearReadMode()
                 series.advance(AdvanceMode::BEGINSTEP);
                 break;
             }
+            data.parsePreference = *fOpen.out_parsePreference;
             break;
         }
         }
@@ -76,10 +103,12 @@ void SeriesIterator::initSeriesInLinearReadMode()
     series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
 }
 
-SeriesIterator::SeriesIterator(Series series_in)
+SeriesIterator::SeriesIterator(
+    Series series_in, std::optional<internal::ParsePreference> parsePreference)
     : m_data{std::make_shared<SharedData>()}
 {
     auto &data = *m_data;
+    data.parsePreference = std::move(parsePreference);
     data.series = std::move(series_in);
     auto &series = data.series.value();
     if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
@@ -143,8 +172,8 @@ SeriesIterator::SeriesIterator(Series series_in)
              */
             Iteration::BeginStepStatus::AvailableIterations_t
                 availableIterations;
-            std::tie(status, availableIterations) =
-                it->second.beginStep(/* reread = */ true);
+            std::tie(status, availableIterations) = it->second.beginStep(
+                /* reread = */ reread(data.parsePreference));
             /*
              * In random-access mode, do not use the information read in the
              * `snapshot` attribute, instead simply go through iterations
@@ -276,8 +305,11 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
     Iteration::BeginStepStatus::AvailableIterations_t availableIterations;
     try
     {
-        std::tie(status, availableIterations) =
-            Iteration::beginStep({}, *data.series, /* reread = */ true);
+        std::tie(status, availableIterations) = Iteration::beginStep(
+            {},
+            *data.series,
+            /* reread = */ reread(data.parsePreference),
+            data.ignoreIterations);
     }
     catch (error::ReadError const &err)
     {
@@ -320,7 +352,6 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
                  * later IO step. No need to finish right now.
                  */
                 data.iterationsInCurrentStep = {};
-                data.series->advance(AdvanceMode::ENDSTEP);
             }
         }
         else
@@ -348,7 +379,6 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
                      * finish right now.
                      */
                     data.iterationsInCurrentStep = {};
-                    data.series->advance(AdvanceMode::ENDSTEP);
                 }
             }
             else
@@ -386,7 +416,7 @@ std::optional<SeriesIterator *> SeriesIterator::loopBody()
     }
 
     auto guardReturn =
-        [&iterations](
+        [&series, &iterations](
             auto const &option) -> std::optional<openPMD::SeriesIterator *> {
         if (!option.has_value() || *option.value() == end())
         {
@@ -395,33 +425,49 @@ std::optional<SeriesIterator *> SeriesIterator::loopBody()
         auto currentIterationIndex = option.value()->peekCurrentIteration();
         if (!currentIterationIndex.has_value())
         {
+            series.advance(AdvanceMode::ENDSTEP);
             return std::nullopt;
         }
-        auto iteration = iterations.at(currentIterationIndex.value());
-        if (iteration.get().m_closed != internal::CloseStatus::ClosedInBackend)
+        // If we had the iteration already, then it's either not there at all
+        // (because old iterations are deleted in linear access mode),
+        // or it's still there but closed in random-access mode
+        auto index = currentIterationIndex.value();
+
+        if (iterations.contains(index))
         {
-            try
+            auto iteration = iterations.at(index);
+            if (iteration.get().m_closed !=
+                internal::CloseStatus::ClosedInBackend)
             {
-                iteration.open();
-                option.value()->setCurrentIteration();
-                return option;
+                try
+                {
+                    iterations.at(index).open();
+                    option.value()->setCurrentIteration();
+                    return option;
+                }
+                catch (error::ReadError const &err)
+                {
+                    std::cerr << "Cannot read iteration '"
+                              << currentIterationIndex.value()
+                              << "' and will skip it due to read error:\n"
+                              << err.what() << std::endl;
+                    option.value()->deactivateDeadIteration(
+                        currentIterationIndex.value());
+                    return std::nullopt;
+                }
             }
-            catch (error::ReadError const &err)
+            else
             {
-                std::cerr << "Cannot read iteration '"
-                          << currentIterationIndex.value()
-                          << "' and will skip it due to read error:\n"
-                          << err.what() << std::endl;
-                option.value()->deactivateDeadIteration(
-                    currentIterationIndex.value());
-                return std::nullopt;
+                // we had this iteration already, skip it
+                iteration.endStep();
+                return std::nullopt; // empty, go into next iteration
             }
         }
         else
         {
             // we had this iteration already, skip it
-            iteration.endStep();
-            return std::nullopt; // empty, go into next iteration
+            series.advance(AdvanceMode::ENDSTEP);
+            return std::nullopt;
         }
     };
 
@@ -480,6 +526,7 @@ SeriesIterator &SeriesIterator::operator++()
         *this = end();
         return *this;
     }
+    auto oldIterationIndex = data.currentIteration;
     std::optional<SeriesIterator *> res;
     /*
      * loopBody() might return an empty option to indicate a skipped iteration.
@@ -496,7 +543,27 @@ SeriesIterator &SeriesIterator::operator++()
     auto resvalue = res.value();
     if (*resvalue != end())
     {
-        (**resvalue).setStepStatus(StepStatus::DuringStep);
+        auto &series = data.series.value();
+        auto index = data.currentIteration;
+        auto &iteration = series.iterations[index];
+        iteration.setStepStatus(StepStatus::DuringStep);
+
+        if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR)
+        {
+            /*
+             * Linear read mode: Any data outside the current iteration is
+             * inaccessible. Delete the iteration. This has two effects:
+             *
+             * 1) Avoid confusion.
+             * 2) Avoid memory buildup in long-running workflows with many
+             *    iterations.
+             *
+             * @todo Also delete data in the backends upon doing this.
+             */
+            auto &container = series.iterations.container();
+            container.erase(oldIterationIndex);
+            data.ignoreIterations.emplace(oldIterationIndex);
+        }
     }
     return *resvalue;
 }
@@ -527,13 +594,16 @@ SeriesIterator SeriesIterator::end()
     return SeriesIterator{};
 }
 
-ReadIterations::ReadIterations(Series series, Access access)
-    : m_series(std::move(series))
+ReadIterations::ReadIterations(
+    Series series,
+    Access access,
+    std::optional<internal::ParsePreference> parsePreference)
+    : m_series(std::move(series)), m_parsePreference(std::move(parsePreference))
 {
     if (access == Access::READ_LINEAR)
     {
         // Open the iterator now already, so that metadata may already be read
-        alreadyOpened = iterator_t{m_series};
+        alreadyOpened = iterator_t{m_series, m_parsePreference};
     }
 }
 
@@ -541,7 +611,7 @@ ReadIterations::iterator_t ReadIterations::begin()
 {
     if (!alreadyOpened.has_value())
     {
-        alreadyOpened = iterator_t{m_series};
+        alreadyOpened = iterator_t{m_series, m_parsePreference};
     }
     return alreadyOpened.value();
 }

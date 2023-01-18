@@ -22,10 +22,12 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/backend/ParsePreference.hpp"
 
 #include <deque>
 #include <iostream>
 #include <optional>
+#include <set>
 
 namespace openPMD
 {
@@ -66,6 +68,13 @@ class SeriesIterator
         maybe_series_t series;
         std::deque<iteration_index_t> iterationsInCurrentStep;
         uint64_t currentIteration{};
+        std::optional<internal::ParsePreference> parsePreference;
+        /*
+         * Necessary because in the old ADIOS2 schema, old iterations' metadata
+         * will leak into new steps, making the frontend think that the groups
+         * are still there and the iterations can be parsed again.
+         */
+        std::set<Iteration::IterationIndex_t> ignoreIterations;
     };
 
     std::shared_ptr<SharedData> m_data;
@@ -74,7 +83,8 @@ public:
     //! construct the end() iterator
     explicit SeriesIterator();
 
-    SeriesIterator(Series);
+    SeriesIterator(
+        Series, std::optional<internal::ParsePreference> parsePreference);
 
     SeriesIterator &operator++();
 
@@ -162,8 +172,12 @@ private:
 
     Series m_series;
     std::optional<SeriesIterator> alreadyOpened;
+    std::optional<internal::ParsePreference> m_parsePreference;
 
-    ReadIterations(Series, Access);
+    ReadIterations(
+        Series,
+        Access,
+        std::optional<internal::ParsePreference> parsePreference);
 
 public:
     iterator_t begin();

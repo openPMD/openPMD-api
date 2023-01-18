@@ -6893,10 +6893,6 @@ void append_mode(
                     ++counter;
                 }
                 REQUIRE(counter == 5);
-                // Cannot do listSeries here because the Series is already
-                // drained
-                REQUIRE_THROWS_AS(
-                    helper::listSeries(read), error::WrongAPIUsage);
             }
             break;
             case ParseMode::WithSnapshot: {
@@ -6912,10 +6908,6 @@ void append_mode(
                     ++counter;
                 }
                 REQUIRE(counter == 8);
-                // Cannot do listSeries here because the Series is already
-                // drained
-                REQUIRE_THROWS_AS(
-                    helper::listSeries(read), error::WrongAPIUsage);
             }
             break;
             default:

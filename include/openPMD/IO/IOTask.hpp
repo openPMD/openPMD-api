@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/ParsePreference.hpp"
 
 #include <map>
 #include <memory>
@@ -170,11 +171,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
      * variableBased encoding.
      */
     IterationEncoding encoding = IterationEncoding::groupBased;
-    enum class ParsePreference : char
-    {
-        UpFront, //<! Data should be parsed right when opening the dataset
-        PerStep //<! Data should be parsed step by step
-    };
+    using ParsePreference = internal::ParsePreference;
     std::shared_ptr<ParsePreference> out_parsePreference =
         std::make_shared<ParsePreference>(ParsePreference::UpFront);
 };

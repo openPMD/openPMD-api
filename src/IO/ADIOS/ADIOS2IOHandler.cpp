@@ -614,7 +614,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         std::string name = auxiliary::removeSlashes(parameters.name);
 
         auto const file =
-            refreshFileFromParent(writable, /* preferParentFile = */ false);
+            refreshFileFromParent(writable, /* preferParentFile = */ true);
         auto filePos = setAndGetFilePosition(writable, name);
         filePos->gd = ADIOS2FilePosition::GD::DATASET;
         auto const varName = nameOfVariable(writable);
@@ -777,7 +777,7 @@ void ADIOS2IOHandlerImpl::openDataset(
     writable->abstractFilePosition.reset();
     auto pos = setAndGetFilePosition(writable, name);
     pos->gd = ADIOS2FilePosition::GD::DATASET;
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto file = refreshFileFromParent(writable, /* preferParentFile = */ true);
     auto varName = nameOfVariable(writable);
     *parameters.dtype =
         detail::fromADIOS2Type(getFileData(file, IfFileNotOpen::ThrowError)
@@ -1271,7 +1271,7 @@ void ADIOS2IOHandlerImpl::listAttributes(
 void ADIOS2IOHandlerImpl::advance(
     Writable *writable, Parameter<Operation::ADVANCE> &parameters)
 {
-    auto file = m_files[writable];
+    auto file = m_files.at(writable);
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
     *parameters.status =
         ba.advance(parameters.mode, /* calledExplicitly = */ true);
