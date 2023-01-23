@@ -120,4 +120,19 @@ namespace
     template <typename>
     inline constexpr bool dependent_false_v = false;
 } // namespace
+
+enum class endian
+{
+    big,
+    little
+};
+
+constexpr endian platform_endianness()
+{
+    // Implementation adapted from the example given here:
+    // https://en.cppreference.com/w/cpp/language/reinterpret_cast
+    int const i = 1;
+    return reinterpret_cast<char const *>(&i)[0] == '\x1' ? endian::little
+                                                          : endian::big;
+}
 } // namespace openPMD::auxiliary

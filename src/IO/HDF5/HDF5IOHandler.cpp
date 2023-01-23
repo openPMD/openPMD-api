@@ -31,6 +31,7 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Attribute.hpp"
 
 #include <hdf5.h>
@@ -73,8 +74,8 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     , m_H5T_CFLOAT{H5Tcreate(H5T_COMPOUND, sizeof(float) * 2)}
     , m_H5T_CDOUBLE{H5Tcreate(H5T_COMPOUND, sizeof(double) * 2)}
     , m_H5T_CLONG_DOUBLE{H5Tcreate(H5T_COMPOUND, sizeof(long double) * 2)}
-    , m_H5T_LONG_DOUBLE_80_BE{H5Tcopy(H5T_IEEE_F64BE)}
-    , m_H5T_LONG_DOUBLE_80_LE{H5Tcopy(H5T_IEEE_F64LE)}
+    , m_H5T_LONG_DOUBLE_80{H5Tcopy(H5T_IEEE_F64BE)}
+    , m_H5T_CLONG_DOUBLE_80{H5Tcreate(H5T_COMPOUND, 16 * 2)}
 {
     // create a h5py compatible bool type
     VERIFY(
@@ -109,27 +110,27 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     H5Tinsert(m_H5T_CLONG_DOUBLE, "r", 0, H5T_NATIVE_LDOUBLE);
     H5Tinsert(m_H5T_CLONG_DOUBLE, "i", sizeof(long double), H5T_NATIVE_LDOUBLE);
 
-    H5Tset_size(m_H5T_LONG_DOUBLE_80_BE, 16);
-    H5Tset_order(m_H5T_LONG_DOUBLE_80_BE, H5T_ORDER_BE);
-    H5Tset_precision(m_H5T_LONG_DOUBLE_80_BE, 80);
-    H5Tset_fields(m_H5T_LONG_DOUBLE_80_BE, 79, 64, 15, 0, 64);
-    H5Tset_ebias(m_H5T_LONG_DOUBLE_80_BE, 16383);
-    H5Tset_norm(m_H5T_LONG_DOUBLE_80_BE, H5T_NORM_NONE);
-
-    H5Tset_size(m_H5T_LONG_DOUBLE_80_LE, 16);
-    H5Tset_order(m_H5T_LONG_DOUBLE_80_LE, H5T_ORDER_LE);
-    H5Tset_precision(m_H5T_LONG_DOUBLE_80_LE, 80);
-    H5Tset_fields(m_H5T_LONG_DOUBLE_80_LE, 79, 64, 15, 0, 64);
-    H5Tset_ebias(m_H5T_LONG_DOUBLE_80_LE, 16383);
-    H5Tset_norm(m_H5T_LONG_DOUBLE_80_LE, H5T_NORM_NONE);
+    H5Tset_size(m_H5T_LONG_DOUBLE_80, 16);
+    H5Tset_order(
+        m_H5T_LONG_DOUBLE_80,
+        auxiliary::platform_endianness() == auxiliary::endian::big
+            ? H5T_ORDER_BE
+            : H5T_ORDER_LE);
+    H5Tset_precision(m_H5T_LONG_DOUBLE_80, 80);
+    H5Tset_fields(m_H5T_LONG_DOUBLE_80, 79, 64, 15, 0, 64);
+    H5Tset_ebias(m_H5T_LONG_DOUBLE_80, 16383);
+    H5Tset_norm(m_H5T_LONG_DOUBLE_80, H5T_NORM_NONE);
 
     VERIFY(
-        m_H5T_LONG_DOUBLE_80_BE >= 0,
-        "[HDF5] Internal error: Failed to create 128-bit long double BE");
+        m_H5T_LONG_DOUBLE_80 >= 0,
+        "[HDF5] Internal error: Failed to create 128-bit long double");
+
+    H5Tinsert(m_H5T_CLONG_DOUBLE_80, "r", 0, m_H5T_LONG_DOUBLE_80);
+    H5Tinsert(m_H5T_CLONG_DOUBLE_80, "i", 16, m_H5T_LONG_DOUBLE_80);
 
     VERIFY(
-        m_H5T_LONG_DOUBLE_80_LE >= 0,
-        "[HDF5] Internal error: Failed to create 128-bit long double LE");
+        m_H5T_LONG_DOUBLE_80 >= 0,
+        "[HDF5] Internal error: Failed to create 128-bit complex long double");
 
     m_chunks = auxiliary::getEnvString("OPENPMD_HDF5_CHUNKS", "auto");
     // JSON option can overwrite env option:
@@ -212,6 +213,14 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
         std::cerr
             << "[HDF5] Internal error: Failed to close complex double type\n";
     status = H5Tclose(m_H5T_CLONG_DOUBLE);
+    if (status < 0)
+        std::cerr << "[HDF5] Internal error: Failed to close complex long "
+                     "double type\n";
+    status = H5Tclose(m_H5T_LONG_DOUBLE_80);
+    if (status < 0)
+        std::cerr
+            << "[HDF5] Internal error: Failed to close long double type\n";
+    status = H5Tclose(m_H5T_CLONG_DOUBLE_80);
     if (status < 0)
         std::cerr << "[HDF5] Internal error: Failed to close complex long "
                      "double type\n";
@@ -610,12 +619,12 @@ void HDF5IOHandlerImpl::createDataset(
         }
          */
 
-        GetH5DataType getH5DataType({
-            {typeid(bool).name(), m_H5T_BOOL_ENUM},
-            {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
-            {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
-            {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
-        });
+        GetH5DataType getH5DataType(
+            {{typeid(bool).name(), m_H5T_BOOL_ENUM},
+             {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
+             {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
+             {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
+             {typeid(long double).name(), H5T_NATIVE_LDOUBLE}});
         hid_t datatype = getH5DataType(a);
         VERIFY(
             datatype >= 0,
@@ -1030,13 +1039,17 @@ void HDF5IOHandlerImpl::openDataset(
             d = DT::FLOAT;
         else if (H5Tequal(dataset_type, H5T_NATIVE_DOUBLE))
             d = DT::DOUBLE;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_LDOUBLE))
+        else if (
+            H5Tequal(dataset_type, H5T_NATIVE_LDOUBLE) ||
+            H5Tequal(dataset_type, m_H5T_LONG_DOUBLE_80))
             d = DT::LONG_DOUBLE;
         else if (H5Tequal(dataset_type, m_H5T_CFLOAT))
             d = DT::CFLOAT;
         else if (H5Tequal(dataset_type, m_H5T_CDOUBLE))
             d = DT::CDOUBLE;
-        else if (H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE))
+        else if (
+            H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE) ||
+            H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE_80))
             d = DT::CLONG_DOUBLE;
         else if (H5Tequal(dataset_type, H5T_NATIVE_USHORT))
             d = DT::USHORT;
@@ -1319,12 +1332,12 @@ void HDF5IOHandlerImpl::writeDataset(
 
     void const *data = parameters.data.get();
 
-    GetH5DataType getH5DataType({
-        {typeid(bool).name(), m_H5T_BOOL_ENUM},
-        {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
-        {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
-        {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
-    });
+    GetH5DataType getH5DataType(
+        {{typeid(bool).name(), m_H5T_BOOL_ENUM},
+         {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
+         {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
+         {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
+         {typeid(long double).name(), H5T_NATIVE_LDOUBLE}});
 
     // TODO Check if parameter dtype and dataset dtype match
     Attribute a(0);
@@ -1430,12 +1443,16 @@ void HDF5IOHandlerImpl::writeAttribute(
     Attribute const att(parameters.resource);
     Datatype dtype = parameters.dtype;
     herr_t status;
-    GetH5DataType getH5DataType({
-        {typeid(bool).name(), m_H5T_BOOL_ENUM},
-        {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
-        {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
-        {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
-    });
+    /*
+     * Since this is the write side, we use HDF5 default float types and not
+     * m_H5T_LONG_DOUBLE_80 or m_H5T_CLONG_DOUBLE_80
+     */
+    GetH5DataType getH5DataType(
+        {{typeid(bool).name(), m_H5T_BOOL_ENUM},
+         {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
+         {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
+         {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
+         {typeid(long double).name(), H5T_NATIVE_LDOUBLE}});
     hid_t dataType = getH5DataType(att);
     VERIFY(
         dataType >= 0,
@@ -1778,12 +1795,16 @@ void HDF5IOHandlerImpl::readDataset(
     default:
         throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }
-    GetH5DataType getH5DataType({
-        {typeid(bool).name(), m_H5T_BOOL_ENUM},
-        {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
-        {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
-        {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
-    });
+    GetH5DataType getH5DataType(
+        {{typeid(bool).name(), m_H5T_BOOL_ENUM},
+         {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
+         {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
+         {typeid(std::complex<long double>).name(),
+          sizeof(long double) == 16 ? m_H5T_CLONG_DOUBLE_80
+                                    : m_H5T_CLONG_DOUBLE},
+         {typeid(long double).name(),
+          sizeof(long double) == 16 ? m_H5T_LONG_DOUBLE_80
+                                    : H5T_NATIVE_LDOUBLE}});
     hid_t dataType = getH5DataType(a);
     VERIFY(
         dataType >= 0,
@@ -1970,6 +1991,14 @@ void HDF5IOHandlerImpl::readAttribute(
             status = H5Aread(attr_id, attr_type, &d);
             a = Attribute(d);
         }
+        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80))
+        {
+            char bfr[16];
+            status = H5Aread(attr_id, attr_type, bfr);
+            H5Tconvert(
+                attr_type, H5T_NATIVE_LDOUBLE, 1, bfr, nullptr, H5P_DEFAULT);
+            a = Attribute(reinterpret_cast<long double *>(bfr)[0]);
+        }
         else if (H5Tequal(attr_type, H5T_NATIVE_LDOUBLE))
         {
             long double l;
@@ -2094,6 +2123,20 @@ void HDF5IOHandlerImpl::readAttribute(
                     status = H5Aread(attr_id, attr_type, &cld);
                     a = Attribute(cld);
                 }
+                else if (complexSize == 16)
+                {
+                    char bfr[2 * 16];
+                    status = H5Aread(attr_id, attr_type, bfr);
+                    H5Tconvert(
+                        attr_type,
+                        m_H5T_CLONG_DOUBLE,
+                        1,
+                        bfr,
+                        nullptr,
+                        H5P_DEFAULT);
+                    a = Attribute(
+                        reinterpret_cast<std::complex<long double> *>(bfr)[0]);
+                }
                 else
                     throw error::ReadError(
                         error::AffectedObject::Attribute,
@@ -2113,7 +2156,8 @@ void HDF5IOHandlerImpl::readAttribute(
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 "HDF5",
-                "[HDF5] Unsupported scalar attribute type");
+                "[HDF5] Unsupported scalar attribute type for '" + attr_name +
+                    "'.");
     }
     else if (attr_class == H5S_SIMPLE)
     {
@@ -2235,46 +2279,41 @@ void HDF5IOHandlerImpl::readAttribute(
             status = H5Aread(attr_id, attr_type, vcld.data());
             a = Attribute(vcld);
         }
-        else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE))
-        {
-            std::vector<std::complex<long double> > vcld(dims[0], 0);
-            status = H5Aread(attr_id, attr_type, vcld.data());
-            a = Attribute(vcld);
-        }
-        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_BE))
+        else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE_80))
         {
             // worst case, sizeof(long double) is only 8, so allocate enough
             // memory to fit 16 bytes per member
-            std::vector<long double> vld80be(dims[0] * 2, 0);
-            status = H5Aread(attr_id, attr_type, vld80be.data());
+            auto *tmpBuffer =
+                static_cast<long double *>(malloc(16 * 2 * dims[0]));
+            status = H5Aread(attr_id, attr_type, tmpBuffer);
+            H5Tconvert(
+                attr_type,
+                m_H5T_CLONG_DOUBLE,
+                dims[0],
+                tmpBuffer,
+                nullptr,
+                H5P_DEFAULT);
+            std::vector<std::complex<long double> > vcld{
+                tmpBuffer, tmpBuffer + dims[0]};
+            free(tmpBuffer);
+            a = Attribute(std::move(vcld));
+        }
+        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80))
+        {
+            // use malloc to allocate a buffer that is definitely aliased and
+            // big enough for 16-bit doubles
+            auto *tmpBuffer = static_cast<long double *>(malloc(16 * dims[0]));
+            status = H5Aread(attr_id, attr_type, tmpBuffer);
             H5Tconvert(
                 attr_type,
                 H5T_NATIVE_LDOUBLE,
                 dims[0],
-                vld80be.data(),
+                tmpBuffer,
                 nullptr,
                 H5P_DEFAULT);
-            std::cout << attr_name << " size " << dims[0] << ", " << vld80be[0]
-                      << " " << vld80be[1] << " " << vld80be[2] << std::endl;
-            a = Attribute(vld80be);
-        }
-        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE))
-        {
-            // worst case, sizeof(long double) is only 8, so allocate enough
-            // memory to fit 16 bytes per member
-            std::vector<long double> vld80le(dims[0] * 2, 0);
-            status = H5Aread(attr_id, attr_type, vld80le.data());
-            H5Tconvert(
-                attr_type,
-                H5T_NATIVE_LDOUBLE,
-                dims[0],
-                vld80le.data(),
-                nullptr,
-                H5P_DEFAULT);
-            std::cout << attr_name << sizeof(long double) << " size " << dims[0]
-                      << ", " << vld80le[0] << " " << vld80le[1] << " "
-                      << vld80le[2] << std::endl;
-            a = Attribute(vld80le);
+            std::vector<long double> vld80{tmpBuffer, tmpBuffer + dims[0]};
+            free(tmpBuffer);
+            a = Attribute(std::move(vld80));
         }
         else if (H5Tget_class(attr_type) == H5T_STRING)
         {
@@ -2312,7 +2351,6 @@ void HDF5IOHandlerImpl::readAttribute(
         else
         {
             auto order = H5Tget_order(attr_type);
-            auto size = H5Tget_size(attr_type);
             auto prec = H5Tget_precision(attr_type);
             auto ebias = H5Tget_ebias(attr_type);
             size_t spos, epos, esize, mpos, msize;
@@ -2322,24 +2360,27 @@ void HDF5IOHandlerImpl::readAttribute(
             auto cset = H5Tget_cset(attr_type);
             auto sign = H5Tget_sign(attr_type);
 
-            std::cout << "order " << std::to_string(order) << std::endl
-                      << "prec " << std::to_string(prec) << std::endl
-                      << "ebias " << std::to_string(ebias) << std::endl
-                      << "fields " << std::to_string(spos) << " "
-                      << std::to_string(epos) << " " << std::to_string(esize)
-                      << " " << std::to_string(mpos) << " "
-                      << std::to_string(msize) << "norm "
-                      << std::to_string(norm) << std::endl
-                      << "cset " << std::to_string(cset) << std::endl
-                      << "sign " << std::to_string(sign) << std::endl
-                      << std::endl;
+            std::stringstream detailed_info;
+            detailed_info << "order " << std::to_string(order) << std::endl
+                          << "prec " << std::to_string(prec) << std::endl
+                          << "ebias " << std::to_string(ebias) << std::endl
+                          << "fields " << std::to_string(spos) << " "
+                          << std::to_string(epos) << " "
+                          << std::to_string(esize) << " "
+                          << std::to_string(mpos) << " "
+                          << std::to_string(msize) << "norm "
+                          << std::to_string(norm) << std::endl
+                          << "cset " << std::to_string(cset) << std::endl
+                          << "sign " << std::to_string(sign) << std::endl
+                          << std::endl;
 
             throw error::ReadError(
                 error::AffectedObject::Attribute,
                 error::Reason::UnexpectedContent,
                 "HDF5",
                 "[HDF5] Unsupported simple attribute type " +
-                    std::to_string(attr_type) + " for " + attr_name);
+                    std::to_string(attr_type) + " for " + attr_name +
+                    ".\n(Info for debugging: " + detailed_info.str() + ")");
         }
     }
     else
