@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-18.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
       with: {path: /opt/spack, key: clang6_nopy_nompi_h5_libcpp_v2 }
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-18.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
       with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp_v2 }
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
       with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad2_v2 }
@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
       with: {path: /opt/spack, key: clang14_py311_nompi_h5_ad1_ad2_v2 }
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
       with: {path: /opt/spack, key: clang8_py38_mpich_h5_ad1_ad2_newLayout_v2 }
@@ -205,7 +205,7 @@ jobs:
     runs-on: ubuntu-18.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
       with: {path: /opt/spack, key: gcc7_py36_ompi_h5_ad1_ad2_v2 }
@@ -241,7 +241,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install
       run: |
         sudo apt-get update
@@ -265,7 +265,7 @@ jobs:
     container:
       image: quay.io/pypa/musllinux_1_1_x86_64
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install
       run: |
         apk update
@@ -288,7 +288,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: conda-incubator/setup-miniconda@v2
       name: Setup conda
       with:
