@@ -2484,6 +2484,12 @@ void HDF5IOHandlerImpl::listAttributes(
         "listing");
 }
 
+void HDF5IOHandlerImpl::deregister(
+    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+{
+    m_fileNames.erase(writable);
+}
+
 std::optional<HDF5IOHandlerImpl::File>
 HDF5IOHandlerImpl::getFile(Writable *writable)
 {

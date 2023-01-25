@@ -213,6 +213,10 @@ public:
 
     void availableChunks(
         Writable *, Parameter<Operation::AVAILABLE_CHUNKS> &) override;
+
+    void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
+
     /**
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.

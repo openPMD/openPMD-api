@@ -102,49 +102,55 @@ std::future<void> ADIOS1IOHandlerImpl::flush()
             case O::CREATE_FILE:
                 createFile(
                     i.writable,
-                    deref_dynamic_cast<Parameter<Operation::CREATE_FILE> >(
+                    deref_dynamic_cast<Parameter<Operation::CREATE_FILE>>(
                         i.parameter.get()));
                 break;
             case O::CHECK_FILE:
                 checkFile(
                     i.writable,
-                    deref_dynamic_cast<Parameter<Operation::CHECK_FILE> >(
+                    deref_dynamic_cast<Parameter<Operation::CHECK_FILE>>(
                         i.parameter.get()));
                 break;
             case O::CREATE_PATH:
                 createPath(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::CREATE_PATH> >(
+                    deref_dynamic_cast<Parameter<O::CREATE_PATH>>(
                         i.parameter.get()));
                 break;
             case O::OPEN_PATH:
                 openPath(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::OPEN_PATH> >(
+                    deref_dynamic_cast<Parameter<O::OPEN_PATH>>(
                         i.parameter.get()));
                 break;
             case O::CREATE_DATASET:
                 createDataset(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::CREATE_DATASET> >(
+                    deref_dynamic_cast<Parameter<O::CREATE_DATASET>>(
                         i.parameter.get()));
                 break;
             case O::WRITE_ATT:
                 writeAttribute(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::WRITE_ATT> >(
+                    deref_dynamic_cast<Parameter<O::WRITE_ATT>>(
                         i.parameter.get()));
                 break;
             case O::OPEN_FILE:
                 openFile(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::OPEN_FILE> >(
+                    deref_dynamic_cast<Parameter<O::OPEN_FILE>>(
                         i.parameter.get()));
                 break;
             case O::KEEP_SYNCHRONOUS:
                 keepSynchronous(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS> >(
+                    deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS>>(
+                        i.parameter.get()));
+                break;
+            case O::DEREGISTER:
+                deregister(
+                    i.writable,
+                    deref_dynamic_cast<Parameter<O::DEREGISTER>>(
                         i.parameter.get()));
                 break;
             default:
@@ -183,19 +189,19 @@ std::future<void> ADIOS1IOHandlerImpl::flush()
             case O::EXTEND_DATASET:
                 extendDataset(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::EXTEND_DATASET> >(
+                    deref_dynamic_cast<Parameter<O::EXTEND_DATASET>>(
                         i.parameter.get()));
                 break;
             case O::CLOSE_PATH:
                 closePath(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::CLOSE_PATH> >(
+                    deref_dynamic_cast<Parameter<O::CLOSE_PATH>>(
                         i.parameter.get()));
                 break;
             case O::OPEN_DATASET:
                 openDataset(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::OPEN_DATASET> >(
+                    deref_dynamic_cast<Parameter<O::OPEN_DATASET>>(
                         i.parameter.get()));
                 break;
             case O::CLOSE_FILE:
@@ -207,79 +213,79 @@ std::future<void> ADIOS1IOHandlerImpl::flush()
             case O::DELETE_FILE:
                 deleteFile(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::DELETE_FILE> >(
+                    deref_dynamic_cast<Parameter<O::DELETE_FILE>>(
                         i.parameter.get()));
                 break;
             case O::DELETE_PATH:
                 deletePath(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::DELETE_PATH> >(
+                    deref_dynamic_cast<Parameter<O::DELETE_PATH>>(
                         i.parameter.get()));
                 break;
             case O::DELETE_DATASET:
                 deleteDataset(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::DELETE_DATASET> >(
+                    deref_dynamic_cast<Parameter<O::DELETE_DATASET>>(
                         i.parameter.get()));
                 break;
             case O::DELETE_ATT:
                 deleteAttribute(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::DELETE_ATT> >(
+                    deref_dynamic_cast<Parameter<O::DELETE_ATT>>(
                         i.parameter.get()));
                 break;
             case O::WRITE_DATASET:
                 writeDataset(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::WRITE_DATASET> >(
+                    deref_dynamic_cast<Parameter<O::WRITE_DATASET>>(
                         i.parameter.get()));
                 break;
             case O::READ_DATASET:
                 readDataset(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::READ_DATASET> >(
+                    deref_dynamic_cast<Parameter<O::READ_DATASET>>(
                         i.parameter.get()));
                 break;
             case O::GET_BUFFER_VIEW:
                 getBufferView(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::GET_BUFFER_VIEW> >(
+                    deref_dynamic_cast<Parameter<O::GET_BUFFER_VIEW>>(
                         i.parameter.get()));
                 break;
             case O::READ_ATT:
                 readAttribute(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::READ_ATT> >(
+                    deref_dynamic_cast<Parameter<O::READ_ATT>>(
                         i.parameter.get()));
                 break;
             case O::LIST_PATHS:
                 listPaths(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::LIST_PATHS> >(
+                    deref_dynamic_cast<Parameter<O::LIST_PATHS>>(
                         i.parameter.get()));
                 break;
             case O::LIST_DATASETS:
                 listDatasets(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::LIST_DATASETS> >(
+                    deref_dynamic_cast<Parameter<O::LIST_DATASETS>>(
                         i.parameter.get()));
                 break;
             case O::LIST_ATTS:
                 listAttributes(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::LIST_ATTS> >(
+                    deref_dynamic_cast<Parameter<O::LIST_ATTS>>(
                         i.parameter.get()));
                 break;
             case O::ADVANCE:
                 advance(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::ADVANCE> >(
+                    deref_dynamic_cast<Parameter<O::ADVANCE>>(
                         i.parameter.get()));
                 break;
             case O::AVAILABLE_CHUNKS:
                 availableChunks(
                     i.writable,
-                    deref_dynamic_cast<Parameter<O::AVAILABLE_CHUNKS> >(
+                    deref_dynamic_cast<Parameter<O::AVAILABLE_CHUNKS>>(
                         i.parameter.get()));
                 break;
             default:
@@ -366,6 +372,7 @@ void ADIOS1IOHandler::enqueue(IOTask const &i)
     case Operation::OPEN_FILE:
     case Operation::WRITE_ATT:
     case Operation::KEEP_SYNCHRONOUS:
+    case Operation::DEREGISTER:
         m_setup.push(i);
         return;
     default:

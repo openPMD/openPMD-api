@@ -84,6 +84,8 @@ public:
     void
     listDatasets(Writable *, Parameter<Operation::LIST_DATASETS> &) override;
     void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
+    void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
 
     void close(int64_t);
     void close(ADIOS_FILE *);

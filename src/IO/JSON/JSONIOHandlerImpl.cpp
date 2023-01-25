@@ -558,6 +558,7 @@ void JSONIOHandlerImpl::closeFile(
     if (fileIterator != m_files.end())
     {
         putJsonContents(fileIterator->second);
+        m_dirty.erase(fileIterator->second);
         // do not invalidate the file
         // it still exists, it is just not open
         m_files.erase(fileIterator);
@@ -938,6 +939,12 @@ void JSONIOHandlerImpl::listAttributes(
     {
         parameters.attributes->push_back(it.key());
     }
+}
+
+void JSONIOHandlerImpl::deregister(
+    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+{
+    m_files.erase(writable);
 }
 
 std::shared_ptr<JSONIOHandlerImpl::FILEHANDLE>

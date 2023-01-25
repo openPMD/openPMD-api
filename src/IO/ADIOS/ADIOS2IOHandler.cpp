@@ -748,6 +748,8 @@ void ADIOS2IOHandlerImpl::closeFile(
                 /* flushUnconditionally = */ false);
             m_fileData.erase(it);
         }
+        m_dirty.erase(fileIterator->second);
+        m_files.erase(fileIterator);
     }
 }
 
@@ -1326,6 +1328,12 @@ void ADIOS2IOHandlerImpl::availableChunks(
         engine,
         varName,
         /* allSteps = */ allSteps);
+}
+
+void ADIOS2IOHandlerImpl::deregister(
+    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+{
+    m_files.erase(writable);
 }
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)

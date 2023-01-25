@@ -202,6 +202,12 @@ public:
                         deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS> >(
                             i.parameter.get()));
                     break;
+                case O::DEREGISTER:
+                    deregister(
+                        i.writable,
+                        deref_dynamic_cast<Parameter<O::DEREGISTER> >(
+                            i.parameter.get()));
+                    break;
                 }
             }
             catch (...)
@@ -565,6 +571,16 @@ public:
      */
     void
     keepSynchronous(Writable *, Parameter<Operation::KEEP_SYNCHRONOUS> param);
+
+    /** Notify the backend that the Writable has been / will be deallocated.
+     *
+     * The backend should remove all references to this Writable from internal
+     * data structures. Subtle bugs might be possible if not doing this, since
+     * new objects might be allocated to the now-freed address.
+     * The Writable pointer must not be dereferenced.
+     */
+    virtual void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &param) = 0;
 
     AbstractIOHandler *m_handler;
 }; // AbstractIOHandlerImpl

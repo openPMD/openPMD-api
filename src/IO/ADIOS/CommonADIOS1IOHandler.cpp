@@ -1996,6 +1996,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::listAttributes(
 }
 
 template <typename ChildClass>
+void CommonADIOS1IOHandlerImpl<ChildClass>::deregister(
+    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+{
+    m_filePaths.erase(writable);
+}
+
+template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::initJson(json::TracingJSON config)
 {
     if (!config.json().contains("adios1"))

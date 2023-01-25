@@ -212,6 +212,9 @@ public:
 
     void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
 
+    void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
+
     std::future<void> flush();
 
 private:
