@@ -29,6 +29,7 @@ repos:
     - id: check-yaml
       args: [--allow-multiple-documents]
     - id: check-added-large-files
+      args: ['--maxkb=80']
     - id: requirements-txt-fixer
 #  - id: fix-encoding-pragma
 #    exclude: ^noxfile.py$
@@ -106,6 +107,16 @@ repos:
 #  - id: blacken-docs
 #    additional_dependencies:
 #    - black==21.10b0 # keep in sync with black hook
+
+# Jupyter Notebooks: clean up all cell outputs
+- repo: https://github.com/roy-ht/pre-commit-jupyter
+  rev: v1.2.1
+  hooks:
+  - id: jupyter-notebook-cleanup
+    args:
+      - --pin-patterns
+      - "[pin];[donotremove]"
+      # - --remove-kernel-metadata
 
 # Checks the manifest for missing files (native support)
 - repo: https://github.com/mgedmin/check-manifest
