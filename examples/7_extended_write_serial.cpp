@@ -226,6 +226,11 @@ int main()
         // constant records
         mesh["y"].makeConstant(constant_value);
 
+        // The iteration can be closed in order to help free up resources.
+        // The iteration's content will be flushed automatically.
+        // An iteration once closed cannot (yet) be reopened.
+        cur_it.close();
+
         /* The files in 'f' are still open until the object is destroyed, on
          * which it cleanly flushes and closes all open file handles.
          * When running out of scope on return, the 'Series' destructor is
@@ -233,6 +238,7 @@ int main()
          * effect as calling the destructor, including the release of file
          * handles.
          */
+        f.close();
     } // namespace ;
 
     return 0;

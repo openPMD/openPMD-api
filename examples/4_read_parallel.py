@@ -36,7 +36,11 @@ if __name__ == "__main__":
     if 0 == comm.rank:
         print("Queued the loading of a single chunk per MPI rank from disk, "
               "ready to execute")
-    series.flush()
+
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    series.iterations[100].close()
 
     if 0 == comm.rank:
         print("Chunks have been read from disk")

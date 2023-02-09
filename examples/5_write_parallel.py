@@ -37,6 +37,10 @@ if __name__ == "__main__":
         print("Created an empty series in parallel with {} MPI ranks".format(
               comm.size))
 
+    # In parallel contexts, it's important to explicitly open iterations.
+    # This is done automatically when using `Series.write_iterations()`,
+    # or in read mode `Series.read_iterations()`.
+    series.iterations[1].open()
     mymesh = series.iterations[1]. \
         meshes["mymesh"][io.Mesh_Record_Component.SCALAR]
 
@@ -59,7 +63,11 @@ if __name__ == "__main__":
         print("Registered a single chunk per MPI rank containing its "
               "contribution, ready to write content to disk")
 
-    series.flush()
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    series.iterations[1].close()
+
     if 0 == comm.rank:
         print("Dataset content has been fully written to disk")
 

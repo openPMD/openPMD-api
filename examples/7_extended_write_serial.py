@@ -206,6 +206,11 @@ if __name__ == "__main__":
     # constant records
     mesh["y"].make_constant(constant_value)
 
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    cur_it.close()
+
     # The files in 'f' are still open until the series is closed, at which
     # time it cleanly flushes and closes all open file handles.
     # One can close the object explicitly to trigger this.

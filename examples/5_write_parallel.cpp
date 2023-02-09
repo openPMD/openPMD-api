@@ -54,6 +54,10 @@ int main(int argc, char *argv[])
         cout << "Created an empty series in parallel with " << mpi_size
              << " MPI ranks\n";
 
+    // In parallel contexts, it's important to explicitly open iterations.
+    // This is done automatically when using `Series::writeIterations()`,
+    // or in read mode `Series::readIterations()`.
+    series.iterations[1].open();
     MeshRecordComponent mymesh =
         series.iterations[1].meshes["mymesh"][MeshRecordComponent::SCALAR];
 
@@ -80,10 +84,20 @@ int main(int argc, char *argv[])
                 "contribution, "
                 "ready to write content to disk\n";
 
-    series.flush();
+    // The iteration can be closed in order to help free up resources.
+    // The iteration's content will be flushed automatically.
+    // An iteration once closed cannot (yet) be reopened.
+    series.iterations[100].close();
+
     if (0 == mpi_rank)
         cout << "Dataset content has been fully written to disk\n";
 
+    /* The files in 'series' are still open until the object is destroyed, on
+     * which it cleanly flushes and closes all open file handles.
+     * When running out of scope on return, the 'Series' destructor is called.
+     * Alternatively, one can call `series.close()` to the same effect as
+     * calling the destructor, including the release of file handles.
+     */
     series.close();
 
     // openPMD::Series MUST be destructed or closed at this point

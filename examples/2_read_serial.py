@@ -61,7 +61,11 @@ if __name__ == "__main__":
     #     print("")
 
     all_data = E_x.load_chunk()
-    series.flush()
+
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    i.close()
     print("Full E/x is of shape {0} and starts with:".format(all_data.shape))
     print(all_data[0, 0, :5])
 

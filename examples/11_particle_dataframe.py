@@ -96,3 +96,5 @@ if __name__ == "__main__":
             idx_max * E.grid_spacing + E.grid_global_offset)
         print("maximum intensity I={} at index={} z={}mu".format(
             Intensity_max, idx_max, pos_max[2]))
+
+    s.close()

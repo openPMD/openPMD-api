@@ -51,6 +51,13 @@ if __name__ == "__main__":
     # E_z_yz  = toCartesianSliceYZ(E_z_modes)[:, :]  # (y, z)
     # series.flush()
 
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    # Alternatively, one can call `series.close()` to the same effect as
+    # calling the destructor, including the release of file handles.
+    i.close()
+
     # The files in 'series' are still open until the series is closed, at which
     # time it cleanly flushes and closes all open file handles.
     # One can close the object explicitly to trigger this.
