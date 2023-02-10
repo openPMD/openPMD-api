@@ -1230,12 +1230,16 @@ TEST_CASE("load_chunk_wrong_datatype", "[core]")
     }
     {
         Series read("../samples/some_float_value.json", Access::READ_ONLY);
+
+        std::string const err_msg =
+            "Type conversion during chunk loading not yet implemented! "
+            "Data: FLOAT; Load as: DOUBLE";
+
         REQUIRE_THROWS_WITH(
             read.iterations[0]
                 .meshes["rho"][RecordComponent::SCALAR]
                 .loadChunk<double>({0}, {10}),
-            Catch::Equals(
-                "Type conversion during chunk loading not yet implemented"));
+            Catch::Equals(err_msg));
     }
 }
 
