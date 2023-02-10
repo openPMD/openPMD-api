@@ -110,8 +110,10 @@ bind_container(py::handle scope, std::string const &name, Args &&...args)
     cl.def(
         "__getitem__",
         [](Map &m, KeyType const &k) -> MappedType & { return m[k]; },
-        // ref + keepalive
-        py::return_value_policy::reference_internal);
+        // copy + keepalive
+        // All objects in the openPMD object model are handles, so using a copy
+        // is safer and still performant.
+        py::return_value_policy::copy);
 
     // Assignment provided only if the type is copyable
     py::detail::map_assignment<Map, Class_>(cl);

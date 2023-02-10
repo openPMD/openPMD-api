@@ -61,8 +61,8 @@ void init_Series(py::module &m)
             [](WriteIterations writeIterations, Series::IterationIndex_t key) {
                 return writeIterations[key];
             },
-            // keep container alive while iterator exists
-            py::keep_alive<0, 1>());
+            // copy + keepalive
+            py::return_value_policy::copy);
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
     py::class_<ReadIterations>(m, "ReadIterations")
@@ -224,6 +224,11 @@ this method.
         .def_readwrite(
             "iterations",
             &Series::iterations,
+            /*
+             * Need to keep reference return policy here for now to further
+             * support legacy `del series` workflows that works despite children
+             * still being alive.
+             */
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
