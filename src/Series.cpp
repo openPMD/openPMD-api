@@ -2235,7 +2235,10 @@ namespace internal
     void SeriesData::close()
     {
         // WriteIterations gets the first shot at flushing
-        this->m_writeIterations = std::optional<WriteIterations>();
+        if (this->m_writeIterations.has_value())
+        {
+            this->m_writeIterations.value().close();
+        }
         /*
          * Scenario: A user calls `Series::flush()` but does not check for
          * thrown exceptions. The exception will propagate further up,
@@ -2250,10 +2253,6 @@ namespace internal
             Series impl{{this, [](auto const *) {}}};
             impl.flush();
             impl.flushStep(/* doFlush = */ true);
-        }
-        if (m_writeIterations.has_value())
-        {
-            m_writeIterations = std::optional<WriteIterations>();
         }
         // Not strictly necessary, but clear the map of iterations
         // This releases the openPMD hierarchy

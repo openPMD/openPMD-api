@@ -44,9 +44,16 @@ class Series;
  * not possible once it has been closed.
  *
  */
+
+namespace internal
+{
+    class SeriesData;
+}
+
 class WriteIterations
 {
     friend class Series;
+    friend class internal::SeriesData;
 
 private:
     using IterationsContainer_t =
@@ -62,6 +69,7 @@ private:
     struct SharedResources
     {
         IterationsContainer_t iterations;
+        //! Index of the last opened iteration
         std::optional<Iteration::IterationIndex_t> currentlyOpen;
 
         SharedResources(IterationsContainer_t);
@@ -70,8 +78,11 @@ private:
 
     WriteIterations(IterationsContainer_t);
     explicit WriteIterations() = default;
-    //! Index of the last opened iteration
-    std::shared_ptr<SharedResources> shared;
+    // std::optional so that a single instance is able to close this without
+    // needing to wait for all instances to deallocate
+    std::shared_ptr<std::optional<SharedResources>> shared;
+
+    void close();
 
 public:
     mapped_type &operator[](key_type const &key);
