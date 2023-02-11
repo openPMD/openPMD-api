@@ -101,8 +101,13 @@ inline void RecordComponent::loadChunk(
         if( !isSameInteger< T >( getDatatype() ) &&
             !isSameFloatingPoint< T >( getDatatype() ) &&
             !isSameComplexFloatingPoint< T >( getDatatype() ) )
-            throw std::runtime_error(
-                "Type conversion during chunk loading not yet implemented" );
+        {
+            std::string const data_type_str = datatypeToString(getDatatype());
+            std::string const requ_type_str = datatypeToString(determineDatatype<T>());
+            std::string err_msg = "Type conversion during chunk loading not yet implemented! ";
+            err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
+            throw std::runtime_error( err_msg );
+        }
 
     uint8_t dim = getDimensionality();
 
