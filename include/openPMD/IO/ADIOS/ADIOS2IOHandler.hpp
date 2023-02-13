@@ -164,7 +164,7 @@ public:
     void extendDataset(
         Writable *, Parameter<Operation::EXTEND_DATASET> const &) override;
 
-    void openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) override;
+    void openFile(Writable *, Parameter<Operation::OPEN_FILE> &) override;
 
     void
     closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) override;
@@ -213,6 +213,10 @@ public:
 
     void availableChunks(
         Writable *, Parameter<Operation::AVAILABLE_CHUNKS> &) override;
+
+    void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
+
     /**
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.
@@ -248,7 +252,10 @@ private:
      */
     std::string m_userSpecifiedExtension;
 
-    ADIOS2Schema::schema_t m_schema = ADIOS2Schema::schema_0000_00_00;
+    /*
+     * Empty option: No schema has been explicitly selected, use default.
+     */
+    std::optional<ADIOS2Schema::schema_t> m_schema;
 
     enum class UseSpan : char
     {
@@ -267,7 +274,11 @@ private:
 
     inline SupportedSchema schema() const
     {
-        switch (m_schema)
+        if (!m_schema.has_value())
+        {
+            return SupportedSchema::s_0000_00_00;
+        }
+        switch (m_schema.value())
         {
         case ADIOS2Schema::schema_0000_00_00:
             return SupportedSchema::s_0000_00_00;
@@ -276,7 +287,7 @@ private:
         default:
             throw std::runtime_error(
                 "[ADIOS2] Encountered unsupported schema version: " +
-                std::to_string(m_schema));
+                std::to_string(m_schema.value()));
         }
     }
 
@@ -331,11 +342,11 @@ private:
      * @return first parameter: the operators, second parameters: whether
      * operators have been configured
      */
-    std::optional<std::vector<ParameterizedOperator> >
+    std::optional<std::vector<ParameterizedOperator>>
     getOperators(json::TracingJSON config);
 
     // use m_config
-    std::optional<std::vector<ParameterizedOperator> > getOperators();
+    std::optional<std::vector<ParameterizedOperator>> getOperators();
 
     std::string fileSuffix(bool verbose = true) const;
 
@@ -361,7 +372,7 @@ private:
      */
     std::unordered_map<
         InvalidatableFile,
-        std::unique_ptr<detail::BufferedActions> >
+        std::unique_ptr<detail::BufferedActions>>
         m_fileData;
 
     std::map<std::string, adios2::Operator> m_operators;
@@ -455,8 +466,8 @@ namespace detail
 
     template <typename T>
     inline constexpr bool IsUnsupportedComplex_v =
-        std::is_same_v<T, std::complex<long double> > ||
-        std::is_same_v<T, std::vector<std::complex<long double> > >;
+        std::is_same_v<T, std::complex<long double>> ||
+        std::is_same_v<T, std::vector<std::complex<long double>>>;
 
     struct DatasetReader
     {
@@ -581,7 +592,8 @@ namespace detail
             Parameter<Operation::AVAILABLE_CHUNKS> &params,
             adios2::IO &IO,
             adios2::Engine &engine,
-            std::string const &varName);
+            std::string const &varName,
+            bool allSteps);
 
         template <int n, typename... Params>
         static void call(Params &&...);
@@ -630,7 +642,7 @@ namespace detail
     };
 
     template <>
-    struct AttributeTypes<std::complex<long double> >
+    struct AttributeTypes<std::complex<long double>>
     {
         static void createAttribute(
             adios2::IO &,
@@ -663,13 +675,13 @@ namespace detail
     };
 
     template <>
-    struct AttributeTypes<std::vector<std::complex<long double> > >
+    struct AttributeTypes<std::vector<std::complex<long double>>>
     {
         static void createAttribute(
             adios2::IO &,
             adios2::Engine &,
             detail::BufferedAttributeWrite &,
-            const std::vector<std::complex<long double> > &)
+            const std::vector<std::complex<long double>> &)
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex "
@@ -687,7 +699,7 @@ namespace detail
         }
 
         static bool attributeUnchanged(
-            adios2::IO &, std::string, std::vector<std::complex<long double> >)
+            adios2::IO &, std::string, std::vector<std::complex<long double>>)
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex "
@@ -696,7 +708,7 @@ namespace detail
     };
 
     template <typename T>
-    struct AttributeTypes<std::vector<T> >
+    struct AttributeTypes<std::vector<T>>
     {
         static void createAttribute(
             adios2::IO &IO,
@@ -734,7 +746,7 @@ namespace detail
     };
 
     template <>
-    struct AttributeTypes<std::vector<std::string> >
+    struct AttributeTypes<std::vector<std::string>>
     {
         static void createAttribute(
             adios2::IO &IO,
@@ -772,7 +784,7 @@ namespace detail
     };
 
     template <typename T, size_t n>
-    struct AttributeTypes<std::array<T, n> >
+    struct AttributeTypes<std::array<T, n>>
     {
         static void createAttribute(
             adios2::IO &IO,
@@ -986,14 +998,14 @@ namespace detail
          * Hence, next to the actual file name, also store the name for the
          * IO.
          */
-        std::string const m_IOName;
+        std::string m_IOName;
         adios2::ADIOS &m_ADIOS;
         adios2::IO m_IO;
         /**
          * The default queue for deferred actions.
          * Drained upon BufferedActions::flush().
          */
-        std::vector<std::unique_ptr<BufferedAction> > m_buffer;
+        std::vector<std::unique_ptr<BufferedAction>> m_buffer;
         /**
          * Buffer for attributes to be written in the new (variable-based)
          * attribute layout.
@@ -1017,7 +1029,7 @@ namespace detail
          * We must store them somewhere until the next PerformPuts/Gets, EndStep
          * or Close in ADIOS2 to avoid use after free conditions.
          */
-        std::vector<std::unique_ptr<BufferedAction> > m_alreadyEnqueued;
+        std::vector<std::unique_ptr<BufferedAction>> m_alreadyEnqueued;
         adios2::Mode m_mode;
         /**
          * The base pointer of an ADIOS2 span might change after reallocations.
@@ -1027,7 +1039,7 @@ namespace detail
          * retrieval of the updated base pointer.
          * This map is cleared upon flush points.
          */
-        std::map<unsigned, std::unique_ptr<I_UpdateSpan> > m_updateSpans;
+        std::map<unsigned, std::unique_ptr<I_UpdateSpan>> m_updateSpans;
         PreloadAdiosAttributes preloadAttributes;
 
         /*
@@ -1048,6 +1060,10 @@ namespace detail
          * on chosen ADIOS2 engine and can not be explicitly overridden by user.
          */
         bool optimizeAttributesStreaming = false;
+
+        using ParsePreference =
+            Parameter<Operation::OPEN_FILE>::ParsePreference;
+        ParsePreference parsePreference = ParsePreference::UpFront;
 
         using AttributeMap_t = std::map<std::string, adios2::Params>;
 
@@ -1257,13 +1273,6 @@ namespace detail
          */
         std::string m_engineType;
 
-        /**
-         * See documentation for StreamStatus::Parsing.
-         * Will be set true under the circumstance described there in order to
-         * indicate that the first step should only be opened after parsing.
-         */
-        bool delayOpeningTheFirstStep = false;
-
         /*
          * ADIOS2 does not give direct access to its internal attribute and
          * variable maps, but will instead give access to copies of them.
@@ -1280,6 +1289,11 @@ namespace detail
         std::optional<AttributeMap_t> m_availableVariables;
 
         /*
+         * Cannot write attributes right after opening the engine
+         * https://github.com/ornladios/ADIOS2/issues/3433
+         */
+        bool initializedDefaults = false;
+        /*
          * finalize() will set this true to avoid running twice.
          */
         bool finalized = false;
@@ -1289,7 +1303,11 @@ namespace detail
             return m_impl->schema();
         }
 
+        void create_IO();
+
         void configure_IO(ADIOS2IOHandlerImpl &impl);
+        void configure_IO_Read(std::optional<bool> userSpecifiedUsesteps);
+        void configure_IO_Write(std::optional<bool> userSpecifiedUsesteps);
 
         using AttributeLayout = ADIOS2IOHandlerImpl::AttributeLayout;
         inline AttributeLayout attributeLayout() const

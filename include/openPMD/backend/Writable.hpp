@@ -97,7 +97,7 @@ private:
     Writable(internal::AttributableData *);
 
 public:
-    ~Writable() = default;
+    ~Writable();
 
     Writable(Writable const &other) = delete;
     Writable(Writable &&other) = delete;

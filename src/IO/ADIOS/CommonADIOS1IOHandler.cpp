@@ -412,7 +412,7 @@ template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::createFile(
     Writable *writable, Parameter<Operation::CREATE_FILE> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[ADIOS1] Creating a file in read-only mode is not possible.");
 
@@ -470,7 +470,7 @@ template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::createPath(
     Writable *writable, Parameter<Operation::CREATE_PATH> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[ADIOS1] Creating a path in a file opened as read only is not "
             "possible.");
@@ -534,7 +534,7 @@ template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::createDataset(
     Writable *writable, Parameter<Operation::CREATE_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[ADIOS1] Creating a dataset in a file opened as read only is not "
             "possible.");
@@ -543,9 +543,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::createDataset(
     {
         /* ADIOS variable definitions require the file to be (re-)opened to take
          * effect/not cause errors */
-        auto res = m_filePaths.find(writable);
-        if (res == m_filePaths.end())
-            res = m_filePaths.find(writable->parent);
+        auto res = m_filePaths.find(writable->parent);
 
         int64_t group = m_groups[res->second];
 
@@ -664,7 +662,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::extendDataset(
 
 template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::openFile(
-    Writable *writable, Parameter<Operation::OPEN_FILE> const &parameters)
+    Writable *writable, Parameter<Operation::OPEN_FILE> &parameters)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
         error::throwReadError(
@@ -739,7 +737,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::closeFile(
     if (myGroup != m_groups.end())
     {
         auto attributeWrites = m_attributeWrites.find(myGroup->second);
-        if (this->m_handler->m_backendAccess != Access::READ_ONLY &&
+        if (access::write(this->m_handler->m_backendAccess) &&
             attributeWrites != m_attributeWrites.end())
         {
             for (auto &att : attributeWrites->second)
@@ -849,9 +847,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::openDataset(
     Writable *writable, Parameter<Operation::OPEN_DATASET> &parameters)
 {
     ADIOS_FILE *f;
-    auto res = m_filePaths.find(writable);
-    if (res == m_filePaths.end())
-        res = m_filePaths.find(writable->parent);
+    auto res = m_filePaths.find(writable->parent);
     f = m_openReadFileHandles.at(res->second);
 
     /* Sanitize name */
@@ -1017,7 +1013,7 @@ template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::deleteFile(
     Writable *writable, Parameter<Operation::DELETE_FILE> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[ADIOS1] Deleting a file opened as read only is not possible.");
 
@@ -1103,7 +1099,7 @@ template <typename ChildClass>
 void CommonADIOS1IOHandlerImpl<ChildClass>::writeDataset(
     Writable *writable, Parameter<Operation::WRITE_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[ADIOS1] Writing into a dataset in a file opened as read-only is "
             "not possible.");
@@ -1149,7 +1145,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::writeAttribute(
         // cannot do this
         return;
     }
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[ADIOS1] Writing an attribute in a file opened as read only is "
             "not possible.");
@@ -1997,6 +1993,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::listAttributes(
         *parameters.attributes =
             std::vector<std::string>(attributes.begin(), attributes.end());
     }
+}
+
+template <typename ChildClass>
+void CommonADIOS1IOHandlerImpl<ChildClass>::deregister(
+    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+{
+    m_filePaths.erase(writable);
 }
 
 template <typename ChildClass>

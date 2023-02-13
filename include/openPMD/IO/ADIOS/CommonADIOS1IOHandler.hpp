@@ -59,7 +59,7 @@ public:
         Writable *, Parameter<Operation::CREATE_DATASET> const &) override;
     void extendDataset(
         Writable *, Parameter<Operation::EXTEND_DATASET> const &) override;
-    void openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) override;
+    void openFile(Writable *, Parameter<Operation::OPEN_FILE> &) override;
     void
     closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) override;
     void availableChunks(
@@ -84,6 +84,8 @@ public:
     void
     listDatasets(Writable *, Parameter<Operation::LIST_DATASETS> &) override;
     void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
+    void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
 
     void close(int64_t);
     void close(ADIOS_FILE *);

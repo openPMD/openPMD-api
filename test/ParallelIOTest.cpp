@@ -9,6 +9,11 @@
 #if openPMD_HAVE_MPI
 #include <mpi.h>
 
+#if openPMD_HAVE_ADIOS2
+#include <adios2.h>
+#define HAS_ADIOS_2_8 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 208)
+#endif
+
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -1128,9 +1133,13 @@ void adios2_streaming(bool variableBasedLayout)
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(1s);
 
+        /*
+         * READ_LINEAR always works in Streaming, but READ_ONLY must stay
+         * working at least for groupbased iteration encoding
+         */
         Series readSeries(
             "../samples/adios2_stream.sst",
-            Access::READ_ONLY,
+            variableBasedLayout ? Access::READ_LINEAR : Access::READ_ONLY,
             // inline TOML
             R"(defer_iteration_parsing = true)");
 
@@ -1388,31 +1397,73 @@ TEST_CASE("adios2_ssc", "[parallel][adios2]")
     adios2_ssc();
 }
 
+enum class ParseMode
+{
+    /*
+     * Conventional workflow. Just parse the whole thing and yield iterations
+     * in rising order.
+     */
+    NoSteps,
+    /*
+     * The Series is parsed ahead of time upon opening, but it has steps.
+     * Parsing ahead of time is the conventional workflow to support
+     * random-access.
+     * Reading such a Series with the streaming API is only possible if all
+     * steps are in ascending order, otherwise the openPMD-api has no way of
+     * associating IO steps with interation indices.
+     * Reading such a Series with the Streaming API will become possible with
+     * the Linear read mode to be introduced by #1291.
+     */
+    AheadOfTimeWithoutSnapshot,
+    /*
+     * In Linear read mode, a Series is not parsed ahead of time, but
+     * step-by-step, giving the openPMD-api a way to associate IO steps with
+     * iterations. No snapshot attribute exists, so the fallback mode is chosen:
+     * Iterations are returned in ascending order.
+     * If an IO step returns an iteration whose index is lower than the
+     * last one, it will be skipped.
+     * This mode of parsing is not available for the BP4 engine with ADIOS2
+     * schema 0, since BP4 does not associate attributes with the step in
+     * which they were created, making it impossible to separate parsing into
+     * single steps.
+     */
+    LinearWithoutSnapshot,
+    /*
+     * Snapshot attribute exists and dictates the iteration index returned by
+     * an IO step. Duplicate iterations will be skipped.
+     */
+    WithSnapshot
+};
+
 void append_mode(
     std::string const &extension,
     bool variableBased,
+    ParseMode parseMode,
     std::string jsonConfig = "{}")
 {
     std::string filename =
         (variableBased ? "../samples/append/append_variablebased."
                        : "../samples/append/append_groupbased.") +
         extension;
+    int mpi_size{}, mpi_rank{};
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Barrier(MPI_COMM_WORLD);
     if (auxiliary::directory_exists("../samples/append"))
     {
         auxiliary::remove_directory("../samples/append");
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    std::vector<int> data(10, 0);
-    auto writeSomeIterations = [&data](
+    std::vector<int> data(10, 999);
+    auto writeSomeIterations = [&data, mpi_size, mpi_rank](
                                    WriteIterations &&writeIterations,
                                    std::vector<uint64_t> indices) {
         for (auto index : indices)
         {
             auto it = writeIterations[index];
             auto dataset = it.meshes["E"]["x"];
-            dataset.resetDataset({Datatype::INT, {10}});
-            dataset.storeChunk(data, {0}, {10});
+            dataset.resetDataset({Datatype::INT, {unsigned(mpi_size), 10}});
+            dataset.storeChunk(data, {unsigned(mpi_rank), 0}, {1, 10});
             // test that it works without closing too
             it.close();
         }
@@ -1430,6 +1481,7 @@ void append_mode(
         writeSomeIterations(
             write.writeIterations(), std::vector<uint64_t>{0, 1});
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     {
         Series write(filename, Access::APPEND, MPI_COMM_WORLD, jsonConfig);
         if (variableBased)
@@ -1448,9 +1500,10 @@ void append_mode(
         }
 
         writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{2, 3});
+            write.writeIterations(), std::vector<uint64_t>{3, 2});
         write.flush();
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     {
         using namespace std::chrono_literals;
         /*
@@ -1476,32 +1529,142 @@ void append_mode(
         }
 
         writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{4, 3});
+            write.writeIterations(), std::vector<uint64_t>{4, 3, 10});
         write.flush();
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     {
-        Series read(filename, Access::READ_ONLY, MPI_COMM_WORLD);
-        if (variableBased || extension == "bp5")
+        Series write(filename, Access::APPEND, MPI_COMM_WORLD, jsonConfig);
+        if (variableBased)
         {
-            // in variable-based encodings, iterations are not parsed ahead of
-            // time but as they go
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
+        if (write.backend() == "MPI_ADIOS1")
+        {
+            REQUIRE_THROWS_AS(
+                write.flush(), error::OperationUnsupportedInBackend);
+            // destructor will be noisy now
+            return;
+        }
+
+        writeSomeIterations(
+            write.writeIterations(), std::vector<uint64_t>{7, 1, 11});
+        write.flush();
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    auto verifyIteration = [mpi_size](auto &&it) {
+        auto chunk = it.meshes["E"]["x"].template loadChunk<int>(
+            {0, 0}, {unsigned(mpi_size), 10});
+        it.seriesFlush();
+        for (size_t i = 0; i < unsigned(mpi_size) * 10; ++i)
+        {
+            REQUIRE(chunk.get()[i] == 999);
+        }
+    };
+
+    {
+        switch (parseMode)
+        {
+        case ParseMode::NoSteps: {
+            Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
             unsigned counter = 0;
-            for (auto const &iteration : read.readIterations())
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
+            for (auto iteration : read.readIterations())
             {
-                REQUIRE(iteration.iterationIndex == counter);
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                verifyIteration(iteration);
                 ++counter;
             }
-            REQUIRE(counter == 5);
+            REQUIRE(counter == 8);
         }
-        else
+        break;
+        case ParseMode::LinearWithoutSnapshot: {
+            Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
+            unsigned counter = 0;
+            uint64_t iterationOrder[] = {0, 1, 3, 4, 10, 11};
+            for (auto iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                verifyIteration(iteration);
+                ++counter;
+            }
+            REQUIRE(counter == 6);
+        }
+        break;
+        case ParseMode::WithSnapshot: {
+            // in variable-based encodings, iterations are not parsed ahead of
+            // time but as they go
+            Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
+            unsigned counter = 0;
+            uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 11};
+            for (auto iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                verifyIteration(iteration);
+                ++counter;
+            }
+            REQUIRE(counter == 8);
+            // Cannot do listSeries here because the Series is already drained
+            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+        }
+        break;
+        case ParseMode::AheadOfTimeWithoutSnapshot: {
+            Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
+            unsigned counter = 0;
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
+            /*
+             * This one is a bit tricky:
+             * The BP4 engine has no way of parsing a Series in the old
+             * ADIOS2 schema step-by-step, since attributes are not
+             * associated with the step in which they were created.
+             * As a result, when readIterations() is called, the whole thing
+             * is parsed immediately ahead-of-time.
+             * We can then iterate through the iterations and access metadata,
+             * but since the IO steps don't correspond with the order of
+             * iterations returned (there is no way to figure out that order),
+             * we cannot load data in here.
+             * BP4 in the old ADIOS2 schema only supports either of the
+             * following: 1) A Series in which the iterations are present in
+             * ascending order. 2) Or accessing the Series in READ_ONLY mode.
+             */
+            for (auto const &iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                ++counter;
+            }
+            REQUIRE(counter == 8);
+            /*
+             * Roadmap: for now, reading this should work by ignoring the last
+             * duplicate iteration.
+             * After merging https://github.com/openPMD/openPMD-api/pull/949, we
+             * should see both instances when reading.
+             * Final goal: Read only the last instance.
+             */
+            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+        }
+        break;
+        }
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (!variableBased)
+    {
+        Series read(filename, Access::READ_ONLY, MPI_COMM_WORLD);
+        REQUIRE(read.iterations.size() == 8);
+        unsigned counter = 0;
+        uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
+        for (auto iteration : read.readIterations())
         {
-            REQUIRE(read.iterations.size() == 5);
-            helper::listSeries(read);
+            REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+            verifyIteration(iteration);
+            ++counter;
         }
+        REQUIRE(counter == 8);
     }
 #if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
         10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
     208002700
+    MPI_Barrier(MPI_COMM_WORLD);
     // AppendAfterSteps has a bug before that version
     if (extension == "bp5")
     {
@@ -1533,30 +1696,69 @@ void append_mode(
                 write.writeIterations(), std::vector<uint64_t>{4, 5});
             write.flush();
         }
+        MPI_Barrier(MPI_COMM_WORLD);
+        {
+            Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
+            switch (parseMode)
+            {
+            case ParseMode::LinearWithoutSnapshot: {
+                uint64_t iterationOrder[] = {0, 1, 3, 4, 10};
+                unsigned counter = 0;
+                for (auto iteration : read.readIterations())
+                {
+                    REQUIRE(
+                        iteration.iterationIndex == iterationOrder[counter]);
+                    verifyIteration(iteration);
+                    ++counter;
+                }
+                REQUIRE(counter == 5);
+            }
+            break;
+            case ParseMode::WithSnapshot: {
+                // in variable-based encodings, iterations are not parsed ahead
+                // of time but as they go
+                unsigned counter = 0;
+                uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 5};
+                for (auto iteration : read.readIterations())
+                {
+                    REQUIRE(
+                        iteration.iterationIndex == iterationOrder[counter]);
+                    verifyIteration(iteration);
+                    ++counter;
+                }
+                REQUIRE(counter == 8);
+            }
+            break;
+            default:
+                throw std::runtime_error("Test configured wrong.");
+                break;
+            }
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (!variableBased)
         {
             Series read(filename, Access::READ_ONLY, MPI_COMM_WORLD);
-            // in variable-based encodings, iterations are not parsed ahead of
-            // time but as they go
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 5, 7, 10};
             unsigned counter = 0;
             for (auto const &iteration : read.readIterations())
             {
-                REQUIRE(iteration.iterationIndex == counter);
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
                 ++counter;
             }
-            REQUIRE(counter == 6);
-            helper::listSeries(read);
+            REQUIRE(counter == 8);
+            // Cannot do listSeries here because the Series is already
+            // drained
+            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
         }
     }
 #endif
 }
 
-TEST_CASE("append_mode", "[parallel]")
+TEST_CASE("append_mode", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        if (t == "bp" || t == "bp4" || t == "bp5")
-        {
-            std::string jsonConfigOld = R"END(
+        std::string jsonConfigOld = R"END(
 {
     "adios2":
     {
@@ -1567,7 +1769,7 @@ TEST_CASE("append_mode", "[parallel]")
         }
     }
 })END";
-            std::string jsonConfigNew = R"END(
+        std::string jsonConfigNew = R"END(
 {
     "adios2":
     {
@@ -1578,28 +1780,27 @@ TEST_CASE("append_mode", "[parallel]")
         }
     }
 })END";
+        if (t == "bp" || t == "bp4" || t == "bp5")
+        {
             /*
              * Troublesome combination:
              * 1) ADIOS2 v2.7
              * 2) Parallel writer
              * 3) Append mode
-             * 4) Writing to a scalar variable
              *
-             * 4) is done by schema 2021 which will be phased out, so the tests
-             * are just deactivated.
              */
-            if (auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", 0) != 0)
-            {
-                continue;
-            }
-            append_mode(t, false, jsonConfigOld);
-            // append_mode(t, true, jsonConfigOld);
-            // append_mode(t, false, jsonConfigNew);
-            // append_mode(t, true, jsonConfigNew);
+#if HAS_ADIOS_2_8
+            append_mode(
+                t, false, ParseMode::LinearWithoutSnapshot, jsonConfigOld);
+            append_mode(t, false, ParseMode::WithSnapshot, jsonConfigNew);
+            // This test config does not make sense
+            // append_mode(t, true, ParseMode::WithSnapshot, jsonConfigOld);
+            append_mode(t, true, ParseMode::WithSnapshot, jsonConfigNew);
+#endif
         }
         else
         {
-            append_mode(t, false);
+            append_mode(t, false, ParseMode::NoSteps);
         }
     }
 }
@@ -1663,4 +1864,4 @@ TEST_CASE("unavailable_backend", "[core][parallel]")
     }
 #endif
 }
-#endif
+#endif // openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI

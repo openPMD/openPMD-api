@@ -91,7 +91,7 @@ void JSONIOHandlerImpl::createFile(
     Writable *writable, Parameter<Operation::CREATE_FILE> const &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[JSON] Creating a file in read-only mode is not possible.");
 
     if (!writable->written)
@@ -199,7 +199,7 @@ void JSONIOHandlerImpl::createPath(
 void JSONIOHandlerImpl::createDataset(
     Writable *writable, Parameter<Operation::CREATE_DATASET> const &parameter)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
     {
         throw std::runtime_error(
             "[JSON] Creating a dataset in a file opened as read only is not "
@@ -267,7 +267,7 @@ void JSONIOHandlerImpl::extendDataset(
     Writable *writable, Parameter<Operation::EXTEND_DATASET> const &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[JSON] Cannot extend a dataset in read-only mode.")
     setAndGetFilePosition(writable);
     refreshFileFromParent(writable);
@@ -526,7 +526,7 @@ void JSONIOHandlerImpl::availableChunks(
 }
 
 void JSONIOHandlerImpl::openFile(
-    Writable *writable, Parameter<Operation::OPEN_FILE> const &parameter)
+    Writable *writable, Parameter<Operation::OPEN_FILE> &parameter)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
     {
@@ -558,6 +558,7 @@ void JSONIOHandlerImpl::closeFile(
     if (fileIterator != m_files.end())
     {
         putJsonContents(fileIterator->second);
+        m_dirty.erase(fileIterator->second);
         // do not invalidate the file
         // it still exists, it is just not open
         m_files.erase(fileIterator);
@@ -615,7 +616,7 @@ void JSONIOHandlerImpl::deleteFile(
     Writable *writable, Parameter<Operation::DELETE_FILE> const &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[JSON] Cannot delete files in read-only mode")
 
     if (!writable->written)
@@ -646,7 +647,7 @@ void JSONIOHandlerImpl::deletePath(
     Writable *writable, Parameter<Operation::DELETE_PATH> const &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[JSON] Cannot delete paths in read-only mode")
 
     if (!writable->written)
@@ -724,7 +725,7 @@ void JSONIOHandlerImpl::deleteDataset(
     Writable *writable, Parameter<Operation::DELETE_DATASET> const &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[JSON] Cannot delete datasets in read-only mode")
 
     if (!writable->written)
@@ -766,7 +767,7 @@ void JSONIOHandlerImpl::deleteAttribute(
     Writable *writable, Parameter<Operation::DELETE_ATT> const &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[JSON] Cannot delete attributes in read-only mode")
     if (!writable->written)
     {
@@ -783,7 +784,7 @@ void JSONIOHandlerImpl::writeDataset(
     Writable *writable, Parameter<Operation::WRITE_DATASET> const &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[JSON] Cannot write data in read-only mode.");
 
     auto pos = setAndGetFilePosition(writable);
@@ -806,7 +807,7 @@ void JSONIOHandlerImpl::writeAttribute(
         // cannot do this
         return;
     }
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
     {
         throw std::runtime_error(
             "[JSON] Creating a dataset in a file opened as read only is not "
@@ -940,6 +941,12 @@ void JSONIOHandlerImpl::listAttributes(
     }
 }
 
+void JSONIOHandlerImpl::deregister(
+    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+{
+    m_files.erase(writable);
+}
+
 std::shared_ptr<JSONIOHandlerImpl::FILEHANDLE>
 JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
 {
@@ -948,11 +955,8 @@ JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
         "[JSON] Tried opening a file that has been overwritten or deleted.")
     auto path = fullPath(std::move(fileName));
     auto fs = std::make_shared<std::fstream>();
-    switch (access)
+    if (access::write(access))
     {
-    case Access::CREATE:
-    case Access::READ_WRITE:
-    case Access::APPEND:
         /*
          * Always truncate when writing, we alway write entire JSON
          * datasets, never partial ones.
@@ -961,10 +965,10 @@ JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
          * functionality in APPEND mode.
          */
         fs->open(path, std::ios_base::out | std::ios_base::trunc);
-        break;
-    case Access::READ_ONLY:
+    }
+    else
+    {
         fs->open(path, std::ios_base::in);
-        break;
     }
     VERIFY(fs->good(), "[JSON] Failed opening a file '" + path + "'");
     return fs;

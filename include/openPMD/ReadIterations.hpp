@@ -22,10 +22,12 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/backend/ParsePreference.hpp"
 
 #include <deque>
 #include <iostream>
 #include <optional>
+#include <set>
 
 namespace openPMD
 {
@@ -55,15 +57,34 @@ class SeriesIterator
 
     using maybe_series_t = std::optional<Series>;
 
-    maybe_series_t m_series;
-    std::deque<iteration_index_t> m_iterationsInCurrentStep;
-    uint64_t m_currentIteration{};
+    struct SharedData
+    {
+        SharedData() = default;
+        SharedData(SharedData const &) = delete;
+        SharedData(SharedData &&) = delete;
+        SharedData &operator=(SharedData const &) = delete;
+        SharedData &operator=(SharedData &&) = delete;
+
+        maybe_series_t series;
+        std::deque<iteration_index_t> iterationsInCurrentStep;
+        uint64_t currentIteration{};
+        std::optional<internal::ParsePreference> parsePreference;
+        /*
+         * Necessary because in the old ADIOS2 schema, old iterations' metadata
+         * will leak into new steps, making the frontend think that the groups
+         * are still there and the iterations can be parsed again.
+         */
+        std::set<Iteration::IterationIndex_t> ignoreIterations;
+    };
+
+    std::shared_ptr<SharedData> m_data;
 
 public:
     //! construct the end() iterator
     explicit SeriesIterator();
 
-    SeriesIterator(Series);
+    SeriesIterator(
+        Series, std::optional<internal::ParsePreference> parsePreference);
 
     SeriesIterator &operator++();
 
@@ -78,7 +99,8 @@ public:
 private:
     inline bool setCurrentIteration()
     {
-        if (m_iterationsInCurrentStep.empty())
+        auto &data = *m_data;
+        if (data.iterationsInCurrentStep.empty())
         {
             std::cerr << "[ReadIterations] Encountered a step without "
                          "iterations. Closing the Series."
@@ -86,19 +108,20 @@ private:
             *this = end();
             return false;
         }
-        m_currentIteration = *m_iterationsInCurrentStep.begin();
+        data.currentIteration = *data.iterationsInCurrentStep.begin();
         return true;
     }
 
     inline std::optional<uint64_t> peekCurrentIteration()
     {
-        if (m_iterationsInCurrentStep.empty())
+        auto &data = *m_data;
+        if (data.iterationsInCurrentStep.empty())
         {
             return std::nullopt;
         }
         else
         {
-            return {*m_iterationsInCurrentStep.begin()};
+            return {*data.iterationsInCurrentStep.begin()};
         }
     }
 
@@ -119,6 +142,8 @@ private:
     std::optional<SeriesIterator *> loopBody();
 
     void deactivateDeadIteration(iteration_index_t);
+
+    void initSeriesInLinearReadMode();
 };
 
 /**
@@ -146,8 +171,13 @@ private:
     using iterator_t = SeriesIterator;
 
     Series m_series;
+    std::optional<SeriesIterator> alreadyOpened;
+    std::optional<internal::ParsePreference> m_parsePreference;
 
-    ReadIterations(Series);
+    ReadIterations(
+        Series,
+        Access,
+        std::optional<internal::ParsePreference> parsePreference);
 
 public:
     iterator_t begin();

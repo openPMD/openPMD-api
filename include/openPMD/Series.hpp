@@ -30,6 +30,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/ParsePreference.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
 
@@ -158,6 +159,14 @@ namespace internal
          * The destructor will only attempt flushing again if this is true.
          */
         bool m_lastFlushSuccessful = false;
+
+        /**
+         * Remember the preference that the backend specified for parsing.
+         * Not used in file-based iteration encoding, empty then.
+         * In linear read mode, parsing only starts after calling
+         * Series::readIterations(), empty before that point.
+         */
+        std::optional<ParsePreference> m_parsePreference;
 
         void close();
     }; // SeriesData
@@ -618,8 +627,10 @@ OPENPMD_private
      * ReadIterations since those methods should be aware when the current step
      * is broken).
      */
-    std::optional<std::deque<IterationIndex_t> >
-    readGorVBased(bool do_always_throw_errors, bool init);
+    std::optional<std::deque<IterationIndex_t> > readGorVBased(
+        bool do_always_throw_errors,
+        bool init,
+        std::set<IterationIndex_t> const &ignoreIterations = {});
     void readBase();
     std::string iterationFilename(IterationIndex_t i);
 

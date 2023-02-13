@@ -161,18 +161,15 @@ namespace
 void ParticleSpecies::flush(
     std::string const &path, internal::FlushParams const &flushParams)
 {
-    switch (IOHandler()->m_frontendAccess)
+    if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-    case Access::READ_ONLY: {
         for (auto &record : *this)
             record.second.flush(record.first, flushParams);
         for (auto &patch : particlePatches)
             patch.second.flush(patch.first, flushParams);
-        break;
     }
-    case Access::READ_WRITE:
-    case Access::CREATE:
-    case Access::APPEND: {
+    else
+    {
         auto it = find("position");
         if (it != end())
             it->second.setUnitDimension({{UnitDimension::L, 1}});
@@ -191,8 +188,6 @@ void ParticleSpecies::flush(
             for (auto &patch : particlePatches)
                 patch.second.flush(patch.first, flushParams);
         }
-        break;
-    }
     }
 }
 

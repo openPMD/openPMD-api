@@ -17,7 +17,7 @@ if __name__ == "__main__":
         print("SST engine not available in ADIOS2.")
         sys.exit(0)
 
-    series = io.Series("simData.sst", io.Access_Type.read_only,
+    series = io.Series("simData.sst", io.Access_Type.read_linear,
                        json.dumps(config))
 
     # Read all available iterations and print electron position data.

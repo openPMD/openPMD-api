@@ -19,7 +19,7 @@ int main()
         return 0;
     }
 
-    Series series = Series("electrons.sst", Access::READ_ONLY);
+    Series series = Series("electrons.sst", Access::READ_LINEAR);
 
     for (IndexedIteration iteration : series.readIterations())
     {

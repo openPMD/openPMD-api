@@ -52,7 +52,7 @@ public:
         Writable *, Parameter<Operation::EXTEND_DATASET> const &) override;
     void availableChunks(
         Writable *, Parameter<Operation::AVAILABLE_CHUNKS> &) override;
-    void openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) override;
+    void openFile(Writable *, Parameter<Operation::OPEN_FILE> &) override;
     void
     closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) override;
     void openPath(Writable *, Parameter<Operation::OPEN_PATH> const &) override;
@@ -75,6 +75,8 @@ public:
     void
     listDatasets(Writable *, Parameter<Operation::LIST_DATASETS> &) override;
     void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
+    void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
 
     std::unordered_map<Writable *, std::string> m_fileNames;
     std::unordered_map<std::string, hid_t> m_fileNamesWithID;
