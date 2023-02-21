@@ -1206,10 +1206,17 @@ void Series::readOneIterationFileBased(std::string const &filePath)
         else if (encoding == "groupBased")
         {
             series.m_iterationEncoding = IterationEncoding::groupBased;
-            std::cerr << "Series constructor called with iteration "
-                         "regex '%T' suggests loading a "
-                      << "time series with fileBased iteration "
-                         "encoding. Loaded file is groupBased.\n";
+            /*
+             * Opening a single file of a file-based Series is a valid workflow,
+             * warnings are not necessary here.
+             * Leaving the old warning as a comment, because we might want to
+             * add this back in again if we add some kind of verbosity level
+             * specification or logging.
+             */
+            // std::cerr << "Series constructor called with iteration "
+            //              "regex '%T' suggests loading a "
+            //           << "time series with fileBased iteration "
+            //              "encoding. Loaded file is groupBased.\n";
         }
         else if (encoding == "variableBased")
         {
@@ -1350,10 +1357,18 @@ creating new iterations.
             else if (encoding == "fileBased")
             {
                 series.m_iterationEncoding = IterationEncoding::fileBased;
-                std::cerr << "Series constructor called with explicit "
-                             "iteration suggests loading a "
-                          << "single file with groupBased iteration encoding. "
-                             "Loaded file is fileBased.\n";
+                /*
+                 * Opening a single file of a file-based Series is a valid
+                 * workflow, warnings are not necessary here.
+                 * Leaving the old warning as a comment, because we might want
+                 * to add this back in again if we add some kind of verbosity
+                 * level specification or logging.
+                 */
+                // std::cerr << "Series constructor called with explicit "
+                //              "iteration suggests loading a "
+                //           << "single file with groupBased iteration encoding.
+                //           "
+                //              "Loaded file is fileBased.\n";
                 /*
                  * We'll want the openPMD API to continue series.m_name to open
                  * the file instead of piecing the name together via
