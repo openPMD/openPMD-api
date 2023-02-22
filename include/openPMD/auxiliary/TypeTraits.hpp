@@ -84,7 +84,7 @@ namespace detail
     };
 
     template <typename T>
-    struct IsPointer<OpenpmdUniquePtr<T>>
+    struct IsPointer<UniquePtrWithLambda<T>>
     {
         constexpr static bool value = true;
         using type = T;

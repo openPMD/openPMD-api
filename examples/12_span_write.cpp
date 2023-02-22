@@ -100,13 +100,13 @@ void span_write(std::string const &filename)
          */
         chargeDensity.resetDataset(dataset);
         /*
-         * The class template OpenpmdUniquePtr (subclass of std::unique_ptr)
+         * The class template UniquePtrWithLambda (subclass of std::unique_ptr)
          * can be used to specify custom destructors, e.g. for deallocating
          * GPU pointers.
          * Normal std::unique_ptr types can also be used, even with custom
          * destructors.
          */
-        OpenpmdUniquePtr<mesh_type> data(
+        UniquePtrWithLambda<mesh_type> data(
             new mesh_type[length](), [](auto const *ptr) { delete[] ptr; });
         /*
          * Move the unique_ptr into openPMD. It must now no longer be accessed.

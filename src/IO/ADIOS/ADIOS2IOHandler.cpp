@@ -1962,7 +1962,7 @@ namespace detail
                 }
                 else if constexpr (std::is_same_v<
                                        ptr_type,
-                                       OpenpmdUniquePtr<void>>)
+                                       UniquePtrWithLambda<void>>)
                 {
                     BufferedUniquePtrPut bput;
                     bput.name = std::move(bp.name);

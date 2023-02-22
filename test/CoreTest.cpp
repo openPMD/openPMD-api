@@ -1366,17 +1366,17 @@ TEST_CASE("unavailable_backend", "[core]")
 TEST_CASE("unique_ptr", "[core]")
 {
     auto stdptr = std::make_unique<int>(5);
-    OpenpmdUniquePtr<int> ptr = std::move(stdptr);
+    UniquePtrWithLambda<int> ptr = std::move(stdptr);
     auto stdptr_with_custom_del =
         std::unique_ptr<int, auxiliary::CustomDelete<int>>{
             new int{5}, auxiliary::CustomDelete<int>{[](int const *del_ptr) {
                 delete del_ptr;
             }}};
-    OpenpmdUniquePtr<int> ptr2 = std::move(stdptr_with_custom_del);
+    UniquePtrWithLambda<int> ptr2 = std::move(stdptr_with_custom_del);
 
-    OpenpmdUniquePtr<int[]> arrptr;
+    UniquePtrWithLambda<int[]> arrptr;
     // valgrind can detect mismatched new/delete pairs
-    OpenpmdUniquePtr<int[]> arrptrFilled{new int[5]{}};
-    OpenpmdUniquePtr<int[]> arrptrFilledCustom{
+    UniquePtrWithLambda<int[]> arrptrFilled{new int[5]{}};
+    UniquePtrWithLambda<int[]> arrptrFilledCustom{
         new int[5]{}, [](int const *p) { delete[] p; }};
 }

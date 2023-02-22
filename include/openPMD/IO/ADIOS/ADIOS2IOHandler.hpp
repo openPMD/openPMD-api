@@ -919,7 +919,7 @@ namespace detail
         std::string name;
         Offset offset;
         Extent extent;
-        OpenpmdUniquePtr<void> data;
+        UniquePtrWithLambda<void> data;
         Datatype dtype;
 
         void run(BufferedActions &);

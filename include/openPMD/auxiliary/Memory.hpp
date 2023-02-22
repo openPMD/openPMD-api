@@ -173,11 +173,11 @@ namespace auxiliary
      */
     struct WriteBuffer
     {
-        using EligibleTypes =
-            std::variant<std::shared_ptr<void const>, OpenpmdUniquePtr<void>>;
+        using EligibleTypes = std::
+            variant<std::shared_ptr<void const>, UniquePtrWithLambda<void>>;
         EligibleTypes m_buffer;
 
-        WriteBuffer() : m_buffer(OpenpmdUniquePtr<void>())
+        WriteBuffer() : m_buffer(UniquePtrWithLambda<void>())
         {}
 
         template <typename... Args>
@@ -196,7 +196,7 @@ namespace auxiliary
             return *this;
         }
 
-        WriteBuffer const &operator=(OpenpmdUniquePtr<void const> ptr)
+        WriteBuffer const &operator=(UniquePtrWithLambda<void const> ptr)
         {
             m_buffer = std::move(ptr);
             return *this;

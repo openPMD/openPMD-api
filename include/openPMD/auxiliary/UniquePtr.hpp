@@ -14,7 +14,7 @@ namespace auxiliary
      * @brief Custom deleter type based on std::function.
      *
      * No need to interact with this class directly, used implicitly
-     * by OpenpmdUniquePtr.
+     * by UniquePtrWithLambda.
      *
      * Has some special treatment for array types and falls back
      * to std::default_delete by default.
@@ -83,7 +83,7 @@ namespace auxiliary
  * @tparam T The pointer type, as in std::unique_ptr.
  */
 template <typename T>
-class OpenpmdUniquePtr
+class UniquePtrWithLambda
     : public std::unique_ptr<
           T,
           /* Deleter = */ auxiliary::CustomDelete<T>>
@@ -94,18 +94,18 @@ private:
 public:
     using T_decayed = std::remove_extent_t<T>;
 
-    OpenpmdUniquePtr() = default;
+    UniquePtrWithLambda() = default;
 
-    OpenpmdUniquePtr(OpenpmdUniquePtr &&) = default;
-    OpenpmdUniquePtr &operator=(OpenpmdUniquePtr &&) = default;
+    UniquePtrWithLambda(UniquePtrWithLambda &&) = default;
+    UniquePtrWithLambda &operator=(UniquePtrWithLambda &&) = default;
 
-    OpenpmdUniquePtr(OpenpmdUniquePtr const &) = delete;
-    OpenpmdUniquePtr &operator=(OpenpmdUniquePtr const &) = delete;
+    UniquePtrWithLambda(UniquePtrWithLambda const &) = delete;
+    UniquePtrWithLambda &operator=(UniquePtrWithLambda const &) = delete;
 
     /**
      * Conversion constructor from std::unique_ptr<T> with default deleter.
      */
-    OpenpmdUniquePtr(std::unique_ptr<T>);
+    UniquePtrWithLambda(std::unique_ptr<T>);
 
     /**
      * Conversion constructor from std::unique_ptr<T> with custom deleter.
@@ -113,17 +113,17 @@ public:
      * @tparam Del Custom deleter type.
      */
     template <typename Del>
-    OpenpmdUniquePtr(std::unique_ptr<T, Del>);
+    UniquePtrWithLambda(std::unique_ptr<T, Del>);
 
     /**
      * Construct from raw pointer with default deleter.
      */
-    OpenpmdUniquePtr(T_decayed *);
+    UniquePtrWithLambda(T_decayed *);
 
     /**
      * Construct from raw pointer with custom deleter.
      */
-    OpenpmdUniquePtr(T_decayed *, std::function<void(T_decayed *)>);
+    UniquePtrWithLambda(T_decayed *, std::function<void(T_decayed *)>);
 
     /**
      * Like std::static_pointer_cast.
@@ -133,17 +133,17 @@ public:
      * @tparam U Convert to unique pointer of this type.
      */
     template <typename U>
-    OpenpmdUniquePtr<U> static_cast_() &&;
+    UniquePtrWithLambda<U> static_cast_() &&;
 };
 
 template <typename T>
-OpenpmdUniquePtr<T>::OpenpmdUniquePtr(std::unique_ptr<T> stdPtr)
+UniquePtrWithLambda<T>::UniquePtrWithLambda(std::unique_ptr<T> stdPtr)
     : BasePtr{stdPtr.release()}
 {}
 
 template <typename T>
 template <typename Del>
-OpenpmdUniquePtr<T>::OpenpmdUniquePtr(std::unique_ptr<T, Del> ptr)
+UniquePtrWithLambda<T>::UniquePtrWithLambda(std::unique_ptr<T, Del> ptr)
     : BasePtr{
           ptr.release(),
           auxiliary::CustomDelete<T>{
@@ -153,21 +153,21 @@ OpenpmdUniquePtr<T>::OpenpmdUniquePtr(std::unique_ptr<T, Del> ptr)
 {}
 
 template <typename T>
-OpenpmdUniquePtr<T>::OpenpmdUniquePtr(T_decayed *ptr) : BasePtr{ptr}
+UniquePtrWithLambda<T>::UniquePtrWithLambda(T_decayed *ptr) : BasePtr{ptr}
 {}
 
 template <typename T>
-OpenpmdUniquePtr<T>::OpenpmdUniquePtr(
+UniquePtrWithLambda<T>::UniquePtrWithLambda(
     T_decayed *ptr, std::function<void(T_decayed *)> deleter)
     : BasePtr{ptr, std::move(deleter)}
 {}
 
 template <typename T>
 template <typename U>
-OpenpmdUniquePtr<U> OpenpmdUniquePtr<T>::static_cast_() &&
+UniquePtrWithLambda<U> UniquePtrWithLambda<T>::static_cast_() &&
 {
     using other_type = std::remove_extent_t<U>;
-    return OpenpmdUniquePtr<U>{
+    return UniquePtrWithLambda<U>{
         static_cast<other_type *>(this->release()),
         [deleter = std::move(this->get_deleter())](other_type *ptr) {
             deleter.get_deleter()(static_cast<T_decayed *>(ptr));

@@ -728,39 +728,39 @@ void close_and_copy_attributable_test(std::string file_ending)
             {0},
             {global_extent});
 
-        // scalar OpenpmdUniquePtr, default delete
+        // scalar UniquePtrWithLambda, default delete
         auto pos_z = electronPositions["z"];
         pos_z.resetDataset(dataset);
         pos_z.storeChunk(
-            OpenpmdUniquePtr<int>{
+            UniquePtrWithLambda<int>{
                 new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
             {0},
             {global_extent});
 
-        // array OpenpmdUniquePtr, default delete
+        // array UniquePtrWithLambda, default delete
         auto posOff_z = electronPositionsOffset["z"];
         posOff_z.resetDataset(dataset);
         posOff_z.storeChunk(
-            OpenpmdUniquePtr<int[]>{
+            UniquePtrWithLambda<int[]>{
                 new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
             {0},
             {global_extent});
 
-        // scalar OpenpmdUniquePtr, custom delete
+        // scalar UniquePtrWithLambda, custom delete
         // we're playing 4D now
         auto pos_w = electronPositions["w"];
         pos_w.resetDataset(dataset);
         pos_w.storeChunk(
-            OpenpmdUniquePtr<int>{
+            UniquePtrWithLambda<int>{
                 new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
             {0},
             {global_extent});
 
-        // array OpenpmdUniquePtr, custom delete
+        // array UniquePtrWithLambda, custom delete
         auto posOff_w = electronPositionsOffset["w"];
         posOff_w.resetDataset(dataset);
         posOff_w.storeChunk(
-            OpenpmdUniquePtr<int[]>{
+            UniquePtrWithLambda<int[]>{
                 new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
             {0},
             {global_extent});
@@ -963,7 +963,7 @@ inline void constant_scalar(std::string file_ending)
         E_x.makeConstant(static_cast<float>(13.37));
         auto E_y = s.iterations[1].meshes["E"]["y"];
         E_y.resetDataset(Dataset(Datatype::UINT, {1, 2, 3}));
-        OpenpmdUniquePtr<unsigned int> E(
+        UniquePtrWithLambda<unsigned int> E(
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
@@ -998,7 +998,7 @@ inline void constant_scalar(std::string file_ending)
         vel_x.makeConstant(static_cast<short>(-1));
         auto vel_y = s.iterations[1].particles["e"]["velocity"]["y"];
         vel_y.resetDataset(Dataset(Datatype::ULONGLONG, {3, 2, 1}));
-        OpenpmdUniquePtr<unsigned long long> vel(
+        UniquePtrWithLambda<unsigned long long> vel(
             new unsigned long long[6],
             [](unsigned long long const *p) { delete[] p; });
         unsigned long long v{0};
@@ -4258,7 +4258,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         }
 
         bool has_been_deleted = false;
-        OpenpmdUniquePtr<int32_t> copied_as_unique(
+        UniquePtrWithLambda<int32_t> copied_as_unique(
             new int[size], [&has_been_deleted](int const *ptr) {
                 delete[] ptr;
                 has_been_deleted = true;
