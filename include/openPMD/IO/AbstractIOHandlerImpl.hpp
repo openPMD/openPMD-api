@@ -456,7 +456,7 @@ public:
      * storage after the operation completes successfully.
      */
     virtual void
-    writeDataset(Writable *, Parameter<Operation::WRITE_DATASET> const &) = 0;
+    writeDataset(Writable *, Parameter<Operation::WRITE_DATASET> &) = 0;
 
     /** Get a view into a dataset buffer that can be filled by a user.
      *

@@ -52,7 +52,8 @@ std::vector<std::string> testedFileExtensions()
         allExtensions.begin(), allExtensions.end(), [](std::string const &ext) {
             // sst and ssc need a receiver for testing
             // bp4 is already tested via bp
-            return ext == "sst" || ext == "ssc" || ext == "bp4" | ext == "json";
+            return ext == "sst" || ext == "ssc" || ext == "bp4" ||
+                ext == "toml" || ext == "json";
         });
     return {allExtensions.begin(), newEnd};
 }

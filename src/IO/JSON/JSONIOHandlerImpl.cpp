@@ -781,7 +781,7 @@ void JSONIOHandlerImpl::deleteAttribute(
 }
 
 void JSONIOHandlerImpl::writeDataset(
-    Writable *writable, Parameter<Operation::WRITE_DATASET> const &parameters)
+    Writable *writable, Parameter<Operation::WRITE_DATASET> &parameters)
 {
     VERIFY_ALWAYS(
         access::write(m_handler->m_backendAccess),

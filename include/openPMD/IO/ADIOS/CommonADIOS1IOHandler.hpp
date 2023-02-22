@@ -74,8 +74,8 @@ public:
         Writable *, Parameter<Operation::DELETE_DATASET> const &) override;
     void deleteAttribute(
         Writable *, Parameter<Operation::DELETE_ATT> const &) override;
-    void writeDataset(
-        Writable *, Parameter<Operation::WRITE_DATASET> const &) override;
+    void
+    writeDataset(Writable *, Parameter<Operation::WRITE_DATASET> &) override;
     void writeAttribute(
         Writable *, Parameter<Operation::WRITE_ATT> const &) override;
     void readDataset(Writable *, Parameter<Operation::READ_DATASET> &) override;

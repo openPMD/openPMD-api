@@ -1235,7 +1235,7 @@ void HDF5IOHandlerImpl::deleteAttribute(
 }
 
 void HDF5IOHandlerImpl::writeDataset(
-    Writable *writable, Parameter<Operation::WRITE_DATASET> const &parameters)
+    Writable *writable, Parameter<Operation::WRITE_DATASET> &parameters)
 {
     if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
@@ -1277,7 +1277,7 @@ void HDF5IOHandlerImpl::writeDataset(
         "[HDF5] Internal error: Failed to select hyperslab during dataset "
         "write");
 
-    std::shared_ptr<void const> data = parameters.data;
+    void const *data = parameters.data.get();
 
     GetH5DataType getH5DataType({
         {typeid(bool).name(), m_H5T_BOOL_ENUM},
@@ -1321,7 +1321,7 @@ void HDF5IOHandlerImpl::writeDataset(
             memspace,
             filespace,
             m_datasetTransferProperty,
-            data.get());
+            data);
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to write dataset " +

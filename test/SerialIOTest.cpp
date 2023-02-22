@@ -661,7 +661,7 @@ TEST_CASE("close_iteration_interleaved_test", "[serial]")
 
 void close_and_copy_attributable_test(std::string file_ending)
 {
-    using position_t = double;
+    using position_t = int;
 
     // open file for writing
     Series series("electrons." + file_ending, Access::CREATE);
@@ -691,16 +691,80 @@ void close_and_copy_attributable_test(std::string file_ending)
             iteration_ptr->particles["e"]["positionOffset"];
 
         std::iota(local_data.get(), local_data.get() + length, i * length);
-        for (auto const &dim : {"x", "y", "z"})
-        {
-            RecordComponent pos = electronPositions[dim];
-            pos.resetDataset(dataset);
-            pos.storeChunk(local_data, Offset{0}, global_extent);
+        /*
+         * Hijack this test to additionally test the unique_ptr storeChunk API
+         */
+        // scalar unique_ptr, default delete
+        auto pos_x = electronPositions["x"];
+        pos_x.resetDataset(Dataset{datatype, {1}});
+        pos_x.storeChunk(std::make_unique<int>(5), {0}, {1});
 
-            RecordComponent posOff = electronPositionsOffset[dim];
-            posOff.resetDataset(dataset);
-            posOff.makeConstant(position_t(0.0));
-        }
+        // array unique_ptr, default delete
+        auto posOff_x = electronPositionsOffset["x"];
+        posOff_x.resetDataset(dataset);
+        posOff_x.storeChunk(
+            std::unique_ptr<int[]>{new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}},
+            {0},
+            {global_extent});
+
+        using CD = auxiliary::CustomDelete<int>;
+        CD array_deleter{[](int const *ptr) { delete[] ptr; }};
+
+        // scalar unique_ptr, custom delete
+        auto pos_y = electronPositions["y"];
+        pos_y.resetDataset(dataset);
+        pos_y.storeChunk(
+            std::unique_ptr<int, CD>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array unique_ptr, custom delete
+        auto posOff_y = electronPositionsOffset["y"];
+        posOff_y.resetDataset(dataset);
+        posOff_y.storeChunk(
+            std::unique_ptr<int[], CD>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // scalar UniquePtrWithLambda, default delete
+        auto pos_z = electronPositions["z"];
+        pos_z.resetDataset(dataset);
+        pos_z.storeChunk(
+            UniquePtrWithLambda<int>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array UniquePtrWithLambda, default delete
+        auto posOff_z = electronPositionsOffset["z"];
+        posOff_z.resetDataset(dataset);
+        posOff_z.storeChunk(
+            UniquePtrWithLambda<int[]>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // scalar UniquePtrWithLambda, custom delete
+        // we're playing 4D now
+        auto pos_w = electronPositions["w"];
+        pos_w.resetDataset(dataset);
+        pos_w.storeChunk(
+            UniquePtrWithLambda<int>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array UniquePtrWithLambda, custom delete
+        auto posOff_w = electronPositionsOffset["w"];
+        posOff_w.resetDataset(dataset);
+        posOff_w.storeChunk(
+            UniquePtrWithLambda<int[]>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
         iteration_ptr->close();
         // force re-flush of previous iterations
         series.flush();
@@ -899,11 +963,11 @@ inline void constant_scalar(std::string file_ending)
         E_x.makeConstant(static_cast<float>(13.37));
         auto E_y = s.iterations[1].meshes["E"]["y"];
         E_y.resetDataset(Dataset(Datatype::UINT, {1, 2, 3}));
-        std::shared_ptr<unsigned int> E(
+        UniquePtrWithLambda<unsigned int> E(
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
-        E_y.storeChunk(E, {0, 0, 0}, {1, 2, 3});
+        E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.iterations[1].meshes["E"];
@@ -934,12 +998,12 @@ inline void constant_scalar(std::string file_ending)
         vel_x.makeConstant(static_cast<short>(-1));
         auto vel_y = s.iterations[1].particles["e"]["velocity"]["y"];
         vel_y.resetDataset(Dataset(Datatype::ULONGLONG, {3, 2, 1}));
-        std::shared_ptr<unsigned long long> vel(
+        UniquePtrWithLambda<unsigned long long> vel(
             new unsigned long long[6],
             [](unsigned long long const *p) { delete[] p; });
         unsigned long long v{0};
         std::generate(vel.get(), vel.get() + 6, [&v] { return v++; });
-        vel_y.storeChunk(vel, {0, 0, 0}, {3, 2, 1});
+        vel_y.storeChunk(std::move(vel), {0, 0, 0}, {3, 2, 1});
     }
 
     {
@@ -4104,6 +4168,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         return res;
     };
     std::vector<int32_t> data(size, 10);
+    Datatype dtype = determineDatatype<int32_t>();
     {
         Series write("../samples/bp5_flush.bp", Access::CREATE, cfg);
 
@@ -4111,7 +4176,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["e_chargeDensity"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush();
@@ -4134,7 +4199,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["i_chargeDensity"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
         }
 
@@ -4169,7 +4234,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["temperature"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush(
@@ -4192,12 +4257,19 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             REQUIRE(currentSize <= 4096);
         }
 
+        bool has_been_deleted = false;
+        UniquePtrWithLambda<int32_t> copied_as_unique(
+            new int[size], [&has_been_deleted](int const *ptr) {
+                delete[] ptr;
+                has_been_deleted = true;
+            });
+        std::copy_n(data.data(), size, copied_as_unique.get());
         {
             auto component =
                 write.writeIterations()[0]
                     .meshes["temperature"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
-            component.storeChunk(data, {0}, {size});
+            component.resetDataset({dtype, {size}});
+            component.storeChunk(std::move(copied_as_unique), {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush(
                 "adios2.engine.preferred_flush_target = \"disk\"");
@@ -4207,11 +4279,13 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         {
             // should now be roughly within 1% of 16Mb
             REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
+            REQUIRE(has_been_deleted);
         }
         else
         {
             // should be roughly zero
             REQUIRE(currentSize <= 4096);
+            REQUIRE(!has_been_deleted);
         }
     }
     auto currentSize = getsize();

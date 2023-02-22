@@ -7,6 +7,7 @@
 
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -68,11 +69,11 @@ TEST_CASE("attribute_dtype_test", "[core]")
     REQUIRE(Datatype::DOUBLE == a.dtype);
     a = Attribute(static_cast<long double>(0.));
     REQUIRE(Datatype::LONG_DOUBLE == a.dtype);
-    a = Attribute(static_cast<std::complex<float> >(0.));
+    a = Attribute(static_cast<std::complex<float>>(0.));
     REQUIRE(Datatype::CFLOAT == a.dtype);
-    a = Attribute(static_cast<std::complex<double> >(0.));
+    a = Attribute(static_cast<std::complex<double>>(0.));
     REQUIRE(Datatype::CDOUBLE == a.dtype);
-    a = Attribute(static_cast<std::complex<long double> >(0.));
+    a = Attribute(static_cast<std::complex<long double>>(0.));
     REQUIRE(Datatype::CLONG_DOUBLE == a.dtype);
     a = Attribute(std::string(""));
     REQUIRE(Datatype::STRING == a.dtype);
@@ -989,9 +990,11 @@ TEST_CASE("use_count_test", "[core]")
     pprc.resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
     pprc.store(0, static_cast<uint64_t>(1));
     REQUIRE(
-        static_cast<Parameter<Operation::WRITE_DATASET> *>(
-            pprc.get().m_chunks.front().parameter.get())
-            ->data.use_count() == 1);
+        std::get<std::shared_ptr<void const>>(
+            static_cast<Parameter<Operation::WRITE_DATASET> *>(
+                pprc.get().m_chunks.front().parameter.get())
+                ->data.m_buffer)
+            .use_count() == 1);
 #endif
 }
 
@@ -1267,12 +1270,12 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
         REQUIRE(attr.get<unsigned char>() == 'x');
         REQUIRE(attr.get<signed char>() == 'x');
         // all the previous ones, but make them single-element vectors now
-        REQUIRE(attr.get<std::vector<char> >() == std::vector<char>{'x'});
+        REQUIRE(attr.get<std::vector<char>>() == std::vector<char>{'x'});
         REQUIRE(
-            attr.get<std::vector<unsigned char> >() ==
+            attr.get<std::vector<unsigned char>>() ==
             std::vector<unsigned char>{'x'});
         REQUIRE(
-            attr.get<std::vector<signed char> >() ==
+            attr.get<std::vector<signed char>>() ==
             std::vector<signed char>{'x'});
     }
     {
@@ -1280,14 +1283,14 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
         Attribute attr{array};
 
         // the following conversions should be possible
-        REQUIRE(attr.get<std::array<double, 7> >() == array);
+        REQUIRE(attr.get<std::array<double, 7>>() == array);
         // we don't need array-to-array conversions,
         // so array< int, 7 > cannot be loaded here
         REQUIRE(
-            attr.get<std::vector<double> >() ==
+            attr.get<std::vector<double>>() ==
             std::vector<double>{0, 1, 2, 3, 4, 5, 6});
         REQUIRE(
-            attr.get<std::vector<int> >() ==
+            attr.get<std::vector<int>>() ==
             std::vector<int>{0, 1, 2, 3, 4, 5, 6});
     }
     {
@@ -1297,17 +1300,17 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
         Attribute attr{vector};
 
         // the following conversions should be possible
-        REQUIRE(attr.get<std::array<double, 7> >() == arraydouble);
-        REQUIRE(attr.get<std::array<int, 7> >() == arrayint);
+        REQUIRE(attr.get<std::array<double, 7>>() == arraydouble);
+        REQUIRE(attr.get<std::array<int, 7>>() == arrayint);
         REQUIRE_THROWS_WITH(
-            (attr.get<std::array<int, 8> >()),
+            (attr.get<std::array<int, 8>>()),
             Catch::Equals("getCast: no vector to array conversion possible "
                           "(wrong requested array size)."));
         REQUIRE(
-            attr.get<std::vector<double> >() ==
+            attr.get<std::vector<double>>() ==
             std::vector<double>{0, 1, 2, 3, 4, 5, 6});
         REQUIRE(
-            attr.get<std::vector<int> >() ==
+            attr.get<std::vector<int>>() ==
             std::vector<int>{0, 1, 2, 3, 4, 5, 6});
     }
 }
@@ -1358,4 +1361,22 @@ TEST_CASE("unavailable_backend", "[core]")
             "'HDF5'.");
     }
 #endif
+}
+
+TEST_CASE("unique_ptr", "[core]")
+{
+    auto stdptr = std::make_unique<int>(5);
+    UniquePtrWithLambda<int> ptr = std::move(stdptr);
+    auto stdptr_with_custom_del =
+        std::unique_ptr<int, auxiliary::CustomDelete<int>>{
+            new int{5}, auxiliary::CustomDelete<int>{[](int const *del_ptr) {
+                delete del_ptr;
+            }}};
+    UniquePtrWithLambda<int> ptr2 = std::move(stdptr_with_custom_del);
+
+    UniquePtrWithLambda<int[]> arrptr;
+    // valgrind can detect mismatched new/delete pairs
+    UniquePtrWithLambda<int[]> arrptrFilled{new int[5]{}};
+    UniquePtrWithLambda<int[]> arrptrFilledCustom{
+        new int[5]{}, [](int const *p) { delete[] p; }};
 }
