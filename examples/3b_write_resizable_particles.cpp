@@ -32,7 +32,8 @@ int main()
     Series series =
         Series("../samples/3b_write_resizable_particles.h5", Access::CREATE);
 
-    ParticleSpecies electrons = series.iterations[0].particles["electrons"];
+    ParticleSpecies electrons =
+        series.writeIterations()[0].particles["electrons"];
 
     // our initial data to write
     std::vector<double> x{0., 1., 2., 3., 4.};
@@ -78,8 +79,14 @@ int main()
     rc_xo.resetDataset(dataset);
     rc_yo.resetDataset(dataset);
 
-    // after this call, the provided data buffers can be used again or deleted
-    series.flush();
+    // Attributable::seriesFlush() can be used alternatively if the Series
+    // handle is not currently in scope
+    rc_yo.seriesFlush();
+
+    // The iteration can be closed in order to help free up resources.
+    // The iteration's content will be flushed automatically.
+    // An iteration once closed cannot (yet) be reopened.
+    series.writeIterations()[0].close();
 
     // rinse and repeat as needed :)
 
@@ -89,5 +96,6 @@ int main()
      * Alternatively, one can call `series.close()` to the same effect as
      * calling the destructor, including the release of file handles.
      */
+    series.close();
     return 0;
 }

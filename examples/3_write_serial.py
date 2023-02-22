@@ -28,7 +28,7 @@ if __name__ == "__main__":
     print("Created an empty {0} Series".format(series.iteration_encoding))
 
     print(len(series.iterations))
-    rho = series.iterations[1]. \
+    rho = series.write_iterations()[1]. \
         meshes["rho"][io.Mesh_Record_Component.SCALAR]
 
     dataset = io.Dataset(data.dtype, data.shape)
@@ -47,7 +47,10 @@ if __name__ == "__main__":
     print("Stored the whole Dataset contents as a single chunk, " +
           "ready to write content")
 
-    series.flush()
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    series.write_iterations()[1].close()
     print("Dataset content has been fully written")
 
     # The files in 'series' are still open until the series is closed, at which

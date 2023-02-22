@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     geometry_parameters = "m={0};imag=+".format(num_modes)
 
-    E = series.iterations[0].meshes["E"]
+    E = series.write_iterations()[0].meshes["E"]
     E.geometry = io.Geometry.thetaMode
     E.geometry_parameters = geometry_parameters
     E.grid_spacing = [1.0, 1.0]
@@ -62,7 +62,10 @@ if __name__ == "__main__":
     E_t.reset_dataset(io.Dataset(E_t_data.dtype, E_t_data.shape))
     E_t.store_chunk(E_t_data)
 
-    series.flush()
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    series.write_iterations()[0].close()
 
     # The files in 'series' are still open until the series is closed, at which
     # time it cleanly flushes and closes all open file handles.

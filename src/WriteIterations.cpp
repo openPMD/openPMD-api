@@ -20,6 +20,7 @@
  */
 
 #include "openPMD/WriteIterations.hpp"
+#include "openPMD/Error.hpp"
 
 #include "openPMD/Series.hpp"
 
@@ -45,8 +46,14 @@ WriteIterations::SharedResources::~SharedResources()
 }
 
 WriteIterations::WriteIterations(IterationsContainer_t iterations)
-    : shared{std::make_shared<SharedResources>(std::move(iterations))}
+    : shared{std::make_shared<std::optional<SharedResources>>(
+          std::move(iterations))}
 {}
+
+void WriteIterations::close()
+{
+    *shared = std::nullopt;
+}
 
 WriteIterations::mapped_type &WriteIterations::operator[](key_type const &key)
 {
@@ -56,17 +63,23 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type const &key)
 }
 WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
 {
-    if (shared->currentlyOpen.has_value())
+    if (!shared || !shared->has_value())
     {
-        auto lastIterationIndex = shared->currentlyOpen.value();
-        auto &lastIteration = shared->iterations.at(lastIterationIndex);
+        throw error::WrongAPIUsage(
+            "[WriteIterations] Trying to access after closing Series.");
+    }
+    auto &s = shared->value();
+    if (s.currentlyOpen.has_value())
+    {
+        auto lastIterationIndex = s.currentlyOpen.value();
+        auto &lastIteration = s.iterations.at(lastIterationIndex);
         if (lastIterationIndex != key && !lastIteration.closed())
         {
             lastIteration.close();
         }
     }
-    shared->currentlyOpen = key;
-    auto &res = shared->iterations[std::move(key)];
+    s.currentlyOpen = key;
+    auto &res = s.iterations[std::move(key)];
     if (res.getStepStatus() == StepStatus::NoStep)
     {
         res.beginStep(/* reread = */ false);

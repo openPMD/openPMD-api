@@ -74,13 +74,13 @@ void init_Iteration(py::module &m)
         .def_readwrite(
             "meshes",
             &Iteration::meshes,
-            py::return_value_policy::reference,
+            py::return_value_policy::copy,
             // garbage collection: return value must be freed before Iteration
             py::keep_alive<1, 0>())
         .def_readwrite(
             "particles",
             &Iteration::particles,
-            py::return_value_policy::reference,
+            py::return_value_policy::copy,
             // garbage collection: return value must be freed before Iteration
             py::keep_alive<1, 0>());
 }

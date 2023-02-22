@@ -91,7 +91,11 @@ int main()
     }
 
     auto all_data = E_x.loadChunk<double>();
-    series.flush();
+
+    // The iteration can be closed in order to help free up resources.
+    // The iteration's content will be flushed automatically.
+    // An iteration once closed cannot (yet) be reopened.
+    i.close();
     cout << "Full E/x starts with:\n\t{";
     for (size_t col = 0; col < extent[1] && col < 5; ++col)
         cout << all_data.get()[col] << ", ";
@@ -103,5 +107,6 @@ int main()
      * Alternatively, one can call `series.close()` to the same effect as
      * calling the destructor, including the release of file handles.
      */
+    series.close();
     return 0;
 }

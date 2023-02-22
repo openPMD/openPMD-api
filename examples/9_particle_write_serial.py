@@ -68,5 +68,10 @@ if __name__ == "__main__":
     # files)
     f.flush()
 
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    cur_it.close()
+
     # now the file is closed
     f.close()

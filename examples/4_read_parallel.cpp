@@ -55,7 +55,11 @@ int main(int argc, char *argv[])
         cout << "Queued the loading of a single chunk per MPI rank from "
                 "disk, "
                 "ready to execute\n";
-    series.flush();
+
+    // The iteration can be closed in order to help free up resources.
+    // The iteration's content will be flushed automatically.
+    // An iteration once closed cannot (yet) be reopened.
+    series.iterations[100].close();
 
     if (0 == mpi_rank)
         cout << "Chunks have been read from disk\n";
@@ -78,6 +82,12 @@ int main(int argc, char *argv[])
         // this barrier is not necessary but structures the example output
         MPI_Barrier(MPI_COMM_WORLD);
     }
+    // The files in 'series' are still open until the series is closed, at which
+    // time it cleanly flushes and closes all open file handles.
+    // One can close the object explicitly to trigger this.
+    // Alternatively, this will automatically happen once the garbage collector
+    // claims (every copy of) the series object.
+    // In any case, this must happen before MPI_Finalize() is called
     series.close();
 
     // openPMD::Series MUST be destructed or closed at this point

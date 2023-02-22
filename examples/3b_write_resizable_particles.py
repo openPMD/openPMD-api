@@ -60,8 +60,11 @@ if __name__ == "__main__":
     rc_xo.reset_dataset(dataset)
     rc_yo.reset_dataset(dataset)
 
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
     # after this call, the provided data buffers can be used again or deleted
-    series.flush()
+    series.write_iterations()[0].close()
 
     # rinse and repeat as needed :)
 

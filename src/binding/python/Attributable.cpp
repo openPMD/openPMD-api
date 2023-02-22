@@ -380,7 +380,7 @@ void init_Attributable(py::module &m)
             "attributes",
             [](Attributable &attr) { return attr.attributes(); },
             // ref + keepalive
-            py::return_value_policy::reference_internal)
+            py::return_value_policy::move)
 
         // C++ pass-through API: Setter
         // note that the order of overloads is important!

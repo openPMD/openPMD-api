@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     cout << "Created an empty " << series.iterationEncoding() << " Series\n";
 
     MeshRecordComponent rho =
-        series.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
+        series.writeIterations()[1].meshes["rho"][MeshRecordComponent::SCALAR];
     cout << "Created a scalar mesh Record with all required openPMD "
             "attributes\n";
 
@@ -67,7 +67,11 @@ int main(int argc, char *argv[])
     cout << "Stored the whole Dataset contents as a single chunk, "
             "ready to write content\n";
 
-    series.flush();
+    // The iteration can be closed in order to help free up resources.
+    // The iteration's content will be flushed automatically.
+    // An iteration once closed cannot (yet) be reopened.
+    series.writeIterations()[1].close();
+
     cout << "Dataset content has been fully written\n";
 
     /* The files in 'series' are still open until the object is destroyed, on
@@ -76,5 +80,6 @@ int main(int argc, char *argv[])
      * Alternatively, one can call `series.close()` to the same effect as
      * calling the destructor, including the release of file handles.
      */
+    series.close();
     return 0;
 }
