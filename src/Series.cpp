@@ -2976,19 +2976,13 @@ auto Series::currentSnapshot() const
     if (series.iterations.containsAttribute("snapshot"))
     {
         auto const &attribute = series.iterations.getAttribute("snapshot");
-        switch (attribute.dtype)
+        auto res = attribute.getOptional<vec_t>();
+        if (res.has_value())
         {
-        case Datatype::ULONGLONG:
-        case Datatype::VEC_ULONGLONG: {
-            auto const &vec = attribute.get<std::vector<unsigned long long>>();
-            return vec_t{vec.begin(), vec.end()};
+            return res.value();
         }
-        case Datatype::ULONG:
-        case Datatype::VEC_ULONG: {
-            auto const &vec = attribute.get<std::vector<unsigned long>>();
-            return vec_t{vec.begin(), vec.end()};
-        }
-        default: {
+        else
+        {
             std::stringstream s;
             s << "Unexpected datatype for '/data/snapshot': " << attribute.dtype
               << " (expected a vector of integer, found " +
@@ -2999,7 +2993,6 @@ auto Series::currentSnapshot() const
                 error::Reason::UnexpectedContent,
                 {},
                 s.str());
-        }
         }
     }
     else
