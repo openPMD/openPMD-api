@@ -28,6 +28,7 @@
 
 #include <exception>
 #include <string>
+#include <type_traits>
 
 namespace openPMD
 {
@@ -36,9 +37,23 @@ inline Datatype dtype_from_numpy(pybind11::dtype const dt)
     // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
     // ref: https://github.com/numpy/numpy/issues/10678#issuecomment-369363551
     if (dt.char_() == pybind11::dtype("b").char_())
-        return Datatype::CHAR;
+        if constexpr (std::is_signed_v<char>)
+        {
+            return Datatype::CHAR;
+        }
+        else
+        {
+            return Datatype::SCHAR;
+        }
     else if (dt.char_() == pybind11::dtype("B").char_())
-        return Datatype::UCHAR;
+        if constexpr (std::is_unsigned_v<char>)
+        {
+            return Datatype::CHAR;
+        }
+        else
+        {
+            return Datatype::UCHAR;
+        }
     else if (dt.char_() == pybind11::dtype("short").char_())
         return Datatype::SHORT;
     else if (dt.char_() == pybind11::dtype("intc").char_())
