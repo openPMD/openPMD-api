@@ -978,6 +978,8 @@ void HDF5IOHandlerImpl::openDataset(
             d = DT::CHAR;
         else if (H5Tequal(dataset_type, H5T_NATIVE_UCHAR))
             d = DT::UCHAR;
+        else if (H5Tequal(dataset_type, H5T_NATIVE_SCHAR))
+            d = DT::SCHAR;
         else if (H5Tequal(dataset_type, H5T_NATIVE_SHORT))
             d = DT::SHORT;
         else if (H5Tequal(dataset_type, H5T_NATIVE_INT))
@@ -1729,6 +1731,7 @@ void HDF5IOHandlerImpl::readDataset(
     case DT::ULONGLONG:
     case DT::CHAR:
     case DT::UCHAR:
+    case DT::SCHAR:
     case DT::BOOL:
         break;
     case DT::UNDEFINED:
