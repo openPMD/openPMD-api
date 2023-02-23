@@ -1863,6 +1863,12 @@ void HDF5IOHandlerImpl::readAttribute(
             status = H5Aread(attr_id, attr_type, &u);
             a = Attribute(u);
         }
+        else if (H5Tequal(attr_type, H5T_NATIVE_SCHAR))
+        {
+            signed char u;
+            status = H5Aread(attr_id, attr_type, &u);
+            a = Attribute(u);
+        }
         else if (H5Tequal(attr_type, H5T_NATIVE_SHORT))
         {
             short i;
@@ -2086,6 +2092,12 @@ void HDF5IOHandlerImpl::readAttribute(
         else if (H5Tequal(attr_type, H5T_NATIVE_UCHAR))
         {
             std::vector<unsigned char> vu(dims[0], 0);
+            status = H5Aread(attr_id, attr_type, vu.data());
+            a = Attribute(vu);
+        }
+        else if (H5Tequal(attr_type, H5T_NATIVE_SCHAR))
+        {
+            std::vector<signed char> vu(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vu.data());
             a = Attribute(vu);
         }
