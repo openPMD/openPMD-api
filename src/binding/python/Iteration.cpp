@@ -63,8 +63,20 @@ void init_Iteration(py::module &m)
             "dt", &Iteration::dt<long double>, &Iteration::setDt<double>)
         .def_property(
             "time_unit_SI", &Iteration::timeUnitSI, &Iteration::setTimeUnitSI)
-        .def("open", &Iteration::open)
-        .def("close", &Iteration::close, py::arg("flush") = true)
+        .def(
+            "open",
+            [](Iteration &it) {
+                py::gil_scoped_release release;
+                return it.open();
+            })
+        .def(
+            "close",
+            /*
+             * Cannot release the GIL here since Python buffers might be
+             * accessed in deferred tasks
+             */
+            &Iteration::close,
+            py::arg("flush") = true)
 
         // TODO remove in future versions (deprecated)
         .def("set_time", &Iteration::setTime<double>)

@@ -59,6 +59,7 @@ void init_Series(py::module &m)
         .def(
             "__getitem__",
             [](WriteIterations writeIterations, Series::IterationIndex_t key) {
+                py::gil_scoped_release release;
                 return writeIterations[key];
             },
             // copy + keepalive
@@ -74,6 +75,11 @@ void init_Series(py::module &m)
                 {
                     throw py::stop_iteration();
                 }
+                /*
+                 * Closing the iteration must happen under the GIL lock since
+                 * Python buffers might be accessed
+                 */
+                (*iterator).close();
                 {
                     py::gil_scoped_release release;
                     ++iterator;
