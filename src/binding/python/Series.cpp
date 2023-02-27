@@ -59,11 +59,23 @@ void init_Series(py::module &m)
         .def(
             "__getitem__",
             [](WriteIterations writeIterations, Series::IterationIndex_t key) {
+                auto lastIteration = writeIterations.currentIteration();
+                if (lastIteration.has_value() &&
+                    lastIteration.value().iterationIndex != key)
+                {
+                    // this must happen under the GIL
+                    lastIteration.value().close();
+                }
                 py::gil_scoped_release release;
                 return writeIterations[key];
             },
             // copy + keepalive
-            py::return_value_policy::copy);
+            py::return_value_policy::copy)
+        .def(
+            "current_iteration",
+            &WriteIterations::currentIteration,
+            "Return the iteration that is currently being written to, if it "
+            "exists.");
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
 
@@ -79,7 +91,10 @@ void init_Series(py::module &m)
                  * Closing the iteration must happen under the GIL lock since
                  * Python buffers might be accessed
                  */
-                (*iterator).close();
+                if (!(*iterator).closed())
+                {
+                    (*iterator).close();
+                }
                 {
                     py::gil_scoped_release release;
                     ++iterator;

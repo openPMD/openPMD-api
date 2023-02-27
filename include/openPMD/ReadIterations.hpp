@@ -31,26 +31,6 @@
 
 namespace openPMD
 {
-/**
- * @brief Subclass of Iteration that knows its own index withing the containing
- *        Series.
- */
-class IndexedIteration : public Iteration
-{
-    friend class SeriesIterator;
-
-public:
-    using iterations_t = decltype(internal::SeriesData::iterations);
-    using index_t = iterations_t::key_type;
-    index_t const iterationIndex;
-
-private:
-    template <typename Iteration_t>
-    IndexedIteration(Iteration_t &&it, index_t index)
-        : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
-    {}
-};
-
 class SeriesIterator
 {
     using iteration_index_t = IndexedIteration::index_t;

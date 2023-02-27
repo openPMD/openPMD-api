@@ -420,4 +420,24 @@ inline T Iteration::dt() const
 {
     return this->readFloatingpoint<T>("dt");
 }
+
+/**
+ * @brief Subclass of Iteration that knows its own index withing the containing
+ *        Series.
+ */
+class IndexedIteration : public Iteration
+{
+    friend class SeriesIterator;
+    friend class WriteIterations;
+
+public:
+    using index_t = Iteration::IterationIndex_t;
+    index_t const iterationIndex;
+
+private:
+    template <typename Iteration_t>
+    IndexedIteration(Iteration_t &&it, index_t index)
+        : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
+    {}
+};
 } // namespace openPMD
