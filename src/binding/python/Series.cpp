@@ -78,7 +78,12 @@ void init_Series(py::module &m)
     py::class_<Series, Attributable>(m, "Series")
 
         .def(
-            py::init<std::string const &, Access, std::string const &>(),
+            py::init([](std::string const &filepath,
+                        Access at,
+                        std::string const &options) {
+                py::gil_scoped_release release;
+                return new Series(filepath, at, options);
+            }),
             py::arg("filepath"),
             py::arg("access"),
             py::arg("options") = "{}")
@@ -145,6 +150,7 @@ void init_Series(py::module &m)
                         "(Mismatched MPI at compile vs. runtime?)");
                 }
 
+                py::gil_scoped_release release;
                 return new Series(filepath, at, *mpiCommPtr, options);
             }),
             py::arg("filepath"),
@@ -232,7 +238,13 @@ this method.
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
-        .def("read_iterations", &Series::readIterations, py::keep_alive<0, 1>())
+        .def(
+            "read_iterations",
+            [](Series &s) {
+                py::gil_scoped_release release;
+                return s.readIterations();
+            },
+            py::keep_alive<0, 1>())
         .def(
             "write_iterations",
             &Series::writeIterations,
