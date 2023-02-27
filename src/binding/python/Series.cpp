@@ -65,12 +65,41 @@ void init_Series(py::module &m)
             py::return_value_policy::copy);
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
+
+    py::class_<SeriesIterator>(m, "SeriesIterator")
+        .def(
+            "__next__",
+            [](SeriesIterator &iterator) {
+                if (iterator == SeriesIterator::end())
+                {
+                    throw py::stop_iteration();
+                }
+                {
+                    py::gil_scoped_release release;
+                    ++iterator;
+                }
+                if (iterator == SeriesIterator::end())
+                {
+                    throw py::stop_iteration();
+                }
+                else
+                {
+                    return *iterator;
+                }
+            }
+
+        );
+
     py::class_<ReadIterations>(m, "ReadIterations")
         .def(
             "__iter__",
             [](ReadIterations &readIterations) {
-                return py::make_iterator(
-                    readIterations.begin(), readIterations.end());
+                // Simple iterator implementation:
+                // But we need to release the GIL inside
+                // SeriesIterator::operator++, so manually it is
+                // return py::make_iterator(
+                //     readIterations.begin(), readIterations.end());
+                return readIterations.begin();
             },
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
