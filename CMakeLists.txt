@@ -42,6 +42,8 @@ endif()
 
 # Project structure ###########################################################
 #
+get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+
 # temporary build directories
 if(NOT openPMD_ARCHIVE_OUTPUT_DIRECTORY)
     if(CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
@@ -573,6 +575,19 @@ set_target_properties(openPMD PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+# note: same as above, but for Multi-Config generators
+if(isMultiConfig)
+    foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+        string(TOUPPER "${CFG}" CFG_UPPER)
+        set_target_properties(openPMD PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+            LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+            RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+            PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}
+            COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
+        )
+    endforeach()
+endif()
 set(_cxx_msvc   "$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>")
 set(_msvc_1914  "$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,19.14>")
 set(_msvc_options)
@@ -654,6 +669,19 @@ if(openPMD_HAVE_ADIOS1)
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN ON
     )
+    # note: same as above, but for Multi-Config generators
+    if(isMultiConfig)
+        foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CFG}" CFG_UPPER)
+            set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
+                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}
+                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}
+                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
+            )
+        endforeach()
+    endif()
     if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
         set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
             LINK_FLAGS "-Wl,--exclude-libs,ALL")
@@ -688,6 +716,19 @@ if(openPMD_HAVE_ADIOS1)
             CXX_VISIBILITY_PRESET hidden
             VISIBILITY_INLINES_HIDDEN 1
         )
+        # note: same as above, but for Multi-Config generators
+        if(isMultiConfig)
+            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+                string(TOUPPER "${CFG}" CFG_UPPER)
+                set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
+                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}
+                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
+                )
+            endforeach()
+        endif()
         if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
             set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
                 LINK_FLAGS "-Wl,--exclude-libs,ALL")
@@ -841,6 +882,19 @@ if(openPMD_HAVE_PYTHON)
         PDB_OUTPUT_DIRECTORY ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
         COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
     )
+    # note: same as above, but for Multi-Config generators
+    if(isMultiConfig)
+        foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CFG}" CFG_UPPER)
+            set_target_properties(openPMD.py PROPERTIES
+                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+            )
+        endforeach()
+    endif()
     function(copy_aux_py)
         set(AUX_PY_SRC_DIR ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api/)
         set(AUX_PY_DSR_DIR ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api/)
@@ -934,6 +988,19 @@ if(openPMD_BUILD_TESTING)
         POSITION_INDEPENDENT_CODE ON
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
+    # note: same as above, but for Multi-Config generators
+    if(isMultiConfig)
+        foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CFG}" CFG_UPPER)
+            set_target_properties(CatchRunner PROPERTIES
+                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}
+                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
+            )
+        endforeach()
+    endif()
     target_compile_options(CatchRunner PUBLIC ${_msvc_options})
     target_compile_options(CatchMain   PUBLIC ${_msvc_options})
     target_link_libraries(CatchRunner PUBLIC openPMD::thirdparty::Catch2)
@@ -953,6 +1020,19 @@ if(openPMD_BUILD_TESTING)
             PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
         )
+        # note: same as above, but for Multi-Config generators
+        if(isMultiConfig)
+            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+                string(TOUPPER "${CFG}" CFG_UPPER)
+                set_target_properties(${testname}Tests PROPERTIES
+                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                )
+            endforeach()
+        endif()
 
         if(openPMD_USE_INVASIVE_TESTS)
             target_compile_definitions(${testname}Tests PRIVATE openPMD_USE_INVASIVE_TESTS=1)
@@ -983,6 +1063,19 @@ if(openPMD_BUILD_CLI_TOOLS)
             PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
         )
+        # note: same as above, but for Multi-Config generators
+        if(isMultiConfig)
+            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+                string(TOUPPER "${CFG}" CFG_UPPER)
+                set_target_properties(openpmd-${toolname} PROPERTIES
+                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                )
+            endforeach()
+        endif()
 
         target_link_libraries(openpmd-${toolname} PRIVATE openPMD)
     endforeach()
@@ -1010,6 +1103,19 @@ if(openPMD_BUILD_EXAMPLES)
             PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
         )
+        # note: same as above, but for Multi-Config generators
+        if(isMultiConfig)
+            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+                string(TOUPPER "${CFG}" CFG_UPPER)
+                set_target_properties(${examplename} PROPERTIES
+                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                )
+            endforeach()
+        endif()
         target_link_libraries(${examplename} PRIVATE openPMD)
     endforeach()
 endif()
