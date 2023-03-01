@@ -53,6 +53,20 @@ struct openPMD_PyMPICommObject
 using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 #endif
 
+struct SeriesIteratorPythonAdaptor : SeriesIterator
+{
+    SeriesIteratorPythonAdaptor(SeriesIterator it)
+        : SeriesIterator(std::move(it))
+    {}
+
+    /*
+     * Python iterators are weird and call `__next__()` already for getting the
+     * first element.
+     * In that case, no `operator++()` must be called...
+     */
+    bool first_iteration = true;
+};
+
 void init_Series(py::module &m)
 {
     py::class_<WriteIterations>(m, "WriteIterations")
@@ -79,10 +93,10 @@ void init_Series(py::module &m)
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
 
-    py::class_<SeriesIterator>(m, "SeriesIterator")
+    py::class_<SeriesIteratorPythonAdaptor>(m, "SeriesIterator")
         .def(
             "__next__",
-            [](SeriesIterator &iterator) {
+            [](SeriesIteratorPythonAdaptor &iterator) {
                 if (iterator == SeriesIterator::end())
                 {
                     throw py::stop_iteration();
@@ -91,14 +105,16 @@ void init_Series(py::module &m)
                  * Closing the iteration must happen under the GIL lock since
                  * Python buffers might be accessed
                  */
-                if (!(*iterator).closed())
+                if (!iterator.first_iteration)
                 {
-                    (*iterator).close();
-                }
-                {
+                    if (!(*iterator).closed())
+                    {
+                        (*iterator).close();
+                    }
                     py::gil_scoped_release release;
                     ++iterator;
                 }
+                iterator.first_iteration = false;
                 if (iterator == SeriesIterator::end())
                 {
                     throw py::stop_iteration();
@@ -120,7 +136,7 @@ void init_Series(py::module &m)
                 // SeriesIterator::operator++, so manually it is
                 // return py::make_iterator(
                 //     readIterations.begin(), readIterations.end());
-                return readIterations.begin();
+                return SeriesIteratorPythonAdaptor(readIterations.begin());
             },
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
