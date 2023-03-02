@@ -618,8 +618,17 @@ void HDF5IOHandlerImpl::createDataset(
 #endif
 
         /* Open H5Object to write into */
-        auto res = getFile(writable);
-        File file = res ? res.value() : getFile(writable->parent).value();
+        File file{};
+        if (auto opt = getFile(writable->parent); opt.has_value())
+        {
+            file = opt.value();
+        }
+        else
+        {
+            throw error::Internal(
+                "[HDF5] CREATE_DATASET task must have a parent with an "
+                "associated file.");
+        }
         hid_t node_id =
             H5Gopen(file.id, concrete_h5_file_position(writable).c_str(), gapl);
         VERIFY(
