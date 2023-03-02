@@ -67,8 +67,8 @@ namespace detail
     struct DatasetReader;
     struct AttributeReader;
     struct AttributeWriter;
-    struct OldAttributeReader;
-    struct OldAttributeWriter;
+    struct AttributeReader;
+    struct AttributeWriter;
     template <typename>
     struct AttributeTypes;
     struct DatasetOpener;
@@ -113,8 +113,8 @@ class ADIOS2IOHandlerImpl
     friend struct detail::DatasetReader;
     friend struct detail::AttributeReader;
     friend struct detail::AttributeWriter;
-    friend struct detail::OldAttributeReader;
-    friend struct detail::OldAttributeWriter;
+    friend struct detail::AttributeReader;
+    friend struct detail::AttributeWriter;
     template <typename>
     friend struct detail::AttributeTypes;
     friend struct detail::DatasetOpener;
@@ -266,6 +266,16 @@ private:
     };
 
     UseSpan m_useSpanBasedPutByDefault = UseSpan::Auto;
+
+    enum class ModifiableAttributes : char
+    {
+        Yes,
+        No,
+        Unspecified
+    };
+
+    ModifiableAttributes m_modifiableAttributes =
+        ModifiableAttributes::Unspecified;
 
     inline SupportedSchema schema() const
     {
@@ -441,6 +451,7 @@ namespace ADIOS2Defaults
     constexpr const_str str_isBooleanOldLayout = "__is_boolean__";
     constexpr const_str str_isBooleanNewLayout =
         "__openPMD_internal/is_boolean";
+    constexpr const_str str_activeTablePrefix = "__openPMD_groups";
 } // namespace ADIOS2Defaults
 
 namespace detail
@@ -465,10 +476,11 @@ namespace detail
         static constexpr char const *errorMsg = "ADIOS2: readDataset()";
     };
 
-    struct OldAttributeReader
+    struct AttributeReader
     {
         template <typename T>
         static Datatype call(
+            ADIOS2IOHandlerImpl &,
             adios2::IO &IO,
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
@@ -477,7 +489,7 @@ namespace detail
         static Datatype call(Params &&...);
     };
 
-    struct OldAttributeWriter
+    struct AttributeWriter
     {
         template <typename T>
         static void call(
@@ -786,14 +798,6 @@ namespace detail
         void run(BufferedActions &);
     };
 
-    struct OldBufferedAttributeRead : BufferedAction
-    {
-        Parameter<Operation::READ_ATT> param;
-        std::string name;
-
-        void run(BufferedActions &) override;
-    };
-
     struct I_UpdateSpan
     {
         virtual void *update() = 0;
@@ -1017,6 +1021,10 @@ namespace detail
          * See description below.
          */
         void invalidateVariablesMap();
+
+        void markActive(Writable *);
+
+        // bool isActive(std::string const & path);
 
         /*
          * streamStatus is NoStream for file-based ADIOS engines.
