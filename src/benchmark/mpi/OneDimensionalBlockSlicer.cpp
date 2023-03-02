@@ -72,4 +72,9 @@ OneDimensionalBlockSlicer::sliceBlock(Extent &totalExtent, int size, int rank)
     }
     return std::make_pair(std::move(offs), std::move(localExtent));
 }
+
+std::unique_ptr<BlockSlicer> OneDimensionalBlockSlicer::clone() const
+{
+    return std::unique_ptr<BlockSlicer>(new OneDimensionalBlockSlicer(m_dim));
+}
 } // namespace openPMD
