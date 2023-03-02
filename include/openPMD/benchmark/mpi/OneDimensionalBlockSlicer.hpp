@@ -35,5 +35,7 @@ public:
 
     std::pair<Offset, Extent>
     sliceBlock(Extent &totalExtent, int size, int rank) override;
+
+    virtual std::unique_ptr<BlockSlicer> clone() const override;
 };
 } // namespace openPMD

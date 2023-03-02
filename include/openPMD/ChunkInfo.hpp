@@ -23,6 +23,7 @@
 #include "openPMD/config.hpp"
 
 #include "openPMD/Dataset.hpp" // Offset, Extent
+#include "openPMD/benchmark/mpi/BlockSlicer.hpp"
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -84,7 +85,243 @@ using ChunkTable = std::vector<WrittenChunkInfo>;
 
 namespace chunk_assignment
 {
+    constexpr char const *HOSTFILE_VARNAME = "MPI_WRITTEN_HOSTFILE";
+
     using RankMeta = std::map<unsigned int, std::string>;
+
+    using Assignment = std::map<unsigned int, std::vector<WrittenChunkInfo>>;
+
+    struct PartialAssignment
+    {
+        ChunkTable notAssigned;
+        Assignment assigned;
+
+        explicit PartialAssignment() = default;
+        PartialAssignment(ChunkTable notAssigned);
+        PartialAssignment(ChunkTable notAssigned, Assignment assigned);
+    };
+
+    /**
+     * @brief Interface for a chunk distribution strategy.
+     *
+     * Used for implementing algorithms that read a ChunkTable as produced
+     * by BaseRecordComponent::availableChunks() and produce as result a
+     * ChunkTable that guides data sinks on how to load data into reading
+     * processes.
+     */
+    struct Strategy
+    {
+        Assignment assign(
+            ChunkTable,
+            RankMeta const &rankMetaIn,
+            RankMeta const &rankMetaOut);
+        /**
+         * @brief Assign chunks to be loaded to reading processes.
+         *
+         * @param partialAssignment Two chunktables, one of unassigned chunks
+         *        and one of chunks that might have already been assigned
+         *        previously.
+         *        Merge the unassigned chunks into the partially assigned table.
+         * @param in Meta information on writing processes, e.g. hostnames.
+         * @param out Meta information on reading processes, e.g. hostnames.
+         * @return ChunkTable A table that assigns chunks to reading processes.
+         */
+        virtual Assignment assign(
+            PartialAssignment partialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) = 0;
+
+        virtual std::unique_ptr<Strategy> clone() const = 0;
+
+        virtual ~Strategy() = default;
+    };
+
+    /**
+     * @brief A chunk distribution strategy that guarantees no complete
+     *        distribution.
+     *
+     * Combine with a full Strategy using the FromPartialStrategy struct to
+     * obtain a Strategy that works in two phases:
+     * 1. Apply the partial strategy.
+     * 2. Apply the full strategy to assign unassigned leftovers.
+     *
+     */
+    struct PartialStrategy
+    {
+        PartialAssignment
+        assign(ChunkTable table, RankMeta const &in, RankMeta const &out);
+        /**
+         * @brief Assign chunks to be loaded to reading processes.
+         *
+         * @param partialAssignment Two chunktables, one of unassigned chunks
+         *        and one of chunks that might have already been assigned
+         *        previously.
+         *        Merge the unassigned chunks into the partially assigned table.
+         * @param in Meta information on writing processes, e.g. hostnames.
+         * @param out Meta information on reading processes, e.g. hostnames.
+         * @return PartialAssignment Two chunktables, one of leftover chunks
+         *         that were not assigned and one that assigns chunks to
+         *         reading processes.
+         */
+        virtual PartialAssignment assign(
+            PartialAssignment partialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) = 0;
+
+        virtual std::unique_ptr<PartialStrategy> clone() const = 0;
+
+        virtual ~PartialStrategy() = default;
+    };
+
+    /**
+     * @brief Combine a PartialStrategy and a Strategy to obtain a Strategy
+     *        working in two phases.
+     *
+     * 1. Apply the PartialStrategy to obtain a PartialAssignment.
+     *    This may be a heuristic that will not work under all circumstances,
+     *    e.g. trying to distribute chunks within the same compute node.
+     * 2. Apply the Strategy to assign leftovers.
+     *    This guarantees correctness in case the heuristics in the first phase
+     *    were not applicable e.g. due to a suboptimal setup.
+     *
+     */
+    struct FromPartialStrategy : Strategy
+    {
+        FromPartialStrategy(
+            std::unique_ptr<PartialStrategy> firstPass,
+            std::unique_ptr<Strategy> secondPass);
+
+        virtual Assignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        virtual std::unique_ptr<Strategy> clone() const override;
+
+    private:
+        std::unique_ptr<PartialStrategy> m_firstPass;
+        std::unique_ptr<Strategy> m_secondPass;
+    };
+
+    /**
+     * @brief Simple strategy that assigns produced chunks to reading processes
+     *        in a round-Robin manner.
+     *
+     */
+    struct RoundRobin : Strategy
+    {
+        Assignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        virtual std::unique_ptr<Strategy> clone() const override;
+    };
+
+    /**
+     * @brief Strategy that assigns chunks to be read by processes within
+     *        the same host that produced the chunk.
+     *
+     * The distribution strategy within one such chunk can be flexibly
+     * chosen.
+     *
+     */
+    struct ByHostname : PartialStrategy
+    {
+        ByHostname(std::unique_ptr<Strategy> withinNode);
+
+        PartialAssignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        virtual std::unique_ptr<PartialStrategy> clone() const override;
+
+    private:
+        std::unique_ptr<Strategy> m_withinNode;
+    };
+
+    /**
+     * @brief Slice the n-dimensional dataset into hyperslabs and distribute
+     *        chunks according to them.
+     *
+     * This strategy only produces chunks in the returned ChunkTable for the
+     * calling parallel process.
+     * Incoming chunks are intersected with the hyperslab and assigned to the
+     * current parallel process in case this intersection is non-empty.
+     *
+     */
+    struct ByCuboidSlice : Strategy
+    {
+        ByCuboidSlice(
+            std::unique_ptr<BlockSlicer> blockSlicer,
+            Extent totalExtent,
+            unsigned int mpi_rank,
+            unsigned int mpi_size);
+
+        Assignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        virtual std::unique_ptr<Strategy> clone() const override;
+
+    private:
+        std::unique_ptr<BlockSlicer> blockSlicer;
+        Extent totalExtent;
+        unsigned int mpi_rank, mpi_size;
+    };
+
+    /**
+     * @brief Strategy that tries to assign chunks in a balanced manner without
+     *        arbitrarily cutting chunks.
+     *
+     * Idea:
+     * Calculate the ideal amount of data to be loaded per parallel process
+     * and cut chunks s.t. no chunk is larger than that ideal size.
+     * The resulting problem is an instance of the Bin-Packing problem which
+     * can be solved by a factor-2 approximation, meaning that a reading process
+     * will be assigned at worst twice the ideal amount of data.
+     *
+     */
+    struct BinPacking : Strategy
+    {
+        size_t splitAlongDimension = 0;
+
+        /**
+         * @param splitAlongDimension If a chunk needs to be split, split it
+         *        along this dimension.
+         */
+        BinPacking(size_t splitAlongDimension = 0);
+
+        Assignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        virtual std::unique_ptr<Strategy> clone() const override;
+    };
+
+    /**
+     * @brief Strategy that purposefully fails when the PartialAssignment has
+     *        leftover chunks.
+     *
+     * Useful as second phase in FromPartialStrategy to assert that the first
+     * pass of the strategy catches all blocks, e.g. to assert that all chunks
+     * can be assigned within the same compute node.
+     *
+     */
+    struct FailingStrategy : Strategy
+    {
+        explicit FailingStrategy();
+
+        Assignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        virtual std::unique_ptr<Strategy> clone() const override;
+    };
 } // namespace chunk_assignment
 
 namespace host_info
