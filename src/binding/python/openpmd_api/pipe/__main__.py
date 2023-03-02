@@ -10,6 +10,7 @@ License: LGPLv3+
 """
 import argparse
 import os  # os.path.basename
+import re
 import sys  # sys.stderr.write
 
 from .. import openpmd_api_cxx as io
@@ -39,8 +40,14 @@ are fulfilled:
    By default, the openPMD-api will be initialized without an MPI communicator
    if the MPI size is 1. This is to simplify the use of the JSON backend
    which is only available in serial openPMD.
-With parallelization enabled, each dataset will be equally sliced along
-the dimension with the largest extent.
+With parallelization enabled, each dataset will be equally sliced according to
+a chunk distribution strategy which may be selected via the environment
+variable OPENPMD_CHUNK_DISTRIBUTION. Options include "roundrobin",
+"binpacking", "slicedataset" and "hostname_<1>_<2>", where <1> should be
+replaced with a strategy to be applied within a compute node and <2> with a
+secondary strategy in case the hostname strategy does not distribute
+all chunks.
+The default is `hostname_binpacking_slicedataset`.
 
 Examples:
     {0} --infile simData.h5 --outfile simData_%T.bp
@@ -99,71 +106,48 @@ class FallbackMPICommunicator:
         self.rank = 0
 
 
-class Chunk:
-    """
-    A Chunk is an n-dimensional hypercube, defined by an offset and an extent.
-    Offset and extent must be of the same dimensionality (Chunk.__len__).
-    """
-    def __init__(self, offset, extent):
-        assert (len(offset) == len(extent))
-        self.offset = offset
-        self.extent = extent
-
-    def __len__(self):
-        return len(self.offset)
-
-    def slice1D(self, mpi_rank, mpi_size, dimension=None):
-        """
-        Slice this chunk into mpi_size hypercubes along one of its
-        n dimensions. The dimension is given through the 'dimension'
-        parameter. If None, the dimension with the largest extent on
-        this hypercube is automatically picked.
-        Returns the mpi_rank'th of the sliced chunks.
-        """
-        if dimension is None:
-            # pick that dimension which has the highest count of items
-            dimension = 0
-            maximum = self.extent[0]
-            for k, v in enumerate(self.extent):
-                if v > maximum:
-                    dimension = k
-        assert (dimension < len(self))
-        # no offset
-        assert (self.offset == [0 for _ in range(len(self))])
-        offset = [0 for _ in range(len(self))]
-        stride = self.extent[dimension] // mpi_size
-        rest = self.extent[dimension] % mpi_size
-
-        # local function f computes the offset of a rank
-        # for more equal balancing, we want the start index
-        # at the upper gaussian bracket of (N/n*rank)
-        # where N the size of the dataset in dimension dim
-        # and n the MPI size
-        # for avoiding integer overflow, this is the same as:
-        # (N div n)*rank + round((N%n)/n*rank)
-        def f(rank):
-            res = stride * rank
-            padDivident = rest * rank
-            pad = padDivident // mpi_size
-            if pad * mpi_size < padDivident:
-                pad += 1
-            return res + pad
-
-        offset[dimension] = f(mpi_rank)
-        extent = self.extent.copy()
-        if mpi_rank >= mpi_size - 1:
-            extent[dimension] -= offset[dimension]
-        else:
-            extent[dimension] = f(mpi_rank + 1) - offset[dimension]
-        return Chunk(offset, extent)
-
-
 class deferred_load:
     def __init__(self, source, dynamicView, offset, extent):
         self.source = source
         self.dynamicView = dynamicView
         self.offset = offset
         self.extent = extent
+
+
+def distribution_strategy(dataset_extent,
+                          mpi_rank,
+                          mpi_size,
+                          strategy_identifier=None):
+    if strategy_identifier is None or not strategy_identifier:
+        if 'OPENPMD_CHUNK_DISTRIBUTION' in os.environ:
+            strategy_identifier = os.environ[
+                'OPENPMD_CHUNK_DISTRIBUTION'].lower()
+        else:
+            strategy_identifier = 'hostname_binpacking_slicedataset'  # default
+    match = re.search('hostname_(.*)_(.*)', strategy_identifier)
+    if match is not None:
+        inside_node = distribution_strategy(dataset_extent,
+                                            mpi_rank,
+                                            mpi_size,
+                                            strategy_identifier=match.group(1))
+        second_phase = distribution_strategy(
+            dataset_extent,
+            mpi_rank,
+            mpi_size,
+            strategy_identifier=match.group(2))
+        return io.FromPartialStrategy(io.ByHostname(inside_node), second_phase)
+    elif strategy_identifier == 'roundrobin':
+        return io.RoundRobin()
+    elif strategy_identifier == 'binpacking':
+        return io.BinPacking()
+    elif strategy_identifier == 'slicedataset':
+        return io.ByCuboidSlice(io.OneDimensionalBlockSlicer(), dataset_extent,
+                                mpi_rank, mpi_size)
+    elif strategy_identifier == 'fail':
+        return io.FailingStrategy()
+    else:
+        raise RuntimeError("Unknown distribution strategy: " +
+                           strategy_identifier)
 
 
 class pipe:
@@ -177,6 +161,11 @@ class pipe:
         self.outconfig = outconfig
         self.loads = []
         self.comm = comm
+        if HAVE_MPI:
+            hostinfo = io.HostInfo.MPI_PROCESSOR_NAME
+            self.outranks = hostinfo.get_collective(self.comm)
+        else:
+            self.outranks = {i: str(i) for i in range(self.comm.size)}
 
     def run(self):
         if not HAVE_MPI or (args.mpi is None and self.comm.size == 1):
@@ -268,6 +257,9 @@ class pipe:
                         print("With records:")
                         for r in in_iteration.particles[ps]:
                             print("\t {0}".format(r))
+                # With linear read mode, we can only load the source rank table
+                # inside `read_iterations()` since it's a dataset.
+                self.inranks = src.get_rank_table(collective=True)
                 out_iteration = write_iterations[in_iteration.iteration_index]
                 sys.stdout.flush()
                 self.__copy(
@@ -284,7 +276,6 @@ class pipe:
         elif isinstance(src, io.Record_Component) and (not is_container
                                                        or src.scalar):
             shape = src.shape
-            offset = [0 for _ in shape]
             dtype = src.dtype
             dest.reset_dataset(io.Dataset(dtype, shape))
             if src.empty:
@@ -294,19 +285,23 @@ class pipe:
             elif src.constant:
                 dest.make_constant(src.get_attribute("value"))
             else:
-                chunk = Chunk(offset, shape)
-                local_chunk = chunk.slice1D(self.comm.rank, self.comm.size)
-                if debug:
-                    end = local_chunk.offset.copy()
-                    for i in range(len(end)):
-                        end[i] += local_chunk.extent[i]
-                    print("{}\t{}/{}:\t{} -- {}".format(
-                        current_path, self.comm.rank, self.comm.size,
-                        local_chunk.offset, end))
-                span = dest.store_chunk(local_chunk.offset, local_chunk.extent)
-                self.loads.append(
-                    deferred_load(src, span, local_chunk.offset,
-                                  local_chunk.extent))
+                chunk_table = src.available_chunks()
+                strategy = distribution_strategy(shape, self.comm.rank,
+                                                 self.comm.size)
+                my_chunks = strategy.assign(chunk_table, self.inranks,
+                                            self.outranks)
+                for chunk in my_chunks[
+                        self.comm.rank] if self.comm.rank in my_chunks else []:
+                    if debug:
+                        end = chunk.offset.copy()
+                        for i in range(len(end)):
+                            end[i] += chunk.extent[i]
+                        print("{}\t{}/{}:\t{} -- {}".format(
+                            current_path, self.comm.rank, self.comm.size,
+                            chunk.offset, end))
+                    span = dest.store_chunk(chunk.offset, chunk.extent)
+                    self.loads.append(
+                        deferred_load(src, span, chunk.offset, chunk.extent))
         elif isinstance(src, io.Iteration):
             self.__copy(src.meshes, dest.meshes, current_path + "meshes/")
             self.__copy(src.particles, dest.particles,
