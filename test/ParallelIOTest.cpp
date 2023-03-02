@@ -6,6 +6,8 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/openPMD.hpp"
+// @todo change includes
+#include "openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp"
 #include <catch2/catch.hpp>
 
 #if openPMD_HAVE_MPI
@@ -1190,6 +1192,53 @@ TEST_CASE("independent_write_with_collective_flush", "[parallel]")
 }
 #endif
 
+#if openPMD_HAVE_MPI
+TEST_CASE("unavailable_backend", "[core][parallel]")
+{
+#if !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.bp",
+                Access::CREATE,
+                MPI_COMM_WORLD,
+                R"({"backend": "ADIOS2"})");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() {
+            Series("unavailable.bp", Access::CREATE, MPI_COMM_WORLD);
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_HDF5
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.h5",
+                Access::CREATE,
+                MPI_COMM_WORLD,
+                R"({"backend": "HDF5"})");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'HDF5'.");
+    }
+#endif
+}
+#endif
+
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 
 void adios2_streaming(bool variableBasedLayout)
@@ -1887,51 +1936,6 @@ TEST_CASE("append_mode", "[serial]")
     }
 }
 
-TEST_CASE("unavailable_backend", "[core][parallel]")
-{
-#if !openPMD_HAVE_ADIOS2
-    {
-        auto fail = []() {
-            Series(
-                "unavailable.bp",
-                Access::CREATE,
-                MPI_COMM_WORLD,
-                R"({"backend": "ADIOS2"})");
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'ADIOS2'.");
-    }
-#endif
-#if !openPMD_HAVE_ADIOS2
-    {
-        auto fail = []() {
-            Series("unavailable.bp", Access::CREATE, MPI_COMM_WORLD);
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'ADIOS2'.");
-    }
-#endif
-#if !openPMD_HAVE_HDF5
-    {
-        auto fail = []() {
-            Series(
-                "unavailable.h5",
-                Access::CREATE,
-                MPI_COMM_WORLD,
-                R"({"backend": "HDF5"})");
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'HDF5'.");
-    }
-#endif
-}
-
 void joined_dim(std::string const &ext)
 {
     using type = float;
@@ -2202,4 +2206,241 @@ TEST_CASE("adios2_flush_via_step")
 }
 #endif
 
+void adios2_chunk_distribution()
+{
+    /*
+     * This test simulates a multi-node streaming setup in order to test some
+     * of our chunk distribution strategies.
+     * We don't actually stream (but write a .bp file instead) and also we don't
+     * actually run anything on multiple nodes, but we can use this for testing
+     * the distribution strategies anyway.
+     */
+    int mpi_size{-1};
+    int mpi_rank{-1};
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
+    /*
+     * Mappings: MPI rank -> hostname where the rank is executed.
+     * For the writing application as well as for the reading one.
+     */
+    chunk_assignment::RankMeta writingRanksHostnames, readingRanksHostnames;
+    for (int i = 0; i < mpi_size; ++i)
+    {
+        /*
+         * The mapping is intentionally weird. Nodes "node1", "node3", ...
+         * do not have instances of the reading application running on them.
+         * Our distribution strategies will need to deal with that situation.
+         */
+        // 0, 0, 1, 1, 2, 2, 3, 3 ...
+        writingRanksHostnames[i] = "node" + std::to_string(i / 2);
+        // 0, 0, 0, 0, 2, 2, 2, 2 ...
+        readingRanksHostnames[i] = "node" + std::to_string(i / 4 * 2);
+    }
+
+    std::string filename = "../samples/adios2_chunk_distribution.bp";
+    // Simulate a stream: BP4 assigns chunk IDs by subfile (i.e. aggregator).
+    std::stringstream parameters;
+    parameters << R"END(
+{
+    "adios2":
+    {
+        "engine":
+        {
+            "type": "bp4",
+            "parameters":
+            {
+                "NumAggregators":)END"
+               << "\"" << std::to_string(mpi_size) << "\""
+               << R"END(
+            }
+        }
+    }
+}
+)END";
+
+    auto printChunktable = [mpi_rank](
+                               std::string const &strategyName,
+                               ChunkTable const &table,
+                               chunk_assignment::RankMeta const &meta) {
+        if (mpi_rank != 0)
+        {
+            return;
+        }
+        std::cout << "WITH STRATEGY '" << strategyName << "':\n";
+        for (auto const &chunk : table)
+        {
+            std::cout << "[HOST: " << meta.at(chunk.sourceID)
+                      << ",\tRank: " << chunk.sourceID << ",\tOffset: ";
+            for (auto offset : chunk.offset)
+            {
+                std::cout << offset << ", ";
+            }
+            std::cout << "\tExtent: ";
+            for (auto extent : chunk.extent)
+            {
+                std::cout << extent << ", ";
+            }
+            std::cout << "]" << std::endl;
+        }
+    };
+
+    auto printAssignment = [mpi_rank](
+                               std::string const &strategyName,
+                               chunk_assignment::Assignment const &table,
+                               chunk_assignment::RankMeta const &meta) {
+        if (mpi_rank != 0)
+        {
+            return;
+        }
+        std::cout << "WITH STRATEGY '" << strategyName << "':\n";
+        for (auto &[rank, chunkList] : table)
+        {
+            std::cout << "[HOST: " << meta.at(rank) << ",\tRank: " << rank
+                      << "]" << std::endl;
+            for (auto const &chunk : chunkList)
+            {
+                std::cout << "\t[Source rank: " << chunk.sourceID
+                          << "\tOffset: ";
+                for (auto offset : chunk.offset)
+                {
+                    std::cout << offset << ", ";
+                }
+                std::cout << "\tExtent: ";
+                for (auto extent : chunk.extent)
+                {
+                    std::cout << extent << ", ";
+                }
+                std::cout << "]" << std::endl;
+            }
+        }
+    };
+
+    // Create a dataset.
+    {
+        Series series(
+            filename,
+            openPMD::Access::CREATE,
+            MPI_COMM_WORLD,
+            parameters.str());
+        /*
+         * The writing application sets an attribute that tells the reading
+         * application about the "MPI rank -> hostname" mapping.
+         * Each rank only needs to set its own value.
+         * (Some other options like setting all at once or reading from a file
+         * exist as well.)
+         */
+        series.setRankTable(writingRanksHostnames.at(mpi_rank));
+
+        auto E_x = series.iterations[0].meshes["E"]["x"];
+        openPMD::Dataset ds(openPMD::Datatype::INT, {unsigned(mpi_size), 10});
+        E_x.resetDataset(ds);
+        std::vector<int> data(10, 0);
+        std::iota(data.begin(), data.end(), 0);
+        E_x.storeChunk(data, {unsigned(mpi_rank), 0}, {1, 10});
+        series.flush();
+    }
+
+    {
+        Series series(filename, openPMD::Access::READ_ONLY, MPI_COMM_WORLD);
+        /*
+         * Inquire the writing application's "MPI rank -> hostname" mapping.
+         * The reading application needs to know about its own mapping.
+         * Having both of these mappings is the basis for an efficient chunk
+         * distribution since we can use it to figure out which instances
+         * are running on the same nodes.
+         */
+        auto rankMetaIn = series.rankTable(/* collective = */ true);
+        REQUIRE(rankMetaIn == writingRanksHostnames);
+
+        auto E_x = series.iterations[0].meshes["E"]["x"];
+        /*
+         * Ask the backend which chunks are available.
+         */
+        auto const chunkTable = E_x.availableChunks();
+
+        printChunktable("INPUT", chunkTable, rankMetaIn);
+
+        using namespace chunk_assignment;
+
+        /*
+         * Assign the chunks by distributing them one after the other to reading
+         * ranks. Easy, but not particularly efficient.
+         */
+        RoundRobin roundRobinStrategy;
+        auto roundRobinAssignment = roundRobinStrategy.assign(
+            chunkTable, rankMetaIn, readingRanksHostnames);
+        printAssignment(
+            "ROUND ROBIN", roundRobinAssignment, readingRanksHostnames);
+
+        /*
+         * Assign chunks by hostname.
+         * Two difficulties:
+         * * A distribution strategy within one node needs to be picked.
+         *   We pick the BinPacking strategy that tries to assign chunks in a
+         *   balanced manner. Since our chunks have a small extent along
+         *   dimension 0, use dimension 1 for slicing.
+         * * The assignment is partial since some nodes only have instances of
+         *   the writing application. Those chunks remain unassigned.
+         */
+        ByHostname byHostname(
+            std::make_unique<BinPacking>(/* splitAlongDimension = */ 1));
+        auto byHostnamePartialAssignment =
+            byHostname.assign(chunkTable, rankMetaIn, readingRanksHostnames);
+        printAssignment(
+            "HOSTNAME, ASSIGNED",
+            byHostnamePartialAssignment.assigned,
+            readingRanksHostnames);
+        printChunktable(
+            "HOSTNAME, LEFTOVER",
+            byHostnamePartialAssignment.notAssigned,
+            rankMetaIn);
+
+        /*
+         * Assign chunks by hostnames, once more.
+         * This time, apply a secondary distribution strategy to assign
+         * leftovers. We pick BinPacking, once more.
+         * Notice that the BinPacking strategy does not (yet) take into account
+         * chunks that have been assigned by the first round.
+         * Balancing is calculated solely based on the leftover chunks from the
+         * first round.
+         */
+        FromPartialStrategy fromPartialStrategy(
+            std::make_unique<ByHostname>(std::move(byHostname)),
+            std::make_unique<BinPacking>(/* splitAlongDimension = */ 1));
+        auto fromPartialAssignment = fromPartialStrategy.assign(
+            chunkTable, rankMetaIn, readingRanksHostnames);
+        printAssignment(
+            "HOSTNAME WITH SECOND PASS",
+            fromPartialAssignment,
+            readingRanksHostnames);
+
+        /*
+         * Assign chunks by slicing the n-dimensional physical domain and
+         * intersecting those slices with the available chunks from the backend.
+         * Notice that this strategy only returns the chunks that the currently
+         * running rank is supposed to load, whereas the other strategies return
+         * a chunk table containing all chunks that all ranks will load.
+         * In principle, a chunk_assignment::Strategy only needs to return the
+         * chunks that the current rank should load, but is free to emplace the
+         * other chunks for other reading ranks as well.
+         * (Reasoning: In some strategies, calculating everything is necessary,
+         * in others such as this one, it's an unneeded overhead.)
+         */
+        ByCuboidSlice cuboidSliceStrategy(
+            std::make_unique<OneDimensionalBlockSlicer>(1),
+            E_x.getExtent(),
+            mpi_rank,
+            mpi_size);
+        auto cuboidSliceAssignment = cuboidSliceStrategy.assign(
+            chunkTable, rankMetaIn, readingRanksHostnames);
+        printAssignment(
+            "CUBOID SLICE", cuboidSliceAssignment, readingRanksHostnames);
+    }
+}
+
+TEST_CASE("adios2_chunk_distribution", "[parallel][adios2]")
+{
+    adios2_chunk_distribution();
+}
 #endif // openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
