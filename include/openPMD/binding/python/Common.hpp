@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticlePatches.hpp"
@@ -32,6 +33,15 @@
 #endif
 // not yet used:
 //   pybind11/functional.h  // for std::function
+
+using PyVecChunkInfo = std::vector<openPMD::ChunkInfo>;
+
+PYBIND11_MAKE_OPAQUE(openPMD::ChunkInfo)
+PYBIND11_MAKE_OPAQUE(PyVecChunkInfo)
+PYBIND11_MAKE_OPAQUE(openPMD::WrittenChunkInfo)
+PYBIND11_MAKE_OPAQUE(openPMD::ChunkTable)
+PYBIND11_MAKE_OPAQUE(openPMD::chunk_assignment::Assignment)
+PYBIND11_MAKE_OPAQUE(openPMD::chunk_assignment::PartialAssignment)
 
 // used exclusively in all our Python .cpp files
 namespace py = pybind11;
