@@ -23,6 +23,8 @@
 
 #include "openPMD/Dataset.hpp"
 
+#include <memory>
+
 namespace openPMD
 {
 /**
@@ -41,6 +43,8 @@ public:
      */
     virtual std::pair<Offset, Extent>
     sliceBlock(Extent &totalExtent, int size, int rank) = 0;
+
+    virtual std::unique_ptr<BlockSlicer> clone() const = 0;
 
     /** This class will be derived from
      */
