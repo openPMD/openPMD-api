@@ -275,6 +275,14 @@ this method.
         .def_property("base_path", &Series::basePath, &Series::setBasePath)
         .def_property(
             "meshes_path", &Series::meshesPath, &Series::setMeshesPath)
+        .def(
+            "get_mpi_ranks_meta_info",
+            &Series::mpiRanksMetaInfo,
+            py::arg("collective"))
+        .def(
+            "set_mpi_ranks_meta_info",
+            &Series::setMpiRanksMetaInfo,
+            py::arg("my_rank_info"))
         .def_property(
             "particles_path", &Series::particlesPath, &Series::setParticlesPath)
         .def_property("author", &Series::author, &Series::setAuthor)
