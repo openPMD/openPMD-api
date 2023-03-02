@@ -533,11 +533,15 @@ void Iteration::read_impl(std::string const &groupPath)
 #ifdef openPMD_USE_INVASIVE_TESTS
     if (containsAttribute("__openPMD_internal_fail"))
     {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::Other,
-            {},
-            "Deliberately failing this iteration for testing purposes");
+        if (getAttribute("__openPMD_internal_fail").get<std::string>() ==
+            "asking for trouble")
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::Other,
+                {},
+                "Deliberately failing this iteration for testing purposes");
+        }
     }
 #endif
 }
