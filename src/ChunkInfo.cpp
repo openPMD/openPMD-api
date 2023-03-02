@@ -20,7 +20,15 @@
  */
 #include "openPMD/ChunkInfo.hpp"
 
+#include "openPMD/auxiliary/Mpi.hpp"
+
 #include <utility>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace openPMD
 {
@@ -48,4 +56,43 @@ bool WrittenChunkInfo::operator==(WrittenChunkInfo const &other) const
     return this->sourceID == other.sourceID &&
         this->ChunkInfo::operator==(other);
 }
+
+namespace host_info
+{
+    constexpr size_t MAX_HOSTNAME_LENGTH = 200;
+
+    std::string byMethod(Method method)
+    {
+        static std::map<Method, std::string (*)()> map{
+            {Method::HOSTNAME, &hostname}};
+        return (*map[method])();
+    }
+
+#if openPMD_HAVE_MPI
+    chunk_assignment::RankMeta byMethodCollective(MPI_Comm comm, Method method)
+    {
+        auto myHostname = byMethod(method);
+        chunk_assignment::RankMeta res;
+        auto allHostnames =
+            auxiliary::distributeStringsToAllRanks(comm, myHostname);
+        for (size_t i = 0; i < allHostnames.size(); ++i)
+        {
+            res[i] = allHostnames[i];
+        }
+        return res;
+    }
+#endif
+
+    std::string hostname()
+    {
+        char hostname[MAX_HOSTNAME_LENGTH];
+        if (gethostname(hostname, MAX_HOSTNAME_LENGTH))
+        {
+            throw std::runtime_error(
+                "[gethostname] Could not inquire hostname.");
+        }
+        std::string res(hostname);
+        return res;
+    }
+} // namespace host_info
 } // namespace openPMD

@@ -19,22 +19,27 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Series.hpp"
+#include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/version.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <exception>
 #include <iomanip>
@@ -188,6 +193,243 @@ Series &Series::setMeshesPath(std::string const &mp)
         setAttribute("meshesPath", mp + "/");
     setDirty(true);
     return *this;
+}
+
+#if openPMD_HAVE_MPI
+chunk_assignment::RankMeta Series::mpiRanksMetaInfo(bool collective)
+#else
+chunk_assignment::RankMeta
+Series::mpiRanksMetaInfo([[maybe_unused]] bool collective)
+#endif
+{
+    auto &series = get();
+    auto &rankTable = series.m_rankTable;
+    if (rankTable.m_bufferedRead.has_value())
+    {
+        return *rankTable.m_bufferedRead;
+    }
+    if (iterationEncoding() == IterationEncoding::fileBased)
+    {
+        if (iterations.empty())
+        {
+            return {};
+        }
+        Parameter<Operation::OPEN_FILE> openFile;
+        openFile.name = iterationFilename(iterations.begin()->first);
+        IOHandler()->enqueue(IOTask(this, openFile));
+    }
+    Parameter<Operation::LIST_DATASETS> listDatasets;
+    IOHandler()->enqueue(IOTask(this, listDatasets));
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (std::none_of(
+            listDatasets.datasets->begin(),
+            listDatasets.datasets->end(),
+            [](std::string const &str) { return str == "rankTable"; }))
+    {
+        rankTable.m_bufferedRead = chunk_assignment::RankMeta{};
+        return {};
+    }
+    Parameter<Operation::OPEN_DATASET> openDataset;
+    openDataset.name = "rankTable";
+    IOHandler()->enqueue(IOTask(&rankTable.m_attributable, openDataset));
+
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (openDataset.extent->size() != 2)
+    {
+        // @todo use better error type
+        throw std::runtime_error("[Series] rankTable must be 2D.");
+    }
+    if (*openDataset.dtype != Datatype::CHAR &&
+        *openDataset.dtype != Datatype::UCHAR &&
+        *openDataset.dtype != Datatype::SCHAR)
+    {
+        // @todo use better error type
+        throw std::runtime_error("[Series] rankTable must have char type.");
+    }
+
+    auto writerRanks = (*openDataset.extent)[0];
+    auto lineWidth = (*openDataset.extent)[1];
+
+    if (lineWidth < 1)
+    {
+        // Check this because our indexing logic later relies on this
+        // @todo use better error type
+        throw std::runtime_error("[Series] rankTable lines must not be empty.");
+    }
+
+    std::shared_ptr<char> get{
+        new char[writerRanks * lineWidth],
+        [](char const *ptr) { delete[] ptr; }};
+
+    auto doReadDataset = [&openDataset, this, &get, &rankTable]() {
+        Parameter<Operation::READ_DATASET> readDataset;
+        // read the whole thing
+        readDataset.offset.resize(2);
+        readDataset.extent = *openDataset.extent;
+        // @todo better cross-platform support by switching over
+        // *openDataset.dtype
+        readDataset.dtype = Datatype::CHAR;
+        readDataset.data = get;
+
+        IOHandler()->enqueue(IOTask(&rankTable.m_attributable, readDataset));
+        IOHandler()->flush(internal::defaultFlushParams);
+    };
+
+#if openPMD_HAVE_MPI
+    if (collective && series.m_communicator.has_value())
+    {
+        auto comm = series.m_communicator.value();
+        int rank{0}, size{1};
+        MPI_Comm_rank(comm, &rank);
+        MPI_Comm_size(comm, &size);
+        if (rank == 0)
+        {
+            doReadDataset();
+        }
+        MPI_Bcast(get.get(), writerRanks * lineWidth, MPI_CHAR, 0, comm);
+    }
+    else
+    {
+        doReadDataset();
+    }
+#else
+    doReadDataset();
+#endif
+
+    if (iterationEncoding() == IterationEncoding::fileBased)
+    {
+        auto &it = iterations.begin()->second;
+        Parameter<Operation::CLOSE_FILE> closeFile;
+        IOHandler()->enqueue(IOTask(&it, closeFile));
+        it.get().m_closed = internal::CloseStatus::ClosedTemporarily;
+        IOHandler()->flush(internal::defaultFlushParams);
+    }
+
+    chunk_assignment::RankMeta res;
+    for (size_t i = 0; i < writerRanks; ++i)
+    {
+        if (get.get()[(i + 1) * lineWidth - 1] != 0)
+        {
+            throw std::runtime_error(
+                "[Series] rankTable lines must be null-terminated strings.");
+        }
+        // Use C-String constructor for std::string in the following line
+        // std::string::string(char const*);
+        res[i] = get.get() + i * lineWidth;
+    }
+    rankTable.m_bufferedRead = res;
+    return res;
+}
+
+Series &Series::setMpiRanksMetaInfo(const std::string &myRankInfo)
+{
+    get().m_rankTable.m_rankTableSource =
+        internal::SeriesData::SourceSpecifiedManually{myRankInfo};
+    return *this;
+}
+
+void Series::flushRankTable()
+{
+    auto &series = get();
+    auto &rankTable = series.m_rankTable;
+    auto maybeMyRankInfo = std::visit(
+        auxiliary::overloaded{
+            [](internal::SeriesData::NoSourceSpecified &)
+                -> std::optional<std::string> { return std::nullopt; },
+            [](internal::SeriesData::SourceSpecifiedViaJSON &viaJson)
+                -> std::optional<std::string> {
+                if (viaJson.value == "hostname")
+                {
+                    return host_info::hostname();
+                }
+                else
+                {
+                    throw error::WrongAPIUsage(
+                        "[Series] Wrong value for JSON option 'rank_table': '" +
+                        viaJson.value + "'.");
+                };
+            },
+            [](internal::SeriesData::SourceSpecifiedManually &manually)
+                -> std::optional<std::string> { return manually.value; }},
+        rankTable.m_rankTableSource);
+    if (!maybeMyRankInfo.has_value())
+    {
+        return;
+    }
+
+    auto myRankInfo = std::move(*maybeMyRankInfo);
+
+    unsigned long long mySize = myRankInfo.size() + 1; // null character
+    int rank{0}, size{1};
+    unsigned long long maxSize = mySize;
+
+    auto createRankTable = [&size, &maxSize, &rankTable, this]() {
+        if (rankTable.m_attributable.written())
+        {
+            return;
+        }
+        Parameter<Operation::CREATE_DATASET> param;
+        param.name = "rankTable";
+        param.dtype = Datatype::CHAR;
+        param.extent = {uint64_t(size), uint64_t(maxSize)};
+        IOHandler()->enqueue(
+            IOTask(&rankTable.m_attributable, std::move(param)));
+    };
+
+    auto writeDataset = [&rank, &maxSize, this, &rankTable](
+                            std::shared_ptr<char> put, size_t num_lines = 1) {
+        Parameter<Operation::WRITE_DATASET> chunk;
+        chunk.dtype = Datatype::CHAR;
+        chunk.offset = {uint64_t(rank), 0};
+        chunk.extent = {num_lines, maxSize};
+        chunk.data = std::move(put);
+        IOHandler()->enqueue(
+            IOTask(&rankTable.m_attributable, std::move(chunk)));
+    };
+
+#if openPMD_HAVE_MPI
+    if (series.m_communicator.has_value())
+    {
+        auto comm = series.m_communicator.value();
+        MPI_Comm_rank(comm, &rank);
+        MPI_Comm_size(comm, &size);
+        // todo char portability
+        auto [charBuffer, lineLength, numLines] =
+            auxiliary::collectStringsAsMatrixTo(comm, 0, myRankInfo);
+        maxSize = lineLength;
+        (void)numLines; // it's the MPI size
+
+        if (rank == 0)
+        {
+            createRankTable();
+            auto asRawPtr = new std::vector<char>(std::move(charBuffer));
+            std::shared_ptr<char> put{
+                asRawPtr->data(),
+                /*
+                 * A nicer solution would be to std::move() the vector into the
+                 * closure and let RAII deal with it. But clang6 doesn't
+                 * correctly implement C++17 closure move initialization, so
+                 * we go the extra mile and use raw pointers.
+                 * > [m_charBuffer = std::move(charBuffer)](char *){
+                 * >     // no-op
+                 * > }
+                 */
+                [asRawPtr](char *) { delete asRawPtr; }};
+            writeDataset(std::move(put), /* num_lines = */ size);
+        }
+        return;
+    }
+#endif
+    // sic! no else
+    // if the Series was initialized without a communicator, then this code will
+    // run as well
+    createRankTable();
+
+    std::shared_ptr<char> put{
+        new char[maxSize]{}, [](char const *ptr) { delete[] ptr; }};
+    std::copy_n(myRankInfo.c_str(), mySize, put.get());
+
+    writeDataset(std::move(put));
 }
 
 std::string Series::particlesPath() const
@@ -815,6 +1057,7 @@ void Series::initSeries(
 
     series.iterations.linkHierarchy(writable);
     series.iterations.writable().ownKeyWithinParent = "iterations";
+    series.m_rankTable.m_attributable.linkHierarchy(writable);
 
     series.m_name = input->name;
 
@@ -1190,6 +1433,8 @@ void Series::flushGorVBased(
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
             IOHandler()->enqueue(IOTask(this, fCreate));
+
+            flushRankTable();
         }
 
         series.iterations.flush(
@@ -2413,7 +2658,7 @@ namespace
      * The string is converted to lower case.
      */
     template <typename Dest = std::string>
-    void getJsonOptionLowerCase(
+    bool getJsonOptionLowerCase(
         json::TracingJSON &config, std::string const &key, Dest &dest)
     {
         if (config.json().contains(key))
@@ -2429,6 +2674,11 @@ namespace
                 throw error::BackendConfigSchema(
                     {key}, "Must be convertible to string type.");
             }
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 } // namespace
@@ -2439,6 +2689,11 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
     auto &series = get();
     getJsonOption<bool>(
         options, "defer_iteration_parsing", series.m_parseLazily);
+    internal::SeriesData::SourceSpecifiedViaJSON rankTableSource;
+    if (getJsonOptionLowerCase(options, "rank_table", rankTableSource.value))
+    {
+        series.m_rankTable.m_rankTableSource = std::move(rankTableSource);
+    }
     // backend key
     {
         std::map<std::string, Format> const backendDescriptors{
