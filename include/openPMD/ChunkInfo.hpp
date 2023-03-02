@@ -20,8 +20,13 @@
  */
 #pragma once
 
+#include "openPMD/config.hpp"
+
 #include "openPMD/Dataset.hpp" // Offset, Extent
 
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
 #include <vector>
 
 namespace openPMD
@@ -72,5 +77,27 @@ struct WrittenChunkInfo : ChunkInfo
     bool operator==(WrittenChunkInfo const &other) const;
 };
 
+// !< @todo Also add a ChunkTable for ReadChunkInfo or sth like that
 using ChunkTable = std::vector<WrittenChunkInfo>;
+
+namespace chunk_assignment
+{
+    using RankMeta = std::map<unsigned int, std::string>;
+} // namespace chunk_assignment
+
+namespace host_info
+{
+    enum class Method
+    {
+        HOSTNAME
+    };
+
+    std::string byMethod(Method);
+
+#if openPMD_HAVE_MPI
+    chunk_assignment::RankMeta byMethodCollective(MPI_Comm, Method);
+#endif
+
+    std::string hostname();
+} // namespace host_info
 } // namespace openPMD

@@ -550,6 +550,11 @@ target_include_directories(openPMD PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
+# Winsock library for gethostname() function on Windows
+if(WIN32)
+    target_link_libraries(openPMD PRIVATE ws2_32)
+endif()
+
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
     add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)

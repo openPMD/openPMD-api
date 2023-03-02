@@ -201,6 +201,37 @@ namespace internal
             m_deferred_initialization = std::nullopt;
 
         void close();
+
+#if openPMD_HAVE_MPI
+        /*
+         * @todo Once we have separate MPI headers, move this there.
+         */
+        std::optional<MPI_Comm> m_communicator;
+#endif
+
+        struct NoSourceSpecified
+        {};
+        struct SourceSpecifiedViaJSON
+        {
+            std::string value;
+        };
+        struct SourceSpecifiedManually
+        {
+            std::string value;
+        };
+
+        struct RankTableData
+        {
+            Attributable m_attributable;
+            // Parameter<Operation::CREATE_DATASET> m_param;
+            std::variant<
+                NoSourceSpecified,
+                SourceSpecifiedViaJSON,
+                SourceSpecifiedManually>
+                m_rankTableSource;
+            std::optional<chunk_assignment::RankMeta> m_bufferedRead;
+        };
+        RankTableData m_rankTable;
     }; // SeriesData
 
     class SeriesInternal;
@@ -387,6 +418,33 @@ public:
      * @return  Reference to modified series.
      */
     Series &setMeshesPath(std::string const &meshesPath);
+
+    /**
+     * @throw   no_such_attribute_error If optional attribute is not present.
+     * @param collective Run this read operation collectively.
+                There might be an enormous IO overhead if running this
+                operation non-collectively.
+                To make this explicit to users, there is no default parameter.
+                Parameter is ignored if compiling without MPI support, (it is
+                present for the sake of a consistent API).
+     * @return  Vector with a String per (writing) MPI rank, indicating user-
+     *          defined meta information per rank. Example: host name.
+     */
+#if openPMD_HAVE_MPI
+    chunk_assignment::RankMeta mpiRanksMetaInfo(bool collective);
+#else
+    chunk_assignment::RankMeta mpiRanksMetaInfo(bool collective = false);
+#endif
+
+    /**
+     * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with
+     *        a String per (writing) MPI rank, indicating user-
+     *        defined meta information per rank. Example: host name.
+     *        @todo make private, only expose non-collective access methods
+     *
+     * @return Reference to modified series.
+     */
+    Series &setMpiRanksMetaInfo(std::string const &myRankInfo);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -745,6 +803,7 @@ OPENPMD_private
         bool flushIOHandler = true);
     void flushMeshesPath();
     void flushParticlesPath();
+    void flushRankTable();
     void readFileBased();
     void readOneIterationFileBased(std::string const &filePath);
     /**
