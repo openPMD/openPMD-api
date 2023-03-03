@@ -322,6 +322,27 @@ namespace chunk_assignment
 
         virtual std::unique_ptr<Strategy> clone() const override;
     };
+
+    /**
+     * @brief Strategy that purposefully discards leftover chunk from
+     *        the PartialAssignment.
+     *
+     * Useful as second phase in FromPartialStrategy when knowing that some
+     * chunks will go unassigned, but still wanting to communicate only within
+     * the same node.
+     *
+     */
+    struct DiscardingStrategy : Strategy
+    {
+        explicit DiscardingStrategy();
+
+        Assignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        virtual std::unique_ptr<Strategy> clone() const override;
+    };
 } // namespace chunk_assignment
 
 namespace host_info
