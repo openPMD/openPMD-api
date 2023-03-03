@@ -189,4 +189,7 @@ void init_Chunk(py::module &m)
 
     py::class_<FailingStrategy, Strategy>(m, "FailingStrategy")
         .def(py::init<>());
+
+    py::class_<DiscardingStrategy, Strategy>(m, "DiscardingStrategy")
+        .def(py::init<>());
 }

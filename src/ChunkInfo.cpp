@@ -552,6 +552,19 @@ namespace chunk_assignment
     {
         return std::make_unique<FailingStrategy>();
     }
+
+    DiscardingStrategy::DiscardingStrategy() = default;
+
+    Assignment DiscardingStrategy::assign(
+        PartialAssignment assignment, RankMeta const &, RankMeta const &)
+    {
+        return assignment.assigned;
+    }
+
+    std::unique_ptr<Strategy> DiscardingStrategy::clone() const
+    {
+        return std::make_unique<DiscardingStrategy>();
+    }
 } // namespace chunk_assignment
 
 namespace host_info
