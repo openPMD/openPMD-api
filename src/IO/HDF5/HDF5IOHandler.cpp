@@ -769,6 +769,19 @@ void HDF5IOHandlerImpl::availableChunks(
     }
     parameters.chunks->push_back(
         WrittenChunkInfo(std::move(offset), std::move(extent)));
+
+    herr_t status;
+    status = H5Sclose(dataset_space);
+    VERIFY(
+        status == 0,
+        "[HDF5] Internal error: Failed to close HDF5 dataset space during "
+        "availableChunks task");
+
+    status = H5Dclose(dataset_id);
+    VERIFY(
+        status == 0,
+        "[HDF5] Internal error: Failed to close HDF5 dataset during "
+        "availableChunks task");
 }
 
 void HDF5IOHandlerImpl::openFile(
