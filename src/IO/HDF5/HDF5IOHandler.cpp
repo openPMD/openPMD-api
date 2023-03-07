@@ -991,6 +991,8 @@ void HDF5IOHandlerImpl::openDataset(
             d = DT::CHAR;
         else if (H5Tequal(dataset_type, H5T_NATIVE_UCHAR))
             d = DT::UCHAR;
+        else if (H5Tequal(dataset_type, H5T_NATIVE_SCHAR))
+            d = DT::SCHAR;
         else if (H5Tequal(dataset_type, H5T_NATIVE_SHORT))
             d = DT::SHORT;
         else if (H5Tequal(dataset_type, H5T_NATIVE_INT))
@@ -1742,6 +1744,7 @@ void HDF5IOHandlerImpl::readDataset(
     case DT::ULONGLONG:
     case DT::CHAR:
     case DT::UCHAR:
+    case DT::SCHAR:
     case DT::BOOL:
         break;
     case DT::UNDEFINED:
@@ -1873,6 +1876,12 @@ void HDF5IOHandlerImpl::readAttribute(
         else if (H5Tequal(attr_type, H5T_NATIVE_UCHAR))
         {
             unsigned char u;
+            status = H5Aread(attr_id, attr_type, &u);
+            a = Attribute(u);
+        }
+        else if (H5Tequal(attr_type, H5T_NATIVE_SCHAR))
+        {
+            signed char u;
             status = H5Aread(attr_id, attr_type, &u);
             a = Attribute(u);
         }
@@ -2099,6 +2108,12 @@ void HDF5IOHandlerImpl::readAttribute(
         else if (H5Tequal(attr_type, H5T_NATIVE_UCHAR))
         {
             std::vector<unsigned char> vu(dims[0], 0);
+            status = H5Aread(attr_id, attr_type, vu.data());
+            a = Attribute(vu);
+        }
+        else if (H5Tequal(attr_type, H5T_NATIVE_SCHAR))
+        {
+            std::vector<signed char> vu(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vu.data());
             a = Attribute(vu);
         }
