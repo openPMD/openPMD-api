@@ -35,6 +35,18 @@ class CMakeBuild(build_ext):
         for ext in self.extensions:
             self.build_extension(ext)
 
+    def get_ext_filename(self, ext_name):
+        r"""Convert the name of an extension (eg. "foo.bar") into the name
+        of the file from which it will be loaded (eg. "foo/bar.so", or
+        "foo\bar.pyd").
+        """
+        from distutils.sysconfig import get_config_var
+        ext_path = ext_name.split('.')
+        ext_suffix = os.getenv('SETUPTOOLS_EXT_SUFFIX', None)
+        if ext_suffix is None:
+            ext_suffix = get_config_var('EXT_SUFFIX')
+        return os.path.join(*ext_path) + ext_suffix
+
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(
             self.get_ext_fullpath(ext.name)
@@ -44,10 +56,9 @@ class CMakeBuild(build_ext):
             extdir += os.path.sep
 
         cmake_args = [
-            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' +
-            os.path.join(extdir, "openpmd_api"),
-            # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
-            '-DCMAKE_PYTHON_OUTPUT_DIRECTORY=' + extdir,
+            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
+            # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + os.path.join(extdir, "../"),
+            '-DCMAKE_PYTHON_OUTPUT_DIRECTORY=' + os.path.join(extdir, "../"),
             '-DPython_EXECUTABLE=' + sys.executable,
             '-DopenPMD_USE_PYTHON:BOOL=ON',
             # variants
@@ -87,9 +98,7 @@ class CMakeBuild(build_ext):
         if platform.system() == "Windows":
             cmake_args += [
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
-                    cfg.upper(),
-                    os.path.join(extdir, "openpmd_api")
-                )
+                    cfg.upper(), extdir)
             ]
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
@@ -186,7 +195,7 @@ setup(
         'Source': 'https://github.com/openPMD/openPMD-api',
         'Tracker': 'https://github.com/openPMD/openPMD-api/issues',
     },
-    ext_modules=[CMakeExtension('openpmd_api_cxx')],
+    ext_modules=[CMakeExtension('openpmd_api.openpmd_api_cxx')],
     cmdclass=dict(build_ext=CMakeBuild),
     # scripts=['openpmd-ls'],
     zip_safe=False,

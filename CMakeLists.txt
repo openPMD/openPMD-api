@@ -795,7 +795,7 @@ if(openPMD_HAVE_PYTHON)
 
     if(EMSCRIPTEN)
         set_target_properties(openPMD.py PROPERTIES
-            PREFIX "")
+            PREFIX "" SUFFIX ".emscripten_wasm32.so")
     else()
         pybind11_extension(openPMD.py)
     endif()
