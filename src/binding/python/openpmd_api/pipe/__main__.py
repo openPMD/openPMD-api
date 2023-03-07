@@ -223,6 +223,9 @@ class pipe:
                                   self.outconfig)
             print("Opened input and output on rank {}.".format(self.comm.rank))
             sys.stdout.flush()
+        # In Linear read mode, global attributes are only present after calling
+        # this method to access the first iteration
+        inseries.read_iterations()
         self.__copy(inseries, outseries)
 
     def __copy(self, src, dest, current_path="/data/"):
