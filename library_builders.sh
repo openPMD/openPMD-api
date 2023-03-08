@@ -185,11 +185,11 @@ function build_blosc {
     cd build-blosc
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    # Blosc2 runs into a linking error without testing enabled???
     PATH=${CMAKE_BIN}:${PATH} cmake          \
-      -DDEACTIVATE_SNAPPY=ON                 \
-      -DWITH_SSE2=${WITH_SSE2}   \
+      -DWITH_SSE2=${WITH_SSE2}               \
       -DBUILD_SHARED=OFF                     \
-      -DBUILD_TESTS=OFF                      \
+      -DBUILD_TESTS=ON                       \
       -DBUILD_BENCHMARKS=OFF                 \
       -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
