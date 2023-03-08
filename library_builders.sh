@@ -96,8 +96,8 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.7.1.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.7.1.tar.gz
+    curl -sLo adios2-2.9.0-rc1.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.9.0-rc1.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
@@ -105,7 +105,7 @@ function build_adios2 {
     # Patch PThread Propagation
     curl -sLo adios-pthread.patch \
         https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
-    python3 -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
+    python3 -m patch -p 1 -d ADIOS2-2.9.0-rc1 adios-pthread.patch
 
     # DILL macOS arm64 or universal2 binary
     #   https://github.com/ornladios/ADIOS2/issues/3116
@@ -136,6 +136,7 @@ function build_adios2 {
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
         -DADIOS2_BUILD_EXAMPLES=OFF               \
         -DADIOS2_USE_BZip2=OFF                    \
+        -DADIOS2_USE_Blosc=ON                     \
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
@@ -161,23 +162,23 @@ function build_adios2 {
 function build_blosc {
     if [ -e blosc-stamp ]; then return; fi
 
-    curl -sLo c-blosc-1.21.0.tar.gz \
-        https://github.com/Blosc/c-blosc/archive/v1.21.0.tar.gz
-    file c-blosc*.tar.gz
-    tar -xzf c-blosc*.tar.gz
-    rm c-blosc*.tar.gz
+    curl -sLo c-blosc2-v2.7.1.tar.gz \
+        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.7.1.tar.gz
+    file c-blosc2*.tar.gz
+    tar -xzf c-blosc2*.tar.gz
+    rm c-blosc2*.tar.gz
 
     # Patch PThread Propagation
-    curl -sLo blosc-pthread.patch \
-        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
-    python3 -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
+    # curl -sLo blosc-pthread.patch \
+    #     https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
+    # python3 -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
 
     # SSE2 support
     #   https://github.com/Blosc/c-blosc/issues/334
-    DEACTIVATE_SSE2=OFF
+    WITH_SSE2=ON
     if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
       # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
-      DEACTIVATE_SSE2=ON
+      WITH_SSE2=OFF
     fi
 
     mkdir build-blosc
@@ -186,14 +187,14 @@ function build_blosc {
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake          \
       -DDEACTIVATE_SNAPPY=ON                 \
-      -DDEACTIVATE_SSE2=${DEACTIVATE_SSE2}   \
+      -DWITH_SSE2=${WITH_SSE2}   \
       -DBUILD_SHARED=OFF                     \
       -DBUILD_TESTS=OFF                      \
       -DBUILD_BENCHMARKS=OFF                 \
       -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       -DZLIB_USE_STATIC_LIBS=ON              \
-      ../c-blosc-*
+      ../c-blosc2-*
     make -j${CPU_COUNT}
     make install
     cd -
