@@ -103,9 +103,9 @@ function build_adios2 {
     rm adios2*.tar.gz
 
     # Patch PThread Propagation
-    curl -sLo adios-pthread.patch \
-        https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
-    python3 -m patch -p 1 -d ADIOS2-2.9.0-rc1 adios-pthread.patch
+    # curl -sLo adios-pthread.patch \
+    #     https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
+    # python3 -m patch -p 1 -d ADIOS2-2.9.0-rc1 adios-pthread.patch
 
     # DILL macOS arm64 or universal2 binary
     #   https://github.com/ornladios/ADIOS2/issues/3116
