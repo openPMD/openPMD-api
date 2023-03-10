@@ -104,15 +104,20 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         rc.m_hasBeenExtended = true;
     }
 
-    if (d.dtype == Datatype::UNDEFINED)
-    {
-        throw error::WrongAPIUsage(
-            "[RecordComponent] Must set specific datatype.");
-    }
-    // if( d.extent.empty() )
-    //    throw std::runtime_error("Dataset extent must be at least 1D.");
+    if (d.extent.empty())
+        throw std::runtime_error("Dataset extent must be at least 1D.");
     if (d.empty())
-        return makeEmpty(std::move(d));
+    {
+        if (d.dtype != Datatype::UNDEFINED)
+        {
+            return makeEmpty(std::move(d));
+        }
+        else
+        {
+            rc.m_dataset = std::move(d);
+            return *this;
+        }
+    }
 
     rc.m_isEmpty = false;
     if (written())
