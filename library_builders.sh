@@ -181,15 +181,12 @@ function build_blosc {
       WITH_SSE2=OFF
     fi
 
+    # @todo: proper patch for this
+    sed -Ei 's|if\(\$ENV\{CMAKE_OSX_ARCHITECTURES\} STREQUAL "arm64"\)|if("$ENV{CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")|' CMakeLists.txt
+
     mkdir build-blosc
     cd build-blosc
     PY_BIN=$(which python3)
-    if [ -n "${CMAKE_OSX_ARCHITECTURES+x}" -a -z "${CMAKE_OSX_ARCHITECTURES}" ]; then
-        # This if branch gets active when the env variable is defined, but empty
-        # Our builders somehow define CMAKE_OSC_ARCHITECTURES="" and the CMake
-        # script of blosc2 runs into trouble then
-        unset CMAKE_OSX_ARCHITECTURES
-    fi
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     # Blosc2 runs into a linking error without testing enabled???
     PATH=${CMAKE_BIN}:${PATH} cmake          \
