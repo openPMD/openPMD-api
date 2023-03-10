@@ -191,6 +191,7 @@ function build_blosc {
     # Blosc2 runs into a linking error without testing enabled???
     PATH=${CMAKE_BIN}:${PATH} cmake          \
       -DWITH_SSE2=${WITH_SSE2}               \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON   \
       -DBUILD_SHARED=OFF                     \
       -DBUILD_TESTS=ON                       \
       -DBUILD_BENCHMARKS=OFF                 \
