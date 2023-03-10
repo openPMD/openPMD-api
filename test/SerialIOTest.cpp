@@ -3023,21 +3023,21 @@ TEST_CASE("git_hdf5_legacy_picongpu", "[serial][hdf5]")
 
 TEST_CASE("git_hdf5_sample_attribute_test", "[serial][hdf5]")
 {
-    try
-    {
-        Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
-
+    auto verifySeries = [](Series o, bool this_is_the_original_file) {
         REQUIRE(o.openPMD() == "1.1.0");
         REQUIRE(o.openPMDextension() == 1);
         REQUIRE(o.basePath() == "/data/%T/");
         REQUIRE(o.meshesPath() == "fields/");
         REQUIRE(o.particlesPath() == "particles/");
-        REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
-        REQUIRE(o.iterationFormat() == "data%T.h5");
-        REQUIRE(o.name() == "data%T");
+        if (this_is_the_original_file)
+        {
+            REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
+            REQUIRE(o.iterationFormat() == "data%T.h5");
+            REQUIRE(o.name() == "data%T");
 
-        REQUIRE(o.iterations.size() == 5);
-        REQUIRE(o.iterations.count(100) == 1);
+            REQUIRE(o.iterations.size() == 5);
+            REQUIRE(o.iterations.count(100) == 1);
+        }
 
         Iteration &iteration_100 = o.iterations[100];
         REQUIRE(iteration_100.time<double>() == 3.2847121452090077e-14);
@@ -3267,6 +3267,30 @@ TEST_CASE("git_hdf5_sample_attribute_test", "[serial][hdf5]")
         REQUIRE(weighting_scalar.getDatatype() == Datatype::DOUBLE);
         REQUIRE(weighting_scalar.getDimensionality() == 1);
         REQUIRE(weighting_scalar.getExtent() == e);
+    };
+
+    try
+    {
+        {
+            Series o =
+                Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
+            verifySeries(o, true);
+
+            Series fromTemplate(
+                "../samples/initialized_from_git_sample.json",
+                Access::CREATE,
+                R"(json.mode = "template")");
+            auxiliary::initializeFromTemplate(fromTemplate, o, 100);
+            fromTemplate.flush();
+        }
+
+        {
+            Series o(
+                "../samples/initialized_from_git_sample.json",
+                Access::READ_ONLY,
+                R"(json.mode = "template")");
+            verifySeries(o, false);
+        }
     }
     catch (error::ReadError &e)
     {
