@@ -44,7 +44,7 @@ public:
         JOINED_DIMENSION = std::numeric_limits<std::uint64_t>::max()
     };
 
-    Dataset(Datatype, Extent, std::string options = "{}");
+    Dataset(Datatype, Extent = {1}, std::string options = "{}");
 
     /**
      * @brief Constructor that sets the datatype to undefined.
