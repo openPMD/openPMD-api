@@ -182,7 +182,8 @@ function build_blosc {
     fi
 
     # @todo: proper patch for this
-    sed -Ei 's|if\(\$ENV\{CMAKE_OSX_ARCHITECTURES\} STREQUAL "arm64"\)|if("$ENV{CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")|' CMakeLists.txt
+    sed -E -i.bak 's|if\(\$ENV\{CMAKE_OSX_ARCHITECTURES\} STREQUAL "arm64"\)|if("$ENV{CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")|' c-blosc2-*/CMakeLists.txt
+    cat c-blosc2-*/CMakeLists.txt
 
     mkdir build-blosc
     cd build-blosc
