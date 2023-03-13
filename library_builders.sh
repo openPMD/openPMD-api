@@ -136,7 +136,7 @@ function build_adios2 {
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
         -DADIOS2_BUILD_EXAMPLES=OFF               \
         -DADIOS2_USE_BZip2=OFF                    \
-        -DADIOS2_USE_Blosc=ON                     \
+        -DADIOS2_USE_Blosc2=ON                    \
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
