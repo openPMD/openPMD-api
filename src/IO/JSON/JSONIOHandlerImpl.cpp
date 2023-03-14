@@ -498,107 +498,6 @@ namespace
         }
         return res;
     }
-
-    /*
-     * Check whether two chunks can be merged to form a large one
-     * and optionally return that larger chunk
-     */
-    std::optional<WrittenChunkInfo>
-    mergeChunks(WrittenChunkInfo const &chunk1, WrittenChunkInfo const &chunk2)
-    {
-        /*
-         * Idea:
-         * If two chunks can be merged into one, they agree on offsets and
-         * extents in all but exactly one dimension dim.
-         * At dimension dim, the offset of chunk 2 is equal to the offset
-         * of chunk 1 plus its extent -- or vice versa.
-         */
-        unsigned dimensionality = chunk1.extent.size();
-        for (unsigned dim = 0; dim < dimensionality; ++dim)
-        {
-            WrittenChunkInfo const *c1(&chunk1), *c2(&chunk2);
-            // check if one chunk is the extension of the other at
-            // dimension dim
-            // first, let's put things in order
-            if (c1->offset[dim] > c2->offset[dim])
-            {
-                std::swap(c1, c2);
-            }
-            // now, c1 begins at the lower of both offsets
-            // next check, that both chunks border one another exactly
-            if (c2->offset[dim] != c1->offset[dim] + c1->extent[dim])
-            {
-                continue;
-            }
-            // we've got a candidate
-            // verify that all other dimensions have equal values
-            auto equalValues = [dimensionality, dim, c1, c2]() {
-                for (unsigned j = 0; j < dimensionality; ++j)
-                {
-                    if (j == dim)
-                    {
-                        continue;
-                    }
-                    if (c1->offset[j] != c2->offset[j] ||
-                        c1->extent[j] != c2->extent[j])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            };
-            if (!equalValues())
-            {
-                continue;
-            }
-            // we can merge the chunks
-            Offset offset(c1->offset);
-            Extent extent(c1->extent);
-            extent[dim] += c2->extent[dim];
-            return std::make_optional(WrittenChunkInfo(offset, extent));
-        }
-        return std::optional<WrittenChunkInfo>();
-    }
-
-    /*
-     * Merge chunks in the chunktable until no chunks are left that can be
-     * merged.
-     */
-    void mergeChunks(ChunkTable &table)
-    {
-        bool stillChanging;
-        do
-        {
-            stillChanging = false;
-            auto innerLoops = [&table]() {
-                /*
-                 * Iterate over pairs of chunks in the table.
-                 * When a pair that can be merged is found, merge it,
-                 * delete the original two chunks from the table,
-                 * put the new one in and return.
-                 */
-                for (auto i = table.begin(); i < table.end(); ++i)
-                {
-                    for (auto j = i + 1; j < table.end(); ++j)
-                    {
-                        std::optional<WrittenChunkInfo> merged =
-                            mergeChunks(*i, *j);
-                        if (merged)
-                        {
-                            // erase order is important due to iterator
-                            // invalidation
-                            table.erase(j);
-                            table.erase(i);
-                            table.emplace_back(std::move(merged.value()));
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            };
-            stillChanging = innerLoops();
-        } while (stillChanging);
-    }
 } // namespace
 
 void JSONIOHandlerImpl::availableChunks(
@@ -608,7 +507,7 @@ void JSONIOHandlerImpl::availableChunks(
     auto filePosition = setAndGetFilePosition(writable);
     auto &j = obtainJsonContents(writable)["data"];
     *parameters.chunks = chunksInJSON(j);
-    mergeChunks(*parameters.chunks);
+    chunk_assignment::mergeChunks(*parameters.chunks);
 }
 
 void JSONIOHandlerImpl::openFile(

@@ -27,6 +27,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <optional>
 #include <utility>
 
 #ifdef _WIN32
@@ -68,6 +69,115 @@ bool WrittenChunkInfo::operator==(WrittenChunkInfo const &other) const
 
 namespace chunk_assignment
 {
+    namespace
+    {
+        /*
+         * Check whether two chunks can be merged to form a large one
+         * and optionally return that larger chunk
+         */
+        template <typename Chunk_t>
+        std::optional<Chunk_t>
+        mergeChunks(Chunk_t const &chunk1, Chunk_t const &chunk2)
+        {
+            /*
+             * Idea:
+             * If two chunks can be merged into one, they agree on offsets and
+             * extents in all but exactly one dimension dim.
+             * At dimension dim, the offset of chunk 2 is equal to the offset
+             * of chunk 1 plus its extent -- or vice versa.
+             */
+            unsigned dimensionality = chunk1.extent.size();
+            for (unsigned dim = 0; dim < dimensionality; ++dim)
+            {
+                Chunk_t const *c1(&chunk1), *c2(&chunk2);
+                // check if one chunk is the extension of the other at
+                // dimension dim
+                // first, let's put things in order
+                if (c1->offset[dim] > c2->offset[dim])
+                {
+                    std::swap(c1, c2);
+                }
+                // now, c1 begins at the lower of both offsets
+                // next check, that both chunks border one another exactly
+                if (c2->offset[dim] != c1->offset[dim] + c1->extent[dim])
+                {
+                    continue;
+                }
+                // we've got a candidate
+                // verify that all other dimensions have equal values
+                auto equalValues = [dimensionality, dim, c1, c2]() {
+                    for (unsigned j = 0; j < dimensionality; ++j)
+                    {
+                        if (j == dim)
+                        {
+                            continue;
+                        }
+                        if (c1->offset[j] != c2->offset[j] ||
+                            c1->extent[j] != c2->extent[j])
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                };
+                if (!equalValues())
+                {
+                    continue;
+                }
+                // we can merge the chunks
+                Offset offset(c1->offset);
+                Extent extent(c1->extent);
+                extent[dim] += c2->extent[dim];
+                return std::make_optional(Chunk_t(offset, extent));
+            }
+            return std::optional<Chunk_t>();
+        }
+    } // namespace
+
+    /*
+     * Merge chunks in the chunktable until no chunks are left that can be
+     * merged.
+     */
+    template <typename Chunk_t>
+    void mergeChunks(std::vector<Chunk_t> &table)
+    {
+        bool stillChanging;
+        do
+        {
+            stillChanging = false;
+            auto innerLoops = [&table]() {
+                /*
+                 * Iterate over pairs of chunks in the table.
+                 * When a pair that can be merged is found, merge it,
+                 * delete the original two chunks from the table,
+                 * put the new one in and return.
+                 */
+                for (auto i = table.begin(); i < table.end(); ++i)
+                {
+                    for (auto j = i + 1; j < table.end(); ++j)
+                    {
+                        std::optional<Chunk_t> merged = mergeChunks(*i, *j);
+                        if (merged)
+                        {
+                            // erase order is important due to iterator
+                            // invalidation
+                            table.erase(j);
+                            table.erase(i);
+                            table.emplace_back(std::move(merged.value()));
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+            stillChanging = innerLoops();
+        } while (stillChanging);
+    }
+
+    template void mergeChunks<ChunkInfo>(std::vector<ChunkInfo> &);
+    template void
+    mergeChunks<WrittenChunkInfo>(std::vector<WrittenChunkInfo> &);
+
     namespace
     {
         std::map<std::string, std::list<unsigned int> >

@@ -171,8 +171,8 @@ void init_Chunk(py::module &m)
             })
         .def_readwrite("offset", &ChunkInfo::offset)
         .def_readwrite("extent", &ChunkInfo::extent);
-    py::bind_vector<PyVecChunkInfo>(m, "VectorChunkInfo");
-    py::implicitly_convertible<py::list, std::vector<ChunkInfo>>();
+    py::bind_vector<PyVecChunkInfo>(m, "VectorChunkInfo")
+        .def("merge_chunks", &chunk_assignment::mergeChunks<ChunkInfo>);
     py::class_<WrittenChunkInfo, ChunkInfo>(m, "WrittenChunkInfo")
         .def(py::init<Offset, Extent>(), py::arg("offset"), py::arg("extent"))
         .def(
@@ -236,7 +236,8 @@ void init_Chunk(py::module &m)
             })
         .def("available", &host_info::methodAvailable);
 
-    py::bind_vector<ChunkTable>(m, "ChunkTable");
+    py::bind_vector<ChunkTable>(m, "ChunkTable")
+        .def("merge_chunks", &chunk_assignment::mergeChunks<WrittenChunkInfo>);
 
     using namespace chunk_assignment;
 
