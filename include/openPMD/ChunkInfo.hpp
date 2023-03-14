@@ -91,6 +91,9 @@ namespace chunk_assignment
 
     using Assignment = std::map<unsigned int, std::vector<WrittenChunkInfo>>;
 
+    template <typename Chunk_t>
+    void mergeChunks(std::vector<Chunk_t> &);
+
     struct PartialAssignment
     {
         ChunkTable notAssigned;
