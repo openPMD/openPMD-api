@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/backend/Attributable.hpp"
