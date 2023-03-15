@@ -114,6 +114,37 @@ class deferred_load:
         self.extent = extent
 
 
+# Example how to implement a simple partial strategy in Python
+class LoadOne(io.PartialStrategy):
+    def __init__(self, rank):
+        super().__init__()
+        self.rank = rank
+
+    def assign(self, assignment, *_):
+        element = assignment.not_assigned.pop()
+        if self.rank not in assignment.assigned:
+            assignment.assigned[self.rank] = [element]
+        else:
+            assignment.assigned[self.rank].append(element)
+        return assignment
+
+
+# Example how to implement a simple strategy in Python
+class LoadAll(io.Strategy):
+
+    def __init__(self, rank):
+        super().__init__()
+        self.rank = rank
+
+    def assign(self, assignment, *_):
+        res = assignment.assigned
+        if self.rank not in res:
+            res[self.rank] = assignment.not_assigned
+        else:
+            res[self.rank].extend(assignment.not_assigned)
+        return res
+
+
 def distribution_strategy(dataset_extent,
                           mpi_rank,
                           mpi_size,
@@ -136,6 +167,8 @@ def distribution_strategy(dataset_extent,
             mpi_size,
             strategy_identifier=match.group(2))
         return io.FromPartialStrategy(io.ByHostname(inside_node), second_phase)
+    elif strategy_identifier == 'all':
+        return io.FromPartialStrategy(LoadOne(mpi_rank), LoadAll(mpi_rank))
     elif strategy_identifier == 'roundrobin':
         return io.RoundRobin()
     elif strategy_identifier == 'binpacking':
