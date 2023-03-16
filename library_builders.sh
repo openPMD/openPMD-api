@@ -102,6 +102,41 @@ function build_adios2 {
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
 
+    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+
+    mkdir build-atl
+    cd build-atl
+    PATH=${CMAKE_BIN}:${PATH} cmake               \
+        -DBUILD_SHARED_LIBS=OFF                   \
+        -DBUILD_TESTING=OFF                       \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
+        -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*/thirdparty/atl/atl
+    make -j${CPU_COUNT}
+    make install
+    cd -
+
+    mkdir build-dill
+    cd build-dill
+    PATH=${CMAKE_BIN}:${PATH} cmake               \
+        -DBUILD_SHARED_LIBS=OFF                   \
+        -DBUILD_TESTING=OFF                       \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
+        -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*/thirdparty/dill/dill
+    make -j${CPU_COUNT}
+    make install
+    cd -
+
+    mkdir build-ffs
+    cd build-ffs
+    PATH=${CMAKE_BIN}:${PATH} cmake               \
+        -DBUILD_SHARED_LIBS=OFF                   \
+        -DBUILD_TESTING=OFF                       \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
+        -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*/thirdparty/ffs/ffs
+    make -j${CPU_COUNT}
+    make install
+    cd -
+
     # Patch PThread Propagation
     # curl -sLo adios-pthread.patch \
     #     https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
@@ -121,7 +156,6 @@ function build_adios2 {
     mkdir build-adios2
     cd build-adios2
     PY_BIN=$(which python3)
-    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     if [ "$(uname -s)" = "Linux" ]
     then
         EVPATH_ZPL="ON"
@@ -135,6 +169,8 @@ function build_adios2 {
         -DBUILD_TESTING=OFF                       \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
         -DADIOS2_BUILD_EXAMPLES=OFF               \
+        -DADIOS2_USE_EXTERNAL_ATL=ON              \
+        -DADIOS2_USE_EXTERNAL_FFS=ON              \
         -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Blosc2=ON                    \
         -DADIOS2_USE_Fortran=OFF                  \
