@@ -42,6 +42,8 @@ endif()
 
 # Project structure ###########################################################
 #
+get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+
 # temporary build directories
 if(NOT openPMD_ARCHIVE_OUTPUT_DIRECTORY)
     if(CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
@@ -564,6 +566,7 @@ add_library(openPMD::openPMD ALIAS openPMD)
 # properties
 openpmd_cxx_required(openPMD)
 set_target_properties(openPMD PROPERTIES
+    COMPILE_PDB_NAME openPMD
     ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
     LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
     RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
@@ -573,6 +576,20 @@ set_target_properties(openPMD PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+# note: same as above, but for Multi-Config generators
+if(isMultiConfig)
+    foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+        string(TOUPPER "${CFG}" CFG_UPPER)
+        set_target_properties(openPMD PROPERTIES
+            COMPILE_PDB_NAME_${CFG_UPPER} openPMD
+            ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
+            LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
+            RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+            PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
+            COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
+        )
+    endforeach()
+endif()
 set(_cxx_msvc   "$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>")
 set(_msvc_1914  "$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,19.14>")
 set(_msvc_options)
@@ -644,6 +661,7 @@ if(openPMD_HAVE_ADIOS1)
         $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
+        COMPILE_PDB_NAME openPMD.ADIOS1.Serial
         ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
         LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
         RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
@@ -654,6 +672,20 @@ if(openPMD_HAVE_ADIOS1)
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN ON
     )
+    # note: same as above, but for Multi-Config generators
+    if(isMultiConfig)
+        foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CFG}" CFG_UPPER)
+            set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
+                COMPILE_PDB_NAME_${CFG_UPPER} openPMD.ADIOS1.Serial
+                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
+                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/${CFG}
+                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
+                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
+            )
+        endforeach()
+    endif()
     if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
         set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
             LINK_FLAGS "-Wl,--exclude-libs,ALL")
@@ -678,6 +710,7 @@ if(openPMD_HAVE_ADIOS1)
 
     if(openPMD_HAVE_MPI)
         set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
+            COMPILE_PDB_NAME openPMD.ADIOS1.Parallel
             ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
             LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
             RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
@@ -688,6 +721,20 @@ if(openPMD_HAVE_ADIOS1)
             CXX_VISIBILITY_PRESET hidden
             VISIBILITY_INLINES_HIDDEN 1
         )
+        # note: same as above, but for Multi-Config generators
+        if(isMultiConfig)
+            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+                string(TOUPPER "${CFG}" CFG_UPPER)
+                set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
+                    COMPILE_PDB_NAME_${CFG_UPPER} opemPMD.ADIOS1.Parallel
+                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
+                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
+                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
+                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
+                )
+            endforeach()
+        endif()
         if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
             set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
                 LINK_FLAGS "-Wl,--exclude-libs,ALL")
@@ -835,12 +882,27 @@ if(openPMD_HAVE_PYTHON)
     set_target_properties(openPMD.py PROPERTIES
         ARCHIVE_OUTPUT_NAME openpmd_api_cxx
         LIBRARY_OUTPUT_NAME openpmd_api_cxx
+        COMPILE_PDB_NAME openpmd_api_cxx
         ARCHIVE_OUTPUT_DIRECTORY ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
         LIBRARY_OUTPUT_DIRECTORY ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
         RUNTIME_OUTPUT_DIRECTORY ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
         PDB_OUTPUT_DIRECTORY ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
         COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
     )
+    # note: same as above, but for Multi-Config generators
+    if(isMultiConfig)
+        foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CFG}" CFG_UPPER)
+            set_target_properties(openPMD.py PROPERTIES
+                COMPILE_PDB_NAME_${CFG_UPPER} openpmd_api_cxx
+                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
+                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
+                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
+                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
+            )
+        endforeach()
+    endif()
     function(copy_aux_py)
         set(AUX_PY_SRC_DIR ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api/)
         set(AUX_PY_DSR_DIR ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api/)
@@ -934,6 +996,30 @@ if(openPMD_BUILD_TESTING)
         POSITION_INDEPENDENT_CODE ON
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
+    set_target_properties(CatchRunner PROPERTIES COMPILE_PDB_NAME CatchRunner)
+    set_target_properties(CatchMain PROPERTIES COMPILE_PDB_NAME CatchMain)
+    # note: same as above, but for Multi-Config generators
+    if(isMultiConfig)
+        foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CFG}" CFG_UPPER)
+            set_target_properties(CatchRunner PROPERTIES
+                COMPILE_PDB_NAME_${CFG_UPPER} CatchRunner
+                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
+                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
+                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
+            )
+            set_target_properties(CatchMain PROPERTIES
+                COMPILE_PDB_NAME_${CFG_UPPER} CatchMain
+                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
+                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
+                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
+            )
+        endforeach()
+    endif()
     target_compile_options(CatchRunner PUBLIC ${_msvc_options})
     target_compile_options(CatchMain   PUBLIC ${_msvc_options})
     target_link_libraries(CatchRunner PUBLIC openPMD::thirdparty::Catch2)
@@ -947,12 +1033,27 @@ if(openPMD_BUILD_TESTING)
         add_executable(${testname}Tests test/${testname}Test.cpp)
         openpmd_cxx_required(${testname}Tests)
         set_target_properties(${testname}Tests PROPERTIES
+            COMPILE_PDB_NAME ${testname}Tests
             ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
             LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
             RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
         )
+        # note: same as above, but for Multi-Config generators
+        if(isMultiConfig)
+            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+                string(TOUPPER "${CFG}" CFG_UPPER)
+                set_target_properties(${testname}Tests PROPERTIES
+                    COMPILE_PDB_NAME_${CFG_UPPER} ${testname}Tests
+                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
+                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
+                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                )
+            endforeach()
+        endif()
 
         if(openPMD_USE_INVASIVE_TESTS)
             target_compile_definitions(${testname}Tests PRIVATE openPMD_USE_INVASIVE_TESTS=1)
@@ -977,12 +1078,27 @@ if(openPMD_BUILD_CLI_TOOLS)
         add_executable(openpmd-${toolname} src/cli/${toolname}.cpp)
         openpmd_cxx_required(openpmd-${toolname})
         set_target_properties(openpmd-${toolname} PROPERTIES
+            COMPILE_PDB_NAME openpmd-${toolname}
             ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
             LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
             RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
         )
+        # note: same as above, but for Multi-Config generators
+        if(isMultiConfig)
+            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+                string(TOUPPER "${CFG}" CFG_UPPER)
+                set_target_properties(openpmd-${toolname} PROPERTIES
+                    COMPILE_PDB_NAME_${CFG_UPPER} openpmd-${toolname}
+                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
+                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
+                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                )
+            endforeach()
+        endif()
 
         target_link_libraries(openpmd-${toolname} PRIVATE openPMD)
     endforeach()
@@ -1004,12 +1120,27 @@ if(openPMD_BUILD_EXAMPLES)
            openpmd_cxx_required(${examplename})
         endif()
         set_target_properties(${examplename} PROPERTIES
+            COMPILE_PDB_NAME ${examplename}
             ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
             LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
             RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
             COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
         )
+        # note: same as above, but for Multi-Config generators
+        if(isMultiConfig)
+            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+                string(TOUPPER "${CFG}" CFG_UPPER)
+                set_target_properties(${examplename} PROPERTIES
+                    COMPILE_PDB_NAME_${CFG_UPPER} ${examplename}
+                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
+                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
+                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
+                )
+            endforeach()
+        endif()
         target_link_libraries(${examplename} PRIVATE openPMD)
     endforeach()
 endif()
@@ -1291,6 +1422,30 @@ if(openPMD_BUILD_TESTING)
 
     # Python Unit tests
     if(openPMD_HAVE_PYTHON)
+        function(test_set_pythonpath test_name)
+            if(WIN32)
+                if(isMultiConfig)
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR}/$<CONFIG>)
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>)
+                else()
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
+                endif()
+                string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
+                string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                set_property(TEST ${test_name}
+                    PROPERTY ENVIRONMENT
+                        "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                        "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${openPMD_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                )
+            else()
+                set_tests_properties(${test_name}
+                    PROPERTIES ENVIRONMENT
+                        "PYTHONPATH=${openPMD_BINARY_DIR}/${openPMD_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                )
+            endif()
+        endfunction()
+
         if(openPMD_HAVE_HDF5)
             if(EXAMPLE_DATA_FOUND)
                 add_test(NAME Unittest.py
@@ -1299,22 +1454,7 @@ if(openPMD_BUILD_TESTING)
                     WORKING_DIRECTORY
                         ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )
-                if(WIN32)
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
-                    string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
-                    string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
-                    set_property(TEST Unittest.py
-                        PROPERTY ENVIRONMENT
-                            "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                            "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${openPMD_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-                    )
-                else()
-                    set_tests_properties(Unittest.py
-                        PROPERTIES ENVIRONMENT
-                            "PYTHONPATH=${openPMD_BINARY_DIR}/${openPMD_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-                    )
-                endif()
+                test_set_pythonpath(Unittest.py)
             endif()
         endif()
     endif()
@@ -1367,21 +1507,6 @@ if(openPMD_BUILD_TESTING)
             )
         endif()
     endif()
-
-    function(test_set_pythonpath test_name)
-        if(WIN32)
-            set_property(TEST ${test_name}
-                PROPERTY ENVIRONMENT
-                    "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                    "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${openPMD_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-            )
-        else()
-            set_tests_properties(${test_name}
-                PROPERTIES ENVIRONMENT
-                    "PYTHONPATH=${openPMD_BINARY_DIR}/${openPMD_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-            )
-        endif()
-    endfunction()
 
     # Python CLI Modules
     if(openPMD_HAVE_PYTHON)
@@ -1469,25 +1594,6 @@ if(openPMD_BUILD_TESTING)
         endif()
     endif()
 
-    function(configure_python_test testname)
-        if(WIN32)
-            string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
-            string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
-            string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
-            string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
-            set_property(TEST ${testname}
-                PROPERTY ENVIRONMENT
-                    "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                    "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${openPMD_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-            )
-        else()
-            set_tests_properties(${testname}
-                PROPERTIES ENVIRONMENT
-                    "PYTHONPATH=${openPMD_BINARY_DIR}/${openPMD_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-            )
-        endif()
-    endfunction()
-
 
     # Python Examples
     # Current examples all use HDF5, elaborate if other backends are used
@@ -1522,14 +1628,14 @@ if(openPMD_BUILD_TESTING)
                                 ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                         )
                     endif()
-                    configure_python_test(Example.py.${examplename})
+                    test_set_pythonpath(Example.py.${examplename})
                 endif()
             endforeach()
             if(openPMD_HAVE_ADIOS2 AND openPMD_BUILD_TESTING AND NOT WIN32)
                 add_test(NAME Asynchronous.10_streaming.py
                         COMMAND sh -c "${Python_EXECUTABLE} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_write.py & sleep 1; ${Python_EXECUTABLE} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_read.py"
                         WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
-                configure_python_test(Asynchronous.10_streaming.py)
+                test_set_pythonpath(Asynchronous.10_streaming.py)
             endif()
         endif()
     endif()
