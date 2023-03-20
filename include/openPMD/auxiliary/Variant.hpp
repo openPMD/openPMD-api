@@ -90,5 +90,17 @@ namespace auxiliary
     private:
         resource m_data;
     };
+
+    /*
+     * Helper type for std::visit,
+     * see https://en.cppreference.com/w/cpp/utility/variant/visit
+     */
+    template <class... Ts>
+    struct overloaded : Ts...
+    {
+        using Ts::operator()...;
+    };
+    template <class... Ts>
+    overloaded(Ts...) -> overloaded<Ts...>;
 } // namespace auxiliary
 } // namespace openPMD
