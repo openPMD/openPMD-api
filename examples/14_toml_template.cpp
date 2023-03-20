@@ -107,7 +107,8 @@ void read()
 {
   "iteration_encoding": "variable_based",
   "json": {
-    "mode": "template"
+    "dataset": {"mode": "template"},
+    "attribute": {"mode": "short"}
   }
 }
 )";
