@@ -1566,7 +1566,15 @@ TEST_CASE("dtype_test", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        dtype_test(t);
+        if (t == "json")
+        {
+            dtype_test(t);
+            dtype_test(t, R"(json.mode = "template")");
+        }
+        else
+        {
+            dtype_test(t);
+        }
     }
     dtype_test("json", R"(
 {
