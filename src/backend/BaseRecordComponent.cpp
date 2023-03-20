@@ -92,4 +92,16 @@ BaseRecordComponent::BaseRecordComponent() : Attributable(NoInit())
 
 BaseRecordComponent::BaseRecordComponent(NoInit) : Attributable(NoInit())
 {}
+
+void BaseRecordComponent::setDatasetDefined(
+    internal::BaseRecordComponentData &data)
+{
+    data.m_datasetDefined = true;
+}
+
+bool BaseRecordComponent::datasetDefined() const
+{
+    auto & data = get();
+    return data.m_datasetDefined;
+}
 } // namespace openPMD

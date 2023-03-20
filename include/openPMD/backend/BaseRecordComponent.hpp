@@ -49,6 +49,13 @@ namespace internal
          * instead defined via light-weight attributes.
          */
         bool m_isConstant = false;
+        /**
+         * Tracks if there was any write access to the record component.
+         * Necessary in BaseRecord<T> to track if the scalar component has been
+         * used and is used by BaseRecord<T> to determine the return value of
+         * the BaseRecord<T>::scalar() method.
+         */
+        bool m_datasetDefined = false;
 
         BaseRecordComponentData(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData(BaseRecordComponentData &&) = delete;
@@ -165,6 +172,10 @@ protected:
         m_baseRecordComponentData = std::move(data);
         Attributable::setData(m_baseRecordComponentData);
     }
+
+    void setDatasetDefined(Data_t &);
+
+    bool datasetDefined() const;
 
     BaseRecordComponent();
     BaseRecordComponent(NoInit);

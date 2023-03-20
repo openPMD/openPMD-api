@@ -124,11 +124,14 @@ OPENPMD_protected
 
     inline Data_t const &get() const
     {
+        // cannot call this in the const overload
+        // setDatasetDefined(*m_recordComponentData);
         return *m_patchRecordComponentData;
     }
 
     inline Data_t &get()
     {
+        setDatasetDefined(*m_patchRecordComponentData);
         return *m_patchRecordComponentData;
     }
 
