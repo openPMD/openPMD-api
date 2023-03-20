@@ -31,20 +31,28 @@
 // @todo add TOML here
 std::map<std::string, bool> openPMD::getVariants()
 {
+    // clang-format off
     return std::map<std::string, bool>{
         {"mpi", bool(openPMD_HAVE_MPI)},
         {"json", true},
+// https://github.com/ToruNiina/toml11/issues/205
+#if !defined(__NVCOMPILER_MAJOR__) || __NVCOMPILER_MAJOR__ >= 23
         {"toml", true},
+#endif
         {"hdf5", bool(openPMD_HAVE_HDF5)},
         {"adios1", false},
         {"adios2", bool(openPMD_HAVE_ADIOS2)}};
+    // clang-format on
 }
 
 std::vector<std::string> openPMD::getFileExtensions()
 {
     std::vector<std::string> fext;
     fext.emplace_back("json");
+// https://github.com/ToruNiina/toml11/issues/205
+#if !defined(__NVCOMPILER_MAJOR__) || __NVCOMPILER_MAJOR__ >= 23
     fext.emplace_back("toml");
+#endif
 #if openPMD_HAVE_ADIOS2
     fext.emplace_back("bp");
 #endif
