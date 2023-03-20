@@ -49,6 +49,7 @@ namespace traits
     template <typename U>
     struct GenerationPolicy
     {
+        constexpr static bool is_noop = true;
         template <typename T>
         void operator()(T &)
         {}

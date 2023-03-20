@@ -56,6 +56,9 @@ namespace internal
 
         PatchRecordComponentData();
     };
+
+    template <typename, typename>
+    class BaseRecordData;
 } // namespace internal
 
 /**
@@ -67,6 +70,8 @@ class PatchRecordComponent : public BaseRecordComponent
     friend class Container;
     template <typename>
     friend class BaseRecord;
+    template <typename, typename>
+    friend class internal::BaseRecordData;
     friend class ParticlePatches;
     friend class PatchRecord;
     friend class ParticleSpecies;
@@ -121,6 +126,7 @@ OPENPMD_protected
     std::shared_ptr<Data_t> m_patchRecordComponentData;
 
     PatchRecordComponent();
+    PatchRecordComponent(NoInit);
 
     inline Data_t const &get() const
     {

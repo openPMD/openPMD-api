@@ -30,11 +30,14 @@ class MeshRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
+    template <typename>
+    friend class BaseRecord;
 
     friend class Mesh;
 
 private:
     MeshRecordComponent();
+    MeshRecordComponent(NoInit);
     void read() override;
 
 public:

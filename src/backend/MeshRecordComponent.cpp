@@ -27,6 +27,9 @@ MeshRecordComponent::MeshRecordComponent() : RecordComponent()
     setPosition(std::vector<double>{0});
 }
 
+MeshRecordComponent::MeshRecordComponent(NoInit) : RecordComponent(NoInit())
+{}
+
 void MeshRecordComponent::read()
 {
     using DT = Datatype;

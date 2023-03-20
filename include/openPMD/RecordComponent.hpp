@@ -95,6 +95,8 @@ namespace internal
          */
         bool m_hasBeenExtended = false;
     };
+    template <typename, typename>
+    class BaseRecordData;
 } // namespace internal
 
 class RecordComponent : public BaseRecordComponent
@@ -103,8 +105,10 @@ class RecordComponent : public BaseRecordComponent
     friend class Container;
     friend class Iteration;
     friend class ParticleSpecies;
-    template <typename T_elem>
+    template <typename>
     friend class BaseRecord;
+    template <typename, typename>
+    friend class internal::BaseRecordData;
     friend class Record;
     friend class Mesh;
     template <typename>
@@ -437,6 +441,7 @@ OPENPMD_protected
     std::shared_ptr<Data_t> m_recordComponentData;
 
     RecordComponent();
+    RecordComponent(NoInit);
 
     inline Data_t const &get() const
     {

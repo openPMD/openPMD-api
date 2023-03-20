@@ -81,7 +81,7 @@ namespace internal
         A_MAP m_attributes;
     };
 
-    template <typename>
+    template <typename, typename>
     class BaseRecordData;
 } // namespace internal
 
@@ -99,7 +99,7 @@ class Attributable
     friend class BaseRecord;
     template <typename T_elem>
     friend class BaseRecordInterface;
-    template <typename>
+    template <typename, typename>
     friend class internal::BaseRecordData;
     template <typename T, typename T_key, typename T_container>
     friend class Container;

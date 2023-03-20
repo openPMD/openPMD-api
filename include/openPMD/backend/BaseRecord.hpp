@@ -32,8 +32,16 @@ namespace openPMD
 {
 namespace internal
 {
-    template <typename T_elem>
-    class BaseRecordData : public ContainerData<T_elem>
+    template <
+        typename T_elem, // = T_RecordComponent
+        /*
+         * Technically not necessary, but some old compilers ignore friend
+         * declarations at this place, so we specify the data class explicitly
+         */
+        typename T_RecordComponentData = typename T_elem::Data_t>
+    class BaseRecordData final
+        : public ContainerData<T_elem>
+        , public T_RecordComponentData
     {
     public:
         /**
@@ -55,16 +63,28 @@ namespace internal
 } // namespace internal
 
 template <typename T_elem>
-class BaseRecord : public Container<T_elem>
+class BaseRecord
+    : public Container<T_elem>
+    , public T_elem // T_RecordComponent
 {
+    using T_RecordComponent = T_elem;
+    using T_Container = Container<T_elem>;
+    using T_Self = BaseRecord<T_elem>;
     friend class Iteration;
     friend class ParticleSpecies;
     friend class PatchRecord;
     friend class Record;
     friend class Mesh;
+    template <typename, typename>
+    friend class internal::BaseRecordData;
 
-    using Data_t = internal::BaseRecordData<T_elem>;
+    using Data_t =
+        internal::BaseRecordData<T_elem, typename T_RecordComponent::Data_t>;
     std::shared_ptr<Data_t> m_baseRecordData;
+
+    static_assert(
+        traits::GenerationPolicy<T_RecordComponent>::is_noop,
+        "Internal error: Scalar components cannot have generation policies.");
 
     inline Data_t const &get() const
     {
@@ -82,7 +102,8 @@ protected:
     inline void setData(std::shared_ptr<Data_t> data)
     {
         m_baseRecordData = std::move(data);
-        Container<T_elem>::setData(m_baseRecordData);
+        T_Container::setData(m_baseRecordData);
+        T_RecordComponent::setData(m_baseRecordData);
     }
 
 public:
@@ -96,8 +117,8 @@ public:
     using const_reference = typename Container<T_elem>::const_reference;
     using pointer = typename Container<T_elem>::pointer;
     using const_pointer = typename Container<T_elem>::const_pointer;
-    using iterator = typename Container<T_elem>::iterator;
-    using const_iterator = typename Container<T_elem>::const_iterator;
+    using iterator = typename T_Container::iterator;
+    using const_iterator = typename T_Container::const_iterator;
 
     virtual ~BaseRecord() = default;
 
@@ -158,8 +179,8 @@ private:
 
 namespace internal
 {
-    template <typename T_elem>
-    BaseRecordData<T_elem>::BaseRecordData()
+    template <typename T_elem, typename T_RecordComponentData>
+    BaseRecordData<T_elem, T_RecordComponentData>::BaseRecordData()
     {
         Attributable impl;
         impl.setData({this, [](auto const *) {}});
@@ -170,7 +191,9 @@ namespace internal
 } // namespace internal
 
 template <typename T_elem>
-BaseRecord<T_elem>::BaseRecord() : Container<T_elem>(Attributable::NoInit())
+BaseRecord<T_elem>::BaseRecord()
+    : T_Container(Attributable::NoInit())
+    , T_RecordComponent(Attributable::NoInit())
 {
     setData(std::make_shared<Data_t>());
 }
@@ -291,7 +314,7 @@ template <typename T_elem>
 inline std::array<double, 7> BaseRecord<T_elem>::unitDimension() const
 {
     return this->getAttribute("unitDimension")
-        .template get<std::array<double, 7> >();
+        .template get<std::array<double, 7>>();
 }
 
 template <typename T_elem>
@@ -310,7 +333,7 @@ inline void BaseRecord<T_elem>::readBase()
     this->IOHandler()->enqueue(IOTask(this, aRead));
     this->IOHandler()->flush(internal::defaultFlushParams);
     if (auto val =
-            Attribute(*aRead.resource).getOptional<std::array<double, 7> >();
+            Attribute(*aRead.resource).getOptional<std::array<double, 7>>();
         val.has_value())
         this->setAttribute("unitDimension", val.value());
     else
@@ -339,7 +362,7 @@ template <typename T_elem>
 inline void BaseRecord<T_elem>::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {
-    if (!this->written() && this->empty())
+    if (!this->written() && this->T_Container::empty())
         throw std::runtime_error(
             "A Record can not be written without any contained "
             "RecordComponents: " +

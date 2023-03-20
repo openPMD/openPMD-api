@@ -80,6 +80,10 @@ PatchRecordComponent::PatchRecordComponent() : BaseRecordComponent(NoInit())
     setUnitSI(1);
 }
 
+PatchRecordComponent::PatchRecordComponent(NoInit)
+    : BaseRecordComponent(NoInit())
+{}
+
 void PatchRecordComponent::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {

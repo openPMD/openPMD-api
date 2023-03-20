@@ -61,6 +61,7 @@ namespace traits
     template <>
     struct GenerationPolicy<ParticleSpecies>
     {
+        constexpr static bool is_noop = false;
         template <typename T>
         void operator()(T &ret)
         {

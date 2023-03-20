@@ -46,6 +46,9 @@ RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
     setUnitSI(1);
 }
 
+RecordComponent::RecordComponent(NoInit) : BaseRecordComponent(NoInit())
+{}
+
 // We need to instantiate this somewhere otherwise there might be linker issues
 // despite this thing actually being constepxr
 constexpr char const *const RecordComponent::SCALAR;
