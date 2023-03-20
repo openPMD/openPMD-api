@@ -64,8 +64,13 @@ namespace internal
      *
      * (Not movable or copyable)
      *
+     * Class is final since our std::shared_ptr<Data_t> pattern has the little
+     * disadvantage that child constructors overwrite the parent constructors.
+     * Since the SeriesData constructor does some initialization, making this
+     * class final avoids stumbling over this pitfall.
+     *
      */
-    class SeriesData : public AttributableData
+    class SeriesData final : public AttributableData
     {
     public:
         explicit SeriesData() = default;
@@ -211,10 +216,6 @@ class Series : public Attributable
     friend class SeriesIterator;
     friend class internal::SeriesData;
     friend class WriteIterations;
-
-protected:
-    // Should not be called publicly, only by implementing classes
-    Series(std::shared_ptr<internal::SeriesData>);
 
 public:
     explicit Series();
@@ -585,9 +586,10 @@ OPENPMD_private
     using iterations_t = decltype(internal::SeriesData::iterations);
     using iterations_iterator = iterations_t::iterator;
 
-    std::shared_ptr<internal::SeriesData> m_series = nullptr;
+    using Data_t = internal::SeriesData;
+    std::shared_ptr<Data_t> m_series = nullptr;
 
-    inline internal::SeriesData &get()
+    inline Data_t &get()
     {
         if (m_series)
         {
@@ -600,7 +602,7 @@ OPENPMD_private
         }
     }
 
-    inline internal::SeriesData const &get() const
+    inline Data_t const &get() const
     {
         if (m_series)
         {
@@ -611,6 +613,13 @@ OPENPMD_private
             throw std::runtime_error(
                 "[Series] Cannot use default-constructed Series.");
         }
+    }
+
+    inline void setData(std::shared_ptr<internal::SeriesData> series)
+    {
+        m_series = std::move(series);
+        iterations = m_series->iterations;
+        Attributable::setData(m_series);
     }
 
     std::unique_ptr<ParsedInput> parseInput(std::string);

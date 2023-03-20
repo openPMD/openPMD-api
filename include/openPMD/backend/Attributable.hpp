@@ -111,14 +111,16 @@ class Attributable
     friend class WriteIterations;
 
 protected:
-    std::shared_ptr<internal::AttributableData> m_attri{
-        new internal::AttributableData()};
+    // tag for internal constructor
+    struct NoInit
+    {};
 
-    // Should not be called publicly, only by implementing classes
-    Attributable(std::shared_ptr<internal::AttributableData>);
+    using Data_t = internal::AttributableData;
+    std::shared_ptr<Data_t> m_attri;
 
 public:
     Attributable();
+    Attributable(NoInit);
 
     virtual ~Attributable() = default;
 

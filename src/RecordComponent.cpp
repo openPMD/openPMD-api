@@ -37,23 +37,14 @@ namespace openPMD
 {
 namespace internal
 {
-    RecordComponentData::RecordComponentData()
-    {
-        RecordComponent impl{
-            std::shared_ptr<RecordComponentData>{this, [](auto const *) {}}};
-        impl.setUnitSI(1);
-    }
+    RecordComponentData::RecordComponentData() = default;
 } // namespace internal
 
-RecordComponent::RecordComponent() : BaseRecordComponent{nullptr}
+RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 {
-    BaseRecordComponent::setData(m_recordComponentData);
+    setData(std::make_shared<Data_t>());
+    setUnitSI(1);
 }
-
-RecordComponent::RecordComponent(
-    std::shared_ptr<internal::RecordComponentData> data)
-    : BaseRecordComponent{data}, m_recordComponentData{std::move(data)}
-{}
 
 // We need to instantiate this somewhere otherwise there might be linker issues
 // despite this thing actually being constepxr

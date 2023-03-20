@@ -63,15 +63,15 @@ class BaseRecord : public Container<T_elem>
     friend class Record;
     friend class Mesh;
 
-    std::shared_ptr<internal::BaseRecordData<T_elem> > m_baseRecordData{
-        new internal::BaseRecordData<T_elem>()};
+    using Data_t = internal::BaseRecordData<T_elem>;
+    std::shared_ptr<Data_t> m_baseRecordData;
 
-    inline internal::BaseRecordData<T_elem> &get()
+    inline Data_t const &get() const
     {
         return *m_baseRecordData;
     }
 
-    inline internal::BaseRecordData<T_elem> const &get() const
+    inline Data_t &get()
     {
         return *m_baseRecordData;
     }
@@ -79,9 +79,7 @@ class BaseRecord : public Container<T_elem>
     BaseRecord();
 
 protected:
-    BaseRecord(std::shared_ptr<internal::BaseRecordData<T_elem> >);
-
-    inline void setData(internal::BaseRecordData<T_elem> *data)
+    inline void setData(std::shared_ptr<Data_t> data)
     {
         m_baseRecordData = std::move(data);
         Container<T_elem>::setData(m_baseRecordData);
@@ -137,7 +135,6 @@ public:
     bool scalar() const;
 
 protected:
-    BaseRecord(internal::BaseRecordData<T_elem> *);
     void readBase();
 
 private:
@@ -164,7 +161,8 @@ namespace internal
     template <typename T_elem>
     BaseRecordData<T_elem>::BaseRecordData()
     {
-        Attributable impl{{this, [](auto const *) {}}};
+        Attributable impl;
+        impl.setData({this, [](auto const *) {}});
         impl.setAttribute(
             "unitDimension",
             std::array<double, 7>{{0., 0., 0., 0., 0., 0., 0.}});
@@ -172,16 +170,10 @@ namespace internal
 } // namespace internal
 
 template <typename T_elem>
-BaseRecord<T_elem>::BaseRecord() : Container<T_elem>{nullptr}
+BaseRecord<T_elem>::BaseRecord() : Container<T_elem>(Attributable::NoInit())
 {
-    Container<T_elem>::setData(m_baseRecordData);
+    setData(std::make_shared<Data_t>());
 }
-
-template <typename T_elem>
-BaseRecord<T_elem>::BaseRecord(
-    std::shared_ptr<internal::BaseRecordData<T_elem> > data)
-    : Container<T_elem>{data}, m_baseRecordData{std::move(data)}
-{}
 
 template <typename T_elem>
 inline typename BaseRecord<T_elem>::mapped_type &

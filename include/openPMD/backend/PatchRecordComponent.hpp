@@ -112,29 +112,27 @@ OPENPMD_private
      */
     bool dirtyRecursive() const;
 
-    std::shared_ptr<internal::PatchRecordComponentData>
-        m_patchRecordComponentData{new internal::PatchRecordComponentData()};
-
-    PatchRecordComponent();
-
     // clang-format off
 OPENPMD_protected
     // clang-format on
 
-    PatchRecordComponent(std::shared_ptr<internal::PatchRecordComponentData>);
+    using Data_t = internal::PatchRecordComponentData;
 
-    inline internal::PatchRecordComponentData const &get() const
+    std::shared_ptr<Data_t> m_patchRecordComponentData;
+
+    PatchRecordComponent();
+
+    inline Data_t const &get() const
     {
         return *m_patchRecordComponentData;
     }
 
-    inline internal::PatchRecordComponentData &get()
+    inline Data_t &get()
     {
         return *m_patchRecordComponentData;
     }
 
-    inline void
-    setData(std::shared_ptr<internal::PatchRecordComponentData> data)
+    inline void setData(std::shared_ptr<Data_t> data)
     {
         m_patchRecordComponentData = std::move(data);
         BaseRecordComponent::setData(m_patchRecordComponentData);

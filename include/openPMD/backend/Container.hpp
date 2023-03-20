@@ -65,7 +65,7 @@ namespace internal
         typename T,
         typename T_key = std::string,
         typename T_container = std::map<T_key, T> >
-    class ContainerData : public AttributableData
+    class ContainerData : virtual public AttributableData
     {
     public:
         using InternalContainer = T_container;
@@ -128,7 +128,7 @@ template <
     typename T,
     typename T_key = std::string,
     typename T_container = std::map<T_key, T> >
-class Container : public Attributable
+class Container : virtual public Attributable
 {
     static_assert(
         std::is_base_of<Attributable, T>::value,
@@ -147,7 +147,7 @@ protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
     using InternalContainer = T_container;
 
-    std::shared_ptr<ContainerData> m_containerData{new ContainerData()};
+    std::shared_ptr<ContainerData> m_containerData;
 
     inline void setData(std::shared_ptr<ContainerData> containerData)
     {
@@ -428,10 +428,6 @@ public:
 OPENPMD_protected
     // clang-format on
 
-    Container(std::shared_ptr<ContainerData> containerData)
-        : Attributable{containerData}, m_containerData{std::move(containerData)}
-    {}
-
     void clear_unchecked()
     {
         if (written())
@@ -454,14 +450,13 @@ OPENPMD_protected
         flushAttributes(flushParams);
     }
 
-    // clang-format off
-OPENPMD_private
-    // clang-format on
-
-    Container() : Attributable{nullptr}
+    Container() : Attributable(NoInit())
     {
-        Attributable::setData(m_containerData);
+        setData(std::make_shared<ContainerData>());
     }
+
+    Container(NoInit) : Attributable(NoInit())
+    {}
 };
 
 namespace internal
@@ -532,7 +527,8 @@ namespace internal
         ~EraseStaleEntries()
         {
             auto &map = m_originalContainer.container();
-            using iterator_t = typename BareContainer_t::const_iterator;
+            using iterator_t =
+                typename BareContainer_t::InternalContainer::const_iterator;
             std::vector<iterator_t> deleteMe;
             deleteMe.reserve(map.size() - m_accessedKeys.size());
             for (iterator_t it = map.begin(); it != map.end(); ++it)

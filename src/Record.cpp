@@ -176,7 +176,5 @@ void Record::read()
     readAttributes(ReadMode::FullyReread);
 }
 
-template <>
-BaseRecord<RecordComponent>::mapped_type &
-BaseRecord<RecordComponent>::operator[](std::string &&key);
+template class BaseRecord<RecordComponent>;
 } // namespace openPMD
