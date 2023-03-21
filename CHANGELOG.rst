@@ -20,23 +20,37 @@ Features
 - Python: support of 3.10 and 3.11, removal of 3.6 #1323 #1139
 - include internally shipped toml11 v3.7.1 #1148 #1227
 - pybind11: require version 2.10.1+ #1220 #1322
-- Switch to C++17 #1128 #1140 #1157
-- Error-recovery during parsing #1150
+- Switch to C++17 #1128 #1140 #1157 #1164 #1183 #1185
+- Error-recovery during parsing #1150 #1179 #1237
 - Extensive update for JSON/TOML configuration #1043
   - TOML as an alternative to JSON #1146
   - compression configuration via JSON# 1043
   - case insensitivity #1043
   - datatype conversion for string values #1043
-  - ``json::merge`` public function #1043
+  - ``json::merge`` public function #1043 #1333
   - better warnings for unused values #1043
   - new JSON options: ``backend`` and ``iteration_encoding`` #1043
   - ADIOS1 compression configuration via JSON #1043 #1162
-- Header for openPMD-defined error types #1080
-- Support for ADIOS2 BP5 engine #1119
-- I/O optimizations for HDF5 #1129 #1133
-- Support for empty string attributes #1087
-- Support for inconsistent padding of filenames in file-based encoding #1118
+New access types:
+  - ``APPEND``: Add new iterations without reading, supports ADIOS2 Append mode #1007 #1302
+  - ``READ_LINEAR``: For reading through ADIOS2 steps, for full support of ADIOS2 BP5 #1291 #1379
+- Support for all char types (CHAR SCHAR UCHAR) #1275 #1378
+- Header for openPMD-defined error types #1080 #1355
+- Support for ADIOS2 BP5 engine #1119 #1215 #1258 #1262 #1291
+- Support for selecting flush targets (buffer/disk) in ADIOS2 BP5 for more fine-grained memory control #1226 #1207
+- Add file extensions for ADIOS2: ``.bp4``, ``.bp5`` and furthers, make them behave more as expected #1218
+- Add ``Series::close()`` API call #1324
+- Optionally explicitly map ADIOS2 steps to openPMD iterations via modifiable attributes (only supported in experimental ADIOS2 modes) #949
+- Support for ADIOS 2.8 and newer #1166
+- I/O optimizations for HDF5 #1129 #1133 #1192
+- Support for empty string attributes #1087 #1223 #1338
+- Support for inconsistent padding of filenames in file-based encoding #1118 #1253
 - ADIOS2: Automatic (de)activation of span API depending on compression configuration #1155
+- ADIOS2: Support for operator specification at read time #1191
+- Support for array specializations of C++ smart pointer types #1296
+- Direct support for raw pointer types in ``store/loadChunk()`` API, replacing former ``shareRaw()`` #1229
+- Support and backend optimizations (ADIOS2 BP5) based on unique pointer types in ``store/loadChunk()`` #1294
+- Use C++ ``std::optional`` types in public Attribute API (``Attribute::getOptional<T>()``) for dynamic attribute type conversion #1278
 
 Bug Fixes
 """""""""
@@ -44,20 +58,38 @@ Bug Fixes
 - HDF5
 
   - Support attribute reads from HDF5 Vlen Strings #1084
+  - Close HFD5 handles in availableChunks task #1386
+- ADIOS1
+  - Fix use-after-free issue #1224
 
 - ADIOS2
 
   - Don't apply compression operators multiple times #1152
   - Fix logic for associating openPMD objects to files and paths therein #1073
   - Fix precedence of environment variable vs. JSON configuration
+  - Detect changing datatypes and warn/fail accordingly #1356
 - CMake:
 
   - MPI: prefer HDF5 in Config package, too #1340
   - ADIOS1: do not include as -isystem #1076
+  - Fix ``-Wsign-compare`` #1202
+  - Remove caching of global CMake variables #1313
+  - Fix Build & Install Option Names #1326
+  - Prefer parallel HDF5 in find_package in downstream use #1340
+  - CMake: Multi-Config Generator #1384
+Python:
+
+  - Fix ``__repr__`` (time and Iteration) #1242 #1149
+  - Python Tests: Fix ``long`` Numpy Type #1348
+  - use ``double`` as standard for attributes #1290 #1369kk
+  - Fix dtype_from_numpy #1357
 - Don't forget closing unmodified files #1083
 - Diverse relaxations on attribute type conversions #1085 #1096 #1137
 - Performance bug: Don't reread iterations that are already parsed #1089
+- Performance bug: Don't flush prematurely #1264
 - Avoid object slicing in Series class #1107
+- Avoid use-after-free in Python bindings #1225
+- Logical fixes for opening iterations #1239
 
 Breaking Changes
 """"""""""""""""
@@ -65,6 +97,8 @@ Breaking Changes
 - Deprecations
 
   - Iteration.closed attribute #1088
+  - ``shareRaw`` (replaced with raw- and unique-ptr overloads, see features section) #1229
+  - ADIOS1 backend (deprecation notice has hints on upgrading to ADIOS2) #1314
 - Redesign of public class structure
 
   - Apply frontend redesign to Container and deriving classes #1115 #1159
@@ -73,36 +107,64 @@ Breaking Changes
 
 Other
 """""
-- Catch2: updated to 2.13.10 #1299 #...
+- Catch2: updated to 2.13.10 #1299 #1344
 - Tests & Examples:
 
   - Test: Interleaved Write and Close #1073 #1078
-  - Extend and fix examples 8a and 8b (bench write/read parallel) #1131 #1144
+  - Extend and fix examples 8a and 8b (bench write/read parallel) #1131 #1144 #1231 #1359
+  - GPU support in example 8a #1240
   - Extensive Python example for Streaming API #1141
+  - General overhaul of examples to newest API standards #1371
 - CI
 
   - URL Check for broken links #1086
   - CI savings (abort prior push, draft skips most) #1116
   - Appveyor fixes for Python Executable #1127
-  - Pre-commit and clang-format #1142
+  - Pre-commit and clang-format #1142 #1175 #1178 #1032 #1222 #1370
+  - ADIOS1: Fix Serial Builds, CI: Clang 10->12 #1167
+  - Upgrade NVHPC Apt repository #1241
+  - Spack upgrade to v0.17.1 and further fixes #1244
+  - Update CUDA repository key #1256
+  - Switch from Conda to Mamba #1261
+  - Remove ``-Wno-deprecated-declarations`` where possible #1246
+  - Expand read-only permission tests #1272
+  - Ensure that the CI also build against ADIOS2 v2.7.1 #1271
+  - Build(deps): Bump s-weigand/setup-conda from 1.1.0 to 1.1.1 #1284
+  - Style w/ Ubuntu 22.04 #1346
+  - Add CodeQL workflow for GitHub code scanning #1345
+  - Cache Action v3 #1358 #1362
 - CMake
 
+  - Extra CMake Arg Control in setup.py #1199
+  - Do not strip Python symbols in Debug #1219
   - Disable in-source builds #1079
-  - Fixes for NVCC #1102
+  - Fixes for NVCC #1102 ##1184
   - Set RPATHs on installed targets #1105 #1103
-
+  - CMake 3.22+: Policy CMP0127 #1165
+  - Warning Flags First in CXXFLAGS #1172
 - Docs
 
   - More easily findable documentation for ``-DPython_EXECUTABLE`` #1104 and lazy parsing #1111
   - HDF5 performance tuning and known issues #1129 #1132
   - HDF5: Document HDF5_USE_FILE_LOCKING #1106
   - SST/libfabric installation notes for Cray systems #1134
-  - Doc: OMPI_MCA_io Control #1114
+  - OMPI_MCA_io Control #1114
+  - Update Citation & Add BibTeX (#1168)
+  - Fix CLI Highlighting #1171
+  - HDF5 versions that support collective metadata #1250
+  - Recommend Static Build for Superbuilds #1325
+  - Latest Sphinx, Docutils, RTD #1341
+- Tooling
+  - openpmd-pipe: better optional support for MPI #1186 #1336
 - Enable use of Series::setName() and Series::setIterationEncoding() in combination with file-based encoding 1081
 - Remove DATATYPE, HIGHEST_DATATYPE AND LOWEST_DATATYPE from Datatype enumeration #1100
 - Check for undefined datatypes in dataset definitions #1099
 - Include StringManip header into public headers #1124
-Add default constructor for DynamicMemoryView class #1156
+- Add default constructor for DynamicMemoryView class #1156
+- Helpful error message upon wrong backend specification #1214
+- Helpful error message for errors in ``loadChunk`` API #1373
+- No warning when opening a single file of a file-based Series #1368
+- Add ``IterationIndex_t`` type alias #1285
 
 
 0.14.3
