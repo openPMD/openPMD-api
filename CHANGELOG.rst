@@ -17,20 +17,92 @@ Changes to "0.14.0"
 Features
 """"""""
 
-- Python: support of 3.10 and 3.11, removal of 3.6 #1323
+- Python: support of 3.10 and 3.11, removal of 3.6 #1323 #1139
 - include internally shipped toml11 v3.7.1 #1148 #1227
 - pybind11: require version 2.10.1+ #1220 #1322
+- Switch to C++17 #1128 #1140 #1157
+- Error-recovery during parsing #1150
+- Extensive update for JSON/TOML configuration #1043
+  - TOML as an alternative to JSON #1146
+  - compression configuration via JSON# 1043
+  - case insensitivity #1043
+  - datatype conversion for string values #1043
+  - ``json::merge`` public function #1043
+  - better warnings for unused values #1043
+  - new JSON options: ``backend`` and ``iteration_encoding`` #1043
+  - ADIOS1 compression configuration via JSON #1043 #1162
+- Header for openPMD-defined error types #1080
+- Support for ADIOS2 BP5 engine #1119
+- I/O optimizations for HDF5 #1129 #1133
+- Support for empty string attributes #1087
+- Support for inconsistent padding of filenames in file-based encoding #1118
+- ADIOS2: Automatic (de)activation of span API depending on compression configuration #1155
 
 Bug Fixes
 """""""""
 
+- HDF5
+
+  - Support attribute reads from HDF5 Vlen Strings #1084
+
+- ADIOS2
+
+  - Don't apply compression operators multiple times #1152
+  - Fix logic for associating openPMD objects to files and paths therein #1073
+  - Fix precedence of environment variable vs. JSON configuration
 - CMake:
 
   - MPI: prefer HDF5 in Config package, too #1340
+  - ADIOS1: do not include as -isystem #1076
+- Don't forget closing unmodified files #1083
+- Diverse relaxations on attribute type conversions #1085 #1096 #1137
+- Performance bug: Don't reread iterations that are already parsed #1089
+- Avoid object slicing in Series class #1107
+
+Breaking Changes
+""""""""""""""""
+
+- Deprecations
+
+  - Iteration.closed attribute #1088
+- Redesign of public class structure
+
+  - Apply frontend redesign to Container and deriving classes #1115 #1159
+- Removal of APIs
+  - Dataset::transform, Dataset::compression and Dataset::chunksize #1043
 
 Other
 """""
 - Catch2: updated to 2.13.10 #1299 #...
+- Tests & Examples:
+
+  - Test: Interleaved Write and Close #1073 #1078
+  - Extend and fix examples 8a and 8b (bench write/read parallel) #1131 #1144
+  - Extensive Python example for Streaming API #1141
+- CI
+
+  - URL Check for broken links #1086
+  - CI savings (abort prior push, draft skips most) #1116
+  - Appveyor fixes for Python Executable #1127
+  - Pre-commit and clang-format #1142
+- CMake
+
+  - Disable in-source builds #1079
+  - Fixes for NVCC #1102
+  - Set RPATHs on installed targets #1105 #1103
+
+- Docs
+
+  - More easily findable documentation for ``-DPython_EXECUTABLE`` #1104 and lazy parsing #1111
+  - HDF5 performance tuning and known issues #1129 #1132
+  - HDF5: Document HDF5_USE_FILE_LOCKING #1106
+  - SST/libfabric installation notes for Cray systems #1134
+  - Doc: OMPI_MCA_io Control #1114
+- Enable use of Series::setName() and Series::setIterationEncoding() in combination with file-based encoding 1081
+- Remove DATATYPE, HIGHEST_DATATYPE AND LOWEST_DATATYPE from Datatype enumeration #1100
+- Check for undefined datatypes in dataset definitions #1099
+- Include StringManip header into public headers #1124
+Add default constructor for DynamicMemoryView class #1156
 
 
 0.14.3
