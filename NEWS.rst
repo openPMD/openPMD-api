@@ -18,6 +18,8 @@ The following backend-specific members of the ``Dataset`` class have been remove
 They are replaced by backend-specific options in the JSON-based backend configuration.
 This can be passed in ``Dataset::options``.
 
+XY
+
 
 0.14.0
 ------
