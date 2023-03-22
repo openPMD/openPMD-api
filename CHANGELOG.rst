@@ -34,23 +34,32 @@ Features
 New access types:
   - ``APPEND``: Add new iterations without reading, supports ADIOS2 Append mode #1007 #1302
   - ``READ_LINEAR``: For reading through ADIOS2 steps, for full support of ADIOS2 BP5 #1291 #1379
-- Support for all char types (CHAR SCHAR UCHAR) #1275 #1378
-- Header for openPMD-defined error types #1080 #1355
-- Support for ADIOS2 BP5 engine #1119 #1215 #1258 #1262 #1291
-- Support for selecting flush targets (buffer/disk) in ADIOS2 BP5 for more fine-grained memory control #1226 #1207
-- Add file extensions for ADIOS2: ``.bp4``, ``.bp5`` and furthers, make them behave more as expected #1218
-- Add ``Series::close()`` API call #1324
-- Optionally explicitly map ADIOS2 steps to openPMD iterations via modifiable attributes (only supported in experimental ADIOS2 modes) #949
-- Support for ADIOS 2.8 and newer #1166
-- I/O optimizations for HDF5 #1129 #1133 #1192
+- ADIOS2:
+
+  - Support for ADIOS 2.8 and newer #1166
+  - Support for ADIOS2 BP5 engine #1119 #1215 #1258 #1262 #1291
+  - Support for selecting flush targets (buffer/disk) in ADIOS2 BP5 for more fine-grained memory control #1226 #1207
+  - Add file extensions for ADIOS2: ``.bp4``, ``.bp5`` and furthers, make them behave more as expected #1218
+  - ADIOS2: Support for operator specification at read time #1191
+  - ADIOS2: Automatic (de)activation of span API depending on compression configuration #1155
+  - Optionally explicitly map ADIOS2 steps to openPMD iterations via modifiable attributes (only supported in experimental ADIOS2 modes) #949
+
+- HDF5:
+
+  - I/O optimizations for HDF5 #1129 #1133 #1192
+
+- Miscellaneous API additions:
+
+  - Support for all char types (CHAR SCHAR UCHAR) #1275 #1378
+  - Header for openPMD-defined error types #1080 #1355
+  - Add ``Series::close()`` API call #1324
+  - Support for array specializations of C++ smart pointer types #1296
+  - Direct support for raw pointer types in ``store/loadChunk()`` API, replacing former ``shareRaw()`` #1229
+  - Support for and backend optimizations (ADIOS2 BP5) based on unique pointer types in ``store/loadChunk()`` #1294
+  - Use C++ ``std::optional`` types in public Attribute API (``Attribute::getOptional<T>()``) for dynamic attribute type conversion #1278
+
 - Support for empty string attributes #1087 #1223 #1338
 - Support for inconsistent padding of filenames in file-based encoding #1118 #1253
-- ADIOS2: Automatic (de)activation of span API depending on compression configuration #1155
-- ADIOS2: Support for operator specification at read time #1191
-- Support for array specializations of C++ smart pointer types #1296
-- Direct support for raw pointer types in ``store/loadChunk()`` API, replacing former ``shareRaw()`` #1229
-- Support and backend optimizations (ADIOS2 BP5) based on unique pointer types in ``store/loadChunk()`` #1294
-- Use C++ ``std::optional`` types in public Attribute API (``Attribute::getOptional<T>()``) for dynamic attribute type conversion #1278
 
 Bug Fixes
 """""""""
@@ -60,8 +69,8 @@ Bug Fixes
   - Support attribute reads from HDF5 Vlen Strings #1084
   - Close HFD5 handles in availableChunks task #1386
 - ADIOS1
-  - Fix use-after-free issue #1224
 
+  - Fix use-after-free issue #1224
 - ADIOS2
 
   - Don't apply compression operators multiple times #1152
