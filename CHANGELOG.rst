@@ -86,7 +86,7 @@ Bug Fixes
   - Fix Build & Install Option Names #1326
   - Prefer parallel HDF5 in find_package in downstream use #1340
   - CMake: Multi-Config Generator #1384
-Python:
+- Python:
 
   - Fix ``__repr__`` (time and Iteration) #1242 #1149
   - Python Tests: Fix ``long`` Numpy Type #1348
@@ -105,7 +105,7 @@ Breaking Changes
 
 - Deprecations
 
-  - Iteration.closed attribute #1088
+  - ``Iteration::closedByWriter()`` attribute #1088
   - ``shareRaw`` (replaced with raw- and unique-ptr overloads, see features section) #1229
   - ADIOS1 backend (deprecation notice has hints on upgrading to ADIOS2) #1314
 - Redesign of public class structure
@@ -113,6 +113,10 @@ Breaking Changes
   - Apply frontend redesign to Container and deriving classes #1115 #1159
 - Removal of APIs
   - Dataset::transform, Dataset::compression and Dataset::chunksize #1043
+
+.. note::
+
+   See :ref:`NEWS.rst <install-upgrade>` for a more detailed upgrade guide.
 
 Other
 """""
