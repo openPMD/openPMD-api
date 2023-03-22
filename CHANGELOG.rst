@@ -27,7 +27,7 @@ Features
 - Python: support of 3.10 and 3.11, removal of 3.6 #1323 #1139
 - include internally shipped toml11 v3.7.1 #1148 #1227
 - pybind11: require version 2.10.1+ #1220 #1322
-- Switch to C++17 #1128 #1140 #1157 #1164 #1183 #1185
+- Switch to C++17 #1103 #1128 #1140 #1157 #1164 #1183 #1185
 - Error-recovery during parsing #1150 #1179 #1237
 - Extensive update for JSON/TOML configuration #1043
   - TOML as an alternative to JSON #1146
@@ -81,13 +81,13 @@ Bug Fixes
 - ADIOS2
 
   - Don't apply compression operators multiple times #1152
-  - Fix logic for associating openPMD objects to files and paths therein #1073
+  - Fix logic for associating openPMD objects to files and paths therein (needed for interleaved write and close) #1073
   - Fix precedence of environment variable vs. JSON configuration
   - Detect changing datatypes and warn/fail accordingly #1356
 - CMake:
 
   - MPI: prefer HDF5 in Config package, too #1340
-  - ADIOS1: do not include as -isystem #1076
+  - ADIOS1: do not include as ``-isystem`` #1076
   - Fix ``-Wsign-compare`` #1202
   - Remove caching of global CMake variables #1313
   - Fix Build & Install Option Names #1326
@@ -98,7 +98,7 @@ Bug Fixes
   - Fix ``__repr__`` (time and Iteration) #1242 #1149
   - Python Tests: Fix ``long`` Numpy Type #1348
   - use ``double`` as standard for attributes #1290 #1369kk
-  - Fix dtype_from_numpy #1357
+  - Fix ``dtype_from_numpy`` #1357
 - Don't forget closing unmodified files #1083
 - Diverse relaxations on attribute type conversions #1085 #1096 #1137
 - Performance bug: Don't reread iterations that are already parsed #1089
@@ -119,7 +119,7 @@ Breaking Changes
 
   - Apply frontend redesign to Container and deriving classes #1115 #1159
 - Removal of APIs
-  - Dataset::transform, Dataset::compression and Dataset::chunksize #1043
+  - ``Dataset::transform``, ``Dataset::compression`` and ``Dataset::chunksize`` #1043
 
 .. note::
 
@@ -131,8 +131,10 @@ Other
 - Tests & Examples:
 
   - Test: Interleaved Write and Close #1073 #1078
-  - Extend and fix examples 8a and 8b (bench write/read parallel) #1131 #1144 #1231 #1359
-  - GPU support in example 8a #1240
+  - Extend and fix examples 8a and 8b (bench write/read parallel) #1131 #1144 #1231 #1359 #1240
+    - support variable encoding #1131
+    - block located at top left corner was mistaken to read a block in the center #1131
+    - GPU support in example 8a #1240
   - Extensive Python example for Streaming API #1141
   - General overhaul of examples to newest API standards #1371
 - CI
@@ -153,34 +155,36 @@ Other
   - Style w/ Ubuntu 22.04 #1346
   - Add CodeQL workflow for GitHub code scanning #1345
   - Cache Action v3 #1358 #1362
+  - Spack: No More ``load -r`` #1125
 - CMake
 
-  - Extra CMake Arg Control in setup.py #1199
+  - Extra CMake Arg Control in ``setup.py`` #1199
   - Do not strip Python symbols in Debug #1219
   - Disable in-source builds #1079
-  - Fixes for NVCC #1102 ##1184
-  - Set RPATHs on installed targets #1105 #1103
-  - CMake 3.22+: Policy CMP0127 #1165
-  - Warning Flags First in CXXFLAGS #1172
+  - Fixes for NVCC #1102 #1103 #1184
+  - Set RPATHs on installed targets #1105
+  - CMake 3.22+: Policy ``CMP0127`` #1165
+  - Warning Flags First in ``CXXFLAGS`` #1172
 - Docs
 
   - More easily findable documentation for ``-DPython_EXECUTABLE`` #1104 and lazy parsing #1111
   - HDF5 performance tuning and known issues #1129 #1132
-  - HDF5: Document HDF5_USE_FILE_LOCKING #1106
+  - HDF5: Document ``HDF5_USE_FILE_LOCKING`` #1106
   - SST/libfabric installation notes for Cray systems #1134
-  - OMPI_MCA_io Control #1114
+  - OpenMPI: Document ``OMPI_MCA_io`` Control #1114
   - Update Citation & Add BibTeX (#1168)
   - Fix CLI Highlighting #1171
   - HDF5 versions that support collective metadata #1250
   - Recommend Static Build for Superbuilds #1325
   - Latest Sphinx, Docutils, RTD #1341
 - Tooling
-  - openpmd-pipe: better optional support for MPI #1186 #1336
-- Enable use of Series::setName() and Series::setIterationEncoding() in combination with file-based encoding 1081
-- Remove DATATYPE, HIGHEST_DATATYPE AND LOWEST_DATATYPE from Datatype enumeration #1100
+  - ``openpmd-pipe``: better optional support for MPI #1186 #1336
+  - ``openpmd-ls``: use lazy parsing #1111
+- Enable use of ``Series::setName()`` and ``Series::setIterationEncoding()`` in combination with file-based encoding 1081
+- Remove ``DATATYPE``, ``HIGHEST_DATATYPE`` AND ``LOWEST_DATATYPE`` from Datatype enumeration #1100
 - Check for undefined datatypes in dataset definitions #1099
-- Include StringManip header into public headers #1124
-- Add default constructor for DynamicMemoryView class #1156
+- Include ``StringManip`` header into public headers #1124
+- Add default constructor for ``DynamicMemoryView`` class #1156
 - Helpful error message upon wrong backend specification #1214
 - Helpful error message for errors in ``loadChunk`` API #1373
 - No warning when opening a single file of a file-based Series #1368
