@@ -54,6 +54,7 @@ Features
 - HDF5:
 
   - I/O optimizations for HDF5 #1129 #1133 #1192
+    - Improve write time by disabling fill #1192
 
 - Miscellaneous API additions:
 
@@ -66,7 +67,7 @@ Features
   - Use C++ ``std::optional`` types in public Attribute API (``Attribute::getOptional<T>()``) for dynamic attribute type conversion #1278
 
 - Support for empty string attributes #1087 #1223 #1338
-- Support for inconsistent padding of filenames in file-based encoding #1118 #1253
+- Support for inconsistent and overflowing padding of filenames in file-based encoding #1118 #1173 #1253
 
 Bug Fixes
 """""""""
@@ -77,34 +78,45 @@ Bug Fixes
   - Close HFD5 handles in availableChunks task #1386
 - ADIOS1
 
-  - Fix use-after-free issue #1224
+  - Fix use-after-free issue in ``ADIOS1IOHandler`` #1224
 - ADIOS2
 
   - Don't apply compression operators multiple times #1152
   - Fix logic for associating openPMD objects to files and paths therein (needed for interleaved write and close) #1073
   - Fix precedence of environment variable vs. JSON configuration
   - Detect changing datatypes and warn/fail accordingly #1356
+  - Remove deprecated debug parameter in ADIOS2 #1269
+- HDF5
+
+  - missing HDF5 include #1236
 - CMake:
 
   - MPI: prefer HDF5 in Config package, too #1340
   - ADIOS1: do not include as ``-isystem`` #1076
-  - Fix ``-Wsign-compare`` #1202
   - Remove caching of global CMake variables #1313
   - Fix Build & Install Option Names #1326
   - Prefer parallel HDF5 in find_package in downstream use #1340
   - CMake: Multi-Config Generator #1384
+- Warnings:
+
+  - Avoid copying std::string in for loop #1268
+  - SerialIOTest: Fix GCC Pragma Check #1213 #1260
+  - Fix ``-Wsign-compare`` #1202
 - Python:
 
   - Fix ``__repr__`` (time and Iteration) #1242 #1149
   - Python Tests: Fix ``long`` Numpy Type #1348
   - use ``double`` as standard for attributes #1290 #1369kk
   - Fix ``dtype_from_numpy`` #1357
+  - Wheels: Fix macOS arm64 (M1) builds #1233
+  - Avoid use-after-free in Python bindings #1225
+  - Patch MSVC pybind11 debug bug #1209
+  - sign compare warning #1198
 - Don't forget closing unmodified files #1083
 - Diverse relaxations on attribute type conversions #1085 #1096 #1137
 - Performance bug: Don't reread iterations that are already parsed #1089
 - Performance bug: Don't flush prematurely #1264
 - Avoid object slicing in Series class #1107
-- Avoid use-after-free in Python bindings #1225
 - Logical fixes for opening iterations #1239
 
 Breaking Changes
@@ -189,6 +201,123 @@ Other
 - Helpful error message for errors in ``loadChunk`` API #1373
 - No warning when opening a single file of a file-based Series #1368
 - Add ``IterationIndex_t`` type alias #1285
+
+
+0.14.5
+------
+**Date:** 2022-06-07
+
+Improve Series Parsing, Python & Fix Backend Bugs
+
+This release improves reading back iterations that overflow the specified zero-pattern.
+ADIOS1, ADIOS2 and HDF5 backend stability and performance were improved.
+Python bindings got additional wheel platform support and various smaller issues were fixed.
+
+Changes to "0.14.4"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- Series and iterations:
+
+  - fix read of overflowing zero patterns #1173 #1253
+  - fix for opening an iteration #1239
+- ADIOS1:
+
+  - fix use-after-free in ``ADIOS1IOHandler`` #1224
+  - Remove task from IO queue if it fails with exception #1179
+- ADIOS2:
+
+  - Remove deprecated debug parameter in ADIOS2 #1269
+  - Add memory leak suppression: ``ps_make_timer_name_`` #1235
+  - Don't safeguard empty strings while reading #1223
+- HDF5:
+
+  - missing HDF5 include #1236
+- Python:
+
+  - Wheels: Fix macOS arm64 (M1) builds #1233
+  - Python Iteration: Fix ``__repr__`` (time) #1242
+  - Increase reference count also in other ``load_chunk`` overload #1225
+  - Do Not Strip Symbols In Debug #1219
+  - Patch MSVC pybind11 debug bug #1209
+
+Other
+"""""
+
+- HDF5:
+
+  - Improve write time by disabling fill #1192
+  - Update documented HDF5 versions with collective metadata issues #1250
+- Print warning if mpi4py is not found in ``openpmd-pipe`` #1186
+- Pass-through flushing parameters #1226
+- Clang-Format #1032 #1222
+- Warnings:
+
+  - Avoid copying std::string in for loop #1268
+  - SerialIOTest: Fix GCC Pragma Check #1213 #1260
+  - Fix ``-Wsign-compare`` #1202
+- CI:
+
+  - Fix Conda Build - <3 Mamba #1261
+  - Fix Spack #1244
+  - Update CUDA repo key #1256
+  - NVHPC New Apt Repo #1241
+- Python:
+
+  - ``setup.py``: Extra CMake Arg Control #1199
+  - sign compare warning #1198
+
+
+0.14.4
+------
+**Date:** 2022-01-21
+
+Increased Compatibility & Python Install Bug
+
+This release fixes various read/parsing bugs and increases compatibility with upcoming versions of ADIOS and old releases of Intel ``icpc``.
+An installation issue for pip-based installs from source in the last release was fixed and Python 3.10 support added.
+Various documentation and installation warnings have been fixed.
+
+Changes to "0.14.3"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- ADIOS2:
+
+  - automatically deactivate ``span`` based ``Put`` API when operators are present #1155
+  - solve incompatibilities w/ post-``2.7.1`` ``master``-branch #1166
+- ICC 19.1.2: C++17 work-arounds (``variant``) #1157
+- Don't apply compression operators multiple times in variable-based iteration encoding #1152
+- Reading/parsing:
+
+  - remove invalid records from data structures entirely #1150
+  - fix grid spacing with type long double #1137
+- Python:
+
+  - fix ``Iteration`` ``__repr__`` typo #1149
+  - add ``cmake/`` to ``MANIFEST.in`` #1140
+
+Other
+"""""
+
+- add simple ``.pre-commit-config.yaml``
+- Python:
+
+  - support Python 3.10 #1139
+- CMake:
+
+  - warning flags first in ``CXXFLAGS`` #1172
+  - add policy CMP0127 (v3.22+) #1165
+- Docs:
+
+  - fix CLI highlighting #1171
+  - update citation & add BibTeX #1168
+  - fix HDF5 JSON File #1169
+  - minor warnings #1170
 
 
 0.14.3
