@@ -7,9 +7,16 @@ Changelog
 ------
 **Date:** 2023-03-XY
 
-[Title]
+C++17, Parsing error recovery, Support for ADIOS2 BP5 engine, Append and Read-Linear access modes, performance and memory optimizations
 
-[Summary]
+This release adds error recovery mechanisms, in order to access erroneous datasets, created e.g. by crashing simulations.
+The BP5 engine of ADIOS2 v2.9 is fully supported by this release, including access to its various features for more fine-grained control of memory usage.
+Various I/O performance improvements for HDF5 are activated by default.
+Runtime configuration of openPMD and its backends, e.g. selection of backends and compression, is now consistently done via JSON, and alternatively via TOML for better readability.
+The data storage/retrieval API now consistently supports all common C++ pointer types (raw and smart pointers), implementing automatic memory optimizations for ADIOS2 BP5 if using unique pointers.
+
+The miminum required C++ version is now C++17.
+Supported Python versions are Python 3.10 and 3.11.
 
 Changes to "0.14.0"
 ^^^^^^^^^^^^^^^^^^^

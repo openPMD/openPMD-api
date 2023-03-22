@@ -9,7 +9,7 @@ int main()
 
     {
         auto f =
-            io::Series("working/directory/2D_simData.h5", io::Access::CREATE);
+            io::Series("working/directory/2D_simData.bp", io::Access::CREATE);
 
         // all required openPMD attributes will be set to reasonable default
         // values (all ones, all zeros, empty strings,...) manually setting them
@@ -105,25 +105,13 @@ int main()
         io::Datatype dtype = io::determineDatatype(partial_mesh);
         auto d = io::Dataset(dtype, io::Extent{2, 5});
         std::string datasetConfig = R"END(
-{
-  "adios1": {
-    "dataset": {
-      "transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
-    }
-  },
-  "adios2": {
-    "dataset": {
-      "operators": [
-        {
-          "type": "zlib",
-          "parameters": {
-            "clevel": 9
-          }
-        }
-      ]
-    }
-  }
-})END";
+[adios1.dataset]
+transform = "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
+
+[[adios2.dataset.operatorors]]
+type = "zlib"
+parameters.clevel = 9
+)END";
         d.options = datasetConfig;
         mesh["x"].resetDataset(d);
 
