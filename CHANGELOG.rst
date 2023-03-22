@@ -31,7 +31,7 @@ Features
   - better warnings for unused values #1043
   - new JSON options: ``backend`` and ``iteration_encoding`` #1043
   - ADIOS1 compression configuration via JSON #1043 #1162
-New access types:
+- New access types:
   - ``APPEND``: Add new iterations without reading, supports ADIOS2 Append mode #1007 #1302
   - ``READ_LINEAR``: For reading through ADIOS2 steps, for full support of ADIOS2 BP5 #1291 #1379
 - ADIOS2:
