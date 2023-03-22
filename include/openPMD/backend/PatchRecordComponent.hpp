@@ -105,7 +105,7 @@ OPENPMD_private
     // clang-format on
 
     void flush(std::string const &, internal::FlushParams const &);
-    void read();
+    virtual void read();
 
     /**
      * @brief Check recursively whether this RecordComponent is dirty.

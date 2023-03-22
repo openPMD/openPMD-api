@@ -79,9 +79,7 @@ void ParticleSpecies::read()
             auto shape = std::find(att_begin, att_end, "shape");
             if (value != att_end && shape != att_end)
             {
-                internal::EraseStaleEntries<Record &> scalarMap(r);
-                RecordComponent &rc = scalarMap[RecordComponent::SCALAR];
-                rc.parent() = r.parent();
+                RecordComponent &rc = r;
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
                 IOHandler()->flush(internal::defaultFlushParams);
                 rc.get().m_isConstant = true;
@@ -122,9 +120,7 @@ void ParticleSpecies::read()
             dOpen.name = record_name;
             IOHandler()->enqueue(IOTask(&r, dOpen));
             IOHandler()->flush(internal::defaultFlushParams);
-            internal::EraseStaleEntries<Record &> scalarMap(r);
-            RecordComponent &rc = scalarMap[RecordComponent::SCALAR];
-            rc.parent() = r.parent();
+            RecordComponent &rc = r;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush(internal::defaultFlushParams);
             rc.written() = false;

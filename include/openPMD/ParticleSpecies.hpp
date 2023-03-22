@@ -68,13 +68,9 @@ namespace traits
             ret.particlePatches.linkHierarchy(ret.writable());
 
             auto &np = ret.particlePatches["numParticles"];
-            auto &npc = np[RecordComponent::SCALAR];
-            npc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
-            npc.parent() = np.parent();
+            np.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
             auto &npo = ret.particlePatches["numParticlesOffset"];
-            auto &npoc = npo[RecordComponent::SCALAR];
-            npoc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
-            npoc.parent() = npo.parent();
+            npo.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
         }
     };
 } // namespace traits

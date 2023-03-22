@@ -44,14 +44,6 @@ namespace internal
         , public T_RecordComponentData
     {
     public:
-        /**
-         * True if this Record contains a scalar record component.
-         * If so, then that record component is the only component contained,
-         * and the last hierarchical layer is skipped (i.e. only one OPEN_PATH
-         * task for Record and RecordComponent).
-         */
-        bool m_containsScalar = false;
-
         BaseRecordData();
 
         BaseRecordData(BaseRecordData const &) = delete;
@@ -124,6 +116,8 @@ public:
 
     mapped_type &operator[](key_type const &key) override;
     mapped_type &operator[](key_type &&key) override;
+    mapped_type &at(key_type const &key);
+    mapped_type const &at(key_type const &key) const;
     size_type erase(key_type const &key) override;
     iterator erase(iterator res) override;
     //! @todo add also, as soon as added in Container:
@@ -162,7 +156,6 @@ private:
     void flush(std::string const &, internal::FlushParams const &) final;
     virtual void
     flush_impl(std::string const &, internal::FlushParams const &) = 0;
-    virtual void read() = 0;
 
     /**
      * @brief Check recursively whether this BaseRecord is dirty.
@@ -214,12 +207,15 @@ BaseRecord<T_elem>::operator[](key_type const &key)
                 "A scalar component can not be contained at "
                 "the same time as one or more regular components.");
 
-        mapped_type &ret = Container<T_elem>::operator[](key);
         if (keyScalar)
         {
-            get().m_containsScalar = true;
-            ret.parent() = this->parent();
+            /*
+             * This activates the RecordComponent API of this object.
+             */
+            T_RecordComponent::get();
         }
+        mapped_type &ret = keyScalar ? static_cast<mapped_type &>(*this)
+                                     : T_Container::operator[](key);
         return ret;
     }
 }
@@ -240,13 +236,42 @@ BaseRecord<T_elem>::operator[](key_type &&key)
                 "A scalar component can not be contained at "
                 "the same time as one or more regular components.");
 
-        mapped_type &ret = Container<T_elem>::operator[](std::move(key));
         if (keyScalar)
         {
-            get().m_containsScalar = true;
-            ret.parent() = this->parent();
+            /*
+             * This activates the RecordComponent API of this object.
+             */
+            T_RecordComponent::get();
         }
+        mapped_type &ret = keyScalar ? static_cast<mapped_type &>(*this)
+                                     : T_Container::operator[](std::move(key));
         return ret;
+    }
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::at(key_type const &key) -> mapped_type &
+{
+    return const_cast<mapped_type &>(
+        static_cast<BaseRecord<T_elem> const *>(this)->at(key));
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::at(key_type const &key) const -> mapped_type const &
+{
+    bool const keyScalar = (key == RecordComponent::SCALAR);
+    if (keyScalar)
+    {
+        if (!get().m_datasetDefined)
+        {
+            throw std::out_of_range(
+                "[at()] Requested scalar entry from non-scalar record.");
+        }
+        return static_cast<mapped_type const &>(*this);
+    }
+    else
+    {
+        return T_Container::at(key);
     }
 }
 
@@ -260,22 +285,21 @@ BaseRecord<T_elem>::erase(key_type const &key)
         res = Container<T_elem>::erase(key);
     else
     {
-        mapped_type &rc = this->find(RecordComponent::SCALAR)->second;
-        if (rc.written())
+        if (this->written())
         {
             Parameter<Operation::DELETE_DATASET> dDelete;
             dDelete.name = ".";
-            this->IOHandler()->enqueue(IOTask(&rc, dDelete));
+            this->IOHandler()->enqueue(IOTask(this, dDelete));
             this->IOHandler()->flush(internal::defaultFlushParams);
         }
-        res = Container<T_elem>::erase(key);
+        res = this->datasetDefined() ? 1 : 0;
     }
 
     if (keyScalar)
     {
         this->written() = false;
         this->writable().abstractFilePosition.reset();
-        this->get().m_containsScalar = false;
+        this->get().m_datasetDefined = false;
     }
     return res;
 }
@@ -290,23 +314,11 @@ BaseRecord<T_elem>::erase(iterator res)
         ret = Container<T_elem>::erase(res);
     else
     {
-        mapped_type &rc = this->find(RecordComponent::SCALAR)->second;
-        if (rc.written())
-        {
-            Parameter<Operation::DELETE_DATASET> dDelete;
-            dDelete.name = ".";
-            this->IOHandler()->enqueue(IOTask(&rc, dDelete));
-            this->IOHandler()->flush(internal::defaultFlushParams);
-        }
-        ret = Container<T_elem>::erase(res);
+        throw std::runtime_error(
+            "Unreachable! Iterators do not yet cover scalars (they will in a "
+            "later commit).");
     }
 
-    if (keyScalar)
-    {
-        this->written() = false;
-        this->writable().abstractFilePosition.reset();
-        this->get().m_containsScalar = false;
-    }
     return ret;
 }
 
@@ -320,7 +332,7 @@ inline std::array<double, 7> BaseRecord<T_elem>::unitDimension() const
 template <typename T_elem>
 inline bool BaseRecord<T_elem>::scalar() const
 {
-    return get().m_containsScalar;
+    return this->datasetDefined();
 }
 
 template <typename T_elem>
@@ -362,7 +374,8 @@ template <typename T_elem>
 inline void BaseRecord<T_elem>::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {
-    if (!this->written() && this->T_Container::empty())
+    if (!this->written() && this->T_Container::empty() &&
+        !this->datasetDefined())
         throw std::runtime_error(
             "A Record can not be written without any contained "
             "RecordComponents: " +

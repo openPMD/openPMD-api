@@ -101,7 +101,7 @@ void BaseRecordComponent::setDatasetDefined(
 
 bool BaseRecordComponent::datasetDefined() const
 {
-    auto & data = get();
+    auto &data = get();
     return data.m_datasetDefined;
 }
 } // namespace openPMD

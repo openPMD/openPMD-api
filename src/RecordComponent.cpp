@@ -43,7 +43,6 @@ namespace internal
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 {
     setData(std::make_shared<Data_t>());
-    setUnitSI(1);
 }
 
 RecordComponent::RecordComponent(NoInit) : BaseRecordComponent(NoInit())
@@ -251,6 +250,10 @@ void RecordComponent::flush(
                     "[RecordComponent] Must specify dataset type and extent "
                     "before flushing (see RecordComponent::resetDataset()).");
             }
+        }
+        if (!containsAttribute("unitSI"))
+        {
+            setUnitSI(1);
         }
         if (!written())
         {

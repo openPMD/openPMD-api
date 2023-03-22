@@ -39,6 +39,7 @@ private:
     MeshRecordComponent();
     MeshRecordComponent(NoInit);
     void read() override;
+    void flush(std::string const &, internal::FlushParams const &);
 
 public:
     ~MeshRecordComponent() override = default;

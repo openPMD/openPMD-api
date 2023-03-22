@@ -117,6 +117,10 @@ void PatchRecordComponent::flush(
                     "RecordComponent::resetDataset()).");
             }
         }
+        if (!containsAttribute("unitSI"))
+        {
+            setUnitSI(1);
+        }
         if (!written())
         {
             Parameter<Operation::CREATE_DATASET> dCreate;

@@ -23,9 +23,7 @@
 namespace openPMD
 {
 MeshRecordComponent::MeshRecordComponent() : RecordComponent()
-{
-    setPosition(std::vector<double>{0});
-}
+{}
 
 MeshRecordComponent::MeshRecordComponent(NoInit) : RecordComponent(NoInit())
 {}
@@ -59,6 +57,17 @@ void MeshRecordComponent::read()
                 datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     readBase();
+}
+
+void MeshRecordComponent::flush(
+    std::string const &name, internal::FlushParams const &params)
+{
+    if (access::write(IOHandler()->m_frontendAccess) &&
+        !containsAttribute("position"))
+    {
+        setPosition(std::vector<double>{0});
+    }
+    RecordComponent::flush(name, params);
 }
 
 template <typename T>
