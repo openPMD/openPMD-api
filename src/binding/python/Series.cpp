@@ -334,12 +334,7 @@ this method.
         .def_readwrite(
             "iterations",
             &Series::iterations,
-            /*
-             * Need to keep reference return policy here for now to further
-             * support legacy `del series` workflows that works despite children
-             * still being alive.
-             */
-            py::return_value_policy::reference,
+            py::return_value_policy::copy,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
         .def(
