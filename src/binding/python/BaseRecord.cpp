@@ -25,6 +25,8 @@
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.hpp"
+#include "openPMD/binding/python/RecordComponent.hpp"
 #include "openPMD/binding/python/UnitDimension.hpp"
 
 void init_BaseRecord(py::module &m)
@@ -33,31 +35,25 @@ void init_BaseRecord(py::module &m)
 Returns true if this record only contains a single component.
 )docstr";
 
-    py::class_<
-        BaseRecord<BaseRecordComponent>,
-        Container<BaseRecordComponent> >(m, "Base_Record_Base_Record_Component")
-        .def_property_readonly(
-            "unit_dimension",
-            &BaseRecord<BaseRecordComponent>::unitDimension,
-            python::doc_unit_dimension)
-        .def_property_readonly(
-            "scalar", &BaseRecord<BaseRecordComponent>::scalar, doc_scalar);
-
-    py::class_<BaseRecord<RecordComponent>, Container<RecordComponent> >(
-        m, "Base_Record_Record_Component")
+    addRecordComponentSetGet(
+        detail::create_and_bind_container<
+            BaseRecord<RecordComponent>,
+            Container<RecordComponent>,
+            RecordComponent>(m, "Base_Record_Record_Component"))
         .def_property_readonly(
             "scalar", &BaseRecord<RecordComponent>::scalar, doc_scalar);
-
-    py::class_<
-        BaseRecord<MeshRecordComponent>,
-        Container<MeshRecordComponent> >(m, "Base_Record_Mesh_Record_Component")
+    addRecordComponentSetGet(
+        detail::create_and_bind_container<
+            BaseRecord<MeshRecordComponent>,
+            Container<MeshRecordComponent>,
+            MeshRecordComponent>(m, "Base_Record_Mesh_Record_Component"))
         .def_property_readonly(
             "scalar", &BaseRecord<MeshRecordComponent>::scalar, doc_scalar);
-
-    py::class_<
-        BaseRecord<PatchRecordComponent>,
-        Container<PatchRecordComponent> >(
-        m, "Base_Record_Patch_Record_Component")
+    addRecordComponentSetGet(
+        detail::create_and_bind_container<
+            BaseRecord<PatchRecordComponent>,
+            Container<PatchRecordComponent>,
+            PatchRecordComponent>(m, "Base_Record_Patch_Record_Component"))
         .def_property_readonly(
             "scalar", &BaseRecord<PatchRecordComponent>::scalar, doc_scalar);
 }
