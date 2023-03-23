@@ -114,12 +114,12 @@ public:
 
     virtual ~BaseRecord() = default;
 
-    mapped_type &operator[](key_type const &key) override;
-    mapped_type &operator[](key_type &&key) override;
+    mapped_type &operator[](key_type const &key);
+    mapped_type &operator[](key_type &&key);
     mapped_type &at(key_type const &key);
     mapped_type const &at(key_type const &key) const;
-    size_type erase(key_type const &key) override;
-    iterator erase(iterator res) override;
+    size_type erase(key_type const &key);
+    iterator erase(iterator res);
     //! @todo add also, as soon as added in Container:
     // iterator erase(const_iterator first, const_iterator last) override;
 
