@@ -18,7 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "openPMD/RecordComponent.hpp"
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+#include "openPMD/binding/python/RecordComponent.hpp"
+
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/Series.hpp"
@@ -714,7 +719,7 @@ inline void load_chunk(
  *
  * Called with a py::tuple of slices.
  */
-inline py::array load_chunk(RecordComponent &r, py::tuple const &slices)
+py::array load_chunk(RecordComponent &r, py::tuple const &slices)
 {
     uint8_t ndim = r.getDimensionality();
     auto const full_extent = r.getExtent();
@@ -937,56 +942,6 @@ void init_RecordComponent(py::module &m)
                 return rc.makeEmpty(dtype_from_numpy(dt), dimensionality);
             })
 
-        // TODO if we also want to support scalar arrays, we have to switch
-        //      py::array for py::buffer as in Attributable
-        //      https://github.com/pybind/pybind11/pull/1537
-
-        // slicing protocol
-        .def(
-            "__getitem__",
-            [](RecordComponent &r, py::tuple const &slices) {
-                return load_chunk(r, slices);
-            },
-            py::arg("tuple of index slices"))
-        .def(
-            "__getitem__",
-            [](RecordComponent &r, py::slice const &slice_obj) {
-                auto const slices = py::make_tuple(slice_obj);
-                return load_chunk(r, slices);
-            },
-            py::arg("slice"))
-        .def(
-            "__getitem__",
-            [](RecordComponent &r, py::int_ const &slice_obj) {
-                auto const slices = py::make_tuple(slice_obj);
-                return load_chunk(r, slices);
-            },
-            py::arg("axis index"))
-
-        .def(
-            "__setitem__",
-            [](RecordComponent &r, py::tuple const &slices, py::array &a) {
-                store_chunk(r, a, slices);
-            },
-            py::arg("tuple of index slices"),
-            py::arg("array with values to assign"))
-        .def(
-            "__setitem__",
-            [](RecordComponent &r, py::slice const &slice_obj, py::array &a) {
-                auto const slices = py::make_tuple(slice_obj);
-                store_chunk(r, a, slices);
-            },
-            py::arg("slice"),
-            py::arg("array with values to assign"))
-        .def(
-            "__setitem__",
-            [](RecordComponent &r, py::int_ const &slice_obj, py::array &a) {
-                auto const slices = py::make_tuple(slice_obj);
-                store_chunk(r, a, slices);
-            },
-            py::arg("axis index"),
-            py::arg("array with values to assign"))
-
         // deprecated: pass-through C++ API
         .def(
             "load_chunk",
@@ -1126,6 +1081,8 @@ void init_RecordComponent(py::module &m)
             return series.iterations[n_it]
                 .particles[group.at(3)][group.at(4)][group.at(5)];
         });
+
+    addRecordComponentSetGet(cl);
 
     finalize_container<PyRecordComponentContainer>(py_rc_cnt);
 
