@@ -42,7 +42,6 @@ using PyPatchRecordContainer = Container<PatchRecord>;
 using PyRecordComponentContainer = Container<RecordComponent>;
 using PyMeshRecordComponentContainer = Container<MeshRecordComponent>;
 using PyPatchRecordComponentContainer = Container<PatchRecordComponent>;
-using PyBaseRecordComponentContainer = Container<BaseRecordComponent>;
 PYBIND11_MAKE_OPAQUE(PyIterationContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshContainer)
 PYBIND11_MAKE_OPAQUE(PyPartContainer)
@@ -52,4 +51,3 @@ PYBIND11_MAKE_OPAQUE(PyPatchRecordContainer)
 PYBIND11_MAKE_OPAQUE(PyRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyPatchRecordComponentContainer)
-PYBIND11_MAKE_OPAQUE(PyBaseRecordComponentContainer)

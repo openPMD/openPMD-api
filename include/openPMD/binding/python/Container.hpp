@@ -1,4 +1,4 @@
-/* Copyright 2018-2021 Axel Huebl
+/* Copyright 2018-2022 Axel Huebl and Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -23,23 +23,23 @@
  *
  * BSD-style license, see pybind11 LICENSE file.
  */
+
 #pragma once
 
-#include "openPMD/backend/Container.hpp"
-#include "openPMD/backend/MeshRecordComponent.hpp"
-#include "openPMD/backend/PatchRecord.hpp"
-#include "openPMD/backend/PatchRecordComponent.hpp"
-#include "openPMD/binding/python/Container.hpp"
+#include "openPMD/backend/Attributable.hpp"
 
-#include "openPMD/binding/python/Common.hpp"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
 
-#include <cstddef>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
 
-namespace openPMD
+namespace py = pybind11;
+
+namespace openPMD::detail
 {
 /* based on std_bind.h in pybind11
  *
@@ -47,35 +47,11 @@ namespace openPMD
  *
  * BSD-style license, see pybind11 LICENSE file.
  */
-template <
-    typename Map,
-    typename holder_type = std::unique_ptr<Map>,
-    typename... Args>
-py::class_<Map, holder_type, Attributable>
-declare_container(py::handle scope, std::string const &name, Args &&...args)
+template <typename Map, typename Class_>
+Class_ bind_container(Class_ &cl, std::string const &name)
 {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
-    using Class_ = py::class_<Map, holder_type, Attributable>;
-
-    // If either type is a non-module-local bound type then make the map
-    // binding non-local as well; otherwise (e.g. both types are either
-    // module-local or converting) the map will be module-local.
-    auto tinfo = py::detail::get_type_info(typeid(MappedType));
-    bool local = !tinfo || tinfo->module_local;
-    if (local)
-    {
-        tinfo = py::detail::get_type_info(typeid(KeyType));
-        local = !tinfo || tinfo->module_local;
-    }
-
-    Class_ cl(
-        scope,
-        name.c_str(),
-        py::module_local(local),
-        std::forward<Args>(args)...);
-
-    cl.def(py::init<Map const &>());
 
     // Register stream insertion operator (if possible)
     py::detail::map_if_insertion_operator<Map, Class_>(cl, name);
@@ -107,19 +83,6 @@ declare_container(py::handle scope, std::string const &name, Args &&...args)
         return stream.str();
     });
 
-    return cl;
-}
-
-template <
-    typename Map,
-    typename holder_type = std::unique_ptr<Map>>
-py::class_<Map, holder_type, Attributable>
-finalize_container(py::class_<Map, holder_type, Attributable> cl)
-{
-    using KeyType = typename Map::key_type;
-    using MappedType = typename Map::mapped_type;
-    using Class_ = py::class_<Map, holder_type, Attributable>;
-
     cl.def(
         "items",
         [](Map &m) { return py::make_iterator(m.begin(), m.end()); },
@@ -133,7 +96,8 @@ finalize_container(py::class_<Map, holder_type, Attributable> cl)
         // copy + keepalive
         // All objects in the openPMD object model are handles, so using a copy
         // is safer and still performant.
-        py::return_value_policy::copy);
+        py::return_value_policy::copy,
+        py::keep_alive<0, 1>());
 
     // Assignment provided only if the type is copyable
     py::detail::map_assignment<Map, Class_>(cl);
@@ -156,4 +120,33 @@ finalize_container(py::class_<Map, holder_type, Attributable> cl)
 
     return cl;
 }
-} // namespace openPMD
+
+template <typename Map, typename... Args>
+py::class_<Map, std::unique_ptr<Map>, Args...>
+create_and_bind_container(py::handle scope, std::string const &name)
+{
+    using holder_type = std::unique_ptr<Map>;
+    using KeyType = typename Map::key_type;
+    using MappedType = typename Map::mapped_type;
+    using Class_ = py::class_<Map, holder_type, Args...>;
+
+    // If either type is a non-module-local bound type then make the map
+    // binding non-local as well; otherwise (e.g. both types are either
+    // module-local or converting) the map will be module-local.
+    auto tinfo = py::detail::get_type_info(typeid(MappedType));
+    bool local = !tinfo || tinfo->module_local;
+    if (local)
+    {
+        tinfo = py::detail::get_type_info(typeid(KeyType));
+        local = !tinfo || tinfo->module_local;
+    }
+
+    Class_ cl(
+        scope,
+        name.c_str(),
+        py::module_local(local),
+        py::multiple_inheritance());
+
+    return bind_container<Map>(cl, name);
+}
+} // namespace openPMD::detail
