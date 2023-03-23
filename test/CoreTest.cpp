@@ -202,12 +202,7 @@ TEST_CASE("myPath", "[core]")
     auto scalarMeshComponent = scalarMesh[RecordComponent::SCALAR];
     REQUIRE(
         pathOf(scalarMeshComponent) ==
-        vec_t{
-            "iterations",
-            "1234",
-            "meshes",
-            "e_chargeDensity",
-            RecordComponent::SCALAR});
+        vec_t{"iterations", "1234", "meshes", "e_chargeDensity"});
     writeSomething(scalarMeshComponent);
 
     auto vectorMesh = iteration.meshes["E"];
@@ -243,13 +238,7 @@ TEST_CASE("myPath", "[core]")
     auto speciesWeightingX = speciesWeighting[RecordComponent::SCALAR];
     REQUIRE(
         pathOf(speciesWeightingX) ==
-        vec_t{
-            "iterations",
-            "1234",
-            "particles",
-            "e",
-            "weighting",
-            RecordComponent::SCALAR});
+        vec_t{"iterations", "1234", "particles", "e", "weighting"});
     writeSomething(speciesWeightingX);
 
     REQUIRE(

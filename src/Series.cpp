@@ -561,7 +561,7 @@ void Series::init(
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
             std::move(ioHandler));
     series.iterations.linkHierarchy(writable());
-    series.iterations.writable().ownKeyWithinParent = {"iterations"};
+    series.iterations.writable().ownKeyWithinParent = "iterations";
 
     series.m_name = input->name;
 

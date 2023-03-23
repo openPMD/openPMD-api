@@ -30,7 +30,7 @@ namespace openPMD
 {
 ParticleSpecies::ParticleSpecies()
 {
-    particlePatches.writable().ownKeyWithinParent = {"particlePatches"};
+    particlePatches.writable().ownKeyWithinParent = "particlePatches";
 }
 
 void ParticleSpecies::read()

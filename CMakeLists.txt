@@ -462,7 +462,6 @@ set(CORE_SOURCE
         src/auxiliary/JSON.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
-        src/backend/Container.cpp
         src/backend/MeshRecordComponent.cpp
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp

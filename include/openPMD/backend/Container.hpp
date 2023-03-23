@@ -86,36 +86,6 @@ namespace internal
     };
 } // namespace internal
 
-namespace detail
-{
-    /*
-     * This converts the key (first parameter) to its string name within the
-     * openPMD hierarchy.
-     * If the key is found to be equal to RecordComponent::SCALAR, the parentKey
-     * will be returned, adding RecordComponent::SCALAR to its back.
-     * Reason: Scalar record components do not link their containing record as
-     * parent, but rather the parent's parent, so the own key within the
-     * "apparent" parent must be given as two steps.
-     */
-    template <typename T>
-    std::vector<std::string>
-    keyAsString(T &&key, std::vector<std::string> const &parentKey)
-    {
-        (void)parentKey;
-        return {std::to_string(std::forward<T>(key))};
-    }
-
-    // moved to a *.cpp file so we don't need to include RecordComponent.hpp
-    // here
-    template <>
-    std::vector<std::string> keyAsString<std::string const &>(
-        std::string const &key, std::vector<std::string> const &parentKey);
-
-    template <>
-    std::vector<std::string> keyAsString<std::string>(
-        std::string &&key, std::vector<std::string> const &parentKey);
-} // namespace detail
-
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
  *
  * @see http://en.cppreference.com/w/cpp/container/map
@@ -328,8 +298,14 @@ public:
             T t = T();
             t.linkHierarchy(writable());
             auto &ret = container().insert({key, std::move(t)}).first->second;
-            ret.writable().ownKeyWithinParent =
-                detail::keyAsString(key, writable().ownKeyWithinParent);
+            if constexpr (std::is_same_v<T_key, std::string>)
+            {
+                ret.writable().ownKeyWithinParent = key;
+            }
+            else
+            {
+                ret.writable().ownKeyWithinParent = std::to_string(key);
+            }
             traits::GenerationPolicy<T> gen;
             gen(ret);
             return ret;
@@ -363,8 +339,15 @@ public:
             T t = T();
             t.linkHierarchy(writable());
             auto &ret = container().insert({key, std::move(t)}).first->second;
-            ret.writable().ownKeyWithinParent = detail::keyAsString(
-                std::move(key), writable().ownKeyWithinParent);
+            if constexpr (std::is_same_v<T_key, std::string>)
+            {
+                ret.writable().ownKeyWithinParent = std::move(key);
+            }
+            else
+            {
+                ret.writable().ownKeyWithinParent =
+                    std::to_string(std::move(key));
+            }
             traits::GenerationPolicy<T> gen;
             gen(ret);
             return ret;

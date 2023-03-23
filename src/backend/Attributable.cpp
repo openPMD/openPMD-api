@@ -197,13 +197,7 @@ auto Attributable::myPath() const -> MyPath
         // so it's alright that this loop doesn't ask the key of the last found
         // Writable
 
-        // push these in reverse because we're building the list from the back
-        for (auto it = findSeries->ownKeyWithinParent.rbegin();
-             it != findSeries->ownKeyWithinParent.rend();
-             ++it)
-        {
-            res.group.push_back(*it);
-        }
+        res.group.push_back(findSeries->ownKeyWithinParent);
         findSeries = findSeries->parent;
     }
     std::reverse(res.group.begin(), res.group.end());
