@@ -986,6 +986,27 @@ TEST_CASE("wrapper_test", "[core]")
 #endif
 }
 
+TEST_CASE("baserecord_test", "[core]")
+{
+    Series o("../samples/testBaseRecord.json", Access::CREATE);
+    auto E = o.iterations[100].meshes["E"];
+    Mesh B = o.iterations[100].meshes["B"];
+    Dataset ds(Datatype::INT, {16, 16});
+    for (auto const &component : {"x", "y", "z"})
+    {
+        E[component].makeConstant(5);
+        E[component].resetDataset(ds);
+    }
+    for (auto const &component : {"x", /* "y", */ "z"})
+    {
+        B[component].makeConstant(5);
+        B[component].resetDataset(ds);
+    }
+    auto inserted = B.insert(B.find("x"), std::pair{"y", E["y"]});
+    REQUIRE(inserted->first == "y");
+    B.erase(inserted);
+}
+
 TEST_CASE("use_count_test", "[core]")
 {
     Series o = Series("./new_openpmd_output.json", Access::CREATE);

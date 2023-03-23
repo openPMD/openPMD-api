@@ -55,6 +55,12 @@ namespace internal
         operator=(PatchRecordComponentData &&) = delete;
 
         PatchRecordComponentData();
+
+        void reset() override
+        {
+            BaseRecordComponentData::reset();
+            m_chunks = std::queue<IOTask>();
+        }
     };
 
     template <typename, typename>

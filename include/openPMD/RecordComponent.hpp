@@ -94,6 +94,16 @@ namespace internal
          * flushed to the backend
          */
         bool m_hasBeenExtended = false;
+
+        void reset() override
+        {
+            BaseRecordComponentData::reset();
+            m_chunks = std::queue<IOTask>();
+            m_constantValue = -1;
+            m_name = std::string();
+            m_isEmpty = false;
+            m_hasBeenExtended = false;
+        }
     };
     template <typename, typename>
     class BaseRecordData;

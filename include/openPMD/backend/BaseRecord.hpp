@@ -22,14 +22,19 @@
 
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/UnitDimension.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Container.hpp"
 
 #include <array>
 #include <stdexcept>
 #include <string>
+#include <type_traits> // std::remove_reference_t
+#include <utility> // std::declval
 
 namespace openPMD
 {
+template <typename>
+class BaseRecord;
 namespace internal
 {
     template <
@@ -43,6 +48,8 @@ namespace internal
         : public ContainerData<T_elem>
         , public T_RecordComponentData
     {
+        using T_RecordComponent = T_elem;
+
     public:
         BaseRecordData();
 
@@ -51,6 +58,150 @@ namespace internal
 
         BaseRecordData &operator=(BaseRecordData const &) = delete;
         BaseRecordData &operator=(BaseRecordData &&) = delete;
+    };
+
+    // @todo change T_InternalContainer to direct iterator type
+    template <
+        typename T_BaseRecord_,
+        typename T_BaseRecordData_,
+        typename T_BaseIterator>
+    class ScalarIterator
+    {
+        /*
+         * Allow other template instantiations of ScalarIterators member access.
+         */
+        template <typename, typename, typename>
+        friend class ScalarIterator;
+
+        using T_BaseRecord = T_BaseRecord_;
+        using T_BaseRecordData = T_BaseRecordData_;
+        using T_RecordComponent = typename T_BaseRecord::T_RecordComponent;
+        using T_Container = typename T_BaseRecord::T_Container;
+        using T_Value =
+            std::remove_reference_t<decltype(*std::declval<T_BaseIterator>())>;
+        using Left = T_BaseIterator;
+        struct Right
+        { /*Empty*/
+            constexpr bool operator==(Right const &) const noexcept
+            {
+                return true;
+            }
+            constexpr bool operator!=(Right const &) const noexcept
+            {
+                return false;
+            }
+        };
+
+        template <typename>
+        friend class openPMD::BaseRecord;
+
+        T_BaseRecordData *m_baseRecordData = nullptr;
+        using ScalarTuple =
+            std::optional<std::pair<std::string const, T_RecordComponent>>;
+        ScalarTuple m_scalarTuple;
+        std::variant<Left, Right> m_iterator;
+
+        explicit ScalarIterator() = default;
+
+        ScalarIterator(T_BaseRecord *baseRecord)
+            : m_baseRecordData(&baseRecord->get())
+            , m_scalarTuple(std::make_pair(
+                  RecordComponent::SCALAR, T_RecordComponent(*baseRecord)))
+            , m_iterator(Right())
+        {}
+        ScalarIterator(T_BaseRecord *baseRecord, Left iterator)
+            : m_baseRecordData(&baseRecord->get())
+            , m_scalarTuple(std::make_pair(
+                  RecordComponent::SCALAR, T_RecordComponent(*baseRecord)))
+            , m_iterator(std::move(iterator))
+        {}
+
+    public:
+        /**
+         * Auto-convert normal to const iterator.
+         * This is necessary to have things like:
+         * > B.insert(B.find("x"), std::pair{"y", E["y"]})
+         *            ^^^^^^^^^^^
+         *      returns a normal iterator
+         *  but insert-with-hint requires a const
+         *
+         * @tparam Other A ScalarIterator with other template parameters.
+         * @tparam SFINAE Implementation detail.
+         * @param other Copy from this non-const iterator.
+         */
+        template <
+            typename Other,
+            /*
+             * We need this in order to not accidentally register this as a copy
+             * constructor.
+             */
+            typename SFINAE = std::enable_if_t<
+                !std::is_same_v<T_BaseRecord, typename Other::T_BaseRecord>>>
+        ScalarIterator(Other const &other)
+            : m_baseRecordData(other.m_baseRecordData)
+            , m_scalarTuple(
+                  other.m_scalarTuple.has_value()
+                      ? ScalarTuple(std::make_pair(
+                            RecordComponent::SCALAR,
+                            T_RecordComponent(
+                                other.m_scalarTuple.value().second)))
+                      : ScalarTuple(std::nullopt))
+            , m_iterator(std::visit(
+                  auxiliary::overloaded{
+                      [](typename Other::Left const &left) {
+                          // This converts the STL iterator to an
+                          // STL const_iterator
+                          return std::variant<Left, Right>(left);
+                      },
+                      [](typename Other::Right const &) {
+                          return std::variant<Left, Right>(Right());
+                      }},
+                  other.m_iterator))
+        {}
+
+        ScalarIterator &operator++()
+        {
+            std::visit(
+                auxiliary::overloaded{
+                    [](Left &left) { ++left; },
+                    [this](Right &) {
+                        m_iterator = m_baseRecordData->m_container.end();
+                    }},
+                m_iterator);
+            return *this;
+        }
+
+        T_Value *operator->()
+        {
+            return std::visit(
+                auxiliary::overloaded{
+                    [](Left &left) -> T_Value * { return left.operator->(); },
+                    [this](Right &) -> T_Value * {
+                        /*
+                         * We cannot create this value on the fly since we only
+                         * give out a pointer, so that would be use-after-free.
+                         * Instead, we just keep one value around inside
+                         * BaseRecordData and give it out when needed.
+                         */
+                        return &m_scalarTuple.value();
+                    }},
+                m_iterator);
+        }
+
+        T_Value &operator*()
+        {
+            return *operator->();
+        }
+
+        bool operator==(ScalarIterator const &other) const
+        {
+            return this->m_iterator == other.m_iterator;
+        }
+
+        bool operator!=(ScalarIterator const &other) const
+        {
+            return !operator==(other);
+        }
     };
 } // namespace internal
 
@@ -69,6 +220,8 @@ class BaseRecord
     friend class Mesh;
     template <typename, typename>
     friend class internal::BaseRecordData;
+    template <typename, typename, typename>
+    friend class internal::ScalarIterator;
 
     using Data_t =
         internal::BaseRecordData<T_elem, typename T_RecordComponent::Data_t>;
@@ -109,8 +262,148 @@ public:
     using const_reference = typename Container<T_elem>::const_reference;
     using pointer = typename Container<T_elem>::pointer;
     using const_pointer = typename Container<T_elem>::const_pointer;
-    using iterator = typename T_Container::iterator;
-    using const_iterator = typename T_Container::const_iterator;
+
+    using iterator = internal::ScalarIterator<
+        T_Self,
+        Data_t,
+        typename T_Container::InternalContainer::iterator>;
+    using const_iterator = internal::ScalarIterator<
+        T_Self const,
+        Data_t const,
+        typename T_Container::InternalContainer::const_iterator>;
+    using reverse_iterator = internal::ScalarIterator<
+        T_Self,
+        Data_t,
+        typename T_Container::InternalContainer::reverse_iterator>;
+    using const_reverse_iterator = internal::ScalarIterator<
+        T_Self const,
+        Data_t const,
+        typename T_Container::InternalContainer::const_reverse_iterator>;
+
+private:
+    template <typename... Arg>
+    iterator makeIterator(Arg &&...arg)
+    {
+        return iterator{this, std::forward<Arg>(arg)...};
+    }
+    template <typename... Arg>
+    const_iterator makeIterator(Arg &&...arg) const
+    {
+        return const_iterator{this, std::forward<Arg>(arg)...};
+    }
+    template <typename... Arg>
+    reverse_iterator makeReverseIterator(Arg &&...arg)
+    {
+        return reverse_iterator{this, std::forward<Arg>(arg)...};
+    }
+    template <typename... Arg>
+    const_reverse_iterator makeReverseIterator(Arg &&...arg) const
+    {
+        return const_reverse_iterator{this, std::forward<Arg>(arg)...};
+    }
+
+public:
+    iterator begin()
+    {
+        if (get().m_datasetDefined)
+        {
+            return makeIterator();
+        }
+        else
+        {
+            return makeIterator(T_Container::begin());
+        }
+    }
+
+    const_iterator begin() const
+    {
+        if (get().m_datasetDefined)
+        {
+            return makeIterator();
+        }
+        else
+        {
+            return makeIterator(T_Container::begin());
+        }
+    }
+
+    const_iterator cbegin() const
+    {
+        if (get().m_datasetDefined)
+        {
+            return makeIterator();
+        }
+        else
+        {
+            return makeIterator(T_Container::cbegin());
+        }
+    }
+
+    iterator end()
+    {
+        return makeIterator(T_Container::end());
+    }
+
+    const_iterator end() const
+    {
+        return makeIterator(T_Container::end());
+    }
+
+    const_iterator cend() const
+    {
+        return makeIterator(T_Container::cend());
+    }
+
+    reverse_iterator rbegin()
+    {
+        if (get().m_datasetDefined)
+        {
+            return makeReverseIterator();
+        }
+        else
+        {
+            return makeReverseIterator(this->container().rbegin());
+        }
+    }
+
+    const_reverse_iterator rbegin() const
+    {
+        if (get().m_datasetDefined)
+        {
+            return makeReverseIterator();
+        }
+        else
+        {
+            return makeReverseIterator(this->container().rbegin());
+        }
+    }
+
+    const_reverse_iterator crbegin() const
+    {
+        if (get().m_datasetDefined)
+        {
+            return makeReverseIterator();
+        }
+        else
+        {
+            return makeReverseIterator(this->container().crbegin());
+        }
+    }
+
+    reverse_iterator rend()
+    {
+        return makeReverseIterator(this->container().rend());
+    }
+
+    const_reverse_iterator rend() const
+    {
+        return makeReverseIterator(this->container().rend());
+    }
+
+    const_reverse_iterator crend() const
+    {
+        return makeReverseIterator(this->container().crend());
+    }
 
     virtual ~BaseRecord() = default;
 
@@ -120,6 +413,24 @@ public:
     mapped_type const &at(key_type const &key) const;
     size_type erase(key_type const &key);
     iterator erase(iterator res);
+    bool empty() const noexcept;
+    iterator find(key_type const &key);
+    const_iterator find(key_type const &key) const;
+    size_type count(key_type const &key) const;
+    size_type size() const;
+    void clear();
+    std::pair<iterator, bool> insert(value_type const &value);
+    std::pair<iterator, bool> insert(value_type &&value);
+    iterator insert(const_iterator hint, value_type const &value);
+    iterator insert(const_iterator hint, value_type &&value);
+    template <class InputIt>
+    void insert(InputIt first, InputIt last);
+    void insert(std::initializer_list<value_type> ilist);
+    void swap(BaseRecord &other);
+    bool contains(key_type const &key) const;
+    template <class... Args>
+    auto emplace(Args &&...args) -> std::pair<iterator, bool>;
+
     //! @todo add also, as soon as added in Container:
     // iterator erase(const_iterator first, const_iterator last) override;
 
@@ -166,6 +477,7 @@ private:
      * @return false Otherwise.
      */
     bool dirtyRecursive() const;
+    void eraseScalar();
 }; // BaseRecord
 
 // implementation
@@ -192,12 +504,25 @@ BaseRecord<T_elem>::BaseRecord()
 }
 
 template <typename T_elem>
-inline typename BaseRecord<T_elem>::mapped_type &
-BaseRecord<T_elem>::operator[](key_type const &key)
+auto BaseRecord<T_elem>::operator[](key_type const &key) -> mapped_type &
 {
     auto it = this->find(key);
     if (it != this->end())
-        return it->second;
+    {
+        return std::visit(
+            auxiliary::overloaded{
+                [](typename iterator::Left &l) -> mapped_type & {
+                    return l->second;
+                },
+                [this](typename iterator::Right &) -> mapped_type & {
+                    /*
+                     * Do not use the iterator result, as it is a non-owning
+                     * handle
+                     */
+                    return static_cast<mapped_type &>(*this);
+                }},
+            it.m_iterator);
+    }
     else
     {
         bool const keyScalar = (key == RecordComponent::SCALAR);
@@ -221,12 +546,25 @@ BaseRecord<T_elem>::operator[](key_type const &key)
 }
 
 template <typename T_elem>
-inline typename BaseRecord<T_elem>::mapped_type &
-BaseRecord<T_elem>::operator[](key_type &&key)
+auto BaseRecord<T_elem>::operator[](key_type &&key) -> mapped_type &
 {
     auto it = this->find(key);
     if (it != this->end())
-        return it->second;
+    {
+        return std::visit(
+            auxiliary::overloaded{
+                [](typename iterator::Left &l) -> mapped_type & {
+                    return l->second;
+                },
+                [this](typename iterator::Right &) -> mapped_type & {
+                    /*
+                     * Do not use the iterator result, as it is a non-owning
+                     * handle
+                     */
+                    return static_cast<mapped_type &>(*this);
+                }},
+            it.m_iterator);
+    }
     else
     {
         bool const keyScalar = (key == RecordComponent::SCALAR);
@@ -276,8 +614,7 @@ auto BaseRecord<T_elem>::at(key_type const &key) const -> mapped_type const &
 }
 
 template <typename T_elem>
-inline typename BaseRecord<T_elem>::size_type
-BaseRecord<T_elem>::erase(key_type const &key)
+auto BaseRecord<T_elem>::erase(key_type const &key) -> size_type
 {
     bool const keyScalar = (key == RecordComponent::SCALAR);
     size_type res;
@@ -285,14 +622,8 @@ BaseRecord<T_elem>::erase(key_type const &key)
         res = Container<T_elem>::erase(key);
     else
     {
-        if (this->written())
-        {
-            Parameter<Operation::DELETE_DATASET> dDelete;
-            dDelete.name = ".";
-            this->IOHandler()->enqueue(IOTask(this, dDelete));
-            this->IOHandler()->flush(internal::defaultFlushParams);
-        }
         res = this->datasetDefined() ? 1 : 0;
+        eraseScalar();
     }
 
     if (keyScalar)
@@ -305,21 +636,271 @@ BaseRecord<T_elem>::erase(key_type const &key)
 }
 
 template <typename T_elem>
-inline typename BaseRecord<T_elem>::iterator
-BaseRecord<T_elem>::erase(iterator res)
+auto BaseRecord<T_elem>::erase(iterator it) -> iterator
 {
-    bool const keyScalar = (res->first == RecordComponent::SCALAR);
-    iterator ret;
-    if (!keyScalar || (keyScalar && this->at(res->first).constant()))
-        ret = Container<T_elem>::erase(res);
+    return std::visit(
+        auxiliary::overloaded{
+            [this](typename iterator::Left &left) {
+                return makeIterator(T_Container::erase(left));
+            },
+            [this](typename iterator::Right &) {
+                eraseScalar();
+                return end();
+            }},
+        it.m_iterator);
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::empty() const noexcept -> bool
+{
+    return !scalar() && T_Container::empty();
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::find(key_type const &key) -> iterator
+{
+    auto &r = get();
+    if (key == RecordComponent::SCALAR && get().m_datasetDefined)
+    {
+        if (r.m_datasetDefined)
+        {
+            return begin();
+        }
+        else
+        {
+            return end();
+        }
+    }
     else
     {
-        throw std::runtime_error(
-            "Unreachable! Iterators do not yet cover scalars (they will in a "
-            "later commit).");
+        return makeIterator(r.m_container.find(key));
     }
+}
 
-    return ret;
+template <typename T_elem>
+auto BaseRecord<T_elem>::find(key_type const &key) const -> const_iterator
+{
+    auto &r = get();
+    if (key == RecordComponent::SCALAR && get().m_datasetDefined)
+    {
+        if (r.m_datasetDefined)
+        {
+            return begin();
+        }
+        else
+        {
+            return end();
+        }
+    }
+    else
+    {
+        return makeIterator(r.m_container.find(key));
+    }
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::count(key_type const &key) const -> size_type
+{
+    if (key == RecordComponent::SCALAR)
+    {
+        return get().m_datasetDefined ? 1 : 0;
+    }
+    else
+    {
+        return T_Container::count(key);
+    }
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::size() const -> size_type
+{
+    if (scalar())
+    {
+        return 1;
+    }
+    else
+    {
+        return T_Container::size();
+    }
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::clear() -> void
+{
+    if (Access::READ_ONLY == this->IOHandler()->m_frontendAccess)
+        throw std::runtime_error(
+            "Can not clear a container in a read-only Series.");
+    if (scalar())
+    {
+        eraseScalar();
+    }
+    else
+    {
+        T_Container::clear_unchecked();
+    }
+}
+
+namespace detail
+{
+    constexpr char const *const NO_SCALAR_INSERT =
+        "[BaseRecord] emplace()/insert()/swap() API invalid for scalar "
+        "records. Use the Record directly as a RecordComponent.";
+
+    template <typename BaseRecord>
+    void verifyNonscalar(BaseRecord *self)
+    {
+        if (self->scalar())
+        {
+            throw error::WrongAPIUsage(NO_SCALAR_INSERT);
+        }
+    }
+} // namespace detail
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::insert(value_type const &value)
+    -> std::pair<iterator, bool>
+{
+    detail::verifyNonscalar(this);
+    auto res = this->container().insert(value);
+    if (res.first->first == RecordComponent::SCALAR)
+    {
+        this->container().erase(res.first);
+        throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
+    }
+    return {makeIterator(std::move(res.first)), res.second};
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::insert(value_type &&value) -> std::pair<iterator, bool>
+{
+    detail::verifyNonscalar(this);
+    auto res = this->container().insert(std::move(value));
+    if (res.first->first == RecordComponent::SCALAR)
+    {
+        this->container().erase(res.first);
+        throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
+    }
+    return {makeIterator(std::move(res.first)), res.second};
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::insert(const_iterator hint, value_type const &value)
+    -> iterator
+{
+    detail::verifyNonscalar(this);
+    auto base_hint = std::visit(
+        auxiliary::overloaded{
+            [](typename const_iterator::Left left) { return left; },
+            [this](typename const_iterator::Right) {
+                return static_cast<BaseRecord<T_elem> const *>(this)
+                    ->container()
+                    .begin();
+            }},
+        hint.m_iterator);
+    auto res = this->container().insert(base_hint, value);
+    if (res->first == RecordComponent::SCALAR)
+    {
+        this->container().erase(res);
+        throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
+    }
+    return makeIterator(res);
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::insert(const_iterator hint, value_type &&value)
+    -> iterator
+{
+    detail::verifyNonscalar(this);
+    auto base_hint = std::visit(
+        auxiliary::overloaded{
+            [](typename const_iterator::Left left) { return left; },
+            [this](typename const_iterator::Right) {
+                return static_cast<BaseRecord<T_elem> const *>(this)
+                    ->container()
+                    .begin();
+            }},
+        hint.m_iterator);
+    auto res = this->container().insert(base_hint, std::move(value));
+    if (res->first == RecordComponent::SCALAR)
+    {
+        this->container().erase(res);
+        throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
+    }
+    return makeIterator(res);
+}
+
+template <typename T_elem>
+template <typename InputIt>
+auto BaseRecord<T_elem>::insert(InputIt first, InputIt last) -> void
+{
+    detail::verifyNonscalar(this);
+    this->container().insert(first, last);
+    /*
+     * We skip this check as it changes the runtime of this call from
+     * O(last-first) to O(container().size()).
+     */
+    // for (auto it = this->container().begin(); it != end; ++it)
+    // {
+    //     if (it->first == RecordComponent::SCALAR)
+    //     {
+    //         this->container().erase(it);
+    //         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
+    //     }
+    // }
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
+{
+    detail::verifyNonscalar(this);
+    this->container().insert(std::move(ilist));
+    /*
+     * We skip this check as it changes the runtime of this call from
+     * O(last-first) to O(container().size()).
+     */
+    // for (auto it = this->container().begin(); it != end; ++it)
+    // {
+    //     if (it->first == RecordComponent::SCALAR)
+    //     {
+    //         this->container().erase(it);
+    //         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
+    //     }
+    // }
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::swap(BaseRecord &other) -> void
+{
+    detail::verifyNonscalar(this);
+    detail::verifyNonscalar(&other);
+    this->container().swap(other.container());
+}
+
+template <typename T_elem>
+auto BaseRecord<T_elem>::contains(key_type const &key) const -> bool
+{
+    if (scalar())
+    {
+        return key == RecordComponent::SCALAR;
+    }
+    else
+    {
+        return T_Container::contains(key);
+    }
+}
+
+template <typename T_elem>
+template <typename... Args>
+auto BaseRecord<T_elem>::emplace(Args &&...args) -> std::pair<iterator, bool>
+{
+    detail::verifyNonscalar(this);
+    auto res = this->container().emplace(std::forward<Args>(args)...);
+    if (res.first->first == RecordComponent::SCALAR)
+    {
+        this->container().erase(res.first);
+        throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
+    }
+    return {makeIterator(std::move(res.first)), res.second};
 }
 
 template <typename T_elem>
@@ -374,8 +955,7 @@ template <typename T_elem>
 inline void BaseRecord<T_elem>::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {
-    if (!this->written() && this->T_Container::empty() &&
-        !this->datasetDefined())
+    if (!this->written() && this->empty() && !this->datasetDefined())
         throw std::runtime_error(
             "A Record can not be written without any contained "
             "RecordComponents: " +
@@ -401,5 +981,20 @@ inline bool BaseRecord<T_elem>::dirtyRecursive() const
         }
     }
     return false;
+}
+
+template <typename T_elem>
+void BaseRecord<T_elem>::eraseScalar()
+{
+    if (this->written())
+    {
+        Parameter<Operation::DELETE_DATASET> dDelete;
+        dDelete.name = ".";
+        this->IOHandler()->enqueue(IOTask(this, dDelete));
+        this->IOHandler()->flush(internal::defaultFlushParams);
+    }
+    auto &data = T_RecordComponent::get();
+    data.reset();
+    this->writable().abstractFilePosition.reset();
 }
 } // namespace openPMD

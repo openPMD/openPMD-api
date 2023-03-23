@@ -26,12 +26,20 @@
 
 namespace openPMD
 {
+namespace internal
+{
+    template <typename, typename>
+    class BaseRecordData;
+}
+
 class MeshRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
     template <typename>
     friend class BaseRecord;
+    template <typename, typename>
+    friend class internal::BaseRecordData;
 
     friend class Mesh;
 

@@ -59,12 +59,18 @@ namespace internal
 
         BaseRecordComponentData(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData(BaseRecordComponentData &&) = delete;
-
         BaseRecordComponentData &
         operator=(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData &operator=(BaseRecordComponentData &&) = delete;
 
         BaseRecordComponentData() = default;
+
+        virtual void reset()
+        {
+            m_dataset = std::nullopt;
+            m_isConstant = false;
+            m_datasetDefined = false;
+        }
     };
 } // namespace internal
 
