@@ -37,13 +37,6 @@ AbstractIOHandlerImpl::AbstractIOHandlerImpl(AbstractIOHandler *handler)
     }
 }
 
-void AbstractIOHandlerImpl::keepSynchronous(
-    Writable *writable, Parameter<Operation::KEEP_SYNCHRONOUS> const &param)
-{
-    writable->abstractFilePosition = param.otherWritable->abstractFilePosition;
-    writable->written = true;
-}
-
 template <typename... Args>
 void AbstractIOHandlerImpl::writeToStderr([[maybe_unused]] Args &&...args) const
 {
@@ -339,19 +332,6 @@ std::future<void> AbstractIOHandlerImpl::flush()
                     i.writable,
                     "] AVAILABLE_CHUNKS");
                 availableChunks(i.writable, parameter);
-                break;
-            }
-            case O::KEEP_SYNCHRONOUS: {
-                auto &parameter =
-                    deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS>>(
-                        i.parameter.get());
-                writeToStderr(
-                    "[",
-                    i.writable->parent,
-                    "->",
-                    i.writable,
-                    "] KEEP_SYNCHRONOUS");
-                keepSynchronous(i.writable, parameter);
                 break;
             }
             case O::DEREGISTER: {
