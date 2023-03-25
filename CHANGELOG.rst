@@ -5,9 +5,9 @@ Changelog
 
 0.15.0
 ------
-**Date:** 2023-03-XY
+**Date:** 2023-03-25
 
-C++17, Parsing error recovery, Support for ADIOS2 BP5 engine, Append and Read-Linear access modes, performance and memory optimizations
+C++17, Error Recovery, ADIOS2 BP5, Append & Read-Linear Modes, Performance & Memory
 
 This release adds error recovery mechanisms, in order to access erroneous datasets, created e.g. by crashing simulations.
 The BP5 engine of ADIOS2 v2.9 is fully supported by this release, including access to its various features for more fine-grained control of memory usage.
