@@ -17,6 +17,92 @@ Catch2 2.13.10 is now the minimally supported version for tests.
 The following backend-specific members of the ``Dataset`` class have been removed: ``Dataset::setChunkSize()``, ``Dataset::setCompression()``, ``Dataset::setCustomTransform()``, ``Dataset::chunkSize``, ``Dataset::compression``, ``Dataset::transform``.
 They are replaced by backend-specific options in the JSON-based backend configuration.
 This can be passed in ``Dataset::options``.
+The following configuration shows a compression configuration for ADIOS1 and ADIOS2:
+
+.. code-block:: json
+
+   {
+     "adios1": {
+       "dataset": {
+         "transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
+       }
+     },
+     "adios2": {
+       "dataset": {
+         "operators": [
+           {
+             "type": "zlib",
+             "parameters": {
+               "clevel": 9
+             }
+           }
+         ]
+       }
+     }
+   }
+
+Or alternatively, in TOML:
+
+.. code-block:: toml
+
+   [adios1.dataset]
+   transform = "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
+
+   [[adios2.dataset.operators]]
+   type = "zlib"
+   parameters.clevel = 9
+
+
+The helper function ``shareRaw`` of the C++ API has been deprecated.
+In its stead, there are now new API calls ``RecordComponent::storeChunkRaw()`` and ``RecordComponent::loadChunkRaw``.
+
+The **ADIOS1 backend** is now deprecated, to be replaced fully with ADIOS2.
+Now is a good time to check if ADIOS2 is able to read old ADIOS1 datasets that you might have. Otherwise, ``openpmd-pipe`` can be used for conversion:
+
+.. code-block:: bash
+
+   openpmd-pipe --infile adios1_dataset_%T.bp --inconfig 'backend = "adios1"' --outfile adios2_dataset_%T.bp --outconfig 'backend = "adios2"'
+
+The class structure of ``Container`` and deriving classes has been reworked.
+Usage of the API generally stays the same, but code that relies on the concrete class structure might break.
+
+The ``Iteration::closedByWriter()`` attribute has been deprecated as a leftover from the early streaming implementation.
+
+Old:
+
+.. code-block:: cpp
+
+   double const * data;
+   recordComponent.storeChunk(shareRaw(data), offset, extent);
+
+New:
+
+.. code-block:: cpp
+
+   double const * data;
+   recordComponent.storeChunkRaw(data, offset, extent);
+
+Additionally, ``determineDatatype`` now accepts pointer types (raw and smart pointers):
+
+Old:
+
+.. code-block:: cpp
+
+   std::vector<double> data;
+   Datatype dt = determineDatatype(shareRaw(data));
+
+New:
+
+.. code-block:: cpp
+
+   std::vector<double> data;
+   Datatype dt = determineDatatype(data.data());
+
+.. note::
+
+   ``determineDatatype`` does not directly accept ``determineDatatype(data)``, since it's unclear if the result from that call would be ``Datatype::DOUBLE`` or ``Datatype::VEC_DOUBLE``.
+
+   In order to get the direct mapping between C++ type and openPMD datatype, use the template parameter of ``determineDatatype``: ``determineDatatype<decltype(data)>()`` or ``determineDatatype<std::vector<double>>()``.
 
 
 0.14.0
