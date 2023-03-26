@@ -6,9 +6,9 @@ branches:
 
 env:
   global:
-    - OPENPMD_GIT_REF="0.14.5"
+    - OPENPMD_GIT_REF="0.15.0"
 
-    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.6"
+    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.7"
     # Install dependencies on Linux and OSX
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
     # for the openPMD-api build, CMake shall search for
@@ -21,48 +21,45 @@ jobs:
   include:
     # perform a linux ARMv8 build
     # note: takes >50min, so we need to split
+    # +manylinux
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp38-* cp39-* pp36-* pp37-* cp310-* *-musllinux_*"
+        - CIBW_BUILD="cp37-manylinux_aarch64 cp38-manylinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp36-* cp37-* pp36-* pp37-* cp310-* *-musllinux_*"
+        - CIBW_BUILD="cp39-manylinux_aarch64 cp310-manylinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp38-* cp39-* cp36-* cp37-* cp310-* *-musllinux_*"
+        - CIBW_BUILD="cp311-manylinux_aarch64 pp37-manylinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="*-musllinux_aarch64"
-        - CIBW_SKIP="cp38-* cp39-* cp310-*"
+        - CIBW_BUILD="pp38-manylinux_aarch64 pp39-manylinux_aarch64"
+    # +musllinux
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="*-musllinux_aarch64"
-        - CIBW_SKIP="cp36-* cp37-* cp310-*"
+        - CIBW_BUILD="cp37-musllinux_aarch64 cp38-musllinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp310-musllinux_aarch64"
+        - CIBW_BUILD="cp39-musllinux_aarch64 cp310-musllinux_aarch64"
+    - services: docker
+      arch: arm64
+      dist: focal
+      env:
+        - CIBW_BUILD="cp311-musllinux_aarch64"
 
     # perform a linux PPC64LE build
-    - services: docker
-      arch: ppc64le
-      dist: focal
-      env:
-        - CIBW_BUILD="cp36-manylinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
@@ -87,7 +84,7 @@ jobs:
       arch: ppc64le
       dist: focal
       env:
-        - CIBW_BUILD="cp36-musllinux_ppc64le"
+        - CIBW_BUILD="cp311-manylinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
@@ -108,6 +105,11 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="cp310-musllinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp311-musllinux_ppc64le"
 
     # perform a linux S390X build
     # blocked by https://github.com/GTkorvo/dill/issues/15
@@ -126,7 +128,7 @@ jobs:
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh src/.github/
-  - python3 -m pip install git+https://github.com/ax3l/cibuildwheel.git@fix-ppc64leNetworkTravis
+  - python -m pip install cibuildwheel==2.12.1
   # twine & cryptography: see
   #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
   #   https://github.com/pyca/cryptography/issues/6086
@@ -137,11 +139,11 @@ install:
 before_script:
   - mkdir -p src/.patch
   - cd src/.patch
-  - curl -sOL https://github.com/ax3l/openPMD-api/commit/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
-  - curl -sOL https://gist.githubusercontent.com/ax3l/4db2f1744e0e28e6c013ee4e752b3cb7/raw/ceb03d11a10e2e2f8cd9c74bff524a21ba8eb92b/setupversion.patch
+  - curl -sOL https://github.com/ax3l/openPMD-api/commit/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
+  - curl -sOL https://github.com/ax3l/openPMD-api/commit/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
   - cd ..
   - python3 -m patch .patch/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
-  - python3 -m patch .patch/setupversion.patch
+  - python3 -m patch .patch/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
   - cd ..
 
 script:
