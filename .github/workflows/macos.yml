@@ -43,16 +43,24 @@ jobs:
         cmake --build build --parallel 2
         ctest --test-dir build --verbose
 
-  appleclang12_py:
+  appleclang12_py_ad1:
     runs-on: macos-10.15
     # next: macOS-11
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
     - name: Install
+      env: {MACOSX_DEPLOYMENT_TARGET: 10.14}
       run: |
         set +e
         python3 -m pip install -U numpy pandas
+
+        curl -Lo adios-1.13.1.tar.gz http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
+        tar -xzf adios-1.13.1.tar.gz
+        cd adios-1.13.1/
+        CFLAGS="-fPIC" ./configure --enable-static --enable-shared --prefix=/usr/local --without-mpi --disable-fortran
+        make -j 2
+        make install
         set -e
     - name: Build
       env: {CXXFLAGS: -Werror -DTOML11_DISABLE_STD_FILESYSTEM, MACOSX_DEPLOYMENT_TARGET: 10.14}
@@ -65,6 +73,7 @@ jobs:
           -DopenPMD_USE_PYTHON=ON  \
           -DopenPMD_USE_MPI=OFF    \
           -DopenPMD_USE_HDF5=OFF   \
+          -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=OFF \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
