@@ -23,6 +23,7 @@
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -144,7 +145,8 @@ template <typename T>
 inline std::shared_ptr<T> PatchRecordComponent::load()
 {
     uint64_t numPoints = getExtent()[0];
-#if defined(__clang_major__) && __clang_major__ < 7
+#if (defined(__clang_major__) && __clang_major__ < 7) ||                       \
+    (defined(__apple_build_version__) && __clang_major__ < 14)
     auto newData =
         std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
     load(newData);
