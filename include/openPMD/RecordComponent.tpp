@@ -28,6 +28,9 @@
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
+#include <memory>
+
+
 namespace openPMD
 {
 template< typename T >
@@ -80,7 +83,8 @@ inline std::shared_ptr< T > RecordComponent::loadChunk(
     for( auto const& dimensionSize : extent )
         numPoints *= dimensionSize;
 
-#if defined(__clang_major__) && __clang_major__ < 7
+#if (defined(__clang_major__) && __clang_major__ < 7) ||                       \
+    (defined(__apple_build_version__) && __clang_major__ < 14)
     auto newData =
         std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
     loadChunk(newData, offset, extent);
@@ -374,7 +378,8 @@ RecordComponent::storeChunk( Offset offset, Extent extent )
         std::move( extent ),
         []( size_t size )
         {
-#if defined(__clang_major__) && __clang_major__ < 7
+#if (defined(__clang_major__) && __clang_major__ < 7) ||                       \
+    (defined(__apple_build_version__) && __clang_major__ < 14)
             return std::shared_ptr< T >{
                 new T[ size ], []( auto * ptr ) { delete[] ptr; } };
 #else

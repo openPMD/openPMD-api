@@ -12,7 +12,7 @@ jobs:
 #  appleclang10_py37_h5_ad2_libcpp
 #  appleclang11_nopy_nompi_h5_ad2
 
-  appleclang12_py_mpi_h5_ad2:
+  appleclang14_py_mpi_h5_ad2:
     runs-on: macos-latest
     if: github.event.pull_request.draft == false
     steps:
@@ -28,11 +28,10 @@ jobs:
         python3 -m pip install -U mpi4py numpy pandas
         set -e
     - name: Build
-      env: {CXXFLAGS: -Werror -DTOML11_DISABLE_STD_FILESYSTEM, MACOSX_DEPLOYMENT_TARGET: 10.13}
-      # C++11 & 14 support in macOS 10.9+
-      # C++17 support in macOS 10.13+/10.14+
+      env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 10.15}
+      # 10.14+ due to std::visit
+      # 10.15+ due to std::filesystem in toml11
       #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
-      # std::filesystem needs macOS 10.15
       run: |
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -40,6 +39,33 @@ jobs:
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
+          -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build build --parallel 2
+        ctest --test-dir build --verbose
+
+  appleclang12_py:
+    runs-on: macos-10.15
+    # next: macOS-11
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install
+      run: |
+        set +e
+        python3 -m pip install -U numpy pandas
+        set -e
+    - name: Build
+      env: {CXXFLAGS: -Werror -DTOML11_DISABLE_STD_FILESYSTEM, MACOSX_DEPLOYMENT_TARGET: 10.14}
+      # 10.14+ due to std::visit
+      # std::filesystem in toml11 needs macOS 10.15
+      #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
+      run: |
+        share/openPMD/download_samples.sh build
+        cmake -S . -B build \
+          -DopenPMD_USE_PYTHON=ON  \
+          -DopenPMD_USE_MPI=OFF    \
+          -DopenPMD_USE_HDF5=OFF   \
+          -DopenPMD_USE_ADIOS2=OFF \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
         ctest --test-dir build --verbose
