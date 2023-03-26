@@ -30,6 +30,7 @@ Features
 - Switch to C++17 #1103 #1128 #1140 #1157 #1164 #1183 #1185
 - Error-recovery during parsing #1150 #1179 #1237
 - Extensive update for JSON/TOML configuration #1043
+
   - TOML as an alternative to JSON #1146
   - compression configuration via JSON# 1043
   - case insensitivity #1043
@@ -39,6 +40,7 @@ Features
   - new JSON options: ``backend`` and ``iteration_encoding`` #1043
   - ADIOS1 compression configuration via JSON #1043 #1162
 - New access types:
+
   - ``APPEND``: Add new iterations without reading, supports ADIOS2 Append mode #1007 #1302
   - ``READ_LINEAR``: For reading through ADIOS2 steps, for full support of ADIOS2 BP5 #1291 #1379
 - ADIOS2:
@@ -54,6 +56,7 @@ Features
 - HDF5:
 
   - I/O optimizations for HDF5 #1129 #1133 #1192
+
     - Improve write time by disabling fill #1192
 
 - Miscellaneous API additions:
@@ -131,6 +134,7 @@ Breaking Changes
 
   - Apply frontend redesign to Container and deriving classes #1115 #1159
 - Removal of APIs
+
   - ``Dataset::transform``, ``Dataset::compression`` and ``Dataset::chunksize`` #1043
 
 .. note::
@@ -190,6 +194,7 @@ Other
   - Recommend Static Build for Superbuilds #1325
   - Latest Sphinx, Docutils, RTD #1341
 - Tooling
+
   - ``openpmd-pipe``: better optional support for MPI #1186 #1336
   - ``openpmd-ls``: use lazy parsing #1111
 - Enable use of ``Series::setName()`` and ``Series::setIterationEncoding()`` in combination with file-based encoding 1081
