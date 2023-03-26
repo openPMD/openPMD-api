@@ -299,6 +299,26 @@ Known Issues
 Selected References
 -------------------
 
+* William F. Godoy, Norbert Podhorszki, Ruonan Wang, Chuck Atkins, Greg Eisenhauer, Junmin Gu, Philip Davis, Jong Choi, Kai Germaschewski, Kevin Huck, Axel Huebl, Mark Kim, James Kress, Tahsin Kurc, Qing Liu, Jeremy Logan, Kshitij Mehta, George Ostrouchov, Manish Parashar, Franz Poeschel, David Pugmire, Eric Suchyta, Keichi Takahashi, Nick Thompson, Seiji Tsutsumi, Lipeng Wan, Matthew Wolf, Kesheng Wu, and Scott Klasky.
+  *ADIOS 2: The Adaptable Input Output System. A framework for high-performance data management,*
+  SoftwareX, vol. 12, 100561, 2020.
+  `DOI:10.1016/j.softx.2020.100561 <https://doi.org/10.1016/j.softx.2020.100561>`__
+
+* Franz Poeschel, Juncheng E, William F. Godoy, Norbert Podhorszki, Scott Klasky, Greg Eisenhauer, Philip E. Davis, Lipeng Wan, Ana Gainaru, Junmin Gu, Fabian Koller, Rene Widera, Michael Bussmann, and Axel Huebl.
+  *Transitioning from file-based HPC workflows to streaming data pipelines with openPMD and ADIOS2,*
+  Part of *Driving Scientific and Engineering Discoveries Through the Integration of Experiment, Big Data, and Modeling and Simulation,* SMC 2021, Communications in Computer and Information Science (CCIS), vol 1512, 2022.
+  `arXiv:2107.06108 <https://arxiv.org/abs/2107.06108>`__, `DOI:10.1007/978-3-030-96498-6_6 <https://doi.org/10.1007/978-3-030-96498-6_6>`__
+
+* Lipeng Wan, Axel Huebl, Junmin Gu, Franz Poeschel, Ana Gainaru, Ruonan Wang, Jieyang Chen, Xin Liang, Dmitry Ganyushin, Todd Munson, Ian Foster, Jean-Luc Vay, Norbert Podhorszki, Kesheng Wu, and Scott Klasky.
+  *Improving I/O Performance for Exascale Applications through Online Data Layout Reorganization,*
+  IEEE Transactions on Parallel and Distributed Systems, vol. 33, no. 4, pp. 878-890, 2022.
+  `arXiv:2107.07108 <https://arxiv.org/abs/2107.07108>`__, `DOI:10.1109/TPDS.2021.3100784 <https://doi.org/10.1109/TPDS.2021.3100784>`__
+
+* Junmin Gu, Philip Davis, Greg Eisenhauer, William Godoy, Axel Huebl, Scott Klasky, Manish Parashar, Norbert Podhorszki, Franz Poeschel, Jean-Luc Vay, Lipeng Wan, Ruonan Wang, and Kesheng Wu.
+  *Organizing Large Data Sets for Efficient Analyses on HPC Systems,*
+  Journal of Physics: Conference Series, vol. 2224, in *2nd International Symposium on Automation, Information and Computing* (ISAIC 2021), 2022.
+  `DOI:10.1088/1742-6596/2224/1/012042 <https://doi.org/10.1088/1742-6596/2224/1/012042>`__
+
 * Hasan Abbasi, Matthew Wolf, Greg Eisenhauer, Scott Klasky, Karsten Schwan, and Fang Zheng.
   *Datastager: scalable data staging services for petascale applications,*
   Cluster Computing, 13(3):277–290, 2010.
