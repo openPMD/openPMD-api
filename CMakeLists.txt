@@ -680,7 +680,7 @@ if(openPMD_HAVE_ADIOS1)
                 COMPILE_PDB_NAME_${CFG_UPPER} openPMD.ADIOS1.Serial
                 ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
                 LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
-                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/${CFG}
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
                 PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
                 COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
             )
@@ -875,10 +875,10 @@ if(openPMD_HAVE_PYTHON)
             "${CMAKE_INSTALL_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
         )
     endif()
-    # Location for installed python package
-    set(openPMD_INSTALL_PYTHONDIR "${openPMD_INSTALL_PYTHONDIR_DEFAULT}")
-    # Build directory for python modules
-    set(openPMD_PYTHON_OUTPUT_DIRECTORY "${openPMD_BINARY_DIR}/${openPMD_INSTALL_PYTHONDIR}")
+    set(openPMD_INSTALL_PYTHONDIR "${openPMD_INSTALL_PYTHONDIR_DEFAULT}"
+        CACHE STRING "Location for installed python package")
+    set(openPMD_PYTHON_OUTPUT_DIRECTORY "${openPMD_BINARY_DIR}/${openPMD_INSTALL_PYTHONDIR}"
+        CACHE STRING "Build directory for python modules")
     set_target_properties(openPMD.py PROPERTIES
         ARCHIVE_OUTPUT_NAME openpmd_api_cxx
         LIBRARY_OUTPUT_NAME openpmd_api_cxx
