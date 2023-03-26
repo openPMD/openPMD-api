@@ -13,14 +13,8 @@ jobs:
           - os: ubuntu-20.04
             arch: "x86_64"
 
-          # 32bit Linux builds blocked by:
-          # GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
-          #     https://github.com/pypa/manylinux/issues/543
-          #       variant.hpp:2241:9: internal compiler error:
-          #       unexpected expression ‘I’ of kind template_parm_index
-          #       typename T = lib::type_pack_element_t<I, Ts...>,
-          #- os: ubuntu-20.04
-          #  arch: "i686"
+          - os: ubuntu-20.04
+            arch: "i686"
 
           # builds faster on Travis-CI:
           #- os: ubuntu-20.04
@@ -49,7 +43,7 @@ jobs:
           - os: macos-10.15
             arch: "x86_64"
             env:
-              MACOSX_DEPLOYMENT_TARGET: 10.9
+              MACOSX_DEPLOYMENT_TARGET: 10.15
 
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
@@ -76,7 +70,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         path: 'src'
-        ref: '0.14.5'
+        ref: '0.15.0'
 
     - uses: actions/checkout@v2
       with:
@@ -90,44 +84,40 @@ jobs:
     - name: Install cibuildwheel
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install cibuildwheel==2.2.2
+        python -m pip install cibuildwheel==2.12.1
 
-    # 0.14.5: macOS ADIOS1 Linker Error
-    # https://github.com/openPMD/openPMD-api/issues/1287
-    - name: Download Patch 1/2
+    # 0.15.0: CMake: Fix Python Install Directory
+    # https://github.com/openPMD/openPMD-api/pull/1393
+    - name: Download Patch 1/1
       uses: suisei-cn/actions-download-file@v1
       id: adiosbuild
       with:
-        url: "https://github.com/ax3l/openPMD-api/commit/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch"
+        url: "https://github.com/ax3l/openPMD-api/commit/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch"
         target: src/.patch/
 
-    # 0.14.5.post1 bump
+    # 0.15.0: macOS AppleClang12 Fixes
+    # https://github.com/openPMD/openPMD-api/pull/1395
     - name: Download Patch 2/2
       uses: suisei-cn/actions-download-file@v1
       id: setupversion
       with:
-        url: "https://gist.githubusercontent.com/ax3l/4db2f1744e0e28e6c013ee4e752b3cb7/raw/ceb03d11a10e2e2f8cd9c74bff524a21ba8eb92b/setupversion.patch"
+        url: "https://github.com/ax3l/openPMD-api/commit/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch"
         target: src/.patch/
 
     - name: Apply Patches
       run: |
         python -m pip install "patch==1.*"
         cd src
-        python -m patch .patch/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
-        python -m patch .patch/setupversion.patch
+        python -m patch .patch/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
+        python -m patch .patch/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
 
     - name: Build wheel
       env:
-        # (1) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
-        #     https://github.com/pypa/manylinux/issues/543
-        #       variant.hpp:2241:9: internal compiler error:
-        #       unexpected expression ‘I’ of kind template_parm_index
-        #       typename T = lib::type_pack_element_t<I, Ts...>,
-        # (2) Disable PyPy (manylinux image: yum repo issues)
+        # (1) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
-        CIBW_SKIP: "*-manylinux_i686 pp*-manylinux*"
+        CIBW_SKIP: "pp*-manylinux*"
         CIBW_ARCHS: "${{ matrix.arch }}"
-        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.6"
+        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
         # Install dependencies
         CIBW_BEFORE_BUILD_LINUX: bash -x .github/library_builders.sh
         CIBW_BEFORE_BUILD_MACOS: bash -x .github/library_builders.sh
@@ -136,8 +126,7 @@ jobs:
         # static dependencies of HDF5 and ADIOS1 (see setup.py)
         CIBW_ENVIRONMENT: HDF5_USE_STATIC_LIBRARIES='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
         CIBW_ENVIRONMENT_WINDOWS: HDF5_USE_STATIC_LIBRARIES='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON' CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
-        # C++11 & 14 support in macOS 10.9+
-        # C++17 support in macOS 10.13+/10.14+
+        # C++17 support in macOS 10.13+ (partial) and 10.14+ (std::visit) and 10.15+ (std::filesystem::path)
         #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
         # arm64 Python interpreters are built with 11.0
         MACOSX_DEPLOYMENT_TARGET: "${{ matrix.env.MACOSX_DEPLOYMENT_TARGET }}"
