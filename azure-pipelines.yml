@@ -314,7 +314,6 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack bootstrap
       . spack/share/spack/setup-env.sh
       spack install -v --fail-fast openpmd-api +python +adios1 +adios2 %gcc@9.5.0
 
