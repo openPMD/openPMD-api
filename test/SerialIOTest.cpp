@@ -6564,10 +6564,15 @@ TEST_CASE("unfinished_iteration_test", "[serial]")
         "bp", IterationEncoding::fileBased, R"({"backend": "adios2"})");
 #endif
 #if openPMD_HAVE_ADIOS1
-    unfinished_iteration_test(
-        "adios1.bp", IterationEncoding::groupBased, R"({"backend": "adios1"})");
-    unfinished_iteration_test(
-        "adios1.bp", IterationEncoding::fileBased, R"({"backend": "adios1"})");
+    /*
+     * Catching errors from ADIOS1 is not generally supported
+     */
+    // unfinished_iteration_test(
+    //     "adios1.bp", IterationEncoding::groupBased, R"({"backend":
+    //     "adios1"})");
+    // unfinished_iteration_test(
+    //     "adios1.bp", IterationEncoding::fileBased, R"({"backend":
+    //     "adios1"})");
 #endif
 #if openPMD_HAVE_HDF5
     unfinished_iteration_test("h5", IterationEncoding::groupBased);

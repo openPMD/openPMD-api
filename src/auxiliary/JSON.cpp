@@ -499,14 +499,17 @@ std::optional<std::string> asLowerCaseStringDynamic(nlohmann::json const &value)
     return maybeString;
 }
 
-std::vector<std::string> backendKeys{"adios1", "adios2", "json", "hdf5"};
+std::vector<std::string> backendKeys()
+{
+    return {"adios1", "adios2", "json", "hdf5"};
+}
 
 void warnGlobalUnusedOptions(TracingJSON const &config)
 {
     auto shadow = config.invertShadow();
     // The backends are supposed to deal with this
     // Only global options here
-    for (auto const &backendKey : json::backendKeys)
+    for (auto const &backendKey : json::backendKeys())
     {
         shadow.erase(backendKey);
     }
