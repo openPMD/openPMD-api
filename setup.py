@@ -84,8 +84,10 @@ class CMakeBuild(build_ext):
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
 
+        # Assumption: Windows builds are always multi-config (MSVC VS)
         if platform.system() == "Windows":
             cmake_args += [
+                '-DopenPMD_BUILD_NO_CFG_SUBPATH:BOOL=ON',
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
                     cfg.upper(),
                     os.path.join(extdir, "openpmd_api")
