@@ -578,15 +578,26 @@ set_target_properties(openPMD PROPERTIES
 )
 # note: same as above, but for Multi-Config generators
 if(isMultiConfig)
+    # this is a tweak for setup.py to pick up our libs & pybind module properly
+    # this assumes there will only be one config built
+    option(openPMD_BUILD_NO_CFG_SUBPATH
+           "For multi-config builds, do not appends the config to build dir" OFF)
+    mark_as_advanced(openPMD_BUILD_NO_CFG_SUBPATH)
+
     foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
         string(TOUPPER "${CFG}" CFG_UPPER)
+        if(openPMD_BUILD_NO_CFG_SUBPATH)  # for setup.py
+            set(CFG_PATH "")
+        else()
+            set(CFG_PATH "/${CFG}")
+        endif()
         set_target_properties(openPMD PROPERTIES
             COMPILE_PDB_NAME_${CFG_UPPER} openPMD
-            ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
-            LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
-            RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
-            PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
-            COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
+            ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}${CFG_PATH}
+            LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}${CFG_PATH}
+            RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}${CFG_PATH}
+            PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}${CFG_PATH}
+            COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}${CFG_PATH}
         )
     endforeach()
 endif()
@@ -893,13 +904,18 @@ if(openPMD_HAVE_PYTHON)
     if(isMultiConfig)
         foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
             string(TOUPPER "${CFG}" CFG_UPPER)
+            if(openPMD_BUILD_NO_CFG_SUBPATH)  # for setup.py
+                set(CFG_PATH "")
+            else()
+                set(CFG_PATH "/${CFG}")
+            endif()
             set_target_properties(openPMD.py PROPERTIES
                 COMPILE_PDB_NAME_${CFG_UPPER} openpmd_api_cxx
-                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
-                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
-                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
-                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
-                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG}/openpmd_api
+                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}${CFG_PATH}/openpmd_api
+                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}${CFG_PATH}/openpmd_api
+                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}${CFG_PATH}/openpmd_api
+                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}${CFG_PATH}/openpmd_api
+                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PYTHON_OUTPUT_DIRECTORY}${CFG_PATH}/openpmd_api
             )
         endforeach()
     endif()
