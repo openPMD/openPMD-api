@@ -422,6 +422,8 @@ Further thanks go to improvements and contributions from:
   HDF5 performance tuning
 * [Bernhard Manfred Gruber (CERN)](https://github.com/bernhardmgruber):
   CMake fix for parallel HDF5
+* [Nils Schild (IPP)](https://github.com/DerNils-git):
+  CMake improvements for subprojects
 
 ### Grants
 

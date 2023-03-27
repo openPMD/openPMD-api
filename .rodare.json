@@ -120,6 +120,12 @@
       "name": "Gruber, Bernhard Manfred",
       "orcid": "0000-0001-7848-1690",
       "type": "Other"
+    },
+    {
+      "affiliation": "Max Planck Institute for Plasma Physics (IPP)",
+      "name": "Schild, Nils",
+      "orcid": "0009-0000-5048-4814",
+      "type": "Other"
     }
   ],
   "title": "C++ & Python API for Scientific I/O with openPMD",
