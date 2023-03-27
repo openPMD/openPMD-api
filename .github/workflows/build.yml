@@ -88,20 +88,37 @@ jobs:
 
     # 0.15.0: CMake: Fix Python Install Directory
     # https://github.com/openPMD/openPMD-api/pull/1393
-    - name: Download Patch 1/1
+    - name: Download Patch 1/4
       uses: suisei-cn/actions-download-file@v1
-      id: adiosbuild
+      id: patch1
       with:
         url: "https://github.com/ax3l/openPMD-api/commit/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch"
         target: src/.patch/
 
     # 0.15.0: macOS AppleClang12 Fixes
     # https://github.com/openPMD/openPMD-api/pull/1395
-    - name: Download Patch 2/2
+    - name: Download Patch 2/4
+      uses: suisei-cn/actions-download-file@v1
+      id: patch2
+      with:
+        url: "https://github.com/ax3l/openPMD-api/commit/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch"
+        target: src/.patch/
+
+    # 0.15.0: Fix: Artifact Placement in Windows Wheels
+    # https://github.com/openPMD/openPMD-api/pull/1400
+    - name: Download Patch 3/4
+      uses: suisei-cn/actions-download-file@v1
+      id: patch3
+      with:
+        url: "https://github.com/ax3l/openPMD-api/commit/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch"
+        target: src/.patch/
+
+    # 0.15.0.post1 bump
+    - name: Download Patch 4/4
       uses: suisei-cn/actions-download-file@v1
       id: setupversion
       with:
-        url: "https://github.com/ax3l/openPMD-api/commit/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch"
+        url: "https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/b510a363aac6b68651ec8081efbb40cb3bda1d4b/0001-Bump-setup.py.patch"
         target: src/.patch/
 
     - name: Apply Patches
@@ -110,6 +127,8 @@ jobs:
         cd src
         python -m patch .patch/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
         python -m patch .patch/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
+        python -m patch .patch/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
+        python -m patch .patch/0001-Bump-setup.py.patch
 
     - name: Build wheel
       env:

@@ -1,4 +1,6 @@
 language: python
+python:
+  - "3.9"
 
 branches:
   only:
@@ -128,6 +130,7 @@ jobs:
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh src/.github/
+  - python -m pip install --upgrade pip setuptools wheel
   - python -m pip install cibuildwheel==2.12.1
   # twine & cryptography: see
   #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
@@ -141,9 +144,13 @@ before_script:
   - cd src/.patch
   - curl -sOL https://github.com/ax3l/openPMD-api/commit/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
   - curl -sOL https://github.com/ax3l/openPMD-api/commit/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
+  - curl -sOL https://github.com/ax3l/openPMD-api/commit/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
+  - curl -sOL https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/b510a363aac6b68651ec8081efbb40cb3bda1d4b/0001-Bump-setup.py.patch
   - cd ..
-  - python3 -m patch .patch/dfd65f23af7f907851d44ceb9e3aebdd05b4045f.patch
+  - python3 -m patch .patch/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
   - python3 -m patch .patch/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
+  - python3 -m patch .patch/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
+  - python3 -m patch .patch/0001-Bump-setup.py.patch
   - cd ..
 
 script:
