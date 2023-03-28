@@ -108,13 +108,32 @@ The default behavior may be restored by setting the :ref:`JSON parameter <backen
 Best Practice at Large Scale
 ----------------------------
 
-A good practice at scale is to disable the online creation of the metadata file.
-After writing the data, run ``bpmeta`` on the (to-be-created) filename to generate the metadata file offline (repeat per iteration for file-based encoding).
-This metadata file is needed for reading, while the actual heavy data resides in ``<metadata filename>.dir/`` directories.
-Note that such a tool is not yet available for ADIOS2, but the ``bpmeta`` utility provided by ADIOS1 is capable of processing files written by ADIOS2.
+A benefitial configuration depends heavily on:
 
-Further options depend heavily on filesystem type, specific file striping, network infrastructure and available RAM on the aggregator nodes.
-A good number for substreams is usually the number of contributing nodes divided by four.
+1. Hardware: filesystem type, specific file striping, network infrastructure and available RAM on the aggregator nodes.
+2. Software: communication and I/O patterns in the data producer/consumer, ADIOS2 engine being used.
+
+The BP4 engine optimizes aggressively for I/O efficiency at large scale, while the BP5 engine implements some compromises for tighter control of host memory usage.
+
+ADIOS2 aggregates at two levels:
+
+1. Aggregators: These are the processes that actually write data to the filesystem.
+   In BP5, there must be at least one aggregatore per compute node.
+2. Subfiles: In BP5, multiple aggregators might write to the same physical file on the filesystem.
+   The BP4 engine does not distinguish the number of aggregators from the number of subfiles, each aggregator writes to one file.
+
+The number of aggregators depends on the actual scale of the application.
+At low and mediocre scale, it is generally preferred to have every process write to the filesystem in order to make good use of parallel resources and utilize the full bandwidth.
+At higher scale, reducing the number of aggregators is suggested, in order to avoid competition for resources between too many writing processes.
+In the latter case, a good number of aggregators is usually the number of contributing nodes.
+A file count lower than the number of nodes might be chosen in both BP4 and BP5 with care, file counts of "number of nodes divided by four" have yielded good results in some setups.
+
+Use of asynchronous I/O functionality (``BurstBufferPath`` in BP4, ``AsyncWrite`` in BP5) depends on the application, and might increase the performance or decrease it.
+Asynchronous I/O can compete with MPI for communication resources, impacting the *compute* performance of an application.
+
+For SST streaming, the default TCP-based backend does not scale well in HPC situations.
+Instead, a high-performance backend (``libfabric``, ``ucx`` or ``mpi`` (only supported for well-configured MPICH)) should be chosen.
+The preferred backend usually depends on the system's native software stack.
 
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS2 manual and talk to your filesystem admins and the ADIOS2 authors.
 Be aware that extreme-scale I/O is a research topic after all.

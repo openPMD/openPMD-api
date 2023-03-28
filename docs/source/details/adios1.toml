@@ -1,2 +1,2 @@
-[adios.dataset]
+[adios1.dataset]
 transform = "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
