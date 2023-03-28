@@ -161,6 +161,11 @@ exit /b 0
   cmake --build build-zlib --target install --config Release
   if errorlevel 1 exit 1
 
+  set "zlib_dll=%BUILD_PREFIX:~1,-1%/zlib/bin/zlib.dll"
+  set "zlib_dll=%zlib_dll:/=\%"
+  del "%zlib_dll%"
+  if errorlevel 1 exit 1
+
   break > zlib-stamp
   if errorlevel 1 exit 1
 exit /b 0

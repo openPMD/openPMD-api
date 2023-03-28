@@ -118,7 +118,7 @@ jobs:
       uses: suisei-cn/actions-download-file@v1
       id: setupversion
       with:
-        url: "https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/b510a363aac6b68651ec8081efbb40cb3bda1d4b/0001-Bump-setup.py.patch"
+        url: "https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/023cbd69e06715e5191ece741bb1de56560a9f96/0001-Bump-setup.py.patch"
         target: src/.patch/
 
     - name: Apply Patches
