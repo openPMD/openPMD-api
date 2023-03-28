@@ -470,7 +470,7 @@ jobs:
 - job: macOS_pip_pypy_pypi
   displayName: macOS PyPy from PyPI
   pool:
-    vmImage: macOS-10.15
+    vmImage: macOS-11
   steps:
   - script: |
       brew update || true
@@ -523,7 +523,7 @@ jobs:
 - job: macOS_pip_pypi_mpich
   displayName: macOS pip from PyPI w/ MPICH
   pool:
-    vmImage: macOS-10.15
+    vmImage: macOS-11
   steps:
   - script: |
       brew update || true
@@ -737,7 +737,7 @@ jobs:
   displayName: macOS homebrew
   timeoutInMinutes: 120
   pool:
-    vmImage: macOS-10.15
+    vmImage: macOS-11
   steps:
   - script: |
       rm -rf /usr/local/bin/2to3
