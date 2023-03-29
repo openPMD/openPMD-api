@@ -210,6 +210,7 @@ for Run in Runs:
     ######################################################################################################################################
 
     # series attributes
+    dt_s = input_series.attribute_dtypes
     for a in input_series.attributes:
         print(f"{a}")
 
@@ -218,11 +219,12 @@ for Run in Runs:
             print(" - skipped")
             continue
 
-        output_series.set_attribute(a, input_series.get_attribute(a))
+        output_series.set_attribute(a, input_series.get_attribute(a), dt_s[a])
 
     # iteration attributes
     # single iteration
     in_it = input_series.iterations[k_it]
+    dt_it = in_it.attribute_dtypes
     for _ in [k_it]:
 
     # OR all iterations:
@@ -231,37 +233,48 @@ for Run in Runs:
         out_it = output_series.iterations[k_it]
         for a in in_it.attributes:
             print(f" {a}")
-            out_it.set_attribute(a, in_it.get_attribute(a))
+            out_it.set_attribute(a, in_it.get_attribute(a), dt_it[a])
 
-        # species attributes
+        # particles group attributes
+        in_pa = in_it.particles
+        out_pa = out_it.particles
+        dt_pa = in_pa.attribute_dtypes
+        for a in in_pa.attributes:
+            print(f"  {a}")
+            out_pa.set_attribute(a, in_pa.get_attribute(a), dt_pa[a])
+
+        # per species attributes
         for k_p, in_p in in_it.particles.items():
             print(k_p)
             out_p = out_it.particles[k_p]
+            dt_p = in_it.particles[k_p].attribute_dtypes
             for a in in_p.attributes:
                 print(f"  {a}")
-                out_p.set_attribute(a, in_p.get_attribute(a))
+                out_p.set_attribute(a, in_p.get_attribute(a), dt_p[a])
 
             # species record attributes
             for k_p_r, in_p_r in in_p.items():
                 print(k_p, k_p_r)
                 out_p_r = out_p[k_p_r]
+                dt_p_r = in_p_r.attribute_dtypes
                 for a in in_p_r.attributes:
                     print(f"   {a}")
                     if a in ["shape", "value"]:
                         print("    - skipped")
                         continue
-                    out_p_r.set_attribute(a, in_p_r.get_attribute(a))
+                    out_p_r.set_attribute(a, in_p_r.get_attribute(a), dt_p_r[a])
 
                 # species record component attributes
                 for k_p_rc, in_p_rc in in_p_r.items():
                     print(f"  {k_p_rc}")
                     out_p_rc = out_p_r[k_p_rc]
+                    dt_p_rc = in_p_rc.attribute_dtypes
                     for a in in_p_rc.attributes:
                         print(f"    {a}")
                         if a in ["shape", "value"]:
                             print("     - skipped")
                             continue
-                        out_p_rc.set_attribute(a, in_p_rc.get_attribute(a))
+                        out_p_rc.set_attribute(a, in_p_rc.get_attribute(a), dt_p_rc[a])
 
     output_series.flush()
 
