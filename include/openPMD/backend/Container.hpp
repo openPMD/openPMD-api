@@ -179,6 +179,9 @@ public:
     using const_pointer = typename InternalContainer::const_pointer;
     using iterator = typename InternalContainer::iterator;
     using const_iterator = typename InternalContainer::const_iterator;
+    using reverse_iterator = typename InternalContainer::reverse_iterator;
+    using const_reverse_iterator =
+        typename InternalContainer::const_reverse_iterator;
 
     iterator begin() noexcept
     {
@@ -204,6 +207,32 @@ public:
     const_iterator cend() const noexcept
     {
         return container().cend();
+    }
+
+    reverse_iterator rbegin() noexcept
+    {
+        return container().rbegin();
+    }
+    const_reverse_iterator rbegin() const noexcept
+    {
+        return container().rbegin();
+    }
+    const_reverse_iterator crbegin() const noexcept
+    {
+        return container().crbegin();
+    }
+
+    reverse_iterator rend() noexcept
+    {
+        return container().rend();
+    }
+    const_reverse_iterator rend() const noexcept
+    {
+        return container().rend();
+    }
+    const_reverse_iterator crend() const noexcept
+    {
+        return container().crend();
     }
 
     bool empty() const noexcept
@@ -235,8 +264,7 @@ public:
     {
         return container().insert(value);
     }
-    template <class P>
-    std::pair<iterator, bool> insert(P &&value)
+    std::pair<iterator, bool> insert(value_type &&value)
     {
         return container().insert(value);
     }
@@ -244,8 +272,7 @@ public:
     {
         return container().insert(hint, value);
     }
-    template <class P>
-    iterator insert(const_iterator hint, P &&value)
+    iterator insert(const_iterator hint, value_type &&value)
     {
         return container().insert(hint, value);
     }
