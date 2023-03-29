@@ -145,7 +145,7 @@ template <typename T>
 inline std::shared_ptr<T> PatchRecordComponent::load()
 {
     uint64_t numPoints = getExtent()[0];
-#if (defined(__clang_major__) && __clang_major__ < 7) ||                       \
+#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
     (defined(__apple_build_version__) && __clang_major__ < 14)
     auto newData =
         std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
