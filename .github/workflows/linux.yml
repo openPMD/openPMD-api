@@ -7,26 +7,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  clang6_nopy_nompi_h5_libcpp:
-    runs-on: ubuntu-18.04
+  clang7_nopy_nompi_h5_libcpp:
+    runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang6_nopy_nompi_h5_libcpp_v2 }
+      with: {path: /opt/spack, key: clang7_nopy_nompi_h5_libcpp_v2}
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-6.0 libc++-dev libc++abi-dev
+        sudo apt-get install clang-7 libc++-7-dev libc++abi-7-dev
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_nompi_h5_libcpp/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_nompi_h5_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -39,21 +39,21 @@ jobs:
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
-  clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp:
-    runs-on: ubuntu-18.04
+  clang7_nopy_ompi_h5_ad1_ad2_bp3_libcpp:
+    runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp_v2 }
+      with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad1_ad2_bp3_libcpp_v2}
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-6.0 libc++-dev libc++abi-dev gfortran libopenmpi-dev python3
+        sudo apt-get install clang-7 libc++-7-dev libc++abi-7-dev gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
@@ -62,7 +62,7 @@ jobs:
         mpiexec --version
         perl --version
         python --version
-        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad1_ad2_bp3_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -202,7 +202,7 @@ jobs:
 #  gcc-7.4.0_py_ompi_h5_ad1_ad2_coveralls
 
   gcc7_py36_pd_dd_ompi_h5_ad1_ad2:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3

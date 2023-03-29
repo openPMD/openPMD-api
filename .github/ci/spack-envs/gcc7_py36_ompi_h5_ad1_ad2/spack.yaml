@@ -47,7 +47,7 @@ spack:
       extra_rpaths: []
       flags: {}
       modules: []
-      operating_system: ubuntu18.04
+      operating_system: ubuntu20.04
       paths:
         cc: /usr/bin/gcc-7
         cxx: /usr/bin/g++-7
