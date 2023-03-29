@@ -33,7 +33,8 @@
 
 namespace openPMD
 {
-template< typename T >
+template<
+typename T >
 inline RecordComponent&
 RecordComponent::makeConstant(T value)
 {
