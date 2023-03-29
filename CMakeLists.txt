@@ -785,6 +785,9 @@ if(openPMD_HAVE_ADIOS1)
 
     target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Serial)
     target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Parallel)
+else()
+    # add stubs to prevent missing symbols in Clang ASAN/UBSAN
+    target_sources(openPMD PRIVATE ${IO_ADIOS1_SEQUENTIAL_SOURCE} ${IO_ADIOS1_SOURCE})
 endif()
 
 # ADIOS2 Backend
