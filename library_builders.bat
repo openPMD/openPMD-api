@@ -71,7 +71,6 @@ exit /b 0
     -DBUILD_SHARED=OFF          ^
     -DBUILD_STATIC=ON           ^
     -DBUILD_TESTS=OFF           ^
-    -DPREFER_EXTERNAL_ZLIB=ON   ^
     -DZLIB_USE_STATIC_LIBS=ON   ^
     -DDEACTIVATE_SNAPPY=ON
   if errorlevel 1 exit 1
@@ -194,7 +193,7 @@ call :install_buildessentials
 call :build_zlib
 :: build_bzip2
 :: build_szip
-::call :build_blosc
-::call :build_zfp
+call :build_blosc
+call :build_zfp
 call :build_hdf5
-::call :build_adios2
+call :build_adios2

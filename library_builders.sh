@@ -192,7 +192,6 @@ function build_blosc {
       -DBUILD_BENCHMARKS=OFF                 \
       -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
-      -DPREFER_EXTERNAL_ZLIB=ON              \
       -DZLIB_USE_STATIC_LIBS=ON              \
       ../c-blosc-*
     make -j${CPU_COUNT}
