@@ -10,11 +10,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          #- os: ubuntu-20.04
-          #  arch: "x86_64"
+          - os: ubuntu-20.04
+            arch: "x86_64"
 
-          #- os: ubuntu-20.04
-          #  arch: "i686"
+          - os: ubuntu-20.04
+            arch: "i686"
 
           # builds faster on Travis-CI:
           #- os: ubuntu-20.04
@@ -34,25 +34,25 @@ jobs:
             arch: "AMD64"
 
           # x86 (32bit)
-          #- os: windows-2019
-          #  arch: "x86"
-          # env:
-          #    CMAKE_GENERATOR: "Visual Studio 16 2019"
-          #    CMAKE_GENERATOR_PLATFORM: "Win32"
+          - os: windows-2019
+            arch: "x86"
+            env:
+              CMAKE_GENERATOR: "Visual Studio 16 2019"
+              CMAKE_GENERATOR_PLATFORM: "Win32"
 
-          #- os: macos-10.15
-          #  arch: "x86_64"
-          #  env:
-          #    MACOSX_DEPLOYMENT_TARGET: 10.15
+          - os: macos-10.15
+            arch: "x86_64"
+            env:
+              MACOSX_DEPLOYMENT_TARGET: 10.15
 
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
           #   https://github.com/pypa/cibuildwheel/pull/704
-          #- os: macos-11
-          #  arch: "arm64"
-          #  env:
-          #    CMAKE_OSX_ARCHITECTURES: "arm64"
-          #    MACOSX_DEPLOYMENT_TARGET: 11.0
+          - os: macos-11
+            arch: "arm64"
+            env:
+              CMAKE_OSX_ARCHITECTURES: "arm64"
+              MACOSX_DEPLOYMENT_TARGET: 11.0
 
           # Apple universal builds that contain x86-64 and arm64 binary code
           #   Needs extra treatment of all librarys that are not CMake
@@ -113,7 +113,7 @@ jobs:
         url: "https://github.com/ax3l/openPMD-api/commit/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch"
         target: src/.patch/
 
-    # 0.15.0.post1 bump
+    # 0.15.0.post2 bump
     - name: Download Patch 4/4
       uses: suisei-cn/actions-download-file@v1
       id: setupversion
@@ -134,7 +134,6 @@ jobs:
       env:
         # (1) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
-        CIBW_BUILD: "cp311-win_amd64"
         CIBW_SKIP: "pp*-manylinux*"
         CIBW_ARCHS: "${{ matrix.arch }}"
         CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
