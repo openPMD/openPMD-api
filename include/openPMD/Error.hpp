@@ -8,10 +8,6 @@
 #include <utility>
 #include <vector>
 
-#if defined(OPENPMD_ADIOS1_IMPLEMENTATION)
-static_assert(false, "ADIOS1 implementation must not include Error.hpp");
-#endif
-
 namespace openPMD
 {
 /**

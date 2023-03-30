@@ -543,13 +543,21 @@ set(IO_SOURCE
         src/IO/InvalidatableFile.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/auxiliary/Filesystem.cpp
+        src/auxiliary/JSON.cpp
+        src/IO/AbstractIOHandlerImpl.cpp
         src/ChunkInfo.cpp
+        src/Error.cpp
+        src/IO/IOTask.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp
         src/IO/IOTask.cpp)
 set(IO_ADIOS1_SOURCE
         src/auxiliary/Filesystem.cpp
+        src/auxiliary/JSON.cpp
+        src/IO/AbstractIOHandlerImpl.cpp
         src/ChunkInfo.cpp
+        src/Error.cpp
+        src/IO/IOTask.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
         src/IO/IOTask.cpp)
@@ -715,9 +723,6 @@ if(openPMD_HAVE_ADIOS1)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_ADIOS1=1)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_MPI=0)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE _NOMPI)  # ADIOS header
-    # This ensures that the ADIOS1 targets don't ever include Error.hpp
-    # To avoid incompatible error types in weird compile configurations
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE OPENPMD_ADIOS1_IMPLEMENTATION)
 
     if(openPMD_HAVE_MPI)
         set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES

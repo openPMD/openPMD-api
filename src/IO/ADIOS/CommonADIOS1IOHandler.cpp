@@ -20,7 +20,7 @@
  */
 
 #include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
-#include "openPMD/ThrowError.hpp"
+#include "openPMD/Error.hpp"
 
 #if openPMD_HAVE_ADIOS1
 
