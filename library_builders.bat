@@ -51,6 +51,9 @@ exit /b 0
   cmake --build build-adios2 --target install --config Release
   if errorlevel 1 exit 1
 
+  rmdir /s /q build-adios2
+  if errorlevel 1 exit 1
+
   break > adios2-stamp
   if errorlevel 1 exit 1
 exit /b 0
@@ -68,6 +71,7 @@ exit /b 0
     -DBUILD_SHARED=OFF          ^
     -DBUILD_STATIC=ON           ^
     -DBUILD_TESTS=OFF           ^
+    -DZLIB_USE_STATIC_LIBS=ON   ^
     -DDEACTIVATE_SNAPPY=ON
   if errorlevel 1 exit 1
 
@@ -75,6 +79,9 @@ exit /b 0
   if errorlevel 1 exit 1
 
   cmake --build build-blosc --target install --config Release
+  if errorlevel 1 exit 1
+
+  rmdir /s /q build-blosc
   if errorlevel 1 exit 1
 
   break > blosc-stamp
@@ -93,6 +100,7 @@ exit /b 0
     -DCMAKE_VERBOSE_MAKEFILE=ON ^
     -DBUILD_SHARED_LIBS=OFF     ^
     -DBUILD_TESTING=OFF         ^
+    -DTEST_SHELL_SCRIPTS=OFF    ^
     -DHDF5_BUILD_CPP_LIB=OFF    ^
     -DHDF5_BUILD_EXAMPLES=OFF   ^
     -DHDF5_BUILD_FORTRAN=OFF    ^
@@ -101,6 +109,7 @@ exit /b 0
     -DHDF5_ENABLE_PARALLEL=OFF  ^
     -DHDF5_ENABLE_SZIP_SUPPORT=OFF ^
     -DHDF5_ENABLE_Z_LIB_SUPPORT=ON ^
+    -DZLIB_USE_STATIC_LIBS=ON   ^
     -DCMAKE_INSTALL_PREFIX=%BUILD_PREFIX%/HDF5
   if errorlevel 1 exit 1
 
@@ -108,6 +117,9 @@ exit /b 0
   if errorlevel 1 exit 1
 
   cmake --build build-hdf5 --target install --config Release
+  if errorlevel 1 exit 1
+
+  rmdir /s /q build-hdf5
   if errorlevel 1 exit 1
 
   break > hdf5-stamp
@@ -137,6 +149,9 @@ exit /b 0
   cmake --build build-zfp --target install --config Release
   if errorlevel 1 exit 1
 
+  rmdir /s /q build-zfp
+  if errorlevel 1 exit 1
+
   break > zfp-stamp
   if errorlevel 1 exit 1
 exit /b 0
@@ -144,12 +159,12 @@ exit /b 0
 :build_zlib
   if exist zlib-stamp exit /b 0
 
-  curl -sLo zlib-1.2.12.zip ^
-    https://github.com/madler/zlib/archive/v1.2.12.zip
-  powershell Expand-Archive zlib-1.2.12.zip -DestinationPath dep-zlib
+  curl -sLo zlib-1.2.13.zip ^
+    https://github.com/madler/zlib/archive/v1.2.13.zip
+  powershell Expand-Archive zlib-1.2.13.zip -DestinationPath dep-zlib
 
-  cmake -S dep-zlib/zlib-1.2.12 -B build-zlib ^
-    -DBUILD_SHARED_LIBS=OFF ^
+  cmake -S dep-zlib/zlib-1.2.13 -B build-zlib ^
+    -DBUILD_SHARED_LIBS=ON ^
     -DCMAKE_BUILD_TYPE=Release
   if errorlevel 1 exit 1
 :: Manually-specified variables were not used by the project:
@@ -159,6 +174,14 @@ exit /b 0
   if errorlevel 1 exit 1
 
   cmake --build build-zlib --target install --config Release
+  if errorlevel 1 exit 1
+
+  set "zlib_dll=%BUILD_PREFIX:~1,-1%/zlib/bin/zlib1.dll"
+  set "zlib_dll=%zlib_dll:/=\%"
+  del "%zlib_dll%"
+  if errorlevel 1 exit 1
+
+  rmdir /s /q build-zlib
   if errorlevel 1 exit 1
 
   break > zlib-stamp

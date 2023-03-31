@@ -118,8 +118,8 @@ function build_adios2 {
         ADIOS2_USE_SST=OFF
     fi
 
-    mkdir build-ADIOS2
-    cd build-ADIOS2
+    mkdir build-adios2
+    cd build-adios2
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     if [ "$(uname -s)" = "Linux" ]
@@ -153,6 +153,8 @@ function build_adios2 {
     make install
     cd -
 
+    rm -rf build-adios2
+
     touch adios2-stamp
 }
 
@@ -178,8 +180,8 @@ function build_blosc {
       DEACTIVATE_SSE2=ON
     fi
 
-    mkdir build-c-blosc
-    cd build-c-blosc
+    mkdir build-blosc
+    cd build-blosc
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake          \
@@ -190,10 +192,13 @@ function build_blosc {
       -DBUILD_BENCHMARKS=OFF                 \
       -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
+      -DZLIB_USE_STATIC_LIBS=ON              \
       ../c-blosc-*
     make -j${CPU_COUNT}
     make install
     cd -
+
+    rm -rf build-blosc
 
     touch blosc-stamp
 }
@@ -221,13 +226,15 @@ function build_zfp {
     make install
     cd -
 
+    rm -rf build-zfp
+
     touch zfp-stamp
 }
 
 function build_zlib {
     if [ -e zlib-stamp ]; then return; fi
 
-    ZLIB_VERSION="1.2.12"
+    ZLIB_VERSION="1.2.13"
 
     curl -sLO https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
     file zlib*.tar.gz
@@ -246,6 +253,8 @@ function build_zlib {
     PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --parallel ${CPU_COUNT}
     PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --target install
     rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so
+
+    rm -rf build-zlib
 
     touch zlib-stamp
 }

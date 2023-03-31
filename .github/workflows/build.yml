@@ -113,12 +113,12 @@ jobs:
         url: "https://github.com/ax3l/openPMD-api/commit/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch"
         target: src/.patch/
 
-    # 0.15.0.post1 bump
+    # 0.15.0.post2 bump
     - name: Download Patch 4/4
       uses: suisei-cn/actions-download-file@v1
       id: setupversion
       with:
-        url: "https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/b510a363aac6b68651ec8081efbb40cb3bda1d4b/0001-Bump-setup.py.patch"
+        url: "https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/023cbd69e06715e5191ece741bb1de56560a9f96/0001-Bump-setup.py.patch"
         target: src/.patch/
 
     - name: Apply Patches
@@ -143,8 +143,8 @@ jobs:
         CIBW_BEFORE_BUILD_WINDOWS: 'cmd /E:ON /V:ON /C .github\library_builders.bat'
         # for the openPMD-api build, CMake shall search for
         # static dependencies of HDF5 and ADIOS1 (see setup.py)
-        CIBW_ENVIRONMENT: HDF5_USE_STATIC_LIBRARIES='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
-        CIBW_ENVIRONMENT_WINDOWS: HDF5_USE_STATIC_LIBRARIES='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON' CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
+        CIBW_ENVIRONMENT: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
+        CIBW_ENVIRONMENT_WINDOWS: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON' CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
         # C++17 support in macOS 10.13+ (partial) and 10.14+ (std::visit) and 10.15+ (std::filesystem::path)
         #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
         # arm64 Python interpreters are built with 11.0
