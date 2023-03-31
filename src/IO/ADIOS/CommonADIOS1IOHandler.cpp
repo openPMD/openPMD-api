@@ -2035,9 +2035,19 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::initJson(json::TracingJSON config)
     }
 }
 
-template class CommonADIOS1IOHandlerImpl<ADIOS1IOHandlerImpl>;
+/*
+ * Sic!
+ * The ADIOS1 IO Handler is built as two CMake targets: serial and parallel.
+ * One receives the definition openPMD_HAVE_MPI=0, the other receives
+ * openPMD_HAVE_MPI=1.
+ * So, if openPMD_HAVE_MPI is true, then we do not need to instantiate both
+ * the serial and the parallel handler down here, since the serial handler will
+ * be instantiated in another target.
+ */
 #if openPMD_HAVE_MPI
 template class CommonADIOS1IOHandlerImpl<ParallelADIOS1IOHandlerImpl>;
+#else
+template class CommonADIOS1IOHandlerImpl<ADIOS1IOHandlerImpl>;
 #endif // openPMD_HAVE_MPI
 
 } // namespace openPMD
