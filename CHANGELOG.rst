@@ -3,6 +3,51 @@
 Changelog
 =========
 
+0.15.1
+------
+**Date:** 2023-04-02
+
+Build Regressions
+
+This release fixes build regressions and minor documentation updates for the 0.15.0 release.
+
+Changes to "0.15.0"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- Build issues:
+
+  - CMake: Fix Python Install Directory #1393
+  - Work-Around: libc++ shared_ptr array #1409
+  - Artifact Placement in Windows Wheels #1400
+  - macOS AppleClang12 Fixes #1395
+  - ADIOS1:
+
+    - ADIOS1 on macOS #1396
+    - If no ADIOS1, then add ADIOS1 sources to main lib #1407
+    - Instantiate only parallel ADIOS1 IO Handler in parallel ADIOS1 lib #1411
+
+Other
+"""""
+
+- Docker: CMake 3.24+: ZLIB_USE_STATIC_LIBS (#1410
+- CI:
+
+  - Test on Ubuntu 20.04 #1408
+  - clang-format also for ``.tpp`` and ``.hpp.in`` files #1403
+- docs:
+
+  - update funding #1412
+  - HTML5: CSS updates #1397 #1413
+  - README: Remove LGTM Batches #1402
+  - Docs TOML and ADIOS2 best practices #1404
+  - Docs: ADIOS1 EOL in Overview #1398
+  - Releases: Nils Schild (IPP) #1394
+  - Formatting of lists in 0.15.0 changelog #1399
+
+
 0.15.0
 ------
 **Date:** 2023-03-25
