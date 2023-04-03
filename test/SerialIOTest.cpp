@@ -6031,7 +6031,7 @@ void adios2_bp5_no_steps(bool usesteps)
         IO.DefineAttribute("/openPMD", std::string("1.1.0"));
         IO.DefineAttribute("/openPMDextension", uint32_t(0));
         IO.DefineAttribute("/software", std::string("openPMD-api"));
-        IO.DefineAttribute("/softwareVersion", std::string("0.15.0-dev"));
+        IO.DefineAttribute("/softwareVersion", std::string("0.15.1-dev"));
 
         IO.DefineAttribute("/data/0/dt", double(1));
         IO.DefineAttribute(
