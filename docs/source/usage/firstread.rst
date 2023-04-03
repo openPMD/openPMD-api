@@ -11,34 +11,34 @@ We are using the examples files from `openPMD-example-datasets <https://github.c
    <style>
    @media screen and (min-width: 60em) {
        /* C++17 and Python code samples side-by-side  */
-       #first-read > .section > .section:nth-of-type(2n+1) {
+       #first-read > section > section:nth-of-type(2n+1) {
            float: left;
            width: 48%;
            margin-right: 4%;
        }
-       #first-read > .section > .section:nth-of-type(2n+0):after {
+       #first-read > section > section:nth-of-type(2n+0):after {
            content: "";
            display: table;
            clear: both;
        }
        /* only show first C++17 and Python Headline */
-       #first-read > .section > .section:not(#c-17):not(#python) > h3 {
+       #first-read > section > section:not(#c-17):not(#python) > h3 {
            display: none;
        }
    }
    /* align language headline */
-   #first-read > .section > .section > h3 {
+   #first-read > section > section > h3 {
        text-align: center;
        padding-left: 1em;
    }
    /* avoid jumping of headline when hovering to get anchor */
-   #first-read > .section > .section > h3 > a.headerlink {
+   #first-read > section > section > h3 > a.headerlink {
        display: inline-block;
    }
-   #first-read > .section > .section > h3 > .headerlink:after {
+   #first-read > section > section > h3 > .headerlink:after {
        visibility: hidden;
    }
-   #first-read > .section > .section > h3:hover > .headerlink:after {
+   #first-read > section > section > h3:hover > .headerlink:after {
        visibility: visible;
    }
    </style>
