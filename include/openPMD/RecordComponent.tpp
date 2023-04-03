@@ -30,57 +30,53 @@
 
 #include <memory>
 
-
 namespace openPMD
 {
-template< typename T >
-inline RecordComponent&
-RecordComponent::makeConstant(T value)
+template <typename T>
+inline RecordComponent &RecordComponent::makeConstant(T value)
 {
-    if( written() )
-        throw std::runtime_error("A recordComponent can not (yet) be made constant after it has been written.");
+    if (written())
+        throw std::runtime_error(
+            "A recordComponent can not (yet) be made constant after it has "
+            "been written.");
 
-    auto & rc = get();
+    auto &rc = get();
 
     rc.m_constantValue = Attribute(value);
     rc.m_isConstant = true;
     return *this;
 }
 
-template< typename T >
-inline RecordComponent&
-RecordComponent::makeEmpty( uint8_t dimensions )
+template <typename T>
+inline RecordComponent &RecordComponent::makeEmpty(uint8_t dimensions)
 {
-    return makeEmpty( Dataset(
-        determineDatatype< T >(),
-        Extent( dimensions, 0 ) ) );
+    return makeEmpty(Dataset(determineDatatype<T>(), Extent(dimensions, 0)));
 }
 
-template< typename T >
-inline std::shared_ptr< T > RecordComponent::loadChunk(
-    Offset o, Extent e )
+template <typename T>
+inline std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
     Offset offset = o;
-    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
+    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
         offset = Offset(dim, 0u);
 
     //   extent = {-1u}: take full size
     Extent extent(dim, 1u);
-    if( e.size() == 1u && e.at(0) == -1u )
+    if (e.size() == 1u && e.at(0) == -1u)
     {
         extent = getExtent();
-        for( uint8_t i = 0u; i < dim; ++i )
+        for (uint8_t i = 0u; i < dim; ++i)
             extent[i] -= offset[i];
     }
     else
         extent = e;
 
     uint64_t numPoints = 1u;
-    for( auto const& dimensionSize : extent )
+    for (auto const &dimensionSize : extent)
         numPoints *= dimensionSize;
 
 #if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
@@ -96,23 +92,23 @@ inline std::shared_ptr< T > RecordComponent::loadChunk(
 #endif
 }
 
-template< typename T >
-inline void RecordComponent::loadChunk(
-    std::shared_ptr< T > data,
-    Offset o,
-    Extent e )
+template <typename T>
+inline void
+RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     Datatype dtype = determineDatatype(data);
-    if( dtype != getDatatype() )
-        if( !isSameInteger< T >( getDatatype() ) &&
-            !isSameFloatingPoint< T >( getDatatype() ) &&
-            !isSameComplexFloatingPoint< T >( getDatatype() ) )
+    if (dtype != getDatatype())
+        if (!isSameInteger<T>(getDatatype()) &&
+            !isSameFloatingPoint<T>(getDatatype()) &&
+            !isSameComplexFloatingPoint<T>(getDatatype()))
         {
             std::string const data_type_str = datatypeToString(getDatatype());
-            std::string const requ_type_str = datatypeToString(determineDatatype<T>());
-            std::string err_msg = "Type conversion during chunk loading not yet implemented! ";
+            std::string const requ_type_str =
+                datatypeToString(determineDatatype<T>());
+            std::string err_msg =
+                "Type conversion during chunk loading not yet implemented! ";
             err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
-            throw std::runtime_error( err_msg );
+            throw std::runtime_error(err_msg);
         }
 
     uint8_t dim = getDimensionality();
@@ -120,59 +116,60 @@ inline void RecordComponent::loadChunk(
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
     Offset offset = o;
-    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
+    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
         offset = Offset(dim, 0u);
 
     //   extent = {-1u}: take full size
     Extent extent(dim, 1u);
-    if( e.size() == 1u && e.at(0) == -1u )
+    if (e.size() == 1u && e.at(0) == -1u)
     {
         extent = getExtent();
-        for( uint8_t i = 0u; i < dim; ++i )
+        for (uint8_t i = 0u; i < dim; ++i)
             extent[i] -= offset[i];
     }
     else
         extent = e;
 
-    if( extent.size() != dim || offset.size() != dim )
+    if (extent.size() != dim || offset.size() != dim)
     {
         std::ostringstream oss;
         oss << "Dimensionality of chunk ("
             << "offset=" << offset.size() << "D, "
             << "extent=" << extent.size() << "D) "
-            << "and record component ("
-            << int(dim) << "D) "
+            << "and record component (" << int(dim) << "D) "
             << "do not match.";
         throw std::runtime_error(oss.str());
     }
     Extent dse = getExtent();
-    for( uint8_t i = 0; i < dim; ++i )
-        if( dse[i] < offset[i] + extent[i] )
-            throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
-                                     + ". DS: " + std::to_string(dse[i])
-                                     + " - Chunk: " + std::to_string(offset[i] + extent[i])
-                                     + ")");
-    if( !data )
-        throw std::runtime_error("Unallocated pointer passed during chunk loading.");
+    for (uint8_t i = 0; i < dim; ++i)
+        if (dse[i] < offset[i] + extent[i])
+            throw std::runtime_error(
+                "Chunk does not reside inside dataset (Dimension on index " +
+                std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                " - Chunk: " + std::to_string(offset[i] + extent[i]) + ")");
+    if (!data)
+        throw std::runtime_error(
+            "Unallocated pointer passed during chunk loading.");
 
-    auto & rc = get();
-    if( constant() )
+    auto &rc = get();
+    if (constant())
     {
         uint64_t numPoints = 1u;
-        for( auto const& dimensionSize : extent )
+        for (auto const &dimensionSize : extent)
             numPoints *= dimensionSize;
 
-        T value = rc.m_constantValue.get< T >();
+        T value = rc.m_constantValue.get<T>();
 
-        T* raw_ptr = data.get();
+        T *raw_ptr = data.get();
         std::fill(raw_ptr, raw_ptr + numPoints, value);
-    } else
+    }
+    else
     {
-        Parameter< Operation::READ_DATASET > dRead;
+        Parameter<Operation::READ_DATASET> dRead;
         dRead.offset = offset;
         dRead.extent = extent;
         dRead.dtype = getDatatype();
-        dRead.data = std::static_pointer_cast< void >(data);
+        dRead.data = std::static_pointer_cast<void>(data);
         rc.m_chunks.push(IOTask(this, dRead));
     }
 }
@@ -190,13 +187,10 @@ inline void RecordComponent::loadChunk(
 template <typename T>
 inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    loadChunk(
-        auxiliary::shareRaw(ptr),
-        std::move(offset),
-        std::move(extent));
+    loadChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
 }
 
-template< typename T >
+template <typename T>
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
@@ -250,13 +244,10 @@ RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
 template <typename T>
 void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    storeChunk(
-        auxiliary::shareRaw(ptr),
-        std::move(offset),
-        std::move(extent));
+    storeChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
 }
 
-template< typename T_ContiguousContainer >
+template <typename T_ContiguousContainer>
 inline typename std::enable_if_t<
     auxiliary::IsContiguousContainer_v<T_ContiguousContainer> >
 RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
@@ -266,64 +257,57 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
     Offset offset = o;
-    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
+    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
         offset = Offset(dim, 0u);
 
     //   extent = {-1u}: take full size
     Extent extent(dim, 1u);
     //   avoid outsmarting the user:
     //   - stdlib data container implement 1D -> 1D chunk to write
-    if( e.size() == 1u && e.at(0) == -1u && dim == 1u )
+    if (e.size() == 1u && e.at(0) == -1u && dim == 1u)
         extent.at(0) = data.size();
     else
         extent = e;
 
-    storeChunk(
-        auxiliary::shareRaw(data.data()),
-        offset,
-        extent);
+    storeChunk(auxiliary::shareRaw(data.data()), offset, extent);
 }
 
-template< typename T, typename F >
-inline DynamicMemoryView< T >
-RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
+template <typename T, typename F>
+inline DynamicMemoryView<T>
+RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
-    if( constant() )
+    if (constant())
         throw std::runtime_error(
-            "Chunks cannot be written for a constant RecordComponent." );
-    if( empty() )
+            "Chunks cannot be written for a constant RecordComponent.");
+    if (empty())
         throw std::runtime_error(
-            "Chunks cannot be written for an empty RecordComponent." );
+            "Chunks cannot be written for an empty RecordComponent.");
     Datatype dtype = determineDatatype<T>();
-    if( dtype != getDatatype() )
+    if (dtype != getDatatype())
     {
         std::ostringstream oss;
-        oss << "Datatypes of chunk data ("
-            << dtype
-            << ") and record component ("
-            << getDatatype()
-            << ") do not match.";
+        oss << "Datatypes of chunk data (" << dtype
+            << ") and record component (" << getDatatype() << ") do not match.";
         throw std::runtime_error(oss.str());
     }
     uint8_t dim = getDimensionality();
-    if( e.size() != dim || o.size() != dim )
+    if (e.size() != dim || o.size() != dim)
     {
         std::ostringstream oss;
         oss << "Dimensionality of chunk ("
             << "offset=" << o.size() << "D, "
             << "extent=" << e.size() << "D) "
-            << "and record component ("
-            << int(dim) << "D) "
+            << "and record component (" << int(dim) << "D) "
             << "do not match.";
         throw std::runtime_error(oss.str());
     }
     Extent dse = getExtent();
-    for( uint8_t i = 0; i < dim; ++i )
-        if( dse[i] < o[i] + e[i] )
-            throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
-                                     + ". DS: " + std::to_string(dse[i])
-                                     + " - Chunk: " + std::to_string(o[i] + e[i])
-                                     + ")");
+    for (uint8_t i = 0; i < dim; ++i)
+        if (dse[i] < o[i] + e[i])
+            throw std::runtime_error(
+                "Chunk does not reside inside dataset (Dimension on index " +
+                std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
 
     /*
      * The openPMD backend might not yet know about this dataset.
@@ -333,7 +317,7 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
     seriesFlush({FlushLevel::SkeletonOnly});
 
     size_t size = 1;
-    for( auto ext : e )
+    for (auto ext : e)
     {
         size *= ext;
     }
@@ -341,17 +325,17 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
      * Flushing the skeleton does not create datasets,
      * so we might need to do it now.
      */
-    if( !written() )
+    if (!written())
     {
-        auto & rc = get();
-        Parameter< Operation::CREATE_DATASET > dCreate;
+        auto &rc = get();
+        Parameter<Operation::CREATE_DATASET> dCreate;
         dCreate.name = rc.m_name;
         dCreate.extent = getExtent();
         dCreate.dtype = getDatatype();
         dCreate.options = rc.m_dataset.options;
         IOHandler()->enqueue(IOTask(this, dCreate));
     }
-    Parameter< Operation::GET_BUFFER_VIEW > getBufferView;
+    Parameter<Operation::GET_BUFFER_VIEW> getBufferView;
     getBufferView.offset = o;
     getBufferView.extent = e;
     getBufferView.dtype = getDatatype();
@@ -369,22 +353,17 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
 }
 
-template< typename T >
-inline DynamicMemoryView< T >
-RecordComponent::storeChunk( Offset offset, Extent extent )
+template <typename T>
+inline DynamicMemoryView<T>
+RecordComponent::storeChunk(Offset offset, Extent extent)
 {
-    return storeChunk< T >(
-        std::move( offset ),
-        std::move( extent ),
-        []( size_t size )
-        {
+    return storeChunk<T>(std::move(offset), std::move(extent), [](size_t size) {
 #if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
     (defined(__apple_build_version__) && __clang_major__ < 14)
-            return std::shared_ptr< T >{
-                new T[ size ], []( auto * ptr ) { delete[] ptr; } };
+        return std::shared_ptr<T>{new T[size], [](auto *ptr) { delete[] ptr; }};
 #else
             return std::shared_ptr< T[] >{ new T[ size ] };
 #endif
-        } );
+    });
 }
-}
+} // namespace openPMD

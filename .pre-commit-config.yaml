@@ -69,6 +69,14 @@ repos:
   rev: v16.0.0
   hooks:
   - id: clang-format
+    # By default, the clang-format hook configures:
+    # 'types_or': [c++, c, c#, cuda, java, javascript, json, objective-c, proto, textproto]
+    # Unfortunately, the c++ option does not recognize .tpp files, so we need to do this manually
+    # Since file filters in pre-commit work by logical AND, it's only possible to narrow the filter definition
+    # So, we add a regex for the type of file that we want and additionally disable the 'types_or'
+    # option entirely.
+    'types_or': []
+    files: .*\.(tpp|h|hpp|hpp\.in|cpp|cxx|js|json)$
 
 # Autoremoves unused Python imports
 - repo: https://github.com/hadialqattan/pycln
