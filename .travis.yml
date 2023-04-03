@@ -8,7 +8,7 @@ branches:
 
 env:
   global:
-    - OPENPMD_GIT_REF="0.15.0"
+    - OPENPMD_GIT_REF="0.15.1"
 
     - CIBW_PROJECT_REQUIRES_PYTHON=">=3.7"
     # Install dependencies on Linux and OSX
@@ -139,19 +139,19 @@ install:
   - python3 -m pip install "patch==1.*"
 
 # Download & Apply Patches
-before_script:
-  - mkdir -p src/.patch
-  - cd src/.patch
-  - curl -sOL https://github.com/ax3l/openPMD-api/commit/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
-  - curl -sOL https://github.com/ax3l/openPMD-api/commit/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
-  - curl -sOL https://github.com/ax3l/openPMD-api/commit/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
-  - curl -sOL https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/023cbd69e06715e5191ece741bb1de56560a9f96/0001-Bump-setup.py.patch
-  - cd ..
-  - python3 -m patch .patch/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
-  - python3 -m patch .patch/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
-  - python3 -m patch .patch/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
-  - python3 -m patch .patch/0001-Bump-setup.py.patch
-  - cd ..
+#before_script:
+#  - mkdir -p src/.patch
+#  - cd src/.patch
+#  - curl -sOL https://github.com/ax3l/openPMD-api/commit/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
+#  - curl -sOL https://github.com/ax3l/openPMD-api/commit/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
+#  - curl -sOL https://github.com/ax3l/openPMD-api/commit/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
+#  - curl -sOL https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/023cbd69e06715e5191ece741bb1de56560a9f96/0001-Bump-setup.py.patch
+#  - cd ..
+#  - python3 -m patch .patch/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
+#  - python3 -m patch .patch/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
+#  - python3 -m patch .patch/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
+#  - python3 -m patch .patch/0001-Bump-setup.py.patch
+#  - cd ..
 
 script:
   - cd src
