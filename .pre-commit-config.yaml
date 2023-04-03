@@ -76,7 +76,7 @@ repos:
     # So, we add a regex for the type of file that we want and additionally disable the 'types_or'
     # option entirely.
     'types_or': []
-    files: .*\.(tpp|hpp|cpp)$
+    files: .*\.(tpp|h|hpp|hpp\.in|cpp|cxx|js|json)$
 
 # Autoremoves unused Python imports
 - repo: https://github.com/hadialqattan/pycln
