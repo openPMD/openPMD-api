@@ -10,34 +10,34 @@ Step-by-step: how to write scientific data with openPMD-api?
    <style>
    @media screen and (min-width: 60em) {
        /* C++17 and Python code samples side-by-side  */
-       #first-write > .section > .section:nth-of-type(2n+1) {
+       #first-write > section > section:nth-of-type(2n+1) {
            float: left;
            width: 48%;
            margin-right: 4%;
        }
-       #first-write > .section > .section:nth-of-type(2n+0):after {
+       #first-write > section > section:nth-of-type(2n+0):after {
            content: "";
            display: table;
            clear: both;
        }
        /* only show first C++17 and Python Headline */
-       #first-write > .section > .section:not(#c-17):not(#python) > h3 {
+       #first-write > section > section:not(#c-17):not(#python) > h3 {
            display: none;
        }
    }
    /* align language headline */
-   #first-write > .section > .section > h3 {
+   #first-write > section > section > h3 {
        text-align: center;
        padding-left: 1em;
    }
    /* avoid jumping of headline when hovering to get anchor */
-   #first-write > .section > .section > h3 > a.headerlink {
+   #first-write > section > section > h3 > a.headerlink {
        display: inline-block;
    }
-   #first-write > .section > .section > h3 > .headerlink:after {
+   #first-write > section > section > h3 > .headerlink:after {
        visibility: hidden;
    }
-   #first-write > .section > .section > h3:hover > .headerlink:after {
+   #first-write > section > section > h3:hover > .headerlink:after {
        visibility: visible;
    }
    </style>
