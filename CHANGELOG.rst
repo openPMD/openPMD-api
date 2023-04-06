@@ -3,6 +3,27 @@
 Changelog
 =========
 
+0.16.0
+------
+**Date:** TBA
+
+[Title]
+
+[Summary]
+
+Changes to "0.15.0"
+^^^^^^^^^^^^^^^^^^^
+
+Features
+""""""""
+
+Bug Fixes
+"""""""""
+
+Other
+"""""
+
+
 0.15.1
 ------
 **Date:** 2023-04-02
