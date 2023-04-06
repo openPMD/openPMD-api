@@ -3,80 +3,12 @@
 ADIOS1
 ======
 
-openPMD supports writing to and reading from ADIOS1 ``.bp`` files.
-For this, the installed copy of openPMD must have been built with support for the ADIOS1 backend.
-To build openPMD with support for ADIOS, use the CMake option ``-DopenPMD_USE_ADIOS1=ON``.
-For further information, check out the :ref:`installation guide <install>`,
-:ref:`build dependencies <development-dependencies>` and the :ref:`build options <development-buildoptions>`.
+The ADIOS1 library is no longer developed in favor of ADIOS2.
+Consequently, ADIOS1 support was removed in openPMD-api 0.16.0 and newer.
+Please transition to ADIOS2.
 
-.. note::
-
-   This backend is deprecated, please use ADIOS2 instead.
-
-
-I/O Method
-----------
-
-ADIOS1 has several staging methods for alternative file formats, yet natively writes to ``.bp`` files.
-We currently implement the ``MPI_AGGREGATE`` transport method for MPI-parallel write (``POSIX`` for serial write) and ``ADIOS_READ_METHOD_BP`` for read.
-
-
-Backend-Specific Controls
--------------------------
-
-The following environment variables control ADIOS1 I/O behavior at runtime.
-Fine-tuning these is especially useful when running at large scale.
-
-============================================== ========== ================================================================================
-environment variable                           default    description
-============================================== ========== ================================================================================
-``OPENPMD_ADIOS_NUM_AGGREGATORS``              ``1``      Number of I/O aggregator nodes for ADIOS1 ``MPI_AGGREGATE`` transport method.
-``OPENPMD_ADIOS_NUM_OST``                      ``0``      Number of I/O OSTs for ADIOS1 ``MPI_AGGREGATE`` transport method.
-``OPENPMD_ADIOS_HAVE_METADATA_FILE``           ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
-``OPENPMD_BP_BACKEND``                         ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
-``OPENPMD_ADIOS_SUPPRESS_DEPRECATED_WARNING``  ``0``      Set to ``1`` to suppress ADIOS1 deprecation warnings.
-============================================== ========== ================================================================================
-
-Please refer to the `ADIOS1 manual, section 6.1.5 <https://users.nccs.gov/~pnorbert/ADIOS-UsersManual-1.13.1.pdf>`_ for details on I/O tuning.
-
-In case both the ADIOS1 backend and the :ref:`ADIOS2 backend <backends-adios2>` are enabled, set ``OPENPMD_BP_BACKEND`` to ``ADIOS1`` to enforce using ADIOS1.
-If only the ADIOS1 backend was compiled but not the :ref:`ADIOS2 backend <backends-adios2>`, the default of ``OPENPMD_BP_BACKEND`` is automatically switched to ``ADIOS1``.
-Be advised that ADIOS1 only supports ``.bp`` files up to the internal version BP3, while ADIOS2 supports BP3, BP4 and later formats.
-
-
-Best Practice at Large Scale
-----------------------------
-
-A good practice at scale is to disable the online creation of the metadata file.
-After writing the data, run ``bpmeta`` on the (to-be-created) filename to generate the metadata file offline (repeat per iteration for file-based encoding).
-This metadata file is needed for reading, while the actual heavy data resides in ``<metadata filename>.dir/`` directories.
-
-Further options depend heavily on filesystem type, specific file striping, network infrastructure and available RAM on the aggregator nodes.
-If your filesystem exposes explicit object-storage-targets (OSTs), such as Lustre, try to set the number of OSTs to the maximum number available and allowed per job (e.g. non-full), assuming the number of writing MPI ranks is larger.
-A good number for aggregators is usually the number of contributing nodes divided by four.
-
-For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS1 manual and talk to your filesystem admins and the ADIOS1 authors.
-Be aware that extreme-scale I/O is a research topic after all.
-
-
-Limitations
------------
-
-.. note::
-
-   You cannot initialize and use more than one ``openPMD::Series`` with ADIOS1 backend at the same time in a process, even if both Series operate on totally independent data.
-   This is an upstream bug in ADIOS1 that we cannot control: ADIOS1 cannot be initialized more than once, probably because it shares some internal state.
-
-.. note::
-
-   The way we currently implement ADIOS1 in openPMD-api is sub-ideal and we close/re-open file handles way too often.
-   Consequently, this can lead to severe performance degradation unless fixed.
-   Mea culpa, we did better in the past (in PIConGPU).
-   Please consider using our ADIOS2 backend instead, on which we focus our developments these days.
-
-.. note::
-
-   ADIOS1 does not support attributes that are `arrays of complex types <https://github.com/ornladios/ADIOS/issues/212>`_.
+For reading legacy ADIOS1 BP3 files, either use an older version of openPMD-api or the BP3 backend in ADIOS2.
+Note that ADIOS2 does not support compression in BP3 files.
 
 
 Selected References

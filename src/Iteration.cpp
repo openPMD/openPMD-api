@@ -219,20 +219,6 @@ void Iteration::flushFileBased(
     }
     else
     {
-        // operations for create mode
-        if ((IOHandler()->m_frontendAccess == Access::CREATE) &&
-            ((IOHandler()->backendName() == "MPI_ADIOS1") ||
-             (IOHandler()->backendName() == "ADIOS1")))
-        {
-            Parameter<Operation::OPEN_FILE> fOpen;
-            fOpen.name = filename;
-            fOpen.encoding = IterationEncoding::fileBased;
-            IOHandler()->enqueue(IOTask(&s.writable(), fOpen));
-            flush(flushParams);
-
-            return;
-        }
-
         // operations for read/read-write mode
         /* open file */
         s.openIteration(i, *this);

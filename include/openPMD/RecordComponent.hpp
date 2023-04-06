@@ -136,7 +136,6 @@ public:
      *
      * Backend support for resizing datasets:
      * * JSON: Supported
-     * * ADIOS1: Unsupported
      * * ADIOS2: Supported as of ADIOS2 2.7.0
      * * HDF5: (Currently) unsupported.
      *   Will be probably supported as soon as chunking is supported in HDF5.

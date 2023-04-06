@@ -14,7 +14,6 @@ CMake Option                   Values          Description
 ============================== =============== ========================================================================
 ``openPMD_USE_MPI``            **AUTO**/ON/OFF Parallel, Multi-Node I/O for clusters
 ``openPMD_USE_HDF5``           **AUTO**/ON/OFF HDF5 backend (``.h5`` files)
-``openPMD_USE_ADIOS1``         AUTO/ON/**OFF** ADIOS1 backend (``.bp`` files up to version BP3) - deprecated
 ``openPMD_USE_ADIOS2``         **AUTO**/ON/OFF ADIOS2 backend (``.bp`` files in BP3, BP4 or higher)
 ``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Enable Python bindings
 ``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`1`
@@ -42,7 +41,6 @@ CMake Option                   Values          Description
 ============================== =============== ==================================================
 ``openPMD_BUILD_SHARED_LIBS``  **ON**/OFF      Build the C++ API as shared library
 ``HDF5_USE_STATIC_LIBRARIES``  ON/**OFF**      Require static HDF5 library
-``ADIOS_USE_STATIC_LIBS``      ON/**OFF**      Require static ADIOS1 library
 ============================== =============== ==================================================
 
 Note that python modules (``openpmd_api.cpython.[...].so`` or ``openpmd_api.pyd``) are always dynamic libraries.

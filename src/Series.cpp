@@ -2155,7 +2155,6 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
     {
         std::map<std::string, Format> const backendDescriptors{
             {"hdf5", Format::HDF5},
-            {"adios1", Format::ADIOS1},
             {"adios2", Format::ADIOS2_BP},
             {"json", Format::JSON}};
         std::string backend;

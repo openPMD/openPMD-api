@@ -34,7 +34,7 @@ std::vector<std::string> getBackends()
     // first component: backend file ending
     // second component: whether to test 128 bit values
     std::vector<std::string> res;
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2
     res.emplace_back("bp");
 #endif
 #if openPMD_HAVE_HDF5
@@ -70,14 +70,6 @@ TEST_CASE("parallel_multi_series_test", "[parallel]")
     std::list<Series> allSeries;
 
     auto myBackends = getBackends();
-
-    // this test demonstrates an ADIOS1 (upstream) bug, comment this section to
-    // trigger it
-    auto const rmEnd = std::remove_if(
-        myBackends.begin(), myBackends.end(), [](std::string const &beit) {
-            return beit == "bp" && determineFormat("test.bp") == Format::ADIOS1;
-        });
-    myBackends.erase(rmEnd, myBackends.end());
 
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3})
@@ -385,8 +377,7 @@ TEST_CASE("no_parallel_hdf5", "[parallel][hdf5]")
 
 #endif
 
-// this one works for both ADIOS1 and ADIOS2
-#if (openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2) && openPMD_HAVE_MPI
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 void available_chunks_test(std::string file_ending)
 {
     int r_mpi_rank{-1}, r_mpi_size{-1};
@@ -481,11 +472,6 @@ void extendDataset(std::string const &ext, std::string const &jsonConfig)
     std::iota(data2.begin(), data2.end(), 25);
     {
         Series write(filename, Access::CREATE, MPI_COMM_WORLD, jsonConfig);
-        if (ext == "bp" && write.backend() != "ADIOS2")
-        {
-            // dataset resizing unsupported in ADIOS1
-            return;
-        }
         Dataset ds1{Datatype::INT, {mpi_size, 25}};
         Dataset ds2{{mpi_size, 50}};
 
@@ -525,7 +511,7 @@ TEST_CASE("extend_dataset", "[parallel]")
 }
 #endif
 
-#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 TEST_CASE("adios_write_test", "[parallel][adios]")
 {
     Series o =
@@ -538,7 +524,7 @@ TEST_CASE("adios_write_test", "[parallel][adios]")
     auto mpi_size = static_cast<uint64_t>(size);
     auto mpi_rank = static_cast<uint64_t>(rank);
 
-    o.setAuthor("Parallel ADIOS1");
+    o.setAuthor("Parallel ADIOS2");
     ParticleSpecies &e = o.iterations[1].particles["e"];
 
     std::vector<double> position_global(mpi_size);
@@ -587,7 +573,7 @@ TEST_CASE("adios_write_test_skip_declare", "[parallel][adios]")
     write_test_zero_extent(true, "bp", false, false);
 }
 
-TEST_CASE("hzdr_adios_sample_content_test", "[parallel][adios1]")
+TEST_CASE("hzdr_adios_sample_content_test", "[parallel][adios2][bp3]")
 {
     int mpi_rank{-1};
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -720,7 +706,6 @@ void close_iteration_test(std::string file_ending)
     std::vector<int> data{2, 4, 6, 8};
     // { // we do *not* need these parentheses
     Series write(name, Access::CREATE, MPI_COMM_WORLD);
-    bool isAdios1 = write.backend() == "MPI_ADIOS1";
     {
         Iteration it0 = write.iterations[0];
         auto E_x = it0.meshes["E"]["x"];
@@ -731,14 +716,6 @@ void close_iteration_test(std::string file_ending)
     write.flush();
     // }
 
-    if (isAdios1)
-    {
-        // run a simplified test for Adios1 since Adios1 has issues opening
-        // twice in the same process
-        REQUIRE(auxiliary::file_exists(
-            "../samples/close_iterations_parallel_0.bp"));
-    }
-    else
     {
         Series read(name, Access::READ_ONLY, MPI_COMM_WORLD);
         Iteration it0 = read.iterations[0];
@@ -764,14 +741,6 @@ void close_iteration_test(std::string file_ending)
         REQUIRE_THROWS(write.flush());
     }
 
-    if (isAdios1)
-    {
-        // run a simplified test for Adios1 since Adios1 has issues opening
-        // twice in the same process
-        REQUIRE(auxiliary::file_exists(
-            "../samples/close_iterations_parallel_1.bp"));
-    }
-    else
     {
         Series read(name, Access::READ_ONLY, MPI_COMM_WORLD);
         Iteration it1 = read.iterations[1];
@@ -1075,11 +1044,6 @@ void adios2_streaming(bool variableBasedLayout)
     int rank{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1")
-    {
-        // run this test for ADIOS2 only
-        return;
-    }
 
     if (size < 2 || rank > 1)
     {
@@ -1179,11 +1143,6 @@ TEST_CASE("adios2_streaming", "[pseudoserial][adios2]")
 
 TEST_CASE("parallel_adios2_json_config", "[parallel][adios2]")
 {
-    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1")
-    {
-        // run this test for ADIOS2 only
-        return;
-    }
     int size{-1};
     int rank{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -1327,11 +1286,6 @@ void adios2_ssc()
     int global_rank{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &global_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
-    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1")
-    {
-        // run this test for ADIOS2 only
-        return;
-    }
 
     if (global_size < 2)
     {
@@ -1489,16 +1443,6 @@ void append_mode(
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
         }
-        if (write.backend() == "MPI_ADIOS1")
-        {
-            REQUIRE_THROWS_WITH(
-                write.flush(),
-                Catch::Equals(
-                    "Operation unsupported in ADIOS1: Appending to existing "
-                    "file on disk (use Access::CREATE to overwrite)"));
-            // destructor will be noisy now
-            return;
-        }
 
         writeSomeIterations(
             write.writeIterations(), std::vector<uint64_t>{3, 2});
@@ -1518,16 +1462,6 @@ void append_mode(
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
         }
-        if (write.backend() == "MPI_ADIOS1")
-        {
-            REQUIRE_THROWS_WITH(
-                write.flush(),
-                Catch::Equals(
-                    "Operation unsupported in ADIOS1: Appending to existing "
-                    "file on disk (use Access::CREATE to overwrite)"));
-            // destructor will be noisy now
-            return;
-        }
 
         writeSomeIterations(
             write.writeIterations(), std::vector<uint64_t>{4, 3, 10});
@@ -1539,13 +1473,6 @@ void append_mode(
         if (variableBased)
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
-        }
-        if (write.backend() == "MPI_ADIOS1")
-        {
-            REQUIRE_THROWS_AS(
-                write.flush(), error::OperationUnsupportedInBackend);
-            // destructor will be noisy now
-            return;
         }
 
         writeSomeIterations(
@@ -1681,17 +1608,6 @@ void append_mode(
             {
                 write.setIterationEncoding(IterationEncoding::variableBased);
             }
-            if (write.backend() == "ADIOS1")
-            {
-                REQUIRE_THROWS_WITH(
-                    write.flush(),
-                    Catch::Equals(
-                        "Operation unsupported in ADIOS1: Appending to "
-                        "existing "
-                        "file on disk (use Access::CREATE to overwrite)"));
-                // destructor will be noisy now
-                return;
-            }
 
             writeSomeIterations(
                 write.writeIterations(), std::vector<uint64_t>{4, 5});
@@ -1808,21 +1724,6 @@ TEST_CASE("append_mode", "[serial]")
 
 TEST_CASE("unavailable_backend", "[core][parallel]")
 {
-#if !openPMD_HAVE_ADIOS1
-    {
-        auto fail = []() {
-            Series(
-                "unavailable.bp",
-                Access::CREATE,
-                MPI_COMM_WORLD,
-                R"({"backend": "ADIOS1"})");
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'ADIOS1'.");
-    }
-#endif
 #if !openPMD_HAVE_ADIOS2
     {
         auto fail = []() {
@@ -1838,7 +1739,7 @@ TEST_CASE("unavailable_backend", "[core][parallel]")
             "'ADIOS2'.");
     }
 #endif
-#if !openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
+#if !openPMD_HAVE_ADIOS2
     {
         auto fail = []() {
             Series("unavailable.bp", Access::CREATE, MPI_COMM_WORLD);

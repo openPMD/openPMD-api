@@ -38,7 +38,7 @@ Functionality                Behavior           Description
 .. [2] Dataset declarations in :ref:`parallel HDF5 <backends-hdf5>` are only non-collective if :ref:`chunking <backendconfig-hdf5>` is set to ``none`` (``auto`` by default).
        Otherwise these operations are collective.
 
-.. [3] :ref:`HDF5 <backends-hdf5>` only supports collective attribute definitions/writes; :ref:`ADIOS1 <backends-adios1>` and :ref:`ADIOS2 <backends-adios2>` attributes can be written independently.
+.. [3] :ref:`HDF5 <backends-hdf5>` only supports collective attribute definitions/writes; :ref:`ADIOS2 <backends-adios2>` attributes can be written independently.
        If you want to support all backends equally, treat as a collective operation.
        Note that openPMD represents constant record components with attributes, thus inheriting this for ``::makeConstant``.
 

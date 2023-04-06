@@ -501,7 +501,7 @@ std::optional<std::string> asLowerCaseStringDynamic(nlohmann::json const &value)
 
 std::vector<std::string> backendKeys()
 {
-    return {"adios1", "adios2", "json", "hdf5"};
+    return {"adios2", "json", "hdf5"};
 }
 
 void warnGlobalUnusedOptions(TracingJSON const &config)

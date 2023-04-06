@@ -32,28 +32,7 @@ Format determineFormat(std::string const &filename)
     if (auxiliary::ends_with(filename, ".h5"))
         return Format::HDF5;
     if (auxiliary::ends_with(filename, ".bp"))
-    {
-        auto const bp_backend = auxiliary::getEnvString(
-            "OPENPMD_BP_BACKEND",
-#if openPMD_HAVE_ADIOS2
-            "ADIOS2"
-#elif openPMD_HAVE_ADIOS1
-            "ADIOS1"
-#else
-            "ADIOS2"
-#endif
-        );
-
-        if (bp_backend == "ADIOS2")
-            return Format::ADIOS2_BP;
-        else if (bp_backend == "ADIOS1")
-            return Format::ADIOS1;
-        else
-            throw std::runtime_error(
-                "Environment variable OPENPMD_BP_BACKEND for .bp backend is "
-                "neither ADIOS1 nor ADIOS2: " +
-                bp_backend);
-    }
+        return Format::ADIOS2_BP;
     if (auxiliary::ends_with(filename, ".bp4"))
         return Format::ADIOS2_BP4;
     if (auxiliary::ends_with(filename, ".bp5"))
@@ -75,7 +54,6 @@ std::string suffix(Format f)
     {
     case Format::HDF5:
         return ".h5";
-    case Format::ADIOS1:
     case Format::ADIOS2_BP:
         return ".bp";
     case Format::ADIOS2_BP4:

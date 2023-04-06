@@ -220,17 +220,12 @@ class APITest(unittest.TestCase):
                                  np.array([4.5, 6.7], dtype=np.double))
             series.set_attribute("nparr_longdouble",
                                  np.array([8.9, 7.6], dtype=np.longdouble))
-            # note: looks like ADIOS 1.13.1 cannot write arrays of complex
-            #       as attributes (writes 1st value for single and crashes
-            #       in write for complex double)
-            #   https://github.com/ornladios/ADIOS/issues/212
-            if series.backend != "ADIOS1":
-                series.set_attribute("nparr_csingle",
-                                     np.array([1.2 - 0.3j, 2.3 + 4.2j],
-                                              dtype=np.complex64))
-                series.set_attribute("nparr_cdouble",
-                                     np.array([4.5 + 1.1j, 6.7 - 2.2j],
-                                              dtype=np.complex128))
+            series.set_attribute("nparr_csingle",
+                                 np.array([1.2 - 0.3j, 2.3 + 4.2j],
+                                          dtype=np.complex64))
+            series.set_attribute("nparr_cdouble",
+                                 np.array([4.5 + 1.1j, 6.7 - 2.2j],
+                                          dtype=np.complex128))
             if file_ending not in ["bp", "bp4", "bp5"]:
                 series.set_attribute("nparr_clongdouble",
                                      np.array([8.9 + 7.8j, 7.6 + 9.2j],
@@ -335,15 +330,13 @@ class APITest(unittest.TestCase):
                 series.get_attribute("nparr_double"), [4.5, 6.7])
             np.testing.assert_almost_equal(
                 series.get_attribute("nparr_longdouble"), [8.9, 7.6])
-            # see https://github.com/ornladios/ADIOS/issues/212
-            if series.backend != "ADIOS1":
-                np.testing.assert_almost_equal(
-                    series.get_attribute("nparr_csingle"),
-                    np.array([1.2 - 0.3j, 2.3 + 4.2j],
-                             dtype=np.complex64))
-                np.testing.assert_almost_equal(
-                    series.get_attribute("nparr_cdouble"),
-                    [4.5 + 1.1j, 6.7 - 2.2j])
+            np.testing.assert_almost_equal(
+                series.get_attribute("nparr_csingle"),
+                np.array([1.2 - 0.3j, 2.3 + 4.2j],
+                         dtype=np.complex64))
+            np.testing.assert_almost_equal(
+                series.get_attribute("nparr_cdouble"),
+                [4.5 + 1.1j, 6.7 - 2.2j])
             # not in ADIOS 1.13.1 nor ADIOS 2.7.0
             if file_ending not in ["bp", "bp4", "bp5"]:
                 np.testing.assert_almost_equal(
@@ -811,7 +804,6 @@ class APITest(unittest.TestCase):
         backend_filesupport = {
             'json': 'json',
             'hdf5': 'h5',
-            'adios1': 'bp',
             'adios2': 'bp'
         }
         for b in io.variants:
@@ -1709,25 +1701,22 @@ class APITest(unittest.TestCase):
         E_x = it0.meshes["E"]["x"]
         E_x.reset_dataset(DS(np.dtype("int"), extent))
         E_x.store_chunk(data, [0], extent)
-        is_adios1 = series.backend == 'ADIOS1'
         it0.close(flush=True)
 
-        # not supported in ADIOS1: can only open one ADIOS1 series at a time
-        if not is_adios1:
-            read = io.Series(
-                "../samples/unittest_closeIteration_%T." + file_ending,
-                io.Access_Type.read_only
-            )
-            it0 = read.iterations[0]
-            E_x = it0.meshes["E"]["x"]
-            chunk = E_x.load_chunk([0], extent)
-            it0.close()  # flush = True <- default argument
+        read = io.Series(
+            "../samples/unittest_closeIteration_%T." + file_ending,
+            io.Access_Type.read_only
+        )
+        it0 = read.iterations[0]
+        E_x = it0.meshes["E"]["x"]
+        chunk = E_x.load_chunk([0], extent)
+        it0.close()  # flush = True <- default argument
 
-            for i in range(len(data)):
-                self.assertEqual(data[i], chunk[i])
-            self.assertTrue(read)
-            read.close()
-            self.assertFalse(read)
+        for i in range(len(data)):
+            self.assertEqual(data[i], chunk[i])
+        self.assertTrue(read)
+        read.close()
+        self.assertFalse(read)
 
         it1 = series.iterations[1]
         E_x = it1.meshes["E"]["x"]
@@ -1736,22 +1725,21 @@ class APITest(unittest.TestCase):
         it1.close(flush=False)
         series.flush()
 
-        if not is_adios1:
-            read = io.Series(
-                "../samples/unittest_closeIteration_%T." + file_ending,
-                io.Access_Type.read_only
-            )
-            it1 = read.iterations[1]
-            E_x = it1.meshes["E"]["x"]
-            chunk = E_x.load_chunk([0], extent)
-            it1.close(flush=False)
-            read.flush()
+        read = io.Series(
+            "../samples/unittest_closeIteration_%T." + file_ending,
+            io.Access_Type.read_only
+        )
+        it1 = read.iterations[1]
+        E_x = it1.meshes["E"]["x"]
+        chunk = E_x.load_chunk([0], extent)
+        it1.close(flush=False)
+        read.flush()
 
-            for i in range(len(data)):
-                self.assertEqual(data[i], chunk[i])
-            self.assertTrue(read)
-            read.close()
-            self.assertFalse(read)
+        for i in range(len(data)):
+            self.assertEqual(data[i], chunk[i])
+        self.assertTrue(read)
+        read.close()
+        self.assertFalse(read)
 
     def testCloseIteration(self):
         for ext in tested_file_extensions:
@@ -1829,7 +1817,6 @@ class APITest(unittest.TestCase):
         backend_filesupport = {
             'json': 'json',
             'hdf5': 'h5',
-            'adios1': 'bp',
             'adios2': 'bp'
         }
         for b in io.variants:
@@ -2003,9 +1990,6 @@ class APITest(unittest.TestCase):
             "../samples/unittest_jsonConfiguredBP3.bp",
             io.Access_Type.create,
             global_config)
-        if series.backend != 'ADIOS2':
-            # might happen, if env. var. OPENPMD_BP_BACKEND is used
-            return
 
         DS = io.Dataset
         data = np.array(range(1000), dtype=np.dtype("double"))

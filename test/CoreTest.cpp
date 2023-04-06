@@ -1095,25 +1095,6 @@ TEST_CASE("backend_via_json", "[core]")
     REQUIRE(auxiliary::directory_exists(
         "../samples/optionsViaJsonOverwritesAutomaticDetectionBp4.sst"));
 
-#if openPMD_HAVE_ADIOS1
-    setenv("OPENPMD_BP_BACKEND", "ADIOS1", 1);
-    {
-        /*
-         * ADIOS2 backend should be selected even if OPENPMD_BP_BACKEND is set
-         * as ADIOS1
-         * JSON config overwrites environment variables
-         */
-        Series series(
-            "../samples/optionsPreferJsonOverEnvVar.bp",
-            Access::CREATE,
-            R"({"backend": "ADIOS2"})");
-        REQUIRE(series.backend() == "ADIOS2");
-    }
-    // unset again
-    unsetenv("OPENPMD_BP_BACKEND");
-    REQUIRE(auxiliary::directory_exists(
-        "../samples/optionsPreferJsonOverEnvVar.bp"));
-#endif
 #endif
     std::string encodingFileBased =
         R"({"backend": "json", "iteration_encoding": "file_based"})";
@@ -1317,18 +1298,6 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
 
 TEST_CASE("unavailable_backend", "[core]")
 {
-#if !openPMD_HAVE_ADIOS1
-    {
-        auto fail = []() {
-            Series(
-                "unavailable.bp", Access::CREATE, R"({"backend": "ADIOS1"})");
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'ADIOS1'.");
-    }
-#endif
 #if !openPMD_HAVE_ADIOS2
     {
         auto fail = []() {
@@ -1341,7 +1310,7 @@ TEST_CASE("unavailable_backend", "[core]")
             "'ADIOS2'.");
     }
 #endif
-#if !openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
+#if !openPMD_HAVE_ADIOS2
     {
         auto fail = []() { Series("unavailable.bp", Access::CREATE); };
         REQUIRE_THROWS_WITH(

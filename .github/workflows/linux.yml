@@ -39,14 +39,14 @@ jobs:
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
-  clang7_nopy_ompi_h5_ad1_ad2_bp3_libcpp:
+  clang7_nopy_ompi_h5_ad2_libcpp:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad1_ad2_bp3_libcpp_v2}
+      with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad2_libcpp_v2}
     - name: Install
       run: |
         sudo apt-get update
@@ -62,7 +62,7 @@ jobs:
         mpiexec --version
         perl --version
         python --version
-        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad1_ad2_bp3_libcpp/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad2_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -70,7 +70,6 @@ jobs:
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
           -DopenPMD_USE_HDF5=ON    \
-          -DopenPMD_USE_ADIOS1=ON  \
           -DopenPMD_USE_ADIOS2=ON  \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
@@ -79,7 +78,6 @@ jobs:
 
         find . -name *.bp     | xargs -n1 -P1 -I {} rm -rf {}
         find . -name *.bp.dir | xargs -n1 -P1 -I {} rm -rf {}
-        export OPENPMD_BP_BACKEND=ADIOS1
         ctest --test-dir build --output-on-failure
 
   clang7_nopy_ompi_h5_ad2_newLayout:
@@ -98,7 +96,7 @@ jobs:
     - name: Build
       env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -106,7 +104,6 @@ jobs:
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
           -DopenPMD_USE_HDF5=ON    \
-          -DopenPMD_USE_ADIOS1=OFF \
           -DopenPMD_USE_ADIOS2=ON  \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
@@ -114,16 +111,16 @@ jobs:
         ctest --test-dir build --output-on-failure
 
 # TODO
-#  clang7_py36_nompi_h5_ad1_ad2_libstdc++
+#  clang7_py36_nompi_h5_ad2_libstdc++
 
-  clang14_py311_nompi_h5_ad1_ad2:
+  clang14_py311_nompi_h5_ad2:
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang14_py311_nompi_h5_ad1_ad2_v2 }
+      with: {path: /opt/spack, key: clang14_py311_nompi_h5_ad2_v2 }
     - name: Install
       run: |
         sudo apt update
@@ -135,7 +132,7 @@ jobs:
     - name: Build
       env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang14_py311_nompi_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang14_py311_nompi_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -143,7 +140,6 @@ jobs:
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
           -DopenPMD_USE_HDF5=ON   \
-          -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON     \
@@ -152,14 +148,14 @@ jobs:
         ctest --test-dir build --output-on-failure
 
   # ADIOS2 v2.7.1
-  clang8_py38_mpich_h5_ad1_ad2_newLayout:
+  clang8_py38_mpich_h5_ad2_newLayout:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang8_py38_mpich_h5_ad1_ad2_newLayout_v2 }
+      with: {path: /opt/spack, key: clang8_py38_mpich_h5_ad2_newLayout_v2 }
     - name: Install
       run: |
         sudo apt-get update
@@ -172,7 +168,7 @@ jobs:
         mpiexec --version
         perl --version
         python --version
-        eval $(spack env activate --sh .github/ci/spack-envs/clang8_py38_mpich_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang8_py38_mpich_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -180,35 +176,34 @@ jobs:
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=ON     \
           -DopenPMD_USE_HDF5=ON    \
-          -DopenPMD_USE_ADIOS1=ON  \
           -DopenPMD_USE_ADIOS2=ON  \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
 # TODO: (old Travis-CI coverage)
-#  clang10_py38_ompi_h5_1-10-6_ad1_ad2_release
+#  clang10_py38_ompi_h5_1-10-6_ad2_release
 #  ..._h5coll with OPENPMD_HDF5_INDEPENDENT: OFF
 
 # TODO: (old Travis-CI coverage)
-#  gcc-4.9.4_nopy_nompi_h5_ad1_ad2
-#  gcc-4.9.4_nopy_ompi_h5_ad1_ad2
-#  gcc-9.3.0_nopy_nompi_h5_ad1_ad2-2.6.0
-#  gcc-7.4.0_nopy_ompi_h5_ad1_h5coll
-#  gcc-6.5.0_py35_nompi_h5_ad1-1.13.1
-#  gcc-8.1.0_py37_nompi_h5_ad1_static
+#  gcc-4.9.4_nopy_nompi_h5_ad2
+#  gcc-4.9.4_nopy_ompi_h5_ad2
+#  gcc-9.3.0_nopy_nompi_h5_ad2-2.6.0
+#  gcc-7.4.0_nopy_ompi_h5_h5coll
+#  gcc-6.5.0_py35_nompi_h5-1.13.1
+#  gcc-8.1.0_py37_nompi_h5_static
 #  gcc-6.5.0_py36_nompi_h5-1.8.13
 #  gcc-4.8.5_py35_nompi_h5
-#  gcc-7.4.0_py_ompi_h5_ad1_ad2_coveralls
+#  gcc-7.4.0_py_ompi_h5_ad2_coveralls
 
-  gcc7_py36_pd_dd_ompi_h5_ad1_ad2:
+  gcc7_py36_pd_dd_ompi_h5_ad2:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: gcc7_py36_ompi_h5_ad1_ad2_v2 }
+      with: {path: /opt/spack, key: gcc7_py36_ompi_h5_ad2_v2 }
     - name: Install
       run: |
         sudo apt-get update
@@ -223,7 +218,7 @@ jobs:
     - name: Build
       env: {CC: gcc-7, CXX: g++-7, CXXFLAGS: -Werror}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/gcc7_py36_ompi_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/gcc7_py36_ompi_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -231,7 +226,6 @@ jobs:
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
-          -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
@@ -245,7 +239,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev libadios-dev python3 python3-numpy python3-mpi4py python3-pandas
+        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas
 #       TODO ADIOS2
     - name: Build
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
@@ -313,7 +307,6 @@ jobs:
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
-          -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2

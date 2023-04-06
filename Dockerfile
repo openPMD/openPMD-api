@@ -13,7 +13,7 @@ ENV        CFLAGS="-fPIC ${CFLAGS}"
 ENV        CXXFLAGS="-fPIC ${CXXFLAGS}"
 
 # install dependencies
-#   CMake, zlib?, HDF5, c-blosc, ADIOS1, ADIOS2
+#   CMake, zlib?, HDF5, c-blosc, ADIOS2
 RUN        yum check-update -y \
            ; yum -y install \
                glibc-static \
@@ -39,7 +39,7 @@ RUN        curl -sLo hdf5-1.10.5.tar.gz https://support.hdfgroup.org/ftp/HDF5/re
            && make \
            && make install
 
-# avoid picking up a static libpthread in adios (also: those libs lack -fPIC)
+# avoid picking up a static libpthread (also: those libs lack -fPIC)
 RUN        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
 RUN        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
 
@@ -53,15 +53,6 @@ RUN        curl -sLo c-blosc-1.15.0.tar.gz https://github.com/Blosc/c-blosc/arch
            && PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
            && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
            && PATH=${CMAKE_BIN}:${PATH} cmake -DDEACTIVATE_SNAPPY=ON -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DPREFER_EXTERNAL_ZLIB=ON -DZLIB_USE_STATIC_LIBS=ON -DCMAKE_INSTALL_PREFIX=/usr ../c-blosc-* \
-           && make \
-           && make install
-
-RUN        curl -sLo adios-1.13.1.tar.gz http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz \
-           && file adios*.tar.gz \
-           && tar -xzf adios*.tar.gz \
-           && rm adios*.tar.gz \
-           && cd adios-* \
-           && ./configure --enable-static --disable-shared --disable-fortran --without-mpi --prefix=/usr --with-blosc=/usr \
            && make \
            && make install
 
@@ -84,7 +75,6 @@ RUN        ls /opt/python/
 
 ENV        HDF5_USE_STATIC_LIBRARIES=ON \
            ZLIB_USE_STATIC_LIBS=ON \
-           ADIOS_USE_STATIC_LIBS=ON \
            openPMD_BUILD_TESTING=OFF \
            openPMD_BUILD_EXAMPLES=OFF
 

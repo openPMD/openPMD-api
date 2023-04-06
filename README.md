@@ -23,7 +23,7 @@ openPMD is an open meta-data schema that provides meaning and self-description f
 See [the openPMD standard](https://github.com/openPMD/openPMD-standard) for details of this schema.
 
 This library provides a reference API for openPMD data handling.
-Since openPMD is a schema (or markup) on top of portable, hierarchical file formats, this library implements various backends such as HDF5, ADIOS1, ADIOS2 and JSON.
+Since openPMD is a schema (or markup) on top of portable, hierarchical file formats, this library implements various backends such as HDF5, ADIOS2 and JSON.
 Writing & reading through those backends and their associated files are supported for serial and [MPI-parallel](https://www.mpi-forum.org/docs/) workflows.
 
 ## Usage
@@ -108,7 +108,6 @@ Shipped internally in `share/openPMD/thirdParty/`:
 I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+ (optional)
-* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+ (optional, deprecated)
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.7.0+ (optional)
 
 while those can be built either with or without:
@@ -144,7 +143,7 @@ Choose *one* of the install methods below to get started:
 [![Spack Use Case](https://img.shields.io/badge/use_case-desktop_%28C%2B%2B,_py%29,_development,_HPC-brightgreen)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 
 ```bash
-# optional:               +python +adios1 -adios2 -hdf5 -mpi
+# optional:               +python -adios2 -hdf5 -mpi
 spack install openpmd-api
 spack load openpmd-api
 ```
@@ -182,7 +181,7 @@ brew install openpmd-api
 [![PyPI Format](https://img.shields.io/pypi/format/openPMD-api)](https://pypi.org/project/openPMD-api)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api)](https://pypi.org/project/openPMD-api)
 
-On very old macOS versions (<10.9) or on exotic processor architectures, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+On very old macOS versions (<10.9) or on exotic processor architectures, this install method *compiles from source* against the found installations of HDF5, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 
 ```bash
 # we need pip 19 or newer
@@ -251,7 +250,6 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 |------------------------------|------------------|------------------------------------------------------------------------------|
 | `openPMD_USE_MPI`            | **AUTO**/ON/OFF  | Parallel, Multi-Node I/O for clusters                                        |
 | `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | HDF5 backend (`.h5` files)                                                   |
-| `openPMD_USE_ADIOS1`         | AUTO/ON/**OFF**  | ADIOS1 backend (`.bp` files up to version BP3) - deprecated                  |
 | `openPMD_USE_ADIOS2`         | **AUTO**/ON/OFF  | ADIOS2 backend (`.bp` files in BP3, BP4 or higher)                           |
 | `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                                       |
 | `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>1</sup>                       |
@@ -307,7 +305,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 
 Use the following lines in your project's `CMakeLists.txt`:
 ```cmake
-# supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS1 ADIOS2
+# supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS2
 find_package(openPMD 0.9.0 CONFIG)
 
 if(openPMD_FOUND)
@@ -435,7 +433,7 @@ This work was partially funded by the Center of Advanced Systems Understanding (
 
 openPMD-api stands on the shoulders of giants and we are grateful for the following projects included as direct dependencies:
 
-* [ADIOS1](https://github.com/ornladios/ADIOS) and [ADIOS2](https://github.com/ornladios/ADIOS2) by [S. Klasky (ORNL), team, collaborators](https://csmd.ornl.gov/adios) and [contributors](https://github.com/ornladios/ADIOS2/graphs/contributors)
+* [ADIOS2](https://github.com/ornladios/ADIOS2) by [S. Klasky, N. Podhorszki, W.F. Godoy (ORNL), team, collaborators](https://csmd.ornl.gov/adios) and [contributors](https://github.com/ornladios/ADIOS2/graphs/contributors)
 * [Catch2](https://github.com/catchorg/Catch2) by [Phil Nash](https://github.com/philsquared), [Martin Hořeňovský](https://github.com/horenmar) and [contributors](https://github.com/catchorg/Catch2/graphs/contributors)
 * HDF5 by [the HDF group](https://www.hdfgroup.org) and community
 * [json](https://github.com/nlohmann/json) by [Niels Lohmann](https://github.com/nlohmann) and [contributors](https://github.com/nlohmann/json/graphs/contributors)

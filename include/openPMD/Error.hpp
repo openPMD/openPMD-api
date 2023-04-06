@@ -44,7 +44,7 @@ namespace error
      * @brief An operation was requested that is not supported in a specific
      *     backend.
      *
-     * Example: Append mode is not available in ADIOS1.
+     * Example: Append mode is not available in JSON.
      */
     class OperationUnsupportedInBackend : public Error
     {

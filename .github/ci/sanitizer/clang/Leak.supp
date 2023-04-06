@@ -9,9 +9,6 @@ leak:libevent*
 leak:*py*
 # 10 byte memleak in main of "make" 4.1
 leak:/usr/bin/make*
-# ADIOS 1.13.1
-leak:adios_read_bp_open_file
-leak:adios_inq_var
 # ADIOS2
 leak:adios2::core::engine::SstReader::*
 leak:adios2::core::engine::SstWriter::*
