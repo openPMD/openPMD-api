@@ -40,7 +40,7 @@ jobs:
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
-        cmake --build build --parallel 2
+        cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
   appleclang12_py_ad1:
@@ -59,7 +59,7 @@ jobs:
         tar -xzf adios-1.13.1.tar.gz
         cd adios-1.13.1/
         CFLAGS="-fPIC" ./configure --enable-static --enable-shared --prefix=/usr/local --without-mpi --disable-fortran
-        make -j 2
+        make -j 3
         make install
         set -e
     - name: Build
@@ -76,7 +76,7 @@ jobs:
           -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=OFF \
           -DopenPMD_USE_INVASIVE_TESTS=ON
-        cmake --build build --parallel 2
+        cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
 # TODO: apple_conda_ompi_all (similar to conda_ompi_all on Linux)
