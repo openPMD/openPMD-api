@@ -78,7 +78,6 @@ class Writable final
     friend class Series;
     friend class Record;
     friend class AbstractIOHandlerImpl;
-    template <typename>
     friend class ADIOS2IOHandlerImpl;
     friend class HDF5IOHandlerImpl;
     friend class ParallelHDF5IOHandlerImpl;
