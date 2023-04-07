@@ -4468,10 +4468,8 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series read(
                     name,
                     Access::READ_ONLY,
-                    isThisADIOS1
-                        ? "backend = \"adios1\""
-                        : "backend = \"adios2\"\nadios2.engine.type = \"" +
-                            requiredEngine + "\"");
+                    "backend = \"adios2\"\nadios2.engine.type = \"" +
+                        requiredEngine + "\"");
             }
         };
 
@@ -4625,10 +4623,8 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series read(
                     name,
                     Access::READ_ONLY,
-                    isThisADIOS1
-                        ? "backend = \"adios1\""
-                        : "backend = \"adios2\"\nadios2.engine.type = \"" +
-                            requiredEngine + "\"");
+                    "backend = \"adios2\"\nadios2.engine.type = \"" +
+                        requiredEngine + "\"");
             }
         };
 
