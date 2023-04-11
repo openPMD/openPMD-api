@@ -6430,11 +6430,19 @@ void unfinished_iteration_test(
          */
         it5.setAttribute("__openPMD_internal_fail", "asking for trouble");
         auto it10 = write.writeIterations()[10];
+        Dataset ds(Datatype::INT, {10});
         auto E_x = it10.meshes["E"]["x"];
         auto e_density = it10.meshes["e_density"][RecordComponent::SCALAR];
         auto electron_x = it10.particles["e"]["position"]["x"];
         auto electron_mass =
             it10.particles["e"]["mass"][RecordComponent::SCALAR];
+
+        RecordComponent *resetThese[] = {
+            &E_x, &e_density, &electron_x, &electron_mass};
+        for (RecordComponent *rc : resetThese)
+        {
+            rc->resetDataset(ds);
+        }
     }
     auto tryReading = [&config, file, encoding](
                           Access access,

@@ -90,7 +90,9 @@ if __name__ == "__main__":
     electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
     electrons["displacement"]["x"].unit_SI = 1.e-6
     del electrons["displacement"]
-    electrons["weighting"][SCALAR].make_constant(1.e-5)
+    electrons["weighting"][SCALAR] \
+        .reset_dataset(Dataset(np.dtype("float32"), extent=[1])) \
+        .make_constant(1.e-5)
 
     mesh = cur_it.meshes["lowRez_2D_field"]
     mesh.axis_labels = ["x", "y"]
