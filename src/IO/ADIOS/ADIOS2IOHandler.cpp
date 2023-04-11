@@ -720,6 +720,13 @@ void ADIOS2IOHandlerImpl::createDataset(
             "[ADIOS2] Creating a dataset in a file opened as read "
             "only is not possible.");
     }
+#if !openPMD_HAS_ADIOS_2_9
+    if (parameters.joinedDimension.has_value())
+    {
+        error::throwOperationUnsupportedInBackend(
+            "ADIOS1", "Joined Arrays require ADIOS2 >= v2.9");
+    }
+#endif
     if (!writable->written)
     {
         /* Sanitize name */
