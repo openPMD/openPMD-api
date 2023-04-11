@@ -104,10 +104,22 @@ void PatchRecordComponent::flush(
     {
         if (!rc.m_dataset.has_value())
         {
-            throw error::WrongAPIUsage(
-                "[PatchRecordComponent] Must specify dataset type and extent "
-                "before "
-                "flushing (see RecordComponent::resetDataset()).");
+            // The check for !written() is technically not needed, just
+            // defensive programming against internal bugs that go on us.
+            if (!written() && rc.m_chunks.empty())
+            {
+                // No data written yet, just accessed the object so far without
+                // doing anything
+                // Just do nothing and skip this record component.
+                return;
+            }
+            else
+            {
+                throw error::WrongAPIUsage(
+                    "[PatchRecordComponent] Must specify dataset type and "
+                    "extent before flushing (see "
+                    "RecordComponent::resetDataset()).");
+            }
         }
         if (!written())
         {
