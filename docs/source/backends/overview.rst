@@ -23,7 +23,7 @@ Performance        A-            A               B         C
 Native File Format ``.bp`` (BP3) ``.bp`` (BP3-5) ``.h5``   ``.json``
 ================== ============= =============== ========= ==========
 
-:ref:`ADIOS1 is deprecated and will be removed in a future release <install-upgrade>`.
+:ref:`ADIOS1 was removed in version 0.16.0 <install-upgrade>`.
 Please use ADIOS2 instead.
 
 * supported/yes: implemented and accessible for users of openPMD-api

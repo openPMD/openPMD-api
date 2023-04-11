@@ -35,7 +35,7 @@
 #endif
 
 #ifndef openPMD_HAVE_ADIOS1
-#cmakedefine01 openPMD_HAVE_ADIOS1
+#define openPMD_HAVE_ADIOS1 0
 #endif
 
 #ifndef openPMD_HAVE_ADIOS2

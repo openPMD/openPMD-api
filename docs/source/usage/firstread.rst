@@ -78,7 +78,7 @@ Open
 
 Open an existing openPMD series in ``data<N>.h5``.
 Further file formats than ``.h5`` (`HDF5 <https://hdfgroup.org>`_) are supported:
-``.bp`` (`ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios/>`_/`ADIOS2 <https://csmd.ornl.gov/software/adios2>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
+``.bp`` (`ADIOS2 <https://csmd.ornl.gov/software/adios2>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
 
 C++17
 ^^^^^

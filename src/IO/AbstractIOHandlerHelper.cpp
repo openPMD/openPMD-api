@@ -23,9 +23,7 @@
 #include "openPMD/config.hpp"
 
 #include "openPMD/Error.hpp"
-#include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
-#include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 #include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
@@ -62,22 +60,6 @@ namespace
         }
         throw "Unreachable";
     }
-
-    constexpr char const *adios1Deprecation = R"(
-[Deprecation warning]
-    Development on the ADIOS1 IO library has ceased.
-    Support for ADIOS1 in the openPMD-api has been deprecated
-    and will be removed in a future version.
-
-    Please consider switching to ADIOS2.
-    We recommend checking your ADIOS1 datasets for compatibility with ADIOS2.
-    Conversion of data from one backend to another may optionally be achieved
-    by using the `openpmd-pipe` tool.)
-
-    Suppress this warning via `export OPENPMD_ADIOS_SUPPRESS_DEPRECATED_WARNING=1`.)";
-
-    constexpr char const *suppressAdios1DeprecationWarning =
-        "OPENPMD_ADIOS_SUPPRESS_DEPRECATED_WARNING";
 } // namespace
 
 #if openPMD_HAVE_MPI
@@ -97,18 +79,6 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     case Format::HDF5:
         return constructIOHandler<ParallelHDF5IOHandler, openPMD_HAVE_HDF5>(
             "HDF5", path, access, comm, std::move(options));
-    case Format::ADIOS1:
-        if (auxiliary::getEnvNum(suppressAdios1DeprecationWarning, 0) == 0)
-        {
-            int rank;
-            MPI_Comm_rank(comm, &rank);
-            if (rank == 0)
-            {
-                std::cerr << adios1Deprecation << std::endl;
-            }
-        }
-        return constructIOHandler<ParallelADIOS1IOHandler, openPMD_HAVE_ADIOS1>(
-            "ADIOS1", path, access, std::move(options), comm);
     case Format::ADIOS2_BP:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -175,13 +145,6 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     case Format::HDF5:
         return constructIOHandler<HDF5IOHandler, openPMD_HAVE_HDF5>(
             "HDF5", path, access, std::move(options));
-    case Format::ADIOS1:
-        if (auxiliary::getEnvNum(suppressAdios1DeprecationWarning, 0) == 0)
-        {
-            std::cerr << adios1Deprecation << std::endl;
-        }
-        return constructIOHandler<ADIOS1IOHandler, openPMD_HAVE_ADIOS1>(
-            "ADIOS1", path, access, std::move(options));
     case Format::ADIOS2_BP:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",

@@ -19,15 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * For objects that must not include Error.hpp but still need to throw errors.
- * In some exotic compiler configurations (clang-6 with libc++),
- * including Error.hpp into the ADIOS1 backend leads to incompatible error type
- * symbols.
- * So, use only the functions defined in here in the ADIOS1 backend.
- * Definitions are in Error.cpp.
- */
-
 #pragma once
 
 #include "openPMD/auxiliary/Export.hpp"

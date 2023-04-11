@@ -57,10 +57,7 @@ std::vector<BackendSelection> testedBackends()
 {
     auto variants = getVariants();
     std::map<std::string, std::string> extensions{
-        {"json", "json"},
-        {"adios1", "adios1.bp"},
-        {"adios2", "bp"},
-        {"hdf5", "h5"}};
+        {"json", "json"}, {"adios2", "bp"}, {"hdf5", "h5"}};
     std::vector<BackendSelection> res;
     for (auto const &pair : variants)
     {
@@ -175,10 +172,6 @@ TEST_CASE("adios2_char_portability", "[serial][adios2]")
     }
 
     {
-        if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "ADIOS2") != "ADIOS2")
-        {
-            return;
-        }
         Series read(
             "../samples/adios2_char_portability.bp", Access::READ_ONLY, config);
         auto signedVectorAttribute = read.getAttribute("signedVector");
@@ -300,16 +293,6 @@ TEST_CASE("multi_series_test", "[serial]")
     std::list<Series> allSeries;
 
     auto myfileExtensions = testedFileExtensions();
-
-    // this test demonstrates an ADIOS1 (upstream) bug, comment this section to
-    // trigger it
-    auto const rmEnd = std::remove_if(
-        myfileExtensions.begin(),
-        myfileExtensions.end(),
-        [](std::string const &beit) {
-            return beit == "bp" && determineFormat("test.bp") == Format::ADIOS1;
-        });
-    myfileExtensions.erase(rmEnd, myfileExtensions.end());
 
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3})
@@ -642,9 +625,6 @@ void close_iteration_interleaved_test(
 
 TEST_CASE("close_iteration_interleaved_test", "[serial]")
 {
-    bool const bp_prefer_adios1 =
-        (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1");
-
     for (auto const &t : testedFileExtensions())
     {
         close_iteration_interleaved_test(t, IterationEncoding::fileBased);
@@ -652,8 +632,6 @@ TEST_CASE("close_iteration_interleaved_test", "[serial]")
 
         // run this test for ADIOS2 & JSON only
         if (t == "h5")
-            continue;
-        if (t == "bp" && bp_prefer_adios1)
             continue;
         close_iteration_interleaved_test(t, IterationEncoding::variableBased);
     }
@@ -4400,8 +4378,6 @@ TEST_CASE("adios2_engines_and_file_endings")
             std::string const &requiredEngine,
             std::string const &filesystemExt,
             std::string const &jsonCfg = "{}") mutable {
-            // Env. var. OPENPMD_BP_BACKEND does not matter for this test as
-            // we always override it in the JSON config
             auto basename = "../samples/file_endings/groupbased" +
                 std::to_string(filenameCounter++);
             auto name = basename + ext;
@@ -4480,10 +4456,7 @@ TEST_CASE("adios2_engines_and_file_endings")
             {
                 Series write(name, Access::CREATE, jsonCfg);
             }
-            bool isThisADIOS1 =
-                auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1" &&
-                ext == ".bp";
-            if (directory && !isThisADIOS1)
+            if (directory)
             {
                 REQUIRE(auxiliary::directory_exists(filesystemname));
             }
@@ -4495,10 +4468,8 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series read(
                     name,
                     Access::READ_ONLY,
-                    isThisADIOS1
-                        ? "backend = \"adios1\""
-                        : "backend = \"adios2\"\nadios2.engine.type = \"" +
-                            requiredEngine + "\"");
+                    "backend = \"adios2\"\nadios2.engine.type = \"" +
+                        requiredEngine + "\"");
             }
         };
 
@@ -4630,10 +4601,7 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series write(name, Access::CREATE, jsonCfg);
                 write.writeIterations()[0];
             }
-            bool isThisADIOS1 =
-                auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1" &&
-                ext == ".bp";
-            if (directory && !isThisADIOS1)
+            if (directory)
             {
                 REQUIRE(auxiliary::directory_exists(filesystemname));
             }
@@ -4655,10 +4623,8 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series read(
                     name,
                     Access::READ_ONLY,
-                    isThisADIOS1
-                        ? "backend = \"adios1\""
-                        : "backend = \"adios2\"\nadios2.engine.type = \"" +
-                            requiredEngine + "\"");
+                    "backend = \"adios2\"\nadios2.engine.type = \"" +
+                        requiredEngine + "\"");
             }
         };
 
@@ -4695,11 +4661,6 @@ TEST_CASE("adios2_engines_and_file_endings")
 
 TEST_CASE("serial_adios2_backend_config", "[serial][adios2]")
 {
-    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1")
-    {
-        // run this test for ADIOS2 only
-        return;
-    }
     std::string writeConfigBP3 = R"END(
 unused = "global parameter"
 

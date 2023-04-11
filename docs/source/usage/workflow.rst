@@ -39,11 +39,10 @@ The openPMD-api distinguishes between a number of different access modes:
   New datasets and iterations will be inserted as needed.
   Not fully supported by all backends:
 
-  * ADIOS1: Automatically coerced to *Create* mode if the file does not exist yet and to *Read-only* mode if it exists.
   * ADIOS2: Automatically coerced to *Create* mode if the file does not exist yet and to *Read-only* mode if it exists.
 
   Since this happens on a per-file level, this mode allows to read from existing iterations and write to new iterations at the same time in file-based iteration encoding.
-* **Append mode**: Restricted mode for appending new iterations to an existing Series that is supported by all backends at least in file-based iteration encoding, and by all but ADIOS1 in other encodings.
+* **Append mode**: Restricted mode for appending new iterations to an existing Series that is supported by all backends in all encodings.
   The API is equivalent to that of the *Create* mode, meaning that no reading is supported whatsoever.
   If the Series does not exist yet, this behaves equivalently to the *Create* mode.
   Existing iterations will not be deleted, newly-written iterations will be inserted.

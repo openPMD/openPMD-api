@@ -9,8 +9,6 @@ set(openPMD_STANDARD_VERSION 1.1.0)
 
 include(${openPMD_SOURCE_DIR}/cmake/openPMDFunctions.cmake)
 
-list(APPEND CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/share/openPMD/cmake")
-
 
 # CMake policies ##############################################################
 #
@@ -144,7 +142,6 @@ endfunction()
 
 openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
-openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                 OFF)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
@@ -374,64 +371,6 @@ if(openPMD_HDF5_STATUS)
     endif()
 endif()
 
-#   always search for a sequential lib first, so we can mock MPI
-find_package(ADIOS 1.13.1 COMPONENTS sequential QUIET)
-set(ADIOS_DEFINITIONS_SEQUENTIAL ${ADIOS_DEFINITIONS})
-set(ADIOS_LIBRARIES_SEQUENTIAL ${ADIOS_LIBRARIES})
-set(ADIOS_INCLUDE_DIRS_SEQUENTIAL ${ADIOS_INCLUDE_DIRS})
-unset(ADIOS_FOUND CACHE)
-unset(ADIOS_VERSION CACHE)
-
-#   regular logic
-set(ADIOS1_PREFER_COMPONENTS)
-if(NOT openPMD_HAVE_MPI)
-    set(ADIOS1_PREFER_COMPONENTS sequential)
-endif()
-if(openPMD_USE_ADIOS1 STREQUAL AUTO)
-    find_package(ADIOS 1.13.1 COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
-    if(ADIOS_FOUND)
-        set(openPMD_HAVE_ADIOS1 TRUE)
-    else()
-        set(openPMD_HAVE_ADIOS1 FALSE)
-    endif()
-elseif(openPMD_USE_ADIOS1)
-    find_package(ADIOS 1.13.1 REQUIRED COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
-    set(openPMD_HAVE_ADIOS1 TRUE)
-else()
-    set(openPMD_HAVE_ADIOS1 FALSE)
-endif()
-
-if(openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND ADIOS_HAVE_SEQUENTIAL)
-    string(CONCAT openPMD_ADIOS1_STATUS
-        "Found MPI but requested ADIOS1 is serial. "
-        "Set openPMD_USE_MPI=OFF to disable MPI.\n"
-        "If you manually installed a parallel version of ADIOS1 in "
-        "a non-default path, add its installation prefix to the "
-        "environment variable CMAKE_PREFIX_PATH to find it: "
-        "https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html")
-    if(openPMD_USE_ADIOS1 STREQUAL AUTO)
-        message(WARNING "${openPMD_ADIOS1_STATUS}")
-        set(openPMD_HAVE_ADIOS1 FALSE)
-    elseif(openPMD_USE_ADIOS1)
-        message(FATAL_ERROR "${openPMD_ADIOS1_STATUS}")
-    endif()
-endif()
-if(NOT openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND NOT ADIOS_HAVE_SEQUENTIAL)
-    string(CONCAT openPMD_ADIOS1_STATUS
-        "Did not find MPI but requested ADIOS1 is parallel. "
-        "Set openPMD_USE_ADIOS1=OFF to disable ADIOS1.\n"
-        "If you manually installed a serial version of ADIOS1 in "
-        "a non-default path, add its installation prefix to the "
-        "environment variable CMAKE_PREFIX_PATH to find it: "
-        "https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html")
-    if(openPMD_USE_ADIOS1 STREQUAL AUTO)
-        message(WARNING "${openPMD_ADIOS1_STATUS}")
-        set(openPMD_HAVE_ADIOS1 FALSE)
-    elseif(openPMD_USE_ADIOS1)
-        message(FATAL_ERROR "${openPMD_ADIOS1_STATUS}")
-    endif()
-endif()
-
 # external library: ADIOS2 (optional)
 if(openPMD_USE_ADIOS2 STREQUAL AUTO)
     find_package(ADIOS2 2.7.0 CONFIG)
@@ -541,26 +480,6 @@ set(IO_SOURCE
         src/IO/ADIOS/ADIOS2Auxiliary.cpp
         src/IO/ADIOS/ADIOS2PreloadAttributes.cpp
         src/IO/InvalidatableFile.cpp)
-set(IO_ADIOS1_SEQUENTIAL_SOURCE
-        src/auxiliary/Filesystem.cpp
-        src/auxiliary/JSON.cpp
-        src/IO/AbstractIOHandlerImpl.cpp
-        src/ChunkInfo.cpp
-        src/Error.cpp
-        src/IO/IOTask.cpp
-        src/IO/ADIOS/CommonADIOS1IOHandler.cpp
-        src/IO/ADIOS/ADIOS1IOHandler.cpp
-        src/IO/IOTask.cpp)
-set(IO_ADIOS1_SOURCE
-        src/auxiliary/Filesystem.cpp
-        src/auxiliary/JSON.cpp
-        src/IO/AbstractIOHandlerImpl.cpp
-        src/ChunkInfo.cpp
-        src/Error.cpp
-        src/IO/IOTask.cpp
-        src/IO/ADIOS/CommonADIOS1IOHandler.cpp
-        src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
-        src/IO/IOTask.cpp)
 
 # library
 if(openPMD_BUILD_SHARED_LIBS)
@@ -656,143 +575,6 @@ if(openPMD_HAVE_HDF5)
     target_link_libraries(openPMD PRIVATE ${HDF5_LIBRARIES})
     target_include_directories(openPMD SYSTEM PRIVATE ${HDF5_INCLUDE_DIRS})
     target_compile_definitions(openPMD PRIVATE ${HDF5_DEFINITIONS})
-endif()
-
-# ADIOS1 Backend
-if(openPMD_HAVE_ADIOS1)
-    add_library(openPMD.ADIOS1.Serial SHARED ${IO_ADIOS1_SEQUENTIAL_SOURCE})
-    add_library(openPMD.ADIOS1.Parallel SHARED ${IO_ADIOS1_SOURCE})
-    openpmd_cxx_required(openPMD.ADIOS1.Serial)
-    openpmd_cxx_required(openPMD.ADIOS1.Parallel)
-    target_compile_options(openPMD.ADIOS1.Serial PUBLIC ${_msvc_options})
-    target_compile_options(openPMD.ADIOS1.Parallel PUBLIC ${_msvc_options})
-
-    target_include_directories(openPMD.ADIOS1.Serial PRIVATE
-        ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
-    target_include_directories(openPMD.ADIOS1.Parallel PRIVATE
-        ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
-
-    target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
-        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
-    target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
-        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
-
-    set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
-        COMPILE_PDB_NAME openPMD.ADIOS1.Serial
-        ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
-        LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
-        RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
-        PDB_OUTPUT_DIRECTORY ${openPMD_PDB_OUTPUT_DIRECTORY}
-        COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
-
-        POSITION_INDEPENDENT_CODE ON
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN ON
-    )
-    # note: same as above, but for Multi-Config generators
-    if(isMultiConfig)
-        foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
-            string(TOUPPER "${CFG}" CFG_UPPER)
-            set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
-                COMPILE_PDB_NAME_${CFG_UPPER} openPMD.ADIOS1.Serial
-                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
-                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
-                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
-                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
-                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
-            )
-        endforeach()
-    endif()
-    if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-        set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
-            LINK_FLAGS "-Wl,--exclude-libs,ALL")
-    elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
-        set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
-            XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
-            XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
-            XCODE_ATTRIBUTE_SEPARATE_STRIP "YES"
-        )
-    endif()
-    foreach(adlib ${ADIOS_LIBRARIES_SEQUENTIAL})
-        target_link_libraries(openPMD.ADIOS1.Serial PRIVATE ${adlib})
-    endforeach()
-    target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS_SEQUENTIAL})
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "${ADIOS_DEFINITIONS_SEQUENTIAL}")
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_ADIOS1=1)
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_MPI=0)
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE _NOMPI)  # ADIOS header
-
-    if(openPMD_HAVE_MPI)
-        set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
-            COMPILE_PDB_NAME openPMD.ADIOS1.Parallel
-            ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
-            LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
-            RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
-            PDB_OUTPUT_DIRECTORY ${openPMD_PDB_OUTPUT_DIRECTORY}
-            COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
-
-            POSITION_INDEPENDENT_CODE ON
-            CXX_VISIBILITY_PRESET hidden
-            VISIBILITY_INLINES_HIDDEN 1
-        )
-        # note: same as above, but for Multi-Config generators
-        if(isMultiConfig)
-            foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
-                string(TOUPPER "${CFG}" CFG_UPPER)
-                set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
-                    COMPILE_PDB_NAME_${CFG_UPPER} opemPMD.ADIOS1.Parallel
-                    ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
-                    LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
-                    RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
-                    PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
-                    COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
-                )
-            endforeach()
-        endif()
-        if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-            set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
-                LINK_FLAGS "-Wl,--exclude-libs,ALL")
-        elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
-            set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
-                XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
-                XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
-                XCODE_ATTRIBUTE_SEPARATE_STRIP "YES"
-            )
-        endif()
-        foreach(adlib ${ADIOS_LIBRARIES})
-            target_link_libraries(openPMD.ADIOS1.Parallel PRIVATE ${adlib})
-        endforeach()
-        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC ${openPMD_MPI_TARGETS})
-
-        target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS})
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "${ADIOS_DEFINITIONS}")
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_ADIOS1=1)
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=1)
-    else()
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_ADIOS1=0)
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE _NOMPI)  # ADIOS header
-    endif()
-    # This ensures that the ADIOS1 targets don't ever include Error.hpp
-    # To avoid incompatible error types in weird compile configurations
-    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE OPENPMD_ADIOS1_IMPLEMENTATION)
-
-    # Runtime parameter and API status checks ("asserts")
-    if(openPMD_USE_VERIFY)
-        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_USE_VERIFY=1)
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_USE_VERIFY=1)
-    else()
-        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_USE_VERIFY=0)
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_USE_VERIFY=0)
-    endif()
-
-    target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Serial)
-    target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Parallel)
-else()
-    # add stubs to prevent missing symbols in Clang ASAN/UBSAN
-    target_sources(openPMD PRIVATE ${IO_ADIOS1_SEQUENTIAL_SOURCE} ${IO_ADIOS1_SOURCE})
 endif()
 
 # ADIOS2 Backend
@@ -1265,11 +1047,6 @@ write_basic_package_version_file("openPMDConfigVersion.cmake"
 if(openPMD_INSTALL)
     set(openPMD_INSTALL_TARGET_NAMES openPMD)
 
-    if(openPMD_HAVE_ADIOS1)
-        list(APPEND openPMD_INSTALL_TARGET_NAMES
-            openPMD.ADIOS1.Serial openPMD.ADIOS1.Parallel)
-    endif()
-
     if(openPMD_BUILD_CLI_TOOLS)
         foreach(toolname ${openPMD_CLI_TOOL_NAMES})
             list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
@@ -1353,11 +1130,6 @@ if(openPMD_INSTALL)
             ${openPMD_BINARY_DIR}/openPMDConfig.cmake
             ${openPMD_BINARY_DIR}/openPMDConfigVersion.cmake
         DESTINATION ${openPMD_INSTALL_CMAKEDIR}
-    )
-    install(
-        FILES
-            ${openPMD_SOURCE_DIR}/share/openPMD/cmake/FindADIOS.cmake
-        DESTINATION ${openPMD_INSTALL_CMAKEDIR}/Modules
     )
     # pkg-config .pc file for depending legacy projects
     #   This is for projects that do not use a build file generator, e.g.
@@ -1565,7 +1337,7 @@ if(openPMD_BUILD_TESTING)
         # openpmd-pipe (python) test
         if( NOT WIN32
             AND openPMD_HAVE_HDF5
-            AND (openPMD_HAVE_ADIOS2 OR openPMD_HAVE_ADIOS1)
+            AND openPMD_HAVE_ADIOS2
             AND EXAMPLE_DATA_FOUND
         )
             if( openPMD_HAVE_MPI )
