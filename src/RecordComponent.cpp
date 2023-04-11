@@ -42,7 +42,6 @@ namespace internal
         RecordComponent impl{
             std::shared_ptr<RecordComponentData>{this, [](auto const *) {}}};
         impl.setUnitSI(1);
-        impl.resetDataset(Dataset(Datatype::CHAR, {1}));
     }
 } // namespace internal
 
@@ -71,11 +70,17 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
     auto &rc = get();
     if (written())
     {
+        if (!rc.m_dataset.has_value())
+        {
+            throw error::Internal(
+                "Internal control flow error: Written record component must "
+                "have defined datatype and extent.");
+        }
         if (d.dtype == Datatype::UNDEFINED)
         {
-            d.dtype = rc.m_dataset.dtype;
+            d.dtype = rc.m_dataset.value().dtype;
         }
-        else if (d.dtype != rc.m_dataset.dtype)
+        else if (d.dtype != rc.m_dataset.value().dtype)
         {
             throw std::runtime_error(
                 "Cannot change the datatype of a dataset.");
@@ -99,7 +104,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
     rc.m_isEmpty = false;
     if (written())
     {
-        rc.m_dataset.extend(std::move(d.extent));
+        rc.m_dataset.value().extend(std::move(d.extent));
     }
     else
     {
@@ -112,12 +117,28 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
 
 uint8_t RecordComponent::getDimensionality() const
 {
-    return get().m_dataset.rank;
+    auto &rc = get();
+    if (rc.m_dataset.has_value())
+    {
+        return rc.m_dataset.value().rank;
+    }
+    else
+    {
+        return 1;
+    }
 }
 
 Extent RecordComponent::getExtent() const
 {
-    return get().m_dataset.extent;
+    auto &rc = get();
+    if (rc.m_dataset.has_value())
+    {
+        return rc.m_dataset.value().extent;
+    }
+    else
+    {
+        return {1};
+    }
 }
 
 namespace detail
@@ -149,6 +170,12 @@ RecordComponent &RecordComponent::makeEmpty(Dataset d)
     auto &rc = get();
     if (written())
     {
+        if (!rc.m_dataset.has_value())
+        {
+            throw error::Internal(
+                "Internal control flow error: Written record component must "
+                "have defined datatype and extent.");
+        }
         if (!constant())
         {
             throw std::runtime_error(
@@ -158,14 +185,14 @@ RecordComponent &RecordComponent::makeEmpty(Dataset d)
         }
         if (d.dtype == Datatype::UNDEFINED)
         {
-            d.dtype = rc.m_dataset.dtype;
+            d.dtype = rc.m_dataset.value().dtype;
         }
-        else if (d.dtype != rc.m_dataset.dtype)
+        else if (d.dtype != rc.m_dataset.value().dtype)
         {
             throw std::runtime_error(
                 "Cannot change the datatype of a dataset.");
         }
-        rc.m_dataset.extend(std::move(d.extent));
+        rc.m_dataset.value().extend(std::move(d.extent));
         rc.m_hasBeenExtended = true;
     }
     else
@@ -173,7 +200,7 @@ RecordComponent &RecordComponent::makeEmpty(Dataset d)
         rc.m_dataset = std::move(d);
     }
 
-    if (rc.m_dataset.extent.size() == 0)
+    if (rc.m_dataset.value().extent.size() == 0)
         throw std::runtime_error("Dataset extent must be at least 1D.");
 
     rc.m_isEmpty = true;
@@ -181,7 +208,7 @@ RecordComponent &RecordComponent::makeEmpty(Dataset d)
     if (!written())
     {
         switchType<detail::DefaultValue<RecordComponent> >(
-            rc.m_dataset.dtype, *this);
+            rc.m_dataset.value().dtype, *this);
     }
     return *this;
 }
@@ -213,11 +240,11 @@ void RecordComponent::flush(
         /*
          * This catches when a user forgets to use resetDataset.
          */
-        if (rc.m_dataset.dtype == Datatype::UNDEFINED)
+        if (!rc.m_dataset.has_value())
         {
             throw error::WrongAPIUsage(
-                "[RecordComponent] Must set specific datatype (Use "
-                "resetDataset call).");
+                "[RecordComponent] Must specify dataset type and extent before "
+                "flushing (see RecordComponent::resetDataset()).");
         }
         if (!written())
         {
@@ -243,7 +270,7 @@ void RecordComponent::flush(
                 dCreate.name = name;
                 dCreate.extent = getExtent();
                 dCreate.dtype = getDatatype();
-                dCreate.options = rc.m_dataset.options;
+                dCreate.options = rc.m_dataset.value().options;
                 IOHandler()->enqueue(IOTask(this, dCreate));
             }
         }
@@ -262,7 +289,7 @@ void RecordComponent::flush(
             else
             {
                 Parameter<Operation::EXTEND_DATASET> pExtend;
-                pExtend.extent = rc.m_dataset.extent;
+                pExtend.extent = rc.m_dataset.value().extent;
                 IOHandler()->enqueue(IOTask(this, std::move(pExtend)));
                 rc.m_hasBeenExtended = false;
             }

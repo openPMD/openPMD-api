@@ -35,13 +35,29 @@ BaseRecordComponent &BaseRecordComponent::resetDatatype(Datatype d)
             "A Records Datatype can not (yet) be changed after it has been "
             "written.");
 
-    get().m_dataset.dtype = d;
+    auto &rc = get();
+    if (rc.m_dataset.has_value())
+    {
+        rc.m_dataset.value().dtype = d;
+    }
+    else
+    {
+        rc.m_dataset = Dataset{d, {1}};
+    }
     return *this;
 }
 
 Datatype BaseRecordComponent::getDatatype() const
 {
-    return get().m_dataset.dtype;
+    auto &rc = get();
+    if (rc.m_dataset.has_value())
+    {
+        return rc.m_dataset.value().dtype;
+    }
+    else
+    {
+        return Datatype::UNDEFINED;
+    }
 }
 
 bool BaseRecordComponent::constant() const
@@ -54,8 +70,12 @@ ChunkTable BaseRecordComponent::availableChunks()
     auto &rc = get();
     if (rc.m_isConstant)
     {
-        Offset offset(rc.m_dataset.extent.size(), 0);
-        return ChunkTable{{std::move(offset), rc.m_dataset.extent}};
+        if (!rc.m_dataset.has_value())
+        {
+            return ChunkTable{};
+        }
+        Offset offset(rc.m_dataset.value().extent.size(), 0);
+        return ChunkTable{{std::move(offset), rc.m_dataset.value().extent}};
     }
     containingIteration().open();
     Parameter<Operation::AVAILABLE_CHUNKS> param;
