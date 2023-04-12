@@ -450,6 +450,7 @@ endif()
 set(CORE_SOURCE
         src/config.cpp
         src/ChunkInfo.cpp
+        src/CustomHierarchy.cpp
         src/Dataset.cpp
         src/Datatype.cpp
         src/Error.cpp
