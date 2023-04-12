@@ -67,6 +67,51 @@ class BaseRecordComponent : virtual public Attributable
     friend class Container;
 
 public:
+    /*
+     * Need to define these manually due to the virtual inheritance from
+     * Attributable.
+     * Otherwise, they would only run from the most derived class
+     * if explicitly called.
+     * If not defining these, a user could destroy copy/move constructors/
+     * assignment operators by deriving from any class that has a virtual
+     * Attributable somewhere.
+     * Care must be taken in move constructors/assignment operators to not move
+     * multiple times (which could happen in diamond inheritance situations).
+     */
+
+    BaseRecordComponent(BaseRecordComponent const &other)
+        : Attributable(NoInit())
+    {
+        m_attri = other.m_attri;
+        m_baseRecordComponentData = other.m_baseRecordComponentData;
+    }
+
+    BaseRecordComponent(BaseRecordComponent &&other) : Attributable(NoInit())
+    {
+        if (other.m_attri)
+        {
+            m_attri = std::move(other.m_attri);
+        }
+        m_baseRecordComponentData = std::move(other.m_baseRecordComponentData);
+    }
+
+    BaseRecordComponent &operator=(BaseRecordComponent const &other)
+    {
+        m_attri = other.m_attri;
+        m_baseRecordComponentData = other.m_baseRecordComponentData;
+        return *this;
+    }
+
+    BaseRecordComponent &operator=(BaseRecordComponent &&other)
+    {
+        if (other.m_attri)
+        {
+            m_attri = std::move(other.m_attri);
+        }
+        m_baseRecordComponentData = std::move(other.m_baseRecordComponentData);
+        return *this;
+    }
+
     double unitSI() const;
 
     BaseRecordComponent &resetDatatype(Datatype);
