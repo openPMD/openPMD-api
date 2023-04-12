@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
@@ -79,7 +80,7 @@ namespace internal
         bool beginStep = false;
     };
 
-    class IterationData : public AttributableData
+    class IterationData : public CustomHierarchyData
     {
     public:
         /*
@@ -123,7 +124,7 @@ namespace internal
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
-class Iteration : public Attributable
+class Iteration : public CustomHierarchy
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
@@ -260,14 +261,19 @@ private:
     inline void setData(std::shared_ptr<Data_t> data)
     {
         m_iterationData = std::move(data);
-        Attributable::setData(m_iterationData);
+        CustomHierarchy::setData(m_iterationData);
     }
 
     void flushFileBased(
         std::string const &, IterationIndex_t, internal::FlushParams const &);
     void flushGroupBased(IterationIndex_t, internal::FlushParams const &);
     void flushVariableBased(IterationIndex_t, internal::FlushParams const &);
-    void flush(internal::FlushParams const &);
+    /*
+     * Named flushIteration instead of flush to avoid naming
+     * conflicts with overridden virtual flush from CustomHierarchy
+     * class.
+     */
+    void flushIteration(internal::FlushParams const &);
     void deferParseAccess(internal::DeferredParseAccess);
     /*
      * Control flow for runDeferredParseAccess(), readFileBased(),
