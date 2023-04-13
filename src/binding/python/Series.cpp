@@ -53,24 +53,90 @@ struct openPMD_PyMPICommObject
 using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 #endif
 
+struct SeriesIteratorPythonAdaptor : SeriesIterator
+{
+    SeriesIteratorPythonAdaptor(SeriesIterator it)
+        : SeriesIterator(std::move(it))
+    {}
+
+    /*
+     * Python iterators are weird and call `__next__()` already for getting the
+     * first element.
+     * In that case, no `operator++()` must be called...
+     */
+    bool first_iteration = true;
+};
+
 void init_Series(py::module &m)
 {
     py::class_<WriteIterations>(m, "WriteIterations")
         .def(
             "__getitem__",
             [](WriteIterations writeIterations, Series::IterationIndex_t key) {
+                auto lastIteration = writeIterations.currentIteration();
+                if (lastIteration.has_value() &&
+                    lastIteration.value().iterationIndex != key)
+                {
+                    // this must happen under the GIL
+                    lastIteration.value().close();
+                }
+                py::gil_scoped_release release;
                 return writeIterations[key];
             },
             // copy + keepalive
-            py::return_value_policy::copy);
+            py::return_value_policy::copy)
+        .def(
+            "current_iteration",
+            &WriteIterations::currentIteration,
+            "Return the iteration that is currently being written to, if it "
+            "exists.");
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
+
+    py::class_<SeriesIteratorPythonAdaptor>(m, "SeriesIterator")
+        .def(
+            "__next__",
+            [](SeriesIteratorPythonAdaptor &iterator) {
+                if (iterator == SeriesIterator::end())
+                {
+                    throw py::stop_iteration();
+                }
+                /*
+                 * Closing the iteration must happen under the GIL lock since
+                 * Python buffers might be accessed
+                 */
+                if (!iterator.first_iteration)
+                {
+                    if (!(*iterator).closed())
+                    {
+                        (*iterator).close();
+                    }
+                    py::gil_scoped_release release;
+                    ++iterator;
+                }
+                iterator.first_iteration = false;
+                if (iterator == SeriesIterator::end())
+                {
+                    throw py::stop_iteration();
+                }
+                else
+                {
+                    return *iterator;
+                }
+            }
+
+        );
+
     py::class_<ReadIterations>(m, "ReadIterations")
         .def(
             "__iter__",
             [](ReadIterations &readIterations) {
-                return py::make_iterator(
-                    readIterations.begin(), readIterations.end());
+                // Simple iterator implementation:
+                // But we need to release the GIL inside
+                // SeriesIterator::operator++, so manually it is
+                // return py::make_iterator(
+                //     readIterations.begin(), readIterations.end());
+                return SeriesIteratorPythonAdaptor(readIterations.begin());
             },
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
@@ -78,7 +144,12 @@ void init_Series(py::module &m)
     py::class_<Series, Attributable>(m, "Series")
 
         .def(
-            py::init<std::string const &, Access, std::string const &>(),
+            py::init([](std::string const &filepath,
+                        Access at,
+                        std::string const &options) {
+                py::gil_scoped_release release;
+                return new Series(filepath, at, options);
+            }),
             py::arg("filepath"),
             py::arg("access"),
             py::arg("options") = "{}")
@@ -145,6 +216,7 @@ void init_Series(py::module &m)
                         "(Mismatched MPI at compile vs. runtime?)");
                 }
 
+                py::gil_scoped_release release;
                 return new Series(filepath, at, *mpiCommPtr, options);
             }),
             py::arg("filepath"),
@@ -232,7 +304,13 @@ this method.
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
-        .def("read_iterations", &Series::readIterations, py::keep_alive<0, 1>())
+        .def(
+            "read_iterations",
+            [](Series &s) {
+                py::gil_scoped_release release;
+                return s.readIterations();
+            },
+            py::keep_alive<0, 1>())
         .def(
             "write_iterations",
             &Series::writeIterations,

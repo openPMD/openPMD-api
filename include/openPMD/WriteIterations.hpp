@@ -87,5 +87,10 @@ private:
 public:
     mapped_type &operator[](key_type const &key);
     mapped_type &operator[](key_type &&key);
+
+    /**
+     * Return the iteration that is currently being written to, if it exists.
+     */
+    std::optional<IndexedIteration> currentIteration();
 };
 } // namespace openPMD

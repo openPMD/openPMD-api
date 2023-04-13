@@ -69,13 +69,17 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
             "[WriteIterations] Trying to access after closing Series.");
     }
     auto &s = shared->value();
-    if (s.currentlyOpen.has_value())
+    auto lastIteration = currentIteration();
+    if (lastIteration.has_value())
     {
-        auto lastIterationIndex = s.currentlyOpen.value();
-        auto &lastIteration = s.iterations.at(lastIterationIndex);
-        if (lastIterationIndex != key && !lastIteration.closed())
+        auto lastIteration_v = lastIteration.value();
+        if (lastIteration_v.iterationIndex == key)
         {
-            lastIteration.close();
+            return s.iterations.at(std::move(key));
+        }
+        else
+        {
+            lastIteration_v.close(); // continue below
         }
     }
     s.currentlyOpen = key;
@@ -86,5 +90,25 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
         res.setStepStatus(StepStatus::DuringStep);
     }
     return res;
+}
+
+std::optional<IndexedIteration> WriteIterations::currentIteration()
+{
+    if (!shared || !shared->has_value())
+    {
+        return std::nullopt;
+    }
+    auto &s = shared->value();
+    if (!s.currentlyOpen.has_value())
+    {
+        return std::nullopt;
+    }
+    Iteration &currentIteration = s.iterations.at(s.currentlyOpen.value());
+    if (currentIteration.closed())
+    {
+        return std::nullopt;
+    }
+    return std::make_optional<IndexedIteration>(
+        IndexedIteration(currentIteration, s.currentlyOpen.value()));
 }
 } // namespace openPMD
