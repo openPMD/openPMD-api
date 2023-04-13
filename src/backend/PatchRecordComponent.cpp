@@ -67,7 +67,15 @@ uint8_t PatchRecordComponent::getDimensionality() const
 
 Extent PatchRecordComponent::getExtent() const
 {
-    return get().m_dataset.extent;
+    auto &rc = get();
+    if (rc.m_dataset.has_value())
+    {
+        return rc.m_dataset.value().extent;
+    }
+    else
+    {
+        return {1};
+    }
 }
 
 PatchRecordComponent::PatchRecordComponent() : BaseRecordComponent{nullptr}
@@ -94,13 +102,32 @@ void PatchRecordComponent::flush(
     }
     else
     {
+        if (!rc.m_dataset.has_value())
+        {
+            // The check for !written() is technically not needed, just
+            // defensive programming against internal bugs that go on us.
+            if (!written() && rc.m_chunks.empty())
+            {
+                // No data written yet, just accessed the object so far without
+                // doing anything
+                // Just do nothing and skip this record component.
+                return;
+            }
+            else
+            {
+                throw error::WrongAPIUsage(
+                    "[PatchRecordComponent] Must specify dataset type and "
+                    "extent before flushing (see "
+                    "RecordComponent::resetDataset()).");
+            }
+        }
         if (!written())
         {
             Parameter<Operation::CREATE_DATASET> dCreate;
             dCreate.name = name;
             dCreate.extent = getExtent();
             dCreate.dtype = getDatatype();
-            dCreate.options = rc.m_dataset.options;
+            dCreate.options = rc.m_dataset.value().options;
             IOHandler()->enqueue(IOTask(this, dCreate));
         }
 

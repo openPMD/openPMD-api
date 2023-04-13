@@ -332,7 +332,13 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         dCreate.name = rc.m_name;
         dCreate.extent = getExtent();
         dCreate.dtype = getDatatype();
-        dCreate.options = rc.m_dataset.options;
+        if (!rc.m_dataset.has_value())
+        {
+            throw error::WrongAPIUsage(
+                "[RecordComponent] Must specify dataset type and extent before "
+                "using storeChunk() (see RecordComponent::resetDataset()).");
+        }
+        dCreate.options = rc.m_dataset.value().options;
         IOHandler()->enqueue(IOTask(this, dCreate));
     }
     Parameter<Operation::GET_BUFFER_VIEW> getBufferView;

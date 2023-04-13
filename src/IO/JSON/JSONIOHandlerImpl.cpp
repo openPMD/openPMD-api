@@ -58,23 +58,7 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(AbstractIOHandler *handler)
     : AbstractIOHandlerImpl(handler)
 {}
 
-JSONIOHandlerImpl::~JSONIOHandlerImpl()
-{
-    // we must not throw in a destructor
-    try
-    {
-        flush();
-    }
-    catch (std::exception const &ex)
-    {
-        std::cerr << "[~JSONIOHandlerImpl] An error occurred: " << ex.what()
-                  << std::endl;
-    }
-    catch (...)
-    {
-        std::cerr << "[~JSONIOHandlerImpl] An error occurred." << std::endl;
-    }
-}
+JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
 
 std::future<void> JSONIOHandlerImpl::flush()
 {

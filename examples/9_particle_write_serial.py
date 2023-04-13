@@ -44,7 +44,9 @@ if __name__ == "__main__":
     # don't like it anymore? remove it with:
     # del electrons["displacement"]
 
-    electrons["weighting"][SCALAR].make_constant(1.e-5)
+    electrons["weighting"][SCALAR] \
+        .reset_dataset(Dataset(np.dtype("float32"), extent=[1])) \
+        .make_constant(1.e-5)
 
     particlePos_x = np.random.rand(234).astype(np.float32)
     particlePos_y = np.random.rand(234).astype(np.float32)
