@@ -33,8 +33,9 @@ Environment variable                     Default      Description
 ``OPENPMD_HDF5_PAGED_ALLOCATION_SIZE``   ``33554432`` Size of the page, in bytes, if HDF5 paged allocation optimization is enabled.
 ``OPENPMD_HDF5_DEFER_METADATA``          ``ON``       Tuning parameter for parallel I/O in HDF5 to enable deferred HDF5 metadata operations.
 ``OPENPMD_HDF5_DEFER_METADATA_SIZE``     ``ON``       Size of the buffer, in bytes, if HDF5 deferred metadata optimization is enabled.
-``H5_COLL_API_SANITY_CHECK``             unset        Debug: Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
 ``HDF5_USE_FILE_LOCKING``                ``TRUE``     Work-around: Set to ``FALSE`` in case you are on an HPC or network file system that hang in open for reads.
+``HDF5_DO_MPI_FILE_SYNC``                driver-dep.  Work-around: Set to ``FALSE`` to overcome MPI-I/O synchronization issues on some filesystems, e.g., NFS.
+``H5_COLL_API_SANITY_CHECK``             unset        Debug: Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
 ``OMPI_MCA_io``                          unset        Work-around: Disable OpenMPI's I/O implementation for older releases by setting this to ``^ompio``.
 ======================================== ============ ===========================================================================================================
 
@@ -72,16 +73,23 @@ The metadata buffer size can be controlled by the ``OPENPMD_HDF5_DEFER_METADATA_
 ``OPENPMD_HDF5_DEFER_METADATA_SIZE``: this option configures the size of the buffer if ``OPENPMD_HDF5_DEFER_METADATA`` optimization is enabled via `H5Pset_mdc_config <https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetMdcConfig>`__.
 Values are expressed in bytes. Default is set to 32MB.
 
-``H5_COLL_API_SANITY_CHECK``: this is a HDF5 control option for debugging parallel I/O logic (API calls).
-Debugging a parallel program with that option enabled can help to spot bugs such as collective MPI-calls that are not called by all participating MPI ranks.
-Do not use in production, this will slow parallel I/O operations down.
-
 ``HDF5_USE_FILE_LOCKING``: this is a HDF5 1.10.1+ control option that disables HDF5 internal file locking operations (see `HDF5 1.10.1 release notes <https://support.hdfgroup.org/ftp/HDF5/releases/ReleaseFiles/hdf5-1.10.1-RELEASE.txt>`__).
 This mechanism is mainly used to ensure that a file that is still being written to cannot (yet) be opened by either a reader or another writer.
 On some HPC and Jupyter systems, parallel/network file systems like GPFS are mounted in a way that interferes with this internal, HDF5 access consistency check.
 As a result, read-only operations like ``h5ls some_file.h5`` or openPMD ``Series`` open can hang indefinitely.
 If you are sure that the file was written completely and is closed by the writer, e.g., because a simulation finished that created HDF5 outputs, then you can set this environment variable to ``FALSE`` to work-around the problem.
 You should also report this problem to your system support, so they can fix the file system mount options or disable locking by default in the provided HDF5 installation.
+
+``HDF5_DO_MPI_FILE_SYNC``: this is an MPI-parallel HDF5 1.14+ control option that adds an ``MPI_File_sync()`` call `after every collective write operation <https://github.com/HDFGroup/hdf5/pull/1801>`__.
+This is sometimes needed by the underlying parallel MPI-I/O driver if the filesystem have very limited parallel features.
+Examples are NFS and UnifyFS, where this can be used to overcome synchronization issues/crashes.
+The default value for this is *MPI-IO driver-dependent* and defaults to ``TRUE`` for these filesystems in newer HDF5 versions.
+Setting the value back to ``FALSE`` has been shown to overcome `issues on NFS with parallel HDF5 <https://github.com/openPMD/openPMD-api/issues/1423>`__.
+Note that excessive sync calls can severely reduce parallel write performance, so ``TRUE`` should only be used when truly needed for correctness/stability.
+
+``H5_COLL_API_SANITY_CHECK``: this is a HDF5 control option for debugging parallel I/O logic (API calls).
+Debugging a parallel program with that option enabled can help to spot bugs such as collective MPI-calls that are not called by all participating MPI ranks.
+Do not use in production, this will slow parallel I/O operations down.
 
 ``OMPI_MCA_io``: this is an OpenMPI control variable.
 OpenMPI implements its own MPI-I/O implementation backend *OMPIO*, starting with `OpenMPI 2.x <https://www.open-mpi.org/faq/?category=ompio>`__ .
