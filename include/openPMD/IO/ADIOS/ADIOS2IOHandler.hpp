@@ -920,7 +920,7 @@ namespace detail
         Offset offset;
         Extent extent;
         UniquePtrWithLambda<void> data;
-        Datatype dtype;
+        Datatype dtype = Datatype::UNDEFINED;
 
         void run(BufferedActions &);
     };
