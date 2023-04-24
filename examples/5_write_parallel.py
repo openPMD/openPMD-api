@@ -40,6 +40,12 @@ if __name__ == "__main__":
     # In parallel contexts, it's important to explicitly open iterations.
     # This is done automatically when using `Series.write_iterations()`,
     # or in read mode `Series.read_iterations()`.
+    #
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
+    # `Series.iterations` can be directly accessed in random-access workflows.
     series.iterations[1].open()
     mymesh = series.iterations[1]. \
         meshes["mymesh"][io.Mesh_Record_Component.SCALAR]

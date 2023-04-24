@@ -44,6 +44,11 @@ int main(int argc, char *argv[])
     Series series = Series("../samples/3_write_serial.h5", Access::CREATE);
     cout << "Created an empty " << series.iterationEncoding() << " Series\n";
 
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     MeshRecordComponent rho =
         series.writeIterations()[1].meshes["rho"][MeshRecordComponent::SCALAR];
     cout << "Created a scalar mesh Record with all required openPMD "

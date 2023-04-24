@@ -51,6 +51,11 @@ int main()
     geos << "m=" << num_modes << ";imag=+";
     std::string const geometryParameters = geos.str();
 
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     Mesh E = series.writeIterations()[0].meshes["E"];
     E.setGeometry(Mesh::Geometry::thetaMode);
     E.setGeometryParameters(geometryParameters);

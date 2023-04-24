@@ -38,7 +38,13 @@ int main()
     /* Access to individual positions inside happens hierarchically, according
      * to the openPMD standard. Creation of new elements happens on access
      * inside the tree-like structure. Required attributes are initialized to
-     * reasonable defaults for every object. */
+     * reasonable defaults for every object.
+     * `Series::writeIterations()` and `Series::readIterations()` are
+     * intentionally restricted APIs that ensure a workflow which also works
+     * in streaming setups, e.g. an iteration cannot be opened again once
+     * it has been closed.
+     * `Series::iterations` can be directly accessed in random-access workflows.
+     */
     ParticleSpecies electrons =
         series.writeIterations()[1].particles["electrons"];
 

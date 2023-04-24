@@ -21,12 +21,13 @@ if __name__ == "__main__":
                        json.dumps(config))
 
     # Read all available iterations and print electron position data.
-    # Use `series.read_iterations()` instead of `series.iterations`
-    # for streaming support (while still retaining file-reading support).
-    # Direct access to `series.iterations` is only necessary for random-access
-    # of iterations. By using `series.read_iterations()`, the openPMD-api will
-    # step through the iterations one by one, and going back to an iteration is
-    # not possible once it has been closed.
+    # Direct access to iterations is possible via `series.iterations`.
+    # For streaming support, `series.read_iterations()` needs to be used
+    # instead of `series.iterations`.
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
     for iteration in series.read_iterations():
         print("Current iteration {}".format(iteration.iteration_index))
         electronPositions = iteration.particles["e"]["position"]

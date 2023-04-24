@@ -491,6 +491,11 @@ public:
      * Creates and returns an instance of the ReadIterations class which can
      * be used for iterating over the openPMD iterations in a C++11-style for
      * loop.
+     * `Series::readIterations()` is an intentionally restricted API that
+     * ensures a workflow which also works in streaming setups, e.g. an
+     * iteration cannot be opened again once it has been closed.
+     * For a less restrictive API in non-streaming situations,
+     * `Series::iterations` can be accessed directly.
      * Look for the ReadIterations class for further documentation.
      *
      * @return ReadIterations
@@ -500,11 +505,16 @@ public:
     /**
      * @brief Entry point to the writing end of the streaming API.
      *
-     * Creates and returns an instance of the WriteIterations class which is a
-     * restricted container of iterations which takes care of
-     * streaming semantics.
+     * Creates and returns an instance of the WriteIterations class which is an
+     * intentionally restricted container of iterations that takes care of
+     * streaming semantics, e.g. ensuring that an iteration cannot be reopened
+     * once closed.
+     * For a less restrictive API in non-streaming situations,
+     * `Series::iterations` can be accessed directly.
      * The created object is stored as member of the Series object, hence this
      * method may be called as many times as a user wishes.
+     * There is only one shared iterator state per Series, even when calling
+     * this method twice.
      * Look for the WriteIterations class for further documentation.
      *
      * @return WriteIterations

@@ -748,6 +748,11 @@ void AbstractPattern::store(Series &series, int step)
     std::string scalar = openPMD::MeshRecordComponent::SCALAR;
     storeMesh(series, step, field_rho, scalar);
 
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     ParticleSpecies &currSpecies =
         series.writeIterations()[step].particles["ion"];
     storeParticles(currSpecies, step);
@@ -770,6 +775,11 @@ void AbstractPattern::storeMesh(
     const std::string &fieldName,
     const std::string &compName)
 {
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     MeshRecordComponent compA =
         series.writeIterations()[step].meshes[fieldName][compName];
     Datatype datatype = determineDatatype<double>();

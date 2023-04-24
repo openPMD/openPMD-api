@@ -55,8 +55,14 @@ int main(int argc, char *argv[])
              << " MPI ranks\n";
 
     // In parallel contexts, it's important to explicitly open iterations.
-    // This is done automatically when using `Series::writeIterations()`,
-    // or in read mode `Series::readIterations()`.
+    // You can either explicitly access Series::iterations and use
+    // Iteration::open() afterwards, or use `Series::writeIterations()`,
+    // or in read mode `Series::readIterations()` where iterations are opened
+    // automatically.
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
     series.iterations[1].open();
     MeshRecordComponent mymesh =
         series.iterations[1].meshes["mymesh"][MeshRecordComponent::SCALAR];
