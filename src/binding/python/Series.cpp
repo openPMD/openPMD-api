@@ -55,7 +55,19 @@ using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 
 void init_Series(py::module &m)
 {
-    py::class_<WriteIterations>(m, "WriteIterations")
+    py::class_<WriteIterations>(m, "WriteIterations", R"END(
+Writing side of the streaming API.
+
+Create instance via Series.writeIterations().
+Restricted Container of Iterations, designed to allow reading any kind
+of Series, streaming and non-streaming alike.
+Calling Iteration.close() manually before opening the next iteration is
+encouraged and will implicitly flush all deferred IO actions.
+Otherwise, Iteration.close() will be implicitly called upon
+opening the next iteration or upon destruction.
+Since this is designed for streaming mode, reopening an iteration is
+not possible once it has been closed.
+    )END")
         .def(
             "__getitem__",
             [](WriteIterations writeIterations, Series::IterationIndex_t key) {
@@ -65,7 +77,55 @@ void init_Series(py::module &m)
             py::return_value_policy::copy);
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
-    py::class_<ReadIterations>(m, "ReadIterations")
+
+    py::class_<SeriesIteratorPythonAdaptor>(m, "SeriesIterator")
+        .def(
+            "__next__",
+            [](SeriesIteratorPythonAdaptor &iterator) {
+                if (iterator == SeriesIterator::end())
+                {
+                    throw py::stop_iteration();
+                }
+                /*
+                 * Closing the iteration must happen under the GIL lock since
+                 * Python buffers might be accessed
+                 */
+                if (!iterator.first_iteration)
+                {
+                    if (!(*iterator).closed())
+                    {
+                        (*iterator).close();
+                    }
+                    py::gil_scoped_release release;
+                    ++iterator;
+                }
+                iterator.first_iteration = false;
+                if (iterator == SeriesIterator::end())
+                {
+                    throw py::stop_iteration();
+                }
+                else
+                {
+                    return *iterator;
+                }
+            }
+
+        );
+
+    py::class_<ReadIterations>(m, "ReadIterations", R"END(
+Reading side of the streaming API.
+
+Create instance via Series.readIterations().
+For use in a foreach loop over iterations.
+Designed to allow reading any kind of Series, streaming and non-streaming alike.
+Calling Iteration.close() manually before opening the next iteration is
+encouraged and will implicitly flush all deferred IO actions.
+Otherwise, Iteration.close() will be implicitly called upon
+SeriesIterator.__next__(), i.e. upon going to the next iteration in
+the foreach loop.
+Since this is designed for streaming mode, reopening an iteration is
+not possible once it has been closed.
+    )END")
         .def(
             "__iter__",
             [](ReadIterations &readIterations) {
@@ -232,11 +292,45 @@ this method.
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
-        .def("read_iterations", &Series::readIterations, py::keep_alive<0, 1>())
+        .def(
+            "read_iterations",
+            [](Series &s) {
+                py::gil_scoped_release release;
+                return s.readIterations();
+            },
+            py::keep_alive<0, 1>(),
+            R"END(
+Entry point to the reading end of the streaming API.
+
+Creates and returns an instance of the ReadIterations class which can
+be used for iterating over the openPMD iterations in a C++11-style for
+loop.
+`Series.read_iterations()` is an intentionally restricted API that
+ensures a workflow which also works in streaming setups, e.g. an
+iteration cannot be opened again once it has been closed.
+For a less restrictive API in non-streaming situations,
+`Series.iterations` can be accessed directly.
+Look for the ReadIterations class for further documentation.
+            )END")
         .def(
             "write_iterations",
             &Series::writeIterations,
-            py::keep_alive<0, 1>());
+            py::keep_alive<0, 1>(),
+            R"END(
+Entry point to the writing end of the streaming API.
+
+Creates and returns an instance of the WriteIterations class which is an
+intentionally restricted container of iterations that takes care of
+streaming semantics, e.g. ensuring that an iteration cannot be reopened
+once closed.
+For a less restrictive API in non-streaming situations,
+`Series.iterations` can be accessed directly.
+The created object is stored as member of the Series object, hence this
+method may be called as many times as a user wishes.
+There is only one shared iterator state per Series, even when calling
+this method twice.
+Look for the WriteIterations class for further documentation.
+            )END");
 
     m.def(
         "merge_json",

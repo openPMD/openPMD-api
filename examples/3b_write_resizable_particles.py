@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # The iteration's content will be flushed automatically.
     # An iteration once closed cannot (yet) be reopened.
     # after this call, the provided data buffers can be used again or deleted
-    series.write_iterations()[0].close()
+    series.iterations[0].close()
 
     # rinse and repeat as needed :)
 

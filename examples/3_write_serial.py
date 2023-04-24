@@ -28,6 +28,11 @@ if __name__ == "__main__":
     print("Created an empty {0} Series".format(series.iteration_encoding))
 
     print(len(series.iterations))
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
+    # `Series.iterations` can be directly accessed in random-access workflows.
     rho = series.write_iterations()[1]. \
         meshes["rho"][io.Mesh_Record_Component.SCALAR]
 

@@ -50,6 +50,19 @@ namespace internal
     class SeriesData;
 }
 
+/**
+ * @brief Writing side of the streaming API.
+ *
+ * Create instance via Series::writeIterations().
+ * Restricted Container of Iterations, designed to allow reading any kind
+ * of Series, streaming and non-streaming alike.
+ * Calling Iteration::close() manually before opening the next iteration is
+ * encouraged and will implicitly flush all deferred IO actions.
+ * Otherwise, Iteration::close() will be implicitly called upon
+ * opening the next iteration or upon destruction.
+ * Since this is designed for streaming mode, reopening an iteration is
+ * not possible once it has been closed.
+ */
 class WriteIterations
 {
     friend class Series;
