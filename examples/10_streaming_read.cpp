@@ -21,6 +21,11 @@ int main()
 
     Series series = Series("electrons.sst", Access::READ_LINEAR);
 
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     for (IndexedIteration iteration : series.readIterations())
     {
         std::cout << "Current iteration: " << iteration.iterationIndex

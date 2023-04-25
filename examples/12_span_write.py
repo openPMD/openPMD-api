@@ -10,6 +10,11 @@ def span_write(filename):
     extent = [length]
     dataset = io.Dataset(datatype, extent)
 
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
+    # `Series.iterations` can be directly accessed in random-access workflows.
     iterations = series.write_iterations()
     for i in range(12):
         iteration = iterations[i]
