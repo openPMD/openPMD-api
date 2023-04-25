@@ -7371,3 +7371,147 @@ TEST_CASE("groupbased_read_write", "[serial]")
         groupbased_read_write("toml");
     }
 }
+
+void joined_dim(std::string const &ext)
+{
+    using type = float;
+    using patchType = uint64_t;
+    constexpr size_t patches_per_rank = 5;
+    constexpr size_t length_of_patch = 10;
+
+    {
+        Series s("../samples/joinedDimParallel." + ext, Access::CREATE);
+        std::vector<UniquePtrWithLambda<type>> writeFrom(patches_per_rank);
+
+        auto it = s.writeIterations()[100];
+
+        Dataset numParticlesDS(
+            determineDatatype<patchType>(), {Dataset::JOINED_DIMENSION});
+        auto numParticles =
+            it.particles["e"]
+                .particlePatches["numParticles"][RecordComponent::SCALAR];
+        auto numParticlesOffset =
+            it.particles["e"]
+                .particlePatches["numParticlesOffset"][RecordComponent::SCALAR];
+        numParticles.resetDataset(numParticlesDS);
+        numParticlesOffset.resetDataset(numParticlesDS);
+
+        auto patchOffset = it.particles["e"].particlePatches["offset"]["x"];
+        auto patchExtent = it.particles["e"].particlePatches["extent"]["x"];
+        Dataset particlePatchesDS(
+            determineDatatype<float>(), {Dataset::JOINED_DIMENSION});
+        patchOffset.resetDataset(particlePatchesDS);
+        patchExtent.resetDataset(particlePatchesDS);
+
+        for (size_t i = 0; i < 5; ++i)
+        {
+            writeFrom[i] = UniquePtrWithLambda<type>(
+                new type[length_of_patch],
+                [](auto const *ptr) { delete[] ptr; });
+            std::iota(
+                writeFrom[i].get(),
+                writeFrom[i].get() + 10,
+                length_of_patch * i);
+            patchOffset.store<type>(length_of_patch * i);
+        }
+
+        auto epx = it.particles["e"]["position"]["x"];
+        Dataset ds(determineDatatype<type>(), {Dataset::JOINED_DIMENSION});
+        epx.resetDataset(ds);
+
+        size_t counter = 0;
+        for (auto &chunk : writeFrom)
+        {
+            epx.storeChunk(std::move(chunk), {}, {length_of_patch});
+            numParticles.store<patchType>(length_of_patch);
+            /*
+             * For the sake of the test case, we know that the
+             * numParticlesOffset has this value. In general, the purpose of the
+             * joined array is that we don't need to know these values, so the
+             * specification of particle patches is somewhat difficult.
+             */
+            numParticlesOffset.store<patchType>(counter++ * length_of_patch);
+            patchExtent.store<type>(10);
+        }
+        writeFrom.clear();
+        it.close();
+        s.close();
+    }
+
+    {
+        Series s("../samples/joinedDimParallel." + ext, Access::READ_ONLY);
+        auto it = s.iterations[100];
+        auto e = it.particles["e"];
+
+        auto particleData = e["position"]["x"].loadChunk<type>();
+        auto numParticles =
+            e.particlePatches["numParticles"][RecordComponent::SCALAR]
+                .load<patchType>();
+        auto numParticlesOffset =
+            e.particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
+                .load<patchType>();
+        auto patchOffset = e.particlePatches["offset"]["x"].load<type>();
+        auto patchExtent = e.particlePatches["extent"]["x"].load<type>();
+
+        it.close();
+
+        // check validity of particle patches
+        auto numPatches =
+            e.particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
+                .getExtent()[0];
+        REQUIRE(
+            e.particlePatches["numParticles"][RecordComponent::SCALAR]
+                .getExtent()[0] == numPatches);
+        for (size_t i = 0; i < numPatches; ++i)
+        {
+            for (size_t j = 0; j < numParticles.get()[i]; ++j)
+            {
+                REQUIRE(
+                    patchOffset.get()[i] <=
+                    particleData.get()[numParticlesOffset.get()[i] + j]);
+                REQUIRE(
+                    particleData.get()[numParticlesOffset.get()[i] + j] <
+                    patchOffset.get()[i] + patchExtent.get()[i]);
+            }
+        }
+
+        /*
+         * Check that:
+         * 1. Joined array joins writes from lower ranks before higher ranks
+         * 2. Joined array joins early writes before later writes from the same
+         *    rank
+         */
+        for (size_t i = 0; i < length_of_patch * patches_per_rank; ++i)
+        {
+            REQUIRE(float(i) == particleData.get()[i]);
+        }
+        for (size_t i = 0; i < patches_per_rank; ++i)
+        {
+            REQUIRE(length_of_patch * i == numParticlesOffset.get()[i]);
+            REQUIRE(type(length_of_patch * i) == patchOffset.get()[i]);
+        }
+    }
+}
+
+TEST_CASE("joined_dim", "[serial]")
+{
+#if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
+        10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
+    209000000
+    constexpr char const *supportsJoinedDims[] = {"bp", "bp4", "bp5"};
+#else
+    // no zero-size arrays
+    std::vector<char const *> supportsJoinedDims;
+#endif
+    for (auto const &t : testedFileExtensions())
+    {
+        for (auto const supported : supportsJoinedDims)
+        {
+            if (t == supported)
+            {
+                joined_dim(t);
+                break;
+            }
+        }
+    }
+}
