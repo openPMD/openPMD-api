@@ -189,12 +189,14 @@ void init_PatchRecordComponent(py::module &m)
         // allowed python intrinsics, after (!) buffer matching
         .def(
             "store",
-            &PatchRecordComponent::store<double>,
+            py::overload_cast<uint64_t, double>(
+                &PatchRecordComponent::store<double>),
             py::arg("idx"),
             py::arg("data"))
         .def(
             "store",
-            &PatchRecordComponent::store<long>,
+            py::overload_cast<uint64_t, long>(
+                &PatchRecordComponent::store<long>),
             py::arg("idx"),
             py::arg("data"))
 

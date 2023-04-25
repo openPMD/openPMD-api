@@ -20,9 +20,10 @@
  */
 #pragma once
 
-#include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/Error.hpp"
+#include "openPMD/RecordComponent.hpp"
 
 #include <memory>
 #include <sstream>
@@ -84,6 +85,9 @@ public:
 
     template <typename T>
     void store(uint64_t idx, T);
+
+    template <typename T>
+    void store(T);
 
     // clang-format off
 OPENPMD_private
@@ -174,6 +178,35 @@ inline void PatchRecordComponent::store(uint64_t idx, T data)
 
     Parameter<Operation::WRITE_DATASET> dWrite;
     dWrite.offset = {idx};
+    dWrite.extent = {1};
+    dWrite.dtype = dtype;
+    dWrite.data = std::make_shared<T>(data);
+    auto &rc = get();
+    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
+}
+
+template <typename T>
+inline void PatchRecordComponent::store(T data)
+{
+    Datatype dtype = determineDatatype<T>();
+    if (dtype != getDatatype())
+    {
+        std::ostringstream oss;
+        oss << "Datatypes of patch data (" << dtype << ") and dataset ("
+            << getDatatype() << ") do not match.";
+        throw std::runtime_error(oss.str());
+    }
+
+    if (!joinedDimension().has_value())
+    {
+        throw error::WrongAPIUsage(
+            "[PatchRecordComponent::store] API call without explicit "
+            "specification of index only allowed when a joined dimension is "
+            "specified.");
+    }
+
+    Parameter<Operation::WRITE_DATASET> dWrite;
+    dWrite.offset = {};
     dWrite.extent = {1};
     dWrite.dtype = dtype;
     dWrite.data = std::make_shared<T>(data);

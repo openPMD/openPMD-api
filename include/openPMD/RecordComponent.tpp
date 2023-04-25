@@ -259,8 +259,17 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
     Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
+    if (o.size() == 1u && o.at(0) == 0u)
+    {
+        if (joinedDimension().has_value())
+        {
+            offset.clear();
+        }
+        else if (dim > 1u)
+        {
+            offset = Offset(dim, 0u);
+        }
+    }
 
     //   extent = {-1u}: take full size
     Extent extent(dim, 1u);
@@ -303,6 +312,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         dCreate.name = rc.m_name;
         dCreate.extent = getExtent();
         dCreate.dtype = getDatatype();
+        dCreate.joinedDimension = joinedDimension();
         if (!rc.m_dataset.has_value())
         {
             throw error::WrongAPIUsage(

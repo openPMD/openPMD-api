@@ -143,6 +143,8 @@ public:
      */
     bool constant() const;
 
+    std::optional<size_t> joinedDimension() const;
+
     /**
      * Get data chunks that are available to be loaded from the backend.
      * Note that this is backend-dependent information and the returned

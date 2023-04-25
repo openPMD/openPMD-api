@@ -60,6 +60,8 @@ namespace openPMD
 {
 #if openPMD_HAVE_ADIOS2
 
+std::optional<size_t> joinedDimension(adios2::Dims const &dims);
+
 class ADIOS2IOHandler;
 
 namespace detail
@@ -443,13 +445,22 @@ private:
                         std::to_string(actualDim) + ")");
             }
         }
+        auto joinedDim = joinedDimension(shape);
         for (unsigned int i = 0; i < actualDim; i++)
         {
-            if (offset[i] + extent[i] > shape[i])
+            if (!(joinedDim.has_value() && *joinedDim == i) &&
+                offset[i] + extent[i] > shape[i])
             {
                 throw std::runtime_error(
                     "[ADIOS2] Dataset access out of bounds.");
             }
+        }
+
+        if (joinedDim.has_value() && !offset.empty())
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Offset must be an empty vector in case of joined "
+                "array.");
         }
 
         var.SetSelection(

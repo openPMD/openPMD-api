@@ -95,10 +95,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
     }
     // if( d.extent.empty() )
     //    throw std::runtime_error("Dataset extent must be at least 1D.");
-    if (std::any_of(
-            d.extent.begin(), d.extent.end(), [](Extent::value_type const &i) {
-                return i == 0u;
-            }))
+    if (d.empty())
         return makeEmpty(std::move(d));
 
     rc.m_isEmpty = false;
@@ -299,6 +296,7 @@ void RecordComponent::flush(
                 dCreate.extent = getExtent();
                 dCreate.dtype = getDatatype();
                 dCreate.options = rc.m_dataset.value().options;
+                dCreate.joinedDimension = joinedDimension();
                 IOHandler()->enqueue(IOTask(this, dCreate));
             }
         }
@@ -484,22 +482,57 @@ void RecordComponent::verifyChunk(
     uint8_t dim = getDimensionality();
     Extent dse = getExtent();
 
-    if (e.size() != dim || o.size() != dim)
+    if (auto jd = joinedDimension(); jd.has_value())
     {
-        std::ostringstream oss;
-        oss << "Dimensionality of chunk ("
-            << "offset=" << o.size() << "D, "
-            << "extent=" << e.size() << "D) "
-            << "and record component (" << int(dim) << "D) "
-            << "do not match.";
-        throw std::runtime_error(oss.str());
+        if (o.size() != 0)
+        {
+            std::ostringstream oss;
+            oss << "Joined array: Must specify an empty offset (given: "
+                << "offset=" << o.size() << "D, "
+                << "extent=" << e.size() << "D).";
+            throw std::runtime_error(oss.str());
+        }
+        if (e.size() != dim)
+        {
+            std::ostringstream oss;
+            oss << "Joined array: Dimensionalities of chunk extent and dataset "
+                   "extent must be equivalent (given: "
+                << "offset=" << o.size() << "D, "
+                << "extent=" << e.size() << "D).";
+            throw std::runtime_error(oss.str());
+        }
+        for (size_t i = 0; i < dim; ++i)
+        {
+            if (i != jd.value() && e[i] != dse[i])
+            {
+                throw std::runtime_error(
+                    "Joined array: Chunk extent on non-joined dimensions must "
+                    "be equivalent to dataset extents (Dimension on index " +
+                    std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                    " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
+            }
+        }
     }
-    for (uint8_t i = 0; i < dim; ++i)
-        if (dse[i] < o[i] + e[i])
-            throw std::runtime_error(
-                "Chunk does not reside inside dataset (Dimension on index " +
-                std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
-                " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
+    else
+    {
+        if (e.size() != dim || o.size() != dim)
+        {
+            std::ostringstream oss;
+            oss << "Dimensionality of chunk ("
+                << "offset=" << o.size() << "D, "
+                << "extent=" << e.size() << "D) "
+                << "and record component (" << int(dim) << "D) "
+                << "do not match.";
+            throw std::runtime_error(oss.str());
+        }
+        for (uint8_t i = 0; i < dim; ++i)
+            if (dse[i] < o[i] + e[i])
+                throw std::runtime_error(
+                    "Chunk does not reside inside dataset (Dimension on "
+                    "index " +
+                    std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                    " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
+    }
 }
 
 namespace
