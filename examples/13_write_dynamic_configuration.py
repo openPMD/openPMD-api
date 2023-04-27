@@ -130,7 +130,7 @@ def main():
         temperature.axis_labels = ["x", "y"]
         temperature.grid_spacing = [1., 1.]
         # temperature has no x,y,z components, so skip the last layer:
-        temperature_dataset = temperature[io.Mesh_Record_Component.SCALAR]
+        temperature_dataset = temperature
         # let's say we are in a 3x3 mesh
         dataset = io.Dataset(np.dtype("double"), [3, 3])
         dataset.options = json.dumps(config)

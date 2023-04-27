@@ -39,14 +39,14 @@ if __name__ == "__main__":
 
     # let's set a weird user-defined record this time
     electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
-    electrons["displacement"][SCALAR].unit_SI = 1.e-6
+    electrons["displacement"].unit_SI = 1.e-6
     dset = Dataset(np.dtype("float64"), extent=[n_particles])
-    electrons["displacement"][SCALAR].reset_dataset(dset)
-    electrons["displacement"][SCALAR].make_constant(42.43)
+    electrons["displacement"].reset_dataset(dset)
+    electrons["displacement"].make_constant(42.43)
     # don't like it anymore? remove it with:
     # del electrons["displacement"]
 
-    electrons["weighting"][SCALAR] \
+    electrons["weighting"] \
         .reset_dataset(Dataset(np.dtype("float32"), extent=[n_particles])) \
         .make_constant(1.e-5)
 

@@ -64,8 +64,7 @@ int main(int argc, char *argv[])
     // in streaming setups, e.g. an iteration cannot be opened again once
     // it has been closed.
     series.iterations[1].open();
-    MeshRecordComponent mymesh =
-        series.iterations[1].meshes["mymesh"][MeshRecordComponent::SCALAR];
+    Mesh mymesh = series.iterations[1].meshes["mymesh"];
 
     // example 1D domain decomposition in first index
     Datatype datatype = determineDatatype<float>();

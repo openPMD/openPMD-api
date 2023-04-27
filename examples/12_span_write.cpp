@@ -90,8 +90,7 @@ void span_write(std::string const &filename)
 
         using mesh_type = position_t;
 
-        RecordComponent chargeDensity =
-            iteration.meshes["e_chargeDensity"][RecordComponent::SCALAR];
+        Mesh chargeDensity = iteration.meshes["e_chargeDensity"];
 
         /*
          * A similar memory optimization is possible by using a unique_ptr type

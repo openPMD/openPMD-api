@@ -54,10 +54,9 @@ int main()
      * differently.
      * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#scalar-vector-and-tensor-records*/
     Record mass = electrons["mass"];
-    RecordComponent mass_scalar = mass[RecordComponent::SCALAR];
 
     Dataset dataset = Dataset(Datatype::DOUBLE, Extent{1});
-    mass_scalar.resetDataset(dataset);
+    mass.resetDataset(dataset);
 
     /* Required Records and RecordComponents are created automatically.
      * Initialization has to be done explicitly by the user. */
