@@ -86,7 +86,7 @@ class PatchRecordComponent : public BaseRecordComponent
 public:
     PatchRecordComponent &setUnitSI(double);
 
-    PatchRecordComponent &resetDataset(Dataset);
+    virtual PatchRecordComponent &resetDataset(Dataset);
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;

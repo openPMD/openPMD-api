@@ -154,7 +154,7 @@ public:
      *
      * @return RecordComponent&
      */
-    RecordComponent &resetDataset(Dataset);
+    virtual RecordComponent &resetDataset(Dataset);
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;

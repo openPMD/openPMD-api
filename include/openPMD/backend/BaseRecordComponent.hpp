@@ -179,7 +179,7 @@ protected:
         Attributable::setData(m_baseRecordComponentData);
     }
 
-    void setDatasetDefined(Data_t &);
+    virtual void setDatasetDefined(Data_t &);
 
     bool datasetDefined() const;
 

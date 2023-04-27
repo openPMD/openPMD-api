@@ -20,9 +20,11 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
 
 #include <array>
@@ -454,6 +456,17 @@ public:
      */
     std::array<double, 7> unitDimension() const;
 
+    void setDatasetDefined(BaseRecordComponent::Data_t &data) override
+    {
+        if (!T_Container::empty())
+        {
+            throw error::WrongAPIUsage(
+                "A scalar component can not be contained at the same time as "
+                "one or more regular components.");
+        }
+        T_RecordComponent::setDatasetDefined(data);
+    }
+
     /** Returns true if this record only contains a single component
      *
      * @return true if a record with only a single component
@@ -528,9 +541,9 @@ auto BaseRecord<T_elem>::operator[](key_type const &key) -> mapped_type &
         bool const keyScalar = (key == RecordComponent::SCALAR);
         if ((keyScalar && !Container<T_elem>::empty() && !scalar()) ||
             (scalar() && !keyScalar))
-            throw std::runtime_error(
-                "A scalar component can not be contained at "
-                "the same time as one or more regular components.");
+            throw error::WrongAPIUsage(
+                "A scalar component can not be contained at the same time as "
+                "one or more regular components.");
 
         if (keyScalar)
         {
@@ -570,9 +583,9 @@ auto BaseRecord<T_elem>::operator[](key_type &&key) -> mapped_type &
         bool const keyScalar = (key == RecordComponent::SCALAR);
         if ((keyScalar && !Container<T_elem>::empty() && !scalar()) ||
             (scalar() && !keyScalar))
-            throw std::runtime_error(
-                "A scalar component can not be contained at "
-                "the same time as one or more regular components.");
+            throw error::WrongAPIUsage(
+                "A scalar component can not be contained at the same time as "
+                "one or more regular components.");
 
         if (keyScalar)
         {
@@ -960,6 +973,17 @@ inline void BaseRecord<T_elem>::flush(
             "A Record can not be written without any contained "
             "RecordComponents: " +
             name);
+
+    /*
+     * Defensive programming. Normally, this error should yield as soon as
+     * possible.
+     */
+    if (scalar() && !T_Container::empty())
+    {
+        throw error::WrongAPIUsage(
+            "A scalar component can not be contained at the same time as "
+            "one or more regular components.");
+    }
 
     this->flush_impl(name, flushParams);
     // flush_impl must take care to correctly set the dirty() flag so this

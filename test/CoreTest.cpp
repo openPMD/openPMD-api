@@ -1,4 +1,6 @@
 // expose private and protected members for invasive testing
+#include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -1387,4 +1389,45 @@ TEST_CASE("unique_ptr", "[core]")
     UniquePtrWithLambda<int[]> arrptrFilled{new int[5]{}};
     UniquePtrWithLambda<int[]> arrptrFilledCustom{
         new int[5]{}, [](int const *p) { delete[] p; }};
+}
+
+TEST_CASE("scalar_and_vector", "[core]")
+{
+    {
+        Series series("../samples/scalar_and_vector.json", Access::CREATE);
+        auto E = series.iterations[0].meshes["E"];
+        E["x"].makeEmpty(Datatype::FLOAT, 3);
+        REQUIRE_THROWS_AS(
+            E.makeEmpty(Datatype::FLOAT, 3), error::WrongAPIUsage);
+    }
+    {
+        Series series("scalar_and_vector.json", Access::CREATE);
+        auto E = series.iterations[0].meshes["E"];
+        E.makeEmpty(Datatype::FLOAT, 3);
+        REQUIRE_THROWS_AS(E["x"], error::WrongAPIUsage);
+    }
+    {
+        Series series("../samples/scalar_and_vector.json", Access::CREATE);
+        auto E = series.iterations[0].meshes["E"];
+        E["x"].makeEmpty(Datatype::FLOAT, 3);
+    }
+    {
+        Series read("../samples/scalar_and_vector.json", Access::READ_ONLY);
+        auto E = read.iterations[0].meshes["E"];
+        REQUIRE(E.size() == 1);
+        REQUIRE(!E.scalar());
+        REQUIRE(E.contains("x"));
+    }
+    {
+        Series series("../samples/scalar_and_vector.json", Access::CREATE);
+        auto E = series.iterations[0].meshes["E"];
+        E.makeEmpty(Datatype::FLOAT, 3);
+    }
+    {
+        Series read("../samples/scalar_and_vector.json", Access::READ_ONLY);
+        auto E = read.iterations[0].meshes["E"];
+        REQUIRE(E.size() == 1);
+        REQUIRE(E.scalar());
+        REQUIRE(!E.contains("x"));
+    }
 }
