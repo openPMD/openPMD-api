@@ -84,25 +84,11 @@ namespace detail
     struct RunUniquePtrPut;
 } // namespace detail
 
-namespace ADIOS2Schema
+enum class UseGroupTable
 {
-    using schema_t = uint64_t;
-    /*
-     * Original ADIOS schema.
-     */
-    constexpr schema_t schema_0000_00_00 = 00000000;
-    /*
-     * This introduces attribute layout via scalar ADIOS variables.
-     */
-    constexpr schema_t schema_2022_07_26 = 20220726;
-
-    enum class SupportedSchema : char
-    {
-        s_0000_00_00,
-        s_2022_07_26
-    };
-} // namespace ADIOS2Schema
-using SupportedSchema = ADIOS2Schema::SupportedSchema;
+    Yes,
+    No
+};
 
 class ADIOS2IOHandlerImpl
     : public AbstractIOHandlerImplCommon<ADIOS2FilePosition>
@@ -240,8 +226,9 @@ private:
     std::optional<MPI_Comm> m_communicator;
 #endif
     /*
-     * If the iteration encoding is variableBased, we default to using the
-     * 2021_02_09 schema since it allows mutable attributes.
+     * If the iteration encoding is variableBased, we default to using a group
+     * table, since it is the only reliable way to recover currently active
+     * groups.
      */
     IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
     /**
@@ -254,9 +241,10 @@ private:
     std::string m_userSpecifiedExtension;
 
     /*
-     * Empty option: No schema has been explicitly selected, use default.
+     * Empty option: No choice about the group table has been explicitly made,
+     * use default.
      */
-    std::optional<ADIOS2Schema::schema_t> m_schema;
+    std::optional<UseGroupTable> m_useGroupTable;
 
     enum class UseSpan : char
     {
@@ -277,23 +265,13 @@ private:
     ModifiableAttributes m_modifiableAttributes =
         ModifiableAttributes::Unspecified;
 
-    inline SupportedSchema schema() const
+    inline UseGroupTable useGroupTable() const
     {
-        if (!m_schema.has_value())
+        if (!m_useGroupTable.has_value())
         {
-            return SupportedSchema::s_0000_00_00;
+            return UseGroupTable::No;
         }
-        switch (m_schema.value())
-        {
-        case ADIOS2Schema::schema_0000_00_00:
-            return SupportedSchema::s_0000_00_00;
-        case ADIOS2Schema::schema_2022_07_26:
-            return SupportedSchema::s_2022_07_26;
-        default:
-            throw std::runtime_error(
-                "[ADIOS2] Encountered unsupported schema version: " +
-                std::to_string(m_schema.value()));
-        }
+        return m_useGroupTable.value();
     }
 
     struct ParameterizedOperator
@@ -448,9 +426,7 @@ namespace ADIOS2Defaults
     constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
     constexpr const_str str_adios2Schema =
         "__openPMD_internal/openPMD2_adios2_schema";
-    constexpr const_str str_isBooleanOldLayout = "__is_boolean__";
-    constexpr const_str str_isBooleanNewLayout =
-        "__openPMD_internal/is_boolean";
+    constexpr const_str str_isBoolean = "__is_boolean__";
     constexpr const_str str_activeTablePrefix = "__openPMD_groups";
 } // namespace ADIOS2Defaults
 
@@ -924,6 +900,8 @@ namespace detail
          */
         void finalize();
 
+        UseGroupTable detectGroupTable();
+
         adios2::Engine &getEngine();
         adios2::Engine &requireActiveStep();
 
@@ -1158,9 +1136,9 @@ namespace detail
          */
         bool finalized = false;
 
-        inline SupportedSchema schema() const
+        [[nodiscard]] inline UseGroupTable useGroupTable() const
         {
-            return m_impl->schema();
+            return m_impl->useGroupTable();
         }
 
         void create_IO();

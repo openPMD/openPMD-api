@@ -23,6 +23,7 @@
 
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -63,17 +64,6 @@ namespace openPMD
     }
 
 #if openPMD_HAVE_ADIOS2
-
-/*
- * ADIOS2 v2.8 brings mode::ReadRandomAccess
- */
-#define HAS_ADIOS_2_8 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 208)
-/*
- * ADIOS2 v2.9 brings modifiable attributes (technically already in v2.8, but
- * there are too many bugs, so we only support it beginning with v2.9).
- * Schema 20220726 requires ADIOS2 v2.9.
- */
-#define HAS_ADIOS_2_9 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 209)
 
 #if openPMD_HAVE_MPI
 
@@ -157,19 +147,23 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
         [](unsigned char c) { return std::tolower(c); });
 
     // environment-variable based configuration
-    if (int schemaViaEnv = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", -1);
-        schemaViaEnv != -1)
+    if (int groupTableViaEnv =
+            auxiliary::getEnvNum("OPENPMD2_ADIOS2_USE_GROUP_TABLE", -1);
+        groupTableViaEnv != -1)
     {
-        m_schema = schemaViaEnv;
+        m_useGroupTable =
+            groupTableViaEnv == 0 ? UseGroupTable::No : UseGroupTable::Yes;
     }
 
     if (cfg.json().contains("adios2"))
     {
         m_config = cfg["adios2"];
 
-        if (m_config.json().contains("schema"))
+        if (m_config.json().contains("use_group_table"))
         {
-            m_schema = m_config["schema"].json().get<ADIOS2Schema::schema_t>();
+            m_useGroupTable = m_config["use_group_table"].json().get<bool>()
+                ? UseGroupTable::Yes
+                : UseGroupTable::No;
         }
 
         if (m_config.json().contains("use_span_based_put"))
@@ -223,11 +217,12 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
             m_handler->backendName(),
             "Modifiable attributes require ADIOS2 >= v2.9.");
     }
-    if (m_schema.has_value() && m_schema.value() != 0)
+    if (m_useGroupTable.has_value() &&
+        m_useGroupTable.value() == UseGroupTable::Yes)
     {
         throw error::OperationUnsupportedInBackend(
             m_handler->backendName(),
-            "ADIOS2 schema 2022_07_26 requires ADIOS2 >= v2.9.");
+            "ADIOS2 group table feature requires ADIOS2 >= v2.9.");
     }
 #endif
 }
@@ -629,11 +624,11 @@ void ADIOS2IOHandlerImpl::createPath(
     writable->abstractFilePosition =
         std::make_shared<ADIOS2FilePosition>(path, GroupOrDataset::GROUP);
 
-    switch (schema())
+    switch (useGroupTable())
     {
-    case SupportedSchema::s_0000_00_00:
+    case UseGroupTable::No:
         break;
-    case SupportedSchema::s_2022_07_26:
+    case UseGroupTable::Yes:
         getFileData(file, IfFileNotOpen::ThrowError).markActive(writable);
         break;
     }
@@ -811,11 +806,11 @@ void ADIOS2IOHandlerImpl::openPath(
         prefix + infix + suffix, GroupOrDataset::GROUP);
     writable->written = true;
 
-    switch (schema())
+    switch (useGroupTable())
     {
-    case SupportedSchema::s_0000_00_00:
+    case UseGroupTable::No:
         break;
-    case SupportedSchema::s_2022_07_26:
+    case UseGroupTable::Yes:
         getFileData(file, IfFileNotOpen::ThrowError).markActive(writable);
         break;
     }
@@ -885,9 +880,9 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     Writable *writable, const Parameter<Operation::WRITE_ATT> &parameters)
 {
 #if HAS_ADIOS_2_9
-    switch (schema())
+    switch (useGroupTable())
     {
-    case SupportedSchema::s_0000_00_00:
+    case UseGroupTable::No:
         if (parameters.changesOverSteps ==
             Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
         {
@@ -896,7 +891,7 @@ void ADIOS2IOHandlerImpl::writeAttribute(
         }
 
         break;
-    case SupportedSchema::s_2022_07_26: {
+    case UseGroupTable::Yes: {
         break;
     }
     default:
@@ -1121,9 +1116,9 @@ void ADIOS2IOHandlerImpl::listPaths(
      */
     std::vector<std::string> delete_me;
 
-    switch (schema())
+    switch (useGroupTable())
     {
-    case SupportedSchema::s_0000_00_00: {
+    case UseGroupTable::No: {
         std::vector<std::string> vars =
             fileData.availableVariablesPrefixed(myName);
         for (auto var : vars)
@@ -1152,7 +1147,7 @@ void ADIOS2IOHandlerImpl::listPaths(
         }
         break;
     }
-    case SupportedSchema::s_2022_07_26: {
+    case UseGroupTable::Yes: {
         {
             auto tablePrefix = ADIOS2Defaults::str_activeTablePrefix + myName;
             std::vector attrs =
@@ -1605,15 +1600,7 @@ namespace detail
             }
 
             std::string metaAttr;
-            switch (impl.schema())
-            {
-            case SupportedSchema::s_0000_00_00:
-                metaAttr = ADIOS2Defaults::str_isBooleanOldLayout + name;
-                break;
-            case SupportedSchema::s_2022_07_26:
-                metaAttr = ADIOS2Defaults::str_isBooleanNewLayout + name;
-                break;
-            }
+            metaAttr = ADIOS2Defaults::str_isBoolean + name;
             /*
              * In verbose mode, attributeInfo will yield a warning if not
              * finding the requested attribute. Since we expect the attribute
@@ -1846,17 +1833,8 @@ namespace detail
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
-            switch (impl->schema())
-            {
-            case SupportedSchema::s_0000_00_00:
-                IO.DefineAttribute<bool_representation>(
-                    ADIOS2Defaults::str_isBooleanOldLayout + fullName, 1);
-                break;
-            case SupportedSchema::s_2022_07_26:
-                IO.DefineAttribute<bool_representation>(
-                    ADIOS2Defaults::str_isBooleanNewLayout + fullName, 1);
-                break;
-            }
+            IO.DefineAttribute<bool_representation>(
+                ADIOS2Defaults::str_isBoolean + fullName, 1);
             auto representation = bool_repr::toRep(value);
             defineAttribute(representation);
         }
@@ -2153,11 +2131,7 @@ namespace detail
         // (attributes and unique_ptr datasets are written upon closing a step
         // or a file which users might never do)
         bool needToWrite = !m_uniquePtrPuts.empty();
-        if ((needToWrite || !m_engine) && m_mode != adios2::Mode::Read
-#if HAS_ADIOS_2_8
-            && m_mode != adios2::Mode::ReadRandomAccess
-#endif
-        )
+        if ((needToWrite || !m_engine) && writeOnly(m_mode))
         {
             getEngine();
             for (auto &entry : m_uniquePtrPuts)
@@ -2269,8 +2243,8 @@ namespace detail
             return false;
         }
 
-        bool
-        useStepsInWriting(SupportedSchema schema, std::string const &engineType)
+        bool useStepsInWriting(
+            UseGroupTable groupTable, std::string const &engineType)
         {
             if (engineType == "bp5")
             {
@@ -2285,11 +2259,11 @@ namespace detail
             case PerstepParsing::Required:
                 return true;
             case PerstepParsing::Supported:
-                switch (schema)
+                switch (groupTable)
                 {
-                case SupportedSchema::s_0000_00_00:
+                case UseGroupTable::No:
                     return false;
-                case SupportedSchema::s_2022_07_26:
+                case UseGroupTable::Yes:
                     return true;
                 }
                 break;
@@ -2356,7 +2330,7 @@ namespace detail
                  * Note that in BP4 with linear access mode, we set the
                  * StreamReader option, disabling upfrontParsing capability.
                  * So, this branch is only taken by niche engines, such as
-                 * BP3 or HDF5, or by BP5 with old ADIOS2 schema and normal read
+                 * BP3 or HDF5, or by BP5 without group table and normal read
                  * mode. Need to fall back to random access parsing.
                  */
 #if HAS_ADIOS_2_8
@@ -2407,15 +2381,12 @@ namespace detail
         std::optional<bool> userSpecifiedUsesteps)
     {
         optimizeAttributesStreaming =
-            // Optimizing attributes in streaming mode is not needed in
-            // the variable-based ADIOS2 schema
-            schema() == SupportedSchema::s_0000_00_00 &&
             // Also, it should only be done when truly streaming, not
             // when using a disk-based engine that behaves like a
             // streaming engine (otherwise attributes might vanish)
             nonpersistentEngine(m_engineType);
 
-        bool useSteps = useStepsInWriting(schema(), m_engineType);
+        bool useSteps = useStepsInWriting(useGroupTable(), m_engineType);
         if (userSpecifiedUsesteps.has_value())
         {
             useSteps = userSpecifiedUsesteps.value();
@@ -2433,41 +2404,46 @@ namespace detail
 
     void BufferedActions::configure_IO(ADIOS2IOHandlerImpl &impl)
     {
-        // step/variable-based iteration encoding requires the new schema
-        // but new schema is available only in ADIOS2 >= v2.8
-        // use old schema to support at least one single iteration otherwise
+        // step/variable-based iteration encoding requires use of group tables
+        // but the group table feature is available only in ADIOS2 >= v2.9
+        // use old layout to support at least one single iteration otherwise
+        // these properties are inferred from the opened dataset in read mode
+        if (writeOnly(m_mode))
+        {
+
 #if HAS_ADIOS_2_9
-        if (!m_impl->m_schema.has_value())
-        {
-            switch (m_impl->m_iterationEncoding)
+            if (!m_impl->m_useGroupTable.has_value())
             {
-            case IterationEncoding::variableBased:
-                m_impl->m_schema = ADIOS2Schema::schema_2022_07_26;
-                break;
-            case IterationEncoding::groupBased:
-            case IterationEncoding::fileBased:
-                m_impl->m_schema = ADIOS2Schema::schema_0000_00_00;
-                break;
+                switch (m_impl->m_iterationEncoding)
+                {
+                case IterationEncoding::variableBased:
+                    m_impl->m_useGroupTable = UseGroupTable::Yes;
+                    break;
+                case IterationEncoding::groupBased:
+                case IterationEncoding::fileBased:
+                    m_impl->m_useGroupTable = UseGroupTable::No;
+                    break;
+                }
             }
-        }
 
-        if (m_impl->m_modifiableAttributes ==
-            ADIOS2IOHandlerImpl::ModifiableAttributes::Unspecified)
-        {
-            m_impl->m_modifiableAttributes =
-                m_impl->m_iterationEncoding == IterationEncoding::variableBased
-                ? ADIOS2IOHandlerImpl::ModifiableAttributes::Yes
-                : ADIOS2IOHandlerImpl::ModifiableAttributes::No;
-        }
+            if (m_impl->m_modifiableAttributes ==
+                ADIOS2IOHandlerImpl::ModifiableAttributes::Unspecified)
+            {
+                m_impl->m_modifiableAttributes = m_impl->m_iterationEncoding ==
+                        IterationEncoding::variableBased
+                    ? ADIOS2IOHandlerImpl::ModifiableAttributes::Yes
+                    : ADIOS2IOHandlerImpl::ModifiableAttributes::No;
+            }
 #else
-        if (!m_impl->m_schema.has_value())
-        {
-            m_impl->m_schema = ADIOS2Schema::schema_0000_00_00;
-        }
+            if (!m_impl->m_useGroupTable.has_value())
+            {
+                m_impl->m_useGroupTable = UseGroupTable::No;
+            }
 
-        m_impl->m_modifiableAttributes =
-            ADIOS2IOHandlerImpl::ModifiableAttributes::No;
+            m_impl->m_modifiableAttributes =
+                ADIOS2IOHandlerImpl::ModifiableAttributes::No;
 #endif
+        }
 
         // set engine type
         {
@@ -2534,8 +2510,7 @@ namespace detail
             }
             auto _useAdiosSteps =
                 impl.config(ADIOS2Defaults::str_usesteps, engineConfig);
-            if (!_useAdiosSteps.json().is_null() &&
-                m_mode != adios2::Mode::Read)
+            if (!_useAdiosSteps.json().is_null() && writeOnly(m_mode))
             {
                 userSpecifiedUsesteps =
                     std::make_optional(_useAdiosSteps.json().get<bool>());
@@ -2584,14 +2559,7 @@ namespace detail
             configure_IO_Read(userSpecifiedUsesteps);
             break;
         case Access::READ_WRITE:
-            if (
-#if HAS_ADIOS_2_8
-                m_mode == adios2::Mode::Read ||
-                m_mode == adios2::Mode::ReadRandomAccess
-#else
-                m_mode == adios2::Mode::Read
-#endif
-            )
+            if (readOnly(m_mode))
             {
                 configure_IO_Read(userSpecifiedUsesteps);
             }
@@ -2730,6 +2698,23 @@ namespace detail
         getEngine();
     }
 
+    UseGroupTable BufferedActions::detectGroupTable()
+    {
+        auto const &attributes = availableAttributes();
+        auto lower_bound =
+            attributes.lower_bound(ADIOS2Defaults::str_activeTablePrefix);
+        if (lower_bound != attributes.end() &&
+            auxiliary::starts_with(
+                lower_bound->first, ADIOS2Defaults::str_activeTablePrefix))
+        {
+            return UseGroupTable::Yes;
+        }
+        else
+        {
+            return UseGroupTable::No;
+        }
+    }
+
     adios2::Engine &BufferedActions::getEngine()
     {
         if (!m_engine)
@@ -2765,10 +2750,7 @@ namespace detail
                 m_engine = std::make_optional(
                     adios2::Engine(m_IO.Open(m_file, m_mode)));
                 /*
-                 * First round: decide attribute layout.
-                 * This MUST occur before the `switch(streamStatus)` construct
-                 * since the streamStatus might be changed after taking a look
-                 * at the used schema.
+                 * First round: detect use of group table
                  */
                 bool openedANewStep = false;
                 {
@@ -2778,7 +2760,7 @@ namespace detail
                         /*
                          * In BP5 with Linear read mode, we now need to
                          * tentatively open the first IO step.
-                         * Otherwise we don't see the schema attribute.
+                         * Otherwise we don't see the group table attributes.
                          * This branch is also taken by Streaming engines.
                          */
                         if (m_engine->BeginStep() != adios2::StepStatus::OK)
@@ -2789,25 +2771,31 @@ namespace detail
                         }
                         openedANewStep = true;
                     }
-                    auto attr = m_IO.InquireAttribute<ADIOS2Schema::schema_t>(
-                        ADIOS2Defaults::str_adios2Schema);
-                    if (!attr)
+
+                    if (m_impl->m_useGroupTable.has_value())
                     {
-                        m_impl->m_schema = ADIOS2Schema::schema_0000_00_00;
+                        switch (m_impl->m_useGroupTable.value())
+                        {
+                        case UseGroupTable::Yes: {
+                            auto detectedGroupTable = detectGroupTable();
+                            if (detectedGroupTable == UseGroupTable::No)
+                            {
+                                std::cerr
+                                    << "[Warning] User requested use of group "
+                                       "table when reading from ADIOS2 "
+                                       "dataset, but no group table has been "
+                                       "found. Will ignore."
+                                    << std::endl;
+                                m_impl->m_useGroupTable = UseGroupTable::No;
+                            }
+                        }
+                        case openPMD::UseGroupTable::No:
+                            break;
+                        }
                     }
                     else
                     {
-#if !HAS_ADIOS_2_9
-                        if (attr.Data()[0] != 0)
-                        {
-                            throw error::OperationUnsupportedInBackend(
-                                m_impl->m_handler->backendName(),
-                                "ADIOS2 schema 2022_07_26 requires ADIOS2 >= "
-                                "v2.9. (Trying to access a file with schema != "
-                                "0).");
-                        }
-#endif
-                        m_impl->m_schema = attr.Data()[0];
+                        m_impl->m_useGroupTable = detectGroupTable();
                     }
                 };
 
@@ -2858,11 +2846,11 @@ namespace detail
                 }
                 case StreamStatus::NoStream:
                     // using random-access mode
-                case StreamStatus::DuringStep:
-                    // IO step might have sneakily been opened
-                    // by setLayoutVersion(), because otherwise we don't see
-                    // the schema attribute
                     break;
+                case StreamStatus::DuringStep:
+                    throw error::Internal(
+                        "[ADIOS2] Control flow error: stream status cannot be "
+                        "DuringStep before opening the engine.");
                 case StreamStatus::OutsideOfStep:
                     if (openedANewStep)
                     {
@@ -3000,8 +2988,8 @@ namespace detail
 
         if (!initializedDefaults)
         {
-            m_IO.DefineAttribute<ADIOS2Schema::schema_t>(
-                ADIOS2Defaults::str_adios2Schema, m_impl->m_schema.value());
+            // Currently only schema 0 supported
+            m_IO.DefineAttribute<uint64_t>(ADIOS2Defaults::str_adios2Schema, 0);
             initializedDefaults = true;
         }
 
@@ -3013,12 +3001,7 @@ namespace detail
             }
         }
 
-#if HAS_ADIOS_2_8
-        if (this->m_mode == adios2::Mode::Read ||
-            this->m_mode == adios2::Mode::ReadRandomAccess)
-#else
-        if (this->m_mode == adios2::Mode::Read)
-#endif
+        if (readOnly(m_mode))
         {
             level = FlushLevel::UserFlush;
         }
@@ -3115,21 +3098,13 @@ namespace detail
             flushParams,
             [decideFlushAPICall = std::move(decideFlushAPICall)](
                 BufferedActions &ba, adios2::Engine &eng) {
-                switch (ba.m_mode)
+                if (writeOnly(ba.m_mode))
                 {
-                case adios2::Mode::Write:
-                case adios2::Mode::Append:
                     decideFlushAPICall(eng);
-                    break;
-                case adios2::Mode::Read:
-#if HAS_ADIOS_2_8
-                case adios2::Mode::ReadRandomAccess:
-#endif
+                }
+                else
+                {
                     eng.PerformGets();
-                    break;
-                default:
-                    throw error::Internal("[ADIOS2] Unexpected access mode.");
-                    break;
                 }
             },
             writeLatePuts,
@@ -3147,8 +3122,7 @@ namespace detail
         // sic! no else
         if (streamStatus == StreamStatus::NoStream)
         {
-            if ((m_mode == adios2::Mode::Write ||
-                 m_mode == adios2::Mode::Append) &&
+            if (writeOnly(m_mode) &&
                 !m_IO.InquireAttribute<bool_representation>(
                     ADIOS2Defaults::str_usesstepsAttribute))
             {
@@ -3169,8 +3143,7 @@ namespace detail
          * The usessteps tag should only be set when the Series is *logically*
          * using steps.
          */
-        if (calledExplicitly &&
-            (m_mode == adios2::Mode::Write || m_mode == adios2::Mode::Append) &&
+        if (calledExplicitly && writeOnly(m_mode) &&
             !m_IO.InquireAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute))
         {
@@ -3331,16 +3304,15 @@ namespace detail
 
     void BufferedActions::markActive(Writable *writable)
     {
-        switch (schema())
+        switch (useGroupTable())
         {
-        case SupportedSchema::s_0000_00_00:
+        case UseGroupTable::No:
             break;
-        case SupportedSchema::s_2022_07_26:
+        case UseGroupTable::Yes:
 #if HAS_ADIOS_2_9
         {
             // @todo do this also for all parent paths?
-            if (m_mode != adios2::Mode::Read &&
-                m_mode != adios2::Mode::ReadRandomAccess)
+            if (writeOnly(m_mode))
             {
                 auto filePos = m_impl->setAndGetFilePosition(
                     writable, /* write = */ false);
@@ -3360,7 +3332,7 @@ namespace detail
             (void)writable;
             throw error::OperationUnsupportedInBackend(
                 m_impl->m_handler->backendName(),
-                "ADIOS2 schema 2022_07_26 requires ADIOS2 >= v2.9.");
+                "Group table feature requires ADIOS2 >= v2.9.");
 #endif
         break;
         }
