@@ -987,12 +987,13 @@ void HDF5IOHandlerImpl::openDataset(
     if (dataset_class == H5S_SIMPLE || dataset_class == H5S_SCALAR ||
         dataset_class == H5S_NULL)
     {
-        if (H5Tequal(dataset_type, H5T_NATIVE_CHAR))
-            d = DT::CHAR;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_UCHAR))
+        if (H5Tequal(dataset_type, H5T_NATIVE_UCHAR))
             d = DT::UCHAR;
         else if (H5Tequal(dataset_type, H5T_NATIVE_SCHAR))
             d = DT::SCHAR;
+        // NOTE: in HDF5, CHAR is actually either UCHAR or SCHAR.
+        else if (H5Tequal(dataset_type, H5T_NATIVE_CHAR))
+            d = DT::CHAR;
         else if (H5Tequal(dataset_type, H5T_NATIVE_SHORT))
             d = DT::SHORT;
         else if (H5Tequal(dataset_type, H5T_NATIVE_INT))
