@@ -212,8 +212,11 @@ class BaseRecord
     : public Container<T_elem>
     , public T_elem // T_RecordComponent
 {
+public:
     using T_RecordComponent = T_elem;
     using T_Container = Container<T_elem>;
+
+private:
     using T_Self = BaseRecord<T_elem>;
     friend class Iteration;
     friend class ParticleSpecies;

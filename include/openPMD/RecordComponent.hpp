@@ -109,6 +109,9 @@ namespace internal
     class BaseRecordData;
 } // namespace internal
 
+template <typename>
+class BaseRecord;
+
 class RecordComponent : public BaseRecordComponent
 {
     template <typename T, typename T_key, typename T_container>
@@ -133,6 +136,15 @@ public:
         API,
         AUTO
     }; // Allocation
+
+    /**
+     * @brief Avoid object slicing when using a Record as a scalar Record
+     *        Component.
+     *
+     * It's still preferred to directly use the Record, or alternatively a
+     * Record-Component-type reference to a Record.
+     */
+    RecordComponent(BaseRecord<RecordComponent> const &);
 
     RecordComponent &setUnitSI(double);
 

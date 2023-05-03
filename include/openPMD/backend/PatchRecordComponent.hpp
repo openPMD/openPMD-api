@@ -84,6 +84,15 @@ class PatchRecordComponent : public BaseRecordComponent
     friend class internal::PatchRecordComponentData;
 
 public:
+    /**
+     * @brief Avoid object slicing when using a Record as a scalar Record
+     *        Component.
+     *
+     * It's still preferred to directly use the Record, or alternatively a
+     * Record-Component-type reference to a Record.
+     */
+    PatchRecordComponent(BaseRecord<PatchRecordComponent> const &);
+
     PatchRecordComponent &setUnitSI(double);
 
     virtual PatchRecordComponent &resetDataset(Dataset);

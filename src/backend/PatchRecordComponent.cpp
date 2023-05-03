@@ -20,6 +20,7 @@
  */
 #include "openPMD/backend/PatchRecordComponent.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 #include <algorithm>
 
@@ -72,6 +73,13 @@ Extent PatchRecordComponent::getExtent() const
     {
         return {1};
     }
+}
+
+PatchRecordComponent::PatchRecordComponent(
+    BaseRecord<PatchRecordComponent> const &baseRecord)
+    : BaseRecordComponent(NoInit())
+{
+    setData(baseRecord.m_patchRecordComponentData);
 }
 
 PatchRecordComponent::PatchRecordComponent() : BaseRecordComponent(NoInit())

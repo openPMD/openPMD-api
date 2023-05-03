@@ -25,6 +25,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 #include <algorithm>
 #include <climits>
@@ -47,6 +48,12 @@ RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 
 RecordComponent::RecordComponent(NoInit) : BaseRecordComponent(NoInit())
 {}
+
+RecordComponent::RecordComponent(BaseRecord<RecordComponent> const &baseRecord)
+    : BaseRecordComponent(NoInit())
+{
+    setData(baseRecord.m_recordComponentData);
+}
 
 // We need to instantiate this somewhere otherwise there might be linker issues
 // despite this thing actually being constepxr

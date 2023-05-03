@@ -74,6 +74,9 @@ namespace internal
     };
 } // namespace internal
 
+template <typename>
+class BaseRecord;
+
 class BaseRecordComponent : virtual public Attributable
 {
     template <typename T, typename T_key, typename T_container>

@@ -52,6 +52,15 @@ private:
 public:
     ~MeshRecordComponent() override = default;
 
+    /**
+     * @brief Avoid object slicing when using a Record as a scalar Record
+     *        Component.
+     *
+     * It's still preferred to directly use the Record, or alternatively a
+     * Record-Component-type reference to a Record.
+     */
+    MeshRecordComponent(BaseRecord<MeshRecordComponent> const &);
+
     /** Position on an element
      *
      * Relative on an element (node/cell/voxel) of the mesh

@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 namespace openPMD
 {
@@ -27,6 +28,13 @@ MeshRecordComponent::MeshRecordComponent() : RecordComponent()
 
 MeshRecordComponent::MeshRecordComponent(NoInit) : RecordComponent(NoInit())
 {}
+
+MeshRecordComponent::MeshRecordComponent(
+    BaseRecord<MeshRecordComponent> const &baseRecord)
+    : RecordComponent(NoInit())
+{
+    setData(baseRecord.m_recordComponentData);
+}
 
 void MeshRecordComponent::read()
 {
