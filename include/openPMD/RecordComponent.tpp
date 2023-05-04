@@ -100,7 +100,8 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
     if (dtype != getDatatype())
         if (!isSameInteger<T>(getDatatype()) &&
             !isSameFloatingPoint<T>(getDatatype()) &&
-            !isSameComplexFloatingPoint<T>(getDatatype()))
+            !isSameComplexFloatingPoint<T>(getDatatype()) &&
+            !isSameChar<T>(getDatatype()))
         {
             std::string const data_type_str = datatypeToString(getDatatype());
             std::string const requ_type_str =
