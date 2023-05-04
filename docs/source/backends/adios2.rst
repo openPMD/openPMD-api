@@ -82,7 +82,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
 ``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``      Number of files to be created, 0 indicates maximum number possible.
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
-``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
+``OPENPMD2_ADIOS2_USE_GROUP_TABLE``   ``0``      Use group table (see below)
 ``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
 ``OPENPMD_ADIOS2_ASYNC_WRITE``        ``0``      ADIOS2 BP5 engine: 1 means setting "AsyncWrite" in ADIOS2 to "on". Flushes will go to the buffer by default (see ``preferred_flush_target``).
 ``OPENPMD_ADIOS2_BP5_BufferChunkMB``  ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
@@ -135,14 +135,32 @@ The preferred backend usually depends on the system's native software stack.
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS2 manual and talk to your filesystem admins and the ADIOS2 authors.
 Be aware that extreme-scale I/O is a research topic after all.
 
-Experimental new ADIOS2 schema
-------------------------------
+Experimental group table feature
+--------------------------------
 
-The experimental new ADIOS2 schema is deprecated and **will be removed soon**. It used to be activated via the JSON parameter ``adios2.schema = 20210209`` or via the environment variable ``export OPENPMD2_ADIOS2_SCHEMA=20210209``.
+We are experimenting with a feature that will make the structure of an ADIOS2 file more explicit.
+Currently, the hierarchical structure of an openPMD dataset in ADIOS2 is recovered implicitly by inspecting variables and attributes found in the ADIOS2 file.
+Inspecting attributes is necessary since not every openPMD group necessarily contains an (array) dataset.
+The downside of this approach is that ADIOS2 attributes do not properly interact with ADIOS2 steps, resulting in many problems and workarounds when parsing an ADIOS2 dataset.
+An attribute, once defined, cannot be deleted, implying that the ADIOS2 backend will recover groups that might not actually be logically present in the current step.
 
-**Do no longer use these options**, the created datasets will no longer be read by the openPMD-api.
+As a result of this behavior, support for ADIOS2 steps is currently restricted.
 
-An alternative data layout with less intrusive changes and similar features is `currently in development <https://github.com/openPMD/openPMD-api/pull/1310>`__.
+For full support of ADIOS2 steps, we introduce a group table that makes use of modifiable attributes in ADIOS2 v2.9, i.e. attributes that can have different values across steps.
+
+An openPMD group ``<group>`` is present if:
+
+1. The integer attribute ``__openPMD_groups/<group>`` exists
+2. and:
+
+  a. the file is either accessed in random-access mode
+  b. or the current value of said attribute is equivalent to the current step index.
+
+This feature can be activated via the JSON/TOML key ``adios2.use_group_table = true`` or via the environment variable ``OPENPMD2_ADIOS2_USE_GROUP_TABLE=1``.
+It is fully backward-compatible with the old layout of openPMD in ADIOS2 and mostly forward-compatible (except the support for steps).
+
+The variable-based encoding of openPMD automatically activates the group table feature.
+The group table feature automatically activates the use of ADIOS2 steps (which until now was an opt-in feature via ``adios2.engine.usesteps = true``).
 
 Memory usage
 ------------
