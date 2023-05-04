@@ -651,6 +651,22 @@ inline bool isSameInteger(Datatype d)
         return false;
 }
 
+constexpr bool isChar(Datatype d)
+{
+    switch (d)
+    {
+    case Datatype::CHAR:
+    case Datatype::SCHAR:
+    case Datatype::UCHAR:
+        return true;
+    default:
+        return false;
+    }
+}
+
+template <typename T_Char>
+constexpr bool isSameChar(Datatype d);
+
 /** Comparison for two Datatypes
  *
  * Besides returning true for the same types, identical implementations on
@@ -710,6 +726,43 @@ void warnWrongDtype(std::string const &key, Datatype store, Datatype request);
 
 std::ostream &operator<<(std::ostream &, openPMD::Datatype const &);
 
+/**
+ * Generalizes switching over an openPMD datatype.
+ *
+ * Will call the function template found at Action::call< T >(), instantiating T
+ * with the C++ internal datatype corresponding to the openPMD datatype.
+ *
+ * @tparam ReturnType The function template's return type.
+ * @tparam Action The struct containing the function template.
+ * @tparam Args The function template's argument types.
+ * @param dt The openPMD datatype.
+ * @param args The function template's arguments.
+ * @return Passes on the result of invoking the function template with the given
+ *     arguments and with the template parameter specified by dt.
+ */
+template <typename Action, typename... Args>
+constexpr auto switchType(Datatype dt, Args &&...args)
+    -> decltype(Action::template call<char>(std::forward<Args>(args)...));
+
+/**
+ * Generalizes switching over an openPMD datatype.
+ *
+ * Will call the function template found at Action::call< T >(), instantiating T
+ * with the C++ internal datatype corresponding to the openPMD datatype.
+ * Ignores vector and array types.
+ *
+ * @tparam ReturnType The function template's return type.
+ * @tparam Action The struct containing the function template.
+ * @tparam Args The function template's argument types.
+ * @param dt The openPMD datatype.
+ * @param args The function template's arguments.
+ * @return Passes on the result of invoking the function template with the given
+ *     arguments and with the template parameter specified by dt.
+ */
+template <typename Action, typename... Args>
+constexpr auto switchNonVectorType(Datatype dt, Args &&...args)
+    -> decltype(Action::template call<char>(std::forward<Args>(args)...));
+
 } // namespace openPMD
 
 #if !defined(_MSC_VER)
@@ -737,3 +790,5 @@ inline bool operator!=(openPMD::Datatype d, openPMD::Datatype e)
 /** @}
  */
 #endif
+
+#include "openPMD/Datatype.tpp"
