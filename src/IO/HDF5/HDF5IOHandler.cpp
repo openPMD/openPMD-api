@@ -74,8 +74,8 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     , m_H5T_CFLOAT{H5Tcreate(H5T_COMPOUND, sizeof(float) * 2)}
     , m_H5T_CDOUBLE{H5Tcreate(H5T_COMPOUND, sizeof(double) * 2)}
     , m_H5T_CLONG_DOUBLE{H5Tcreate(H5T_COMPOUND, sizeof(long double) * 2)}
-    , m_H5T_LONG_DOUBLE_80{H5Tcopy(H5T_IEEE_F64BE)}
-    , m_H5T_CLONG_DOUBLE_80{H5Tcreate(H5T_COMPOUND, 16 * 2)}
+    , m_H5T_LONG_DOUBLE_80_LE{H5Tcopy(H5T_IEEE_F64BE)}
+    , m_H5T_CLONG_DOUBLE_80_LE{H5Tcreate(H5T_COMPOUND, 16 * 2)}
 {
     // create a h5py compatible bool type
     VERIFY(
@@ -110,26 +110,22 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     H5Tinsert(m_H5T_CLONG_DOUBLE, "r", 0, H5T_NATIVE_LDOUBLE);
     H5Tinsert(m_H5T_CLONG_DOUBLE, "i", sizeof(long double), H5T_NATIVE_LDOUBLE);
 
-    H5Tset_size(m_H5T_LONG_DOUBLE_80, 16);
-    H5Tset_order(
-        m_H5T_LONG_DOUBLE_80,
-        auxiliary::platform_endianness() == auxiliary::endian::big
-            ? H5T_ORDER_BE
-            : H5T_ORDER_LE);
-    H5Tset_precision(m_H5T_LONG_DOUBLE_80, 80);
-    H5Tset_fields(m_H5T_LONG_DOUBLE_80, 79, 64, 15, 0, 64);
-    H5Tset_ebias(m_H5T_LONG_DOUBLE_80, 16383);
-    H5Tset_norm(m_H5T_LONG_DOUBLE_80, H5T_NORM_NONE);
+    H5Tset_size(m_H5T_LONG_DOUBLE_80_LE, 16);
+    H5Tset_order(m_H5T_LONG_DOUBLE_80_LE, H5T_ORDER_LE);
+    H5Tset_precision(m_H5T_LONG_DOUBLE_80_LE, 80);
+    H5Tset_fields(m_H5T_LONG_DOUBLE_80_LE, 79, 64, 15, 0, 64);
+    H5Tset_ebias(m_H5T_LONG_DOUBLE_80_LE, 16383);
+    H5Tset_norm(m_H5T_LONG_DOUBLE_80_LE, H5T_NORM_NONE);
 
     VERIFY(
-        m_H5T_LONG_DOUBLE_80 >= 0,
+        m_H5T_LONG_DOUBLE_80_LE >= 0,
         "[HDF5] Internal error: Failed to create 128-bit long double");
 
-    H5Tinsert(m_H5T_CLONG_DOUBLE_80, "r", 0, m_H5T_LONG_DOUBLE_80);
-    H5Tinsert(m_H5T_CLONG_DOUBLE_80, "i", 16, m_H5T_LONG_DOUBLE_80);
+    H5Tinsert(m_H5T_CLONG_DOUBLE_80_LE, "r", 0, m_H5T_LONG_DOUBLE_80_LE);
+    H5Tinsert(m_H5T_CLONG_DOUBLE_80_LE, "i", 16, m_H5T_LONG_DOUBLE_80_LE);
 
     VERIFY(
-        m_H5T_LONG_DOUBLE_80 >= 0,
+        m_H5T_LONG_DOUBLE_80_LE >= 0,
         "[HDF5] Internal error: Failed to create 128-bit complex long double");
 
     m_chunks = auxiliary::getEnvString("OPENPMD_HDF5_CHUNKS", "auto");
@@ -216,11 +212,11 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
     if (status < 0)
         std::cerr << "[HDF5] Internal error: Failed to close complex long "
                      "double type\n";
-    status = H5Tclose(m_H5T_LONG_DOUBLE_80);
+    status = H5Tclose(m_H5T_LONG_DOUBLE_80_LE);
     if (status < 0)
         std::cerr
             << "[HDF5] Internal error: Failed to close long double type\n";
-    status = H5Tclose(m_H5T_CLONG_DOUBLE_80);
+    status = H5Tclose(m_H5T_CLONG_DOUBLE_80_LE);
     if (status < 0)
         std::cerr << "[HDF5] Internal error: Failed to close complex long "
                      "double type\n";
@@ -1040,7 +1036,7 @@ void HDF5IOHandlerImpl::openDataset(
             d = DT::DOUBLE;
         else if (
             H5Tequal(dataset_type, H5T_NATIVE_LDOUBLE) ||
-            H5Tequal(dataset_type, m_H5T_LONG_DOUBLE_80))
+            H5Tequal(dataset_type, m_H5T_LONG_DOUBLE_80_LE))
             d = DT::LONG_DOUBLE;
         else if (H5Tequal(dataset_type, m_H5T_CFLOAT))
             d = DT::CFLOAT;
@@ -1048,7 +1044,7 @@ void HDF5IOHandlerImpl::openDataset(
             d = DT::CDOUBLE;
         else if (
             H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE) ||
-            H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE_80))
+            H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE_80_LE))
             d = DT::CLONG_DOUBLE;
         else if (H5Tequal(dataset_type, H5T_NATIVE_USHORT))
             d = DT::USHORT;
@@ -1444,7 +1440,7 @@ void HDF5IOHandlerImpl::writeAttribute(
     herr_t status;
     /*
      * Since this is the write side, we use HDF5 default float types and not
-     * m_H5T_LONG_DOUBLE_80 or m_H5T_CLONG_DOUBLE_80
+     * m_H5T_LONG_DOUBLE_80_LE or m_H5T_CLONG_DOUBLE_80_LE
      */
     GetH5DataType getH5DataType(
         {{typeid(bool).name(), m_H5T_BOOL_ENUM},
@@ -1799,10 +1795,10 @@ void HDF5IOHandlerImpl::readDataset(
          {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
          {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
          {typeid(std::complex<long double>).name(),
-          sizeof(long double) == 16 ? m_H5T_CLONG_DOUBLE_80
+          sizeof(long double) == 16 ? m_H5T_CLONG_DOUBLE_80_LE
                                     : m_H5T_CLONG_DOUBLE},
          {typeid(long double).name(),
-          sizeof(long double) == 16 ? m_H5T_LONG_DOUBLE_80
+          sizeof(long double) == 16 ? m_H5T_LONG_DOUBLE_80_LE
                                     : H5T_NATIVE_LDOUBLE}});
     hid_t dataType = getH5DataType(a);
     VERIFY(
@@ -1990,7 +1986,7 @@ void HDF5IOHandlerImpl::readAttribute(
             status = H5Aread(attr_id, attr_type, &d);
             a = Attribute(d);
         }
-        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80))
+        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE))
         {
             char bfr[16];
             status = H5Aread(attr_id, attr_type, bfr);
@@ -2278,7 +2274,7 @@ void HDF5IOHandlerImpl::readAttribute(
             status = H5Aread(attr_id, attr_type, vcld.data());
             a = Attribute(vcld);
         }
-        else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE_80))
+        else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE_80_LE))
         {
             // worst case, sizeof(long double) is only 8, so allocate enough
             // memory to fit 16 bytes per member
@@ -2297,7 +2293,7 @@ void HDF5IOHandlerImpl::readAttribute(
             free(tmpBuffer);
             a = Attribute(std::move(vcld));
         }
-        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80))
+        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE))
         {
             // use malloc to allocate a buffer that is definitely aliased and
             // big enough for 16-bit doubles
