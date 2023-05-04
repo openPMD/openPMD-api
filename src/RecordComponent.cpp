@@ -453,6 +453,21 @@ bool RecordComponent::dirtyRecursive() const
 void RecordComponent::storeChunk(
     auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
 {
+    verifyChunk(dtype, o, e);
+
+    Parameter<Operation::WRITE_DATASET> dWrite;
+    dWrite.offset = std::move(o);
+    dWrite.extent = std::move(e);
+    dWrite.dtype = dtype;
+    /* std::static_pointer_cast correctly reference-counts the pointer */
+    dWrite.data = std::move(buffer);
+    auto &rc = get();
+    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
+}
+
+void RecordComponent::verifyChunk(
+    Datatype dtype, Offset const &o, Extent const &e) const
+{
     if (constant())
         throw std::runtime_error(
             "Chunks cannot be written for a constant RecordComponent.");
@@ -467,6 +482,8 @@ void RecordComponent::storeChunk(
         throw std::runtime_error(oss.str());
     }
     uint8_t dim = getDimensionality();
+    Extent dse = getExtent();
+
     if (e.size() != dim || o.size() != dim)
     {
         std::ostringstream oss;
@@ -477,22 +494,12 @@ void RecordComponent::storeChunk(
             << "do not match.";
         throw std::runtime_error(oss.str());
     }
-    Extent dse = getExtent();
     for (uint8_t i = 0; i < dim; ++i)
         if (dse[i] < o[i] + e[i])
             throw std::runtime_error(
                 "Chunk does not reside inside dataset (Dimension on index " +
                 std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
                 " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
-
-    Parameter<Operation::WRITE_DATASET> dWrite;
-    dWrite.offset = o;
-    dWrite.extent = e;
-    dWrite.dtype = dtype;
-    /* std::static_pointer_cast correctly reference-counts the pointer */
-    dWrite.data = std::move(buffer);
-    auto &rc = get();
-    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
 }
 
 namespace

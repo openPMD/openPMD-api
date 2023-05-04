@@ -537,6 +537,11 @@ OPENPMD_protected
     }
 
     void readBase(bool require_unit_si);
+
+    template <typename T>
+    void verifyChunk(Offset const &, Extent const &) const;
+
+    void verifyChunk(Datatype, Offset const &, Extent const &) const;
 }; // RecordComponent
 
 } // namespace openPMD
