@@ -99,7 +99,7 @@ hid_t openPMD::GetH5DataType::operator()(Attribute const &att)
         return H5Tcopy(H5T_NATIVE_DOUBLE);
     case DT::LONG_DOUBLE:
     case DT::VEC_LONG_DOUBLE:
-        return H5Tcopy(m_userTypes.at(typeid(long double).name()));
+        return H5Tcopy(H5T_NATIVE_LDOUBLE);
     case DT::CFLOAT:
     case DT::VEC_CFLOAT:
         return H5Tcopy(m_userTypes.at(typeid(std::complex<float>).name()));

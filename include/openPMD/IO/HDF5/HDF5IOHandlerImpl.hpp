@@ -94,6 +94,14 @@ public:
     hid_t m_H5T_CFLOAT;
     hid_t m_H5T_CDOUBLE;
     hid_t m_H5T_CLONG_DOUBLE;
+    /* See https://github.com/openPMD/openPMD-api/issues/1363
+     * long double values written on AMD64 architectures cannot be read on
+     * ARM64/PPC64 architectures without doing some special tricks.
+     * We generally don't implement custom conversions, but instead pass-through
+     * the cross-platform support of HDF5.
+     * But this case is common and important enough to warrant a custom
+     * workaround.
+     */
     hid_t m_H5T_LONG_DOUBLE_80_LE;
     hid_t m_H5T_CLONG_DOUBLE_80_LE;
 

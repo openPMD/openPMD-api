@@ -615,12 +615,12 @@ void HDF5IOHandlerImpl::createDataset(
         }
          */
 
-        GetH5DataType getH5DataType(
-            {{typeid(bool).name(), m_H5T_BOOL_ENUM},
-             {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
-             {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
-             {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
-             {typeid(long double).name(), H5T_NATIVE_LDOUBLE}});
+        GetH5DataType getH5DataType({
+            {typeid(bool).name(), m_H5T_BOOL_ENUM},
+            {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
+            {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
+            {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
+        });
         hid_t datatype = getH5DataType(a);
         VERIFY(
             datatype >= 0,
@@ -1328,12 +1328,12 @@ void HDF5IOHandlerImpl::writeDataset(
 
     void const *data = parameters.data.get();
 
-    GetH5DataType getH5DataType(
-        {{typeid(bool).name(), m_H5T_BOOL_ENUM},
-         {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
-         {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
-         {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
-         {typeid(long double).name(), H5T_NATIVE_LDOUBLE}});
+    GetH5DataType getH5DataType({
+        {typeid(bool).name(), m_H5T_BOOL_ENUM},
+        {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
+        {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
+        {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
+    });
 
     // TODO Check if parameter dtype and dataset dtype match
     Attribute a(0);
@@ -1439,16 +1439,12 @@ void HDF5IOHandlerImpl::writeAttribute(
     Attribute const att(parameters.resource);
     Datatype dtype = parameters.dtype;
     herr_t status;
-    /*
-     * Since this is the write side, we use HDF5 default float types and not
-     * m_H5T_LONG_DOUBLE_80_LE or m_H5T_CLONG_DOUBLE_80_LE
-     */
-    GetH5DataType getH5DataType(
-        {{typeid(bool).name(), m_H5T_BOOL_ENUM},
-         {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
-         {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
-         {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
-         {typeid(long double).name(), H5T_NATIVE_LDOUBLE}});
+    GetH5DataType getH5DataType({
+        {typeid(bool).name(), m_H5T_BOOL_ENUM},
+        {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
+        {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
+        {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
+    });
     hid_t dataType = getH5DataType(att);
     VERIFY(
         dataType >= 0,
@@ -1791,17 +1787,35 @@ void HDF5IOHandlerImpl::readDataset(
     default:
         throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }
-    GetH5DataType getH5DataType(
-        {{typeid(bool).name(), m_H5T_BOOL_ENUM},
-         {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
-         {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
-         {typeid(std::complex<long double>).name(),
-          sizeof(long double) == 16 ? m_H5T_CLONG_DOUBLE_80_LE
-                                    : m_H5T_CLONG_DOUBLE},
-         {typeid(long double).name(),
-          sizeof(long double) == 16 ? m_H5T_LONG_DOUBLE_80_LE
-                                    : H5T_NATIVE_LDOUBLE}});
+    GetH5DataType getH5DataType({
+        {typeid(bool).name(), m_H5T_BOOL_ENUM},
+        {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
+        {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
+        {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
+    });
     hid_t dataType = getH5DataType(a);
+    if (H5Tequal(dataType, H5T_NATIVE_LDOUBLE))
+    {
+        // We have previously determined in openDataset() that this dataset is
+        // of type long double.
+        // We cannot know if that actually was H5T_NATIVE_LDOUBLE or if it was
+        // the worked-around m_H5T_LONG_DOUBLE_80_LE.
+        // Check this.
+        hid_t checkDatasetTypeAgain = H5Dget_type(dataset_id);
+        if (!H5Tequal(checkDatasetTypeAgain, H5T_NATIVE_LDOUBLE))
+        {
+            dataType = m_H5T_LONG_DOUBLE_80_LE;
+        }
+    }
+    else if (H5Tequal(dataType, m_H5T_CLONG_DOUBLE))
+    {
+        // Same deal for m_H5T_CLONG_DOUBLE
+        hid_t checkDatasetTypeAgain = H5Dget_type(dataset_id);
+        if (!H5Tequal(checkDatasetTypeAgain, m_H5T_CLONG_DOUBLE))
+        {
+            dataType = m_H5T_CLONG_DOUBLE_80_LE;
+        }
+    }
     VERIFY(
         dataType >= 0,
         "[HDF5] Internal error: Failed to get HDF5 datatype during dataset "
@@ -1987,6 +2001,12 @@ void HDF5IOHandlerImpl::readAttribute(
             status = H5Aread(attr_id, attr_type, &d);
             a = Attribute(d);
         }
+        else if (H5Tequal(attr_type, H5T_NATIVE_LDOUBLE))
+        {
+            long double l;
+            status = H5Aread(attr_id, attr_type, &l);
+            a = Attribute(l);
+        }
         else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE))
         {
             char bfr[16];
@@ -1994,12 +2014,6 @@ void HDF5IOHandlerImpl::readAttribute(
             H5Tconvert(
                 attr_type, H5T_NATIVE_LDOUBLE, 1, bfr, nullptr, H5P_DEFAULT);
             a = Attribute(reinterpret_cast<long double *>(bfr)[0]);
-        }
-        else if (H5Tequal(attr_type, H5T_NATIVE_LDOUBLE))
-        {
-            long double l;
-            status = H5Aread(attr_id, attr_type, &l);
-            a = Attribute(l);
         }
         else if (H5Tget_class(attr_type) == H5T_STRING)
         {
