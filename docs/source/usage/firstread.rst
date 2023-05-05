@@ -347,12 +347,11 @@ C++17
 
 .. code-block:: cpp
 
-   // destruct series object,
-   // e.g. when out-of-scope
+   series.close()
 
 Python
 ^^^^^^
 
 .. code-block:: python3
 
-   del series
+   series.close()

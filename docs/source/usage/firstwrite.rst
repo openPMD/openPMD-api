@@ -297,11 +297,9 @@ C++17
 .. code-block:: cpp
 
    B_x.storeChunk(
-       io::shareRaw(x_data),
-       {0, 0}, {150, 300});
+       x_data, {0, 0}, {150, 300});
    B_z.storeChunk(
-       io::shareRaw(z_data),
-       {0, 0}, {150, 300});
+       z_data, {0, 0}, {150, 300});
 
    B_y.makeConstant(y_data);
 
@@ -310,10 +308,10 @@ Python
 
 .. code-block:: python3
 
-   B_x.store_chunk(x_data)
+   B_x[:, :] = x_data
 
 
-   B_z.store_chunk(z_data)
+   B_z[:, :] = z_data
 
 
 
@@ -354,12 +352,11 @@ C++17
 
 .. code-block:: cpp
 
-   // destruct series object,
-   // e.g. when out-of-scope
+   series.close()
 
 Python
 ^^^^^^
 
 .. code-block:: python3
 
-   del series
+   series.close()
