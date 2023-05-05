@@ -5355,6 +5355,58 @@ TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
 }
 
 #if HAS_ADIOS_2_9
+void adios2_group_table(
+    std::string const &jsonWrite,
+    std::string const &jsonRead,
+    bool canDeleteGroups)
+{
+    Series write(
+        "../samples/group_table.bp",
+        Access::CREATE,
+        json::merge(R"(iteration_encoding = "variable_based")", jsonWrite));
+    // write E_x and E_y in iteration 0, only E_x in iteration 1
+    write.writeIterations()[0].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
+    write.writeIterations()[0].meshes["E"]["y"].makeEmpty(Datatype::FLOAT, 1);
+    write.writeIterations()[1].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
+    write.close();
+
+    Series read("../samples/group_table.bp", Access::READ_LINEAR, jsonRead);
+    for (auto iteration : read.readIterations())
+    {
+        switch (iteration.iterationIndex)
+        {
+        case 0:
+            REQUIRE(iteration.meshes["E"].contains("x"));
+            REQUIRE(iteration.meshes["E"].contains("y"));
+            REQUIRE(iteration.meshes["E"].size() == 2);
+            break;
+        case 1:
+            if (canDeleteGroups)
+            {
+                REQUIRE(iteration.meshes["E"].contains("x"));
+                REQUIRE(iteration.meshes["E"].size() == 1);
+            }
+            else
+            {
+                REQUIRE(iteration.meshes["E"].contains("x"));
+                REQUIRE(iteration.meshes["E"].contains("y"));
+                REQUIRE(iteration.meshes["E"].size() == 2);
+            }
+            break;
+        }
+    }
+}
+
+TEST_CASE("adios2_group_table", "[serial]")
+{
+    std::string useGroupTable = R"(adios2.use_group_table = true)";
+    std::string noGroupTable = R"(adios2.use_group_table = false)";
+    adios2_group_table(useGroupTable, useGroupTable, true);
+    adios2_group_table(noGroupTable, useGroupTable, false);
+    adios2_group_table(useGroupTable, noGroupTable, false);
+    adios2_group_table(noGroupTable, noGroupTable, false);
+}
+
 void variableBasedSeries(std::string const &file)
 {
     constexpr Extent::value_type extent = 1000;
