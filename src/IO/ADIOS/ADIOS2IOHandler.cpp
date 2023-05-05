@@ -3211,6 +3211,7 @@ namespace detail
             }
             invalidateAttributesMap();
             invalidateVariablesMap();
+            m_pathsMarkedAsActive.clear();
             return res;
         }
         }
@@ -3311,21 +3312,28 @@ namespace detail
         case UseGroupTable::Yes:
 #if HAS_ADIOS_2_9
         {
-            // @todo do this also for all parent paths?
             if (writeOnly(m_mode))
             {
-                auto filePos = m_impl->setAndGetFilePosition(
-                    writable, /* write = */ false);
-                using attr_t = unsigned long long;
                 requireActiveStep();
-                auto fullPath =
-                    ADIOS2Defaults::str_activeTablePrefix + filePos->location;
-                m_IO.DefineAttribute<attr_t>(
-                    fullPath,
-                    currentStep(),
-                    /* variableName = */ "",
-                    /* separator = */ "/",
-                    /* allowModification = */ true);
+                auto currentStepBuffered = currentStep();
+                do
+                {
+                    using attr_t = unsigned long long;
+                    auto filePos = m_impl->setAndGetFilePosition(
+                        writable, /* write = */ false);
+                    auto fullPath = ADIOS2Defaults::str_activeTablePrefix +
+                        filePos->location;
+                    m_IO.DefineAttribute<attr_t>(
+                        fullPath,
+                        currentStepBuffered,
+                        /* variableName = */ "",
+                        /* separator = */ "/",
+                        /* allowModification = */ true);
+                    m_pathsMarkedAsActive.emplace(writable);
+                    writable = writable->parent;
+                } while (writable &&
+                         m_pathsMarkedAsActive.find(writable) ==
+                             m_pathsMarkedAsActive.end());
             }
         }
 #else

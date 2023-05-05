@@ -1126,6 +1126,8 @@ namespace detail
         std::optional<AttributeMap_t> m_availableAttributes;
         std::optional<AttributeMap_t> m_availableVariables;
 
+        std::set<Writable *> m_pathsMarkedAsActive;
+
         /*
          * Cannot write attributes right after opening the engine
          * https://github.com/ornladios/ADIOS2/issues/3433
