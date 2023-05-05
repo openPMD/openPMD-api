@@ -207,6 +207,16 @@ namespace internal
     };
 } // namespace internal
 
+/**
+ * @brief Base class for any type of record (e.g. mesh or particle record).
+ *
+ * If the record is a vector record, the single components are accessed via the
+ * container interface (base class 1).
+ * If the record is a scalar record, it directly acts as a record component
+ * (base class 2) and the Container API needs not be used.
+ *
+ * @tparam T_elem
+ */
 template <typename T_elem>
 class BaseRecord
     : public Container<T_elem>
