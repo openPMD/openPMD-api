@@ -260,7 +260,7 @@ In the openPMD-api, this can be done by specifying backend-specific parameters t
 
 .. code:: cpp
 
-  series.flush(R"({"adios2": {"preferred_flush_target": "disk"}})")
+  series.flush(R"({"adios2": {"engine": {"preferred_flush_target": "disk"}}})")
 
 The memory consumption of this approach shows that the 2GB buffer is first drained and then recreated after each ``flush()``:
 
@@ -281,7 +281,7 @@ Note that this involves data copies that can be avoided by either flushing direc
 
 .. code:: cpp
 
-  series.flush(R"({"adios2": {"preferred_flush_target": "buffer"}})")
+  series.flush(R"({"adios2": {"engine": {"preferred_flush_target": "buffer"}}})")
 
 With this strategy, the BP5 engine will slowly build up its buffer until ending the step.
 Rather than by reallocation as in BP4, this is done by appending a new chunk, leading to a clearly more acceptable memory profile:
