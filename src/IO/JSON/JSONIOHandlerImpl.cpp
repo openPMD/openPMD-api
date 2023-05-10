@@ -26,8 +26,12 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <toml.hpp>
+
+#include <algorithm>
 #include <exception>
 #include <iostream>
 #include <optional>
@@ -54,9 +58,82 @@ namespace openPMD
             throw std::runtime_error((TEXT));                                  \
     }
 
-JSONIOHandlerImpl::JSONIOHandlerImpl(AbstractIOHandler *handler)
+namespace
+{
+    struct DefaultValue
+    {
+        template <typename T>
+        static nlohmann::json call()
+        {
+            if constexpr (auxiliary::IsComplex_v<T>)
+            {
+                return typename T::value_type{};
+            }
+            else
+            {
+                return T{};
+            }
+#if defined(__INTEL_COMPILER)
+/*
+ * ICPC has trouble with if constexpr, thinking that return statements are
+ * missing afterwards. Deactivate the warning.
+ * Note that putting a statement here will not help to fix this since it will
+ * then complain about unreachable code.
+ * https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
+ */
+#pragma warning(disable : 1011)
+        }
+#pragma warning(default : 1011)
+#else
+        }
+#endif
+
+        static constexpr char const *errorMsg = "JSON default value";
+    };
+
+    /*
+     * If initializeWithDefaultValue contains a datatype, then the dataset ought
+     * to be initialized with the zero value of that dataset.
+     * Otherwise with null.
+     */
+    nlohmann::json initializeNDArray(
+        Extent const &extent,
+        std::optional<Datatype> initializeWithDefaultValue)
+    {
+        // idea: begin from the innermost shale and copy the result into the
+        // outer shales
+        nlohmann::json accum = initializeWithDefaultValue.has_value()
+            ? switchNonVectorType<DefaultValue>(
+                  initializeWithDefaultValue.value())
+            : nlohmann::json();
+        nlohmann::json old;
+        auto *accum_ptr = &accum;
+        auto *old_ptr = &old;
+        for (auto it = extent.rbegin(); it != extent.rend(); it++)
+        {
+            std::swap(old_ptr, accum_ptr);
+            *accum_ptr = nlohmann::json::array();
+            for (Extent::value_type i = 0; i < *it; i++)
+            {
+                (*accum_ptr)[i] = *old_ptr; // copy boi
+            }
+        }
+        return *accum_ptr;
+    }
+} // namespace
+
+JSONIOHandlerImpl::JSONIOHandlerImpl(
+    AbstractIOHandler *handler,
+    openPMD::json::TracingJSON config,
+    FileFormat format,
+    std::string originalExtension)
     : AbstractIOHandlerImpl(handler)
-{}
+    , m_fileFormat{format}
+    , m_originalExtension{std::move(originalExtension)}
+{
+    // Currently unused
+    (void)config;
+}
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
 
@@ -80,11 +157,7 @@ void JSONIOHandlerImpl::createFile(
 
     if (!writable->written)
     {
-        std::string name = parameters.name;
-        if (!auxiliary::ends_with(name, ".json"))
-        {
-            name += ".json";
-        }
+        std::string name = parameters.name + m_originalExtension;
 
         auto res_pair = getPossiblyExisting(name);
         auto fullPathToFile = fullPath(std::get<0>(res_pair));
@@ -205,20 +278,23 @@ void JSONIOHandlerImpl::createDataset(
         setAndGetFilePosition(writable, name);
         auto &dset = jsonVal[name];
         dset["datatype"] = datatypeToString(parameter.dtype);
+        auto extent = parameter.extent;
         switch (parameter.dtype)
         {
         case Datatype::CFLOAT:
         case Datatype::CDOUBLE:
         case Datatype::CLONG_DOUBLE: {
-            auto complexExtent = parameter.extent;
-            complexExtent.push_back(2);
-            dset["data"] = initializeNDArray(complexExtent);
+            extent.push_back(2);
             break;
         }
         default:
-            dset["data"] = initializeNDArray(parameter.extent);
             break;
         }
+        // TOML does not support nulls, so initialize with zero
+        dset["data"] = initializeNDArray(
+            extent,
+            m_fileFormat == FileFormat::Json ? std::optional<Datatype>()
+                                             : parameter.dtype);
         writable->written = true;
         m_dirty.emplace(file);
     }
@@ -276,27 +352,28 @@ void JSONIOHandlerImpl::extendDataset(
         throw std::runtime_error(
             "[JSON] The specified location contains no valid dataset");
     }
-    switch (stringToDatatype(j["datatype"].get<std::string>()))
+    auto extent = parameters.extent;
+    auto datatype = stringToDatatype(j["datatype"].get<std::string>());
+    switch (datatype)
     {
     case Datatype::CFLOAT:
     case Datatype::CDOUBLE:
     case Datatype::CLONG_DOUBLE: {
-        // @todo test complex resizing
-        auto complexExtent = parameters.extent;
-        complexExtent.push_back(2);
-        nlohmann::json newData = initializeNDArray(complexExtent);
-        nlohmann::json &oldData = j["data"];
-        mergeInto(newData, oldData);
-        j["data"] = newData;
+        extent.push_back(2);
         break;
     }
     default:
-        nlohmann::json newData = initializeNDArray(parameters.extent);
-        nlohmann::json &oldData = j["data"];
-        mergeInto(newData, oldData);
-        j["data"] = newData;
+        // nothing to do
         break;
     }
+    // TOML does not support nulls, so initialize with zero
+    nlohmann::json newData = initializeNDArray(
+        extent,
+        m_fileFormat == FileFormat::Json ? std::optional<Datatype>()
+                                         : datatype);
+    nlohmann::json &oldData = j["data"];
+    mergeInto(newData, oldData);
+    j["data"] = newData;
     writable->written = true;
 }
 
@@ -521,11 +598,7 @@ void JSONIOHandlerImpl::openFile(
             "Supplied directory is not valid: " + m_handler->directory);
     }
 
-    std::string name = parameter.name;
-    if (!auxiliary::ends_with(name, ".json"))
-    {
-        name += ".json";
-    }
+    std::string name = parameter.name + m_originalExtension;
 
     auto file = std::get<0>(getPossiblyExisting(name));
 
@@ -844,7 +917,8 @@ void JSONIOHandlerImpl::readAttribute(
         "[JSON] Attributes have to be written before reading.")
     refreshFileFromParent(writable);
     auto name = removeSlashes(parameters.name);
-    auto &jsonLoc = obtainJsonContents(writable)["attributes"];
+    auto const &jsonContents = obtainJsonContents(writable);
+    auto const &jsonLoc = jsonContents["attributes"];
     setAndGetFilePosition(writable);
     std::string error_msg("[JSON] No such attribute '");
     if (!hasKey(jsonLoc, name))
@@ -919,7 +993,12 @@ void JSONIOHandlerImpl::listAttributes(
         "[JSON] Attributes have to be written before reading.")
     refreshFileFromParent(writable);
     auto filePosition = setAndGetFilePosition(writable);
-    auto &j = obtainJsonContents(writable)["attributes"];
+    auto const &jsonContents = obtainJsonContents(writable);
+    if (!jsonContents.contains("attributes"))
+    {
+        return;
+    }
+    auto const &j = jsonContents["attributes"];
     for (auto it = j.begin(); it != j.end(); it++)
     {
         parameters.attributes->push_back(it.key());
@@ -932,14 +1011,16 @@ void JSONIOHandlerImpl::deregister(
     m_files.erase(writable);
 }
 
-std::shared_ptr<JSONIOHandlerImpl::FILEHANDLE>
-JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
+auto JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
+    -> std::tuple<std::unique_ptr<FILEHANDLE>, std::istream *, std::ostream *>
 {
     VERIFY_ALWAYS(
         fileName.valid(),
         "[JSON] Tried opening a file that has been overwritten or deleted.")
     auto path = fullPath(std::move(fileName));
-    auto fs = std::make_shared<std::fstream>();
+    auto fs = std::make_unique<FILEHANDLE>();
+    std::istream *istream = nullptr;
+    std::ostream *ostream = nullptr;
     if (access::write(access))
     {
         /*
@@ -949,14 +1030,31 @@ JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
          * equivalent, but the openPMD frontend exposes no reading
          * functionality in APPEND mode.
          */
-        fs->open(path, std::ios_base::out | std::ios_base::trunc);
+        std::ios_base::openmode openmode =
+            std::ios_base::out | std::ios_base::trunc;
+        if (m_fileFormat == FileFormat::Toml)
+        {
+            openmode |= std::ios_base::binary;
+        }
+        fs->open(path, openmode);
+        ostream =
+            &(*fs << std::setprecision(
+                  std::numeric_limits<double>::digits10 + 1));
     }
     else
     {
-        fs->open(path, std::ios_base::in);
+        std::ios_base::openmode openmode = std::ios_base::in;
+        if (m_fileFormat == FileFormat::Toml)
+        {
+            openmode |= std::ios_base::binary;
+        }
+        fs->open(path, openmode);
+        istream =
+            &(*fs >>
+              std::setprecision(std::numeric_limits<double>::digits10 + 1));
     }
     VERIFY(fs->good(), "[JSON] Failed opening a file '" + path + "'");
-    return fs;
+    return std::make_tuple(std::move(fs), istream, ostream);
 }
 
 std::string JSONIOHandlerImpl::fullPath(File fileName)
@@ -1048,26 +1146,6 @@ Extent JSONIOHandlerImpl::getMultiplicators(Extent const &extent)
     return res;
 }
 
-nlohmann::json JSONIOHandlerImpl::initializeNDArray(Extent const &extent)
-{
-    // idea: begin from the innermost shale and copy the result into the
-    // outer shales
-    nlohmann::json accum;
-    nlohmann::json old;
-    auto *accum_ptr = &accum;
-    auto *old_ptr = &old;
-    for (auto it = extent.rbegin(); it != extent.rend(); it++)
-    {
-        std::swap(old_ptr, accum_ptr);
-        *accum_ptr = nlohmann::json{};
-        for (Extent::value_type i = 0; i < *it; i++)
-        {
-            (*accum_ptr)[i] = *old_ptr; // copy boi
-        }
-    }
-    return *accum_ptr;
-}
-
 Extent JSONIOHandlerImpl::getExtent(nlohmann::json &j)
 {
     Extent res;
@@ -1106,7 +1184,7 @@ std::string JSONIOHandlerImpl::removeSlashes(std::string s)
 }
 
 template <typename KeyT>
-bool JSONIOHandlerImpl::hasKey(nlohmann::json &j, KeyT &&key)
+bool JSONIOHandlerImpl::hasKey(nlohmann::json const &j, KeyT &&key)
 {
     return j.find(std::forward<KeyT>(key)) != j.end();
 }
@@ -1166,9 +1244,18 @@ std::shared_ptr<nlohmann::json> JSONIOHandlerImpl::obtainJsonContents(File file)
         return it->second;
     }
     // read from file
-    auto fh = getFilehandle(file, Access::READ_ONLY);
+    auto [fh, fh_with_precision, _] = getFilehandle(file, Access::READ_ONLY);
     std::shared_ptr<nlohmann::json> res = std::make_shared<nlohmann::json>();
-    *fh >> *res;
+    switch (m_fileFormat)
+    {
+    case FileFormat::Json:
+        *fh_with_precision >> *res;
+        break;
+    case FileFormat::Toml:
+        *res =
+            openPMD::json::tomlToJson(toml::parse(*fh_with_precision, *file));
+        break;
+    }
     VERIFY(fh->good(), "[JSON] Failed reading from a file.");
     m_jsonVals.emplace(file, res);
     return res;
@@ -1192,9 +1279,21 @@ void JSONIOHandlerImpl::putJsonContents(
     auto it = m_jsonVals.find(filename);
     if (it != m_jsonVals.end())
     {
-        auto fh = getFilehandle(filename, Access::CREATE);
+        auto [fh, _, fh_with_precision] =
+            getFilehandle(filename, Access::CREATE);
         (*it->second)["platform_byte_widths"] = platformSpecifics();
-        *fh << *it->second << std::endl;
+
+        switch (m_fileFormat)
+        {
+        case FileFormat::Json:
+            *fh_with_precision << *it->second << std::endl;
+            break;
+        case FileFormat::Toml:
+            *fh_with_precision << openPMD::json::jsonToToml(*it->second)
+                               << std::endl;
+            break;
+        }
+
         VERIFY(fh->good(), "[JSON] Failed writing data to disk.")
         m_jsonVals.erase(it);
         if (unsetDirty)
@@ -1399,7 +1498,7 @@ void JSONIOHandlerImpl::AttributeWriter::call(
 
 template <typename T>
 void JSONIOHandlerImpl::AttributeReader::call(
-    nlohmann::json &json, Parameter<Operation::READ_ATT> &parameters)
+    nlohmann::json const &json, Parameter<Operation::READ_ATT> &parameters)
 {
     JsonToCpp<T> jtc;
     *parameters.resource = jtc(json);

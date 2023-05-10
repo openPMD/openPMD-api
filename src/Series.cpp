@@ -2180,7 +2180,8 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
         std::map<std::string, Format> const backendDescriptors{
             {"hdf5", Format::HDF5},
             {"adios2", Format::ADIOS2_BP},
-            {"json", Format::JSON}};
+            {"json", Format::JSON},
+            {"toml", Format::TOML}};
         std::string backend;
         getJsonOptionLowerCase(options, "backend", backend);
         if (!backend.empty())
