@@ -1,10 +1,10 @@
 .. _backends-json:
 
-JSON
-====
+JSON/TOML
+=========
 
-openPMD supports writing to and reading from JSON files.
-The JSON backend is always available.
+openPMD supports writing to and reading from JSON and TOML files.
+The JSON and TOML backends are always available.
 
 
 JSON File Format
@@ -43,9 +43,17 @@ Every such attribute is itself a JSON object with two keys:
  * ``datatype``: A string describing the type of the value.
  * ``value``: The actual value of type ``datatype``.
 
+TOML File Format
+----------------
 
-Restrictions
-------------
+A TOML file uses the file ending ``.toml``. The TOML backend is chosen by creating a ``Series`` object with a filename that has this file ending.
+
+The TOML backend internally works with JSON datasets and converts to/from TOML during I/O.
+As a result, data layout and usage are equivalent to the JSON backend.
+
+
+JSON Restrictions
+-----------------
 
 For creation of JSON serializations (i.e. writing), the restrictions of the JSON backend are
 equivalent to those of the `JSON library by Niels Lohmann <https://github.com/nlohmann/json>`_
@@ -72,6 +80,20 @@ may have originally been +/-Infinity or beyond the supported value range.
 
 Upon reading ``null`` when expecting any other datatype, the JSON backend will
 propagate the exception thrown by Niels Lohmann's library.
+
+The (keys) names ``"attributes"``, ``"data"`` and ``"datatype"`` are reserved and must not be used for base/mesh/particles path, records and their components.
+
+A parallel (i.e. MPI) implementation is *not* available.
+
+TOML Restrictions
+-----------------
+
+Note that the JSON datatype-specific restrictions do not automatically hold for TOML, as those affect only the representation on disk, not the internal representation.
+
+TOML supports most numeric types, up to long double and long long types.
+Special floating point values such as NaN are also support.
+
+TOML does not support null values.
 
 The (keys) names ``"attributes"``, ``"data"`` and ``"datatype"`` are reserved and must not be used for base/mesh/particles path, records and their components.
 
