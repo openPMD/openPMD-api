@@ -26,7 +26,6 @@
 #include <type_traits> // std::void_t
 #include <utility> // std::forward
 
-
 namespace openPMD
 {
 namespace detail
