@@ -651,6 +651,13 @@ inline bool isSameInteger(Datatype d)
         return false;
 }
 
+/**
+ * Determines if d represents a char type.
+ *
+ * @param d An openPMD datatype.
+ * @return true If d is a scalar char, signed char or unsigned char.
+ * @return false Otherwise.
+ */
 constexpr bool isChar(Datatype d)
 {
     switch (d)
@@ -664,6 +671,18 @@ constexpr bool isChar(Datatype d)
     }
 }
 
+/**
+ * Determines if d and T_Char are char types of same representation.
+ *
+ * Same representation means that on platforms with signed `char` type, `char`
+ * and `signed char` are considered to be eqivalent, similarly on platforms
+ * with unsigned `char` type.
+ *
+ * @tparam T_Char A type, as template parameter.
+ * @param d A type, as openPMD datatype.
+ * @return true If both types are chars of the same representation.
+ * @return false Otherwise.
+ */
 template <typename T_Char>
 constexpr bool isSameChar(Datatype d);
 
