@@ -96,8 +96,8 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.9.0-rc1.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.9.0-rc1.tar.gz
+    curl -sLo adios2-2.9.0.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.9.0.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
@@ -105,7 +105,7 @@ function build_adios2 {
     # Patch PThread Propagation
     # curl -sLo adios-pthread.patch \
     #     https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
-    # python3 -m patch -p 1 -d ADIOS2-2.9.0-rc1 adios-pthread.patch
+    # python3 -m patch -p 1 -d ADIOS2-2.9.0 adios-pthread.patch
 
     # DILL macOS arm64 or universal2 binary
     #   https://github.com/ornladios/ADIOS2/issues/3116
