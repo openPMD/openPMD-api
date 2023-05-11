@@ -1515,11 +1515,15 @@ TEST_CASE("dtype_test", "[serial]")
     {
         dtype_test(t);
     }
-    /*
-     * TOML backend is not generally tested for performance reasons, opt in to
-     * testing it here.
-     */
-    dtype_test("toml");
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        dtype_test("toml");
+    }
 }
 
 inline void write_test(const std::string &backend)
@@ -2118,11 +2122,15 @@ TEST_CASE("fileBased_write_test", "[serial]")
     {
         fileBased_write_test(t);
     }
-    /*
-     * TOML backend is not generally tested for performance reasons, opt in to
-     * testing it here.
-     */
-    fileBased_write_test("toml");
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        fileBased_write_test("toml");
+    }
 }
 
 inline void sample_write_thetaMode(std::string file_ending)
@@ -7422,9 +7430,13 @@ TEST_CASE("groupbased_read_write", "[serial]")
             }
         }
     }
-    /*
-     * TOML backend is not generally tested for performance reasons, opt in to
-     * testing it here.
-     */
-    groupbased_read_write("toml");
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        groupbased_read_write("toml");
+    }
 }
