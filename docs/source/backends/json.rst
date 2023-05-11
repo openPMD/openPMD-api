@@ -90,7 +90,7 @@ TOML Restrictions
 
 Note that the JSON datatype-specific restrictions do not automatically hold for TOML, as those affect only the representation on disk, not the internal representation.
 
-TOML supports most numeric types, up to long double and long long types.
+TOML supports most numeric types, with the support for long double and long integer types being platform-defined.
 Special floating point values such as NaN are also support.
 
 TOML does not support null values.
