@@ -43,9 +43,8 @@ jobs:
         cmake --build build --parallel 2
         ctest --test-dir build --verbose
 
-  appleclang12_py_ad1:
-    runs-on: macos-10.15
-    # next: macOS-11
+  appleclang13_py:
+    runs-on: macos-11
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
@@ -75,8 +74,9 @@ jobs:
           -DopenPMD_USE_HDF5=OFF   \
           -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=OFF \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
-        cmake --build build --parallel 2
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DPython_EXECUTABLE=$(which python3)
+        cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
 # TODO: apple_conda_ompi_all (similar to conda_ompi_all on Linux)
