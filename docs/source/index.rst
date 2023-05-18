@@ -138,6 +138,8 @@ Data Analysis
 
    analysis/viewer
    analysis/paraview
+   analysis/pandas
+   analysis/dask
    analysis/contrib
 
 Development
