@@ -296,7 +296,7 @@ The install will contain header files and libraries in the path set with `-DCMAK
 
 ### CMake
 
-If your project is using CMake for its build, one can conveniently use our provided `openPMDConfig.cmake` package which is installed alongside the library.
+If your project is using CMake for its build, one can conveniently use our provided `openPMDConfig.cmake` package, which is installed alongside the library.
 
 First set the following environment hint if openPMD-api was *not* installed in a system path:
 
@@ -308,7 +308,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 Use the following lines in your project's `CMakeLists.txt`:
 ```cmake
 # supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS1 ADIOS2
-find_package(openPMD 0.9.0 CONFIG)
+find_package(openPMD 0.15.0 CONFIG)
 
 if(openPMD_FOUND)
     target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
@@ -336,13 +336,13 @@ set(openPMD_INSTALL OFF)            # or instead use:
 set(openPMD_USE_PYTHON OFF)
 FetchContent_Declare(openPMD
   GIT_REPOSITORY "https://github.com/openPMD/openPMD-api.git"
-  GIT_TAG        "dev")
+  GIT_TAG        "0.15.0")
 FetchContent_MakeAvailable(openPMD)
 ```
 
 ### Manually
 
-If your (Linux/OSX) project is build by calling the compiler directly or uses a manually written `Makefile`, consider using our `openPMD.pc` helper file for `pkg-config` which are installed alongside the library.
+If your (Linux/OSX) project is build by calling the compiler directly or uses a manually written `Makefile`, consider using our `openPMD.pc` helper file for `pkg-config`, which are installed alongside the library.
 
 First set the following environment hint if openPMD-api was *not* installed in a system path:
 
