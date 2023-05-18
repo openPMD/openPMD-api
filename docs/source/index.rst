@@ -141,6 +141,7 @@ Development
    dev/backend
    dev/dependencies
    dev/buildoptions
+   dev/linking
    dev/sphinx
 
 Maintenance
