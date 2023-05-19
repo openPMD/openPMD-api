@@ -12,7 +12,7 @@ jobs:
 #  appleclang10_py37_h5_ad2_libcpp
 #  appleclang11_nopy_nompi_h5_ad2
 
-  appleclang14_py_mpi_h5_ad2_julia:
+  appleclang14_py_mpi_h5_ad2:
     runs-on: macos-latest
     if: github.event.pull_request.draft == false
     steps:
