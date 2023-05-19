@@ -709,11 +709,7 @@ if(openPMD_HAVE_Julia)
         src/binding/julia/shared_ptr.cpp
         src/binding/julia/version.cpp
     )
-    target_compile_features(openPMD.jl PUBLIC cxx_std_17)
-    set_target_properties(openPMD.jl PROPERTIES
-        CXX_EXTENSIONS OFF
-        CXX_STANDARD_REQUIRED ON
-    )
+    openpmd_cxx_required(openPMD.jl)
     target_link_libraries(openPMD.jl PRIVATE openPMD JlCxx::cxxwrap_julia JlCxx::cxxwrap_julia_stl)
 endif()
 
