@@ -33,7 +33,7 @@ jobs:
         sudo curl -L -o /usr/local/bin/cmake-easyinstall https://git.io/JvLxY
         sudo chmod a+x /usr/local/bin/cmake-easyinstall
         # Install libcxxwrap-julia
-        cmake-easyinstall git+https://github.com/JuliaInterop/libcxxwrap-julia.git@v0.9.0
+        cmake-easyinstall git+https://github.com/JuliaInterop/libcxxwrap-julia.git@v0.9.7
     - name: Build
       env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 10.15}
       # 10.14+ due to std::visit
