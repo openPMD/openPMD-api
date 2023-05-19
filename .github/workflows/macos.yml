@@ -12,13 +12,12 @@ jobs:
 #  appleclang10_py37_h5_ad2_libcpp
 #  appleclang11_nopy_nompi_h5_ad2
 
-  appleclang14_py_mpi_h5_ad2:
+  appleclang14_py_mpi_h5_ad2_julia:
     runs-on: macos-latest
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
     - name: Install
-      env: {MACOSX_DEPLOYMENT_TARGET: 10.15}
       run: |
         rm -rf /usr/local/bin/2to3
         set +e
