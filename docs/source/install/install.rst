@@ -123,6 +123,18 @@ Additional CMake options can be passed via individual environment variables, whi
 
    .. image:: cmake.svg
 
+Using the Julia Package
+-----------------------
+
+A package for openPMD-api is available via the Julia Package Registry:
+
+.. code-block:: julia
+
+    # We need Julia 1.7 or newer
+    using("Pkg")
+    Pkg.add("openPMD")
+
+
 From Source with CMake
 ----------------------
 
@@ -147,7 +159,7 @@ Linux & OSX
    #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
    # for options append:
    #   -DopenPMD_USE_...=...
-   # e.g. for python support add:
+   # e.g. for Python support add:
    #   -DopenPMD_USE_PYTHON=ON -DPython_EXECUTABLE=$(which python3)
    cmake ../openPMD-api
 
