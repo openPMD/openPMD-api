@@ -90,7 +90,9 @@ if __name__ == "__main__":
     electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
     electrons["displacement"]["x"].unit_SI = 1.e-6
     del electrons["displacement"]
-    electrons["weighting"][SCALAR].make_constant(1.e-5)
+    electrons["weighting"][SCALAR] \
+        .reset_dataset(Dataset(np.dtype("float32"), extent=[1])) \
+        .make_constant(1.e-5)
 
     mesh = cur_it.meshes["lowRez_2D_field"]
     mesh.axis_labels = ["x", "y"]
@@ -206,8 +208,14 @@ if __name__ == "__main__":
     # constant records
     mesh["y"].make_constant(constant_value)
 
-    # The files in 'f' are still open until the object is destroyed, on
-    # which it cleanly flushes and closes all open file handles.
-    # One can delete the object explicitly (or let it run out of scope) to
-    # trigger this.
-    del f
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    cur_it.close()
+
+    # The files in 'f' are still open until the series is closed, at which
+    # time it cleanly flushes and closes all open file handles.
+    # One can close the object explicitly to trigger this.
+    # Alternatively, this will automatically happen once the garbage collector
+    # claims (every copy of) the series object.
+    f.close()

@@ -19,8 +19,13 @@ int main()
         return 0;
     }
 
-    Series series = Series("electrons.sst", Access::READ_ONLY);
+    Series series = Series("electrons.sst", Access::READ_LINEAR);
 
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     for (IndexedIteration iteration : series.readIterations())
     {
         std::cout << "Current iteration: " << iteration.iterationIndex
@@ -39,6 +44,9 @@ int main()
             extents[i] = rc.getExtent();
         }
 
+        // The iteration can be closed in order to help free up resources.
+        // The iteration's content will be flushed automatically.
+        // An iteration once closed cannot (yet) be reopened.
         iteration.close();
 
         for (size_t i = 0; i < 3; ++i)
@@ -54,6 +62,14 @@ int main()
             std::cout << "\n----------\n" << std::endl;
         }
     }
+
+    /* The files in 'series' are still open until the object is destroyed, on
+     * which it cleanly flushes and closes all open file handles.
+     * When running out of scope on return, the 'Series' destructor is called.
+     * Alternatively, one can call `series.close()` to the same effect as
+     * calling the destructor, including the release of file handles.
+     */
+    series.close();
 
     return 0;
 #else

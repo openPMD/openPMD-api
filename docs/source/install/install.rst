@@ -6,7 +6,7 @@ Installation
 .. raw:: html
 
    <style>
-   .rst-content .section>img {
+   .rst-content section>img {
        width: 30px;
        margin-bottom: 0;
        margin-top: 0;
@@ -34,7 +34,7 @@ A package for openPMD-api is available via the `Spack <https://spack.io>`_ packa
 
 .. code-block:: bash
 
-   # optional:               +python +adios1 -adios2 -hdf5 -mpi
+   # optional:               +python -adios2 -hdf5 -mpi
    spack install openpmd-api
    spack load openpmd-api
 
@@ -72,7 +72,7 @@ A package for openPMD-api is available via the `Homebrew <https://brew.sh/>`_/`L
    brew tap openpmd/openpmd
    brew install openpmd-api
 
-Brew ship only the latest release, includes (Open)MPI support and lacks the ADIOS1 backend.
+Brew ship only the latest release and includes (Open)MPI support.
 
 .. _install-pypi:
 
@@ -85,7 +85,7 @@ Using the PyPI Package
 
 A package for openPMD-api is available via the Python Package Index (`PyPI <https://pypi.org>`_).
 
-On very old macOS versions (<10.9) or on exotic processor architectures, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+On very old macOS versions (<10.9) or on exotic processor architectures, this install method *compiles from source* against the found installations of HDF5, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 
 .. code-block:: bash
 

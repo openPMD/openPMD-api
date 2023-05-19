@@ -60,13 +60,17 @@ if __name__ == "__main__":
     rc_xo.reset_dataset(dataset)
     rc_yo.reset_dataset(dataset)
 
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
     # after this call, the provided data buffers can be used again or deleted
-    series.flush()
+    series.iterations[0].close()
 
     # rinse and repeat as needed :)
 
-    # The files in 'series' are still open until the object is destroyed, on
-    # which it cleanly flushes and closes all open file handles.
-    # One can delete the object explicitly (or let it run out of scope) to
-    # trigger this.
-    del series
+    # The files in 'series' are still open until the series is closed, at which
+    # time it cleanly flushes and closes all open file handles.
+    # One can close the object explicitly to trigger this.
+    # Alternatively, this will automatically happen once the garbage collector
+    # claims (every copy of) the series object.
+    series.close()

@@ -44,36 +44,66 @@ class Series;
  * not possible once it has been closed.
  *
  */
+
+namespace internal
+{
+    class SeriesData;
+}
+
+/**
+ * @brief Writing side of the streaming API.
+ *
+ * Create instance via Series::writeIterations().
+ * Restricted Container of Iterations, designed to allow reading any kind
+ * of Series, streaming and non-streaming alike.
+ * Calling Iteration::close() manually before opening the next iteration is
+ * encouraged and will implicitly flush all deferred IO actions.
+ * Otherwise, Iteration::close() will be implicitly called upon
+ * opening the next iteration or upon destruction.
+ * Since this is designed for streaming mode, reopening an iteration is
+ * not possible once it has been closed.
+ */
 class WriteIterations
 {
     friend class Series;
+    friend class internal::SeriesData;
 
 private:
-    using iterations_t = Container<Iteration, uint64_t>;
+    using IterationsContainer_t =
+        Container<Iteration, Iteration::IterationIndex_t>;
 
 public:
-    using key_type = typename iterations_t::key_type;
-    using mapped_type = typename iterations_t::mapped_type;
-    using value_type = typename iterations_t::value_type;
-    using reference = typename iterations_t::reference;
+    using key_type = IterationsContainer_t::key_type;
+    using mapped_type = IterationsContainer_t::mapped_type;
+    using value_type = IterationsContainer_t::value_type;
+    using reference = IterationsContainer_t::reference;
 
 private:
     struct SharedResources
     {
-        iterations_t iterations;
-        std::optional<uint64_t> currentlyOpen;
+        IterationsContainer_t iterations;
+        //! Index of the last opened iteration
+        std::optional<Iteration::IterationIndex_t> currentlyOpen;
 
-        SharedResources(iterations_t);
+        SharedResources(IterationsContainer_t);
         ~SharedResources();
     };
 
-    WriteIterations(iterations_t);
+    WriteIterations(IterationsContainer_t);
     explicit WriteIterations() = default;
-    //! Index of the last opened iteration
-    std::shared_ptr<SharedResources> shared;
+    // std::optional so that a single instance is able to close this without
+    // needing to wait for all instances to deallocate
+    std::shared_ptr<std::optional<SharedResources>> shared;
+
+    void close();
 
 public:
     mapped_type &operator[](key_type const &key);
     mapped_type &operator[](key_type &&key);
+
+    /**
+     * Return the iteration that is currently being written to, if it exists.
+     */
+    std::optional<IndexedIteration> currentIteration();
 };
 } // namespace openPMD

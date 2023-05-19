@@ -28,6 +28,7 @@
 
 #include <exception>
 #include <string>
+#include <type_traits>
 
 namespace openPMD
 {
@@ -35,45 +36,60 @@ inline Datatype dtype_from_numpy(pybind11::dtype const dt)
 {
     // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
     // ref: https://github.com/numpy/numpy/issues/10678#issuecomment-369363551
-    if (dt.is(pybind11::dtype("b")))
-        return Datatype::CHAR;
-    else if (dt.is(pybind11::dtype("B")))
-        return Datatype::UCHAR;
-    else if (dt.is(pybind11::dtype("short")))
+    if (dt.char_() == pybind11::dtype("b").char_())
+        if constexpr (std::is_signed_v<char>)
+        {
+            return Datatype::CHAR;
+        }
+        else
+        {
+            return Datatype::SCHAR;
+        }
+    else if (dt.char_() == pybind11::dtype("B").char_())
+        if constexpr (std::is_unsigned_v<char>)
+        {
+            return Datatype::CHAR;
+        }
+        else
+        {
+            return Datatype::UCHAR;
+        }
+    else if (dt.char_() == pybind11::dtype("short").char_())
         return Datatype::SHORT;
-    else if (dt.is(pybind11::dtype("intc")))
+    else if (dt.char_() == pybind11::dtype("intc").char_())
         return Datatype::INT;
-    else if (dt.is(pybind11::dtype("int_")))
+    else if (dt.char_() == pybind11::dtype("int_").char_())
         return Datatype::LONG;
-    else if (dt.is(pybind11::dtype("longlong")))
+    else if (dt.char_() == pybind11::dtype("longlong").char_())
         return Datatype::LONGLONG;
-    else if (dt.is(pybind11::dtype("ushort")))
+    else if (dt.char_() == pybind11::dtype("ushort").char_())
         return Datatype::USHORT;
-    else if (dt.is(pybind11::dtype("uintc")))
+    else if (dt.char_() == pybind11::dtype("uintc").char_())
         return Datatype::UINT;
-    else if (dt.is(pybind11::dtype("uint")))
+    else if (dt.char_() == pybind11::dtype("uint").char_())
         return Datatype::ULONG;
-    else if (dt.is(pybind11::dtype("ulonglong")))
+    else if (dt.char_() == pybind11::dtype("ulonglong").char_())
         return Datatype::ULONGLONG;
-    else if (dt.is(pybind11::dtype("clongdouble")))
+    else if (dt.char_() == pybind11::dtype("clongdouble").char_())
         return Datatype::CLONG_DOUBLE;
-    else if (dt.is(pybind11::dtype("cdouble")))
+    else if (dt.char_() == pybind11::dtype("cdouble").char_())
         return Datatype::CDOUBLE;
-    else if (dt.is(pybind11::dtype("csingle")))
+    else if (dt.char_() == pybind11::dtype("csingle").char_())
         return Datatype::CFLOAT;
-    else if (dt.is(pybind11::dtype("longdouble")))
+    else if (dt.char_() == pybind11::dtype("longdouble").char_())
         return Datatype::LONG_DOUBLE;
-    else if (dt.is(pybind11::dtype("double")))
+    else if (dt.char_() == pybind11::dtype("double").char_())
         return Datatype::DOUBLE;
-    else if (dt.is(pybind11::dtype("single")))
+    else if (dt.char_() == pybind11::dtype("single").char_())
         return Datatype::FLOAT;
-    else if (dt.is(pybind11::dtype("bool")))
+    else if (dt.char_() == pybind11::dtype("bool").char_())
         return Datatype::BOOL;
     else
     {
         pybind11::print(dt);
         throw std::runtime_error(
-            "Datatype '...' not known in 'dtype_from_numpy'!"); // _s.format(dt)
+            std::string("Datatype '") + dt.char_() +
+            std::string("' not known in 'dtype_from_numpy'!")); // _s.format(dt)
     }
 }
 

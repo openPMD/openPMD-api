@@ -14,7 +14,6 @@ CMake Option                   Values          Description
 ============================== =============== ========================================================================
 ``openPMD_USE_MPI``            **AUTO**/ON/OFF Parallel, Multi-Node I/O for clusters
 ``openPMD_USE_HDF5``           **AUTO**/ON/OFF HDF5 backend (``.h5`` files)
-``openPMD_USE_ADIOS1``         **AUTO**/ON/OFF ADIOS1 backend (``.bp`` files up to version BP3)
 ``openPMD_USE_ADIOS2``         **AUTO**/ON/OFF ADIOS2 backend (``.bp`` files in BP3, BP4 or higher)
 ``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Enable Python bindings
 ``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`1`
@@ -42,7 +41,6 @@ CMake Option                   Values          Description
 ============================== =============== ==================================================
 ``openPMD_BUILD_SHARED_LIBS``  **ON**/OFF      Build the C++ API as shared library
 ``HDF5_USE_STATIC_LIBRARIES``  ON/**OFF**      Require static HDF5 library
-``ADIOS_USE_STATIC_LIBS``      ON/**OFF**      Require static ADIOS1 library
 ============================== =============== ==================================================
 
 Note that python modules (``openpmd_api.cpython.[...].so`` or ``openpmd_api.pyd``) are always dynamic libraries.
@@ -68,7 +66,7 @@ The following options allow to switch to external installs of dependencies:
 ================================= =========== ======== ============= ========
 CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
-``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2         2.13.9+
+``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2        2.13.10+
 ``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11       2.10.1+
 ``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.9.1+
 ``openPMD_USE_INTERNAL_TOML11``   **ON**/OFF  No       toml11          3.7.1+

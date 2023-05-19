@@ -47,7 +47,7 @@ class CMakeBuild(build_ext):
             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' +
             os.path.join(extdir, "openpmd_api"),
             # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
-            '-DCMAKE_PYTHON_OUTPUT_DIRECTORY=' + extdir,
+            '-DopenPMD_PYTHON_OUTPUT_DIRECTORY=' + extdir,
             '-DPython_EXECUTABLE=' + sys.executable,
             '-DopenPMD_USE_PYTHON:BOOL=ON',
             # variants
@@ -84,8 +84,10 @@ class CMakeBuild(build_ext):
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
 
+        # Assumption: Windows builds are always multi-config (MSVC VS)
         if platform.system() == "Windows":
             cmake_args += [
+                '-DopenPMD_BUILD_NO_CFG_SUBPATH:BOOL=ON',
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
                     cfg.upper(),
                     os.path.join(extdir, "openpmd_api")
@@ -168,7 +170,7 @@ with open('./requirements.txt') as f:
 setup(
     name='openPMD-api',
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
-    version='0.15.0.dev',
+    version='0.16.0.dev',
     author='Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu',
     author_email='axelhuebl@lbl.gov, f.poeschel@hzdr.de',
     maintainer='Axel Huebl',

@@ -202,16 +202,25 @@ public:
                         deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS> >(
                             i.parameter.get()));
                     break;
+                case O::DEREGISTER:
+                    deregister(
+                        i.writable,
+                        deref_dynamic_cast<Parameter<O::DEREGISTER> >(
+                            i.parameter.get()));
+                    break;
                 }
             }
             catch (...)
             {
                 std::cerr << "[AbstractIOHandlerImpl] IO Task "
                           << internal::operationAsString(i.operation)
-                          << " failed with exception. Removing task"
-                          << " from IO queue and passing on the exception."
+                          << " failed with exception. Clearing IO queue and "
+                             "passing on the exception."
                           << std::endl;
-                (*m_handler).m_work.pop();
+                while (!m_handler->m_work.empty())
+                {
+                    m_handler->m_work.pop();
+                }
                 throw;
             }
             (*m_handler).m_work.pop();
@@ -351,8 +360,7 @@ public:
      * root group "/" of the hierarchy in the opened file. The Writable should
      * be marked written when the operation completes successfully.
      */
-    virtual void
-    openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) = 0;
+    virtual void openFile(Writable *, Parameter<Operation::OPEN_FILE> &) = 0;
     /** Open all contained groups in a path, possibly recursively.
      *
      * The operation should overwrite existing file positions, even when the
@@ -448,7 +456,7 @@ public:
      * storage after the operation completes successfully.
      */
     virtual void
-    writeDataset(Writable *, Parameter<Operation::WRITE_DATASET> const &) = 0;
+    writeDataset(Writable *, Parameter<Operation::WRITE_DATASET> &) = 0;
 
     /** Get a view into a dataset buffer that can be filled by a user.
      *
@@ -563,6 +571,16 @@ public:
      */
     void
     keepSynchronous(Writable *, Parameter<Operation::KEEP_SYNCHRONOUS> param);
+
+    /** Notify the backend that the Writable has been / will be deallocated.
+     *
+     * The backend should remove all references to this Writable from internal
+     * data structures. Subtle bugs might be possible if not doing this, since
+     * new objects might be allocated to the now-freed address.
+     * The Writable pointer must not be dereferenced.
+     */
+    virtual void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &param) = 0;
 
     AbstractIOHandler *m_handler;
 }; // AbstractIOHandlerImpl

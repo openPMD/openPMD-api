@@ -51,7 +51,12 @@ int main()
     geos << "m=" << num_modes << ";imag=+";
     std::string const geometryParameters = geos.str();
 
-    Mesh E = series.iterations[0].meshes["E"];
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
+    Mesh E = series.writeIterations()[0].meshes["E"];
     E.setGeometry(Mesh::Geometry::thetaMode);
     E.setGeometryParameters(geometryParameters);
     E.setDataOrder(Mesh::DataOrder::C);
@@ -84,11 +89,17 @@ int main()
     E_t.resetDataset(Dataset(Datatype::FLOAT, {num_fields, N_r, N_z}));
     E_t.storeChunk(E_t_data, Offset{0, 0, 0}, Extent{num_fields, N_r, N_z});
 
-    series.flush();
+    // The iteration can be closed in order to help free up resources.
+    // The iteration's content will be flushed automatically.
+    // An iteration once closed cannot (yet) be reopened.
+    series.writeIterations()[0].close();
 
     /* The files in 'series' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
      * When running out of scope on return, the 'Series' destructor is called.
+     * Alternatively, one can call `series.close()` to the same effect as
+     * calling the destructor, including the release of file handles.
      */
+    series.close();
     return 0;
 }

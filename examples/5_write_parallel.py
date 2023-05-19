@@ -37,6 +37,16 @@ if __name__ == "__main__":
         print("Created an empty series in parallel with {} MPI ranks".format(
               comm.size))
 
+    # In parallel contexts, it's important to explicitly open iterations.
+    # This is done automatically when using `Series.write_iterations()`,
+    # or in read mode `Series.read_iterations()`.
+    #
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
+    # `Series.iterations` can be directly accessed in random-access workflows.
+    series.iterations[1].open()
     mymesh = series.iterations[1]. \
         meshes["mymesh"][io.Mesh_Record_Component.SCALAR]
 
@@ -59,12 +69,17 @@ if __name__ == "__main__":
         print("Registered a single chunk per MPI rank containing its "
               "contribution, ready to write content to disk")
 
-    series.flush()
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    series.iterations[1].close()
+
     if 0 == comm.rank:
         print("Dataset content has been fully written to disk")
 
-    # The files in 'series' are still open until the object is destroyed, on
-    # which it cleanly flushes and closes all open file handles.
-    # One can delete the object explicitly (or let it run out of scope) to
-    # trigger this.
-    del series
+    # The files in 'series' are still open until the series is closed, at which
+    # time it cleanly flushes and closes all open file handles.
+    # One can close the object explicitly to trigger this.
+    # Alternatively, this will automatically happen once the garbage collector
+    # claims (every copy of) the series object.
+    series.close()

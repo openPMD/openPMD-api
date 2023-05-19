@@ -6,15 +6,12 @@
 #
 spack:
   specs:
-  - adios
   - adios2
   - hdf5
 
   packages:
     hdf5:
       variants: ~mpi
-    adios:
-      variants: ~mpi ~zfp ~sz ~lz4 ~blosc
     adios2:
       variants: ~mpi ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
     cmake:

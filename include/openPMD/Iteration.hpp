@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <deque>
 #include <optional>
+#include <set>
 #include <tuple>
 
 namespace openPMD
@@ -133,6 +134,8 @@ class Iteration : public Attributable
 public:
     Iteration(Iteration const &) = default;
     Iteration &operator=(Iteration const &) = default;
+
+    using IterationIndex_t = uint64_t;
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float,
@@ -255,9 +258,9 @@ private:
     }
 
     void flushFileBased(
-        std::string const &, uint64_t, internal::FlushParams const &);
-    void flushGroupBased(uint64_t, internal::FlushParams const &);
-    void flushVariableBased(uint64_t, internal::FlushParams const &);
+        std::string const &, IterationIndex_t, internal::FlushParams const &);
+    void flushGroupBased(IterationIndex_t, internal::FlushParams const &);
+    void flushVariableBased(IterationIndex_t, internal::FlushParams const &);
     void flush(internal::FlushParams const &);
     void deferParseAccess(internal::DeferredParseAccess);
     /*
@@ -284,6 +287,8 @@ private:
         std::string filePath, std::string const &groupPath, bool beginStep);
     void readGorVBased(std::string const &groupPath, bool beginStep);
     void read_impl(std::string const &groupPath);
+    void readMeshes(std::string const &meshesPath);
+    void readParticles(std::string const &particlesPath);
 
     /**
      * Status after beginning an IO step. Currently includes:
@@ -334,8 +339,11 @@ private:
      * Useful in group-based iteration encoding where the Iteration will only
      * be known after opening the step.
      */
-    static BeginStepStatus
-    beginStep(std::optional<Iteration> thisObject, Series &series, bool reread);
+    static BeginStepStatus beginStep(
+        std::optional<Iteration> thisObject,
+        Series &series,
+        bool reread,
+        std::set<IterationIndex_t> const &ignoreIterations = {});
 
     /**
      * @brief End an IO step on the IO file (or file-like object)
@@ -412,4 +420,24 @@ inline T Iteration::dt() const
 {
     return this->readFloatingpoint<T>("dt");
 }
+
+/**
+ * @brief Subclass of Iteration that knows its own index withing the containing
+ *        Series.
+ */
+class IndexedIteration : public Iteration
+{
+    friend class SeriesIterator;
+    friend class WriteIterations;
+
+public:
+    using index_t = Iteration::IterationIndex_t;
+    index_t const iterationIndex;
+
+private:
+    template <typename Iteration_t>
+    IndexedIteration(Iteration_t &&it, index_t index)
+        : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
+    {}
+};
 } // namespace openPMD

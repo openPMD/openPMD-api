@@ -20,15 +20,20 @@
  */
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 
+#include "openPMD/config.hpp"
+
 #include "openPMD/Error.hpp"
-#include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
-#include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 #include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
 
 #include <memory>
 #include <utility>
@@ -39,12 +44,12 @@ namespace openPMD
 namespace
 {
     template <typename Backend, bool enabled, typename... Args>
-    std::shared_ptr<Backend>
+    std::unique_ptr<Backend>
     constructIOHandler(std::string const &backendName, Args &&...args)
     {
         if constexpr (enabled)
         {
-            return std::make_shared<Backend>(std::forward<Args>(args)...);
+            return std::make_unique<Backend>(std::forward<Args>(args)...);
         }
         else
         {
@@ -59,7 +64,7 @@ namespace
 
 #if openPMD_HAVE_MPI
 template <>
-std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
+std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     std::string path,
     Access access,
     Format format,
@@ -74,9 +79,6 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     case Format::HDF5:
         return constructIOHandler<ParallelHDF5IOHandler, openPMD_HAVE_HDF5>(
             "HDF5", path, access, comm, std::move(options));
-    case Format::ADIOS1:
-        return constructIOHandler<ParallelADIOS1IOHandler, openPMD_HAVE_ADIOS1>(
-            "ADIOS1", path, access, std::move(options), comm);
     case Format::ADIOS2_BP:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -130,7 +132,7 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
 #endif
 
 template <>
-std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
+std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     std::string path,
     Access access,
     Format format,
@@ -143,9 +145,6 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     case Format::HDF5:
         return constructIOHandler<HDF5IOHandler, openPMD_HAVE_HDF5>(
             "HDF5", path, access, std::move(options));
-    case Format::ADIOS1:
-        return constructIOHandler<ADIOS1IOHandler, openPMD_HAVE_ADIOS1>(
-            "ADIOS1", path, access, std::move(options));
     case Format::ADIOS2_BP:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -195,7 +194,7 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     }
 }
 
-std::shared_ptr<AbstractIOHandler> createIOHandler(
+std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string path,
     Access access,
     Format format,

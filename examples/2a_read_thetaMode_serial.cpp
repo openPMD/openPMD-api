@@ -69,9 +69,17 @@ int main()
     // toCartesianSliceYZ(E_z_modes).loadChunk<double>();  # (y, z)
     // series.flush();
 
+    // The iteration can be closed in order to help free up resources.
+    // The iteration's content will be flushed automatically.
+    // An iteration once closed cannot (yet) be reopened.
+    i.close();
+
     /* The files in 'series' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
      * When running out of scope on return, the 'Series' destructor is called.
+     * Alternatively, one can call `series.close()` to the same effect as
+     * calling the destructor, including the release of file handles.
      */
+    series.close();
     return 0;
 }

@@ -38,8 +38,15 @@ int main()
     /* Access to individual positions inside happens hierarchically, according
      * to the openPMD standard. Creation of new elements happens on access
      * inside the tree-like structure. Required attributes are initialized to
-     * reasonable defaults for every object. */
-    ParticleSpecies electrons = series.iterations[1].particles["electrons"];
+     * reasonable defaults for every object.
+     * `Series::writeIterations()` and `Series::readIterations()` are
+     * intentionally restricted APIs that ensure a workflow which also works
+     * in streaming setups, e.g. an iteration cannot be opened again once
+     * it has been closed.
+     * `Series::iterations` can be directly accessed in random-access workflows.
+     */
+    ParticleSpecies electrons =
+        series.writeIterations()[1].particles["electrons"];
 
     /* Data to be moved from memory to persistent storage is structured into
      * Records, each holding an unbounded number of RecordComponents. If a
@@ -59,9 +66,17 @@ int main()
     electrons["positionOffset"]["x"].resetDataset(dataset);
     electrons["positionOffset"]["x"].makeConstant(22.0);
 
+    // The iteration can be closed in order to help free up resources.
+    // The iteration's content will be flushed automatically.
+    // An iteration once closed cannot (yet) be reopened.
+    series.writeIterations()[1].close();
+
     /* The files in 'series' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
      * When running out of scope on return, the 'Series' destructor is called.
+     * Alternatively, one can call `series.close()` to the same effect as
+     * calling the destructor, including the release of file handles.
      */
+    series.close();
     return 0;
 }

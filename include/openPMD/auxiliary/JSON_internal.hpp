@@ -23,8 +23,6 @@
 
 #include "openPMD/config.hpp"
 
-#include "openPMD/Error.hpp"
-
 #include <nlohmann/json.hpp>
 #include <toml.hpp>
 
@@ -233,7 +231,7 @@ namespace json
      * Vector containing the lower-case keys to the single backends'
      * configurations.
      */
-    extern std::vector<std::string> backendKeys;
+    extern std::vector<std::string> backendKeys();
 
     /**
      * Function that can be called after reading all global options from the

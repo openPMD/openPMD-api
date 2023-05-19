@@ -7,6 +7,7 @@
 
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -23,6 +24,8 @@
 #include <vector>
 
 using namespace openPMD;
+
+Dataset globalDataset(Datatype::CHAR, {1});
 
 TEST_CASE("versions_test", "[core]")
 {
@@ -68,11 +71,11 @@ TEST_CASE("attribute_dtype_test", "[core]")
     REQUIRE(Datatype::DOUBLE == a.dtype);
     a = Attribute(static_cast<long double>(0.));
     REQUIRE(Datatype::LONG_DOUBLE == a.dtype);
-    a = Attribute(static_cast<std::complex<float> >(0.));
+    a = Attribute(static_cast<std::complex<float>>(0.));
     REQUIRE(Datatype::CFLOAT == a.dtype);
-    a = Attribute(static_cast<std::complex<double> >(0.));
+    a = Attribute(static_cast<std::complex<double>>(0.));
     REQUIRE(Datatype::CDOUBLE == a.dtype);
-    a = Attribute(static_cast<std::complex<long double> >(0.));
+    a = Attribute(static_cast<std::complex<long double>>(0.));
     REQUIRE(Datatype::CLONG_DOUBLE == a.dtype);
     a = Attribute(std::string(""));
     REQUIRE(Datatype::STRING == a.dtype);
@@ -438,11 +441,11 @@ TEST_CASE("record_constructor_test", "[core]")
     ps["position"][RecordComponent::SCALAR].resetDataset(dset);
     ps["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
-    REQUIRE(r["x"].unitSI() == 1);
+    REQUIRE(r["x"].resetDataset(dset).unitSI() == 1);
     REQUIRE(r["x"].numAttributes() == 1); /* unitSI */
-    REQUIRE(r["y"].unitSI() == 1);
+    REQUIRE(r["y"].resetDataset(dset).unitSI() == 1);
     REQUIRE(r["y"].numAttributes() == 1); /* unitSI */
-    REQUIRE(r["z"].unitSI() == 1);
+    REQUIRE(r["z"].resetDataset(dset).unitSI() == 1);
     REQUIRE(r["z"].numAttributes() == 1); /* unitSI */
     std::array<double, 7> zeros{{0., 0., 0., 0., 0., 0., 0.}};
     REQUIRE(r.unitDimension() == zeros);
@@ -487,13 +490,15 @@ TEST_CASE("recordComponent_modification_test", "[core]")
 
     r["x"].setUnitSI(2.55999e-7);
     r["y"].setUnitSI(4.42999e-8);
-    REQUIRE(r["x"].unitSI() == static_cast<double>(2.55999e-7));
+    REQUIRE(
+        r["x"].resetDataset(dset).unitSI() == static_cast<double>(2.55999e-7));
     REQUIRE(r["x"].numAttributes() == 1); /* unitSI */
-    REQUIRE(r["y"].unitSI() == static_cast<double>(4.42999e-8));
+    REQUIRE(
+        r["y"].resetDataset(dset).unitSI() == static_cast<double>(4.42999e-8));
     REQUIRE(r["y"].numAttributes() == 1); /* unitSI */
 
     r["z"].setUnitSI(1);
-    REQUIRE(r["z"].unitSI() == static_cast<double>(1));
+    REQUIRE(r["z"].resetDataset(dset).unitSI() == static_cast<double>(1));
     REQUIRE(r["z"].numAttributes() == 1); /* unitSI */
 }
 
@@ -504,13 +509,13 @@ TEST_CASE("mesh_constructor_test", "[core]")
     Mesh &m = o.iterations[42].meshes["E"];
 
     std::vector<double> pos{0};
-    REQUIRE(m["x"].unitSI() == 1);
+    REQUIRE(m["x"].resetDataset(globalDataset).unitSI() == 1);
     REQUIRE(m["x"].numAttributes() == 2); /* unitSI, position */
     REQUIRE(m["x"].position<double>() == pos);
-    REQUIRE(m["y"].unitSI() == 1);
+    REQUIRE(m["y"].resetDataset(globalDataset).unitSI() == 1);
     REQUIRE(m["y"].numAttributes() == 2); /* unitSI, position */
     REQUIRE(m["y"].position<double>() == pos);
-    REQUIRE(m["z"].unitSI() == 1);
+    REQUIRE(m["z"].resetDataset(globalDataset).unitSI() == 1);
     REQUIRE(m["z"].numAttributes() == 2); /* unitSI, position */
     REQUIRE(m["z"].position<double>() == pos);
     REQUIRE(m.geometry() == Mesh::Geometry::cartesian);
@@ -533,9 +538,9 @@ TEST_CASE("mesh_modification_test", "[core]")
     Series o = Series("./MyOutput_%T.json", Access::CREATE);
 
     Mesh &m = o.iterations[42].meshes["E"];
-    m["x"];
-    m["y"];
-    m["z"];
+    m["x"].resetDataset(globalDataset);
+    m["y"].resetDataset(globalDataset);
+    m["z"].resetDataset(globalDataset);
 
     m.setGeometry(Mesh::Geometry::spherical);
     REQUIRE(m.geometry() == Mesh::Geometry::spherical);
@@ -989,9 +994,11 @@ TEST_CASE("use_count_test", "[core]")
     pprc.resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
     pprc.store(0, static_cast<uint64_t>(1));
     REQUIRE(
-        static_cast<Parameter<Operation::WRITE_DATASET> *>(
-            pprc.get().m_chunks.front().parameter.get())
-            ->data.use_count() == 1);
+        std::get<std::shared_ptr<void const>>(
+            static_cast<Parameter<Operation::WRITE_DATASET> *>(
+                pprc.get().m_chunks.front().parameter.get())
+                ->data.m_buffer)
+            .use_count() == 1);
 #endif
 }
 
@@ -1092,25 +1099,6 @@ TEST_CASE("backend_via_json", "[core]")
     REQUIRE(auxiliary::directory_exists(
         "../samples/optionsViaJsonOverwritesAutomaticDetectionBp4.sst"));
 
-#if openPMD_HAVE_ADIOS1
-    setenv("OPENPMD_BP_BACKEND", "ADIOS1", 1);
-    {
-        /*
-         * ADIOS2 backend should be selected even if OPENPMD_BP_BACKEND is set
-         * as ADIOS1
-         * JSON config overwrites environment variables
-         */
-        Series series(
-            "../samples/optionsPreferJsonOverEnvVar.bp",
-            Access::CREATE,
-            R"({"backend": "ADIOS2"})");
-        REQUIRE(series.backend() == "ADIOS2");
-    }
-    // unset again
-    unsetenv("OPENPMD_BP_BACKEND");
-    REQUIRE(auxiliary::directory_exists(
-        "../samples/optionsPreferJsonOverEnvVar.bp"));
-#endif
 #endif
     std::string encodingFileBased =
         R"({"backend": "json", "iteration_encoding": "file_based"})";
@@ -1230,12 +1218,16 @@ TEST_CASE("load_chunk_wrong_datatype", "[core]")
     }
     {
         Series read("../samples/some_float_value.json", Access::READ_ONLY);
+
+        std::string const err_msg =
+            "Type conversion during chunk loading not yet implemented! "
+            "Data: FLOAT; Load as: DOUBLE";
+
         REQUIRE_THROWS_WITH(
             read.iterations[0]
                 .meshes["rho"][RecordComponent::SCALAR]
                 .loadChunk<double>({0}, {10}),
-            Catch::Equals(
-                "Type conversion during chunk loading not yet implemented"));
+            Catch::Equals(err_msg));
     }
 }
 
@@ -1263,12 +1255,12 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
         REQUIRE(attr.get<unsigned char>() == 'x');
         REQUIRE(attr.get<signed char>() == 'x');
         // all the previous ones, but make them single-element vectors now
-        REQUIRE(attr.get<std::vector<char> >() == std::vector<char>{'x'});
+        REQUIRE(attr.get<std::vector<char>>() == std::vector<char>{'x'});
         REQUIRE(
-            attr.get<std::vector<unsigned char> >() ==
+            attr.get<std::vector<unsigned char>>() ==
             std::vector<unsigned char>{'x'});
         REQUIRE(
-            attr.get<std::vector<signed char> >() ==
+            attr.get<std::vector<signed char>>() ==
             std::vector<signed char>{'x'});
     }
     {
@@ -1276,14 +1268,14 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
         Attribute attr{array};
 
         // the following conversions should be possible
-        REQUIRE(attr.get<std::array<double, 7> >() == array);
+        REQUIRE(attr.get<std::array<double, 7>>() == array);
         // we don't need array-to-array conversions,
         // so array< int, 7 > cannot be loaded here
         REQUIRE(
-            attr.get<std::vector<double> >() ==
+            attr.get<std::vector<double>>() ==
             std::vector<double>{0, 1, 2, 3, 4, 5, 6});
         REQUIRE(
-            attr.get<std::vector<int> >() ==
+            attr.get<std::vector<int>>() ==
             std::vector<int>{0, 1, 2, 3, 4, 5, 6});
     }
     {
@@ -1293,35 +1285,23 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
         Attribute attr{vector};
 
         // the following conversions should be possible
-        REQUIRE(attr.get<std::array<double, 7> >() == arraydouble);
-        REQUIRE(attr.get<std::array<int, 7> >() == arrayint);
+        REQUIRE(attr.get<std::array<double, 7>>() == arraydouble);
+        REQUIRE(attr.get<std::array<int, 7>>() == arrayint);
         REQUIRE_THROWS_WITH(
-            (attr.get<std::array<int, 8> >()),
+            (attr.get<std::array<int, 8>>()),
             Catch::Equals("getCast: no vector to array conversion possible "
                           "(wrong requested array size)."));
         REQUIRE(
-            attr.get<std::vector<double> >() ==
+            attr.get<std::vector<double>>() ==
             std::vector<double>{0, 1, 2, 3, 4, 5, 6});
         REQUIRE(
-            attr.get<std::vector<int> >() ==
+            attr.get<std::vector<int>>() ==
             std::vector<int>{0, 1, 2, 3, 4, 5, 6});
     }
 }
 
 TEST_CASE("unavailable_backend", "[core]")
 {
-#if !openPMD_HAVE_ADIOS1
-    {
-        auto fail = []() {
-            Series(
-                "unavailable.bp", Access::CREATE, R"({"backend": "ADIOS1"})");
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'ADIOS1'.");
-    }
-#endif
 #if !openPMD_HAVE_ADIOS2
     {
         auto fail = []() {
@@ -1334,7 +1314,7 @@ TEST_CASE("unavailable_backend", "[core]")
             "'ADIOS2'.");
     }
 #endif
-#if !openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
+#if !openPMD_HAVE_ADIOS2
     {
         auto fail = []() { Series("unavailable.bp", Access::CREATE); };
         REQUIRE_THROWS_WITH(
@@ -1354,63 +1334,22 @@ TEST_CASE("unavailable_backend", "[core]")
             "'HDF5'.");
     }
 #endif
+}
 
-#if openPMD_HAVE_MPI
-#if !openPMD_HAVE_ADIOS1
-    {
-        auto fail = []() {
-            Series(
-                "unavailable.bp",
-                Access::CREATE,
-                MPI_COMM_WORLD,
-                R"({"backend": "ADIOS1"})");
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'ADIOS1'.");
-    }
-#endif
-#if !openPMD_HAVE_ADIOS2
-    {
-        auto fail = []() {
-            Series(
-                "unavailable.bp",
-                Access::CREATE,
-                MPI_COMM_WORLD,
-                R"({"backend": "ADIOS2"})");
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'ADIOS2'.");
-    }
-#endif
-#if !openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
-    {
-        auto fail = []() {
-            Series("unavailable.bp", Access::CREATE, MPI_COMM_WORLD);
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'ADIOS2'.");
-    }
-#endif
-#if !openPMD_HAVE_HDF5
-    {
-        auto fail = []() {
-            Series(
-                "unavailable.h5",
-                Access::CREATE,
-                MPI_COMM_WORLD,
-                R"({"backend": "HDF5"})");
-        };
-        REQUIRE_THROWS_WITH(
-            fail(),
-            "Wrong API usage: openPMD-api built without support for backend "
-            "'HDF5'.");
-    }
-#endif
-#endif
+TEST_CASE("unique_ptr", "[core]")
+{
+    auto stdptr = std::make_unique<int>(5);
+    UniquePtrWithLambda<int> ptr = std::move(stdptr);
+    auto stdptr_with_custom_del =
+        std::unique_ptr<int, auxiliary::CustomDelete<int>>{
+            new int{5}, auxiliary::CustomDelete<int>{[](int const *del_ptr) {
+                delete del_ptr;
+            }}};
+    UniquePtrWithLambda<int> ptr2 = std::move(stdptr_with_custom_del);
+
+    UniquePtrWithLambda<int[]> arrptr;
+    // valgrind can detect mismatched new/delete pairs
+    UniquePtrWithLambda<int[]> arrptrFilled{new int[5]{}};
+    UniquePtrWithLambda<int[]> arrptrFilledCustom{
+        new int[5]{}, [](int const *p) { delete[] p; }};
 }

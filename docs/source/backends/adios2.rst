@@ -84,7 +84,6 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
 ``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
 ``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
-``OPENPMD_BP_BACKEND``                ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
 ``OPENPMD_ADIOS2_BP5_BufferChunkMB``  ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
 ``OPENPMD_ADIOS2_BP5_MaxShmMB``       ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
 ``OPENPMD_ADIOS2_BP5_NumSubFiles``    ``0``      ADIOS2 BP5 engine: num of subfiles
@@ -93,9 +92,6 @@ environment variable                  default    description
 ===================================== ========== ================================================================================
 
 Please refer to the `ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for details on I/O tuning.
-
-In case the ADIOS2 backend was not compiled but only the deprecated :ref:`ADIOS1 backend <backends-adios1>`, the default of ``OPENPMD_BP_BACKEND`` will fall back to ``ADIOS1``.
-Be advised that ADIOS1 only supports ``.bp`` files up to the internal version BP3, while ADIOS2 supports BP3, BP4 and later formats.
 
 Notice that the ADIOS2 backend is alternatively configurable via :ref:`JSON parameters <backendconfig>`.
 
@@ -108,13 +104,32 @@ The default behavior may be restored by setting the :ref:`JSON parameter <backen
 Best Practice at Large Scale
 ----------------------------
 
-A good practice at scale is to disable the online creation of the metadata file.
-After writing the data, run ``bpmeta`` on the (to-be-created) filename to generate the metadata file offline (repeat per iteration for file-based encoding).
-This metadata file is needed for reading, while the actual heavy data resides in ``<metadata filename>.dir/`` directories.
-Note that such a tool is not yet available for ADIOS2, but the ``bpmeta`` utility provided by ADIOS1 is capable of processing files written by ADIOS2.
+A benefitial configuration depends heavily on:
 
-Further options depend heavily on filesystem type, specific file striping, network infrastructure and available RAM on the aggregator nodes.
-A good number for substreams is usually the number of contributing nodes divided by four.
+1. Hardware: filesystem type, specific file striping, network infrastructure and available RAM on the aggregator nodes.
+2. Software: communication and I/O patterns in the data producer/consumer, ADIOS2 engine being used.
+
+The BP4 engine optimizes aggressively for I/O efficiency at large scale, while the BP5 engine implements some compromises for tighter control of host memory usage.
+
+ADIOS2 aggregates at two levels:
+
+1. Aggregators: These are the processes that actually write data to the filesystem.
+   In BP5, there must be at least one aggregatore per compute node.
+2. Subfiles: In BP5, multiple aggregators might write to the same physical file on the filesystem.
+   The BP4 engine does not distinguish the number of aggregators from the number of subfiles, each aggregator writes to one file.
+
+The number of aggregators depends on the actual scale of the application.
+At low and mediocre scale, it is generally preferred to have every process write to the filesystem in order to make good use of parallel resources and utilize the full bandwidth.
+At higher scale, reducing the number of aggregators is suggested, in order to avoid competition for resources between too many writing processes.
+In the latter case, a good number of aggregators is usually the number of contributing nodes.
+A file count lower than the number of nodes might be chosen in both BP4 and BP5 with care, file counts of "number of nodes divided by four" have yielded good results in some setups.
+
+Use of asynchronous I/O functionality (``BurstBufferPath`` in BP4, ``AsyncWrite`` in BP5) depends on the application, and might increase the performance or decrease it.
+Asynchronous I/O can compete with MPI for communication resources, impacting the *compute* performance of an application.
+
+For SST streaming, the default TCP-based backend does not scale well in HPC situations.
+Instead, a high-performance backend (``libfabric``, ``ucx`` or ``mpi`` (only supported for well-configured MPICH)) should be chosen.
+The preferred backend usually depends on the system's native software stack.
 
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS2 manual and talk to your filesystem admins and the ADIOS2 authors.
 Be aware that extreme-scale I/O is a research topic after all.
@@ -298,6 +313,26 @@ Known Issues
 
 Selected References
 -------------------
+
+* William F. Godoy, Norbert Podhorszki, Ruonan Wang, Chuck Atkins, Greg Eisenhauer, Junmin Gu, Philip Davis, Jong Choi, Kai Germaschewski, Kevin Huck, Axel Huebl, Mark Kim, James Kress, Tahsin Kurc, Qing Liu, Jeremy Logan, Kshitij Mehta, George Ostrouchov, Manish Parashar, Franz Poeschel, David Pugmire, Eric Suchyta, Keichi Takahashi, Nick Thompson, Seiji Tsutsumi, Lipeng Wan, Matthew Wolf, Kesheng Wu, and Scott Klasky.
+  *ADIOS 2: The Adaptable Input Output System. A framework for high-performance data management,*
+  SoftwareX, vol. 12, 100561, 2020.
+  `DOI:10.1016/j.softx.2020.100561 <https://doi.org/10.1016/j.softx.2020.100561>`__
+
+* Franz Poeschel, Juncheng E, William F. Godoy, Norbert Podhorszki, Scott Klasky, Greg Eisenhauer, Philip E. Davis, Lipeng Wan, Ana Gainaru, Junmin Gu, Fabian Koller, Rene Widera, Michael Bussmann, and Axel Huebl.
+  *Transitioning from file-based HPC workflows to streaming data pipelines with openPMD and ADIOS2,*
+  Part of *Driving Scientific and Engineering Discoveries Through the Integration of Experiment, Big Data, and Modeling and Simulation,* SMC 2021, Communications in Computer and Information Science (CCIS), vol 1512, 2022.
+  `arXiv:2107.06108 <https://arxiv.org/abs/2107.06108>`__, `DOI:10.1007/978-3-030-96498-6_6 <https://doi.org/10.1007/978-3-030-96498-6_6>`__
+
+* Lipeng Wan, Axel Huebl, Junmin Gu, Franz Poeschel, Ana Gainaru, Ruonan Wang, Jieyang Chen, Xin Liang, Dmitry Ganyushin, Todd Munson, Ian Foster, Jean-Luc Vay, Norbert Podhorszki, Kesheng Wu, and Scott Klasky.
+  *Improving I/O Performance for Exascale Applications through Online Data Layout Reorganization,*
+  IEEE Transactions on Parallel and Distributed Systems, vol. 33, no. 4, pp. 878-890, 2022.
+  `arXiv:2107.07108 <https://arxiv.org/abs/2107.07108>`__, `DOI:10.1109/TPDS.2021.3100784 <https://doi.org/10.1109/TPDS.2021.3100784>`__
+
+* Junmin Gu, Philip Davis, Greg Eisenhauer, William Godoy, Axel Huebl, Scott Klasky, Manish Parashar, Norbert Podhorszki, Franz Poeschel, Jean-Luc Vay, Lipeng Wan, Ruonan Wang, and Kesheng Wu.
+  *Organizing Large Data Sets for Efficient Analyses on HPC Systems,*
+  Journal of Physics: Conference Series, vol. 2224, in *2nd International Symposium on Automation, Information and Computing* (ISAIC 2021), 2022.
+  `DOI:10.1088/1742-6596/2224/1/012042 <https://doi.org/10.1088/1742-6596/2224/1/012042>`__
 
 * Hasan Abbasi, Matthew Wolf, Greg Eisenhauer, Scott Klasky, Karsten Schwan, and Fang Zheng.
   *Datastager: scalable data staging services for petascale applications,*

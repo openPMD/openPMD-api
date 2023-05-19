@@ -57,10 +57,7 @@ std::vector<BackendSelection> testedBackends()
 {
     auto variants = getVariants();
     std::map<std::string, std::string> extensions{
-        {"json", "json"},
-        {"adios1", "adios1.bp"},
-        {"adios2", "bp"},
-        {"hdf5", "h5"}};
+        {"json", "json"}, {"adios2", "bp"}, {"hdf5", "h5"}};
     std::vector<BackendSelection> res;
     for (auto const &pair : variants)
     {
@@ -175,10 +172,6 @@ TEST_CASE("adios2_char_portability", "[serial][adios2]")
     }
 
     {
-        if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "ADIOS2") != "ADIOS2")
-        {
-            return;
-        }
         Series read(
             "../samples/adios2_char_portability.bp", Access::READ_ONLY, config);
         auto signedVectorAttribute = read.getAttribute("signedVector");
@@ -300,16 +293,6 @@ TEST_CASE("multi_series_test", "[serial]")
     std::list<Series> allSeries;
 
     auto myfileExtensions = testedFileExtensions();
-
-    // this test demonstrates an ADIOS1 (upstream) bug, comment this section to
-    // trigger it
-    auto const rmEnd = std::remove_if(
-        myfileExtensions.begin(),
-        myfileExtensions.end(),
-        [](std::string const &beit) {
-            return beit == "bp" && determineFormat("test.bp") == Format::ADIOS1;
-        });
-    myfileExtensions.erase(rmEnd, myfileExtensions.end());
 
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3})
@@ -642,9 +625,6 @@ void close_iteration_interleaved_test(
 
 TEST_CASE("close_iteration_interleaved_test", "[serial]")
 {
-    bool const bp_prefer_adios1 =
-        (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1");
-
     for (auto const &t : testedFileExtensions())
     {
         close_iteration_interleaved_test(t, IterationEncoding::fileBased);
@@ -653,15 +633,13 @@ TEST_CASE("close_iteration_interleaved_test", "[serial]")
         // run this test for ADIOS2 & JSON only
         if (t == "h5")
             continue;
-        if (t == "bp" && bp_prefer_adios1)
-            continue;
         close_iteration_interleaved_test(t, IterationEncoding::variableBased);
     }
 }
 
 void close_and_copy_attributable_test(std::string file_ending)
 {
-    using position_t = double;
+    using position_t = int;
 
     // open file for writing
     Series series("electrons." + file_ending, Access::CREATE);
@@ -691,16 +669,80 @@ void close_and_copy_attributable_test(std::string file_ending)
             iteration_ptr->particles["e"]["positionOffset"];
 
         std::iota(local_data.get(), local_data.get() + length, i * length);
-        for (auto const &dim : {"x", "y", "z"})
-        {
-            RecordComponent pos = electronPositions[dim];
-            pos.resetDataset(dataset);
-            pos.storeChunk(local_data, Offset{0}, global_extent);
+        /*
+         * Hijack this test to additionally test the unique_ptr storeChunk API
+         */
+        // scalar unique_ptr, default delete
+        auto pos_x = electronPositions["x"];
+        pos_x.resetDataset(Dataset{datatype, {1}});
+        pos_x.storeChunk(std::make_unique<int>(5), {0}, {1});
 
-            RecordComponent posOff = electronPositionsOffset[dim];
-            posOff.resetDataset(dataset);
-            posOff.makeConstant(position_t(0.0));
-        }
+        // array unique_ptr, default delete
+        auto posOff_x = electronPositionsOffset["x"];
+        posOff_x.resetDataset(dataset);
+        posOff_x.storeChunk(
+            std::unique_ptr<int[]>{new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}},
+            {0},
+            {global_extent});
+
+        using CD = auxiliary::CustomDelete<int>;
+        CD array_deleter{[](int const *ptr) { delete[] ptr; }};
+
+        // scalar unique_ptr, custom delete
+        auto pos_y = electronPositions["y"];
+        pos_y.resetDataset(dataset);
+        pos_y.storeChunk(
+            std::unique_ptr<int, CD>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array unique_ptr, custom delete
+        auto posOff_y = electronPositionsOffset["y"];
+        posOff_y.resetDataset(dataset);
+        posOff_y.storeChunk(
+            std::unique_ptr<int[], CD>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // scalar UniquePtrWithLambda, default delete
+        auto pos_z = electronPositions["z"];
+        pos_z.resetDataset(dataset);
+        pos_z.storeChunk(
+            UniquePtrWithLambda<int>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array UniquePtrWithLambda, default delete
+        auto posOff_z = electronPositionsOffset["z"];
+        posOff_z.resetDataset(dataset);
+        posOff_z.storeChunk(
+            UniquePtrWithLambda<int[]>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // scalar UniquePtrWithLambda, custom delete
+        // we're playing 4D now
+        auto pos_w = electronPositions["w"];
+        pos_w.resetDataset(dataset);
+        pos_w.storeChunk(
+            UniquePtrWithLambda<int>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // array UniquePtrWithLambda, custom delete
+        auto posOff_w = electronPositionsOffset["w"];
+        posOff_w.resetDataset(dataset);
+        posOff_w.storeChunk(
+            UniquePtrWithLambda<int[]>{
+                new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
         iteration_ptr->close();
         // force re-flush of previous iterations
         series.flush();
@@ -899,11 +941,11 @@ inline void constant_scalar(std::string file_ending)
         E_x.makeConstant(static_cast<float>(13.37));
         auto E_y = s.iterations[1].meshes["E"]["y"];
         E_y.resetDataset(Dataset(Datatype::UINT, {1, 2, 3}));
-        std::shared_ptr<unsigned int> E(
+        UniquePtrWithLambda<unsigned int> E(
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
-        E_y.storeChunk(E, {0, 0, 0}, {1, 2, 3});
+        E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.iterations[1].meshes["E"];
@@ -934,12 +976,12 @@ inline void constant_scalar(std::string file_ending)
         vel_x.makeConstant(static_cast<short>(-1));
         auto vel_y = s.iterations[1].particles["e"]["velocity"]["y"];
         vel_y.resetDataset(Dataset(Datatype::ULONGLONG, {3, 2, 1}));
-        std::shared_ptr<unsigned long long> vel(
+        UniquePtrWithLambda<unsigned long long> vel(
             new unsigned long long[6],
             [](unsigned long long const *p) { delete[] p; });
         unsigned long long v{0};
         std::generate(vel.get(), vel.get() + 6, [&v] { return v++; });
-        vel_y.storeChunk(vel, {0, 0, 0}, {3, 2, 1});
+        vel_y.storeChunk(std::move(vel), {0, 0, 0}, {3, 2, 1});
     }
 
     {
@@ -1251,6 +1293,7 @@ inline void dtype_test(const std::string &backend)
     bool test_long_long = (backend != "json") || sizeof(long long) <= 8;
     {
         Series s = Series("../samples/dtype_test." + backend, Access::CREATE);
+        bool adios1 = s.backend() == "ADIOS1" || s.backend() == "MPI_ADIOS1";
 
         char c = 'c';
         s.setAttribute("char", c);
@@ -1281,6 +1324,10 @@ inline void dtype_test(const std::string &backend)
         }
         std::string str = "string";
         s.setAttribute("string", str);
+        if (!adios1)
+        {
+            s.setAttribute("emptyString", "");
+        }
         s.setAttribute("vecChar", std::vector<char>({'c', 'h', 'a', 'r'}));
         s.setAttribute("vecInt16", std::vector<int16_t>({32766, 32767}));
         s.setAttribute(
@@ -1310,6 +1357,13 @@ inline void dtype_test(const std::string &backend)
         }
         s.setAttribute(
             "vecString", std::vector<std::string>({"vector", "of", "strings"}));
+        if (!adios1)
+        {
+            s.setAttribute(
+                "vecEmptyString", std::vector<std::string>{"", "", ""});
+            s.setAttribute(
+                "vecMixedString", std::vector<std::string>{"hi", "", "ho"});
+        }
         s.setAttribute("bool", true);
         s.setAttribute("boolF", false);
 
@@ -1369,6 +1423,7 @@ inline void dtype_test(const std::string &backend)
     }
 
     Series s = Series("../samples/dtype_test." + backend, Access::READ_ONLY);
+    bool adios1 = s.backend() == "ADIOS1" || s.backend() == "MPI_ADIOS1";
 
     REQUIRE(s.getAttribute("char").get<char>() == 'c');
     REQUIRE(s.getAttribute("uchar").get<unsigned char>() == 'u');
@@ -1386,6 +1441,10 @@ inline void dtype_test(const std::string &backend)
         REQUIRE(s.getAttribute("longdouble").get<long double>() == 1.e80L);
     }
     REQUIRE(s.getAttribute("string").get<std::string>() == "string");
+    if (!adios1)
+    {
+        REQUIRE(s.getAttribute("emptyString").get<std::string>().empty());
+    }
     REQUIRE(
         s.getAttribute("vecChar").get<std::vector<char> >() ==
         std::vector<char>({'c', 'h', 'a', 'r'}));
@@ -1429,6 +1488,15 @@ inline void dtype_test(const std::string &backend)
     REQUIRE(
         s.getAttribute("vecString").get<std::vector<std::string> >() ==
         std::vector<std::string>({"vector", "of", "strings"}));
+    if (!adios1)
+    {
+        REQUIRE(
+            s.getAttribute("vecEmptyString").get<std::vector<std::string> >() ==
+            std::vector<std::string>({"", "", ""}));
+        REQUIRE(
+            s.getAttribute("vecMixedString").get<std::vector<std::string> >() ==
+            std::vector<std::string>({"hi", "", "ho"}));
+    }
     REQUIRE(s.getAttribute("bool").get<bool>() == true);
     REQUIRE(s.getAttribute("boolF").get<bool>() == false);
 
@@ -2191,7 +2259,6 @@ inline void bool_test(const std::string &backend)
     {
         Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
 
-        REQUIRE_THROWS_AS(o.setAuthor(""), std::runtime_error);
         o.setAttribute("Bool attribute true", true);
         o.setAttribute("Bool attribute false", false);
     }
@@ -2379,9 +2446,16 @@ inline void optional_paths_110_test(const std::string &backend)
             REQUIRE(s.iterations[400].particles.empty());
         }
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
+        }
+        else
+        {
+            throw;
+        }
     }
 
     {
@@ -2450,10 +2524,14 @@ void git_early_chunk_query(
             }
         }
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 }
 
@@ -2490,9 +2568,16 @@ TEST_CASE("empty_alternate_fbpic", "[serial][hdf5]")
             helper::listSeries(list);
         }
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
+        }
+        else
+        {
+            throw;
+        }
     }
 }
 
@@ -2679,10 +2764,14 @@ TEST_CASE("git_hdf5_sample_structure_test", "[serial][hdf5]")
         int32_t i32 = 32;
         REQUIRE_THROWS(o.setAttribute("setAttributeFail", i32));
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 #else
     std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
@@ -2936,10 +3025,14 @@ TEST_CASE("git_hdf5_sample_attribute_test", "[serial][hdf5]")
         REQUIRE(weighting_scalar.getDimensionality() == 1);
         REQUIRE(weighting_scalar.getExtent() == e);
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 }
 
@@ -3010,10 +3103,14 @@ TEST_CASE("git_hdf5_sample_content_test", "[serial][hdf5]")
                 REQUIRE(raw_ptr[i] == constant_value);
         }
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 }
 
@@ -3034,10 +3131,15 @@ TEST_CASE("git_hdf5_sample_fileBased_read_test", "[serial][hdf5]")
         REQUIRE(o.get().m_filenamePadding == 8);
 #endif
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible &&
+            e.affectedObject == error::AffectedObject::File)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 
     try
@@ -3056,15 +3158,19 @@ TEST_CASE("git_hdf5_sample_fileBased_read_test", "[serial][hdf5]")
         REQUIRE(o.get().m_filenamePadding == 8);
 #endif
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 
-    REQUIRE_THROWS_WITH(
+    REQUIRE_THROWS_AS(
         Series("../samples/git-sample/data%07T.h5", Access::READ_ONLY),
-        Catch::Equals("No matching iterations found: data%07T"));
+        error::ReadError);
 
     try
     {
@@ -3101,10 +3207,16 @@ TEST_CASE("git_hdf5_sample_fileBased_read_test", "[serial][hdf5]")
             auxiliary::remove_file(file);
         }
     }
+    // use no_such_file_error here to check that the backward-compatibility
+    // alias works
     catch (no_such_file_error &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 }
 
@@ -3181,10 +3293,14 @@ TEST_CASE("git_hdf5_sample_read_thetaMode", "[serial][hdf5][thetaMode]")
         auto data = B_z.loadChunk<double>(offset, extent);
         o.flush();
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
     }
 }
 
@@ -3654,10 +3770,13 @@ TEST_CASE("hzdr_hdf5_sample_content_test", "[serial][hdf5]")
         REQUIRE(
             isSame(e_offset_z.getDatatype(), determineDatatype<uint64_t>()));
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
     }
 }
 
@@ -3848,10 +3967,13 @@ TEST_CASE("hzdr_adios1_sample_content_test", "[serial][adios1]")
                 for (int c = 0; c < 3; ++c)
                     REQUIRE(raw_ptr[((a * 3) + b) * 3 + c] == actual[a][b][c]);
     }
-    catch (no_such_file_error &e)
+    catch (error::ReadError &e)
     {
-        std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
-        return;
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
     }
 }
 
@@ -4024,6 +4146,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         return res;
     };
     std::vector<int32_t> data(size, 10);
+    Datatype dtype = determineDatatype<int32_t>();
     {
         Series write("../samples/bp5_flush.bp", Access::CREATE, cfg);
 
@@ -4031,7 +4154,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["e_chargeDensity"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush();
@@ -4054,7 +4177,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["i_chargeDensity"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
         }
 
@@ -4089,7 +4212,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             auto component =
                 write.writeIterations()[0]
                     .meshes["temperature"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
+            component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush(
@@ -4112,12 +4235,19 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             REQUIRE(currentSize <= 4096);
         }
 
+        bool has_been_deleted = false;
+        UniquePtrWithLambda<int32_t> copied_as_unique(
+            new int[size], [&has_been_deleted](int const *ptr) {
+                delete[] ptr;
+                has_been_deleted = true;
+            });
+        std::copy_n(data.data(), size, copied_as_unique.get());
         {
             auto component =
                 write.writeIterations()[0]
                     .meshes["temperature"][RecordComponent::SCALAR];
-            component.resetDataset({Datatype::INT, {size}});
-            component.storeChunk(data, {0}, {size});
+            component.resetDataset({dtype, {size}});
+            component.storeChunk(std::move(copied_as_unique), {0}, {size});
             // component.seriesFlush(FlushMode::NonCollective);
             component.seriesFlush(
                 "adios2.engine.preferred_flush_target = \"disk\"");
@@ -4127,11 +4257,13 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         {
             // should now be roughly within 1% of 16Mb
             REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
+            REQUIRE(has_been_deleted);
         }
         else
         {
             // should be roughly zero
             REQUIRE(currentSize <= 4096);
+            REQUIRE(!has_been_deleted);
         }
     }
     auto currentSize = getsize();
@@ -4246,8 +4378,6 @@ TEST_CASE("adios2_engines_and_file_endings")
             std::string const &requiredEngine,
             std::string const &filesystemExt,
             std::string const &jsonCfg = "{}") mutable {
-            // Env. var. OPENPMD_BP_BACKEND does not matter for this test as
-            // we always override it in the JSON config
             auto basename = "../samples/file_endings/groupbased" +
                 std::to_string(filenameCounter++);
             auto name = basename + ext;
@@ -4326,10 +4456,7 @@ TEST_CASE("adios2_engines_and_file_endings")
             {
                 Series write(name, Access::CREATE, jsonCfg);
             }
-            bool isThisADIOS1 =
-                auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1" &&
-                ext == ".bp";
-            if (directory && !isThisADIOS1)
+            if (directory)
             {
                 REQUIRE(auxiliary::directory_exists(filesystemname));
             }
@@ -4341,10 +4468,8 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series read(
                     name,
                     Access::READ_ONLY,
-                    isThisADIOS1
-                        ? "backend = \"adios1\""
-                        : "backend = \"adios2\"\nadios2.engine.type = \"" +
-                            requiredEngine + "\"");
+                    "backend = \"adios2\"\nadios2.engine.type = \"" +
+                        requiredEngine + "\"");
             }
         };
 
@@ -4476,10 +4601,7 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series write(name, Access::CREATE, jsonCfg);
                 write.writeIterations()[0];
             }
-            bool isThisADIOS1 =
-                auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1" &&
-                ext == ".bp";
-            if (directory && !isThisADIOS1)
+            if (directory)
             {
                 REQUIRE(auxiliary::directory_exists(filesystemname));
             }
@@ -4501,10 +4623,8 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series read(
                     name,
                     Access::READ_ONLY,
-                    isThisADIOS1
-                        ? "backend = \"adios1\""
-                        : "backend = \"adios2\"\nadios2.engine.type = \"" +
-                            requiredEngine + "\"");
+                    "backend = \"adios2\"\nadios2.engine.type = \"" +
+                        requiredEngine + "\"");
             }
         };
 
@@ -4541,11 +4661,6 @@ TEST_CASE("adios2_engines_and_file_endings")
 
 TEST_CASE("serial_adios2_backend_config", "[serial][adios2]")
 {
-    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1")
-    {
-        // run this test for ADIOS2 only
-        return;
-    }
     std::string writeConfigBP3 = R"END(
 unused = "global parameter"
 
@@ -4757,7 +4872,8 @@ this = "should not warn"
 void bp4_steps(
     std::string const &file,
     std::string const &options_write,
-    std::string const &options_read)
+    std::string const &options_read,
+    Access access = Access::READ_ONLY)
 {
     {
         Series writeSeries(file, Access::CREATE, options_write);
@@ -4782,7 +4898,7 @@ void bp4_steps(
         return;
     }
 
-    Series readSeries(file, Access::READ_ONLY, options_read);
+    Series readSeries(file, access, options_read);
 
     size_t last_iteration_index = 0;
     for (auto iteration : readSeries.readIterations())
@@ -4835,6 +4951,7 @@ TEST_CASE("bp4_steps", "[serial][adios2]")
         type = "bp4"
         UseSteps = false
     )";
+
     // sing the yes no song
     bp4_steps("../samples/bp4steps_yes_yes.bp", useSteps, useSteps);
     bp4_steps("../samples/bp4steps_no_yes.bp", dontUseSteps, useSteps);
@@ -4842,6 +4959,17 @@ TEST_CASE("bp4_steps", "[serial][adios2]")
     bp4_steps("../samples/bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
     bp4_steps("../samples/nullcore.bp", nullcore, "");
     bp4_steps("../samples/bp4steps_default.bp", "{}", "{}");
+
+    // bp4_steps(
+    //     "../samples/newlayout_bp4steps_yes_yes.bp",
+    //     useSteps,
+    //     useSteps,
+    //     Access::READ_LINEAR);
+    // bp4_steps(
+    //     "../samples/newlayout_bp4steps_yes_no.bp",
+    //     useSteps,
+    //     dontUseSteps,
+    //     Access::READ_LINEAR);
 
     /*
      * Do this whole thing once more, but this time use the new attribute
@@ -4877,6 +5005,17 @@ TEST_CASE("bp4_steps", "[serial][adios2]")
         "../samples/newlayout_bp4steps_no_yes.bp", dontUseSteps, useSteps);
     bp4_steps(
         "../samples/newlayout_bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
+
+    bp4_steps(
+        "../samples/newlayout_bp4steps_yes_yes.bp",
+        useSteps,
+        useSteps,
+        Access::READ_LINEAR);
+    bp4_steps(
+        "../samples/newlayout_bp4steps_yes_no.bp",
+        useSteps,
+        dontUseSteps,
+        Access::READ_LINEAR);
 }
 #endif
 
@@ -5278,6 +5417,7 @@ void variableBasedSeries(std::string const &file)
     constexpr Extent::value_type extent = 1000;
     {
         Series writeSeries(file, Access::CREATE, selectADIOS2);
+        writeSeries.setAttribute("some_global", "attribute");
         writeSeries.setIterationEncoding(IterationEncoding::variableBased);
         REQUIRE(
             writeSeries.iterationEncoding() ==
@@ -5326,10 +5466,19 @@ void variableBasedSeries(std::string const &file)
 
     auto testRead = [&file, &extent, &selectADIOS2](
                         std::string const &jsonConfig) {
+        /*
+         * Need linear read mode to access more than a single iteration in
+         * variable-based iteration encoding.
+         */
         Series readSeries(
-            file, Access::READ_ONLY, json::merge(selectADIOS2, jsonConfig));
+            file, Access::READ_LINEAR, json::merge(selectADIOS2, jsonConfig));
 
         size_t last_iteration_index = 0;
+        REQUIRE(!readSeries.containsAttribute("some_global"));
+        readSeries.readIterations();
+        REQUIRE(
+            readSeries.getAttribute("some_global").get<std::string>() ==
+            "attribute");
         for (auto iteration : readSeries.readIterations())
         {
             if (iteration.iterationIndex > 2)
@@ -5730,42 +5879,46 @@ void iterate_nonstreaming_series(
         }
     }
 
-    Series readSeries(
-        file,
-        Access::READ_ONLY,
-        json::merge(jsonConfig, R"({"defer_iteration_parsing": true})"));
-
-    size_t last_iteration_index = 0;
-    // conventionally written Series must be readable with streaming-aware API!
-    for (auto iteration : readSeries.readIterations())
+    for (auto access : {Access::READ_LINEAR, Access::READ_ONLY})
     {
-        // ReadIterations takes care of Iteration::open()ing iterations
-        auto E_x = iteration.meshes["E"]["x"];
-        REQUIRE(E_x.getDimensionality() == 2);
-        REQUIRE(E_x.getExtent()[0] == 2);
-        REQUIRE(E_x.getExtent()[1] == extent);
-        auto chunk = E_x.loadChunk<int>({0, 0}, {1, extent});
-        auto chunk2 = E_x.loadChunk<int>({1, 0}, {1, extent});
-        // we encourage manually closing iterations, but it should not matter
-        // so let's do the switcharoo for this test
-        if (last_iteration_index % 2 == 0)
-        {
-            readSeries.flush();
-        }
-        else
-        {
-            iteration.close();
-        }
+        Series readSeries(
+            file,
+            access,
+            json::merge(jsonConfig, R"({"defer_iteration_parsing": true})"));
 
-        int value = variableBasedLayout ? 0 : iteration.iterationIndex;
-        for (size_t i = 0; i < extent; ++i)
+        size_t last_iteration_index = 0;
+        // conventionally written Series must be readable with streaming-aware
+        // API!
+        for (auto iteration : readSeries.readIterations())
         {
-            REQUIRE(chunk.get()[i] == value);
-            REQUIRE(chunk2.get()[i] == int(i));
+            // ReadIterations takes care of Iteration::open()ing iterations
+            auto E_x = iteration.meshes["E"]["x"];
+            REQUIRE(E_x.getDimensionality() == 2);
+            REQUIRE(E_x.getExtent()[0] == 2);
+            REQUIRE(E_x.getExtent()[1] == extent);
+            auto chunk = E_x.loadChunk<int>({0, 0}, {1, extent});
+            auto chunk2 = E_x.loadChunk<int>({1, 0}, {1, extent});
+            // we encourage manually closing iterations, but it should not
+            // matter so let's do the switcharoo for this test
+            if (last_iteration_index % 2 == 0)
+            {
+                readSeries.flush();
+            }
+            else
+            {
+                iteration.close();
+            }
+
+            int value = variableBasedLayout ? 0 : iteration.iterationIndex;
+            for (size_t i = 0; i < extent; ++i)
+            {
+                REQUIRE(chunk.get()[i] == value);
+                REQUIRE(chunk2.get()[i] == int(i));
+            }
+            last_iteration_index = iteration.iterationIndex;
         }
-        last_iteration_index = iteration.iterationIndex;
+        REQUIRE(last_iteration_index == 9);
     }
-    REQUIRE(last_iteration_index == 9);
 }
 
 TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
@@ -5790,13 +5943,13 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
                     backend.extension,
                 false,
                 json::merge(
-                    backend.jsonBaseConfig(), "adios2.engine = \"bp5\""));
+                    backend.jsonBaseConfig(), "adios2.engine.type = \"bp5\""));
             iterate_nonstreaming_series(
                 "../samples/iterate_nonstreaming_series_groupbased_bp5." +
                     backend.extension,
                 false,
                 json::merge(
-                    backend.jsonBaseConfig(), "adios2.engine = \"bp5\""));
+                    backend.jsonBaseConfig(), "adios2.engine.type = \"bp5\""));
         }
 #endif
     }
@@ -5839,7 +5992,7 @@ void adios2_bp5_no_steps(bool usesteps)
         IO.DefineAttribute("/openPMD", std::string("1.1.0"));
         IO.DefineAttribute("/openPMDextension", uint32_t(0));
         IO.DefineAttribute("/software", std::string("openPMD-api"));
-        IO.DefineAttribute("/softwareVersion", std::string("0.15.0-dev"));
+        IO.DefineAttribute("/softwareVersion", std::string("0.16.0-dev"));
 
         IO.DefineAttribute("/data/0/dt", double(1));
         IO.DefineAttribute(
@@ -6052,7 +6205,7 @@ void deferred_parsing(std::string const &extension)
         Series series(basename + "%06T." + extension, Access::CREATE);
         std::vector<float> buffer(20);
         std::iota(buffer.begin(), buffer.end(), 0.f);
-        auto dataset = series.iterations[1000].meshes["E"]["x"];
+        auto dataset = series.iterations[0].meshes["E"]["x"];
         dataset.resetDataset({Datatype::FLOAT, {20}});
         dataset.storeChunk(buffer, {0}, {20});
         series.flush();
@@ -6060,7 +6213,7 @@ void deferred_parsing(std::string const &extension)
     // create some empty pseudo files
     // if the reader tries accessing them it's game over
     {
-        for (size_t i = 0; i < 1000; i += 100)
+        for (size_t i = 1; i < 1000; i += 100)
         {
             std::string infix = std::to_string(i);
             std::string padding;
@@ -6080,7 +6233,7 @@ void deferred_parsing(std::string const &extension)
             Access::READ_ONLY,
             "{\"defer_iteration_parsing\": true}");
         auto dataset =
-            series.iterations[1000].open().meshes["E"]["x"].loadChunk<float>(
+            series.iterations[0].open().meshes["E"]["x"].loadChunk<float>(
                 {0}, {20});
         series.flush();
         for (size_t i = 0; i < 20; ++i)
@@ -6096,7 +6249,7 @@ void deferred_parsing(std::string const &extension)
             Access::READ_WRITE,
             "{\"defer_iteration_parsing\": true}");
         auto dataset =
-            series.iterations[1000].open().meshes["E"]["x"].loadChunk<float>(
+            series.iterations[0].open().meshes["E"]["x"].loadChunk<float>(
                 {0}, {20});
         series.flush();
         for (size_t i = 0; i < 20; ++i)
@@ -6198,50 +6351,54 @@ void chaotic_stream(std::string filename, bool variableBased)
 
     bool weirdOrderWhenReading{};
 
+    Series series(filename, Access::CREATE, jsonConfig);
+    /*
+     * When using ADIOS2 steps, iterations are read not by logical order
+     * (iteration index), but by order of writing.
+     */
+    weirdOrderWhenReading = series.backend() == "ADIOS2" &&
+        series.iterationEncoding() != IterationEncoding::fileBased;
+    if (variableBased)
     {
-        Series series(filename, Access::CREATE, jsonConfig);
-        /*
-         * When using ADIOS2 steps, iterations are read not by logical order
-         * (iteration index), but by order of writing.
-         */
-        weirdOrderWhenReading = series.backend() == "ADIOS2" &&
-            series.iterationEncoding() != IterationEncoding::fileBased;
-        if (variableBased)
+        if (series.backend() != "ADIOS2")
         {
-            if (series.backend() != "ADIOS2")
-            {
-                return;
-            }
-            series.setIterationEncoding(IterationEncoding::variableBased);
+            return;
         }
-        for (auto currentIteration : iterations)
-        {
-            auto dataset =
-                series.writeIterations()[currentIteration]
-                    .meshes["iterationOrder"][MeshRecordComponent::SCALAR];
-            dataset.resetDataset({determineDatatype<uint64_t>(), {10}});
-            dataset.storeChunk(iterations, {0}, {10});
-            // series.writeIterations()[ currentIteration ].close();
-        }
+        series.setIterationEncoding(IterationEncoding::variableBased);
     }
+    for (auto currentIteration : iterations)
+    {
+        auto dataset =
+            series.writeIterations()[currentIteration]
+                .meshes["iterationOrder"][MeshRecordComponent::SCALAR];
+        dataset.resetDataset({determineDatatype<uint64_t>(), {10}});
+        dataset.storeChunk(iterations, {0}, {10});
+        // series.writeIterations()[ currentIteration ].close();
+    }
+    REQUIRE(series.operator bool());
+    series.close();
+    REQUIRE(!series.operator bool());
 
+    /*
+     * Random-access read mode would go by the openPMD group names instead
+     * of the ADIOS2 steps.
+     * Hence, the order would be ascending.
+     */
+    Series read(filename, Access::READ_LINEAR);
+    size_t index = 0;
+    for (const auto &iteration : read.readIterations())
     {
-        Series series(filename, Access::READ_ONLY);
-        size_t index = 0;
-        for (const auto &iteration : series.readIterations())
+        if (weirdOrderWhenReading)
         {
-            if (weirdOrderWhenReading)
-            {
-                REQUIRE(iteration.iterationIndex == iterations[index]);
-            }
-            else
-            {
-                REQUIRE(iteration.iterationIndex == index);
-            }
-            ++index;
+            REQUIRE(iteration.iterationIndex == iterations[index]);
         }
-        REQUIRE(index == iterations.size());
+        else
+        {
+            REQUIRE(iteration.iterationIndex == index);
+        }
+        ++index;
     }
+    REQUIRE(index == iterations.size());
 }
 
 TEST_CASE("chaotic_stream", "[serial]")
@@ -6253,6 +6410,147 @@ TEST_CASE("chaotic_stream", "[serial]")
         chaotic_stream("../samples/chaotic_stream_vbased." + t, true);
     }
 }
+
+#ifdef openPMD_USE_INVASIVE_TESTS
+void unfinished_iteration_test(
+    std::string const &ext,
+    IterationEncoding encoding,
+    std::string const &config = "{}")
+{
+    std::cout << "\n\nTESTING " << ext << "\n\n" << std::endl;
+    std::string file = std::string("../samples/unfinished_iteration") +
+        (encoding == IterationEncoding::fileBased ? "_%T." : ".") + ext;
+    {
+        Series write(file, Access::CREATE, config);
+        auto it0 = write.writeIterations()[0];
+        auto it5 = write.writeIterations()[5];
+        /*
+         * With enabled invasive tests, this attribute will let the Iteration
+         * fail parsing.
+         */
+        it5.setAttribute("__openPMD_internal_fail", "asking for trouble");
+        auto it10 = write.writeIterations()[10];
+        Dataset ds(Datatype::INT, {10});
+        auto E_x = it10.meshes["E"]["x"];
+        auto e_density = it10.meshes["e_density"][RecordComponent::SCALAR];
+        auto electron_x = it10.particles["e"]["position"]["x"];
+        auto electron_mass =
+            it10.particles["e"]["mass"][RecordComponent::SCALAR];
+
+        RecordComponent *resetThese[] = {
+            &E_x, &e_density, &electron_x, &electron_mass};
+        for (RecordComponent *rc : resetThese)
+        {
+            rc->resetDataset(ds);
+        }
+    }
+    auto tryReading = [&config, file, encoding](
+                          Access access,
+                          std::string const &additionalConfig = "{}") {
+        {
+            Series read(file, access, json::merge(config, additionalConfig));
+
+            std::vector<decltype(Series::iterations)::key_type> iterations;
+            std::cout << "Going to list iterations in " << file << ":"
+                      << std::endl;
+            for (auto iteration : read.readIterations())
+            {
+                std::cout << "Seeing iteration " << iteration.iterationIndex
+                          << std::endl;
+                iterations.push_back(iteration.iterationIndex);
+
+                Parameter<Operation::READ_ATT> readAttribute;
+                readAttribute.name = "this_does_definitely_not_exist";
+                read.IOHandler()->enqueue(IOTask(&iteration, readAttribute));
+                // enqueue a second time to check that the queue is cleared upon
+                // exception
+                read.IOHandler()->enqueue(IOTask(&iteration, readAttribute));
+
+                REQUIRE_THROWS_AS(
+                    read.IOHandler()->flush({FlushLevel::InternalFlush}),
+                    error::ReadError);
+                REQUIRE(read.IOHandler()->m_work.empty());
+            }
+            REQUIRE(
+                (iterations ==
+                 std::vector<decltype(Series::iterations)::key_type>{0, 10}));
+        }
+
+        if (encoding == IterationEncoding::fileBased &&
+            access == Access::READ_ONLY)
+        {
+            Series read(file, access, json::merge(config, additionalConfig));
+            if (additionalConfig == "{}")
+            {
+                // Eager parsing, defective iteration has already been removed
+                REQUIRE(!read.iterations.contains(5));
+                read.iterations[0].open();
+                read.iterations[10].open();
+            }
+            else
+            {
+                REQUIRE_THROWS_AS(read.iterations[5].open(), error::ReadError);
+                read.iterations[0].open();
+                read.iterations[10].open();
+            }
+        }
+    };
+
+    tryReading(Access::READ_LINEAR);
+    tryReading(Access::READ_LINEAR, R"({"defer_iteration_parsing": true})");
+    if (encoding != IterationEncoding::variableBased)
+    {
+        /*
+         * In variable-based iteration encoding, READ_ONLY mode will make
+         * iteration metadata leak into other iterations, causing iteration 0
+         * to fail being parsed.
+         * (See also the warning that occurs when trying to access a variable-
+         * based Series in READ_ONLY mode)
+         */
+        tryReading(Access::READ_ONLY);
+        tryReading(Access::READ_ONLY, R"({"defer_iteration_parsing": true})");
+    }
+}
+
+TEST_CASE("unfinished_iteration_test", "[serial]")
+{
+#if openPMD_HAVE_ADIOS2
+    unfinished_iteration_test(
+        "bp", IterationEncoding::groupBased, R"({"backend": "adios2"})");
+    unfinished_iteration_test(
+        "bp",
+        IterationEncoding::variableBased,
+        R"(
+    {
+      "backend": "adios2",
+      "iteration_encoding": "variable_based",
+      "adios2": {
+        "schema": 20210209
+      }
+    }
+    )");
+    unfinished_iteration_test(
+        "bp", IterationEncoding::fileBased, R"({"backend": "adios2"})");
+#endif
+#if openPMD_HAVE_ADIOS1
+    /*
+     * Catching errors from ADIOS1 is not generally supported
+     */
+    // unfinished_iteration_test(
+    //     "adios1.bp", IterationEncoding::groupBased, R"({"backend":
+    //     "adios1"})");
+    // unfinished_iteration_test(
+    //     "adios1.bp", IterationEncoding::fileBased, R"({"backend":
+    //     "adios1"})");
+#endif
+#if openPMD_HAVE_HDF5
+    unfinished_iteration_test("h5", IterationEncoding::groupBased);
+    unfinished_iteration_test("h5", IterationEncoding::fileBased);
+#endif
+    unfinished_iteration_test("json", IterationEncoding::groupBased);
+    unfinished_iteration_test("json", IterationEncoding::fileBased);
+}
+#endif
 
 TEST_CASE("late_setting_of_iterationencoding", "[serial]")
 {
@@ -6365,14 +6663,16 @@ enum class ParseMode
      */
     AheadOfTimeWithoutSnapshot,
     /*
-     * A Series of the BP5 engine is not parsed ahead of time, but step-by-step,
-     * giving the openPMD-api a way to associate IO steps with iterations.
-     * No snapshot attribute exists, so the fallback mode is chosen:
+     * In Linear read mode, a Series is not parsed ahead of time, but
+     * step-by-step, giving the openPMD-api a way to associate IO steps with
+     * iterations. No snapshot attribute exists, so the fallback mode is chosen:
      * Iterations are returned in ascending order.
      * If an IO step returns an iteration whose index is lower than the
      * last one, it will be skipped.
-     * This mode of parsing will be generalized into the Linear read mode with
-     * PR #1291.
+     * This mode of parsing is not available for the BP4 engine with ADIOS2
+     * schema 0, since BP4 does not associate attributes with the step in
+     * which they were created, making it impossible to separate parsing into
+     * single steps.
      */
     LinearWithoutSnapshot,
     /*
@@ -6392,7 +6692,7 @@ void append_mode(
     {
         auxiliary::remove_directory("../samples/append");
     }
-    std::vector<int> data(10, 0);
+    std::vector<int> data(10, 999);
     auto writeSomeIterations = [&data](
                                    WriteIterations &&writeIterations,
                                    std::vector<uint64_t> indices) {
@@ -6437,7 +6737,7 @@ void append_mode(
         }
 
         writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{2, 3});
+            write.writeIterations(), std::vector<uint64_t>{3, 2});
         write.flush();
     }
     {
@@ -6486,40 +6786,55 @@ void append_mode(
             write.writeIterations(), std::vector<uint64_t>{7, 1, 11});
         write.flush();
     }
+
+    auto verifyIteration = [](auto &&it) {
+        auto chunk = it.meshes["E"]["x"].template loadChunk<int>({0}, {10});
+        it.seriesFlush();
+        for (size_t i = 0; i < 10; ++i)
+        {
+            REQUIRE(chunk.get()[i] == 999);
+        }
+    };
+
     {
-        Series read(filename, Access::READ_ONLY);
         switch (parseMode)
         {
         case ParseMode::NoSteps: {
+            Series read(filename, Access::READ_LINEAR);
             unsigned counter = 0;
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
-            for (auto const &iteration : read.readIterations())
+            for (auto iteration : read.readIterations())
             {
                 REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                verifyIteration(iteration);
                 ++counter;
             }
             REQUIRE(counter == 8);
         }
         break;
         case ParseMode::LinearWithoutSnapshot: {
+            Series read(filename, Access::READ_LINEAR);
             unsigned counter = 0;
-            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10, 11};
-            for (auto const &iteration : read.readIterations())
+            uint64_t iterationOrder[] = {0, 1, 3, 4, 10, 11};
+            for (auto iteration : read.readIterations())
             {
                 REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                verifyIteration(iteration);
                 ++counter;
             }
-            REQUIRE(counter == 7);
+            REQUIRE(counter == 6);
         }
         break;
         case ParseMode::WithSnapshot: {
             // in variable-based encodings, iterations are not parsed ahead of
             // time but as they go
+            Series read(filename, Access::READ_LINEAR);
             unsigned counter = 0;
-            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10, 7, 11};
-            for (auto const &iteration : read.readIterations())
+            uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 11};
+            for (auto iteration : read.readIterations())
             {
                 REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                verifyIteration(iteration);
                 ++counter;
             }
             REQUIRE(counter == 8);
@@ -6528,17 +6843,27 @@ void append_mode(
         }
         break;
         case ParseMode::AheadOfTimeWithoutSnapshot: {
-            REQUIRE(read.iterations.size() == 8);
+            Series read(filename, Access::READ_LINEAR);
             unsigned counter = 0;
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
             /*
-             * Use conventional read API since streaming API is not possible
-             * without Linear read mode.
-             * (See also comments inside ParseMode enum).
+             * This one is a bit tricky:
+             * The BP4 engine has no way of parsing a Series in the old
+             * ADIOS2 schema step-by-step, since attributes are not
+             * associated with the step in which they were created.
+             * As a result, when readIterations() is called, the whole thing
+             * is parsed immediately ahead-of-time.
+             * We can then iterate through the iterations and access metadata,
+             * but since the IO steps don't correspond with the order of
+             * iterations returned (there is no way to figure out that order),
+             * we cannot load data in here.
+             * BP4 in the old ADIOS2 schema only supports either of the
+             * following: 1) A Series in which the iterations are present in
+             * ascending order. 2) Or accessing the Series in READ_ONLY mode.
              */
-            for (auto const &iteration : read.iterations)
+            for (auto const &iteration : read.readIterations())
             {
-                REQUIRE(iteration.first == iterationOrder[counter]);
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
                 ++counter;
             }
             REQUIRE(counter == 8);
@@ -6549,10 +6874,24 @@ void append_mode(
              * should see both instances when reading.
              * Final goal: Read only the last instance.
              */
-            helper::listSeries(read);
+            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
         }
         break;
         }
+    }
+    if (!variableBased)
+    {
+        Series read(filename, Access::READ_ONLY);
+        REQUIRE(read.iterations.size() == 8);
+        unsigned counter = 0;
+        uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
+        for (auto iteration : read.readIterations())
+        {
+            REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+            verifyIteration(iteration);
+            ++counter;
+        }
+        REQUIRE(counter == 8);
     }
     // AppendAfterSteps has a bug before that version
 #if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
@@ -6588,48 +6927,56 @@ void append_mode(
             write.flush();
         }
         {
-            Series read(filename, Access::READ_ONLY);
+            Series read(filename, Access::READ_LINEAR);
             switch (parseMode)
             {
             case ParseMode::LinearWithoutSnapshot: {
-                uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10};
+                uint64_t iterationOrder[] = {0, 1, 3, 4, 10};
                 unsigned counter = 0;
-                for (auto const &iteration : read.readIterations())
+                for (auto iteration : read.readIterations())
                 {
                     REQUIRE(
                         iteration.iterationIndex == iterationOrder[counter]);
+                    verifyIteration(iteration);
                     ++counter;
                 }
-                REQUIRE(counter == 6);
-                // Cannot do listSeries here because the Series is already
-                // drained
-                REQUIRE_THROWS_AS(
-                    helper::listSeries(read), error::WrongAPIUsage);
+                REQUIRE(counter == 5);
             }
             break;
             case ParseMode::WithSnapshot: {
                 // in variable-based encodings, iterations are not parsed ahead
                 // of time but as they go
                 unsigned counter = 0;
-                uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10, 7, 5};
-                for (auto const &iteration : read.readIterations())
+                uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 5};
+                for (auto iteration : read.readIterations())
                 {
                     REQUIRE(
                         iteration.iterationIndex == iterationOrder[counter]);
+                    verifyIteration(iteration);
                     ++counter;
                 }
                 REQUIRE(counter == 8);
-                // Cannot do listSeries here because the Series is already
-                // drained
-                REQUIRE_THROWS_AS(
-                    helper::listSeries(read), error::WrongAPIUsage);
             }
             break;
-            case ParseMode::NoSteps:
-            case ParseMode::AheadOfTimeWithoutSnapshot:
+            default:
                 throw std::runtime_error("Test configured wrong.");
                 break;
             }
+        }
+        if (!variableBased)
+        {
+            Series read(filename, Access::READ_ONLY);
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 5, 7, 10};
+            unsigned counter = 0;
+            for (auto const &iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                ++counter;
+            }
+            REQUIRE(counter == 8);
+            // Cannot do listSeries here because the Series is already
+            // drained
+            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
         }
     }
 #endif
@@ -6661,46 +7008,24 @@ TEST_CASE("append_mode", "[serial]")
         }
     }
 })END";
-        if (t == "bp5")
+        if (t == "bp" || t == "bp4" || t == "bp5")
         {
             append_mode(
-                "../samples/append/groupbased." + t,
+                "../samples/append/append_groupbased." + t,
                 false,
                 ParseMode::LinearWithoutSnapshot,
                 jsonConfigOld);
             append_mode(
-                "../samples/append/groupbased_newschema." + t,
-                false,
-                ParseMode::WithSnapshot,
-                jsonConfigNew);
-            append_mode(
-                "../samples/append/variablebased." + t,
-                true,
-                ParseMode::WithSnapshot,
-                jsonConfigOld);
-            append_mode(
-                "../samples/append/variablebased_newschema." + t,
-                true,
-                ParseMode::WithSnapshot,
-                jsonConfigNew);
-        }
-        else if (t == "bp" || t == "bp4")
-        {
-            append_mode(
-                "../samples/append/append_groupbased." + t,
-                false,
-                ParseMode::AheadOfTimeWithoutSnapshot,
-                jsonConfigOld);
-            append_mode(
                 "../samples/append/append_groupbased." + t,
                 false,
                 ParseMode::WithSnapshot,
                 jsonConfigNew);
-            append_mode(
-                "../samples/append/append_variablebased." + t,
-                true,
-                ParseMode::WithSnapshot,
-                jsonConfigOld);
+            // This test config does not make sense
+            // append_mode(
+            //     "../samples/append/append_variablebased." + t,
+            //     true,
+            //     ParseMode::WithSnapshot,
+            //     jsonConfigOld);
             append_mode(
                 "../samples/append/append_variablebased." + t,
                 true,

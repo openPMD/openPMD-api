@@ -174,7 +174,7 @@ public:
     void availableChunks(
         Writable *, Parameter<Operation::AVAILABLE_CHUNKS> &) override;
 
-    void openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) override;
+    void openFile(Writable *, Parameter<Operation::OPEN_FILE> &) override;
 
     void
     closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) override;
@@ -195,8 +195,8 @@ public:
     void deleteAttribute(
         Writable *, Parameter<Operation::DELETE_ATT> const &) override;
 
-    void writeDataset(
-        Writable *, Parameter<Operation::WRITE_DATASET> const &) override;
+    void
+    writeDataset(Writable *, Parameter<Operation::WRITE_DATASET> &) override;
 
     void writeAttribute(
         Writable *, Parameter<Operation::WRITE_ATT> const &) override;
@@ -211,6 +211,9 @@ public:
     listDatasets(Writable *, Parameter<Operation::LIST_DATASETS> &) override;
 
     void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
+
+    void
+    deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
 
     std::future<void> flush();
 

@@ -25,13 +25,16 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Export.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/ParsePreference.hpp"
 
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace openPMD
@@ -44,21 +47,37 @@ Writable *getWritable(Attributable *);
 /** Type of IO operation between logical and persistent data.
  */
 OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
-    CREATE_FILE,      CHECK_FILE,     OPEN_FILE,     CLOSE_FILE,
+    CREATE_FILE,
+    CHECK_FILE,
+    OPEN_FILE,
+    CLOSE_FILE,
     DELETE_FILE,
 
-    CREATE_PATH,      CLOSE_PATH,     OPEN_PATH,     DELETE_PATH,
+    CREATE_PATH,
+    CLOSE_PATH,
+    OPEN_PATH,
+    DELETE_PATH,
     LIST_PATHS,
 
-    CREATE_DATASET,   EXTEND_DATASET, OPEN_DATASET,  DELETE_DATASET,
-    WRITE_DATASET,    READ_DATASET,   LIST_DATASETS, GET_BUFFER_VIEW,
+    CREATE_DATASET,
+    EXTEND_DATASET,
+    OPEN_DATASET,
+    DELETE_DATASET,
+    WRITE_DATASET,
+    READ_DATASET,
+    LIST_DATASETS,
+    GET_BUFFER_VIEW,
 
-    DELETE_ATT,       WRITE_ATT,      READ_ATT,      LIST_ATTS,
+    DELETE_ATT,
+    WRITE_ATT,
+    READ_ATT,
+    LIST_ATTS,
 
     ADVANCE,
     AVAILABLE_CHUNKS, //!< Query chunks that can be loaded in a dataset
-    KEEP_SYNCHRONOUS //!< Keep two items in the object model synchronous with
-                     //!< each other
+    KEEP_SYNCHRONOUS, //!< Keep two items in the object model synchronous with
+                      //!< each other
+    DEREGISTER //!< Inform the backend that an object has been deleted.
 }; // note: if you change the enum members here, please update
    // docs/source/dev/design.rst
 
@@ -75,12 +94,17 @@ struct OPENPMDAPI_EXPORT AbstractParameter
 {
     virtual ~AbstractParameter() = default;
     AbstractParameter() = default;
-    // AbstractParameter(AbstractParameter&&) = default;
 
+    virtual std::unique_ptr<AbstractParameter> to_heap() && = 0;
+
+protected:
     // avoid object slicing
-    AbstractParameter(const AbstractParameter &) = delete;
-    AbstractParameter &operator=(const AbstractParameter &) = delete;
-    virtual std::unique_ptr<AbstractParameter> clone() const = 0;
+    // by allow only child classes to use these things for defining their own
+    // copy/move constructors/assignment operators
+    AbstractParameter(const AbstractParameter &) = default;
+    AbstractParameter &operator=(const AbstractParameter &) = default;
+    AbstractParameter(AbstractParameter &&) = default;
+    AbstractParameter &operator=(AbstractParameter &&) = default;
 };
 
 /** @brief Typesafe description of all required arguments for a specified
@@ -105,14 +129,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_FILE>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter(), name(p.name), encoding(p.encoding)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::CREATE_FILE>(*this));
+            new Parameter<Operation::CREATE_FILE>(std::move(*this)));
     }
 
     std::string name = "";
@@ -124,14 +149,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CHECK_FILE>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter(), name(p.name), fileExists(p.fileExists)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::CHECK_FILE>(*this));
+            new Parameter<Operation::CHECK_FILE>(std::move(*this)));
     }
 
     std::string name = "";
@@ -150,14 +176,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter(), name(p.name), encoding(p.encoding)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::OPEN_FILE>(*this));
+            new Parameter<Operation::OPEN_FILE>(std::move(*this)));
     }
 
     std::string name = "";
@@ -167,6 +194,9 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
      * variableBased encoding.
      */
     IterationEncoding encoding = IterationEncoding::groupBased;
+    using ParsePreference = internal::ParsePreference;
+    std::shared_ptr<ParsePreference> out_parsePreference =
+        std::make_shared<ParsePreference>(ParsePreference::UpFront);
 };
 
 template <>
@@ -174,13 +204,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CLOSE_FILE>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &) : AbstractParameter()
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::CLOSE_FILE>(*this));
+            new Parameter<Operation::CLOSE_FILE>(std::move(*this)));
     }
 };
 
@@ -189,13 +221,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_FILE>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), name(p.name)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::DELETE_FILE>(*this));
+            new Parameter<Operation::DELETE_FILE>(std::move(*this)));
     }
 
     std::string name = "";
@@ -206,13 +240,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_PATH>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), path(p.path)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::CREATE_PATH>(*this));
+            new Parameter<Operation::CREATE_PATH>(std::move(*this)));
     }
 
     std::string path = "";
@@ -223,18 +259,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CLOSE_PATH>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &) : AbstractParameter()
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    Parameter &operator=(Parameter const &)
-    {
-        return *this;
-    }
-
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::CLOSE_PATH>(*this));
+            new Parameter<Operation::CLOSE_PATH>(std::move(*this)));
     }
 };
 
@@ -243,13 +276,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_PATH>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), path(p.path)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::OPEN_PATH>(*this));
+            new Parameter<Operation::OPEN_PATH>(std::move(*this)));
     }
 
     std::string path = "";
@@ -260,13 +295,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_PATH>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), path(p.path)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::DELETE_PATH>(*this));
+            new Parameter<Operation::DELETE_PATH>(std::move(*this)));
     }
 
     std::string path = "";
@@ -277,13 +314,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_PATHS>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), paths(p.paths)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::LIST_PATHS>(*this));
+            new Parameter<Operation::LIST_PATHS>(std::move(*this)));
     }
 
     std::shared_ptr<std::vector<std::string>> paths =
@@ -295,18 +334,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_DATASET>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter()
-        , name(p.name)
-        , extent(p.extent)
-        , dtype(p.dtype)
-        , options(p.options)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::CREATE_DATASET>(*this));
+            new Parameter<Operation::CREATE_DATASET>(std::move(*this)));
     }
 
     std::string name = "";
@@ -332,13 +368,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::EXTEND_DATASET>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), extent(p.extent)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::EXTEND_DATASET>(*this));
+            new Parameter<Operation::EXTEND_DATASET>(std::move(*this)));
     }
 
     Extent extent = {};
@@ -349,14 +387,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_DATASET>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter(), name(p.name), dtype(p.dtype), extent(p.extent)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::OPEN_DATASET>(*this));
+            new Parameter<Operation::OPEN_DATASET>(std::move(*this)));
     }
 
     std::string name = "";
@@ -369,13 +408,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_DATASET>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), name(p.name)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::DELETE_DATASET>(*this));
+            new Parameter<Operation::DELETE_DATASET>(std::move(*this)));
     }
 
     std::string name = "";
@@ -386,33 +427,22 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_DATASET>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter<Operation::WRITE_DATASET> const &p)
-        : AbstractParameter()
-        , extent(p.extent)
-        , offset(p.offset)
-        , dtype(p.dtype)
-        , data(p.data)
-    {}
 
-    Parameter &operator=(const Parameter &p)
-    {
-        this->extent = p.extent;
-        this->offset = p.offset;
-        this->dtype = p.dtype;
-        this->data = p.data;
-        return *this;
-    }
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = delete;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = delete;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::WRITE_DATASET>(*this));
+            new Parameter<Operation::WRITE_DATASET>(std::move(*this)));
     }
 
     Extent extent = {};
     Offset offset = {};
     Datatype dtype = Datatype::UNDEFINED;
-    std::shared_ptr<void const> data = nullptr;
+    auxiliary::WriteBuffer data;
 };
 
 template <>
@@ -420,27 +450,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::READ_DATASET>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter<Operation::READ_DATASET> const &p)
-        : AbstractParameter()
-        , extent(p.extent)
-        , offset(p.offset)
-        , dtype(p.dtype)
-        , data(p.data)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    Parameter &operator=(const Parameter &p)
-    {
-        this->extent = p.extent;
-        this->offset = p.offset;
-        this->dtype = p.dtype;
-        this->data = p.data;
-        return *this;
-    }
-
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::READ_DATASET>(*this));
+            new Parameter<Operation::READ_DATASET>(std::move(*this)));
     }
 
     Extent extent = {};
@@ -454,13 +472,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_DATASETS>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), datasets(p.datasets)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::LIST_DATASETS>(*this));
+            new Parameter<Operation::LIST_DATASETS>(std::move(*this)));
     }
 
     std::shared_ptr<std::vector<std::string>> datasets =
@@ -472,28 +492,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::GET_BUFFER_VIEW>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter()
-        , offset(p.offset)
-        , extent(p.extent)
-        , dtype(p.dtype)
-        , update(p.update)
-        , out(p.out)
-    {}
-    Parameter &operator=(Parameter const &p)
-    {
-        offset = p.offset;
-        extent = p.extent;
-        dtype = p.dtype;
-        update = p.update;
-        out = p.out;
-        return *this;
-    }
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::GET_BUFFER_VIEW>(*this));
+            new Parameter<Operation::GET_BUFFER_VIEW>(std::move(*this)));
     }
 
     // in parameters
@@ -516,13 +523,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_ATT>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), name(p.name)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::DELETE_ATT>(*this));
+            new Parameter<Operation::DELETE_ATT>(std::move(*this)));
     }
 
     std::string name = "";
@@ -533,18 +542,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter()
-        , name(p.name)
-        , dtype(p.dtype)
-        , changesOverSteps(p.changesOverSteps)
-        , resource(p.resource)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::WRITE_ATT>(*this));
+            new Parameter<Operation::WRITE_ATT>(std::move(*this)));
     }
 
     std::string name = "";
@@ -564,25 +570,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::READ_ATT>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter()
-        , name(p.name)
-        , dtype(p.dtype)
-        , resource(p.resource)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    Parameter &operator=(const Parameter &p)
-    {
-        this->name = p.name;
-        this->dtype = p.dtype;
-        this->resource = p.resource;
-        return *this;
-    }
-
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::READ_ATT>(*this));
+            new Parameter<Operation::READ_ATT>(std::move(*this)));
     }
 
     std::string name = "";
@@ -596,14 +592,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_ATTS>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter(), attributes(p.attributes)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::LIST_ATTS>(*this));
+            new Parameter<Operation::LIST_ATTS>(std::move(*this)));
     }
 
     std::shared_ptr<std::vector<std::string>> attributes =
@@ -615,14 +612,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::ADVANCE>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter(), mode(p.mode), status(p.status)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::ADVANCE>(*this));
+            new Parameter<Operation::ADVANCE>(std::move(*this)));
     }
 
     //! input parameter
@@ -637,19 +635,15 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::AVAILABLE_CHUNKS>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p) : AbstractParameter(), chunks(p.chunks)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    Parameter &operator=(Parameter const &p)
-    {
-        chunks = p.chunks;
-        return *this;
-    }
-
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::AVAILABLE_CHUNKS>(*this));
+            new Parameter<Operation::AVAILABLE_CHUNKS>(std::move(*this)));
     }
 
     // output parameter
@@ -661,16 +655,33 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::KEEP_SYNCHRONOUS>
     : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const &p)
-        : AbstractParameter(), otherWritable(p.otherWritable)
-    {}
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
 
-    std::unique_ptr<AbstractParameter> clone() const override
+    std::unique_ptr<AbstractParameter> to_heap() && override
     {
-        return std::make_unique<Parameter<Operation::KEEP_SYNCHRONOUS>>(*this);
+        return std::make_unique<Parameter<Operation::KEEP_SYNCHRONOUS>>(
+            std::move(*this));
     }
 
     Writable *otherWritable;
+};
+
+template <>
+struct OPENPMDAPI_EXPORT Parameter<Operation::DEREGISTER>
+    : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter(Parameter const &) : AbstractParameter()
+    {}
+
+    std::unique_ptr<AbstractParameter> to_heap() && override
+    {
+        return std::make_unique<Parameter<Operation::DEREGISTER>>(
+            std::move(*this));
+    }
 };
 
 /** @brief Self-contained description of a single IO operation.
@@ -693,13 +704,15 @@ public:
      * parameters to the operation.
      */
     template <Operation op>
-    explicit IOTask(Writable *w, Parameter<op> const &p)
-        : writable{w}, operation{op}, parameter{p.clone()}
+    explicit IOTask(Writable *w, Parameter<op> p)
+        : writable{w}, operation{op}, parameter{std::move(p).to_heap()}
     {}
 
     template <Operation op>
-    explicit IOTask(Attributable *a, Parameter<op> const &p)
-        : writable{getWritable(a)}, operation{op}, parameter{p.clone()}
+    explicit IOTask(Attributable *a, Parameter<op> p)
+        : writable{getWritable(a)}
+        , operation{op}
+        , parameter{std::move(p).to_heap()}
     {}
 
     explicit IOTask(IOTask const &other)

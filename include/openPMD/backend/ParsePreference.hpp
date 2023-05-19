@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2023 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -18,19 +18,14 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#include "openPMD/IO/AbstractFilePosition.hpp"
-
-#include <string>
-
-namespace openPMD
+namespace openPMD::internal
 {
-struct ADIOS1FilePosition : public AbstractFilePosition
+enum class ParsePreference : char
 {
-    ADIOS1FilePosition(std::string const &s) : location{s}
-    {}
-
-    std::string location;
-}; // ADIOS1FilePosition
-} // namespace openPMD
+    UpFront, //<! Data should be parsed right when opening the dataset
+    PerStep //<! Data should be parsed step by step
+};
+} // namespace openPMD::internal

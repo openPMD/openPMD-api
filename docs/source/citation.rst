@@ -30,6 +30,7 @@ The equivalent BibTeX code is:
                      Sbalzarini, Ivo and
                      Kuschel, Stephan and
                      Sagan, David and
+                     Mayes, Christopher and
                      P{\'e}rez, Fr{\'e}d{\'e}ric and
                      Koller, Fabian and
                      Bussmann, Michael},

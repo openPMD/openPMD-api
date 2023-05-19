@@ -10,34 +10,34 @@ Step-by-step: how to write scientific data with openPMD-api?
    <style>
    @media screen and (min-width: 60em) {
        /* C++17 and Python code samples side-by-side  */
-       #first-write > .section > .section:nth-of-type(2n+1) {
+       #first-write > section > section:nth-of-type(2n+1) {
            float: left;
            width: 48%;
            margin-right: 4%;
        }
-       #first-write > .section > .section:nth-of-type(2n+0):after {
+       #first-write > section > section:nth-of-type(2n+0):after {
            content: "";
            display: table;
            clear: both;
        }
        /* only show first C++17 and Python Headline */
-       #first-write > .section > .section:not(#c-17):not(#python) > h3 {
+       #first-write > section > section:not(#c-17):not(#python) > h3 {
            display: none;
        }
    }
    /* align language headline */
-   #first-write > .section > .section > h3 {
+   #first-write > section > section > h3 {
        text-align: center;
        padding-left: 1em;
    }
    /* avoid jumping of headline when hovering to get anchor */
-   #first-write > .section > .section > h3 > a.headerlink {
+   #first-write > section > section > h3 > a.headerlink {
        display: inline-block;
    }
-   #first-write > .section > .section > h3 > .headerlink:after {
+   #first-write > section > section > h3 > .headerlink:after {
        visibility: hidden;
    }
-   #first-write > .section > .section > h3:hover > .headerlink:after {
+   #first-write > section > section > h3:hover > .headerlink:after {
        visibility: visible;
    }
    </style>
@@ -76,7 +76,7 @@ Open
 
 Write into a new openPMD series in ``myOutput/data_<00...N>.h5``.
 Further file formats than ``.h5`` (`HDF5 <https://hdfgroup.org>`_) are supported:
-``.bp`` (`ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios/>`_/`ADIOS2 <https://csmd.ornl.gov/software/adios2>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
+``.bp`` (`ADIOS2 <https://csmd.ornl.gov/software/adios2>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
 
 C++17
 ^^^^^
@@ -297,11 +297,9 @@ C++17
 .. code-block:: cpp
 
    B_x.storeChunk(
-       io::shareRaw(x_data),
-       {0, 0}, {150, 300});
+       x_data, {0, 0}, {150, 300});
    B_z.storeChunk(
-       io::shareRaw(z_data),
-       {0, 0}, {150, 300});
+       z_data, {0, 0}, {150, 300});
 
    B_y.makeConstant(y_data);
 
@@ -310,10 +308,10 @@ Python
 
 .. code-block:: python3
 
-   B_x.store_chunk(x_data)
+   B_x[:, :] = x_data
 
 
-   B_z.store_chunk(z_data)
+   B_z[:, :] = z_data
 
 
 
@@ -354,12 +352,11 @@ C++17
 
 .. code-block:: cpp
 
-   // destruct series object,
-   // e.g. when out-of-scope
+   series.close()
 
 Python
 ^^^^^^
 
 .. code-block:: python3
 
-   del series
+   series.close()

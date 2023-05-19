@@ -27,6 +27,21 @@ namespace openPMD
 Writable::Writable(internal::AttributableData *a) : attributable{a}
 {}
 
+Writable::~Writable()
+{
+    if (!IOHandler || !IOHandler->has_value())
+    {
+        return;
+    }
+    /*
+     * Enqueueing a pointer to this object, which is now being deleted.
+     * The DEREGISTER task must not dereference the pointer, but only use it to
+     * remove references to this object from internal data structures.
+     */
+    IOHandler->value()->enqueue(
+        IOTask(this, Parameter<Operation::DEREGISTER>()));
+}
+
 void Writable::seriesFlush(std::string backendConfig)
 {
     seriesFlush({FlushLevel::UserFlush, std::move(backendConfig)});

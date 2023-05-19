@@ -32,43 +32,56 @@ int main()
     std::cout << '\n';
 
     std::cout << "Read iterations in basePath:\n";
+    /*
+     * A classical loop over the C++-style container
+     * Direct access to o.iterations allows random-access into all data.
+     */
     for (auto const &i : o.iterations)
         std::cout << '\t' << i.first << '\n';
     std::cout << '\n';
 
-    for (auto const &i : o.iterations)
+    /*
+     * A loop that uses o.readIterations().
+     * This loop is MPI collective and will open and close iterations
+     * automatically (closing manually is still recommended before long compute
+     * operations in order to release data as soon as possible).
+     * An iteration once closed can not (yet) be re-opened.
+     */
+    for (auto i : o.readIterations())
     {
-        std::cout << "Read attributes in iteration " << i.first << ":\n";
-        for (auto const &val : i.second.attributes())
+        std::cout << "Read attributes in iteration " << i.iterationIndex
+                  << ":\n";
+        for (auto const &val : i.attributes())
             std::cout << '\t' << val << '\n';
         std::cout << '\n';
 
-        std::cout << i.first << ".time - " << i.second.time<float>() << '\n'
-                  << i.first << ".dt - " << i.second.dt<float>() << '\n'
-                  << i.first << ".timeUnitSI - " << i.second.timeUnitSI()
+        std::cout << i.iterationIndex << ".time - " << i.time<float>() << '\n'
+                  << i.iterationIndex << ".dt - " << i.dt<float>() << '\n'
+                  << i.iterationIndex << ".timeUnitSI - " << i.timeUnitSI()
                   << '\n'
                   << '\n';
 
-        std::cout << "Read attributes in meshesPath in iteration " << i.first
-                  << ":\n";
-        for (auto const &a : i.second.meshes.attributes())
+        std::cout << "Read attributes in meshesPath in iteration "
+                  << i.iterationIndex << ":\n";
+        for (auto const &a : i.meshes.attributes())
             std::cout << '\t' << a << '\n';
         std::cout << '\n';
 
-        std::cout << "Read meshes in iteration " << i.first << ":\n";
-        for (auto const &m : i.second.meshes)
+        std::cout << "Read meshes in iteration " << i.iterationIndex << ":\n";
+        for (auto const &m : i.meshes)
             std::cout << '\t' << m.first << '\n';
         std::cout << '\n';
 
-        for (auto const &m : i.second.meshes)
+        for (auto const &m : i.meshes)
         {
             std::cout << "Read attributes for mesh " << m.first
-                      << " in iteration " << i.first << ":\n";
+                      << " in iteration " << i.iterationIndex << ":\n";
             for (auto const &val : m.second.attributes())
                 std::cout << '\t' << val << '\n';
             std::cout << '\n';
 
-            std::string meshPrefix = std::to_string(i.first) + '.' + m.first;
+            std::string meshPrefix =
+                std::to_string(i.iterationIndex) + '.' + m.first;
             std::string axisLabels = "";
             for (auto const &val : m.second.axisLabels())
                 axisLabels += val + ", ";
@@ -110,8 +123,8 @@ int main()
                     std::cout << '\t' << val << '\n';
                 std::cout << '\n';
 
-                std::string componentPrefix =
-                    std::to_string(i.first) + '.' + m.first + '.' + rc.first;
+                std::string componentPrefix = std::to_string(i.iterationIndex) +
+                    '.' + m.first + '.' + rc.first;
                 std::string position = "";
                 for (auto const &val : rc.second.position<double>())
                     position += std::to_string(val) + ", ";
@@ -123,27 +136,29 @@ int main()
             }
         }
 
-        std::cout << "Read attributes in particlesPath in iteration " << i.first
-                  << ":\n";
-        for (auto const &a : i.second.particles.attributes())
+        std::cout << "Read attributes in particlesPath in iteration "
+                  << i.iterationIndex << ":\n";
+        for (auto const &a : i.particles.attributes())
             std::cout << '\t' << a << '\n';
         std::cout << '\n';
 
-        std::cout << "Read particleSpecies in iteration " << i.first << ":\n";
-        for (auto const &val : i.second.particles)
+        std::cout << "Read particleSpecies in iteration " << i.iterationIndex
+                  << ":\n";
+        for (auto const &val : i.particles)
             std::cout << '\t' << val.first << '\n';
         std::cout << '\n';
 
-        for (auto const &p : i.second.particles)
+        for (auto const &p : i.particles)
         {
             std::cout << "Read attributes for particle species " << p.first
-                      << " in iteration " << i.first << ":\n";
+                      << " in iteration " << i.iterationIndex << ":\n";
             for (auto const &val : p.second.attributes())
                 std::cout << '\t' << val << '\n';
             std::cout << '\n';
 
             std::cout << "Read particle records for particle species "
-                      << p.first << " in iteration " << i.first << ":\n";
+                      << p.first << " in iteration " << i.iterationIndex
+                      << ":\n";
             for (auto const &r : p.second)
                 std::cout << '\t' << r.first << '\n';
             std::cout << '\n';
@@ -167,11 +182,20 @@ int main()
                 }
             }
         }
+
+        // The iteration can be closed in order to help free up resources.
+        // The iteration's content will be flushed automatically.
+        // An iteration once closed cannot (yet) be reopened.
+        // Since we're using `Series::readIterations()`, this would also happen
+        // automatically upon the next iteration.
+        i.close();
     }
 
     /* The files in 'o' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
      * When running out of scope on return, the 'Series' destructor is called.
+     * Alternatively, one can call `series.close()` to the same effect as
+     * calling the destructor, including the release of file handles.
      */
     return 0;
 }

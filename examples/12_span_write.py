@@ -10,6 +10,11 @@ def span_write(filename):
     extent = [length]
     dataset = io.Dataset(datatype, extent)
 
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
+    # `Series.iterations` can be directly accessed in random-access workflows.
     iterations = series.write_iterations()
     for i in range(12):
         iteration = iterations[i]
@@ -26,6 +31,13 @@ def span_write(filename):
                 span[k] = 3 * i * length + j * length + k
             j += 1
         iteration.close()
+
+    # The files in 'series' are still open until the object is destroyed, on
+    # which it cleanly flushes and closes all open file handles.
+    # When running out of scope on return, the 'Series' destructor is called.
+    # Alternatively, one can call `series.close()` to the same effect as
+    # calling the destructor, including the release of file handles.
+    series.close()
 
 
 if __name__ == "__main__":

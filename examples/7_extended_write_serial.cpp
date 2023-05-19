@@ -83,8 +83,9 @@ int main()
                 {{io::UnitDimension::M, 1}});
             electrons["displacement"]["x"].setUnitSI(1e-6);
             electrons.erase("displacement");
-            electrons["weighting"][io::RecordComponent::SCALAR].makeConstant(
-                1.e-5);
+            electrons["weighting"][io::RecordComponent::SCALAR]
+                .resetDataset({io::Datatype::FLOAT, {1}})
+                .makeConstant(1.e-5);
         }
 
         io::Mesh mesh = cur_it.meshes["lowRez_2D_field"];
@@ -226,11 +227,19 @@ int main()
         // constant records
         mesh["y"].makeConstant(constant_value);
 
+        // The iteration can be closed in order to help free up resources.
+        // The iteration's content will be flushed automatically.
+        // An iteration once closed cannot (yet) be reopened.
+        cur_it.close();
+
         /* The files in 'f' are still open until the object is destroyed, on
          * which it cleanly flushes and closes all open file handles.
          * When running out of scope on return, the 'Series' destructor is
-         * called.
+         * called. Alternatively, one can call `series.close()` to the same
+         * effect as calling the destructor, including the release of file
+         * handles.
          */
+        f.close();
     } // namespace ;
 
     return 0;

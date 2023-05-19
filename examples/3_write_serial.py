@@ -28,7 +28,12 @@ if __name__ == "__main__":
     print("Created an empty {0} Series".format(series.iteration_encoding))
 
     print(len(series.iterations))
-    rho = series.iterations[1]. \
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
+    # `Series.iterations` can be directly accessed in random-access workflows.
+    rho = series.write_iterations()[1]. \
         meshes["rho"][io.Mesh_Record_Component.SCALAR]
 
     dataset = io.Dataset(data.dtype, data.shape)
@@ -47,11 +52,15 @@ if __name__ == "__main__":
     print("Stored the whole Dataset contents as a single chunk, " +
           "ready to write content")
 
-    series.flush()
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    series.write_iterations()[1].close()
     print("Dataset content has been fully written")
 
-    # The files in 'series' are still open until the object is destroyed, on
-    # which it cleanly flushes and closes all open file handles.
-    # One can delete the object explicitly (or let it run out of scope) to
-    # trigger this.
-    del series
+    # The files in 'series' are still open until the series is closed, at which
+    # time it cleanly flushes and closes all open file handles.
+    # One can close the object explicitly to trigger this.
+    # Alternatively, this will automatically happen once the garbage collector
+    # claims (every copy of) the series object.
+    series.close()

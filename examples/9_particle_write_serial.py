@@ -44,7 +44,9 @@ if __name__ == "__main__":
     # don't like it anymore? remove it with:
     # del electrons["displacement"]
 
-    electrons["weighting"][SCALAR].make_constant(1.e-5)
+    electrons["weighting"][SCALAR] \
+        .reset_dataset(Dataset(np.dtype("float32"), extent=[1])) \
+        .make_constant(1.e-5)
 
     particlePos_x = np.random.rand(234).astype(np.float32)
     particlePos_y = np.random.rand(234).astype(np.float32)
@@ -68,5 +70,10 @@ if __name__ == "__main__":
     # files)
     f.flush()
 
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    cur_it.close()
+
     # now the file is closed
-    del f
+    f.close()

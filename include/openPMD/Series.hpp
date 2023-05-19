@@ -30,6 +30,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/ParsePreference.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
 
@@ -37,7 +38,7 @@
 #include <mpi.h>
 #endif
 
-#include <cstdint>
+#include <cstdint> // uint64_t
 #include <deque>
 #include <map>
 #include <optional>
@@ -75,7 +76,9 @@ namespace internal
         SeriesData &operator=(SeriesData const &) = delete;
         SeriesData &operator=(SeriesData &&) = delete;
 
-        Container<Iteration, uint64_t> iterations{};
+        using IterationIndex_t = Iteration::IterationIndex_t;
+        using IterationsContainer_t = Container<Iteration, IterationIndex_t>;
+        IterationsContainer_t iterations{};
 
         /**
          * For each instance of Series, there is only one instance
@@ -89,7 +92,7 @@ namespace internal
          * currently active output step. Use this later when writing the
          * snapshot attribute.
          */
-        std::set<uint64_t> m_currentlyActiveIterations;
+        std::set<IterationIndex_t> m_currentlyActiveIterations;
         /**
          * Needed if reading a single iteration of a file-based series.
          * Users may specify the concrete filename of one iteration instead of
@@ -155,6 +158,16 @@ namespace internal
          * The destructor will only attempt flushing again if this is true.
          */
         bool m_lastFlushSuccessful = false;
+
+        /**
+         * Remember the preference that the backend specified for parsing.
+         * Not used in file-based iteration encoding, empty then.
+         * In linear read mode, parsing only starts after calling
+         * Series::readIterations(), empty before that point.
+         */
+        std::optional<ParsePreference> m_parsePreference;
+
+        void close();
     }; // SeriesData
 
     class SeriesInternal;
@@ -209,7 +222,15 @@ public:
 
     virtual ~Series() = default;
 
-    Container<Iteration, uint64_t> iterations;
+    /**
+     * An unsigned integer type, used to identify Iterations in a Series.
+     */
+    using IterationIndex_t = Iteration::IterationIndex_t;
+    /**
+     * Type for a container of Iterations indexed by IterationIndex_t.
+     */
+    using IterationsContainer_t = internal::SeriesData::IterationsContainer_t;
+    IterationsContainer_t iterations;
 
     /**
      * @brief Is this a usable Series object?
@@ -469,6 +490,11 @@ public:
      * Creates and returns an instance of the ReadIterations class which can
      * be used for iterating over the openPMD iterations in a C++11-style for
      * loop.
+     * `Series::readIterations()` is an intentionally restricted API that
+     * ensures a workflow which also works in streaming setups, e.g. an
+     * iteration cannot be opened again once it has been closed.
+     * For a less restrictive API in non-streaming situations,
+     * `Series::iterations` can be accessed directly.
      * Look for the ReadIterations class for further documentation.
      *
      * @return ReadIterations
@@ -478,16 +504,33 @@ public:
     /**
      * @brief Entry point to the writing end of the streaming API.
      *
-     * Creates and returns an instance of the WriteIterations class which is a
-     * restricted container of iterations which takes care of
-     * streaming semantics.
+     * Creates and returns an instance of the WriteIterations class which is an
+     * intentionally restricted container of iterations that takes care of
+     * streaming semantics, e.g. ensuring that an iteration cannot be reopened
+     * once closed.
+     * For a less restrictive API in non-streaming situations,
+     * `Series::iterations` can be accessed directly.
      * The created object is stored as member of the Series object, hence this
      * method may be called as many times as a user wishes.
+     * There is only one shared iterator state per Series, even when calling
+     * this method twice.
      * Look for the WriteIterations class for further documentation.
      *
      * @return WriteIterations
      */
     WriteIterations writeIterations();
+
+    /**
+     * @brief Close the Series and release the data storage/transport backends.
+     *
+     * This is an explicit API call for what the Series::~Series() destructor
+     * would do otherwise.
+     * All backends are closed after calling this method.
+     * The Series should be treated as destroyed after calling this method.
+     * The Series will be evaluated as false in boolean contexts after calling
+     * this method.
+     */
+    void close();
 
     // clang-format off
 OPENPMD_private
@@ -541,7 +584,7 @@ OPENPMD_private
     void parseJsonOptions(TracingJSON &options, ParsedInput &);
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
-    void init(std::shared_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
+    void init(std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
     void initDefaults(IterationEncoding, bool initAll = false);
     /**
      * @brief Internal call for flushing a Series.
@@ -586,10 +629,19 @@ OPENPMD_private
      * Iterations/Records/Record Components etc.
      * If series.iterations contains the attribute `snapshot`, returns its
      * value.
+     * If do_always_throw_errors is false, this method will try to handle errors
+     * and turn them into a warning (useful when parsing a Series, since parsing
+     * should succeed without issue).
+     * If true, the error will always be re-thrown (useful when using
+     * ReadIterations since those methods should be aware when the current step
+     * is broken).
      */
-    std::optional<std::deque<uint64_t> > readGorVBased(bool init = true);
+    std::optional<std::deque<IterationIndex_t> > readGorVBased(
+        bool do_always_throw_errors,
+        bool init,
+        std::set<IterationIndex_t> const &ignoreIterations = {});
     void readBase();
-    std::string iterationFilename(uint64_t i);
+    std::string iterationFilename(IterationIndex_t i);
 
     enum class IterationOpened : bool
     {
@@ -602,14 +654,15 @@ OPENPMD_private
      * Only open if the iteration is dirty and if it is not in deferred
      * parse state.
      */
-    IterationOpened openIterationIfDirty(uint64_t index, Iteration iteration);
+    IterationOpened
+    openIterationIfDirty(IterationIndex_t index, Iteration iteration);
     /*
      * Open an iteration. Ensures that the iteration's m_closed status
      * is set properly and that any files pertaining to the iteration
      * is opened.
      * Does not create files when called in CREATE mode.
      */
-    void openIteration(uint64_t index, Iteration iteration);
+    void openIteration(IterationIndex_t index, Iteration iteration);
 
     /**
      * Find the given iteration in Series::iterations and return an iterator
@@ -652,7 +705,7 @@ OPENPMD_private
      * Returns the current content of the /data/snapshot attribute.
      * (We could also add this to the public API some time)
      */
-    std::optional<std::vector<uint64_t> > currentSnapshot() const;
+    std::optional<std::vector<IterationIndex_t> > currentSnapshot() const;
 }; // Series
 } // namespace openPMD
 

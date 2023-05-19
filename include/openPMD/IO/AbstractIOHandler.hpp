@@ -34,29 +34,10 @@
 #include <queue>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 namespace openPMD
 {
-class no_such_file_error : public std::runtime_error
-{
-public:
-    no_such_file_error(std::string const &what_arg)
-        : std::runtime_error(what_arg)
-    {}
-    virtual ~no_such_file_error()
-    {}
-};
-
-class unsupported_data_error : public std::runtime_error
-{
-public:
-    unsupported_data_error(std::string const &what_arg)
-        : std::runtime_error(what_arg)
-    {}
-    virtual ~unsupported_data_error()
-    {}
-};
-
 /**
  * @brief Determine what items should be flushed upon Series::flush()
  *
@@ -143,6 +124,48 @@ namespace internal
                 ///< Special state only active while internal routines are
                 ///< running.
     };
+
+    // @todo put this somewhere else
+    template <typename Functor, typename... Args>
+    auto withRWAccess(SeriesStatus &status, Functor &&functor, Args &&...args)
+        -> decltype(std::forward<Functor>(functor)(std::forward<Args>(args)...))
+    {
+        using Res = decltype(std::forward<Functor>(functor)(
+            std::forward<Args>(args)...));
+        if constexpr (std::is_void_v<Res>)
+        {
+            auto oldStatus = status;
+            status = internal::SeriesStatus::Parsing;
+            try
+            {
+                std::forward<decltype(functor)>(functor)();
+            }
+            catch (...)
+            {
+                status = oldStatus;
+                throw;
+            }
+            status = oldStatus;
+            return;
+        }
+        else
+        {
+            auto oldStatus = status;
+            status = internal::SeriesStatus::Parsing;
+            Res res;
+            try
+            {
+                res = std::forward<decltype(functor)>(functor)();
+            }
+            catch (...)
+            {
+                status = oldStatus;
+                throw;
+            }
+            status = oldStatus;
+            return res;
+        }
+    }
 } // namespace internal
 
 /** Interface for communicating between logical and physically persistent data.
@@ -211,7 +234,21 @@ public:
     virtual std::string backendName() const = 0;
 
     std::string const directory;
-    // why do these need to be separate?
+    /*
+     * Originally, the reason for distinguishing these two was that during
+     * parsing in reading access modes, the access type would be temporarily
+     * const_cast'ed to an access type that would support modifying
+     * the openPMD object model. Then, it would be const_cast'ed back to
+     * READ_ONLY, to disable further modifications.
+     * Due to this approach's tendency to cause subtle bugs, and due to its
+     * difficult debugging properties, this was replaced by the SeriesStatus
+     * enum, defined in this file.
+     * The distinction of backendAccess and frontendAccess stays relevant, since
+     * the frontend can use it in order to pretend to the backend that another
+     * access type is being used. This is used by the file-based append mode,
+     * which is entirely implemented by the frontend, which internally uses
+     * the backend in CREATE mode.
+     */
     Access const m_backendAccess;
     Access const m_frontendAccess;
     internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;

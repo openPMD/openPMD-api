@@ -30,7 +30,12 @@ if __name__ == "__main__":
 
     geometry_parameters = "m={0};imag=+".format(num_modes)
 
-    E = series.iterations[0].meshes["E"]
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
+    # `Series.iterations` can be directly accessed in random-access workflows.
+    E = series.write_iterations()[0].meshes["E"]
     E.geometry = io.Geometry.thetaMode
     E.geometry_parameters = geometry_parameters
     E.grid_spacing = [1.0, 1.0]
@@ -62,10 +67,14 @@ if __name__ == "__main__":
     E_t.reset_dataset(io.Dataset(E_t_data.dtype, E_t_data.shape))
     E_t.store_chunk(E_t_data)
 
-    series.flush()
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    series.write_iterations()[0].close()
 
-    # The files in 'series' are still open until the object is destroyed, on
-    # which it cleanly flushes and closes all open file handles.
-    # One can delete the object explicitly (or let it run out of scope) to
-    # trigger this.
-    del series
+    # The files in 'series' are still open until the series is closed, at which
+    # time it cleanly flushes and closes all open file handles.
+    # One can close the object explicitly to trigger this.
+    # Alternatively, this will automatically happen once the garbage collector
+    # claims (every copy of) the series object.
+    series.close()

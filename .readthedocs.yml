@@ -5,10 +5,13 @@ python:
     - requirements: docs/requirements.txt
 
 formats:
-    - htmlzip
-    - pdf
-    - epub
+  - htmlzip
+  - pdf
+  - epub
 
 build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
   apt_packages:
     - librsvg2-bin

@@ -19,6 +19,11 @@ void span_write(std::string const &filename)
 
     std::vector<position_t> fallbackBuffer;
 
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     WriteIterations iterations = series.writeIterations();
     for (size_t i = 0; i < 10; ++i)
     {
@@ -82,8 +87,46 @@ void span_write(std::string const &filename)
             }
             ++j;
         }
+
+        using mesh_type = position_t;
+
+        RecordComponent chargeDensity =
+            iteration.meshes["e_chargeDensity"][RecordComponent::SCALAR];
+
+        /*
+         * A similar memory optimization is possible by using a unique_ptr type
+         * in the call to storeChunk().
+         * Unlike the Span API, the buffer here is user-created, but in both
+         * approaches, the backend will manage the memory after the call to
+         * storeChunk().
+         * Some backends (especially: ADIOS2 BP5) will benefit from being able
+         * to avoid memcopies since they know that they can just keep the memory
+         * and noone else is reading it.
+         */
+        chargeDensity.resetDataset(dataset);
+        /*
+         * The class template UniquePtrWithLambda (subclass of std::unique_ptr)
+         * can be used to specify custom destructors, e.g. for deallocating
+         * GPU pointers.
+         * Normal std::unique_ptr types can also be used, even with custom
+         * destructors.
+         */
+        UniquePtrWithLambda<mesh_type> data(
+            new mesh_type[length](), [](auto const *ptr) { delete[] ptr; });
+        /*
+         * Move the unique_ptr into openPMD. It must now no longer be accessed.
+         */
+        chargeDensity.storeChunk(std::move(data), {0}, extent);
         iteration.close();
     }
+
+    /* The files in 'series' are still open until the object is destroyed, on
+     * which it cleanly flushes and closes all open file handles.
+     * When running out of scope on return, the 'Series' destructor is called.
+    # Alternatively, one can call `series.close()` to the same effect as
+    # calling the destructor, including the release of file handles.
+     */
+    series.close();
 }
 
 int main()

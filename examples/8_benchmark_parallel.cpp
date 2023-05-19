@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     // given that you provide it with an appropriate DatasetFillerProvider
     // (template parameter of the Benchmark class).
     using type = uint64_t;
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2 || openPMD_HAVE_HDF5
+#if openPMD_HAVE_ADIOS2 || openPMD_HAVE_HDF5
     openPMD::Datatype dt = openPMD::determineDatatype<type>();
 #endif
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     // * The number of iterations. Effectively, the benchmark will be repeated
     // for this many
     //   times.
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2
     benchmark.addConfiguration(
         R"({"adios2": {"dataset":{"operators":[{"type": "blosc"}]}}})",
         "bp",

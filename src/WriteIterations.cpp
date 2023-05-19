@@ -20,12 +20,14 @@
  */
 
 #include "openPMD/WriteIterations.hpp"
+#include "openPMD/Error.hpp"
 
 #include "openPMD/Series.hpp"
 
 namespace openPMD
 {
-WriteIterations::SharedResources::SharedResources(iterations_t _iterations)
+WriteIterations::SharedResources::SharedResources(
+    IterationsContainer_t _iterations)
     : iterations(std::move(_iterations))
 {}
 
@@ -43,9 +45,15 @@ WriteIterations::SharedResources::~SharedResources()
     }
 }
 
-WriteIterations::WriteIterations(iterations_t iterations)
-    : shared{std::make_shared<SharedResources>(std::move(iterations))}
+WriteIterations::WriteIterations(IterationsContainer_t iterations)
+    : shared{std::make_shared<std::optional<SharedResources>>(
+          std::move(iterations))}
 {}
+
+void WriteIterations::close()
+{
+    *shared = std::nullopt;
+}
 
 WriteIterations::mapped_type &WriteIterations::operator[](key_type const &key)
 {
@@ -55,22 +63,52 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type const &key)
 }
 WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
 {
-    if (shared->currentlyOpen.has_value())
+    if (!shared || !shared->has_value())
     {
-        auto lastIterationIndex = shared->currentlyOpen.value();
-        auto &lastIteration = shared->iterations.at(lastIterationIndex);
-        if (lastIterationIndex != key && !lastIteration.closed())
+        throw error::WrongAPIUsage(
+            "[WriteIterations] Trying to access after closing Series.");
+    }
+    auto &s = shared->value();
+    auto lastIteration = currentIteration();
+    if (lastIteration.has_value())
+    {
+        auto lastIteration_v = lastIteration.value();
+        if (lastIteration_v.iterationIndex == key)
         {
-            lastIteration.close();
+            return s.iterations.at(std::move(key));
+        }
+        else
+        {
+            lastIteration_v.close(); // continue below
         }
     }
-    shared->currentlyOpen = key;
-    auto &res = shared->iterations[std::move(key)];
+    s.currentlyOpen = key;
+    auto &res = s.iterations[std::move(key)];
     if (res.getStepStatus() == StepStatus::NoStep)
     {
         res.beginStep(/* reread = */ false);
         res.setStepStatus(StepStatus::DuringStep);
     }
     return res;
+}
+
+std::optional<IndexedIteration> WriteIterations::currentIteration()
+{
+    if (!shared || !shared->has_value())
+    {
+        return std::nullopt;
+    }
+    auto &s = shared->value();
+    if (!s.currentlyOpen.has_value())
+    {
+        return std::nullopt;
+    }
+    Iteration &currentIteration = s.iterations.at(s.currentlyOpen.value());
+    if (currentIteration.closed())
+    {
+        return std::nullopt;
+    }
+    return std::make_optional<IndexedIteration>(
+        IndexedIteration(currentIteration, s.currentlyOpen.value()));
 }
 } // namespace openPMD

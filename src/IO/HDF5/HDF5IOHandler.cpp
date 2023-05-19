@@ -220,7 +220,7 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
 void HDF5IOHandlerImpl::createFile(
     Writable *writable, Parameter<Operation::CREATE_FILE> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Creating a file in read-only mode is not possible.");
 
@@ -258,6 +258,7 @@ void HDF5IOHandlerImpl::createFile(
             flags = H5F_ACC_EXCL;
             break;
         case Access::READ_ONLY:
+        case Access::READ_LINEAR:
             // condition has been checked above
             throw std::runtime_error(
                 "[HDF5] Control flow error in createFile backend access mode.");
@@ -322,7 +323,7 @@ void HDF5IOHandlerImpl::checkFile(
 void HDF5IOHandlerImpl::createPath(
     Writable *writable, Parameter<Operation::CREATE_PATH> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Creating a path in a file opened as read only is not "
             "possible.");
@@ -413,7 +414,7 @@ void HDF5IOHandlerImpl::createPath(
 void HDF5IOHandlerImpl::createDataset(
     Writable *writable, Parameter<Operation::CREATE_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Creating a dataset in a file opened as read only is not "
             "possible.");
@@ -652,7 +653,7 @@ void HDF5IOHandlerImpl::createDataset(
 void HDF5IOHandlerImpl::extendDataset(
     Writable *writable, Parameter<Operation::EXTEND_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Extending a dataset in a file opened as read only is not "
             "possible.");
@@ -768,14 +769,30 @@ void HDF5IOHandlerImpl::availableChunks(
     }
     parameters.chunks->push_back(
         WrittenChunkInfo(std::move(offset), std::move(extent)));
+
+    herr_t status;
+    status = H5Sclose(dataset_space);
+    VERIFY(
+        status == 0,
+        "[HDF5] Internal error: Failed to close HDF5 dataset space during "
+        "availableChunks task");
+
+    status = H5Dclose(dataset_id);
+    VERIFY(
+        status == 0,
+        "[HDF5] Internal error: Failed to close HDF5 dataset during "
+        "availableChunks task");
 }
 
 void HDF5IOHandlerImpl::openFile(
-    Writable *writable, Parameter<Operation::OPEN_FILE> const &parameters)
+    Writable *writable, Parameter<Operation::OPEN_FILE> &parameters)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
-        throw no_such_file_error(
-            "[HDF5] Supplied directory is not valid: " + m_handler->directory);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "HDF5",
+            "Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;
     if (!auxiliary::ends_with(name, ".h5"))
@@ -793,23 +810,24 @@ void HDF5IOHandlerImpl::openFile(
 
     unsigned flags;
     Access at = m_handler->m_backendAccess;
-    if (at == Access::READ_ONLY)
+    if (access::readOnly(at))
         flags = H5F_ACC_RDONLY;
     /*
      * Within the HDF5 backend, APPEND and READ_WRITE mode are
      * equivalent, but the openPMD frontend exposes no reading
      * functionality in APPEND mode.
      */
-    else if (
-        at == Access::READ_WRITE || at == Access::CREATE ||
-        at == Access::APPEND)
-        flags = H5F_ACC_RDWR;
     else
-        throw std::runtime_error("[HDF5] Unknown file Access");
+        flags = H5F_ACC_RDWR;
+
     hid_t file_id;
     file_id = H5Fopen(name.c_str(), flags, m_fileAccessProperty);
     if (file_id < 0)
-        throw no_such_file_error("[HDF5] Failed to open HDF5 file " + name);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "HDF5",
+            "Failed to open HDF5 file " + name);
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared<HDF5FilePosition>("/");
@@ -853,9 +871,15 @@ void HDF5IOHandlerImpl::openPath(
 
     node_id = H5Gopen(
         file.id, concrete_h5_file_position(writable->parent).c_str(), gapl);
-    VERIFY(
-        node_id >= 0,
-        "[HDF5] Internal error: Failed to open HDF5 group during path opening");
+    if (node_id < 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Group,
+            error::Reason::NotFound,
+            "HDF5",
+            "[HDF5] Internal error: Failed to open HDF5 group during path "
+            "opening");
+    }
 
     /* Sanitize path */
     std::string path = parameters.path;
@@ -866,30 +890,50 @@ void HDF5IOHandlerImpl::openPath(
         if (!auxiliary::ends_with(path, '/'))
             path += '/';
         path_id = H5Gopen(node_id, path.c_str(), gapl);
-        VERIFY(
-            path_id >= 0,
-            "[HDF5] Internal error: Failed to open HDF5 group during path "
-            "opening");
+        if (path_id < 0)
+        {
+            throw error::ReadError(
+                error::AffectedObject::Group,
+                error::Reason::NotFound,
+                "HDF5",
+                "[HDF5] Internal error: Failed to open HDF5 group during path "
+                "opening");
+        }
 
         herr_t status;
         status = H5Gclose(path_id);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 group during path "
-            "opening");
+        if (status != 0)
+        {
+            throw error::ReadError(
+                error::AffectedObject::Group,
+                error::Reason::Other,
+                "HDF5",
+                "[HDF5] Internal error: Failed to close HDF5 group during path "
+                "opening");
+        }
     }
 
     herr_t status;
     status = H5Gclose(node_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 group during path "
-        "opening");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Group,
+            error::Reason::Other,
+            "HDF5",
+            "[HDF5] Internal error: Failed to close HDF5 group during path "
+            "opening");
+    }
     status = H5Pclose(gapl);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 property during path "
-        "opening");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Group,
+            error::Reason::Other,
+            "HDF5",
+            "[HDF5] Internal error: Failed to close HDF5 property during path "
+            "opening");
+    }
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared<HDF5FilePosition>(path);
@@ -947,6 +991,8 @@ void HDF5IOHandlerImpl::openDataset(
             d = DT::CHAR;
         else if (H5Tequal(dataset_type, H5T_NATIVE_UCHAR))
             d = DT::UCHAR;
+        else if (H5Tequal(dataset_type, H5T_NATIVE_SCHAR))
+            d = DT::SCHAR;
         else if (H5Tequal(dataset_type, H5T_NATIVE_SHORT))
             d = DT::SHORT;
         else if (H5Tequal(dataset_type, H5T_NATIVE_INT))
@@ -1033,7 +1079,7 @@ void HDF5IOHandlerImpl::openDataset(
 void HDF5IOHandlerImpl::deleteFile(
     Writable *writable, Parameter<Operation::DELETE_FILE> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Deleting a file opened as read only is not possible.");
 
@@ -1067,7 +1113,7 @@ void HDF5IOHandlerImpl::deleteFile(
 void HDF5IOHandlerImpl::deletePath(
     Writable *writable, Parameter<Operation::DELETE_PATH> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Deleting a path in a file opened as read only is not "
             "possible.");
@@ -1119,7 +1165,7 @@ void HDF5IOHandlerImpl::deletePath(
 void HDF5IOHandlerImpl::deleteDataset(
     Writable *writable, Parameter<Operation::DELETE_DATASET> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Deleting a path in a file opened as read only is not "
             "possible.");
@@ -1171,7 +1217,7 @@ void HDF5IOHandlerImpl::deleteDataset(
 void HDF5IOHandlerImpl::deleteAttribute(
     Writable *writable, Parameter<Operation::DELETE_ATT> const &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Deleting an attribute in a file opened as read only is not "
             "possible.");
@@ -1204,9 +1250,9 @@ void HDF5IOHandlerImpl::deleteAttribute(
 }
 
 void HDF5IOHandlerImpl::writeDataset(
-    Writable *writable, Parameter<Operation::WRITE_DATASET> const &parameters)
+    Writable *writable, Parameter<Operation::WRITE_DATASET> &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Writing into a dataset in a file opened as read only is "
             "not possible.");
@@ -1246,7 +1292,7 @@ void HDF5IOHandlerImpl::writeDataset(
         "[HDF5] Internal error: Failed to select hyperslab during dataset "
         "write");
 
-    std::shared_ptr<void const> data = parameters.data;
+    void const *data = parameters.data.get();
 
     GetH5DataType getH5DataType({
         {typeid(bool).name(), m_H5T_BOOL_ENUM},
@@ -1290,7 +1336,7 @@ void HDF5IOHandlerImpl::writeDataset(
             memspace,
             filespace,
             m_datasetTransferProperty,
-            data.get());
+            data);
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to write dataset " +
@@ -1333,7 +1379,7 @@ void HDF5IOHandlerImpl::writeAttribute(
         // cannot do this
         return;
     }
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
         throw std::runtime_error(
             "[HDF5] Writing an attribute in a file opened as read only is not "
             "possible.");
@@ -1588,8 +1634,8 @@ void HDF5IOHandlerImpl::writeAttribute(
         auto vs = att.get<std::vector<std::string> >();
         size_t max_len = 0;
         for (std::string const &s : vs)
-            max_len = std::max(max_len, s.size());
-        std::unique_ptr<char[]> c_str(new char[max_len * vs.size()]);
+            max_len = std::max(max_len, s.size() + 1);
+        std::unique_ptr<char[]> c_str(new char[max_len * vs.size()]());
         for (size_t i = 0; i < vs.size(); ++i)
             strncpy(c_str.get() + i * max_len, vs[i].c_str(), max_len);
         status = H5Awrite(attribute_id, dataType, c_str.get());
@@ -1698,6 +1744,7 @@ void HDF5IOHandlerImpl::readDataset(
     case DT::ULONGLONG:
     case DT::CHAR:
     case DT::UCHAR:
+    case DT::SCHAR:
     case DT::BOOL:
         break;
     case DT::UNDEFINED:
@@ -1771,18 +1818,30 @@ void HDF5IOHandlerImpl::readAttribute(
 
     obj_id =
         H5Oopen(file.id, concrete_h5_file_position(writable).c_str(), fapl);
-    VERIFY(
-        obj_id >= 0,
-        std::string("[HDF5] Internal error: Failed to open HDF5 object '") +
-            concrete_h5_file_position(writable).c_str() +
-            "' during attribute read");
+    if (obj_id < 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::NotFound,
+            "HDF5",
+            std::string("[HDF5] Internal error: Failed to open HDF5 object '") +
+                concrete_h5_file_position(writable).c_str() +
+                "' during attribute read");
+    }
     std::string const &attr_name = parameters.name;
     attr_id = H5Aopen(obj_id, attr_name.c_str(), H5P_DEFAULT);
-    VERIFY(
-        attr_id >= 0,
-        std::string("[HDF5] Internal error: Failed to open HDF5 attribute '") +
-            attr_name + "' (" + concrete_h5_file_position(writable).c_str() +
-            ") during attribute read");
+    if (attr_id < 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::NotFound,
+            "HDF5",
+            std::string(
+                "[HDF5] Internal error: Failed to open HDF5 attribute '") +
+                attr_name + "' (" +
+                concrete_h5_file_position(writable).c_str() +
+                ") during attribute read");
+    }
 
     hid_t attr_type, attr_space;
     attr_type = H5Aget_type(attr_id);
@@ -1793,10 +1852,15 @@ void HDF5IOHandlerImpl::readAttribute(
     std::vector<hsize_t> maxdims(ndims, 0);
 
     status = H5Sget_simple_extent_dims(attr_space, dims.data(), maxdims.data());
-    VERIFY(
-        status == ndims,
-        "[HDF5] Internal error: Failed to get dimensions during attribute "
-        "read");
+    if (status != ndims)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::CannotRead,
+            "HDF5",
+            "[HDF5] Internal error: Failed to get dimensions during attribute "
+            "read");
+    }
 
     H5S_class_t attr_class = H5Sget_simple_extent_type(attr_space);
     Attribute a(0);
@@ -1812,6 +1876,12 @@ void HDF5IOHandlerImpl::readAttribute(
         else if (H5Tequal(attr_type, H5T_NATIVE_UCHAR))
         {
             unsigned char u;
+            status = H5Aread(attr_id, attr_type, &u);
+            a = Attribute(u);
+        }
+        else if (H5Tequal(attr_type, H5T_NATIVE_SCHAR))
+        {
+            signed char u;
             status = H5Aread(attr_id, attr_type, &u);
             a = Attribute(u);
         }
@@ -1929,7 +1999,10 @@ void HDF5IOHandlerImpl::readAttribute(
                 a = Attribute(static_cast<bool>(enumVal));
             }
             else
-                throw unsupported_data_error(
+                throw error::ReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::UnexpectedContent,
+                    "HDF5",
                     "[HDF5] Unsupported attribute enumeration");
         }
         else if (H5Tget_class(attr_type) == H5T_COMPOUND)
@@ -1997,21 +2070,33 @@ void HDF5IOHandlerImpl::readAttribute(
                     a = Attribute(cld);
                 }
                 else
-                    throw unsupported_data_error(
+                    throw error::ReadError(
+                        error::AffectedObject::Attribute,
+                        error::Reason::UnexpectedContent,
+                        "HDF5",
                         "[HDF5] Unknown complex type representation");
             }
             else
-                throw unsupported_data_error(
+                throw error::ReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::UnexpectedContent,
+                    "HDF5",
                     "[HDF5] Compound attribute type not supported");
         }
         else
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "HDF5",
                 "[HDF5] Unsupported scalar attribute type");
     }
     else if (attr_class == H5S_SIMPLE)
     {
         if (ndims != 1)
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "HDF5",
                 "[HDF5] Unsupported attribute (array with ndims != 1)");
 
         if (H5Tequal(attr_type, H5T_NATIVE_CHAR))
@@ -2023,6 +2108,12 @@ void HDF5IOHandlerImpl::readAttribute(
         else if (H5Tequal(attr_type, H5T_NATIVE_UCHAR))
         {
             std::vector<unsigned char> vu(dims[0], 0);
+            status = H5Aread(attr_id, attr_type, vu.data());
+            a = Attribute(vu);
+        }
+        else if (H5Tequal(attr_type, H5T_NATIVE_SCHAR))
+        {
+            std::vector<signed char> vu(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vu.data());
             a = Attribute(vu);
         }
@@ -2126,11 +2217,16 @@ void HDF5IOHandlerImpl::readAttribute(
             {
                 std::vector<char *> vc(dims[0]);
                 status = H5Aread(attr_id, attr_type, vc.data());
-                VERIFY(
-                    status == 0,
-                    "[HDF5] Internal error: Failed to read attribute " +
-                        attr_name + " at " +
-                        concrete_h5_file_position(writable));
+                if (status != 0)
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::Attribute,
+                        error::Reason::CannotRead,
+                        "HDF5",
+                        "[HDF5] Internal error: Failed to read attribute " +
+                            attr_name + " at " +
+                            concrete_h5_file_position(writable));
+                }
                 for (auto const &val : vc)
                     vs.push_back(auxiliary::strip(std::string(val), {'\0'}));
                 status = H5Dvlen_reclaim(
@@ -2148,26 +2244,45 @@ void HDF5IOHandlerImpl::readAttribute(
             a = Attribute(vs);
         }
         else
-            throw std::runtime_error(
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "HDF5",
                 "[HDF5] Unsupported simple attribute type");
     }
     else
         throw std::runtime_error("[HDF5] Unsupported attribute class");
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to read attribute " + attr_name +
-            " at " + concrete_h5_file_position(writable));
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::CannotRead,
+            "HDF5",
+            "[HDF5] Internal error: Failed to read attribute " + attr_name +
+                " at " + concrete_h5_file_position(writable));
+    }
 
     status = H5Tclose(attr_type);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close attribute datatype during "
-        "attribute read");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::CannotRead,
+            "HDF5",
+            "[HDF5] Internal error: Failed to close attribute datatype during "
+            "attribute read");
+    }
     status = H5Sclose(attr_space);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close attribute file space during "
-        "attribute read");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::CannotRead,
+            "HDF5",
+            "[HDF5] Internal error: Failed to close attribute file space "
+            "during "
+            "attribute read");
+    }
 
     auto dtype = parameters.dtype;
     *dtype = a.dtype;
@@ -2175,21 +2290,36 @@ void HDF5IOHandlerImpl::readAttribute(
     *resource = a.getResource();
 
     status = H5Aclose(attr_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close attribute " + attr_name +
-            " at " + concrete_h5_file_position(writable) +
-            " during attribute read");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::CannotRead,
+            "HDF5",
+            "[HDF5] Internal error: Failed to close attribute " + attr_name +
+                " at " + concrete_h5_file_position(writable) +
+                " during attribute read");
+    }
     status = H5Oclose(obj_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close " +
-            concrete_h5_file_position(writable) + " during attribute read");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::CannotRead,
+            "HDF5",
+            "[HDF5] Internal error: Failed to close " +
+                concrete_h5_file_position(writable) + " during attribute read");
+    }
     status = H5Pclose(fapl);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 attribute during "
-        "attribute read");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::CannotRead,
+            "HDF5",
+            "[HDF5] Internal error: Failed to close HDF5 attribute during "
+            "attribute read");
+    }
 }
 
 void HDF5IOHandlerImpl::listPaths(
@@ -2380,6 +2510,12 @@ void HDF5IOHandlerImpl::listAttributes(
         status == 0,
         "[HDF5] Internal error: Failed to close HDF5 property during dataset "
         "listing");
+}
+
+void HDF5IOHandlerImpl::deregister(
+    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+{
+    m_fileNames.erase(writable);
 }
 
 std::optional<HDF5IOHandlerImpl::File>

@@ -63,13 +63,13 @@ def main():
 
     # now, write a number of iterations (or: snapshots, time steps)
     for i in range(10):
-        # Use `series.write_iterations()` instead of `series.iterations`
-        # for streaming support (while still retaining file-writing support).
-        # Direct access to `series.iterations` is only necessary for
-        # random-access of iterations. By using `series.write_iterations()`,
-        # the openPMD-api will adhere to streaming semantics while writing.
-        # In particular, this means that only one iteration can be written at a
-        # time and an iteration can no longer be modified after closing it.
+        # Direct access to iterations is possible via `series.iterations`.
+        # For streaming support, `series.write_iterations()` needs to be used
+        # instead of `series.iterations`.
+        # `Series.write_iterations()` and `Series.read_iterations()` are
+        # intentionally restricted APIs that ensure a workflow which also works
+        # in streaming setups, e.g. an iteration cannot be opened again once
+        # it has been closed.
         iteration = series.write_iterations()[i]
 
         #######################
@@ -145,6 +145,13 @@ def main():
         # If not closing an iteration explicitly, it will be implicitly closed
         # upon creating the next iteration.
         iteration.close()
+
+    # The files in 'series' are still open until the object is destroyed, on
+    # which it cleanly flushes and closes all open file handles.
+    # When running out of scope on return, the 'Series' destructor is called.
+    # Alternatively, one can call `series.close()` to the same effect as
+    # calling the destructor, including the release of file handles.
+    series.close()
 
 
 if __name__ == "__main__":

@@ -7,15 +7,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  clangtidy10_nopy_ompi_h5_ad1_ad2:
+  clangtidy10_nopy_ompi_h5_ad2:
     name: clang-tidy w/o py
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Spack Cache
-      uses: actions/cache@v2
-      with: {path: /opt/spack, key: clangtidy10_nopy_ompi_h5_ad1_ad2 }
+      uses: actions/cache@v3
+      with: {path: /opt/spack, key: clangtidy10_nopy_ompi_h5_ad2 }
     - name: Install
       run: |
         sudo apt-get update
@@ -24,7 +24,7 @@ jobs:
     - name: Build
       env: {CC: clang, CXX: clang++}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -35,15 +35,15 @@ jobs:
         cat build/clang-tidy.log
         if [[ $(wc -m <build/clang-tidy.log) -gt 1 ]]; then exit 1; fi
 
-  clangsanitizer10_py38_ompi_h5_ad1_ad2:
+  clangsanitizer10_py38_ompi_h5_ad2:
     name: Clang ASAN UBSAN
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Spack Cache
-      uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang10_nopy_ompi_h5_ad1_ad2 }
+      uses: actions/cache@v3
+      with: {path: /opt/spack, key: clang10_nopy_ompi_h5_ad2 }
     - name: Install
       run: |
         sudo apt-get update
@@ -54,7 +54,7 @@ jobs:
     - name: Build
       env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-10, OMPI_CXX: clang++-10, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
         SOURCEPATH="$(pwd)"
         share/openPMD/download_samples.sh build
@@ -65,7 +65,6 @@ jobs:
           -DopenPMD_USE_PYTHON=ON         \
           -DopenPMD_USE_HDF5=ON           \
           -DopenPMD_USE_ADIOS2=ON         \
-          -DopenPMD_USE_ADIOS1=ON         \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 2

@@ -64,6 +64,8 @@ namespace openPMD
 
 #if openPMD_HAVE_ADIOS2
 
+#define HAS_ADIOS_2_8 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 208)
+
 #if openPMD_HAVE_MPI
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
@@ -112,7 +114,17 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
         sorted.push_back(std::move(pair.second));
     }
     m_fileData.clear();
-    std::sort(
+    /*
+     * Technically, std::sort() is sufficient here, since file names are unique.
+     * Use std::stable_sort() for two reasons:
+     * 1) On some systems (clang 13.0.1, libc++ 13.0.1), std::sort() leads to
+     *    weird inconsistent segfaults here.
+     * 2) Robustness against future changes. stable_sort() might become needed
+     *    in future, and debugging this can be hard.
+     * 3) It does not really matter, this is just the destructor, so we can take
+     *    the extra time.
+     */
+    std::stable_sort(
         sorted.begin(), sorted.end(), [](auto const &left, auto const &right) {
             return left->m_file <= right->m_file;
         });
@@ -136,7 +148,11 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
         [](unsigned char c) { return std::tolower(c); });
 
     // environment-variable based configuration
-    m_schema = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", m_schema);
+    if (int schemaViaEnv = auxiliary::getEnvNum("OPENPMD2_ADIOS2_SCHEMA", -1);
+        schemaViaEnv != -1)
+    {
+        m_schema = schemaViaEnv;
+    }
 
     if (cfg.json().contains("adios2"))
     {
@@ -447,7 +463,7 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
     {
         if (m_dirty.find(p.first) != m_dirty.end())
         {
-            p.second->flush(adios2FlushParams, /* writeAttributes = */ false);
+            p.second->flush(adios2FlushParams, /* writeLatePuts = */ false);
         }
         else
         {
@@ -461,7 +477,7 @@ void ADIOS2IOHandlerImpl::createFile(
     Writable *writable, Parameter<Operation::CREATE_FILE> const &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[ADIOS2] Creating a file in read-only mode is not possible.");
 
     if (!writable->written)
@@ -586,7 +602,7 @@ void ADIOS2IOHandlerImpl::createPath(
 void ADIOS2IOHandlerImpl::createDataset(
     Writable *writable, const Parameter<Operation::CREATE_DATASET> &parameters)
 {
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
     {
         throw std::runtime_error(
             "[ADIOS2] Creating a dataset in a file opened as read "
@@ -598,7 +614,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         std::string name = auxiliary::removeSlashes(parameters.name);
 
         auto const file =
-            refreshFileFromParent(writable, /* preferParentFile = */ false);
+            refreshFileFromParent(writable, /* preferParentFile = */ true);
         auto filePos = setAndGetFilePosition(writable, name);
         filePos->gd = ADIOS2FilePosition::GD::DATASET;
         auto const varName = nameOfVariable(writable);
@@ -669,7 +685,7 @@ void ADIOS2IOHandlerImpl::extendDataset(
     Writable *writable, const Parameter<Operation::EXTEND_DATASET> &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[ADIOS2] Cannot extend datasets in read-only mode.");
     setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
@@ -681,13 +697,15 @@ void ADIOS2IOHandlerImpl::extendDataset(
 }
 
 void ADIOS2IOHandlerImpl::openFile(
-    Writable *writable, const Parameter<Operation::OPEN_FILE> &parameters)
+    Writable *writable, Parameter<Operation::OPEN_FILE> &parameters)
 {
     if (!auxiliary::directory_exists(m_handler->directory))
     {
-        throw no_such_file_error(
-            "[ADIOS2] Supplied directory is not valid: " +
-            m_handler->directory);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Inaccessible,
+            "ADIOS2",
+            "Supplied directory is not valid: " + m_handler->directory);
     }
 
     std::string name = parameters.name + fileSuffix();
@@ -702,7 +720,8 @@ void ADIOS2IOHandlerImpl::openFile(
     m_iterationEncoding = parameters.encoding;
     // enforce opening the file
     // lazy opening is deathly in parallel situations
-    getFileData(file, IfFileNotOpen::OpenImplicitly);
+    auto &fileData = getFileData(file, IfFileNotOpen::OpenImplicitly);
+    *parameters.out_parsePreference = fileData.parsePreference;
 }
 
 void ADIOS2IOHandlerImpl::closeFile(
@@ -725,10 +744,12 @@ void ADIOS2IOHandlerImpl::closeFile(
                 [](detail::BufferedActions &ba, adios2::Engine &) {
                     ba.finalize();
                 },
-                /* writeAttributes = */ true,
+                /* writeLatePuts = */ true,
                 /* flushUnconditionally = */ false);
             m_fileData.erase(it);
         }
+        m_dirty.erase(fileIterator->second);
+        m_files.erase(fileIterator);
     }
 }
 
@@ -758,7 +779,7 @@ void ADIOS2IOHandlerImpl::openDataset(
     writable->abstractFilePosition.reset();
     auto pos = setAndGetFilePosition(writable, name);
     pos->gd = ADIOS2FilePosition::GD::DATASET;
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto file = refreshFileFromParent(writable, /* preferParentFile = */ true);
     auto varName = nameOfVariable(writable);
     *parameters.dtype =
         detail::fromADIOS2Type(getFileData(file, IfFileNotOpen::ThrowError)
@@ -795,17 +816,17 @@ void ADIOS2IOHandlerImpl::deleteAttribute(
 }
 
 void ADIOS2IOHandlerImpl::writeDataset(
-    Writable *writable, const Parameter<Operation::WRITE_DATASET> &parameters)
+    Writable *writable, Parameter<Operation::WRITE_DATASET> &parameters)
 {
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
+        access::write(m_handler->m_backendAccess),
         "[ADIOS2] Cannot write data in read-only mode.");
     setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
     detail::BufferedPut bp;
     bp.name = nameOfVariable(writable);
-    bp.param = parameters;
+    bp.param = std::move(parameters);
     ba.enqueue(std::move(bp));
     m_dirty.emplace(std::move(file));
     writable->written = true; // TODO erst nach dem Schreiben?
@@ -827,7 +848,7 @@ void ADIOS2IOHandlerImpl::writeAttribute(
         break;
     case AttributeLayout::ByAdiosVariables: {
         VERIFY_ALWAYS(
-            m_handler->m_backendAccess != Access::READ_ONLY,
+            access::write(m_handler->m_backendAccess),
             "[ADIOS2] Cannot write attribute in read-only mode.");
         auto pos = setAndGetFilePosition(writable);
         auto file =
@@ -974,6 +995,8 @@ void ADIOS2IOHandlerImpl::getBufferView(
     case UseSpan::Yes:
         break;
     }
+
+    ba.requireActiveStep();
 
     if (parameters.update)
     {
@@ -1250,7 +1273,7 @@ void ADIOS2IOHandlerImpl::listAttributes(
 void ADIOS2IOHandlerImpl::advance(
     Writable *writable, Parameter<Operation::ADVANCE> &parameters)
 {
-    auto file = m_files[writable];
+    auto file = m_files.at(writable);
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
     *parameters.status =
         ba.advance(parameters.mode, /* calledExplicitly = */ true);
@@ -1262,7 +1285,7 @@ void ADIOS2IOHandlerImpl::closePath(
     VERIFY_ALWAYS(
         writable->written,
         "[ADIOS2] Cannot close a path that has not been written yet.");
-    if (m_handler->m_backendAccess == Access::READ_ONLY)
+    if (access::readOnly(m_handler->m_backendAccess))
     {
         // nothing to do
         return;
@@ -1296,8 +1319,21 @@ void ADIOS2IOHandlerImpl::availableChunks(
     std::string varName = nameOfVariable(writable);
     auto engine = ba.getEngine(); // make sure that data are present
     auto datatype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
+    bool allSteps = m_handler->m_frontendAccess != Access::READ_LINEAR &&
+        ba.streamStatus == detail::BufferedActions::StreamStatus::NoStream;
     switchAdios2VariableType<detail::RetrieveBlocksInfo>(
-        datatype, parameters, ba.m_IO, engine, varName);
+        datatype,
+        parameters,
+        ba.m_IO,
+        engine,
+        varName,
+        /* allSteps = */ allSteps);
+}
+
+void ADIOS2IOHandlerImpl::deregister(
+    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+{
+    m_files.erase(writable);
 }
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
@@ -1306,13 +1342,25 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
     {
     case Access::CREATE:
         return adios2::Mode::Write;
+#if HAS_ADIOS_2_8
+    case Access::READ_LINEAR:
+        return adios2::Mode::Read;
+    case Access::READ_ONLY:
+        return adios2::Mode::ReadRandomAccess;
+#else
+    case Access::READ_LINEAR:
     case Access::READ_ONLY:
         return adios2::Mode::Read;
+#endif
     case Access::READ_WRITE:
         if (auxiliary::directory_exists(fullPath) ||
             auxiliary::file_exists(fullPath))
         {
+#if HAS_ADIOS_2_8
+            return adios2::Mode::ReadRandomAccess;
+#else
             return adios2::Mode::Read;
+#endif
         }
         else
         {
@@ -1701,7 +1749,7 @@ namespace detail
         const Parameter<Operation::WRITE_ATT> &parameters)
     {
         VERIFY_ALWAYS(
-            impl->m_handler->m_backendAccess != Access::READ_ONLY,
+            access::write(impl->m_handler->m_backendAccess),
             "[ADIOS2] Cannot write attribute in read-only mode.");
         auto pos = impl->setAndGetFilePosition(writable);
         auto file = impl->refreshFileFromParent(
@@ -1733,6 +1781,29 @@ namespace detail
             }
             else if (attributeModifiable())
             {
+                if (detail::fromADIOS2Type(t) !=
+                    basicDatatype(determineDatatype<T>()))
+                {
+                    if (impl->m_engineType == "bp5")
+                    {
+                        throw error::OperationUnsupportedInBackend(
+                            "ADIOS2",
+                            "Attempting to change datatype of attribute '" +
+                                fullName +
+                                "'. In the BP5 engine, this will lead to "
+                                "corrupted "
+                                "datasets.");
+                    }
+                    else
+                    {
+                        std::cerr << "[ADIOS2] Attempting to change datatype "
+                                     "of attribute '"
+                                  << fullName
+                                  << "'. This invokes undefined behavior. Will "
+                                     "proceed."
+                                  << std::endl;
+                    }
+                }
                 IO.RemoveAttribute(fullName);
             }
             else
@@ -1865,23 +1936,59 @@ namespace detail
             shape.begin(), shape.end(), std::back_inserter(*parameters.extent));
     }
 
+    template <class>
+    inline constexpr bool always_false_v = false;
+
     template <typename T>
-    void WriteDataset::call(
-        ADIOS2IOHandlerImpl *impl,
-        detail::BufferedPut &bp,
-        adios2::IO &IO,
-        adios2::Engine &engine)
+    void WriteDataset::call(BufferedActions &ba, detail::BufferedPut &bp)
     {
         VERIFY_ALWAYS(
-            impl->m_handler->m_backendAccess != Access::READ_ONLY,
+            access::write(ba.m_impl->m_handler->m_backendAccess),
             "[ADIOS2] Cannot write data in read-only mode.");
 
-        auto ptr = std::static_pointer_cast<const T>(bp.param.data).get();
+        std::visit(
+            [&](auto &&arg) {
+                using ptr_type = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<
+                                  ptr_type,
+                                  std::shared_ptr<void const>>)
+                {
+                    auto ptr = static_cast<T const *>(arg.get());
 
-        adios2::Variable<T> var = impl->verifyDataset<T>(
-            bp.param.offset, bp.param.extent, IO, bp.name);
+                    adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
+                        bp.param.offset, bp.param.extent, ba.m_IO, bp.name);
 
-        engine.Put(var, ptr);
+                    ba.getEngine().Put(var, ptr);
+                }
+                else if constexpr (std::is_same_v<
+                                       ptr_type,
+                                       UniquePtrWithLambda<void>>)
+                {
+                    BufferedUniquePtrPut bput;
+                    bput.name = std::move(bp.name);
+                    bput.offset = std::move(bp.param.offset);
+                    bput.extent = std::move(bp.param.extent);
+                    /*
+                     * Note: Moving is required here since it's a unique_ptr.
+                     * std::forward<>() would theoretically work, but it
+                     * requires the type parameter and we don't have that
+                     * inside the lambda.
+                     * (ptr_type does not work for this case).
+                     */
+                    // clang-format off
+                    bput.data = std::move(arg); // NOLINT(bugprone-move-forwarding-reference)
+                    // clang-format on
+                    bput.dtype = bp.param.dtype;
+                    ba.m_uniquePtrPuts.push_back(std::move(bput));
+                }
+                else
+                {
+                    static_assert(
+                        always_false_v<ptr_type>,
+                        "Unhandled std::variant branch");
+                }
+            },
+            bp.param.data.m_buffer);
     }
 
     template <int n, typename... Params>
@@ -1942,26 +2049,48 @@ namespace detail
         Parameter<Operation::AVAILABLE_CHUNKS> &params,
         adios2::IO &IO,
         adios2::Engine &engine,
-        std::string const &varName)
+        std::string const &varName,
+        bool allSteps)
     {
         auto var = IO.InquireVariable<T>(varName);
-        auto blocksInfo = engine.BlocksInfo<T>(var, engine.CurrentStep());
         auto &table = *params.chunks;
-        table.reserve(blocksInfo.size());
-        for (auto const &info : blocksInfo)
-        {
-            Offset offset;
-            Extent extent;
-            auto size = info.Start.size();
-            offset.reserve(size);
-            extent.reserve(size);
-            for (unsigned i = 0; i < size; ++i)
+        auto addBlocksInfo = [&table](auto const &blocksInfo_) {
+            for (auto const &info : blocksInfo_)
             {
-                offset.push_back(info.Start[i]);
-                extent.push_back(info.Count[i]);
+                Offset offset;
+                Extent extent;
+                auto size = info.Start.size();
+                offset.reserve(size);
+                extent.reserve(size);
+                for (unsigned i = 0; i < size; ++i)
+                {
+                    offset.push_back(info.Start[i]);
+                    extent.push_back(info.Count[i]);
+                }
+                table.emplace_back(
+                    std::move(offset), std::move(extent), info.WriterID);
             }
-            table.emplace_back(
-                std::move(offset), std::move(extent), info.WriterID);
+        };
+        if (allSteps)
+        {
+            auto allBlocks = var.AllStepsBlocksInfo();
+            table.reserve(std::accumulate(
+                allBlocks.begin(),
+                allBlocks.end(),
+                size_t(0),
+                [](size_t acc, auto const &block) {
+                    return acc + block.size();
+                }));
+            for (auto const &blocksInfo : allBlocks)
+            {
+                addBlocksInfo(blocksInfo);
+            }
+        }
+        else
+        {
+            auto blocksInfo = engine.BlocksInfo<T>(var, engine.CurrentStep());
+            table.reserve(blocksInfo.size());
+            addBlocksInfo(blocksInfo);
         }
     }
 
@@ -2295,8 +2424,29 @@ namespace detail
 
     void BufferedPut::run(BufferedActions &ba)
     {
-        switchAdios2VariableType<detail::WriteDataset>(
-            param.dtype, ba.m_impl, *this, ba.m_IO, ba.getEngine());
+        switchAdios2VariableType<detail::WriteDataset>(param.dtype, ba, *this);
+    }
+
+    struct RunUniquePtrPut
+    {
+        template <typename T>
+        static void call(BufferedUniquePtrPut &bufferedPut, BufferedActions &ba)
+        {
+            auto ptr = static_cast<T const *>(bufferedPut.data.get());
+            adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
+                bufferedPut.offset,
+                bufferedPut.extent,
+                ba.m_IO,
+                bufferedPut.name);
+            ba.getEngine().Put(var, ptr);
+        }
+
+        static constexpr char const *errorMsg = "RunUniquePtrPut";
+    };
+
+    void BufferedUniquePtrPut::run(BufferedActions &ba)
+    {
+        switchAdios2VariableType<RunUniquePtrPut>(dtype, *this, ba);
     }
 
     void OldBufferedAttributeRead::run(BufferedActions &ba)
@@ -2305,9 +2455,11 @@ namespace detail
 
         if (type == Datatype::UNDEFINED)
         {
-            throw std::runtime_error(
-                "[ADIOS2] Requested attribute (" + name +
-                ") not found in backend.");
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::NotFound,
+                "ADIOS2",
+                name);
         }
 
         Datatype ret = switchType<detail::OldAttributeReader>(
@@ -2325,9 +2477,11 @@ namespace detail
 
         if (type == Datatype::UNDEFINED)
         {
-            throw std::runtime_error(
-                "[ADIOS2] Requested attribute (" + name +
-                ") not found in backend.");
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::NotFound,
+                "ADIOS2",
+                name);
         }
 
         Datatype ret = switchType<detail::AttributeReader>(
@@ -2343,7 +2497,6 @@ namespace detail
     BufferedActions::BufferedActions(
         ADIOS2IOHandlerImpl &impl, InvalidatableFile file)
         : m_file(impl.fullPath(std::move(file)))
-        , m_IOName(std::to_string(impl.nameCounter++))
         , m_ADIOS(impl.m_ADIOS)
         , m_impl(&impl)
         , m_engineType(impl.m_engineType)
@@ -2351,8 +2504,8 @@ namespace detail
         // Declaring these members in the constructor body to avoid
         // initialization order hazards. Need the IO_ prefix since in some
         // situation there seems to be trouble with number-only IO names
-        m_IO = impl.m_ADIOS.DeclareIO("IO_" + m_IOName);
         m_mode = impl.adios2AccessMode(m_file);
+        create_IO();
         if (!m_IO)
         {
             throw std::runtime_error(
@@ -2364,6 +2517,12 @@ namespace detail
         {
             configure_IO(impl);
         }
+    }
+
+    void BufferedActions::create_IO()
+    {
+        m_IOName = std::to_string(m_impl->nameCounter++);
+        m_IO = m_impl->m_ADIOS.DeclareIO("IO_" + m_IOName);
     }
 
     BufferedActions::~BufferedActions()
@@ -2379,20 +2538,20 @@ namespace detail
         }
         // if write accessing, ensure that the engine is opened
         // and that all attributes are written
-        // (attributes are written upon closing a step or a file
-        // which users might never do)
-        bool needToWriteAttributes = !m_attributeWrites.empty();
-        if ((needToWriteAttributes || !m_engine) &&
-            m_mode != adios2::Mode::Read)
+        // (attributes and unique_ptr datasets are written upon closing a step
+        // or a file which users might never do)
+        bool needToWrite =
+            !m_attributeWrites.empty() || !m_uniquePtrPuts.empty();
+        if ((needToWrite || !m_engine) && m_mode != adios2::Mode::Read)
         {
-            auto &engine = getEngine();
-            if (needToWriteAttributes)
+            getEngine();
+            for (auto &pair : m_attributeWrites)
             {
-                for (auto &pair : m_attributeWrites)
-                {
-                    pair.second.run(*this);
-                }
-                engine.PerformPuts();
+                pair.second.run(*this);
+            }
+            for (auto &entry : m_uniquePtrPuts)
+            {
+                entry.run(*this);
             }
         }
         if (m_engine)
@@ -2412,99 +2571,298 @@ namespace detail
         finalized = true;
     }
 
-    void BufferedActions::configure_IO(ADIOS2IOHandlerImpl &impl)
+    namespace
     {
-        (void)impl;
-        static std::set<std::string> streamingEngines = {
-            "sst",
-            "insitumpi",
-            "inline",
-            "staging",
-            "nullcore",
-            "ssc",
-            "filestream",
-            "bp5"};
-        // diskStreamingEngines is a subset of streamingEngines
-        static std::set<std::string> diskStreamingEngines{"bp5", "filestream"};
-        static std::set<std::string> fileEngines = {
-            "bp4", "bp3", "hdf5", "file"};
+        constexpr char const *alwaysSupportsUpfrontParsing[] = {"bp3", "hdf5"};
+        constexpr char const *supportsUpfrontParsingInRandomAccessMode[] = {
+            "bp4", "bp5", "file", "filestream"};
+        constexpr char const *nonPersistentEngines[] = {
+            "sst", "insitumpi", "inline", "staging", "nullcore", "ssc"};
 
-        // step/variable-based iteration encoding requires the new schema
-        if (m_impl->m_iterationEncoding == IterationEncoding::variableBased)
+        bool supportedEngine(std::string const &engineType)
         {
-            m_impl->m_schema = ADIOS2Schema::schema_2021_02_09;
+            auto is_in_list = [&engineType](auto &list) {
+                for (auto const &e : list)
+                {
+                    if (engineType == e)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            };
+            return is_in_list(alwaysSupportsUpfrontParsing) ||
+                is_in_list(supportsUpfrontParsingInRandomAccessMode) ||
+                is_in_list(nonPersistentEngines);
         }
 
-        // set engine type
-        bool isStreaming = false;
+        bool
+        supportsUpfrontParsing(Access access, std::string const &engineType)
         {
-            m_IO.SetEngine(m_engineType);
-            auto it = streamingEngines.find(m_engineType);
-            if (it != streamingEngines.end())
+            for (auto const &e : alwaysSupportsUpfrontParsing)
             {
-                isStreaming = true;
-                optimizeAttributesStreaming =
-                    // Optimizing attributes in streaming mode is not needed in
-                    // the variable-based ADIOS2 schema
-                    schema() == SupportedSchema::s_0000_00_00 &&
-                    // Also, it should only be done when truly streaming, not
-                    // when using a disk-based engine that behaves like a
-                    // streaming engine (otherwise attributes might vanish)
-                    diskStreamingEngines.find(m_engineType) ==
-                        diskStreamingEngines.end();
-                streamStatus = StreamStatus::OutsideOfStep;
+                if (e == engineType)
+                {
+                    return true;
+                }
+            }
+            if (access != Access::READ_LINEAR)
+            {
+                for (auto const &e : supportsUpfrontParsingInRandomAccessMode)
+                {
+                    if (e == engineType)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        enum class PerstepParsing
+        {
+            Supported,
+            Unsupported,
+            Required
+        };
+
+        PerstepParsing
+        supportsPerstepParsing(Access access, std::string const &engineType)
+        {
+            // required in all streaming engines
+            for (auto const &e : nonPersistentEngines)
+            {
+                if (engineType == e)
+                {
+                    return PerstepParsing::Required;
+                }
+            }
+            // supported in file engines in READ_LINEAR mode
+            if (access != Access::READ_RANDOM_ACCESS)
+            {
+                return PerstepParsing::Supported;
+            }
+
+            return PerstepParsing::Unsupported;
+        }
+
+        bool nonpersistentEngine(std::string const &engineType)
+        {
+            for (auto &e : nonPersistentEngines)
+            {
+                if (e == engineType)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool
+        useStepsInWriting(SupportedSchema schema, std::string const &engineType)
+        {
+            if (engineType == "bp5")
+            {
+                /*
+                 * BP5 does not require steps when reading, but it requires
+                 * them when writing.
+                 */
+                return true;
+            }
+            switch (supportsPerstepParsing(Access::CREATE, engineType))
+            {
+            case PerstepParsing::Required:
+                return true;
+            case PerstepParsing::Supported:
+                switch (schema)
+                {
+                case SupportedSchema::s_0000_00_00:
+                    return false;
+                case SupportedSchema::s_2021_02_09:
+                    return true;
+                }
+                break;
+            case PerstepParsing::Unsupported:
+                return false;
+            }
+            return false; // unreachable
+        }
+    } // namespace
+
+    void BufferedActions::configure_IO_Read(
+        std::optional<bool> userSpecifiedUsesteps)
+    {
+        if (userSpecifiedUsesteps.has_value() &&
+            m_impl->m_handler->m_backendAccess != Access::READ_WRITE)
+        {
+            std::cerr << "Explicitly specified `adios2.usesteps` in Read mode. "
+                         "Usage of steps will be determined by what is found "
+                         "in the file being read."
+                      << std::endl;
+        }
+
+        bool upfrontParsing = supportsUpfrontParsing(
+            m_impl->m_handler->m_backendAccess, m_engineType);
+        PerstepParsing perstepParsing = supportsPerstepParsing(
+            m_impl->m_handler->m_backendAccess, m_engineType);
+
+        switch (m_impl->m_handler->m_backendAccess)
+        {
+        case Access::READ_LINEAR:
+            switch (perstepParsing)
+            {
+            case PerstepParsing::Supported:
+            case PerstepParsing::Required:
+                // all is fine, we can go forward with READ_LINEAR mode
+                /*
+                 * We don't know yet if per-step parsing will be fine since the
+                 * engine is not opened yet.
+                 * In non-persistent (streaming) engines, per-step parsing is
+                 * always fine and always required.
+                 */
+                streamStatus = nonpersistentEngine(m_engineType)
+                    ? StreamStatus::OutsideOfStep
+                    : StreamStatus::Undecided;
+                parsePreference = ParsePreference::PerStep;
+                m_IO.SetParameter("StreamReader", "On");
+                break;
+            case PerstepParsing::Unsupported:
+                streamStatus = StreamStatus::NoStream;
+                parsePreference = ParsePreference::UpFront;
+                /*
+                 * Note that in BP4 with linear access mode, we set the
+                 * StreamReader option, disabling upfrontParsing capability.
+                 * So, this branch is only taken by niche engines, such as
+                 * BP3 or HDF5, or by BP5 with old ADIOS2 schema and normal read
+                 * mode. Need to fall back to random access parsing.
+                 */
+#if HAS_ADIOS_2_8
+                m_mode = adios2::Mode::ReadRandomAccess;
+#endif
+                break;
+            }
+            break;
+        case Access::READ_ONLY:
+        case Access::READ_WRITE:
+            /*
+             * Prefer up-front parsing, but try to fallback to per-step parsing
+             * if possible.
+             */
+            if (upfrontParsing == nonpersistentEngine(m_engineType))
+            {
+                throw error::Internal(
+                    "Internal control flow error: With access types "
+                    "READ_ONLY/READ_WRITE, support for upfront parsing is "
+                    "equivalent to the chosen engine being file-based.");
+            }
+            if (upfrontParsing)
+            {
+                streamStatus = StreamStatus::NoStream;
+                parsePreference = ParsePreference::UpFront;
             }
             else
             {
-                it = fileEngines.find(m_engineType);
-                if (it != fileEngines.end())
-                {
-                    switch (m_mode)
-                    {
-                    case adios2::Mode::Read:
-                        /*
-                         * File engines, read mode:
-                         * Use of steps is dictated by what is detected in the
-                         * file being read.
-                         */
-                        streamStatus = StreamStatus::Undecided;
-                        delayOpeningTheFirstStep = true;
-                        break;
-                    case adios2::Mode::Write:
-                    case adios2::Mode::Append:
-                        /*
-                         * File engines, write mode:
-                         * Default for old layout is no steps.
-                         * Default for new layout is to use steps.
-                         */
-                        switch (schema())
-                        {
-                        case SupportedSchema::s_0000_00_00:
-                            streamStatus = StreamStatus::NoStream;
-                            break;
-                        case SupportedSchema::s_2021_02_09:
-                            streamStatus = StreamStatus::OutsideOfStep;
-                            break;
-                        }
-                        break;
-                    default:
-                        throw std::runtime_error("Unreachable!");
-                    }
-                    optimizeAttributesStreaming = false;
-                }
-                else
-                {
-                    throw std::runtime_error(
-                        "[ADIOS2IOHandler] Unknown engine type. Please choose "
-                        "one out of [sst, staging, bp4, bp3, hdf5, file, "
-                        "filestream, null]");
-                    // not listing unsupported engines
-                }
+                /*
+                 * Scenario: A step-only workflow was used (i.e. a streaming
+                 * engine), but Access::READ_ONLY was specified.
+                 * Fall back to streaming read mode.
+                 */
+                m_mode = adios2::Mode::Read;
+                parsePreference = ParsePreference::PerStep;
+                streamStatus = StreamStatus::OutsideOfStep;
             }
+            break;
+        default:
+            VERIFY_ALWAYS(
+                access::writeOnly(m_impl->m_handler->m_backendAccess),
+                "Internal control flow error: Must set parse preference for "
+                "any read mode.");
+        }
+    }
+
+    void BufferedActions::configure_IO_Write(
+        std::optional<bool> userSpecifiedUsesteps)
+    {
+        optimizeAttributesStreaming =
+            // Optimizing attributes in streaming mode is not needed in
+            // the variable-based ADIOS2 schema
+            schema() == SupportedSchema::s_0000_00_00 &&
+            // Also, it should only be done when truly streaming, not
+            // when using a disk-based engine that behaves like a
+            // streaming engine (otherwise attributes might vanish)
+            nonpersistentEngine(m_engineType);
+
+        bool useSteps = useStepsInWriting(schema(), m_engineType);
+        if (userSpecifiedUsesteps.has_value())
+        {
+            useSteps = userSpecifiedUsesteps.value();
+            if (!useSteps && nonpersistentEngine(m_engineType))
+            {
+                throw error::WrongAPIUsage(
+                    "Cannot switch off IO steps for non-persistent stream "
+                    "engines in ADIOS2.");
+            }
+        }
+
+        streamStatus =
+            useSteps ? StreamStatus::OutsideOfStep : StreamStatus::NoStream;
+    }
+
+    void BufferedActions::configure_IO(ADIOS2IOHandlerImpl &impl)
+    {
+        // step/variable-based iteration encoding requires the new schema
+        // but new schema is available only in ADIOS2 >= v2.8
+        // use old schema to support at least one single iteration otherwise
+        if (!m_impl->m_schema.has_value())
+        {
+            switch (m_impl->m_iterationEncoding)
+            {
+            case IterationEncoding::variableBased:
+                m_impl->m_schema = ADIOS2Schema::schema_2021_02_09;
+                break;
+            case IterationEncoding::groupBased:
+            case IterationEncoding::fileBased:
+                m_impl->m_schema = ADIOS2Schema::schema_0000_00_00;
+                break;
+            }
+        }
+
+        // set engine type
+        {
+            m_IO.SetEngine(m_engineType);
+        }
+
+        if (!supportedEngine(m_engineType))
+        {
+            std::stringstream sstream;
+            sstream
+                << "User-selected ADIOS2 engine '" << m_engineType
+                << "' is not recognized by the openPMD-api. Select one of: '";
+            bool first_entry = true;
+            auto add_entries = [&first_entry, &sstream](auto &list) {
+                for (auto const &e : list)
+                {
+                    if (first_entry)
+                    {
+                        sstream << e;
+                        first_entry = false;
+                    }
+                    else
+                    {
+                        sstream << ", " << e;
+                    }
+                }
+            };
+            add_entries(alwaysSupportsUpfrontParsing);
+            add_entries(supportsUpfrontParsingInRandomAccessMode);
+            add_entries(nonPersistentEngines);
+            sstream << "'." << std::endl;
+            throw error::WrongAPIUsage(sstream.str());
         }
 
         // set engine parameters
         std::set<std::string> alreadyConfigured;
+        std::optional<bool> userSpecifiedUsesteps;
         auto engineConfig = impl.config(ADIOS2Defaults::str_engine);
         if (!engineConfig.json().is_null())
         {
@@ -2536,14 +2894,8 @@ namespace detail
             if (!_useAdiosSteps.json().is_null() &&
                 m_mode != adios2::Mode::Read)
             {
-                bool tmp = _useAdiosSteps.json();
-                if (isStreaming && !bool(tmp))
-                {
-                    throw std::runtime_error(
-                        "Cannot switch off steps for streaming engines.");
-                }
-                streamStatus = bool(tmp) ? StreamStatus::OutsideOfStep
-                                         : StreamStatus::NoStream;
+                userSpecifiedUsesteps =
+                    std::make_optional(_useAdiosSteps.json().get<bool>());
             }
 
             if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
@@ -2582,6 +2934,36 @@ namespace detail
             }
             }
         }
+
+        switch (m_impl->m_handler->m_backendAccess)
+        {
+        case Access::READ_LINEAR:
+        case Access::READ_ONLY:
+            configure_IO_Read(userSpecifiedUsesteps);
+            break;
+        case Access::READ_WRITE:
+            if (
+#if HAS_ADIOS_2_8
+                m_mode == adios2::Mode::Read ||
+                m_mode == adios2::Mode::ReadRandomAccess
+#else
+                m_mode == adios2::Mode::Read
+#endif
+            )
+            {
+                configure_IO_Read(userSpecifiedUsesteps);
+            }
+            else
+            {
+                configure_IO_Write(userSpecifiedUsesteps);
+            }
+            break;
+        case Access::APPEND:
+        case Access::CREATE:
+            configure_IO_Write(userSpecifiedUsesteps);
+            break;
+        }
+
         auto notYetConfigured = [&alreadyConfigured](std::string const &param) {
             auto it = alreadyConfigured.find(
                 auxiliary::lowerCase(std::string(param)));
@@ -2713,48 +3095,80 @@ namespace detail
                 // usesSteps attribute only written upon ::advance()
                 // this makes sure that the attribute is only put in case
                 // the streaming API was used.
-                m_IO.DefineAttribute<ADIOS2Schema::schema_t>(
-                    ADIOS2Defaults::str_adios2Schema, m_impl->m_schema);
                 m_engine = std::make_optional(
                     adios2::Engine(m_IO.Open(m_file, tempMode)));
                 break;
             }
+#if HAS_ADIOS_2_8
+            case adios2::Mode::ReadRandomAccess:
+#endif
             case adios2::Mode::Read: {
                 m_engine = std::make_optional(
                     adios2::Engine(m_IO.Open(m_file, m_mode)));
-                // decide attribute layout
-                // in streaming mode, this needs to be done after opening
-                // a step
-                // in file-based mode, we do it before
-                auto layoutVersion = [IO{m_IO}]() mutable {
-                    auto attr = IO.InquireAttribute<ADIOS2Schema::schema_t>(
+                /*
+                 * First round: decide attribute layout.
+                 * This MUST occur before the `switch(streamStatus)` construct
+                 * since the streamStatus might be changed after taking a look
+                 * at the used schema.
+                 */
+                bool openedANewStep = false;
+                {
+                    if (!supportsUpfrontParsing(
+                            m_impl->m_handler->m_backendAccess, m_engineType))
+                    {
+                        /*
+                         * In BP5 with Linear read mode, we now need to
+                         * tentatively open the first IO step.
+                         * Otherwise we don't see the schema attribute.
+                         * This branch is also taken by Streaming engines.
+                         */
+                        if (m_engine->BeginStep() != adios2::StepStatus::OK)
+                        {
+                            throw std::runtime_error(
+                                "[ADIOS2] Unexpected step status when "
+                                "opening file/stream.");
+                        }
+                        openedANewStep = true;
+                    }
+                    auto attr = m_IO.InquireAttribute<ADIOS2Schema::schema_t>(
                         ADIOS2Defaults::str_adios2Schema);
                     if (!attr)
                     {
-                        return ADIOS2Schema::schema_0000_00_00;
+                        m_impl->m_schema = ADIOS2Schema::schema_0000_00_00;
                     }
                     else
                     {
-                        return attr.Data()[0];
+                        m_impl->m_schema = attr.Data()[0];
                     }
                 };
-                // decide streaming mode
+
+                /*
+                 * Second round: Decide the streamStatus.
+                 */
                 switch (streamStatus)
                 {
                 case StreamStatus::Undecided: {
-                    m_impl->m_schema = layoutVersion();
                     auto attr = m_IO.InquireAttribute<bool_representation>(
                         ADIOS2Defaults::str_usesstepsAttribute);
                     if (attr && attr.Data()[0] == 1)
                     {
-                        if (delayOpeningTheFirstStep)
+                        if (parsePreference == ParsePreference::UpFront)
                         {
+                            if (openedANewStep)
+                            {
+                                throw error::Internal(
+                                    "Logic error in ADIOS2 backend! No need to "
+                                    "indiscriminately open a step before doing "
+                                    "anything in an engine that supports "
+                                    "up-front parsing.");
+                            }
                             streamStatus = StreamStatus::Parsing;
                         }
                         else
                         {
-                            if (m_engine.value().BeginStep() !=
-                                adios2::StepStatus::OK)
+                            if (!openedANewStep &&
+                                m_engine.value().BeginStep() !=
+                                    adios2::StepStatus::OK)
                             {
                                 throw std::runtime_error(
                                     "[ADIOS2] Unexpected step status when "
@@ -2765,23 +3179,37 @@ namespace detail
                     }
                     else
                     {
+                        /*
+                         * If openedANewStep is true, then the file consists
+                         * of one large step, we just leave it open.
+                         */
                         streamStatus = StreamStatus::NoStream;
                     }
                     break;
                 }
+                case StreamStatus::NoStream:
+                    // using random-access mode
+                case StreamStatus::DuringStep:
+                    // IO step might have sneakily been opened
+                    // by setLayoutVersion(), because otherwise we don't see
+                    // the schema attribute
+                    break;
                 case StreamStatus::OutsideOfStep:
-                    if (m_engine.value().BeginStep() != adios2::StepStatus::OK)
+                    if (openedANewStep)
                     {
-                        throw std::runtime_error(
-                            "[ADIOS2] Unexpected step status when "
-                            "opening file/stream.");
+                        streamStatus = StreamStatus::DuringStep;
                     }
-                    m_impl->m_schema = layoutVersion();
-                    streamStatus = StreamStatus::DuringStep;
+                    else
+                    {
+                        throw error::Internal(
+                            "Control flow error: Step should have been opened "
+                            "before this point.");
+                    }
                     break;
                 default:
                     throw std::runtime_error("[ADIOS2] Control flow error!");
                 }
+
                 if (attributeLayout() == AttributeLayout::ByAdiosVariables)
                 {
                     preloadAttributes.preloadAttributes(m_IO, m_engine.value());
@@ -2844,11 +3272,52 @@ namespace detail
             std::unique_ptr<BufferedAction>(new _BA(std::forward<BA>(ba))));
     }
 
+    template <typename... Args>
+    void BufferedActions::flush(Args &&...args)
+    {
+        try
+        {
+            flush_impl(std::forward<Args>(args)...);
+        }
+        catch (error::ReadError const &)
+        {
+            /*
+             * We need to take actions out of the buffer, since an exception
+             * should reset everything from the current IOHandler->flush() call.
+             * However, we cannot simply clear the buffer, since tasks may have
+             * been enqueued to ADIOS2 already and we cannot undo that.
+             * So, we need to keep the memory alive for the benefit of ADIOS2.
+             * Luckily, we have m_alreadyEnqueued for exactly that purpose.
+             */
+            for (auto &task : m_buffer)
+            {
+                m_alreadyEnqueued.emplace_back(std::move(task));
+            }
+            m_buffer.clear();
+
+            // m_attributeWrites and m_attributeReads are for implementing the
+            // 2021 ADIOS2 schema which will go anyway.
+            // So, this ugliness here is temporary.
+            for (auto &task : m_attributeWrites)
+            {
+                m_alreadyEnqueued.emplace_back(std::unique_ptr<BufferedAction>{
+                    new BufferedAttributeWrite{std::move(task.second)}});
+            }
+            m_attributeWrites.clear();
+            /*
+             * An AttributeRead is not a deferred action, so we can clear it
+             * immediately.
+             */
+            m_attributeReads.clear();
+            throw;
+        }
+    }
+
     template <typename F>
-    void BufferedActions::flush(
+    void BufferedActions::flush_impl(
         ADIOS2FlushParams flushParams,
         F &&performPutGets,
-        bool writeAttributes,
+        bool writeLatePuts,
         bool flushUnconditionally)
     {
         auto level = flushParams.level;
@@ -2868,7 +3337,8 @@ namespace detail
         if (streamStatus == StreamStatus::OutsideOfStep)
         {
             if (m_buffer.empty() &&
-                (!writeAttributes || m_attributeWrites.empty()) &&
+                (!writeLatePuts ||
+                 (m_attributeWrites.empty() && m_uniquePtrPuts.empty())) &&
                 m_attributeReads.empty())
             {
                 if (flushUnconditionally)
@@ -2887,15 +3357,31 @@ namespace detail
             ba->run(*this);
         }
 
-        if (writeAttributes)
+        if (!initializedDefaults)
+        {
+            m_IO.DefineAttribute<ADIOS2Schema::schema_t>(
+                ADIOS2Defaults::str_adios2Schema, m_impl->m_schema.value());
+            initializedDefaults = true;
+        }
+
+        if (writeLatePuts)
         {
             for (auto &pair : m_attributeWrites)
             {
                 pair.second.run(*this);
             }
+            for (auto &entry : m_uniquePtrPuts)
+            {
+                entry.run(*this);
+            }
         }
 
+#if HAS_ADIOS_2_8
+        if (this->m_mode == adios2::Mode::Read ||
+            this->m_mode == adios2::Mode::ReadRandomAccess)
+#else
         if (this->m_mode == adios2::Mode::Read)
+#endif
         {
             level = FlushLevel::UserFlush;
         }
@@ -2907,9 +3393,10 @@ namespace detail
             m_updateSpans.clear();
             m_buffer.clear();
             m_alreadyEnqueued.clear();
-            if (writeAttributes)
+            if (writeLatePuts)
             {
                 m_attributeWrites.clear();
+                m_uniquePtrPuts.clear();
             }
 
             for (BufferedAttributeRead &task : m_attributeReads)
@@ -2931,24 +3418,19 @@ namespace detail
             {
                 m_alreadyEnqueued.emplace_back(std::move(task));
             }
-            if (writeAttributes)
+            if (writeLatePuts)
             {
-                for (auto &task : m_attributeWrites)
-                {
-                    m_alreadyEnqueued.emplace_back(
-                        std::unique_ptr<BufferedAction>{
-                            new BufferedAttributeWrite{
-                                std::move(task.second)}});
-                }
-                m_attributeWrites.clear();
+                throw error::Internal(
+                    "ADIOS2 backend: Flush of late writes was requested at the "
+                    "wrong time.");
             }
             m_buffer.clear();
             break;
         }
     }
 
-    void
-    BufferedActions::flush(ADIOS2FlushParams flushParams, bool writeAttributes)
+    void BufferedActions::flush_impl(
+        ADIOS2FlushParams flushParams, bool writeLatePuts)
     {
         auto decideFlushAPICall = [this, flushTarget = flushParams.flushTarget](
                                       adios2::Engine &engine) {
@@ -2971,7 +3453,21 @@ namespace detail
 
             if (performDataWrite)
             {
+                /*
+                 * Deliberately don't write buffered attributes now since
+                 * readers won't be able to see them before EndStep anyway,
+                 * so there's no use. In fact, writing them now is harmful
+                 * because they can't be overwritten after this anymore in the
+                 * current step.
+                 * Draining the uniquePtrPuts now is good however, since we
+                 * should use this chance to free the memory.
+                 */
+                for (auto &entry : m_uniquePtrPuts)
+                {
+                    entry.run(*this);
+                }
                 engine.PerformDataWrite();
+                m_uniquePtrPuts.clear();
             }
             else
             {
@@ -2984,7 +3480,7 @@ namespace detail
 #endif
         };
 
-        flush(
+        flush_impl(
             flushParams,
             [decideFlushAPICall = std::move(decideFlushAPICall)](
                 BufferedActions &ba, adios2::Engine &eng) {
@@ -2995,6 +3491,9 @@ namespace detail
                     decideFlushAPICall(eng);
                     break;
                 case adios2::Mode::Read:
+#if HAS_ADIOS_2_8
+                case adios2::Mode::ReadRandomAccess:
+#endif
                     eng.PerformGets();
                     break;
                 default:
@@ -3002,7 +3501,7 @@ namespace detail
                     break;
                 }
             },
-            writeAttributes,
+            writeLatePuts,
             /* flushUnconditionally = */ false);
     }
 
@@ -3017,9 +3516,17 @@ namespace detail
         // sic! no else
         if (streamStatus == StreamStatus::NoStream)
         {
-            m_IO.DefineAttribute<bool_representation>(
-                ADIOS2Defaults::str_usesstepsAttribute, 0);
-            flush({FlushLevel::UserFlush}, /* writeAttributes = */ false);
+            if ((m_mode == adios2::Mode::Write ||
+                 m_mode == adios2::Mode::Append) &&
+                !m_IO.InquireAttribute<bool_representation>(
+                    ADIOS2Defaults::str_usesstepsAttribute))
+            {
+                m_IO.DefineAttribute<bool_representation>(
+                    ADIOS2Defaults::str_usesstepsAttribute, 0);
+            }
+            flush(
+                ADIOS2FlushParams{FlushLevel::UserFlush},
+                /* writeLatePuts = */ false);
             return AdvanceStatus::RANDOMACCESS;
         }
 
@@ -3031,7 +3538,10 @@ namespace detail
          * The usessteps tag should only be set when the Series is *logically*
          * using steps.
          */
-        if (calledExplicitly)
+        if (calledExplicitly &&
+            (m_mode == adios2::Mode::Write || m_mode == adios2::Mode::Append) &&
+            !m_IO.InquireAttribute<bool_representation>(
+                ADIOS2Defaults::str_usesstepsAttribute))
         {
             m_IO.DefineAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute, 1);
@@ -3059,9 +3569,9 @@ namespace detail
                 }
             }
             flush(
-                {FlushLevel::UserFlush},
+                ADIOS2FlushParams{FlushLevel::UserFlush},
                 [](BufferedActions &, adios2::Engine &eng) { eng.EndStep(); },
-                /* writeAttributes = */ true,
+                /* writeLatePuts = */ true,
                 /* flushUnconditionally = */ true);
             uncommittedAttributes.clear();
             m_updateSpans.clear();

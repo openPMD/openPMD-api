@@ -22,48 +22,49 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/backend/ParsePreference.hpp"
 
 #include <deque>
 #include <iostream>
 #include <optional>
+#include <set>
 
 namespace openPMD
 {
-/**
- * @brief Subclass of Iteration that knows its own index withing the containing
- *        Series.
- */
-class IndexedIteration : public Iteration
-{
-    friend class SeriesIterator;
-
-public:
-    using iterations_t = decltype(internal::SeriesData::iterations);
-    using index_t = iterations_t::key_type;
-    index_t const iterationIndex;
-
-private:
-    template <typename Iteration_t>
-    IndexedIteration(Iteration_t &&it, index_t index)
-        : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
-    {}
-};
-
 class SeriesIterator
 {
     using iteration_index_t = IndexedIteration::index_t;
 
     using maybe_series_t = std::optional<Series>;
 
-    maybe_series_t m_series;
-    std::deque<iteration_index_t> m_iterationsInCurrentStep;
-    uint64_t m_currentIteration{};
+    struct SharedData
+    {
+        SharedData() = default;
+        SharedData(SharedData const &) = delete;
+        SharedData(SharedData &&) = delete;
+        SharedData &operator=(SharedData const &) = delete;
+        SharedData &operator=(SharedData &&) = delete;
+
+        maybe_series_t series;
+        std::deque<iteration_index_t> iterationsInCurrentStep;
+        uint64_t currentIteration{};
+        std::optional<internal::ParsePreference> parsePreference;
+        /*
+         * Necessary because in the old ADIOS2 schema, old iterations' metadata
+         * will leak into new steps, making the frontend think that the groups
+         * are still there and the iterations can be parsed again.
+         */
+        std::set<Iteration::IterationIndex_t> ignoreIterations;
+    };
+
+    std::shared_ptr<SharedData> m_data;
 
 public:
     //! construct the end() iterator
     explicit SeriesIterator();
 
-    SeriesIterator(Series);
+    SeriesIterator(
+        Series, std::optional<internal::ParsePreference> parsePreference);
 
     SeriesIterator &operator++();
 
@@ -78,7 +79,8 @@ public:
 private:
     inline bool setCurrentIteration()
     {
-        if (m_iterationsInCurrentStep.empty())
+        auto &data = *m_data;
+        if (data.iterationsInCurrentStep.empty())
         {
             std::cerr << "[ReadIterations] Encountered a step without "
                          "iterations. Closing the Series."
@@ -86,27 +88,42 @@ private:
             *this = end();
             return false;
         }
-        m_currentIteration = *m_iterationsInCurrentStep.begin();
+        data.currentIteration = *data.iterationsInCurrentStep.begin();
         return true;
     }
 
     inline std::optional<uint64_t> peekCurrentIteration()
     {
-        if (m_iterationsInCurrentStep.empty())
+        auto &data = *m_data;
+        if (data.iterationsInCurrentStep.empty())
         {
             return std::nullopt;
         }
         else
         {
-            return {*m_iterationsInCurrentStep.begin()};
+            return {*data.iterationsInCurrentStep.begin()};
         }
     }
 
     std::optional<SeriesIterator *> nextIterationInStep();
 
-    std::optional<SeriesIterator *> nextStep();
+    /*
+     * When a step cannot successfully be opened, the method nextStep() calls
+     * itself again recursively.
+     * (Recursion massively simplifies the logic here, and it only happens
+     * in case of error.)
+     * After successfully beginning a step, this methods needs to remember, how
+     * many broken steps have been skipped. In case the Series does not use
+     * the /data/snapshot attribute, this helps figuring out which iteration
+     * is now active. Hence, recursion_depth.
+     */
+    std::optional<SeriesIterator *> nextStep(size_t recursion_depth);
 
     std::optional<SeriesIterator *> loopBody();
+
+    void deactivateDeadIteration(iteration_index_t);
+
+    void initSeriesInLinearReadMode();
 };
 
 /**
@@ -134,8 +151,13 @@ private:
     using iterator_t = SeriesIterator;
 
     Series m_series;
+    std::optional<SeriesIterator> alreadyOpened;
+    std::optional<internal::ParsePreference> m_parsePreference;
 
-    ReadIterations(Series);
+    ReadIterations(
+        Series,
+        Access,
+        std::optional<internal::ParsePreference> parsePreference);
 
 public:
     iterator_t begin();

@@ -61,12 +61,17 @@ if __name__ == "__main__":
     #     print("")
 
     all_data = E_x.load_chunk()
-    series.flush()
+
+    # The iteration can be closed in order to help free up resources.
+    # The iteration's content will be flushed automatically.
+    # An iteration once closed cannot (yet) be reopened.
+    i.close()
     print("Full E/x is of shape {0} and starts with:".format(all_data.shape))
     print(all_data[0, 0, :5])
 
-    # The files in 'series' are still open until the object is destroyed, on
-    # which it cleanly flushes and closes all open file handles.
-    # One can delete the object explicitly (or let it run out of scope) to
-    # trigger this.
-    del series
+    # The files in 'series' are still open until the series is closed, at which
+    # time it cleanly flushes and closes all open file handles.
+    # One can close the object explicitly to trigger this.
+    # Alternatively, this will automatically happen once the garbage collector
+    # claims (every copy of) the series object.
+    series.close()

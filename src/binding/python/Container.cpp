@@ -33,6 +33,7 @@
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Record.hpp"
+#include "openPMD/Series.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -109,8 +110,10 @@ bind_container(py::handle scope, std::string const &name, Args &&...args)
     cl.def(
         "__getitem__",
         [](Map &m, KeyType const &k) -> MappedType & { return m[k]; },
-        // ref + keepalive
-        py::return_value_policy::reference_internal);
+        // copy + keepalive
+        // All objects in the openPMD object model are handles, so using a copy
+        // is safer and still performant.
+        py::return_value_policy::copy);
 
     // Assignment provided only if the type is copyable
     py::detail::map_assignment<Map, Class_>(cl);
@@ -135,7 +138,7 @@ bind_container(py::handle scope, std::string const &name, Args &&...args)
 }
 } // namespace detail
 
-using PyIterationContainer = Container<Iteration, uint64_t>;
+using PyIterationContainer = Series::IterationsContainer_t;
 using PyMeshContainer = Container<Mesh>;
 using PyPartContainer = Container<ParticleSpecies>;
 using PyPatchContainer = Container<ParticlePatches>;

@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build & Install
       run: |
         python3.exe -m pip install --upgrade pip
@@ -28,13 +28,35 @@ jobs:
 # add before install, and fix Python path:
 # ctest --test-dir build -C Debug --output-on-failure
 
+  build_win_msvc_pip:
+    name: MSVC w/o MPI via pip
+    runs-on: windows-latest
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build & Install
+      run: |
+        python3.exe -m pip install --upgrade pip setuptools wheel
+        python3.exe -m pip install --upgrade cmake
+        python3.exe -m pip install --upgrade numpy
+
+        python3.exe -m pip wheel .
+        if(!$?) { Exit $LASTEXITCODE }
+        python3.exe -m pip install openPMD_api-0.16.0.dev0-cp39-cp39-win_amd64.whl
+        if(!$?) { Exit $LASTEXITCODE }
+
+        python3.exe -c "import openpmd_api as api; print(api.variants)"
+        if(!$?) { Exit $LASTEXITCODE }
+
+        python3.exe -m openpmd_api.ls --help
+        if(!$?) { Exit $LASTEXITCODE }
 
   build_win_clang:
     name: Clang w/o MPI
     runs-on: windows-2019
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: seanmiddleditch/gha-setup-ninja@master
     - name: Build & Install
       shell: cmd

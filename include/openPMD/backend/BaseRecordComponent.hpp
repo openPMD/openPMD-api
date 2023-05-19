@@ -24,6 +24,8 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
+#include <optional>
+
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
 #define OPENPMD_protected protected:
@@ -39,7 +41,7 @@ namespace internal
         /**
          * The type and extent of the dataset defined by this component.
          */
-        Dataset m_dataset{Datatype::UNDEFINED, {}};
+        std::optional<Dataset> m_dataset;
         /**
          * True if this is defined as a constant record component as specified
          * in the openPMD standard.

@@ -46,16 +46,13 @@ Record &Record::setUnitDimension(std::map<UnitDimension, double> const &udim)
 void Record::flush_impl(
     std::string const &name, internal::FlushParams const &flushParams)
 {
-    switch (IOHandler()->m_frontendAccess)
+    if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-    case Access::READ_ONLY: {
         for (auto &comp : *this)
             comp.second.flush(comp.first, flushParams);
-        break;
     }
-    case Access::READ_WRITE:
-    case Access::CREATE:
-    case Access::APPEND: {
+    else
+    {
         if (!written())
         {
             if (scalar())
@@ -99,8 +96,6 @@ void Record::flush_impl(
         }
 
         flushAttributes(flushParams);
-        break;
-    }
     }
 }
 
@@ -109,7 +104,18 @@ void Record::read()
     if (scalar())
     {
         /* using operator[] will incorrectly update parent */
-        this->at(RecordComponent::SCALAR).read();
+        auto &scalarComponent = this->at(RecordComponent::SCALAR);
+        try
+        {
+            scalarComponent.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read scalar record component and will skip it "
+                         "due to read error:\n"
+                      << err.what() << std::endl;
+            this->container().erase(RecordComponent::SCALAR);
+        }
     }
     else
     {
@@ -124,7 +130,17 @@ void Record::read()
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             rc.get().m_isConstant = true;
-            rc.read();
+            try
+            {
+                rc.read();
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read record component '" << component
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+                this->container().erase(component);
+            }
         }
 
         Parameter<Operation::LIST_DATASETS> dList;
@@ -141,7 +157,17 @@ void Record::read()
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;
-            rc.read();
+            try
+            {
+                rc.read();
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read record component '" << component
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+                this->container().erase(component);
+            }
         }
     }
 

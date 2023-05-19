@@ -24,6 +24,7 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
 
 #if openPMD_HAVE_MPI
@@ -53,26 +54,115 @@ struct openPMD_PyMPICommObject
 using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 #endif
 
+struct SeriesIteratorPythonAdaptor : SeriesIterator
+{
+    SeriesIteratorPythonAdaptor(SeriesIterator it)
+        : SeriesIterator(std::move(it))
+    {}
+
+    /*
+     * Python iterators are weird and call `__next__()` already for getting the
+     * first element.
+     * In that case, no `operator++()` must be called...
+     */
+    bool first_iteration = true;
+};
+
 void init_Series(py::module &m)
 {
+    py::class_<WriteIterations>(m, "WriteIterations", R"END(
+Writing side of the streaming API.
 
-    using iterations_key_t = decltype(Series::iterations)::key_type;
-    py::class_<WriteIterations>(m, "WriteIterations")
+Create instance via Series.writeIterations().
+Restricted Container of Iterations, designed to allow reading any kind
+of Series, streaming and non-streaming alike.
+Calling Iteration.close() manually before opening the next iteration is
+encouraged and will implicitly flush all deferred IO actions.
+Otherwise, Iteration.close() will be implicitly called upon
+opening the next iteration or upon destruction.
+Since this is designed for streaming mode, reopening an iteration is
+not possible once it has been closed.
+    )END")
         .def(
             "__getitem__",
-            [](WriteIterations writeIterations, iterations_key_t key) {
+            [](WriteIterations writeIterations, Series::IterationIndex_t key) {
+                auto lastIteration = writeIterations.currentIteration();
+                if (lastIteration.has_value() &&
+                    lastIteration.value().iterationIndex != key)
+                {
+                    // this must happen under the GIL
+                    lastIteration.value().close();
+                }
+                py::gil_scoped_release release;
                 return writeIterations[key];
             },
-            // keep container alive while iterator exists
-            py::keep_alive<0, 1>());
+            // copy + keepalive
+            py::return_value_policy::copy)
+        .def(
+            "current_iteration",
+            &WriteIterations::currentIteration,
+            "Return the iteration that is currently being written to, if it "
+            "exists.");
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
-    py::class_<ReadIterations>(m, "ReadIterations")
+
+    py::class_<SeriesIteratorPythonAdaptor>(m, "SeriesIterator")
+        .def(
+            "__next__",
+            [](SeriesIteratorPythonAdaptor &iterator) {
+                if (iterator == SeriesIterator::end())
+                {
+                    throw py::stop_iteration();
+                }
+                /*
+                 * Closing the iteration must happen under the GIL lock since
+                 * Python buffers might be accessed
+                 */
+                if (!iterator.first_iteration)
+                {
+                    if (!(*iterator).closed())
+                    {
+                        (*iterator).close();
+                    }
+                    py::gil_scoped_release release;
+                    ++iterator;
+                }
+                iterator.first_iteration = false;
+                if (iterator == SeriesIterator::end())
+                {
+                    throw py::stop_iteration();
+                }
+                else
+                {
+                    return *iterator;
+                }
+            }
+
+        );
+
+    py::class_<ReadIterations>(m, "ReadIterations", R"END(
+Reading side of the streaming API.
+
+Create instance via Series.readIterations().
+For use in a foreach loop over iterations.
+Designed to allow reading any kind of Series, streaming and non-streaming alike.
+Calling Iteration.close() manually before opening the next iteration is
+encouraged and will implicitly flush all deferred IO actions.
+Otherwise, Iteration.close() will be implicitly called upon
+SeriesIterator.__next__(), i.e. upon going to the next iteration in
+the foreach loop.
+Since this is designed for streaming mode, reopening an iteration is
+not possible once it has been closed.
+    )END")
         .def(
             "__iter__",
             [](ReadIterations &readIterations) {
-                return py::make_iterator(
-                    readIterations.begin(), readIterations.end());
+                // Simple iterator implementation:
+                // But we need to release the GIL inside
+                // SeriesIterator::operator++, so manually it is
+                // return py::make_iterator(
+                //     readIterations.begin(), readIterations.end());
+                return SeriesIteratorPythonAdaptor(readIterations.begin());
             },
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
@@ -80,7 +170,12 @@ void init_Series(py::module &m)
     py::class_<Series, Attributable>(m, "Series")
 
         .def(
-            py::init<std::string const &, Access, std::string const &>(),
+            py::init([](std::string const &filepath,
+                        Access at,
+                        std::string const &options) {
+                py::gil_scoped_release release;
+                return new Series(filepath, at, options);
+            }),
             py::arg("filepath"),
             py::arg("access"),
             py::arg("options") = "{}")
@@ -147,6 +242,7 @@ void init_Series(py::module &m)
                         "(Mismatched MPI at compile vs. runtime?)");
                 }
 
+                py::gil_scoped_release release;
                 return new Series(filepath, at, *mpiCommPtr, options);
             }),
             py::arg("filepath"),
@@ -154,6 +250,15 @@ void init_Series(py::module &m)
             py::arg("mpi_communicator"),
             py::arg("options") = "{}")
 #endif
+        .def("__bool__", &Series::operator bool)
+        .def("close", &Series::close, R"(
+Closes the Series and release the data storage/transport backends.
+
+All backends are closed after calling this method.
+The Series should be treated as destroyed after calling this method.
+The Series will be evaluated as false in boolean contexts after calling
+this method.
+        )")
 
         .def_property("openPMD", &Series::openPMD, &Series::setOpenPMD)
         .def_property(
@@ -217,12 +322,90 @@ void init_Series(py::module &m)
         .def_readwrite(
             "iterations",
             &Series::iterations,
+            /*
+             * Need to keep reference return policy here for now to further
+             * support legacy `del series` workflows that works despite children
+             * still being alive.
+             */
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
-        .def("read_iterations", &Series::readIterations, py::keep_alive<0, 1>())
+        .def(
+            "read_iterations",
+            [](Series &s) {
+                py::gil_scoped_release release;
+                return s.readIterations();
+            },
+            py::keep_alive<0, 1>(),
+            R"END(
+Entry point to the reading end of the streaming API.
+
+Creates and returns an instance of the ReadIterations class which can
+be used for iterating over the openPMD iterations in a C++11-style for
+loop.
+`Series.read_iterations()` is an intentionally restricted API that
+ensures a workflow which also works in streaming setups, e.g. an
+iteration cannot be opened again once it has been closed.
+For a less restrictive API in non-streaming situations,
+`Series.iterations` can be accessed directly.
+Look for the ReadIterations class for further documentation.
+            )END")
         .def(
             "write_iterations",
             &Series::writeIterations,
-            py::keep_alive<0, 1>());
+            py::keep_alive<0, 1>(),
+            R"END(
+Entry point to the writing end of the streaming API.
+
+Creates and returns an instance of the WriteIterations class which is an
+intentionally restricted container of iterations that takes care of
+streaming semantics, e.g. ensuring that an iteration cannot be reopened
+once closed.
+For a less restrictive API in non-streaming situations,
+`Series.iterations` can be accessed directly.
+The created object is stored as member of the Series object, hence this
+method may be called as many times as a user wishes.
+There is only one shared iterator state per Series, even when calling
+this method twice.
+Look for the WriteIterations class for further documentation.
+            )END");
+
+    m.def(
+        "merge_json",
+        &json::merge,
+        py::arg("default_value") = "{}",
+        py::arg("overwrite") = "{}",
+        R"END(
+Merge two JSON/TOML datasets into one.
+
+Merging rules:
+1. If both `defaultValue` and `overwrite` are JSON/TOML objects, then the
+resulting JSON/TOML object will contain the union of both objects'
+keys. If a key is specified in both objects, the values corresponding
+to the key are merged recursively. Keys that point to a null value
+after this procedure will be pruned.
+2. In any other case, the JSON/TOML dataset `defaultValue` is replaced in
+its entirety with the JSON/TOML dataset `overwrite`.
+
+Note that item 2 means that datasets of different type will replace each
+other without error.
+It also means that array types will replace each other without any notion
+of appending or merging.
+
+Possible use case:
+An application uses openPMD-api and wants to do the following:
+1. Set some default backend options as JSON/TOML parameters.
+2. Let its users specify custom backend options additionally.
+
+By using the json::merge() function, this application can then allow
+users to overwrite default options, while keeping any other ones.
+
+Parameters:
+* default_value: A string containing either a JSON or a TOML dataset.
+* overwrite:     A string containing either a JSON or TOML dataset (does
+                 not need to be the same as `defaultValue`).
+* returns:       The merged dataset, according to the above rules.
+                 If `defaultValue` was a JSON dataset, then as a JSON string,
+                 otherwise as a TOML string.
+        )END");
 }

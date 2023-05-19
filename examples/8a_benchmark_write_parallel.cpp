@@ -701,6 +701,7 @@ void AbstractPattern::run()
                 store(series, step);
             }
         }
+        return;
     }
 
     { // group/var based
@@ -747,6 +748,11 @@ void AbstractPattern::store(Series &series, int step)
     std::string scalar = openPMD::MeshRecordComponent::SCALAR;
     storeMesh(series, step, field_rho, scalar);
 
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     ParticleSpecies &currSpecies =
         series.writeIterations()[step].particles["ion"];
     storeParticles(currSpecies, step);
@@ -769,6 +775,11 @@ void AbstractPattern::storeMesh(
     const std::string &fieldName,
     const std::string &compName)
 {
+    // `Series::writeIterations()` and `Series::readIterations()` are
+    // intentionally restricted APIs that ensure a workflow which also works
+    // in streaming setups, e.g. an iteration cannot be opened again once
+    // it has been closed.
+    // `Series::iterations` can be directly accessed in random-access workflows.
     MeshRecordComponent compA =
         series.writeIterations()[step].meshes[fieldName][compName];
     Datatype datatype = determineDatatype<double>();
@@ -1004,22 +1015,19 @@ bool OneDimPattern::setLayOut(int step)
         return true;
 
     auto numPartition = m_Input.GetSeg();
-    if (unitCount < numPartition)
-        numPartition = unitCount;
 
-    auto avg = unitCount / numPartition;
-    for (unsigned int i = 0; i < numPartition; i++)
+    if (1 == numPartition)
     {
         Offset offset = {unitOffset * m_MinBlock[0]};
-        if (i < (numPartition - 1))
+        Extent count = {unitCount * m_MinBlock[0]};
+        m_InRankMeshLayout.emplace_back(offset, count);
+    }
+    else
+    {
+        Extent count = {m_MinBlock[0]};
+        for (unsigned long i = 0; i < unitCount; i++)
         {
-            Extent count = {avg * m_MinBlock[0]};
-            m_InRankMeshLayout.emplace_back(offset, count);
-        }
-        else
-        {
-            auto res = unitCount - avg * (numPartition - 1);
-            Extent count = {res * m_MinBlock[0]};
+            Offset offset = {(unitOffset + i) * m_MinBlock[0]};
             m_InRankMeshLayout.emplace_back(offset, count);
         }
     }

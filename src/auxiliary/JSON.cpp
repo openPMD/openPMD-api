@@ -22,6 +22,7 @@
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 
+#include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
@@ -498,14 +499,17 @@ std::optional<std::string> asLowerCaseStringDynamic(nlohmann::json const &value)
     return maybeString;
 }
 
-std::vector<std::string> backendKeys{"adios1", "adios2", "json", "hdf5"};
+std::vector<std::string> backendKeys()
+{
+    return {"adios2", "json", "hdf5"};
+}
 
 void warnGlobalUnusedOptions(TracingJSON const &config)
 {
     auto shadow = config.invertShadow();
     // The backends are supposed to deal with this
     // Only global options here
-    for (auto const &backendKey : json::backendKeys)
+    for (auto const &backendKey : json::backendKeys())
     {
         shadow.erase(backendKey);
     }
@@ -569,8 +573,21 @@ merge(nlohmann::json &defaultVal, nlohmann::json const &overwrite)
 
 std::string merge(std::string const &defaultValue, std::string const &overwrite)
 {
-    auto res = parseOptions(defaultValue, /* considerFiles = */ false).config;
+    auto [res, returnFormat] =
+        parseOptions(defaultValue, /* considerFiles = */ false);
     merge(res, parseOptions(overwrite, /* considerFiles = */ false).config);
-    return res.dump();
+    switch (returnFormat)
+    {
+    case SupportedLanguages::JSON:
+        return res.dump();
+        break;
+    case SupportedLanguages::TOML: {
+        auto asToml = json::jsonToToml(res);
+        std::stringstream sstream;
+        sstream << asToml;
+        return sstream.str();
+    }
+    }
+    throw std::runtime_error("Unreachable!");
 }
 } // namespace openPMD::json

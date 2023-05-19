@@ -44,42 +44,55 @@ void init_Iteration(py::module &m)
                 return ss.str();
             })
 
+        /*
+         * Purposefully only using setTime<double> and setDt<double> here.
+         * Python does not let you select the overload anyway and uses the one
+         * that was last defined in Pybind.
+         * So, set a sensible default: double, since long double is not
+         * cross-platform compatible.
+         */
         .def_property(
-            "time", &Iteration::time<float>, &Iteration::setTime<float>)
+            "time", &Iteration::time<float>, &Iteration::setTime<double>)
         .def_property(
             "time", &Iteration::time<double>, &Iteration::setTime<double>)
         .def_property(
-            "time",
-            &Iteration::time<long double>,
-            &Iteration::setTime<long double>)
-        .def_property("dt", &Iteration::dt<float>, &Iteration::setDt<float>)
+            "time", &Iteration::time<long double>, &Iteration::setTime<double>)
+        .def_property("dt", &Iteration::dt<float>, &Iteration::setDt<double>)
         .def_property("dt", &Iteration::dt<double>, &Iteration::setDt<double>)
         .def_property(
-            "dt", &Iteration::dt<long double>, &Iteration::setDt<long double>)
+            "dt", &Iteration::dt<long double>, &Iteration::setDt<double>)
         .def_property(
             "time_unit_SI", &Iteration::timeUnitSI, &Iteration::setTimeUnitSI)
-        .def("open", &Iteration::open)
-        .def("close", &Iteration::close, py::arg("flush") = true)
+        .def(
+            "open",
+            [](Iteration &it) {
+                py::gil_scoped_release release;
+                return it.open();
+            })
+        .def(
+            "close",
+            /*
+             * Cannot release the GIL here since Python buffers might be
+             * accessed in deferred tasks
+             */
+            &Iteration::close,
+            py::arg("flush") = true)
 
         // TODO remove in future versions (deprecated)
-        .def("set_time", &Iteration::setTime<float>)
         .def("set_time", &Iteration::setTime<double>)
-        .def("set_time", &Iteration::setTime<long double>)
-        .def("set_dt", &Iteration::setDt<float>)
         .def("set_dt", &Iteration::setDt<double>)
-        .def("set_dt", &Iteration::setDt<long double>)
         .def("set_time_unit_SI", &Iteration::setTimeUnitSI)
 
         .def_readwrite(
             "meshes",
             &Iteration::meshes,
-            py::return_value_policy::reference,
+            py::return_value_policy::copy,
             // garbage collection: return value must be freed before Iteration
             py::keep_alive<1, 0>())
         .def_readwrite(
             "particles",
             &Iteration::particles,
-            py::return_value_policy::reference,
+            py::return_value_policy::copy,
             // garbage collection: return value must be freed before Iteration
             py::keep_alive<1, 0>());
 }

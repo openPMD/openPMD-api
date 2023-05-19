@@ -17,16 +17,17 @@ if __name__ == "__main__":
         print("SST engine not available in ADIOS2.")
         sys.exit(0)
 
-    series = io.Series("simData.sst", io.Access_Type.read_only,
+    series = io.Series("simData.sst", io.Access_Type.read_linear,
                        json.dumps(config))
 
     # Read all available iterations and print electron position data.
-    # Use `series.read_iterations()` instead of `series.iterations`
-    # for streaming support (while still retaining file-reading support).
-    # Direct access to `series.iterations` is only necessary for random-access
-    # of iterations. By using `series.read_iterations()`, the openPMD-api will
-    # step through the iterations one by one, and going back to an iteration is
-    # not possible once it has been closed.
+    # Direct access to iterations is possible via `series.iterations`.
+    # For streaming support, `series.read_iterations()` needs to be used
+    # instead of `series.iterations`.
+    # `Series.write_iterations()` and `Series.read_iterations()` are
+    # intentionally restricted APIs that ensure a workflow which also works
+    # in streaming setups, e.g. an iteration cannot be opened again once
+    # it has been closed.
     for iteration in series.read_iterations():
         print("Current iteration {}".format(iteration.iteration_index))
         electronPositions = iteration.particles["e"]["position"]
@@ -53,3 +54,10 @@ if __name__ == "__main__":
             print("dim: {}".format(dim))
             chunk = loadedChunks[i]
             print(chunk)
+
+    # The files in 'series' are still open until the object is destroyed, on
+    # which it cleanly flushes and closes all open file handles.
+    # When running out of scope on return, the 'Series' destructor is called.
+    # Alternatively, one can call `series.close()` to the same effect as
+    # calling the destructor, including the release of file handles.
+    series.close()

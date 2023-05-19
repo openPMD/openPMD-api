@@ -1,6 +1,9 @@
 #pragma once
 
+#include "openPMD/ThrowError.hpp"
+
 #include <exception>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,7 +44,7 @@ namespace error
      * @brief An operation was requested that is not supported in a specific
      *     backend.
      *
-     * Example: Append mode is not available in ADIOS1.
+     * Example: Append mode is not available in JSON.
      */
     class OperationUnsupportedInBackend : public Error
     {
@@ -80,5 +83,48 @@ namespace error
     public:
         Internal(std::string const &what);
     };
+
+    /*
+     * Read error concerning a specific object.
+     */
+    class ReadError : public Error
+    {
+    public:
+        AffectedObject affectedObject;
+        Reason reason;
+        // If empty, then the error is thrown by the frontend
+        std::optional<std::string> backend;
+        std::string description; // object path, further details, ...
+
+        ReadError(
+            AffectedObject,
+            Reason,
+            std::optional<std::string> backend_in,
+            std::string description_in);
+    };
+
+    class NoSuchAttribute : public Error
+    {
+    public:
+        NoSuchAttribute(std::string attributeName);
+    };
 } // namespace error
+
+/**
+ * @brief Backward-compatibility alias for no_such_file_error.
+ *
+ */
+using no_such_file_error = error::ReadError;
+
+/**
+ * @brief Backward-compatibility alias for unsupported_data_error.
+ *
+ */
+using unsupported_data_error = error::OperationUnsupportedInBackend;
+
+/**
+ * @brief Backward-compatibility alias for no_such_attribute_error.
+ *
+ */
+using no_such_attribute_error = error::NoSuchAttribute;
 } // namespace openPMD
