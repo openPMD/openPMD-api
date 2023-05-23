@@ -9,12 +9,6 @@ import math
 
 import numpy as np
 
-try:
-    import pandas as pd
-    found_pandas = True
-except ImportError:
-    found_pandas = False
-
 
 def particles_to_dataframe(particle_species, slice=None):
     """
@@ -46,6 +40,13 @@ def particles_to_dataframe(particle_species, slice=None):
         are optimal arguments for the slice parameter
     pandas.DataFrame : the central dataframe object created here
     """
+    # import pandas here for a lazy import
+    try:
+        import pandas as pd
+        found_pandas = True
+    except ImportError:
+        found_pandas = False
+
     if not found_pandas:
         raise ImportError("pandas NOT found. Install pandas for DataFrame "
                           "support.")

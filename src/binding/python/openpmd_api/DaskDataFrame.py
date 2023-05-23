@@ -7,18 +7,6 @@ License: LGPLv3+
 """
 import numpy as np
 
-try:
-    import dask.dataframe as dd
-    from dask.delayed import delayed
-    found_dask = True
-except ImportError:
-    found_dask = False
-try:
-    import pandas  # noqa
-    found_pandas = True
-except ImportError:
-    found_pandas = False
-
 
 def read_chunk_to_df(species, chunk):
     stride = np.s_[chunk.offset[0]:chunk.offset[0]+chunk.extent[0]]
@@ -51,6 +39,19 @@ def particles_to_daskdataframe(particle_species):
         are used internally to parallelize particle processing
     dask.dataframe : the central dataframe object created here
     """
+    # import here for lazy imports
+    try:
+        import dask.dataframe as dd
+        from dask.delayed import delayed
+        found_dask = True
+    except ImportError:
+        found_dask = False
+    try:
+        import pandas  # noqa
+        found_pandas = True
+    except ImportError:
+        found_pandas = False
+
     if not found_dask:
         raise ImportError("dask NOT found. Install dask for Dask DataFrame "
                           "support.")
