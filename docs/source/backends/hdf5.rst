@@ -102,8 +102,8 @@ Known Issues
 
 .. warning::
 
-   The ROMIO backend of OpenMPI has `a bug <https://github.com/open-mpi/ompi/issues/7795>`_ that leads to segmentation faults in combination with parallel HDF5 I/O with chunking enabled.
-   This bug usually does not occur when using default configurations as OpenMPI `uses the OMPIO component by default <https://docs.open-mpi.org/en/v5.0.x/mca.html>`_.
+   The ROMIO backend of OpenMPI has `a bug <https://github.com/open-mpi/ompi/issues/7795>`__ that leads to segmentation faults in combination with parallel HDF5 I/O with chunking enabled.
+   This bug usually does not occur when using default configurations as OpenMPI `uses the OMPIO component by default <https://docs.open-mpi.org/en/v5.0.x/mca.html>`__.
    The bug affects at least the entire OpenMPI 4.* release range and is currently set to be fixed for release 5.0 (release candidate available at the time of writing this).
 
 
