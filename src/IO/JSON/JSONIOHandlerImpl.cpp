@@ -1245,6 +1245,7 @@ std::shared_ptr<nlohmann::json> JSONIOHandlerImpl::obtainJsonContents(File file)
     }
     // read from file
     auto [fh, fh_with_precision, _] = getFilehandle(file, Access::READ_ONLY);
+    (void)_;
     std::shared_ptr<nlohmann::json> res = std::make_shared<nlohmann::json>();
     switch (m_fileFormat)
     {
@@ -1281,6 +1282,7 @@ void JSONIOHandlerImpl::putJsonContents(
     {
         auto [fh, _, fh_with_precision] =
             getFilehandle(filename, Access::CREATE);
+        (void)_;
         (*it->second)["platform_byte_widths"] = platformSpecifics();
 
         switch (m_fileFormat)
