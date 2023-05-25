@@ -126,17 +126,26 @@ namespace internal
  */
 class Iteration : public CustomHierarchy
 {
-    template <typename T, typename T_key, typename T_container>
-    friend class Container;
+public:
+    using IterationIndex_t = uint64_t;
+
+    /*
+     * Some old compilers have trouble with befriending the entire Container
+     * template here, so we restrict it
+     * to Container<Iteration, IterationIndex_t>, more is not needed anyway.
+     *
+     * E.g. on gcc-7:
+     * > error: specialization of 'openPMD::Container<openPMD::CustomHierarchy>'
+     * > after instantiation
+     * >      friend class Container;
+     */
+    friend class Container<Iteration, IterationIndex_t>;
     friend class Series;
     friend class WriteIterations;
     friend class SeriesIterator;
 
-public:
     Iteration(Iteration const &) = default;
     Iteration &operator=(Iteration const &) = default;
-
-    using IterationIndex_t = uint64_t;
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float,
