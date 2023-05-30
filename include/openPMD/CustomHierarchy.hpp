@@ -61,6 +61,16 @@ protected:
      */
     void linkHierarchy(Writable &w) override;
 
+    /*
+     * @brief Check recursively whether this object is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
+     *
+     * @return true If dirty.
+     * @return false Otherwise.
+     */
+    bool dirtyRecursive() const;
+
 public:
     CustomHierarchy(CustomHierarchy const &other) = default;
     CustomHierarchy(CustomHierarchy &&other) = default;

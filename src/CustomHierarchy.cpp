@@ -21,9 +21,12 @@
 
 #include "openPMD/CustomHierarchy.hpp"
 
+#include "openPMD/Mesh.hpp"
+#include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <map>
 #include <string>
 
 namespace openPMD
@@ -41,5 +44,39 @@ void CustomHierarchy::linkHierarchy(Writable &w)
     Attributable::linkHierarchy(w);
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
+}
+
+bool CustomHierarchy::dirtyRecursive() const
+{
+    if (dirty())
+    {
+        return true;
+    }
+    if (particles.dirty() || meshes.dirty())
+    {
+        return true;
+    }
+    for (auto const &pair : particles)
+    {
+        if (pair.second.dirtyRecursive())
+        {
+            return true;
+        }
+    }
+    for (auto const &pair : meshes)
+    {
+        if (pair.second.dirtyRecursive())
+        {
+            return true;
+        }
+    }
+    for (auto const &pair : *this)
+    {
+        if (pair.second.dirtyRecursive())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace openPMD
