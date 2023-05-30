@@ -323,7 +323,8 @@ private:
 
     // make sure that the given path exists in proper form in
     // the passed json value
-    static void ensurePath(nlohmann::json *json, std::string const &path);
+    static void
+    ensurePath(nlohmann::json *json, std::string const &path, Access);
 
     // In order not to insert the same file name into the data structures
     // with a new pointer (e.g. when reopening), search for a possibly
