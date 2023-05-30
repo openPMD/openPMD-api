@@ -372,7 +372,9 @@ bool RecordComponent::empty() const
 }
 
 void RecordComponent::flush(
-    std::string const &name, internal::FlushParams const &flushParams)
+    std::string const &name,
+    internal::FlushParams const &flushParams,
+    bool set_defaults)
 {
     if (!dirtyRecursive())
     {
@@ -415,7 +417,7 @@ void RecordComponent::flush(
                     "RecordComponent::resetDataset()).");
             }
         }
-        if (!containsAttribute("unitSI"))
+        if (set_defaults && !containsAttribute("unitSI"))
         {
             setUnitSI(1);
         }
@@ -516,9 +518,9 @@ void RecordComponent::flush(
     }
 }
 
-void RecordComponent::read(bool require_unit_si)
+void RecordComponent::read(bool read_defaults)
 {
-    readBase(require_unit_si);
+    readBase(read_defaults);
 }
 
 namespace
@@ -543,7 +545,7 @@ namespace
     };
 } // namespace
 
-void RecordComponent::readBase(bool require_unit_si)
+void RecordComponent::readBase(bool read_defaults)
 {
     using DT = Datatype;
     auto &rc = get();
@@ -596,7 +598,7 @@ void RecordComponent::readBase(bool require_unit_si)
         read_constant();
     }
 
-    if (require_unit_si)
+    if (read_defaults)
     {
         if (!containsAttribute("unitSI"))
         {

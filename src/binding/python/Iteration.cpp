@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Iteration.hpp"
+#include "openPMD/CustomHierarchy.hpp"
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/binding/python/Common.hpp"
@@ -40,8 +41,11 @@ void init_Iteration(py::module &m)
 #define OPENPMD_AVOID_CLANG_FORMAT auto cl =
     OPENPMD_AVOID_CLANG_FORMAT
 #undef OPENPMD_AVOID_CLANG_FORMAT
-
-    py::class_<Iteration, Attributable>(m, "Iteration")
+    py::class_<
+        Iteration,
+        CustomHierarchy,
+        PyCustomHierarchyContainer,
+        Attributable>(m, "Iteration")
         .def(py::init<Iteration const &>())
 
         .def(

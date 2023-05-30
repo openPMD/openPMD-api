@@ -106,6 +106,7 @@ class Writable final
     friend void debug::printDirty(Series const &);
     friend struct Parameter<Operation::CREATE_DATASET>;
     friend struct Parameter<Operation::OPEN_DATASET>;
+    friend class CustomHierarchy;
 
 private:
     Writable(internal::AttributableData *);

@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
@@ -98,7 +99,7 @@ namespace internal
         BeginStep beginStep = BeginStepTypes::DontBeginStep{};
     };
 
-    class IterationData : public AttributableData
+    class IterationData : public CustomHierarchyData
     {
     public:
         /*
@@ -142,10 +143,22 @@ namespace internal
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
-class Iteration : public Attributable
+class Iteration : public CustomHierarchy
 {
-    template <typename T, typename T_key, typename T_container>
-    friend class Container;
+public:
+    using IterationIndex_t = uint64_t;
+
+    /*
+     * Some old compilers have trouble with befriending the entire Container
+     * template here, so we restrict it
+     * to Container<Iteration, IterationIndex_t>, more is not needed anyway.
+     *
+     * E.g. on gcc-7:
+     * > error: specialization of 'openPMD::Container<openPMD::CustomHierarchy>'
+     * > after instantiation
+     * >      friend class Container;
+     */
+    friend class Container<Iteration, IterationIndex_t>;
     friend class Series;
     friend class internal::AttributableData;
     template <typename T>
@@ -154,13 +167,17 @@ class Iteration : public Attributable
     friend class StatefulIterator;
     friend class StatefulSnapshotsContainer;
 
-public:
     Iteration(Iteration const &) = default;
     Iteration(Iteration &&) = default;
     Iteration &operator=(Iteration const &) = default;
     Iteration &operator=(Iteration &&) = default;
 
-    using IterationIndex_t = uint64_t;
+    // These use the openPMD Container class mainly for consistency.
+    // But they are in fact only aliases that don't actually exist
+    // in the backend.
+    // Hence meshes.written() and particles.written() will always be false.
+    Container<Mesh> meshes{};
+    Container<ParticleSpecies> particles{};
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float,
@@ -268,9 +285,6 @@ public:
     [[deprecated("This attribute is no longer set by the openPMD-api.")]] bool
     closedByWriter() const;
 
-    Container<Mesh> meshes{};
-    Container<ParticleSpecies> particles{}; // particleSpecies?
-
     virtual ~Iteration() = default;
 
 private:
@@ -297,14 +311,25 @@ private:
     inline void setData(std::shared_ptr<Data_t> data)
     {
         m_iterationData = std::move(data);
-        Attributable::setData(m_iterationData);
+        CustomHierarchy::setData(m_iterationData);
     }
 
     void flushFileBased(
         std::string const &, IterationIndex_t, internal::FlushParams const &);
     void flushGroupBased(IterationIndex_t, internal::FlushParams const &);
     void flushVariableBased(IterationIndex_t, internal::FlushParams const &);
-    void flush(internal::FlushParams const &);
+    /*
+     * Named flushIteration instead of flush to avoid naming
+     * conflicts with overridden virtual flush from CustomHierarchy
+     * class.
+     */
+    void flushIteration(internal::FlushParams const &);
+
+    void sync_meshes_and_particles_from_alias_to_subgroups(
+        internal::MeshesParticlesPath const &);
+    void sync_meshes_and_particles_from_subgroups_to_alias(
+        internal::MeshesParticlesPath const &);
+
     void deferParseAccess(internal::DeferredParseAccess);
     /*
      * Control flow for runDeferredParseAccess(), readFileBased(),
@@ -334,8 +359,6 @@ private:
     void readGorVBased(
         std::string const &groupPath, internal::BeginStep const &beginStep);
     void read_impl(std::string const &groupPath);
-    void readMeshes(std::string const &meshesPath);
-    void readParticles(std::string const &particlesPath);
 
     /**
      * Status after beginning an IO step. Currently includes:
@@ -416,12 +439,22 @@ private:
      */
     void setStepStatus(StepStatus);
 
+    /*
+     * @brief Check recursively whether this Iteration is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
+     *
+     * @return true If dirty.
+     * @return false Otherwise.
+     */
+    bool dirtyRecursive() const;
+
     /**
      * @brief Link with parent.
      *
      * @param w The Writable representing the parent.
      */
-    virtual void linkHierarchy(Writable &w);
+    void linkHierarchy(Writable &w);
 
     /**
      * @brief Access an iteration in read mode that has potentially not been

@@ -21,6 +21,7 @@
 
 #include "openPMD/backend/ContainerImpl.tpp"
 
+#include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticlePatches.hpp"
@@ -33,6 +34,7 @@ namespace openPMD
 #define OPENPMD_COMMA ,
 #define OPENPMD_INSTANTIATE(type) template class Container<type>;
 
+OPENPMD_INSTANTIATE(CustomHierarchy)
 OPENPMD_INSTANTIATE(Mesh)
 OPENPMD_INSTANTIATE(MeshRecordComponent)
 OPENPMD_INSTANTIATE(ParticlePatches)
