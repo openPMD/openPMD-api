@@ -137,33 +137,11 @@ Be aware that extreme-scale I/O is a research topic after all.
 Experimental new ADIOS2 schema
 ------------------------------
 
-We are experimenting with a breaking change to our layout of openPMD datasets in ADIOS2.
-It is likely that we will in future use ADIOS attributes only for a handful of internal flags.
-Actual openPMD attributes will be modeled by ADIOS variables of the same name.
-In order to distinguish datasets from attributes, datasets will be suffixed by ``/__data__``.
+The experimental new ADIOS2 schema is deprecated and **will be removed soon**. It used to be activated via the JSON parameter ``adios2.schema = 20210209`` or via the environment variable ``export OPENPMD2_ADIOS2_SCHEMA=20210209``.
 
-We hope that this will bring several advantages:
+**Do no longer use these options**, the created datasets will no longer be read by the openPMD-api.
 
-* Unlike ADIOS attributes, ADIOS variables are mutable.
-* ADIOS variables are more closely related to the concept of ADIOS steps.
-  An ADIOS variable that is not written to in one step is not seen by the reader.
-  This will bring more manageable amounts of metadata for readers to parse through.
-
-The new layout may be activated **for experimental purposes** in two ways:
-
-* Via the JSON parameter ``adios2.schema = 20210209``.
-* Via the environment variable ``export OPENPMD2_ADIOS2_SCHEMA=20210209``.
-
-The ADIOS2 backend will automatically recognize the layout that has been used by a writer when reading a dataset.
-
-.. tip::
-
-   This schema does not use ADIOS2 attributes anymore, thus ``bpls -a`` and ``bpls -A`` attribute switches do not show openPMD attributes.
-   Their functionality can be emulated via regexes:
-
-   * Print datasets and attributes: Default behavior
-   * Print datasets only: ``bpls -e '.*/__data__$'``
-   * Print attributes only: ``bpls -e '^(.(?!/__data__$))*$'``
+An alternative data layout with less intrusive changes and similar features is `currently in development <https://github.com/openPMD/openPMD-api/pull/1310>`__.
 
 Memory usage
 ------------
