@@ -52,6 +52,48 @@ using sized_uint_t = typename sized_uint<I>::type;
 
 using array_double_7 = std::array<double, 7>;
 
+// From pybind11, see
+// share/openPMD/thirdParty/pybind11/include/pybind11/detail/common.h
+// in the source tree
+struct non_const_tag
+{};
+struct const_tag
+{};
+
+namespace detail
+{
+template <typename... Args>
+struct overload_cast_impl
+{
+    template <typename Return>
+    constexpr auto operator()(Return (*pf)(Args...)) const noexcept
+        -> decltype(pf)
+    {
+        return pf;
+    }
+
+    template <typename Return, typename Class>
+    constexpr auto
+    operator()(Return (Class::*pmf)(Args...), non_const_tag = {}) const noexcept
+        -> decltype(pmf)
+    {
+        return pmf;
+    }
+
+    template <typename Return, typename Class>
+    constexpr auto
+    operator()(Return (Class::*pmf)(Args...) const, const_tag) const noexcept
+        -> decltype(pmf)
+    {
+        return pmf;
+    }
+};
+} // namespace detail
+
+template <typename... Args>
+static constexpr ::detail::overload_cast_impl<Args...> overload_cast{};
+constexpr const_tag const const_;
+
 /**
  * Generalizes the repeated application of a function template for all
  * scalar openPMD datatypes.

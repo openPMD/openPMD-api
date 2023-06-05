@@ -11,8 +11,7 @@ struct UseType
     {
         type.method(
             "cxx_store_chunk_" + datatypeToString(determineDatatype<T>()),
-            static_cast<void (RecordComponent::*)(
-                std::shared_ptr<T>, Offset, Extent)>(
+            overload_cast<std::shared_ptr<T>, Offset, Extent>(
                 &RecordComponent::storeChunk<T>));
     }
 };

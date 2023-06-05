@@ -25,9 +25,7 @@ void define_julia_Iteration(jlcxx::Module &mod)
     type.method("cxx_set_dt!", &Iteration::setDt<double>);
     type.method("cxx_time_unit_SI", &Iteration::timeUnitSI);
     type.method("cxx_set_time_unit_SI!", &Iteration::setTimeUnitSI);
-    type.method(
-        "cxx_close",
-        static_cast<Iteration &(Iteration::*)(bool)>(&Iteration::close));
+    type.method("cxx_close", overload_cast<bool>(&Iteration::close));
     type.method("cxx_open", &Iteration::open);
     type.method("cxx_closed", &Iteration::closed);
     type.method("cxx_meshes", [](Iteration &iter) -> Container<Mesh> & {
