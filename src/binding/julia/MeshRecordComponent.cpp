@@ -12,6 +12,20 @@ struct SuperType<MeshRecordComponent>
 };
 } // namespace jlcxx
 
+namespace
+{
+struct UseType
+{
+    template <typename T>
+    static void call(jlcxx::TypeWrapper<MeshRecordComponent> type)
+    {
+        type.method(
+            "cxx_make_constant_" + datatypeToString(determineDatatype<T>()),
+            &MeshRecordComponent::makeConstant<T>);
+    }
+};
+} // namespace
+
 void define_julia_MeshRecordComponent(jlcxx::Module &mod)
 {
     auto type = mod.add_type<MeshRecordComponent>(
@@ -19,11 +33,5 @@ void define_julia_MeshRecordComponent(jlcxx::Module &mod)
 
     type.method("cxx_position", &MeshRecordComponent::position<double>);
     type.method("cxx_set_position!", &MeshRecordComponent::setPosition<double>);
-#define USE_TYPE(NAME, ENUM, TYPE)                                             \
-    type.method(                                                               \
-        "cxx_make_constant_" NAME, &MeshRecordComponent::makeConstant<TYPE>);
-    {
-        FORALL_OPENPMD_TYPES(USE_TYPE)
-    }
-#undef USE_TYPE
+    forallJuliaTypes<UseType>(type);
 }

@@ -2,15 +2,26 @@
 
 #include "defs.hpp"
 
+namespace
+{
+struct UseType
+{
+    template <typename T>
+    static void call(jlcxx::TypeWrapper<Attributable> type)
+    {
+        type.method(
+            "cxx_set_attribute_" + datatypeToString(determineDatatype<T>()) +
+                "!",
+            &Attributable::setAttribute<T>);
+    }
+};
+} // namespace
+
 void define_julia_Attributable(jlcxx::Module &mod)
 {
     auto type = mod.add_type<Attributable>("CXX_Attributable");
 
-#define USE_TYPE(NAME, ENUM, TYPE)                                             \
-    type.method(                                                               \
-        "cxx_set_attribute_" NAME "!", &Attributable::setAttribute<TYPE>);
-    {FORALL_OPENPMD_TYPES(USE_TYPE)}
-#undef USE_TYPE
+    forallJuliaTypes<UseType>(type);
 
     type.method("cxx_get_attribute", &Attributable::getAttribute);
     type.method("cxx_delete_attribute!", &Attributable::deleteAttribute);

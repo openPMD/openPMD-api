@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -51,213 +52,99 @@ using sized_uint_t = typename sized_uint<I>::type;
 
 using array_double_7 = std::array<double, 7>;
 
-/*
- * Generate code fo all openPMD types. Use is e.g. as follows:
- *   #define USE_TYPE(NAME, ENUM, TYPE)                    \
- *     type.method("get_" NAME, &Attribute::get<TYPE>);
- *   FORALL_OPENPMD_TYPES(USE_TYPE)
- *   #undef USE_TYPE
+/**
+ * Generalizes the repeated application of a function template for all
+ * scalar openPMD datatypes.
+ *
+ * Will call the function template found at Action::template call<T>(),
+ * instantiating T with every scalar openPMD datatype as found
+ * in the Datatype enum.
+ *
+ * @tparam Action The struct containing the function template.
+ * @tparam Args The function template's argument types.
+ * @param args The function template's arguments.
  */
-
-// We disable `long double` since Julia does not support this type
-#define FORALL_OPENPMD_TYPES(MACRO)                                            \
-    MACRO("CHAR", Datatype::CHAR, char)                                        \
-    MACRO("UCHAR", Datatype::UCHAR, unsigned char)                             \
-    MACRO("SHORT", Datatype::SHORT, short)                                     \
-    MACRO("INT", Datatype::INT, int)                                           \
-    MACRO("LONG", Datatype::LONG, long)                                        \
-    MACRO("LONGLONG", Datatype::LONGLONG, long long)                           \
-    MACRO("USHORT", Datatype::USHORT, unsigned short)                          \
-    MACRO("UINT", Datatype::UINT, unsigned int)                                \
-    MACRO("ULONG", Datatype::ULONG, unsigned long)                             \
-    MACRO("ULONGLONG", Datatype::ULONGLONG, unsigned long long)                \
-    MACRO("FLOAT", Datatype::FLOAT, float)                                     \
-    MACRO("DOUBLE", Datatype::DOUBLE, double)                                  \
-    /* MACRO("LONG_DOUBLE", Datatype::LONG_DOUBLE, long double) */             \
-    MACRO("CFLOAT", Datatype::CFLOAT, std::complex<float>)                     \
-    MACRO("CDOUBLE", Datatype::CDOUBLE, std::complex<double>)                  \
-    /* MACRO("CLONG_DOUBLE", Datatype::CLONG_DOUBLE, std::complex<long         \
-     * double>) */                                                             \
-    MACRO("STRING", Datatype::STRING, std::string)                             \
-    MACRO("VEC_CHAR", Datatype::VEC_CHAR, std::vector<char>)                   \
-    MACRO("VEC_UCHAR", Datatype::VEC_UCHAR, std::vector<unsigned char>)        \
-    MACRO("VEC_SHORT", Datatype::VEC_SHORT, std::vector<short>)                \
-    MACRO("VEC_INT", Datatype::VEC_INT, std::vector<int>)                      \
-    MACRO("VEC_LONG", Datatype::VEC_LONG, std::vector<long>)                   \
-    MACRO("VEC_LONGLONG", Datatype::VEC_LONGLONG, std::vector<long long>)      \
-    MACRO("VEC_USHORT", Datatype::VEC_USHORT, std::vector<unsigned short>)     \
-    MACRO("VEC_UINT", Datatype::VEC_UINT, std::vector<unsigned int>)           \
-    MACRO("VEC_ULONG", Datatype::VEC_ULONG, std::vector<unsigned long>)        \
-    MACRO(                                                                     \
-        "VEC_ULONGLONG",                                                       \
-        Datatype::VEC_ULONGLONG,                                               \
-        std::vector<unsigned long long>)                                       \
-    MACRO("VEC_FLOAT", Datatype::VEC_FLOAT, std::vector<float>)                \
-    MACRO("VEC_DOUBLE", Datatype::VEC_DOUBLE, std::vector<double>)             \
-    /* MACRO("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE, std::vector<long    \
-     * double>) */                                                             \
-    MACRO(                                                                     \
-        "VEC_CFLOAT", Datatype::VEC_CFLOAT, std::vector<std::complex<float>>)  \
-    MACRO(                                                                     \
-        "VEC_CDOUBLE",                                                         \
-        Datatype::VEC_CDOUBLE,                                                 \
-        std::vector<std::complex<double>>)                                     \
-    /* MACRO("VEC_CLONG_DOUBLE", Datatype::VEC_CLONG_DOUBLE,                   \
-     * std::vector<std::complex<long double>>) */                              \
-    MACRO("VEC_STRING", Datatype::VEC_STRING, std::vector<std::string>)        \
-    MACRO("ARR_DBL_7", Datatype::ARR_DBL_7, array_double_7)                    \
-    MACRO("BOOL", Datatype::BOOL, bool)
-
-#define FORALL_SCALAR_OPENPMD_TYPES(MACRO)                                     \
-    MACRO("CHAR", Datatype::CHAR, char)                                        \
-    MACRO("UCHAR", Datatype::UCHAR, unsigned char)                             \
-    MACRO("SHORT", Datatype::SHORT, short)                                     \
-    MACRO("INT", Datatype::INT, int)                                           \
-    MACRO("LONG", Datatype::LONG, long)                                        \
-    MACRO("LONGLONG", Datatype::LONGLONG, long long)                           \
-    MACRO("USHORT", Datatype::USHORT, unsigned short)                          \
-    MACRO("UINT", Datatype::UINT, unsigned int)                                \
-    MACRO("ULONG", Datatype::ULONG, unsigned long)                             \
-    MACRO("ULONGLONG", Datatype::ULONGLONG, unsigned long long)                \
-    MACRO("FLOAT", Datatype::FLOAT, float)                                     \
-    MACRO("DOUBLE", Datatype::DOUBLE, double)                                  \
-    /* MACRO("LONG_DOUBLE", Datatype::LONG_DOUBLE, long double) */             \
-    MACRO("CFLOAT", Datatype::CFLOAT, std::complex<float>)                     \
-    MACRO("CDOUBLE", Datatype::CDOUBLE, std::complex<double>)                  \
-    /* MACRO("CLONG_DOUBLE", Datatype::CLONG_DOUBLE, std::complex<long         \
-     * double>) */                                                             \
-    MACRO("STRING", Datatype::STRING, std::string)                             \
-    MACRO("ARR_DBL_7", Datatype::ARR_DBL_7, array_double_7)                    \
-    MACRO("BOOL", Datatype::BOOL, bool)
-
-// This C++ version is a bit more tedious to use than the macro version above
-template <typename T>
-T typeval()
+template <typename Action, typename... Args>
+void forallScalarJuliaTypes(Args &&...args)
 {
-    return T{};
+    // Do NOT call std::forward<Args>(args)... here
+    // Move semantics must be avoided due to repeated application
+    Action::template call<char>(args...);
+    Action::template call<unsigned char>(args...);
+    Action::template call<signed char>(args...);
+    Action::template call<short>(args...);
+    Action::template call<int>(args...);
+    Action::template call<long>(args...);
+    Action::template call<long long>(args...);
+    Action::template call<unsigned short>(args...);
+    Action::template call<unsigned int>(args...);
+    Action::template call<unsigned long>(args...);
+    Action::template call<unsigned long long>(args...);
+    Action::template call<float>(args...);
+    Action::template call<double>(args...);
+    // We disable `long double` since Julia does not support this type
+    // Action::template call<long double>(args...);
+    Action::template call<std::complex<float>>(args...);
+    Action::template call<std::complex<double>>(args...);
+    // Action::template call<std::complex<long double>>(args...);
+    Action::template call<std::string>(args...);
+    Action::template call<bool>(args...);
 }
-template <typename F, typename... Args>
-void forall_openPMD_types(const F &f, Args &&...args)
+/**
+ * Generalizes the repeated application of a function template for all
+ * openPMD datatypes.
+ *
+ * Will call the function template found at Action::template call<T>(),
+ * instantiating T with every scalar datatype as found in the Datatype enum.
+ *
+ * @tparam Action The struct containing the function template.
+ * @tparam Args The function template's argument types.
+ * @param args The function template's arguments.
+ */
+template <typename Action, typename... Args>
+void forallJuliaTypes(Args &&...args)
 {
-    f("CHAR", Datatype::CHAR, typeval<char>(), std::forward<Args>(args)...);
-    f("UCHAR",
-      Datatype::UCHAR,
-      typeval<unsigned char>(),
-      std::forward<Args>(args)...);
-    f("SHORT", Datatype::SHORT, typeval<short>(), std::forward<Args>(args)...);
-    f("INT", Datatype::INT, typeval<int>(), std::forward<Args>(args)...);
-    f("LONG", Datatype::LONG, typeval<long>(), std::forward<Args>(args)...);
-    f("LONGLONG",
-      Datatype::LONGLONG,
-      typeval<long long>(),
-      std::forward<Args>(args)...);
-    f("USHORT",
-      Datatype::USHORT,
-      typeval<unsigned short>(),
-      std::forward<Args>(args)...);
-    f("UINT",
-      Datatype::UINT,
-      typeval<unsigned int>(),
-      std::forward<Args>(args)...);
-    f("ULONG",
-      Datatype::ULONG,
-      typeval<unsigned long>(),
-      std::forward<Args>(args)...);
-    f("ULONGLONG",
-      Datatype::ULONGLONG,
-      typeval<unsigned long long>(),
-      std::forward<Args>(args)...);
-    f("FLOAT", Datatype::FLOAT, typeval<float>(), std::forward<Args>(args)...);
-    f("DOUBLE",
-      Datatype::DOUBLE,
-      typeval<double>(),
-      std::forward<Args>(args)...);
-    // f("LONG_DOUBLE", Datatype::LONG_DOUBLE, typeval<long double>(),
-    // std::forward<Args>(args)...);
-    f("CFLOAT",
-      Datatype::CFLOAT,
-      typeval<std::complex<float>>(),
-      std::forward<Args>(args)...);
-    f("CDOUBLE",
-      Datatype::CDOUBLE,
-      typeval<std::complex<double>>(),
-      std::forward<Args>(args)...);
-    // f("CLONG_DOUBLE", Datatype::CLONG_DOUBLE, typeval<std::complex<long
-    // double>>(), std::forward<Args>(args)...);
-    f("STRING",
-      Datatype::STRING,
-      typeval<std::string>(),
-      std::forward<Args>(args)...);
-    f("VEC_CHAR",
-      Datatype::VEC_CHAR,
-      typeval<std::vector<char>>(),
-      std::forward<Args>(args)...);
-    f("VEC_UCHAR",
-      Datatype::VEC_UCHAR,
-      typeval<std::vector<unsigned char>>(),
-      std::forward<Args>(args)...);
-    f("VEC_SHORT",
-      Datatype::VEC_SHORT,
-      typeval<std::vector<short>>(),
-      std::forward<Args>(args)...);
-    f("VEC_INT",
-      Datatype::VEC_INT,
-      typeval<std::vector<int>>(),
-      std::forward<Args>(args)...);
-    f("VEC_LONG",
-      Datatype::VEC_LONG,
-      typeval<std::vector<long>>(),
-      std::forward<Args>(args)...);
-    f("VEC_LONGLONG",
-      Datatype::VEC_LONGLONG,
-      typeval<std::vector<long long>>(),
-      std::forward<Args>(args)...);
-    f("VEC_USHORT",
-      Datatype::VEC_USHORT,
-      typeval<std::vector<unsigned short>>(),
-      std::forward<Args>(args)...);
-    f("VEC_UINT",
-      Datatype::VEC_UINT,
-      typeval<std::vector<unsigned int>>(),
-      std::forward<Args>(args)...);
-    f("VEC_ULONG",
-      Datatype::VEC_ULONG,
-      typeval<std::vector<unsigned long>>(),
-      std::forward<Args>(args)...);
-    f("VEC_ULONGLONG",
-      Datatype::VEC_ULONGLONG,
-      typeval<std::vector<unsigned long long>>(),
-      std::forward<Args>(args)...);
-    f("VEC_FLOAT",
-      Datatype::VEC_FLOAT,
-      typeval<std::vector<float>>(),
-      std::forward<Args>(args)...);
-    f("VEC_DOUBLE",
-      Datatype::VEC_DOUBLE,
-      typeval<std::vector<double>>(),
-      std::forward<Args>(args)...);
-    // f("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE, typeval<std::vector<long
-    // double>>(), std::forward<Args>(args)...);
-    f("VEC_CFLOAT",
-      Datatype::VEC_CFLOAT,
-      typeval<std::vector<std::complex<float>>>(),
-      std::forward<Args>(args)...);
-    f("VEC_CDOUBLE",
-      Datatype::VEC_CDOUBLE,
-      typeval<std::vector<std::complex<double>>>(),
-      std::forward<Args>(args)...);
-    // f("VEC_CLONG_DOUBLE", Datatype::VEC_CLONG_DOUBLE,
-    // typeval<std::vector<std::complex<long double>>>(),
-    // std::forward<Args>(args)...);
-    f("VEC_STRING",
-      Datatype::VEC_STRING,
-      typeval<std::vector<std::string>>(),
-      std::forward<Args>(args)...);
-    f("ARR_DBL_7",
-      Datatype::ARR_DBL_7,
-      typeval<array_double_7>(),
-      std::forward<Args>(args)...);
-    f("BOOL", Datatype::BOOL, typeval<bool>(), std::forward<Args>(args)...);
+    // Do NOT call std::forward<Args>(args)... here
+    // Move semantics must be avoided due to repeated application
+    Action::template call<char>(args...);
+    Action::template call<unsigned char>(args...);
+    Action::template call<signed char>(args...);
+    Action::template call<short>(args...);
+    Action::template call<int>(args...);
+    Action::template call<long>(args...);
+    Action::template call<long long>(args...);
+    Action::template call<unsigned short>(args...);
+    Action::template call<unsigned int>(args...);
+    Action::template call<unsigned long>(args...);
+    Action::template call<unsigned long long>(args...);
+    Action::template call<float>(args...);
+    Action::template call<double>(args...);
+    // We disable `long double` since Julia does not support this type
+    // Action::template call<long double>(args...);
+    Action::template call<std::complex<float>>(args...);
+    Action::template call<std::complex<double>>(args...);
+    // Action::template call<std::complex<long double>>(args...);
+    Action::template call<std::string>(args...);
+    Action::template call<std::vector<char>>(args...);
+    Action::template call<std::vector<short>>(args...);
+    Action::template call<std::vector<int>>(args...);
+    Action::template call<std::vector<long>>(args...);
+    Action::template call<std::vector<long long>>(args...);
+    Action::template call<std::vector<unsigned char>>(args...);
+    Action::template call<std::vector<signed char>>(args...);
+    Action::template call<std::vector<unsigned short>>(args...);
+    Action::template call<std::vector<unsigned int>>(args...);
+    Action::template call<std::vector<unsigned long>>(args...);
+    Action::template call<std::vector<unsigned long long>>(args...);
+    Action::template call<std::vector<float>>(args...);
+    Action::template call<std::vector<double>>(args...);
+    // Action::template call<std::vector<long double>>(args...);
+    Action::template call<std::vector<std::complex<float>>>(args...);
+    Action::template call<std::vector<std::complex<double>>>(args...);
+    // Action::template call<std::vector<std::complex<long double>>>(args...);
+    Action::template call<std::vector<std::string>>(args...);
+    Action::template call<std::array<double, 7>>(args...);
+    Action::template call<bool>(args...);
 }
 
 namespace

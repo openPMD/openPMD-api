@@ -1,15 +1,25 @@
 // shared_ptr
 
 #include "defs.hpp"
+#include "openPMD/Datatype.hpp"
+#include <jlcxx/module.hpp>
+
+namespace
+{
+struct UseType
+{
+    template <typename T>
+    static void call(jlcxx::Module &mod)
+    {
+        mod.method(
+            "create_aliasing_shared_ptr_" +
+                datatypeToString(determineDatatype<T>()),
+            &create_aliasing_shared_ptr<T>);
+    }
+};
+} // namespace
 
 void define_julia_shared_ptr(jlcxx::Module &mod)
 {
-#define USE_TYPE(NAME, ENUM, TYPE)                                             \
-    mod.method(                                                                \
-        "create_aliasing_shared_ptr_" NAME,                                    \
-        &create_aliasing_shared_ptr<TYPE>);
-    {
-        FORALL_SCALAR_OPENPMD_TYPES(USE_TYPE)
-    }
-#undef USE_TYPE
+    forallScalarJuliaTypes<UseType>(mod);
 }
