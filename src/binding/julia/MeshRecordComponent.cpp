@@ -8,7 +8,7 @@ namespace jlcxx
 template <>
 struct SuperType<MeshRecordComponent>
 {
-    typedef RecordComponent type;
+    using type = RecordComponent;
 };
 } // namespace jlcxx
 

@@ -14,14 +14,13 @@ namespace jlcxx
 template <typename T, typename K>
 struct SuperType<Container<T, K>>
 {
-    typedef Attributable type;
+    using type = Attributable;
 };
 } // namespace jlcxx
 
+using julia_Container_type_t =
+    jlcxx::TypeWrapper<jlcxx::Parametric<jlcxx::TypeVar<1>, jlcxx::TypeVar<2>>>;
 // TODO: use std::optional instead of std::unique_ptr
-typedef jlcxx::TypeWrapper<
-    jlcxx::Parametric<jlcxx::TypeVar<1>, jlcxx::TypeVar<2>>>
-    julia_Container_type_t;
 extern std::unique_ptr<julia_Container_type_t> julia_Container_type;
 
 template <typename Eltype, typename Keytype>

@@ -10,7 +10,7 @@ namespace jlcxx
 template <>
 struct SuperType<Iteration>
 {
-    typedef Attributable type;
+    using type = Attributable;
 };
 } // namespace jlcxx
 

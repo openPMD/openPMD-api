@@ -8,7 +8,7 @@ namespace jlcxx
 template <>
 struct SuperType<Mesh>
 {
-    typedef Container<MeshRecordComponent> type;
+    using type = Container<MeshRecordComponent>;
 };
 } // namespace jlcxx
 

@@ -13,7 +13,7 @@ namespace jlcxx
 template <>
 struct SuperType<RecordComponent>
 {
-    typedef BaseRecordComponent type;
+    using type = BaseRecordComponent;
 };
 } // namespace jlcxx
 
