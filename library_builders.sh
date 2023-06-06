@@ -65,34 +65,6 @@ function install_buildessentials {
     touch buildessentials-stamp
 }
 
-function build_adios1 {
-    if [ -e adios1-stamp ]; then return; fi
-
-    curl -sLo adios-1.13.1.tar.gz \
-        http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
-    file adios*.tar.gz
-    tar -xzf adios*.tar.gz
-    rm adios*.tar.gz
-    cd adios-*
-
-    # Cross-Compile hints for autotools based builds
-    HOST_ARG=""
-    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
-        HOST_ARG="--host=aarch64-apple-darwin"
-    fi
-
-    ./configure --enable-static --disable-shared --disable-fortran --without-mpi ${HOST_ARG} --prefix=${BUILD_PREFIX} --with-blosc=/usr
-    make -j${CPU_COUNT}
-    make install
-    cd -
-
-    # note: for universal binaries on macOS
-    #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
-    #lipo -create -output universal_app x86_app arm_app
-
-    touch adios1-stamp
-}
-
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
@@ -348,8 +320,4 @@ build_zlib
 build_blosc
 build_zfp
 build_hdf5
-# skip ADIOS1 build for M1
-if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" ]]; then
-    build_adios1
-fi
 build_adios2
