@@ -81,7 +81,7 @@ If you are sure that the file was written completely and is closed by the writer
 You should also report this problem to your system support, so they can fix the file system mount options or disable locking by default in the provided HDF5 installation.
 
 ``HDF5_DO_MPI_FILE_SYNC``: this is an MPI-parallel HDF5 1.14+ control option that adds an ``MPI_File_sync()`` call `after every collective write operation <https://github.com/HDFGroup/hdf5/pull/1801>`__.
-This is sometimes needed by the underlying parallel MPI-I/O driver if the filesystem have very limited parallel features.
+This is sometimes needed by the underlying parallel MPI-I/O driver if the filesystem has very limited parallel features.
 Examples are NFS and UnifyFS, where this can be used to overcome synchronization issues/crashes.
 The default value for this is *MPI-IO driver-dependent* and defaults to ``TRUE`` for these filesystems in newer HDF5 versions.
 Setting the value back to ``FALSE`` has been shown to overcome `issues on NFS with parallel HDF5 <https://github.com/openPMD/openPMD-api/issues/1423>`__.
