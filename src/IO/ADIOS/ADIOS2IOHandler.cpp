@@ -2995,6 +2995,19 @@ namespace detail
                 m_IO.SetParameter("Profile", "Off");
             }
         }
+        if (notYetConfigured("AsyncWrite"))
+        {
+            if (1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_ASYNC_WRITE", 1) &&
+                notYetConfigured("AsyncWrite"))
+            {
+                m_IO.SetParameter("AsyncWrite", "On");
+            }
+            else
+            {
+                m_IO.SetParameter("AsyncWrite", "Off");
+            }
+        }
+
 #if openPMD_HAVE_MPI
         {
             auto num_substreams =
