@@ -56,15 +56,16 @@ hid_t openPMD::GetH5DataType::operator()(Attribute const &att)
     using DT = Datatype;
     switch (att.dtype)
     {
-    case DT::CHAR:
-    case DT::VEC_CHAR:
-        return H5Tcopy(H5T_NATIVE_CHAR);
     case DT::UCHAR:
     case DT::VEC_UCHAR:
         return H5Tcopy(H5T_NATIVE_UCHAR);
     case DT::SCHAR:
     case DT::VEC_SCHAR:
         return H5Tcopy(H5T_NATIVE_SCHAR);
+    // NOTE: in HDF5, CHAR is actually either UCHAR or SCHAR.
+    case DT::CHAR:
+    case DT::VEC_CHAR:
+        return H5Tcopy(H5T_NATIVE_CHAR);
     case DT::SHORT:
     case DT::VEC_SHORT:
         return H5Tcopy(H5T_NATIVE_SHORT);

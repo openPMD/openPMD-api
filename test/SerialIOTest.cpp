@@ -1,4 +1,6 @@
 // expose private and protected members for invasive testing
+#include "openPMD/Datatype.hpp"
+#include "openPMD/IO/Access.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -207,6 +209,54 @@ TEST_CASE("adios2_char_portability", "[serial][adios2]")
     }
 }
 #endif
+
+namespace detail
+{
+template <typename Char>
+void writeChar(Series &series, std::string const &component_name)
+{
+    auto component = series.iterations[0].meshes["E"][component_name];
+    std::vector<Char> data(10);
+    component.resetDataset({determineDatatype<Char>(), {10}});
+    component.storeChunk(data, {0}, {10});
+    series.flush();
+}
+template <typename Char>
+void readChar(Series &series, std::string const &component_name)
+{
+    auto component = series.iterations[0].meshes["E"][component_name];
+    std::vector<Char> data(10);
+    auto chunk = component.loadChunk<Char>();
+    series.flush();
+    for (size_t i = 0; i < 10; ++i)
+    {
+        REQUIRE(data[i] == chunk.get()[i]);
+    }
+}
+} // namespace detail
+
+void char_roundtrip(std::string const &extension)
+{
+    Series write("../samples/char_rountrip." + extension, Access::CREATE);
+    ::detail::writeChar<char>(write, "char");
+    ::detail::writeChar<unsigned char>(write, "uchar");
+    ::detail::writeChar<signed char>(write, "schar");
+    write.close();
+
+    Series read("../samples/char_rountrip." + extension, Access::READ_ONLY);
+    ::detail::readChar<char>(read, "char");
+    ::detail::readChar<unsigned char>(read, "uchar");
+    ::detail::readChar<signed char>(read, "schar");
+    read.close();
+}
+
+TEST_CASE("char_roundtrip", "[serial]")
+{
+    for (auto const &t : testedFileExtensions())
+    {
+        char_roundtrip(t);
+    }
+}
 
 void write_and_read_many_iterations(
     std::string const &ext, bool intermittentFlushes)
