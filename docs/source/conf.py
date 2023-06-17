@@ -38,6 +38,8 @@ show_authors = True
 # ones.
 extensions = ['sphinx.ext.mathjax',
               'breathe',
+              'sphinx_copybutton',
+              'sphinx_design',
               'sphinxcontrib.programoutput',
               'sphinxcontrib.rsvgconverter',
               'matplotlib.sphinxext.plot_directive']
