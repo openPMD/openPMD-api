@@ -22,6 +22,7 @@
 #pragma once
 
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/config.hpp"
 
 #if openPMD_HAVE_ADIOS2
@@ -35,18 +36,6 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
-
-/*
- * ADIOS2 v2.8 brings mode::ReadRandomAccess
- */
-#define HAS_ADIOS_2_8 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 208)
-/*
- * ADIOS2 v2.9 brings modifiable attributes (technically already in v2.8, but
- * there are too many bugs, so we only support it beginning with v2.9).
- * Group table feature requires ADIOS2 v2.9.
- */
-#define HAS_ADIOS_2_9 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 209)
-
 #endif
 
 namespace openPMD
@@ -150,7 +139,7 @@ namespace detail
         case adios2::Mode::Write:
             return false;
         case adios2::Mode::Read:
-#if HAS_ADIOS_2_8
+#if openPMD_HAS_ADIOS_2_8
         case adios2::Mode::ReadRandomAccess:
 #endif
             return true;
@@ -169,7 +158,7 @@ namespace detail
         case adios2::Mode::Write:
             return true;
         case adios2::Mode::Read:
-#if HAS_ADIOS_2_8
+#if openPMD_HAS_ADIOS_2_8
         case adios2::Mode::ReadRandomAccess:
 #endif
             return false;

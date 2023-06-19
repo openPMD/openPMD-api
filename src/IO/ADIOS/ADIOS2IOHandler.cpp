@@ -210,7 +210,7 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
             defaultOperators = std::move(operators.value());
         }
     }
-#if !HAS_ADIOS_2_9
+#if !openPMD_HAS_ADIOS_2_9
     if (m_modifiableAttributes == ModifiableAttributes::Yes)
     {
         throw error::OperationUnsupportedInBackend(
@@ -879,7 +879,7 @@ void ADIOS2IOHandlerImpl::writeDataset(
 void ADIOS2IOHandlerImpl::writeAttribute(
     Writable *writable, const Parameter<Operation::WRITE_ATT> &parameters)
 {
-#if HAS_ADIOS_2_9
+#if openPMD_HAS_ADIOS_2_9
     switch (useGroupTable())
     {
     case UseGroupTable::No:
@@ -1354,7 +1354,7 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
     {
     case Access::CREATE:
         return adios2::Mode::Write;
-#if HAS_ADIOS_2_8
+#if openPMD_HAS_ADIOS_2_8
     case Access::READ_LINEAR:
         return adios2::Mode::Read;
     case Access::READ_ONLY:
@@ -1368,7 +1368,7 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
         if (auxiliary::directory_exists(fullPath) ||
             auxiliary::file_exists(fullPath))
         {
-#if HAS_ADIOS_2_8
+#if openPMD_HAS_ADIOS_2_8
             return adios2::Mode::ReadRandomAccess;
 #else
             return adios2::Mode::Read;
@@ -1707,7 +1707,7 @@ namespace detail
         adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace(std::move(file));
 
-#if HAS_ADIOS_2_9
+#if openPMD_HAS_ADIOS_2_9
         if (impl->m_modifiableAttributes ==
                 ADIOS2IOHandlerImpl::ModifiableAttributes::No &&
             parameters.changesOverSteps ==
@@ -1773,7 +1773,7 @@ namespace detail
         }
 
         auto &value = std::get<T>(parameters.resource);
-#if HAS_ADIOS_2_9
+#if openPMD_HAS_ADIOS_2_9
         bool modifiable = impl->m_modifiableAttributes ==
                 ADIOS2IOHandlerImpl::ModifiableAttributes::Yes ||
             parameters.changesOverSteps !=
@@ -1787,7 +1787,7 @@ namespace detail
 
         auto defineAttribute =
             [&IO, &fullName, &modifiable, &impl](auto const &...args) {
-#if HAS_ADIOS_2_9
+#if openPMD_HAS_ADIOS_2_9
                 auto attr = IO.DefineAttribute(
                     fullName,
                     args...,
@@ -2333,7 +2333,7 @@ namespace detail
                  * BP3 or HDF5, or by BP5 without group table and normal read
                  * mode. Need to fall back to random access parsing.
                  */
-#if HAS_ADIOS_2_8
+#if openPMD_HAS_ADIOS_2_8
                 m_mode = adios2::Mode::ReadRandomAccess;
 #endif
                 break;
@@ -2411,7 +2411,7 @@ namespace detail
         if (writeOnly(m_mode))
         {
 
-#if HAS_ADIOS_2_9
+#if openPMD_HAS_ADIOS_2_9
             if (!m_impl->m_useGroupTable.has_value())
             {
                 switch (m_impl->m_iterationEncoding)
@@ -2743,7 +2743,7 @@ namespace detail
                     adios2::Engine(m_IO.Open(m_file, tempMode)));
                 break;
             }
-#if HAS_ADIOS_2_8
+#if openPMD_HAS_ADIOS_2_8
             case adios2::Mode::ReadRandomAccess:
 #endif
             case adios2::Mode::Read: {
@@ -3310,7 +3310,7 @@ namespace detail
         case UseGroupTable::No:
             break;
         case UseGroupTable::Yes:
-#if HAS_ADIOS_2_9
+#if openPMD_HAS_ADIOS_2_9
         {
             if (writeOnly(m_mode))
             {
