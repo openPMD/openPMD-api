@@ -160,7 +160,7 @@ This feature can be activated via the JSON/TOML key ``adios2.use_group_table = t
 It is fully backward-compatible with the old layout of openPMD in ADIOS2 and mostly forward-compatible (except the support for steps).
 
 The variable-based encoding of openPMD automatically activates the group table feature.
-The group table feature automatically activates the use of ADIOS2 steps (which until now was an opt-in feature via ``adios2.engine.usesteps = true``).
+The group table feature automatically activates the use of ADIOS2 steps (which until version 0.15 was an opt-in feature via ``adios2.engine.usesteps = true``).
 
 Memory usage
 ------------
