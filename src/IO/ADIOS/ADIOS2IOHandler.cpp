@@ -2997,7 +2997,7 @@ namespace detail
         }
         if (notYetConfigured("AsyncWrite"))
         {
-            if (1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_ASYNC_WRITE", 1) &&
+            if (1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_ASYNC_WRITE", 0) &&
                 notYetConfigured("AsyncWrite"))
             {
                 m_IO.SetParameter("AsyncWrite", "On");
