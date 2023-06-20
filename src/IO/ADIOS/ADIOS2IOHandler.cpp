@@ -2863,6 +2863,7 @@ namespace detail
         // set engine parameters
         std::set<std::string> alreadyConfigured;
         std::optional<bool> userSpecifiedUsesteps;
+        bool wasTheFlushTargetSpecifiedViaJSON = false;
         auto engineConfig = impl.config(ADIOS2Defaults::str_engine);
         if (!engineConfig.json().is_null())
         {
@@ -2909,9 +2910,8 @@ namespace detail
                         "Flush target must be either 'disk' or 'buffer', but "
                         "was non-literal type.");
                 }
-                overrideFlushTarget(
-                    m_impl->m_flushTarget,
-                    flushTargetFromString(target.value()));
+                m_impl->m_flushTarget = flushTargetFromString(target.value());
+                wasTheFlushTargetSpecifiedViaJSON = true;
             }
         }
 
@@ -3001,6 +3001,10 @@ namespace detail
                 notYetConfigured("AsyncWrite"))
             {
                 m_IO.SetParameter("AsyncWrite", "On");
+                if (!wasTheFlushTargetSpecifiedViaJSON)
+                {
+                    m_impl->m_flushTarget = FlushTarget::Buffer;
+                }
             }
             else
             {
