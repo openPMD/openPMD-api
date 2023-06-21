@@ -84,6 +84,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
 ``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
 ``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
+``OPENPMD_ADIOS2_ASYNC_WRITE``        ``0``      ADIOS2 BP5 engine: 1 means setting "AsyncWrite" in ADIOS2 to "on". Flushes will go to the buffer by default (see ``preferred_flush_target``).
 ``OPENPMD_ADIOS2_BP5_BufferChunkMB``  ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
 ``OPENPMD_ADIOS2_BP5_MaxShmMB``       ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
 ``OPENPMD_ADIOS2_BP5_NumSubFiles``    ``0``      ADIOS2 BP5 engine: num of subfiles
@@ -267,7 +268,7 @@ Rather than by reallocation as in BP4, this is done by appending a new chunk, le
 .. figure:: https://user-images.githubusercontent.com/14241876/181477384-ce4ea8ab-3bde-4210-991b-2e627dfcc7c9.png
   :alt: Memory usage of BP5 when flushing to the engine buffer
 
-The default is to flush to disk, but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
+The default is to flush to disk (except when specifying ``OPENPMD_ADIOS2_ASYNC_WRITE=1``), but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
 
 
 

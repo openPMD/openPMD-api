@@ -4378,7 +4378,11 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 )";
 
     adios2_bp5_flush(
-        cfg3, /* flushDuringStep = */ FlushDuringStep::Default_Yes);
+        cfg3,
+        /* flushDuringStep = */
+        auxiliary::getEnvNum("OPENPMD_ADIOS2_ASYNC_WRITE", 0) == 0
+            ? FlushDuringStep::Default_Yes
+            : FlushDuringStep::Default_No);
 
     std::string cfg4 = R"(
 [adios2]
