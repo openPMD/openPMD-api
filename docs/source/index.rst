@@ -140,6 +140,7 @@ Data Analysis
    analysis/paraview
    analysis/pandas
    analysis/dask
+   analysis/rapids
    analysis/contrib
 
 Development
