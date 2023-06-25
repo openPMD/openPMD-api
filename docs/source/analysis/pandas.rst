@@ -5,7 +5,7 @@ Pandas
 
 The Python bindings of openPMD-api provide direct methods to load data into the `Pandas data analysis ecosystem <https://pandas.pydata.org>`__.
 
-Pandas computes on CPU, for GPU-accelerated data analysis see :ref:`RAPIDS <analysis-rapids>`.
+Pandas computes on the CPU, for GPU-accelerated data analysis see :ref:`RAPIDS <analysis-rapids>`.
 
 
 .. _analysis-pandas-install:

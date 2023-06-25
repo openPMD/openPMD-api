@@ -3,7 +3,7 @@
 openPMD-viewer
 ==============
 
-`openPMD-viewer <https://github.com/openPMD/openPMD-viewer>`__ is an open-source Python package to access openPMD data.
+`openPMD-viewer <https://github.com/openPMD/openPMD-viewer>`__ (`documentation <https://openpmd-viewer.readthedocs.io>`__) is a Python package to access openPMD data.
 
 It allows to:
 
@@ -65,4 +65,4 @@ by using the command:
     ts.slider()
 
 You can also access the particle and field data as numpy arrays with the methods ``ts.get_field`` and ``ts.get_particle``.
-See the openPMD-viewer tutorials `here <https://github.com/openPMD/openPMD-viewer/tree/master/tutorials>`_ for more info.
+See the openPMD-viewer tutorials `on read-the-docs <https://openpmd-viewer.readthedocs.io>`_ for more info.

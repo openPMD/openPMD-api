@@ -21,7 +21,7 @@ Writing & reading through those backends and their associated files is supported
    section#api-details,
    section#utilities,
    section#backends,
-   section#analysis,
+   section#data-analysis,
    section#development,
    section#maintenance {
        display:none;
@@ -132,7 +132,7 @@ Backends
 Data Analysis
 -------------
 .. toctree::
-   :caption: ANALYSIS
+   :caption: DATA ANALYSIS
    :maxdepth: 1
    :hidden:
 
