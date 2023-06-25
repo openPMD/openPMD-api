@@ -21,6 +21,7 @@ Writing & reading through those backends and their associated files is supported
    section#api-details,
    section#utilities,
    section#backends,
+   section#data-analysis,
    section#development,
    section#maintenance {
        display:none;
@@ -127,6 +128,20 @@ Backends
    backends/adios1
    backends/adios2
    backends/hdf5
+
+Data Analysis
+-------------
+.. toctree::
+   :caption: DATA ANALYSIS
+   :maxdepth: 1
+   :hidden:
+
+   analysis/viewer
+   analysis/paraview
+   analysis/pandas
+   analysis/dask
+   analysis/rapids
+   analysis/contrib
 
 Development
 -----------
