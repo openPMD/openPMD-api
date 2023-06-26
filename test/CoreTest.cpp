@@ -202,7 +202,8 @@ TEST_CASE("myPath", "[core]")
     REQUIRE(
         pathOf(scalarMesh) ==
         vec_t{"iterations", "1234", "meshes", "e_chargeDensity"});
-    auto scalarMeshComponent = scalarMesh[RecordComponent::SCALAR];
+    auto scalarMeshComponent = scalarMesh[RecordComponent::SCALAR].resetDataset(
+        {Datatype::FLOAT, {10}});
     REQUIRE(
         pathOf(scalarMeshComponent) ==
         vec_t{"iterations", "1234", "meshes", "e_chargeDensity"});
@@ -210,7 +211,8 @@ TEST_CASE("myPath", "[core]")
 
     auto vectorMesh = iteration.meshes["E"];
     REQUIRE(pathOf(vectorMesh) == vec_t{"iterations", "1234", "meshes", "E"});
-    auto vectorMeshComponent = vectorMesh["x"];
+    auto vectorMeshComponent =
+        vectorMesh["x"].resetDataset({Datatype::FLOAT, {10}});
     REQUIRE(
         pathOf(vectorMeshComponent) ==
         vec_t{"iterations", "1234", "meshes", "E", "x"});
@@ -227,7 +229,8 @@ TEST_CASE("myPath", "[core]")
         pathOf(speciesPosition) ==
         vec_t{"iterations", "1234", "particles", "e", "position"});
 
-    auto speciesPositionX = speciesPosition["x"];
+    auto speciesPositionX =
+        speciesPosition["x"].resetDataset({Datatype::FLOAT, {10}});
     REQUIRE(
         pathOf(speciesPositionX) ==
         vec_t{"iterations", "1234", "particles", "e", "position", "x"});
@@ -238,7 +241,9 @@ TEST_CASE("myPath", "[core]")
         pathOf(speciesWeighting) ==
         vec_t{"iterations", "1234", "particles", "e", "weighting"});
 
-    auto speciesWeightingX = speciesWeighting[RecordComponent::SCALAR];
+    auto speciesWeightingX =
+        speciesWeighting[RecordComponent::SCALAR].resetDataset(
+            {Datatype::FLOAT, {10}});
     REQUIRE(
         pathOf(speciesWeightingX) ==
         vec_t{"iterations", "1234", "particles", "e", "weighting"});
@@ -259,7 +264,7 @@ TEST_CASE("myPath", "[core]")
             "particlePatches",
             "extent"});
 
-    auto patchExtentX = patchExtent["x"];
+    auto patchExtentX = patchExtent["x"].resetDataset({Datatype::INT, {10}});
     REQUIRE(
         pathOf(patchExtentX) ==
         vec_t{
@@ -283,7 +288,8 @@ TEST_CASE("myPath", "[core]")
             "numParticles"});
 
     auto patchNumParticlesComponent =
-        patchNumParticles[RecordComponent::SCALAR];
+        patchNumParticles[RecordComponent::SCALAR].resetDataset(
+            {Datatype::INT, {10}});
     REQUIRE(
         pathOf(patchNumParticlesComponent) ==
         vec_t{
@@ -293,6 +299,10 @@ TEST_CASE("myPath", "[core]")
             "e",
             "particlePatches",
             "numParticles"});
+
+    speciesE.particlePatches["offset"]["x"].resetDataset({Datatype::INT, {10}});
+    speciesE.particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
+        .resetDataset({Datatype::INT, {10}});
 #endif
 }
 
@@ -1096,6 +1106,7 @@ TEST_CASE("backend_via_json", "[core]")
     {
         Series series(
             "../samples/optionsViaJson", Access::CREATE, encodingVariableBased);
+        series.iterations[0]; // v-based encoding requires at least 1 iteration
         REQUIRE(series.backend() == "JSON");
         REQUIRE(series.iterationEncoding() == IterationEncoding::variableBased);
     }
@@ -1109,6 +1120,7 @@ TEST_CASE("backend_via_json", "[core]")
             "../samples/optionsViaJson.bp",
             Access::CREATE,
             encodingVariableBased);
+        series.iterations[0]; // v-based encoding requires at least 1 iteration
         REQUIRE(series.backend() == "JSON");
         REQUIRE(series.iterationEncoding() == IterationEncoding::variableBased);
     }
