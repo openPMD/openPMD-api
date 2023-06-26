@@ -1,0 +1,40 @@
+type = "object"
+title = "Particle Species"
+description = "Dict of particle quantities."
+propertyNames.pattern = "^\\w*$"
+
+# A particle species requires at least a "position" record
+required = ["position"]
+
+[properties.attributes]
+
+##################################################
+# First requirement: standard-defined attributes #
+##################################################
+
+[[properties.attributes.allOf]]
+title = "Particle Species attributes"
+description = "Standard-defined attributes at the Particle Species level."
+# No required attributes
+required = []
+
+[properties.attributes.allOf.properties]
+id."$ref" = "attribute_defs.json#/$defs/int_attribute"
+
+####################################################
+# Second requirement: General layout of attributes #
+####################################################
+
+[[properties.attributes.allOf]]
+title = "Attribute layout"
+description = "Custom attributes allowed, no required attributes defined."
+"$ref" = "attributes.json"
+
+[properties.particlePatches]
+title = "Particle Patches"
+"$ref" = "particle_patches.json"
+
+
+[patternProperties."^(?!(attributes|particlePatches)).*"]
+title = "Record"
+"$ref" = "record.json"

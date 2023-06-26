@@ -1,0 +1,184 @@
+
+["$defs"]
+
+######################
+# Vectors of strings #
+######################
+
+["$defs".vec_string_attribute]
+required = ["value", "datatype"]
+
+["$defs".vec_string_attribute.properties]
+
+value.any_of = [
+    { type = "string" },
+    { type = "array", items = { "type" = "string" } },
+]
+
+datatype.enum = [
+    "STRING",
+    "CHAR",
+    "SCHAR",
+    "UCHAR",
+    "VEC_STRING",
+    "VEC_CHAR",
+    "VEC_SCHAR",
+    "VEC_UCHAR",
+]
+
+##################
+# Vectors of int #
+##################
+
+["$defs".vec_int_attribute]
+required = ["value", "datatype"]
+
+["$defs".vec_int_attribute.properties]
+
+value.any_of = [
+    { type = "integer" },
+    { type = "array", items = { "type" = "integer" } },
+]
+
+datatype.enum = [
+    "SHORT",
+    "INT",
+    "LONG",
+    "LONGLONG",
+    "USHORT",
+    "UINT",
+    "ULONG",
+    "ULONGLONG",
+    "VEC_SHORT",
+    "VEC_INT",
+    "VEC_LONG",
+    "VEC_LONGLONG",
+    "VEC_USHORT",
+    "VEC_UINT",
+    "VEC_ULONG",
+    "VEC_ULONGLONG",
+]
+
+####################
+# Vectors of float #
+####################
+
+["$defs".vec_float_attribute]
+required = ["value", "datatype"]
+
+["$defs".vec_float_attribute.properties]
+
+value.any_of = [
+    { type = "number" },
+    { type = "array", items = { "type" = "number" } },
+]
+
+datatype.enum = [
+    "CHAR",
+    "UCHAR",
+    "SCHAR",
+    "SHORT",
+    "INT",
+    "LONG",
+    "LONGLONG",
+    "USHORT",
+    "UINT",
+    "ULONG",
+    "ULONGLONG",
+    "FLOAT",
+    "DOUBLE",
+    "LONG_DOUBLE",
+    "CFLOAT",
+    "CDOUBLE",
+    "CLONG_DOUBLE",
+    "VEC_SHORT",
+    "VEC_INT",
+    "VEC_LONG",
+    "VEC_LONGLONG",
+    "VEC_USHORT",
+    "VEC_UINT",
+    "VEC_ULONG",
+    "VEC_ULONGLONG",
+    "VEC_FLOAT",
+    "VEC_DOUBLE",
+    "VEC_LONG_DOUBLE",
+    "VEC_CFLOAT",
+    "VEC_CDOUBLE",
+    "VEC_CLONG_DOUBLE",
+]
+
+###########################
+# Special case:           #
+# unitDimension attribute #
+###########################
+
+["$defs".unitDimension]
+required = ["value", "datatype"]
+
+["$defs".unitDimension.properties]
+
+value = { type = "array", items = { type = "number" } }
+datatype.const = "ARR_DBL_7"
+
+#####################
+# string attributes #
+#####################
+
+["$defs".string_attribute]
+required = ["value", "datatype"]
+
+["$defs".string_attribute.properties]
+
+value.type = "string"
+datatype.enum = ["STRING", "CHAR", "SCHAR", "UCHAR"]
+
+##################
+# int attributes #
+##################
+
+["$defs".int_attribute]
+required = ["value", "datatype"]
+
+["$defs".int_attribute.properties]
+
+value.type = "integer"
+datatype.enum = [
+    "SHORT",
+    "INT",
+    "LONG",
+    "LONGLONG",
+    "USHORT",
+    "UINT",
+    "ULONG",
+    "ULONGLONG",
+]
+
+####################
+# float attributes #
+####################
+
+["$defs".float_attribute]
+required = ["value", "datatype"]
+
+["$defs".float_attribute.properties]
+
+value.type = "number"
+datatype.enum = [
+    "CHAR",
+    "UCHAR",
+    "SCHAR",
+    "SHORT",
+    "INT",
+    "LONG",
+    "LONGLONG",
+    "USHORT",
+    "UINT",
+    "ULONG",
+    "ULONGLONG",
+    "FLOAT",
+    "DOUBLE",
+    "LONG_DOUBLE",
+    "CFLOAT",
+    "CDOUBLE",
+    "CLONG_DOUBLE",
+]

@@ -1,0 +1,118 @@
+type = "object"
+required = ["attributes", "data"]
+title = "Series"
+description = "The root group in the hierarchical openPMD standard."
+
+#########################################################
+# Requirement 1: Basic layout of the root path (Series) #
+#########################################################
+
+[[allOf]]
+title = "Basic Series layout"
+
+#####################
+# Series attributes #
+#####################
+
+[allOf.properties.attributes]
+title = "Attributes"
+
+################################################
+# Requirement 1.1: standard-defined attributes #
+################################################
+
+[[allOf.properties.attributes.allOf]]
+required = [
+    "openPMD",
+    "openPMDextension",
+    "basePath",
+    "iterationEncoding",
+    "iterationFormat",
+]
+title = "Series attributes"
+description = "Standard-defined attributes at the Series level."
+
+[allOf.properties.attributes.allOf.properties]
+
+author."$ref"               = "attribute_defs.json#/$defs/string_attribute"
+comment."$ref"              = "attribute_defs.json#/$defs/string_attribute"
+date."$ref"                 = "attribute_defs.json#/$defs/string_attribute"
+openPMD."$ref"              = "attribute_defs.json#/$defs/string_attribute"
+iterationEncoding."$ref"    = "attribute_defs.json#/$defs/string_attribute"
+softwareVersion."$ref"      = "attribute_defs.json#/$defs/string_attribute"
+basePath."$ref"             = "attribute_defs.json#/$defs/string_attribute"
+iterationFormat."$ref"      = "attribute_defs.json#/$defs/string_attribute"
+openPMDextension."$ref"     = "attribute_defs.json#/$defs/int_attribute"
+software."$ref"             = "attribute_defs.json#/$defs/string_attribute"
+machine."$ref"              = "attribute_defs.json#/$defs/string_attribute"
+softwareDependencies."$ref" = "attribute_defs.json#/$defs/string_attribute"
+
+meshesPath.description = "Note that the meshesPath is hardcoded as its semantics are impossible to model in a JSON schema."
+meshesPath.const.value = "meshes/"
+meshesPath.const.datatype = "STRING"
+
+particlesPath.description = "Note that the particlesPath is hardcoded as its semantics are impossible to model in a JSON schema."
+particlesPath.const.value = "particles/"
+particlesPath.const.datatype = "STRING"
+
+#################################################
+# Requirement 1.2: General layout of attributes #
+#################################################
+
+[[allOf.properties.attributes.allOf]]
+title = "Attribute layout"
+"$ref" = "attributes.json"
+
+#################################################
+# Requirement 2: The Series contains iterations #
+#################################################
+
+[[allOf]]
+title = "Contains iterations"
+
+#########################################################################
+# Requirement 2.1: Either a single iteration in variable-based encoding #
+#########################################################################
+
+[[allOf.oneOf]]
+title = "Variable-based encoding"
+properties.attributes.properties.iterationEncoding.properties.value = { const = "variableBased" }
+
+[allOf.oneOf.properties.data]
+type = "object"
+title = "An iteration"
+description = "A single iteration."
+"$ref" = "iteration.json"
+
+############################################################################
+# Requirement 2.2: Or multiple iterations in group- or file-based encoding #
+############################################################################
+
+[[allOf.oneOf]]
+title = "Group-based (or file-based) encoding"
+properties.attributes.properties.iterationEncoding.properties.value = { oneOf = [
+    { const = "groupBased" },
+    { const = "fileBased" },
+] }
+
+# Base Path
+
+[allOf.oneOf.properties.data]
+type = "object"
+title = "Base path"
+description = "A map of all iterations/snapshots in the Series."
+
+propertyNames.pattern = "^(-?[0-9]*|attributes)$"
+
+[allOf.oneOf.properties.data.properties]
+
+[allOf.oneOf.properties.data.properties.attributes]
+title = "Attribute layout"
+description = "Custom attributes allowed, no required attributes defined."
+"$ref" = "attributes.json"
+
+# Base Path -> Iterations
+
+[allOf.oneOf.properties.data.patternProperties."^-?[0-9]*$"]
+title = "Iteration"
+"$ref" = "iteration.json"
