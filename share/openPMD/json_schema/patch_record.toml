@@ -1,0 +1,37 @@
+#########################################################
+# Requirement 1: Mesh-specific structure and attributes #
+#########################################################
+
+[[allOf]]
+
+type = "object"
+required = ["attributes"]
+title = "Record"
+description = "A list of particle quantities."
+
+##############################################
+# Requirement 1: Generic attribute structure #
+##############################################
+
+
+[allOf.properties.attributes]
+title = "Attribute layout"
+"$ref" = "attributes.json"
+
+#######################################################
+# Requirement 2: Contains components of a vector mesh #
+#######################################################
+
+[[allOf]]
+title = "Contains vector components"
+description = "Additionally to the attributes, at least one component must be contained"
+# The attributes are contained in this dict, and at least one further
+# non-scalar component. Hence, we require at least two entries.
+minProperties = 2
+propertyNames.pattern = "^\\w*$"
+
+[allOf.patternProperties]
+
+[allOf.patternProperties."^(?!attributes).*"]
+title = "Scalar component"
+"$ref" = "record_component.json"

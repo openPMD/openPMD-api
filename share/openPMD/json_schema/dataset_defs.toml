@@ -1,0 +1,79 @@
+["$defs"]
+
+######################################
+# n-dimensional datasets of any type #
+######################################
+
+[["$defs".any_type_recursive_array.anyOf]]
+title = "A numeric type"
+type = "array"
+items.anyOf = [{"type" = "number"}, {"type" = "null"}]
+
+[["$defs".any_type_recursive_array.anyOf]]
+title = "A recursive array of numeric types"
+type = "array"
+items."$ref" = "#/$defs/any_type_recursive_array"
+
+["$defs".any_type_dataset]
+title = "A dataset of any numeric type"
+required = ["data", "datatype"]
+
+["$defs".any_type_dataset.properties]
+
+datatype.enum = [
+    "CHAR",
+    "UCHAR",
+    "SCHAR",
+    "SHORT",
+    "INT",
+    "LONG",
+    "LONGLONG",
+    "USHORT",
+    "UINT",
+    "ULONG",
+    "ULONGLONG",
+    "FLOAT",
+    "DOUBLE",
+    "LONG_DOUBLE",
+    "CFLOAT",
+    "CDOUBLE",
+    "CLONG_DOUBLE",
+    "BOOL",
+]
+data."$ref" = "#/$defs/any_type_recursive_array"
+
+######################################
+# n-dimensional datasets of int type #
+######################################
+
+[["$defs".int_type_recursive_array.anyOf]]
+title = "An integer type"
+type = "array"
+items.anyOf = [{"type" = "integer"}, {"type" = "null"}]
+
+[["$defs".int_type_recursive_array.anyOf]]
+title = "A recursive array of integer types"
+type = "array"
+items."$ref" = "#/$defs/int_type_recursive_array"
+
+["$defs".int_type_dataset]
+title = "A dataset of integer type"
+required = ["data", "datatype"]
+
+["$defs".int_type_dataset.properties]
+
+datatype.enum = [
+    "CHAR",
+    "UCHAR",
+    "SCHAR",
+    "SHORT",
+    "INT",
+    "LONG",
+    "LONGLONG",
+    "USHORT",
+    "UINT",
+    "ULONG",
+    "ULONGLONG",
+    "BOOL",
+]
+data."$ref" = "#/$defs/int_type_recursive_array"
