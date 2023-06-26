@@ -747,11 +747,12 @@ set(openPMD_TEST_NAMES
 # command line tools
 set(openPMD_CLI_TOOL_NAMES
     ls
+    convert-json-toml
 )
 set(openPMD_PYTHON_CLI_TOOL_NAMES
     pipe
 )
-set(openPMD_PYTHON_CLI_MODULE_NAMES ${openPMD_CLI_TOOL_NAMES})
+set(openPMD_PYTHON_CLI_MODULE_NAMES ls)
 # examples
 set(openPMD_EXAMPLE_NAMES
     1_structure
@@ -920,6 +921,9 @@ if(openPMD_BUILD_CLI_TOOLS)
         endif()
 
         target_link_libraries(openpmd-${toolname} PRIVATE openPMD)
+        target_include_directories(openpmd-${toolname} SYSTEM PRIVATE
+            $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+            $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
     endforeach()
 endif()
 

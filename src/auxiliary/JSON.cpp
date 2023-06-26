@@ -289,7 +289,8 @@ toml::value jsonToToml(nlohmann::json const &val)
 
 namespace
 {
-    ParsedConfig parseInlineOptions(std::string const &options)
+    ParsedConfig
+    parseInlineOptions(std::string const &options, bool convertLowercase)
     {
         // speed up default options
         ParsedConfig res;
@@ -325,12 +326,16 @@ namespace
             res.config = json::tomlToJson(tomlVal);
             res.originallySpecifiedAs = SupportedLanguages::TOML;
         }
-        lowerCase(res.config);
+        if (convertLowercase)
+        {
+            lowerCase(res.config);
+        }
         return res;
     }
 } // namespace
 
-ParsedConfig parseOptions(std::string const &options, bool considerFiles)
+ParsedConfig parseOptions(
+    std::string const &options, bool considerFiles, bool convertLowercase)
 {
     if (considerFiles)
     {
@@ -340,6 +345,12 @@ ParsedConfig parseOptions(std::string const &options, bool considerFiles)
             std::fstream handle;
             handle.open(
                 filename.value(), std::ios_base::binary | std::ios_base::in);
+            if (!handle.good())
+            {
+                throw std::runtime_error(
+                    "Failed opening '" + filename.value() +
+                    "': " + strerror(errno));
+            }
             ParsedConfig res;
             if (auxiliary::ends_with(filename.value(), ".toml"))
             {
@@ -359,16 +370,22 @@ ParsedConfig parseOptions(std::string const &options, bool considerFiles)
                     "Failed reading JSON config from file " + filename.value() +
                     ".");
             }
-            lowerCase(res.config);
+            if (convertLowercase)
+            {
+                lowerCase(res.config);
+            }
             return res;
         }
     }
-    return parseInlineOptions(options);
+    return parseInlineOptions(options, convertLowercase);
 }
 
 #if openPMD_HAVE_MPI
-ParsedConfig
-parseOptions(std::string const &options, MPI_Comm comm, bool considerFiles)
+ParsedConfig parseOptions(
+    std::string const &options,
+    MPI_Comm comm,
+    bool considerFiles,
+    bool convertLowercase)
 {
     if (considerFiles)
     {
@@ -392,11 +409,14 @@ parseOptions(std::string const &options, MPI_Comm comm, bool considerFiles)
                 res.config = nlohmann::json::parse(fileContent);
                 res.originallySpecifiedAs = SupportedLanguages::JSON;
             }
-            lowerCase(res.config);
+            if (convertLowercase)
+            {
+                lowerCase(res.config);
+            }
             return res;
         }
     }
-    return parseInlineOptions(options);
+    return parseInlineOptions(options, convertLowercase);
 }
 #endif
 

@@ -190,16 +190,25 @@ namespace json
      * @param options as a parsed JSON object.
      * @param considerFiles If yes, check if `options` refers to a file and read
      *        from there.
+     * @param convertLowercase If yes, lowercase conversion is applied
+     *        recursively to keys and values, except for some hardcoded places
+     *        that should be left untouched.
      */
-    ParsedConfig parseOptions(std::string const &options, bool considerFiles);
+    ParsedConfig parseOptions(
+        std::string const &options,
+        bool considerFiles,
+        bool convertLowercase = true);
 
 #if openPMD_HAVE_MPI
 
     /**
      * Parallel version of parseOptions(). MPI-collective.
      */
-    ParsedConfig
-    parseOptions(std::string const &options, MPI_Comm comm, bool considerFiles);
+    ParsedConfig parseOptions(
+        std::string const &options,
+        MPI_Comm comm,
+        bool considerFiles,
+        bool convertLowercase = true);
 
 #endif
 
