@@ -2333,8 +2333,8 @@ inline void bool_test(const std::string &backend)
     {
         Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
 
-        o.setAttribute("Bool attribute true", true);
-        o.setAttribute("Bool attribute false", false);
+        o.setAttribute("Bool_attribute_true", true);
+        o.setAttribute("Bool_attribute_false", false);
     }
     {
         Series o =
@@ -2342,12 +2342,12 @@ inline void bool_test(const std::string &backend)
 
         auto attrs = o.attributes();
         REQUIRE(
-            std::count(attrs.begin(), attrs.end(), "Bool attribute true") == 1);
+            std::count(attrs.begin(), attrs.end(), "Bool_attribute_true") == 1);
         REQUIRE(
-            std::count(attrs.begin(), attrs.end(), "Bool attribute false") ==
+            std::count(attrs.begin(), attrs.end(), "Bool_attribute_false") ==
             1);
-        REQUIRE(o.getAttribute("Bool attribute true").get<bool>() == true);
-        REQUIRE(o.getAttribute("Bool attribute false").get<bool>() == false);
+        REQUIRE(o.getAttribute("Bool_attribute_true").get<bool>() == true);
+        REQUIRE(o.getAttribute("Bool_attribute_false").get<bool>() == false);
     }
     {
         Series list{"../samples/serial_bool." + backend, Access::READ_ONLY};
