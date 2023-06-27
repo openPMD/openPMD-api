@@ -113,10 +113,7 @@ function build_adios2 {
         ADIOS2_USE_SST=OFF
     fi
 
-    mkdir build-adios2
-    cd build-adios2
-    PY_BIN=$(which python3)
-    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    # ZPL issues on non-Linux platforms
     if [ "$(uname -s)" = "Linux" ]
     then
         EVPATH_ZPL="ON"
@@ -125,6 +122,12 @@ function build_adios2 {
         #       https://github.com/GTkorvo/evpath/issues/47
         EVPATH_ZPL="OFF"
     fi
+
+    # build
+    mkdir build-adios2
+    cd build-adios2
+    PY_BIN=$(which python3)
+    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake               \
         -DBUILD_SHARED_LIBS=OFF                   \
         -DBUILD_TESTING=OFF                       \
@@ -297,8 +300,8 @@ function build_zlib {
 function build_hdf5 {
     if [ -e hdf5-stamp ]; then return; fi
 
-    curl -sLo hdf5-1.12.2.tar.gz \
-        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz
+    curl -sLo hdf5-1.14.1-2.tar.gz \
+        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.1/src/hdf5-1.14.1-2.tar.gz
     file hdf5*.tar.gz
     tar -xzf hdf5*.tar.gz
     rm hdf5*.tar.gz
