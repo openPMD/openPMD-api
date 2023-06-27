@@ -65,6 +65,34 @@ function install_buildessentials {
     touch buildessentials-stamp
 }
 
+function build_adios1 {
+    if [ -e adios1-stamp ]; then return; fi
+
+    curl -sLo adios-1.13.1.tar.gz \
+        http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
+    file adios*.tar.gz
+    tar -xzf adios*.tar.gz
+    rm adios*.tar.gz
+    cd adios-*
+
+    # Cross-Compile hints for autotools based builds
+    HOST_ARG=""
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        HOST_ARG="--host=aarch64-apple-darwin"
+    fi
+
+    ./configure --enable-static --disable-shared --disable-fortran --without-mpi ${HOST_ARG} --prefix=${BUILD_PREFIX} --with-blosc=/usr
+    make -j${CPU_COUNT}
+    make install
+    cd -
+
+    # note: for universal binaries on macOS
+    #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
+    #lipo -create -output universal_app x86_app arm_app
+
+    touch adios1-stamp
+}
+
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
@@ -136,31 +164,63 @@ function build_adios2 {
 function build_blosc {
     if [ -e blosc-stamp ]; then return; fi
 
+    curl -sLo c-blosc-1.21.0.tar.gz \
+        https://github.com/Blosc/c-blosc/archive/v1.21.0.tar.gz
+    file c-blosc*.tar.gz
+    tar -xzf c-blosc*.tar.gz
+    rm c-blosc*.tar.gz
+
+    # Patch PThread Propagation
+    curl -sLo blosc-pthread.patch \
+        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
+    python3 -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
+
+    # SSE2 support
+    #   https://github.com/Blosc/c-blosc/issues/334
+    DEACTIVATE_SSE2=OFF
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
+      # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
+      DEACTIVATE_SSE2=ON
+    fi
+
+    mkdir build-blosc
+    cd build-blosc
+    PY_BIN=$(which python3)
+    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    PATH=${CMAKE_BIN}:${PATH} cmake          \
+      -DDEACTIVATE_SNAPPY=ON                 \
+      -DDEACTIVATE_SSE2=${DEACTIVATE_SSE2}   \
+      -DBUILD_SHARED=OFF                     \
+      -DBUILD_TESTS=OFF                      \
+      -DBUILD_BENCHMARKS=OFF                 \
+      -DCMAKE_VERBOSE_MAKEFILE=ON            \
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
+      -DZLIB_USE_STATIC_LIBS=ON              \
+      ../c-blosc-*
+    make -j${CPU_COUNT}
+    make install
+    cd -
+
+    rm -rf build-blosc
+
+    touch blosc-stamp
+}
+
+function build_blosc2 {
+    if [ -e blosc-stamp ]; then return; fi
+
     curl -sLo c-blosc2-v2.7.1.tar.gz \
         https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.7.1.tar.gz
     file c-blosc2*.tar.gz
     tar -xzf c-blosc2*.tar.gz
     rm c-blosc2*.tar.gz
 
-    # Patch PThread Propagation
-    # curl -sLo blosc-pthread.patch \
-    #     https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
-    # python3 -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
-
-    # SSE2 support
-    #   https://github.com/Blosc/c-blosc/issues/334
-    WITH_SSE2=ON
-    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
-      # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
-      WITH_SSE2=OFF
-    fi
-
     # @todo: proper patch for this
     sed -E -i.bak 's|if\(\$ENV\{CMAKE_OSX_ARCHITECTURES\} STREQUAL "arm64"\)|if("$ENV{CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")|' c-blosc2-*/CMakeLists.txt
     cat c-blosc2-*/CMakeLists.txt
 
-    mkdir build-blosc
-    cd build-blosc
+    mkdir build-blosc2
+    cd build-blosc2
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     # Blosc2 runs into a linking error without testing enabled???
@@ -178,9 +238,9 @@ function build_blosc {
     make install
     cd -
 
-    rm -rf build-blosc
+    rm -rf build-blosc2
 
-    touch blosc-stamp
+    touch blosc2-stamp
 }
 
 function build_zfp {
@@ -320,6 +380,11 @@ fi
 install_buildessentials
 build_zlib
 build_blosc
+build_blosc2
 build_zfp
 build_hdf5
+# skip ADIOS1 build for M1
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" ]]; then
+    build_adios1
+fi
 build_adios2
