@@ -4,7 +4,14 @@
 set -eu -o pipefail
 
 BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
-CPU_COUNT="${CPU_COUNT:-2}"
+
+# https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+if [ "$(uname -s)" = "Darwin" ]
+then
+    CPU_COUNT="${CPU_COUNT:-3}"
+else
+    CPU_COUNT="${CPU_COUNT:-2}"
+fi
 
 function install_buildessentials {
     if [ -e buildessentials-stamp ]; then return; fi
