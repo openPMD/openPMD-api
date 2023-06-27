@@ -110,6 +110,10 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     H5Tinsert(m_H5T_CLONG_DOUBLE, "r", 0, H5T_NATIVE_LDOUBLE);
     H5Tinsert(m_H5T_CLONG_DOUBLE, "i", sizeof(long double), H5T_NATIVE_LDOUBLE);
 
+    // Create a type that understands 128bit floats with 80 bits of precision
+    // even on those platforms that do not have it (ARM64, PPC64).
+    // Otherwise, files created on e.g. AMD64 platforms might not be readable
+    // on such platforms.
     H5Tset_size(m_H5T_LONG_DOUBLE_80_LE, 16);
     H5Tset_order(m_H5T_LONG_DOUBLE_80_LE, H5T_ORDER_LE);
     H5Tset_precision(m_H5T_LONG_DOUBLE_80_LE, 80);
@@ -1806,6 +1810,11 @@ void HDF5IOHandlerImpl::readDataset(
         {
             dataType = m_H5T_LONG_DOUBLE_80_LE;
         }
+        status = H5Tclose(checkDatasetTypeAgain);
+        VERIFY(
+            status == 0,
+            "[HDF5] Internal error: Failed to close HDF5 dataset type during "
+            "dataset reading");
     }
     else if (H5Tequal(dataType, m_H5T_CLONG_DOUBLE))
     {
@@ -1815,6 +1824,11 @@ void HDF5IOHandlerImpl::readDataset(
         {
             dataType = m_H5T_CLONG_DOUBLE_80_LE;
         }
+        status = H5Tclose(checkDatasetTypeAgain);
+        VERIFY(
+            status == 0,
+            "[HDF5] Internal error: Failed to close HDF5 dataset type during "
+            "dataset reading");
     }
     VERIFY(
         dataType >= 0,
@@ -2294,7 +2308,7 @@ void HDF5IOHandlerImpl::readAttribute(
             // worst case, sizeof(long double) is only 8, so allocate enough
             // memory to fit 16 bytes per member
             auto *tmpBuffer =
-                static_cast<long double *>(malloc(16 * 2 * dims[0]));
+                reinterpret_cast<long double *>(new char[16lu * 2lu * dims[0]]);
             status = H5Aread(attr_id, attr_type, tmpBuffer);
             H5Tconvert(
                 attr_type,
@@ -2305,7 +2319,7 @@ void HDF5IOHandlerImpl::readAttribute(
                 H5P_DEFAULT);
             std::vector<std::complex<long double> > vcld{
                 tmpBuffer, tmpBuffer + dims[0]};
-            free(tmpBuffer);
+            delete[] tmpBuffer;
             a = Attribute(std::move(vcld));
         }
         else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE))
