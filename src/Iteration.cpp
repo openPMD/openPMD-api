@@ -26,6 +26,7 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <exception>
@@ -695,7 +696,8 @@ auto Iteration::beginStep(
     case IE::fileBased:
         if (thisObject.has_value())
         {
-            file = &static_cast<Attributable &>(*thisObject).get();
+            file = static_cast<internal::AttributableData *>(
+                thisObject.value().m_attri.get());
         }
         else
         {
@@ -775,7 +777,7 @@ void Iteration::endStep()
     switch (series.iterationEncoding())
     {
     case IE::fileBased:
-        file = &Attributable::get();
+        file = m_attri.get();
         break;
     case IE::groupBased:
     case IE::variableBased:

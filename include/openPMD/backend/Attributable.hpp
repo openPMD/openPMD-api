@@ -53,18 +53,19 @@ class Series;
 
 namespace internal
 {
-    class AttributableData
+    class SharedAttributableData
     {
         friend class openPMD::Attributable;
 
     public:
-        AttributableData();
-        AttributableData(AttributableData const &) = delete;
-        AttributableData(AttributableData &&) = delete;
-        virtual ~AttributableData() = default;
+        SharedAttributableData(AttributableData *);
+        SharedAttributableData(SharedAttributableData const &) = delete;
+        SharedAttributableData(SharedAttributableData &&) = delete;
+        virtual ~SharedAttributableData() = default;
 
-        AttributableData &operator=(AttributableData const &) = delete;
-        AttributableData &operator=(AttributableData &&) = delete;
+        SharedAttributableData &
+        operator=(SharedAttributableData const &) = delete;
+        SharedAttributableData &operator=(SharedAttributableData &&) = delete;
 
         using A_MAP = std::map<std::string, Attribute>;
         /**
@@ -79,6 +80,40 @@ namespace internal
          * The attributes defined by this Attributable.
          */
         A_MAP m_attributes;
+    };
+
+    /*
+     * This is essentially a two-level pointer.
+     *
+     * 1. level: Our public API hands out handles to users that are (shared)
+     *    pointers to an internal object (PIMPL).
+     * 2. level: Multiple internal objects might refer to the same item in an
+     *    openPMD file, e.g. to the same backend object.
+     *    So, the internal object for an Attributable is a shared pointer to the
+     *    unique object identifying this item.
+     *
+     * Such sharing occurs in the CustomHierarchy class where multiple
+     * containers refer to the same group in the openPMD hierarchy
+     * (container of groups, of meshes, of particle species, of datasets).
+     * This might also become relevant for links as in HDF5 if we choose to
+     * implement them.
+     */
+
+    class AttributableData : public std::shared_ptr<SharedAttributableData>
+    {
+        friend class openPMD::Attributable;
+
+        using SharedData_t = std::shared_ptr<SharedAttributableData>;
+
+    public:
+        AttributableData();
+        AttributableData(SharedAttributableData *);
+        AttributableData(AttributableData const &) = delete;
+        AttributableData(AttributableData &&) = delete;
+        virtual ~AttributableData() = default;
+
+        AttributableData &operator=(AttributableData const &) = delete;
+        AttributableData &operator=(AttributableData &&) = delete;
     };
 
     template <typename, typename>
@@ -347,7 +382,7 @@ OPENPMD_protected
     }
     AbstractIOHandler const *IOHandler() const
     {
-        auto &opt = m_attri->m_writable.IOHandler;
+        auto &opt = writable().IOHandler;
         if (!opt || !opt->has_value())
         {
             return nullptr;
@@ -356,19 +391,19 @@ OPENPMD_protected
     }
     Writable *&parent()
     {
-        return m_attri->m_writable.parent;
+        return writable().parent;
     }
     Writable const *parent() const
     {
-        return m_attri->m_writable.parent;
+        return writable().parent;
     }
     Writable &writable()
     {
-        return m_attri->m_writable;
+        return (*m_attri)->m_writable;
     }
     Writable const &writable() const
     {
-        return m_attri->m_writable;
+        return (*m_attri)->m_writable;
     }
 
     inline void setData(std::shared_ptr<internal::AttributableData> attri)
@@ -376,13 +411,13 @@ OPENPMD_protected
         m_attri = std::move(attri);
     }
 
-    inline internal::AttributableData &get()
+    inline internal::SharedAttributableData &get()
     {
-        return *m_attri;
+        return **m_attri;
     }
-    inline internal::AttributableData const &get() const
+    inline internal::SharedAttributableData const &get() const
     {
-        return *m_attri;
+        return **m_attri;
     }
 
     bool dirty() const

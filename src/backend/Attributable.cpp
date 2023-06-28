@@ -34,7 +34,16 @@ namespace openPMD
 {
 namespace internal
 {
-    AttributableData::AttributableData() : m_writable{this}
+    SharedAttributableData::SharedAttributableData(AttributableData *attr)
+        : m_writable{attr}
+    {}
+
+    AttributableData::AttributableData()
+        : SharedData_t(std::make_shared<SharedAttributableData>(this))
+    {}
+
+    AttributableData::AttributableData(SharedAttributableData *raw_ptr)
+        : SharedData_t({raw_ptr, [](auto const *) {}})
     {}
 } // namespace internal
 
@@ -168,7 +177,8 @@ Iteration const &Attributable::containingIteration() const
         (*searchQueue.rbegin())->attributable);
     for (auto const &pair : series.iterations)
     {
-        if (&static_cast<Attributable const &>(pair.second).get() == attr)
+        if (static_cast<Attributable const &>(pair.second).m_attri.get() ==
+            attr)
         {
             return pair.second;
         }
