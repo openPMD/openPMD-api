@@ -1060,7 +1060,7 @@ void Series::initSeries(
     std::unique_ptr<Series::ParsedInput> input)
 {
     auto &series = get();
-    auto &writable = series.m_writable;
+    auto &writable = series->m_writable;
 
     /*
      * In Access modes READ_LINEAR and APPEND, the Series constructor might have
@@ -2419,7 +2419,7 @@ AdvanceStatus Series::advance(
             // If the backend does not support steps, we cannot continue here
             param.isThisStepMandatory = true;
         }
-        IOTask task(&file.m_writable, param);
+        IOTask task(&file->m_writable, param);
         IOHandler()->enqueue(task);
     }
 
@@ -2516,7 +2516,7 @@ AdvanceStatus Series::advance(AdvanceMode mode)
         // If the backend does not support steps, we cannot continue here
         param.isThisStepMandatory = true;
     }
-    IOTask task(&series.m_writable, param);
+    IOTask task(&series->m_writable, param);
     IOHandler()->enqueue(task);
 
     // We cannot call Series::flush now, since the IO handler is still filled
@@ -2880,9 +2880,9 @@ namespace internal
         // This releases the openPMD hierarchy
         iterations.container().clear();
         // Release the IO Handler
-        if (m_writable.IOHandler)
+        if (operator*().m_writable.IOHandler)
         {
-            *m_writable.IOHandler = std::nullopt;
+            *operator*().m_writable.IOHandler = std::nullopt;
         }
     }
 } // namespace internal
