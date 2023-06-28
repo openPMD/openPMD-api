@@ -19,10 +19,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Writable.hpp"
-#include "openPMD/Error.hpp"
+
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
-#include "openPMD/auxiliary/DerefDynamicCast.hpp"
+
 #include <stdexcept>
 
 namespace openPMD
