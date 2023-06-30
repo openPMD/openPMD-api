@@ -214,21 +214,21 @@ function build_blosc {
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
-    curl -sLo c-blosc2-v2.7.1.tar.gz \
-        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.7.1.tar.gz
+    curl -sLo c-blosc2-v2.9.3.tar.gz \
+        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.9.3.tar.gz
     file c-blosc2*.tar.gz
     tar -xzf c-blosc2*.tar.gz
     rm c-blosc2*.tar.gz
 
-    # @todo: proper patch for this
-    sed -E -i.bak 's|if\(\$ENV\{CMAKE_OSX_ARCHITECTURES\} STREQUAL "arm64"\)|if("$ENV{CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")|' c-blosc2-*/CMakeLists.txt
-    cat c-blosc2-*/CMakeLists.txt
+    # https://github.com/Blosc/c-blosc2/pull/525
+    curl -sLo c-blosc2-cmake.patch \
+        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/525.patch
+    python3 -m patch -p 1 -d c-blosc2-2.9.3 c-blosc2-cmake.patch
 
     mkdir build-blosc2
     cd build-blosc2
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    # Blosc2 runs into a linking error without testing enabled???
     PATH=${CMAKE_BIN}:${PATH} cmake          \
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON   \
       -DBUILD_STATIC=ON                      \
@@ -236,9 +236,10 @@ function build_blosc2 {
       -DBUILD_BENCHMARKS=OFF                 \
       -DBUILD_EXAMPLES=OFF                   \
       -DBUILD_FUZZERS=OFF                    \
-      -DBUILD_TESTS=ON                       \
+      -DBUILD_TESTS=OFF                      \
       -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
+      -DPREFER_EXTERNAL_ZLIB=ON              \
       -DZLIB_USE_STATIC_LIBS=ON              \
       ../c-blosc2-*
     make -j${CPU_COUNT}
