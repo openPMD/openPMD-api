@@ -991,10 +991,15 @@ void HDF5IOHandlerImpl::openDataset(
 
     node_id = H5Gopen(
         file.id, concrete_h5_file_position(writable->parent).c_str(), gapl);
-    VERIFY(
-        node_id >= 0,
-        "[HDF5] Internal error: Failed to open HDF5 group during dataset "
-        "opening");
+    if (node_id < 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Dataset,
+            error::Reason::NotFound,
+            "HDF5",
+            "Internal error: Failed to open HDF5 group during dataset "
+            "opening");
+    }
 
     /* Sanitize name */
     std::string name = parameters.name;
@@ -1004,10 +1009,15 @@ void HDF5IOHandlerImpl::openDataset(
         name += '/';
 
     dataset_id = H5Dopen(node_id, name.c_str(), H5P_DEFAULT);
-    VERIFY(
-        dataset_id >= 0,
-        "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
-        "opening");
+    if (dataset_id < 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Dataset,
+            error::Reason::NotFound,
+            "HDF5",
+            "Internal error: Failed to open HDF5 dataset during dataset "
+            "opening");
+    }
 
     hid_t dataset_type, dataset_space;
     dataset_type = H5Dget_type(dataset_id);
@@ -1062,10 +1072,18 @@ void HDF5IOHandlerImpl::openDataset(
         else if (H5Tget_class(dataset_type) == H5T_STRING)
             d = DT::STRING;
         else
-            throw std::runtime_error("[HDF5] Unknown dataset type");
+            throw error::ReadError(
+                error::AffectedObject::Dataset,
+                error::Reason::UnexpectedContent,
+                "HDF5",
+                "Unknown dataset type");
     }
     else
-        throw std::runtime_error("[HDF5] Unsupported dataset class");
+        throw error::ReadError(
+            error::AffectedObject::Dataset,
+            error::Reason::UnexpectedContent,
+            "HDF5",
+            "Unknown dataset class");
 
     auto dtype = parameters.dtype;
     *dtype = d;
@@ -1083,30 +1101,55 @@ void HDF5IOHandlerImpl::openDataset(
 
     herr_t status;
     status = H5Sclose(dataset_space);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 dataset space during "
-        "dataset opening");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Group,
+            error::Reason::Other,
+            "HDF5",
+            "Internal error: Failed to close HDF5 dataset space during "
+            "dataset opening");
+    }
     status = H5Tclose(dataset_type);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 dataset type during "
-        "dataset opening");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Group,
+            error::Reason::Other,
+            "HDF5",
+            "Internal error: Failed to close HDF5 dataset type during "
+            "dataset opening");
+    }
     status = H5Dclose(dataset_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 dataset during dataset "
-        "opening");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Group,
+            error::Reason::Other,
+            "HDF5",
+            "Internal error: Failed to close HDF5 dataset during dataset "
+            "opening");
+    }
     status = H5Gclose(node_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 group during dataset "
-        "opening");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Group,
+            error::Reason::Other,
+            "HDF5",
+            "Internal error: Failed to close HDF5 group during dataset "
+            "opening");
+    }
     status = H5Pclose(gapl);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 property during dataset "
-        "opening");
+    if (status != 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Group,
+            error::Reason::Other,
+            "HDF5",
+            "Internal error: Failed to close HDF5 property during dataset "
+            "opening");
+    }
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared<HDF5FilePosition>(name);
