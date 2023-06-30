@@ -96,6 +96,11 @@ exit /b 0
     https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/525.patch
   python -m patch -p 1 -d dep-blosc2/c-blosc2-2.9.3 c-blosc2-cmake.patch
 
+  :: https://github.com/Blosc/c-blosc2/issues/526
+  curl -sLo c-blosc2-cxx20.patch ^
+    https://github.com/Blosc/c-blosc2/pull/527.patch
+  python -m patch -p 1 -d dep-blosc2/c-blosc2-2.9.3 c-blosc2-cxx20.patch
+
   cmake -S dep-blosc2/c-blosc2-2.9.3 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED=OFF          ^
