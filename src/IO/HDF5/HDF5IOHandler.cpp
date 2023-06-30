@@ -1030,53 +1030,107 @@ void HDF5IOHandlerImpl::openDataset(
     if (dataset_class == H5S_SIMPLE || dataset_class == H5S_SCALAR ||
         dataset_class == H5S_NULL)
     {
-        if (H5Tequal(dataset_type, H5T_NATIVE_UCHAR))
-            d = DT::UCHAR;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_SCHAR))
-            d = DT::SCHAR;
-        // NOTE: in HDF5, CHAR is actually either UCHAR or SCHAR.
-        else if (H5Tequal(dataset_type, H5T_NATIVE_CHAR))
-            d = DT::CHAR;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_SHORT))
-            d = DT::SHORT;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_INT))
-            d = DT::INT;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_LONG))
-            d = DT::LONG;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_LLONG))
-            d = DT::LONGLONG;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_FLOAT))
-            d = DT::FLOAT;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_DOUBLE))
-            d = DT::DOUBLE;
-        else if (
-            H5Tequal(dataset_type, H5T_NATIVE_LDOUBLE) ||
-            H5Tequal(dataset_type, m_H5T_LONG_DOUBLE_80_LE))
-            d = DT::LONG_DOUBLE;
-        else if (H5Tequal(dataset_type, m_H5T_CFLOAT))
-            d = DT::CFLOAT;
-        else if (H5Tequal(dataset_type, m_H5T_CDOUBLE))
-            d = DT::CDOUBLE;
-        else if (
-            H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE) ||
-            H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE_80_LE))
-            d = DT::CLONG_DOUBLE;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_USHORT))
-            d = DT::USHORT;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_UINT))
-            d = DT::UINT;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_ULONG))
-            d = DT::ULONG;
-        else if (H5Tequal(dataset_type, H5T_NATIVE_ULLONG))
-            d = DT::ULONGLONG;
-        else if (H5Tget_class(dataset_type) == H5T_STRING)
-            d = DT::STRING;
-        else
-            throw error::ReadError(
-                error::AffectedObject::Dataset,
-                error::Reason::UnexpectedContent,
-                "HDF5",
-                "Unknown dataset type");
+        constexpr size_t max_retries = 10;
+        /*
+         * It happens that an HDF5 file has a type that is not equal to any of
+         * the native types, but can still be read as its parent type.
+         * For example an enum (which some applications use to emulate bools)
+         * can still be read as its parent type, a char.
+         * Upon not matching any native type, don't give up yet, but check the
+         * parent type.
+         * Normally, this procedure should stop at the point where
+         * H5Tget_super() returns H5I_INVALID_HID, but this is putting a bit
+         * too much trust in an external library to be the loop's exit
+         * condition. So, we restrict the loop to a maximum of 10 iterations
+         * before manually canceling it.
+         */
+        size_t remaining_tries = max_retries;
+        bool repeat = false;
+        do
+        {
+            repeat = false;
+            if (H5Tequal(dataset_type, H5T_NATIVE_UCHAR))
+                d = DT::UCHAR;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_SCHAR))
+                d = DT::SCHAR;
+            // NOTE: in HDF5, CHAR is actually either UCHAR or SCHAR.
+            else if (H5Tequal(dataset_type, H5T_NATIVE_CHAR))
+                d = DT::CHAR;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_SHORT))
+                d = DT::SHORT;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_INT))
+                d = DT::INT;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_LONG))
+                d = DT::LONG;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_LLONG))
+                d = DT::LONGLONG;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_FLOAT))
+                d = DT::FLOAT;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_DOUBLE))
+                d = DT::DOUBLE;
+            else if (
+                H5Tequal(dataset_type, H5T_NATIVE_LDOUBLE) ||
+                H5Tequal(dataset_type, m_H5T_LONG_DOUBLE_80_LE))
+                d = DT::LONG_DOUBLE;
+            else if (H5Tequal(dataset_type, m_H5T_CFLOAT))
+                d = DT::CFLOAT;
+            else if (H5Tequal(dataset_type, m_H5T_CDOUBLE))
+                d = DT::CDOUBLE;
+            else if (
+                H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE) ||
+                H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE_80_LE))
+                d = DT::CLONG_DOUBLE;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_USHORT))
+                d = DT::USHORT;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_UINT))
+                d = DT::UINT;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_ULONG))
+                d = DT::ULONG;
+            else if (H5Tequal(dataset_type, H5T_NATIVE_ULLONG))
+                d = DT::ULONGLONG;
+            else if (H5Tget_class(dataset_type) == H5T_STRING)
+                d = DT::STRING;
+            else
+            {
+                auto throw_error = []() {
+                    throw error::ReadError(
+                        error::AffectedObject::Dataset,
+                        error::Reason::UnexpectedContent,
+                        "HDF5",
+                        "Unknown dataset type");
+                };
+                if (remaining_tries == 0)
+                {
+                    throw_error();
+                }
+                hid_t next_type = H5Tget_super(dataset_type);
+                if (next_type == H5I_INVALID_HID)
+                {
+                    throw_error();
+                }
+                else if (H5Tequal(dataset_type, next_type))
+                {
+                    H5Tclose(next_type);
+                    throw_error();
+                }
+                else
+                {
+                    if (H5Tclose(dataset_type) != 0)
+                    {
+                        throw error::ReadError(
+                            error::AffectedObject::Group,
+                            error::Reason::Other,
+                            "HDF5",
+                            "Internal error: Failed to close HDF5 dataset type "
+                            "during "
+                            "dataset opening");
+                    }
+                    dataset_type = next_type;
+                    --remaining_tries;
+                    repeat = true;
+                }
+            }
+        } while (repeat);
     }
     else
         throw error::ReadError(
