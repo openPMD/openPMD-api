@@ -118,11 +118,11 @@ exit /b 0
 :build_hdf5
   if exist hdf5-stamp exit /b 0
 
-  curl -sLo hdf5-1.12.2.zip ^
-    https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.zip
-  powershell Expand-Archive hdf5-1.12.2.zip -DestinationPath dep-hdf5
+  curl -sLo hdf5-1.14.1-2.zip ^
+    https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.1/src/hdf5-1.14.1-2.zip
+  powershell Expand-Archive hdf5-1.14.1-2.zip -DestinationPath dep-hdf5
 
-  cmake -S dep-hdf5/hdf5-1.12.2 -B build-hdf5 ^
+  cmake -S dep-hdf5/hdf5-1.14.1-2 -B build-hdf5 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DCMAKE_VERBOSE_MAKEFILE=ON ^
     -DBUILD_SHARED_LIBS=OFF     ^
