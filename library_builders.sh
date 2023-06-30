@@ -339,8 +339,7 @@ function build_hdf5 {
 
         curl -sLo osx_cross_src_makefile.patch \
             https://raw.githubusercontent.com/conda-forge/hdf5-feedstock/ca7b3b40d58cb949638ead75c9527b3fd1112a3f/recipe/patches/osx_cross_makefile.patch
-        #python3 -m patch -p 0 -d . osx_cross_src_makefile.patch
-        patch -p 0 < osx_cross_src_makefile.patch
+        python3 -m patch -p 0 -d . osx_cross_src_makefile.patch
     fi
 
     ./configure \
