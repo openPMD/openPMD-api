@@ -352,17 +352,6 @@ function build_hdf5 {
         ${HOST_ARG}        \
         --prefix=${BUILD_PREFIX}
 
-    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
-        # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh - build_h5detect
-        mkdir -p native-build/bin
-        pushd native-build/bin
-        CFLAGS= $CC ../../src/H5detect.c -I ../../src/ -o H5detect
-        CFLAGS= $CC ../../src/H5make_libsettings.c -I ../../src/ -o H5make_libsettings
-        popd
-
-        export PATH="$(pwd)/native-build/bin:$PATH"
-    fi
-
     make -j${CPU_COUNT}
     make install
     cd ..
