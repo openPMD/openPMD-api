@@ -212,7 +212,7 @@ function build_blosc {
 }
 
 function build_blosc2 {
-    if [ -e blosc-stamp ]; then return; fi
+    if [ -e blosc-stamp2 ]; then return; fi
 
     curl -sLo c-blosc2-v2.7.1.tar.gz \
         https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.7.1.tar.gz
@@ -230,11 +230,13 @@ function build_blosc2 {
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     # Blosc2 runs into a linking error without testing enabled???
     PATH=${CMAKE_BIN}:${PATH} cmake          \
-      -DWITH_SSE2=${WITH_SSE2}               \
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON   \
+      -DBUILD_STATIC=ON                      \
       -DBUILD_SHARED=OFF                     \
-      -DBUILD_TESTS=ON                       \
       -DBUILD_BENCHMARKS=OFF                 \
+      -DBUILD_EXAMPLES=OFF                   \
+      -DBUILD_FUZZERS=OFF                    \
+      -DBUILD_TESTS=ON                       \
       -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       -DZLIB_USE_STATIC_LIBS=ON              \
@@ -245,7 +247,7 @@ function build_blosc2 {
 
     rm -rf build-blosc2
 
-    touch blosc2-stamp
+    touch blosc-stamp2
 }
 
 function build_zfp {

@@ -16,25 +16,21 @@ exit /b 0
 
 :build_adios2
   if exist adios2-stamp exit /b 0
-  curl -sLo adios2-2.7.1.zip ^
-    https://github.com/ornladios/ADIOS2/archive/v2.7.1.zip
-  powershell Expand-Archive adios2-2.7.1.zip -DestinationPath dep-adios2
+  curl -sLo adios2-2.9.0.zip ^
+    https://github.com/ornladios/ADIOS2/archive/v2.9.0.zip
+  powershell Expand-Archive adios2-2.9.0.zip -DestinationPath dep-adios2
 
-  :: Patch Blosc Compression w/ ADIOS 2.7.1
-  curl -sLo adios2-blosc.patch ^
-    https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2746.patch
-  python -m patch -p 1 -d dep-adios2/ADIOS2-2.7.1 adios2-blosc.patch
-
-  cmake -S dep-adios2/ADIOS2-2.7.1 -B build-adios2 ^
+  cmake -S dep-adios2/ADIOS2-2.9.0 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED_LIBS=OFF     ^
     -DBUILD_TESTING=OFF         ^
     -DADIOS2_USE_MPI=OFF        ^
     -DADIOS2_BUILD_EXAMPLES=OFF ^
-    -DADIOS2_USE_Blosc=ON       ^
+    -DADIOS2_USE_Blosc2=ON      ^
     -DADIOS2_USE_BZip2=OFF      ^
     -DADIOS2_USE_Fortran=OFF    ^
     -DADIOS2_USE_HDF5=OFF       ^
+    -DADIOS2_USE_MHS=OFF        ^
     -DADIOS2_USE_PNG=OFF        ^
     -DADIOS2_USE_Profiling=OFF  ^
     -DADIOS2_USE_Python=OFF     ^
@@ -85,6 +81,37 @@ exit /b 0
   if errorlevel 1 exit 1
 
   break > blosc-stamp
+  if errorlevel 1 exit 1
+exit /b 0
+
+:build_blosc2
+  if exist blosc2-stamp exit /b 0
+
+  curl -sLo blosc2-2.7.1.zip ^
+    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.7.1.zip
+  powershell Expand-Archive blosc2-2.7.1.zip -DestinationPath dep-blosc2
+
+  cmake -S dep-blosc2/c-blosc2-2.7.1 -B build-blosc2 ^
+    -DCMAKE_BUILD_TYPE=Release  ^
+    -DBUILD_SHARED=OFF          ^
+    -DBUILD_STATIC=ON           ^
+    -DBUILD_BENCHMARKS=OFF      ^
+    -DBUILD_EXAMPLES=OFF        ^
+    -DBUILD_FUZZERS=OFF         ^
+    -DBUILD_TESTS=OFF           ^
+    -DZLIB_USE_STATIC_LIBS=ON
+  if errorlevel 1 exit 1
+
+  cmake --build build-blosc2 --parallel %CPU_COUNT%
+  if errorlevel 1 exit 1
+
+  cmake --build build-blosc2 --target install --config Release
+  if errorlevel 1 exit 1
+
+  rmdir /s /q build-blosc2
+  if errorlevel 1 exit 1
+
+  break > blosc2-stamp
   if errorlevel 1 exit 1
 exit /b 0
 
@@ -194,6 +221,7 @@ call :build_zlib
 :: build_bzip2
 :: build_szip
 call :build_blosc
+call :build_blosc2
 call :build_zfp
 call :build_hdf5
 call :build_adios2
