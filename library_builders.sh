@@ -319,6 +319,7 @@ function build_hdf5 {
 
     # macOS cross-compile
     HOST_ARG=""
+    #   heavily based on conda-forge hdf5-feedstock and h5py's cibuildwheel instructions
     #   https://github.com/conda-forge/hdf5-feedstock/blob/cbbd57d58f7f5350ca679eaad49354c11dd32b95/recipe/build.sh#L53-L80
     if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
         # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh
@@ -351,6 +352,22 @@ function build_hdf5 {
         --with-zlib=${BUILD_PREFIX} \
         ${HOST_ARG}        \
         --prefix=${BUILD_PREFIX}
+
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        (
+        # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh - build_h5detect
+        mkdir -p native-build/bin
+        pushd native-build/bin
+
+        # MACOSX_DEPLOYMENT_TARGET is for the target_platform and not for build_platform
+        unset MACOSX_DEPLOYMENT_TARGET
+
+        $CC ../../src/H5detect.c -I ../../src/ -o H5detect
+        $CC ../../src/H5make_libsettings.c -I ../../src/ -o H5make_libsettings
+        popd
+        )
+        export PATH="$(pwd)/native-build/bin:$PATH"
+    fi
 
     make -j${CPU_COUNT}
     make install
