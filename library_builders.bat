@@ -106,6 +106,11 @@ exit /b 0
     https://github.com/Blosc/c-blosc2/pull/527.patch
   python -m patch -p 1 -d dep-blosc2/c-blosc2-2.9.3 c-blosc2-cxx20.patch
 
+  :: https://github.com/Blosc/c-blosc2/pull/529
+  curl -sLo c-blosc2-external-zlib.patch ^
+    https://github.com/Blosc/c-blosc2/pull/529.patch
+  python -m patch -p 1 -d dep-blosc2/c-blosc2-2.9.3 c-blosc2-external-zlib.patch
+
   cmake -S dep-blosc2/c-blosc2-2.9.3 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED=OFF          ^
@@ -113,6 +118,7 @@ exit /b 0
     -DBUILD_BENCHMARKS=OFF      ^
     -DBUILD_EXAMPLES=OFF        ^
     -DBUILD_FUZZERS=OFF         ^
+    -DBUILD_PLUGINS=OFF         ^
     -DBUILD_TESTS=OFF           ^
     -DPREFER_EXTERNAL_ZLIB=ON   ^
     -DZLIB_USE_STATIC_LIBS=ON
@@ -236,8 +242,8 @@ call :install_buildessentials
 call :build_zlib
 :: build_bzip2
 :: build_szip
+call :build_zfp
 call :build_blosc
 call :build_blosc2
-call :build_zfp
 call :build_hdf5
 call :build_adios2

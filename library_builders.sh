@@ -225,6 +225,11 @@ function build_blosc2 {
         https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/525.patch
     python3 -m patch -p 1 -d c-blosc2-2.9.3 c-blosc2-cmake.patch
 
+    # https://github.com/Blosc/c-blosc2/pull/529
+    curl -sLo c-blosc2-external-zlib.patch \
+        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/529.patch
+    python3 -m patch -p 1 -d c-blosc2-2.9.3 c-blosc2-external-zlib.patch
+
     mkdir build-blosc2
     cd build-blosc2
     PY_BIN=$(which python3)
@@ -236,12 +241,13 @@ function build_blosc2 {
       -DBUILD_BENCHMARKS=OFF                 \
       -DBUILD_EXAMPLES=OFF                   \
       -DBUILD_FUZZERS=OFF                    \
+      -DBUILD_PLUGINS=OFF                    \
       -DBUILD_TESTS=OFF                      \
       -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       -DPREFER_EXTERNAL_ZLIB=ON              \
       -DZLIB_USE_STATIC_LIBS=ON              \
-      ../c-blosc2-*
+      ../c-blosc2-2.9.3
     make -j${CPU_COUNT}
     make install
     cd -
@@ -392,9 +398,9 @@ fi
 
 install_buildessentials
 build_zlib
+build_zfp
 build_blosc
 build_blosc2
-build_zfp
 build_hdf5
 # skip ADIOS1 build for M1
 if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" ]]; then
