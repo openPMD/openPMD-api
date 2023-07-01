@@ -20,6 +20,11 @@ exit /b 0
     https://github.com/ornladios/ADIOS2/archive/v2.9.0.zip
   powershell Expand-Archive adios2-2.9.0.zip -DestinationPath dep-adios2
 
+  :: https://github.com/ornladios/ADIOS2/issues/3680#issuecomment-1615308336
+  curl -sLo adios2-cblosc-stdmin.patch ^
+    https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/3681.patch
+  python -m patch -p 1 -d dep-adios2/ADIOS2-2.9.0 adios2-cblosc-stdmin.patch
+
   cmake -S dep-adios2/ADIOS2-2.9.0 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED_LIBS=OFF     ^
