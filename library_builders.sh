@@ -362,8 +362,8 @@ function build_hdf5 {
         # MACOSX_DEPLOYMENT_TARGET is for the target_platform and not for build_platform
         unset MACOSX_DEPLOYMENT_TARGET
 
-        $CC ../../src/H5detect.c -I ../../src/ -o H5detect
-        $CC ../../src/H5make_libsettings.c -I ../../src/ -o H5make_libsettings
+        CFLAGS="" $CC ../../src/H5detect.c -I ../../src/ -o H5detect
+        CFLAGS="" $CC ../../src/H5make_libsettings.c -I ../../src/ -o H5make_libsettings
         popd
         )
         export PATH="$(pwd)/native-build/bin:$PATH"
