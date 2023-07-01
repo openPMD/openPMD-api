@@ -119,9 +119,9 @@ exit /b 0
     -DBUILD_EXAMPLES=OFF        ^
     -DBUILD_FUZZERS=OFF         ^
     -DBUILD_PLUGINS=OFF         ^
-    -DBUILD_TESTS=OFF           ^
-    -DPREFER_EXTERNAL_ZLIB=ON   ^
-    -DZLIB_USE_STATIC_LIBS=ON
+    -DBUILD_TESTS=OFF
+::    -DPREFER_EXTERNAL_ZLIB=ON
+::    -DZLIB_USE_STATIC_LIBS=ON
   if errorlevel 1 exit 1
 
   cmake --build build-blosc2 --parallel %CPU_COUNT%
