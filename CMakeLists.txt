@@ -1100,10 +1100,9 @@ if(openPMD_INSTALL)
         if(openPMD_BUILD_CLI_TOOLS)
             foreach(toolname ${openPMD_PYTHON_CLI_TOOL_NAMES})
                 install(
-                    FILES ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
+                    PROGRAMS ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
                     DESTINATION ${openPMD_INSTALL_BINDIR}
                     RENAME openpmd-${toolname}
-                    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
                 )
             endforeach()
         endif()

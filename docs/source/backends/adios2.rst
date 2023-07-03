@@ -84,6 +84,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
 ``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
 ``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
+``OPENPMD_ADIOS2_ASYNC_WRITE``        ``0``      ADIOS2 BP5 engine: 1 means setting "AsyncWrite" in ADIOS2 to "on". Flushes will go to the buffer by default (see ``preferred_flush_target``).
 ``OPENPMD_ADIOS2_BP5_BufferChunkMB``  ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
 ``OPENPMD_ADIOS2_BP5_MaxShmMB``       ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
 ``OPENPMD_ADIOS2_BP5_NumSubFiles``    ``0``      ADIOS2 BP5 engine: num of subfiles
@@ -137,33 +138,11 @@ Be aware that extreme-scale I/O is a research topic after all.
 Experimental new ADIOS2 schema
 ------------------------------
 
-We are experimenting with a breaking change to our layout of openPMD datasets in ADIOS2.
-It is likely that we will in future use ADIOS attributes only for a handful of internal flags.
-Actual openPMD attributes will be modeled by ADIOS variables of the same name.
-In order to distinguish datasets from attributes, datasets will be suffixed by ``/__data__``.
+The experimental new ADIOS2 schema is deprecated and **will be removed soon**. It used to be activated via the JSON parameter ``adios2.schema = 20210209`` or via the environment variable ``export OPENPMD2_ADIOS2_SCHEMA=20210209``.
 
-We hope that this will bring several advantages:
+**Do no longer use these options**, the created datasets will no longer be read by the openPMD-api.
 
-* Unlike ADIOS attributes, ADIOS variables are mutable.
-* ADIOS variables are more closely related to the concept of ADIOS steps.
-  An ADIOS variable that is not written to in one step is not seen by the reader.
-  This will bring more manageable amounts of metadata for readers to parse through.
-
-The new layout may be activated **for experimental purposes** in two ways:
-
-* Via the JSON parameter ``adios2.schema = 20210209``.
-* Via the environment variable ``export OPENPMD2_ADIOS2_SCHEMA=20210209``.
-
-The ADIOS2 backend will automatically recognize the layout that has been used by a writer when reading a dataset.
-
-.. tip::
-
-   This schema does not use ADIOS2 attributes anymore, thus ``bpls -a`` and ``bpls -A`` attribute switches do not show openPMD attributes.
-   Their functionality can be emulated via regexes:
-
-   * Print datasets and attributes: Default behavior
-   * Print datasets only: ``bpls -e '.*/__data__$'``
-   * Print attributes only: ``bpls -e '^(.(?!/__data__$))*$'``
+An alternative data layout with less intrusive changes and similar features is `currently in development <https://github.com/openPMD/openPMD-api/pull/1310>`__.
 
 Memory usage
 ------------
@@ -260,7 +239,7 @@ In the openPMD-api, this can be done by specifying backend-specific parameters t
 
 .. code:: cpp
 
-  series.flush(R"({"adios2": {"preferred_flush_target": "disk"}})")
+  series.flush(R"({"adios2": {"engine": {"preferred_flush_target": "disk"}}})")
 
 The memory consumption of this approach shows that the 2GB buffer is first drained and then recreated after each ``flush()``:
 
@@ -281,7 +260,7 @@ Note that this involves data copies that can be avoided by either flushing direc
 
 .. code:: cpp
 
-  series.flush(R"({"adios2": {"preferred_flush_target": "buffer"}})")
+  series.flush(R"({"adios2": {"engine": {"preferred_flush_target": "buffer"}}})")
 
 With this strategy, the BP5 engine will slowly build up its buffer until ending the step.
 Rather than by reallocation as in BP4, this is done by appending a new chunk, leading to a clearly more acceptable memory profile:
@@ -289,7 +268,7 @@ Rather than by reallocation as in BP4, this is done by appending a new chunk, le
 .. figure:: https://user-images.githubusercontent.com/14241876/181477384-ce4ea8ab-3bde-4210-991b-2e627dfcc7c9.png
   :alt: Memory usage of BP5 when flushing to the engine buffer
 
-The default is to flush to disk, but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
+The default is to flush to disk (except when specifying ``OPENPMD_ADIOS2_ASYNC_WRITE=1``), but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
 
 
 
