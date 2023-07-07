@@ -89,7 +89,8 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     std::string originalExtension,
 
     MPI_Comm comm,
-    json::TracingJSON options)
+    json::TracingJSON options,
+    std::string const &pathAsItWasSpecifiedInTheConstructor)
 {
     (void)options;
     switch (format)
@@ -154,9 +155,14 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             std::move(options),
             "ssc",
             std::move(originalExtension));
+    case Format::JSON:
+        throw error::WrongAPIUsage(
+            "JSON backend not available in parallel openPMD.");
     default:
-        throw std::runtime_error(
-            "Unknown file format! Did you specify a file ending?");
+        throw error::WrongAPIUsage(
+            "Unknown file format! Did you specify a file ending? Specified "
+            "file name was '" +
+            pathAsItWasSpecifiedInTheConstructor + "'.");
     }
 }
 #endif
@@ -167,7 +173,8 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     Access access,
     Format format,
     std::string originalExtension,
-    json::TracingJSON options)
+    json::TracingJSON options,
+    std::string const &pathAsItWasSpecifiedInTheConstructor)
 {
     (void)options;
     switch (format)
@@ -227,7 +234,9 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             "JSON", path, access);
     default:
         throw std::runtime_error(
-            "Unknown file format! Did you specify a file ending?");
+            "Unknown file format! Did you specify a file ending? Specified "
+            "file name was '" +
+            pathAsItWasSpecifiedInTheConstructor + "'.");
     }
 }
 
@@ -242,6 +251,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
         access,
         format,
         std::move(originalExtension),
-        json::TracingJSON(json::ParsedConfig{}));
+        json::TracingJSON(json::ParsedConfig{}),
+        "");
 }
 } // namespace openPMD
