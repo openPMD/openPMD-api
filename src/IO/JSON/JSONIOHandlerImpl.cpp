@@ -23,6 +23,8 @@
 #include "openPMD/Datatype.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
@@ -132,6 +134,21 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {}
+
+#if openPMD_HAVE_MPI
+JSONIOHandlerImpl::JSONIOHandlerImpl(
+    AbstractIOHandler *handler,
+    MPI_Comm comm,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    [[maybe_unused]] openPMD::json::TracingJSON config,
+    FileFormat format,
+    std::string originalExtension)
+    : AbstractIOHandlerImpl(handler)
+    , m_communicator{comm}
+    , m_fileFormat{format}
+    , m_originalExtension{std::move(originalExtension)}
+{}
+#endif
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
 

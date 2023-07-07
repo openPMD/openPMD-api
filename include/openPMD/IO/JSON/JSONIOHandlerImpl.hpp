@@ -31,6 +31,9 @@
 
 #include <istream>
 #include <nlohmann/json.hpp>
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
 
 #include <complex>
 #include <fstream>
@@ -167,6 +170,15 @@ public:
         FileFormat,
         std::string originalExtension);
 
+#if openPMD_HAVE_MPI
+    JSONIOHandlerImpl(
+        AbstractIOHandler *,
+        MPI_Comm,
+        openPMD::json::TracingJSON config,
+        FileFormat,
+        std::string originalExtension);
+#endif
+
     ~JSONIOHandlerImpl() override;
 
     void
@@ -230,6 +242,10 @@ public:
     std::future<void> flush();
 
 private:
+#if openPMD_HAVE_MPI
+    std::optional<MPI_Comm> m_communicator;
+#endif
+
     using FILEHANDLE = std::fstream;
 
     // map each Writable to its associated file
