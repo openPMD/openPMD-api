@@ -2313,7 +2313,8 @@ Series::Series(
         input->format,
         input->filenameExtension,
         comm,
-        optionsJson);
+        optionsJson,
+        filepath);
     init(std::move(handler), std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
@@ -2330,7 +2331,12 @@ Series::Series(
     auto input = parseInput(filepath);
     parseJsonOptions(optionsJson, *input);
     auto handler = createIOHandler(
-        input->path, at, input->format, input->filenameExtension, optionsJson);
+        input->path,
+        at,
+        input->format,
+        input->filenameExtension,
+        optionsJson,
+        filepath);
     init(std::move(handler), std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
