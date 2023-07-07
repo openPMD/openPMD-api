@@ -26,11 +26,13 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <iomanip>
 #include <toml.hpp>
 
 #include <algorithm>
@@ -1260,21 +1262,65 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
     {
         return it->second;
     }
+    auto serialImplementation = [&file, this]() {
+        auto [fh, fh_with_precision, _] =
+            getFilehandle(file, Access::READ_ONLY);
+        (void)_;
+        std::shared_ptr<nlohmann::json> res =
+            std::make_shared<nlohmann::json>();
+        switch (m_fileFormat)
+        {
+        case FileFormat::Json:
+            *fh_with_precision >> *res;
+            break;
+        case FileFormat::Toml:
+            *res = openPMD::json::tomlToJson(
+                toml::parse(*fh_with_precision, *file));
+            break;
+        }
+        VERIFY(fh->good(), "[JSON] Failed reading from a file.");
+        return res;
+    };
+    auto parallelImplementation = [&file, this](MPI_Comm comm) {
+        auto path = fullPath(*file);
+        std::string collectivelyReadRawData =
+            auxiliary::collective_file_read(path, comm);
+        std::shared_ptr<nlohmann::json> res =
+            std::make_shared<nlohmann::json>();
+        switch (m_fileFormat)
+        {
+        case FileFormat::Json:
+            *res = nlohmann::json::parse(collectivelyReadRawData);
+            break;
+        case FileFormat::Toml:
+            std::istringstream istream(
+                collectivelyReadRawData.c_str(),
+                std::ios_base::binary | std::ios_base::in);
+            auto as_toml = toml::parse(
+                istream >> std::setprecision(
+                               std::numeric_limits<double>::digits10 + 1),
+                *file);
+            *res = openPMD::json::tomlToJson(as_toml);
+            break;
+        }
+        return res;
+    };
     // read from file
-    auto [fh, fh_with_precision, _] = getFilehandle(file, Access::READ_ONLY);
-    (void)_;
-    std::shared_ptr<nlohmann::json> res = std::make_shared<nlohmann::json>();
-    switch (m_fileFormat)
+#if openPMD_HAVE_MPI
+    std::shared_ptr<nlohmann::json> res;
+    if (m_communicator.has_value())
     {
-    case FileFormat::Json:
-        *fh_with_precision >> *res;
-        break;
-    case FileFormat::Toml:
-        *res =
-            openPMD::json::tomlToJson(toml::parse(*fh_with_precision, *file));
-        break;
+        res = parallelImplementation(m_communicator.value());
     }
-    VERIFY(fh->good(), "[JSON] Failed reading from a file.");
+    else
+    {
+        res = serialImplementation();
+    }
+
+#else
+    auto res = serialImplementation();
+#endif
+
     m_jsonVals.emplace(file, res);
     return res;
 }

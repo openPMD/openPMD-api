@@ -195,7 +195,8 @@ std::string collective_file_read(std::string const &path, MPI_Comm comm)
         if (!handle.good())
         {
             throw std::runtime_error(
-                "Failed reading JSON config from file " + path + ".");
+                "[collective_file_read] Failed acessing file '" + path +
+                "' on MPI rank 0.");
         }
         stringLength = res.size() + 1;
     }
