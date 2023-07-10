@@ -339,7 +339,8 @@ private:
 
     // write to disk the json contents associated with the file
     // remove from m_dirty if unsetDirty == true
-    void putJsonContents(File const &, bool unsetDirty = true);
+    auto putJsonContents(File const &, bool unsetDirty = true)
+        -> decltype(m_jsonVals)::iterator;
 
     // figure out the file position of the writable
     // (preferring the parent's file position) and extend it
