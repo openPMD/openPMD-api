@@ -1390,25 +1390,58 @@ auto JSONIOHandlerImpl::putJsonContents(
             return res;
         };
 
-        auto parallelImplementation =
-            [this, &filename, &writeSingleFile, &num_digits](MPI_Comm comm) {
-                auto path = fullPath(*filename);
-                auto dirpath = path + ".parallel";
-                if (!auxiliary::create_directories(dirpath))
+        auto parallelImplementation = [this,
+                                       &filename,
+                                       &writeSingleFile,
+                                       &num_digits](MPI_Comm comm) {
+            auto path = fullPath(*filename);
+            auto dirpath = path + ".parallel";
+            if (!auxiliary::create_directories(dirpath))
+            {
+                throw std::runtime_error(
+                    "Failed creating directory '" + dirpath +
+                    "' for parallel JSON output");
+            }
+            int rank = 0, size = 0;
+            MPI_Comm_rank(comm, &rank);
+            MPI_Comm_size(comm, &size);
+            std::stringstream subfilePath;
+            subfilePath << dirpath << "/mpi_rank_"
+                        << std::setw(num_digits(size - 1)) << std::setfill('0')
+                        << rank << ".json";
+            writeSingleFile(subfilePath.str());
+            if (rank == 0)
+            {
+                constexpr char const *readme_msg = R"(
+This folder has been created by a parallel instance of the JSON backend in
+openPMD. There is one JSON file for each parallel writer MPI rank.
+The parallel JSON backend performs no metadata or data aggregation at all.
+
+This functionality is intended mainly for debugging and prototyping workflows.
+There is no support in the openPMD-api for reading this folder as a single
+dataset. For reading purposes, either pick a single .json file and read that, or
+merge the .json files somehow (no tooling provided for this (yet)).
+)";
+                std::fstream readme_file;
+                readme_file.open(
+                    dirpath + "/README.txt",
+                    std::ios_base::out | std::ios_base::trunc);
+                readme_file << readme_msg + 1;
+                readme_file.close();
+                if (!readme_file.good() &&
+                    !filename.fileState->printedReadmeWarningAlready)
                 {
-                    throw std::runtime_error(
-                        "Failed creating directory '" + dirpath +
-                        "' for parallel JSON output");
+                    std::cerr
+                        << "[Warning] Something went wrong in trying to create "
+                           "README file at '"
+                        << dirpath
+                        << "/README.txt'. Will ignore and continue. The README "
+                           "message would have been:\n----------\n"
+                        << readme_msg + 1 << "----------" << std::endl;
+                    filename.fileState->printedReadmeWarningAlready = true;
                 }
-                int rank = 0, size = 0;
-                MPI_Comm_rank(comm, &rank);
-                MPI_Comm_size(comm, &size);
-                std::stringstream subfilePath;
-                subfilePath << dirpath << "/mpi_rank_"
-                            << std::setw(num_digits(size - 1))
-                            << std::setfill('0') << rank << ".json";
-                writeSingleFile(subfilePath.str());
-            };
+            }
+        };
 
         std::shared_ptr<nlohmann::json> res;
         if (m_communicator.has_value())

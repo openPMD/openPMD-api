@@ -73,6 +73,7 @@ struct File
 
         std::string name;
         bool valid = true;
+        bool printedReadmeWarningAlready = false;
     };
 
     std::shared_ptr<FileState> fileState;
