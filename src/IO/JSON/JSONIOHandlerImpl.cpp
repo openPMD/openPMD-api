@@ -1374,8 +1374,24 @@ auto JSONIOHandlerImpl::putJsonContents(
         };
 
 #if openPMD_HAVE_MPI
+        auto num_digits = [](unsigned n) -> unsigned {
+            constexpr auto max = std::numeric_limits<unsigned>::max();
+            unsigned base_10 = 1;
+            unsigned res = 1;
+            while (base_10 < max)
+            {
+                base_10 *= 10;
+                if (n / base_10 == 0)
+                {
+                    return res;
+                }
+                ++res;
+            }
+            return res;
+        };
+
         auto parallelImplementation =
-            [this, &filename, &writeSingleFile](MPI_Comm comm) {
+            [this, &filename, &writeSingleFile, &num_digits](MPI_Comm comm) {
                 auto path = fullPath(*filename);
                 auto dirpath = path + ".parallel";
                 if (!auxiliary::create_directories(dirpath))
@@ -1384,10 +1400,12 @@ auto JSONIOHandlerImpl::putJsonContents(
                         "Failed creating directory '" + dirpath +
                         "' for parallel JSON output");
                 }
-                int rank = 0;
+                int rank = 0, size = 0;
                 MPI_Comm_rank(comm, &rank);
+                MPI_Comm_size(comm, &size);
                 std::stringstream subfilePath;
-                subfilePath << dirpath << "/mpi_rank_" << std::setw(6)
+                subfilePath << dirpath << "/mpi_rank_"
+                            << std::setw(num_digits(size - 1))
                             << std::setfill('0') << rank << ".json";
                 writeSingleFile(subfilePath.str());
             };
