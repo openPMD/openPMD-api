@@ -38,7 +38,13 @@ void init_Record(py::module &m)
     py::class_<Record, BaseRecord<RecordComponent> > cl(m, "Record");
     cl.def(py::init<Record const &>())
 
-        .def("__repr__", [](Record const &) { return "<openPMD.Record>"; })
+        .def(
+            "__repr__",
+            [](Record const &r) {
+                return "<openPMD.Record of " + std::to_string(r.size()) +
+                    " component(s) and " + std::to_string(r.numAttributes()) +
+                    " attribute(s)>";
+            })
 
         .def_property(
             "unit_dimension",

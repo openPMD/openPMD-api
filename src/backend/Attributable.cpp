@@ -203,6 +203,7 @@ auto Attributable::myPath() const -> MyPath
     res.seriesName = series.name();
     res.seriesExtension = suffix(seriesData.m_format);
     res.directory = IOHandler()->directory;
+    res.access = IOHandler()->m_backendAccess;
     return res;
 }
 

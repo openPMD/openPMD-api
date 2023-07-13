@@ -362,6 +362,16 @@ bool setAttributeFromObject(
 
 void init_Attributable(py::module &m)
 {
+    py::class_<Attributable::MyPath>(m, "AttributablePath")
+        .def_readonly("directory", &Attributable::MyPath::directory)
+        .def_readonly("series_name", &Attributable::MyPath::seriesName)
+        .def_readonly(
+            "series_extension", &Attributable::MyPath::seriesExtension)
+        .def_readonly("group", &Attributable::MyPath::group)
+        .def_readonly("access", &Attributable::MyPath::access)
+        .def_property_readonly("file_path", &Attributable::MyPath::filePath);
+
+
     py::class_<Attributable>(m, "Attributable")
         .def(py::init<Attributable const &>())
 
@@ -369,7 +379,7 @@ void init_Attributable(py::module &m)
             "__repr__",
             [](Attributable const &attr) {
                 return "<openPMD.Attributable with '" +
-                    std::to_string(attr.numAttributes()) + "' attributes>";
+                    std::to_string(attr.numAttributes()) + "' attribute(s)>";
             })
         .def(
             "series_flush",

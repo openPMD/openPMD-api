@@ -22,6 +22,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "openPMD/IO/Access.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
@@ -32,6 +34,7 @@
 #include <mpi.h>
 #endif
 
+#include <sstream>
 #include <string>
 
 namespace py = pybind11;
@@ -213,6 +216,20 @@ not possible once it has been closed.
             py::arg("options") = "{}")
 #endif
         .def("__bool__", &Series::operator bool)
+        .def(
+            "__repr__",
+            [](Series const &s) {
+                std::stringstream stream;
+                auto myPath = s.myPath();
+                stream << "<openPMD.Series at '" << myPath.filePath()
+                       << "' with " << s.iterations.size() << " iteration(s)";
+                if (myPath.access == Access::READ_LINEAR)
+                {
+                    stream << " (currently parsed)";
+                }
+                stream << " and " << s.numAttributes() << " attributes>";
+                return stream.str();
+            })
         .def("close", &Series::close, R"(
 Closes the Series and release the data storage/transport backends.
 

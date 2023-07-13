@@ -38,9 +38,25 @@ void init_MeshRecordComponent(py::module &m)
         m, "Mesh_Record_Component");
     cl.def(
           "__repr__",
-          [](MeshRecordComponent const &rc) {
-              return "<openPMD.Mesh_Record_Component of dimensionality '" +
-                  std::to_string(rc.getDimensionality()) + "'>";
+          [](RecordComponent const &rc) {
+              std::stringstream stream;
+              stream << "<openPMD.Record_Component of type '"
+                     << rc.getDatatype() << "' and with extent ";
+              if (auto extent = rc.getExtent(); extent.empty())
+              {
+                  stream << "[]>";
+              }
+              else
+              {
+                  auto begin = extent.begin();
+                  stream << '[' << *begin++;
+                  for (; begin != extent.end(); ++begin)
+                  {
+                      stream << ", " << *begin;
+                  }
+                  stream << "]>";
+              }
+              return stream.str();
           })
 
         .def_property(

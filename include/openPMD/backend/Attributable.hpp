@@ -223,6 +223,7 @@ public:
          * Notice that RecordComponent::SCALAR is included in this list, too.
          */
         std::vector<std::string> group;
+        Access access;
 
         /** Reconstructs a path that can be passed to a Series constructor */
         std::string filePath() const;
