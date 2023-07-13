@@ -36,8 +36,11 @@ void init_ParticlePatches(py::module &m)
         .def(
             "__repr__",
             [](ParticlePatches const &pp) {
-                return "<openPMD.Particle_Patches of size '" +
-                    std::to_string(pp.numPatches()) + "'>";
+                std::stringstream stream;
+                stream << "<openPMD.Particle_Patches with " << pp.size()
+                       << " records and " << pp.numAttributes()
+                       << " attribute(s)>";
+                return stream.str();
             })
 
         .def_property_readonly("num_patches", &ParticlePatches::numPatches);

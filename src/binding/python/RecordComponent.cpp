@@ -766,8 +766,24 @@ void init_RecordComponent(py::module &m)
     cl.def(
           "__repr__",
           [](RecordComponent const &rc) {
-              return "<openPMD.Record_Component of dimensionality '" +
-                  std::to_string(rc.getDimensionality()) + "'>";
+              std::stringstream stream;
+              stream << "<openPMD.Record_Component of type '"
+                     << rc.getDatatype() << "' and with extent ";
+              if (auto extent = rc.getExtent(); extent.empty())
+              {
+                  stream << "[]>";
+              }
+              else
+              {
+                  auto begin = extent.begin();
+                  stream << '[' << *begin++;
+                  for (; begin != extent.end(); ++begin)
+                  {
+                      stream << ", " << *begin;
+                  }
+                  stream << "]>";
+              }
+              return stream.str();
           })
 
         .def_property(

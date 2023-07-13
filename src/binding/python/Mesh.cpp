@@ -42,7 +42,8 @@ void init_Mesh(py::module &m)
             "__repr__",
             [](Mesh const &mesh) {
                 return "<openPMD.Mesh record with '" +
-                    std::to_string(mesh.size()) + "' record components>";
+                    std::to_string(mesh.size()) + "' record component(s) and " +
+                    std::to_string(mesh.numAttributes()) + " attributes>";
             })
 
         .def_property(

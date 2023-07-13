@@ -41,7 +41,9 @@
 #include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
+#include <cstddef>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -99,6 +101,22 @@ bind_container(py::handle scope, std::string const &name, Args &&...args)
         [](Map &m) { return py::make_key_iterator(m.begin(), m.end()); },
         // keep container alive while iterator exists
         py::keep_alive<0, 1>());
+
+    cl.def("__repr__", [name](Map const &m) {
+        std::stringstream stream;
+        stream << "<openPMD." << name << " with ";
+        if (size_t num_entries = m.size(); num_entries == 1)
+        {
+            stream << "1 entry and ";
+        }
+        else
+        {
+            stream << num_entries << " entries and ";
+        }
+
+        stream << m.numAttributes() << " attribute(s)>";
+        return stream.str();
+    });
 
     cl.def(
         "items",
