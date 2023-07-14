@@ -59,7 +59,7 @@ def record_component_to_daskarray(record_component, chunks=None):
         A record component class in openPMD-api.
     chunks : chunks parameter to pass to dask.array.from_array.
         See dask documentation for more details.
-        When set to None (default) the chunking will be automaticaly 
+        When set to None (default) the chunking will be automaticaly
         determined based on record_component.available_chunks().
 
     Returns
@@ -113,9 +113,9 @@ def record_component_to_daskarray(record_component, chunks=None):
         #  are a multiple of a common blocksize
         #   problem: too limited description in Dask
         #     https://github.com/dask/dask/issues/7475
-        #   work-around: create smaller chunks (this incurs a read cost) 
+        #   work-around: create smaller chunks (this incurs a read cost)
         #                by forcing into case 1
-        #                (this can lead to larger blocks than using 
+        #                (this can lead to larger blocks than using
         # the gcd of the extents aka AMReX block size)
         common_chunk_widths_per_dim = list()
         for d, offsets_in_dim in enumerate(offsets_sorted_unique_per_dim):
