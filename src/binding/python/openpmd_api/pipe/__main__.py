@@ -169,6 +169,8 @@ def distribution_strategy(dataset_extent,
         return io.ByCuboidSlice(io.OneDimensionalBlockSlicer(), dataset_extent)
     elif strategy_identifier == 'fail':
         return io.FailingStrategy()
+    elif strategy_identifier == 'discard':
+        return io.DiscardingStrategy()
     else:
         raise RuntimeError("Unknown distribution strategy: " +
                            strategy_identifier)
