@@ -233,6 +233,7 @@ endfunction()
 #     Clang+MPI: Potentially needed MPI::MPI_C targets in the past
 #                (exact MPI flavor & Clang version lost)
 #     BullMPI: PUBLIC dependency to MPI::MPI_CXX is missing in MPI::MPI_C target
+include(FetchContent)
 set(openPMD_MPI_LINK_C_DEFAULT OFF)
 option(openPMD_MPI_LINK_C  "Also link the MPI C targets" ${openPMD_MPI_LINK_C_DEFAULT})
 mark_as_advanced(openPMD_MPI_LINK_C)
@@ -259,18 +260,20 @@ endif()
 
 
 # external library: nlohmann-json (required)
-if(openPMD_USE_INTERNAL_JSON)
-    set(JSON_BuildTests OFF CACHE INTERNAL "")
-    set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
-    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
-    message(STATUS "nlohmann-json: Using INTERNAL version '3.9.1'")
-else()
-    find_package(nlohmann_json CONFIG REQUIRED)
-    message(STATUS "nlohmann-json: Found version '${nlohmann_json_VERSION}'")
+find_package(nlohmann_json CONFIG)
+if(NOT nlohmann_json_FOUND)
+  FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG 6af826d0bdb55e4b69e3ad817576745335f243ca
+    OVERRIDE_FIND_PACKAGE
+  )
+
+  set(JSON_Install OFF CACHE BOOL "JSON CMake option set with openPMD-api")
+  set(JSON_BuildTests OFF CACHE BOOL "JSON CMake option set with openPMD-api")
+
+  FetchContent_MakeAvailable(nlohmann_json)
 endif()
-add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
-target_link_libraries(openPMD::thirdparty::nlohmann_json
-    INTERFACE nlohmann_json::nlohmann_json)
 
 # external library: toml11
 if(openPMD_USE_INTERNAL_TOML11)
@@ -565,9 +568,8 @@ if(openPMD_HAVE_MPI)
 endif()
 
 # JSON Backend and User-Facing Runtime Options
-#target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
+target_link_libraries(openPMD PRIVATE nlohmann_json::nlohmann_json)
 target_include_directories(openPMD SYSTEM PRIVATE
-    $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # HDF5 Backend
@@ -872,8 +874,8 @@ if(openPMD_BUILD_TESTING)
         endif()
 
         if(${testname} STREQUAL JSON)
+            target_link_libraries(${testname}Tests PRIVATE nlohmann_json::nlohmann_json)
             target_include_directories(${testname}Tests SYSTEM PRIVATE
-                $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
                 $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
         endif()
     endforeach()
