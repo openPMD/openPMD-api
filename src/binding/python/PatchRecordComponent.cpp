@@ -52,6 +52,29 @@ void init_PatchRecordComponent(py::module &m)
             &BaseRecordComponent::unitSI,
             &PatchRecordComponent::setUnitSI)
 
+        .def(
+            "__repr__",
+            [](PatchRecordComponent const &rc) {
+                std::stringstream stream;
+                stream << "<openPMD.Patch_Record_Component of type '"
+                       << rc.getDatatype() << "' and with extent ";
+                if (auto extent = rc.getExtent(); extent.empty())
+                {
+                    stream << "[]>";
+                }
+                else
+                {
+                    auto begin = extent.begin();
+                    stream << '[' << *begin++;
+                    for (; begin != extent.end(); ++begin)
+                    {
+                        stream << ", " << *begin;
+                    }
+                    stream << "]>";
+                }
+                return stream.str();
+            })
+
         .def("reset_dataset", &PatchRecordComponent::resetDataset)
         .def_property_readonly(
             "ndims", &PatchRecordComponent::getDimensionality)
