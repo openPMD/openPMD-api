@@ -1035,13 +1035,16 @@ TEST_CASE("no_file_ending", "[core]")
 {
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output", Access::CREATE),
-        Catch::Equals("Unknown file format! Did you specify a file ending?"));
+        Catch::Equals("Unknown file format! Did you specify a file ending? "
+                      "Specified file name was './new_openpmd_output'."));
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output_%T", Access::CREATE),
-        Catch::Equals("Unknown file format! Did you specify a file ending?"));
+        Catch::Equals("Unknown file format! Did you specify a file ending? "
+                      "Specified file name was './new_openpmd_output_%T'."));
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output_%05T", Access::CREATE),
-        Catch::Equals("Unknown file format! Did you specify a file ending?"));
+        Catch::Equals("Unknown file format! Did you specify a file ending? "
+                      "Specified file name was './new_openpmd_output_%05T'."));
     {
         Series(
             "../samples/no_extension_specified",

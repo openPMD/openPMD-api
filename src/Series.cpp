@@ -424,6 +424,11 @@ std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
         filepath = auxiliary::replace_all(filepath, "\\", "/");
     }
 #endif
+    if (auxiliary::ends_with(filepath, auxiliary::directory_separator))
+    {
+        filepath = auxiliary::replace_last(
+            filepath, std::string(&auxiliary::directory_separator, 1), "");
+    }
     auto const pos = filepath.find_last_of(auxiliary::directory_separator);
     if (std::string::npos == pos)
     {
@@ -2308,7 +2313,8 @@ Series::Series(
         input->format,
         input->filenameExtension,
         comm,
-        optionsJson);
+        optionsJson,
+        filepath);
     init(std::move(handler), std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
@@ -2325,7 +2331,12 @@ Series::Series(
     auto input = parseInput(filepath);
     parseJsonOptions(optionsJson, *input);
     auto handler = createIOHandler(
-        input->path, at, input->format, input->filenameExtension, optionsJson);
+        input->path,
+        at,
+        input->format,
+        input->filenameExtension,
+        optionsJson,
+        filepath);
     init(std::move(handler), std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
