@@ -1,6 +1,6 @@
 # Preamble ####################################################################
 #
-cmake_minimum_required(VERSION 3.24.0)
+cmake_minimum_required(VERSION 3.15.0)
 
 project(openPMD VERSION 0.16.0) # LANGUAGES CXX
 
@@ -265,7 +265,7 @@ if(NOT nlohmann_json_FOUND)
   FetchContent_Declare(
     nlohmann_json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG db78ac1d7716f56fc9f1b030b715f872f93964e4#6af826d0bdb55e4b69e3ad817576745335f243ca
+    GIT_TAG 6af826d0bdb55e4b69e3ad817576745335f243ca
     OVERRIDE_FIND_PACKAGE
   )
 
@@ -274,10 +274,6 @@ if(NOT nlohmann_json_FOUND)
 
   FetchContent_MakeAvailable(nlohmann_json)
 endif()
-add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
-target_link_libraries(openPMD::thirdparty::nlohmann_json
-                        INTERFACE nlohmann_json::nlohmann_json)
-
 
 # external library: toml11
 if(openPMD_USE_INTERNAL_TOML11)
