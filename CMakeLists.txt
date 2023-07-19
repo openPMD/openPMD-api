@@ -878,8 +878,8 @@ if(openPMD_BUILD_TESTING)
         endif()
 
         if(${testname} STREQUAL JSON)
+            target_link_libraries(${testname}Tests PRIVATE nlohmann_json::nlohmann_json)
             target_include_directories(${testname}Tests SYSTEM PRIVATE
-                $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
                 $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
         endif()
     endforeach()
