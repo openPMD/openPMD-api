@@ -631,6 +631,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::ADVANCE>
 
     //! input parameter
     AdvanceMode mode;
+    bool isThisStepMandatory = false;
     //! output parameter
     std::shared_ptr<AdvanceStatus> status =
         std::make_shared<AdvanceStatus>(AdvanceStatus::OK);
