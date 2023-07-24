@@ -161,6 +161,15 @@ namespace internal
         bool m_lastFlushSuccessful = false;
 
         /**
+         * In variable-based encoding, all backends except ADIOS2 can only write
+         * one single iteration. So, we remember if we already had a step,
+         * and if yes, Parameter<Operation::ADVANCE>::isThisStepMandatory is
+         * set as true in variable-based encoding.
+         * The backend will then throw if it has no support for steps.
+         */
+        bool m_wroteAtLeastOneIOStep = false;
+
+        /**
          * Remember the preference that the backend specified for parsing.
          * Not used in file-based iteration encoding, empty then.
          * In linear read mode, parsing only starts after calling
@@ -696,7 +705,8 @@ OPENPMD_private
 
     /**
      * @brief Called at the end of an IO step to store the iterations defined
-     *        in the IO step to the snapshot attribute.
+     *        in the IO step to the snapshot attribute and to store that at
+     *        least one step was written.
      *
      * @param doFlush If true, flush the IO handler.
      */

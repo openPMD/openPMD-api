@@ -1847,6 +1847,13 @@ AdvanceStatus Series::advance(
     else
     {
         param.mode = mode;
+        if (iterationEncoding() == IterationEncoding::variableBased &&
+            access::write(IOHandler()->m_frontendAccess) &&
+            mode == AdvanceMode::BEGINSTEP && series.m_wroteAtLeastOneIOStep)
+        {
+            // If the backend does not support steps, we cannot continue here
+            param.isThisStepMandatory = true;
+        }
         IOTask task(&file.m_writable, param);
         IOHandler()->enqueue(task);
     }
@@ -1937,6 +1944,13 @@ AdvanceStatus Series::advance(AdvanceMode mode)
 
     Parameter<Operation::ADVANCE> param;
     param.mode = mode;
+    if (iterationEncoding() == IterationEncoding::variableBased &&
+        access::write(IOHandler()->m_frontendAccess) &&
+        mode == AdvanceMode::BEGINSTEP && series.m_wroteAtLeastOneIOStep)
+    {
+        // If the backend does not support steps, we cannot continue here
+        param.isThisStepMandatory = true;
+    }
     IOTask task(&series.m_writable, param);
     IOHandler()->enqueue(task);
 
@@ -1973,6 +1987,7 @@ void Series::flushStep(bool doFlush)
             IOHandler()->flush(internal::defaultFlushParams);
         }
     }
+    series.m_wroteAtLeastOneIOStep = true;
 }
 
 auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
