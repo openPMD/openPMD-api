@@ -147,12 +147,14 @@ void PatchRecordComponent::read()
 
     if (containsAttribute("unitSI"))
     {
+        /*
+         * No need to call setUnitSI
+         * If it's in the attributes map, then it's already set
+         * Just verify that it has the right type (getOptional<>() does
+         * conversions if possible, so this check is non-intrusive)
+         */
         if (auto val = getAttribute("unitSI").getOptional<double>();
-            val.has_value())
-        {
-            setUnitSI(val.value());
-        }
-        else
+            !val.has_value())
         {
             throw error::ReadError(
                 error::AffectedObject::Attribute,
