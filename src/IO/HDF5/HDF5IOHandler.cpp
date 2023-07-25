@@ -2304,8 +2304,11 @@ void HDF5IOHandlerImpl::readAttribute(
         }
         else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE_80_LE))
         {
-            // worst case, sizeof(long double) is only 8, so allocate enough
-            // memory to fit 16 bytes per member
+            // worst case:
+            // sizeof(long double) is only 8, but the dataset on disk has
+            // 16-byte long doubles
+            // --> do NOT use `new long double[]` as the buffer would be too
+            // small
             auto *tmpBuffer =
                 reinterpret_cast<long double *>(new char[16lu * 2lu * dims[0]]);
             status = H5Aread(attr_id, attr_type, tmpBuffer);
@@ -2323,9 +2326,13 @@ void HDF5IOHandlerImpl::readAttribute(
         }
         else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE))
         {
-            // use malloc to allocate a buffer that is definitely aliased and
-            // big enough for 16-bit doubles
-            auto *tmpBuffer = static_cast<long double *>(malloc(16 * dims[0]));
+            // worst case:
+            // sizeof(long double) is only 8, but the dataset on disk has
+            // 16-byte long doubles
+            // --> do NOT use `new long double[]` as the buffer would be too
+            // small
+            auto *tmpBuffer =
+                reinterpret_cast<long double *>(new char[16lu * dims[0]]);
             status = H5Aread(attr_id, attr_type, tmpBuffer);
             H5Tconvert(
                 attr_type,
@@ -2335,7 +2342,7 @@ void HDF5IOHandlerImpl::readAttribute(
                 nullptr,
                 H5P_DEFAULT);
             std::vector<long double> vld80{tmpBuffer, tmpBuffer + dims[0]};
-            free(tmpBuffer);
+            delete[] tmpBuffer;
             a = Attribute(std::move(vld80));
         }
         else if (H5Tget_class(attr_type) == H5T_STRING)
