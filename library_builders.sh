@@ -143,6 +143,7 @@ function build_adios2 {
         -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Blosc2=ON                    \
         -DADIOS2_USE_Fortran=OFF                  \
+        -DADIOS2_USE_HDF5=OFF                     \
         -DADIOS2_USE_MHS=OFF                      \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
@@ -316,8 +317,8 @@ function build_zlib {
 function build_hdf5 {
     if [ -e hdf5-stamp ]; then return; fi
 
-    curl -sLo hdf5-1.14.1-2.tar.gz \
-        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.1/src/hdf5-1.14.1-2.tar.gz
+    curl -sLo hdf5-1.12.2.tar.gz \
+        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz
     file hdf5*.tar.gz
     tar -xzf hdf5*.tar.gz
     rm hdf5*.tar.gz
@@ -342,12 +343,13 @@ function build_hdf5 {
         HOST_ARG="--host=aarch64-apple-darwin"
 
         curl -sLo osx_cross_configure.patch \
-            https://raw.githubusercontent.com/conda-forge/hdf5-feedstock/ca7b3b40d58cb949638ead75c9527b3fd1112a3f/recipe/patches/osx_cross_configure.patch
+            https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_configure.patch
         python3 -m patch -p 0 -d . osx_cross_configure.patch
 
         curl -sLo osx_cross_src_makefile.patch \
-            https://raw.githubusercontent.com/conda-forge/hdf5-feedstock/ca7b3b40d58cb949638ead75c9527b3fd1112a3f/recipe/patches/osx_cross_makefile.patch
-        python3 -m patch -p 0 -d . osx_cross_src_makefile.patch
+            https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_src_makefile.patch
+        #python3 -m patch -p 0 -d . osx_cross_src_makefile.patch
+        patch -p 0 < osx_cross_src_makefile.patch
     fi
 
     ./configure \
