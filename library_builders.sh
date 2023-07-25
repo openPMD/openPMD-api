@@ -231,6 +231,13 @@ function build_blosc2 {
         https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/529.patch
     python3 -m patch -p 1 -d c-blosc2-2.9.3 c-blosc2-external-zlib.patch
 
+    # https://github.com/Blosc/c-blosc2/pull/536
+    curl -sLo c-blosc2-external-zlib-public.patch \
+        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/536.patch
+    python3 -m patch -p 1 -d c-blosc2-2.9.3 c-blosc2-external-zlib-public.patch
+
+    rm -rf *.patch
+
     mkdir build-blosc2
     cd build-blosc2
     PY_BIN=$(which python3)
