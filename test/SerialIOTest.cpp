@@ -5494,8 +5494,15 @@ void variableBasedSeries(std::string const &file)
             writeSeries.iterationEncoding() ==
             IterationEncoding::variableBased);
         auto iterations = writeSeries.writeIterations();
+        bool is_not_adios2 = !auxiliary::contains(file, ".bp");
         for (size_t i = 0; i < 10; ++i)
         {
+            if (i > 0 && is_not_adios2)
+            {
+                REQUIRE_THROWS_AS(
+                    iterations[i], error::OperationUnsupportedInBackend);
+                return;
+            }
             auto iteration = iterations[i];
             auto E_x = iteration.meshes["E"]["x"];
             E_x.resetDataset({openPMD::Datatype::INT, {1000}});
@@ -5554,10 +5561,7 @@ void variableBasedSeries(std::string const &file)
          * Need linear read mode to access more than a single iteration in
          * variable-based iteration encoding.
          */
-        Series readSeries(
-            file,
-            Access::READ_LINEAR,
-            json::merge(R"(backend = "adios2")", parseMode));
+        Series readSeries(file, Access::READ_LINEAR, parseMode);
 
         size_t last_iteration_index = 0;
         REQUIRE(!readSeries.containsAttribute("some_global"));
@@ -5697,8 +5701,10 @@ void variableBasedSeries(std::string const &file)
 
 TEST_CASE("variableBasedSeries", "[serial][adios2]")
 {
-    variableBasedSeries("../samples/variableBasedSeries.bp4");
-    variableBasedSeries("../samples/variableBasedSeries.bp5");
+    for (auto const &t : testedFileExtensions())
+    {
+        variableBasedSeries("../samples/variableBasedSeries." + t);
+    }
 }
 
 void variableBasedParticleData()
