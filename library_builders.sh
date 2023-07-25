@@ -399,11 +399,15 @@ fi
 install_buildessentials
 build_zlib
 build_zfp
-build_blosc
+if [[ "$(uname -m)" != "ppc64le" ]]; then
+    # builds too long for Travis-CI
+    build_blosc
+fi
 build_blosc2
 build_hdf5
-# skip ADIOS1 build for M1
-if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" ]]; then
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" && "$(uname -m)" != "ppc64le" ]]; then
+    # macOS: skip ADIOS1 build for M1
+    # Linux: with ADIOS2 also enabled, this builds too long for Travis-CI
     build_adios1
 fi
 build_adios2
