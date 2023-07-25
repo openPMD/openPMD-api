@@ -1339,25 +1339,6 @@ auto Series::readGorVBased(
             else if (encoding == "variableBased")
             {
                 series.m_iterationEncoding = IterationEncoding::variableBased;
-                if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
-                {
-                    std::cerr << R"(
-The opened Series uses variable-based encoding, but is being accessed by
-READ_ONLY mode which operates in random-access manner.
-Random-access is (currently) unsupported by variable-based encoding
-and some iterations may not be found by this access mode.
-Consider using Access::READ_LINEAR and Series::readIterations().)"
-                              << std::endl;
-                }
-                else if (IOHandler()->m_frontendAccess == Access::READ_WRITE)
-                {
-                    throw error::WrongAPIUsage(R"(
-The opened Series uses variable-based encoding, but is being accessed by
-READ_WRITE mode which does not (yet) support variable-based encoding.
-Please choose either Access::READ_LINEAR for reading or Access::APPEND for
-creating new iterations.
-                    )");
-                }
             }
             else if (encoding == "fileBased")
             {

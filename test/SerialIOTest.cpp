@@ -5262,7 +5262,7 @@ void variableBasedSingleIteration(std::string const &file)
             writeSeries.iterationEncoding() ==
             IterationEncoding::variableBased);
         auto iterations = writeSeries.writeIterations();
-        auto iteration = writeSeries.iterations[0];
+        auto iteration = iterations[0];
         auto E_x = iteration.meshes["E"]["x"];
         E_x.resetDataset(openPMD::Dataset(openPMD::Datatype::INT, {1000}));
         std::vector<int> data(1000, 0);
