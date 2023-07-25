@@ -2837,19 +2837,6 @@ struct LoadDataset
     {
         auto chunk = rc.loadChunk<T>();
         rc.seriesFlush();
-        // std::cout << "Successfully loaded mask" << std::endl;
-        // for (size_t i = 0; i < rc.getExtent()[0]; ++i)
-        // {
-        //     if constexpr (std::is_convertible_v<T, int>)
-        //     {
-        //         std::cout << int(chunk.get()[i]) << ", ";
-        //     }
-        //     else
-        //     {
-        //         std::cout << chunk.get()[i] << ", ";
-        //     }
-        // }
-        // std::cout << std::endl;
     }
 
     static constexpr char const *errorMsg = "LoadDataset";
