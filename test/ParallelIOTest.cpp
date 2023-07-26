@@ -1606,8 +1606,9 @@ void append_mode(
                 ++counter;
             }
             REQUIRE(counter == 8);
-            // Cannot do listSeries here because the Series is already drained
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
         break;
         case ParseMode::AheadOfTimeWithoutSnapshot: {
@@ -1747,9 +1748,9 @@ void append_mode(
                 ++counter;
             }
             REQUIRE(counter == 8);
-            // Cannot do listSeries here because the Series is already
-            // drained
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
     }
 #endif

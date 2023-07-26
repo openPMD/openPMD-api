@@ -533,6 +533,7 @@ public:
     /**
      * @brief Parse the Series.
      *
+     * Only necessary in linear read mode.
      * In linear read mode, the Series constructor does not do any IO accesses.
      * This call effectively triggers the side effects of
      * Series::readIterations(), for use cases where data needs to be accessed
