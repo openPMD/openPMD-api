@@ -171,7 +171,6 @@ private:
     using iterator_t = SeriesIterator;
 
     Series m_series;
-    std::optional<SeriesIterator> alreadyOpened;
     std::optional<internal::ParsePreference> m_parsePreference;
 
     ReadIterations(

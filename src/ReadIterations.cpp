@@ -603,17 +603,20 @@ ReadIterations::ReadIterations(
     if (access == Access::READ_LINEAR)
     {
         // Open the iterator now already, so that metadata may already be read
-        alreadyOpened = iterator_t{m_series, m_parsePreference};
+        m_series.get().m_sharedStatefulIterator =
+            std::make_unique<iterator_t>(m_series, m_parsePreference);
     }
 }
 
 ReadIterations::iterator_t ReadIterations::begin()
 {
-    if (!alreadyOpened.has_value())
+    auto &series = m_series.get();
+    if (!series.m_sharedStatefulIterator)
     {
-        alreadyOpened = iterator_t{m_series, m_parsePreference};
+        series.m_sharedStatefulIterator =
+            std::make_unique<iterator_t>(m_series, m_parsePreference);
     }
-    return alreadyOpened.value();
+    return *series.m_sharedStatefulIterator;
 }
 
 ReadIterations::iterator_t ReadIterations::end()

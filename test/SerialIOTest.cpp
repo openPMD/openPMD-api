@@ -5272,9 +5272,10 @@ void variableBasedSingleIteration(std::string const &file)
     }
 
     {
-        Series readSeries(file, Access::READ_ONLY);
+        Series readSeries(file, Access::READ_LINEAR);
+        readSeries.parseBase();
 
-        auto E_x = readSeries.iterations[0].meshes["E"]["x"];
+        auto E_x = (*readSeries.readIterations().begin()).meshes["E"]["x"];
         REQUIRE(E_x.getDimensionality() == 1);
         REQUIRE(E_x.getExtent()[0] == extent);
         auto chunk = E_x.loadChunk<int>({0}, {extent});
@@ -5665,7 +5666,7 @@ void variableBasedSeries(std::string const &file)
 
         size_t last_iteration_index = 0;
         REQUIRE(!readSeries.containsAttribute("some_global"));
-        readSeries.readIterations();
+        readSeries.parseBase();
         REQUIRE(
             readSeries.getAttribute("some_global").get<std::string>() ==
             "attribute");
