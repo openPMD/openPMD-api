@@ -53,6 +53,7 @@
 namespace openPMD
 {
 class ReadIterations;
+class SeriesIterator;
 class Series;
 class Series;
 
@@ -88,6 +89,23 @@ namespace internal
          * the same instance.
          */
         std::optional<WriteIterations> m_writeIterations;
+
+        /**
+         * Series::readIterations() returns an iterator type that modifies the
+         * state of the Series (by proceeding through IO steps).
+         * Hence, we need to make sure that there is only one of them, otherwise
+         * they will both make modifications to the Series that the other
+         * iterator is not aware of.
+         *
+         * Plan: At some point, we should add a second iterator type that does
+         * not change the state. Series::readIterations() should then return
+         * either this or that iterator depending on read mode (linear or
+         * random-access) and backend capabilities.
+         *
+         * Due to include order, this member needs to be a pointer instead of
+         * an optional.
+         */
+        std::unique_ptr<SeriesIterator> m_sharedStatefulIterator;
         /**
          * For writing: Remember which iterations have been written in the
          * currently active output step. Use this later when writing the
@@ -197,6 +215,7 @@ class Series : public Attributable
     friend class Attributable;
     friend class Iteration;
     friend class Writable;
+    friend class ReadIterations;
     friend class SeriesIterator;
     friend class internal::SeriesData;
     friend class WriteIterations;
@@ -510,6 +529,21 @@ public:
      * @return ReadIterations
      */
     ReadIterations readIterations();
+
+    /**
+     * @brief Parse the Series.
+     *
+     * In linear read mode, the Series constructor does not do any IO accesses.
+     * This call effectively triggers the side effects of
+     * Series::readIterations(), for use cases where data needs to be accessed
+     * before iterating through the iterations.
+     *
+     * The reason for introducing this restricted alias to
+     * Series::readIterations() is that the name "readIterations" is misleading
+     * for that use case: When using IO steps, this call only ensures that the
+     * first step is parsed.
+     */
+    void parseBase();
 
     /**
      * @brief Entry point to the writing end of the streaming API.

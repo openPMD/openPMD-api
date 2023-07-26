@@ -225,7 +225,7 @@ class pipe:
             sys.stdout.flush()
         # In Linear read mode, global attributes are only present after calling
         # this method to access the first iteration
-        inseries.read_iterations()
+        inseries.parse_base()
         self.__copy(inseries, outseries)
 
     def __copy(self, src, dest, current_path="/data/"):
