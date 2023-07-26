@@ -166,6 +166,8 @@ function build_adios2 {
 
     rm -rf build-adios2
 
+    cat /usr/local/lib/cmake/adios2/adios2-config.cmake
+
     touch adios2-stamp
 }
 
@@ -217,14 +219,12 @@ function build_blosc {
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
-    #curl -sLo c-blosc2-v2.10.0.tar.gz \
-    curl -sLo c-blosc2-topic-cmake-install-targets.tar.gz \
+    #curl -sLo blosc2-v2.10.0.tar.gz \
+    curl -sLo blosc2-topic-cmake-install-targets.tar.gz \
         https://github.com/ax3l/c-blosc2/archive/refs/heads/topic-cmake-install-targets.tar.gz
-    file c-blosc2*.tar.gz
-    tar -xzf c-blosc2*.tar.gz
-    rm c-blosc2*.tar.gz
-
-    ls
+    file blosc2*.tar.gz
+    tar -xzf blosc2*.tar.gz
+    rm blosc2*.tar.gz
 
     mkdir build-blosc2
     cd build-blosc2
@@ -243,7 +243,7 @@ function build_blosc2 {
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       -DPREFER_EXTERNAL_ZLIB=ON              \
       -DZLIB_USE_STATIC_LIBS=ON              \
-      ../c-blosc2-topic-cmake-install-targets
+      ../c-blosc2-*
     make -j${CPU_COUNT}
     make install
     cd -
