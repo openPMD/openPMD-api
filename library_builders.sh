@@ -103,8 +103,10 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.9.0.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.9.0.tar.gz
+    #curl -sLo adios2-2.9.0.tar.gz \
+    #    https://github.com/ornladios/ADIOS2/archive/v2.9.0.tar.gz
+    curl -sLo adios2-fix-blosc2-findpackage.tar.gz \
+        https://github.com/ax3l/ADIOS2/archive/refs/heads/fix-blosc2-findpackage.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
@@ -215,28 +217,14 @@ function build_blosc {
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
-    curl -sLo c-blosc2-v2.9.3.tar.gz \
-        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.9.3.tar.gz
+    #curl -sLo c-blosc2-v2.10.0.tar.gz \
+    curl -sLo c-blosc2-topic-cmake-install-targets.tar.gz \
+        https://github.com/ax3l/c-blosc2/archive/refs/heads/topic-cmake-install-targets.tar.gz
     file c-blosc2*.tar.gz
     tar -xzf c-blosc2*.tar.gz
     rm c-blosc2*.tar.gz
 
-    # https://github.com/Blosc/c-blosc2/pull/525
-    curl -sLo c-blosc2-cmake.patch \
-        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/525.patch
-    python3 -m patch -p 1 -d c-blosc2-2.9.3 c-blosc2-cmake.patch
-
-    # https://github.com/Blosc/c-blosc2/pull/529
-    curl -sLo c-blosc2-external-zlib.patch \
-        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/529.patch
-    python3 -m patch -p 1 -d c-blosc2-2.9.3 c-blosc2-external-zlib.patch
-
-    # https://github.com/Blosc/c-blosc2/pull/536
-    curl -sLo c-blosc2-external-zlib-public.patch \
-        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/536.patch
-    python3 -m patch -p 1 -d c-blosc2-2.9.3 c-blosc2-external-zlib-public.patch
-
-    rm -rf *.patch
+    ls
 
     mkdir build-blosc2
     cd build-blosc2
@@ -255,7 +243,7 @@ function build_blosc2 {
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       -DPREFER_EXTERNAL_ZLIB=ON              \
       -DZLIB_USE_STATIC_LIBS=ON              \
-      ../c-blosc2-2.9.3
+      ../c-blosc2-topic-cmake-install-targets
     make -j${CPU_COUNT}
     make install
     cd -
