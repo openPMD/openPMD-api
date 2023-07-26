@@ -115,7 +115,16 @@ SeriesIterator::SeriesIterator(
 {
     auto &data = get();
     data.parsePreference = std::move(parsePreference);
-    data.series = std::move(series_in);
+    /*
+     * Since the iterator is stored in
+     * internal::SeriesData::m_sharedStatefulIterator,
+     * we need to use a non-owning Series instance here for tie-breaking
+     * purposes.
+     * This is ok due to the usual C++ iterator invalidation workflows
+     * (deleting the original container invalidates the iterator).
+     */
+    data.series = Series(std::shared_ptr<internal::SeriesData>(
+        series_in.m_series.get(), [](auto const *) {}));
     auto &series = data.series.value();
     if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
         series.iterations.empty())
