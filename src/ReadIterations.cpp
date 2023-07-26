@@ -25,6 +25,7 @@
 #include "openPMD/Series.hpp"
 
 #include <iostream>
+#include <optional>
 
 namespace openPMD
 {
@@ -58,7 +59,7 @@ SeriesIterator::SeriesIterator() = default;
 
 void SeriesIterator::initSeriesInLinearReadMode()
 {
-    auto &data = *m_data;
+    auto &data = get();
     auto &series = *data.series;
     series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
     try
@@ -103,11 +104,16 @@ void SeriesIterator::initSeriesInLinearReadMode()
     series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
 }
 
+void SeriesIterator::close()
+{
+    *m_data = std::nullopt; // turn this into end iterator
+}
+
 SeriesIterator::SeriesIterator(
     Series series_in, std::optional<internal::ParsePreference> parsePreference)
-    : m_data{std::make_shared<SharedData>()}
+    : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
 {
-    auto &data = *m_data;
+    auto &data = get();
     data.parsePreference = std::move(parsePreference);
     data.series = std::move(series_in);
     auto &series = data.series.value();
@@ -120,7 +126,7 @@ SeriesIterator::SeriesIterator(
     auto it = series.get().iterations.begin();
     if (it == series.get().iterations.end())
     {
-        *this = end();
+        this->close();
         return;
     }
     else if (
@@ -212,12 +218,12 @@ SeriesIterator::SeriesIterator(
 
         if (status == AdvanceStatus::OVER)
         {
-            *this = end();
+            this->close();
             return;
         }
         if (!setCurrentIteration())
         {
-            *this = end();
+            this->close();
             return;
         }
         it->second.setStepStatus(StepStatus::DuringStep);
@@ -226,7 +232,7 @@ SeriesIterator::SeriesIterator(
 
 std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
 {
-    auto &data = *m_data;
+    auto &data = get();
     using ret_t = std::optional<SeriesIterator *>;
 
     if (data.iterationsInCurrentStep.empty())
@@ -298,7 +304,7 @@ std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
 
 std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
 {
-    auto &data = *m_data;
+    auto &data = get();
     // since we are in group-based iteration layout, it does not
     // matter which iteration we begin a step upon
     AdvanceStatus status{};
@@ -339,7 +345,7 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
             if (status == AdvanceStatus::RANDOMACCESS ||
                 status == AdvanceStatus::OVER)
             {
-                *this = end();
+                this->close();
                 return {this};
             }
             else
@@ -366,7 +372,7 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
                 if (status == AdvanceStatus::RANDOMACCESS ||
                     status == AdvanceStatus::OVER)
                 {
-                    *this = end();
+                    this->close();
                     return {this};
                 }
                 else
@@ -390,7 +396,7 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
 
     if (status == AdvanceStatus::OVER)
     {
-        *this = end();
+        this->close();
         return {this};
     }
 
@@ -399,7 +405,7 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
 
 std::optional<SeriesIterator *> SeriesIterator::loopBody()
 {
-    auto &data = *m_data;
+    auto &data = get();
     Series &series = data.series.value();
     auto &iterations = series.iterations;
 
@@ -485,7 +491,7 @@ std::optional<SeriesIterator *> SeriesIterator::loopBody()
     if (series.iterationEncoding() == IterationEncoding::fileBased)
     {
         // this one is handled above, stream is over once it proceeds to here
-        *this = end();
+        this->close();
         return {this};
     }
 
@@ -495,7 +501,7 @@ std::optional<SeriesIterator *> SeriesIterator::loopBody()
 
 void SeriesIterator::deactivateDeadIteration(iteration_index_t index)
 {
-    auto &data = *m_data;
+    auto &data = get();
     switch (data.series->iterationEncoding())
     {
     case IterationEncoding::fileBased: {
@@ -520,10 +526,10 @@ void SeriesIterator::deactivateDeadIteration(iteration_index_t index)
 
 SeriesIterator &SeriesIterator::operator++()
 {
-    auto &data = *m_data;
+    auto &data = get();
     if (!data.series.has_value())
     {
-        *this = end();
+        this->close();
         return *this;
     }
     auto oldIterationIndex = data.currentIteration;
@@ -570,7 +576,7 @@ SeriesIterator &SeriesIterator::operator++()
 
 IndexedIteration SeriesIterator::operator*()
 {
-    auto &data = *m_data;
+    auto &data = get();
     return IndexedIteration(
         data.series.value().iterations[data.currentIteration],
         data.currentIteration);
@@ -578,10 +584,12 @@ IndexedIteration SeriesIterator::operator*()
 
 bool SeriesIterator::operator==(SeriesIterator const &other) const
 {
-    return (this->m_data.operator bool() && other.m_data.operator bool() &&
-            (this->m_data->currentIteration ==
-             other.m_data->currentIteration)) ||
-        (!this->m_data.operator bool() && !other.m_data.operator bool());
+    return
+        // either both iterators are filled
+        (this->m_data->has_value() && other.m_data->has_value() &&
+         (this->get().currentIteration == other.get().currentIteration)) ||
+        // or both are empty
+        (!this->m_data->has_value() && !other.m_data->has_value());
 }
 
 bool SeriesIterator::operator!=(SeriesIterator const &other) const
@@ -600,10 +608,11 @@ ReadIterations::ReadIterations(
     std::optional<internal::ParsePreference> parsePreference)
     : m_series(std::move(series)), m_parsePreference(std::move(parsePreference))
 {
-    if (access == Access::READ_LINEAR)
+    auto &data = m_series.get();
+    if (access == Access::READ_LINEAR && !data.m_sharedStatefulIterator)
     {
         // Open the iterator now already, so that metadata may already be read
-        m_series.get().m_sharedStatefulIterator =
+        data.m_sharedStatefulIterator =
             std::make_unique<iterator_t>(m_series, m_parsePreference);
     }
 }
