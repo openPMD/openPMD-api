@@ -86,29 +86,19 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cibuildwheel==2.12.1
 
-#    # 0.15.0: CMake: Fix Python Install Directory
-#    # https://github.com/openPMD/openPMD-api/pull/1393
-#    - name: Download Patch 1/2
-#      uses: suisei-cn/actions-download-file@v1
-#      id: patch1
-#      with:
-#        url: "https://github.com/ax3l/openPMD-api/commit/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch"
-#        target: src/.patch/
-#
-#    # 0.15.0.post2 bump
-#    - name: Download Patch 2/2
-#      uses: suisei-cn/actions-download-file@v1
-#      id: setupversion
-#      with:
-#        url: "https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/023cbd69e06715e5191ece741bb1de56560a9f96/0001-Bump-setup.py.patch"
-#        target: src/.patch/
+    # Hack: cmake --trace-expand
+    - name: Download Patch 2/2
+      uses: suisei-cn/actions-download-file@v1
+      id: setupversion
+      with:
+        url: "https://gist.githubusercontent.com/ax3l/9b15c5bc73d7f3c1c66784187a016474/raw/e31dd54498c9c8fc465a7cbb6f900f768b9d0c0b/0001-Hack-setup.py-CMake-trace-expand.patch"
+        target: src/.patch/
 
-#    - name: Apply Patches
-#      run: |
-#        python -m pip install "patch==1.*"
-#        cd src
-#        python -m patch .patch/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
-#        python -m patch .patch/0001-Bump-setup.py.patch
+    - name: Apply Patches
+      run: |
+        python -m pip install "patch==1.*"
+        cd src
+        python -m patch .patch/0001-Hack-setup.py-CMake-trace-expand.patch
 
     - name: Build wheel
       env:
