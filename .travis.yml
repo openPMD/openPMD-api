@@ -155,7 +155,7 @@ install:
 
 script:
   - cd src
-  - python3 -m cibuildwheel --output-dir ../wheelhouse
+  - travis_wait 30 python3 -m cibuildwheel --output-dir ../wheelhouse
   - cd ..
 
 deploy:
