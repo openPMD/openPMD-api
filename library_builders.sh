@@ -166,8 +166,6 @@ function build_adios2 {
 
     rm -rf build-adios2
 
-    cat /usr/local/lib/cmake/adios2/adios2-config.cmake
-
     touch adios2-stamp
 }
 
