@@ -339,7 +339,6 @@ void Iteration::flushIteration(internal::FlushParams const &flushParams)
             if (!s.containsAttribute("meshesPath"))
             {
                 s.setMeshesPath("meshes/");
-                s.flushMeshesPath();
             }
             meshes.flush(s.meshesPath(), flushParams);
             for (auto &m : meshes)
@@ -355,7 +354,6 @@ void Iteration::flushIteration(internal::FlushParams const &flushParams)
             if (!s.containsAttribute("particlesPath"))
             {
                 s.setParticlesPath("particles/");
-                s.flushParticlesPath();
             }
             particles.flush(s.particlesPath(), flushParams);
             for (auto &species : particles)

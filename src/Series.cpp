@@ -172,7 +172,27 @@ Series &Series::setBasePath(std::string const &bp)
 
 std::string Series::meshesPath() const
 {
-    return getAttribute("meshesPath").get<std::string>();
+    auto res = meshesPaths();
+    if (res.empty())
+    {
+        throw no_such_attribute_error("meshesPath");
+    }
+    /*
+     * @todo: Verify that meshesPath has canonical form
+     */
+    return res.at(0);
+}
+
+std::vector<std::string> Series::meshesPaths() const
+{
+    if (containsAttribute("meshesPath"))
+    {
+        return getAttribute("meshesPath").get<std::vector<std::string>>();
+    }
+    else
+    {
+        return {};
+    }
 }
 
 Series &Series::setMeshesPath(std::string const &mp)
@@ -193,6 +213,23 @@ Series &Series::setMeshesPath(std::string const &mp)
     else
         setAttribute("meshesPath", mp + "/");
     setDirty(true);
+    return *this;
+}
+Series &Series::setMeshesPath(std::vector<std::string> const &mp)
+{
+    // @todo if already written, then append
+    switch (mp.size())
+    {
+    case 0:
+        return *this;
+    case 1:
+        setAttribute("meshesPath", *mp.begin());
+        break;
+    default:
+        setAttribute("meshesPath", mp);
+        break;
+    }
+    dirty() = true;
     return *this;
 }
 
@@ -462,7 +499,27 @@ void Series::flushRankTable()
 
 std::string Series::particlesPath() const
 {
-    return getAttribute("particlesPath").get<std::string>();
+    auto res = particlesPaths();
+    if (res.empty())
+    {
+        throw no_such_attribute_error("particlesPath");
+    }
+    /*
+     * @todo: Verify that particlesPath has canonical form
+     */
+    return res.at(0);
+}
+
+std::vector<std::string> Series::particlesPaths() const
+{
+    if (containsAttribute("particlesPath"))
+    {
+        return getAttribute("particlesPath").get<std::vector<std::string>>();
+    }
+    else
+    {
+        return {};
+    }
 }
 
 Series &Series::setParticlesPath(std::string const &pp)
@@ -483,6 +540,23 @@ Series &Series::setParticlesPath(std::string const &pp)
     else
         setAttribute("particlesPath", pp + "/");
     setDirty(true);
+    return *this;
+}
+Series &Series::setParticlesPath(std::vector<std::string> const &pp)
+{
+    // @todo if already written, then append
+    switch (pp.size())
+    {
+    case 0:
+        return *this;
+    case 1:
+        setAttribute("particlesPath", *pp.begin());
+        break;
+    default:
+        setAttribute("particlesPath", pp);
+        break;
+    }
+    dirty() = true;
     return *this;
 }
 
@@ -1530,26 +1604,6 @@ void Series::flushGorVBased(
     }
 }
 
-void Series::flushMeshesPath()
-{
-    Parameter<Operation::WRITE_ATT> aWrite;
-    aWrite.name = "meshesPath";
-    Attribute a = getAttribute("meshesPath");
-    aWrite.resource = a.getResource();
-    aWrite.dtype = a.dtype;
-    IOHandler()->enqueue(IOTask(this, aWrite));
-}
-
-void Series::flushParticlesPath()
-{
-    Parameter<Operation::WRITE_ATT> aWrite;
-    aWrite.name = "particlesPath";
-    Attribute a = getAttribute("particlesPath");
-    aWrite.resource = a.getResource();
-    aWrite.dtype = a.dtype;
-    IOHandler()->enqueue(IOTask(this, aWrite));
-}
-
 void Series::readFileBased()
 {
     auto &series = get();
@@ -2226,7 +2280,8 @@ void Series::readBase()
         aRead.name = "meshesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
-        if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+        if (auto val = Attribute(*aRead.resource)
+                           .getOptional<std::vector<std::string>>();
             val.has_value())
         {
             /* allow setting the meshes path after completed IO */
@@ -2258,7 +2313,8 @@ void Series::readBase()
         aRead.name = "particlesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
-        if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+        if (auto val = Attribute(*aRead.resource)
+                           .getOptional<std::vector<std::string>>();
             val.has_value())
         {
             /* allow setting the meshes path after completed IO */
