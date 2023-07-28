@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/Mesh.hpp"
+#include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/backend/Container.hpp"
 
 #include <memory>
@@ -52,11 +54,21 @@ protected:
         Container_t::setData(std::move(data));
     }
 
+    /**
+     * @brief Link with parent.
+     *
+     * @param w The Writable representing the parent.
+     */
+    void linkHierarchy(Writable &w) override;
+
 public:
     CustomHierarchy(CustomHierarchy const &other) = default;
     CustomHierarchy(CustomHierarchy &&other) = default;
 
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
+
+    Container<Mesh> meshes{};
+    Container<ParticleSpecies> particles{};
 };
 } // namespace openPMD
