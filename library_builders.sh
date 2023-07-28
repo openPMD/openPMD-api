@@ -137,7 +137,7 @@ function build_adios2 {
     cd build-adios2
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake  --trace-expand  \
+    PATH=${CMAKE_BIN}:${PATH} cmake               \
         -DBUILD_SHARED_LIBS=OFF                   \
         -DBUILD_TESTING=OFF                       \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
