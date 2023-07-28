@@ -208,7 +208,7 @@ function build_blosc2 {
 
     #curl -sLo blosc2-v2.10.0.tar.gz \
     curl -sLo blosc2-topic-cmake-install-targets.tar.gz \
-        https://github.com/ax3l/c-blosc2/archive/refs/heads/topic-cmake-install-targets.tar.gz
+        https://github.com/Blosc/c-blosc2/archive/d510951c492db9f09ab9171675c3dddbf8ffd4fa.tar.gz
     file blosc2*.tar.gz
     tar -xzf blosc2*.tar.gz
     rm blosc2*.tar.gz
