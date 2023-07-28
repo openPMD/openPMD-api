@@ -292,6 +292,25 @@ namespace detail
                 }
             }
         }
+        // conversion cast: turn a 1-element vector into a single value
+        else if constexpr (auxiliary::IsVector_v<T>)
+        {
+            if constexpr (std::is_convertible_v<typename T::value_type, U>)
+            {
+                if (pv->size() != 1)
+                {
+                    return {std::runtime_error(
+                        "getCast: vector to scalar conversion requires "
+                        "single-element vectors")};
+                }
+                return {U(*pv->begin())};
+            }
+            else
+            {
+                return {std::runtime_error(
+                    "getCast: no vector to scalar conversion possible.")};
+            }
+        }
         else
         {
             return {std::runtime_error("getCast: no cast possible.")};
