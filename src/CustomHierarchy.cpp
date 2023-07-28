@@ -22,9 +22,24 @@
 #include "openPMD/CustomHierarchy.hpp"
 
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Writable.hpp"
+
+#include <string>
 
 namespace openPMD
 {
-CustomHierarchy::CustomHierarchy() = default;
-CustomHierarchy::CustomHierarchy(NoInit): Container_t(NoInit()) {}
+CustomHierarchy::CustomHierarchy()
+{
+    meshes.writable().ownKeyWithinParent = "meshes";
+    particles.writable().ownKeyWithinParent = "particles";
 }
+CustomHierarchy::CustomHierarchy(NoInit) : Container_t(NoInit())
+{}
+
+void CustomHierarchy::linkHierarchy(Writable &w)
+{
+    Attributable::linkHierarchy(w);
+    meshes.linkHierarchy(this->writable());
+    particles.linkHierarchy(this->writable());
+}
+} // namespace openPMD

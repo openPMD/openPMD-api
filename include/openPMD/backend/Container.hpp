@@ -128,6 +128,7 @@ class Container : virtual public Attributable
     template <typename>
     friend class internal::EraseStaleEntries;
     friend class SeriesIterator;
+    friend class CustomHierarchy;
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;

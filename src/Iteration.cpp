@@ -837,13 +837,6 @@ void Iteration::setStepStatus(StepStatus status)
     }
 }
 
-void Iteration::linkHierarchy(Writable &w)
-{
-    Attributable::linkHierarchy(w);
-    meshes.linkHierarchy(this->writable());
-    particles.linkHierarchy(this->writable());
-}
-
 void Iteration::runDeferredParseAccess()
 {
     if (access::read(IOHandler()->m_frontendAccess))

@@ -103,6 +103,7 @@ class Writable final
     template <typename>
     friend class Span;
     friend void debug::printDirty(Series const &);
+    friend class CustomHierarchy;
 
 private:
     Writable(internal::AttributableData *);

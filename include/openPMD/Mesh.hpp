@@ -41,6 +41,7 @@ class Mesh : public BaseRecord<MeshRecordComponent>
 {
     friend class Container<Mesh>;
     friend class Iteration;
+    friend class CustomHierarchy;
 
 public:
     Mesh(Mesh const &) = default;
