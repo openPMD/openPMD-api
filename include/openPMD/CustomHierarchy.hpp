@@ -33,17 +33,48 @@ namespace openPMD
 class CustomHierarchy;
 namespace internal
 {
+    enum class ContainedType
+    {
+        Group,
+        Mesh,
+        Particle
+    };
+    struct MeshesParticlesPath
+    {
+        std::optional<std::string> meshesPath;
+        std::optional<std::string> particlesPath;
+
+        explicit MeshesParticlesPath() = default;
+        MeshesParticlesPath(
+            std::optional<std::string> meshesPath,
+            std::optional<std::string> particlesPath);
+
+        [[nodiscard]] ContainedType determineType(
+            std::vector<std::string> const &path,
+            std::string const &name) const;
+        [[nodiscard]] bool isParticle(
+            std::vector<std::string> const &path,
+            std::string const &name) const;
+        [[nodiscard]] bool isMesh(
+            std::vector<std::string> const &path,
+            std::string const &name) const;
+    };
+
     using CustomHierarchyData = ContainerData<CustomHierarchy>;
-}
+} // namespace internal
 
 class CustomHierarchy : public Container<CustomHierarchy>
 {
     friend class Iteration;
+    friend class Container<CustomHierarchy>;
 
 private:
     using Container_t = Container<CustomHierarchy>;
     using Data_t = typename Container_t::ContainerData;
     static_assert(std::is_base_of_v<Container_t::ContainerData, Data_t>);
+
+    void readMeshes(std::string const &meshesPath);
+    void readParticles(std::string const &particlesPath);
 
 protected:
     CustomHierarchy();
@@ -53,6 +84,11 @@ protected:
     {
         Container_t::setData(std::move(data));
     }
+
+    void read(internal::MeshesParticlesPath const &);
+    void read(
+        internal::MeshesParticlesPath const &,
+        std::vector<std::string> &currentPath);
 
     /**
      * @brief Link with parent.

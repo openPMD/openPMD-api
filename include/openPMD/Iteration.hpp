@@ -315,8 +315,6 @@ private:
         bool beginStep);
     void readGorVBased(std::string const &groupPath, bool beginStep);
     void read_impl(std::string const &groupPath);
-    void readMeshes(std::string const &meshesPath);
-    void readParticles(std::string const &particlesPath);
 
     /**
      * Status after beginning an IO step. Currently includes:

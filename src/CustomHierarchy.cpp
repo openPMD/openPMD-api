@@ -20,17 +20,75 @@
  */
 
 #include "openPMD/CustomHierarchy.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 
+#include "openPMD/Dataset.hpp"
+#include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/IOTask.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <algorithm>
+#include <iostream>
 #include <map>
 #include <string>
 
 namespace openPMD
 {
+namespace internal
+{
+    MeshesParticlesPath::MeshesParticlesPath(
+        std::optional<std::string> meshesPath_in,
+        std::optional<std::string> particlesPath_in)
+        : meshesPath{std::move(meshesPath_in)}
+        , particlesPath{std::move(particlesPath_in)}
+    {
+        if (meshesPath.has_value())
+        {
+            meshesPath = auxiliary::removeSlashes(*meshesPath);
+        }
+        if (particlesPath.has_value())
+        {
+            particlesPath = auxiliary::removeSlashes(*particlesPath);
+        }
+    }
+
+    ContainedType MeshesParticlesPath::determineType(
+        std::vector<std::string> const &path, std::string const &name) const
+    {
+        if (isMesh(path, name))
+        {
+            return ContainedType::Mesh;
+        }
+        else if (isParticle(path, name))
+        {
+            return ContainedType::Particle;
+        }
+        else
+        {
+            return ContainedType::Group;
+        }
+    }
+
+    bool MeshesParticlesPath::isParticle(
+        std::vector<std::string> const &path, std::string const &name) const
+    {
+        (void)path;
+        return particlesPath.has_value() ? name == *particlesPath : false;
+    }
+    bool MeshesParticlesPath::isMesh(
+        std::vector<std::string> const &path, std::string const &name) const
+    {
+        (void)path;
+        return meshesPath.has_value() ? name == *meshesPath : false;
+    }
+} // namespace internal
+
 CustomHierarchy::CustomHierarchy()
 {
     meshes.writable().ownKeyWithinParent = "meshes";
@@ -38,6 +96,219 @@ CustomHierarchy::CustomHierarchy()
 }
 CustomHierarchy::CustomHierarchy(NoInit) : Container_t(NoInit())
 {}
+
+void CustomHierarchy::readMeshes(std::string const &meshesPath)
+{
+    Parameter<Operation::OPEN_PATH> pOpen;
+    Parameter<Operation::LIST_PATHS> pList;
+
+    pOpen.path = meshesPath;
+    IOHandler()->enqueue(IOTask(&meshes, pOpen));
+
+    meshes.readAttributes(ReadMode::FullyReread);
+
+    internal::EraseStaleEntries<decltype(meshes)> map{meshes};
+
+    /* obtain all non-scalar meshes */
+    IOHandler()->enqueue(IOTask(&meshes, pList));
+    IOHandler()->flush(internal::defaultFlushParams);
+
+    Parameter<Operation::LIST_ATTS> aList;
+    for (auto const &mesh_name : *pList.paths)
+    {
+        Mesh &m = map[mesh_name];
+        pOpen.path = mesh_name;
+        aList.attributes->clear();
+        IOHandler()->enqueue(IOTask(&m, pOpen));
+        IOHandler()->enqueue(IOTask(&m, aList));
+        IOHandler()->flush(internal::defaultFlushParams);
+
+        auto att_begin = aList.attributes->begin();
+        auto att_end = aList.attributes->end();
+        auto value = std::find(att_begin, att_end, "value");
+        auto shape = std::find(att_begin, att_end, "shape");
+        if (value != att_end && shape != att_end)
+        {
+            MeshRecordComponent &mrc = m;
+            IOHandler()->enqueue(IOTask(&mrc, pOpen));
+            IOHandler()->flush(internal::defaultFlushParams);
+            mrc.get().m_isConstant = true;
+        }
+        try
+        {
+            m.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read mesh with name '" << mesh_name
+                      << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+            map.forget(mesh_name);
+        }
+    }
+
+    /* obtain all scalar meshes */
+    Parameter<Operation::LIST_DATASETS> dList;
+    IOHandler()->enqueue(IOTask(&meshes, dList));
+    IOHandler()->flush(internal::defaultFlushParams);
+
+    Parameter<Operation::OPEN_DATASET> dOpen;
+    for (auto const &mesh_name : *dList.datasets)
+    {
+        Mesh &m = map[mesh_name];
+        dOpen.name = mesh_name;
+        IOHandler()->enqueue(IOTask(&m, dOpen));
+        IOHandler()->flush(internal::defaultFlushParams);
+        MeshRecordComponent &mrc = m;
+        IOHandler()->enqueue(IOTask(&mrc, dOpen));
+        IOHandler()->flush(internal::defaultFlushParams);
+        mrc.setWritten(false, Attributable::EnqueueAsynchronously::No);
+        mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+        mrc.setWritten(true, Attributable::EnqueueAsynchronously::No);
+        try
+        {
+            m.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read mesh with name '" << mesh_name
+                      << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+            map.forget(mesh_name);
+        }
+    }
+}
+
+void CustomHierarchy::readParticles(std::string const &particlesPath)
+{
+    Parameter<Operation::OPEN_PATH> pOpen;
+    Parameter<Operation::LIST_PATHS> pList;
+
+    pOpen.path = particlesPath;
+    IOHandler()->enqueue(IOTask(&particles, pOpen));
+
+    particles.readAttributes(ReadMode::FullyReread);
+
+    /* obtain all particle species */
+    pList.paths->clear();
+    IOHandler()->enqueue(IOTask(&particles, pList));
+    IOHandler()->flush(internal::defaultFlushParams);
+
+    internal::EraseStaleEntries<decltype(particles)> map{particles};
+    for (auto const &species_name : *pList.paths)
+    {
+        ParticleSpecies &p = map[species_name];
+        pOpen.path = species_name;
+        IOHandler()->enqueue(IOTask(&p, pOpen));
+        IOHandler()->flush(internal::defaultFlushParams);
+        try
+        {
+            p.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read particle species with name '"
+                      << species_name
+                      << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+            map.forget(species_name);
+        }
+    }
+}
+
+void CustomHierarchy::read(internal::MeshesParticlesPath const &mpp)
+{
+    std::vector<std::string> currentPath;
+    read(mpp, currentPath);
+}
+
+void CustomHierarchy::read(
+    internal::MeshesParticlesPath const &mpp,
+    std::vector<std::string> &currentPath)
+{
+    /*
+     * Convention for CustomHierarchy::flush and CustomHierarchy::read:
+     * Path is created/opened already at entry point of method, method needs
+     * to create/open path for contained subpaths.
+     */
+
+    Parameter<Operation::LIST_PATHS> pList;
+    IOHandler()->enqueue(IOTask(this, pList));
+
+    Attributable::readAttributes(ReadMode::FullyReread);
+    Parameter<Operation::LIST_DATASETS> dList;
+    IOHandler()->enqueue(IOTask(this, dList));
+    IOHandler()->flush(internal::defaultFlushParams);
+
+    for (auto const &path : *pList.paths)
+    {
+        switch (mpp.determineType(currentPath, path))
+        {
+        case internal::ContainedType::Group: {
+            Parameter<Operation::OPEN_PATH> pOpen;
+            pOpen.path = path;
+            auto &subpath = this->operator[](path);
+            IOHandler()->enqueue(IOTask(&subpath, pOpen));
+            currentPath.emplace_back(path);
+            try
+            {
+                subpath.read(mpp, currentPath);
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read subgroup '" << path << "' at path '"
+                          << myPath().openPMDPath()
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+                container().erase(path);
+            }
+            currentPath.pop_back();
+            break;
+        }
+        case internal::ContainedType::Mesh: {
+            try
+            {
+                readMeshes(*mpp.meshesPath);
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read meshes at path '"
+                          << myPath().openPMDPath()
+                          << "' and will skip them due to read error:\n"
+                          << err.what() << std::endl;
+                meshes = {};
+                meshes.dirty() = false;
+            }
+            break;
+        }
+        case internal::ContainedType::Particle: {
+            try
+            {
+                readParticles(*mpp.particlesPath);
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read particles at path '"
+                          << myPath().openPMDPath()
+                          << "' and will skip them due to read error:\n"
+                          << err.what() << std::endl;
+                particles = {};
+                particles.dirty() = false;
+            }
+            break;
+        }
+        }
+    }
+
+    if (!mpp.meshesPath.has_value())
+    {
+        meshes.dirty() = false;
+    }
+    if (!mpp.particlesPath.has_value())
+    {
+        particles.dirty() = false;
+    }
+}
 
 void CustomHierarchy::linkHierarchy(Writable &w)
 {

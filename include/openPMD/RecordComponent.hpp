@@ -135,6 +135,7 @@ class RecordComponent : public BaseRecordComponent
     friend class MeshRecordComponent;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    friend class CustomHierarchy;
 
 public:
     enum class Allocation
