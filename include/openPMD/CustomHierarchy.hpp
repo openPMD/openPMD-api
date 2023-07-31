@@ -60,7 +60,14 @@ namespace internal
             std::string const &name) const;
     };
 
-    using CustomHierarchyData = ContainerData<CustomHierarchy>;
+    struct CustomHierarchyData : ContainerData<CustomHierarchy>
+    {
+        explicit CustomHierarchyData();
+
+        void syncAttributables();
+
+        Container<RecordComponent> m_embeddedDatasets;
+    };
 } // namespace internal
 
 class CustomHierarchy : public Container<CustomHierarchy>
@@ -70,8 +77,19 @@ class CustomHierarchy : public Container<CustomHierarchy>
 
 private:
     using Container_t = Container<CustomHierarchy>;
-    using Data_t = typename Container_t::ContainerData;
+    using Data_t = internal::CustomHierarchyData;
     static_assert(std::is_base_of_v<Container_t::ContainerData, Data_t>);
+
+    std::shared_ptr<Data_t> m_customHierarchyData;
+
+    [[nodiscard]] Data_t &get()
+    {
+        return *m_customHierarchyData;
+    }
+    [[nodiscard]] Data_t const &get() const
+    {
+        return *m_customHierarchyData;
+    }
 
     void readMeshes(std::string const &meshesPath);
     void readParticles(std::string const &particlesPath);
@@ -82,6 +100,7 @@ protected:
 
     inline void setData(std::shared_ptr<Data_t> data)
     {
+        m_customHierarchyData = data;
         Container_t::setData(std::move(data));
     }
 
@@ -119,6 +138,9 @@ public:
 
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
+
+    template <typename ContainedType>
+    auto asContainerOf() -> Container<ContainedType> &;
 
     Container<Mesh> meshes{};
     Container<ParticleSpecies> particles{};

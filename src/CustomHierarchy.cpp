@@ -89,10 +89,31 @@ namespace internal
         (void)path;
         return meshesPath.has_value() ? name == *meshesPath : false;
     }
+
+    CustomHierarchyData::CustomHierarchyData()
+    {
+        syncAttributables();
+    }
+
+    void CustomHierarchyData::syncAttributables()
+    {
+        /*
+         * m_embeddeddatasets and its friends should point to the same instance
+         * of Attributable.
+         * (next commits will add members for meshes and particles)
+         */
+        for (auto p :
+             std::initializer_list<Attributable *>{&m_embeddedDatasets})
+        {
+            p->m_attri->asSharedPtrOfAttributable() =
+                this->asSharedPtrOfAttributable();
+        }
+    }
 } // namespace internal
 
 CustomHierarchy::CustomHierarchy()
 {
+    setData(std::make_shared<Data_t>());
     meshes.writable().ownKeyWithinParent = "meshes";
     particles.writable().ownKeyWithinParent = "particles";
 }
@@ -242,6 +263,8 @@ void CustomHierarchy::read(
     IOHandler()->enqueue(IOTask(this, dList));
     IOHandler()->flush(internal::defaultFlushParams);
 
+    std::deque<std::string> constantComponentsPushback;
+    auto &data = get();
     for (auto const &path : *pList.paths)
     {
         switch (mpp.determineType(currentPath, path))
@@ -265,6 +288,15 @@ void CustomHierarchy::read(
                 container().erase(path);
             }
             currentPath.pop_back();
+            if (subpath.size() == 0 && subpath.containsAttribute("shape") &&
+                subpath.containsAttribute("value"))
+            {
+                // This is not a group, but a constant record component
+                // Writable::~Writable() will deal with removing this from the
+                // backend again.
+                constantComponentsPushback.push_back(path);
+                container().erase(path);
+            }
             break;
         }
         case internal::ContainedType::Mesh: {
@@ -309,6 +341,40 @@ void CustomHierarchy::read(
     if (!mpp.particlesPath.has_value())
     {
         particles.dirty() = false;
+    }
+
+    for (auto const &path : *dList.datasets)
+    {
+        auto &rc = data.m_embeddedDatasets[path];
+        Parameter<Operation::OPEN_DATASET> dOpen;
+        dOpen.name = path;
+        IOHandler()->enqueue(IOTask(&rc, dOpen));
+        try
+        {
+            IOHandler()->flush(internal::defaultFlushParams);
+            rc.written() = false;
+            rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+            rc.written() = true;
+            rc.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read contained custom dataset '" << path
+                      << "' at path '" << myPath().printGroup()
+                      << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+            data.m_embeddedDatasets.container().erase(path);
+        }
+    }
+
+    for (auto const &path : constantComponentsPushback)
+    {
+        auto &rc = data.m_embeddedDatasets[path];
+        Parameter<Operation::OPEN_PATH> pOpen;
+        pOpen.path = path;
+        IOHandler()->enqueue(IOTask(&rc, pOpen));
+        rc.get().m_isConstant = true;
+        rc.read();
     }
 }
 
@@ -374,6 +440,10 @@ void CustomHierarchy::flush_internal(
     {
         particles.dirty() = false;
     }
+    for (auto &[name, dataset] : get().m_embeddedDatasets)
+    {
+        dataset.flush(name, flushParams);
+    }
 }
 
 void CustomHierarchy::flush(
@@ -435,6 +505,13 @@ bool CustomHierarchy::dirtyRecursive() const
             return true;
         }
     }
+    for (auto const &pair : get().m_embeddedDatasets)
+    {
+        if (pair.second.dirtyRecursive())
+        {
+            return true;
+        }
+    }
     for (auto const &pair : *this)
     {
         if (pair.second.dirtyRecursive())
@@ -444,4 +521,29 @@ bool CustomHierarchy::dirtyRecursive() const
     }
     return false;
 }
+
+template <typename ContainedType>
+auto CustomHierarchy::asContainerOf() -> Container<ContainedType> &
+{
+    if constexpr (std::is_same_v<ContainedType, CustomHierarchy>)
+    {
+        return *static_cast<Container<CustomHierarchy> *>(this);
+    }
+    else if constexpr (std::is_same_v<ContainedType, RecordComponent>)
+    {
+        return get().m_embeddedDatasets;
+    }
+    else
+    {
+        static_assert(
+            auxiliary::dependent_false_v<ContainedType>,
+            "[CustomHierarchy::asContainerOf] Type parameter must be "
+            "one of: CustomHierarchy, RecordComponent.");
+    }
+}
+
+template auto CustomHierarchy::asContainerOf<CustomHierarchy>()
+    -> Container<CustomHierarchy> &;
+template auto CustomHierarchy::asContainerOf<RecordComponent>()
+    -> Container<RecordComponent> &;
 } // namespace openPMD
