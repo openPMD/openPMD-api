@@ -222,7 +222,7 @@ TEST_CASE("custom_hierarchies", "[core]")
 
         auto meshesViaAlias = write.iterations[0].meshes;
         meshesViaAlias["E"]["x"].makeEmpty<float>(2);
-        write.setMeshesPath("fields");
+        write.setMeshesPath(std::vector<std::string>{"fields/", ".*/meshes/"});
         auto meshesManually =
             write.iterations[0]["fields"].asContainerOf<Mesh>();
         REQUIRE(meshesManually.contains("E"));
@@ -307,6 +307,89 @@ TEST_CASE("custom_hierarchies", "[core]")
         REQUIRE(constant_dataset.getDatatype() == Datatype::FLOAT);
         REQUIRE(constant_dataset.getExtent() == Extent{0, 0, 0});
     }
+    read.close();
+
+    write = Series(filePath, Access::READ_WRITE);
+    {
+        std::vector<int> data(10, 3);
+
+        auto E_x = write.iterations[0]["custom_meshes"].meshes["E"]["x"];
+        E_x.resetDataset({Datatype::INT, {10}});
+        E_x.storeChunk(data, {0}, {10});
+
+        auto e_pos_x = write.iterations[0]["custom_particles"]
+                           .particles["e"]["position"]["x"];
+        e_pos_x.resetDataset({Datatype::INT, {10}});
+        e_pos_x.storeChunk(data, {0}, {10});
+        write.close();
+    }
+
+    read = Series(filePath, Access::READ_ONLY);
+    {
+        auto it0 = read.iterations[0];
+        auto custom_meshes = it0["custom_meshes"];
+        REQUIRE(custom_meshes.meshes.size() == 1);
+        REQUIRE(read.iterations[0]["custom_meshes"].meshes.count("E") == 1);
+        auto E_x_loaded = read.iterations[0]["custom_meshes"]
+                              .meshes["E"]["x"]
+                              .loadChunk<int>();
+        REQUIRE(read.iterations[0]["custom_particles"].particles.size() == 1);
+        REQUIRE(
+            read.iterations[0]["custom_particles"].particles.count("e") == 1);
+        auto e_pos_x_loaded = read.iterations[0]["custom_particles"]
+                                  .particles["e"]["position"]["x"]
+                                  .loadChunk<int>();
+        read.flush();
+
+        for (size_t i = 0; i < 10; ++i)
+        {
+            REQUIRE(E_x_loaded.get()[i] == 3);
+            REQUIRE(e_pos_x_loaded.get()[i] == 3);
+        }
+    }
+}
+
+TEST_CASE("custom_hierarchies_no_rw", "[core]")
+{
+    std::string filePath = "../samples/custom_hierarchies_no_rw.json";
+    Series write(filePath, Access::CREATE);
+    write.setMeshesPath(std::vector<std::string>{".*/meshes/"});
+    write.iterations[0]["custom"]["hierarchy"];
+    write.iterations[0]["custom"].setAttribute("string", "attribute");
+    write.iterations[0]["custom"]["hierarchy"].setAttribute("number", 3);
+    write.iterations[0]["no_attributes"];
+
+    {
+        write.iterations[0]["custom"]["hierarchy"];
+        write.iterations[0]["custom"]
+            .asContainerOf<RecordComponent>()["emptyDataset"]
+            .makeEmpty(Datatype::FLOAT, 3);
+        write.iterations[0]["custom"]["hierarchy"].setAttribute("number", 3);
+        write.iterations[0]["no_attributes"];
+        auto iteration_level_ds =
+            write.iterations[0]
+                .asContainerOf<RecordComponent>()["iteration_level_dataset"];
+        iteration_level_ds.resetDataset({Datatype::INT, {10}});
+        std::vector<int> data(10, 5);
+        iteration_level_ds.storeChunk(data);
+        write.flush();
+    }
+
+    {
+        std::vector<int> data(10, 3);
+
+        auto E_x = write.iterations[0]["custom_meshes"].meshes["E"]["x"];
+        E_x.resetDataset({Datatype::INT, {10}});
+        E_x.storeChunk(data, {0}, {10});
+
+        auto e_pos_x = write.iterations[0]["custom_particles"]
+                           .particles["e"]["position"]["x"];
+        e_pos_x.resetDataset({Datatype::INT, {10}});
+        e_pos_x.storeChunk(data, {0}, {10});
+        write.close();
+    }
+
+    Series read(filePath, Access::READ_ONLY);
 }
 
 TEST_CASE("myPath", "[core]")
