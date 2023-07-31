@@ -461,12 +461,7 @@ void Iteration::read_impl(std::string const &groupPath)
     // @todo restore compatibility with openPMD 1.0.*:
     //   hasMeshes <-> meshesPath is defined
 
-    internal::MeshesParticlesPath mpp(
-        s.containsAttribute("meshesPath") ? std::make_optional(s.meshesPath())
-                                          : std::nullopt,
-        s.containsAttribute("particlesPath")
-            ? std::make_optional(s.particlesPath())
-            : std::nullopt);
+    internal::MeshesParticlesPath mpp(s.meshesPaths(), s.particlesPaths());
     CustomHierarchy::read(std::move(mpp));
 
 #ifdef openPMD_USE_INVASIVE_TESTS
