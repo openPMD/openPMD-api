@@ -44,6 +44,17 @@ namespace internal
         std::optional<std::string> meshesPath;
         std::optional<std::string> particlesPath;
 
+        inline std::string requestMeshesPath()
+        {
+            meshesPath = meshesPath.value_or("meshes");
+            return *meshesPath;
+        }
+        inline std::string requestParticlesPath()
+        {
+            particlesPath = particlesPath.value_or("particles");
+            return *particlesPath;
+        }
+
         explicit MeshesParticlesPath() = default;
         MeshesParticlesPath(
             std::optional<std::string> meshesPath,
@@ -67,6 +78,8 @@ namespace internal
         void syncAttributables();
 
         Container<RecordComponent> m_embeddedDatasets;
+        Container<Mesh> m_embeddedMeshes;
+        Container<ParticleSpecies> m_embeddedParticles;
     };
 } // namespace internal
 
@@ -91,8 +104,12 @@ private:
         return *m_customHierarchyData;
     }
 
-    void readMeshes(std::string const &meshesPath);
-    void readParticles(std::string const &particlesPath);
+    using EraseStaleMeshes = internal::EraseStaleEntries<Container<Mesh>>;
+    using EraseStaleParticles =
+        internal::EraseStaleEntries<Container<ParticleSpecies>>;
+    void readNonscalarMesh(EraseStaleMeshes &map, std::string const &name);
+    void readScalarMesh(EraseStaleMeshes &map, std::string const &name);
+    void readParticleSpecies(EraseStaleParticles &map, std::string const &name);
 
 protected:
     CustomHierarchy();
@@ -139,10 +156,17 @@ public:
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
 
+    mapped_type &operator[](key_type &&key);
+    mapped_type &operator[](key_type const &key);
+
     template <typename ContainedType>
     auto asContainerOf() -> Container<ContainedType> &;
 
     Container<Mesh> meshes{};
     Container<ParticleSpecies> particles{};
+
+private:
+    template <typename KeyType>
+    mapped_type &bracketOperatorImpl(KeyType &&);
 };
 } // namespace openPMD

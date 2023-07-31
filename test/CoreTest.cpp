@@ -219,18 +219,60 @@ TEST_CASE("custom_hierarchies", "[core]")
         iteration_level_ds.resetDataset({Datatype::INT, {10}});
         std::vector<int> data(10, 5);
         iteration_level_ds.storeChunk(data);
+
+        auto meshesViaAlias = write.iterations[0].meshes;
+        meshesViaAlias["E"]["x"].makeEmpty<float>(2);
+        write.setMeshesPath("fields");
+        auto meshesManually =
+            write.iterations[0]["fields"].asContainerOf<Mesh>();
+        REQUIRE(meshesManually.contains("E"));
+        REQUIRE(meshesManually.size() == 1);
+        meshesManually["B"]["x"].makeEmpty<float>(2);
+        REQUIRE(meshesViaAlias.contains("B"));
+        REQUIRE(meshesViaAlias.size() == 2);
+
+        write.setParticlesPath("species");
+        auto particlesManually =
+            write.iterations[0]["species"].asContainerOf<ParticleSpecies>();
+        particlesManually["e"]["position"]["x"].makeEmpty<float>(1);
+        auto particlesViaAlias = write.iterations[0].particles;
+        particlesViaAlias["i"]["position"]["x"].makeEmpty<float>(1);
+
         write.close();
     }
 
     read = Series(filePath, Access::READ_ONLY);
     {
-        REQUIRE(read.iterations[0].size() == 2);
+        REQUIRE(read.iterations[0].size() == 4);
         REQUIRE(read.iterations[0].count("custom") == 1);
         REQUIRE(read.iterations[0].count("no_attributes") == 1);
+        REQUIRE(read.iterations[0].count("fields") == 1);
+        REQUIRE(read.iterations[0].count("species") == 1);
         REQUIRE(read.iterations[0]["custom"].size() == 1);
         REQUIRE(read.iterations[0]["custom"].count("hierarchy") == 1);
         REQUIRE(read.iterations[0]["custom"]["hierarchy"].size() == 0);
         REQUIRE(read.iterations[0]["no_attributes"].size() == 0);
+        REQUIRE(read.iterations[0]["fields"].asContainerOf<Mesh>().size() == 2);
+        REQUIRE(
+            read.iterations[0]["fields"].asContainerOf<Mesh>().contains("E"));
+        REQUIRE(
+            read.iterations[0]["fields"].asContainerOf<Mesh>().contains("B"));
+        REQUIRE(read.iterations[0].meshes.size() == 2);
+        REQUIRE(read.iterations[0].meshes.contains("E"));
+        REQUIRE(read.iterations[0].meshes.contains("B"));
+        REQUIRE(
+            read.iterations[0]["species"]
+                .asContainerOf<ParticleSpecies>()
+                .size() == 2);
+        REQUIRE(read.iterations[0]["species"]
+                    .asContainerOf<ParticleSpecies>()
+                    .contains("e"));
+        REQUIRE(read.iterations[0]["species"]
+                    .asContainerOf<ParticleSpecies>()
+                    .contains("i"));
+        REQUIRE(read.iterations[0].particles.size() == 2);
+        REQUIRE(read.iterations[0].particles.contains("e"));
+        REQUIRE(read.iterations[0].particles.contains("i"));
 
         REQUIRE(
             read.iterations[0].asContainerOf<RecordComponent>().size() == 1);
