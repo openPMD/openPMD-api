@@ -224,6 +224,7 @@ class Series : public Attributable
     friend class SeriesIterator;
     friend class internal::SeriesData;
     friend class WriteIterations;
+    friend class CustomHierarchy;
 
 public:
     explicit Series();

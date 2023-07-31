@@ -20,13 +20,18 @@
  */
 #pragma once
 
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/backend/Container.hpp"
 
 #include <memory>
+#include <regex>
+#include <set>
+#include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace openPMD
 {
@@ -41,24 +46,24 @@ namespace internal
     };
     struct MeshesParticlesPath
     {
-        std::optional<std::string> meshesPath;
-        std::optional<std::string> particlesPath;
+        std::regex meshRegex;
+        std::set<std::string> collectNewMeshesPaths;
+        std::regex particleRegex;
+        std::set<std::string> collectNewParticlesPaths;
 
-        inline std::string requestMeshesPath()
-        {
-            meshesPath = meshesPath.value_or("meshes");
-            return *meshesPath;
-        }
-        inline std::string requestParticlesPath()
-        {
-            particlesPath = particlesPath.value_or("particles");
-            return *particlesPath;
-        }
+        /*
+         * These values decide which path will be returned upon use of the
+         * shorthand notation s.iterations[0].meshes or .particles.
+         *
+         */
+        std::string m_defaultMeshesPath = "meshes";
+        std::string m_defaultParticlesPath = "particles";
 
         explicit MeshesParticlesPath() = default;
         MeshesParticlesPath(
-            std::optional<std::string> meshesPath,
-            std::optional<std::string> particlesPath);
+            std::vector<std::string> const &meshes,
+            std::vector<std::string> const &particles);
+        MeshesParticlesPath(Series const &);
 
         [[nodiscard]] ContainedType determineType(
             std::vector<std::string> const &path,
@@ -80,6 +85,16 @@ namespace internal
         Container<RecordComponent> m_embeddedDatasets;
         Container<Mesh> m_embeddedMeshes;
         Container<ParticleSpecies> m_embeddedParticles;
+
+        /*
+         * Each call to operator[]() needs to check the Series if the meshes/
+         * particlesPath has changed, so the Series gets buffered.
+         *
+         * Alternative: Require that the meshesPath/particlesPath is fixed as
+         * soon as operator[]() has been called for the first time, check
+         * at flush time.
+         */
+        std::unique_ptr<Series> m_bufferedSeries;
     };
 } // namespace internal
 
@@ -168,5 +183,7 @@ public:
 private:
     template <typename KeyType>
     mapped_type &bracketOperatorImpl(KeyType &&);
+
+    Series &getBufferedSeries();
 };
 } // namespace openPMD
