@@ -20,6 +20,8 @@
  */
 
 #include "openPMD/CustomHierarchy.hpp"
+#include "openPMD/IO/Access.hpp"
+#include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
 #include "openPMD/Dataset.hpp"
@@ -307,6 +309,98 @@ void CustomHierarchy::read(
     if (!mpp.particlesPath.has_value())
     {
         particles.dirty() = false;
+    }
+}
+
+void CustomHierarchy::flush_internal(
+    internal::FlushParams const &flushParams,
+    internal::MeshesParticlesPath &mpp,
+    std::vector<std::string> currentPath)
+{
+    /*
+     * Convention for CustomHierarchy::flush and CustomHierarchy::read:
+     * Path is created/opened already at entry point of method, method needs
+     * to create/open path for contained subpaths.
+     */
+
+    if (access::write(IOHandler()->m_frontendAccess))
+    {
+        flushAttributes(flushParams);
+    }
+
+    Parameter<Operation::CREATE_PATH> pCreate;
+    for (auto &[name, subpath] : *this)
+    {
+        if (!subpath.written())
+        {
+            pCreate.path = name;
+            IOHandler()->enqueue(IOTask(&subpath, pCreate));
+        }
+        currentPath.emplace_back(name);
+        subpath.flush_internal(flushParams, mpp, currentPath);
+        currentPath.pop_back();
+    }
+    if (!meshes.empty() || mpp.meshesPath.has_value())
+    {
+        if (!access::readOnly(IOHandler()->m_frontendAccess))
+        {
+            if (!mpp.meshesPath.has_value())
+            {
+                mpp.meshesPath = "meshes";
+            }
+            meshes.flush(mpp.meshesPath.value(), flushParams);
+        }
+        for (auto &m : meshes)
+            m.second.flush(m.first, flushParams);
+    }
+    else
+    {
+        meshes.dirty() = false;
+    }
+    if (!particles.empty() || mpp.particlesPath.has_value())
+    {
+        if (!access::readOnly(IOHandler()->m_frontendAccess))
+        {
+            if (!mpp.particlesPath.has_value())
+            {
+                mpp.particlesPath = "particles";
+            }
+            particles.flush(mpp.particlesPath.value(), flushParams);
+        }
+        for (auto &m : particles)
+            m.second.flush(m.first, flushParams);
+    }
+    else
+    {
+        particles.dirty() = false;
+    }
+}
+
+void CustomHierarchy::flush(
+    std::string const & /* path */, internal::FlushParams const &flushParams)
+{
+    /*
+     * Convention for CustomHierarchy::flush and CustomHierarchy::read:
+     * Path is created/opened already at entry point of method, method needs
+     * to create/open path for contained subpaths.
+     */
+
+    Series s = this->retrieveSeries();
+    internal::MeshesParticlesPath mpp(
+        s.containsAttribute("meshesPath") ? std::make_optional(s.meshesPath())
+                                          : std::nullopt,
+        s.containsAttribute("particlesPath")
+            ? std::make_optional(s.particlesPath())
+            : std::nullopt);
+    std::vector<std::string> currentPath;
+    flush_internal(flushParams, mpp, currentPath);
+    if (mpp.meshesPath.has_value() && !s.containsAttribute("meshesPath"))
+    {
+        s.setMeshesPath(*mpp.meshesPath);
+    }
+    if (mpp.particlesPath.has_value() && !s.containsAttribute("particlesPath"))
+    {
+        s.setParticlesPath(*mpp.particlesPath);
     }
 }
 
