@@ -111,16 +111,6 @@ function build_adios2 {
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
 
-    # ZPL issues on non-Linux platforms
-    if [ "$(uname -s)" = "Linux" ]
-    then
-        EVPATH_ZPL="ON"
-    else
-        # ZPL in EVPATH disabled because it does not build with older macOS
-        #       https://github.com/GTkorvo/evpath/issues/47
-        EVPATH_ZPL="OFF"
-    fi
-
     # build
     mkdir build-adios2
     cd build-adios2
@@ -141,7 +131,6 @@ function build_adios2 {
         -DADIOS2_USE_SST=ON                       \
         -DADIOS2_USE_ZFP=ON                       \
         -DADIOS2_RUN_INSTALL_TEST=OFF             \
-        -DEVPATH_USE_ZPL_ENET=${EVPATH_ZPL}       \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
         -DCMAKE_VERBOSE_MAKEFILE=ON               \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
