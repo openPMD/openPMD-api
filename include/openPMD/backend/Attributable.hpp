@@ -115,6 +115,17 @@ namespace internal
         AttributableData(AttributableData &&) = delete;
         virtual ~AttributableData() = default;
 
+        inline std::shared_ptr<SharedAttributableData> &
+        asSharedPtrOfAttributable()
+        {
+            return *this;
+        }
+        inline std::shared_ptr<SharedAttributableData> const &
+        asSharedPtrOfAttributable() const
+        {
+            return *this;
+        }
+
         AttributableData &operator=(AttributableData const &) = delete;
         AttributableData &operator=(AttributableData &&) = delete;
     };
@@ -123,6 +134,7 @@ namespace internal
     class BaseRecordData;
 
     class RecordComponentData;
+    struct CustomHierarchyData;
 } // namespace internal
 
 namespace debug
@@ -157,6 +169,7 @@ class Attributable
     friend class internal::RecordComponentData;
     friend void debug::printDirty(Series const &);
     friend class CustomHierarchy;
+    friend struct internal::CustomHierarchyData;
 
 protected:
     // tag for internal constructor
