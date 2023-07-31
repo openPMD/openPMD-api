@@ -321,49 +321,13 @@ void Iteration::flushIteration(internal::FlushParams const &flushParams)
 {
     Parameter<Operation::TOUCH> touch;
     IOHandler()->enqueue(IOTask(&writable(), touch));
-    if (access::readOnly(IOHandler()->m_frontendAccess))
+    if (flushParams.flushLevel == FlushLevel::CreateOrOpenFiles)
     {
-        for (auto &m : meshes)
-            m.second.flush(m.first, flushParams);
-        for (auto &species : particles)
-            species.second.flush(species.first, flushParams);
+        return;
     }
-    else
+    CustomHierarchy::flush("", flushParams);
+    if (access::write(IOHandler()->m_frontendAccess))
     {
-        /* Find the root point [Series] of this file,
-         * meshesPath and particlesPath are stored there */
-        Series s = retrieveSeries();
-
-        if (!meshes.empty() || s.containsAttribute("meshesPath"))
-        {
-            if (!s.containsAttribute("meshesPath"))
-            {
-                s.setMeshesPath("meshes/");
-            }
-            meshes.flush(s.meshesPath(), flushParams);
-            for (auto &m : meshes)
-                m.second.flush(m.first, flushParams);
-        }
-        else
-        {
-            meshes.setDirty(false);
-        }
-
-        if (!particles.empty() || s.containsAttribute("particlesPath"))
-        {
-            if (!s.containsAttribute("particlesPath"))
-            {
-                s.setParticlesPath("particles/");
-            }
-            particles.flush(s.particlesPath(), flushParams);
-            for (auto &species : particles)
-                species.second.flush(species.first, flushParams);
-        }
-        else
-        {
-            particles.setDirty(false);
-        }
-
         flushAttributes(flushParams);
     }
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)

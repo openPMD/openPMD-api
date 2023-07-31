@@ -90,6 +90,12 @@ protected:
         internal::MeshesParticlesPath const &,
         std::vector<std::string> &currentPath);
 
+    void flush_internal(
+        internal::FlushParams const &,
+        internal::MeshesParticlesPath &,
+        std::vector<std::string> currentPath);
+    void flush(std::string const &path, internal::FlushParams const &) override;
+
     /**
      * @brief Link with parent.
      *
