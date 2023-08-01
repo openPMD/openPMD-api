@@ -257,7 +257,7 @@ jobs:
         share/openPMD/download_samples.sh build
         cmake -S . -B build       \
           -DopenPMD_USE_HDF5=ON   \
-          -DopenPMD_USE_Julia=ON  \
+          -DopenPMD_USE_JULIA=ON  \
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
