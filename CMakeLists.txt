@@ -147,7 +147,7 @@ endfunction()
 openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
-openpmd_option(Julia          "Enable Julia bindings"                     OFF)
+openpmd_option(JULIA          "Enable Julia bindings"                     OFF)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
@@ -394,13 +394,13 @@ endif()
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
 
 # External library: libcxxwrap-julia
-if(openPMD_USE_Julia)
+if(openPMD_USE_JULIA)
     find_package(JlCxx 0.8.3 REQUIRED)
-    set(openPMD_HAVE_Julia TRUE)
+    set(openPMD_HAVE_JULIA TRUE)
 else()
-    set(openPMD_HAVE_Julia FALSE)
+    set(openPMD_HAVE_JULIA FALSE)
 endif()
-if(openPMD_HAVE_Julia)
+if(openPMD_HAVE_JULIA)
     get_target_property(JlCxx_location JlCxx::cxxwrap_julia LOCATION)
     get_filename_component(JlCxx_location ${JlCxx_location} DIRECTORY)
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${JlCxx_location}")
@@ -613,7 +613,7 @@ else()
 endif()
 
 # Julia bindings
-if(openPMD_HAVE_Julia)
+if(openPMD_HAVE_JULIA)
     add_library(openPMD.jl SHARED
         src/binding/julia/Access.cpp
         src/binding/julia/Attributable.cpp
@@ -1103,7 +1103,7 @@ if(openPMD_INSTALL)
         endforeach()
     endif()
 
-    if(openPMD_HAVE_Julia)
+    if(openPMD_HAVE_JULIA)
         list(APPEND openPMD_INSTALL_TARGET_NAMES openPMD.jl)
     endif()
 
