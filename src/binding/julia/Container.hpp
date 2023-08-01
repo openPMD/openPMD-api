@@ -1,3 +1,9 @@
+/* Bindings for Container
+ *
+ * File authors: Erik Schnetter
+ * License: LGPL-3.0-or-later
+ */
+
 #ifndef CONTAINER_HPP
 #define CONTAINER_HPP
 

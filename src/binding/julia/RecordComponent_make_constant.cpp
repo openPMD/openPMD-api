@@ -1,4 +1,8 @@
-// RecordComponent_make_constant
+/* Bindings for RecordComponent::make_constant
+ *
+ * File authors: Erik Schnetter
+ * License: LGPL-3.0-or-later
+ */
 
 #include "defs.hpp"
 

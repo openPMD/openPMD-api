@@ -1,4 +1,8 @@
-// RecordComponent_load_chunk
+/* Bindings for RecordComponent::load_chunk
+ *
+ * File authors: Erik Schnetter
+ * License: LGPL-3.0-or-later
+ */
 
 #include "defs.hpp"
 

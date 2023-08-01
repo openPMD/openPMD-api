@@ -1,4 +1,8 @@
-// IO/UnitDimension
+/* Bindings for IO/UnitDimension
+ *
+ * File authors: Erik Schnetter
+ * License: LGPL-3.0-or-later
+ */
 
 #include "defs.hpp"
 

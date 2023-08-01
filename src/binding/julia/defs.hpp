@@ -1,3 +1,9 @@
+/* General definitions
+ *
+ * File authors: Erik Schnetter
+ * License: LGPL-3.0-or-later
+ */
+
 #ifndef DEFS_HPP
 #define DEFS_HPP
 
