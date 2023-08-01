@@ -81,8 +81,8 @@ void define_julia_Series(jlcxx::Module &mod)
     type.method("cxx_software", &Series::software);
     type.method(
         "cxx_set_software!",
-        static_cast<Series &(
-            Series::*)(const std::string &, const std::string &)>(
+        static_cast<Series &(Series::*)(const std::string &,
+                                        const std::string &)>(
             &Series::setSoftware));
     type.method(
         "cxx_set_software!",
