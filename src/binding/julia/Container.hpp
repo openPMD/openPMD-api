@@ -20,14 +20,13 @@ namespace jlcxx
 template <typename T, typename K>
 struct SuperType<Container<T, K>>
 {
-    typedef Attributable type;
+    using type = Attributable;
 };
 } // namespace jlcxx
 
+using julia_Container_type_t =
+    jlcxx::TypeWrapper<jlcxx::Parametric<jlcxx::TypeVar<1>, jlcxx::TypeVar<2>>>;
 // TODO: use std::optional instead of std::unique_ptr
-typedef jlcxx::TypeWrapper<
-    jlcxx::Parametric<jlcxx::TypeVar<1>, jlcxx::TypeVar<2>>>
-    julia_Container_type_t;
 extern std::unique_ptr<julia_Container_type_t> julia_Container_type;
 
 template <typename Eltype, typename Keytype>
@@ -43,7 +42,6 @@ void define_julia_Container(jlcxx::Module &mod)
         using ContainerT = typename decltype(type)::type;
         using key_type = typename ContainerT::key_type;
         using mapped_type = typename ContainerT::mapped_type;
-        using size_type = typename ContainerT::size_type;
         static_assert(std::is_same_v<Eltype, mapped_type>);
         static_assert(std::is_same_v<Keytype, key_type>);
 
@@ -69,9 +67,7 @@ void define_julia_Container(jlcxx::Module &mod)
         type.method("cxx_count", &ContainerT::count);
         type.method("cxx_contains", &ContainerT::contains);
         type.method(
-            "cxx_delete!",
-            static_cast<size_type (ContainerT::*)(const key_type &)>(
-                &ContainerT::erase));
+            "cxx_delete!", overload_cast<const key_type &>(&ContainerT::erase));
         type.method("cxx_keys", [](const ContainerT &cont) {
             std::vector<key_type> res;
             res.reserve(cont.size());

@@ -12,7 +12,7 @@ namespace jlcxx
 template <>
 struct SuperType<Mesh>
 {
-    typedef Container<MeshRecordComponent> type;
+    using type = Container<MeshRecordComponent>;
 };
 } // namespace jlcxx
 
@@ -50,8 +50,7 @@ void define_julia_Mesh(jlcxx::Module &mod)
 
     type.method("cxx_geometry", &Mesh::geometry);
     type.method(
-        "cxx_set_geometry!",
-        static_cast<Mesh &(Mesh::*)(Mesh::Geometry g)>(&Mesh::setGeometry));
+        "cxx_set_geometry!", overload_cast<Mesh::Geometry>(&Mesh::setGeometry));
     type.method("cxx_geometry_parameters", &Mesh::geometryParameters);
     type.method("cxx_set_geometry_parameters!", &Mesh::setGeometryParameters);
     type.method("cxx_data_order", &Mesh::dataOrder);

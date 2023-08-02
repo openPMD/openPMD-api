@@ -25,7 +25,7 @@ namespace jlcxx
 template <>
 struct SuperType<Series>
 {
-    typedef Attributable type;
+    using type = Attributable;
 };
 } // namespace jlcxx
 
@@ -45,7 +45,7 @@ void define_julia_Series(jlcxx::Module &mod)
            sized_uint_t<sizeof(MPI_Comm)> ucomm,
            const std::string &options) {
             MPI_Comm comm;
-            static_assert(sizeof ucomm == sizeof comm, "");
+            static_assert(sizeof ucomm == sizeof comm);
             memcpy(&comm, &ucomm, sizeof comm);
             return Series(filepath, at, comm, options);
         });
@@ -55,7 +55,7 @@ void define_julia_Series(jlcxx::Module &mod)
            Access at,
            sized_uint_t<sizeof(MPI_Comm)> ucomm) {
             MPI_Comm comm;
-            static_assert(sizeof ucomm == sizeof comm, "");
+            static_assert(sizeof ucomm == sizeof comm);
             memcpy(&comm, &ucomm, sizeof comm);
             return Series(filepath, at, comm);
         });
@@ -81,8 +81,7 @@ void define_julia_Series(jlcxx::Module &mod)
     type.method("cxx_software", &Series::software);
     type.method(
         "cxx_set_software!",
-        static_cast<Series &(Series::*)(const std::string &,
-                                        const std::string &)>(
+        overload_cast<const std::string &, const std::string &>(
             &Series::setSoftware));
     type.method(
         "cxx_set_software!",

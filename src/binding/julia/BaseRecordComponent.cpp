@@ -12,7 +12,7 @@ namespace jlcxx
 template <>
 struct SuperType<BaseRecordComponent>
 {
-    typedef Attributable type;
+    using type = Attributable;
 };
 } // namespace jlcxx
 

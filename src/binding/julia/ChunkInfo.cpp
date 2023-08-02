@@ -12,7 +12,7 @@ namespace jlcxx
 template <>
 struct SuperType<WrittenChunkInfo>
 {
-    typedef ChunkInfo type;
+    using type = ChunkInfo;
 };
 } // namespace jlcxx
 
