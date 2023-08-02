@@ -263,6 +263,7 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
+        /usr/local/julia-1.6.7/bin/julia --eval 'using Pkg; Pkg.install("CxxWrap")'
         /usr/local/julia-1.6.7/bin/julia src/binding/julia/tests/minimal_example.jl
 
   musllinux_py10:
