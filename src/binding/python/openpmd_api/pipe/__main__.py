@@ -234,7 +234,7 @@ class pipe:
         Copies data from src to dest. May represent any point in the openPMD
         hierarchy, but src and dest must both represent the same layer.
         """
-        if (type(src) != type(dest)
+        if (type(src) is not type(dest)
                 and not isinstance(src, io.IndexedIteration)
                 and not isinstance(dest, io.Iteration)):
             raise RuntimeError(
