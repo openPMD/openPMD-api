@@ -4328,7 +4328,8 @@ TEST_CASE("adios2_bp5_flush", "[serial][adios2]")
 [adios2]
 
 [adios2.engine]
-usesteps = true
+# Check that BP5 can also be used without steps
+usesteps = false
 type = "bp5"
 preferred_flush_target = "disk"
 
