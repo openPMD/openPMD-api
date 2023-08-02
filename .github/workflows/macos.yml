@@ -49,6 +49,7 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
+        julia src/binding/julia/tests/minimal_example.jl
 
   appleclang13_py:
     runs-on: macos-11
