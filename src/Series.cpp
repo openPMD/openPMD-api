@@ -23,6 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -1966,7 +1967,7 @@ void Series::flushStep(bool doFlush)
 {
     auto &series = get();
     if (!series.m_currentlyActiveIterations.empty() &&
-        IOHandler()->m_frontendAccess != Access::READ_ONLY)
+        access::write(IOHandler()->m_frontendAccess))
     {
         /*
          * Warning: changing attribute extents over time (probably) unsupported
@@ -1980,6 +1981,7 @@ void Series::flushStep(bool doFlush)
         wAttr.resource = std::vector<unsigned long long>{
             series.m_currentlyActiveIterations.begin(),
             series.m_currentlyActiveIterations.end()};
+        series.m_currentlyActiveIterations.clear();
         wAttr.dtype = Datatype::VEC_ULONGLONG;
         IOHandler()->enqueue(IOTask(&series.iterations, wAttr));
         if (doFlush)
@@ -2287,7 +2289,16 @@ namespace internal
         {
             Series impl{{this, [](auto const *) {}}};
             impl.flush();
-            impl.flushStep(/* doFlush = */ true);
+            /*
+             * In file-based iteration encoding, this must be triggered by
+             * Iteration::endStep() since the "snapshot" attribute is different
+             * for each file.
+             * Also, at this point the files might have already been closed.
+             */
+            if (impl.iterationEncoding() != IterationEncoding::fileBased)
+            {
+                impl.flushStep(/* doFlush = */ true);
+            }
         }
         // Not strictly necessary, but clear the map of iterations
         // This releases the openPMD hierarchy
