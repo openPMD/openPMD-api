@@ -284,7 +284,15 @@ private:
 
     IOMode m_mode = IOMode::Dataset;
 
-    IOMode retrieveDatasetMode(openPMD::json::TracingJSON &config) const;
+    enum class SpecificationVia
+    {
+        DefaultValue,
+        Manually
+    };
+    SpecificationVia m_IOModeSpecificationVia = SpecificationVia::DefaultValue;
+
+    std::pair<IOMode, SpecificationVia>
+    retrieveDatasetMode(openPMD::json::TracingJSON &config) const;
 
     // HELPER FUNCTIONS
 
