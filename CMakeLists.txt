@@ -771,6 +771,7 @@ set(openPMD_EXAMPLE_NAMES
     10_streaming_read
     12_span_write
     13_write_dynamic_configuration
+    14_toml_template
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial

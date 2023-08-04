@@ -2,6 +2,7 @@
 #include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -1271,12 +1272,19 @@ TEST_CASE("particle_patches", "[serial]")
     }
 }
 
-inline void dtype_test(const std::string &backend)
+inline void dtype_test(
+    const std::string &backend,
+    std::optional<std::string> activateTemplateMode = {})
 {
     bool test_long_double = backend != "json" && backend != "toml";
     bool test_long_long = (backend != "json") || sizeof(long long) <= 8;
     {
-        Series s = Series("../samples/dtype_test." + backend, Access::CREATE);
+        Series s = activateTemplateMode.has_value()
+            ? Series(
+                  "../samples/dtype_test." + backend,
+                  Access::CREATE,
+                  activateTemplateMode.value())
+            : Series("../samples/dtype_test." + backend, Access::CREATE);
 
         char c = 'c';
         s.setAttribute("char", c);
@@ -1398,8 +1406,12 @@ inline void dtype_test(const std::string &backend)
         }
     }
 
-    Series s = Series("../samples/dtype_test." + backend, Access::READ_ONLY);
-
+    Series s = activateTemplateMode.has_value()
+        ? Series(
+              "../samples/dtype_test." + backend,
+              Access::READ_ONLY,
+              activateTemplateMode.value())
+        : Series("../samples/dtype_test." + backend, Access::READ_ONLY);
     REQUIRE(s.getAttribute("char").get<char>() == 'c');
     REQUIRE(s.getAttribute("uchar").get<unsigned char>() == 'u');
     REQUIRE(s.getAttribute("schar").get<signed char>() == 's');
@@ -1469,6 +1481,10 @@ inline void dtype_test(const std::string &backend)
     REQUIRE(s.getAttribute("bool").get<bool>() == true);
     REQUIRE(s.getAttribute("boolF").get<bool>() == false);
 
+    if (activateTemplateMode.has_value())
+    {
+        return;
+    }
     // same implementation types (not necessary aliases) detection
 #if !defined(_MSC_VER)
     REQUIRE(s.getAttribute("short").dtype == Datatype::SHORT);
@@ -1541,6 +1557,7 @@ TEST_CASE("dtype_test", "[serial]")
     {
         dtype_test(t);
     }
+    dtype_test("json", R"({"json":{"dataset":{"mode":"template"}}})");
     if (auto extensions = getFileExtensions();
         std::find(extensions.begin(), extensions.end(), "toml") !=
         extensions.end())
@@ -1549,6 +1566,7 @@ TEST_CASE("dtype_test", "[serial]")
        * testing it here.
        */
         dtype_test("toml");
+        dtype_test("toml", R"({"toml":{"dataset":{"mode":"template"}}})");
     }
 }
 
@@ -1572,6 +1590,8 @@ inline void write_test(const std::string &backend)
          host_info::byMethod(
              host_info::methodFromStringDescription("posix_hostname", false))}};
 #endif
+    jsonCfg =
+        json::merge(jsonCfg, R"({"json":{"dataset":{"mode":"template"}}})");
     Series o =
         Series("../samples/serial_write." + backend, Access::CREATE, jsonCfg);
 
@@ -1599,8 +1619,10 @@ inline void write_test(const std::string &backend)
             return posOff++;
         });
     std::shared_ptr<uint64_t> positionOffset_local_1(new uint64_t);
-    e_1["positionOffset"]["x"].resetDataset(
-        Dataset(determineDatatype(positionOffset_local_1), {4}));
+    e_1["positionOffset"]["x"].resetDataset(Dataset(
+        determineDatatype(positionOffset_local_1),
+        {4},
+        R"({"json":{"dataset":{"mode":"dataset"}}})"));
 
     for (uint64_t i = 0; i < 4; ++i)
     {
