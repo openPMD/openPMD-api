@@ -276,6 +276,16 @@ private:
 
     std::string m_originalExtension;
 
+    enum class SpecificationVia
+    {
+        DefaultValue,
+        Manually
+    };
+
+    /////////////////////
+    // Dataset IO mode //
+    /////////////////////
+
     enum class IOMode
     {
         Dataset,
@@ -283,16 +293,27 @@ private:
     };
 
     IOMode m_mode = IOMode::Dataset;
-
-    enum class SpecificationVia
-    {
-        DefaultValue,
-        Manually
-    };
     SpecificationVia m_IOModeSpecificationVia = SpecificationVia::DefaultValue;
 
     std::pair<IOMode, SpecificationVia>
     retrieveDatasetMode(openPMD::json::TracingJSON &config) const;
+
+    ///////////////////////
+    // Attribute IO mode //
+    ///////////////////////
+
+    enum class AttributeMode
+    {
+        Short,
+        Long
+    };
+
+    AttributeMode m_attributeMode = AttributeMode::Long;
+    SpecificationVia m_attributeModeSpecificationVia =
+        SpecificationVia::DefaultValue;
+
+    std::pair<AttributeMode, SpecificationVia>
+    retrieveAttributeMode(openPMD::json::TracingJSON &config) const;
 
     // HELPER FUNCTIONS
 
