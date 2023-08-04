@@ -30,6 +30,7 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
+#include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <iomanip>
@@ -67,7 +68,8 @@ namespace JSONDefaults
 {
     using const_str = char const *const;
     constexpr const_str openpmd_internal = "__openPMD_internal";
-    constexpr const_str IOMode = "IO_mode";
+    constexpr const_str IOMode = "dataset_mode";
+    constexpr const_str AttributeMode = "attribute_mode";
 } // namespace JSONDefaults
 
 namespace
@@ -204,6 +206,54 @@ auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
     return std::make_pair(res, res_2);
 }
 
+auto JSONIOHandlerImpl::retrieveAttributeMode(
+    openPMD::json::TracingJSON &config) const
+    -> std::pair<AttributeMode, SpecificationVia>
+{
+    AttributeMode res = m_attributeMode;
+    SpecificationVia res_2 = SpecificationVia::DefaultValue;
+    if (auto [configLocation, maybeConfig] = getBackendConfig(config);
+        maybeConfig.has_value())
+    {
+        auto jsonConfig = maybeConfig.value();
+        if (jsonConfig.json().contains("attribute"))
+        {
+            auto attributeConfig = jsonConfig["attribute"];
+            if (attributeConfig.json().contains("mode"))
+            {
+                auto modeOption = openPMD::json::asLowerCaseStringDynamic(
+                    attributeConfig["mode"].json());
+                if (!modeOption.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {configLocation, "mode"},
+                        "Invalid value of non-string type (accepted values are "
+                        "'dataset' and 'template'.");
+                }
+                auto mode = modeOption.value();
+                if (mode == "short")
+                {
+                    res = AttributeMode::Short;
+                    res_2 = SpecificationVia::Manually;
+                }
+                else if (mode == "long")
+                {
+                    res = AttributeMode::Long;
+                    res_2 = SpecificationVia::Manually;
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {configLocation, "attribute", "mode"},
+                        "Invalid value: '" + mode +
+                            "' (accepted values are 'short' and 'long'.");
+                }
+            }
+        }
+    }
+    return std::make_pair(res, res_2);
+}
+
 std::string JSONIOHandlerImpl::backendConfigKey() const
 {
     switch (m_fileFormat)
@@ -241,6 +291,8 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_originalExtension{std::move(originalExtension)}
 {
     std::tie(m_mode, m_IOModeSpecificationVia) = retrieveDatasetMode(config);
+    std::tie(m_attributeMode, m_attributeModeSpecificationVia) =
+        retrieveAttributeMode(config);
 
     if (auto [_, backendConfig] = getBackendConfig(config);
         backendConfig.has_value())
@@ -1078,8 +1130,17 @@ void JSONIOHandlerImpl::writeAttribute(
     }
     nlohmann::json value;
     switchType<AttributeWriter>(parameter.dtype, value, parameter.resource);
-    (*jsonVal)[filePosition->id]["attributes"][parameter.name] = {
-        {"datatype", datatypeToString(parameter.dtype)}, {"value", value}};
+    switch (m_attributeMode)
+    {
+    case AttributeMode::Long:
+        (*jsonVal)[filePosition->id]["attributes"][parameter.name] = {
+            {"datatype", datatypeToString(parameter.dtype)}, {"value", value}};
+        break;
+    case AttributeMode::Short:
+        // short form
+        (*jsonVal)[filePosition->id]["attributes"][parameter.name] = value;
+        break;
+    }
     writable->written = true;
     m_dirty.emplace(file);
 }
@@ -1136,6 +1197,195 @@ void JSONIOHandlerImpl::readDataset(
     }
 }
 
+namespace
+{
+    template <typename T>
+    Attribute recoverVectorAttributeFromJson(nlohmann::json const &j)
+    {
+        if (!j.is_array())
+        {
+            throw std::runtime_error(
+                "[JSON backend: recoverVectorAttributeFromJson] Internal "
+                "control flow error.");
+        }
+
+        if (j.size() == 7 &&
+            (std::is_same_v<T, nlohmann::json::number_float_t> ||
+             std::is_same_v<T, nlohmann::json::number_integer_t> ||
+             std::is_same_v<T, nlohmann::json::number_unsigned_t>))
+        {
+            /*
+             * The frontend must deal with wrong type reports here.
+             */
+            std::array<double, 7> res;
+            for (size_t i = 0; i < 7; ++i)
+            {
+                res[i] = j[i].get<double>();
+            }
+            return res;
+        }
+        else
+        {
+            std::vector<T> res;
+            res.reserve(j.size());
+            for (auto const &i : j)
+            {
+                res.push_back(i.get<T>());
+            }
+            return res;
+        }
+    }
+
+    nlohmann::json::value_t unifyNumericType(nlohmann::json const &j)
+    {
+        if (!j.is_array() || j.empty())
+        {
+            throw std::runtime_error(
+                "[JSON backend: recoverVectorAttributeFromJson] Internal "
+                "control flow error.");
+        }
+        auto dtypeRanking = [](nlohmann::json::value_t dtype) -> unsigned {
+            switch (dtype)
+            {
+            case nlohmann::json::value_t::number_unsigned:
+                return 0;
+            case nlohmann::json::value_t::number_integer:
+                return 1;
+            case nlohmann::json::value_t::number_float:
+                return 2;
+            default:
+                throw std::runtime_error(
+                    "[JSON backend] Encountered vector with mixed number and "
+                    "non-number datatypes.");
+            }
+        };
+        auto higherDtype =
+            [&dtypeRanking](
+                nlohmann::json::value_t dt1,
+                nlohmann::json::value_t dt2) -> nlohmann::json::value_t {
+            if (dtypeRanking(dt1) > dtypeRanking(dt2))
+            {
+                return dt1;
+            }
+            else
+            {
+                return dt2;
+            }
+        };
+
+        nlohmann::json::value_t res = j[0].type();
+        for (size_t i = 1; i < j.size(); ++i)
+        {
+            res = higherDtype(res, j[i].type());
+        }
+        return res;
+    }
+
+    Attribute recoverAttributeFromJson(
+        nlohmann::json const &j, std::string const &nameForErrorMessages)
+    {
+        // @todo use ReadError once it's mainlined
+        switch (j.type())
+        {
+        case nlohmann::json::value_t::null:
+            throw std::runtime_error(
+                "[JSON backend] Attribute must not be null: '" +
+                nameForErrorMessages + "'.");
+        case nlohmann::json::value_t::object:
+            throw std::runtime_error(
+                "[JSON backend] Shorthand-style attribute must not be an "
+                "object: '" +
+                nameForErrorMessages + "'.");
+        case nlohmann::json::value_t::array:
+            if (j.empty())
+            {
+                std::cerr << "Cannot recover datatype of empty vector without "
+                             "explicit type annotation for attribute '"
+                          << nameForErrorMessages
+                          << "'. Will continue with VEC_INT datatype."
+                          << std::endl;
+                return std::vector<int>{};
+            }
+            else
+            {
+                auto valueType = j[0].type();
+                /*
+                 * If the vector is of numeric type, it might happen that the
+                 * first entry is an integer, but a later entry is a float.
+                 * We need to pick the most generic datatype in that case.
+                 */
+                if (valueType == nlohmann::json::value_t::number_float ||
+                    valueType == nlohmann::json::value_t::number_unsigned ||
+                    valueType == nlohmann::json::value_t::number_integer)
+                {
+                    valueType = unifyNumericType(j);
+                }
+                switch (valueType)
+                {
+                case nlohmann::json::value_t::null:
+                    throw std::runtime_error(
+                        "[JSON backend] Attribute must not be null: '" +
+                        nameForErrorMessages + "'.");
+                case nlohmann::json::value_t::object:
+                    throw std::runtime_error(
+                        "[JSON backend] Invalid contained datatype (object) "
+                        "inside vector-type attribute: '" +
+                        nameForErrorMessages + "'.");
+                case nlohmann::json::value_t::array:
+                    throw std::runtime_error(
+                        "[JSON backend] Invalid contained datatype (array) "
+                        "inside vector-type attribute: '" +
+                        nameForErrorMessages + "'.");
+                case nlohmann::json::value_t::string:
+                    return recoverVectorAttributeFromJson<std::string>(j);
+                case nlohmann::json::value_t::boolean:
+                    throw std::runtime_error(
+                        "[JSON backend] Attribute must not be vector of bool: "
+                        "'" +
+                        nameForErrorMessages + "'.");
+                case nlohmann::json::value_t::number_integer:
+                    return recoverVectorAttributeFromJson<
+                        nlohmann::json::number_integer_t>(j);
+                case nlohmann::json::value_t::number_unsigned:
+                    return recoverVectorAttributeFromJson<
+                        nlohmann::json::number_unsigned_t>(j);
+                case nlohmann::json::value_t::number_float:
+                    return recoverVectorAttributeFromJson<
+                        nlohmann::json::number_float_t>(j);
+                case nlohmann::json::value_t::binary:
+                    throw std::runtime_error(
+                        "[JSON backend] Attribute must not have binary type: "
+                        "'" +
+                        nameForErrorMessages + "'.");
+                case nlohmann::json::value_t::discarded:
+                    throw std::runtime_error(
+                        "Internal JSON parser datatype leaked into JSON "
+                        "value.");
+                }
+                throw std::runtime_error("Unreachable!");
+            }
+        case nlohmann::json::value_t::string:
+            return j.get<std::string>();
+        case nlohmann::json::value_t::boolean:
+            return j.get<bool>();
+        case nlohmann::json::value_t::number_integer:
+            return j.get<nlohmann::json::number_integer_t>();
+        case nlohmann::json::value_t::number_unsigned:
+            return j.get<nlohmann::json::number_unsigned_t>();
+        case nlohmann::json::value_t::number_float:
+            return j.get<nlohmann::json::number_float_t>();
+        case nlohmann::json::value_t::binary:
+            throw std::runtime_error(
+                "[JSON backend] Attribute must not have binary type: '" +
+                nameForErrorMessages + "'.");
+        case nlohmann::json::value_t::discarded:
+            throw std::runtime_error(
+                "Internal JSON parser datatype leaked into JSON value.");
+        }
+        throw std::runtime_error("Unreachable!");
+    }
+} // namespace
+
 void JSONIOHandlerImpl::readAttribute(
     Writable *writable, Parameter<Operation::READ_ATT> &parameters)
 {
@@ -1160,9 +1410,19 @@ void JSONIOHandlerImpl::readAttribute(
     auto &j = jsonLoc[name];
     try
     {
-        *parameters.dtype =
-            Datatype(stringToDatatype(j["datatype"].get<std::string>()));
-        switchType<AttributeReader>(*parameters.dtype, j["value"], parameters);
+        if (j.is_object())
+        {
+            *parameters.dtype =
+                Datatype(stringToDatatype(j["datatype"].get<std::string>()));
+            switchType<AttributeReader>(
+                *parameters.dtype, j["value"], parameters);
+        }
+        else
+        {
+            Attribute attr = recoverAttributeFromJson(j, name);
+            *parameters.dtype = attr.dtype;
+            *parameters.resource = attr.getResource();
+        }
     }
     catch (json::type_error &)
     {
@@ -1557,7 +1817,10 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
     if (res->contains(JSONDefaults::openpmd_internal))
     {
         auto const &openpmd_internal = res->at(JSONDefaults::openpmd_internal);
-        if (openpmd_internal.contains(JSONDefaults::IOMode))
+
+        // Init dataset mode according to file's default
+        if (m_IOModeSpecificationVia == SpecificationVia::DefaultValue &&
+            openpmd_internal.contains(JSONDefaults::IOMode))
         {
             auto modeOption = openPMD::json::asLowerCaseStringDynamic(
                 openpmd_internal.at(JSONDefaults::IOMode));
@@ -1571,17 +1834,42 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
             }
             else if (modeOption.value() == "dataset")
             {
-                if (m_IOModeSpecificationVia == SpecificationVia::DefaultValue)
-                {
-                    m_mode = IOMode::Dataset;
-                }
+                m_mode = IOMode::Dataset;
             }
             else if (modeOption.value() == "template")
             {
-                if (m_IOModeSpecificationVia == SpecificationVia::DefaultValue)
-                {
-                    m_mode = IOMode::Template;
-                }
+                m_mode = IOMode::Template;
+            }
+            else
+            {
+                std::cerr << "[JSON/TOML backend] Warning: Invalid value '"
+                          << modeOption.value()
+                          << "' at internal meta table for entry '"
+                          << JSONDefaults::IOMode
+                          << "'. Will ignore and continue." << std::endl;
+            }
+        }
+
+        if (m_IOModeSpecificationVia == SpecificationVia::DefaultValue &&
+            openpmd_internal.contains(JSONDefaults::AttributeMode))
+        {
+            auto modeOption = openPMD::json::asLowerCaseStringDynamic(
+                openpmd_internal.at(JSONDefaults::AttributeMode));
+            if (!modeOption.has_value())
+            {
+                std::cerr
+                    << "[JSON/TOML backend] Warning: Invalid value of "
+                       "non-string type at internal meta table for entry '"
+                    << JSONDefaults::AttributeMode
+                    << "'. Will ignore and continue." << std::endl;
+            }
+            else if (modeOption.value() == "long")
+            {
+                m_attributeMode = AttributeMode::Long;
+            }
+            else if (modeOption.value() == "short")
+            {
+                m_attributeMode = AttributeMode::Short;
             }
             else
             {
@@ -1628,6 +1916,18 @@ auto JSONIOHandlerImpl::putJsonContents(
     case IOMode::Template:
         (*it->second)[JSONDefaults::openpmd_internal][JSONDefaults::IOMode] =
             "template";
+        break;
+    }
+
+    switch (m_attributeMode)
+    {
+    case AttributeMode::Short:
+        (*it->second)[JSONDefaults::openpmd_internal]
+                     [JSONDefaults::AttributeMode] = "short";
+        break;
+    case AttributeMode::Long:
+        (*it->second)[JSONDefaults::openpmd_internal]
+                     [JSONDefaults::AttributeMode] = "long";
         break;
     }
 
