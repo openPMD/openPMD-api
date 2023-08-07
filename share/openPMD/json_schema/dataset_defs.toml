@@ -7,19 +7,15 @@
 [["$defs".any_type_recursive_array.anyOf]]
 title = "A numeric type"
 type = "array"
-items.anyOf = [{"type" = "number"}, {"type" = "null"}]
+items.anyOf = [{ "type" = "number" }, { "type" = "null" }]
 
 [["$defs".any_type_recursive_array.anyOf]]
 title = "A recursive array of numeric types"
 type = "array"
 items."$ref" = "#/$defs/any_type_recursive_array"
 
-["$defs".any_type_dataset]
-title = "A dataset of any numeric type"
-required = ["data", "datatype"]
 
-["$defs".any_type_dataset.properties]
-
+["$defs".any_type_dataset_properties.properties]
 datatype.enum = [
     "CHAR",
     "UCHAR",
@@ -41,6 +37,36 @@ datatype.enum = [
     "BOOL",
 ]
 data."$ref" = "#/$defs/any_type_recursive_array"
+extent = { type = "array", items = { type = "integer" } }
+
+
+###################################################
+# Either `datatype` and `data` must be defined... #
+###################################################
+
+[["$defs".any_type_dataset.anyOf]]
+title = "A dataset of any numeric type"
+allOf = [
+    { required = [
+        "datatype",
+        "data",
+    ], title = "Required properties" },
+    { "$ref" = "#/$defs/any_type_dataset_properties", title = "Property definitions" },
+]
+
+#########################################################
+# ...or `datatype` and `extent` must be (template form) #
+#########################################################
+
+[["$defs".any_type_dataset.anyOf]]
+title = "A template dataset of any numeric type"
+allOf = [
+    { required = [
+        "datatype",
+        "extent",
+    ], title = "Required properties" },
+    { "$ref" = "#/$defs/any_type_dataset_properties", title = "Property definitions" },
+]
 
 ######################################
 # n-dimensional datasets of int type #
@@ -49,19 +75,15 @@ data."$ref" = "#/$defs/any_type_recursive_array"
 [["$defs".int_type_recursive_array.anyOf]]
 title = "An integer type"
 type = "array"
-items.anyOf = [{"type" = "integer"}, {"type" = "null"}]
+items.anyOf = [{ "type" = "integer" }, { "type" = "null" }]
 
 [["$defs".int_type_recursive_array.anyOf]]
 title = "A recursive array of integer types"
 type = "array"
 items."$ref" = "#/$defs/int_type_recursive_array"
 
-["$defs".int_type_dataset]
-title = "A dataset of integer type"
-required = ["data", "datatype"]
 
-["$defs".int_type_dataset.properties]
-
+["$defs".int_type_dataset_properties.properties]
 datatype.enum = [
     "CHAR",
     "UCHAR",
@@ -77,3 +99,33 @@ datatype.enum = [
     "BOOL",
 ]
 data."$ref" = "#/$defs/int_type_recursive_array"
+extent = { type = "array", items = { type = "integer" } }
+
+
+###################################################
+# Either `datatype` and `data` must be defined... #
+###################################################
+
+[["$defs".int_type_dataset.anyOf]]
+title = "A dataset of integer type"
+allOf = [
+    { required = [
+        "datatype",
+        "data",
+    ], title = "Required properties" },
+    { "$ref" = "#/$defs/int_type_dataset_properties", title = "Property definitions" },
+]
+
+#########################################################
+# ...or `datatype` and `extent` must be (template form) #
+#########################################################
+
+[["$defs".int_type_dataset.anyOf]]
+title = "A dataset template of integer type"
+allOf = [
+    { required = [
+        "datatype",
+        "extent",
+    ], title = "Required properties" },
+    { "$ref" = "#/$defs/int_type_dataset_properties", title = "Property definitions" },
+]
