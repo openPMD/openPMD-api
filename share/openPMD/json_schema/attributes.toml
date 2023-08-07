@@ -9,11 +9,26 @@ type = "object"
 title = "Dictionary of attributes"
 description = "Generic layout of an attributes object."
 
-[oneOf.patternProperties.".*"]
-title = "A generic attribute"
+[[oneOf.patternProperties.".*".oneOf]]
+title = "A generic attribute - short form"
+anyOf = [
+    # Any primitive value
+    { not = { anyOf = [
+        { type = "object", title = "An object" },
+        { type = "array", title = "An array" },
+    ] }, title = "No complex type" },
+    # Or an array of any primitive value
+    { type = "array", items = { not = { anyOf = [
+        { type = "object", title = "An object" },
+        { type = "array", title = "An array" },
+    ] } }, title = "An array of non-complex types" },
+]
+
+[[oneOf.patternProperties.".*".oneOf]]
+title = "A generic attribute - long form"
 type = "object"
 
-[oneOf.patternProperties.".*".properties]
+[oneOf.patternProperties.".*".oneOf.properties]
 
 value.anyOf = [
     # Any primitive value

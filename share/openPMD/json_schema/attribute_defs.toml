@@ -5,12 +5,21 @@
 # Vectors of strings #
 ######################
 
-["$defs".vec_string_attribute]
+[["$defs".vec_string_attribute.oneOf]]
+title = "Shorthand notation"
+anyOf = [
+    { type = "string" },
+    { type = "array", items = { "type" = "string" } },
+]
+
+[["$defs".vec_string_attribute.oneOf]]
+title = "Long notation"
+type = "object"
 required = ["value", "datatype"]
 
-["$defs".vec_string_attribute.properties]
+["$defs".vec_string_attribute.oneOf.properties]
 
-value.any_of = [
+value.anyOf = [
     { type = "string" },
     { type = "array", items = { "type" = "string" } },
 ]
@@ -30,12 +39,21 @@ datatype.enum = [
 # Vectors of int #
 ##################
 
-["$defs".vec_int_attribute]
+[["$defs".vec_int_attribute.oneOf]]
+title = "Shorthand notation"
+anyOf = [
+    { type = "integer" },
+    { type = "array", items = { "type" = "integer" } },
+]
+
+[["$defs".vec_int_attribute.oneOf]]
+title = "Long notation"
+type = "object"
 required = ["value", "datatype"]
 
-["$defs".vec_int_attribute.properties]
+["$defs".vec_int_attribute.oneOf.properties]
 
-value.any_of = [
+value.anyOf = [
     { type = "integer" },
     { type = "array", items = { "type" = "integer" } },
 ]
@@ -63,12 +81,21 @@ datatype.enum = [
 # Vectors of float #
 ####################
 
-["$defs".vec_float_attribute]
+[["$defs".vec_float_attribute.oneOf]]
+title = "Shorthand notation"
+anyOf = [
+    { type = "number" },
+    { type = "array", items = { "type" = "number" } },
+]
+
+[["$defs".vec_float_attribute.oneOf]]
+title = "Long notation"
+type = "object"
 required = ["value", "datatype"]
 
-["$defs".vec_float_attribute.properties]
+["$defs".vec_float_attribute.oneOf.properties]
 
-value.any_of = [
+value.anyOf = [
     { type = "number" },
     { type = "array", items = { "type" = "number" } },
 ]
@@ -112,10 +139,17 @@ datatype.enum = [
 # unitDimension attribute #
 ###########################
 
-["$defs".unitDimension]
+[["$defs".unitDimension.oneOf]]
+title = "Shorthand notation"
+type = "array"
+items.type = "number"
+
+[["$defs".unitDimension.oneOf]]
+title = "Long notation"
+type = "object"
 required = ["value", "datatype"]
 
-["$defs".unitDimension.properties]
+["$defs".unitDimension.oneOf.properties]
 
 value = { type = "array", items = { type = "number" } }
 datatype.const = "ARR_DBL_7"
@@ -124,10 +158,16 @@ datatype.const = "ARR_DBL_7"
 # string attributes #
 #####################
 
-["$defs".string_attribute]
+[["$defs".string_attribute.oneOf]]
+title = "Shorthand notation"
+type = "string"
+
+[["$defs".string_attribute.oneOf]]
+title = "Long notation"
+type = "object"
 required = ["value", "datatype"]
 
-["$defs".string_attribute.properties]
+["$defs".string_attribute.oneOf.properties]
 
 value.type = "string"
 datatype.enum = ["STRING", "CHAR", "SCHAR", "UCHAR"]
@@ -136,10 +176,16 @@ datatype.enum = ["STRING", "CHAR", "SCHAR", "UCHAR"]
 # int attributes #
 ##################
 
-["$defs".int_attribute]
+[["$defs".int_attribute.oneOf]]
+title = "Shorthand notation"
+type = "integer"
+
+[["$defs".int_attribute.oneOf]]
+title = "Long notation"
+type = "object"
 required = ["value", "datatype"]
 
-["$defs".int_attribute.properties]
+["$defs".int_attribute.oneOf.properties]
 
 value.type = "integer"
 datatype.enum = [
@@ -157,10 +203,16 @@ datatype.enum = [
 # float attributes #
 ####################
 
-["$defs".float_attribute]
+[["$defs".float_attribute.oneOf]]
+title = "Shorthand notation"
+type = "number"
+
+[["$defs".float_attribute.oneOf]]
+title = "Long notation"
+type = "object"
 required = ["value", "datatype"]
 
-["$defs".float_attribute.properties]
+["$defs".float_attribute.oneOf.properties]
 
 value.type = "number"
 datatype.enum = [
