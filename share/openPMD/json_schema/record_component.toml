@@ -43,7 +43,6 @@ title = "Either array or constant"
 #####################
 
 [[allOf.oneOf]]
-required = ["data", "datatype"]
 description = "An n-dimensional dataset containing the payload."
 title = "Array dataset"
 
