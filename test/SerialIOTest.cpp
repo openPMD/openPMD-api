@@ -1561,7 +1561,17 @@ TEST_CASE("dtype_test", "[serial]")
     {
         dtype_test(t);
     }
-    dtype_test("json", R"({"json":{"dataset":{"mode":"template"}}})");
+    dtype_test("json", R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})");
     if (auto extensions = getFileExtensions();
         std::find(extensions.begin(), extensions.end(), "toml") !=
         extensions.end())
@@ -1570,7 +1580,17 @@ TEST_CASE("dtype_test", "[serial]")
        * testing it here.
        */
         dtype_test("toml");
-        dtype_test("toml", R"({"toml":{"dataset":{"mode":"template"}}})");
+        dtype_test("toml", R"(
+{
+  "toml": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})");
     }
 }
 
@@ -1594,8 +1614,17 @@ inline void write_test(const std::string &backend)
          host_info::byMethod(
              host_info::methodFromStringDescription("posix_hostname", false))}};
 #endif
-    jsonCfg =
-        json::merge(jsonCfg, R"({"json":{"dataset":{"mode":"template"}}})");
+    jsonCfg = json::merge(jsonCfg, R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})");
     Series o =
         Series("../samples/serial_write." + backend, Access::CREATE, jsonCfg);
 
