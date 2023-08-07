@@ -1549,7 +1549,17 @@ TEST_CASE("dtype_test", "[serial]")
     {
         dtype_test(t);
     }
-    dtype_test("json", R"({"json":{"dataset":{"mode":"template"}}})");
+    dtype_test("json", R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})");
     if (auto extensions = getFileExtensions();
         std::find(extensions.begin(), extensions.end(), "toml") !=
         extensions.end())
@@ -1558,7 +1568,17 @@ TEST_CASE("dtype_test", "[serial]")
        * testing it here.
        */
         dtype_test("toml");
-        dtype_test("toml", R"({"toml":{"dataset":{"mode":"template"}}})");
+        dtype_test("toml", R"(
+{
+  "toml": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})");
     }
 }
 
@@ -1576,7 +1596,17 @@ inline void write_test(const std::string &backend)
     Series o = Series(
         "../samples/serial_write." + backend,
         Access::CREATE,
-        R"({"json":{"dataset":{"mode":"template"}}})");
+        R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})");
 
     ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
