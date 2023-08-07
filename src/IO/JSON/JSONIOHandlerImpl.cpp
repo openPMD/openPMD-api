@@ -157,6 +157,95 @@ namespace
             }
         }
     }
+
+    // Does the same as datatypeToString(), but this makes sure that we don't
+    // accidentally change the JSON schema by modifying datatypeToString()
+    std::string jsonDatatypeToString(Datatype dt)
+    {
+        switch (dt)
+        {
+            using DT = Datatype;
+        case DT::CHAR:
+            return "CHAR";
+        case DT::UCHAR:
+            return "UCHAR";
+        case DT::SCHAR:
+            return "SCHAR";
+        case DT::SHORT:
+            return "SHORT";
+        case DT::INT:
+            return "INT";
+        case DT::LONG:
+            return "LONG";
+        case DT::LONGLONG:
+            return "LONGLONG";
+        case DT::USHORT:
+            return "USHORT";
+        case DT::UINT:
+            return "UINT";
+        case DT::ULONG:
+            return "ULONG";
+        case DT::ULONGLONG:
+            return "ULONGLONG";
+        case DT::FLOAT:
+            return "FLOAT";
+        case DT::DOUBLE:
+            return "DOUBLE";
+        case DT::LONG_DOUBLE:
+            return "LONG_DOUBLE";
+        case DT::CFLOAT:
+            return "CFLOAT";
+        case DT::CDOUBLE:
+            return "CDOUBLE";
+        case DT::CLONG_DOUBLE:
+            return "CLONG_DOUBLE";
+        case DT::STRING:
+            return "STRING";
+        case DT::VEC_CHAR:
+            return "VEC_CHAR";
+        case DT::VEC_SHORT:
+            return "VEC_SHORT";
+        case DT::VEC_INT:
+            return "VEC_INT";
+        case DT::VEC_LONG:
+            return "VEC_LONG";
+        case DT::VEC_LONGLONG:
+            return "VEC_LONGLONG";
+        case DT::VEC_UCHAR:
+            return "VEC_UCHAR";
+        case DT::VEC_USHORT:
+            return "VEC_USHORT";
+        case DT::VEC_UINT:
+            return "VEC_UINT";
+        case DT::VEC_ULONG:
+            return "VEC_ULONG";
+        case DT::VEC_ULONGLONG:
+            return "VEC_ULONGLONG";
+        case DT::VEC_FLOAT:
+            return "VEC_FLOAT";
+        case DT::VEC_DOUBLE:
+            return "VEC_DOUBLE";
+        case DT::VEC_LONG_DOUBLE:
+            return "VEC_LONG_DOUBLE";
+        case DT::VEC_CFLOAT:
+            return "VEC_CFLOAT";
+        case DT::VEC_CDOUBLE:
+            return "VEC_CDOUBLE";
+        case DT::VEC_CLONG_DOUBLE:
+            return "VEC_CLONG_DOUBLE";
+        case DT::VEC_SCHAR:
+            return "VEC_SCHAR";
+        case DT::VEC_STRING:
+            return "VEC_STRING";
+        case DT::ARR_DBL_7:
+            return "ARR_DBL_7";
+        case DT::BOOL:
+            return "BOOL";
+        case DT::UNDEFINED:
+            return "UNDEFINED";
+        }
+        return "Unreachable!";
+    }
 } // namespace
 
 auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
@@ -478,7 +567,7 @@ void JSONIOHandlerImpl::createDataset(
         }
         setAndGetFilePosition(writable, name);
         auto &dset = jsonVal[name];
-        dset["datatype"] = datatypeToString(parameter.dtype);
+        dset["datatype"] = jsonDatatypeToString(parameter.dtype);
 
         switch (localMode)
         {
@@ -1134,7 +1223,8 @@ void JSONIOHandlerImpl::writeAttribute(
     {
     case AttributeMode::Long:
         (*jsonVal)[filePosition->id]["attributes"][parameter.name] = {
-            {"datatype", datatypeToString(parameter.dtype)}, {"value", value}};
+            {"datatype", jsonDatatypeToString(parameter.dtype)},
+            {"value", value}};
         break;
     case AttributeMode::Short:
         // short form
@@ -2209,7 +2299,7 @@ nlohmann::json JSONIOHandlerImpl::platformSpecifics()
         Datatype::BOOL};
     for (auto it = std::begin(datatypes); it != std::end(datatypes); it++)
     {
-        res[datatypeToString(*it)] = toBytes(*it);
+        res[jsonDatatypeToString(*it)] = toBytes(*it);
     }
     return res;
 }
