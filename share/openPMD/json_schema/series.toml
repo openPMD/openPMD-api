@@ -48,12 +48,16 @@ machine."$ref"              = "attribute_defs.json#/$defs/string_attribute"
 softwareDependencies."$ref" = "attribute_defs.json#/$defs/string_attribute"
 
 meshesPath.description = "Note that the meshesPath is hardcoded as its semantics are impossible to model in a JSON schema."
-meshesPath.const.value = "meshes/"
-meshesPath.const.datatype = "STRING"
+meshesPath.oneOf = [
+    { const = { value = "meshes/", datatype = "STRING" } },
+    { const = "meshes/" },
+]
 
 particlesPath.description = "Note that the particlesPath is hardcoded as its semantics are impossible to model in a JSON schema."
-particlesPath.const.value = "particles/"
-particlesPath.const.datatype = "STRING"
+particlesPath.oneOf = [
+    { const = { value = "particles/", datatype = "STRING" } },
+    { const = "particles/" },
+]
 
 #################################################
 # Requirement 1.2: General layout of attributes #
