@@ -409,6 +409,12 @@ private:
         Extent const &extent,
         adios2::IO &IO,
         std::string const &var);
+
+    struct
+    {
+        bool noGroupBased = false;
+        bool blosc2bp5 = false;
+    } printedWarningsAlready;
 }; // ADIOS2IOHandlerImpl
 
 /*
