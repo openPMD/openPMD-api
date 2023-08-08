@@ -2145,7 +2145,9 @@ namespace detail
             // might have been closed previously
             if (engine)
             {
-                if (streamStatus == StreamStatus::DuringStep)
+                if (streamStatus == StreamStatus::DuringStep ||
+                    (streamStatus == StreamStatus::NoStream &&
+                     m_mode == adios2::Mode::Write))
                 {
                     engine.EndStep();
                 }
@@ -2741,6 +2743,11 @@ namespace detail
                 // the streaming API was used.
                 m_engine = std::make_optional(
                     adios2::Engine(m_IO.Open(m_file, tempMode)));
+                if (streamStatus == StreamStatus::NoStream)
+                {
+                    // Write everything into one big step
+                    m_engine->BeginStep();
+                }
                 break;
             }
 #if openPMD_HAS_ADIOS_2_8
