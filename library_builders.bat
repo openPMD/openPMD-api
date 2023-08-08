@@ -243,7 +243,6 @@ call :build_zlib
 :: build_bzip2
 :: build_szip
 call :build_zfp
-call :build_blosc
 call :build_blosc2
 call :build_hdf5
 call :build_adios2
