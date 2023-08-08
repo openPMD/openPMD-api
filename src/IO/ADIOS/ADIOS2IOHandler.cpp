@@ -645,6 +645,41 @@ void ADIOS2IOHandlerImpl::createDataset(
             parameters.extent.begin(), parameters.extent.end());
 
         auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
+
+#define HAS_BP5_BLOSC2_BUG                                                     \
+    (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR == 209 &&               \
+     ADIOS2_VERSION_PATCH <= 1)
+#if HAS_BP5_BLOSC2_BUG
+        std::string engineType = fileData.getEngine().Type();
+        std::transform(
+            engineType.begin(),
+            engineType.end(),
+            engineType.begin(),
+            [](unsigned char c) { return std::tolower(c); });
+        if (!printedWarningsAlready.blosc2bp5 && engineType == "bp5writer")
+        {
+            for (auto const &op : operators)
+            {
+                std::string operatorType = op.op.Type();
+                std::transform(
+                    operatorType.begin(),
+                    operatorType.end(),
+                    operatorType.begin(),
+                    [](unsigned char c) { return std::tolower(c); });
+                if (operatorType == "blosc")
+                {
+                    std::cerr << &R"(
+[Warning] Use BP5+Blosc with care in ADIOS2 v2.9.0 or v2.9.1.
+Unreadable data might be created, for further details see
+https://github.com/ornladios/ADIOS2/issues/3504.
+                    )"[1] << std::endl;
+                    printedWarningsAlready.blosc2bp5 = true;
+                }
+            }
+        }
+#endif
+#undef HAS_BP5_BLOSC2_BUG
+
         switchAdios2VariableType<detail::VariableDefiner>(
             parameters.dtype, fileData.m_IO, varName, operators, shape);
         fileData.invalidateVariablesMap();
