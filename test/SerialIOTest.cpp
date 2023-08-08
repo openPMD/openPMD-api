@@ -80,7 +80,9 @@ std::vector<std::string> testedFileExtensions()
 {
     auto allExtensions = getFileExtensions();
     auto newEnd = std::remove_if(
-        allExtensions.begin(), allExtensions.end(), [](std::string const &ext) {
+        allExtensions.begin(),
+        allExtensions.end(),
+        []([[maybe_unused]] std::string const &ext) {
 #if openPMD_HAVE_ADIOS2
 #define HAS_ADIOS_2_9 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 209)
 #if HAS_ADIOS_2_9
@@ -94,7 +96,7 @@ std::vector<std::string> testedFileExtensions()
 #endif
 #undef HAS_ADIOS_2_9
 #else
-    return false;
+            return false;
 #endif
         });
     return {allExtensions.begin(), newEnd};
