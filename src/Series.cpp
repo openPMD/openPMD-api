@@ -1961,7 +1961,8 @@ void Series::flushStep(bool doFlush)
          * one IO step.
          */
         Parameter<Operation::WRITE_ATT> wAttr;
-        wAttr.changesOverSteps = true;
+        wAttr.changesOverSteps =
+            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
         wAttr.name = "snapshot";
         wAttr.resource = std::vector<unsigned long long>{
             series.m_currentlyActiveIterations.begin(),

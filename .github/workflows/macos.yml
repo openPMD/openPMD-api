@@ -70,6 +70,9 @@ jobs:
           -DPython_EXECUTABLE=$(which python3)
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
+        rm -rf build/samples
+        share/openPMD/download_samples.sh build
+        OPENPMD2_ADIOS2_USE_GROUP_TABLE=1 ctest --test-dir build --verbose
 
 # TODO: apple_conda_ompi_all (similar to conda_ompi_all on Linux)
 #   both OpenMPI and MPICH cause startup (MPI_Init) issues on GitHub Actions

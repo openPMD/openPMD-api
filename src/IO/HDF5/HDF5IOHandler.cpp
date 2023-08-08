@@ -1412,7 +1412,8 @@ void HDF5IOHandlerImpl::writeDataset(
 void HDF5IOHandlerImpl::writeAttribute(
     Writable *writable, Parameter<Operation::WRITE_ATT> const &parameters)
 {
-    if (parameters.changesOverSteps)
+    if (parameters.changesOverSteps ==
+        Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
     {
         // cannot do this
         return;

@@ -262,6 +262,8 @@ void RecordComponent::flush(
         {
             if (constant())
             {
+                bool isVBased = retrieveSeries().iterationEncoding() ==
+                    IterationEncoding::variableBased;
                 Parameter<Operation::CREATE_PATH> pCreate;
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
@@ -269,11 +271,21 @@ void RecordComponent::flush(
                 aWrite.name = "value";
                 aWrite.dtype = rc.m_constantValue.dtype;
                 aWrite.resource = rc.m_constantValue.getResource();
+                if (isVBased)
+                {
+                    aWrite.changesOverSteps = Parameter<
+                        Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                }
                 IOHandler()->enqueue(IOTask(this, aWrite));
                 aWrite.name = "shape";
                 Attribute a(getExtent());
                 aWrite.dtype = a.dtype;
                 aWrite.resource = a.getResource();
+                if (isVBased)
+                {
+                    aWrite.changesOverSteps = Parameter<
+                        Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                }
                 IOHandler()->enqueue(IOTask(this, aWrite));
             }
             else
@@ -291,11 +303,18 @@ void RecordComponent::flush(
         {
             if (constant())
             {
+                bool isVBased = retrieveSeries().iterationEncoding() ==
+                    IterationEncoding::variableBased;
                 Parameter<Operation::WRITE_ATT> aWrite;
                 aWrite.name = "shape";
                 Attribute a(getExtent());
                 aWrite.dtype = a.dtype;
                 aWrite.resource = a.getResource();
+                if (isVBased)
+                {
+                    aWrite.changesOverSteps = Parameter<
+                        Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                }
                 IOHandler()->enqueue(IOTask(this, aWrite));
             }
             else

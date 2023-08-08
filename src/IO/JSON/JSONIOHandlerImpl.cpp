@@ -786,7 +786,8 @@ void JSONIOHandlerImpl::writeDataset(
 void JSONIOHandlerImpl::writeAttribute(
     Writable *writable, Parameter<Operation::WRITE_ATT> const &parameter)
 {
-    if (parameter.changesOverSteps)
+    if (parameter.changesOverSteps ==
+        Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
     {
         // cannot do this
         return;
