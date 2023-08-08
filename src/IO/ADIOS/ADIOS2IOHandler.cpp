@@ -543,6 +543,24 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
     return res;
 }
 
+static constexpr char const *warningADIOS2NoGroupbasedEncoding = &R"(
+[Warning] Use of group-based encoding in ADIOS2 is discouraged as it can lead
+to drastic performance issues, no matter if I/O steps are used or not.
+
+* If not using I/O steps: A crash will corrupt all data since there is only
+  one atomic logical write operation upon closing the file.
+  Memory performance can be pathological depending on the setup.
+* If using I/O steps: Each step will add new variables and attributes instead
+  of reusing those from earlier steps. ADIOS2 is not optimized for this and
+  especially the BP5 engine will show a quadratic increase in metadata size
+  as the number of steps increase.
+We advise you to pick either file-based encoding or variable-based encoding
+(variable-based encoding is not yet feature-complete in the openPMD-api).
+iteration encoding for use with ADIOS2.
+For more details, refer to
+https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html#iteration-and-series)"
+                                                                     [1];
+
 void ADIOS2IOHandlerImpl::createFile(
     Writable *writable, Parameter<Operation::CREATE_FILE> const &parameters)
 {
@@ -552,6 +570,14 @@ void ADIOS2IOHandlerImpl::createFile(
 
     if (!writable->written)
     {
+
+        if (!printedWarningsAlready.noGroupBased &&
+            parameters.encoding == IterationEncoding::groupBased)
+        {
+            std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
+            printedWarningsAlready.noGroupBased = true;
+        }
+
         std::string name = parameters.name + fileSuffix();
 
         auto res_pair = getPossiblyExisting(name);

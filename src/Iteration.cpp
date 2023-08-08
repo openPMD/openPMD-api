@@ -206,6 +206,7 @@ void Iteration::flushFileBased(
         /* create file */
         Parameter<Operation::CREATE_FILE> fCreate;
         fCreate.name = filename;
+        fCreate.encoding = s.iterationEncoding();
         IOHandler()->enqueue(IOTask(&s.writable(), fCreate));
 
         /* create basePath */

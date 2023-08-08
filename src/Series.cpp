@@ -1195,6 +1195,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     Parameter<Operation::READ_ATT> aRead;
 
     fOpen.name = filePath;
+    fOpen.encoding = iterationEncoding();
     IOHandler()->enqueue(IOTask(this, fOpen));
     IOHandler()->flush(internal::defaultFlushParams);
     series.iterations.parent() = getWritable(this);
