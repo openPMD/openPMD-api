@@ -2706,6 +2706,85 @@ TEST_CASE("git_hdf5_sample_structure_test", "[serial][hdf5]")
 #endif
 }
 
+namespace
+{
+struct LoadDataset
+{
+    template <typename T>
+    static void call(RecordComponent &rc)
+    {
+        auto chunk = rc.loadChunk<T>();
+        rc.seriesFlush();
+    }
+
+    static constexpr char const *errorMsg = "LoadDataset";
+};
+} // namespace
+
+TEST_CASE("git_hdf5_legacy_picongpu", "[serial][hdf5]")
+{
+    try
+    {
+        Series o = Series(
+            "../samples/git-sample/legacy/simData_%T.h5", Access::READ_ONLY);
+
+        /*
+         * That dataset was written directly via HDF5 (not the openPMD-api)
+         * and had two issues:
+         *
+         * 1) No unitSI defined for numParticles and numParticlesOffset.
+         *    unitSI does not really make sense there, but the openPMD-standard
+         *    is not quite clear if it is required, so the API writes it and
+         *    also required it. We will keep writing it, but we don't require
+         *    it any longer.
+         * 2) A custom enum was used for writing a boolean dataset.
+         *    At the least, the dataset should be skipped in parsing instead
+         *    of failing the entire procedure. Ideally, the custom datatype
+         *    should be upcasted to char type and treated as such.
+         */
+
+        auto radiationMask =
+            o.iterations[200]
+                .particles["e"]["radiationMask"][RecordComponent::SCALAR];
+        switchNonVectorType<LoadDataset>(
+            radiationMask.getDatatype(), radiationMask);
+
+        auto particlePatches = o.iterations[200].particles["e"].particlePatches;
+        REQUIRE(particlePatches.size() == 4);
+        for (auto key : {"extent", "offset"})
+        {
+            REQUIRE(particlePatches.contains(key));
+            REQUIRE(particlePatches.at(key).size() == 3);
+            for (auto subkey : {"x", "y", "z"})
+            {
+                REQUIRE(particlePatches.at(key).contains(subkey));
+                // unitSI is present in those records
+                particlePatches.at(key).at(subkey).unitSI();
+            }
+        }
+        for (auto key : {"numParticles", "numParticlesOffset"})
+        {
+            REQUIRE(particlePatches.contains(key));
+            REQUIRE(particlePatches.at(key).contains(RecordComponent::SCALAR));
+            // unitSI is not present in those records
+            REQUIRE_THROWS_AS(
+                particlePatches.at(key).at(RecordComponent::SCALAR).unitSI(),
+                no_such_attribute_error);
+        }
+
+        helper::listSeries(o, true, std::cout);
+    }
+    catch (error::ReadError &e)
+    {
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
+    }
+}
+
 TEST_CASE("git_hdf5_sample_attribute_test", "[serial][hdf5]")
 {
     try
