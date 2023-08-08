@@ -669,8 +669,9 @@ void ADIOS2IOHandlerImpl::createDataset(
                 if (operatorType == "blosc")
                 {
                     std::cerr << &R"(
-[Warning] Use BP5+Blosc with care in ADIOS2 v2.9.0 or v2.9.1.
-Unreadable data might be created, for further details see
+[Warning] Use BP5+Blosc with care in ADIOS2 v2.9.0 and v2.9.1.
+Unreadable data might be created, to mitigate either deactivate Blosc or use BP4+Blosc.
+For further details see
 https://github.com/ornladios/ADIOS2/issues/3504.
                     )"[1] << std::endl;
                     printedWarningsAlready.blosc2bp5 = true;
