@@ -33,8 +33,8 @@ WriteIterations::SharedResources::SharedResources(
 
 WriteIterations::SharedResources::~SharedResources()
 {
-    if (currentlyOpen.has_value() &&
-        iterations.retrieveSeries().get().m_lastFlushSuccessful)
+    if (auto IOHandler = iterations.IOHandler(); currentlyOpen.has_value() &&
+        IOHandler && IOHandler->m_lastFlushSuccessful)
     {
         auto lastIterationIndex = currentlyOpen.value();
         auto &lastIteration = iterations.at(lastIterationIndex);

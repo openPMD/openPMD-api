@@ -28,7 +28,18 @@ namespace openPMD
 std::future<void> AbstractIOHandler::flush(internal::FlushParams const &params)
 {
     internal::ParsedFlushParams parsedParams{params};
-    auto future = this->flush(parsedParams);
+    auto future = [this, &parsedParams]() {
+        try
+        {
+            return this->flush(parsedParams);
+        }
+        catch (...)
+        {
+            m_lastFlushSuccessful = false;
+            throw;
+        }
+    }();
+    m_lastFlushSuccessful = true;
     json::warnGlobalUnusedOptions(parsedParams.backendConfig);
     return future;
 }

@@ -253,6 +253,14 @@ public:
     Access const m_frontendAccess;
     internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
     std::queue<IOTask> m_work;
+    /**
+     * This is to avoid that the destructor tries flushing again if an error
+     * happened. Otherwise, this would lead to confusing error messages.
+     * Initialized as false, set to true after successful construction.
+     * If flushing results in an error, set this back to false.
+     * The destructor will only attempt flushing again if this is true.
+     */
+    bool m_lastFlushSuccessful = false;
 }; // AbstractIOHandler
 
 } // namespace openPMD

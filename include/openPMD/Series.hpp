@@ -169,14 +169,6 @@ namespace internal
          * True if a user opts into lazy parsing.
          */
         bool m_parseLazily = false;
-        /**
-         * This is to avoid that the destructor tries flushing again if an error
-         * happened. Otherwise, this would lead to confusing error messages.
-         * Initialized as false, set to true after successful construction.
-         * If flushing results in an error, set this back to false.
-         * The destructor will only attempt flushing again if this is true.
-         */
-        bool m_lastFlushSuccessful = false;
 
         /**
          * In variable-based encoding, all backends except ADIOS2 can only write

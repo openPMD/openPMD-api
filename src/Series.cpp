@@ -666,7 +666,7 @@ Given file pattern: ')END"
         break;
     }
     }
-    series.m_lastFlushSuccessful = true;
+    IOHandler()->m_lastFlushSuccessful = true;
 }
 
 void Series::initDefaults(IterationEncoding ie, bool initAll)
@@ -710,8 +710,7 @@ std::future<void> Series::flush_impl(
     internal::FlushParams flushParams,
     bool flushIOHandler)
 {
-    auto &series = get();
-    series.m_lastFlushSuccessful = true;
+    IOHandler()->m_lastFlushSuccessful = true;
     try
     {
         switch (iterationEncoding())
@@ -727,16 +726,18 @@ std::future<void> Series::flush_impl(
         }
         if (flushIOHandler)
         {
+            IOHandler()->m_lastFlushSuccessful = true;
             return IOHandler()->flush(flushParams);
         }
         else
         {
+            IOHandler()->m_lastFlushSuccessful = true;
             return {};
         }
     }
     catch (...)
     {
-        series.m_lastFlushSuccessful = false;
+        IOHandler()->m_lastFlushSuccessful = false;
         throw;
     }
 }
@@ -1892,15 +1893,7 @@ AdvanceStatus Series::advance(
     // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
-    try
-    {
-        IOHandler()->flush(flushParams);
-    }
-    catch (...)
-    {
-        series.m_lastFlushSuccessful = false;
-        throw;
-    }
+    IOHandler()->flush(flushParams);
 
     return *param.status;
 }
@@ -1966,15 +1959,7 @@ AdvanceStatus Series::advance(AdvanceMode mode)
     // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
-    try
-    {
-        IOHandler()->flush(flushParams);
-    }
-    catch (...)
-    {
-        series.m_lastFlushSuccessful = false;
-        throw;
-    }
+    IOHandler()->flush(flushParams);
 
     return *param.status;
 }
@@ -2300,10 +2285,10 @@ namespace internal
          * `Series` is needlessly flushed a second time. Otherwise, error
          * messages can get very confusing.
          */
-        if (this->m_lastFlushSuccessful && m_writable.IOHandler &&
-            m_writable.IOHandler->has_value())
+        Series impl{{this, [](auto const *) {}}};
+        if (auto IOHandler = impl.IOHandler();
+            IOHandler && IOHandler->m_lastFlushSuccessful)
         {
-            Series impl{{this, [](auto const *) {}}};
             impl.flush();
             /*
              * In file-based iteration encoding, this must be triggered by
