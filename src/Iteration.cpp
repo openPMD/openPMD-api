@@ -268,6 +268,25 @@ void Iteration::flushVariableBased(
         Parameter<Operation::OPEN_PATH> pOpen;
         pOpen.path = "";
         IOHandler()->enqueue(IOTask(this, pOpen));
+    }
+
+    switch (flushParams.flushLevel)
+    {
+    case FlushLevel::CreateOrOpenFiles:
+        return;
+    case FlushLevel::SkeletonOnly:
+    case FlushLevel::InternalFlush:
+    case FlushLevel::UserFlush:
+        flush(flushParams);
+        break;
+    }
+
+    if (!written())
+    {
+        /* create iteration path */
+        Parameter<Operation::OPEN_PATH> pOpen;
+        pOpen.path = "";
+        IOHandler()->enqueue(IOTask(this, pOpen));
         /*
          * In v-based encoding, the snapshot attribute must always be written.
          * Reason: Even in backends that don't support changing attributes,
@@ -281,17 +300,6 @@ void Iteration::flushVariableBased(
         wAttr.resource = (unsigned long long)i;
         wAttr.dtype = Datatype::ULONGLONG;
         IOHandler()->enqueue(IOTask(this, wAttr));
-    }
-
-    switch (flushParams.flushLevel)
-    {
-    case FlushLevel::CreateOrOpenFiles:
-        break;
-    case FlushLevel::SkeletonOnly:
-    case FlushLevel::InternalFlush:
-    case FlushLevel::UserFlush:
-        flush(flushParams);
-        break;
     }
 }
 

@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
@@ -263,6 +264,14 @@ public:
      */
     virtual void advance(Writable *, Parameter<Operation::ADVANCE> &parameters)
     {
+        if (parameters.isThisStepMandatory)
+        {
+            throw error::OperationUnsupportedInBackend(
+                m_handler->backendName(),
+                "Variable-based encoding requires backend support for IO steps "
+                "in order to store more than one iteration (only supported in "
+                "ADIOS2 backend).");
+        }
         *parameters.status = AdvanceStatus::RANDOMACCESS;
     }
 

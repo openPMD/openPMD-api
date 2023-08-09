@@ -23,6 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -665,7 +666,7 @@ Given file pattern: ')END"
         break;
     }
     }
-    series.m_lastFlushSuccessful = true;
+    IOHandler()->m_lastFlushSuccessful = true;
 }
 
 void Series::initDefaults(IterationEncoding ie, bool initAll)
@@ -709,8 +710,7 @@ std::future<void> Series::flush_impl(
     internal::FlushParams flushParams,
     bool flushIOHandler)
 {
-    auto &series = get();
-    series.m_lastFlushSuccessful = true;
+    IOHandler()->m_lastFlushSuccessful = true;
     try
     {
         switch (iterationEncoding())
@@ -726,16 +726,18 @@ std::future<void> Series::flush_impl(
         }
         if (flushIOHandler)
         {
+            IOHandler()->m_lastFlushSuccessful = true;
             return IOHandler()->flush(flushParams);
         }
         else
         {
+            IOHandler()->m_lastFlushSuccessful = true;
             return {};
         }
     }
     catch (...)
     {
-        series.m_lastFlushSuccessful = false;
+        IOHandler()->m_lastFlushSuccessful = false;
         throw;
     }
 }
@@ -1847,6 +1849,13 @@ AdvanceStatus Series::advance(
     else
     {
         param.mode = mode;
+        if (iterationEncoding() == IterationEncoding::variableBased &&
+            access::write(IOHandler()->m_frontendAccess) &&
+            mode == AdvanceMode::BEGINSTEP && series.m_wroteAtLeastOneIOStep)
+        {
+            // If the backend does not support steps, we cannot continue here
+            param.isThisStepMandatory = true;
+        }
         IOTask task(&file.m_writable, param);
         IOHandler()->enqueue(task);
     }
@@ -1937,6 +1946,13 @@ AdvanceStatus Series::advance(AdvanceMode mode)
 
     Parameter<Operation::ADVANCE> param;
     param.mode = mode;
+    if (iterationEncoding() == IterationEncoding::variableBased &&
+        access::write(IOHandler()->m_frontendAccess) &&
+        mode == AdvanceMode::BEGINSTEP && series.m_wroteAtLeastOneIOStep)
+    {
+        // If the backend does not support steps, we cannot continue here
+        param.isThisStepMandatory = true;
+    }
     IOTask task(&series.m_writable, param);
     IOHandler()->enqueue(task);
 
@@ -1952,7 +1968,7 @@ void Series::flushStep(bool doFlush)
 {
     auto &series = get();
     if (!series.m_currentlyActiveIterations.empty() &&
-        IOHandler()->m_frontendAccess != Access::READ_ONLY)
+        access::write(IOHandler()->m_frontendAccess))
     {
         /*
          * Warning: changing attribute extents over time (probably) unsupported
@@ -1967,6 +1983,7 @@ void Series::flushStep(bool doFlush)
         wAttr.resource = std::vector<unsigned long long>{
             series.m_currentlyActiveIterations.begin(),
             series.m_currentlyActiveIterations.end()};
+        series.m_currentlyActiveIterations.clear();
         wAttr.dtype = Datatype::VEC_ULONGLONG;
         IOHandler()->enqueue(IOTask(&series.iterations, wAttr));
         if (doFlush)
@@ -1974,6 +1991,7 @@ void Series::flushStep(bool doFlush)
             IOHandler()->flush(internal::defaultFlushParams);
         }
     }
+    series.m_wroteAtLeastOneIOStep = true;
 }
 
 auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
@@ -2267,12 +2285,21 @@ namespace internal
          * `Series` is needlessly flushed a second time. Otherwise, error
          * messages can get very confusing.
          */
-        if (this->m_lastFlushSuccessful && m_writable.IOHandler &&
-            m_writable.IOHandler->has_value())
+        Series impl{{this, [](auto const *) {}}};
+        if (auto IOHandler = impl.IOHandler();
+            IOHandler && IOHandler->m_lastFlushSuccessful)
         {
-            Series impl{{this, [](auto const *) {}}};
             impl.flush();
-            impl.flushStep(/* doFlush = */ true);
+            /*
+             * In file-based iteration encoding, this must be triggered by
+             * Iteration::endStep() since the "snapshot" attribute is different
+             * for each file.
+             * Also, at this point the files might have already been closed.
+             */
+            if (impl.iterationEncoding() != IterationEncoding::fileBased)
+            {
+                impl.flushStep(/* doFlush = */ true);
+            }
         }
         // Not strictly necessary, but clear the map of iterations
         // This releases the openPMD hierarchy
@@ -2353,6 +2380,11 @@ ReadIterations Series::readIterations()
     // object slicing
     return {
         this->m_series, IOHandler()->m_frontendAccess, get().m_parsePreference};
+}
+
+void Series::parseBase()
+{
+    readIterations();
 }
 
 WriteIterations Series::writeIterations()
