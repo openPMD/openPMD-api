@@ -67,4 +67,10 @@ def particles_to_dataframe(particle_species, slice=None):
                 columns[column_name] = np.multiply(
                     columns[column_name], rc.unit_SI)
 
-    return pd.DataFrame(columns)
+    df = pd.DataFrame(columns)
+
+    # set a header for the first column (row index)
+    #   note: this is NOT the particle id
+    df.index.name = "row"
+
+    return df
