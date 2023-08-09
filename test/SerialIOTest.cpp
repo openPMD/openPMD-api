@@ -5607,7 +5607,7 @@ void variableBasedSeries(std::string const &file)
             writeSeries.iterationEncoding() ==
             IterationEncoding::variableBased);
         auto iterations = writeSeries.writeIterations();
-        bool is_not_adios2 = !auxiliary::contains(file, ".bp");
+        bool is_not_adios2 = writeSeries.backend() != "ADIOS2";
         for (size_t i = 0; i < 10; ++i)
         {
             if (i > 0 && is_not_adios2)
@@ -5664,6 +5664,8 @@ void variableBasedSeries(std::string const &file)
         Series readSeries(
             file, Access::READ_LINEAR, json::merge(selectADIOS2, jsonConfig));
 
+        bool is_adios2 = readSeries.backend() == "ADIOS2";
+
         size_t last_iteration_index = 0;
         REQUIRE(!readSeries.containsAttribute("some_global"));
         readSeries.parseBase();
@@ -5684,6 +5686,16 @@ void variableBasedSeries(std::string const &file)
                     "iteration_is_larger_than_two"));
             }
 
+            // If modifiable attributes are unsupported, the attribute is
+            // written once in step 0 and then never changed
+            // A warning is printed upon trying to write
+            if (is_adios2)
+            {
+                REQUIRE(
+                    iteration.getAttribute("changing_value").get<unsigned>() ==
+                    (supportsModifiableAttributes ? iteration.iterationIndex
+                                                  : 0));
+            }
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 1);
             REQUIRE(E_x.getExtent()[0] == extent);
@@ -5727,11 +5739,47 @@ void variableBasedSeries(std::string const &file)
 
             last_iteration_index = iteration.iterationIndex;
         }
-        REQUIRE(last_iteration_index == 9);
+        REQUIRE(last_iteration_index == (is_adios2 ? 9 : 0));
     };
 
-    testRead("{\"defer_iteration_parsing\": true}");
-    testRead("{\"defer_iteration_parsing\": false}");
+    std::string jsonConfig = R"(
+{
+  "adios2": {
+    "modifiable_attributes": true
+  }
+})";
+    testWrite(jsonConfig);
+    REQUIRE(
+        (auxiliary::directory_exists(file) || auxiliary::file_exists(file)));
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ true);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ true);
+
+    jsonConfig = "{}";
+    testWrite(jsonConfig);
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ true);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ true);
+
+    jsonConfig = R"(
+{
+  "adios2": {
+    "modifiable_attributes": false
+  }
+})";
+    testWrite(jsonConfig);
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ false);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ false);
 }
 
 #if openPMD_HAVE_ADIOS2

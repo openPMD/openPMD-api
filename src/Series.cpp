@@ -1892,7 +1892,15 @@ AdvanceStatus Series::advance(
     // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
-    IOHandler()->flush(flushParams);
+    try
+    {
+        IOHandler()->flush(flushParams);
+    }
+    catch (...)
+    {
+        series.m_lastFlushSuccessful = false;
+        throw;
+    }
 
     return *param.status;
 }
@@ -1958,7 +1966,15 @@ AdvanceStatus Series::advance(AdvanceMode mode)
     // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
-    IOHandler()->flush(flushParams);
+    try
+    {
+        IOHandler()->flush(flushParams);
+    }
+    catch (...)
+    {
+        series.m_lastFlushSuccessful = false;
+        throw;
+    }
 
     return *param.status;
 }

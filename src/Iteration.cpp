@@ -282,6 +282,25 @@ void Iteration::flushVariableBased(
         Parameter<Operation::OPEN_PATH> pOpen;
         pOpen.path = "";
         IOHandler()->enqueue(IOTask(this, pOpen));
+    }
+
+    switch (flushParams.flushLevel)
+    {
+    case FlushLevel::CreateOrOpenFiles:
+        return;
+    case FlushLevel::SkeletonOnly:
+    case FlushLevel::InternalFlush:
+    case FlushLevel::UserFlush:
+        flush(flushParams);
+        break;
+    }
+
+    if (!written())
+    {
+        /* create iteration path */
+        Parameter<Operation::OPEN_PATH> pOpen;
+        pOpen.path = "";
+        IOHandler()->enqueue(IOTask(this, pOpen));
         /*
          * In v-based encoding, the snapshot attribute must always be written,
          * so don't set the `changesOverSteps` flag of the IOTask here.
@@ -290,17 +309,6 @@ void Iteration::flushVariableBased(
          * iteration. Then, this attribute determines which iteration it is.
          */
         this->setAttribute("snapshot", i);
-    }
-
-    switch (flushParams.flushLevel)
-    {
-    case FlushLevel::CreateOrOpenFiles:
-        break;
-    case FlushLevel::SkeletonOnly:
-    case FlushLevel::InternalFlush:
-    case FlushLevel::UserFlush:
-        flush(flushParams);
-        break;
     }
 }
 
