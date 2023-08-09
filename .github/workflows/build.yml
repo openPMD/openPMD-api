@@ -79,7 +79,7 @@ jobs:
     - uses: actions/setup-python@v1
       name: Install Python
       with:
-        python-version: '3.7'
+        python-version: '3.8'
 
     - name: Install cibuildwheel
       run: |
@@ -106,7 +106,7 @@ jobs:
         #     https://github.com/pypa/manylinux/issues/899
         CIBW_SKIP: "pp*-manylinux*"
         CIBW_ARCHS: "${{ matrix.arch }}"
-        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.7"
+        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8"
         # Install dependencies
         CIBW_BEFORE_BUILD_LINUX: bash -x .github/library_builders.sh
         CIBW_BEFORE_BUILD_MACOS: bash -x .github/library_builders.sh
