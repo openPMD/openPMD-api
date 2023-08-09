@@ -86,7 +86,17 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
     auto &res = s.iterations[std::move(key)];
     if (res.getStepStatus() == StepStatus::NoStep)
     {
-        res.beginStep(/* reread = */ false);
+        try
+        {
+            res.beginStep(/* reread = */ false);
+        }
+        catch (error::OperationUnsupportedInBackend const &)
+        {
+            s.iterations.retrieveSeries()
+                .get()
+                .m_currentlyActiveIterations.clear();
+            throw;
+        }
         res.setStepStatus(StepStatus::DuringStep);
     }
     return res;
