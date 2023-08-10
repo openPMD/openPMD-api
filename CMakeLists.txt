@@ -652,6 +652,14 @@ if(openPMD_HAVE_JULIA)
         POSITION_INDEPENDENT_CODE ON
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
+
+    add_test(NAME CLI.julia_lowlevel
+        COMMAND julia
+            ${openPMD_SOURCE_DIR}/test/julia/lowlevel_test.jl
+            ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/libopenPMD.jl.so
+        WORKING_DIRECTORY
+            ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+    )
 endif()
 
 # python bindings
