@@ -640,6 +640,18 @@ if(openPMD_HAVE_JULIA)
     )
     openpmd_cxx_required(openPMD.jl)
     target_link_libraries(openPMD.jl PRIVATE openPMD JlCxx::cxxwrap_julia JlCxx::cxxwrap_julia_stl)
+
+    set_target_properties(openPMD.jl PROPERTIES
+        COMPILE_PDB_NAME openPMD.jl
+        ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+        LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+        RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+        PDB_OUTPUT_DIRECTORY ${openPMD_PDB_OUTPUT_DIRECTORY}
+        COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
+
+        POSITION_INDEPENDENT_CODE ON
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
 endif()
 
 # python bindings
