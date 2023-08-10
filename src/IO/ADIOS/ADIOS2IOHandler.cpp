@@ -1824,6 +1824,7 @@ namespace detail
         auto defineAttribute =
             [&IO, &fullName, &modifiable, &impl](auto const &...args) {
 #if openPMD_HAS_ADIOS_2_9
+                (void)impl;
                 auto attr = IO.DefineAttribute(
                     fullName,
                     args...,
