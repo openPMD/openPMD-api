@@ -35,8 +35,7 @@ class Writable;
 class AbstractIOHandlerImpl
 {
 public:
-    AbstractIOHandlerImpl(AbstractIOHandler *handler) : m_handler{handler}
-    {}
+    AbstractIOHandlerImpl(AbstractIOHandler *handler);
 
     virtual ~AbstractIOHandlerImpl() = default;
 
@@ -405,5 +404,10 @@ public:
     deregister(Writable *, Parameter<Operation::DEREGISTER> const &param) = 0;
 
     AbstractIOHandler *m_handler;
+    bool m_verboseIOTasks = false;
+
+    // Args will be forwarded to std::cerr if m_verboseIOTasks is true
+    template <typename... Args>
+    void writeToStderr(Args &&...) const;
 }; // AbstractIOHandlerImpl
 } // namespace openPMD

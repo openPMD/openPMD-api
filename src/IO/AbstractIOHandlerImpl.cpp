@@ -20,12 +20,23 @@
  */
 
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+
+#include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
 
 namespace openPMD
 {
+AbstractIOHandlerImpl::AbstractIOHandlerImpl(AbstractIOHandler *handler)
+    : m_handler{handler}
+{
+    if (auxiliary::getEnvNum("OPENPMD_VERBOSE", 0) != 0)
+    {
+        m_verboseIOTasks = true;
+    }
+}
+
 void AbstractIOHandlerImpl::keepSynchronous(
     Writable *writable, Parameter<Operation::KEEP_SYNCHRONOUS> param)
 {
@@ -34,11 +45,12 @@ void AbstractIOHandlerImpl::keepSynchronous(
 }
 
 template <typename... Args>
-inline void writeToStderr([[maybe_unused]] Args &&...args)
+void AbstractIOHandlerImpl::writeToStderr([[maybe_unused]] Args &&...args) const
 {
-#if OPENPMD_DEBUG
-    (std::cerr << ... << args) << std::endl;
-#endif
+    if (m_verboseIOTasks)
+    {
+        (std::cerr << ... << args) << std::endl;
+    }
 }
 
 std::future<void> AbstractIOHandlerImpl::flush()

@@ -99,3 +99,9 @@ Attributes are (currently) unaffected by this:
     Some backends (e.g. the BP5 engine of ADIOS2) have multiple implementations for the openPMD-api-level guarantees of flush points.
     For user-guided selection of such implementations, ``Series::flush`` and ``Attributable::seriesFlush()`` take an optional JSON/TOML string as a parameter.
     See the section on :ref:`backend-specific configuration <backendconfig>` for details.
+
+Deferred Data API Contract
+--------------------------
+
+A verbose debug log can optionally be printed to the standard error output by specifying the environment variable ``OPENPMD_VERBOSE=1``.
+Note that this functionality is at the current time still relatively basic.
