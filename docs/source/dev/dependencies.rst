@@ -39,7 +39,7 @@ Optional: language bindings
 
 * Python:
 
-  * Python 3.7 - 3.11
+  * Python 3.8 - 3.11
   * pybind11 2.11.1+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
