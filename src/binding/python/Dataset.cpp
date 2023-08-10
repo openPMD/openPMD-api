@@ -59,8 +59,24 @@ void init_Dataset(py::module &m)
         .def(
             "__repr__",
             [](const Dataset &d) {
-                return "<openPMD.Dataset of rank '" + std::to_string(d.rank) +
-                    "'>";
+                std::stringstream stream;
+                stream << "<openPMD.Dataset of type '" << d.dtype
+                       << "' and with extent ";
+                if (d.extent.empty())
+                {
+                    stream << "[]>";
+                }
+                else
+                {
+                    auto begin = d.extent.begin();
+                    stream << '[' << *begin++;
+                    for (; begin != d.extent.end(); ++begin)
+                    {
+                        stream << ", " << *begin;
+                    }
+                    stream << "]>";
+                }
+                return stream.str();
             })
 
         .def_readonly("extent", &Dataset::extent)

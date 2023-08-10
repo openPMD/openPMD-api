@@ -23,6 +23,7 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
@@ -35,6 +36,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -519,18 +521,28 @@ void load_chunk(
     // whether we have that
     if (strides.size() == 0)
     {
-        throw std::runtime_error(
+        throw error::WrongAPIUsage(
             "[Record_Component::load_chunk()] Empty buffer passed.");
     }
     {
         py::ssize_t accumulator = toBytes(r.getDatatype());
+        if (buffer_info.itemsize != accumulator)
+        {
+            std::stringstream errorMsg;
+            errorMsg << "[Record_Component::load_chunk()] Loading from a "
+                        "record component of type "
+                     << r.getDatatype() << " with item size " << accumulator
+                     << ", but Python buffer has item size "
+                     << buffer_info.itemsize << ".";
+            throw error::WrongAPIUsage(errorMsg.str());
+        }
         size_t dim = strides.size();
         while (dim > 0)
         {
             --dim;
             if (strides[dim] != accumulator)
             {
-                throw std::runtime_error(
+                throw error::WrongAPIUsage(
                     "[Record_Component::load_chunk()] Requires contiguous slab"
                     " of memory.");
             }
@@ -754,8 +766,24 @@ void init_RecordComponent(py::module &m)
     cl.def(
           "__repr__",
           [](RecordComponent const &rc) {
-              return "<openPMD.Record_Component of dimensionality '" +
-                  std::to_string(rc.getDimensionality()) + "'>";
+              std::stringstream stream;
+              stream << "<openPMD.Record_Component of type '"
+                     << rc.getDatatype() << "' and with extent ";
+              if (auto extent = rc.getExtent(); extent.empty())
+              {
+                  stream << "[]>";
+              }
+              else
+              {
+                  auto begin = extent.begin();
+                  stream << '[' << *begin++;
+                  for (; begin != extent.end(); ++begin)
+                  {
+                      stream << ", " << *begin;
+                  }
+                  stream << "]>";
+              }
+              return stream.str();
           })
 
         .def_property(

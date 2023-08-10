@@ -82,8 +82,9 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
 ``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``      Number of files to be created, 0 indicates maximum number possible.
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
-``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
+``OPENPMD2_ADIOS2_USE_GROUP_TABLE``   ``0``      Use group table (see below)
 ``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
+``OPENPMD_ADIOS2_ASYNC_WRITE``        ``0``      ADIOS2 BP5 engine: 1 means setting "AsyncWrite" in ADIOS2 to "on". Flushes will go to the buffer by default (see ``preferred_flush_target``).
 ``OPENPMD_ADIOS2_BP5_BufferChunkMB``  ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
 ``OPENPMD_ADIOS2_BP5_MaxShmMB``       ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
 ``OPENPMD_ADIOS2_BP5_NumSubFiles``    ``0``      ADIOS2 BP5 engine: num of subfiles
@@ -134,36 +135,32 @@ The preferred backend usually depends on the system's native software stack.
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS2 manual and talk to your filesystem admins and the ADIOS2 authors.
 Be aware that extreme-scale I/O is a research topic after all.
 
-Experimental new ADIOS2 schema
-------------------------------
+Experimental group table feature
+--------------------------------
 
-We are experimenting with a breaking change to our layout of openPMD datasets in ADIOS2.
-It is likely that we will in future use ADIOS attributes only for a handful of internal flags.
-Actual openPMD attributes will be modeled by ADIOS variables of the same name.
-In order to distinguish datasets from attributes, datasets will be suffixed by ``/__data__``.
+We are experimenting with a feature that will make the structure of an ADIOS2 file more explicit.
+Currently, the hierarchical structure of an openPMD dataset in ADIOS2 is recovered implicitly by inspecting variables and attributes found in the ADIOS2 file.
+Inspecting attributes is necessary since not every openPMD group necessarily contains an (array) dataset.
+The downside of this approach is that ADIOS2 attributes do not properly interact with ADIOS2 steps, resulting in many problems and workarounds when parsing an ADIOS2 dataset.
+An attribute, once defined, cannot be deleted, implying that the ADIOS2 backend will recover groups that might not actually be logically present in the current step.
 
-We hope that this will bring several advantages:
+As a result of this behavior, support for ADIOS2 steps is currently restricted.
 
-* Unlike ADIOS attributes, ADIOS variables are mutable.
-* ADIOS variables are more closely related to the concept of ADIOS steps.
-  An ADIOS variable that is not written to in one step is not seen by the reader.
-  This will bring more manageable amounts of metadata for readers to parse through.
+For full support of ADIOS2 steps, we introduce a group table that makes use of modifiable attributes in ADIOS2 v2.9, i.e. attributes that can have different values across steps.
 
-The new layout may be activated **for experimental purposes** in two ways:
+An openPMD group ``<group>`` is present if:
 
-* Via the JSON parameter ``adios2.schema = 20210209``.
-* Via the environment variable ``export OPENPMD2_ADIOS2_SCHEMA=20210209``.
+1. The integer attribute ``__openPMD_groups/<group>`` exists
+2. and:
 
-The ADIOS2 backend will automatically recognize the layout that has been used by a writer when reading a dataset.
+  a. the file is either accessed in random-access mode
+  b. or the current value of said attribute is equivalent to the current step index.
 
-.. tip::
+This feature can be activated via the JSON/TOML key ``adios2.use_group_table = true`` or via the environment variable ``OPENPMD2_ADIOS2_USE_GROUP_TABLE=1``.
+It is fully backward-compatible with the old layout of openPMD in ADIOS2 and mostly forward-compatible (except the support for steps).
 
-   This schema does not use ADIOS2 attributes anymore, thus ``bpls -a`` and ``bpls -A`` attribute switches do not show openPMD attributes.
-   Their functionality can be emulated via regexes:
-
-   * Print datasets and attributes: Default behavior
-   * Print datasets only: ``bpls -e '.*/__data__$'``
-   * Print attributes only: ``bpls -e '^(.(?!/__data__$))*$'``
+The variable-based encoding of openPMD automatically activates the group table feature.
+The group table feature automatically activates the use of ADIOS2 steps (which until version 0.15 was an opt-in feature via ``adios2.engine.usesteps = true``).
 
 Memory usage
 ------------
@@ -260,7 +257,7 @@ In the openPMD-api, this can be done by specifying backend-specific parameters t
 
 .. code:: cpp
 
-  series.flush(R"({"adios2": {"preferred_flush_target": "disk"}})")
+  series.flush(R"({"adios2": {"engine": {"preferred_flush_target": "disk"}}})")
 
 The memory consumption of this approach shows that the 2GB buffer is first drained and then recreated after each ``flush()``:
 
@@ -281,7 +278,7 @@ Note that this involves data copies that can be avoided by either flushing direc
 
 .. code:: cpp
 
-  series.flush(R"({"adios2": {"preferred_flush_target": "buffer"}})")
+  series.flush(R"({"adios2": {"engine": {"preferred_flush_target": "buffer"}}})")
 
 With this strategy, the BP5 engine will slowly build up its buffer until ending the step.
 Rather than by reallocation as in BP4, this is done by appending a new chunk, leading to a clearly more acceptable memory profile:
@@ -289,7 +286,7 @@ Rather than by reallocation as in BP4, this is done by appending a new chunk, le
 .. figure:: https://user-images.githubusercontent.com/14241876/181477384-ce4ea8ab-3bde-4210-991b-2e627dfcc7c9.png
   :alt: Memory usage of BP5 when flushing to the engine buffer
 
-The default is to flush to disk, but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
+The default is to flush to disk (except when specifying ``OPENPMD_ADIOS2_ASYNC_WRITE=1``), but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
 
 
 

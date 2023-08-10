@@ -421,9 +421,9 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
         if(openPMD_USE_INTERNAL_PYBIND11)
             add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
             set(openPMD_HAVE_PYTHON TRUE)
-            message(STATUS "pybind11: Using INTERNAL version 2.10.1")
+            message(STATUS "pybind11: Using INTERNAL version 2.11.1")
         else()
-            find_package(pybind11 2.10.1 CONFIG)
+            find_package(pybind11 2.11.1 CONFIG)
             if(pybind11_FOUND)
                 set(openPMD_HAVE_PYTHON TRUE)
                 message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
@@ -439,9 +439,9 @@ elseif(openPMD_USE_PYTHON)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.10.1")
+        message(STATUS "pybind11: Using INTERNAL version 2.11.1")
     else()
-        find_package(pybind11 2.10.1 REQUIRED CONFIG)
+        find_package(pybind11 2.11.1 REQUIRED CONFIG)
         set(openPMD_HAVE_PYTHON TRUE)
         message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
     endif()
@@ -497,7 +497,6 @@ set(IO_SOURCE
         src/IO/JSON/JSONFilePosition.cpp
         src/IO/ADIOS/ADIOS2IOHandler.cpp
         src/IO/ADIOS/ADIOS2Auxiliary.cpp
-        src/IO/ADIOS/ADIOS2PreloadAttributes.cpp
         src/IO/InvalidatableFile.cpp)
 
 # library
@@ -1021,6 +1020,8 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         # at runtime when used with symbol-hidden code (e.g. pybind11 module)
 
         set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code -Wsign-compare ${CMAKE_CXX_FLAGS}")
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code -Wsign-compare ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
         set(CMAKE_CXX_FLAGS "-w3 -wd193,383,1572 ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -1154,10 +1155,9 @@ if(openPMD_INSTALL)
         if(openPMD_BUILD_CLI_TOOLS)
             foreach(toolname ${openPMD_PYTHON_CLI_TOOL_NAMES})
                 install(
-                    FILES ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
+                    PROGRAMS ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
                     DESTINATION ${openPMD_INSTALL_BINDIR}
                     RENAME openpmd-${toolname}
-                    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
                 )
             endforeach()
         endif()

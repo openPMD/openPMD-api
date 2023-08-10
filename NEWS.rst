@@ -15,6 +15,7 @@ Note that ADIOS2 does not support compression in BP3 files.
 
 Julia 1.7 to 1.9 are supported. The development version of Julia
 (future 1.10) is supported as well. Julia 1.6 is too old.
+pybind11 2.11.1 is now the minimally supported version for Python support.
 
 
 0.15.0

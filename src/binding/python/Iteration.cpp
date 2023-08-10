@@ -40,7 +40,9 @@ void init_Iteration(py::module &m)
             [](Iteration const &it) {
                 std::stringstream ss;
                 ss << "<openPMD.Iteration at t = '" << std::scientific
-                   << it.template time<double>() * it.timeUnitSI() << " s'>";
+                   << it.template time<double>() * it.timeUnitSI()
+                   << " s' with " << std::to_string(it.numAttributes())
+                   << " attributes>";
                 return ss.str();
             })
 

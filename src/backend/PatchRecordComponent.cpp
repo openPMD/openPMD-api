@@ -143,24 +143,28 @@ void PatchRecordComponent::flush(
 
 void PatchRecordComponent::read()
 {
-    Parameter<Operation::READ_ATT> aRead;
-
-    aRead.name = "unitSI";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(*aRead.resource).getOptional<double>();
-        val.has_value())
-        setUnitSI(val.value());
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'unitSI' (expected double, "
-            "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
-
     readAttributes(ReadMode::FullyReread); // this will set dirty() = false
+
+    if (containsAttribute("unitSI"))
+    {
+        /*
+         * No need to call setUnitSI
+         * If it's in the attributes map, then it's already set
+         * Just verify that it has the right type (getOptional<>() does
+         * conversions if possible, so this check is non-intrusive)
+         */
+        if (auto val = getAttribute("unitSI").getOptional<double>();
+            !val.has_value())
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Unexpected Attribute datatype for 'unitSI' (expected double, "
+                "found " +
+                    datatypeToString(getAttribute("unitSI").dtype) + ")");
+        }
+    }
 }
 
 bool PatchRecordComponent::dirtyRecursive() const

@@ -1,7 +1,10 @@
 .. _workflow:
 
+Workflow
+========
+
 Access modes
-============
+------------
 
 The openPMD-api distinguishes between a number of different access modes:
 
@@ -59,9 +62,6 @@ The openPMD-api distinguishes between a number of different access modes:
   **Warning:** There is no reading involved in using Append mode.
   It is a user's responsibility to ensure that the appended dataset and the appended-to dataset are compatible with each other.
   The results of using incompatible backend configurations are undefined.
-
-Workflow
-========
 
 Deferred Data API Contract
 --------------------------

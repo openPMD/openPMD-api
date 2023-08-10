@@ -12,6 +12,7 @@
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
 #define HAS_ADIOS_2_8 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 208)
+#define HAS_ADIOS_2_9 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 209)
 #endif
 
 #include <algorithm>
@@ -1137,7 +1138,9 @@ void adios2_streaming(bool variableBasedLayout)
 
 TEST_CASE("adios2_streaming", "[pseudoserial][adios2]")
 {
+#if HAS_ADIOS_2_9
     adios2_streaming(true);
+#endif // HAS_ADIOS_2_9
     adios2_streaming(false);
 }
 
@@ -1377,10 +1380,10 @@ enum class ParseMode
      * Iterations are returned in ascending order.
      * If an IO step returns an iteration whose index is lower than the
      * last one, it will be skipped.
-     * This mode of parsing is not available for the BP4 engine with ADIOS2
-     * schema 0, since BP4 does not associate attributes with the step in
-     * which they were created, making it impossible to separate parsing into
-     * single steps.
+     * This mode of parsing is not available for the BP4 engine without the
+     * group table feature, since BP4 does not associate attributes with the
+     * step in which they were created, making it impossible to separate parsing
+     * into single steps.
      */
     LinearWithoutSnapshot,
     /*
@@ -1533,8 +1536,9 @@ void append_mode(
                 ++counter;
             }
             REQUIRE(counter == 8);
-            // Cannot do listSeries here because the Series is already drained
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
         break;
         case ParseMode::AheadOfTimeWithoutSnapshot: {
@@ -1543,8 +1547,8 @@ void append_mode(
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
             /*
              * This one is a bit tricky:
-             * The BP4 engine has no way of parsing a Series in the old
-             * ADIOS2 schema step-by-step, since attributes are not
+             * The BP4 engine has no way of parsing a Series step-by-step in
+             * ADIOS2 without group tables, since attributes are not
              * associated with the step in which they were created.
              * As a result, when readIterations() is called, the whole thing
              * is parsed immediately ahead-of-time.
@@ -1552,7 +1556,7 @@ void append_mode(
              * but since the IO steps don't correspond with the order of
              * iterations returned (there is no way to figure out that order),
              * we cannot load data in here.
-             * BP4 in the old ADIOS2 schema only supports either of the
+             * BP4 in ADIOS2 without group table only supports either of the
              * following: 1) A Series in which the iterations are present in
              * ascending order. 2) Or accessing the Series in READ_ONLY mode.
              */
@@ -1663,9 +1667,9 @@ void append_mode(
                 ++counter;
             }
             REQUIRE(counter == 8);
-            // Cannot do listSeries here because the Series is already
-            // drained
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
     }
 #endif
@@ -1679,7 +1683,7 @@ TEST_CASE("append_mode", "[serial]")
 {
     "adios2":
     {
-        "schema": 0,
+        "use_group_table": false,
         "engine":
         {
             "usesteps" : true
@@ -1690,7 +1694,7 @@ TEST_CASE("append_mode", "[serial]")
 {
     "adios2":
     {
-        "schema": 20210209,
+        "use_group_table": true,
         "engine":
         {
             "usesteps" : true
@@ -1709,6 +1713,8 @@ TEST_CASE("append_mode", "[serial]")
 #if HAS_ADIOS_2_8
             append_mode(
                 t, false, ParseMode::LinearWithoutSnapshot, jsonConfigOld);
+#endif
+#if HAS_ADIOS_2_9
             append_mode(t, false, ParseMode::WithSnapshot, jsonConfigNew);
             // This test config does not make sense
             // append_mode(t, true, ParseMode::WithSnapshot, jsonConfigOld);

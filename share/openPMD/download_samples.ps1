@@ -15,18 +15,23 @@ New-item -ItemType directory -Name samples\git-sample\3d-bp4\
 Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-3d.tar.gz -OutFile example-3d.tar.gz
 Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-thetaMode.tar.gz -OutFile example-thetaMode.tar.gz
 Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-3d-bp4.tar.gz -OutFile example-3d-bp4.tar.gz
+Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/566b356030df38f56049484941baacafef331163/legacy_datasets.tar.gz -OutFile legacy_datasets.tar.gz
 7z.exe x -r example-3d.tar.gz
 7z.exe x -r example-3d.tar
 7z.exe x -r example-thetaMode.tar.gz
 7z.exe x -r example-thetaMode.tar
 7z.exe x -r example-3d-bp4.tar.gz
 7z.exe x -r example-3d-bp4.tar
+7z.exe x -r legacy_datasets.tar.gz
+7z.exe x -r legacy_datasets.tar
 Move-Item -Path example-3d\hdf5\* samples\git-sample\
 Move-Item -Path example-thetaMode\hdf5\* samples\git-sample\thetaMode\
 Move-Item -Path example-3d-bp4\* samples\git-sample\3d-bp4\
+Move-Item -Path legacy_datasets\* samples\git-sample\legacy\
 Remove-Item -Recurse -Force example-3d*
 Remove-Item -Recurse -Force example-thetaMode*
 Remove-Item -Recurse -Force example-3d-bp4*
+Remove-Item -Recurse -Force legacy_datasets*
 
 # Ref.: https://github.com/yt-project/yt/pull/1645
 New-item -ItemType directory -Name samples\issue-sample\

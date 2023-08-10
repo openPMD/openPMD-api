@@ -9,12 +9,6 @@ import math
 
 import numpy as np
 
-try:
-    from dask.array import from_array
-    found_dask = True
-except ImportError:
-    found_dask = False
-
 
 class DaskRecordComponent:
     # shape, .ndim, .dtype and support numpy-style slicing
@@ -80,6 +74,13 @@ def record_component_to_daskarray(record_component):
         are used internally to parallelize reading
     dask.array : the (potentially distributed) array object created here
     """
+    # Import dask here for a lazy import
+    try:
+        from dask.array import from_array
+        found_dask = True
+    except ImportError:
+        found_dask = False
+
     if not found_dask:
         raise ImportError("dask NOT found. Install dask for Dask DataFrame "
                           "support.")

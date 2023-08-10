@@ -27,6 +27,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/binding/python/Pickle.hpp"
 
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -38,7 +39,13 @@ void init_ParticleSpecies(py::module &m)
     py::class_<ParticleSpecies, Container<Record> > cl(m, "ParticleSpecies");
     cl.def(
           "__repr__",
-          [](ParticleSpecies const &) { return "<openPMD.ParticleSpecies>"; })
+          [](ParticleSpecies const &p) {
+              std::stringstream stream;
+              stream << "<openPMD.ParticleSpecies with " << p.size()
+                     << " record(s) and " << p.numAttributes()
+                     << " attribute(s)>";
+              return stream.str();
+          })
 
         .def_readwrite("particle_patches", &ParticleSpecies::particlePatches);
     add_pickle(
