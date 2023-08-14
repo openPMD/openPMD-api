@@ -1,7 +1,7 @@
 """
 This file is part of the openPMD-api.
 
-Copyright 2023 openPMD contributors
+Copyright 2021-2023 openPMD contributors
 Authors: Axel Huebl, Pawel Ordyna
 License: LGPLv3+
 """
