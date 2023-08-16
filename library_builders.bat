@@ -92,26 +92,11 @@ exit /b 0
 :build_blosc2
   if exist blosc2-stamp exit /b 0
 
-  curl -sLo blosc2-2.9.3.zip ^
-    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.9.3.zip
-  powershell Expand-Archive blosc2-2.9.3.zip -DestinationPath dep-blosc2
+  curl -sLo blosc2-2.10.1.zip ^
+    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.1.zip
+  powershell Expand-Archive blosc2-2.10.1.zip -DestinationPath dep-blosc2
 
-  :: https://github.com/Blosc/c-blosc2/pull/525
-  curl -sLo c-blosc2-cmake.patch ^
-    https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc2/pull/525.patch
-  python -m patch -p 1 -d dep-blosc2/c-blosc2-2.9.3 c-blosc2-cmake.patch
-
-  :: https://github.com/Blosc/c-blosc2/issues/526
-  curl -sLo c-blosc2-cxx20.patch ^
-    https://github.com/Blosc/c-blosc2/pull/527.patch
-  python -m patch -p 1 -d dep-blosc2/c-blosc2-2.9.3 c-blosc2-cxx20.patch
-
-  :: https://github.com/Blosc/c-blosc2/pull/529
-  curl -sLo c-blosc2-external-zlib.patch ^
-    https://github.com/Blosc/c-blosc2/pull/529.patch
-  python -m patch -p 1 -d dep-blosc2/c-blosc2-2.9.3 c-blosc2-external-zlib.patch
-
-  cmake -S dep-blosc2/c-blosc2-2.9.3 -B build-blosc2 ^
+  cmake -S dep-blosc2/c-blosc2-2.10.1 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED=OFF          ^
     -DBUILD_STATIC=ON           ^

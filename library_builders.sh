@@ -199,9 +199,8 @@ function build_blosc {
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
-    #curl -sLo blosc2-v2.10.0.tar.gz \
-    curl -sLo blosc2-topic-cmake-install-targets.tar.gz \
-        https://github.com/Blosc/c-blosc2/archive/d510951c492db9f09ab9171675c3dddbf8ffd4fa.tar.gz
+    curl -sLo blosc2-v2.10.1.tar.gz \
+        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.1.tar.gz
     file blosc2*.tar.gz
     tar -xzf blosc2*.tar.gz
     rm blosc2*.tar.gz
