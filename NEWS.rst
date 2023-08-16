@@ -3,6 +3,13 @@
 Upgrade Guide
 =============
 
+0.15.2
+------
+
+Python 3.7 is removed, please use 3.8 or newer.
+macOS 10.15 is removed, please use 11.0 or newer.
+
+
 0.15.0
 ------
 

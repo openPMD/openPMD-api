@@ -3,6 +3,71 @@
 Changelog
 =========
 
+0.15.2
+------
+**Date:** 2023-08-17
+
+Python, ADIOS2 and HDF5 Fixes
+
+This release fixed regressions in the Python frontend as well as the ADIOS2 and HDF5 backends.
+Supported macOS versions are now 11.0+ and Python versions are 3.8+.
+
+Changes to "0.15.1"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- Don't require unitSI when reading a patch record component #1470
+- Python:
+
+  - DataFrame to ASCII: Header of First Column in CSV bug documentation third party
+#1480 #1501
+  - Update __repr__ method of major objects in openPMD hierarchy #1476
+  - openpmd-pipe: set correct install permissions #1459
+  - Better error message when loading to a buffer with mismatched type #1452
+  - Use lazy imports for dask and pandas #1442
+- ADIOS2:
+
+  - Fixes for variable-based encoding in backends without step support #1484 #1481
+  - Warn on BP5+Blosc in ADIOS2 v2.9 up to patch level 1 #1497
+  - Ensure that a step is always active at write time #1492
+  - Fix gcc9 warning #1429
+- HDF5:
+
+  - Handle unknown datatypes in datasets #1469
+  - Support for float128 on ARM64/PPC64 #1364
+  - Fix Char Type Matching #1433 #1431
+- CI:
+
+  - type comparison in openpmd-pipe #1490
+
+Other
+"""""
+
+- Better handling for file extensions #1473 #1471
+- Optional debugging output for AbstractIOHandlerImpl::flush() #1495
+- Python: 3.8+ #1502
+- CI:
+
+  - macOS 11.0+ #1486 #1446
+  - oneAPI 2023.2.0 #1478
+  - Doxygen 1.9.7 Broken #1464
+- Docs:
+
+  - Analysis with third party data science frameworks #1444
+  - Sphinx Copybutton and Design #1461
+  - Fix small documentation issues after 0.15 release #1440
+  - HDF5_DO_MPI_FILE_SYNC #1427
+  - OpenMPI-ROMIO/HDF5/Chunking issue #1441
+  - Remove ADIOS2 schema 2021 #1451
+  - Linking to C++ Projects #1445
+  - Fix deprecated APIs in first read/write examples #1435
+  - Update .readthedocs.yml #1438
+  - Fix Bib Authors #1434
+  - More careful documentation of streaming API #1430
+
+
 0.15.1
 ------
 **Date:** 2023-04-02
