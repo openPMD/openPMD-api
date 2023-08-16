@@ -371,7 +371,6 @@ void init_Attributable(py::module &m)
         .def_readonly("access", &Attributable::MyPath::access)
         .def_property_readonly("file_path", &Attributable::MyPath::filePath);
 
-
     py::class_<Attributable>(m, "Attributable")
         .def(py::init<Attributable const &>())
 
