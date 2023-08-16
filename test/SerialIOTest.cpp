@@ -1555,7 +1555,10 @@ struct ReadFromAnyType
 
 inline void write_test(const std::string &backend)
 {
-    Series o = Series("../samples/serial_write." + backend, Access::CREATE);
+    Series o = Series(
+        "../samples/serial_write." + backend,
+        Access::CREATE,
+        R"(rank_table = "hostname")");
 
     ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -1666,6 +1669,10 @@ inline void write_test(const std::string &backend)
                       << '\'' << std::endl;
         },
         variantTypeDataset);
+
+    REQUIRE(
+        read.mpiRanksMetaInfo(/* collective = */ false) ==
+        chunk_assignment::RankMeta{{0, host_info::hostname()}});
 }
 
 TEST_CASE("write_test", "[serial]")
@@ -1822,7 +1829,8 @@ inline void fileBased_write_test(const std::string &backend)
     {
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%03T." + backend,
-            Access::CREATE);
+            Access::CREATE,
+            R"(rank_table="hostname")");
 
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -1941,7 +1949,8 @@ inline void fileBased_write_test(const std::string &backend)
     {
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
-            Access::READ_ONLY);
+            Access::READ_ONLY,
+            R"(rank_table="hostname")");
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(1) == 1);
@@ -2018,7 +2027,8 @@ inline void fileBased_write_test(const std::string &backend)
         // padding
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
-            Access::READ_WRITE);
+            Access::READ_WRITE,
+            R"(rank_table="hostname")");
 
         REQUIRE(o.iterations.size() == 5);
         o.iterations[6];
@@ -2059,7 +2069,8 @@ inline void fileBased_write_test(const std::string &backend)
     {
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%01T." + backend,
-            Access::READ_WRITE);
+            Access::READ_WRITE,
+            R"(rank_table="hostname")");
 
         REQUIRE(o.iterations.size() == 1);
         /*
@@ -2152,6 +2163,46 @@ inline void fileBased_write_test(const std::string &backend)
             Access::READ_ONLY};
         helper::listSeries(list);
     }
+
+#ifdef __unix__
+    /*
+     * Check that the ranktable was written correctly to every iteration file.
+     */
+    {
+        int dirfd = open("../samples/subdir/", O_RDONLY);
+        if (dirfd < 0)
+        {
+            throw std::system_error(
+                std::error_code(errno, std::system_category()));
+        }
+        DIR *directory = fdopendir(dirfd);
+        if (!directory)
+        {
+            close(dirfd);
+            throw std::system_error(
+                std::error_code(errno, std::system_category()));
+        }
+        chunk_assignment::RankMeta compare{{0, host_info::hostname()}};
+        dirent *entry;
+        while ((entry = readdir(directory)) != nullptr)
+        {
+            if (strcmp(entry->d_name, ".") == 0 ||
+                strcmp(entry->d_name, "..") == 0 ||
+                !auxiliary::ends_with(entry->d_name, "." + backend))
+            {
+                continue;
+            }
+            std::string fullPath =
+                std::string("../samples/subdir/") + entry->d_name;
+            Series single_file(fullPath, Access::READ_ONLY);
+            REQUIRE(
+                single_file.mpiRanksMetaInfo(/* collective = */ false) ==
+                compare);
+        }
+        closedir(directory);
+        close(dirfd);
+    }
+#endif // defined(__unix__)
 }
 
 TEST_CASE("fileBased_write_test", "[serial]")
