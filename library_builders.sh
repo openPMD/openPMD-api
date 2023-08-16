@@ -140,6 +140,10 @@ function build_adios2 {
 
     make -j${CPU_COUNT}
     make install
+
+    # CMake Config package of C-Blosc 2.10.1+ only
+    rm -rf ${BUILD_PREFIX}/lib*/cmake/adios2/FindBlosc2.cmake
+
     cd -
 
     rm -rf build-adios2
