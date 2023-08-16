@@ -1,7 +1,8 @@
 from . import openpmd_api_cxx as cxx
 from .DaskArray import record_component_to_daskarray
 from .DaskDataFrame import particles_to_daskdataframe
-from .DataFrame import particles_to_dataframe
+from .DataFrame import (iterations_to_cudf, iterations_to_dataframe,
+                        particles_to_dataframe)
 from .openpmd_api_cxx import *  # noqa
 
 __version__ = cxx.__version__
@@ -13,6 +14,8 @@ __license__ = cxx.__license__
 ParticleSpecies.to_df = particles_to_dataframe  # noqa
 ParticleSpecies.to_dask = particles_to_daskdataframe  # noqa
 Record_Component.to_dask_array = record_component_to_daskarray  # noqa
+Series.to_df = iterations_to_dataframe  # noqa
+Series.to_cudf = iterations_to_cudf  # noqa
 
 # TODO remove in future versions (deprecated)
 Access_Type = Access  # noqa

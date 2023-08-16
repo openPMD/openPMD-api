@@ -45,16 +45,7 @@ One can also combine all iterations in a single dataframe like this:
 
 .. code-block:: python
 
-   import pandas as pd
-
-   df = pd.concat(
-        (
-            s.iterations[i].particles["electrons"].to_df().assign(iteration=i)
-            for i in s.iterations
-        ),
-        axis=0,
-        ignore_index=True,
-   )
+   df = s.to_df("electrons")
 
    # like before but with a new column "iteration" and all particles
    print(df)
