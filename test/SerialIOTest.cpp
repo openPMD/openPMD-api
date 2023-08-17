@@ -5595,11 +5595,12 @@ TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
     }
 }
 
-void variableBasedSeries(std::string const &file)
+void variableBasedSeries(
+    std::string const &file, std::string const &backendSelection)
 {
     constexpr Extent::value_type extent = 1000;
     {
-        Series writeSeries(file, Access::CREATE);
+        Series writeSeries(file, Access::CREATE, backendSelection);
         writeSeries.setAttribute("some_global", "attribute");
         writeSeries.setIterationEncoding(IterationEncoding::variableBased);
         REQUIRE(
@@ -5655,12 +5656,16 @@ void variableBasedSeries(std::string const &file)
     REQUIRE(
         (auxiliary::directory_exists(file) || auxiliary::file_exists(file)));
 
-    auto testRead = [&file, &extent](std::string const &jsonConfig) {
+    auto testRead = [&file, &extent, &backendSelection](
+                        std::string const &jsonConfig) {
         /*
          * Need linear read mode to access more than a single iteration in
          * variable-based iteration encoding.
          */
-        Series readSeries(file, Access::READ_LINEAR, jsonConfig);
+        Series readSeries(
+            file,
+            Access::READ_LINEAR,
+            json::merge(backendSelection, jsonConfig));
 
         bool is_adios2 = readSeries.backend() == "ADIOS2";
 
@@ -5737,9 +5742,11 @@ void variableBasedSeries(std::string const &file)
 #if openPMD_HAVE_ADIOS2
 TEST_CASE("variableBasedSeries", "[serial][adios2]")
 {
-    for (auto const &t : testedFileExtensions())
+    for (auto const &[backend_name, t] : testedBackends())
     {
-        variableBasedSeries("../samples/variableBasedSeries." + t);
+        variableBasedSeries(
+            "../samples/variableBasedSeries." + t,
+            R"({"backend": ")" + backend_name + R"("})");
     }
 }
 #endif
