@@ -77,9 +77,6 @@ struct StringMatrix
 StringMatrix collectStringsAsMatrixTo(
     MPI_Comm communicator, int destRank, std::string const &thisRankString);
 
-std::vector<std::string> collectStringsTo(
-    MPI_Comm communicator, int destRank, std::string const &thisRankString);
-
 std::vector<std::string> distributeStringsToAllRanks(
     MPI_Comm communicator, std::string const &thisRankString);
 #endif
