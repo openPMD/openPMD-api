@@ -1670,9 +1670,11 @@ inline void write_test(const std::string &backend)
         },
         variantTypeDataset);
 
+    // need double parens here to avoid link errors to unprintableString
+    // on Windows
     REQUIRE(
-        read.mpiRanksMetaInfo(/* collective = */ false) ==
-        chunk_assignment::RankMeta{{0, host_info::hostname()}});
+        (read.mpiRanksMetaInfo(/* collective = */ false) ==
+         chunk_assignment::RankMeta{{0, host_info::hostname()}}));
 }
 
 TEST_CASE("write_test", "[serial]")
