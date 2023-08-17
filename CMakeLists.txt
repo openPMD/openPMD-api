@@ -546,6 +546,7 @@ set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/auxiliary/JSON.cpp
         src/IO/AbstractIOHandlerImpl.cpp
         src/ChunkInfo.cpp
+        src/Datatype.cpp
         src/Error.cpp
         src/IO/IOTask.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
@@ -556,6 +557,7 @@ set(IO_ADIOS1_SOURCE
         src/auxiliary/JSON.cpp
         src/IO/AbstractIOHandlerImpl.cpp
         src/ChunkInfo.cpp
+        src/Datatype.cpp
         src/Error.cpp
         src/IO/IOTask.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
