@@ -1568,7 +1568,7 @@ inline void write_test(const std::string &backend)
     Series o = Series(
         "../samples/serial_write." + backend,
         Access::CREATE,
-        R"(rank_table = "hostname")");
+        R"({"rank_table": "hostname"})");
 
     ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -1849,7 +1849,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%03T." + backend,
             Access::CREATE,
-            R"(rank_table="hostname")");
+            R"({"rank_table": "hostname"})");
 
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -1969,7 +1969,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
             Access::READ_ONLY,
-            R"(rank_table="hostname")");
+            R"({"rank_table": "hostname"})");
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(1) == 1);
@@ -2047,7 +2047,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
             Access::READ_WRITE,
-            R"(rank_table="hostname")");
+            R"({"rank_table": "hostname"})");
 
         REQUIRE(o.iterations.size() == 5);
         o.iterations[6];
@@ -2089,7 +2089,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%01T." + backend,
             Access::READ_WRITE,
-            R"(rank_table="hostname")");
+            R"({"rank_table": "hostname"})");
 
         REQUIRE(o.iterations.size() == 1);
         /*
