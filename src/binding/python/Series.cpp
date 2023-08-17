@@ -57,6 +57,20 @@ struct openPMD_PyMPICommObject
 using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 #endif
 
+struct SeriesIteratorPythonAdaptor : SeriesIterator
+{
+    SeriesIteratorPythonAdaptor(SeriesIterator it)
+        : SeriesIterator(std::move(it))
+    {}
+
+    /*
+     * Python iterators are weird and call `__next__()` already for getting the
+     * first element.
+     * In that case, no `operator++()` must be called...
+     */
+    bool first_iteration = true;
+};
+
 void init_Series(py::module &m)
 {
     py::class_<WriteIterations>(m, "WriteIterations", R"END(
