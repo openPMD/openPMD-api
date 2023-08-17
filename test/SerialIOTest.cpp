@@ -4439,6 +4439,9 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
 
 TEST_CASE("adios2_bp5_flush", "[serial][adios2]")
 {
+    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1")
+        return;
+
     std::string cfg1 = R"(
 [adios2]
 
@@ -5827,6 +5830,9 @@ void variableBasedParticleData()
 
 TEST_CASE("variableBasedParticleData", "[serial][adios2]")
 {
+    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1")
+        return;
+
     variableBasedParticleData();
 }
 #endif
@@ -5835,6 +5841,9 @@ TEST_CASE("variableBasedParticleData", "[serial][adios2]")
 #ifdef ADIOS2_HAVE_BZIP2
 TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 {
+    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1")
+        return;
+
     // automatically (de)activate span-based storeChunking
     {
         Series write("../samples/span_based.bp", Access::CREATE);
@@ -6250,6 +6259,9 @@ void adios2_bp5_no_steps(bool usesteps)
 
 TEST_CASE("adios2_bp5_no_steps", "[serial][adios2]")
 {
+    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "") == "ADIOS1")
+        return;
+
     adios2_bp5_no_steps(/* usesteps = */ false);
     adios2_bp5_no_steps(/* usesteps = */ true);
 }
