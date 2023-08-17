@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ChunkInfo.hpp"
+#include "openPMD/binding/python/Mpi.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
 
@@ -73,4 +74,26 @@ void init_Chunk(py::module &m)
 
                 return WrittenChunkInfo(offset, extent, sourceID);
             }));
+
+    py::enum_<host_info::Method>(m, "HostInfo")
+        .value("HOSTNAME", host_info::Method::HOSTNAME)
+#if openPMD_HAVE_MPI
+        .def(
+            "get_collective",
+            [](host_info::Method const &self, py::object &comm) {
+                auto variant = pythonObjectAsMpiComm(comm);
+                if (auto errorMsg = std::get_if<std::string>(&variant))
+                {
+                    throw std::runtime_error("[Series] " + *errorMsg);
+                }
+                else
+                {
+                    return host_info::byMethodCollective(
+                        std::get<MPI_Comm>(variant), self);
+                }
+            })
+#endif
+        .def("get", [](host_info::Method const &self) {
+            return host_info::byMethod(self);
+        });
 }
