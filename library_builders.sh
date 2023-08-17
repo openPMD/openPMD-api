@@ -4,7 +4,14 @@
 set -eu -o pipefail
 
 BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
-CPU_COUNT="${CPU_COUNT:-2}"
+
+# https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+if [ "$(uname -s)" = "Darwin" ]
+then
+    CPU_COUNT="${CPU_COUNT:-3}"
+else
+    CPU_COUNT="${CPU_COUNT:-2}"
+fi
 
 function install_buildessentials {
     if [ -e buildessentials-stamp ]; then return; fi
@@ -96,61 +103,48 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.7.1.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.7.1.tar.gz
+    #curl -sLo adios2-2.9.0.tar.gz \
+    #    https://github.com/ornladios/ADIOS2/archive/v2.9.0.tar.gz
+    curl -sLo adios2-fix-blosc2-findpackage.tar.gz \
+        https://github.com/ax3l/ADIOS2/archive/refs/heads/fix-blosc2-findpackage.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
 
-    # Patch PThread Propagation
-    curl -sLo adios-pthread.patch \
-        https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
-    python3 -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
-
-    # DILL macOS arm64 or universal2 binary
-    #   https://github.com/ornladios/ADIOS2/issues/3116
-    #   needs rebase (or use ADIOS2-2.8.0)
-    #curl -sLo dill-universal.patch \
-    #    https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/3118.patch
-    #python3 -m patch -p 1 -d ADIOS2-2.7.1 dill-universal.patch
-    ADIOS2_USE_SST=ON
-    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
-        ADIOS2_USE_SST=OFF
-    fi
-
+    # build
     mkdir build-adios2
     cd build-adios2
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    if [ "$(uname -s)" = "Linux" ]
-    then
-        EVPATH_ZPL="ON"
-    else
-        # ZPL in EVPATH disabled because it does not build with older macOS
-        #       https://github.com/GTkorvo/evpath/issues/47
-        EVPATH_ZPL="OFF"
-    fi
     PATH=${CMAKE_BIN}:${PATH} cmake               \
         -DBUILD_SHARED_LIBS=OFF                   \
         -DBUILD_TESTING=OFF                       \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
         -DADIOS2_BUILD_EXAMPLES=OFF               \
+        -DADIOS2_Blosc2_PREFER_SHARED=OFF         \
         -DADIOS2_USE_BZip2=OFF                    \
+        -DADIOS2_USE_Blosc2=ON                    \
         -DADIOS2_USE_Fortran=OFF                  \
+        -DADIOS2_USE_HDF5=OFF                     \
+        -DADIOS2_USE_MHS=OFF                      \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
-        -DADIOS2_USE_SST=${ADIOS2_USE_SST}        \
+        -DADIOS2_USE_SST=ON                       \
         -DADIOS2_USE_ZFP=ON                       \
         -DADIOS2_RUN_INSTALL_TEST=OFF             \
-        -DEVPATH_USE_ZPL_ENET=${EVPATH_ZPL}       \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
         -DCMAKE_VERBOSE_MAKEFILE=ON               \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
+        -DADIOS2_INSTALL_GENERATE_CONFIG=OFF      \
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
 
     make -j${CPU_COUNT}
     make install
+
+    # CMake Config package of C-Blosc 2.10.1+ only
+    rm -rf ${BUILD_PREFIX}/lib*/cmake/adios2/FindBlosc2.cmake
+
     cd -
 
     rm -rf build-adios2
@@ -201,6 +195,42 @@ function build_blosc {
     rm -rf build-blosc
 
     touch blosc-stamp
+}
+
+function build_blosc2 {
+    if [ -e blosc-stamp2 ]; then return; fi
+
+    curl -sLo blosc2-v2.10.1.tar.gz \
+        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.1.tar.gz
+    file blosc2*.tar.gz
+    tar -xzf blosc2*.tar.gz
+    rm blosc2*.tar.gz
+
+    mkdir build-blosc2
+    cd build-blosc2
+    PY_BIN=$(which python3)
+    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    PATH=${CMAKE_BIN}:${PATH} cmake          \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON   \
+      -DBUILD_STATIC=ON                      \
+      -DBUILD_SHARED=OFF                     \
+      -DBUILD_BENCHMARKS=OFF                 \
+      -DBUILD_EXAMPLES=OFF                   \
+      -DBUILD_FUZZERS=OFF                    \
+      -DBUILD_PLUGINS=OFF                    \
+      -DBUILD_TESTS=OFF                      \
+      -DCMAKE_VERBOSE_MAKEFILE=ON            \
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
+      -DPREFER_EXTERNAL_ZLIB=ON              \
+      -DZLIB_USE_STATIC_LIBS=ON              \
+      ../c-blosc2-*
+    make -j${CPU_COUNT}
+    make install
+    cd -
+
+    rm -rf build-blosc2
+
+    touch blosc-stamp2
 }
 
 function build_zfp {
@@ -271,6 +301,7 @@ function build_hdf5 {
 
     # macOS cross-compile
     HOST_ARG=""
+    #   heavily based on conda-forge hdf5-feedstock and h5py's cibuildwheel instructions
     #   https://github.com/conda-forge/hdf5-feedstock/blob/cbbd57d58f7f5350ca679eaad49354c11dd32b95/recipe/build.sh#L53-L80
     if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
         # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh
@@ -306,13 +337,18 @@ function build_hdf5 {
         --prefix=${BUILD_PREFIX}
 
     if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        (
         # https://github.com/h5py/h5py/blob/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/configure_hdf5_mac.sh - build_h5detect
         mkdir -p native-build/bin
         pushd native-build/bin
-        CFLAGS= $CC ../../src/H5detect.c -I ../../src/ -o H5detect
-        CFLAGS= $CC ../../src/H5make_libsettings.c -I ../../src/ -o H5make_libsettings
-        popd
 
+        # MACOSX_DEPLOYMENT_TARGET is for the target_platform and not for build_platform
+        unset MACOSX_DEPLOYMENT_TARGET
+
+        CFLAGS="" $CC ../../src/H5detect.c -I ../../src/ -o H5detect
+        CFLAGS="" $CC ../../src/H5make_libsettings.c -I ../../src/ -o H5make_libsettings
+        popd
+        )
         export PATH="$(pwd)/native-build/bin:$PATH"
     fi
 
@@ -339,11 +375,16 @@ fi
 
 install_buildessentials
 build_zlib
-build_blosc
 build_zfp
+if [[ "$(uname -m)" != "ppc64le" ]]; then
+    # builds too long for Travis-CI
+    build_blosc
+fi
+build_blosc2
 build_hdf5
-# skip ADIOS1 build for M1
-if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" ]]; then
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" && "$(uname -m)" != "ppc64le" ]]; then
+    # macOS: skip ADIOS1 build for M1
+    # Linux: with ADIOS2 also enabled, this builds too long for Travis-CI
     build_adios1
 fi
 build_adios2
