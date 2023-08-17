@@ -81,20 +81,20 @@ std::vector<std::string> testedFileExtensions()
         allExtensions.begin(),
         allExtensions.end(),
         []([[maybe_unused]] std::string const &ext) {
-#if openPMD_HAVE_ADIOS2
-#define HAS_ADIOS_2_9 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 209)
-#if HAS_ADIOS_2_9
+#if openPMD_HAS_ADIOS_2_9
             // sst and ssc need a receiver for testing
             // bp5 is already tested via bp
-            return ext == "sst" || ext == "ssc" || ext == "bp5";
+            // toml parsing is very slow and its implementation is equivalent to
+            // the json backend, so it is only activated for selected tests
+            return ext == "sst" || ext == "ssc" || ext == "bp5" ||
+                ext == "toml";
 #else
+            // toml parsing is very slow and its implementation is equivalent to
+            // the json backend, so it is only activated for selected tests
             // sst and ssc need a receiver for testing
             // bp4 is already tested via bp
-            return ext == "sst" || ext == "ssc" || ext == "bp4";
-#endif
-#undef HAS_ADIOS_2_9
-#else
-            return false;
+            return ext == "sst" || ext == "ssc" || ext == "bp4" ||
+                ext == "toml";
 #endif
         });
     return {allExtensions.begin(), newEnd};
@@ -1231,7 +1231,7 @@ TEST_CASE("particle_patches", "[serial]")
 
 inline void dtype_test(const std::string &backend)
 {
-    bool test_long_double = (backend != "json") || sizeof(long double) <= 8;
+    bool test_long_double = backend != "json" && backend != "toml";
     bool test_long_long = (backend != "json") || sizeof(long long) <= 8;
     {
         Series s = Series("../samples/dtype_test." + backend, Access::CREATE);
@@ -1447,7 +1447,10 @@ inline void dtype_test(const std::string &backend)
     REQUIRE(s.getAttribute("short").dtype == Datatype::SHORT);
     REQUIRE(s.getAttribute("int").dtype == Datatype::INT);
     REQUIRE(s.getAttribute("long").dtype == Datatype::LONG);
-    REQUIRE(s.getAttribute("longlong").dtype == Datatype::LONGLONG);
+    if (test_long_long)
+    {
+        REQUIRE(s.getAttribute("longlong").dtype == Datatype::LONGLONG);
+    }
     REQUIRE(s.getAttribute("ushort").dtype == Datatype::USHORT);
     REQUIRE(s.getAttribute("uint").dtype == Datatype::UINT);
     REQUIRE(s.getAttribute("ulong").dtype == Datatype::ULONG);
@@ -1459,7 +1462,10 @@ inline void dtype_test(const std::string &backend)
     REQUIRE(s.getAttribute("vecShort").dtype == Datatype::VEC_SHORT);
     REQUIRE(s.getAttribute("vecInt").dtype == Datatype::VEC_INT);
     REQUIRE(s.getAttribute("vecLong").dtype == Datatype::VEC_LONG);
-    REQUIRE(s.getAttribute("vecLongLong").dtype == Datatype::VEC_LONGLONG);
+    if (test_long_long)
+    {
+        REQUIRE(s.getAttribute("vecLongLong").dtype == Datatype::VEC_LONGLONG);
+    }
     REQUIRE(s.getAttribute("vecUShort").dtype == Datatype::VEC_USHORT);
     REQUIRE(s.getAttribute("vecUInt").dtype == Datatype::VEC_UINT);
     REQUIRE(s.getAttribute("vecULong").dtype == Datatype::VEC_ULONG);
@@ -1507,6 +1513,15 @@ TEST_CASE("dtype_test", "[serial]")
     for (auto const &t : testedFileExtensions())
     {
         dtype_test(t);
+    }
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        dtype_test("toml");
     }
 }
 
@@ -2105,6 +2120,15 @@ TEST_CASE("fileBased_write_test", "[serial]")
     for (auto const &t : testedFileExtensions())
     {
         fileBased_write_test(t);
+    }
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        fileBased_write_test("toml");
     }
 }
 
@@ -7404,5 +7428,14 @@ TEST_CASE("groupbased_read_write", "[serial]")
                 break;
             }
         }
+    }
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        groupbased_read_write("toml");
     }
 }

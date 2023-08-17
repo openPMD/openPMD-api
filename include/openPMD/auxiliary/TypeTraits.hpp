@@ -24,6 +24,7 @@
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <array>
+#include <complex>
 #include <cstddef> // size_t
 #include <memory>
 #include <vector>
@@ -52,6 +53,18 @@ namespace detail
 
     template <typename T, size_t n>
     struct IsArray<std::array<T, n>>
+    {
+        static constexpr bool value = true;
+    };
+
+    template <typename>
+    struct IsComplex
+    {
+        static constexpr bool value = false;
+    };
+
+    template <typename T>
+    struct IsComplex<std::complex<T>>
     {
         static constexpr bool value = true;
     };
@@ -113,6 +126,9 @@ using IsPointer_t = typename detail::IsPointer<T>::type;
  */
 template <typename T>
 inline constexpr bool IsContiguousContainer_v = IsVector_v<T> || IsArray_v<T>;
+
+template <typename T>
+inline constexpr bool IsComplex_v = detail::IsComplex<T>::value;
 
 namespace
 {
