@@ -41,6 +41,9 @@ The central Python API calls to convert to DASK datatypes are the ``ParticleSpec
 
    # note: no series.flush() needed
 
+The ``to_dask_array`` method will automatically set Dask array chunking based on the available chunks in the read data set.
+The default behavior can be overridden by passing an additional keyword argument ``chunks``, see the `dask.array.from_array documentation <https://docs.dask.org/en/stable/generated/dask.array.from_array.html>`__ for more details.
+For example, to chunk only along the outermost axis in a 3D dataset using the default Dask array chunk size, call ``to_dask_array(chunks={0: 'auto', 1: -1,  2:  -1})``.
 
 Example
 -------
