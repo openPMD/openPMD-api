@@ -195,7 +195,7 @@ python3 -m pip install openpmd-api
 If MPI-support shall be enabled, we always have to recompile:
 ```bash
 # optional:                                    --user
-python3 -m pip install -U pip setuptools wheel
+python3 -m pip install -U pip packaging setuptools wheel
 python3 -m pip install -U cmake
 
 # optional:                                                                   --user
