@@ -8,11 +8,12 @@ The JSON and TOML backends are always available.
 
 .. note::
 
-   Both the JSON and the TOML backends are not intended for large-scale use.
+   Both the JSON and the TOML backends are not intended for large-scale data I/O.
 
    The JSON backend is mainly intended for prototyping and learning, or similar workflows where setting up a large IO backend such as HDF5 or ADIOS2 is perceived as obstructive. It can also be used for small datasets that need to be stored in text format rather than binary.
 
-   The TOML backend is intended for handwritten configuration files. The motivation for its addition to the openPMD-api was the handwritten specification for physical quantities along the openPMD standard within the context of experiment workflows.
+   The TOML backend is intended for exchanging the *structure* of a data series without its "heavy" data fields.
+   For instance, one can easily create and exchange human-readable, machine-actionable data configurations for experiments and simulations.
 
 
 JSON File Format
