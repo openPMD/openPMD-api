@@ -359,7 +359,7 @@ class APITest(unittest.TestCase):
         # c_types
         self.assertEqual(series.get_attribute("byte_c"), 30)
         self.assertEqual(series.get_attribute("ubyte_c"), 50)
-        # TODO: returns [100] instead of 100 in json
+        # TODO: returns [100] instead of 100 in json/toml
         if file_ending != "json" and file_ending != "toml":
             self.assertEqual(chr(series.get_attribute("char_c")), 'd')
         self.assertEqual(series.get_attribute("int16_c"), 2)
