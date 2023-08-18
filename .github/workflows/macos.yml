@@ -49,9 +49,9 @@ jobs:
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 3
-        ctest --test-dir build --verbose
+        # Install the Julia side of CxxWrap
         julia --eval 'using Pkg; Pkg.add("CxxWrap")'
-        julia src/binding/julia/tests/minimal_example.jl
+        ctest --test-dir build --verbose
 
   appleclang13_py:
     runs-on: macos-11
