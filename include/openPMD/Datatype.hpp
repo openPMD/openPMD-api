@@ -92,7 +92,7 @@ enum class Datatype : int
  *        listed in order in a vector.
  *
  */
-extern std::vector<Datatype> openPMD_Datatypes;
+std::vector<Datatype> openPMD_Datatypes();
 
 /** @brief Fundamental equivalence check for two given types T and U.
  *
