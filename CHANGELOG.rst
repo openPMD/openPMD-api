@@ -5,7 +5,7 @@ Changelog
 
 0.15.2
 ------
-**Date:** 2023-08-17
+**Date:** 2023-08-18
 
 Python, ADIOS2 and HDF5 Fixes
 
