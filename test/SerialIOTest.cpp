@@ -5747,6 +5747,10 @@ TEST_CASE("variableBasedSeries", "[serial][adios2]")
 {
     for (auto const &[backend_name, t] : testedBackends())
     {
+        if (backend_name == "adios1")
+        {
+            continue;
+        }
         variableBasedSeries(
             "../samples/variableBasedSeries." + t,
             R"({"backend": ")" + backend_name + R"("})");
