@@ -26,7 +26,7 @@ Bug Fixes
 - Python:
 
   - DataFrame to ASCII: Header of First Column in CSV bug documentation third party #1480 #1501
-  - Update __repr__ method of major objects in openPMD hierarchy #1476
+  - Update ``__repr__`` method of major objects in openPMD hierarchy #1476
   - openpmd-pipe: set correct install permissions #1459
   - Better error message when loading to a buffer with mismatched type #1452
   - Use lazy imports for dask and pandas #1442
@@ -41,6 +41,7 @@ Bug Fixes
   - Handle unknown datatypes in datasets #1469
   - Support for float128 on ARM64/PPC64 #1364
   - Fix Char Type Matching #1433 #1431
+  - Install: Warn and Continue on Empty ``HDF5_VERSION`` in CMake #1512
 - CI:
 
   - type comparison in openpmd-pipe #1490
@@ -49,7 +50,7 @@ Other
 """""
 
 - Better handling for file extensions #1473 #1471
-- Optional debugging output for AbstractIOHandlerImpl::flush() #1495
+- Optional debugging output for ``AbstractIOHandlerImpl::flush()`` #1495
 - Python: 3.8+ #1502
 - CI:
 
@@ -61,12 +62,12 @@ Other
   - Analysis with third party data science frameworks #1444
   - Sphinx Copybutton and Design #1461
   - Fix small documentation issues after 0.15 release #1440
-  - HDF5_DO_MPI_FILE_SYNC #1427
+  - ``HDF5_DO_MPI_FILE_SYNC`` #1427
   - OpenMPI-ROMIO/HDF5/Chunking issue #1441
   - Remove ADIOS2 schema 2021 #1451
   - Linking to C++ Projects #1445
   - Fix deprecated APIs in first read/write examples #1435
-  - Update .readthedocs.yml #1438
+  - Update ``.readthedocs.yml`` #1438
   - Fix Bib Authors #1434
   - More careful documentation of streaming API #1430
 
