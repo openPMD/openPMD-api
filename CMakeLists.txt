@@ -552,7 +552,11 @@ target_include_directories(openPMD PUBLIC
 
 # Winsock library for gethostname() function on Windows
 if(WIN32)
-    target_link_libraries(openPMD PRIVATE ws2_32)
+    # need to link this publically as WSAStartup() and WSACleanup() need to be
+    # called surrounding the gethostname() function on Windows
+    # and it needs to be done at client site since the winsocks API is
+    # initialized statically per process....
+    target_link_libraries(openPMD PUBLIC ws2_32)
 endif()
 
 # Catch2 for unit tests
