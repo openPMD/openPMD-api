@@ -19,11 +19,13 @@ Bug Fixes
 """""""""
 
 - Don't require unitSI when reading a patch record component #1470
-- Examples: Fix types of particle constant records #1316 #1510
+- Examples:
+
+  - Streaming examples: Set WAN as default transport #1511
+  - Fix types of particle constant records #1316 #1510
 - Python:
 
-  - DataFrame to ASCII: Header of First Column in CSV bug documentation third party
-#1480 #1501
+  - DataFrame to ASCII: Header of First Column in CSV bug documentation third party #1480 #1501
   - Update __repr__ method of major objects in openPMD hierarchy #1476
   - openpmd-pipe: set correct install permissions #1459
   - Better error message when loading to a buffer with mismatched type #1452
