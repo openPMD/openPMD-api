@@ -25,6 +25,8 @@
 
 using namespace openPMD;
 
+Dataset globalDataset(Datatype::CHAR, {1});
+
 TEST_CASE("versions_test", "[core]")
 {
     auto const apiVersion = getVersion();
@@ -439,11 +441,11 @@ TEST_CASE("record_constructor_test", "[core]")
     ps["position"][RecordComponent::SCALAR].resetDataset(dset);
     ps["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
-    REQUIRE(r["x"].unitSI() == 1);
+    REQUIRE(r["x"].resetDataset(dset).unitSI() == 1);
     REQUIRE(r["x"].numAttributes() == 1); /* unitSI */
-    REQUIRE(r["y"].unitSI() == 1);
+    REQUIRE(r["y"].resetDataset(dset).unitSI() == 1);
     REQUIRE(r["y"].numAttributes() == 1); /* unitSI */
-    REQUIRE(r["z"].unitSI() == 1);
+    REQUIRE(r["z"].resetDataset(dset).unitSI() == 1);
     REQUIRE(r["z"].numAttributes() == 1); /* unitSI */
     std::array<double, 7> zeros{{0., 0., 0., 0., 0., 0., 0.}};
     REQUIRE(r.unitDimension() == zeros);
@@ -488,13 +490,15 @@ TEST_CASE("recordComponent_modification_test", "[core]")
 
     r["x"].setUnitSI(2.55999e-7);
     r["y"].setUnitSI(4.42999e-8);
-    REQUIRE(r["x"].unitSI() == static_cast<double>(2.55999e-7));
+    REQUIRE(
+        r["x"].resetDataset(dset).unitSI() == static_cast<double>(2.55999e-7));
     REQUIRE(r["x"].numAttributes() == 1); /* unitSI */
-    REQUIRE(r["y"].unitSI() == static_cast<double>(4.42999e-8));
+    REQUIRE(
+        r["y"].resetDataset(dset).unitSI() == static_cast<double>(4.42999e-8));
     REQUIRE(r["y"].numAttributes() == 1); /* unitSI */
 
     r["z"].setUnitSI(1);
-    REQUIRE(r["z"].unitSI() == static_cast<double>(1));
+    REQUIRE(r["z"].resetDataset(dset).unitSI() == static_cast<double>(1));
     REQUIRE(r["z"].numAttributes() == 1); /* unitSI */
 }
 
@@ -505,13 +509,13 @@ TEST_CASE("mesh_constructor_test", "[core]")
     Mesh &m = o.iterations[42].meshes["E"];
 
     std::vector<double> pos{0};
-    REQUIRE(m["x"].unitSI() == 1);
+    REQUIRE(m["x"].resetDataset(globalDataset).unitSI() == 1);
     REQUIRE(m["x"].numAttributes() == 2); /* unitSI, position */
     REQUIRE(m["x"].position<double>() == pos);
-    REQUIRE(m["y"].unitSI() == 1);
+    REQUIRE(m["y"].resetDataset(globalDataset).unitSI() == 1);
     REQUIRE(m["y"].numAttributes() == 2); /* unitSI, position */
     REQUIRE(m["y"].position<double>() == pos);
-    REQUIRE(m["z"].unitSI() == 1);
+    REQUIRE(m["z"].resetDataset(globalDataset).unitSI() == 1);
     REQUIRE(m["z"].numAttributes() == 2); /* unitSI, position */
     REQUIRE(m["z"].position<double>() == pos);
     REQUIRE(m.geometry() == Mesh::Geometry::cartesian);
@@ -534,9 +538,9 @@ TEST_CASE("mesh_modification_test", "[core]")
     Series o = Series("./MyOutput_%T.json", Access::CREATE);
 
     Mesh &m = o.iterations[42].meshes["E"];
-    m["x"];
-    m["y"];
-    m["z"];
+    m["x"].resetDataset(globalDataset);
+    m["y"].resetDataset(globalDataset);
+    m["z"].resetDataset(globalDataset);
 
     m.setGeometry(Mesh::Geometry::spherical);
     REQUIRE(m.geometry() == Mesh::Geometry::spherical);

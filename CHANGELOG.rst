@@ -19,6 +19,7 @@ Bug Fixes
 """""""""
 
 - Don't require unitSI when reading a patch record component #1470
+- Examples: Fix types of particle constant records #1316 #1510
 - Python:
 
   - DataFrame to ASCII: Header of First Column in CSV bug documentation third party

@@ -83,8 +83,9 @@ int main()
                 {{io::UnitDimension::M, 1}});
             electrons["displacement"]["x"].setUnitSI(1e-6);
             electrons.erase("displacement");
-            electrons["weighting"][io::RecordComponent::SCALAR].makeConstant(
-                1.e-5);
+            electrons["weighting"][io::RecordComponent::SCALAR]
+                .resetDataset({io::Datatype::FLOAT, {1}})
+                .makeConstant(1.e-5);
         }
 
         io::Mesh mesh = cur_it.meshes["lowRez_2D_field"];
