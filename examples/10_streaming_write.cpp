@@ -20,7 +20,16 @@ int main()
     }
 
     // open file for writing
-    Series series = Series("electrons.sst", Access::CREATE);
+    Series series = Series("electrons.sst", Access::CREATE, R"(
+{
+  "adios2": {
+    "engine": {
+      "parameters": {
+        "DataTransport": "WAN"
+      }
+    }
+  }
+})");
 
     Datatype datatype = determineDatatype<position_t>();
     constexpr unsigned long length = 10ul;
