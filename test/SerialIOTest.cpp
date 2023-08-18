@@ -40,6 +40,12 @@
 #include <unistd.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+// windows.h defines this macro and it breaks any function with the same name
+#undef max
+#endif
+
 using namespace openPMD;
 
 struct BackendSelection
@@ -1555,6 +1561,10 @@ struct ReadFromAnyType
 
 inline void write_test(const std::string &backend)
 {
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 0), &wsaData);
+#endif
     Series o = Series(
         "../samples/serial_write." + backend,
         Access::CREATE,
@@ -1675,6 +1685,9 @@ inline void write_test(const std::string &backend)
     REQUIRE(
         (read.mpiRanksMetaInfo(/* collective = */ false) ==
          chunk_assignment::RankMeta{{0, host_info::hostname()}}));
+#ifdef _WIN32
+    WSACleanup();
+#endif
 }
 
 TEST_CASE("write_test", "[serial]")
@@ -1825,6 +1838,10 @@ fileBased_add_EDpic(ParticleSpecies &e, uint64_t const num_particles)
 
 inline void fileBased_write_test(const std::string &backend)
 {
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 0), &wsaData);
+#endif
     if (auxiliary::directory_exists("../samples/subdir"))
         auxiliary::remove_directory("../samples/subdir");
 
@@ -2205,6 +2222,9 @@ inline void fileBased_write_test(const std::string &backend)
         close(dirfd);
     }
 #endif // defined(__unix__)
+#ifdef _WIN32
+    WSACleanup();
+#endif
 }
 
 TEST_CASE("fileBased_write_test", "[serial]")
