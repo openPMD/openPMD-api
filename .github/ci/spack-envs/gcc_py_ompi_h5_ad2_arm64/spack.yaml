@@ -1,0 +1,60 @@
+# This is a Spack environment file.
+#
+# Activating and installing this environment will provide all dependencies
+# that are needed for full-feature development.
+#   https//spack.readthedocs.io/en/latest/environments.html#anonymous-environments
+#
+spack:
+  specs:
+  - adios2
+  - hdf5
+  - openmpi
+
+  packages:
+    adios2:
+      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+    cmake:
+      externals:
+      - spec: cmake@3.23.0
+        prefix: /usr
+      buildable: False
+    openmpi:
+      externals:
+      - spec: openmpi@2.1.1
+        prefix: /usr
+      buildable: False
+    perl:
+      externals:
+      - spec: perl@5.26.1
+        prefix: /usr
+      buildable: False
+    python:
+      externals:
+      - spec: python@3.8.10
+        prefix: /usr
+      buildable: False
+    all:
+      target: [aarch64]
+      variants: ~fortran
+      compiler: [gcc@9.0.0]
+
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: ubuntu20.04
+      paths:
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      spec: gcc@9.0.0
+      target: aarch64
+
+  config:
+    build_jobs: 2
+
+  mirrors:
+    E4S: https://cache.e4s.io
