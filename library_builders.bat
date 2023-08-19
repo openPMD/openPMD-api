@@ -88,11 +88,11 @@ exit /b 0
 :build_blosc2
   if exist blosc2-stamp exit /b 0
 
-  curl -sLo blosc2-2.10.1.zip ^
-    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.1.zip
-  powershell Expand-Archive blosc2-2.10.1.zip -DestinationPath dep-blosc2
+  curl -sLo blosc2-2.10.2.zip ^
+    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.2.zip
+  powershell Expand-Archive blosc2-2.10.2.zip -DestinationPath dep-blosc2
 
-  cmake -S dep-blosc2/c-blosc2-2.10.1 -B build-blosc2 ^
+  cmake -S dep-blosc2/c-blosc2-2.10.2 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED=OFF          ^
     -DBUILD_STATIC=ON           ^
@@ -100,9 +100,9 @@ exit /b 0
     -DBUILD_EXAMPLES=OFF        ^
     -DBUILD_FUZZERS=OFF         ^
     -DBUILD_PLUGINS=OFF         ^
-    -DBUILD_TESTS=OFF
-::    -DPREFER_EXTERNAL_ZLIB=ON
-::    -DZLIB_USE_STATIC_LIBS=ON
+    -DBUILD_TESTS=OFF           ^
+    -DPREFER_EXTERNAL_ZLIB=ON   ^
+    -DZLIB_USE_STATIC_LIBS=ON
   if errorlevel 1 exit 1
 
   cmake --build build-blosc2 --parallel %CPU_COUNT%

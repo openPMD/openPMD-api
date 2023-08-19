@@ -200,8 +200,8 @@ function build_blosc {
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
-    curl -sLo blosc2-v2.10.1.tar.gz \
-        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.1.tar.gz
+    curl -sLo blosc2-v2.10.2.tar.gz \
+        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.2.tar.gz
     file blosc2*.tar.gz
     tar -xzf blosc2*.tar.gz
     rm blosc2*.tar.gz
