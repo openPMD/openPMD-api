@@ -103,10 +103,10 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    #curl -sLo adios2-2.9.0.tar.gz \
-    #    https://github.com/ornladios/ADIOS2/archive/v2.9.0.tar.gz
-    curl -sLo adios2-fix-blosc2-findpackage.tar.gz \
-        https://github.com/ax3l/ADIOS2/archive/refs/heads/fix-blosc2-findpackage.tar.gz
+    #curl -sLo adios2-2.9.1.tar.gz \
+    #    https://github.com/ornladios/ADIOS2/archive/v2.9.1.tar.gz
+    curl -sLo adios2-2.9.1.tar.gz \
+        https://github.com/ax3l/ADIOS2/archive/refs/heads/release-2.9.1-bp-wheels.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
