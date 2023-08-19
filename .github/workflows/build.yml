@@ -70,7 +70,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         path: 'src'
-        ref: '0.15.1'
+        ref: '0.15.2'
 
     - uses: actions/checkout@v2
       with:
