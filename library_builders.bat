@@ -57,36 +57,6 @@ exit /b 0
   if errorlevel 1 exit 1
 exit /b 0
 
-:build_blosc
-  if exist blosc-stamp exit /b 0
-
-  curl -sLo blosc-1.21.0.zip ^
-    https://github.com/Blosc/c-blosc/archive/v1.21.0.zip
-  powershell Expand-Archive blosc-1.21.0.zip -DestinationPath dep-blosc
-
-  cmake -S dep-blosc/c-blosc-1.21.0 -B build-blosc ^
-    -DCMAKE_BUILD_TYPE=Release  ^
-    -DBUILD_BENCHMARKS=OFF      ^
-    -DBUILD_SHARED=OFF          ^
-    -DBUILD_STATIC=ON           ^
-    -DBUILD_TESTS=OFF           ^
-    -DZLIB_USE_STATIC_LIBS=ON   ^
-    -DDEACTIVATE_SNAPPY=ON
-  if errorlevel 1 exit 1
-
-  cmake --build build-blosc --parallel %CPU_COUNT%
-  if errorlevel 1 exit 1
-
-  cmake --build build-blosc --target install --config Release
-  if errorlevel 1 exit 1
-
-  rmdir /s /q build-blosc
-  if errorlevel 1 exit 1
-
-  break > blosc-stamp
-  if errorlevel 1 exit 1
-exit /b 0
-
 :build_blosc2
   if exist blosc2-stamp exit /b 0
 
