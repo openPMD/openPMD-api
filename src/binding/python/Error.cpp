@@ -1,9 +1,14 @@
+/* Copyright 2019-2023 The openPMD Community
+ *
+ * This header is used to centrally define classes that shall not violate the
+ * C++ one-definition-rule (ODR) for various Python translation units.
+ *
+ * Authors: Franz Poeschel, Axel Huebl
+ * License: LGPL-3.0-or-later
+ */
 #include "openPMD/Error.hpp"
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-using namespace openPMD;
+#include "openPMD/binding/python/Common.hpp"
 
 void init_Error(py::module &m)
 {
