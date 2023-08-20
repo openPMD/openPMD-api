@@ -576,8 +576,9 @@ target_include_directories(openPMD SYSTEM PRIVATE
     $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # HDF5 Backend
+#   TODO: Once we require CMake 3.20+, simply link hdf5::hdf5 C lib target
 if(openPMD_HAVE_HDF5)
-    target_link_libraries(openPMD PRIVATE ${HDF5_LIBRARIES})
+    target_link_libraries(openPMD PUBLIC ${HDF5_LIBRARIES})
     target_include_directories(openPMD SYSTEM PRIVATE ${HDF5_INCLUDE_DIRS})
     target_compile_definitions(openPMD PRIVATE ${HDF5_DEFINITIONS})
 endif()
