@@ -4,7 +4,7 @@ jobs:
   linux-aarch64:
     working_directory: ~/linux-aarch64-wheels
     machine:
-      image: ubuntu-2004:2022.04.1
+      image: ubuntu-2204:current
     # resource_class is what tells CircleCI to use an ARM worker for native arm builds
     #   https://circleci.com/product/features/resource-classes/
     #   https://circleci.com/docs/using-arm/
@@ -44,8 +44,7 @@ jobs:
           name: Test openPMD-api
           command: |
             eval $(spack env activate --sh .github/ci/spack-envs/gcc_py_ompi_h5_ad2_arm64/)
-            cd build
-            ctest --output-on-failure
+            ctest --test-dir build --output-on-failure
 
 workflows:
   version: 2

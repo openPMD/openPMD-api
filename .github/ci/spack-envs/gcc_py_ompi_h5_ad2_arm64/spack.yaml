@@ -15,43 +15,43 @@ spack:
       variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
     cmake:
       externals:
-      - spec: cmake@3.23.0
+      - spec: cmake@3.22.1
         prefix: /usr
       buildable: False
     libfabric:
       externals:
-      - spec: libfabric@1.6.2
+      - spec: libfabric@1.11.0
         prefix: /usr
       buildable: False
     openmpi:
       externals:
-      - spec: openmpi@2.1.1
+      - spec: openmpi@4.1.2
         prefix: /usr
       buildable: False
     perl:
       externals:
-      - spec: perl@5.26.1
+      - spec: perl@5.34.0
         prefix: /usr
       buildable: False
     pkgconf:
       externals:
-      - spec: pkgconf@1.6.3
+      - spec: pkgconf@1.8.0
         prefix: /usr
       buildable: False
     python:
       externals:
-      - spec: python@3.8.10
+      - spec: python@3.10.12
         prefix: /usr
       buildable: False
     hdf5:
       externals:
-      - spec: hdf5@1.10.4
+      - spec: hdf5@1.10.7
         prefix: /usr
       buildable: False
     all:
       target: [aarch64]
       variants: ~fortran
-      compiler: [gcc@9.4.0]
+      compiler: [gcc@11.4.0]
 
   compilers:
   - compiler:
@@ -59,13 +59,13 @@ spack:
       extra_rpaths: []
       flags: {}
       modules: []
-      operating_system: ubuntu20.04
+      operating_system: ubuntu22.04
       paths:
         cc: /usr/bin/gcc
         cxx: /usr/bin/g++
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
-      spec: gcc@9.4.0
+      spec: gcc@11.4.0
       target: aarch64
 
   # arm.large with 4 vCPU cores
@@ -74,7 +74,6 @@ spack:
   config:
     build_jobs: 4
 
-  # https://cache.spack.io/tag/v0.20.1/?stack=aws-ahug-aarch64
+  # https://cache.spack.io
   mirrors:
     E4S: https://cache.e4s.io
-    AWS: https://binaries.spack.io/v0.20.1/aws-ahug-aarch64
