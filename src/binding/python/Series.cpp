@@ -18,16 +18,13 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <pybind11/gil.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
+#include "openPMD/Series.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IterationEncoding.hpp"
-#include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 
 #if openPMD_HAVE_MPI
 //  re-implemented signatures:
@@ -37,9 +34,6 @@
 
 #include <sstream>
 #include <string>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 #if openPMD_HAVE_MPI
 /** mpi4py communicator wrapper

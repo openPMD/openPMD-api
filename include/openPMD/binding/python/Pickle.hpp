@@ -24,8 +24,7 @@
 #include "openPMD/Series.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include "Common.hpp"
 
 #include <exception>
 #include <string>
@@ -46,8 +45,6 @@ template <typename... T_Args, typename T_SeriesAccessor>
 inline void
 add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
 {
-    namespace py = pybind11;
-
     // helper: get first class in py::class_ - that's the type we pickle
     using PickledClass =
         typename std::tuple_element<0, std::tuple<T_Args...> >::type;

@@ -18,18 +18,14 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
-#include "openPMD/binding/python/UnitDimension.hpp"
 
-namespace py = pybind11;
-using namespace openPMD;
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/UnitDimension.hpp"
 
 void init_BaseRecord(py::module &m)
 {
