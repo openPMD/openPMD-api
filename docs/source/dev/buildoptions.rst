@@ -40,7 +40,8 @@ The following options switch between static and shared builds and control if dep
 CMake Option                   Values          Description
 ============================== =============== ==================================================
 ``openPMD_BUILD_SHARED_LIBS``  **ON**/OFF      Build the C++ API as shared library
-``HDF5_USE_STATIC_LIBRARIES``  ON/**OFF**      Require static HDF5 library
+``HDF5_USE_STATIC_LIBRARIES``  ON/OFF          Require static HDF5 library
+``ZLIB_USE_STATIC_LIBS``       ON/OFF          Require static ZLIB library
 ============================== =============== ==================================================
 
 Note that python modules (``openpmd_api.cpython.[...].so`` or ``openpmd_api.pyd``) are always dynamic libraries.
