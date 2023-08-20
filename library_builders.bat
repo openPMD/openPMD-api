@@ -11,6 +11,7 @@ goto:main
 
 :install_buildessentials
   python -m pip install --upgrade pip setuptools wheel
+  python -m pip install --upgrade cmake
   python -m pip install --upgrade "patch==1.*"
 exit /b 0
 
