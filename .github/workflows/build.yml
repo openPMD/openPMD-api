@@ -96,7 +96,7 @@ jobs:
 
     #- name: Apply Patches
     #  run: |
-    #    python -m pip install "patch==1.*"
+    #    python -m pip install patch
     #    cd src
     #    python -m patch .patch/0001-Hack-setup.py-CMake-trace-expand.patch
 
