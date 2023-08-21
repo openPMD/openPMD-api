@@ -120,8 +120,8 @@ install:
   # twine & cryptography: see
   #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
   #   https://github.com/pyca/cryptography/issues/6086
-  - python3 -m pip install twine cryptography~=3.3.2
-  - python3 -m pip install patch
+  - python -m pip install twine cryptography~=3.3.2
+  - python -m pip install patch
 
 # Download & Apply Patches
 #before_script:
@@ -132,20 +132,20 @@ install:
 #  - curl -sOL https://github.com/ax3l/openPMD-api/commit/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
 #  - curl -sOL https://gist.githubusercontent.com/ax3l/5e83edefe4b05cf6aa2a971649285fe0/raw/023cbd69e06715e5191ece741bb1de56560a9f96/0001-Bump-setup.py.patch
 #  - cd ..
-#  - python3 -m patch .patch/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
-#  - python3 -m patch .patch/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
-#  - python3 -m patch .patch/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
-#  - python3 -m patch .patch/0001-Bump-setup.py.patch
+#  - python -m patch .patch/b622cc5ea770f866c1e373185a9e389c04bdb54c.patch
+#  - python -m patch .patch/a1aac530dbc8261656cf6a07900374bc6ac6fcab.patch
+#  - python -m patch .patch/43c4bf4327616e9cf7e7992d91d9b8ccd4ee3a83.patch
+#  - python -m patch .patch/0001-Bump-setup.py.patch
 #  - cd ..
 
 script:
   - cd src
-  - travis_wait 45 python3 -m cibuildwheel --output-dir ../wheelhouse
+  - travis_wait 45 python -m cibuildwheel --output-dir ../wheelhouse
   - cd ..
 
 deploy:
   - provider: script
-    script: python3 -m twine upload --skip-existing wheelhouse/*
+    script: python -m twine upload --skip-existing wheelhouse/*
     skip_cleanup: true
     on:
       repo: ${TRAVIS_REPO_SLUG}
