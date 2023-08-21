@@ -73,7 +73,10 @@ exit /b 0
     -DBUILD_EXAMPLES=OFF        ^
     -DBUILD_FUZZERS=OFF         ^
     -DBUILD_PLUGINS=OFF         ^
-    -DBUILD_TESTS=OFF
+    -DBUILD_TESTS=OFF           ^
+    -DPIGZ_ENABLE_TESTS=OFF     ^
+    -DZLIB_ENABLE_TESTS=OFF     ^
+    -DZLIBNG_ENABLE_TESTS=OFF
 ::    -DPREFER_EXTERNAL_ZLIB=ON   ^
 ::    -DZLIB_USE_STATIC_LIBS=ON
   if errorlevel 1 exit 1
