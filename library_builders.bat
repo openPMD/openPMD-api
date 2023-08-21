@@ -11,16 +11,19 @@ goto:main
 
 :install_buildessentials
   python -m pip install --upgrade pip setuptools wheel
+  python -m pip install --upgrade cmake
   python -m pip install --upgrade "patch==1.*"
 exit /b 0
 
 :build_adios2
   if exist adios2-stamp exit /b 0
+  ::curl -sLo adios2-2.9.1.zip ^
+  ::  https://github.com/ornladios/ADIOS2/archive/v2.9.1.zip
   curl -sLo adios2-2.9.1.zip ^
-    https://github.com/ornladios/ADIOS2/archive/v2.9.1.zip
+    https://github.com/ax3l/ADIOS2/archive/refs/heads/release-2.9.1-bp-wheels.zip
   powershell Expand-Archive adios2-2.9.1.zip -DestinationPath dep-adios2
 
-  cmake -S dep-adios2/ADIOS2-2.9.1 -B build-adios2 ^
+  cmake -S dep-adios2/ADIOS2-release-2.9.1-bp-wheels -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED_LIBS=OFF     ^
     -DBUILD_TESTING=OFF         ^
@@ -55,44 +58,21 @@ exit /b 0
   if errorlevel 1 exit 1
 exit /b 0
 
-:build_blosc
-  if exist blosc-stamp exit /b 0
-
-  curl -sLo blosc-1.21.0.zip ^
-    https://github.com/Blosc/c-blosc/archive/v1.21.0.zip
-  powershell Expand-Archive blosc-1.21.0.zip -DestinationPath dep-blosc
-
-  cmake -S dep-blosc/c-blosc-1.21.0 -B build-blosc ^
-    -DCMAKE_BUILD_TYPE=Release  ^
-    -DBUILD_BENCHMARKS=OFF      ^
-    -DBUILD_SHARED=OFF          ^
-    -DBUILD_STATIC=ON           ^
-    -DBUILD_TESTS=OFF           ^
-    -DZLIB_USE_STATIC_LIBS=ON   ^
-    -DDEACTIVATE_SNAPPY=ON
-  if errorlevel 1 exit 1
-
-  cmake --build build-blosc --parallel %CPU_COUNT%
-  if errorlevel 1 exit 1
-
-  cmake --build build-blosc --target install --config Release
-  if errorlevel 1 exit 1
-
-  rmdir /s /q build-blosc
-  if errorlevel 1 exit 1
-
-  break > blosc-stamp
-  if errorlevel 1 exit 1
-exit /b 0
-
 :build_blosc2
   if exist blosc2-stamp exit /b 0
 
-  curl -sLo blosc2-2.10.1.zip ^
-    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.1.zip
-  powershell Expand-Archive blosc2-2.10.1.zip -DestinationPath dep-blosc2
+  curl -sLo blosc2-2.10.2.zip ^
+    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.2.zip
+  powershell Expand-Archive blosc2-2.10.2.zip -DestinationPath dep-blosc2
 
-  cmake -S dep-blosc2/c-blosc2-2.10.1 -B build-blosc2 ^
+  :: Fix Threads search in Blosc2Config.cmake
+  :: https://github.com/Blosc/c-blosc2/pull/549
+  curl -sLo blosc2-threads.patch ^
+    https://github.com/Blosc/c-blosc2/pull/549.patch
+  python -m patch -p 1 -d dep-blosc2/c-blosc2-2.10.2 blosc2-threads.patch
+  if errorlevel 1 exit 1
+
+  cmake -S dep-blosc2/c-blosc2-2.10.2 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED=OFF          ^
     -DBUILD_STATIC=ON           ^
@@ -100,8 +80,11 @@ exit /b 0
     -DBUILD_EXAMPLES=OFF        ^
     -DBUILD_FUZZERS=OFF         ^
     -DBUILD_PLUGINS=OFF         ^
-    -DBUILD_TESTS=OFF
-::    -DPREFER_EXTERNAL_ZLIB=ON
+    -DBUILD_TESTS=OFF           ^
+    -DPIGZ_ENABLE_TESTS=OFF     ^
+    -DZLIB_ENABLE_TESTS=OFF     ^
+    -DZLIBNG_ENABLE_TESTS=OFF
+::    -DPREFER_EXTERNAL_ZLIB=ON   ^
 ::    -DZLIB_USE_STATIC_LIBS=ON
   if errorlevel 1 exit 1
 
