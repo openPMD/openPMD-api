@@ -140,7 +140,7 @@ install:
 
 script:
   - cd src
-  - travis_wait 45 python -m cibuildwheel --output-dir ../wheelhouse
+  - ../run_long.sh python -m cibuildwheel --output-dir ../wheelhouse
   - cd ..
 
 deploy:
