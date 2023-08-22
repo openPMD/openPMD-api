@@ -139,9 +139,13 @@ install:
 #  - cd ..
 
 script:
+  # output something every <10 minutes
+  - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
   - cd src
-  - ../run_long.sh python -m cibuildwheel --output-dir ../wheelhouse
+  - python -m cibuildwheel --output-dir ../wheelhouse
   - cd ..
+  # terminate background sleep & print loop
+  - kill %1
 
 deploy:
   - provider: script
