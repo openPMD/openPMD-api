@@ -117,10 +117,6 @@ install:
   - cp library_builders.sh src/.github/
   - python -m pip install --upgrade pip setuptools wheel
   - python -m pip install cibuildwheel==2.14.1
-  # twine & cryptography: see
-  #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
-  #   https://github.com/pyca/cryptography/issues/6086
-  - python -m pip install twine cryptography~=3.3.2
   - python -m pip install patch
 
 # Download & Apply Patches
@@ -145,7 +141,9 @@ script:
 
 deploy:
   - provider: script
-    script: python -m twine upload --skip-existing wheelhouse/*
+    script:
+      - python -m pip install twine
+      - python -m twine upload --skip-existing wheelhouse/*
     skip_cleanup: true
     on:
       repo: ${TRAVIS_REPO_SLUG}
