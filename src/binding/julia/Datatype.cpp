@@ -28,7 +28,7 @@ void define_julia_Datatype(jlcxx::Module &mod)
 
     mod.set_const("UNDEFINED", Datatype::UNDEFINED);
 
-    // mod.method("openPMD_datatypes", []() { return openPMD_datatypes; });
+    // mod.method("openpmd_datatypes", openPMD_datatypes);
     // mod.method("determine_datatype", determineDatatype);
     mod.method("cxx_to_bytes", toBytes);
     mod.method("cxx_to_bits", toBits);
