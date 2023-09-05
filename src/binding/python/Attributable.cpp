@@ -22,11 +22,9 @@
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
-#include "openPMD/binding/python/Numpy.hpp"
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/stl_bind.h>
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 #include <algorithm>
 #include <array>
@@ -35,11 +33,7 @@
 #include <string>
 #include <vector>
 
-namespace py = pybind11;
-using namespace openPMD;
-
 using PyAttributeKeys = std::vector<std::string>;
-// PYBIND11_MAKE_OPAQUE(PyAttributeKeys)
 
 bool setAttributeFromBufferInfo(
     Attributable &attr, std::string const &key, py::buffer &a)

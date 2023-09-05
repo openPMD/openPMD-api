@@ -37,7 +37,8 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 2
-        ctest --test-dir build --output-on-failure
+        cd build
+        ctest --output-on-failure
 
   clang7_nopy_ompi_h5_ad2_libcpp:
     runs-on: ubuntu-20.04
@@ -74,11 +75,13 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 2
-        ctest --test-dir build --output-on-failure
+
+        cd build
+        ctest --output-on-failure
 
         find . -name *.bp     | xargs -n1 -P1 -I {} rm -rf {}
         find . -name *.bp.dir | xargs -n1 -P1 -I {} rm -rf {}
-        ctest --test-dir build --output-on-failure
+        ctest --output-on-failure
 
   clang7_nopy_ompi_h5_ad2:
     runs-on: ubuntu-20.04
@@ -108,7 +111,8 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 2
-        ctest --test-dir build --output-on-failure
+        cd build
+        ctest --output-on-failure
 
 # TODO
 #  clang7_py36_nompi_h5_ad2_libstdc++
@@ -179,7 +183,8 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON  \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
-        ctest --test-dir build --output-on-failure
+        cd build
+        ctest --output-on-failure
 
 # TODO: (old Travis-CI coverage)
 #  clang10_py38_ompi_h5_1-10-6_ad2_release
@@ -229,7 +234,8 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
-        ctest --test-dir build --output-on-failure
+        cd build
+        ctest --output-on-failure
 
   gcc9_py38_pd_nompi_h5_ad2_libcpp_julia:
     runs-on: ubuntu-20.04
@@ -265,7 +271,8 @@ jobs:
         cmake --build build --parallel 2
         # Install the Julia side of CxxWrap
         julia --eval 'using Pkg; Pkg.add("CxxWrap")'
-        ctest --test-dir build --output-on-failure
+        cd build
+        ctest --output-on-failure
 
   musllinux_py10:
     runs-on: ubuntu-20.04
@@ -290,7 +297,8 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DPython_EXECUTABLE=$(which python3.10)
         cmake --build build --parallel 2
-        ctest --test-dir build --output-on-failure
+        cd build
+        ctest --output-on-failure
 
   conda_ompi_all:
     runs-on: ubuntu-20.04
@@ -324,4 +332,5 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
-        ctest --test-dir build --output-on-failure
+        cd build
+        ctest --output-on-failure

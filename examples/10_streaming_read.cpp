@@ -19,7 +19,16 @@ int main()
         return 0;
     }
 
-    Series series = Series("electrons.sst", Access::READ_LINEAR);
+    Series series = Series("electrons.sst", Access::READ_LINEAR, R"(
+{
+  "adios2": {
+    "engine": {
+      "parameters": {
+        "DataTransport": "WAN"
+      }
+    }
+  }
+})");
 
     // `Series::writeIterations()` and `Series::readIterations()` are
     // intentionally restricted APIs that ensure a workflow which also works

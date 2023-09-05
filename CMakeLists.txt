@@ -336,10 +336,16 @@ endif()
 # HDF5 checks
 string(CONCAT openPMD_HDF5_STATUS "")
 # version: lower limit
-if(openPMD_HAVE_HDF5 AND HDF5_VERSION VERSION_LESS 1.8.13)
-    string(CONCAT openPMD_HDF5_STATUS
-        "Found HDF5 version ${HDF5_VERSION} is too old. At least "
-        "version 1.8.13 is required.\n")
+if(openPMD_HAVE_HDF5)
+    if(HDF5_VERSION STREQUAL "")
+        message(WARNING "HDF5_VERSION is empty. Now assuming it is 1.8.13 or newer.")
+    else()
+        if(HDF5_VERSION VERSION_LESS 1.8.13)
+            string(CONCAT openPMD_HDF5_STATUS
+                "Found HDF5 version ${HDF5_VERSION} is too old. At least "
+                "version 1.8.13 is required.\n")
+        endif()
+    endif()
 endif()
 # we imply support for parallel I/O if MPI variant is ON
 if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
@@ -415,7 +421,7 @@ if(CMAKE_VERSION VERSION_LESS 3.18.0)
     set(_PY_DEV_MODULE Development)
 endif()
 if(openPMD_USE_PYTHON STREQUAL AUTO)
-    find_package(Python 3.7.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
+    find_package(Python 3.8.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
     if(Python_FOUND)
         if(openPMD_USE_INTERNAL_PYBIND11)
             add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
@@ -588,8 +594,9 @@ target_include_directories(openPMD SYSTEM PRIVATE
     $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # HDF5 Backend
+#   TODO: Once we require CMake 3.20+, simply link hdf5::hdf5 C lib target
 if(openPMD_HAVE_HDF5)
-    target_link_libraries(openPMD PRIVATE ${HDF5_LIBRARIES})
+    target_link_libraries(openPMD PUBLIC ${HDF5_LIBRARIES})
     target_include_directories(openPMD SYSTEM PRIVATE ${HDF5_INCLUDE_DIRS})
     target_compile_definitions(openPMD PRIVATE ${HDF5_DEFINITIONS})
 endif()

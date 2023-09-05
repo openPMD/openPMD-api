@@ -18,16 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/Dataset.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 
 #include <string>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 void init_Dataset(py::module &m)
 {

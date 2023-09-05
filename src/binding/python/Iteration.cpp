@@ -18,17 +18,13 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/Iteration.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 
 #include <ios>
 #include <sstream>
 #include <string>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 void init_Iteration(py::module &m)
 {
