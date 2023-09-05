@@ -645,9 +645,9 @@ if(openPMD_HAVE_JULIA)
         src/binding/julia/version.cpp
     )
     openpmd_cxx_required(openPMD.jl)
-    target_include_directories(openPMD.jl PRIVATE ${Julia_INCLUDE_DIRS})
-    target_link_directories(openPMD.jl PRIVATE ${Julia_LIBRARY_DIR})
-    target_link_libraries(openPMD.jl PRIVATE openPMD JlCxx::cxxwrap_julia JlCxx::cxxwrap_julia_stl ${Julia_LIBRARY})
+    target_include_directories(openPMD.jl PRIVATE JlCxx::cxxwrap_julia)
+    target_link_directories(openPMD.jl PRIVATE JlCxx::cxxwrap_julia)
+    target_link_libraries(openPMD.jl PRIVATE openPMD JlCxx::cxxwrap_julia_stl JlCxx::cxxwrap_julia)
 
     set_target_properties(openPMD.jl PROPERTIES
         COMPILE_PDB_NAME openPMD.jl
