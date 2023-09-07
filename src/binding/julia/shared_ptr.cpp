@@ -10,10 +10,10 @@
 
 namespace
 {
-struct UseType
+struct method_create_aliasing_shared_ptr
 {
     template <typename T>
-    static void call(jlcxx::Module &mod)
+    void call(jlcxx::Module &mod) const
     {
         mod.method(
             "create_aliasing_shared_ptr_" +
@@ -25,5 +25,5 @@ struct UseType
 
 void define_julia_shared_ptr(jlcxx::Module &mod)
 {
-    forallScalarJuliaTypes<UseType>(mod);
+    forallScalarJuliaTypes(method_create_aliasing_shared_ptr(), mod);
 }

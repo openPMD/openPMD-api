@@ -8,10 +8,10 @@
 
 namespace
 {
-struct UseType
+struct method_store_chunk
 {
     template <typename T>
-    static void call(jlcxx::TypeWrapper<RecordComponent> &type)
+    void call(jlcxx::TypeWrapper<RecordComponent> &type) const
     {
         type.method(
             "cxx_store_chunk_" + datatypeToString(determineDatatype<T>()),
@@ -24,5 +24,5 @@ struct UseType
 void define_julia_RecordComponent_store_chunk(
     jlcxx::Module & /*mod*/, jlcxx::TypeWrapper<RecordComponent> &type)
 {
-    forallScalarJuliaTypes<UseType>(type);
+    forallScalarJuliaTypes(method_store_chunk(), type);
 }

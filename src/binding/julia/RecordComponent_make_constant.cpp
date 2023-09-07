@@ -8,10 +8,10 @@
 
 namespace
 {
-struct UseType
+struct method_make_constant
 {
     template <typename T>
-    static void call(jlcxx::TypeWrapper<RecordComponent> &type)
+    void call(jlcxx::TypeWrapper<RecordComponent> &type) const
     {
         type.method(
             "cxx_make_constant_" + datatypeToString(determineDatatype<T>()),
@@ -23,5 +23,5 @@ struct UseType
 void define_julia_RecordComponent_make_constant(
     jlcxx::Module & /*mod*/, jlcxx::TypeWrapper<RecordComponent> &type)
 {
-    forallScalarJuliaTypes<UseType>(type);
+    forallScalarJuliaTypes(method_make_constant(), type);
 }

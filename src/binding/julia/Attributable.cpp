@@ -8,10 +8,10 @@
 
 namespace
 {
-struct UseType
+struct method_set_attribute
 {
     template <typename T>
-    static void call(jlcxx::TypeWrapper<Attributable> type)
+    void call(jlcxx::TypeWrapper<Attributable> type) const
     {
         type.method(
             "cxx_set_attribute_" + datatypeToString(determineDatatype<T>()) +
@@ -25,7 +25,7 @@ void define_julia_Attributable(jlcxx::Module &mod)
 {
     auto type = mod.add_type<Attributable>("CXX_Attributable");
 
-    forallJuliaTypes<UseType>(type);
+    forallJuliaTypes(method_set_attribute(), type);
 
     type.method("cxx_get_attribute", &Attributable::getAttribute);
     type.method("cxx_delete_attribute!", &Attributable::deleteAttribute);

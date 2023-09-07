@@ -110,33 +110,34 @@ constexpr const_tag const const_;
  *
  * @tparam Action The struct containing the function template.
  * @tparam Args The function template's argument types.
+ * @param action The function template's arguments.
  * @param args The function template's arguments.
  */
 template <typename Action, typename... Args>
-void forallScalarJuliaTypes(Args &&...args)
+void forallScalarJuliaTypes(const Action &action, Args &...args)
 {
-    // Do NOT call std::forward<Args>(args)... here
-    // Move semantics must be avoided due to repeated application
-    Action::template call<char>(args...);
-    Action::template call<unsigned char>(args...);
-    Action::template call<signed char>(args...);
-    Action::template call<short>(args...);
-    Action::template call<int>(args...);
-    Action::template call<long>(args...);
-    Action::template call<long long>(args...);
-    Action::template call<unsigned short>(args...);
-    Action::template call<unsigned int>(args...);
-    Action::template call<unsigned long>(args...);
-    Action::template call<unsigned long long>(args...);
-    Action::template call<float>(args...);
-    Action::template call<double>(args...);
+    // Do NOT call `std::forward<Args>(args)...` here.
+    // We must avoid move semantics because we apply repeatedly.
+    action.template call<char>(args...);
+    action.template call<unsigned char>(args...);
+    action.template call<signed char>(args...);
+    action.template call<short>(args...);
+    action.template call<int>(args...);
+    action.template call<long>(args...);
+    action.template call<long long>(args...);
+    action.template call<unsigned short>(args...);
+    action.template call<unsigned int>(args...);
+    action.template call<unsigned long>(args...);
+    action.template call<unsigned long long>(args...);
+    action.template call<float>(args...);
+    action.template call<double>(args...);
     // We disable `long double` since Julia does not support this type
-    // Action::template call<long double>(args...);
-    Action::template call<std::complex<float>>(args...);
-    Action::template call<std::complex<double>>(args...);
-    // Action::template call<std::complex<long double>>(args...);
-    Action::template call<std::string>(args...);
-    Action::template call<bool>(args...);
+    // action. call<long double>(args...);
+    action.template call<std::complex<float>>(args...);
+    action.template call<std::complex<double>>(args...);
+    // action. call<std::complex<long double>>(args...);
+    action.template call<std::string>(args...);
+    action.template call<bool>(args...);
 }
 /**
  * Generalizes the repeated application of a function template for all
@@ -147,52 +148,53 @@ void forallScalarJuliaTypes(Args &&...args)
  *
  * @tparam Action The struct containing the function template.
  * @tparam Args The function template's argument types.
+ * @param action The function template's arguments.
  * @param args The function template's arguments.
  */
 template <typename Action, typename... Args>
-void forallJuliaTypes(Args &&...args)
+void forallJuliaTypes(const Action &action, Args &...args)
 {
-    // Do NOT call std::forward<Args>(args)... here
-    // Move semantics must be avoided due to repeated application
-    Action::template call<char>(args...);
-    Action::template call<unsigned char>(args...);
-    Action::template call<signed char>(args...);
-    Action::template call<short>(args...);
-    Action::template call<int>(args...);
-    Action::template call<long>(args...);
-    Action::template call<long long>(args...);
-    Action::template call<unsigned short>(args...);
-    Action::template call<unsigned int>(args...);
-    Action::template call<unsigned long>(args...);
-    Action::template call<unsigned long long>(args...);
-    Action::template call<float>(args...);
-    Action::template call<double>(args...);
+    // Do NOT call `std::forward<Args>(args)...` here.
+    // We must avoid move semantics because we apply repeatedly.
+    action.template call<char>(args...);
+    action.template call<unsigned char>(args...);
+    action.template call<signed char>(args...);
+    action.template call<short>(args...);
+    action.template call<int>(args...);
+    action.template call<long>(args...);
+    action.template call<long long>(args...);
+    action.template call<unsigned short>(args...);
+    action.template call<unsigned int>(args...);
+    action.template call<unsigned long>(args...);
+    action.template call<unsigned long long>(args...);
+    action.template call<float>(args...);
+    action.template call<double>(args...);
     // We disable `long double` since Julia does not support this type
-    // Action::template call<long double>(args...);
-    Action::template call<std::complex<float>>(args...);
-    Action::template call<std::complex<double>>(args...);
-    // Action::template call<std::complex<long double>>(args...);
-    Action::template call<std::string>(args...);
-    Action::template call<std::vector<char>>(args...);
-    Action::template call<std::vector<short>>(args...);
-    Action::template call<std::vector<int>>(args...);
-    Action::template call<std::vector<long>>(args...);
-    Action::template call<std::vector<long long>>(args...);
-    Action::template call<std::vector<unsigned char>>(args...);
-    Action::template call<std::vector<signed char>>(args...);
-    Action::template call<std::vector<unsigned short>>(args...);
-    Action::template call<std::vector<unsigned int>>(args...);
-    Action::template call<std::vector<unsigned long>>(args...);
-    Action::template call<std::vector<unsigned long long>>(args...);
-    Action::template call<std::vector<float>>(args...);
-    Action::template call<std::vector<double>>(args...);
-    // Action::template call<std::vector<long double>>(args...);
-    Action::template call<std::vector<std::complex<float>>>(args...);
-    Action::template call<std::vector<std::complex<double>>>(args...);
-    // Action::template call<std::vector<std::complex<long double>>>(args...);
-    Action::template call<std::vector<std::string>>(args...);
-    Action::template call<std::array<double, 7>>(args...);
-    Action::template call<bool>(args...);
+    // action.template call <long double>(args...);
+    action.template call<std::complex<float>>(args...);
+    action.template call<std::complex<double>>(args...);
+    // action.template call <std::complex<long double>>(args...);
+    action.template call<std::string>(args...);
+    action.template call<std::vector<char>>(args...);
+    action.template call<std::vector<short>>(args...);
+    action.template call<std::vector<int>>(args...);
+    action.template call<std::vector<long>>(args...);
+    action.template call<std::vector<long long>>(args...);
+    action.template call<std::vector<unsigned char>>(args...);
+    action.template call<std::vector<signed char>>(args...);
+    action.template call<std::vector<unsigned short>>(args...);
+    action.template call<std::vector<unsigned int>>(args...);
+    action.template call<std::vector<unsigned long>>(args...);
+    action.template call<std::vector<unsigned long long>>(args...);
+    action.template call<std::vector<float>>(args...);
+    action.template call<std::vector<double>>(args...);
+    // action.template call <std::vector<long double>>(args...);
+    action.template call<std::vector<std::complex<float>>>(args...);
+    action.template call<std::vector<std::complex<double>>>(args...);
+    // action.template call <std::vector<std::complex<long double>>>(args...);
+    action.template call<std::vector<std::string>>(args...);
+    action.template call<std::array<double, 7>>(args...);
+    action.template call<bool>(args...);
 }
 
 namespace

@@ -18,10 +18,10 @@ struct SuperType<MeshRecordComponent>
 
 namespace
 {
-struct UseType
+struct method_make_constant
 {
     template <typename T>
-    static void call(jlcxx::TypeWrapper<MeshRecordComponent> type)
+    void call(jlcxx::TypeWrapper<MeshRecordComponent> type) const
     {
         type.method(
             "cxx_make_constant_" + datatypeToString(determineDatatype<T>()),
@@ -37,5 +37,5 @@ void define_julia_MeshRecordComponent(jlcxx::Module &mod)
 
     type.method("cxx_position", &MeshRecordComponent::position<double>);
     type.method("cxx_set_position!", &MeshRecordComponent::setPosition<double>);
-    forallJuliaTypes<UseType>(type);
+    forallJuliaTypes(method_make_constant(), type);
 }

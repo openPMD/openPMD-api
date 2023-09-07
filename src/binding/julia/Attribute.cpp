@@ -8,10 +8,10 @@
 
 namespace
 {
-struct UseType
+struct method_get
 {
     template <typename T>
-    static void call(jlcxx::TypeWrapper<Attribute> type)
+    void call(jlcxx::TypeWrapper<Attribute> type) const
     {
         type.method(
             "cxx_get_" + datatypeToString(determineDatatype<T>()),
@@ -26,5 +26,5 @@ void define_julia_Attribute(jlcxx::Module &mod)
 
     type.method("cxx_dtype", [](const Attribute &attr) { return attr.dtype; });
 
-    forallJuliaTypes<UseType>(type);
+    forallJuliaTypes(method_get(), type);
 }

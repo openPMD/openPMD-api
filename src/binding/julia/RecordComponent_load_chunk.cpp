@@ -8,13 +8,13 @@
 
 namespace
 {
-struct UseType
+struct method_load_chunk
 {
     template <typename T>
-    static void call(jlcxx::TypeWrapper<RecordComponent> &type)
+    void call(jlcxx::TypeWrapper<RecordComponent> &type) const
     {
         type.method(
-            "cxx_load_" + datatypeToString(determineDatatype<T>()),
+            "cxx_load_chunk_" + datatypeToString(determineDatatype<T>()),
             overload_cast<std::shared_ptr<T>, Offset, Extent>(
                 &RecordComponent::loadChunk<T>));
     }
@@ -24,5 +24,5 @@ struct UseType
 void define_julia_RecordComponent_load_chunk(
     jlcxx::Module & /*mod*/, jlcxx::TypeWrapper<RecordComponent> &type)
 {
-    forallScalarJuliaTypes<UseType>(type);
+    forallScalarJuliaTypes(method_load_chunk(), type);
 }

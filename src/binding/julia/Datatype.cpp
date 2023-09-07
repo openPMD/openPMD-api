@@ -8,13 +8,15 @@
 
 namespace
 {
-struct UseType
+struct set_const_Datatype
 {
     template <typename T>
-    static void call(jlcxx::Module &mod)
+    void call(jlcxx::Module &mod) const
     {
         Datatype const dt = determineDatatype<T>();
-        mod.set_const(datatypeToString(dt), dt);
+        // The second argument to `set_const` must be a value and not a
+        // reference
+        mod.set_const(datatypeToString(dt), Datatype(dt));
     }
 };
 } // namespace
@@ -24,8 +26,7 @@ void define_julia_Datatype(jlcxx::Module &mod)
     mod.add_bits<Datatype>("Datatype", jlcxx::julia_type("CppEnum"));
     jlcxx::stl::apply_stl<Datatype>(mod);
 
-    forallJuliaTypes<UseType>(mod);
-
+    forallJuliaTypes(set_const_Datatype(), mod);
     mod.set_const("UNDEFINED", Datatype::UNDEFINED);
 
     // mod.method("openpmd_datatypes", openPMD_datatypes);
