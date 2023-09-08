@@ -1,10 +1,12 @@
 import Base
 
-# pass as first argument the path to libopenPMD.jl.so
+# pass as first argument the path to libopenPMD.jl.so but without the ".so" suffix
 
 module openPMD
 using CxxWrap
-@wrapmodule(ARGS[1])
+dlext = Sys.isapple() ? ".dylib" : ".so"
+libname = "$(ARGS[f1])$dlext"
+@wrapmodule libname
 
 function __init__()
     @initcxx
