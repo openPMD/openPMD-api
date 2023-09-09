@@ -4,8 +4,8 @@ import Base
 
 module openPMD
 using CxxWrap
-dlext = Sys.isapple() ? ".dylib" : ".so"
-libname = "$(ARGS[f1])$dlext"
+dlext = Sys.isapple() ? "dylib" : "so"
+libname = "$(ARGS[1]).$dlext"
 @wrapmodule libname
 
 function __init__()
