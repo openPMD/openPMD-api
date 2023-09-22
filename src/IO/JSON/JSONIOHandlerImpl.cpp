@@ -1406,7 +1406,8 @@ auto JSONIOHandlerImpl::putJsonContents(
             MPI_Comm_rank(comm, &rank);
             MPI_Comm_size(comm, &size);
             std::stringstream subfilePath;
-            subfilePath << dirpath << "/mpi_rank_"
+            // writeSingleFile will prepend the base dir
+            subfilePath << *filename << ".parallel/mpi_rank_"
                         << std::setw(num_digits(size - 1)) << std::setfill('0')
                         << rank << ".json";
             writeSingleFile(subfilePath.str());
