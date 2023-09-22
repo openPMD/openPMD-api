@@ -2145,6 +2145,7 @@ merge the .json files somehow (no tooling provided for this (yet)).
 #else
     serialImplementation();
 #endif
+
     if (unsetDirty)
     {
         m_dirty.erase(filename);
