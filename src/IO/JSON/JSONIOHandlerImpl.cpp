@@ -394,16 +394,25 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
 #if openPMD_HAVE_MPI
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
-    MPI_Comm comm,
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    [[maybe_unused]] openPMD::json::TracingJSON config,
+    MPI_Comm comm,openPMD::json::TracingJSON config,
     FileFormat format,
     std::string originalExtension)
     : AbstractIOHandlerImpl(handler)
     , m_communicator{comm}
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
-{}
+{
+    std::tie(m_mode, m_IOModeSpecificationVia) = retrieveDatasetMode(config);
+    std::tie(m_attributeMode, m_attributeModeSpecificationVia) =
+        retrieveAttributeMode(config);
+
+    if (auto [_, backendConfig] = getBackendConfig(config);
+        backendConfig.has_value())
+    {
+        (void)_;
+        warnUnusedJson(backendConfig.value());
+    }
+}
 #endif
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
