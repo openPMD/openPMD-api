@@ -245,7 +245,9 @@ class pipe:
         ignored_attributes = {
             io.Series:
             ["basePath", "iterationEncoding", "iterationFormat", "openPMD"],
-            io.Iteration: ["snapshot"]
+            io.Iteration: ["snapshot"],
+            io.Record_Component: ["value", "shape"],
+            io.Mesh_Record_Component: ["value", "shape"]
         }
         for key in src.attributes:
             ignore_this_attribute = False
@@ -254,6 +256,7 @@ class pipe:
                     for to_ignore in to_ignore_list:
                         if key == to_ignore:
                             ignore_this_attribute = True
+                            break
             if not ignore_this_attribute:
                 attr = src.get_attribute(key)
                 attr_type = attribute_dtypes[key]
