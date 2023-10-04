@@ -539,11 +539,11 @@ namespace
     }
 
     int autoDetectPadding(
-        std::function<Match(std::string const &)> isPartOfSeries,
+        std::function<Match(std::string const &)> const &isPartOfSeries,
         std::string const &directory)
     {
         return autoDetectPadding(
-            std::move(isPartOfSeries),
+            isPartOfSeries,
             directory,
             [](Series::IterationIndex_t index, std::string const &filename) {
                 (void)index;
@@ -1020,7 +1020,7 @@ void Series::readFileBased()
         series.m_filenameExtension);
 
     int padding = autoDetectPadding(
-        std::move(isPartOfSeries),
+        isPartOfSeries,
         IOHandler()->directory,
         // foreach found file with `filename` and `index`:
         [&series](IterationIndex_t index, std::string const &filename) {

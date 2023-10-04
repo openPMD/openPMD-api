@@ -34,7 +34,7 @@ namespace openPMD
 class DummyIOHandler : public AbstractIOHandler
 {
 public:
-    DummyIOHandler(std::string, Access);
+    DummyIOHandler(std::string const &, Access);
     ~DummyIOHandler() override = default;
 
     /** No-op consistent with the IOHandler interface to enable library use

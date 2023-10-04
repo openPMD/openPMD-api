@@ -170,7 +170,7 @@ private:
     std::optional<internal::ParsePreference> m_parsePreference;
 
     ReadIterations(
-        Series,
+        Series const &,
         Access,
         std::optional<internal::ParsePreference> parsePreference);
 

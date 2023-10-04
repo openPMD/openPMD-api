@@ -50,7 +50,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string const &path,
     Access access,
     Format format,
-    std::string originalExtension,
+    std::string const &originalExtension,
     MPI_Comm comm,
     JSON options,
     std::string const &pathAsItWasSpecifiedInTheConstructor);
@@ -77,7 +77,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string const &path,
     Access access,
     Format format,
-    std::string originalExtension,
+    std::string const &originalExtension,
     JSON options,
     std::string const &pathAsItWasSpecifiedInTheConstructor);
 
@@ -86,5 +86,5 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string const &path,
     Access access,
     Format format,
-    std::string originalExtension);
+    std::string const &originalExtension);
 } // namespace openPMD

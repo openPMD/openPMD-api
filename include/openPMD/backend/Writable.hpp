@@ -119,7 +119,7 @@ public:
 OPENPMD_private
     // clang-format on
 
-    void seriesFlush(internal::FlushParams);
+    void seriesFlush(internal::FlushParams const &);
     /*
      * These members need to be shared pointers since distinct instances of
      * Writable may share them.

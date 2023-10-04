@@ -207,9 +207,9 @@ auto Attributable::myPath() const -> MyPath
     return res;
 }
 
-void Attributable::seriesFlush(internal::FlushParams flushParams)
+void Attributable::seriesFlush(internal::FlushParams const &flushParams)
 {
-    writable().seriesFlush(std::move(flushParams));
+    writable().seriesFlush(flushParams);
 }
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)

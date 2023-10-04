@@ -3396,16 +3396,16 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string const &path,
     openPMD::Access at,
     MPI_Comm comm,
-    json::TracingJSON options,
-    std::string engineType,
-    std::string specifiedExtension)
-    : AbstractIOHandler(std::move(path), at, comm)
+    json::TracingJSON const &options,
+    std::string const &engineType,
+    std::string const &specifiedExtension)
+    : AbstractIOHandler(path, at, comm)
     , m_impl{
           this,
           comm,
-          std::move(options),
-          std::move(engineType),
-          std::move(specifiedExtension)}
+          options,
+          engineType,
+          specifiedExtension}
 {}
 
 #endif
@@ -3413,15 +3413,15 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string const &path,
     Access at,
-    json::TracingJSON options,
-    std::string engineType,
-    std::string specifiedExtension)
+    json::TracingJSON const &options,
+    std::string const &engineType,
+    std::string const &specifiedExtension)
     : AbstractIOHandler(path, at)
     , m_impl{
           this,
-          std::move(options),
-          std::move(engineType),
-          std::move(specifiedExtension)}
+          options,
+          engineType,
+          specifiedExtension}
 {}
 
 std::future<void>
@@ -3437,9 +3437,9 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string const &path,
     Access at,
     MPI_Comm comm,
-    json::TracingJSON,
-    std::string,
-    std::string)
+    json::TracingJSON const&,
+    std::string const&,
+    std::string const&)
     : AbstractIOHandler(path, at, comm)
 {}
 
@@ -3448,10 +3448,10 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string const &path,
     Access at,
-    json::TracingJSON,
-    std::string,
-    std::string)
-    : AbstractIOHandler(std::move(path), at)
+    json::TracingJSON const&,
+    std::string const&,
+    std::string const&)
+    : AbstractIOHandler(path, at)
 {}
 
 std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)

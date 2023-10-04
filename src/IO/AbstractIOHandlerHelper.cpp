@@ -68,8 +68,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     std::string const &path,
     Access access,
     Format format,
-    std::string originalExtension,
-
+    std::string const &originalExtension,
     MPI_Comm comm,
     json::TracingJSON options,
     std::string const &pathAsItWasSpecifiedInTheConstructor)
@@ -88,7 +87,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             comm,
             std::move(options),
             "file",
-            std::move(originalExtension));
+            originalExtension);
     case Format::ADIOS2_BP4:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -97,7 +96,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             comm,
             std::move(options),
             "bp4",
-            std::move(originalExtension));
+            originalExtension);
     case Format::ADIOS2_BP5:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -106,7 +105,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             comm,
             std::move(options),
             "bp5",
-            std::move(originalExtension));
+            originalExtension);
     case Format::ADIOS2_SST:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -115,7 +114,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             comm,
             std::move(options),
             "sst",
-            std::move(originalExtension));
+            originalExtension);
     case Format::ADIOS2_SSC:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -124,7 +123,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             comm,
             std::move(options),
             "ssc",
-            std::move(originalExtension));
+            originalExtension);
     case Format::JSON:
         throw error::WrongAPIUsage(
             "JSON backend not available in parallel openPMD.");
@@ -142,7 +141,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     std::string const &path,
     Access access,
     Format format,
-    std::string originalExtension,
+    std::string const &originalExtension,
     json::TracingJSON options,
     std::string const &pathAsItWasSpecifiedInTheConstructor)
 {
@@ -159,7 +158,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             access,
             std::move(options),
             "file",
-            std::move(originalExtension));
+            originalExtension);
     case Format::ADIOS2_BP4:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -167,7 +166,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             access,
             std::move(options),
             "bp4",
-            std::move(originalExtension));
+            originalExtension);
     case Format::ADIOS2_BP5:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -175,7 +174,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             access,
             std::move(options),
             "bp5",
-            std::move(originalExtension));
+            originalExtension);
     case Format::ADIOS2_SST:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -183,7 +182,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             access,
             std::move(options),
             "sst",
-            std::move(originalExtension));
+            originalExtension);
     case Format::ADIOS2_SSC:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2",
@@ -191,7 +190,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             access,
             std::move(options),
             "ssc",
-            std::move(originalExtension));
+            originalExtension);
     case Format::JSON:
         return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
             "JSON",
@@ -199,7 +198,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             access,
             std::move(options),
             JSONIOHandlerImpl::FileFormat::Json,
-            std::move(originalExtension));
+            originalExtension);
     case Format::TOML:
         return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
             "JSON",
@@ -207,7 +206,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             access,
             std::move(options),
             JSONIOHandlerImpl::FileFormat::Toml,
-            std::move(originalExtension));
+            originalExtension);
     default:
         throw std::runtime_error(
             "Unknown file format! Did you specify a file ending? Specified "
@@ -220,13 +219,13 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string const &path,
     Access access,
     Format format,
-    std::string originalExtension)
+    std::string const &originalExtension)
 {
     return createIOHandler(
         path,
         access,
         format,
-        std::move(originalExtension),
+        originalExtension,
         json::TracingJSON(json::ParsedConfig{}),
         "");
 }

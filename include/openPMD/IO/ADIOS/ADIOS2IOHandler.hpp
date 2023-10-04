@@ -1199,18 +1199,18 @@ public:
         std::string const &path,
         Access,
         MPI_Comm,
-        json::TracingJSON options,
-        std::string engineType,
-        std::string specifiedExtension);
+        json::TracingJSON const &options,
+        std::string const &engineType,
+        std::string const &specifiedExtension);
 
 #endif
 
     ADIOS2IOHandler(
         std::string const &path,
         Access,
-        json::TracingJSON options,
-        std::string engineType,
-        std::string specifiedExtension);
+        json::TracingJSON const &options,
+        std::string const &engineType,
+        std::string const &specifiedExtension);
 
     std::string backendName() const override
     {
