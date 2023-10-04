@@ -63,7 +63,7 @@ namespace error
     class WrongAPIUsage : public Error
     {
     public:
-        WrongAPIUsage(std::string const  &what);
+        WrongAPIUsage(std::string const &what);
     };
 
     class BackendConfigSchema : public Error
