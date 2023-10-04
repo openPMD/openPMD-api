@@ -391,7 +391,8 @@ private:
         ThrowError
     };
 
-    detail::BufferedActions &getFileData(InvalidatableFile const &file, IfFileNotOpen);
+    detail::BufferedActions &
+    getFileData(InvalidatableFile const &file, IfFileNotOpen);
 
     void dropFileData(InvalidatableFile const &file);
 

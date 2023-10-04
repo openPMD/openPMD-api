@@ -110,7 +110,8 @@ void SeriesIterator::close()
 }
 
 SeriesIterator::SeriesIterator(
-    Series const &series_in, std::optional<internal::ParsePreference> const &parsePreference)
+    Series const &series_in,
+    std::optional<internal::ParsePreference> const &parsePreference)
     : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
 {
     auto &data = get();

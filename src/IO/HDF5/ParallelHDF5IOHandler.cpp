@@ -182,7 +182,10 @@ ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
 #else
 #if openPMD_HAVE_MPI
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(
-    std::string const &path, Access at, MPI_Comm comm, json::TracingJSON /* config */)
+    std::string const &path,
+    Access at,
+    MPI_Comm comm,
+    json::TracingJSON /* config */)
     : AbstractIOHandler(path, at, comm)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");

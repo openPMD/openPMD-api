@@ -54,7 +54,7 @@ namespace cli
                       << " ./samples/serial_patch.bp\n";
         }
 
-        inline void print_version(std::string const & program_name)
+        inline void print_version(std::string const &program_name)
         {
             std::cout << program_name << " (openPMD-api) " << getVersion()
                       << "\n";

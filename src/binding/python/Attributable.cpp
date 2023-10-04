@@ -401,7 +401,8 @@ void init_Attributable(py::module &m)
                std::string const &key,
                py::object &obj,
                pybind11::dtype datatype) {
-                return setAttributeFromObject(attr, key, obj, std::move(datatype));
+                return setAttributeFromObject(
+                    attr, key, obj, std::move(datatype));
             },
             py::arg("key"),
             py::arg("value"),

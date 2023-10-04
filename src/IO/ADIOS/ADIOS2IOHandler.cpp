@@ -1491,8 +1491,8 @@ std::string
 ADIOS2IOHandlerImpl::nameOfAttribute(Writable *writable, std::string attribute)
 {
     auto pos = setAndGetFilePosition(writable);
-    return filePositionToString(
-        extendFilePosition(pos, auxiliary::removeSlashes(std::move(attribute))));
+    return filePositionToString(extendFilePosition(
+        pos, auxiliary::removeSlashes(std::move(attribute))));
 }
 
 GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
@@ -1500,8 +1500,8 @@ GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
     return setAndGetFilePosition(writable)->gd;
 }
 
-detail::BufferedActions &
-ADIOS2IOHandlerImpl::getFileData(InvalidatableFile const &file, IfFileNotOpen flag)
+detail::BufferedActions &ADIOS2IOHandlerImpl::getFileData(
+    InvalidatableFile const &file, IfFileNotOpen flag)
 {
     VERIFY_ALWAYS(
         file.valid(),
@@ -1515,8 +1515,7 @@ ADIOS2IOHandlerImpl::getFileData(InvalidatableFile const &file, IfFileNotOpen fl
         case IfFileNotOpen::OpenImplicitly: {
 
             auto res = m_fileData.emplace(
-                file,
-                std::make_unique<detail::BufferedActions>(*this, file));
+                file, std::make_unique<detail::BufferedActions>(*this, file));
             return *res.first->second;
         }
         case IfFileNotOpen::ThrowError:
@@ -3447,7 +3446,11 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string const &path, Access at, json::TracingJSON, std::string, std::string)
+    std::string const &path,
+    Access at,
+    json::TracingJSON,
+    std::string,
+    std::string)
     : AbstractIOHandler(std::move(path), at)
 {}
 

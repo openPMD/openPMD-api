@@ -5997,7 +5997,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 
 // @todo Upon switching to ADIOS2 2.7.0, test this the other way around also
 void iterate_nonstreaming_series(
-    std::string const &file, bool variableBasedLayout, std::string const &jsonConfig)
+    std::string const &file,
+    bool variableBasedLayout,
+    std::string const &jsonConfig)
 {
     constexpr size_t extent = 100;
     {

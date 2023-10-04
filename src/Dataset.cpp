@@ -25,7 +25,7 @@
 
 namespace openPMD
 {
-Dataset::Dataset(Datatype d, const Extent& e, std::string options_in)
+Dataset::Dataset(Datatype d, const Extent &e, std::string options_in)
     : extent{e}
     , dtype{d}
     , rank{static_cast<uint8_t>(e.size())}

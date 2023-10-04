@@ -390,8 +390,8 @@ public:
      * Using the default implementation (which copies the abstractFilePath
      * into the current writable) should be enough for all backends.
      */
-    void
-    keepSynchronous(Writable *, Parameter<Operation::KEEP_SYNCHRONOUS> const &param);
+    void keepSynchronous(
+        Writable *, Parameter<Operation::KEEP_SYNCHRONOUS> const &param);
 
     /** Notify the backend that the Writable has been / will be deallocated.
      *

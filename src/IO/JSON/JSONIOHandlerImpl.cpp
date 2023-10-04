@@ -1189,7 +1189,8 @@ bool JSONIOHandlerImpl::hasKey(nlohmann::json const &j, KeyT &&key)
     return j.find(std::forward<KeyT>(key)) != j.end();
 }
 
-void JSONIOHandlerImpl::ensurePath(nlohmann::json *jsonp, std::string const &path)
+void JSONIOHandlerImpl::ensurePath(
+    nlohmann::json *jsonp, std::string const &path)
 {
     auto groups = auxiliary::split(path, "/");
     for (std::string &group : groups)
@@ -1233,7 +1234,8 @@ JSONIOHandlerImpl::getPossiblyExisting(std::string const &file)
             std::move(name), it, newlyCreated);
 }
 
-std::shared_ptr<nlohmann::json> JSONIOHandlerImpl::obtainJsonContents(File const &file)
+std::shared_ptr<nlohmann::json>
+JSONIOHandlerImpl::obtainJsonContents(File const &file)
 {
     VERIFY_ALWAYS(
         file.valid(),
@@ -1305,8 +1307,8 @@ void JSONIOHandlerImpl::putJsonContents(
     }
 }
 
-std::shared_ptr<JSONFilePosition>
-JSONIOHandlerImpl::setAndGetFilePosition(Writable *writable, std::string const &extend)
+std::shared_ptr<JSONFilePosition> JSONIOHandlerImpl::setAndGetFilePosition(
+    Writable *writable, std::string const &extend)
 {
     std::string path;
     if (writable->abstractFilePosition)

@@ -77,7 +77,8 @@ public:
     explicit SeriesIterator();
 
     SeriesIterator(
-        Series const&, std::optional<internal::ParsePreference> const &parsePreference);
+        Series const &,
+        std::optional<internal::ParsePreference> const &parsePreference);
 
     SeriesIterator &operator++();
 

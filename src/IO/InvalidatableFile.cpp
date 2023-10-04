@@ -35,7 +35,8 @@ bool openPMD::InvalidatableFile::valid() const
     return fileState->valid;
 }
 
-openPMD::InvalidatableFile &openPMD::InvalidatableFile::operator=(std::string const &s)
+openPMD::InvalidatableFile &
+openPMD::InvalidatableFile::operator=(std::string const &s)
 {
     if (fileState)
     {

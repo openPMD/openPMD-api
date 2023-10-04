@@ -153,7 +153,8 @@ bool remove_directory(std::string const &path)
     for (auto const &entry : list_directory(path))
     {
         auto partialPath = path;
-        partialPath = partialPath.append(std::string(1,directory_separator)).append(entry);
+        partialPath = partialPath.append(std::string(1, directory_separator))
+                          .append(entry);
         if (directory_exists(partialPath))
             success &= remove_directory(partialPath);
         else if (file_exists(partialPath))

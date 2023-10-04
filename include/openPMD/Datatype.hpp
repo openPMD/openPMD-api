@@ -739,7 +739,7 @@ Datatype toVectorType(Datatype dt);
 
 std::string datatypeToString(Datatype dt);
 
-Datatype stringToDatatype(const std::string& s);
+Datatype stringToDatatype(const std::string &s);
 
 void warnWrongDtype(std::string const &key, Datatype store, Datatype request);
 
