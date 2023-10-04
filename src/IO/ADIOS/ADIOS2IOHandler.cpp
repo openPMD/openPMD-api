@@ -3400,12 +3400,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string const &engineType,
     std::string const &specifiedExtension)
     : AbstractIOHandler(path, at, comm)
-    , m_impl{
-          this,
-          comm,
-          options,
-          engineType,
-          specifiedExtension}
+    , m_impl{this, comm, options, engineType, specifiedExtension}
 {}
 
 #endif
@@ -3417,11 +3412,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string const &engineType,
     std::string const &specifiedExtension)
     : AbstractIOHandler(path, at)
-    , m_impl{
-          this,
-          options,
-          engineType,
-          specifiedExtension}
+    , m_impl{this, options, engineType, specifiedExtension}
 {}
 
 std::future<void>
@@ -3437,9 +3428,9 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string const &path,
     Access at,
     MPI_Comm comm,
-    json::TracingJSON const&,
-    std::string const&,
-    std::string const&)
+    json::TracingJSON const &,
+    std::string const &,
+    std::string const &)
     : AbstractIOHandler(path, at, comm)
 {}
 
@@ -3448,9 +3439,9 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string const &path,
     Access at,
-    json::TracingJSON const&,
-    std::string const&,
-    std::string const&)
+    json::TracingJSON const &,
+    std::string const &,
+    std::string const &)
     : AbstractIOHandler(path, at)
 {}
 
