@@ -13,6 +13,8 @@ Please transition to ADIOS2.
 For reading legacy ADIOS1 BP3 files, either use an older version of openPMD-api or the BP3 backend in ADIOS2.
 Note that ADIOS2 does not support compression in BP3 files.
 
+pybind11 2.11.1 is now the minimally supported version for Python support.
+
 
 0.15.0
 ------

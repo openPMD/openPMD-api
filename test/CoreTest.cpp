@@ -1051,7 +1051,7 @@ TEST_CASE("no_file_ending", "[core]")
             Access::CREATE,
             R"({"backend": "json"})");
     }
-    REQUIRE(auxiliary::file_exists("../samples/no_extension_specified.json"));
+    REQUIRE(auxiliary::file_exists("../samples/no_extension_specified"));
 }
 
 TEST_CASE("backend_via_json", "[core]")

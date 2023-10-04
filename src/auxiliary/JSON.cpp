@@ -200,6 +200,7 @@ namespace
             return nlohmann::json(); // null
         }
 
+        // @todo maybe generalize error type
         throw error::BackendConfigSchema(
             currentPath,
             "Unexpected datatype in TOML configuration. This is probably a "
@@ -215,7 +216,8 @@ namespace
         switch (val.type())
         {
         case nlohmann::json::value_t::null:
-            return toml::value();
+            throw error::BackendConfigSchema(
+                currentPath, "TOML does not support null values.");
         case nlohmann::json::value_t::object: {
             toml::value::table_type res;
             for (auto pair = val.begin(); pair != val.end(); ++pair)
@@ -247,7 +249,7 @@ namespace
         case nlohmann::json::value_t::number_unsigned:
             return val.get<nlohmann::json::number_unsigned_t>();
         case nlohmann::json::value_t::number_float:
-            return val.get<nlohmann::json::number_float_t>();
+            return (long double)val.get<nlohmann::json::number_float_t>();
         case nlohmann::json::value_t::binary:
             return val.get<nlohmann::json::binary_t>();
         case nlohmann::json::value_t::discarded:
@@ -501,7 +503,7 @@ std::optional<std::string> asLowerCaseStringDynamic(nlohmann::json const &value)
 
 std::vector<std::string> backendKeys()
 {
-    return {"adios2", "json", "hdf5"};
+    return {"adios2", "json", "toml", "hdf5"};
 }
 
 void warnGlobalUnusedOptions(TracingJSON const &config)

@@ -50,6 +50,10 @@ namespace internal
     class AttributableData;
     class SeriesData;
 } // namespace internal
+namespace detail
+{
+    struct BufferedActions;
+}
 
 /** @brief Layer to mirror structure of logical data and persistent data in
  * file.
@@ -79,9 +83,11 @@ class Writable final
     friend class Record;
     friend class AbstractIOHandlerImpl;
     friend class ADIOS2IOHandlerImpl;
+    friend struct detail::BufferedActions;
     friend class HDF5IOHandlerImpl;
     friend class ParallelHDF5IOHandlerImpl;
-    friend class AbstractIOHandlerImplCommon<ADIOS2FilePosition>;
+    template <typename>
+    friend class AbstractIOHandlerImplCommon;
     friend class JSONIOHandlerImpl;
     friend struct test::TestHelper;
     friend std::string concrete_h5_file_position(Writable *);

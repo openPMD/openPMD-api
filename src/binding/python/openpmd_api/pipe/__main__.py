@@ -225,7 +225,7 @@ class pipe:
             sys.stdout.flush()
         # In Linear read mode, global attributes are only present after calling
         # this method to access the first iteration
-        inseries.read_iterations()
+        inseries.parse_base()
         self.__copy(inseries, outseries)
 
     def __copy(self, src, dest, current_path="/data/"):
@@ -234,7 +234,7 @@ class pipe:
         Copies data from src to dest. May represent any point in the openPMD
         hierarchy, but src and dest must both represent the same layer.
         """
-        if (type(src) != type(dest)
+        if (type(src) is not type(dest)
                 and not isinstance(src, io.IndexedIteration)
                 and not isinstance(dest, io.Iteration)):
             raise RuntimeError(

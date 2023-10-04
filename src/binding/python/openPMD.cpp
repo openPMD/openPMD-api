@@ -18,17 +18,14 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 
 #include <map>
 #include <sstream>
 #include <string>
-
-namespace py = pybind11;
 
 // forward declarations of exposed classes
 void init_Access(py::module &);

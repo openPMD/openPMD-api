@@ -18,16 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/ChunkInfo.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 
 #include <exception>
 #include <string>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 void init_Chunk(py::module &m)
 {

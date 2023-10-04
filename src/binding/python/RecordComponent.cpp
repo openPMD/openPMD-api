@@ -18,15 +18,13 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
-#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 #include "openPMD/binding/python/Pickle.hpp"
 
@@ -41,9 +39,6 @@
 #include <tuple>
 #include <type_traits>
 #include <vector>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 /** Convert a py::tuple of py::slices to Offset & Extent
  *

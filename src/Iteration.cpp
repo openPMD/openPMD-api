@@ -268,25 +268,38 @@ void Iteration::flushVariableBased(
         Parameter<Operation::OPEN_PATH> pOpen;
         pOpen.path = "";
         IOHandler()->enqueue(IOTask(this, pOpen));
-        /*
-         * In v-based encoding, the snapshot attribute must always be written,
-         * so don't set the `changesOverSteps` flag of the IOTask here.
-         * Reason: Even in backends that don't support changing attributes,
-         * variable-based iteration encoding can be used to write one single
-         * iteration. Then, this attribute determines which iteration it is.
-         */
-        this->setAttribute("snapshot", i);
     }
 
     switch (flushParams.flushLevel)
     {
     case FlushLevel::CreateOrOpenFiles:
-        break;
+        return;
     case FlushLevel::SkeletonOnly:
     case FlushLevel::InternalFlush:
     case FlushLevel::UserFlush:
         flush(flushParams);
         break;
+    }
+
+    if (!written())
+    {
+        /* create iteration path */
+        Parameter<Operation::OPEN_PATH> pOpen;
+        pOpen.path = "";
+        IOHandler()->enqueue(IOTask(this, pOpen));
+        /*
+         * In v-based encoding, the snapshot attribute must always be written.
+         * Reason: Even in backends that don't support changing attributes,
+         * variable-based iteration encoding can be used to write one single
+         * iteration. Then, this attribute determines which iteration it is.
+         */
+        Parameter<Operation::WRITE_ATT> wAttr;
+        wAttr.changesOverSteps =
+            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+        wAttr.name = "snapshot";
+        wAttr.resource = (unsigned long long)i;
+        wAttr.dtype = Datatype::ULONGLONG;
+        IOHandler()->enqueue(IOTask(this, wAttr));
     }
 }
 
@@ -528,11 +541,15 @@ void Iteration::read_impl(std::string const &groupPath)
 #ifdef openPMD_USE_INVASIVE_TESTS
     if (containsAttribute("__openPMD_internal_fail"))
     {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::Other,
-            {},
-            "Deliberately failing this iteration for testing purposes");
+        if (getAttribute("__openPMD_internal_fail").get<std::string>() ==
+            "asking for trouble")
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::Other,
+                {},
+                "Deliberately failing this iteration for testing purposes");
+        }
     }
 #endif
 }

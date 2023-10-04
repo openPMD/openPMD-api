@@ -7,9 +7,9 @@ C++ & Python API for Scientific I/O with openPMD
 [![Gitter chat](https://img.shields.io/gitter/room/openPMD/API)](https://gitter.im/openPMD/API)
 ![Supported Platforms][api-platforms]
 [![License](https://img.shields.io/badge/license-LGPLv3-blue)](https://www.gnu.org/licenses/lgpl-3.0.html)
-[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27.svg)](https://doi.org/10.14278/rodare.27)  
+[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27.svg)](https://doi.org/10.14278/rodare.27)
 [![CodeFactor](https://www.codefactor.io/repository/github/openpmd/openpmd-api/badge)](https://www.codefactor.io/repository/github/openpmd/openpmd-api)
-[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge)](https://coveralls.io/github/openPMD/openPMD-api)  
+[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge)](https://coveralls.io/github/openPMD/openPMD-api)
 [![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](https://openpmd-api.readthedocs.io/en/latest/?badge=latest)
 [![Linux/OSX Build Status dev](https://travis-ci.com/openPMD/openPMD-api.svg?branch=dev)](https://travis-ci.com/openPMD/openPMD-api)
 [![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
@@ -101,7 +101,7 @@ Required:
 
 Shipped internally in `share/openPMD/thirdParty/`:
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.10+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.10.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [pybind11](https://github.com/pybind/pybind11) 2.11.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 * [toml11](https://github.com/ToruNiina/toml11) 3.7.1+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
 
@@ -115,8 +115,8 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.7 - 3.11
-  * pybind11 2.10.1+
+  * Python 3.8 - 3.11
+  * pybind11 2.11.1+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)
@@ -267,7 +267,7 @@ The following options allow to switch to external installs:
 | CMake Option                    | Values     | Library       | Version  |
 |---------------------------------|------------|---------------|----------|
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.10+ |
-| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.10.1+ |
+| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.11.1+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |   3.9.1+ |
 | `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |   3.7.1+ |
 

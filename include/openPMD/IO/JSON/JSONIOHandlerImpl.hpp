@@ -26,8 +26,10 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/JSON/JSONFilePosition.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/config.hpp"
 
+#include <istream>
 #include <nlohmann/json.hpp>
 
 #include <complex>
@@ -153,7 +155,17 @@ class JSONIOHandlerImpl : public AbstractIOHandlerImpl
     using json = nlohmann::json;
 
 public:
-    explicit JSONIOHandlerImpl(AbstractIOHandler *);
+    enum class FileFormat
+    {
+        Json,
+        Toml
+    };
+
+    explicit JSONIOHandlerImpl(
+        AbstractIOHandler *,
+        openPMD::json::TracingJSON config,
+        FileFormat,
+        std::string originalExtension);
 
     ~JSONIOHandlerImpl() override;
 
@@ -229,15 +241,25 @@ private:
     // files that have logically, but not physically been written to
     std::unordered_set<File> m_dirty;
 
+    /*
+     * Is set by constructor.
+     */
+    FileFormat m_fileFormat{};
+
+    std::string m_originalExtension;
+
     // HELPER FUNCTIONS
 
-    // will use the IOHandler to retrieve the correct directory
-    // shared pointer to circumvent the fact that c++ pre 17 does
-    // not enforce (only allow) copy elision in return statements
-    std::shared_ptr<FILEHANDLE> getFilehandle(
-        File,
-        Access access); //, Access
-                        // m_frontendAccess=this->m_handler->m_frontendAccess);
+    // will use the IOHandler to retrieve the correct directory.
+    // first tuple element will be the underlying opened file handle.
+    // if Access is read mode, then the second tuple element will be the istream
+    // casted to precision std::numeric_limits<double>::digits10 + 1, else null.
+    // if Access is write mode, then the second tuple element will be the
+    // ostream casted to precision std::numeric_limits<double>::digits10 + 1,
+    // else null. first tuple element needs to be a pointer, since the casted
+    // streams are references only.
+    std::tuple<std::unique_ptr<FILEHANDLE>, std::istream *, std::ostream *>
+    getFilehandle(File, Access access);
 
     // full operating system path of the given file
     std::string fullPath(File);
@@ -272,15 +294,13 @@ private:
     // essentially: m_i = \prod_{j=0}^{i-1} extent_j
     static Extent getMultiplicators(Extent const &extent);
 
-    static nlohmann::json initializeNDArray(Extent const &extent);
-
     static Extent getExtent(nlohmann::json &j);
 
     // remove single '/' in the beginning and end of a string
     static std::string removeSlashes(std::string);
 
     template <typename KeyT>
-    static bool hasKey(nlohmann::json &, KeyT &&key);
+    static bool hasKey(nlohmann::json const &, KeyT &&key);
 
     // make sure that the given path exists in proper form in
     // the passed json value
@@ -366,7 +386,8 @@ private:
     struct AttributeReader
     {
         template <typename T>
-        static void call(nlohmann::json &, Parameter<Operation::READ_ATT> &);
+        static void
+        call(nlohmann::json const &, Parameter<Operation::READ_ATT> &);
 
         static constexpr char const *errorMsg = "JSON: writeAttribute";
     };

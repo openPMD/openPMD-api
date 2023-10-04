@@ -18,16 +18,13 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include "openPMD/backend/PatchRecordComponent.hpp"
 
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
-#include "openPMD/backend/PatchRecordComponent.hpp"
-#include "openPMD/binding/python/Numpy.hpp"
 
-namespace py = pybind11;
-using namespace openPMD;
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 namespace
 {

@@ -18,15 +18,13 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
+#include "openPMD/Series.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IterationEncoding.hpp"
-#include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 
 #if openPMD_HAVE_MPI
 //  re-implemented signatures:
@@ -36,9 +34,6 @@
 
 #include <sstream>
 #include <string>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 #if openPMD_HAVE_MPI
 /** mpi4py communicator wrapper
@@ -366,6 +361,25 @@ For a less restrictive API in non-streaming situations,
 `Series.iterations` can be accessed directly.
 Look for the ReadIterations class for further documentation.
             )END")
+        .def(
+            "parse_base",
+            [](Series &s) {
+                py::gil_scoped_release release;
+                s.parseBase();
+            },
+            &R"END(
+Parse the Series.
+
+Only necessary in linear read mode.
+In linear read mode, the Series constructor does not do any IO accesses.
+This call effectively triggers the side effects of
+Series::readIterations(), for use cases where data needs to be accessed
+before iterating through the iterations.
+
+The reason for introducing this restricted alias to
+Series.read_iterations() is that the name "read_iterations" is misleading
+for that use case: When using IO steps, this call only ensures that the
+first step is parsed.)END"[1])
         .def(
             "write_iterations",
             &Series::writeIterations,

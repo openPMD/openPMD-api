@@ -194,7 +194,20 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             std::move(originalExtension));
     case Format::JSON:
         return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
-            "JSON", path, access);
+            "JSON",
+            path,
+            access,
+            std::move(options),
+            JSONIOHandlerImpl::FileFormat::Json,
+            std::move(originalExtension));
+    case Format::TOML:
+        return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
+            "JSON",
+            path,
+            access,
+            std::move(options),
+            JSONIOHandlerImpl::FileFormat::Toml,
+            std::move(originalExtension));
     default:
         throw std::runtime_error(
             "Unknown file format! Did you specify a file ending? Specified "

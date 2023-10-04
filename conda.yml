@@ -36,7 +36,7 @@ dependencies:
   - pre-commit
   - pyarrow  # for dask
 #  - pybind11  # shipped internally
-  - python>=3.7
+  - python>=3.8
 
 # just a note for later hackery, we could install pip packages inside the env, too:
 #  - pip:
