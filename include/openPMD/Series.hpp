@@ -637,12 +637,12 @@ OPENPMD_private
     std::future<void> flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     void flushFileBased(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     /*
      * Group-based and variable-based iteration layouts share a lot of logic
@@ -654,7 +654,7 @@ OPENPMD_private
     void flushGorVBased(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     void flushMeshesPath();
     void flushParticlesPath();

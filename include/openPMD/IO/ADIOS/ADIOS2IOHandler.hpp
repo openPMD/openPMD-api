@@ -391,9 +391,9 @@ private:
         ThrowError
     };
 
-    detail::BufferedActions &getFileData(InvalidatableFile file, IfFileNotOpen);
+    detail::BufferedActions &getFileData(InvalidatableFile const &file, IfFileNotOpen);
 
-    void dropFileData(InvalidatableFile file);
+    void dropFileData(InvalidatableFile const &file);
 
     /*
      * Prepare a variable that already exists for an IO
@@ -465,7 +465,7 @@ namespace detail
             ADIOS2IOHandlerImpl &,
             adios2::IO &IO,
             std::string name,
-            std::shared_ptr<Attribute::resource> resource);
+            std::shared_ptr<Attribute::resource> const &resource);
 
         template <int n, typename... Params>
         static Datatype call(Params &&...);
@@ -488,8 +488,8 @@ namespace detail
         template <typename T>
         static void call(
             ADIOS2IOHandlerImpl *impl,
-            InvalidatableFile,
-            const std::string &varName,
+            InvalidatableFile const &,
+            std::string const &varName,
             Parameter<Operation::OPEN_DATASET> &parameters);
 
         static constexpr char const *errorMsg = "ADIOS2: openDataset()";
@@ -1195,7 +1195,7 @@ public:
 #if openPMD_HAVE_MPI
 
     ADIOS2IOHandler(
-        std::string path,
+        std::string const &path,
         Access,
         MPI_Comm,
         json::TracingJSON options,
@@ -1205,7 +1205,7 @@ public:
 #endif
 
     ADIOS2IOHandler(
-        std::string path,
+        std::string const &path,
         Access,
         json::TracingJSON options,
         std::string engineType,

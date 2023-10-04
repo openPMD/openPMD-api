@@ -30,9 +30,9 @@ class JSONIOHandler : public AbstractIOHandler
 {
 public:
     JSONIOHandler(
-        std::string path,
+        std::string const &path,
         Access at,
-        openPMD::json::TracingJSON config,
+        openPMD::json::TracingJSON const &config,
         JSONIOHandlerImpl::FileFormat,
         std::string originalExtension);
 

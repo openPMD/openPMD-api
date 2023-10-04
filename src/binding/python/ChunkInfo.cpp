@@ -61,7 +61,7 @@ void init_Chunk(py::module &m)
             },
 
             // __setstate__
-            [](py::tuple t) {
+            [](py::tuple const &t) {
                 // our state tuple has exactly three values
                 if (t.size() != 3)
                     throw std::runtime_error("Invalid state!");

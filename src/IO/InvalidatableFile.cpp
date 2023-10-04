@@ -21,7 +21,7 @@
 
 #include "openPMD/IO/InvalidatableFile.hpp"
 
-openPMD::InvalidatableFile::InvalidatableFile(std::string s)
+openPMD::InvalidatableFile::InvalidatableFile(std::string const &s)
     : fileState{std::make_shared<FileState>(s)}
 {}
 
@@ -35,7 +35,7 @@ bool openPMD::InvalidatableFile::valid() const
     return fileState->valid;
 }
 
-openPMD::InvalidatableFile &openPMD::InvalidatableFile::operator=(std::string s)
+openPMD::InvalidatableFile &openPMD::InvalidatableFile::operator=(std::string const &s)
 {
     if (fileState)
     {

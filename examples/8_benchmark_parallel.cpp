@@ -12,7 +12,7 @@
 #include <vector>
 
 #if openPMD_HAVE_MPI
-inline void print_help(std::string const program_name)
+inline void print_help(std::string const &program_name)
 {
     std::cout << "Usage: " << program_name << "\n";
     std::cout << "Run a simple parallel write and read benchmark.\n\n";
@@ -27,7 +27,7 @@ inline void print_help(std::string const program_name)
     std::cout << "    " << program_name << "  # for a strong scaling\n";
 }
 
-inline void print_version(std::string const program_name)
+inline void print_version(std::string const &program_name)
 {
     std::cout << program_name << " (openPMD-api) " << openPMD::getVersion()
               << "\n";

@@ -37,9 +37,9 @@ class ParallelHDF5IOHandler : public AbstractIOHandler
 public:
 #if openPMD_HAVE_MPI
     ParallelHDF5IOHandler(
-        std::string path, Access, MPI_Comm, json::TracingJSON config);
+        std::string const &path, Access, MPI_Comm, json::TracingJSON config);
 #else
-    ParallelHDF5IOHandler(std::string path, Access, json::TracingJSON config);
+    ParallelHDF5IOHandler(std::string const &path, Access, json::TracingJSON config);
 #endif
     ~ParallelHDF5IOHandler() override;
 

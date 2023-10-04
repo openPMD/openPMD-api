@@ -91,7 +91,7 @@ void init_PatchRecordComponent(py::module &m)
         // all buffer types
         .def(
             "store",
-            [](PatchRecordComponent &prc, uint64_t idx, py::buffer a) {
+            [](PatchRecordComponent &prc, uint64_t idx, py::buffer const &a) {
                 py::buffer_info buf = a.request();
                 auto const dtype = dtype_from_bufferformat(buf.format);
 

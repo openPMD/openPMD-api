@@ -62,5 +62,5 @@ std::string concrete_h5_file_position(Writable *w);
  * @return array for resulting chunk dimensions
  */
 std::vector<hsize_t>
-getOptimalChunkDims(std::vector<hsize_t> const dims, size_t const typeSize);
+getOptimalChunkDims(std::vector<hsize_t> const &dims, size_t const typeSize);
 } // namespace openPMD

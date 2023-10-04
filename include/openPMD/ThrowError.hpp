@@ -51,7 +51,7 @@ enum class Reason
 throwBackendConfigSchema(std::vector<std::string> jsonPath, std::string what);
 
 [[noreturn]] OPENPMDAPI_EXPORT void
-throwOperationUnsupportedInBackend(std::string backend, std::string what);
+throwOperationUnsupportedInBackend(std::string backend, std::string const &what);
 
 [[noreturn]] OPENPMDAPI_EXPORT void throwReadError(
     AffectedObject affectedObject,

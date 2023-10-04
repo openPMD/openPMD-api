@@ -65,7 +65,7 @@ namespace
 #if openPMD_HAVE_MPI
 template <>
 std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
-    std::string path,
+    std::string const &path,
     Access access,
     Format format,
     std::string originalExtension,
@@ -139,7 +139,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
 
 template <>
 std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
-    std::string path,
+    std::string const &path,
     Access access,
     Format format,
     std::string originalExtension,
@@ -217,13 +217,13 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
 }
 
 std::unique_ptr<AbstractIOHandler> createIOHandler(
-    std::string path,
+    std::string const &path,
     Access access,
     Format format,
     std::string originalExtension)
 {
     return createIOHandler(
-        std::move(path),
+        path,
         access,
         format,
         std::move(originalExtension),

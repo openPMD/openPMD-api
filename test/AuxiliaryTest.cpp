@@ -175,7 +175,7 @@ struct structure : public TestHelper
     }
     structure &setText(std::string newText)
     {
-        setAttribute("text", newText);
+        setAttribute("text", std::move(newText));
         return *this;
     }
 };
@@ -308,7 +308,7 @@ struct AttributedWidget : public TestHelper
     AttributedWidget() : TestHelper()
     {}
 
-    Attribute::resource get(std::string key)
+    Attribute::resource get(std::string const &key)
     {
         return getAttribute(key).getResource();
     }
@@ -380,7 +380,7 @@ struct Dotty : public TestHelper
     }
     Dotty &setAtt3(std::string s)
     {
-        setAttribute("att3", s);
+        setAttribute("att3", std::move(s));
         return *this;
     }
 };

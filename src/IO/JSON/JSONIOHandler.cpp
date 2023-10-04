@@ -26,13 +26,13 @@ namespace openPMD
 JSONIOHandler::~JSONIOHandler() = default;
 
 JSONIOHandler::JSONIOHandler(
-    std::string path,
+    std::string const &path,
     Access at,
-    openPMD::json::TracingJSON jsonCfg,
+    openPMD::json::TracingJSON const &jsonCfg,
     JSONIOHandlerImpl::FileFormat format,
     std::string originalExtension)
     : AbstractIOHandler{path, at}
-    , m_impl{this, std::move(jsonCfg), format, std::move(originalExtension)}
+    , m_impl{this, jsonCfg, format, std::move(originalExtension)}
 {}
 
 std::future<void> JSONIOHandler::flush(internal::ParsedFlushParams &)

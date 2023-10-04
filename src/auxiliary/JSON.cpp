@@ -226,7 +226,7 @@ namespace
                 res[pair.key()] = jsonToToml(pair.value(), currentPath);
                 currentPath.pop_back();
             }
-            return toml::value(std::move(res));
+            return toml::value(res);
         }
         case nlohmann::json::value_t::array: {
             toml::value::array_type res;
@@ -238,7 +238,7 @@ namespace
                 res.emplace_back(jsonToToml(entry, currentPath));
                 currentPath.pop_back();
             }
-            return toml::value(std::move(res));
+            return toml::value(res);
         }
         case nlohmann::json::value_t::string:
             return val.get<std::string>();

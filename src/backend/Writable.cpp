@@ -52,7 +52,7 @@ void Writable::seriesFlush(internal::FlushParams flushParams)
     auto series =
         Attributable({attributable, [](auto const *) {}}).retrieveSeries();
     series.flush_impl(
-        series.iterations.begin(), series.iterations.end(), flushParams);
+        series.iterations.begin(), series.iterations.end(), std::move(flushParams));
 }
 
 } // namespace openPMD

@@ -50,7 +50,7 @@ namespace error
     {
     public:
         std::string backend;
-        OperationUnsupportedInBackend(std::string backend_in, std::string what);
+        OperationUnsupportedInBackend(std::string backend_in, const std::string& what);
     };
 
     /**
@@ -62,7 +62,7 @@ namespace error
     class WrongAPIUsage : public Error
     {
     public:
-        WrongAPIUsage(std::string what);
+        WrongAPIUsage(const std::string& what);
     };
 
     class BackendConfigSchema : public Error

@@ -1241,7 +1241,7 @@ void ADIOS2IOHandlerImpl::listPaths(
     }
     for (auto &path : subdirs)
     {
-        parameters.paths->emplace_back(std::move(path));
+        parameters.paths->emplace_back(path);
     }
 }
 
@@ -1284,7 +1284,7 @@ void ADIOS2IOHandlerImpl::listDatasets(
     }
     for (auto &dataset : subdirs)
     {
-        parameters.datasets->emplace_back(std::move(dataset));
+        parameters.datasets->emplace_back(dataset);
     }
 }
 
@@ -1345,7 +1345,7 @@ void ADIOS2IOHandlerImpl::closePath(
         return;
     }
     auto position = setAndGetFilePosition(writable);
-    auto const positionString = filePositionToString(position);
+    auto positionString = filePositionToString(position);
     VERIFY(
         !auxiliary::ends_with(positionString, '/'),
         "[ADIOS2] Position string has unexpected format. This is a bug "
@@ -1354,7 +1354,7 @@ void ADIOS2IOHandlerImpl::closePath(
     for (auto const &attr :
          fileData.availableAttributesPrefixed(positionString))
     {
-        fileData.m_IO.RemoveAttribute(positionString + '/' + attr);
+        fileData.m_IO.RemoveAttribute(positionString.append("/").append(attr));
     }
 }
 
@@ -1492,7 +1492,7 @@ ADIOS2IOHandlerImpl::nameOfAttribute(Writable *writable, std::string attribute)
 {
     auto pos = setAndGetFilePosition(writable);
     return filePositionToString(
-        extendFilePosition(pos, auxiliary::removeSlashes(attribute)));
+        extendFilePosition(pos, auxiliary::removeSlashes(std::move(attribute))));
 }
 
 GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
@@ -1501,7 +1501,7 @@ GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
 }
 
 detail::BufferedActions &
-ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
+ADIOS2IOHandlerImpl::getFileData(InvalidatableFile const &file, IfFileNotOpen flag)
 {
     VERIFY_ALWAYS(
         file.valid(),
@@ -1515,7 +1515,7 @@ ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
         case IfFileNotOpen::OpenImplicitly: {
 
             auto res = m_fileData.emplace(
-                std::move(file),
+                file,
                 std::make_unique<detail::BufferedActions>(*this, file));
             return *res.first->second;
         }
@@ -1531,7 +1531,7 @@ ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
     }
 }
 
-void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile file)
+void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile const &file)
 {
     auto it = m_fileData.find(file);
     if (it != m_fileData.end())
@@ -1615,7 +1615,7 @@ namespace detail
         ADIOS2IOHandlerImpl &impl,
         adios2::IO &IO,
         std::string name,
-        std::shared_ptr<Attribute::resource> resource)
+        std::shared_ptr<Attribute::resource> const &resource)
     {
         (void)impl;
         /*
@@ -1892,7 +1892,7 @@ namespace detail
     template <typename T>
     void DatasetOpener::call(
         ADIOS2IOHandlerImpl *impl,
-        InvalidatableFile file,
+        InvalidatableFile const &file,
         const std::string &varName,
         Parameter<Operation::OPEN_DATASET> &parameters)
     {
@@ -3394,7 +3394,7 @@ namespace detail
 #if openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path,
+    std::string const &path,
     openPMD::Access at,
     MPI_Comm comm,
     json::TracingJSON options,
@@ -3412,12 +3412,12 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 #endif
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path,
+    std::string const &path,
     Access at,
     json::TracingJSON options,
     std::string engineType,
     std::string specifiedExtension)
-    : AbstractIOHandler(std::move(path), at)
+    : AbstractIOHandler(path, at)
     , m_impl{
           this,
           std::move(options),
@@ -3435,19 +3435,19 @@ ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 
 #if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path,
+    std::string const &path,
     Access at,
     MPI_Comm comm,
     json::TracingJSON,
     std::string,
     std::string)
-    : AbstractIOHandler(std::move(path), at, comm)
+    : AbstractIOHandler(path, at, comm)
 {}
 
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path, Access at, json::TracingJSON, std::string, std::string)
+    std::string const &path, Access at, json::TracingJSON, std::string, std::string)
     : AbstractIOHandler(std::move(path), at)
 {}
 

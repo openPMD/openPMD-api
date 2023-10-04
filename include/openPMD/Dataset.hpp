@@ -37,7 +37,7 @@ class Dataset
     friend class RecordComponent;
 
 public:
-    Dataset(Datatype, Extent, std::string options = "{}");
+    Dataset(Datatype, Extent const&, std::string options = "{}");
 
     /**
      * @brief Constructor that sets the datatype to undefined.
@@ -45,7 +45,7 @@ public:
      * Helpful for resizing datasets, since datatypes need not be given twice.
      *
      */
-    Dataset(Extent);
+    Dataset(Extent const&);
 
     Dataset &extend(Extent newExtent);
 

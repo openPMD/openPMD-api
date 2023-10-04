@@ -12,19 +12,19 @@ const char *Error::what() const noexcept
 namespace error
 {
     OperationUnsupportedInBackend::OperationUnsupportedInBackend(
-        std::string backend_in, std::string what)
+        std::string backend_in, const std::string& what)
         : Error("Operation unsupported in " + backend_in + ": " + what)
         , backend{std::move(backend_in)}
     {}
 
     void
-    throwOperationUnsupportedInBackend(std::string backend, std::string what)
+    throwOperationUnsupportedInBackend(std::string backend, std::string const &what)
     {
         throw OperationUnsupportedInBackend(
-            std::move(backend), std::move(what));
+            std::move(backend), what);
     }
 
-    WrongAPIUsage::WrongAPIUsage(std::string what)
+    WrongAPIUsage::WrongAPIUsage(const std::string& what)
         : Error("Wrong API usage: " + what)
     {}
 
