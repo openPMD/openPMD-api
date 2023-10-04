@@ -12,7 +12,7 @@ const char *Error::what() const noexcept
 namespace error
 {
     OperationUnsupportedInBackend::OperationUnsupportedInBackend(
-        std::string backend_in, const std::string &what)
+        std::string backend_in, std::string const &what)
         : Error("Operation unsupported in " + backend_in + ": " + what)
         , backend{std::move(backend_in)}
     {}
@@ -23,7 +23,7 @@ namespace error
         throw OperationUnsupportedInBackend(std::move(backend), what);
     }
 
-    WrongAPIUsage::WrongAPIUsage(const std::string &what)
+    WrongAPIUsage::WrongAPIUsage(std::string const &what)
         : Error("Wrong API usage: " + what)
     {}
 
