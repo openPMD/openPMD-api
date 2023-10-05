@@ -5806,7 +5806,6 @@ void variableBasedParticleData()
 
             for (size_t i = 0; i < 3; ++i)
             {
-                std::string const &dim = dimensions[i];
                 Extent const &extent = extents[i];
                 auto chunk = loadedChunks[i];
                 for (size_t j = 0; j < extent[0]; ++j)
