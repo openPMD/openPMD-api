@@ -184,12 +184,42 @@ public:
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
      * simulation units to SI units.
      *
+     * Note that this API follows the legacy (openPMD 1.*) definition
+     * of gridUnitSI.
+     * In order to specify the gridUnitSI per dimension,
+     * use `setGridUnitSIPerDimension()`.
+     *
      * @param   gridUnitSI  unit-conversion factor to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
      * simulation units to SI units.
      * @return  Reference to modified mesh.
      */
     Mesh &setGridUnitSI(double gridUnitSI);
+
+    /**
+     * @return  A vector of the gridUnitSI per grid dimension as defined
+     * by the axisLabels. If the gridUnitSI is defined as a scalar
+     * (legacy openPMD), the dimensionality is determined and a vector of
+     * `dimensionality` times the scalar vector is returned.
+     */
+    std::vector<double> gridUnitSIPerDimension() const;
+
+    /** Set the unit-conversion factor per dimension to multiply each value in
+     * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
+     * simulation units to SI units.
+     *
+     * Note that this is a feature of openPMD 2.0.
+     * The legacy behavior (a scalar gridUnitSI) is implemented
+     * by `setGridUnitSI()`.
+     *
+     * @param   gridUnitSI  unit-conversion factor to multiply each value in
+     * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
+     * simulation units to SI units.
+     *
+     * @return  Reference to modified mesh.
+     */
+
+    Mesh &setGridUnitSIPerDimension(std::vector<double> gridUnitSI);
 
     /** Set the powers of the 7 base measures characterizing the record's unit
      * in SI.
