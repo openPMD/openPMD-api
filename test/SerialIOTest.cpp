@@ -6421,7 +6421,7 @@ void deferred_parsing(std::string const &extension)
             }
             infix = padding.append(infix);
             std::ofstream file;
-            file.open(basename.append(infix).append(".").append(extension));
+            file.open(std::string(basename).append(infix).append(".").append(extension));
             file.close();
         }
     }
