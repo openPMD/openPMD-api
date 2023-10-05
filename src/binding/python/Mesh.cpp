@@ -62,6 +62,11 @@ void init_Mesh(py::module &m)
             python::doc_unit_dimension)
 
         .def_property(
+            "grid_unit_dimension",
+            &Mesh::gridUnitDimension,
+            &Mesh::setGridUnitDimension)
+
+        .def_property(
             "geometry",
             &Mesh::geometry,
             py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
