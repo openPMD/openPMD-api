@@ -97,6 +97,10 @@ void init_Mesh(py::module &m)
             &Mesh::setGridGlobalOffset)
         .def_property("grid_unit_SI", &Mesh::gridUnitSI, &Mesh::setGridUnitSI)
         .def_property(
+            "grid_unit_SI_per_dimension",
+            &Mesh::gridUnitSIPerDimension,
+            &Mesh::setGridUnitSIPerDimension)
+        .def_property(
             "time_offset",
             &Mesh::timeOffset<double>,
             &Mesh::setTimeOffset<double>)
