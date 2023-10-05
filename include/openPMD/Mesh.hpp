@@ -155,7 +155,7 @@ public:
      */
     template <
         typename T,
-        typename = std::enable_if_t<std::is_floating_point<T>::value> >
+        typename = std::enable_if_t<std::is_floating_point<T>::value>>
     Mesh &setGridSpacing(std::vector<T> const &gridSpacing);
 
     /**
@@ -232,6 +232,34 @@ public:
     setUnitDimension(std::map<UnitDimension, double> const &unitDimension);
 
     /**
+     * @brief Set the unitDimension for each axis of the current grid.
+     *
+     * @param gridUnitDimension A vector of the unitDimensions for each
+     * axis of the grid in the order of the axisLabels.
+
+     * Behavior note: This is an updating method, meaning that an SI unit that
+     * has been defined before and is in the next call not explicitly set
+     * in the `std::map<UnitDimension, double>` will keep its previous value.
+     *
+     * @return Reference to modified mesh.
+     */
+    Mesh &setGridUnitDimension(
+        std::vector<std::map<UnitDimension, double>> const & gridUnitDimension);
+
+    /**
+     * @brief Return the physical dimensions of the mesh axes.
+
+     * If the attribute is not defined, the axes are assumed to be spatial
+     * and the return value will be according to this assumption.
+     * If the attribute is defined, the dimensionality of the return value is
+     * not checked against the dimensionality of the mesh.
+     *
+     * @return A vector of arrays, each array representing the SI unit of one
+     * mesh axis.
+     */
+    std::vector<std::array<double, 7>> gridUnitDimension() const;
+
+    /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float,
      * double).
      * @return  Offset between the time at which this record is defined and the
@@ -252,7 +280,7 @@ public:
      */
     template <
         typename T,
-        typename = std::enable_if_t<std::is_floating_point<T>::value> >
+        typename = std::enable_if_t<std::is_floating_point<T>::value>>
     Mesh &setTimeOffset(T timeOffset);
 
 private:

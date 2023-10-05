@@ -187,6 +187,32 @@ Mesh &Mesh::setGridUnitSI(double gusi)
     return *this;
 }
 
+namespace
+{
+    uint64_t retrieveMeshDimensionality(Mesh const &m)
+    {
+        try
+        {
+            return m.axisLabels().size();
+        }
+        catch (no_such_attribute_error const &)
+        {
+            // no-op, continue with fallback below
+        }
+
+        // maybe we have record components and can ask them
+        if (auto it = m.begin(); it != m.end())
+        {
+            return it->second.getDimensionality();
+        }
+        /*
+         * Since some backends cannot distinguish between vector and
+         * scalar values, the most likely answer here is 1.
+         */
+        return 1;
+    }
+} // namespace
+
 std::vector<double> Mesh::gridUnitSIPerDimension() const
 {
     Attribute rawAttribute = getAttribute("gridUnitSI");
@@ -197,27 +223,7 @@ std::vector<double> Mesh::gridUnitSIPerDimension() const
     else
     {
         double scalarValue = rawAttribute.get<double>();
-        uint64_t dimensionality = [this]() -> uint64_t {
-            try
-            {
-                return axisLabels().size();
-            }
-            catch (no_such_attribute_error const &)
-            {
-                // no-op, continue with fallback below
-            }
-
-            // maybe we have record components and can ask them
-            if (auto it = this->begin(); it != this->end())
-            {
-                return it->second.getDimensionality();
-            }
-            /*
-             * Since some backends cannot distinguish between vector and
-             * scalar values, the most likely answer here is 1.
-             */
-            return 1;
-        }();
+        uint64_t dimensionality = retrieveMeshDimensionality(*this);
         return std::vector<double>(dimensionality, scalarValue);
     }
 }
@@ -228,16 +234,87 @@ Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
     return *this;
 }
 
+namespace
+{
+    template <typename RandomAccessIterator>
+    void fromMapOfUnitDimension(
+        RandomAccessIterator it, std::map<UnitDimension, double> const &udim)
+    {
+        for (auto [unit, exponent] : udim)
+        {
+            *(it + static_cast<uint8_t>(unit)) = exponent;
+        }
+    }
+} // namespace
+
 Mesh &Mesh::setUnitDimension(std::map<UnitDimension, double> const &udim)
 {
     if (!udim.empty())
     {
         std::array<double, 7> tmpUnitDimension = this->unitDimension();
-        for (auto const &entry : udim)
-            tmpUnitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
+        fromMapOfUnitDimension(tmpUnitDimension.begin(), udim);
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
+}
+
+Mesh &Mesh::setGridUnitDimension(
+    std::vector<std::map<UnitDimension, double>> const &udims)
+{
+    auto rawGridUnitDimension = [this]() {
+        try
+        {
+            return this->getAttribute("gridUnitDimension")
+                .get<std::vector<double>>();
+        }
+        catch (no_such_attribute_error const &)
+        {
+            return std::vector<double>();
+        }
+    }();
+    rawGridUnitDimension.resize(7 * udims.size());
+    auto cursor = rawGridUnitDimension.begin();
+    for (auto const &udim : udims)
+    {
+        fromMapOfUnitDimension(cursor, udim);
+        cursor += 7;
+    }
+    setAttribute("gridUnitDimension", rawGridUnitDimension);
+    return *this;
+}
+
+std::vector<std::array<double, 7>> Mesh::gridUnitDimension() const
+{
+    if (containsAttribute("gridUnitDimension"))
+    {
+        std::vector<double> rawRes =
+            getAttribute("gridUnitDimension").get<std::vector<double>>();
+        if (rawRes.size() % 7 != 0)
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                std::nullopt,
+                "[Mesh::gridUnitDimension()] `gridUnitDimension` attribute "
+                "must have a length equal to a multiple of 7.");
+        }
+        std::vector<std::array<double, 7>> res(rawRes.size() / 7);
+        for (size_t dim = 0; dim < res.size(); ++dim)
+        {
+            std::copy_n(rawRes.begin() + dim * 7, 7, res.at(dim).begin());
+        }
+        return res;
+    }
+    else
+    {
+        // gridUnitSI is an optional attribute
+        // if it is missing, the mesh is interpreted as spatial
+        std::array<double, 7> spatialMesh;
+        fromMapOfUnitDimension(spatialMesh.begin(), {{UnitDimension::L, 1}});
+        auto dim = retrieveMeshDimensionality(*this);
+        std::vector<std::array<double, 7>> res(dim, spatialMesh);
+        return res;
+    }
 }
 
 template <typename T, typename>
