@@ -21,8 +21,10 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <algorithm>
@@ -182,6 +184,47 @@ double Mesh::gridUnitSI() const
 Mesh &Mesh::setGridUnitSI(double gusi)
 {
     setAttribute("gridUnitSI", gusi);
+    return *this;
+}
+
+std::vector<double> Mesh::gridUnitSIPerDimension() const
+{
+    Attribute rawAttribute = getAttribute("gridUnitSI");
+    if (isVector(rawAttribute.dtype))
+    {
+        return rawAttribute.get<std::vector<double>>();
+    }
+    else
+    {
+        double scalarValue = rawAttribute.get<double>();
+        uint64_t dimensionality = [this]() -> uint64_t {
+            try
+            {
+                return axisLabels().size();
+            }
+            catch (no_such_attribute_error const &)
+            {
+                // no-op, continue with fallback below
+            }
+
+            // maybe we have record components and can ask them
+            if (auto it = this->begin(); it != this->end())
+            {
+                return it->second.getDimensionality();
+            }
+            /*
+             * Since some backends cannot distinguish between vector and
+             * scalar values, the most likely answer here is 1.
+             */
+            return 1;
+        }();
+        return std::vector<double>(dimensionality, scalarValue);
+    }
+}
+
+Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
+{
+    setAttribute("gridUnitSI", std::move(gridUnitSI));
     return *this;
 }
 
@@ -385,17 +428,35 @@ void Mesh::read()
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(*aRead.resource).getOptional<double>();
-        val.has_value())
-        setGridUnitSI(val.value());
+    if (isVector(*aRead.dtype))
+    {
+        if (auto val =
+                Attribute(*aRead.resource).getOptional<std::vector<double>>();
+            val.has_value())
+            setGridUnitSIPerDimension(val.value());
+        else
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Unexpected Attribute datatype for 'gridUnitSI' "
+                "(expected vector of double, found " +
+                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+    }
     else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'gridUnitSI' (expected double, "
-            "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+    {
+        if (auto val = Attribute(*aRead.resource).getOptional<double>();
+            val.has_value())
+            setGridUnitSI(val.value());
+        else
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Unexpected Attribute datatype for 'gridUnitSI' "
+                "(expected double, found " +
+                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+    }
 
     if (scalar())
     {
