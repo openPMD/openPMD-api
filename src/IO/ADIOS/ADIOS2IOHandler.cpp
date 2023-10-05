@@ -1354,7 +1354,7 @@ void ADIOS2IOHandlerImpl::closePath(
     for (auto const &attr :
          fileData.availableAttributesPrefixed(positionString))
     {
-        fileData.m_IO.RemoveAttribute(positionString.append("/").append(attr));
+        fileData.m_IO.RemoveAttribute(std::string(positionString).append("/").append(attr));
     }
 }
 
