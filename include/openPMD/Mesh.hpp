@@ -187,7 +187,7 @@ public:
      * Note that this API follows the legacy (openPMD 1.*) definition
      * of gridUnitSI.
      * In order to specify the gridUnitSI per dimension,
-     * use `setGridUnitSIPerDimension()`.
+     * use the vector overload or `setGridUnitSIPerDimension()`.
      *
      * @param   gridUnitSI  unit-conversion factor to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
@@ -195,6 +195,22 @@ public:
      * @return  Reference to modified mesh.
      */
     Mesh &setGridUnitSI(double gridUnitSI);
+
+    /** Set the unit-conversion factor per dimension to multiply each value in
+     * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
+     * simulation units to SI units.
+     *
+     * Note that this is a feature of openPMD 2.0.
+     * The legacy behavior (a scalar gridUnitSI) is implemented
+     * by `setGridUnitSI(double)`.
+     *
+     * @param   gridUnitSI  unit-conversion factor to multiply each value in
+     * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
+     * simulation units to SI units.
+     *
+     * @return  Reference to modified mesh.
+     */
+    Mesh &setGridUnitSI(std::vector<double> gridUnitSI);
 
     /**
      * @return  A vector of the gridUnitSI per grid dimension as defined
@@ -204,13 +220,15 @@ public:
      */
     std::vector<double> gridUnitSIPerDimension() const;
 
-    /** Set the unit-conversion factor per dimension to multiply each value in
+    /** Alias for `setGridUnitSI(std::vector<double>)`.
+     *
+     * Set the unit-conversion factor per dimension to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
      * simulation units to SI units.
      *
      * Note that this is a feature of openPMD 2.0.
      * The legacy behavior (a scalar gridUnitSI) is implemented
-     * by `setGridUnitSI()`.
+     * by `setGridUnitSI(double)`.
      *
      * @param   gridUnitSI  unit-conversion factor to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
@@ -218,7 +236,6 @@ public:
      *
      * @return  Reference to modified mesh.
      */
-
     Mesh &setGridUnitSIPerDimension(std::vector<double> gridUnitSI);
 
     /** Set the powers of the 7 base measures characterizing the record's unit

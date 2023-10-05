@@ -187,6 +187,11 @@ Mesh &Mesh::setGridUnitSI(double gusi)
     return *this;
 }
 
+Mesh &Mesh::setGridUnitSI(std::vector<double> gusi)
+{
+    return setGridUnitSIPerDimension(std::move(gusi));
+}
+
 namespace
 {
     uint64_t retrieveMeshDimensionality(Mesh const &m)
