@@ -184,6 +184,20 @@ double Mesh::gridUnitSI() const
 Mesh &Mesh::setGridUnitSI(double gusi)
 {
     setAttribute("gridUnitSI", gusi);
+    if (auto series_opt = retrieveSeries_optional(); series_opt.has_value())
+    {
+        if (auto version = series_opt->openPMD(); version >= "2.")
+        {
+            std::cerr << "[Mesh::setGridUnitSI] Warning: Setting a scalar "
+                         "`gridUnitSI` in a file with openPMD version '" +
+                    version +
+                    "'. Consider specifying a vector instead in order to "
+                    "specify "
+                    "the gridUnitSI per axis (ref.: "
+                    "https://github.com/openPMD/openPMD-standard/pull/193)."
+                      << std::endl;
+        }
+    }
     return *this;
 }
 
@@ -220,17 +234,7 @@ namespace
 
 std::vector<double> Mesh::gridUnitSIPerDimension() const
 {
-    Attribute rawAttribute = getAttribute("gridUnitSI");
-    if (isVector(rawAttribute.dtype))
-    {
-        return rawAttribute.get<std::vector<double>>();
-    }
-    else
-    {
-        double scalarValue = rawAttribute.get<double>();
-        uint64_t dimensionality = retrieveMeshDimensionality(*this);
-        return std::vector<double>(dimensionality, scalarValue);
-    }
+    return getAttribute("gridUnitSI").get<std::vector<double>>();
 }
 
 Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
@@ -510,7 +514,11 @@ void Mesh::read()
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (isVector(*aRead.dtype))
+    auto series = retrieveSeries();
+    /* @todo remove second if condition (currently enabled since it allows a
+     *       sneak peek into openPMD 2.0 features)
+     */
+    if (series.openPMD() >= "2." || isVector(*aRead.dtype))
     {
         if (auto val =
                 Attribute(*aRead.resource).getOptional<std::vector<double>>();
