@@ -30,6 +30,7 @@
 #include <exception>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -311,6 +312,8 @@ public:
     // clang-format off
 OPENPMD_protected
     // clang-format on
+
+    std::optional<Series> retrieveSeries_optional() const;
 
     Series retrieveSeries() const;
 

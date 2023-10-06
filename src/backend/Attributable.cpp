@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <complex>
 #include <iostream>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -123,14 +124,39 @@ void Attributable::seriesFlush(std::string backendConfig)
     writable().seriesFlush(std::move(backendConfig));
 }
 
-Series Attributable::retrieveSeries() const
+std::optional<Series> Attributable::retrieveSeries_optional() const
 {
     Writable const *findSeries = &writable();
     while (findSeries->parent)
     {
         findSeries = findSeries->parent;
     }
-    return findSeries->attributable->asInternalCopyOf<Series>();
+    auto maybeSeriesData =
+        auxiliary::dynamic_cast_optional<internal::SeriesData>(
+            findSeries->attributable);
+    if (!maybeSeriesData.has_value())
+    {
+        return std::nullopt;
+    }
+    auto seriesData = *maybeSeriesData;
+    return seriesData->asInternalCopyOf<Series>();
+}
+
+Series Attributable::retrieveSeries() const
+{
+    if (auto maybeSeries = retrieveSeries_optional(); maybeSeries.has_value())
+    {
+        return *maybeSeries;
+    }
+    else
+    {
+        throw std::runtime_error(
+            "[Attributable::retrieveSeries] Error when trying to retrieve the "
+            "Series object. Note: An instance of the Series object must still "
+            "exist when flushing. A common cause for this error is using a "
+            "flush call on a handle (e.g. `Iteration::seriesFlush()`) when the "
+            "original Series object has already gone out of scope.");
+    }
 }
 
 auto Attributable::containingIteration() const

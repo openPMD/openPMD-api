@@ -20,7 +20,8 @@
  */
 #pragma once
 
-#include <exception>
+#include <optional>
+#include <stdexcept>
 
 namespace openPMD
 {
@@ -45,6 +46,28 @@ namespace auxiliary
         if (tmp_ptr == nullptr)
             throw std::runtime_error("Dynamic cast returned a nullptr!");
         return *tmp_ptr;
+    }
+
+    /** Returns a value reference stored in a dynamically casted pointer
+     *
+     * Safe version of *dynamic_cast< New_Type* >( some_ptr ); This function
+     * will throw as dynamic_cast and will furthermore throw if the result
+     * of the dynamic_cast is a nullptr.
+     *
+     * @tparam New_Type new type to cast to
+     * @tparam Old_Type old type to cast from
+     * @param[in] ptr and input pointer type
+     * @return value reference of a dereferenced, dynamically casted ptr to
+     * New_Type*
+     */
+    template <typename New_Type, typename Old_Type>
+    inline std::optional<New_Type *>
+    dynamic_cast_optional(Old_Type *ptr) noexcept
+    {
+        auto const tmp_ptr = dynamic_cast<New_Type *>(ptr);
+        if (tmp_ptr == nullptr)
+            return std::nullopt;
+        return {tmp_ptr};
     }
 
 } // namespace auxiliary
