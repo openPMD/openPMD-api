@@ -246,21 +246,21 @@ class pipe:
             io.Series:
             ["basePath", "iterationEncoding", "iterationFormat", "openPMD"],
             io.Iteration: ["snapshot"],
-            io.Record_Component: ["value", "shape"],
-            io.Mesh_Record_Component: ["value", "shape"]
+            io.Record_Component: ["value", "shape"] if isinstance(
+                src, io.Record_Component) and src.constant else []
         }
+        # filter the map for relevant openpmd object model types
+        from itertools import chain
+        ignored_attributes = set(chain.from_iterable(value for (
+            key, value) in ignored_attributes.items() if isinstance(src, key)))
+
         for key in src.attributes:
-            ignore_this_attribute = False
-            for openpmd_group, to_ignore_list in ignored_attributes.items():
-                if isinstance(src, openpmd_group):
-                    for to_ignore in to_ignore_list:
-                        if key == to_ignore:
-                            ignore_this_attribute = True
-                            break
+            ignore_this_attribute = key in ignored_attributes
             if not ignore_this_attribute:
                 attr = src.get_attribute(key)
                 attr_type = attribute_dtypes[key]
                 dest.set_attribute(key, attr, attr_type)
+
         container_types = [
             io.Mesh_Container, io.Particle_Container, io.ParticleSpecies,
             io.Record, io.Mesh, io.Particle_Patches, io.Patch_Record
