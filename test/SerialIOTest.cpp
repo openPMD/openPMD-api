@@ -912,6 +912,7 @@ inline void constant_scalar(std::string const &file_ending)
         // constant scalar
         Series s =
             Series("../samples/constant_scalar." + file_ending, Access::CREATE);
+        s.setOpenPMD("2.0.0");
         auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
         REQUIRE(s.iterations[1].meshes["rho"].scalar());
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
