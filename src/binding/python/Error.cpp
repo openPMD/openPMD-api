@@ -9,6 +9,7 @@
 #include "openPMD/Error.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include <pybind11/pybind11.h>
 
 void init_Error(py::module &m)
 {
@@ -22,6 +23,8 @@ void init_Error(py::module &m)
     py::register_exception<error::Internal>(m, "ErrorInternal", baseError);
     py::register_exception<error::NoSuchAttribute>(
         m, "ErrorNoSuchAttribute", baseError);
+    py::register_exception<error::IllegalInOpenPMDStandard>(
+        m, "ErrorIllegalInOpenPMDStandard", baseError);
 
 #ifndef NDEBUG
     m.def("test_throw", [](std::string description) {

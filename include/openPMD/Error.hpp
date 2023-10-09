@@ -109,6 +109,12 @@ namespace error
     public:
         NoSuchAttribute(std::string attributeName);
     };
+
+    class IllegalInOpenPMDStandard : public Error
+    {
+    public:
+        IllegalInOpenPMDStandard(std::string what);
+    };
 } // namespace error
 
 /**
