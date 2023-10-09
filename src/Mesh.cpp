@@ -240,6 +240,19 @@ std::vector<double> Mesh::gridUnitSIPerDimension() const
 Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
 {
     setAttribute("gridUnitSI", std::move(gridUnitSI));
+    if (auto series_opt = retrieveSeries_optional(); series_opt.has_value())
+    {
+        if (auto version = series_opt->openPMD(); version < "2.")
+        {
+            throw error::IllegalInOpenPMDStandard(
+                "[Mesh::setGridUnitSI] Setting `gridUnitSI` as a vector in a "
+                "file with openPMD version '" +
+                version +
+                "', but per-axis specification is only supported as of "
+                "openPMD 2.0. Either upgrade the file to openPMD >= 2.0 "
+                "or specify a scalar that applies to all axes.");
+        }
+    }
     return *this;
 }
 
@@ -515,10 +528,7 @@ void Mesh::read()
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
     auto series = retrieveSeries();
-    /* @todo remove second if condition (currently enabled since it allows a
-     *       sneak peek into openPMD 2.0 features)
-     */
-    if (series.openPMD() >= "2." || isVector(*aRead.dtype))
+    if (series.openPMD() >= "2.")
     {
         if (auto val =
                 Attribute(*aRead.resource).getOptional<std::vector<double>>();
