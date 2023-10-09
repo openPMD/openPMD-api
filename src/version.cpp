@@ -41,6 +41,16 @@ std::string openPMD::getStandard()
     return standard.str();
 }
 
+std::string openPMD::getStandardDefault()
+{
+    std::stringstream standard;
+    standard << OPENPMD_STANDARD_DEFAULT_MAJOR << "."
+             << OPENPMD_STANDARD_DEFAULT_MINOR << "."
+             << OPENPMD_STANDARD_DEFAULT_PATCH;
+    std::string const standardstr = standard.str();
+    return standardstr;
+}
+
 std::string openPMD::getStandardMinimum()
 {
     std::stringstream standardMin;

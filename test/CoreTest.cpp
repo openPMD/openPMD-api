@@ -36,8 +36,11 @@ TEST_CASE("versions_test", "[core]")
     auto const is_dot = [](char const c) { return c == '.'; };
     REQUIRE(2u == std::count_if(apiVersion.begin(), apiVersion.end(), is_dot));
 
+    auto const standardDefault = getStandardDefault();
+    REQUIRE(standardDefault == "1.1.0");
+
     auto const standard = getStandard();
-    REQUIRE(standard == "1.1.0");
+    REQUIRE(standard == "2.0.0");
 
     auto const standardMin = getStandardMinimum();
     REQUIRE(standardMin == "1.0.0");
