@@ -22,6 +22,7 @@
 
 #include <optional>
 #include <stdexcept>
+#include <typeinfo>
 
 namespace openPMD
 {
@@ -64,10 +65,17 @@ namespace auxiliary
     inline std::optional<New_Type *>
     dynamic_cast_optional(Old_Type *ptr) noexcept
     {
-        auto const tmp_ptr = dynamic_cast<New_Type *>(ptr);
-        if (tmp_ptr == nullptr)
+        try
+        {
+            auto const tmp_ptr = dynamic_cast<New_Type *>(ptr);
+            if (tmp_ptr == nullptr)
+                return std::nullopt;
+            return {tmp_ptr};
+        }
+        catch (std::bad_cast const &)
+        {
             return std::nullopt;
-        return {tmp_ptr};
+        }
     }
 
 } // namespace auxiliary

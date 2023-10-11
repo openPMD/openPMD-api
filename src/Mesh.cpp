@@ -264,7 +264,7 @@ namespace
     {
         for (auto [unit, exponent] : udim)
         {
-            *(it + static_cast<uint8_t>(unit)) = exponent;
+            it[static_cast<uint8_t>(unit)] = exponent;
         }
     }
 } // namespace
