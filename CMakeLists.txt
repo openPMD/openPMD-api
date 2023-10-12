@@ -1384,6 +1384,9 @@ if(openPMD_BUILD_TESTING)
                             ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe       \
                             --infile ../samples/git-sample/thetaMode/data_%T.bp    \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
+                            --outconfig '                                          \
+                                json.attribute.mode = \"short\"                  \n\
+                                json.dataset.mode = \"template\"'                  \
                         "
                     WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )
