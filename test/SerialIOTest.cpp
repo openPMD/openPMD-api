@@ -1276,8 +1276,12 @@ inline void dtype_test(
                   "../samples/dtype_test." + backend,
                   Access::CREATE,
                   activateTemplateMode.value())
-            : Series("../samples/dtype_test." + backend, Access::CREATE);
-
+            :
+            // test TOML long attribute mode by default
+            Series(
+                "../samples/dtype_test." + backend,
+                Access::CREATE,
+                R"({"toml":{"attribute":{"mode":"long"}}})");
         char c = 'c';
         s.setAttribute("char", c);
         unsigned char uc = 'u';
@@ -1875,7 +1879,8 @@ inline void fileBased_write_test(const std::string &backend)
     {
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%03T." + backend,
-            Access::CREATE);
+            Access::CREATE,
+            R"({"toml":{"dataset":{"mode":"dataset"}}})");
 
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -7331,7 +7336,10 @@ void groupbased_read_write(std::string const &ext)
     std::string filename = "../samples/groupbased_read_write." + ext;
 
     {
-        Series write(filename, Access::CREATE);
+        Series write(
+            filename,
+            Access::CREATE,
+            R"({"toml":{"dataset":{"mode":"dataset"}}})");
         auto E_x = write.iterations[0].meshes["E"]["x"];
         auto E_y = write.iterations[0].meshes["E"]["y"];
         E_x.resetDataset(ds);
@@ -7344,7 +7352,10 @@ void groupbased_read_write(std::string const &ext)
     }
 
     {
-        Series write(filename, Access::READ_WRITE);
+        Series write(
+            filename,
+            Access::READ_WRITE,
+            R"({"toml":{"dataset":{"mode":"dataset"}}})");
         // create a new iteration
         auto E_x = write.iterations[1].meshes["E"]["x"];
         E_x.resetDataset(ds);
@@ -7384,7 +7395,10 @@ void groupbased_read_write(std::string const &ext)
 
     // check that truncation works correctly
     {
-        Series write(filename, Access::CREATE);
+        Series write(
+            filename,
+            Access::CREATE,
+            R"({"toml":{"dataset":{"mode":"dataset"}}})");
         // create a new iteration
         auto E_x = write.iterations[2].meshes["E"]["x"];
         E_x.resetDataset(ds);

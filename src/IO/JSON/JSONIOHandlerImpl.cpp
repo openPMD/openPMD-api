@@ -386,18 +386,7 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
-    std::tie(
-        m_mode, m_IOModeSpecificationVia, m_printedSkippedWriteWarningAlready) =
-        retrieveDatasetMode(config);
-    std::tie(m_attributeMode, m_attributeModeSpecificationVia) =
-        retrieveAttributeMode(config);
-
-    if (auto [_, backendConfig] = getBackendConfig(config);
-        backendConfig.has_value())
-    {
-        (void)_;
-        warnUnusedJson(backendConfig.value());
-    }
+    init(std::move(config));
 }
 
 #if openPMD_HAVE_MPI
@@ -411,6 +400,26 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
+    init(std::move(config));
+}
+#endif
+
+void JSONIOHandlerImpl::init(openPMD::json::TracingJSON config)
+{
+    // set the defaults
+    switch (m_fileFormat)
+    {
+    case FileFormat::Json:
+        // @todo take the switch to openPMD 2.0 as a chance to switch to
+        // short attribute mode as a default here
+        m_attributeMode = AttributeMode::Long;
+        m_mode = IOMode::Dataset;
+        break;
+    case FileFormat::Toml:
+        m_attributeMode = AttributeMode::Short;
+        m_mode = IOMode::Template;
+        break;
+    }
     std::tie(
         m_mode, m_IOModeSpecificationVia, m_printedSkippedWriteWarningAlready) =
         retrieveDatasetMode(config);
@@ -424,7 +433,6 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
         warnUnusedJson(backendConfig.value());
     }
 }
-#endif
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
 
