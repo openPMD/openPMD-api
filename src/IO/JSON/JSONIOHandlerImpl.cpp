@@ -1409,7 +1409,16 @@ auto JSONIOHandlerImpl::putJsonContents(
             // writeSingleFile will prepend the base dir
             subfilePath << *filename << ".parallel/mpi_rank_"
                         << std::setw(num_digits(size - 1)) << std::setfill('0')
-                        << rank << ".json";
+                        << rank << [&]() {
+                               switch (m_fileFormat)
+                               {
+                               case FileFormat::Json:
+                                   return ".json";
+                               case FileFormat::Toml:
+                                   return ".toml";
+                               }
+                               throw std::runtime_error("Unreachable!");
+                           }();
             writeSingleFile(subfilePath.str());
             if (rank == 0)
             {
