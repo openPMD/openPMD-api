@@ -180,6 +180,8 @@ public:
         std::string originalExtension);
 #endif
 
+    void init(openPMD::json::TracingJSON config);
+
     ~JSONIOHandlerImpl() override;
 
     void
