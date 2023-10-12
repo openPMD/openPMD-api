@@ -249,11 +249,12 @@ namespace
     }
 } // namespace
 
-auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
-    const -> std::pair<IOMode, SpecificationVia>
+auto JSONIOHandlerImpl::retrieveDatasetMode(
+    openPMD::json::TracingJSON &config) const -> DatasetMode
 {
-    IOMode res = m_mode;
-    SpecificationVia res_2 = SpecificationVia::DefaultValue;
+    IOMode ioMode = m_mode;
+    SpecificationVia specificationVia = SpecificationVia::DefaultValue;
+    bool skipWarnings = false;
     if (auto [configLocation, maybeConfig] = getBackendConfig(config);
         maybeConfig.has_value())
     {
@@ -275,13 +276,19 @@ auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
                 auto mode = modeOption.value();
                 if (mode == "dataset")
                 {
-                    res = IOMode::Dataset;
-                    res_2 = SpecificationVia::Manually;
+                    ioMode = IOMode::Dataset;
+                    specificationVia = SpecificationVia::Manually;
                 }
                 else if (mode == "template")
                 {
-                    res = IOMode::Template;
-                    res_2 = SpecificationVia::Manually;
+                    ioMode = IOMode::Template;
+                    specificationVia = SpecificationVia::Manually;
+                }
+                else if (mode == "template_no_warn")
+                {
+                    ioMode = IOMode::Template;
+                    specificationVia = SpecificationVia::Manually;
+                    skipWarnings = true;
                 }
                 else
                 {
@@ -293,7 +300,7 @@ auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
             }
         }
     }
-    return std::make_pair(res, res_2);
+    return DatasetMode{ioMode, specificationVia, skipWarnings};
 }
 
 auto JSONIOHandlerImpl::retrieveAttributeMode(
@@ -380,7 +387,9 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
-    std::tie(m_mode, m_IOModeSpecificationVia) = retrieveDatasetMode(config);
+    std::tie(
+        m_mode, m_IOModeSpecificationVia, m_printedSkippedWriteWarningAlready) =
+        retrieveDatasetMode(config);
     std::tie(m_attributeMode, m_attributeModeSpecificationVia) =
         retrieveAttributeMode(config);
 
@@ -403,7 +412,9 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
-    std::tie(m_mode, m_IOModeSpecificationVia) = retrieveDatasetMode(config);
+    std::tie(
+        m_mode, m_IOModeSpecificationVia, m_printedSkippedWriteWarningAlready) =
+        retrieveDatasetMode(config);
     std::tie(m_attributeMode, m_attributeModeSpecificationVia) =
         retrieveAttributeMode(config);
 
@@ -558,7 +569,13 @@ void JSONIOHandlerImpl::createDataset(
         parameter.options, /* considerFiles = */ false);
     // Retrieves mode from dataset-specific configuration, falls back to global
     // value if not defined
-    IOMode localMode = retrieveDatasetMode(config).first;
+    auto [localMode, _, skipWarnings] = retrieveDatasetMode(config);
+    (void)_;
+    // No use in introducing logic to skip warnings only for one particular
+    // dataset. If warnings are skipped, then they are skipped consistently.
+    // Use |= since `false` is the default value and we don't wish to reset
+    // the flag.
+    m_printedSkippedWriteWarningAlready |= skipWarnings;
 
     parameter.warnUnusedParameters(
         config,
@@ -1194,9 +1211,14 @@ void JSONIOHandlerImpl::writeDataset(
     case IOMode::Dataset:
         break;
     case IOMode::Template:
-        std::cerr << "[JSON/TOML backend: Warning] Trying to write data to a "
-                     "template dataset. Will skip."
-                  << std::endl;
+        if (!m_printedSkippedWriteWarningAlready)
+        {
+            std::cerr
+                << "[JSON/TOML backend: Warning] Trying to write data to a "
+                   "template dataset. Will skip."
+                << std::endl;
+            m_printedSkippedWriteWarningAlready = true;
+        }
         return;
     }
 

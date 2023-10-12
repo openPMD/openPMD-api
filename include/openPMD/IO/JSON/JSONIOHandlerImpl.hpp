@@ -294,9 +294,22 @@ private:
 
     IOMode m_mode = IOMode::Dataset;
     SpecificationVia m_IOModeSpecificationVia = SpecificationVia::DefaultValue;
+    bool m_printedSkippedWriteWarningAlready = false;
 
-    std::pair<IOMode, SpecificationVia>
-    retrieveDatasetMode(openPMD::json::TracingJSON &config) const;
+    struct DatasetMode
+    {
+        IOMode m_IOMode;
+        SpecificationVia m_specificationVia;
+        bool m_skipWarnings;
+
+        template <typename A, typename B, typename C>
+        operator std::tuple<A, B, C>()
+        {
+            return std::tuple<A, B, C>{
+                m_IOMode, m_specificationVia, m_skipWarnings};
+        }
+    };
+    DatasetMode retrieveDatasetMode(openPMD::json::TracingJSON &config) const;
 
     ///////////////////////
     // Attribute IO mode //
