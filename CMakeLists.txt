@@ -1386,7 +1386,7 @@ if(openPMD_BUILD_TESTING)
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
                             --outconfig '                                          \
                                 json.attribute.mode = \"short\"                  \n\
-                                json.dataset.mode = \"template\"'                  \
+                                json.dataset.mode = \"template_no_warn\"'          \
                         "
                     WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )
