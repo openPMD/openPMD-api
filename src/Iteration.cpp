@@ -592,7 +592,6 @@ void Iteration::readMeshes(std::string const &meshesPath)
             IOHandler()->flush(internal::defaultFlushParams);
             mrc.get().m_isConstant = true;
         }
-        m.read();
         try
         {
             m.read();

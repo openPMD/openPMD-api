@@ -101,7 +101,7 @@ If MPI-support shall be enabled, we always have to recompile:
 .. code-block:: bash
 
    # optional:                                    --user
-   python3 -m pip install -U pip setuptools wheel
+   python3 -m pip install -U pip packaging setuptools wheel
    python3 -m pip install -U cmake
 
    # optional:                                                                   --user

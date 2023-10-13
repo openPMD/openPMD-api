@@ -1277,7 +1277,13 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
-        throw std::runtime_error("Unknown openPMD version - " + version);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::UnexpectedContent,
+            std::nullopt,
+            "Unknown openPMD version - " + version +
+                ". Consider upgrading your installation of the openPMD-api "
+                "(https://openpmd-api.readthedocs.io).");
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
     readAttributes(ReadMode::IgnoreExisting);
