@@ -65,15 +65,12 @@ namespace internal
             std::vector<std::string> const &particles);
         MeshesParticlesPath(Series const &);
 
-        [[nodiscard]] ContainedType determineType(
-            std::vector<std::string> const &path,
-            std::string const &name) const;
-        [[nodiscard]] bool isParticle(
-            std::vector<std::string> const &path,
-            std::string const &name) const;
-        [[nodiscard]] bool isMesh(
-            std::vector<std::string> const &path,
-            std::string const &name) const;
+        [[nodiscard]] ContainedType
+        determineType(std::vector<std::string> const &path) const;
+        [[nodiscard]] bool
+        isParticleContainer(std::vector<std::string> const &path) const;
+        [[nodiscard]] bool
+        isMeshContainer(std::vector<std::string> const &path) const;
     };
 
     struct CustomHierarchyData : ContainerData<CustomHierarchy>
