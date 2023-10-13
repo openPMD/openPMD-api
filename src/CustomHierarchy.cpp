@@ -43,10 +43,17 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <tuple>
 #include <variant>
+
+// @todo add handselected choice of [:punct:] characters to this
+// using a macro here to make string interpolation simpler
+#define OPENPMD_LEGAL_IDENTIFIER_CHARS "[:alnum:]_"
+#define OPENPMD_SINGLE_GLOBBING_CHAR "%"
+#define OPENPMD_DOUBLE_GLOBBING_CHAR "%%"
 
 namespace
 {
@@ -84,7 +91,9 @@ void setDefaultMeshesParticlesPath(
     std::vector<std::string> const &particles,
     OutParam &writeTarget)
 {
-    std::regex is_default_path_specification("[[:alnum:]_]+/", regex_flags);
+    std::regex is_default_path_specification(
+        "[" OPENPMD_LEGAL_IDENTIFIER_CHARS "]+/",
+        regex_flags | std::regex_constants::optimize);
     constexpr char const *default_default_mesh = "meshes";
     constexpr char const *default_default_particle = "particles";
     for (auto [vec, defaultPath, default_default] :
@@ -117,41 +126,10 @@ void setDefaultMeshesParticlesPath(
 }
 
 bool anyPathRegexMatches(
-    std::regex regex,
-    std::vector<std::string> const &path,
-    std::string const &name)
+    std::regex const &regex, std::vector<std::string> const &path)
 {
-    /*
-     * /group/meshes/E is a mesh if the meshes path contains:
-     *
-     * 1) '/group/meshes/' (absolute path to mesh container)
-     * 2) '/group/meshes/E' (absolute path to mesh itself)
-     * 3) 'meshes/' (relative path to mesh container)
-     *
-     * The potential fourth option 'E' (relative path to mesh itself)
-     * is not supported. ("Anything that is named 'E' is a mesh" is not
-     * really a semantic that we want to explicitly support.)
-     * '/' is never a valid meshes path.
-     *
-     * All this analogously for particles path.
-     */
-    std::vector<std::string> pathsToMatch = {
-        /* option 2) from above */
-        "/" + (path.empty() ? "" : concatWithSep(path, "/") + "/") + name};
-    if (!path.empty())
-    {
-        // option 1) from above
-        pathsToMatch.emplace_back("/" + concatWithSep(path, "/") + "/");
-
-        // option 3 from above
-        pathsToMatch.emplace_back(*path.rbegin() + "/");
-    }
-    return std::any_of(
-        pathsToMatch.begin(),
-        pathsToMatch.end(),
-        [&regex](std::string const &candidate_path) {
-            return std::regex_match(candidate_path, regex);
-        });
+    std::string pathToMatch = '/' + concatWithSep(path, "/") + '/';
+    return std::regex_match(pathToMatch, regex);
 }
 } // namespace
 
@@ -159,28 +137,83 @@ namespace openPMD
 {
 namespace internal
 {
+    namespace
+    {
+        std::string globToRegexLongForm(std::string const &glob)
+        {
+            return auxiliary::replace_all(
+                auxiliary::replace_all(
+                    glob,
+                    OPENPMD_DOUBLE_GLOBBING_CHAR,
+                    "([" OPENPMD_LEGAL_IDENTIFIER_CHARS "/]*)"),
+                OPENPMD_SINGLE_GLOBBING_CHAR,
+                "([" OPENPMD_LEGAL_IDENTIFIER_CHARS "]*)");
+        }
+
+        std::string globToRegexShortForm(std::string const &glob)
+        {
+            return "[" OPENPMD_LEGAL_IDENTIFIER_CHARS "/]*/" + glob;
+        }
+    } // namespace
+
     MeshesParticlesPath::MeshesParticlesPath(
         std::vector<std::string> const &meshes,
         std::vector<std::string> const &particles)
     {
-        std::regex is_default_path_specification("[[:alnum:]_]+/", regex_flags);
+        /*
+         * /group/meshes/E is a mesh if the meshes path contains:
+         *
+         * 1) '/group/meshes/' (absolute path to mesh container)
+         * 2) 'meshes/' (relative path to mesh container)
+         *
+         * All this analogously for particles path.
+         */
+
+        // regex for detecting option 1)
+        // e.g. '/path/to/meshes/': The path to the meshes. Mandatory slashes at
+        //                          beginning and end, possibly slashes in
+        //                          between. Mandatory slash at beginning might
+        //                          be replaced with '%%' to enable paths like
+        //                          '%%/path/to/meshes'.
+        // resolves to: `(/|%%)[[:alnum:]_%/]+/`
+        std::regex is_legal_long_path_specification(
+            "(/|" OPENPMD_DOUBLE_GLOBBING_CHAR
+            ")[" OPENPMD_LEGAL_IDENTIFIER_CHARS OPENPMD_SINGLE_GLOBBING_CHAR
+            "/]+/",
+            regex_flags | std::regex_constants::optimize);
+
+        // Regex for detecting option 2)
+        // e.g. 'meshes/': The name without path. One single mandatory slash
+        //                 at the end, no slashes otherwise.
+        // resolves to `[[:alnum:]_]+/`
+        std::regex is_legal_short_path_specification(
+            "[" OPENPMD_LEGAL_IDENTIFIER_CHARS "]+/",
+            regex_flags | std::regex_constants::optimize);
+
         for (auto [target_regex, vec] :
              {std::make_tuple(&this->meshRegex, &meshes),
               std::make_tuple(&this->particleRegex, &particles)})
         {
-            if (vec->empty())
-            {
-                *target_regex = std::regex(
-                    /* does not match anything */ "a^",
-                    regex_flags | std::regex_constants::optimize);
-                continue;
-            }
-            auto begin = vec->begin();
             std::stringstream build_regex;
-            build_regex << '(' << *begin++ << ')';
-            for (; begin != vec->end(); ++begin)
+            // neutral element: empty language, regex doesn't match anything
+            build_regex << "(a^)";
+            for (auto const &entry : *vec)
             {
-                build_regex << "|(" << *begin << ')';
+                if (std::regex_match(entry, is_legal_short_path_specification))
+                {
+                    build_regex << "|(" << globToRegexShortForm(entry) << ')';
+                }
+                else if (std::regex_match(
+                             entry, is_legal_long_path_specification))
+                {
+                    build_regex << "|(" << globToRegexLongForm(entry) << ')';
+                }
+                else
+                {
+                    std::cerr
+                        << "[WARNING] Not a legal meshes-/particles-path: '"
+                        << entry << "'. Will skip." << std::endl;
+                }
             }
             auto regex_string = build_regex.str();
             // std::cout << "Using regex string: " << regex_string << std::endl;
@@ -191,13 +224,13 @@ namespace internal
     }
 
     ContainedType MeshesParticlesPath::determineType(
-        std::vector<std::string> const &path, std::string const &name) const
+        std::vector<std::string> const &path) const
     {
-        if (isMesh(path, name))
+        if (isMeshContainer(path))
         {
             return ContainedType::Mesh;
         }
-        else if (isParticle(path, name))
+        else if (isParticleContainer(path))
         {
             return ContainedType::Particle;
         }
@@ -207,15 +240,15 @@ namespace internal
         }
     }
 
-    bool MeshesParticlesPath::isParticle(
-        std::vector<std::string> const &path, std::string const &name) const
+    bool MeshesParticlesPath::isParticleContainer(
+        std::vector<std::string> const &path) const
     {
-        return anyPathRegexMatches(particleRegex, path, name);
+        return anyPathRegexMatches(particleRegex, path);
     }
-    bool MeshesParticlesPath::isMesh(
-        std::vector<std::string> const &path, std::string const &name) const
+    bool MeshesParticlesPath::isMeshContainer(
+        std::vector<std::string> const &path) const
     {
-        return anyPathRegexMatches(meshRegex, path, name);
+        return anyPathRegexMatches(meshRegex, path);
     }
 
     CustomHierarchyData::CustomHierarchyData()
@@ -366,7 +399,7 @@ void CustomHierarchy::read(
     EraseStaleParticles particlesMap(data.m_embeddedParticles);
     for (auto const &path : *pList.paths)
     {
-        switch (mpp.determineType(currentPath, path))
+        switch (mpp.determineType(currentPath))
         {
         case internal::ContainedType::Group: {
             Parameter<Operation::OPEN_PATH> pOpen;
@@ -432,7 +465,7 @@ void CustomHierarchy::read(
     }
     for (auto const &path : *dList.datasets)
     {
-        switch (mpp.determineType(currentPath, path))
+        switch (mpp.determineType(currentPath))
         {
             // Group is a bit of an internal misnomer here, it just means that
             // it matches neither meshes nor particles path
@@ -527,7 +560,7 @@ void CustomHierarchy::flush_internal(
     }
     for (auto &[name, mesh] : data.m_embeddedMeshes)
     {
-        if (!mpp.isMesh(currentPath, name))
+        if (!mpp.isMeshContainer(currentPath))
         {
             std::string extend_meshes_path;
             // Check if this can be covered by shorthand notation
@@ -543,8 +576,7 @@ void CustomHierarchy::flush_internal(
                 extend_meshes_path = "/" +
                     (currentPath.empty()
                          ? ""
-                         : concatWithSep(currentPath, "/") + "/") +
-                    name;
+                         : concatWithSep(currentPath, "/") + "/");
             }
             mpp.collectNewMeshesPaths.emplace(std::move(extend_meshes_path));
         }
@@ -552,7 +584,7 @@ void CustomHierarchy::flush_internal(
     }
     for (auto &[name, particleSpecies] : data.m_embeddedParticles)
     {
-        if (!mpp.isParticle(currentPath, name))
+        if (!mpp.isParticleContainer(currentPath))
         {
             std::string extend_particles_path;
             if (!currentPath.empty() &&
@@ -568,8 +600,8 @@ void CustomHierarchy::flush_internal(
                 extend_particles_path = "/" +
                     (currentPath.empty()
                          ? ""
-                         : concatWithSep(currentPath, "/") + "/") +
-                    name;
+                         : concatWithSep(currentPath, "/") + "/");
+                ;
             }
             mpp.collectNewParticlesPaths.emplace(
                 std::move(extend_particles_path));
@@ -828,3 +860,7 @@ Series &CustomHierarchy::getBufferedSeries()
     return *data.m_bufferedSeries;
 }
 } // namespace openPMD
+
+#undef OPENPMD_LEGAL_IDENTIFIER_CHARS
+#undef OPENPMD_SINGLE_GLOBBING_CHAR
+#undef OPENPMD_DOUBLE_GLOBBING_CHAR

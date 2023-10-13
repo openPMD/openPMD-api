@@ -222,7 +222,7 @@ TEST_CASE("custom_hierarchies", "[core]")
 
         auto meshesViaAlias = write.iterations[0].meshes;
         meshesViaAlias["E"]["x"].makeEmpty<float>(2);
-        write.setMeshesPath(std::vector<std::string>{"fields/", ".*/meshes/"});
+        write.setMeshesPath(std::vector<std::string>{"fields/", "%%/meshes/"});
         auto meshesManually =
             write.iterations[0]["fields"].asContainerOf<Mesh>();
         REQUIRE(meshesManually.contains("E"));
@@ -353,7 +353,7 @@ TEST_CASE("custom_hierarchies_no_rw", "[core]")
 {
     std::string filePath = "../samples/custom_hierarchies_no_rw.json";
     Series write(filePath, Access::CREATE);
-    write.setMeshesPath(std::vector<std::string>{".*/meshes/"});
+    write.setMeshesPath(std::vector<std::string>{"%%/meshes/"});
     write.iterations[0]["custom"]["hierarchy"];
     write.iterations[0]["custom"].setAttribute("string", "attribute");
     write.iterations[0]["custom"]["hierarchy"].setAttribute("number", 3);
