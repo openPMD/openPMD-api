@@ -3,9 +3,9 @@
 #include <openPMD/backend/Attributable.hpp>
 
 #include <complex.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <cstdlib>
-#include <cstring>
 #include <string>
 
 namespace
@@ -61,17 +61,17 @@ openPMD_Attribute Attribute_cxx2c(const openPMD::Attribute &cxx_attribute)
         break;
     case openPMD_Datatype_CFLOAT: {
         const auto value = cxx_attribute.get<std::complex<float>>();
-        std::memcpy(&attribute.cfloat_data, &value, sizeof value);
+        memcpy(&attribute.cfloat_data, &value, sizeof value);
         break;
     }
     case openPMD_Datatype_CDOUBLE: {
         const auto value = cxx_attribute.get<std::complex<double>>();
-        std::memcpy(&attribute.cdouble_data, &value, sizeof value);
+        memcpy(&attribute.cdouble_data, &value, sizeof value);
         break;
     }
     case openPMD_Datatype_CLONG_DOUBLE: {
         const auto value = cxx_attribute.get<std::complex<long double>>();
-        std::memcpy(&attribute.clong_double_data, &value, sizeof value);
+        memcpy(&attribute.clong_double_data, &value, sizeof value);
         break;
     }
     case openPMD_Datatype_BOOL:
@@ -138,4 +138,73 @@ bool openPMD_Attributable_deleteAttribute(
 {
     const auto cxx_attributable = (openPMD::Attributable *)attributable;
     return cxx_attributable->deleteAttribute(std::string(key));
+}
+
+size_t
+openPMD_Attributable_numAttributes(const openPMD_Attributable *attributable)
+{
+    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
+    return cxx_attributable->numAttributes();
+}
+
+bool openPMD_Attributable_containsAttribute(
+    const openPMD_Attributable *attributable, const char *key)
+{
+    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
+    return cxx_attributable->containsAttribute(std::string(key));
+}
+
+// result must be freed
+char *openPMD_Attributable_comment(const openPMD_Attributable *attributable)
+{
+    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
+    return strdup(cxx_attributable->comment().c_str());
+}
+
+void openPMD_Attributable_setComment(
+    openPMD_Attributable *attributable, const char *comment)
+{
+    const auto cxx_attributable = (openPMD::Attributable *)attributable;
+    cxx_attributable->setComment(std::string(comment));
+}
+
+// backendConfig may be NULL
+void openPMD_Attributable_seriesFlush(
+    openPMD_Attributable *attributable, const char *backendConfig)
+{
+    const auto cxx_attributable = (openPMD::Attributable *)attributable;
+    cxx_attributable->seriesFlush(
+        std::string(backendConfig ? backendConfig : "{}"));
+}
+
+char *
+openPMD_Attributable_MyPath_filePath(const openPMD_Attributable_MyPath *myPath)
+{
+    openPMD::Attributable::MyPath cxx_myPath;
+    cxx_myPath.directory = std::string(myPath->directory);
+    cxx_myPath.seriesName = std::string(myPath->seriesName);
+    cxx_myPath.seriesExtension = std::string(myPath->seriesExtension);
+    cxx_myPath.group.resize(myPath->groupSize);
+    for (size_t n = 0; n < myPath->groupSize; ++n)
+        cxx_myPath.group[n] = std::string(myPath->group[n]);
+    cxx_myPath.access = openPMD::Access(myPath->access);
+    return strdup(cxx_myPath.filePath().c_str());
+}
+
+openPMD_Attributable_MyPath
+openPMD_Attributable_myPath(const openPMD_Attributable *attributable)
+{
+    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
+    const auto cxx_myPath = cxx_attributable->myPath();
+    openPMD_Attributable_MyPath myPath;
+    myPath.directory = strdup(cxx_myPath.directory.c_str());
+    myPath.seriesName = strdup(cxx_myPath.seriesName.c_str());
+    myPath.seriesExtension = strdup(cxx_myPath.seriesExtension.c_str());
+    myPath.groupSize = cxx_myPath.group.size();
+    myPath.group =
+        (char **)malloc(cxx_myPath.group.size() * sizeof *myPath.group);
+    for (size_t n = 0; n < myPath.groupSize; ++n)
+        myPath.group[n] = strdup(cxx_myPath.group[n].c_str());
+    myPath.access = openPMD_Access(cxx_myPath.access);
+    return myPath;
 }

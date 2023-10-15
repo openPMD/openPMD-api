@@ -1,7 +1,6 @@
 #ifndef OPENPMD_ATTRIBUTE_H
 #define OPENPMD_ATTRIBUTE_H
 
-// #include <openPMD/binding/c/auxiliary/Variant.h>
 #include <openPMD/binding/c/Datatype.h>
 
 #include <complex.h>
@@ -13,8 +12,6 @@ extern "C"
 
     typedef struct openPMD_Attribute
     {
-        // openPMD_auxiliary_Variant variant;
-
         openPMD_Datatype datatype;
         union
         {

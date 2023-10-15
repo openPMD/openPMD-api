@@ -1,6 +1,7 @@
 #ifndef OPENPMD_ATTRIBUTABLE_H
 #define OPENPMD_ATTRIBUTABLE_H
 
+#include <openPMD/binding/c/IO/Access.h>
 #include <openPMD/binding/c/backend/Attribute.h>
 
 #include <complex.h>
@@ -75,7 +76,7 @@ extern "C"
     bool openPMD_Attributable_deleteAttribute(
         openPMD_Attributable *attributable, const char *key);
 
-    // result is a pointer to pointeres, both layers must be freed
+    // result is a pointer to pointers, both layers must be freed
     char **
     openPMD_Attributable_attributes(const openPMD_Attributable *attributable);
 
@@ -96,42 +97,21 @@ extern "C"
     void openPMD_Attributable_seriesFlush(
         openPMD_Attributable *attributable, const char *backendConfig);
 
-    // MyPath myPath() const;
+    typedef struct openPMD_Attributable_MyPath
+    {
+        char *directory;
+        char *seriesName;
+        char *seriesExtension;
+        char **group;
+        size_t groupSize;
+        openPMD_Access access;
+    } openPMD_Attributable_MyPath;
 
-    // Series retrieveSeries() const;
+    char *openPMD_Attributable_MyPath_filePath(
+        const openPMD_Attributable_MyPath *myPath);
 
-    // Iteration const &containingIteration() const;
-    // Iteration &containingIteration();
-
-    // void seriesFlush(internal::FlushParams);
-
-    // void flushAttributes(internal::FlushParams const &);
-
-    // void readAttributes(ReadMode);
-
-    // template <typename T> T readFloatingpoint(std::string const &key) const;
-    // template <typename T> std::vector<T> readVectorFloatingpoint(std::string
-    // const &key) const;
-
-    // AbstractIOHandler *IOHandler();
-    // AbstractIOHandler const *IOHandler() const;
-
-    // Writable *&parent();
-    // Writable const *parent() const;
-    // Writable &writable();
-    // Writable const &writable() const;
-
-    // void setData(std::shared_ptr<internal::AttributableData> attri);
-    // internal::AttributableData &get();
-    // internal::AttributableData const &get() const;
-
-    bool openPMD_Attributable_dirty(const openPMD_Attributable *attributable);
-
-    // bool &dirty();
-
-    bool openPMD_Attributable_written(const openPMD_Attributable *attributable);
-
-    // bool &written();
+    openPMD_Attributable_MyPath
+    openPMD_Attributable_myPath(const openPMD_Attributable *attributable);
 
 #ifdef __cplusplus
 }
