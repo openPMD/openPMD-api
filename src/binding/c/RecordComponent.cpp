@@ -9,19 +9,6 @@
 #include <string>
 #include <utility>
 
-namespace
-{
-openPMD::Dataset Dataset_c2cxx(const openPMD_Dataset &dataset)
-{
-    openPMD::Extent extent(dataset.extent, dataset.extent + dataset.size);
-    openPMD::Dataset cxx_dataset(
-        openPMD::Datatype(dataset.datatype), std::move(extent));
-    cxx_dataset.rank = dataset.rank;
-    cxx_dataset.options = std::string(dataset.options);
-    return cxx_dataset;
-}
-} // namespace
-
 const openPMD_BaseRecordComponent *
 openPMD_RecordComponent_getConstBaseRecordComponent(
     const openPMD_RecordComponent *component)
@@ -52,10 +39,17 @@ void openPMD_RecordComponent_setUnitSI(
 }
 
 void openPMD_RecordComponent_resetDataset(
-    openPMD_RecordComponent *component, openPMD_Dataset dataset)
+    openPMD_RecordComponent *component,
+    openPMD_Datatype datatype,
+    const uint64_t *extent,
+    size_t rank,
+    const char *options)
 {
     const auto cxx_component = (openPMD::RecordComponent *)component;
-    auto cxx_dataset = Dataset_c2cxx(dataset);
+    const openPMD::Dataset cxx_dataset(
+        openPMD::Datatype(datatype),
+        openPMD::Extent(extent, extent + rank),
+        std::string(options ? options : "{}"));
     cxx_component->resetDataset(std::move(cxx_dataset));
 }
 

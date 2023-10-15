@@ -102,15 +102,16 @@ extern "C"
         char *directory;
         char *seriesName;
         char *seriesExtension;
-        char **group;
-        size_t groupSize;
+        char **group; // NULL terminated
         openPMD_Access access;
     } openPMD_Attributable_MyPath;
+
+    void openPMD_Attributable_MyPath_free(openPMD_Attributable_MyPath *myPath);
 
     char *openPMD_Attributable_MyPath_filePath(
         const openPMD_Attributable_MyPath *myPath);
 
-    openPMD_Attributable_MyPath
+    openPMD_Attributable_MyPath *
     openPMD_Attributable_myPath(const openPMD_Attributable *attributable);
 
 #ifdef __cplusplus

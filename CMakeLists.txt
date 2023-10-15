@@ -621,7 +621,6 @@ if(openPMD_HAVE_C)
         src/binding/c/ChunkInfo.cpp
         src/binding/c/Container_Iteration.cpp
         src/binding/c/Container_Mesh.cpp
-        src/binding/c/Dataset.cpp
         src/binding/c/Datatype.cpp
         src/binding/c/IO/Access.cpp
         src/binding/c/IO/Format.cpp

@@ -177,6 +177,16 @@ void openPMD_Attributable_seriesFlush(
         std::string(backendConfig ? backendConfig : "{}"));
 }
 
+void openPMD_Attributable_MyPath_free(openPMD_Attributable_MyPath *myPath)
+{
+    free(myPath->directory);
+    free(myPath->seriesName);
+    free(myPath->seriesExtension);
+    for (size_t n = 0; myPath->group[n]; ++n)
+        free(myPath->group[n]);
+    free(myPath->group);
+}
+
 char *
 openPMD_Attributable_MyPath_filePath(const openPMD_Attributable_MyPath *myPath)
 {
@@ -184,27 +194,27 @@ openPMD_Attributable_MyPath_filePath(const openPMD_Attributable_MyPath *myPath)
     cxx_myPath.directory = std::string(myPath->directory);
     cxx_myPath.seriesName = std::string(myPath->seriesName);
     cxx_myPath.seriesExtension = std::string(myPath->seriesExtension);
-    cxx_myPath.group.resize(myPath->groupSize);
-    for (size_t n = 0; n < myPath->groupSize; ++n)
-        cxx_myPath.group[n] = std::string(myPath->group[n]);
+    for (size_t n = 0; myPath->group[n]; ++n)
+        cxx_myPath.group.emplace_back(myPath->group[n]);
     cxx_myPath.access = openPMD::Access(myPath->access);
     return strdup(cxx_myPath.filePath().c_str());
 }
 
-openPMD_Attributable_MyPath
+openPMD_Attributable_MyPath *
 openPMD_Attributable_myPath(const openPMD_Attributable *attributable)
 {
     const auto cxx_attributable = (const openPMD::Attributable *)attributable;
     const auto cxx_myPath = cxx_attributable->myPath();
-    openPMD_Attributable_MyPath myPath;
-    myPath.directory = strdup(cxx_myPath.directory.c_str());
-    myPath.seriesName = strdup(cxx_myPath.seriesName.c_str());
-    myPath.seriesExtension = strdup(cxx_myPath.seriesExtension.c_str());
-    myPath.groupSize = cxx_myPath.group.size();
-    myPath.group =
-        (char **)malloc(cxx_myPath.group.size() * sizeof *myPath.group);
-    for (size_t n = 0; n < myPath.groupSize; ++n)
-        myPath.group[n] = strdup(cxx_myPath.group[n].c_str());
-    myPath.access = openPMD_Access(cxx_myPath.access);
+    openPMD_Attributable_MyPath *myPath =
+        (openPMD_Attributable_MyPath *)malloc(sizeof *myPath);
+    myPath->directory = strdup(cxx_myPath.directory.c_str());
+    myPath->seriesName = strdup(cxx_myPath.seriesName.c_str());
+    myPath->seriesExtension = strdup(cxx_myPath.seriesExtension.c_str());
+    const size_t size = cxx_myPath.group.size();
+    myPath->group = (char **)malloc((size + 1) * sizeof *myPath->group);
+    for (size_t n = 0; n < size; ++n)
+        myPath->group[n] = strdup(cxx_myPath.group[n].c_str());
+    myPath->group[size] = nullptr;
+    myPath->access = openPMD_Access(cxx_myPath.access);
     return myPath;
 }

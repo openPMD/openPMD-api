@@ -1,7 +1,6 @@
 #ifndef OPENPMD_RECORDCOMPONENT_H
 #define OPENPMD_RECORDCOMPONENT_H
 
-#include <openPMD/binding/c/Dataset.h>
 #include <openPMD/binding/c/backend/BaseRecordComponent.h>
 
 #include <stdbool.h>
@@ -32,7 +31,11 @@ extern "C"
         openPMD_RecordComponent *component, double unit);
 
     void openPMD_RecordComponent_resetDataset(
-        openPMD_RecordComponent *component, openPMD_Dataset dataset);
+        openPMD_RecordComponent *component,
+        openPMD_Datatype datatype,
+        const uint64_t *extent,
+        size_t rank,
+        const char *options);
 
     uint8_t openPMD_RecordComponent_getDimensionality(
         const openPMD_RecordComponent *component);
