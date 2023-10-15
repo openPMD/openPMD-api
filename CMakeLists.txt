@@ -638,14 +638,20 @@ if(openPMD_HAVE_C)
         src/binding/c/backend/MeshRecordComponent.cpp
         src/binding/c/version.cpp
     )
+    target_compile_features(openPMD.c PUBLIC c_std_99)
+    target_compile_features(openPMD.c PRIVATE cxx_std_17)
+    target_compile_options(openPMD.c PUBLIC ${_msvc_options})
     target_link_libraries(openPMD.c PRIVATE openPMD)
     set_target_properties(openPMD.c PROPERTIES
+        C_EXTENSIONS OFF
+        C_STANDARD_REQUIRED ON
+        # Allow C++ extensions since we read C header code into C++
+        # code and C99 `_Complex` counts as C++ extension
+        CXX_STANDARD_REQUIRED ON
+
         CXX_VISIBILITY_PRESET "hidden"
         CUDA_VISIBILITY_PRESET "hidden"
-    )
-    openpmd_cxx_required(openPMD.c)
-    openpmd_c_required(openPMD.c)
-    set_target_properties(openPMD.c PROPERTIES
+
         COMPILE_PDB_NAME openPMD
         ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
         LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
@@ -655,7 +661,6 @@ if(openPMD_HAVE_C)
         POSITION_INDEPENDENT_CODE ON
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
-    target_compile_options(openPMD.c PUBLIC ${_msvc_options})
 
     # own headers
     target_include_directories(openPMD.c PUBLIC
