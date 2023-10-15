@@ -2,10 +2,9 @@
 
 #include <openPMD/RecordComponent.hpp>
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <complex>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <utility>
 

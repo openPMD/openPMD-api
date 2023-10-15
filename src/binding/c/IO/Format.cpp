@@ -33,5 +33,5 @@ const char *suffix(openPMD_Format format)
     case openPMD_Format_DUMMY:
         return "DUMMY";
     }
-    std::abort();
+    abort();
 }

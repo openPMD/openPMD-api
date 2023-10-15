@@ -2,9 +2,8 @@
 
 #include <openPMD/backend/Attributable.hpp>
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 namespace
@@ -80,7 +79,7 @@ openPMD_Attribute Attribute_cxx2c(const openPMD::Attribute &cxx_attribute)
         attribute.bool_data = cxx_attribute.get<bool>();
         break;
     default:
-        std::abort();
+        abort();
     }
     return attribute;
 }

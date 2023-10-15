@@ -2,8 +2,7 @@
 
 #include <openPMD/backend/MeshRecordComponent.hpp>
 
-#include <stdlib.h>
-
+#include <cstdlib>
 #include <utility>
 
 const openPMD_RecordComponent *

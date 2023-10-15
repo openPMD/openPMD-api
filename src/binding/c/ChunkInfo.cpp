@@ -2,7 +2,7 @@
 
 #include <openPMD/ChunkInfo.hpp>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 void openPMD_ChunkInfo_construct(openPMD_ChunkInfo *chunkInfo)
 {

@@ -2,7 +2,7 @@
 
 #include <openPMD/Datatype.hpp>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 static const std::vector<openPMD_Datatype> &getDatatypes()
 {

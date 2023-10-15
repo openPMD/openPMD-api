@@ -2,8 +2,8 @@
 
 #include <openPMD/backend/BaseRecordComponent.hpp>
 
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 
 const openPMD_Attributable *openPMD_BaseRecordComponent_getConstAttributable(
     const openPMD_BaseRecordComponent *component)
