@@ -4,9 +4,8 @@
 #include <openPMD/binding/c/IO/Access.h>
 #include <openPMD/binding/c/backend/Attribute.h>
 
-#ifndef __cplusplus
 #include <complex.h>
-#endif
+#undef I
 #include <stdbool.h>
 
 #ifdef __cplusplus

@@ -634,6 +634,9 @@ if(openPMD_HAVE_C)
     target_compile_features(openPMD.c PRIVATE cxx_std_17)
     target_compile_options(openPMD.c PUBLIC ${_msvc_options})
     target_link_libraries(openPMD.c PRIVATE openPMD)
+    if(openPMD_HAVE_MPI)
+        target_link_libraries(openPMD.c PUBLIC ${openPMD_MPI_TARGETS})
+    endif()
     set_target_properties(openPMD.c PROPERTIES
         C_EXTENSIONS OFF
         C_STANDARD_VERSION 99

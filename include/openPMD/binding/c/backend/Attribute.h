@@ -4,6 +4,7 @@
 #include <openPMD/binding/c/Datatype.h>
 
 #include <complex.h>
+#undef I
 
 #ifdef __cplusplus
 extern "C"
