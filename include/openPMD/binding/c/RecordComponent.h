@@ -1,8 +1,8 @@
 #ifndef OPENPMD_RECORDCOMPONENT_H
 #define OPENPMD_RECORDCOMPONENT_H
 
-#include <openPMD/binding/c/backend/BaseRecordComponent.h>
 #include <openPMD/binding/c/Dataset.h>
+#include <openPMD/binding/c/backend/BaseRecordComponent.h>
 
 #include <stdbool.h>
 #include <stddef.h>

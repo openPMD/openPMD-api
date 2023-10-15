@@ -4,7 +4,7 @@
 
 bool openPMD_Access_readOnly(openPMD_Access access)
 {
-  return openPMD::access::readOnly(openPMD::Access(access));
+    return openPMD::access::readOnly(openPMD::Access(access));
 }
 
 bool openPMD_Access_write(openPMD_Access access)
