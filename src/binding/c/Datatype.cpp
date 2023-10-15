@@ -51,13 +51,13 @@ bool openPMD_isComplexFloatingPoint(openPMD_Datatype datatype)
 
 bool openPMD_isInteger(openPMD_Datatype datatype)
 {
-    const auto [isint, issgn] = openPMD::isInteger(openPMD::Datatype(datatype));
+    const auto [isint, _] = openPMD::isInteger(openPMD::Datatype(datatype));
     return isint;
 }
 
 bool openPMD_isSigned(openPMD_Datatype datatype)
 {
-    const auto [isint, issgn] = openPMD::isInteger(openPMD::Datatype(datatype));
+    const auto [_, issgn] = openPMD::isInteger(openPMD::Datatype(datatype));
     return issgn;
 }
 
