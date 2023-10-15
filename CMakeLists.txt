@@ -143,6 +143,7 @@ endfunction()
 openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
+openpmd_option(C              "Enable C bindings"                         ON)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
@@ -394,6 +395,12 @@ endif()
 
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
 
+if(openPMD_USE_C)
+    set(openPMD_HAVE_C TRUE)
+else()
+    set(openPMD_HAVE_C FALSE)
+endif()
+
 # external library: pybind11 (optional)
 set(_PY_DEV_MODULE Development.Module)
 if(CMAKE_VERSION VERSION_LESS 3.18.0)
@@ -597,6 +604,56 @@ if(openPMD_USE_VERIFY)
     target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=1)
 else()
     target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=0)
+endif()
+
+# C bindings
+if(openPMD_HAVE_C)
+    add_library(openPMD.c ${_openpmd_lib_type}
+        src/binding/c/ChunkInfo.cpp
+        src/binding/c/Container_Iteration.cpp
+        src/binding/c/Container_Mesh.cpp
+        src/binding/c/Dataset.cpp
+        src/binding/c/Datatype.cpp
+        src/binding/c/IO/Access.cpp
+        src/binding/c/IO/Format.cpp
+        src/binding/c/Iteration.cpp
+        src/binding/c/Mesh.cpp
+        src/binding/c/ReadIterations.cpp
+        src/binding/c/RecordComponent.cpp
+        src/binding/c/Series.cpp
+        src/binding/c/UnitDimension.cpp
+        src/binding/c/WriteIterations.cpp
+        src/binding/c/backend/Attributable.cpp
+        src/binding/c/backend/Attribute.cpp
+        src/binding/c/backend/BaseRecordComponent.cpp
+        src/binding/c/backend/Container_MeshRecordComponent.cpp
+        src/binding/c/backend/MeshRecordComponent.cpp
+        src/binding/c/version.cpp
+    )
+    target_link_libraries(openPMD.c PRIVATE openPMD)
+    set_target_properties(openPMD.c PROPERTIES
+        CXX_VISIBILITY_PRESET "hidden"
+        CUDA_VISIBILITY_PRESET "hidden"
+    )
+    openpmd_cxx_required(openPMD.c)
+    set_target_properties(openPMD.c PROPERTIES
+        COMPILE_PDB_NAME openPMD
+        ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+        LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+        RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+        PDB_OUTPUT_DIRECTORY ${openPMD_PDB_OUTPUT_DIRECTORY}
+        COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
+        POSITION_INDEPENDENT_CODE ON
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
+    target_compile_options(openPMD.c PUBLIC ${_msvc_options})
+
+    # own headers
+    target_include_directories(openPMD.c PUBLIC
+        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include/binding/c>
+        $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include/binding/c>
+        $<INSTALL_INTERFACE:include/binding/c>
+    )
 endif()
 
 # python bindings
