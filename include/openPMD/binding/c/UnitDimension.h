@@ -17,10 +17,10 @@ extern "C"
         openPMD_UnitDimension_J
     } UnitDimension;
 
-    typedef struct openPMD_Array7
+    typedef struct openPMD_ArrayDouble7
     {
         double element[7];
-    } openPMD_Array7;
+    } openPMD_ArrayDouble7;
 
 #ifdef __cplusplus
 }

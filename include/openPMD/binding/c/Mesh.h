@@ -23,7 +23,7 @@ extern "C"
     openPMD_Mesh_getContainer_MeshRecordComponent(openPMD_Mesh *mesh);
 
     // From BaseRecord<MeshRecordComponent> (too lazy to wrap this class)
-    openPMD_Array7 openPMD_Mesh_unitDimension(const openPMD_Mesh *mesh);
+    openPMD_ArrayDouble7 openPMD_Mesh_unitDimension(const openPMD_Mesh *mesh);
 
     bool openPMD_Mesh_scalar(const openPMD_Mesh *mesh);
 
@@ -90,7 +90,7 @@ extern "C"
     void openPMD_Mesh_setGridUnitSI(openPMD_Mesh *mesh, double unitSI);
 
     void openPMD_Mesh_setUnitDimension(
-        openPMD_Mesh *mesh, const openPMD_Array7 *unitDimension);
+        openPMD_Mesh *mesh, const openPMD_ArrayDouble7 *unitDimension);
 
     double openPMD_Mesh_timeOffset(const openPMD_Mesh *mesh);
 

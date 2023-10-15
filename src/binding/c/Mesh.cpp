@@ -35,11 +35,11 @@ openPMD_Mesh_getContainer_MeshRecordComponent(openPMD_Mesh *mesh)
 }
 
 // From BaseRecord<MeshRecordComponent> (too lazy to wrap this class)
-openPMD_Array7 openPMD_Mesh_unitDimension(const openPMD_Mesh *mesh)
+openPMD_ArrayDouble7 openPMD_Mesh_unitDimension(const openPMD_Mesh *mesh)
 {
     const auto cxx_mesh = (const openPMD::Mesh *)mesh;
     const auto cxx_unitDimension = cxx_mesh->unitDimension();
-    openPMD_Array7 unitDimension;
+    openPMD_ArrayDouble7 unitDimension;
     for (size_t n = 0; n < 7; ++n)
         unitDimension.element[n] = cxx_unitDimension[n];
     return unitDimension;
@@ -228,7 +228,7 @@ void openPMD_Mesh_setGridUnitSI(openPMD_Mesh *mesh, double unitSI)
 }
 
 void openPMD_Mesh_setUnitDimension(
-    openPMD_Mesh *mesh, const openPMD_Array7 *unitDimension)
+    openPMD_Mesh *mesh, const openPMD_ArrayDouble7 *unitDimension)
 {
     const auto cxx_mesh = (openPMD::Mesh *)mesh;
     std::map<openPMD::UnitDimension, double> cxx_unitDimension;

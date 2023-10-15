@@ -221,6 +221,15 @@ function(openpmd_cuda_required target)
        CUDA_STANDARD_REQUIRED ON)
 endfunction()
 
+# C standard: requirements for a target
+function(openpmd_c_required target)
+    target_compile_features(${target} PUBLIC c_std_99)
+    set_target_properties(${target} PROPERTIES
+        C_EXTENSIONS OFF
+        C_STANDARD_REQUIRED ON
+    )
+endfunction()
+
 
 # Dependencies ################################################################
 #
@@ -636,6 +645,7 @@ if(openPMD_HAVE_C)
         CUDA_VISIBILITY_PRESET "hidden"
     )
     openpmd_cxx_required(openPMD.c)
+    openpmd_c_required(openPMD.c)
     set_target_properties(openPMD.c PROPERTIES
         COMPILE_PDB_NAME openPMD
         ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
