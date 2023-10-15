@@ -2,7 +2,6 @@
 
 #include <openPMD/backend/Attributable.hpp>
 
-#include <complex.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -61,17 +60,20 @@ openPMD_Attribute Attribute_cxx2c(const openPMD::Attribute &cxx_attribute)
         break;
     case openPMD_Datatype_CFLOAT: {
         const auto value = cxx_attribute.get<std::complex<float>>();
-        memcpy(&attribute.cfloat_data, &value, sizeof value);
+        attribute.cfloat_data.re = real(value);
+        attribute.cfloat_data.im = imag(value);
         break;
     }
     case openPMD_Datatype_CDOUBLE: {
         const auto value = cxx_attribute.get<std::complex<double>>();
-        memcpy(&attribute.cdouble_data, &value, sizeof value);
+        attribute.cdouble_data.re = real(value);
+        attribute.cdouble_data.im = imag(value);
         break;
     }
     case openPMD_Datatype_CLONG_DOUBLE: {
         const auto value = cxx_attribute.get<std::complex<long double>>();
-        memcpy(&attribute.clong_double_data, &value, sizeof value);
+        attribute.clong_double_data.re = real(value);
+        attribute.clong_double_data.im = imag(value);
         break;
     }
     case openPMD_Datatype_BOOL:
@@ -103,6 +105,17 @@ void openPMD_Attributable_delete(openPMD_Attributable *attributable)
         const auto cxx_attributable = (openPMD::Attributable *)attributable;   \
         return cxx_attributable->setAttribute(std::string(key), value);        \
     }
+#define DEFINE_SETATTTRIBUTE2(NAME, TYPE)                                      \
+    bool openPMD_Attributable_setAttribute_##NAME##2(                          \
+        openPMD_Attributable * attributable,                                   \
+        const char *key,                                                       \
+        TYPE value_re,                                                         \
+        TYPE value_im)                                                         \
+    {                                                                          \
+        const auto cxx_attributable = (openPMD::Attributable *)attributable;   \
+        return cxx_attributable->setAttribute(                                 \
+            std::string(key), std::complex<TYPE>(value_re, value_im));         \
+    }
 DEFINE_SETATTTRIBUTE(char, char)
 DEFINE_SETATTTRIBUTE(uchar, unsigned char)
 DEFINE_SETATTTRIBUTE(schar, signed char)
@@ -117,11 +130,12 @@ DEFINE_SETATTTRIBUTE(ulonglong, unsigned long long)
 DEFINE_SETATTTRIBUTE(float, float)
 DEFINE_SETATTTRIBUTE(double, double)
 DEFINE_SETATTTRIBUTE(long_double, long double)
-DEFINE_SETATTTRIBUTE(cfloat, std::complex<float>)
-DEFINE_SETATTTRIBUTE(cdouble, std::complex<double>)
-DEFINE_SETATTTRIBUTE(clong_double, std::complex<long double>)
+DEFINE_SETATTTRIBUTE2(cfloat, float)
+DEFINE_SETATTTRIBUTE2(cdouble, double)
+DEFINE_SETATTTRIBUTE2(clong_double, long double)
 DEFINE_SETATTTRIBUTE(bool, bool)
 #undef DEFINE_SETATTTRIBUTE
+#undef DEFINE_SETATTTRIBUTE2
 
 openPMD_Attribute openPMD_Attributable_getAttribute(
     const openPMD_Attributable *attributable, const char *key)

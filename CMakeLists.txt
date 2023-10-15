@@ -221,15 +221,6 @@ function(openpmd_cuda_required target)
        CUDA_STANDARD_REQUIRED ON)
 endfunction()
 
-# C standard: requirements for a target
-function(openpmd_c_required target)
-    target_compile_features(${target} PUBLIC c_std_99)
-    set_target_properties(${target} PROPERTIES
-        C_EXTENSIONS OFF
-        C_STANDARD_REQUIRED ON
-    )
-endfunction()
-
 
 # Dependencies ################################################################
 #
@@ -631,6 +622,7 @@ if(openPMD_HAVE_C)
         src/binding/c/Series.cpp
         src/binding/c/UnitDimension.cpp
         src/binding/c/WriteIterations.cpp
+        src/binding/c/backend/Attributable.c
         src/binding/c/backend/Attributable.cpp
         src/binding/c/backend/Attribute.cpp
         src/binding/c/backend/BaseRecordComponent.cpp
@@ -644,13 +636,12 @@ if(openPMD_HAVE_C)
     target_link_libraries(openPMD.c PRIVATE openPMD)
     set_target_properties(openPMD.c PROPERTIES
         C_EXTENSIONS OFF
+        C_STANDARD_VERSION 99
         C_STANDARD_REQUIRED ON
         # Allow C++ extensions since we read C header code into C++
         # code and C99 `_Complex` counts as C++ extension
+        CXX_EXTENSIONS ON
         CXX_STANDARD_REQUIRED ON
-
-        CXX_VISIBILITY_PRESET "hidden"
-        CUDA_VISIBILITY_PRESET "hidden"
 
         COMPILE_PDB_NAME openPMD
         ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
@@ -662,13 +653,20 @@ if(openPMD_HAVE_C)
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
 
+    # # own headers
+    # target_include_directories(openPMD.c PUBLIC
+    #     $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include/openPMD/binding/c>
+    #     $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include/openPMD/binding/c>
+    #     $<INSTALL_INTERFACE:include/openPMD/binding/c>
+    # )
+
     # own headers
     target_include_directories(openPMD.c PUBLIC
-        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include/binding/c>
-        $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include/binding/c>
-        $<INSTALL_INTERFACE:include/binding/c>
+        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
+        $<INSTALL_INTERFACE:include>
     )
-endif()
+    endif()
 
 # python bindings
 if(openPMD_HAVE_PYTHON)
@@ -808,6 +806,10 @@ set(openPMD_TEST_NAMES
     ParallelIO
     JSON
 )
+set(openPMD_C_TEST_NAMES
+    C
+)
+
 # command line tools
 set(openPMD_CLI_TOOL_NAMES
     ls
@@ -954,6 +956,25 @@ if(openPMD_BUILD_TESTING)
                 $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
         endif()
     endforeach()
+
+    if(openPMD_HAVE_C)
+        foreach(testname ${openPMD_C_TEST_NAMES})
+            add_executable(${testname}Tests test/c/${testname}Test.c)
+            target_compile_features(${testname}Tests PUBLIC c_std_99)
+            target_link_libraries(${testname}Tests PRIVATE openPMD.c)
+            set_target_properties(${testname}Tests PROPERTIES
+                C_EXTENSIONS OFF
+                C_STANDARD_REQUIRED ON
+
+                COMPILE_PDB_NAME ${testname}Tests
+                ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+                LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+                RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+            )
+        endforeach()
+    endif()
 endif()
 
 if(openPMD_BUILD_CLI_TOOLS)

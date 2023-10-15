@@ -10,6 +10,21 @@ extern "C"
 {
 #endif
 
+#ifdef __cplusplus
+    struct openPMD_Attributable_cfloat
+    {
+        float re, im;
+    };
+    struct openPMD_Attributable_cdouble
+    {
+        double re, im;
+    };
+    struct openPMD_Attributable_clong_double
+    {
+        long double re, im;
+    };
+#endif
+
     typedef struct openPMD_Attribute
     {
         openPMD_Datatype datatype;
@@ -29,9 +44,15 @@ extern "C"
             float float_data;
             double double_data;
             long double long_double_data;
-            _Complex float cfloat_data;
-            _Complex double cdouble_data;
-            _Complex long double clong_double_data;
+#ifndef __cplusplus
+            complex float cfloat_data;
+            complex double cdouble_data;
+            complex long double clong_double_data;
+#else
+        struct openPMD_Attributable_cfloat cfloat_data;
+        struct openPMD_Attributable_cdouble cdouble_data;
+        struct openPMD_Attributable_clong_double clong_double_data;
+#endif
             bool bool_data;
         };
     } openPMD_Attribute;

@@ -4,7 +4,9 @@
 #include <openPMD/binding/c/IO/Access.h>
 #include <openPMD/binding/c/backend/Attribute.h>
 
+#ifndef __cplusplus
 #include <complex.h>
+#endif
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -55,18 +57,35 @@ extern "C"
         openPMD_Attributable *attributable, const char *key, double value);
     bool openPMD_Attributable_setAttribute_long_double(
         openPMD_Attributable *attributable, const char *key, long double value);
+    bool openPMD_Attributable_setAttribute_cfloat2(
+        openPMD_Attributable *attributable,
+        const char *key,
+        float value_re,
+        float value_im);
+    bool openPMD_Attributable_setAttribute_cdouble2(
+        openPMD_Attributable *attributable,
+        const char *key,
+        double value_re,
+        double value_im);
+    bool openPMD_Attributable_setAttribute_clong_double2(
+        openPMD_Attributable *attributable,
+        const char *key,
+        long double value_re,
+        long double value_im);
+#ifndef __cplusplus
     bool openPMD_Attributable_setAttribute_cfloat(
         openPMD_Attributable *attributable,
         const char *key,
-        _Complex float value);
+        complex float value);
     bool openPMD_Attributable_setAttribute_cdouble(
         openPMD_Attributable *attributable,
         const char *key,
-        _Complex double value);
+        complex double value);
     bool openPMD_Attributable_setAttribute_clong_double(
         openPMD_Attributable *attributable,
         const char *key,
-        _Complex long double value);
+        complex long double value);
+#endif
     bool openPMD_Attributable_setAttribute_bool(
         openPMD_Attributable *attributable, const char *key, bool value);
 

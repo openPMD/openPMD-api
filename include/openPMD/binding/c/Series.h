@@ -29,14 +29,14 @@ extern "C"
     openPMD_Series *openPMD_Series_new();
 
 #if openPMD_HAVE_MPI
-    openPMD_Series *Series_new_parallell(
+    openPMD_Series *openPMD_Series_new_parallell(
         const char *filepath,
         openPMD_Access at,
         MPI_Comm comm,
         const char *options);
 #endif
 
-    openPMD_Series *Series_new_serial(
+    openPMD_Series *openPMD_Series_new_serial(
         const char *filepath, openPMD_Access at, const char *options);
 
     void openPMD_Series_delete(openPMD_Series *series);
