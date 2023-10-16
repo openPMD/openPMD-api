@@ -1564,11 +1564,20 @@ inline void write_test(const std::string &backend)
 #ifdef _WIN32
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 0), &wsaData);
+    std::string jsonCfg = R"({"rank_table": "winsocks_hostname"})";
+    chunk_assignment::RankMeta compare{
+        {0,
+         host_info::byMethod(
+             host_info::methodFromStringDescription("winsocks_hostname"))}};
+#else
+    std::string jsonCfg = R"({"rank_table": "posix_hostname"})";
+    chunk_assignment::RankMeta compare{
+        {0,
+         host_info::byMethod(
+             host_info::methodFromStringDescription("posix_hostname"))}};
 #endif
-    Series o = Series(
-        "../samples/serial_write." + backend,
-        Access::CREATE,
-        R"({"rank_table": "hostname"})");
+    Series o =
+        Series("../samples/serial_write." + backend, Access::CREATE, jsonCfg);
 
     ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -1682,9 +1691,7 @@ inline void write_test(const std::string &backend)
 
     // need double parens here to avoid link errors to unprintableString
     // on Windows
-    REQUIRE(
-        (read.mpiRanksMetaInfo(/* collective = */ false) ==
-         chunk_assignment::RankMeta{{0, host_info::hostname()}}));
+    REQUIRE((read.mpiRanksMetaInfo(/* collective = */ false) == compare));
 #ifdef _WIN32
     WSACleanup();
 #endif
@@ -1841,6 +1848,9 @@ inline void fileBased_write_test(const std::string &backend)
 #ifdef _WIN32
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 0), &wsaData);
+    std::string jsonCfg = R"({"rank_table": "winsocks_hostname"})";
+#else
+    std::string jsonCfg = R"({"rank_table": "posix_hostname"})";
 #endif
     if (auxiliary::directory_exists("../samples/subdir"))
         auxiliary::remove_directory("../samples/subdir");
@@ -1849,7 +1859,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%03T." + backend,
             Access::CREATE,
-            R"({"rank_table": "hostname"})");
+            jsonCfg);
 
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -1969,7 +1979,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
             Access::READ_ONLY,
-            R"({"rank_table": "hostname"})");
+            jsonCfg);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(1) == 1);
@@ -2047,7 +2057,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
             Access::READ_WRITE,
-            R"({"rank_table": "hostname"})");
+            jsonCfg);
 
         REQUIRE(o.iterations.size() == 5);
         o.iterations[6];
@@ -2089,7 +2099,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%01T." + backend,
             Access::READ_WRITE,
-            R"({"rank_table": "hostname"})");
+            jsonCfg);
 
         REQUIRE(o.iterations.size() == 1);
         /*
@@ -2201,7 +2211,7 @@ inline void fileBased_write_test(const std::string &backend)
             throw std::system_error(
                 std::error_code(errno, std::system_category()));
         }
-        chunk_assignment::RankMeta compare{{0, host_info::hostname()}};
+        chunk_assignment::RankMeta compare{{0, host_info::posix_hostname()}};
         dirent *entry;
         while ((entry = readdir(directory)) != nullptr)
         {
