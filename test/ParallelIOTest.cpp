@@ -419,7 +419,8 @@ void available_chunks_test(std::string const &file_ending)
                << R"END(
             }
         }
-    }
+    },
+    "rank_table": "hostname"
 }
 )END";
 
