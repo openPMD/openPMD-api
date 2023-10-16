@@ -89,17 +89,87 @@ namespace chunk_assignment
 
 namespace host_info
 {
+    /**
+     * Methods for retrieving hostname / processor identifiers that openPMD-api
+     * is aware of. These can be used for locality-aware chunk distribution
+     * schemes in streaming setups.
+     */
     enum class Method
     {
-        HOSTNAME
+        POSIX_HOSTNAME,
+        WINSOCKS_HOSTNAME,
+        MPI_PROCESSOR_NAME
     };
 
+    /**
+     * @brief This defines the method identifiers used
+     *        in `{"rank_table": "hostname"}`
+     *
+     * Currently recognized are:
+     *
+     * * posix_hostname
+     * * winsocks_hostname
+     * * mpi_processor_name
+     *
+     * For backwards compatibility reasons, "hostname" is also recognized as a
+     * deprecated alternative for "posix_hostname".
+     *
+     * @return Method enum identifier. The identifier is returned even if the
+     *         method is not available on the system. This should by checked
+     *         via methodAvailable().
+     * @throws std::out_of_range If an unknown string identifier is passed.
+     */
+    Method methodFromStringDescription(std::string const &descr);
+
+    /**
+     * @brief Is the method available on the current system?
+     *
+     * @return true If it is available.
+     * @return false Otherwise.
+     */
+    bool methodAvailable(Method);
+
+    /**
+     * @brief Wrapper for the native hostname retrieval functions such as
+     *        POSIX gethostname().
+     *
+     * @return std::string The hostname / processor name returned by the native
+     *                     function.
+     */
     std::string byMethod(Method);
 
 #if openPMD_HAVE_MPI
+    /**
+     * @brief Retrieve the hostname information on all MPI ranks and distribute
+     *        a map of "rank -> hostname" to all ranks.
+     *
+     * This call is MPI collective.
+     *
+     * @return chunk_assignment::RankMeta Hostname / processor name information
+     *         for all MPI ranks known to the communicator.
+     *         The result is returned on all ranks.
+     */
     chunk_assignment::RankMeta byMethodCollective(MPI_Comm, Method);
 #endif
 
-    std::string hostname();
+/*
+ * The following block contains one wrapper for each native hostname retrieval
+ * method. The purpose is to have the same function pointer type for all
+ * of them.
+ */
+
+/*
+ * @todo Replace _WIN32 with proper Winsocks macro,
+ *       add POSIX availability macro.
+ */
+#ifdef _WIN32
+    std::string winsocks_hostname();
+#else
+    std::string posix_hostname();
+#endif
+#if openPMD_HAVE_MPI
+    std::string mpi_processor_name();
+#endif
+
 } // namespace host_info
 } // namespace openPMD

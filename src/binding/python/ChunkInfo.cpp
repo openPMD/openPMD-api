@@ -76,7 +76,9 @@ void init_Chunk(py::module &m)
             }));
 
     py::enum_<host_info::Method>(m, "HostInfo")
-        .value("HOSTNAME", host_info::Method::HOSTNAME)
+        .value("POSIX_HOSTNAME", host_info::Method::POSIX_HOSTNAME)
+        .value("WINSOCKS_HOSTNAME", host_info::Method::WINSOCKS_HOSTNAME)
+        .value("MPI_PROCESSOR_NAME", host_info::Method::MPI_PROCESSOR_NAME)
 #if openPMD_HAVE_MPI
         .def(
             "get_collective",
@@ -93,7 +95,12 @@ void init_Chunk(py::module &m)
                 }
             })
 #endif
-        .def("get", [](host_info::Method const &self) {
-            return host_info::byMethod(self);
-        });
+        .def(
+            "get",
+            [](host_info::Method const &self) {
+                return host_info::byMethod(self);
+            })
+        .def("available", &host_info::methodAvailable)
+        .def(
+            "from_string_description", &host_info::methodFromStringDescription);
 }

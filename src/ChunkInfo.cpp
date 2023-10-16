@@ -24,6 +24,11 @@
 
 #include <utility>
 
+/*
+ * @todo Replace _WIN32 with proper Winsocks macro,
+ *       add POSIX availability macro.
+ */
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -59,13 +64,69 @@ bool WrittenChunkInfo::operator==(WrittenChunkInfo const &other) const
 
 namespace host_info
 {
-    constexpr size_t MAX_HOSTNAME_LENGTH = 200;
+    constexpr size_t MAX_HOSTNAME_LENGTH = 256;
+
+    Method methodFromStringDescription(std::string const &descr)
+    {
+        static std::map<std::string, Method> const map{
+            {"posix_hostname", Method::POSIX_HOSTNAME},
+            {"hostname", Method::POSIX_HOSTNAME},
+            {"winsocks_hostname", Method::WINSOCKS_HOSTNAME},
+            {"mpi_processor_name", Method::MPI_PROCESSOR_NAME}};
+        if (descr == "hostname")
+        {
+            std::cerr
+                << "[host_info::methodFromStringDescription] `hostname` is a "
+                   "deprecated identifier for a hostname retrieval method. "
+                   "Consider switching to `posix_hostname` instead."
+                << std::endl;
+        }
+        return map.at(descr);
+    }
+
+// @todo do this properly
+#ifdef _WIN32
+#define openPMD_POSIX_AVAILABLE false
+#else
+#define openPMD_POSIX_AVAILABLE true
+#endif
+    bool methodAvailable(Method method)
+    {
+        switch (method)
+        {
+
+        case Method::POSIX_HOSTNAME:
+            return openPMD_POSIX_AVAILABLE;
+        case Method::WINSOCKS_HOSTNAME:
+            return !openPMD_POSIX_AVAILABLE;
+        case Method::MPI_PROCESSOR_NAME:
+            return openPMD_HAVE_MPI == 1;
+        }
+        throw std::runtime_error("Unreachable!");
+    }
 
     std::string byMethod(Method method)
     {
-        static std::map<Method, std::string (*)()> map{
-            {Method::HOSTNAME, &hostname}};
-        return (*map[method])();
+        static std::map<Method, std::string (*)()> const map{
+#ifdef _WIN32
+            {Method::WINSOCKS_HOSTNAME, &winsocks_hostname}
+#else
+            {Method::POSIX_HOSTNAME, &posix_hostname}
+#endif
+#if openPMD_HAVE_MPI
+            ,
+            {Method::MPI_PROCESSOR_NAME, &mpi_processor_name}
+#endif
+        };
+        try
+        {
+            return (*map.at(method))();
+        }
+        catch (std::out_of_range const &)
+        {
+            throw std::runtime_error(
+                "[hostname::byMethod] Specified method is not available.");
+        }
     }
 
 #if openPMD_HAVE_MPI
@@ -81,18 +142,50 @@ namespace host_info
         }
         return res;
     }
+
+    std::string mpi_processor_name()
+    {
+        std::string res;
+        res.resize(MPI_MAX_PROCESSOR_NAME);
+        int string_len;
+        if (MPI_Get_processor_name(res.data(), &string_len) != 0)
+        {
+            throw std::runtime_error(
+                "[mpi_processor_name] Could not inquire processor name.");
+        }
+        // MPI_Get_processor_name returns the string length without null
+        // terminator and std::string::resize() does not use null terminator
+        // either. So, no +-1 necessary.
+        res.resize(string_len);
+        res.shrink_to_fit();
+        return res;
+    }
 #endif
 
-    std::string hostname()
+#ifdef _WIN32
+    std::string winsocks_hostname()
     {
         char hostname[MAX_HOSTNAME_LENGTH];
         if (gethostname(hostname, MAX_HOSTNAME_LENGTH))
         {
             throw std::runtime_error(
-                "[gethostname] Could not inquire hostname.");
+                "[winsocks_hostname] Could not inquire hostname.");
         }
         std::string res(hostname);
         return res;
     }
+#else
+    std::string posix_hostname()
+    {
+        char hostname[MAX_HOSTNAME_LENGTH];
+        if (gethostname(hostname, MAX_HOSTNAME_LENGTH))
+        {
+            throw std::runtime_error(
+                "[posix_hostname] Could not inquire hostname.");
+        }
+        std::string res(hostname);
+        return res;
+    }
+#endif
 } // namespace host_info
 } // namespace openPMD

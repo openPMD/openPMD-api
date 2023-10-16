@@ -338,16 +338,19 @@ void Series::flushRankTable()
                 -> std::optional<std::string> { return std::nullopt; },
             [](internal::SeriesData::SourceSpecifiedViaJSON &viaJson)
                 -> std::optional<std::string> {
-                if (viaJson.value == "hostname")
+                host_info::Method method;
+                try
                 {
-                    return host_info::hostname();
+                    method =
+                        host_info::methodFromStringDescription(viaJson.value);
                 }
-                else
+                catch (std::out_of_range const &)
                 {
                     throw error::WrongAPIUsage(
                         "[Series] Wrong value for JSON option 'rank_table': '" +
                         viaJson.value + "'.");
-                };
+                }
+                return host_info::byMethod(method);
             },
             [](internal::SeriesData::SourceSpecifiedManually &manually)
                 -> std::optional<std::string> { return manually.value; }},
