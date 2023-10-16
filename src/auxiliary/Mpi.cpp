@@ -41,7 +41,7 @@ StringMatrix collectStringsAsMatrixTo(
     {
         res.line_length = maxLength;
         res.num_lines = size;
-        res.char_buffer.resize(res.line_length * res.num_lines);
+        res.char_buffer.resize(maxLength * res.num_lines);
         displs.reserve(size);
         for (int i = 0; i < size; ++i)
         {

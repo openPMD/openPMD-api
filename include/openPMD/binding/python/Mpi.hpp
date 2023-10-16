@@ -25,9 +25,9 @@
 
 #if openPMD_HAVE_MPI
 
+#include "openPMD/binding/python/Common.hpp"
+
 #include <mpi.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 
 /** mpi4py communicator wrapper
  *
