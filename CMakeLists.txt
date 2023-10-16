@@ -641,9 +641,10 @@ if(openPMD_HAVE_C)
         C_EXTENSIONS OFF
         C_STANDARD_VERSION 99
         C_STANDARD_REQUIRED ON
-        # Allow C++ extensions since we read C header code into C++
-        # code and C99 `_Complex` counts as C++ extension
-        CXX_EXTENSIONS ON
+        # # Allow C++ extensions since we read C header code into C++
+        # # code and C99 `_Complex` counts as C++ extension
+        # CXX_EXTENSIONS ON
+        CXX_ESTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
 
         COMPILE_PDB_NAME openPMD
