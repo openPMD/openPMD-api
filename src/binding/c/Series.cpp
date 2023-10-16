@@ -2,8 +2,7 @@
 
 #include <openPMD/Series.hpp>
 
-#include <string.h>
-
+#include <cstring>
 #include <string>
 
 const openPMD_Attributable *
