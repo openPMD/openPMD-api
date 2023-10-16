@@ -27,6 +27,9 @@
 #if openPMD_HAVE_MPI
 #include <mpi.h>
 #endif
+
+#include <map>
+#include <string>
 #include <vector>
 
 namespace openPMD
@@ -77,7 +80,6 @@ struct WrittenChunkInfo : ChunkInfo
     bool operator==(WrittenChunkInfo const &other) const;
 };
 
-// !< @todo Also add a ChunkTable for ReadChunkInfo or sth like that
 using ChunkTable = std::vector<WrittenChunkInfo>;
 
 namespace chunk_assignment

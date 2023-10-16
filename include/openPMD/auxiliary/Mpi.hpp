@@ -67,6 +67,13 @@ namespace
     }
 } // namespace
 
+/**
+ * Multiple variable-length strings represented in one single buffer
+ * with a fixed line width.
+ * Strings smaller than the maximum width are padded with zeros.
+ * The length of char_buffer should be equal to the product of line_length
+ * and num_lines.
+ */
 struct StringMatrix
 {
     std::vector<char> char_buffer;
@@ -74,9 +81,36 @@ struct StringMatrix
     size_t num_lines = 0;
 };
 
+/*
+ * These are mostly internal helper functions, so this defines only those that
+ * we need.
+ * Logically, these should be complemented by `collectStringsTo()` and
+ * `distributeStringsAsMatrixToAllRanks()`, but we don't need them (yet).
+ */
+
+/**
+ * @brief Collect multiple variable-length strings to one rank in MPI_Gatherv
+ *        fashion. Uses two collective MPI calls, the first to gather the
+ *        different string lengths, the second to gather the actual strings.
+ *
+ * @param communicator MPI communicator
+ * @param destRank Target rank for MPI_Gatherv
+ * @param thisRankString The current MPI rank's contribution to the data.
+ * @return StringMatrix See documentation of StringMatrix struct.
+ */
 StringMatrix collectStringsAsMatrixTo(
     MPI_Comm communicator, int destRank, std::string const &thisRankString);
 
+/**
+ * @brief Collect multiple variable-length strings to all ranks in
+ *        MPI_Allgatherv fashion. Uses two collective MPI calls, the first to
+ *        gather the different string lengths, the second to gather the actual
+ *        strings.
+ *
+ * @param communicator communicator
+ * @param thisRankString The current MPI rank's contribution to the data.
+ * @return std::vector<std::string> All ranks' strings, returned on all ranks.
+ */
 std::vector<std::string> distributeStringsToAllRanks(
     MPI_Comm communicator, std::string const &thisRankString);
 #endif

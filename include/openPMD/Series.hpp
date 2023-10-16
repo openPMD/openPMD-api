@@ -49,6 +49,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <variant>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
@@ -223,7 +224,6 @@ namespace internal
         struct RankTableData
         {
             Attributable m_attributable;
-            // Parameter<Operation::CREATE_DATASET> m_param;
             std::variant<
                 NoSourceSpecified,
                 SourceSpecifiedViaJSON,
