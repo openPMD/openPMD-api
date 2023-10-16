@@ -418,7 +418,8 @@ void available_chunks_test(std::string const &file_ending)
                << "\"" << std::to_string(mpi_size) << "\"" << R"END(
             }
         }
-    }
+    },
+    "rank_table": "hostname"
 }
 )END";
 
