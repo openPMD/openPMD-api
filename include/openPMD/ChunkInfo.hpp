@@ -97,7 +97,6 @@ namespace host_info
     enum class Method
     {
         POSIX_HOSTNAME,
-        WINSOCKS_HOSTNAME,
         MPI_PROCESSOR_NAME
     };
 
@@ -108,7 +107,6 @@ namespace host_info
      * Currently recognized are:
      *
      * * posix_hostname
-     * * winsocks_hostname
      * * mpi_processor_name
      *
      * For backwards compatibility reasons, "hostname" is also recognized as a
@@ -152,24 +150,27 @@ namespace host_info
     chunk_assignment::RankMeta byMethodCollective(MPI_Comm, Method);
 #endif
 
-/*
- * The following block contains one wrapper for each native hostname retrieval
- * method. The purpose is to have the same function pointer type for all
- * of them.
- */
+    /*
+     * The following block contains one wrapper for each native hostname
+     * retrieval method. The purpose is to have the same function pointer type
+     * for all of them.
+     */
 
-/*
- * @todo Replace _WIN32 with proper Winsocks macro,
- *       add POSIX availability macro.
- */
 #ifdef _WIN32
-    std::string winsocks_hostname();
+#define openPMD_POSIX_AVAILABLE false
 #else
+#define openPMD_POSIX_AVAILABLE true
+#endif
+
+#if openPMD_POSIX_AVAILABLE
     std::string posix_hostname();
 #endif
+
 #if openPMD_HAVE_MPI
     std::string mpi_processor_name();
 #endif
 
 } // namespace host_info
 } // namespace openPMD
+
+#undef openPMD_POSIX_AVAILABLE
