@@ -77,7 +77,6 @@ void init_Chunk(py::module &m)
 
     py::enum_<host_info::Method>(m, "HostInfo")
         .value("POSIX_HOSTNAME", host_info::Method::POSIX_HOSTNAME)
-        .value("WINSOCKS_HOSTNAME", host_info::Method::WINSOCKS_HOSTNAME)
         .value("MPI_PROCESSOR_NAME", host_info::Method::MPI_PROCESSOR_NAME)
 #if openPMD_HAVE_MPI
         .def(

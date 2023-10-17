@@ -24,14 +24,13 @@
 
 #include <utility>
 
-/*
- * @todo Replace _WIN32 with proper Winsocks macro,
- *       add POSIX availability macro.
- */
-
 #ifdef _WIN32
-#include <windows.h>
+#define openPMD_POSIX_AVAILABLE false
 #else
+#define openPMD_POSIX_AVAILABLE true
+#endif
+
+#if openPMD_POSIX_AVAILABLE
 #include <unistd.h>
 #endif
 
@@ -71,7 +70,6 @@ namespace host_info
         static std::map<std::string, Method> const map{
             {"posix_hostname", Method::POSIX_HOSTNAME},
             {"hostname", Method::POSIX_HOSTNAME},
-            {"winsocks_hostname", Method::WINSOCKS_HOSTNAME},
             {"mpi_processor_name", Method::MPI_PROCESSOR_NAME}};
         if (descr == "hostname")
         {
@@ -84,12 +82,6 @@ namespace host_info
         return map.at(descr);
     }
 
-// @todo do this properly
-#ifdef _WIN32
-#define openPMD_POSIX_AVAILABLE false
-#else
-#define openPMD_POSIX_AVAILABLE true
-#endif
     bool methodAvailable(Method method)
     {
         switch (method)
@@ -97,8 +89,6 @@ namespace host_info
 
         case Method::POSIX_HOSTNAME:
             return openPMD_POSIX_AVAILABLE;
-        case Method::WINSOCKS_HOSTNAME:
-            return !openPMD_POSIX_AVAILABLE;
         case Method::MPI_PROCESSOR_NAME:
             return openPMD_HAVE_MPI == 1;
         }
@@ -107,15 +97,13 @@ namespace host_info
 
     std::string byMethod(Method method)
     {
-        static std::map<Method, std::string (*)()> const map{
-#ifdef _WIN32
-            {Method::WINSOCKS_HOSTNAME, &winsocks_hostname}
-#else
-            {Method::POSIX_HOSTNAME, &posix_hostname}
+        static std::map<Method, std::string (*)()> const map
+        {
+#if openPMD_POSIX_AVAILABLE
+            {Method::POSIX_HOSTNAME, &posix_hostname},
 #endif
 #if openPMD_HAVE_MPI
-            ,
-            {Method::MPI_PROCESSOR_NAME, &mpi_processor_name}
+                {Method::MPI_PROCESSOR_NAME, &mpi_processor_name},
 #endif
         };
         try
@@ -162,19 +150,7 @@ namespace host_info
     }
 #endif
 
-#ifdef _WIN32
-    std::string winsocks_hostname()
-    {
-        char hostname[MAX_HOSTNAME_LENGTH];
-        if (gethostname(hostname, MAX_HOSTNAME_LENGTH))
-        {
-            throw std::runtime_error(
-                "[winsocks_hostname] Could not inquire hostname.");
-        }
-        std::string res(hostname);
-        return res;
-    }
-#else
+#if openPMD_POSIX_AVAILABLE
     std::string posix_hostname()
     {
         char hostname[MAX_HOSTNAME_LENGTH];
@@ -189,3 +165,5 @@ namespace host_info
 #endif
 } // namespace host_info
 } // namespace openPMD
+
+#undef openPMD_POSIX_AVAILABLE

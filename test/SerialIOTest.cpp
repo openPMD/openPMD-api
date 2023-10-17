@@ -1562,13 +1562,7 @@ struct ReadFromAnyType
 inline void write_test(const std::string &backend)
 {
 #ifdef _WIN32
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 0), &wsaData);
-    std::string jsonCfg = R"({"rank_table": "winsocks_hostname"})";
-    chunk_assignment::RankMeta compare{
-        {0,
-         host_info::byMethod(
-             host_info::methodFromStringDescription("winsocks_hostname"))}};
+    std::string jsonCfg = "{}";
 #else
     std::string jsonCfg = R"({"rank_table": "posix_hostname"})";
     chunk_assignment::RankMeta compare{
@@ -1689,11 +1683,8 @@ inline void write_test(const std::string &backend)
         },
         variantTypeDataset);
 
-    // need double parens here to avoid link errors to unprintableString
-    // on Windows
-    REQUIRE((read.mpiRanksMetaInfo(/* collective = */ false) == compare));
-#ifdef _WIN32
-    WSACleanup();
+#ifndef _WIN32
+    REQUIRE(read.mpiRanksMetaInfo(/* collective = */ false) == compare);
 #endif
 }
 
@@ -1846,9 +1837,7 @@ fileBased_add_EDpic(ParticleSpecies &e, uint64_t const num_particles)
 inline void fileBased_write_test(const std::string &backend)
 {
 #ifdef _WIN32
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 0), &wsaData);
-    std::string jsonCfg = R"({"rank_table": "winsocks_hostname"})";
+    std::string jsonCfg = "{}";
 #else
     std::string jsonCfg = R"({"rank_table": "posix_hostname"})";
 #endif
@@ -2232,9 +2221,6 @@ inline void fileBased_write_test(const std::string &backend)
         close(dirfd);
     }
 #endif // defined(__unix__)
-#ifdef _WIN32
-    WSACleanup();
-#endif
 }
 
 TEST_CASE("fileBased_write_test", "[serial]")
