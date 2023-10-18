@@ -6528,7 +6528,8 @@ TEST_CASE("chaotic_stream", "[serial]")
 void unfinished_iteration_test(
     std::string const &ext,
     IterationEncoding encoding,
-    std::string const &config = "{}")
+    std::string const &config = "{}",
+    bool test_linear_access = true)
 {
     std::cout << "\n\nTESTING " << ext << "\n\n" << std::endl;
     std::string file = std::string("../samples/unfinished_iteration") +
@@ -6617,8 +6618,11 @@ void unfinished_iteration_test(
         }
     };
 
-    tryReading(Access::READ_LINEAR);
-    tryReading(Access::READ_LINEAR, R"({"defer_iteration_parsing": true})");
+    if (test_linear_access)
+    {
+        tryReading(Access::READ_LINEAR);
+        tryReading(Access::READ_LINEAR, R"({"defer_iteration_parsing": true})");
+    }
     if (encoding != IterationEncoding::variableBased)
     {
         /*
@@ -6637,7 +6641,10 @@ TEST_CASE("unfinished_iteration_test", "[serial]")
 {
 #if openPMD_HAVE_ADIOS2
     unfinished_iteration_test(
-        "bp", IterationEncoding::groupBased, R"({"backend": "adios2"})");
+        "bp",
+        IterationEncoding::groupBased,
+        R"({"backend": "adios2"})",
+        /* test_linear_access = */ false);
 #if openPMD_HAS_ADIOS_2_9
     unfinished_iteration_test(
         "bp5",
@@ -6798,7 +6805,8 @@ void append_mode(
     std::string const &filename,
     bool variableBased,
     ParseMode parseMode,
-    std::string const &jsonConfig = "{}")
+    std::string const &jsonConfig = "{}",
+    bool test_read_linear = true)
 {
     if (auxiliary::directory_exists("../samples/append"))
     {
@@ -6881,6 +6889,7 @@ void append_mode(
         }
     };
 
+    if (test_read_linear)
     {
         switch (parseMode)
         {
@@ -7003,6 +7012,7 @@ void append_mode(
                 write.writeIterations(), std::vector<uint64_t>{4, 5});
             write.flush();
         }
+        if (test_read_linear)
         {
             Series read(filename, Access::READ_LINEAR);
             switch (parseMode)
@@ -7091,7 +7101,8 @@ TEST_CASE("append_mode", "[serial]")
                 "../samples/append/append_groupbased." + t,
                 false,
                 ParseMode::LinearWithoutSnapshot,
-                jsonConfigOld);
+                jsonConfigOld,
+                /* test_read_linear = */ false);
 #if openPMD_HAS_ADIOS_2_9
             append_mode(
                 "../samples/append/append_groupbased." + t,

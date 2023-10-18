@@ -23,6 +23,7 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/config.hpp"
 
 #if openPMD_HAVE_MPI
@@ -168,6 +169,11 @@ namespace internal
     }
 } // namespace internal
 
+namespace detail
+{
+    class BufferedActions;
+}
+
 /** Interface for communicating between logical and physically persistent data.
  *
  * Input and output operations are channeled through a task queue that is
@@ -179,8 +185,12 @@ namespace internal
 class AbstractIOHandler
 {
     friend class Series;
+    friend class ADIOS2IOHandlerImpl;
+    friend class detail::BufferedActions;
 
 private:
+    IterationEncoding m_encoding = IterationEncoding::groupBased;
+
     void setIterationEncoding(IterationEncoding encoding)
     {
         /*
@@ -193,6 +203,8 @@ private:
             // do we really want to have those as const members..?
             *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
         }
+
+        m_encoding = encoding;
     }
 
 public:

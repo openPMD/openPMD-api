@@ -229,8 +229,12 @@ private:
      * If the iteration encoding is variableBased, we default to using a group
      * table, since it is the only reliable way to recover currently active
      * groups.
+     * If group-based encoding is used without group table, then
+     * READ_RANDOM_ACCESS is forbidden as it will be unreliable in reporting
+     * currently available data.
+     * Use AbstractIOHandler::m_encoding for this though
      */
-    IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
+    // IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
     /**
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
@@ -439,6 +443,8 @@ namespace ADIOS2Defaults
         "__openPMD_internal/openPMD2_adios2_schema";
     constexpr const_str str_isBoolean = "__is_boolean__";
     constexpr const_str str_activeTablePrefix = "__openPMD_groups";
+    constexpr const_str str_groupBasedWarning =
+        "__openPMD_internal/warning_bugprone_groupbased_encoding";
 } // namespace ADIOS2Defaults
 
 namespace detail
@@ -1069,7 +1075,7 @@ namespace detail
              *    without steps. This is not a workaround since not using steps,
              *    while inefficient in ADIOS2, is something that we support.
              */
-            NoStream,
+            ReadWithoutStream,
             /**
              * Rationale behind this state:
              * When user code opens a Series, series.iterations should contain
@@ -1157,8 +1163,8 @@ namespace detail
         void create_IO();
 
         void configure_IO(ADIOS2IOHandlerImpl &impl);
-        void configure_IO_Read(std::optional<bool> userSpecifiedUsesteps);
-        void configure_IO_Write(std::optional<bool> userSpecifiedUsesteps);
+        void configure_IO_Read();
+        void configure_IO_Write();
     };
 
 } // namespace detail

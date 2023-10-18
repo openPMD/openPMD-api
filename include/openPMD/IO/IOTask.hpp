@@ -142,7 +142,6 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_FILE>
     }
 
     std::string name = "";
-    IterationEncoding encoding = IterationEncoding::groupBased;
 };
 
 template <>
@@ -189,12 +188,6 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
     }
 
     std::string name = "";
-    /*
-     * The backends might need to ensure availability of certain features
-     * for some iteration encodings, e.g. availability of ADIOS steps for
-     * variableBased encoding.
-     */
-    IterationEncoding encoding = IterationEncoding::groupBased;
     using ParsePreference = internal::ParsePreference;
     std::shared_ptr<ParsePreference> out_parsePreference =
         std::make_shared<ParsePreference>(ParsePreference::UpFront);

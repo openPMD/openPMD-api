@@ -1403,7 +1403,8 @@ void append_mode(
     std::string const &extension,
     bool variableBased,
     ParseMode parseMode,
-    std::string const &jsonConfig = "{}")
+    std::string const &jsonConfig = "{}",
+    bool test_read_linear = true)
 {
     std::string filename =
         (variableBased ? "../samples/append/append_variablebased."
@@ -1500,6 +1501,7 @@ void append_mode(
         }
     };
 
+    if (test_read_linear)
     {
         switch (parseMode)
         {
@@ -1624,6 +1626,8 @@ void append_mode(
             write.flush();
         }
         MPI_Barrier(MPI_COMM_WORLD);
+
+        if (test_read_linear)
         {
             Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
             switch (parseMode)
@@ -1718,7 +1722,11 @@ TEST_CASE("append_mode", "[serial]")
              */
 #if HAS_ADIOS_2_8
             append_mode(
-                t, false, ParseMode::LinearWithoutSnapshot, jsonConfigOld);
+                t,
+                false,
+                ParseMode::LinearWithoutSnapshot,
+                jsonConfigOld,
+                /* test_read_linear = */ false);
 #endif
 #if HAS_ADIOS_2_9
             append_mode(t, false, ParseMode::WithSnapshot, jsonConfigNew);
