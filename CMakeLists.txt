@@ -644,7 +644,7 @@ if(openPMD_HAVE_C)
         # # Allow C++ extensions since we read C header code into C++
         # # code and C99 `_Complex` counts as C++ extension
         # CXX_EXTENSIONS ON
-        CXX_ESTENSIONS OFF
+        CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
 
         COMPILE_PDB_NAME openPMD
@@ -657,20 +657,12 @@ if(openPMD_HAVE_C)
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
 
-    # # own headers
-    # target_include_directories(openPMD.c PUBLIC
-    #     $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include/openPMD/binding/c>
-    #     $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include/openPMD/binding/c>
-    #     $<INSTALL_INTERFACE:include/openPMD/binding/c>
-    # )
-
-    # own headers
     target_include_directories(openPMD.c PUBLIC
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:include>
     )
-    endif()
+endif()
 
 # python bindings
 if(openPMD_HAVE_PYTHON)
@@ -1191,6 +1183,9 @@ if(openPMD_INSTALL)
         RUNTIME DESTINATION ${openPMD_INSTALL_BINDIR}
         INCLUDES DESTINATION ${openPMD_INSTALL_INCLUDEDIR}
     )
+    if(openPMD_HAVE_C)
+        install(TARGETS openPMD.c DESTINATION ${openPMD_INSTALL_LIBDIR})
+    endif()
     if(openPMD_HAVE_PYTHON)
         install(
             DIRECTORY   ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
@@ -1217,6 +1212,13 @@ if(openPMD_INSTALL)
             PATTERN "*.hpp"
             PATTERN "*.tpp"
     )
+    if(openPMD_HAVE_C)
+        install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
+            DESTINATION ${openPMD_INSTALL_INCLUDEDIR}
+            FILES_MATCHING
+                PATTERN "*.h"
+        )
+    endif()
     install(
         FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
         DESTINATION ${openPMD_INSTALL_INCLUDEDIR}/openPMD
