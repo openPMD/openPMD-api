@@ -1076,33 +1076,6 @@ namespace detail
              */
             ReadWithoutStream,
             /**
-             * Rationale behind this state:
-             * When user code opens a Series, series.iterations should contain
-             * all available iterations.
-             * If accessing a file without opening a step, ADIOS2 will grant
-             * access to variables and attributes from all steps, allowing us
-             * to parse the complete dump.
-             * This state indicates that no step should be opened for parsing
-             * purposes (which is necessary in streaming engines, hence they
-             * are initialized with the OutsideOfStep state).
-             * A step should only be opened if an explicit ADVANCE task arrives
-             * at the backend.
-             *
-             * @todo If the streaming API is used on files, parsing the whole
-             *       Series up front is unnecessary work.
-             *       Our frontend does not yet allow to distinguish whether
-             *       parsing the whole series will be necessary since parsing
-             *       happens upon construction time of Series,
-             *       but the classical and the streaming API are both activated
-             *       afterwards from the created Series object.
-             *       Hence, improving this requires refactoring in our
-             *       user-facing API. Ideas:
-             *       (1) Delayed lazy parsing of iterations upon accessing
-             *           (would bring other benefits also).
-             *       (2) Introduce a restricted class StreamingSeries.
-             */
-            Parsing,
-            /**
              * The stream status of a file-based engine will be decided upon
              * opening the engine if in read mode. Up until then, this right
              * here is the status.

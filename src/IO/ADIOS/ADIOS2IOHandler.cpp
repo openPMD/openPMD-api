@@ -2879,7 +2879,7 @@ namespace detail
                                     "anything in an engine that supports "
                                     "up-front parsing.");
                             }
-                            streamStatus = StreamStatus::Parsing;
+                            streamStatus = StreamStatus::ReadWithoutStream;
                         }
                         else
                         {
