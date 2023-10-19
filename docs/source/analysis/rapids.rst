@@ -51,14 +51,7 @@ One can also combine all iterations in a single dataframe like this:
 
 .. code-block:: python
 
-   cdf = cudf.concat(
-        (
-            cudf.from_pandas(s.iterations[i].particles["electrons"].to_df().assign(iteration=i))
-            for i in s.iterations
-        ),
-        axis=0,
-        ignore_index=True,
-   )
+   cdf = s.to_cudf("electrons")
 
    # like before but with a new column "iteration" and all particles
    print(cdf)
