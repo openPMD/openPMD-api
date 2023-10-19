@@ -1173,6 +1173,8 @@ doshuffle = "BLOSC_BITSHUFFLE"
     std::string writeConfigBP4 = R"END(
 [adios2]
 unused = "parameter"
+attribute_writing_ranks = 0
+use_group_table = true
 
 [adios2.engine]
 type = "bp4"

@@ -79,7 +79,43 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     , m_engineType(std::move(engineType))
     , m_userSpecifiedExtension{std::move(specifiedExtension)}
 {
-    init(std::move(cfg));
+    init(
+        std::move(cfg),
+        /* callbackWriteAttributesFromRank = */
+        [communicator, this](nlohmann::json const &attribute_writing_ranks) {
+            int rank = 0;
+            MPI_Comm_rank(communicator, &rank);
+            auto throw_error = []() {
+                throw error::BackendConfigSchema(
+                    {"adios2", "attribute_writing_ranks"},
+                    "Type must be either an integer or an array of integers.");
+            };
+            if (attribute_writing_ranks.is_array())
+            {
+                m_writeAttributesFromThisRank = false;
+                for (auto const &val : attribute_writing_ranks)
+                {
+                    if (!val.is_number())
+                    {
+                        throw_error();
+                    }
+                    if (val.get<int>() == rank)
+                    {
+                        m_writeAttributesFromThisRank = true;
+                        break;
+                    }
+                }
+            }
+            else if (attribute_writing_ranks.is_number())
+            {
+                m_writeAttributesFromThisRank =
+                    attribute_writing_ranks.get<int>() == rank;
+            }
+            else
+            {
+                throw_error();
+            }
+        });
 }
 
 #endif // openPMD_HAVE_MPI
@@ -94,7 +130,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     , m_engineType(std::move(engineType))
     , m_userSpecifiedExtension(std::move(specifiedExtension))
 {
-    init(std::move(cfg));
+    init(std::move(cfg), [](auto const &...) {});
 }
 
 ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
@@ -135,7 +171,9 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
     }
 }
 
-void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
+template <typename Callback>
+void ADIOS2IOHandlerImpl::init(
+    json::TracingJSON cfg, Callback &&callbackWriteAttributesFromRank)
 {
     // allow overriding through environment variable
     m_engineType =
@@ -179,6 +217,12 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
                 m_config["modifiable_attributes"].json().get<bool>()
                 ? ModifiableAttributes::Yes
                 : ModifiableAttributes::No;
+        }
+
+        if (m_config.json().contains("attribute_writing_ranks"))
+        {
+            callbackWriteAttributesFromRank(
+                m_config["attribute_writing_ranks"].json());
         }
 
         auto engineConfig = config(ADIOS2Defaults::str_engine);
@@ -915,6 +959,10 @@ void ADIOS2IOHandlerImpl::writeDataset(
 void ADIOS2IOHandlerImpl::writeAttribute(
     Writable *writable, const Parameter<Operation::WRITE_ATT> &parameters)
 {
+    if (!m_writeAttributesFromThisRank)
+    {
+        return;
+    }
 #if openPMD_HAS_ADIOS_2_9
     switch (useGroupTable())
     {
@@ -3033,7 +3081,11 @@ namespace detail
         if (!initializedDefaults)
         {
             // Currently only schema 0 supported
-            m_IO.DefineAttribute<uint64_t>(ADIOS2Defaults::str_adios2Schema, 0);
+            if (m_impl->m_writeAttributesFromThisRank)
+            {
+                m_IO.DefineAttribute<uint64_t>(
+                    ADIOS2Defaults::str_adios2Schema, 0);
+            }
             initializedDefaults = true;
         }
 
@@ -3168,7 +3220,8 @@ namespace detail
         {
             if (writeOnly(m_mode) &&
                 !m_IO.InquireAttribute<bool_representation>(
-                    ADIOS2Defaults::str_usesstepsAttribute))
+                    ADIOS2Defaults::str_usesstepsAttribute) &&
+                m_impl->m_writeAttributesFromThisRank)
             {
                 m_IO.DefineAttribute<bool_representation>(
                     ADIOS2Defaults::str_usesstepsAttribute, 0);
@@ -3189,7 +3242,8 @@ namespace detail
          */
         if (calledExplicitly && writeOnly(m_mode) &&
             !m_IO.InquireAttribute<bool_representation>(
-                ADIOS2Defaults::str_usesstepsAttribute))
+                ADIOS2Defaults::str_usesstepsAttribute) &&
+            m_impl->m_writeAttributesFromThisRank)
         {
             m_IO.DefineAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute, 1);
@@ -3356,7 +3410,7 @@ namespace detail
         case UseGroupTable::Yes:
 #if openPMD_HAS_ADIOS_2_9
         {
-            if (writeOnly(m_mode))
+            if (writeOnly(m_mode) && m_impl->m_writeAttributesFromThisRank)
             {
                 requireActiveStep();
                 auto currentStepBuffered = currentStep();
