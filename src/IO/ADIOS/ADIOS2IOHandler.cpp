@@ -1140,8 +1140,6 @@ void ADIOS2IOHandlerImpl::getBufferView(
         break;
     }
 
-    ba.requireActiveStep();
-
     if (parameters.update)
     {
         detail::I_UpdateSpan &updater =
@@ -1176,7 +1174,6 @@ void ADIOS2IOHandlerImpl::readAttribute(
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
     detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    ba.requireActiveStep();
     auto name = nameOfAttribute(writable, parameters.name);
 
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
@@ -1214,7 +1211,6 @@ void ADIOS2IOHandlerImpl::listPaths(
      * from variables and attributes.
      */
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
-    fileData.requireActiveStep();
 
     std::unordered_set<std::string> subdirs;
     /*
@@ -1346,7 +1342,6 @@ void ADIOS2IOHandlerImpl::listDatasets(
      */
 
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
-    fileData.requireActiveStep();
 
     std::unordered_set<std::string> subdirs;
     for (auto var : fileData.availableVariablesPrefixed(myName))
@@ -1382,7 +1377,6 @@ void ADIOS2IOHandlerImpl::listAttributes(
         attributePrefix = "";
     }
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    ba.requireActiveStep(); // make sure that the attributes are present
 
     std::vector<std::string> attrs =
         ba.availableAttributesPrefixed(attributePrefix);
@@ -1817,7 +1811,6 @@ namespace detail
 
         auto &filedata = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
-        filedata.requireActiveStep();
         filedata.invalidateAttributesMap();
         adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace(std::move(file));
@@ -1977,7 +1970,6 @@ namespace detail
     {
         auto &fileData = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
-        fileData.requireActiveStep();
         auto &IO = fileData.m_IO;
         adios2::Variable<T> var = IO.InquireVariable<T>(varName);
         if (!var)
@@ -2983,32 +2975,6 @@ namespace detail
         return m_engine.value();
     }
 
-    // @todo maybe delete
-    adios2::Engine &BufferedActions::requireActiveStep()
-    {
-        adios2::Engine &eng = getEngine();
-        /*
-         * If streamStatus is Parsing, do NOT open the step.
-         */
-        if (streamStatus == StreamStatus::OutsideOfStep)
-        {
-            switch (
-                advance(AdvanceMode::BEGINSTEP, /* calledExplicitly = */ false))
-            {
-            case AdvanceStatus::OVER:
-                throw std::runtime_error(
-                    "[ADIOS2] Operation requires active step but no step is "
-                    "left.");
-            case AdvanceStatus::OK:
-            case AdvanceStatus::RANDOMACCESS:
-                // pass
-                break;
-            }
-            streamStatus = StreamStatus::DuringStep;
-        }
-        return eng;
-    }
-
     template <typename BA>
     void BufferedActions::enqueue(BA &&ba)
     {
@@ -3079,10 +3045,6 @@ namespace detail
                     performPutGets(*this, eng);
                 }
                 return;
-            }
-            else
-            {
-                requireActiveStep();
             }
         }
         for (auto &ba : m_buffer)
@@ -3410,7 +3372,6 @@ namespace detail
         {
             if (writeOnly(m_mode) && m_impl->m_writeAttributesFromThisRank)
             {
-                requireActiveStep();
                 auto currentStepBuffered = currentStep();
                 do
                 {

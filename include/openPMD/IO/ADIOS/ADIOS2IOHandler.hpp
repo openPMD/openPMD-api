@@ -920,7 +920,6 @@ namespace detail
         UseGroupTable detectGroupTable();
 
         adios2::Engine &getEngine();
-        adios2::Engine &requireActiveStep();
 
         template <typename BA>
         void enqueue(BA &&ba);
