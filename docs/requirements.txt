@@ -6,7 +6,7 @@ numpy>=1.15
 pygments
 recommonmark
 scipy
-sphinx>=5.3
+sphinx>=5.3,<7.2
 sphinx-copybutton
 sphinx-design
 sphinx_rtd_theme>=1.1.1
