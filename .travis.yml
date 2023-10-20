@@ -38,6 +38,11 @@ jobs:
       arch: arm64
       dist: focal
       env:
+        - CIBW_BUILD="cp312-manylinux_aarch64"
+    - services: docker
+      arch: arm64
+      dist: focal
+      env:
         - CIBW_BUILD="pp310-manylinux_aarch64"
     - services: docker
       arch: arm64
@@ -55,6 +60,11 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="cp310-musllinux_aarch64 cp311-musllinux_aarch64"
+    - services: docker
+      arch: arm64
+      dist: focal
+      env:
+        - CIBW_BUILD="cp312-musllinux_aarch64"
 
     # perform a linux PPC64LE build
     - services: docker
@@ -81,6 +91,11 @@ jobs:
       arch: ppc64le
       dist: focal
       env:
+        - CIBW_BUILD="cp312-manylinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
         - CIBW_BUILD="cp38-musllinux_ppc64le"
     - services: docker
       arch: ppc64le
@@ -97,6 +112,11 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="cp311-musllinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp312-musllinux_ppc64le"
 
     # perform a linux S390X build
     # blocked by https://github.com/GTkorvo/dill/issues/15
@@ -116,7 +136,7 @@ install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh src/.github/
   - python -m pip install --upgrade pip setuptools wheel
-  - python -m pip install cibuildwheel==2.14.1
+  - python -m pip install cibuildwheel==2.16.2
   # twine & cryptography: see
   #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
   #   https://github.com/pyca/cryptography/issues/6086
