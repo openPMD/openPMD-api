@@ -466,7 +466,7 @@ namespace detail
             ADIOS2IOHandlerImpl &,
             adios2::IO &IO,
             std::string name,
-            std::shared_ptr<Attribute::resource> const &resource);
+            Attribute::resource &resource);
 
         template <int n, typename... Params>
         static Datatype call(Params &&...);
@@ -1196,21 +1196,21 @@ public:
 #if openPMD_HAVE_MPI
 
     ADIOS2IOHandler(
-        std::string const &path,
+        std::string path,
         Access,
         MPI_Comm,
-        json::TracingJSON const &options,
-        std::string const &engineType,
-        std::string const &specifiedExtension);
+        json::TracingJSON options,
+        std::string engineType,
+        std::string specifiedExtension);
 
 #endif
 
     ADIOS2IOHandler(
-        std::string const &path,
+        std::string path,
         Access,
-        json::TracingJSON const &options,
-        std::string const &engineType,
-        std::string const &specifiedExtension);
+        json::TracingJSON options,
+        std::string engineType,
+        std::string specifiedExtension);
 
     std::string backendName() const override
     {

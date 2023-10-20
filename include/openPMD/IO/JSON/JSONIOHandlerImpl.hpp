@@ -163,7 +163,7 @@ public:
 
     explicit JSONIOHandlerImpl(
         AbstractIOHandler *,
-        openPMD::json::TracingJSON const &config,
+        openPMD::json::TracingJSON config,
         FileFormat,
         std::string originalExtension);
 

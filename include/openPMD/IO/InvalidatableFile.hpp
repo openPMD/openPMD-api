@@ -42,7 +42,7 @@ namespace openPMD
  */
 struct InvalidatableFile
 {
-    explicit InvalidatableFile(std::string const &s);
+    explicit InvalidatableFile(std::string s);
 
     InvalidatableFile() = default;
 
@@ -60,7 +60,7 @@ struct InvalidatableFile
 
     bool valid() const;
 
-    InvalidatableFile &operator=(std::string const &s);
+    InvalidatableFile &operator=(std::string s);
 
     bool operator==(InvalidatableFile const &f) const;
 

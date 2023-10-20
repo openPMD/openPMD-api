@@ -25,8 +25,8 @@
 
 namespace openPMD
 {
-DummyIOHandler::DummyIOHandler(std::string const &path, Access at)
-    : AbstractIOHandler(path, at)
+DummyIOHandler::DummyIOHandler(std::string path, Access at)
+    : AbstractIOHandler(std::move(path), at)
 {}
 
 void DummyIOHandler::enqueue(IOTask const &)

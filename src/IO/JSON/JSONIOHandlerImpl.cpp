@@ -122,9 +122,16 @@ namespace
     }
 } // namespace
 
+namespace detail
+{
+    template <typename T>
+    void forget(T)
+    {}
+} // namespace detail
+
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
-    openPMD::json::TracingJSON const &config,
+    openPMD::json::TracingJSON config,
     FileFormat format,
     std::string originalExtension)
     : AbstractIOHandlerImpl(handler)
@@ -132,7 +139,7 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_originalExtension{std::move(originalExtension)}
 {
     // Currently unused
-    (void)config;
+    detail::forget(std::move(config));
 }
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;

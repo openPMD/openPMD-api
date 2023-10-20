@@ -1111,7 +1111,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
     }
 
     Datatype ret = switchType<detail::AttributeReader>(
-        type, *this, ba.m_IO, name, parameters.resource);
+        type, *this, ba.m_IO, name, *parameters.resource);
     *parameters.dtype = ret;
 }
 
@@ -1615,7 +1615,7 @@ namespace detail
         ADIOS2IOHandlerImpl &impl,
         adios2::IO &IO,
         std::string name,
-        std::shared_ptr<Attribute::resource> const &resource)
+        Attribute::resource &resource)
     {
         (void)impl;
         /*
@@ -1653,11 +1653,11 @@ namespace detail
                 auto meta = IO.InquireAttribute<rep>(metaAttr);
                 if (meta.Data().size() == 1 && meta.Data()[0] == 1)
                 {
-                    *resource = bool_repr::fromRep(attr.Data()[0]);
+                    resource = bool_repr::fromRep(attr.Data()[0]);
                     return determineDatatype<bool>();
                 }
             }
-            *resource = attr.Data()[0];
+            resource = attr.Data()[0];
         }
         else if constexpr (IsUnsupportedComplex_v<T>)
         {
@@ -1674,7 +1674,7 @@ namespace detail
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            *resource = attr.Data();
+            resource = attr.Data();
         }
         else if constexpr (auxiliary::IsArray_v<T>)
         {
@@ -1691,7 +1691,7 @@ namespace detail
             {
                 res[i] = data[i];
             }
-            *resource = res;
+            resource = res;
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
@@ -1707,7 +1707,7 @@ namespace detail
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            *resource = attr.Data()[0];
+            resource = attr.Data()[0];
         }
 
         return determineDatatype<T>();
@@ -3394,26 +3394,35 @@ namespace detail
 #if openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string const &path,
+    std::string path,
     openPMD::Access at,
     MPI_Comm comm,
-    json::TracingJSON const &options,
-    std::string const &engineType,
-    std::string const &specifiedExtension)
-    : AbstractIOHandler(path, at, comm)
-    , m_impl{this, comm, options, engineType, specifiedExtension}
+    json::TracingJSON options,
+    std::string engineType,
+    std::string specifiedExtension)
+    : AbstractIOHandler(std::move(path), at, comm)
+    , m_impl{
+          this,
+          comm,
+          std::move(options),
+          std::move(engineType),
+          std::move(specifiedExtension)}
 {}
 
 #endif
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string const &path,
+    std::string path,
     Access at,
-    json::TracingJSON const &options,
-    std::string const &engineType,
-    std::string const &specifiedExtension)
-    : AbstractIOHandler(path, at)
-    , m_impl{this, options, engineType, specifiedExtension}
+    json::TracingJSON options,
+    std::string engineType,
+    std::string specifiedExtension)
+    : AbstractIOHandler(std::move(path), at)
+    , m_impl{
+          this,
+          std::move(options),
+          std::move(engineType),
+          std::move(specifiedExtension)}
 {}
 
 std::future<void>
@@ -3424,27 +3433,38 @@ ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 
 #else // openPMD_HAVE_ADIOS2
 
+namespace detail
+{
+    template <typename... Args>
+    void forget(Args...)
+    {}
+} // namespace detail
+
 #if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string const &path,
+    std::string path,
     Access at,
     MPI_Comm comm,
-    json::TracingJSON const &,
-    std::string const &,
-    std::string const &)
-    : AbstractIOHandler(path, at, comm)
-{}
+    json::TracingJSON a,
+    std::string b,
+    std::string c)
+    : AbstractIOHandler(std::move(path), at, comm)
+{
+    detail::forget(a, b, c);
+}
 
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string const &path,
+    std::string path,
     Access at,
-    json::TracingJSON const &,
-    std::string const &,
-    std::string const &)
-    : AbstractIOHandler(path, at)
-{}
+    json::TracingJSON a,
+    std::string b,
+    std::string c)
+    : AbstractIOHandler(std::move(path), at)
+{
+    detail::forget(std::move(a), std::move(b), std::move(c));
+}
 
 std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
 {

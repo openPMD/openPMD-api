@@ -241,7 +241,13 @@ public:
         Access at,
         std::string const &options = "{}");
 
-    virtual ~Series() = default;
+    Series(Series const &) = default;
+    Series(Series &&) = default;
+
+    Series &operator=(Series const &) = default;
+    Series &operator=(Series &&) = default;
+
+    ~Series() override = default;
 
     /**
      * An unsigned integer type, used to identify Iterations in a Series.

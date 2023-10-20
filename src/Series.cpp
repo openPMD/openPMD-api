@@ -2386,7 +2386,9 @@ ReadIterations Series::readIterations()
     // Use private constructor instead of copy constructor to avoid
     // object slicing
     return {
-        this->m_series, IOHandler()->m_frontendAccess, get().m_parsePreference};
+        Series(this->m_series),
+        IOHandler()->m_frontendAccess,
+        get().m_parsePreference};
 }
 
 void Series::parseBase()

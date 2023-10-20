@@ -47,10 +47,10 @@ namespace openPMD
  */
 template <typename JSON>
 std::unique_ptr<AbstractIOHandler> createIOHandler(
-    std::string const &path,
+    std::string path,
     Access access,
     Format format,
-    std::string const &originalExtension,
+    std::string originalExtension,
     MPI_Comm comm,
     JSON options,
     std::string const &pathAsItWasSpecifiedInTheConstructor);
@@ -74,17 +74,17 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
  */
 template <typename JSON>
 std::unique_ptr<AbstractIOHandler> createIOHandler(
-    std::string const &path,
+    std::string path,
     Access access,
     Format format,
-    std::string const &originalExtension,
+    std::string originalExtension,
     JSON options,
     std::string const &pathAsItWasSpecifiedInTheConstructor);
 
 // version without configuration to use in AuxiliaryTest
 std::unique_ptr<AbstractIOHandler> createIOHandler(
-    std::string const &path,
+    std::string path,
     Access access,
     Format format,
-    std::string const &originalExtension);
+    std::string originalExtension);
 } // namespace openPMD

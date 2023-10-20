@@ -613,10 +613,10 @@ SeriesIterator SeriesIterator::end()
 }
 
 ReadIterations::ReadIterations(
-    Series const &series,
+    Series series,
     Access access,
     std::optional<internal::ParsePreference> parsePreference)
-    : m_series(series), m_parsePreference(parsePreference)
+    : m_series(std::move(series)), m_parsePreference(parsePreference)
 {
     auto &data = m_series.get();
     if (access == Access::READ_LINEAR && !data.m_sharedStatefulIterator)

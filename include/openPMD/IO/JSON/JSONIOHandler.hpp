@@ -32,7 +32,7 @@ public:
     JSONIOHandler(
         std::string const &path,
         Access at,
-        openPMD::json::TracingJSON const &config,
+        openPMD::json::TracingJSON config,
         JSONIOHandlerImpl::FileFormat,
         std::string originalExtension);
 
