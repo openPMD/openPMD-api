@@ -608,7 +608,7 @@ endif()
 
 # C bindings
 if(openPMD_HAVE_C)
-    add_library(openPMD.c ${_openpmd_lib_type}
+    add_library(openPMD_c ${_openpmd_lib_type}
         src/binding/c/ChunkInfo.cpp
         src/binding/c/Container_Iteration.cpp
         src/binding/c/Container_Mesh.cpp
@@ -630,14 +630,14 @@ if(openPMD_HAVE_C)
         src/binding/c/backend/MeshRecordComponent.cpp
         src/binding/c/version.cpp
     )
-    target_compile_features(openPMD.c PUBLIC c_std_99)
-    target_compile_features(openPMD.c PRIVATE cxx_std_17)
-    target_compile_options(openPMD.c PUBLIC ${_msvc_options})
-    target_link_libraries(openPMD.c PRIVATE openPMD)
+    target_compile_features(openPMD_c PUBLIC c_std_99)
+    target_compile_features(openPMD_c PRIVATE cxx_std_17)
+    target_compile_options(openPMD_c PUBLIC ${_msvc_options})
+    target_link_libraries(openPMD_c PRIVATE openPMD)
     if(openPMD_HAVE_MPI)
-        target_link_libraries(openPMD.c PUBLIC ${openPMD_MPI_TARGETS})
+        target_link_libraries(openPMD_c PUBLIC ${openPMD_MPI_TARGETS})
     endif()
-    set_target_properties(openPMD.c PROPERTIES
+    set_target_properties(openPMD_c PROPERTIES
         C_EXTENSIONS OFF
         C_STANDARD_VERSION 99
         C_STANDARD_REQUIRED ON
@@ -657,7 +657,7 @@ if(openPMD_HAVE_C)
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
 
-    target_include_directories(openPMD.c PUBLIC
+    target_include_directories(openPMD_c PUBLIC
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:include>
@@ -957,7 +957,7 @@ if(openPMD_BUILD_TESTING)
         foreach(testname ${openPMD_C_TEST_NAMES})
             add_executable(${testname}Tests test/c/${testname}Test.c)
             target_compile_features(${testname}Tests PUBLIC c_std_99)
-            target_link_libraries(${testname}Tests PRIVATE openPMD.c)
+            target_link_libraries(${testname}Tests PRIVATE openPMD_c)
             set_target_properties(${testname}Tests PROPERTIES
                 C_EXTENSIONS OFF
                 C_STANDARD_REQUIRED ON
@@ -1184,7 +1184,7 @@ if(openPMD_INSTALL)
         INCLUDES DESTINATION ${openPMD_INSTALL_INCLUDEDIR}
     )
     if(openPMD_HAVE_C)
-        install(TARGETS openPMD.c DESTINATION ${openPMD_INSTALL_LIBDIR})
+        install(TARGETS openPMD_c DESTINATION ${openPMD_INSTALL_LIBDIR})
     endif()
     if(openPMD_HAVE_PYTHON)
         install(
