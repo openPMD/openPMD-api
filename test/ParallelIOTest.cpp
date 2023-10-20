@@ -1693,22 +1693,14 @@ TEST_CASE("append_mode", "[serial]")
 {
     "adios2":
     {
-        "use_group_table": false,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": false
     }
 })END";
         std::string jsonConfigNew = R"END(
 {
     "adios2":
     {
-        "use_group_table": true,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": true
     }
 })END";
         if (t == "bp" || t == "bp4" || t == "bp5")
