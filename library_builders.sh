@@ -75,8 +75,8 @@ function install_buildessentials {
 function build_adios1 {
     if [ -e adios1-stamp ]; then return; fi
 
-    curl -sLo adios-1.13.1.tar.gz \
-        http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
+    curl -k -sLo adios-1.13.1.tar.gz \
+        https://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
     file adios*.tar.gz
     tar -xzf adios*.tar.gz
     rm adios*.tar.gz
