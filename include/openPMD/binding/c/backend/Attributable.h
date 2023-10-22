@@ -1,8 +1,8 @@
 #ifndef OPENPMD_ATTRIBUTABLE_H
 #define OPENPMD_ATTRIBUTABLE_H
 
-#include <openPMD/binding/c/IO/Access.h>
 #include <openPMD/binding/c/Datatype.h>
+#include <openPMD/binding/c/IO/Access.h>
 
 #include <complex.h>
 #undef I
