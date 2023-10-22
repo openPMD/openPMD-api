@@ -86,6 +86,8 @@ extern "C"
         const char *key,
         complex long double value);
 #endif
+    bool openPMD_Attributable_setAttribute_string(
+        openPMD_Attributable *attributable, const char *key, const char *value);
     bool openPMD_Attributable_setAttribute_bool(
         openPMD_Attributable *attributable, const char *key, bool value);
 
@@ -173,6 +175,10 @@ extern "C"
 #endif
     bool openPMD_Attributable_getAttribute_bool(
         const openPMD_Attributable *attributable, const char *key, bool *value);
+    bool openPMD_Attributable_getAttribute_string(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        char **value);
 
     bool openPMD_Attributable_deleteAttribute(
         openPMD_Attributable *attributable, const char *key);

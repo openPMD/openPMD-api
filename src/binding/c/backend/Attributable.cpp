@@ -53,6 +53,7 @@ DEFINE_SETATTTRIBUTE(long_double, long double)
 DEFINE_SETATTTRIBUTE2(cfloat, float)
 DEFINE_SETATTTRIBUTE2(cdouble, double)
 DEFINE_SETATTTRIBUTE2(clong_double, long double)
+DEFINE_SETATTTRIBUTE(string, const char *)
 DEFINE_SETATTTRIBUTE(bool, bool)
 #undef DEFINE_SETATTTRIBUTE
 #undef DEFINE_SETATTTRIBUTE2
@@ -126,6 +127,18 @@ DEFINE_GETATTRIBUTE2(clong_double, long double)
 DEFINE_GETATTRIBUTE(bool, bool)
 #undef DEFINE_GETATTRIBUTE
 #undef DEFINE_GETATTRIBUTE2
+
+bool openPMD_Attributable_getAttribute_string(
+    const openPMD_Attributable *attributable, const char *key, char **value)
+{
+    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
+    const auto cxx_attribute = cxx_attributable->getAttribute(std::string(key));
+    const auto cxx_value = cxx_attribute.getOptional<std::string>();
+    if (!cxx_value)
+        return false;
+    *value = strdup(cxx_value->c_str());
+    return true;
+}
 
 bool openPMD_Attributable_deleteAttribute(
     openPMD_Attributable *attributable, const char *key)
