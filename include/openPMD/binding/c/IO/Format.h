@@ -20,7 +20,7 @@ extern "C"
     } openPMD_Format;
 
     openPMD_Format openPMD_determineFormat(const char *filename);
-    const char *suffix(openPMD_Format format);
+    const char *openPMD_suffix(openPMD_Format format);
 
 #ifdef __cplusplus
 }

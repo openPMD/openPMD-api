@@ -8,28 +8,18 @@ extern "C"
 {
 #endif
 
-#define OPENPMDAPI_VERSION_MAJOR 0
-#define OPENPMDAPI_VERSION_MINOR 16
-#define OPENPMDAPI_VERSION_PATCH 0
-#define OPENPMDAPI_VERSION_LABEL "dev"
+    extern const int openPMDapi_version_major;
+    extern const int openPMDapi_version_minor;
+    extern const int openPMDapi_version_patch;
+    extern const char *const openPMDapi_version_label;
 
-#define OPENPMD_STANDARD_MAJOR 1
-#define OPENPMD_STANDARD_MINOR 1
-#define OPENPMD_STANDARD_PATCH 0
+    extern const int openPMD_standard_major;
+    extern const int openPMD_standard_minor;
+    extern const int openPMD_standard_patch;
 
-#define OPENPMD_STANDARD_MIN_MAJOR 1
-#define OPENPMD_STANDARD_MIN_MINOR 0
-#define OPENPMD_STANDARD_MIN_PATCH 0
-
-#define OPENPMDAPI_VERSIONIFY(major, minor, patch)                             \
-    (major * 1000000 + minor * 1000 + patch)
-
-#define OPENPMDAPI_VERSION_GE(major, minor, patch)                             \
-    (OPENPMDAPI_VERSIONIFY(                                                    \
-         OPENPMDAPI_VERSION_MAJOR,                                             \
-         OPENPMDAPI_VERSION_MINOR,                                             \
-         OPENPMDAPI_VERSION_PATCH) >=                                          \
-     OPENPMDAPI_VERSIONIFY(major, minor, patch))
+    extern const int openPMD_standard_min_major;
+    extern const int openPMD_standard_min_minor;
+    extern const int openPMD_standard_min_patch;
 
     const char *openPMD_getVersion();
     const char *openPMD_getStandard();

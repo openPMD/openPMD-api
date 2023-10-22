@@ -6,85 +6,6 @@
 #include <cstring>
 #include <string>
 
-namespace
-{
-openPMD_Attribute Attribute_cxx2c(const openPMD::Attribute &cxx_attribute)
-{
-    openPMD_Datatype datatype = (openPMD_Datatype)cxx_attribute.index();
-    openPMD_Attribute attribute;
-    attribute.datatype = datatype;
-    switch (attribute.datatype)
-    {
-    case openPMD_Datatype_CHAR:
-        attribute.char_data = cxx_attribute.get<char>();
-        break;
-    case openPMD_Datatype_UCHAR:
-        attribute.uchar_data = cxx_attribute.get<unsigned char>();
-        break;
-    case openPMD_Datatype_SCHAR:
-        attribute.schar_data = cxx_attribute.get<signed char>();
-        break;
-    case openPMD_Datatype_SHORT:
-        attribute.short_data = cxx_attribute.get<short>();
-        break;
-    case openPMD_Datatype_INT:
-        attribute.int_data = cxx_attribute.get<int>();
-        break;
-    case openPMD_Datatype_LONG:
-        attribute.long_data = cxx_attribute.get<long>();
-        break;
-    case openPMD_Datatype_LONGLONG:
-        attribute.longlong_data = cxx_attribute.get<long long>();
-        break;
-    case openPMD_Datatype_USHORT:
-        attribute.ushort_data = cxx_attribute.get<unsigned short>();
-        break;
-    case openPMD_Datatype_UINT:
-        attribute.uint_data = cxx_attribute.get<unsigned int>();
-        break;
-    case openPMD_Datatype_ULONG:
-        attribute.ulong_data = cxx_attribute.get<unsigned long>();
-        break;
-    case openPMD_Datatype_ULONGLONG:
-        attribute.ulonglong_data = cxx_attribute.get<unsigned long long>();
-        break;
-    case openPMD_Datatype_FLOAT:
-        attribute.float_data = cxx_attribute.get<float>();
-        break;
-    case openPMD_Datatype_DOUBLE:
-        attribute.double_data = cxx_attribute.get<double>();
-        break;
-    case openPMD_Datatype_LONG_DOUBLE:
-        attribute.long_double_data = cxx_attribute.get<long double>();
-        break;
-    case openPMD_Datatype_CFLOAT: {
-        const auto value = cxx_attribute.get<std::complex<float>>();
-        attribute.cfloat_data.re = real(value);
-        attribute.cfloat_data.im = imag(value);
-        break;
-    }
-    case openPMD_Datatype_CDOUBLE: {
-        const auto value = cxx_attribute.get<std::complex<double>>();
-        attribute.cdouble_data.re = real(value);
-        attribute.cdouble_data.im = imag(value);
-        break;
-    }
-    case openPMD_Datatype_CLONG_DOUBLE: {
-        const auto value = cxx_attribute.get<std::complex<long double>>();
-        attribute.clong_double_data.re = real(value);
-        attribute.clong_double_data.im = imag(value);
-        break;
-    }
-    case openPMD_Datatype_BOOL:
-        attribute.bool_data = cxx_attribute.get<bool>();
-        break;
-    default:
-        abort();
-    }
-    return attribute;
-}
-} // namespace
-
 openPMD_Attributable *openPMD_Attributable_new()
 {
     const auto cxx_attributable = new openPMD::Attributable();
@@ -136,15 +57,62 @@ DEFINE_SETATTTRIBUTE(bool, bool)
 #undef DEFINE_SETATTTRIBUTE
 #undef DEFINE_SETATTTRIBUTE2
 
-openPMD_Attribute openPMD_Attributable_getAttribute(
-    const openPMD_Attributable *attributable, const char *key)
-{
-    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
-    const openPMD::Attribute cxx_attribute =
-        cxx_attributable->getAttribute(std::string(key));
-    const openPMD_Attribute attribute = Attribute_cxx2c(cxx_attribute);
-    return attribute;
-}
+#define DEFINE_GETATTRIBUTE(NAME, TYPE)                                        \
+    bool openPMD_Attributable_getAttribute_##NAME(                             \
+        const openPMD_Attributable *attributable,                              \
+        const char *key,                                                       \
+        TYPE *value)                                                           \
+    {                                                                          \
+        const auto cxx_attributable =                                          \
+            (const openPMD::Attributable *)attributable;                       \
+        const auto cxx_attribute =                                             \
+            cxx_attributable->getAttribute(std::string(key));                  \
+        const auto cxx_value = cxx_attribute.getOptional<TYPE>();              \
+        if (!cxx_value)                                                        \
+            return false;                                                      \
+        *value = *cxx_value;                                                   \
+        return true;                                                           \
+    }
+#define DEFINE_GETATTRIBUTE2(NAME, TYPE)                                       \
+    bool openPMD_Attributable_getAttribute_##NAME##2(                          \
+        const openPMD_Attributable *attributable,                              \
+        const char *key,                                                       \
+        TYPE *value_re,                                                        \
+        TYPE *value_im)                                                        \
+    {                                                                          \
+        const auto cxx_attributable =                                          \
+            (const openPMD::Attributable *)attributable;                       \
+        const auto cxx_attribute =                                             \
+            cxx_attributable->getAttribute(std::string(key));                  \
+        const auto cxx_value =                                                 \
+            cxx_attribute.getOptional<std::complex<TYPE>>();                   \
+        if (!cxx_value)                                                        \
+            return false;                                                      \
+        *value_re = cxx_value->real();                                         \
+        *value_im = cxx_value->imag();                                         \
+        return true;                                                           \
+    }
+
+DEFINE_GETATTRIBUTE(char, char)
+DEFINE_GETATTRIBUTE(uchar, unsigned char)
+DEFINE_GETATTRIBUTE(schar, signed char)
+DEFINE_GETATTRIBUTE(short, short)
+DEFINE_GETATTRIBUTE(int, int)
+DEFINE_GETATTRIBUTE(long, long)
+DEFINE_GETATTRIBUTE(longlong, long long)
+DEFINE_GETATTRIBUTE(ushort, unsigned short)
+DEFINE_GETATTRIBUTE(uint, unsigned int)
+DEFINE_GETATTRIBUTE(ulong, unsigned long)
+DEFINE_GETATTRIBUTE(ulonglong, unsigned long long)
+DEFINE_GETATTRIBUTE(float, float)
+DEFINE_GETATTRIBUTE(double, double)
+DEFINE_GETATTRIBUTE(long_double, long double)
+DEFINE_GETATTRIBUTE2(cfloat, float)
+DEFINE_GETATTRIBUTE2(cdouble, double)
+DEFINE_GETATTRIBUTE2(clong_double, long double)
+DEFINE_GETATTRIBUTE(bool, bool)
+#undef DEFINE_GETATTRIBUTE
+#undef DEFINE_GETATTRIBUTE2
 
 bool openPMD_Attributable_deleteAttribute(
     openPMD_Attributable *attributable, const char *key)

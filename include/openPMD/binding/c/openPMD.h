@@ -15,7 +15,7 @@
 #include <openPMD/binding/c/UnitDimension.h>
 #include <openPMD/binding/c/WriteIterations.h>
 #include <openPMD/binding/c/backend/Attributable.h>
-#include <openPMD/binding/c/backend/Attribute.h>
+/* #include <openPMD/binding/c/backend/Attribute.h> */
 #include <openPMD/binding/c/backend/BaseRecordComponent.h>
 #include <openPMD/binding/c/backend/Container_MeshRecordComponent.h>
 #include <openPMD/binding/c/backend/MeshRecordComponent.h>

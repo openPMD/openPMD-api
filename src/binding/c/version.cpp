@@ -5,6 +5,19 @@
 #include <string>
 #include <vector>
 
+const int openPMDapi_version_major = OPENPMDAPI_VERSION_MAJOR;
+const int openPMDapi_version_minor = OPENPMDAPI_VERSION_MINOR;
+const int openPMDapi_version_patch = OPENPMDAPI_VERSION_PATCH;
+const char *const openPMDapi_version_label = OPENPMDAPI_VERSION_LABEL;
+
+const int openPMD_standard_major = OPENPMD_STANDARD_MAJOR;
+const int openPMD_standard_minor = OPENPMD_STANDARD_MINOR;
+const int openPMD_standard_patch = OPENPMD_STANDARD_PATCH;
+
+const int openPMD_standard_min_major = OPENPMD_STANDARD_MIN_MAJOR;
+const int openPMD_standard_min_minor = OPENPMD_STANDARD_MIN_MINOR;
+const int openPMD_standard_min_patch = OPENPMD_STANDARD_MIN_PATCH;
+
 const char *openPMD_getVersion()
 {
     static const std::string version = openPMD::getVersion();

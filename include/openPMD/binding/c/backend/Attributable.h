@@ -2,11 +2,11 @@
 #define OPENPMD_ATTRIBUTABLE_H
 
 #include <openPMD/binding/c/IO/Access.h>
-#include <openPMD/binding/c/backend/Attribute.h>
 
 #include <complex.h>
 #undef I
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -88,8 +88,87 @@ extern "C"
     bool openPMD_Attributable_setAttribute_bool(
         openPMD_Attributable *attributable, const char *key, bool value);
 
-    openPMD_Attribute openPMD_Attributable_getAttribute(
-        const openPMD_Attributable *attributable, const char *key);
+    bool openPMD_Attributable_getAttribute_char(
+        const openPMD_Attributable *attributable, const char *key, char *value);
+    bool openPMD_Attributable_getAttribute_uchar(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        unsigned char *value);
+    bool openPMD_Attributable_getAttribute_schar(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        signed char *value);
+    bool openPMD_Attributable_getAttribute_short(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        short *value);
+    bool openPMD_Attributable_getAttribute_int(
+        const openPMD_Attributable *attributable, const char *key, int *value);
+    bool openPMD_Attributable_getAttribute_long(
+        const openPMD_Attributable *attributable, const char *key, long *value);
+    bool openPMD_Attributable_getAttribute_longlong(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        long long *value);
+    bool openPMD_Attributable_getAttribute_ushort(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        unsigned short *value);
+    bool openPMD_Attributable_getAttribute_uint(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        unsigned int *value);
+    bool openPMD_Attributable_getAttribute_ulong(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        unsigned long *value);
+    bool openPMD_Attributable_getAttribute_ulonglong(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        unsigned long long *value);
+    bool openPMD_Attributable_getAttribute_float(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        float *value);
+    bool openPMD_Attributable_getAttribute_double(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        double *value);
+    bool openPMD_Attributable_getAttribute_long_double(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        long double *value);
+    bool openPMD_Attributable_getAttribute_cfloat2(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        float *value_re,
+        float *value_im);
+    bool openPMD_Attributable_getAttribute_cdouble2(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        double *value_re,
+        double *value_im);
+    bool openPMD_Attributable_getAttribute_clong_double2(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        long double *value_re,
+        long double *value_im);
+#ifndef __cplusplus
+    bool openPMD_Attributable_getAttribute_cfloat(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        complex float *value);
+    bool openPMD_Attributable_getAttribute_cdouble(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        complex double *value);
+    bool openPMD_Attributable_getAttribute_clong_double(
+        const openPMD_Attributable *attributable,
+        const char *key,
+        complex long double *value);
+#endif
+    bool openPMD_Attributable_getAttribute_bool(
+        const openPMD_Attributable *attributable, const char *key, bool *value);
 
     bool openPMD_Attributable_deleteAttribute(
         openPMD_Attributable *attributable, const char *key);

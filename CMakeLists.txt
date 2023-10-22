@@ -624,7 +624,7 @@ if(openPMD_HAVE_C)
         src/binding/c/WriteIterations.cpp
         src/binding/c/backend/Attributable.c
         src/binding/c/backend/Attributable.cpp
-        src/binding/c/backend/Attribute.cpp
+        #TODO src/binding/c/backend/Attribute.cpp
         src/binding/c/backend/BaseRecordComponent.cpp
         src/binding/c/backend/Container_MeshRecordComponent.cpp
         src/binding/c/backend/MeshRecordComponent.cpp

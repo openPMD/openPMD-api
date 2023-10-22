@@ -10,7 +10,7 @@ openPMD_Format openPMD_determineFormat(const char *filename)
     return openPMD_Format(openPMD::determineFormat(std::string(filename)));
 }
 
-const char *suffix(openPMD_Format format)
+const char *openPMD_suffix(openPMD_Format format)
 {
     switch (format)
     {
