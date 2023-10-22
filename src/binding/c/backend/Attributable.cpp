@@ -57,6 +57,19 @@ DEFINE_SETATTTRIBUTE(bool, bool)
 #undef DEFINE_SETATTTRIBUTE
 #undef DEFINE_SETATTTRIBUTE2
 
+openPMD_Datatype openPMD_Attributable_attributeDatatype(
+    const openPMD_Attributable *attributable, const char *key)
+{
+    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
+    const std::string cxx_key = std::string(key);
+    if (!cxx_attributable->containsAttribute(cxx_key))
+        return (openPMD_Datatype)openPMD::Datatype::UNDEFINED;
+    const openPMD::Attribute cxx_attribute =
+        cxx_attributable->getAttribute(cxx_key);
+    const openPMD::Datatype cxx_datatype = cxx_attribute.dtype;
+    return (openPMD_Datatype)cxx_datatype;
+}
+
 #define DEFINE_GETATTRIBUTE(NAME, TYPE)                                        \
     bool openPMD_Attributable_getAttribute_##NAME(                             \
         const openPMD_Attributable *attributable,                              \

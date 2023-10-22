@@ -2,6 +2,7 @@
 #define OPENPMD_ATTRIBUTABLE_H
 
 #include <openPMD/binding/c/IO/Access.h>
+#include <openPMD/binding/c/Datatype.h>
 
 #include <complex.h>
 #undef I
@@ -87,6 +88,9 @@ extern "C"
 #endif
     bool openPMD_Attributable_setAttribute_bool(
         openPMD_Attributable *attributable, const char *key, bool value);
+
+    openPMD_Datatype openPMD_Attributable_attributeDatatype(
+        const openPMD_Attributable *attributable, const char *key);
 
     bool openPMD_Attributable_getAttribute_char(
         const openPMD_Attributable *attributable, const char *key, char *value);
