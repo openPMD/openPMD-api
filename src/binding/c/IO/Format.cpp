@@ -25,13 +25,13 @@ const char *openPMD_suffix(openPMD_Format format)
     case openPMD_Format_ADIOS2_SST:
         return ".sst";
     case openPMD_Format_ADIOS2_SSC:
-        return ".ssc_SSC";
+        return ".ssc";
     case openPMD_Format_JSON:
         return ".json";
     case openPMD_Format_TOML:
-        return "TOML";
-    case openPMD_Format_DUMMY:
         return ".toml";
+    case openPMD_Format_DUMMY:
+        return "";
     }
     abort();
 }
