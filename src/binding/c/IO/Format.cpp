@@ -15,23 +15,23 @@ const char *openPMD_suffix(openPMD_Format format)
     switch (format)
     {
     case openPMD_Format_HDF5:
-        return "HDF5";
+        return ".h5";
     case openPMD_Format_ADIOS2_BP:
-        return "ADIOS2_BP";
+        return ".bp";
     case openPMD_Format_ADIOS2_BP4:
-        return "ADIOS2_BP4";
+        return ".bp4";
     case openPMD_Format_ADIOS2_BP5:
-        return "ADIOS2_BP5";
+        return ".bp5";
     case openPMD_Format_ADIOS2_SST:
-        return "ADIOS2_SST";
+        return ".sst";
     case openPMD_Format_ADIOS2_SSC:
-        return "ADIOS2_SSC";
+        return ".ssc_SSC";
     case openPMD_Format_JSON:
-        return "JSON";
+        return ".json";
     case openPMD_Format_TOML:
         return "TOML";
     case openPMD_Format_DUMMY:
-        return "DUMMY";
+        return ".toml";
     }
     abort();
 }
