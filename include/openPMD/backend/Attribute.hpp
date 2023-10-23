@@ -85,9 +85,9 @@ class Attribute
           std::vector<float>,
           std::vector<double>,
           std::vector<long double>,
-          std::vector<std::complex<float> >,
-          std::vector<std::complex<double> >,
-          std::vector<std::complex<long double> >,
+          std::vector<std::complex<float>>,
+          std::vector<std::complex<double>>,
+          std::vector<std::complex<long double>>,
           std::vector<signed char>,
           std::vector<std::string>,
           std::array<double, 7>,
@@ -107,7 +107,14 @@ public:
      * Fix by explicitly instantiating resource
      */
     template <typename T>
-    Attribute(T &&val) : Variant(resource(std::forward<T>(val)))
+    Attribute(std::enable_if_t<
+              // If T is `Attribute` or `Attribute const &`, this constructor
+              // should not be used, but instead the move/copy constructors
+              !std::is_same_v<
+                  std::remove_cv_t<std::remove_reference_t<T>>,
+                  Attribute>,
+              T> &&val)
+        : Variant(resource(std::forward<T>(val)))
     {}
 
     /** Retrieve a stored specific Attribute and cast if convertible.
