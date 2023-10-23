@@ -147,18 +147,15 @@ extern "C"
     bool openPMD_Attributable_getAttribute_cfloat2(
         const openPMD_Attributable *attributable,
         const char *key,
-        float *value_re,
-        float *value_im);
+        float *value);
     bool openPMD_Attributable_getAttribute_cdouble2(
         const openPMD_Attributable *attributable,
         const char *key,
-        double *value_re,
-        double *value_im);
+        double *value);
     bool openPMD_Attributable_getAttribute_clong_double2(
         const openPMD_Attributable *attributable,
         const char *key,
-        long double *value_re,
-        long double *value_im);
+        long double *value);
 #ifndef __cplusplus
     bool openPMD_Attributable_getAttribute_cfloat(
         const openPMD_Attributable *attributable,

@@ -29,7 +29,7 @@ bool openPMD_Attributable_getAttribute_cfloat(
     complex float *value)
 {
     return openPMD_Attributable_getAttribute_cfloat2(
-        attributable, key, (float *)(void *)value, (float *)(void *)value + 1);
+        attributable, key, (float *)value);
 }
 
 bool openPMD_Attributable_getAttribute_cdouble(
@@ -38,10 +38,7 @@ bool openPMD_Attributable_getAttribute_cdouble(
     complex double *value)
 {
     return openPMD_Attributable_getAttribute_cdouble2(
-        attributable,
-        key,
-        (double *)(void *)value,
-        (double *)(void *)value + 1);
+        attributable, key, (double *)value);
 }
 
 bool openPMD_Attributable_getAttribute_clong_double(
@@ -50,8 +47,5 @@ bool openPMD_Attributable_getAttribute_clong_double(
     complex long double *value)
 {
     return openPMD_Attributable_getAttribute_clong_double2(
-        attributable,
-        key,
-        (long double *)(void *)value,
-        (long double *)(void *)value + 1);
+        attributable, key, (long double *)value);
 }

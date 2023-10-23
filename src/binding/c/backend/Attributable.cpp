@@ -91,8 +91,7 @@ openPMD_Datatype openPMD_Attributable_attributeDatatype(
     bool openPMD_Attributable_getAttribute_##NAME##2(                          \
         const openPMD_Attributable *attributable,                              \
         const char *key,                                                       \
-        TYPE *value_re,                                                        \
-        TYPE *value_im)                                                        \
+        TYPE *value)                                                           \
     {                                                                          \
         const auto cxx_attributable =                                          \
             (const openPMD::Attributable *)attributable;                       \
@@ -102,8 +101,8 @@ openPMD_Datatype openPMD_Attributable_attributeDatatype(
             cxx_attribute.getOptional<std::complex<TYPE>>();                   \
         if (!cxx_value)                                                        \
             return false;                                                      \
-        *value_re = cxx_value->real();                                         \
-        *value_im = cxx_value->imag();                                         \
+        value[0] = cxx_value->real();                                          \
+        value[1] = cxx_value->imag();                                          \
         return true;                                                           \
     }
 
