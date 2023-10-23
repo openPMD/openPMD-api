@@ -617,7 +617,7 @@ void ADIOS2IOHandlerImpl::createFile(
             fileData.m_IO.DefineAttribute(
                 ADIOS2Defaults::str_groupBasedWarning,
                 std::string("Consider using file-based or variable-based "
-                            "encoding instead."));
+                            "encoding instead in ADIOS2."));
         }
     }
 }
