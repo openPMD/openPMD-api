@@ -4898,9 +4898,19 @@ TEST_CASE("bp4_steps", "[serial][adios2]")
     )";
 
     bp4_steps("../samples/bp4steps.bp", bp4);
-    bp4_steps("../samples/bp4steps.bp", bp4, Access::READ_LINEAR);
     bp4_steps("../samples/nullcore.bp", nullcore, std::nullopt);
     bp4_steps("../samples/bp4steps_default.bp", "{}");
+    // Can use READ_LINEAR with ADIOS2 v2.9 because then we have the group table
+    // feature and can sensibly parse group-based encoding in step-based mode
+    bp4_steps(
+        "../samples/bp4steps.bp",
+        bp4,
+#if openPMD_HAS_ADIOS_2_9
+        Access::READ_LINEAR
+#else
+        Access::READ_ONLY
+#endif
+    );
 
 #if openPMD_HAS_ADIOS_2_9
     /*
