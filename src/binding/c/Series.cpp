@@ -212,7 +212,7 @@ char *openPMD_Series_iterationFormat(const openPMD_Series *series)
     return strdup(cxx_series->iterationFormat().c_str());
 }
 
-void openPMD_Series_setIterationFOrmat(
+void openPMD_Series_setIterationFormat(
     openPMD_Series *series, const char *iterationFormat)
 {
     const auto cxx_series = (openPMD::Series *)series;
