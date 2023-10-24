@@ -33,7 +33,10 @@
 
 #include <exception>
 #include <iostream>
+#include <stdexcept>
 #include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace openPMD
 {
@@ -325,7 +328,42 @@ void Iteration::flushIteration(internal::FlushParams const &flushParams)
     {
         return;
     }
-    CustomHierarchy::flush("", flushParams);
+
+    /*
+     * Convention for CustomHierarchy::flush and CustomHierarchy::read:
+     * Path is created/opened already at entry point of method, method needs
+     * to create/open path for contained subpaths.
+     */
+
+    Series s = retrieveSeries();
+    std::vector<std::string> meshesPaths = s.meshesPaths(),
+                             particlesPaths = s.particlesPaths();
+    internal::MeshesParticlesPath mpp(meshesPaths, particlesPaths);
+
+    sync_meshes_and_particles_from_alias_to_subgroups(mpp);
+
+    std::vector<std::string> currentPath;
+    CustomHierarchy::flush_internal(flushParams, mpp, currentPath);
+
+    sync_meshes_and_particles_from_subgroups_to_alias(mpp);
+
+    if (!mpp.collectNewMeshesPaths.empty() ||
+        !mpp.collectNewParticlesPaths.empty())
+    {
+        for (auto [newly_added_paths, vec] :
+             {std::make_pair(&mpp.collectNewMeshesPaths, &meshesPaths),
+              std::make_pair(&mpp.collectNewParticlesPaths, &particlesPaths)})
+        {
+            std::transform(
+                newly_added_paths->begin(),
+                newly_added_paths->end(),
+                std::back_inserter(*vec),
+                [](auto const &pair) { return pair; });
+        }
+        s.setMeshesPath(meshesPaths);
+        s.setParticlesPath(particlesPaths);
+    }
+
     if (access::write(IOHandler()->m_frontendAccess))
     {
         flushAttributes(flushParams);
@@ -336,6 +374,75 @@ void Iteration::flushIteration(internal::FlushParams const &flushParams)
         meshes.setDirty(false);
         particles.setDirty(false);
     }
+}
+
+void Iteration::sync_meshes_and_particles_from_alias_to_subgroups(
+    internal::MeshesParticlesPath const &mpp)
+{
+    auto sync_meshes_and_particles =
+        [this](auto &m_or_p, std::string const &defaultPath) {
+            using type =
+                typename std::remove_reference_t<decltype(m_or_p)>::mapped_type;
+
+            if (m_or_p.empty())
+            {
+                return;
+            }
+            auto &container = (*this)[defaultPath].asContainerOf<type>();
+
+            for (auto &[name, entry] : m_or_p)
+            {
+                if (auxiliary::contains(name, '/'))
+                {
+                    throw std::runtime_error(
+                        "Unimplemented: Multi-level paths in "
+                        "Iteration::meshes/Iteration::particles");
+                }
+                if (auto it = container.find(name); it != container.end())
+                {
+                    if (it->second.m_attri->asSharedPtrOfAttributable() ==
+                        entry.m_attri->asSharedPtrOfAttributable())
+                    {
+                        continue; // has been emplaced previously
+                    }
+                    else
+                    {
+                        throw std::runtime_error("asdfasdfasdfasd");
+                    }
+                }
+                else
+                {
+                    container.emplace(name, entry);
+                    entry.linkHierarchy(container.writable());
+                }
+            }
+        };
+
+    sync_meshes_and_particles(meshes, mpp.m_defaultMeshesPath);
+    sync_meshes_and_particles(particles, mpp.m_defaultParticlesPath);
+}
+
+void Iteration::sync_meshes_and_particles_from_subgroups_to_alias(
+    internal::MeshesParticlesPath const &mpp)
+{
+    auto sync_meshes_and_particles =
+        [this](auto &m_or_p, std::string const &defaultPath) {
+            using type =
+                typename std::remove_reference_t<decltype(m_or_p)>::mapped_type;
+            auto it = this->find(defaultPath);
+            if (it == this->end())
+            {
+                return;
+            }
+            auto &container = it->second.asContainerOf<type>();
+            for (auto &[name, entry] : container)
+            {
+                m_or_p.emplace(name, entry);
+            }
+        };
+
+    sync_meshes_and_particles(meshes, mpp.m_defaultMeshesPath);
+    sync_meshes_and_particles(particles, mpp.m_defaultParticlesPath);
 }
 
 void Iteration::deferParseAccess(DeferredParseAccess dr)
@@ -462,7 +569,9 @@ void Iteration::read_impl(std::string const &groupPath)
     //   hasMeshes <-> meshesPath is defined
 
     internal::MeshesParticlesPath mpp(s.meshesPaths(), s.particlesPaths());
-    CustomHierarchy::read(std::move(mpp));
+    CustomHierarchy::read(mpp);
+
+    sync_meshes_and_particles_from_subgroups_to_alias(mpp);
 
 #ifdef openPMD_USE_INVASIVE_TESTS
     if (containsAttribute("__openPMD_internal_fail"))
@@ -630,6 +739,36 @@ void Iteration::setStepStatus(StepStatus status)
     default:
         throw std::runtime_error("[Iteration] unreachable");
     }
+}
+
+bool Iteration::dirtyRecursive() const
+{
+    if (dirty() || CustomHierarchy::dirtyRecursive())
+    {
+        return true;
+    }
+    for (auto const &pair : particles)
+    {
+        if (!pair.second.written())
+        {
+            return true;
+        }
+    }
+    for (auto const &pair : meshes)
+    {
+        if (!pair.second.written())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Iteration::linkHierarchy(Writable &w)
+{
+    Attributable::linkHierarchy(w);
+    meshes.linkHierarchy(this->writable());
+    particles.linkHierarchy(this->writable());
 }
 
 void Iteration::runDeferredParseAccess()

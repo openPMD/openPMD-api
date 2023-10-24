@@ -148,7 +148,16 @@ public:
     friend T &internal::makeOwning(T &self, Series);
 
     Iteration(Iteration const &) = default;
+    Iteration(Iteration &&) = default;
     Iteration &operator=(Iteration const &) = default;
+    Iteration &operator=(Iteration &&) = default;
+
+    // These use the openPMD Container class mainly for consistency.
+    // But they are in fact only aliases that don't actually exist
+    // in the backend.
+    // Hence meshes.written() and particles.written() will always be false.
+    Container<Mesh> meshes{};
+    Container<ParticleSpecies> particles{};
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float,
@@ -288,6 +297,12 @@ private:
      * class.
      */
     void flushIteration(internal::FlushParams const &);
+
+    void sync_meshes_and_particles_from_alias_to_subgroups(
+        internal::MeshesParticlesPath const &);
+    void sync_meshes_and_particles_from_subgroups_to_alias(
+        internal::MeshesParticlesPath const &);
+
     void deferParseAccess(internal::DeferredParseAccess);
     /*
      * Control flow for runDeferredParseAccess(), readFileBased(),
@@ -397,6 +412,23 @@ private:
      * this very object).
      */
     void setStepStatus(StepStatus);
+
+    /*
+     * @brief Check recursively whether this Iteration is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
+     *
+     * @return true If dirty.
+     * @return false Otherwise.
+     */
+    bool dirtyRecursive() const;
+
+    /**
+     * @brief Link with parent.
+     *
+     * @param w The Writable representing the parent.
+     */
+    void linkHierarchy(Writable &w);
 
     /**
      * @brief Access an iteration in read mode that has potentially not been

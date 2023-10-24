@@ -225,9 +225,13 @@ TEST_CASE("custom_hierarchies", "[core]")
         write.setMeshesPath(std::vector<std::string>{"fields/", "%%/meshes/"});
         auto meshesManually =
             write.iterations[0]["fields"].asContainerOf<Mesh>();
+        REQUIRE(meshesManually.size() == 0);
+        write.flush(); // Synchronized upon flushing
         REQUIRE(meshesManually.contains("E"));
         REQUIRE(meshesManually.size() == 1);
         meshesManually["B"]["x"].makeEmpty<float>(2);
+        REQUIRE(meshesViaAlias.size() == 1);
+        write.flush();
         REQUIRE(meshesViaAlias.contains("B"));
         REQUIRE(meshesViaAlias.size() == 2);
 
@@ -313,12 +317,14 @@ TEST_CASE("custom_hierarchies", "[core]")
     {
         std::vector<int> data(10, 3);
 
-        auto E_x = write.iterations[0]["custom_meshes"].meshes["E"]["x"];
+        auto E_x = write.iterations[0]["custom_meshes"]["meshes"]
+                       .asContainerOf<Mesh>()["E"]["x"];
         E_x.resetDataset({Datatype::INT, {10}});
         E_x.storeChunk(data, {0}, {10});
 
-        auto e_pos_x = write.iterations[0]["custom_particles"]
-                           .particles["e"]["position"]["x"];
+        auto e_pos_x =
+            write.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()["e"]["position"]["x"];
         e_pos_x.resetDataset({Datatype::INT, {10}});
         e_pos_x.storeChunk(data, {0}, {10});
         write.close();
@@ -328,17 +334,26 @@ TEST_CASE("custom_hierarchies", "[core]")
     {
         auto it0 = read.iterations[0];
         auto custom_meshes = it0["custom_meshes"];
-        REQUIRE(custom_meshes.meshes.size() == 1);
-        REQUIRE(read.iterations[0]["custom_meshes"].meshes.count("E") == 1);
-        auto E_x_loaded = read.iterations[0]["custom_meshes"]
-                              .meshes["E"]["x"]
-                              .loadChunk<int>();
-        REQUIRE(read.iterations[0]["custom_particles"].particles.size() == 1);
+        REQUIRE(custom_meshes["meshes"].asContainerOf<Mesh>().size() == 1);
         REQUIRE(
-            read.iterations[0]["custom_particles"].particles.count("e") == 1);
-        auto e_pos_x_loaded = read.iterations[0]["custom_particles"]
-                                  .particles["e"]["position"]["x"]
-                                  .loadChunk<int>();
+            read.iterations[0]["custom_meshes"]["meshes"]
+                .asContainerOf<Mesh>()
+                .count("E") == 1);
+        auto E_x_loaded = read.iterations[0]["custom_meshes"]["meshes"]
+                              .asContainerOf<Mesh>()["E"]["x"]
+                              .loadChunk<int>();
+        REQUIRE(
+            read.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()
+                .size() == 1);
+        REQUIRE(
+            read.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()
+                .count("e") == 1);
+        auto e_pos_x_loaded =
+            read.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()["e"]["position"]["x"]
+                .loadChunk<int>();
         read.flush();
 
         for (size_t i = 0; i < 10; ++i)
@@ -378,12 +393,14 @@ TEST_CASE("custom_hierarchies_no_rw", "[core]")
     {
         std::vector<int> data(10, 3);
 
-        auto E_x = write.iterations[0]["custom_meshes"].meshes["E"]["x"];
+        auto E_x = write.iterations[0]["custom_meshes"]["meshes"]
+                       .asContainerOf<Mesh>()["E"]["x"];
         E_x.resetDataset({Datatype::INT, {10}});
         E_x.storeChunk(data, {0}, {10});
 
-        auto e_pos_x = write.iterations[0]["custom_particles"]
-                           .particles["e"]["position"]["x"];
+        auto e_pos_x =
+            write.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()["e"]["position"]["x"];
         e_pos_x.resetDataset({Datatype::INT, {10}});
         e_pos_x.storeChunk(data, {0}, {10});
         write.close();
@@ -420,7 +437,9 @@ TEST_CASE("myPath", "[core]")
         recordComponent.template makeConstant<int>(5678);
     };
 
-    REQUIRE(pathOf(iteration.meshes) == vec_t{"iterations", "1234", "meshes"});
+    // iteration.meshes is only an alias without a path of its own
+    // REQUIRE(pathOf(iteration.meshes) == vec_t{"iterations", "1234",
+    // "meshes"});
 
     auto scalarMesh = iteration.meshes["e_chargeDensity"];
     REQUIRE(
@@ -439,9 +458,10 @@ TEST_CASE("myPath", "[core]")
         pathOf(vectorMeshComponent) ==
         vec_t{"iterations", "1234", "meshes", "E", "x"});
 
-    REQUIRE(
-        pathOf(iteration.particles) ==
-        vec_t{"iterations", "1234", "particles"});
+    // iteration.particles is only an alias without a path of its own
+    // REQUIRE(
+    //     pathOf(iteration.particles) ==
+    //     vec_t{"iterations", "1234", "particles"});
 
     auto speciesE = iteration.particles["e"];
     REQUIRE(pathOf(speciesE) == vec_t{"iterations", "1234", "particles", "e"});
