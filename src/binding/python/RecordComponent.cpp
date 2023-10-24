@@ -25,6 +25,7 @@
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Numpy.hpp"
 #include "openPMD/binding/python/Pickle.hpp"
 
@@ -757,6 +758,9 @@ void init_RecordComponent(py::module &m)
             return view.currentView();
         });
 
+    auto py_rc_cnt = declare_container<PyRecordComponentContainer>(
+        m, "Record_Component_Container");
+
     py::class_<RecordComponent, BaseRecordComponent> cl(m, "Record_Component");
     cl.def(
           "__repr__",
@@ -1121,6 +1125,8 @@ void init_RecordComponent(py::module &m)
             return series.iterations[n_it]
                 .particles[group.at(3)][group.at(4)][group.at(5)];
         });
+
+    finalize_container<PyRecordComponentContainer>(py_rc_cnt);
 
     py::enum_<RecordComponent::Allocation>(m, "Allocation")
         .value("USER", RecordComponent::Allocation::USER)

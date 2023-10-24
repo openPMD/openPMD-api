@@ -33,7 +33,6 @@ void init_Attributable(py::module &);
 void init_BaseRecord(py::module &);
 void init_BaseRecordComponent(py::module &);
 void init_Chunk(py::module &m);
-void init_Container(py::module &);
 void init_Dataset(py::module &);
 void init_Datatype(py::module &);
 void init_Error(py::module &);
@@ -86,24 +85,28 @@ PYBIND11_MODULE(openpmd_api_cxx, m)
     init_UnitDimension(m);
     init_Attributable(m);
     init_Chunk(m);
-    init_Container(m);
     init_Error(m);
-    init_BaseRecord(m);
-    init_Dataset(m);
+
     init_Datatype(m);
-    init_Helper(m);
-    init_Iteration(m);
-    init_IterationEncoding(m);
-    init_Mesh(m);
+    init_Dataset(m);
+
     init_BaseRecordComponent(m);
     init_RecordComponent(m);
     init_MeshRecordComponent(m);
-    init_ParticlePatches(m);
-    init_PatchRecord(m);
     init_PatchRecordComponent(m);
-    init_ParticleSpecies(m);
+
+    init_BaseRecord(m);
     init_Record(m);
+    init_PatchRecord(m);
+    init_ParticlePatches(m);
+    init_ParticleSpecies(m);
+    init_Mesh(m);
+
+    init_Iteration(m);
+    init_IterationEncoding(m);
     init_Series(m);
+
+    init_Helper(m);
 
     // API runtime version
     m.attr("__version__") = openPMD::getVersion();

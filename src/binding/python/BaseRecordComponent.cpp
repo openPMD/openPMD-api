@@ -22,12 +22,16 @@
 #include "openPMD/Datatype.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Numpy.hpp"
 
 #include <sstream>
 
 void init_BaseRecordComponent(py::module &m)
 {
+    auto py_brc_cont = declare_container<PyBaseRecordComponentContainer>(
+        m, "Base_Record_Component_Container");
+
     py::class_<BaseRecordComponent, Attributable>(m, "Base_Record_Component")
         .def(
             "__repr__",
@@ -46,4 +50,6 @@ void init_BaseRecordComponent(py::module &m)
         .def_property_readonly("dtype", [](BaseRecordComponent &brc) {
             return dtype_to_numpy(brc.getDatatype());
         });
+
+    finalize_container<PyBaseRecordComponentContainer>(py_brc_cont);
 }

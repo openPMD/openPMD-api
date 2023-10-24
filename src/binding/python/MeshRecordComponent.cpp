@@ -24,6 +24,7 @@
 #include "openPMD/Series.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
 
 #include <string>
@@ -31,6 +32,9 @@
 
 void init_MeshRecordComponent(py::module &m)
 {
+    auto py_mrc_cnt = declare_container<PyMeshRecordComponentContainer>(
+        m, "Mesh_Record_Component_Container");
+
     py::class_<MeshRecordComponent, RecordComponent> cl(
         m, "Mesh_Record_Component");
     cl.def(
@@ -79,4 +83,6 @@ void init_MeshRecordComponent(py::module &m)
             uint64_t const n_it = std::stoull(group.at(1));
             return series.iterations[n_it].meshes[group.at(3)][group.at(4)];
         });
+
+    finalize_container<PyMeshRecordComponentContainer>(py_mrc_cnt);
 }
