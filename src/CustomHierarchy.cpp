@@ -45,6 +45,7 @@
 #include <optional>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <variant>
@@ -274,8 +275,6 @@ namespace internal
 CustomHierarchy::CustomHierarchy()
 {
     setData(std::make_shared<Data_t>());
-    meshes.writable().ownKeyWithinParent = "meshes";
-    particles.writable().ownKeyWithinParent = "particles";
 }
 CustomHierarchy::CustomHierarchy(NoInit) : Container_t(NoInit())
 {}
@@ -533,16 +532,6 @@ void CustomHierarchy::flush_internal(
     auto &data = get();
     if (access::write(IOHandler()->m_frontendAccess))
     {
-        if (!meshes.empty())
-        {
-            (*this)[mpp.m_defaultMeshesPath];
-        }
-
-        if (!particles.empty())
-        {
-            (*this)[mpp.m_defaultParticlesPath];
-        }
-
         flushAttributes(flushParams);
     }
 
@@ -615,43 +604,16 @@ void CustomHierarchy::flush_internal(
 }
 
 void CustomHierarchy::flush(
-    std::string const & /* path */, internal::FlushParams const &flushParams)
+    std::string const & /* path */, internal::FlushParams const &)
 {
-    /*
-     * Convention for CustomHierarchy::flush and CustomHierarchy::read:
-     * Path is created/opened already at entry point of method, method needs
-     * to create/open path for contained subpaths.
-     */
-
-    Series s = this->getBufferedSeries();
-    std::vector<std::string> meshesPaths = s.meshesPaths(),
-                             particlesPaths = s.particlesPaths();
-    internal::MeshesParticlesPath mpp(meshesPaths, particlesPaths);
-    std::vector<std::string> currentPath;
-    flush_internal(flushParams, mpp, currentPath);
-    if (!mpp.collectNewMeshesPaths.empty() ||
-        !mpp.collectNewParticlesPaths.empty())
-    {
-        for (auto [newly_added_paths, vec] :
-             {std::make_pair(&mpp.collectNewMeshesPaths, &meshesPaths),
-              std::make_pair(&mpp.collectNewParticlesPaths, &particlesPaths)})
-        {
-            std::transform(
-                newly_added_paths->begin(),
-                newly_added_paths->end(),
-                std::back_inserter(*vec),
-                [](auto const &pair) { return pair; });
-        }
-        s.setMeshesPath(meshesPaths);
-        s.setParticlesPath(particlesPaths);
-    }
+    throw std::runtime_error(
+        "[CustomHierarchy::flush()] Don't use this method. Flushing should be "
+        "triggered via Iteration class.");
 }
 
 void CustomHierarchy::linkHierarchy(Writable &w)
 {
     Attributable::linkHierarchy(w);
-    meshes.linkHierarchy(this->writable());
-    particles.linkHierarchy(this->writable());
 }
 
 bool CustomHierarchy::dirtyRecursive() const
@@ -672,26 +634,7 @@ bool CustomHierarchy::dirtyRecursive() const
     };
     auto &data = get();
     return check(data.m_embeddedMeshes) || check(data.m_embeddedParticles) ||
-
-        /*
-         * Need to check this, too. It might be that the `meshes` alias has not
-         * been synced yet with the "meshes" subgroup.
-         * The CustomHierarchy object needs to be flushed in order for that to
-         * happen (or the "meshes" group needs to be accessed explicitly via
-         * operator[]()).
-         */
-        check(meshes) || check(particles) || check(data.m_embeddedDatasets) ||
-        check(*this);
-}
-
-auto CustomHierarchy::operator[](key_type &&key) -> mapped_type &
-{
-    return bracketOperatorImpl(std::move(key));
-}
-
-auto CustomHierarchy::operator[](key_type const &key) -> mapped_type &
-{
-    return bracketOperatorImpl(key);
+        check(data.m_embeddedDatasets) || check(*this);
 }
 
 template <typename ContainedType>
@@ -730,135 +673,6 @@ template auto CustomHierarchy::asContainerOf<RecordComponent>()
 template auto CustomHierarchy::asContainerOf<Mesh>() -> Container<Mesh> &;
 template auto CustomHierarchy::asContainerOf<ParticleSpecies>()
     -> Container<ParticleSpecies> &;
-
-/*
- * This method implements the usual job of ::operator[](), but additionally
- * ensures that returned entries are properly linked with ::particles and
- * ::meshes.
- */
-template <typename KeyType>
-auto CustomHierarchy::bracketOperatorImpl(KeyType &&provided_key)
-    -> mapped_type &
-{
-    auto &cont = container();
-    auto find_special_key =
-        [&cont, &provided_key, this](
-            std::string const &special_key,
-            auto &alias,
-            auto &&embeddedAccessor) -> std::optional<mapped_type *> {
-        if (provided_key != special_key)
-        {
-            return std::nullopt;
-        }
-        if (auto it = cont.find(provided_key); it != cont.end())
-        {
-            if (it->second.m_attri->get() != alias.m_attri->get() ||
-                embeddedAccessor(it->second)->m_containerData.get() !=
-                    alias.m_containerData.get())
-            {
-                /*
-                 * This might happen if a user first creates a custom group
-                 * "fields" and sets the default meshes path as "fields"
-                 * only later.
-                 * If the CustomHierarchy::meshes alias carries no data yet,
-                 * we can just redirect it to that group now.
-                 * Otherwise, we need to fail.
-                 */
-                if (alias.empty() && alias.attributes().empty())
-                {
-                    alias.m_containerData =
-                        embeddedAccessor(it->second)->m_containerData;
-                    alias.m_attri->asSharedPtrOfAttributable() =
-                        it->second.m_attri->asSharedPtrOfAttributable();
-                    return &it->second;
-                }
-                throw error::WrongAPIUsage(
-                    "Found a group '" + provided_key + "' at path '" +
-                    myPath().openPMDPath() +
-                    "' which is not synchronous with mesh/particles alias "
-                    "despite '" +
-                    special_key +
-                    "' being the default meshes/particles path. This can "
-                    "have happened because setting default "
-                    "meshes/particles path too late (after first flush). "
-                    "If that's not the case, this is likely an internal "
-                    "bug.");
-            }
-            return &it->second;
-        }
-        else
-        {
-            auto *res =
-                &Container::operator[](std::forward<KeyType>(provided_key));
-            embeddedAccessor(*res)->m_containerData = alias.m_containerData;
-            res->m_attri->asSharedPtrOfAttributable() =
-                alias.m_attri->asSharedPtrOfAttributable();
-            res->m_customHierarchyData->syncAttributables();
-            return res;
-        }
-    };
-
-    /*
-     * @todo Buffer this somehow while still ensuring that changed meshesPath
-     * or particlesPath will be recorded.
-     */
-    struct
-    {
-        std::string m_defaultMeshesPath;
-        std::string m_defaultParticlesPath;
-    } defaultPaths;
-
-    {
-        auto const &series = getBufferedSeries();
-        auto meshes_paths = series.meshesPaths();
-        auto particles_paths = series.particlesPaths();
-        setDefaultMeshesParticlesPath(
-            meshes_paths, particles_paths, defaultPaths);
-    }
-
-    if (auto res = find_special_key(
-            defaultPaths.m_defaultMeshesPath,
-            meshes,
-            [](auto &group) {
-                return &group.m_customHierarchyData->m_embeddedMeshes;
-            });
-        res.has_value())
-    {
-        return **res;
-    }
-    if (auto res = find_special_key(
-            defaultPaths.m_defaultParticlesPath,
-            particles,
-            [](auto &group) {
-                return &group.m_customHierarchyData->m_embeddedParticles;
-            });
-        res.has_value())
-    {
-        return **res;
-    }
-    else
-    {
-        return (*this).Container::operator[](
-            std::forward<KeyType>(provided_key));
-    }
-}
-
-Series &CustomHierarchy::getBufferedSeries()
-{
-    auto &data = get();
-    if (!data.m_bufferedSeries)
-    {
-        /*
-         * retrieveSeries() returns a non-owning Series handle anyway, but let's
-         * be explicit here that we need a non-owning Series to avoid creating
-         * a memory cycle.
-         */
-        data.m_bufferedSeries = std::make_unique<Series>();
-        data.m_bufferedSeries->setData(std::shared_ptr<internal::SeriesData>(
-            &retrieveSeries().get(), [](auto const *) {}));
-    }
-    return *data.m_bufferedSeries;
-}
 } // namespace openPMD
 
 #undef OPENPMD_LEGAL_IDENTIFIER_CHARS

@@ -28,6 +28,7 @@
 #include <memory>
 #include <regex>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -82,16 +83,6 @@ namespace internal
         Container<RecordComponent> m_embeddedDatasets;
         Container<Mesh> m_embeddedMeshes;
         Container<ParticleSpecies> m_embeddedParticles;
-
-        /*
-         * Each call to operator[]() needs to check the Series if the meshes/
-         * particlesPath has changed, so the Series gets buffered.
-         *
-         * Alternative: Require that the meshesPath/particlesPath is fixed as
-         * soon as operator[]() has been called for the first time, check
-         * at flush time.
-         */
-        std::unique_ptr<Series> m_bufferedSeries;
     };
 } // namespace internal
 
@@ -168,19 +159,7 @@ public:
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
 
-    mapped_type &operator[](key_type &&key);
-    mapped_type &operator[](key_type const &key);
-
     template <typename ContainedType>
     auto asContainerOf() -> Container<ContainedType> &;
-
-    Container<Mesh> meshes{};
-    Container<ParticleSpecies> particles{};
-
-private:
-    template <typename KeyType>
-    mapped_type &bracketOperatorImpl(KeyType &&);
-
-    Series &getBufferedSeries();
 };
 } // namespace openPMD
