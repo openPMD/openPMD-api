@@ -23,6 +23,7 @@
 #include "openPMD/backend/MeshRecordComponent.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/binding/python/UnitDimension.hpp"
 
@@ -31,7 +32,17 @@
 
 void init_Mesh(py::module &m)
 {
+    auto py_m_cont = declare_container<PyMeshContainer>(m, "Mesh_Container");
+
     py::class_<Mesh, BaseRecord<MeshRecordComponent> > cl(m, "Mesh");
+
+    py::enum_<Mesh::Geometry>(m, "Geometry") // TODO: m -> cl
+        .value("cartesian", Mesh::Geometry::cartesian)
+        .value("thetaMode", Mesh::Geometry::thetaMode)
+        .value("cylindrical", Mesh::Geometry::cylindrical)
+        .value("spherical", Mesh::Geometry::spherical)
+        .value("other", Mesh::Geometry::other);
+
     cl.def(py::init<Mesh const &>())
 
         .def(
@@ -107,10 +118,5 @@ void init_Mesh(py::module &m)
             return series.iterations[n_it].meshes[group.at(3)];
         });
 
-    py::enum_<Mesh::Geometry>(m, "Geometry")
-        .value("cartesian", Mesh::Geometry::cartesian)
-        .value("thetaMode", Mesh::Geometry::thetaMode)
-        .value("cylindrical", Mesh::Geometry::cylindrical)
-        .value("spherical", Mesh::Geometry::spherical)
-        .value("other", Mesh::Geometry::other);
+    finalize_container<PyMeshContainer>(py_m_cont);
 }

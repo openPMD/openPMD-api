@@ -23,6 +23,7 @@
 #include "openPMD/backend/BaseRecord.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/binding/python/UnitDimension.hpp"
 
@@ -31,6 +32,8 @@
 
 void init_Record(py::module &m)
 {
+    auto py_r_cnt = declare_container<PyRecordContainer>(m, "Record_Container");
+
     py::class_<Record, BaseRecord<RecordComponent> > cl(m, "Record");
     cl.def(py::init<Record const &>())
 
@@ -71,4 +74,6 @@ void init_Record(py::module &m)
             uint64_t const n_it = std::stoull(group.at(1));
             return series.iterations[n_it].particles[group.at(3)][group.at(4)];
         });
+
+    finalize_container<PyRecordContainer>(py_r_cnt);
 }

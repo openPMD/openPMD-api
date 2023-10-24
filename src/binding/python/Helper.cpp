@@ -38,7 +38,7 @@ void init_Helper(py::module &m)
              py::print(s.str());
          },
          py::arg("series"),
-         py::arg_v("longer", false, "Print more verbose output."),
+         py::arg("longer") = false,
          "List information about an openPMD data series")
         // CLI entry point
         .def(

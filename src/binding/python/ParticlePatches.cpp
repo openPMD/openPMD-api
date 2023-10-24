@@ -23,11 +23,15 @@
 #include "openPMD/backend/PatchRecord.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 
 #include <string>
 
 void init_ParticlePatches(py::module &m)
 {
+    auto py_pp_cnt =
+        declare_container<PyPatchContainer>(m, "Particle_Patches_Container");
+
     py::class_<ParticlePatches, Container<PatchRecord> >(m, "Particle_Patches")
         .def(
             "__repr__",
@@ -40,4 +44,6 @@ void init_ParticlePatches(py::module &m)
             })
 
         .def_property_readonly("num_patches", &ParticlePatches::numPatches);
+
+    finalize_container<PyPatchContainer>(py_pp_cnt);
 }

@@ -21,6 +21,7 @@
 #include "openPMD/Iteration.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 
 #include <ios>
 #include <sstream>
@@ -28,6 +29,9 @@
 
 void init_Iteration(py::module &m)
 {
+    auto py_it_cont =
+        declare_container<PyIterationContainer>(m, "Iteration_Container");
+
     py::class_<Iteration, Attributable>(m, "Iteration")
         .def(py::init<Iteration const &>())
 
@@ -93,4 +97,6 @@ void init_Iteration(py::module &m)
             py::return_value_policy::copy,
             // garbage collection: return value must be freed before Iteration
             py::keep_alive<1, 0>());
+
+    finalize_container<PyIterationContainer>(py_it_cont);
 }
