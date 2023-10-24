@@ -40,7 +40,7 @@ spack:
       buildable: False
     python:
       externals:
-      - spec: python@3.10.12
+      - spec: python@3.11.5
         prefix: /usr
       buildable: False
     hdf5:
