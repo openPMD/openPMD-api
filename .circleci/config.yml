@@ -38,7 +38,8 @@ jobs:
               -DopenPMD_USE_MPI=ON    \
               -DopenPMD_USE_HDF5=ON   \
               -DopenPMD_USE_ADIOS2=ON \
-              -DopenPMD_USE_INVASIVE_TESTS=ON
+              -DopenPMD_USE_INVASIVE_TESTS=ON \
+              -DPython_EXECUTABLE=$(which python3)
             cmake --build build --parallel 4
       - run:
           name: Test openPMD-api
