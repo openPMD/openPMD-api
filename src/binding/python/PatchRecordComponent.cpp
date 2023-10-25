@@ -21,11 +21,13 @@
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Numpy.hpp"
+#include "openPMD/binding/python/RecordComponent.hpp"
 
 namespace
 {
@@ -43,8 +45,9 @@ struct Prc_Load
 
 void init_PatchRecordComponent(py::module &m)
 {
-    auto py_prc_cnt = declare_container<PyPatchRecordComponentContainer>(
-        m, "Patch_Record_Component_Container");
+    auto py_prc_cnt =
+        declare_container<PyPatchRecordComponentContainer, Attributable>(
+            m, "Patch_Record_Component_Container");
 
     py::class_<PatchRecordComponent, BaseRecordComponent>(
         m, "Patch_Record_Component")
@@ -201,4 +204,14 @@ void init_PatchRecordComponent(py::module &m)
         .def("set_unit_SI", &PatchRecordComponent::setUnitSI);
 
     finalize_container<PyPatchRecordComponentContainer>(py_prc_cnt);
+    addRecordComponentSetGet(
+        finalize_container<PyBaseRecordPatchRecordComponent>(
+            declare_container<
+                PyBaseRecordPatchRecordComponent,
+                PyPatchRecordComponentContainer,
+                PatchRecordComponent>(m, "Base_Record_Patch_Record_Component")))
+        .def_property_readonly(
+            "scalar",
+            &BaseRecord<PatchRecordComponent>::scalar,
+            &docstring::is_scalar[1]);
 }

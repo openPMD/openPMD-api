@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Mesh.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 
@@ -32,7 +33,8 @@
 
 void init_Mesh(py::module &m)
 {
-    auto py_m_cont = declare_container<PyMeshContainer>(m, "Mesh_Container");
+    auto py_m_cont =
+        declare_container<PyMeshContainer, Attributable>(m, "Mesh_Container");
 
     py::class_<Mesh, BaseRecord<MeshRecordComponent> > cl(m, "Mesh");
 

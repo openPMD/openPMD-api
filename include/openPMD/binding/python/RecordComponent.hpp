@@ -46,6 +46,13 @@ py::array load_chunk(RecordComponent &r, py::tuple const &slices);
 
 void store_chunk(RecordComponent &r, py::array &a, py::tuple const &slices);
 
+namespace docstring
+{
+constexpr static char const *is_scalar = R"docstr(
+Returns true if this record only contains a single component.
+)docstr";
+}
+
 template <typename Class>
 Class &&addRecordComponentSetGet(Class &&class_)
 {

@@ -20,6 +20,7 @@
  */
 #include "openPMD/Iteration.hpp"
 
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Container.H"
 
@@ -29,8 +30,8 @@
 
 void init_Iteration(py::module &m)
 {
-    auto py_it_cont =
-        declare_container<PyIterationContainer>(m, "Iteration_Container");
+    auto py_it_cont = declare_container<PyIterationContainer, Attributable>(
+        m, "Iteration_Container");
 
     py::class_<Iteration, Attributable>(m, "Iteration")
         .def(py::init<Iteration const &>())

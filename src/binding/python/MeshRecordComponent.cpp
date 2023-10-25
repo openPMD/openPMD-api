@@ -23,17 +23,20 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
+#include "openPMD/binding/python/RecordComponent.hpp"
 
 #include <string>
 #include <vector>
 
 void init_MeshRecordComponent(py::module &m)
 {
-    auto py_mrc_cnt = declare_container<PyMeshRecordComponentContainer>(
-        m, "Mesh_Record_Component_Container");
+    auto py_mrc_cnt =
+        declare_container<PyMeshRecordComponentContainer, Attributable>(
+            m, "Mesh_Record_Component_Container");
 
     py::class_<MeshRecordComponent, RecordComponent> cl(
         m, "Mesh_Record_Component");
@@ -85,4 +88,14 @@ void init_MeshRecordComponent(py::module &m)
         });
 
     finalize_container<PyMeshRecordComponentContainer>(py_mrc_cnt);
+    addRecordComponentSetGet(
+        finalize_container<PyBaseRecordMeshRecordComponent>(
+            declare_container<
+                PyBaseRecordMeshRecordComponent,
+                PyMeshRecordComponentContainer,
+                MeshRecordComponent>(m, "Base_Record_Mesh_Record_Component")))
+        .def_property_readonly(
+            "scalar",
+            &BaseRecord<MeshRecordComponent>::scalar,
+            &docstring::is_scalar[1]);
 }

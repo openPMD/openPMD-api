@@ -95,7 +95,6 @@ PYBIND11_MODULE(openpmd_api_cxx, m)
     init_MeshRecordComponent(m);
     init_PatchRecordComponent(m);
 
-    init_BaseRecord(m);
     init_Record(m);
     init_PatchRecord(m);
     init_ParticlePatches(m);
