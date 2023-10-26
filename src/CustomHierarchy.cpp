@@ -262,21 +262,29 @@ namespace internal
         /*
          * m_embeddeddatasets and its friends should point to the same instance
          * of Attributable.
+         * Not strictly necessary to do this explicitly due to virtual
+         * inheritance (all Attributable instances are the same anyway),
+         * but let's be explicit about this.
          */
-        for (auto p : std::initializer_list<Attributable *>{
-                 &m_embeddedDatasets, &m_embeddedMeshes, &m_embeddedParticles})
+        for (auto p : std::initializer_list<AttributableData *>{
+                 static_cast<ContainerData<CustomHierarchy> *>(this),
+                 static_cast<ContainerData<RecordComponent> *>(this),
+                 static_cast<ContainerData<Mesh> *>(this),
+                 static_cast<ContainerData<ParticleSpecies> *>(this)})
         {
-            p->m_attri->asSharedPtrOfAttributable() =
-                this->asSharedPtrOfAttributable();
+            p->asSharedPtrOfAttributable() = this->asSharedPtrOfAttributable();
         }
     }
 } // namespace internal
 
-CustomHierarchy::CustomHierarchy()
+// template
+// class ConversibleContainer<CustomHierarchy>;
+
+CustomHierarchy::CustomHierarchy() : ConversibleContainer(NoInit{})
 {
     setData(std::make_shared<Data_t>());
 }
-CustomHierarchy::CustomHierarchy(NoInit) : Container_t(NoInit())
+CustomHierarchy::CustomHierarchy(NoInit) : ConversibleContainer(NoInit{})
 {}
 
 void CustomHierarchy::readNonscalarMesh(
@@ -394,8 +402,8 @@ void CustomHierarchy::read(
 
     std::deque<std::string> constantComponentsPushback;
     auto &data = get();
-    EraseStaleMeshes meshesMap(data.m_embeddedMeshes);
-    EraseStaleParticles particlesMap(data.m_embeddedParticles);
+    EraseStaleMeshes meshesMap(data.embeddedMeshes());
+    EraseStaleParticles particlesMap(data.embeddedParticles());
     for (auto const &path : *pList.paths)
     {
         switch (mpp.determineType(currentPath))
@@ -469,7 +477,7 @@ void CustomHierarchy::read(
             // Group is a bit of an internal misnomer here, it just means that
             // it matches neither meshes nor particles path
         case internal::ContainedType::Group: {
-            auto &rc = data.m_embeddedDatasets[path];
+            auto &rc = data.embeddedDatasets()[path];
             Parameter<Operation::OPEN_DATASET> dOpen;
             dOpen.name = path;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
@@ -487,7 +495,7 @@ void CustomHierarchy::read(
                           << "' at path '" << myPath().openPMDPath()
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
-                data.m_embeddedDatasets.container().erase(path);
+                data.embeddedDatasets().container().erase(path);
             }
             break;
         }
@@ -518,7 +526,7 @@ void CustomHierarchy::read(
 
     for (auto const &path : constantComponentsPushback)
     {
-        auto &rc = data.m_embeddedDatasets[path];
+        auto &rc = data.embeddedDatasets()[path];
         try
         {
             Parameter<Operation::OPEN_PATH> pOpen;
@@ -533,7 +541,7 @@ void CustomHierarchy::read(
                       << myPath().openPMDPath() << "/" << path
                       << "' and will skip it due to read error:\n"
                       << err.what() << std::endl;
-            data.m_embeddedDatasets.container().erase(path);
+            data.embeddedDatasets().container().erase(path);
         }
     }
 }
@@ -569,7 +577,7 @@ void CustomHierarchy::flush_internal(
         subpath.flush_internal(flushParams, mpp, currentPath);
         currentPath.pop_back();
     }
-    for (auto &[name, mesh] : data.m_embeddedMeshes)
+    for (auto &[name, mesh] : data.embeddedMeshes())
     {
         if (!mpp.isMeshContainer(currentPath))
         {
@@ -593,7 +601,7 @@ void CustomHierarchy::flush_internal(
         }
         mesh.flush(name, flushParams);
     }
-    for (auto &[name, particleSpecies] : data.m_embeddedParticles)
+    for (auto &[name, particleSpecies] : data.embeddedParticles())
     {
         if (!mpp.isParticleContainer(currentPath))
         {
@@ -619,7 +627,7 @@ void CustomHierarchy::flush_internal(
         }
         particleSpecies.flush(name, flushParams);
     }
-    for (auto &[name, dataset] : get().m_embeddedDatasets)
+    for (auto &[name, dataset] : get().embeddedDatasets())
     {
         dataset.flush(name, flushParams);
     }
@@ -654,47 +662,10 @@ bool CustomHierarchy::dirtyRecursive() const
         }
         return false;
     };
-    auto &data = get();
-    return check(data.m_embeddedMeshes) || check(data.m_embeddedParticles) ||
-        check(data.m_embeddedDatasets) || check(*this);
+    auto &data = const_cast<Data_t &>(get()); // @todo do this better
+    return check(data.embeddedMeshes()) || check(data.embeddedParticles()) ||
+        check(data.embeddedDatasets()) || check(data.customHierarchies());
 }
-
-template <typename ContainedType>
-auto CustomHierarchy::asContainerOf() -> Container<ContainedType> &
-{
-    if constexpr (std::is_same_v<ContainedType, CustomHierarchy>)
-    {
-        return *static_cast<Container<CustomHierarchy> *>(this);
-    }
-    else if constexpr (std::is_same_v<ContainedType, Mesh>)
-    {
-        return get().m_embeddedMeshes;
-    }
-    else if constexpr (std::is_same_v<ContainedType, ParticleSpecies>)
-    {
-        return get().m_embeddedParticles;
-    }
-    else if constexpr (std::is_same_v<ContainedType, RecordComponent>)
-    {
-        return get().m_embeddedDatasets;
-    }
-    else
-    {
-        static_assert(
-            auxiliary::dependent_false_v<ContainedType>,
-            "[CustomHierarchy::asContainerOf] Type parameter must be "
-            "one of: CustomHierarchy, RecordComponent, Mesh, "
-            "ParticleSpecies.");
-    }
-}
-
-template auto CustomHierarchy::asContainerOf<CustomHierarchy>()
-    -> Container<CustomHierarchy> &;
-template auto CustomHierarchy::asContainerOf<RecordComponent>()
-    -> Container<RecordComponent> &;
-template auto CustomHierarchy::asContainerOf<Mesh>() -> Container<Mesh> &;
-template auto CustomHierarchy::asContainerOf<ParticleSpecies>()
-    -> Container<ParticleSpecies> &;
 } // namespace openPMD
 
 #undef OPENPMD_LEGAL_IDENTIFIER_CHARS

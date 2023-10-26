@@ -91,7 +91,6 @@ PYBIND11_MODULE(openpmd_api_cxx, m)
     init_Datatype(m);
     init_Dataset(m);
 
-    init_CustomHierarchy(m);
     init_BaseRecordComponent(m);
     init_RecordComponent(m);
     init_MeshRecordComponent(m);
@@ -103,6 +102,7 @@ PYBIND11_MODULE(openpmd_api_cxx, m)
     init_ParticleSpecies(m);
     init_Mesh(m);
 
+    init_CustomHierarchy(m);
     init_Iteration(m);
     init_IterationEncoding(m);
     init_Series(m);
