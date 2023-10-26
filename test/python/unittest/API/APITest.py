@@ -26,7 +26,7 @@ from TestUtilities.TestUtilities import generateTestFilePath
 
 tested_file_extensions = [
     ext for ext in io.file_extensions
-        if ext != 'sst' and ext != 'ssc' and ext != 'toml'
+    if ext != 'sst' and ext != 'ssc' and ext != 'toml'
 ]
 
 
