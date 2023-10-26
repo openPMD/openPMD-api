@@ -23,6 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
 
 #include <memory>
@@ -74,27 +75,67 @@ namespace internal
         isMeshContainer(std::vector<std::string> const &path) const;
     };
 
-    struct CustomHierarchyData : ContainerData<CustomHierarchy>
+    struct CustomHierarchyData
+        : ContainerData<CustomHierarchy>
+        , ContainerData<RecordComponent>
+        , ContainerData<Mesh>
+        , ContainerData<ParticleSpecies>
     {
         explicit CustomHierarchyData();
 
         void syncAttributables();
 
-        Container<RecordComponent> m_embeddedDatasets;
-        Container<Mesh> m_embeddedMeshes;
-        Container<ParticleSpecies> m_embeddedParticles;
+        Container<CustomHierarchy> customHierarchies()
+        {
+            Container<CustomHierarchy> res;
+            res.setData(
+                {static_cast<ContainerData<CustomHierarchy> *>(this),
+                 [](auto const *) {}});
+            return res;
+        }
+        Container<RecordComponent> embeddedDatasets()
+        {
+            Container<RecordComponent> res;
+            res.setData(
+                {static_cast<ContainerData<RecordComponent> *>(this),
+                 [](auto const *) {}});
+            return res;
+        }
+        Container<Mesh> embeddedMeshes()
+        {
+            Container<Mesh> res;
+            res.setData(
+                {static_cast<ContainerData<Mesh> *>(this),
+                 [](auto const *) {}});
+            return res;
+        }
+
+        Container<ParticleSpecies> embeddedParticles()
+        {
+            Container<ParticleSpecies> res;
+            res.setData(
+                {static_cast<ContainerData<ParticleSpecies> *>(this),
+                 [](auto const *) {}});
+            return res;
+        }
     };
 } // namespace internal
 
-class CustomHierarchy : public Container<CustomHierarchy>
+template <typename MappedType>
+class ConversibleContainer : public Container<MappedType>
 {
-    friend class Iteration;
-    friend class Container<CustomHierarchy>;
+    template <typename>
+    friend class ConversibleContainer;
 
-private:
-    using Container_t = Container<CustomHierarchy>;
+protected:
+    using Container_t = Container<MappedType>;
     using Data_t = internal::CustomHierarchyData;
-    static_assert(std::is_base_of_v<Container_t::ContainerData, Data_t>);
+    static_assert(
+        std::is_base_of_v<typename Container_t::ContainerData, Data_t>);
+
+    ConversibleContainer(Attributable::NoInit)
+        : Container_t(Attributable::NoInit{})
+    {}
 
     std::shared_ptr<Data_t> m_customHierarchyData;
 
@@ -107,6 +148,47 @@ private:
         return *m_customHierarchyData;
     }
 
+    inline void setData(std::shared_ptr<Data_t> data)
+    {
+        m_customHierarchyData = data;
+        Container_t::setData(std::move(data));
+    }
+
+public:
+    template <typename TargetType>
+    auto asContainerOf() -> ConversibleContainer<TargetType>
+    {
+        if constexpr (
+            std::is_same_v<TargetType, CustomHierarchy> ||
+            std::is_same_v<TargetType, Mesh> ||
+            std::is_same_v<TargetType, ParticleSpecies> ||
+            std::is_same_v<TargetType, RecordComponent>)
+        {
+            ConversibleContainer<TargetType> res(Attributable::NoInit{});
+            res.setData(m_customHierarchyData);
+            return res;
+        }
+        else
+        {
+            static_assert(
+                auxiliary::dependent_false_v<TargetType>,
+                "[CustomHierarchy::asContainerOf] Type parameter must be "
+                "one of: CustomHierarchy, RecordComponent, Mesh, "
+                "ParticleSpecies.");
+        }
+    }
+};
+
+class CustomHierarchy : public ConversibleContainer<CustomHierarchy>
+{
+    friend class Iteration;
+    friend class Container<CustomHierarchy>;
+
+private:
+    using Container_t = Container<CustomHierarchy>;
+    using Parent_t = ConversibleContainer<CustomHierarchy>;
+    using Data_t = typename Parent_t::Data_t;
+
     using EraseStaleMeshes = internal::EraseStaleEntries<Container<Mesh>>;
     using EraseStaleParticles =
         internal::EraseStaleEntries<Container<ParticleSpecies>>;
@@ -117,12 +199,6 @@ private:
 protected:
     CustomHierarchy();
     CustomHierarchy(NoInit);
-
-    inline void setData(std::shared_ptr<Data_t> data)
-    {
-        m_customHierarchyData = data;
-        Container_t::setData(std::move(data));
-    }
 
     void read(internal::MeshesParticlesPath const &);
     void read(
@@ -158,8 +234,5 @@ public:
 
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
-
-    template <typename ContainedType>
-    auto asContainerOf() -> Container<ContainedType> &;
 };
 } // namespace openPMD

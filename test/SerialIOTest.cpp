@@ -2725,11 +2725,11 @@ TEST_CASE("git_hdf5_sample_structure_test", "[serial][hdf5]")
             getWritable(&o.iterations[100].meshes["E"]));
         REQUIRE(
             o.iterations[100]["fields"].asContainerOf<Mesh>()["E"].parent() ==
-            getWritable(&o.iterations[100]["fields"].asContainerOf<Mesh>()));
+            &o.iterations[100]["fields"].asContainerOf<Mesh>().writable());
         REQUIRE(
             o.iterations[100].meshes["E"].parent() ==
             // Iteration::meshes is only an alias, this is the actual parent
-            getWritable(&o.iterations[100]["fields"].asContainerOf<Mesh>()));
+            &o.iterations[100]["fields"].asContainerOf<Mesh>().writable());
         REQUIRE(
             o.iterations[100].meshes["E"]["x"].parent() ==
             getWritable(&o.iterations[100].meshes["E"]));

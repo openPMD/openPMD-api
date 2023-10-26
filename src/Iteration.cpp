@@ -388,7 +388,7 @@ void Iteration::sync_meshes_and_particles_from_alias_to_subgroups(
             {
                 return;
             }
-            auto &container = (*this)[defaultPath].asContainerOf<type>();
+            auto container = (*this)[defaultPath].asContainerOf<type>();
 
             for (auto &[name, entry] : m_or_p)
             {
@@ -434,7 +434,7 @@ void Iteration::sync_meshes_and_particles_from_subgroups_to_alias(
             {
                 return;
             }
-            auto &container = it->second.asContainerOf<type>();
+            auto container = it->second.asContainerOf<type>();
             for (auto &[name, entry] : container)
             {
                 m_or_p.emplace(name, entry);
