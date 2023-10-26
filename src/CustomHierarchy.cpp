@@ -439,7 +439,7 @@ void CustomHierarchy::read(
             {
                 std::cerr << "Cannot read mesh at location '"
                           << myPath().openPMDPath() << "/" << path
-                          << "' and will skip them due to read error:\n"
+                          << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 meshesMap.forget(path);
             }
@@ -454,7 +454,7 @@ void CustomHierarchy::read(
             {
                 std::cerr << "Cannot read particle species at location '"
                           << myPath().openPMDPath() << "/" << path
-                          << "' and will skip them due to read error:\n"
+                          << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 particlesMap.forget(path);
             }
@@ -492,7 +492,18 @@ void CustomHierarchy::read(
             break;
         }
         case internal::ContainedType::Mesh:
-            readScalarMesh(meshesMap, path);
+            try
+            {
+                readScalarMesh(meshesMap, path);
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "Cannot read scalar mesh at location '"
+                          << myPath().openPMDPath() << "/" << path
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+                meshesMap.forget(path);
+            }
             break;
         case internal::ContainedType::Particle:
             std::cerr
@@ -508,11 +519,22 @@ void CustomHierarchy::read(
     for (auto const &path : constantComponentsPushback)
     {
         auto &rc = data.m_embeddedDatasets[path];
-        Parameter<Operation::OPEN_PATH> pOpen;
-        pOpen.path = path;
-        IOHandler()->enqueue(IOTask(&rc, pOpen));
-        rc.get().m_isConstant = true;
-        rc.read();
+        try
+        {
+            Parameter<Operation::OPEN_PATH> pOpen;
+            pOpen.path = path;
+            IOHandler()->enqueue(IOTask(&rc, pOpen));
+            rc.get().m_isConstant = true;
+            rc.read();
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "Cannot read dataset at location '"
+                      << myPath().openPMDPath() << "/" << path
+                      << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+            data.m_embeddedDatasets.container().erase(path);
+        }
     }
 }
 
