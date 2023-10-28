@@ -146,6 +146,18 @@ bool openPMD_Attributable_deleteAttribute(
     return cxx_attributable->deleteAttribute(std::string(key));
 }
 
+char **openPMD_Attributable_attributes(const openPMD_Attributable *attributable)
+{
+    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
+    const auto cxx_attributes = cxx_attributable->attributes();
+    const std::size_t num_attributes = cxx_attributes.size();
+    char **const attributes =
+        (char **)malloc(num_attributes * sizeof *attributes);
+    for (std::size_t n = 0; n < num_attributes; ++n)
+        attributes[n] = strdup(cxx_attributes[n].c_str());
+    return attributes;
+}
+
 size_t
 openPMD_Attributable_numAttributes(const openPMD_Attributable *attributable)
 {

@@ -40,7 +40,7 @@ void openPMD_Iteration_setTime(openPMD_Iteration *iteration, double newTime)
     cxx_iteration->setTime(newTime);
 }
 
-double dt(const openPMD_Iteration *iteration)
+double openPMD_Iteration_dt(const openPMD_Iteration *iteration)
 {
     const auto cxx_iteration = (const openPMD::Iteration *)iteration;
     return cxx_iteration->dt<double>();
