@@ -2,6 +2,12 @@
 
 #include <openPMD/WriteIterations.hpp>
 
+void openPMD_WriteIterations_delete(openPMD_WriteIterations *iterations)
+{
+    const auto cxx_iterations = (openPMD::WriteIterations *)iterations;
+    delete cxx_iterations;
+}
+
 openPMD_Iteration *
 openPMD_WriteIterations_get(openPMD_WriteIterations *iterations, uint64_t key)
 {

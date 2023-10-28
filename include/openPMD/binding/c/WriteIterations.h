@@ -13,6 +13,8 @@ extern "C"
 
     typedef struct openPMD_WriteIterations openPMD_WriteIterations;
 
+    void openPMD_WriteIterations_delete(openPMD_WriteIterations *iterations);
+
     openPMD_Iteration *openPMD_WriteIterations_get(
         openPMD_WriteIterations *iterations, uint64_t key);
 

@@ -8,6 +8,8 @@ extern "C"
 
     typedef struct openPMD_ReadIterations openPMD_ReadIterations;
 
+    void openPMD_ReadIterations_delete(openPMD_ReadIterations *readIterations);
+
 #ifdef __cplusplus
 }
 #endif
