@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <vector>
 
 openPMD_Attributable *openPMD_Attributable_new()
 {
@@ -36,6 +37,30 @@ void openPMD_Attributable_delete(openPMD_Attributable *attributable)
         return cxx_attributable->setAttribute(                                 \
             std::string(key), std::complex<TYPE>(value_re, value_im));         \
     }
+#define DEFINE_SETATTTRIBUTE_VEC(NAME, TYPE)                                   \
+    bool openPMD_Attributable_setAttribute_vec_##NAME(                         \
+        openPMD_Attributable *attributable,                                    \
+        const char *key,                                                       \
+        const TYPE *values,                                                    \
+        size_t size)                                                           \
+    {                                                                          \
+        const auto cxx_attributable = (openPMD::Attributable *)attributable;   \
+        std::vector<TYPE> cxx_values(values, values + size);                   \
+        return cxx_attributable->setAttribute(std::string(key), cxx_values);   \
+    }
+#define DEFINE_SETATTTRIBUTE_VEC2(NAME, TYPE)                                  \
+    bool openPMD_Attributable_setAttribute_vec_##NAME##2(                      \
+        openPMD_Attributable * attributable,                                   \
+        const char *key,                                                       \
+        const TYPE *values,                                                    \
+        size_t size)                                                           \
+    {                                                                          \
+        const auto cxx_attributable = (openPMD::Attributable *)attributable;   \
+        const std::vector<std::complex<TYPE>> cxx_values(                      \
+            (const std::complex<TYPE> *)values,                                \
+            (const std::complex<TYPE> *)values + size);                        \
+        return cxx_attributable->setAttribute(std::string(key), cxx_values);   \
+    }
 DEFINE_SETATTTRIBUTE(char, char)
 DEFINE_SETATTTRIBUTE(uchar, unsigned char)
 DEFINE_SETATTTRIBUTE(schar, signed char)
@@ -53,10 +78,48 @@ DEFINE_SETATTTRIBUTE(long_double, long double)
 DEFINE_SETATTTRIBUTE2(cfloat, float)
 DEFINE_SETATTTRIBUTE2(cdouble, double)
 DEFINE_SETATTTRIBUTE2(clong_double, long double)
-DEFINE_SETATTTRIBUTE(string, const char *)
+DEFINE_SETATTTRIBUTE_VEC(char, char)
+DEFINE_SETATTTRIBUTE_VEC(uchar, unsigned char)
+DEFINE_SETATTTRIBUTE_VEC(schar, signed char)
+DEFINE_SETATTTRIBUTE_VEC(short, short)
+DEFINE_SETATTTRIBUTE_VEC(int, int)
+DEFINE_SETATTTRIBUTE_VEC(long, long)
+DEFINE_SETATTTRIBUTE_VEC(longlong, long long)
+DEFINE_SETATTTRIBUTE_VEC(ushort, unsigned short)
+DEFINE_SETATTTRIBUTE_VEC(uint, unsigned int)
+DEFINE_SETATTTRIBUTE_VEC(ulong, unsigned long)
+DEFINE_SETATTTRIBUTE_VEC(ulonglong, unsigned long long)
+DEFINE_SETATTTRIBUTE_VEC(float, float)
+DEFINE_SETATTTRIBUTE_VEC(double, double)
+DEFINE_SETATTTRIBUTE_VEC(long_double, long double)
+DEFINE_SETATTTRIBUTE_VEC2(cfloat, float)
+DEFINE_SETATTTRIBUTE_VEC2(cdouble, double)
+DEFINE_SETATTTRIBUTE_VEC2(clong_double, long double)
 DEFINE_SETATTTRIBUTE(bool, bool)
 #undef DEFINE_SETATTTRIBUTE
 #undef DEFINE_SETATTTRIBUTE2
+#undef DEFINE_SETATTTRIBUTE_VEC
+#undef DEFINE_SETATTTRIBUTE_VEC2
+
+bool openPMD_Attributable_setAttribute_string(
+    openPMD_Attributable *attributable, const char *key, const char *value)
+{
+    const auto cxx_attributable = (openPMD::Attributable *)attributable;
+    return cxx_attributable->setAttribute(std::string(key), std::string(value));
+}
+
+bool openPMD_Attributable_setAttribute_vec_string(
+    openPMD_Attributable *attributable,
+    const char *key,
+    const char *const *values,
+    size_t size)
+{
+    const auto cxx_attributable = (openPMD::Attributable *)attributable;
+    std::vector<std::string> cxx_values(size);
+    for (size_t n = 0; n < size; ++n)
+        cxx_values[n] = std::string(values[n]);
+    return cxx_attributable->setAttribute(std::string(key), cxx_values);
+}
 
 openPMD_Datatype openPMD_Attributable_attributeDatatype(
     const openPMD_Attributable *attributable, const char *key)
@@ -105,7 +168,48 @@ openPMD_Datatype openPMD_Attributable_attributeDatatype(
         value[1] = cxx_value->imag();                                          \
         return true;                                                           \
     }
-
+#define DEFINE_GETATTRIBUTE_VEC(NAME, TYPE)                                    \
+    bool openPMD_Attributable_getAttribute_vec_##NAME(                         \
+        const openPMD_Attributable *attributable,                              \
+        const char *key,                                                       \
+        TYPE **__restrict__ values,                                            \
+        size_t *__restrict__ size)                                             \
+    {                                                                          \
+        const auto cxx_attributable =                                          \
+            (const openPMD::Attributable *)attributable;                       \
+        const auto cxx_attribute =                                             \
+            cxx_attributable->getAttribute(std::string(key));                  \
+        const auto cxx_values =                                                \
+            cxx_attribute.getOptional<std::vector<TYPE>>();                    \
+        if (!cxx_values)                                                       \
+            return false;                                                      \
+        *size = cxx_values->size();                                            \
+        *values = (TYPE *)malloc(*size * sizeof **values);                     \
+        for (size_t n = 0; n < *size; ++n)                                     \
+            (*values)[n] = (*cxx_values)[n];                                   \
+        return true;                                                           \
+    }
+#define DEFINE_GETATTRIBUTE_VEC2(NAME, TYPE)                                   \
+    bool openPMD_Attributable_getAttribute_vec_##NAME##2(                      \
+        const openPMD_Attributable *attributable,                              \
+        const char *key,                                                       \
+        TYPE **__restrict__ values,                                            \
+        size_t *__restrict__ size)                                             \
+    {                                                                          \
+        const auto cxx_attributable =                                          \
+            (const openPMD::Attributable *)attributable;                       \
+        const auto cxx_attribute =                                             \
+            cxx_attributable->getAttribute(std::string(key));                  \
+        const auto cxx_values =                                                \
+            cxx_attribute.getOptional<std::vector<std::complex<TYPE>>>();      \
+        if (!cxx_values)                                                       \
+            return false;                                                      \
+        *size = cxx_values->size();                                            \
+        *values = (TYPE *)malloc(*size * sizeof(std::complex<TYPE>));          \
+        for (size_t n = 0; n < *size; ++n)                                     \
+            ((std::complex<TYPE> *)*values)[n] = (*cxx_values)[n];             \
+        return true;                                                           \
+    }
 DEFINE_GETATTRIBUTE(char, char)
 DEFINE_GETATTRIBUTE(uchar, unsigned char)
 DEFINE_GETATTRIBUTE(schar, signed char)
@@ -123,12 +227,33 @@ DEFINE_GETATTRIBUTE(long_double, long double)
 DEFINE_GETATTRIBUTE2(cfloat, float)
 DEFINE_GETATTRIBUTE2(cdouble, double)
 DEFINE_GETATTRIBUTE2(clong_double, long double)
+DEFINE_GETATTRIBUTE_VEC(char, char)
+DEFINE_GETATTRIBUTE_VEC(uchar, unsigned char)
+DEFINE_GETATTRIBUTE_VEC(schar, signed char)
+DEFINE_GETATTRIBUTE_VEC(short, short)
+DEFINE_GETATTRIBUTE_VEC(int, int)
+DEFINE_GETATTRIBUTE_VEC(long, long)
+DEFINE_GETATTRIBUTE_VEC(longlong, long long)
+DEFINE_GETATTRIBUTE_VEC(ushort, unsigned short)
+DEFINE_GETATTRIBUTE_VEC(uint, unsigned int)
+DEFINE_GETATTRIBUTE_VEC(ulong, unsigned long)
+DEFINE_GETATTRIBUTE_VEC(ulonglong, unsigned long long)
+DEFINE_GETATTRIBUTE_VEC(float, float)
+DEFINE_GETATTRIBUTE_VEC(double, double)
+DEFINE_GETATTRIBUTE_VEC(long_double, long double)
+DEFINE_GETATTRIBUTE_VEC2(cfloat, float)
+DEFINE_GETATTRIBUTE_VEC2(cdouble, double)
+DEFINE_GETATTRIBUTE_VEC2(clong_double, long double)
 DEFINE_GETATTRIBUTE(bool, bool)
 #undef DEFINE_GETATTRIBUTE
 #undef DEFINE_GETATTRIBUTE2
+#undef DEFINE_GETATTRIBUTE_VEC
+#undef DEFINE_GETATTRIBUTE_VEC2
 
 bool openPMD_Attributable_getAttribute_string(
-    const openPMD_Attributable *attributable, const char *key, char **value)
+    const openPMD_Attributable *attributable,
+    const char *key,
+    char **__restrict__ value)
 {
     const auto cxx_attributable = (const openPMD::Attributable *)attributable;
     const auto cxx_attribute = cxx_attributable->getAttribute(std::string(key));
@@ -136,6 +261,25 @@ bool openPMD_Attributable_getAttribute_string(
     if (!cxx_value)
         return false;
     *value = strdup(cxx_value->c_str());
+    return true;
+}
+
+bool openPMD_Attributable_getAttribute_vec_string(
+    const openPMD_Attributable *attributable,
+    const char *key,
+    char ***__restrict__ values,
+    size_t *__restrict__ size)
+{
+    const auto cxx_attributable = (const openPMD::Attributable *)attributable;
+    const auto cxx_attribute = cxx_attributable->getAttribute(std::string(key));
+    const auto cxx_values =
+        cxx_attribute.getOptional<std::vector<std::string>>();
+    if (!cxx_values)
+        return false;
+    *size = cxx_values->size();
+    *values = (char **)malloc(*size * sizeof **values);
+    for (size_t n = 0; n < *size; ++n)
+        (*values)[n] = strdup((*cxx_values)[n].c_str());
     return true;
 }
 
