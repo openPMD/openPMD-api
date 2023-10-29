@@ -10,7 +10,7 @@ bool openPMD_Attributable_setAttribute_cfloat(
 bool openPMD_Attributable_setAttribute_cdouble(
     openPMD_Attributable *attributable, const char *key, complex double value)
 {
-    return openPMD_Attributable_setAttribute_cfloat2(
+    return openPMD_Attributable_setAttribute_cdouble2(
         attributable, key, creal(value), cimag(value));
 }
 
@@ -39,7 +39,7 @@ bool openPMD_Attributable_setAttribute_vec_cdouble(
     const complex double *values,
     size_t size)
 {
-    return openPMD_Attributable_setAttribute_vec_cfloat2(
+    return openPMD_Attributable_setAttribute_vec_cdouble2(
         attributable, key, (const double *)values, size);
 }
 
