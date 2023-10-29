@@ -3,6 +3,7 @@
 
 #include <openPMD/config.hpp>
 
+#include <openPMD/binding/c/Container_Iteration.h>
 #include <openPMD/binding/c/IO/Access.h>
 #include <openPMD/binding/c/IterationEncoding.h>
 #include <openPMD/binding/c/ReadIterations.h>
@@ -20,9 +21,11 @@ extern "C"
 
     typedef struct openPMD_Series openPMD_Series;
 
+    // returns a non-owning pointer
     const openPMD_Attributable *
     openPMD_Series_getConstAttributable(const openPMD_Series *series);
 
+    // returns a non-owning pointer
     openPMD_Attributable *
     openPMD_Series_getAttributable(openPMD_Series *series);
 
@@ -40,6 +43,14 @@ extern "C"
         const char *filepath, openPMD_Access at, const char *options);
 
     void openPMD_Series_delete(openPMD_Series *series);
+
+    // returns a non-owning pointer
+    const openPMD_Container_Iteration *
+    openPMD_Series_constIterations(const openPMD_Series *series);
+
+    // returns a non-owning pointer
+    openPMD_Container_Iteration *
+    openPMD_Series_iterations(openPMD_Series *series);
 
     bool openPMD_Series_has_value(const openPMD_Series *series);
 

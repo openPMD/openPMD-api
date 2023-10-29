@@ -60,6 +60,19 @@ void openPMD_Series_delete(openPMD_Series *series)
     delete cxx_series;
 }
 
+const openPMD_Container_Iteration *
+openPMD_Series_constIterations(const openPMD_Series *series)
+{
+    const auto cxx_series = (const openPMD::Series *)series;
+    return (const openPMD_Container_Iteration *)&cxx_series->iterations;
+}
+
+openPMD_Container_Iteration *openPMD_Series_iterations(openPMD_Series *series)
+{
+    const auto cxx_series = (openPMD::Series *)series;
+    return (openPMD_Container_Iteration *)&cxx_series->iterations;
+}
+
 bool openPMD_Series_has_value(const openPMD_Series *series)
 {
     const auto cxx_series = (const openPMD::Series *)series;

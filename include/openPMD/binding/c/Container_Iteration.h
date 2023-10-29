@@ -15,9 +15,12 @@ extern "C"
 
     typedef struct openPMD_Container_Iteration openPMD_Container_Iteration;
 
+    // returns a non-owning pointer
     const openPMD_Attributable *
     openPMD_Container_Iteration_getConstAttributable(
         const openPMD_Container_Iteration *container);
+
+    // returns a non-owning pointer
     openPMD_Attributable *openPMD_Container_Iteration_getAttributable(
         openPMD_Container_Iteration *container);
 

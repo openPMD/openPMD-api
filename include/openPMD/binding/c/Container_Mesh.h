@@ -14,8 +14,11 @@ extern "C"
 
     typedef struct openPMD_Container_Mesh openPMD_Container_Mesh;
 
+    // returns a non-owning pointer
     const openPMD_Attributable *openPMD_Container_Mesh_getConstAttributable(
         const openPMD_Container_Mesh *container);
+
+    // returns a non-owning pointer
     openPMD_Attributable *
     openPMD_Container_Mesh_getAttributable(openPMD_Container_Mesh *container);
 
