@@ -588,6 +588,18 @@ struct CopyableDeleter : std::function<void(T *)>
         : std::function<void(T *)>{[](T const *ptr) { delete[] ptr; }}
     {}
 };
+
+template <typename T>
+struct NonCopyableDeleter : std::function<void(T *)>
+{
+    NonCopyableDeleter()
+        : std::function<void(T *)>{[](T const *ptr) { delete[] ptr; }}
+    {}
+    NonCopyableDeleter(NonCopyableDeleter const &) = delete;
+    NonCopyableDeleter &operator=(NonCopyableDeleter const &) = delete;
+    NonCopyableDeleter(NonCopyableDeleter &&) = default;
+    NonCopyableDeleter &operator=(NonCopyableDeleter &&) = default;
+};
 } // namespace detail
 
 void close_and_copy_attributable_test(std::string file_ending)
@@ -703,6 +715,17 @@ void close_and_copy_attributable_test(std::string file_ending)
         ptr_v_copyable_deleter(new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
         pos_v.storeChunk(
             UniquePtrWithLambda<int>(std::move(ptr_v_copyable_deleter)),
+            {0},
+            {global_extent});
+
+        // UniquePtrWithLambda from unique_ptr with non-copyable custom delete
+        // type
+        auto posOff_v = electronPositionsOffset["v"];
+        posOff_v.resetDataset(dataset);
+        std::unique_ptr<int, ::detail::NonCopyableDeleter<int>>
+        ptr_v_noncopyable_deleter(new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+        posOff_v.storeChunk(
+            UniquePtrWithLambda<int>(std::move(ptr_v_noncopyable_deleter)),
             {0},
             {global_extent});
 
