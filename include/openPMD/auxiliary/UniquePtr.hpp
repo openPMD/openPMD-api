@@ -35,10 +35,9 @@ namespace auxiliary
          * This ensures correct destruction of arrays by using delete[].
          */
         CustomDelete()
-            : deleter_type{[](T_decayed *ptr) {
+            : deleter_type{[]([[maybe_unused]] T_decayed *ptr) {
                 if constexpr (std::is_void_v<T_decayed>)
                 {
-                    (void)ptr;
                     std::cerr << "[Warning] Cannot standard-delete a void-type "
                                  "pointer. Please specify a custom destructor. "
                                  "Will let the memory leak."
@@ -143,6 +142,12 @@ UniquePtrWithLambda<T>::UniquePtrWithLambda(std::unique_ptr<T, Del> ptr)
                   }
                   else
                   {
+                      /*
+                       * The constructor of std::function requires a copyable
+                       * lambda. Since Del is not a copyable type, we cannot
+                       * capture it directly, but need to put it into a
+                       * shared_ptr to make it copyable.
+                       */
                       return [deleter = std::make_shared<Del>(
                                   std::move(ptr.get_deleter()))](
                                  T_decayed *del_ptr) { (*deleter)(del_ptr); };
