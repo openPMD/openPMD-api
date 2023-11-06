@@ -579,6 +579,17 @@ TEST_CASE("close_iteration_interleaved_test", "[serial]")
     }
 }
 
+namespace detail
+{
+template <typename T>
+struct CopyableDeleter : std::function<void(T *)>
+{
+    CopyableDeleter()
+        : std::function<void(T *)>{[](T const *ptr) { delete[] ptr; }}
+    {}
+};
+} // namespace detail
+
 void close_and_copy_attributable_test(std::string file_ending)
 {
     using position_t = int;
@@ -682,6 +693,16 @@ void close_and_copy_attributable_test(std::string file_ending)
         posOff_w.storeChunk(
             UniquePtrWithLambda<int[]>{
                 new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, array_deleter},
+            {0},
+            {global_extent});
+
+        // UniquePtrWithLambda from unique_ptr with custom delete type
+        auto pos_v = electronPositions["v"];
+        pos_v.resetDataset(dataset);
+        std::unique_ptr<int, ::detail::CopyableDeleter<int>>
+        ptr_v_copyable_deleter(new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+        pos_v.storeChunk(
+            UniquePtrWithLambda<int>(std::move(ptr_v_copyable_deleter)),
             {0},
             {global_extent});
 
