@@ -30,15 +30,6 @@ namespace auxiliary
     public:
         using deleter_type = std::function<void(T_decayed *)>;
 
-        deleter_type const &get_deleter() const
-        {
-            return *this;
-        }
-        deleter_type &get_deleter()
-        {
-            return *this;
-        }
-
         /*
          * Default constructor: Use std::default_delete<T>.
          * This ensures correct destruction of arrays by using delete[].
@@ -148,7 +139,7 @@ UniquePtrWithLambda<T>::UniquePtrWithLambda(std::unique_ptr<T, Del> ptr)
           ptr.release(),
           auxiliary::CustomDelete<T>{
               [deleter = std::move(ptr.get_deleter())](T_decayed *del_ptr) {
-                  deleter.get_deleter()(del_ptr);
+                  deleter(del_ptr);
               }}}
 {}
 
@@ -170,7 +161,7 @@ UniquePtrWithLambda<U> UniquePtrWithLambda<T>::static_cast_() &&
     return UniquePtrWithLambda<U>{
         static_cast<other_type *>(this->release()),
         [deleter = std::move(this->get_deleter())](other_type *ptr) {
-            deleter.get_deleter()(static_cast<T_decayed *>(ptr));
+            deleter(static_cast<T_decayed *>(ptr));
         }};
 }
 } // namespace openPMD
