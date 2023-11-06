@@ -984,7 +984,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .meshes["rho"][MeshRecordComponent::SCALAR]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{1, 2, 3});
+                .get<std::vector<uint64_t>>() == Extent{1, 2, 3});
         REQUIRE(s.iterations[1]
                     .meshes["rho"][MeshRecordComponent::SCALAR]
                     .containsAttribute("value"));
@@ -1006,7 +1006,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .meshes["E"]["x"]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{1, 2, 3});
+                .get<std::vector<uint64_t>>() == Extent{1, 2, 3});
         REQUIRE(s.iterations[1].meshes["E"]["x"].containsAttribute("value"));
         REQUIRE(
             s.iterations[1]
@@ -1034,7 +1034,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .particles["e"]["position"][RecordComponent::SCALAR]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{3, 2, 1});
+                .get<std::vector<uint64_t>>() == Extent{3, 2, 1});
         REQUIRE(s.iterations[1]
                     .particles["e"]["position"][RecordComponent::SCALAR]
                     .containsAttribute("value"));
@@ -1058,7 +1058,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .particles["e"]["positionOffset"][RecordComponent::SCALAR]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{3, 2, 1});
+                .get<std::vector<uint64_t>>() == Extent{3, 2, 1});
         REQUIRE(s.iterations[1]
                     .particles["e"]["positionOffset"][RecordComponent::SCALAR]
                     .containsAttribute("value"));
@@ -1080,7 +1080,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .particles["e"]["velocity"]["x"]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{3, 2, 1});
+                .get<std::vector<uint64_t>>() == Extent{3, 2, 1});
         REQUIRE(
             s.iterations[1].particles["e"]["velocity"]["x"].containsAttribute(
                 "value"));
@@ -1432,55 +1432,55 @@ inline void dtype_test(const std::string &backend)
         REQUIRE(s.getAttribute("emptyString").get<std::string>().empty());
     }
     REQUIRE(
-        s.getAttribute("vecChar").get<std::vector<char> >() ==
+        s.getAttribute("vecChar").get<std::vector<char>>() ==
         std::vector<char>({'c', 'h', 'a', 'r'}));
     REQUIRE(
-        s.getAttribute("vecInt16").get<std::vector<int16_t> >() ==
+        s.getAttribute("vecInt16").get<std::vector<int16_t>>() ==
         std::vector<int16_t>({32766, 32767}));
     REQUIRE(
-        s.getAttribute("vecInt32").get<std::vector<int32_t> >() ==
+        s.getAttribute("vecInt32").get<std::vector<int32_t>>() ==
         std::vector<int32_t>({2147483646, 2147483647}));
     REQUIRE(
-        s.getAttribute("vecInt64").get<std::vector<int64_t> >() ==
+        s.getAttribute("vecInt64").get<std::vector<int64_t>>() ==
         std::vector<int64_t>({9223372036854775806, 9223372036854775807}));
     REQUIRE(
-        s.getAttribute("vecUchar").get<std::vector<unsigned char> >() ==
+        s.getAttribute("vecUchar").get<std::vector<unsigned char>>() ==
         std::vector<unsigned char>({'u', 'c', 'h', 'a', 'r'}));
     REQUIRE(
-        s.getAttribute("vecSchar").get<std::vector<signed char> >() ==
+        s.getAttribute("vecSchar").get<std::vector<signed char>>() ==
         std::vector<signed char>({'s', 'c', 'h', 'a', 'r'}));
     REQUIRE(
-        s.getAttribute("vecUint16").get<std::vector<uint16_t> >() ==
+        s.getAttribute("vecUint16").get<std::vector<uint16_t>>() ==
         std::vector<uint16_t>({65534u, 65535u}));
     REQUIRE(
-        s.getAttribute("vecUint32").get<std::vector<uint32_t> >() ==
+        s.getAttribute("vecUint32").get<std::vector<uint32_t>>() ==
         std::vector<uint32_t>({4294967294u, 4294967295u}));
     REQUIRE(
-        s.getAttribute("vecUint64").get<std::vector<uint64_t> >() ==
+        s.getAttribute("vecUint64").get<std::vector<uint64_t>>() ==
         std::vector<uint64_t>({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(
-        s.getAttribute("vecFloat").get<std::vector<float> >() ==
+        s.getAttribute("vecFloat").get<std::vector<float>>() ==
         std::vector<float>({0.f, 3.40282e+38f}));
     REQUIRE(
-        s.getAttribute("vecDouble").get<std::vector<double> >() ==
+        s.getAttribute("vecDouble").get<std::vector<double>>() ==
         std::vector<double>({0., 1.79769e+308}));
     if (test_long_double)
     {
         REQUIRE(
-            s.getAttribute("vecLongdouble").get<std::vector<long double> >() ==
+            s.getAttribute("vecLongdouble").get<std::vector<long double>>() ==
             std::vector<long double>(
                 {0.L, std::numeric_limits<long double>::max()}));
     }
     REQUIRE(
-        s.getAttribute("vecString").get<std::vector<std::string> >() ==
+        s.getAttribute("vecString").get<std::vector<std::string>>() ==
         std::vector<std::string>({"vector", "of", "strings"}));
     if (!adios1)
     {
         REQUIRE(
-            s.getAttribute("vecEmptyString").get<std::vector<std::string> >() ==
+            s.getAttribute("vecEmptyString").get<std::vector<std::string>>() ==
             std::vector<std::string>({"", "", ""}));
         REQUIRE(
-            s.getAttribute("vecMixedString").get<std::vector<std::string> >() ==
+            s.getAttribute("vecMixedString").get<std::vector<std::string>>() ==
             std::vector<std::string>({"hi", "", "ho"}));
     }
     REQUIRE(s.getAttribute("bool").get<bool>() == true);
@@ -1692,7 +1692,7 @@ void test_complex(const std::string &backend)
                 "longDoublesYouSay", std::complex<long double>(5.5, -4.55));
 
         auto Cflt = o.iterations[0].meshes["Cflt"][RecordComponent::SCALAR];
-        std::vector<std::complex<float> > cfloats(3);
+        std::vector<std::complex<float>> cfloats(3);
         cfloats.at(0) = {1., 2.};
         cfloats.at(1) = {-3., 4.};
         cfloats.at(2) = {5., -6.};
@@ -1700,14 +1700,14 @@ void test_complex(const std::string &backend)
         Cflt.storeChunk(cfloats, {0});
 
         auto Cdbl = o.iterations[0].meshes["Cdbl"][RecordComponent::SCALAR];
-        std::vector<std::complex<double> > cdoubles(3);
+        std::vector<std::complex<double>> cdoubles(3);
         cdoubles.at(0) = {2., 1.};
         cdoubles.at(1) = {-4., 3.};
         cdoubles.at(2) = {6., -5.};
         Cdbl.resetDataset(Dataset(Datatype::CDOUBLE, {cdoubles.size()}));
         Cdbl.storeChunk(cdoubles, {0});
 
-        std::vector<std::complex<long double> > cldoubles(3);
+        std::vector<std::complex<long double>> cldoubles(3);
         if (o.backend() != "ADIOS2" && o.backend() != "ADIOS1" &&
             o.backend() != "MPI_ADIOS1")
         {
@@ -1728,26 +1728,26 @@ void test_complex(const std::string &backend)
         Series i = Series(
             "../samples/serial_write_complex." + backend, Access::READ_ONLY);
         REQUIRE(
-            i.getAttribute("lifeIsComplex").get<std::complex<double> >() ==
+            i.getAttribute("lifeIsComplex").get<std::complex<double>>() ==
             std::complex<double>(4.56, 7.89));
         REQUIRE(
-            i.getAttribute("butComplexFloats").get<std::complex<float> >() ==
+            i.getAttribute("butComplexFloats").get<std::complex<float>>() ==
             std::complex<float>(42.3, -99.3));
         if (i.backend() != "ADIOS2" && i.backend() != "ADIOS1" &&
             i.backend() != "MPI_ADIOS1")
         {
             REQUIRE(
                 i.getAttribute("longDoublesYouSay")
-                    .get<std::complex<long double> >() ==
+                    .get<std::complex<long double>>() ==
                 std::complex<long double>(5.5, -4.55));
         }
 
         auto rcflt = i.iterations[0]
                          .meshes["Cflt"][RecordComponent::SCALAR]
-                         .loadChunk<std::complex<float> >();
+                         .loadChunk<std::complex<float>>();
         auto rcdbl = i.iterations[0]
                          .meshes["Cdbl"][RecordComponent::SCALAR]
-                         .loadChunk<std::complex<double> >();
+                         .loadChunk<std::complex<double>>();
         i.flush();
 
         REQUIRE(rcflt.get()[1] == std::complex<float>(-3., 4.));
@@ -1758,7 +1758,7 @@ void test_complex(const std::string &backend)
         {
             auto rcldbl = i.iterations[0]
                               .meshes["Cldbl"][RecordComponent::SCALAR]
-                              .loadChunk<std::complex<long double> >();
+                              .loadChunk<std::complex<long double>>();
             i.flush();
             REQUIRE(rcldbl.get()[2] == std::complex<long double>(7., -6.));
         }
@@ -5001,7 +5001,7 @@ void bp4_steps(
         auto E_x = E["x"];
         REQUIRE(
             E.getAttribute("vector_of_string")
-                .get<std::vector<std::string> >() ==
+                .get<std::vector<std::string>>() ==
             std::vector<std::string>{"vector", "of", "string"});
         REQUIRE(E_x.getDimensionality() == 1);
         REQUIRE(E_x.getExtent()[0] == 10);
@@ -5235,7 +5235,7 @@ struct AreEqual
 };
 
 template <typename T>
-struct AreEqual<std::vector<T> >
+struct AreEqual<std::vector<T>>
 {
     static bool areEqual(std::vector<T> v1, std::vector<T> v2)
     {
