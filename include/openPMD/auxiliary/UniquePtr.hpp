@@ -135,12 +135,19 @@ UniquePtrWithLambda<T>::UniquePtrWithLambda(std::unique_ptr<T> stdPtr)
 template <typename T>
 template <typename Del>
 UniquePtrWithLambda<T>::UniquePtrWithLambda(std::unique_ptr<T, Del> ptr)
-    : BasePtr{
-          ptr.release(),
-          auxiliary::CustomDelete<T>{
-              [deleter = std::move(ptr.get_deleter())](T_decayed *del_ptr) {
-                  deleter(del_ptr);
-              }}}
+    : BasePtr{ptr.release(), auxiliary::CustomDelete<T>{[&]() {
+                  if constexpr (std::is_copy_constructible_v<Del>)
+                  {
+                      return [deleter = std::move(ptr.get_deleter())](
+                                 T_decayed *del_ptr) { deleter(del_ptr); };
+                  }
+                  else
+                  {
+                      return [deleter = std::make_shared<Del>(
+                                  std::move(ptr.get_deleter()))](
+                                 T_decayed *del_ptr) { (*deleter)(del_ptr); };
+                  }
+              }()}}
 {}
 
 template <typename T>
