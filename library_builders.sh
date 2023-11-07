@@ -141,9 +141,6 @@ function build_adios2 {
     make -j${CPU_COUNT}
     make install
 
-    # CMake Config package of C-Blosc 2.10.1+ only
-    rm -rf ${BUILD_PREFIX}/lib*/cmake/adios2/FindBlosc2.cmake
-
     cd -
 
     rm -rf build-adios2
@@ -199,8 +196,8 @@ function build_blosc {
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
-    curl -sLo blosc2-v2.10.2.tar.gz \
-        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.2.tar.gz
+    curl -sLo blosc2-v2.11.1.tar.gz \
+        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.tar.gz
     file blosc2*.tar.gz
     tar -xzf blosc2*.tar.gz
     rm blosc2*.tar.gz

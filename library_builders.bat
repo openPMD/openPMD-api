@@ -59,18 +59,11 @@ exit /b 0
 :build_blosc2
   if exist blosc2-stamp exit /b 0
 
-  curl -sLo blosc2-2.10.2.zip ^
-    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.2.zip
-  powershell Expand-Archive blosc2-2.10.2.zip -DestinationPath dep-blosc2
+  curl -sLo blosc2-2.11.1.zip ^
+    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.zip
+  powershell Expand-Archive blosc2-2.11.1.zip -DestinationPath dep-blosc2
 
-  :: Fix Threads search in Blosc2Config.cmake
-  :: https://github.com/Blosc/c-blosc2/pull/549
-  curl -sLo blosc2-threads.patch ^
-    https://github.com/Blosc/c-blosc2/pull/549.patch
-  python -m patch -p 1 -d dep-blosc2/c-blosc2-2.10.2 blosc2-threads.patch
-  if errorlevel 1 exit 1
-
-  cmake -S dep-blosc2/c-blosc2-2.10.2 -B build-blosc2 ^
+  cmake -S dep-blosc2/c-blosc2-2.11.1 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED=OFF          ^
     -DBUILD_STATIC=ON           ^
