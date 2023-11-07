@@ -103,10 +103,8 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    #curl -sLo adios2-2.9.1.tar.gz \
-    #    https://github.com/ornladios/ADIOS2/archive/v2.9.1.tar.gz
-    curl -sLo adios2-2.9.1.tar.gz \
-        https://github.com/ax3l/ADIOS2/archive/refs/heads/release-2.9.1-bp-wheels.tar.gz
+    curl -sLo adios2-2.9.2.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.9.2.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
@@ -129,6 +127,7 @@ function build_adios2 {
         -DADIOS2_USE_MHS=OFF                      \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
+        -DADIOS2_USE_Sodium=OFF                   \
         -DADIOS2_USE_SST=ON                       \
         -DADIOS2_USE_ZFP=ON                       \
         -DADIOS2_RUN_INSTALL_TEST=OFF             \

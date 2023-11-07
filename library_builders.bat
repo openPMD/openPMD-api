@@ -17,13 +17,11 @@ exit /b 0
 
 :build_adios2
   if exist adios2-stamp exit /b 0
-  ::curl -sLo adios2-2.9.1.zip ^
-  ::  https://github.com/ornladios/ADIOS2/archive/v2.9.1.zip
-  curl -sLo adios2-2.9.1.zip ^
-    https://github.com/ax3l/ADIOS2/archive/refs/heads/release-2.9.1-bp-wheels.zip
-  powershell Expand-Archive adios2-2.9.1.zip -DestinationPath dep-adios2
+  curl -sLo adios2-2.9.2.zip ^
+    https://github.com/ornladios/ADIOS2/archive/v2.9.2.zip
+  powershell Expand-Archive adios2-2.9.2.zip -DestinationPath dep-adios2
 
-  cmake -S dep-adios2/ADIOS2-release-2.9.1-bp-wheels -B build-adios2 ^
+  cmake -S dep-adios2/ADIOS2-2.9.2 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED_LIBS=OFF     ^
     -DBUILD_TESTING=OFF         ^
