@@ -88,7 +88,20 @@ void SeriesIterator::initSeriesInLinearReadMode()
             case PP::UpFront:
                 series.readGorVBased(
                     /* do_always_throw_errors = */ false, /* init = */ true);
-                series.advance(AdvanceMode::BEGINSTEP);
+                /*
+                 * In linear read mode (where no parsing at all is done upon
+                 * constructing the Series), it might turn out after parsing
+                 * that what we expected to be a group-based Series was in fact
+                 * a single file of a file-based Series.
+                 * (E.g. when opening "data00000100.h5" directly instead of
+                 * "data%T.h5")
+                 * So we need to check the current value of
+                 * `iterationEncoding()` once more.
+                 */
+                if (series.iterationEncoding() != IterationEncoding::fileBased)
+                {
+                    series.advance(AdvanceMode::BEGINSTEP);
+                }
                 break;
             }
             data.parsePreference = *fOpen.out_parsePreference;

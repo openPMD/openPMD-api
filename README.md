@@ -115,7 +115,7 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.8 - 3.11
+  * Python 3.8 - 3.12
   * pybind11 2.11.1+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
@@ -195,7 +195,7 @@ python3 -m pip install openpmd-api
 If MPI-support shall be enabled, we always have to recompile:
 ```bash
 # optional:                                    --user
-python3 -m pip install -U pip setuptools wheel
+python3 -m pip install -U pip packaging setuptools wheel
 python3 -m pip install -U cmake
 
 # optional:                                                                   --user

@@ -67,6 +67,9 @@ struct SeriesIteratorPythonAdaptor : SeriesIterator
 
 void init_Series(py::module &m)
 {
+    py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
+        .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
+
     py::class_<WriteIterations>(m, "WriteIterations", R"END(
 Writing side of the streaming API.
 
@@ -100,8 +103,6 @@ not possible once it has been closed.
             &WriteIterations::currentIteration,
             "Return the iteration that is currently being written to, if it "
             "exists.");
-    py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
-        .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
 
     py::class_<SeriesIteratorPythonAdaptor>(m, "SeriesIterator")
         .def(

@@ -23,6 +23,8 @@
  *
  * BSD-style license, see pybind11 LICENSE file.
  */
+#pragma once
+
 #include "openPMD/backend/Container.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
@@ -33,7 +35,7 @@
 #include <string>
 #include <utility>
 
-namespace detail
+namespace openPMD
 {
 /* based on std_bind.h in pybind11
  *
@@ -46,7 +48,7 @@ template <
     typename holder_type = std::unique_ptr<Map>,
     typename... Args>
 py::class_<Map, holder_type, Attributable>
-bind_container(py::handle scope, std::string const &name, Args &&...args)
+declare_container(py::handle scope, std::string const &name, Args &&...args)
 {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
@@ -101,6 +103,19 @@ bind_container(py::handle scope, std::string const &name, Args &&...args)
         return stream.str();
     });
 
+    return cl;
+}
+
+template <
+    typename Map,
+    typename holder_type = std::unique_ptr<Map>>
+py::class_<Map, holder_type, Attributable>
+finalize_container(py::class_<Map, holder_type, Attributable> cl)
+{
+    using KeyType = typename Map::key_type;
+    using MappedType = typename Map::mapped_type;
+    using Class_ = py::class_<Map, holder_type, Attributable>;
+
     cl.def(
         "items",
         [](Map &m) { return py::make_iterator(m.begin(), m.end()); },
@@ -137,23 +152,4 @@ bind_container(py::handle scope, std::string const &name, Args &&...args)
 
     return cl;
 }
-} // namespace detail
-
-void init_Container(py::module &m)
-{
-    ::detail::bind_container<PyIterationContainer>(m, "Iteration_Container");
-    ::detail::bind_container<PyMeshContainer>(m, "Mesh_Container");
-    ::detail::bind_container<PyPartContainer>(m, "Particle_Container");
-    ::detail::bind_container<PyPatchContainer>(m, "Particle_Patches_Container");
-    ::detail::bind_container<PyRecordContainer>(m, "Record_Container");
-    ::detail::bind_container<PyPatchRecordContainer>(
-        m, "Patch_Record_Container");
-    ::detail::bind_container<PyRecordComponentContainer>(
-        m, "Record_Component_Container");
-    ::detail::bind_container<PyMeshRecordComponentContainer>(
-        m, "Mesh_Record_Component_Container");
-    ::detail::bind_container<PyPatchRecordComponentContainer>(
-        m, "Patch_Record_Component_Container");
-    ::detail::bind_container<PyBaseRecordComponentContainer>(
-        m, "Base_Record_Component_Container");
-}
+} // namespace openPMD

@@ -24,6 +24,7 @@
 #include "openPMD/backend/Container.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
 
 #include <sstream>
@@ -32,6 +33,9 @@
 
 void init_ParticleSpecies(py::module &m)
 {
+    auto py_ps_cnt =
+        declare_container<PyPartContainer>(m, "Particle_Container");
+
     py::class_<ParticleSpecies, Container<Record> > cl(m, "ParticleSpecies");
     cl.def(
           "__repr__",
@@ -49,4 +53,6 @@ void init_ParticleSpecies(py::module &m)
             uint64_t const n_it = std::stoull(group.at(1));
             return series.iterations[n_it].particles[group.at(3)];
         });
+
+    finalize_container<PyPartContainer>(py_ps_cnt);
 }

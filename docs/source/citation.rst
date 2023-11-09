@@ -14,7 +14,7 @@ The most general reference to openPMD is:
 
 .. tip::
 
-   Axel Huebl, Remi Lehe, Jean-Luc Vay, David P. Grote, Ivo F. Sbalzarini, Stephan Kuschel, David Sagan, Christopher Mayes, Frederic Perez, Fabian Koller, and Michael Bussmann.
+   Axel Huebl, Remi Lehe, Jean-Luc Vay, David P. Grote, Ivo F. Sbalzarini, Stephan Kuschel, David Sagan, Christopher Mayes, Frederic Perez, Fabian Koller, Franz Poeschel, Carsten Fortmann-Grote, Angel Ferran Pousa, Juncheng E, Maxence Thevenet and Michael Bussmann.
    *"openPMD: A meta data standard for particle and mesh based data,"*
    `DOI:10.5281/zenodo.591699 <https://doi.org/10.5281/zenodo.591699>`_ (2015)
 
@@ -33,6 +33,11 @@ The equivalent BibTeX code is:
                      Mayes, Christopher and
                      P{\'e}rez, Fr{\'e}d{\'e}ric and
                      Koller, Fabian and
+                     Poeschel, Franz and
+                     Fortmann-Grote, Carsten and
+                     Ferran Pousa, Angel and
+                     E, Juncheng and
+                     Th{\'e}venet, Maxence and
                      Bussmann, Michael},
      title        = {{openPMD: A meta data standard for particle and mesh based data}},
      year         = 2015,
