@@ -596,7 +596,13 @@ struct NonCopyableDeleter : std::function<void(T *)>
     {}
     NonCopyableDeleter(NonCopyableDeleter const &) = delete;
     NonCopyableDeleter &operator=(NonCopyableDeleter const &) = delete;
+    /*
+     * MSVC does not recognize these when declaring noexcept and this is
+     * for a test only anyway.
+     */
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
     NonCopyableDeleter(NonCopyableDeleter &&) = default;
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
     NonCopyableDeleter &operator=(NonCopyableDeleter &&) = default;
 };
 } // namespace detail

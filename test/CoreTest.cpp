@@ -49,6 +49,7 @@ TEST_CASE("attribute_dtype_test", "[core]")
     REQUIRE(Datatype::CHAR == a.dtype);
     {
         // check that copy constructor works
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
         [[maybe_unused]] Attribute b = a;
     }
     {
