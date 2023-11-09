@@ -105,7 +105,14 @@ inline Datatype dtype_from_bufferformat(std::string const &fmt)
     if (fmt.find("?") != std::string::npos)
         return DT::BOOL;
     else if (fmt.find("b") != std::string::npos)
-        return DT::CHAR;
+        if constexpr (std::is_signed_v<char>)
+        {
+            return Datatype::CHAR;
+        }
+        else
+        {
+            return Datatype::SCHAR;
+        }
     else if (fmt.find("h") != std::string::npos)
         return DT::SHORT;
     else if (fmt.find("i") != std::string::npos)
@@ -115,7 +122,14 @@ inline Datatype dtype_from_bufferformat(std::string const &fmt)
     else if (fmt.find("q") != std::string::npos)
         return DT::LONGLONG;
     else if (fmt.find("B") != std::string::npos)
-        return DT::UCHAR;
+        if constexpr (std::is_unsigned_v<char>)
+        {
+            return Datatype::CHAR;
+        }
+        else
+        {
+            return Datatype::UCHAR;
+        }
     else if (fmt.find("H") != std::string::npos)
         return DT::USHORT;
     else if (fmt.find("I") != std::string::npos)
@@ -150,10 +164,18 @@ inline pybind11::dtype dtype_to_numpy(Datatype const dt)
     {
     case DT::CHAR:
     case DT::VEC_CHAR:
-    case DT::SCHAR:
-    case DT::VEC_SCHAR:
     case DT::STRING:
     case DT::VEC_STRING:
+        if constexpr (std::is_signed_v<char>)
+        {
+            return pybind11::dtype("b");
+        }
+        else
+        {
+            return pybind11::dtype("B");
+        }
+    case DT::SCHAR:
+    case DT::VEC_SCHAR:
         return pybind11::dtype("b");
         break;
     case DT::UCHAR:
