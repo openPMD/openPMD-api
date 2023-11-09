@@ -237,9 +237,8 @@ TEST_CASE("multi_series_test", "[serial]")
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3})
     {
-        for (auto const &t : myfileExtensions)
+        for (auto const &file_ending : myfileExtensions)
         {
-            auto const file_ending = t;
             std::cout << file_ending << std::endl;
             allSeries.emplace_back(
                 std::string("../samples/multi_open_test_")

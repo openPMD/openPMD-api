@@ -64,6 +64,7 @@ TEST_CASE("deref_cast_test", "[auxiliary]")
     B const value = {123.45};
     B const *const ptr = &value;
 
+    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
     auto const a = deref_dynamic_cast<A const>(ptr);
     auto const &ra = deref_dynamic_cast<A const>(ptr);
     (void)a;
