@@ -109,6 +109,11 @@ function build_adios2 {
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
 
+    # Patch Static Blosc2
+    curl -sLo find-blosc2.patch \
+        https://github.com/ornladios/ADIOS2/commit/8333d5e6ff4665d12cbbd5bae5150bfff5be2daa.patch
+    python3 -m patch -p 1 -d ADIOS2-* find-blosc2.patch
+
     # build
     mkdir build-adios2
     cd build-adios2
