@@ -2814,18 +2814,14 @@ std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &)
     return m_impl->flush();
 }
 #else
-namespace detail
-{
-    template <typename T>
-    void forget(T)
-    {}
-} // namespace detail
 
 HDF5IOHandler::HDF5IOHandler(
-    std::string path, Access at, json::TracingJSON config)
+    std::string path,
+    Access at,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    [[maybe_unused]] json::TracingJSON config)
     : AbstractIOHandler(std::move(path), at)
 {
-    detail::forget(std::move(config));
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }
 

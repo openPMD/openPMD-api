@@ -3433,38 +3433,33 @@ ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 
 #else // openPMD_HAVE_ADIOS2
 
-namespace detail
-{
-    template <typename... Args>
-    void forget(Args...)
-    {}
-} // namespace detail
-
 #if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     MPI_Comm comm,
-    json::TracingJSON a,
-    std::string b,
-    std::string c)
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    json::TracingJSON,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::string,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::string)
     : AbstractIOHandler(std::move(path), at, comm)
-{
-    detail::forget(a, b, c);
-}
+{}
 
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    json::TracingJSON a,
-    std::string b,
-    std::string c)
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    json::TracingJSON,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::string,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::string)
     : AbstractIOHandler(std::move(path), at)
-{
-    detail::forget(std::move(a), std::move(b), std::move(c));
-}
+{}
 
 std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
 {
