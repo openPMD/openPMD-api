@@ -487,7 +487,7 @@ void CustomHierarchy::read(
                 rc.setWritten(false, Attributable::EnqueueAsynchronously::No);
                 rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
                 rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
-                rc.read();
+                rc.read(/* read_defaults = */ false);
             }
             catch (error::ReadError const &err)
             {
@@ -533,7 +533,7 @@ void CustomHierarchy::read(
             pOpen.path = path;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             rc.get().m_isConstant = true;
-            rc.read();
+            rc.read(/* read_defaults = */ false);
         }
         catch (error::ReadError const &err)
         {
@@ -629,7 +629,7 @@ void CustomHierarchy::flush_internal(
     }
     for (auto &[name, dataset] : get().embeddedDatasets())
     {
-        dataset.flush(name, flushParams);
+        dataset.flush(name, flushParams, /* set_defaults = */ false);
     }
 }
 

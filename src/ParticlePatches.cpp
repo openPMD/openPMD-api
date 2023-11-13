@@ -100,7 +100,7 @@ void ParticlePatches::read()
         pr.setDirty(false);
         try
         {
-            prc.PatchRecordComponent::read(/* require_unit_si = */ false);
+            prc.PatchRecordComponent::read(/* read_defaults = */ false);
         }
         catch (error::ReadError const &err)
         {
