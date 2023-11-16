@@ -20,6 +20,7 @@
  */
 
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
@@ -421,7 +422,7 @@ std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
     }
 }
 
-using FlushTarget = ADIOS2IOHandlerImpl::FlushTarget;
+using FlushTarget = adios_defs::FlushTarget;
 static FlushTarget flushTargetFromString(std::string const &str)
 {
     if (str == "buffer")
@@ -2228,8 +2229,13 @@ namespace detail
         }
         else
         {
-            configure_IO(impl);
+            configure_IO();
         }
+    }
+
+    auto BufferedActions::useGroupTable() const -> UseGroupTable
+    {
+        return m_impl->useGroupTable();
     }
 
     void BufferedActions::create_IO()
@@ -2462,7 +2468,7 @@ namespace detail
         streamStatus = StreamStatus::OutsideOfStep;
     }
 
-    void BufferedActions::configure_IO(ADIOS2IOHandlerImpl &impl)
+    void BufferedActions::configure_IO()
     {
         // step/variable-based iteration encoding requires use of group tables
         // but the group table feature is available only in ADIOS2 >= v2.9
@@ -2546,10 +2552,11 @@ namespace detail
         // set engine parameters
         std::set<std::string> alreadyConfigured;
         bool wasTheFlushTargetSpecifiedViaJSON = false;
-        auto engineConfig = impl.config(ADIOS2Defaults::str_engine);
+        auto engineConfig = m_impl->config(ADIOS2Defaults::str_engine);
         if (!engineConfig.json().is_null())
         {
-            auto params = impl.config(ADIOS2Defaults::str_params, engineConfig);
+            auto params =
+                m_impl->config(ADIOS2Defaults::str_params, engineConfig);
             params.declareFullyRead();
             if (params.json().is_object())
             {
@@ -2573,7 +2580,7 @@ namespace detail
                 }
             }
             auto _useAdiosSteps =
-                impl.config(ADIOS2Defaults::str_usesteps, engineConfig);
+                m_impl->config(ADIOS2Defaults::str_usesteps, engineConfig);
             if (!_useAdiosSteps.json().is_null() && writeOnly(m_mode))
             {
                 std::cerr << "[ADIOS2 backend] WARNING: Parameter "
@@ -2598,10 +2605,10 @@ namespace detail
             }
         }
 
-        auto shadow = impl.m_config.invertShadow();
+        auto shadow = m_impl->m_config.invertShadow();
         if (shadow.size() > 0)
         {
-            switch (impl.m_config.originallySpecifiedAs)
+            switch (m_impl->m_config.originallySpecifiedAs)
             {
             case json::SupportedLanguages::JSON:
                 std::cerr << "Warning: parts of the backend configuration for "
@@ -2764,7 +2771,7 @@ namespace detail
         getEngine();
     }
 
-    UseGroupTable BufferedActions::detectGroupTable()
+    auto BufferedActions::detectGroupTable() -> UseGroupTable
     {
         auto const &attributes = availableAttributes();
         auto lower_bound =
@@ -2857,7 +2864,7 @@ namespace detail
                                 m_impl->m_useGroupTable = UseGroupTable::No;
                             }
                         }
-                        case openPMD::UseGroupTable::No:
+                        case UseGroupTable::No:
                             break;
                         }
                     }

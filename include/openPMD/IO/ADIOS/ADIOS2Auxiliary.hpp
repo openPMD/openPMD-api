@@ -46,6 +46,23 @@ enum class GroupOrDataset
     DATASET
 };
 
+namespace adios_defs
+{
+    enum class FlushTarget : unsigned char
+    {
+        Buffer,
+        Buffer_Override,
+        Disk,
+        Disk_Override
+    };
+
+    enum class UseGroupTable
+    {
+        Yes,
+        No
+    };
+} // namespace adios_defs
+
 #if openPMD_HAVE_ADIOS2
 namespace detail
 {
