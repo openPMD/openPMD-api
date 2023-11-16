@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
@@ -29,9 +30,11 @@
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
+#include <stdexcept>
 
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
@@ -396,7 +399,66 @@ private:
         Offset const &offset,
         Extent const &extent,
         adios2::IO &IO,
-        std::string const &var);
+        std::string const &varName)
+    {
+        {
+            auto requiredType = adios2::GetType<T>();
+            auto actualType = IO.VariableType(varName);
+
+            if (requiredType != actualType)
+            {
+                std::stringstream errorMessage;
+                errorMessage << "Trying to access a dataset with wrong type "
+                                "(trying to access dataset with type "
+                             << determineDatatype<T>() << ", but has type "
+                             << detail::fromADIOS2Type(actualType, false)
+                             << ")";
+                throw error::ReadError(
+                    error::AffectedObject::Dataset,
+                    error::Reason::UnexpectedContent,
+                    "ADIOS2",
+                    errorMessage.str());
+            };
+        }
+        adios2::Variable<T> var = IO.InquireVariable<T>(varName);
+        if (!var.operator bool())
+        {
+
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: Failed opening ADIOS2 variable.");
+        }
+        // TODO leave this check to ADIOS?
+        adios2::Dims shape = var.Shape();
+        auto actualDim = shape.size();
+        {
+            auto requiredDim = extent.size();
+            if (requiredDim != actualDim)
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Dataset,
+                    error::Reason::UnexpectedContent,
+                    "ADIOS2",
+                    "Trying to access a dataset with wrong dimensionality "
+                    "(trying to access dataset with dimensionality " +
+                        std::to_string(requiredDim) +
+                        ", but has dimensionality " +
+                        std::to_string(actualDim) + ")");
+            }
+        }
+        for (unsigned int i = 0; i < actualDim; i++)
+        {
+            if (offset[i] + extent[i] > shape[i])
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Dataset access out of bounds.");
+            }
+        }
+
+        var.SetSelection(
+            {adios2::Dims(offset.begin(), offset.end()),
+             adios2::Dims(extent.begin(), extent.end())});
+        return var;
+    }
 
     struct
     {
@@ -404,27 +466,6 @@ private:
         bool blosc2bp5 = false;
     } printedWarningsAlready;
 }; // ADIOS2IOHandlerImpl
-
-/*
- * The following strings are used during parsing of the JSON configuration
- * string for the ADIOS2 backend.
- */
-namespace ADIOS2Defaults
-{
-    using const_str = char const *const;
-    constexpr const_str str_engine = "engine";
-    constexpr const_str str_type = "type";
-    constexpr const_str str_params = "parameters";
-    constexpr const_str str_usesteps = "usesteps";
-    constexpr const_str str_flushtarget = "preferred_flush_target";
-    constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
-    constexpr const_str str_adios2Schema =
-        "__openPMD_internal/openPMD2_adios2_schema";
-    constexpr const_str str_isBoolean = "__is_boolean__";
-    constexpr const_str str_activeTablePrefix = "__openPMD_groups";
-    constexpr const_str str_groupBasedWarning =
-        "__openPMD_internal/warning_bugprone_groupbased_encoding";
-} // namespace ADIOS2Defaults
 
 namespace detail
 {
@@ -434,19 +475,6 @@ namespace detail
     inline constexpr bool IsUnsupportedComplex_v =
         std::is_same_v<T, std::complex<long double>> ||
         std::is_same_v<T, std::vector<std::complex<long double>>>;
-
-    struct DatasetReader
-    {
-        template <typename T>
-        static void call(
-            ADIOS2IOHandlerImpl *impl,
-            BufferedGet &bp,
-            adios2::IO &IO,
-            adios2::Engine &engine,
-            std::string const &fileName);
-
-        static constexpr char const *errorMsg = "ADIOS2: readDataset()";
-    };
 
     struct AttributeReader
     {
@@ -483,15 +511,6 @@ namespace detail
             Parameter<Operation::OPEN_DATASET> &parameters);
 
         static constexpr char const *errorMsg = "ADIOS2: openDataset()";
-    };
-
-    struct WriteDataset
-    {
-        template <typename T>
-        static void call(BufferedActions &ba, BufferedPut &bp);
-
-        template <int n, typename... Params>
-        static void call(Params &&...);
     };
 
     struct VariableDefiner

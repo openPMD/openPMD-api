@@ -24,6 +24,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
 
+#include <functional>
 #include <string>
 
 #include "openPMD/IO/InvalidatableFile.hpp"
@@ -70,12 +71,34 @@ struct BufferedGet : BufferedAction
     void run(BufferedActions &) override;
 };
 
+struct DatasetReader
+{
+    template <typename T>
+    static void call(
+        ADIOS2IOHandlerImpl *impl,
+        BufferedGet &bp,
+        adios2::IO &IO,
+        adios2::Engine &engine,
+        std::string const &fileName);
+
+    static constexpr char const *errorMsg = "ADIOS2: readDataset()";
+};
+
 struct BufferedPut : BufferedAction
 {
     std::string name;
     Parameter<Operation::WRITE_DATASET> param;
 
     void run(BufferedActions &) override;
+};
+
+struct WriteDataset
+{
+    template <typename T>
+    static void call(BufferedActions &ba, BufferedPut &bp);
+
+    template <int n, typename... Params>
+    static void call(Params &&...);
 };
 
 struct BufferedUniquePtrPut
@@ -221,10 +244,18 @@ public:
     adios2::Engine &getEngine();
 
     template <typename BA>
-    void enqueue(BA &&ba);
+    void enqueue(BA &&ba)
+    {
+        enqueue<BA>(std::forward<BA>(ba), m_buffer);
+    }
 
     template <typename BA>
-    void enqueue(BA &&ba, decltype(m_buffer) &);
+    void enqueue(BA &&ba, decltype(m_buffer) &buffer)
+    {
+        using BA_ = typename std::remove_reference<BA>::type;
+        buffer.emplace_back(
+            std::unique_ptr<BufferedAction>(new BA_(std::forward<BA>(ba))));
+    }
 
     template <typename... Args>
     void flush(Args &&...args);
@@ -262,10 +293,10 @@ public:
      * @param flushUnconditionally Whether to run the functor even if no
      *     deferred IO tasks had been queued.
      */
-    template <typename F>
     void flush_impl(
         ADIOS2FlushParams flushParams,
-        F &&performPutsGets,
+        std::function<void(BufferedActions &, adios2::Engine &)> const
+            &performPutGets,
         bool writeLatePuts,
         bool flushUnconditionally);
 
@@ -428,4 +459,30 @@ private:
     void configure_IO_Read();
     void configure_IO_Write();
 };
+
+template <typename... Args>
+void BufferedActions::flush(Args &&...args)
+{
+    try
+    {
+        flush_impl(std::forward<Args>(args)...);
+    }
+    catch (error::ReadError const &)
+    {
+        /*
+         * We need to take actions out of the buffer, since an exception
+         * should reset everything from the current IOHandler->flush() call.
+         * However, we cannot simply clear the buffer, since tasks may have
+         * been enqueued to ADIOS2 already and we cannot undo that.
+         * So, we need to keep the memory alive for the benefit of ADIOS2.
+         * Luckily, we have m_alreadyEnqueued for exactly that purpose.
+         */
+        for (auto &task : m_buffer)
+        {
+            m_alreadyEnqueued.emplace_back(std::move(task));
+        }
+        m_buffer.clear();
+        throw;
+    }
+}
 } // namespace openPMD::detail

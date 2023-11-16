@@ -482,6 +482,7 @@ set(IO_SOURCE
         src/IO/JSON/JSONIOHandlerImpl.cpp
         src/IO/JSON/JSONFilePosition.cpp
         src/IO/ADIOS/ADIOS2IOHandler.cpp
+        src/IO/ADIOS/ADIOS2File.cpp
         src/IO/ADIOS/ADIOS2Auxiliary.cpp
         src/IO/InvalidatableFile.cpp)
 
