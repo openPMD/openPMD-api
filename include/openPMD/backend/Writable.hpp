@@ -52,7 +52,7 @@ namespace internal
 } // namespace internal
 namespace detail
 {
-    class BufferedActions;
+    struct BufferedActions;
 }
 
 /** @brief Layer to mirror structure of logical data and persistent data in
