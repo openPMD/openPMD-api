@@ -105,6 +105,11 @@ The default behavior may be restored by setting the :ref:`JSON parameter <backen
 Best Practice at Large Scale
 ----------------------------
 
+ADIOS2 distinguishes between "heavy" data of arbitrary size (i.e. the "actual" data) and lightweight metadata.
+
+Heavy I/O
+.........
+
 A benefitial configuration depends heavily on:
 
 1. Hardware: filesystem type, specific file striping, network infrastructure and available RAM on the aggregator nodes.
@@ -134,6 +139,24 @@ The preferred backend usually depends on the system's native software stack.
 
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS2 manual and talk to your filesystem admins and the ADIOS2 authors.
 Be aware that extreme-scale I/O is a research topic after all.
+
+Metadata
+........
+
+ADIOS2 will implicitly aggregate metadata specified from parallel MPI processes.
+Duplicate specification of metadata is eliminated in this process.
+Unlike in HDF5, specifying metadata collectively is not required and is even detrimental to performance.
+The :ref:`JSON/TOML key <backendconfig>` ``adios2.attribute_writing_ranks`` can be used to restrict attribute writing to only a select handful of ranks (most typically a single one).
+The ADIOS2 backend of the openPMD-api will then ignore attributes from all other MPI ranks.
+
+.. tip::
+
+  Treat metadata specification as a collective operation in order to retain compatibility with HDF5, and then specify ``adios2.attribute_writing_ranks = 0`` in order to achieve best performance in ADIOS2.
+
+.. warning::
+
+  The ADIOS2 backend may also use attributes to encode openPMD groups (ref. "group table").
+  The ``adios.attribute_writing_ranks`` key also applies to those attributes, i.e. also group creation must be treated as collective then (at least on the specified ranks).
 
 Experimental group table feature
 --------------------------------
