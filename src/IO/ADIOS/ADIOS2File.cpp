@@ -43,6 +43,7 @@
             throw std::runtime_error((TEXT));                                  \
     }
 
+#if openPMD_HAVE_ADIOS2
 namespace openPMD::detail
 {
 template <typename T>
@@ -1306,5 +1307,5 @@ void BufferedActions::markActive(Writable *writable)
     break;
     }
 }
-
 } // namespace openPMD::detail
+#endif

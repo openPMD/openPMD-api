@@ -23,10 +23,6 @@
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
-
-#include <functional>
-#include <string>
-
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/config.hpp"
 
@@ -37,11 +33,15 @@
 #include <mpi.h>
 #endif
 
+#include <functional>
+#include <string>
+
 namespace openPMD
 {
 class ADIOS2IOHandlerImpl;
 }
 
+#if openPMD_HAVE_ADIOS2
 namespace openPMD::detail
 {
 class BufferedActions;
@@ -486,3 +486,4 @@ void BufferedActions::flush(Args &&...args)
     }
 }
 } // namespace openPMD::detail
+#endif
