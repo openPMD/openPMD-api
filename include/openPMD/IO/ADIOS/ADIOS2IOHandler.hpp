@@ -79,7 +79,7 @@ namespace detail
     template <typename>
     struct DatasetTypes;
     struct WriteDataset;
-    class BufferedActions;
+    class ADIOS2File;
     struct BufferedPut;
     struct BufferedGet;
     struct BufferedAttributeRead;
@@ -105,7 +105,7 @@ class ADIOS2IOHandlerImpl
     template <typename>
     friend struct detail::DatasetTypes;
     friend struct detail::WriteDataset;
-    friend class detail::BufferedActions;
+    friend class detail::ADIOS2File;
     friend struct detail::BufferedAttributeRead;
     friend struct detail::RunUniquePtrPut;
 
@@ -331,9 +331,7 @@ private:
      * IO and Engine object.
      * Not to be accessed directly, use getFileData().
      */
-    std::unordered_map<
-        InvalidatableFile,
-        std::unique_ptr<detail::BufferedActions>>
+    std::unordered_map<InvalidatableFile, std::unique_ptr<detail::ADIOS2File>>
         m_fileData;
 
     std::map<std::string, adios2::Operator> m_operators;
@@ -381,7 +379,7 @@ private:
         ThrowError
     };
 
-    detail::BufferedActions &
+    detail::ADIOS2File &
     getFileData(InvalidatableFile const &file, IfFileNotOpen);
 
     void dropFileData(InvalidatableFile const &file);

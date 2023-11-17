@@ -44,7 +44,7 @@ class ADIOS2IOHandlerImpl;
 #if openPMD_HAVE_ADIOS2
 namespace openPMD::detail
 {
-class BufferedActions;
+class ADIOS2File;
 
 /*
  * IO-heavy action to be executed upon flushing.
@@ -60,7 +60,7 @@ struct BufferedAction
     BufferedAction &operator=(BufferedAction const &other) = delete;
     BufferedAction &operator=(BufferedAction &&other) = default;
 
-    virtual void run(BufferedActions &) = 0;
+    virtual void run(ADIOS2File &) = 0;
 };
 
 struct BufferedGet : BufferedAction
@@ -68,7 +68,7 @@ struct BufferedGet : BufferedAction
     std::string name;
     Parameter<Operation::READ_DATASET> param;
 
-    void run(BufferedActions &) override;
+    void run(ADIOS2File &) override;
 };
 
 struct DatasetReader
@@ -89,13 +89,13 @@ struct BufferedPut : BufferedAction
     std::string name;
     Parameter<Operation::WRITE_DATASET> param;
 
-    void run(BufferedActions &) override;
+    void run(ADIOS2File &) override;
 };
 
 struct WriteDataset
 {
     template <typename T>
-    static void call(BufferedActions &ba, BufferedPut &bp);
+    static void call(ADIOS2File &ba, BufferedPut &bp);
 
     template <int n, typename... Params>
     static void call(Params &&...);
@@ -109,7 +109,7 @@ struct BufferedUniquePtrPut
     UniquePtrWithLambda<void> data;
     Datatype dtype = Datatype::UNDEFINED;
 
-    void run(BufferedActions &);
+    void run(ADIOS2File &);
 };
 
 struct I_UpdateSpan
@@ -133,7 +133,7 @@ struct UpdateSpan : I_UpdateSpan
  * (1) the file's IO and Engine objects
  * (2) the file's deferred IO-heavy actions
  */
-class BufferedActions
+class ADIOS2File
 {
     friend struct BufferedGet;
     friend struct BufferedPut;
@@ -144,7 +144,7 @@ class BufferedActions
     using FlushTarget = adios_defs::FlushTarget;
 
 public:
-    BufferedActions(BufferedActions const &) = delete;
+    ADIOS2File(ADIOS2File const &) = delete;
 
     /**
      * The full path to the file created on disk, including the
@@ -177,7 +177,7 @@ public:
     adios2::IO m_IO;
     /**
      * The default queue for deferred actions.
-     * Drained upon BufferedActions::flush().
+     * Drained upon ADIOS2File::flush().
      */
     std::vector<std::unique_ptr<BufferedAction>> m_buffer;
     /**
@@ -219,7 +219,7 @@ public:
      * iteration. If the following boolean is true, old attributes will be
      * removed upon CLOSE_GROUP.
      * Should not be set to true in persistent backends.
-     * Will be automatically set by BufferedActions::configure_IO depending
+     * Will be automatically set by ADIOS2File::configure_IO depending
      * on chosen ADIOS2 engine and can not be explicitly overridden by user.
      */
     bool optimizeAttributesStreaming = false;
@@ -229,9 +229,9 @@ public:
 
     using AttributeMap_t = std::map<std::string, adios2::Params>;
 
-    BufferedActions(ADIOS2IOHandlerImpl &impl, InvalidatableFile file);
+    ADIOS2File(ADIOS2IOHandlerImpl &impl, InvalidatableFile file);
 
-    ~BufferedActions();
+    ~ADIOS2File();
 
     /**
      * Implementation of destructor, will only run once.
@@ -295,7 +295,7 @@ public:
      */
     void flush_impl(
         ADIOS2FlushParams flushParams,
-        std::function<void(BufferedActions &, adios2::Engine &)> const
+        std::function<void(ADIOS2File &, adios2::Engine &)> const
             &performPutGets,
         bool writeLatePuts,
         bool flushUnconditionally);
@@ -346,13 +346,13 @@ public:
 
     /*
      * streamStatus is NoStream for file-based ADIOS engines.
-     * This is relevant for the method BufferedActions::requireActiveStep,
+     * This is relevant for the method ADIOS2File::requireActiveStep,
      * where a step is only opened if the status is OutsideOfStep, but not
      * if NoStream. The rationale behind this is that parsing a Series
      * works differently for file-based and for stream-based engines:
      * * stream-based: Iterations are parsed as they arrive. For parsing an
      *   iteration, the iteration must be awaited.
-     *   BufferedActions::requireActiveStep takes care of this.
+     *   ADIOS2File::requireActiveStep takes care of this.
      * * file-based: The Series is parsed up front. If no step has been
      *   opened yet, ADIOS2 gives access to all variables and attributes
      *   from all steps. Upon opening a step, only the variables from that
@@ -461,7 +461,7 @@ private:
 };
 
 template <typename... Args>
-void BufferedActions::flush(Args &&...args)
+void ADIOS2File::flush(Args &&...args)
 {
     try
     {

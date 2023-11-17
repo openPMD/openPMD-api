@@ -70,7 +70,7 @@ template <class>
 inline constexpr bool always_false_v = false;
 
 template <typename T>
-void WriteDataset::call(BufferedActions &ba, detail::BufferedPut &bp)
+void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
 {
     VERIFY_ALWAYS(
         access::write(ba.m_impl->m_handler->m_backendAccess),
@@ -124,13 +124,13 @@ void WriteDataset::call(Params &&...)
     throw std::runtime_error("[ADIOS2] WRITE_DATASET: Invalid datatype.");
 }
 
-void BufferedGet::run(BufferedActions &ba)
+void BufferedGet::run(ADIOS2File &ba)
 {
     switchAdios2VariableType<detail::DatasetReader>(
         param.dtype, ba.m_impl, *this, ba.m_IO, ba.getEngine(), ba.m_file);
 }
 
-void BufferedPut::run(BufferedActions &ba)
+void BufferedPut::run(ADIOS2File &ba)
 {
     switchAdios2VariableType<detail::WriteDataset>(param.dtype, ba, *this);
 }
@@ -138,7 +138,7 @@ void BufferedPut::run(BufferedActions &ba)
 struct RunUniquePtrPut
 {
     template <typename T>
-    static void call(BufferedUniquePtrPut &bufferedPut, BufferedActions &ba)
+    static void call(BufferedUniquePtrPut &bufferedPut, ADIOS2File &ba)
     {
         auto ptr = static_cast<T const *>(bufferedPut.data.get());
         adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
@@ -149,13 +149,12 @@ struct RunUniquePtrPut
     static constexpr char const *errorMsg = "RunUniquePtrPut";
 };
 
-void BufferedUniquePtrPut::run(BufferedActions &ba)
+void BufferedUniquePtrPut::run(ADIOS2File &ba)
 {
     switchAdios2VariableType<RunUniquePtrPut>(dtype, *this, ba);
 }
 
-BufferedActions::BufferedActions(
-    ADIOS2IOHandlerImpl &impl, InvalidatableFile file)
+ADIOS2File::ADIOS2File(ADIOS2IOHandlerImpl &impl, InvalidatableFile file)
     : m_file(impl.fullPath(std::move(file)))
     , m_ADIOS(impl.m_ADIOS)
     , m_impl(&impl)
@@ -179,23 +178,23 @@ BufferedActions::BufferedActions(
     }
 }
 
-auto BufferedActions::useGroupTable() const -> UseGroupTable
+auto ADIOS2File::useGroupTable() const -> UseGroupTable
 {
     return m_impl->useGroupTable();
 }
 
-void BufferedActions::create_IO()
+void ADIOS2File::create_IO()
 {
     m_IOName = std::to_string(m_impl->nameCounter++);
     m_IO = m_impl->m_ADIOS.DeclareIO("IO_" + m_IOName);
 }
 
-BufferedActions::~BufferedActions()
+ADIOS2File::~ADIOS2File()
 {
     finalize();
 }
 
-void BufferedActions::finalize()
+void ADIOS2File::finalize()
 {
     if (finalized)
     {
@@ -318,7 +317,7 @@ namespace
     }
 } // namespace
 
-size_t BufferedActions::currentStep()
+size_t ADIOS2File::currentStep()
 {
     if (nonpersistentEngine(m_engineType))
     {
@@ -330,7 +329,7 @@ size_t BufferedActions::currentStep()
     }
 }
 
-void BufferedActions::configure_IO_Read()
+void ADIOS2File::configure_IO_Read()
 {
     bool upfrontParsing = supportsUpfrontParsing(
         m_impl->m_handler->m_backendAccess, m_engineType);
@@ -402,7 +401,7 @@ void BufferedActions::configure_IO_Read()
     }
 }
 
-void BufferedActions::configure_IO_Write()
+void ADIOS2File::configure_IO_Write()
 {
     optimizeAttributesStreaming =
         // Also, it should only be done when truly streaming, not
@@ -413,7 +412,7 @@ void BufferedActions::configure_IO_Write()
     streamStatus = StreamStatus::OutsideOfStep;
 }
 
-void BufferedActions::configure_IO()
+void ADIOS2File::configure_IO()
 {
     // step/variable-based iteration encoding requires use of group tables
     // but the group table feature is available only in ADIOS2 >= v2.9
@@ -710,7 +709,7 @@ void BufferedActions::configure_IO()
     getEngine();
 }
 
-auto BufferedActions::detectGroupTable() -> UseGroupTable
+auto ADIOS2File::detectGroupTable() -> UseGroupTable
 {
     auto const &attributes = availableAttributes();
     auto lower_bound =
@@ -727,7 +726,7 @@ auto BufferedActions::detectGroupTable() -> UseGroupTable
     }
 }
 
-adios2::Engine &BufferedActions::getEngine()
+adios2::Engine &ADIOS2File::getEngine()
 {
     if (!m_engine)
     {
@@ -929,10 +928,9 @@ adios2::Engine &BufferedActions::getEngine()
     return m_engine.value();
 }
 
-void BufferedActions::flush_impl(
+void ADIOS2File::flush_impl(
     ADIOS2FlushParams flushParams,
-    std::function<void(BufferedActions &, adios2::Engine &)> const
-        &performPutGets,
+    std::function<void(ADIOS2File &, adios2::Engine &)> const &performPutGets,
     bool writeLatePuts,
     bool flushUnconditionally)
 {
@@ -1026,8 +1024,7 @@ void BufferedActions::flush_impl(
     }
 }
 
-void BufferedActions::flush_impl(
-    ADIOS2FlushParams flushParams, bool writeLatePuts)
+void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
 {
     auto decideFlushAPICall =
         [this, flushTarget = flushParams.flushTarget](adios2::Engine &engine) {
@@ -1080,7 +1077,7 @@ void BufferedActions::flush_impl(
     flush_impl(
         flushParams,
         [decideFlushAPICall = std::move(decideFlushAPICall)](
-            BufferedActions &ba, adios2::Engine &eng) {
+            ADIOS2File &ba, adios2::Engine &eng) {
             if (writeOnly(ba.m_mode))
             {
                 decideFlushAPICall(eng);
@@ -1094,12 +1091,12 @@ void BufferedActions::flush_impl(
         /* flushUnconditionally = */ false);
 }
 
-AdvanceStatus BufferedActions::advance(AdvanceMode mode)
+AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
 {
     if (streamStatus == StreamStatus::Undecided)
     {
         throw error::Internal(
-            "[BufferedActions::advance()] StreamStatus Undecided before "
+            "[ADIOS2File::advance()] StreamStatus Undecided before "
             "beginning/ending a step?");
     }
     // sic! no else
@@ -1118,7 +1115,7 @@ AdvanceStatus BufferedActions::advance(AdvanceMode mode)
          * Advance mode write:
          * Close the current step, defer opening the new step
          * until one is actually needed:
-         * (1) The engine is accessed in BufferedActions::flush
+         * (1) The engine is accessed in ADIOS2File::flush
          * (2) A new step is opened before the currently active step
          *     has seen an access. See the following lines: open the
          *     step just to skip it again.
@@ -1143,7 +1140,7 @@ AdvanceStatus BufferedActions::advance(AdvanceMode mode)
 
         flush(
             ADIOS2FlushParams{FlushLevel::UserFlush},
-            [](BufferedActions &, adios2::Engine &eng) { eng.EndStep(); },
+            [](ADIOS2File &, adios2::Engine &eng) { eng.EndStep(); },
             /* writeLatePuts = */ true,
             /* flushUnconditionally = */ true);
         uncommittedAttributes.clear();
@@ -1189,18 +1186,18 @@ AdvanceStatus BufferedActions::advance(AdvanceMode mode)
         " chosen by the front-end.");
 }
 
-void BufferedActions::drop()
+void ADIOS2File::drop()
 {
     m_buffer.clear();
 }
 
 static std::vector<std::string> availableAttributesOrVariablesPrefixed(
     std::string const &prefix,
-    BufferedActions::AttributeMap_t const &(BufferedActions::*getBasicMap)(),
-    BufferedActions &ba)
+    ADIOS2File::AttributeMap_t const &(ADIOS2File::*getBasicMap)(),
+    ADIOS2File &ba)
 {
     std::string var = auxiliary::ends_with(prefix, '/') ? prefix : prefix + '/';
-    BufferedActions::AttributeMap_t const &attributes = (ba.*getBasicMap)();
+    ADIOS2File::AttributeMap_t const &attributes = (ba.*getBasicMap)();
     std::vector<std::string> ret;
     for (auto it = attributes.lower_bound(prefix); it != attributes.end(); ++it)
     {
@@ -1217,25 +1214,25 @@ static std::vector<std::string> availableAttributesOrVariablesPrefixed(
 }
 
 std::vector<std::string>
-BufferedActions::availableAttributesPrefixed(std::string const &prefix)
+ADIOS2File::availableAttributesPrefixed(std::string const &prefix)
 {
     return availableAttributesOrVariablesPrefixed(
-        prefix, &BufferedActions::availableAttributes, *this);
+        prefix, &ADIOS2File::availableAttributes, *this);
 }
 
 std::vector<std::string>
-BufferedActions::availableVariablesPrefixed(std::string const &prefix)
+ADIOS2File::availableVariablesPrefixed(std::string const &prefix)
 {
     return availableAttributesOrVariablesPrefixed(
-        prefix, &BufferedActions::availableVariables, *this);
+        prefix, &ADIOS2File::availableVariables, *this);
 }
 
-void BufferedActions::invalidateAttributesMap()
+void ADIOS2File::invalidateAttributesMap()
 {
     m_availableAttributes = std::optional<AttributeMap_t>();
 }
 
-BufferedActions::AttributeMap_t const &BufferedActions::availableAttributes()
+ADIOS2File::AttributeMap_t const &ADIOS2File::availableAttributes()
 {
     if (m_availableAttributes)
     {
@@ -1248,12 +1245,12 @@ BufferedActions::AttributeMap_t const &BufferedActions::availableAttributes()
     }
 }
 
-void BufferedActions::invalidateVariablesMap()
+void ADIOS2File::invalidateVariablesMap()
 {
     m_availableVariables = std::optional<AttributeMap_t>();
 }
 
-BufferedActions::AttributeMap_t const &BufferedActions::availableVariables()
+ADIOS2File::AttributeMap_t const &ADIOS2File::availableVariables()
 {
     if (m_availableVariables)
     {
@@ -1266,7 +1263,7 @@ BufferedActions::AttributeMap_t const &BufferedActions::availableVariables()
     }
 }
 
-void BufferedActions::markActive(Writable *writable)
+void ADIOS2File::markActive(Writable *writable)
 {
     switch (useGroupTable())
     {

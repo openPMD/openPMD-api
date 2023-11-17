@@ -144,7 +144,7 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
      * This means that destruction order is nondeterministic.
      * Let's determinize it (necessary if computing in parallel).
      */
-    using file_t = std::unique_ptr<detail::BufferedActions>;
+    using file_t = std::unique_ptr<detail::ADIOS2File>;
     std::vector<file_t> sorted;
     sorted.reserve(m_fileData.size());
     for (auto &pair : m_fileData)
@@ -460,7 +460,7 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
 {
     auto res = AbstractIOHandlerImpl::flush();
 
-    detail::BufferedActions::ADIOS2FlushParams adios2FlushParams{
+    detail::ADIOS2File::ADIOS2FlushParams adios2FlushParams{
         flushParams.flushLevel, m_flushTarget};
     if (flushParams.backendConfig.json().contains("adios2"))
     {
@@ -876,9 +876,7 @@ void ADIOS2IOHandlerImpl::closeFile(
              */
             it->second->flush(
                 FlushLevel::UserFlush,
-                [](detail::BufferedActions &ba, adios2::Engine &) {
-                    ba.finalize();
-                },
+                [](detail::ADIOS2File &ba, adios2::Engine &) { ba.finalize(); },
                 /* writeLatePuts = */ true,
                 /* flushUnconditionally = */ false);
             m_fileData.erase(it);
@@ -967,7 +965,7 @@ void ADIOS2IOHandlerImpl::writeDataset(
         "[ADIOS2] Cannot write data in read-only mode.");
     setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
     detail::BufferedPut bp;
     bp.name = nameOfVariable(writable);
     bp.param = std::move(parameters);
@@ -1018,7 +1016,7 @@ void ADIOS2IOHandlerImpl::readDataset(
 {
     setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
     detail::BufferedGet bg;
     bg.name = nameOfVariable(writable);
     bg.param = parameters;
@@ -1034,7 +1032,7 @@ namespace detail
         static void call(
             ADIOS2IOHandlerImpl *impl,
             Parameter<Operation::GET_BUFFER_VIEW> &params,
-            detail::BufferedActions &ba,
+            detail::ADIOS2File &ba,
             std::string const &varName)
         {
             auto &IO = ba.m_IO;
@@ -1109,7 +1107,7 @@ void ADIOS2IOHandlerImpl::getBufferView(
     }
     setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
 
     std::string name = nameOfVariable(writable);
     switch (m_useSpanBasedPutByDefault)
@@ -1162,7 +1160,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
 {
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
-    detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
     auto name = nameOfAttribute(writable, parameters.name);
 
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
@@ -1253,7 +1251,7 @@ void ADIOS2IOHandlerImpl::listPaths(
             std::vector attrs =
                 fileData.availableAttributesPrefixed(tablePrefix);
             if (fileData.streamStatus ==
-                detail::BufferedActions::StreamStatus::DuringStep)
+                detail::ADIOS2File::StreamStatus::DuringStep)
             {
                 auto currentStep = fileData.currentStep();
                 for (auto const &attrName : attrs)
@@ -1425,13 +1423,12 @@ void ADIOS2IOHandlerImpl::availableChunks(
 {
     setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
     std::string varName = nameOfVariable(writable);
     auto engine = ba.getEngine(); // make sure that data are present
     auto datatype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
     bool allSteps = ba.m_mode != adios2::Mode::Read &&
-        ba.streamStatus ==
-            detail::BufferedActions::StreamStatus::ReadWithoutStream;
+        ba.streamStatus == detail::ADIOS2File::StreamStatus::ReadWithoutStream;
     switchAdios2VariableType<detail::RetrieveBlocksInfo>(
         datatype,
         parameters,
@@ -1563,7 +1560,7 @@ GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
     return setAndGetFilePosition(writable)->gd;
 }
 
-detail::BufferedActions &ADIOS2IOHandlerImpl::getFileData(
+detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
     InvalidatableFile const &file, IfFileNotOpen flag)
 {
     VERIFY_ALWAYS(
@@ -1578,7 +1575,7 @@ detail::BufferedActions &ADIOS2IOHandlerImpl::getFileData(
         case IfFileNotOpen::OpenImplicitly: {
 
             auto res = m_fileData.emplace(
-                file, std::make_unique<detail::BufferedActions>(*this, file));
+                file, std::make_unique<detail::ADIOS2File>(*this, file));
             return *res.first->second;
         }
         case IfFileNotOpen::ThrowError:
