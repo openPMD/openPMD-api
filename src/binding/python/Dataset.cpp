@@ -32,8 +32,8 @@ void init_Dataset(py::module &m)
         .def(py::init<Datatype, Extent>(), py::arg("dtype"), py::arg("extent"))
         .def(py::init<Extent>(), py::arg("extent"))
         .def(
-            py::init([](py::dtype dt, Extent e) {
-                auto const d = dtype_from_numpy(dt);
+            py::init([](py::dtype dt, Extent const &e) {
+                auto const d = dtype_from_numpy(std::move(dt));
                 return new Dataset{d, e};
             }),
             py::arg("dtype"),
@@ -44,8 +44,8 @@ void init_Dataset(py::module &m)
             py::arg("extent"),
             py::arg("options"))
         .def(
-            py::init([](py::dtype dt, Extent e, std::string options) {
-                auto const d = dtype_from_numpy(dt);
+            py::init([](py::dtype dt, Extent const &e, std::string options) {
+                auto const d = dtype_from_numpy(std::move(dt));
                 return new Dataset{d, e, std::move(options)};
             }),
             py::arg("dtype"),

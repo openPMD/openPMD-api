@@ -123,11 +123,12 @@ void SeriesIterator::close()
 }
 
 SeriesIterator::SeriesIterator(
-    Series series_in, std::optional<internal::ParsePreference> parsePreference)
+    Series const &series_in,
+    std::optional<internal::ParsePreference> const &parsePreference)
     : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
 {
     auto &data = get();
-    data.parsePreference = std::move(parsePreference);
+    data.parsePreference = parsePreference;
     /*
      * Since the iterator is stored in
      * internal::SeriesData::m_sharedStatefulIterator,
@@ -628,7 +629,7 @@ ReadIterations::ReadIterations(
     Series series,
     Access access,
     std::optional<internal::ParsePreference> parsePreference)
-    : m_series(std::move(series)), m_parsePreference(std::move(parsePreference))
+    : m_series(std::move(series)), m_parsePreference(parsePreference)
 {
     auto &data = m_series.get();
     if (access == Access::READ_LINEAR && !data.m_sharedStatefulIterator)

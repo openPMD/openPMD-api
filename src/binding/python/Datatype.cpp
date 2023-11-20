@@ -58,7 +58,7 @@ void init_Datatype(py::module &m)
         .value("BOOL", Datatype::BOOL)
         .value("UNDEFINED", Datatype::UNDEFINED);
 
-    m.def("determine_datatype", [](py::dtype const dt) {
+    m.def("determine_datatype", [](py::dtype const &dt) {
         return dtype_from_numpy(dt);
     });
     m.def("determine_datatype", [](py::array const &a) {

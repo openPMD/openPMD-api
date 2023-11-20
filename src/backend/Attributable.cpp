@@ -207,7 +207,7 @@ auto Attributable::myPath() const -> MyPath
     return res;
 }
 
-void Attributable::seriesFlush(internal::FlushParams flushParams)
+void Attributable::seriesFlush(internal::FlushParams const &flushParams)
 {
     writable().seriesFlush(flushParams);
 }
@@ -311,7 +311,7 @@ void Attributable::readAttributes(ReadMode mode)
                 }
                 std::array<double, 7> arr;
                 std::copy_n(vector.begin(), 7, arr.begin());
-                setAttribute(key, std::move(arr));
+                setAttribute(key, arr);
             }
             else
             {

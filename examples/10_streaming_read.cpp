@@ -46,7 +46,7 @@ int main()
 
         for (size_t i = 0; i < 3; ++i)
         {
-            std::string dim = dimensions[i];
+            std::string const &dim = dimensions[i];
             RecordComponent rc = electronPositions[dim];
             loadedChunks[i] = rc.loadChunk<position_t>(
                 Offset(rc.getDimensionality(), 0), rc.getExtent());
@@ -60,7 +60,7 @@ int main()
 
         for (size_t i = 0; i < 3; ++i)
         {
-            std::string dim = dimensions[i];
+            std::string const &dim = dimensions[i];
             Extent const &extent = extents[i];
             std::cout << "\ndim: " << dim << "\n" << std::endl;
             auto chunk = loadedChunks[i];

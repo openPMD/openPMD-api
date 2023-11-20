@@ -67,7 +67,7 @@ std::vector<BackendSelection> testedBackends()
             if (lookup != extensions.end())
             {
                 std::string extension = lookup->second;
-                res.push_back({std::move(pair.first), std::move(extension)});
+                res.push_back({pair.first, std::move(extension)});
             }
         }
     }
@@ -237,9 +237,8 @@ TEST_CASE("multi_series_test", "[serial]")
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3})
     {
-        for (auto const &t : myfileExtensions)
+        for (auto const &file_ending : myfileExtensions)
         {
-            auto const file_ending = t;
             std::cout << file_ending << std::endl;
             allSeries.emplace_back(
                 std::string("../samples/multi_open_test_")
@@ -414,7 +413,7 @@ TEST_CASE("multiple_series_handles_test", "[serial]")
 #endif
 }
 
-void close_iteration_test(std::string file_ending)
+void close_iteration_test(std::string const &file_ending)
 {
     std::string name = "../samples/close_iterations_%T." + file_ending;
 
@@ -500,7 +499,7 @@ TEST_CASE("close_iteration_test", "[serial]")
 }
 
 void close_iteration_interleaved_test(
-    std::string const file_ending, IterationEncoding const it_encoding)
+    std::string const &file_ending, IterationEncoding const it_encoding)
 {
     std::string name = "../samples/close_iterations_interleaved_";
     if (it_encoding == IterationEncoding::fileBased)
@@ -597,12 +596,18 @@ struct NonCopyableDeleter : std::function<void(T *)>
     {}
     NonCopyableDeleter(NonCopyableDeleter const &) = delete;
     NonCopyableDeleter &operator=(NonCopyableDeleter const &) = delete;
+    /*
+     * MSVC does not recognize these when declaring noexcept and this is
+     * for a test only anyway.
+     */
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
     NonCopyableDeleter(NonCopyableDeleter &&) = default;
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
     NonCopyableDeleter &operator=(NonCopyableDeleter &&) = default;
 };
 } // namespace detail
 
-void close_and_copy_attributable_test(std::string file_ending)
+void close_and_copy_attributable_test(std::string const &file_ending)
 {
     using position_t = int;
 
@@ -794,7 +799,7 @@ TEST_CASE("close_iteration_throws_test", "[serial]")
 }
 #endif
 
-inline void empty_dataset_test(std::string file_ending)
+inline void empty_dataset_test(std::string const &file_ending)
 {
     {
         Series series(
@@ -898,7 +903,7 @@ TEST_CASE("empty_dataset_test", "[serial]")
     }
 }
 
-inline void constant_scalar(std::string file_ending)
+inline void constant_scalar(std::string const &file_ending)
 {
     Mesh::Geometry const geometry = Mesh::Geometry::spherical;
     std::string const geometryParameters = "dummyGeometryParameters";
@@ -1170,7 +1175,7 @@ TEST_CASE("flush_without_position_positionOffset", "[serial]")
     }
 }
 
-inline void particle_patches(std::string file_ending)
+inline void particle_patches(std::string const &file_ending)
 {
     constexpr auto SCALAR = openPMD::RecordComponent::SCALAR;
 
@@ -2176,7 +2181,7 @@ TEST_CASE("fileBased_write_test", "[serial]")
     }
 }
 
-inline void sample_write_thetaMode(std::string file_ending)
+inline void sample_write_thetaMode(std::string const &file_ending)
 {
     Series o = Series(
         std::string("../samples/thetaMode_%05T.").append(file_ending),
@@ -2512,8 +2517,8 @@ inline void optional_paths_110_test(const std::string &backend)
 }
 
 void git_early_chunk_query(
-    std::string const filename,
-    std::string const species,
+    std::string const &filename,
+    std::string const &species,
     int const step,
     std::string const &jsonConfig = "{}")
 {
@@ -5839,7 +5844,7 @@ void variableBasedParticleData()
 
             for (size_t i = 0; i < 3; ++i)
             {
-                std::string dim = dimensions[i];
+                std::string const &dim = dimensions[i];
                 RecordComponent rc = electronPositions[dim];
                 loadedChunks[i] = rc.loadChunk<position_t>(
                     Offset(rc.getDimensionality(), 0), rc.getExtent());
@@ -5850,7 +5855,6 @@ void variableBasedParticleData()
 
             for (size_t i = 0; i < 3; ++i)
             {
-                std::string dim = dimensions[i];
                 Extent const &extent = extents[i];
                 auto chunk = loadedChunks[i];
                 for (size_t j = 0; j < extent[0]; ++j)
@@ -6041,7 +6045,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 
 // @todo Upon switching to ADIOS2 2.7.0, test this the other way around also
 void iterate_nonstreaming_series(
-    std::string const &file, bool variableBasedLayout, std::string jsonConfig)
+    std::string const &file,
+    bool variableBasedLayout,
+    std::string const &jsonConfig)
 {
     constexpr size_t extent = 100;
     {
@@ -6461,9 +6467,10 @@ void deferred_parsing(std::string const &extension)
             {
                 padding += "0";
             }
-            infix = padding + infix;
+            infix = padding.append(infix);
             std::ofstream file;
-            file.open(basename + infix + "." + extension);
+            file.open(std::string(basename).append(infix).append(".").append(
+                extension));
             file.close();
         }
     }
@@ -6850,7 +6857,7 @@ TEST_CASE("late_setting_of_iterationencoding", "[serial]")
         auxiliary::file_exists("../samples/change_name_and_encoding_10.json"));
 }
 
-void varying_pattern(std::string const file_ending)
+void varying_pattern(std::string const &file_ending)
 {
     {
         std::string filename = "../samples/varying_pattern_%06T." + file_ending;
@@ -6938,7 +6945,7 @@ void append_mode(
     std::string const &filename,
     bool variableBased,
     ParseMode parseMode,
-    std::string jsonConfig = "{}")
+    std::string const &jsonConfig = "{}")
 {
     if (auxiliary::directory_exists("../samples/append"))
     {
@@ -6947,7 +6954,7 @@ void append_mode(
     std::vector<int> data(10, 999);
     auto writeSomeIterations = [&data](
                                    WriteIterations &&writeIterations,
-                                   std::vector<uint64_t> indices) {
+                                   std::vector<uint64_t> const &indices) {
         for (auto index : indices)
         {
             auto it = writeIterations[index];
@@ -7314,7 +7321,7 @@ void append_mode_filebased(std::string const &extension)
     }
 })END";
     auto writeSomeIterations = [](WriteIterations &&writeIterations,
-                                  std::vector<uint64_t> indices) {
+                                  std::vector<uint64_t> const &indices) {
         for (auto index : indices)
         {
             auto it = writeIterations[index];

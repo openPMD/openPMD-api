@@ -124,16 +124,14 @@ namespace
 
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
-    openPMD::json::TracingJSON config,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    [[maybe_unused]] openPMD::json::TracingJSON config,
     FileFormat format,
     std::string originalExtension)
     : AbstractIOHandlerImpl(handler)
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
-{
-    // Currently unused
-    (void)config;
-}
+{}
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
 
@@ -1011,13 +1009,13 @@ void JSONIOHandlerImpl::deregister(
     m_files.erase(writable);
 }
 
-auto JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
+auto JSONIOHandlerImpl::getFilehandle(File const &fileName, Access access)
     -> std::tuple<std::unique_ptr<FILEHANDLE>, std::istream *, std::ostream *>
 {
     VERIFY_ALWAYS(
         fileName.valid(),
         "[JSON] Tried opening a file that has been overwritten or deleted.")
-    auto path = fullPath(std::move(fileName));
+    auto path = fullPath(fileName);
     auto fs = std::make_unique<FILEHANDLE>();
     std::istream *istream = nullptr;
     std::ostream *ostream = nullptr;
@@ -1057,7 +1055,7 @@ auto JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
     return std::make_tuple(std::move(fs), istream, ostream);
 }
 
-std::string JSONIOHandlerImpl::fullPath(File fileName)
+std::string JSONIOHandlerImpl::fullPath(File const &fileName)
 {
     return fullPath(*fileName);
 }
@@ -1189,7 +1187,8 @@ bool JSONIOHandlerImpl::hasKey(nlohmann::json const &j, KeyT &&key)
     return j.find(std::forward<KeyT>(key)) != j.end();
 }
 
-void JSONIOHandlerImpl::ensurePath(nlohmann::json *jsonp, std::string path)
+void JSONIOHandlerImpl::ensurePath(
+    nlohmann::json *jsonp, std::string const &path)
 {
     auto groups = auxiliary::split(path, "/");
     for (std::string &group : groups)
@@ -1206,7 +1205,7 @@ void JSONIOHandlerImpl::ensurePath(nlohmann::json *jsonp, std::string path)
 }
 
 std::tuple<File, std::unordered_map<Writable *, File>::iterator, bool>
-JSONIOHandlerImpl::getPossiblyExisting(std::string file)
+JSONIOHandlerImpl::getPossiblyExisting(std::string const &file)
 {
 
     auto it = std::find_if(
@@ -1233,7 +1232,8 @@ JSONIOHandlerImpl::getPossiblyExisting(std::string file)
             std::move(name), it, newlyCreated);
 }
 
-std::shared_ptr<nlohmann::json> JSONIOHandlerImpl::obtainJsonContents(File file)
+std::shared_ptr<nlohmann::json>
+JSONIOHandlerImpl::obtainJsonContents(File const &file)
 {
     VERIFY_ALWAYS(
         file.valid(),
@@ -1270,7 +1270,7 @@ nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(Writable *writable)
 }
 
 void JSONIOHandlerImpl::putJsonContents(
-    File filename,
+    File const &filename,
     bool unsetDirty // = true
 )
 {
@@ -1305,8 +1305,8 @@ void JSONIOHandlerImpl::putJsonContents(
     }
 }
 
-std::shared_ptr<JSONFilePosition>
-JSONIOHandlerImpl::setAndGetFilePosition(Writable *writable, std::string extend)
+std::shared_ptr<JSONFilePosition> JSONIOHandlerImpl::setAndGetFilePosition(
+    Writable *writable, std::string const &extend)
 {
     std::string path;
     if (writable->abstractFilePosition)
@@ -1388,7 +1388,7 @@ bool JSONIOHandlerImpl::isDataset(nlohmann::json const &j)
     return i != j.end() && i.value().is_array();
 }
 
-bool JSONIOHandlerImpl::isGroup(nlohmann::json::const_iterator it)
+bool JSONIOHandlerImpl::isGroup(nlohmann::json::const_iterator const &it)
 {
     auto &j = it.value();
     if (it.key() == "attributes" || it.key() == "platform_byte_widths" ||

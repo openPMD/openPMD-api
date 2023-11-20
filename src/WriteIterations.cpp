@@ -75,7 +75,7 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
         auto lastIteration_v = lastIteration.value();
         if (lastIteration_v.iterationIndex == key)
         {
-            return s.iterations.at(std::move(key));
+            return s.iterations.at(std::forward<key_type>(key));
         }
         else
         {
@@ -83,7 +83,7 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
         }
     }
     s.currentlyOpen = key;
-    auto &res = s.iterations[std::move(key)];
+    auto &res = s.iterations[std::forward<key_type>(key)];
     if (res.getStepStatus() == StepStatus::NoStep)
     {
         try

@@ -26,7 +26,7 @@ namespace openPMD
 JSONIOHandler::~JSONIOHandler() = default;
 
 JSONIOHandler::JSONIOHandler(
-    std::string path,
+    std::string const &path,
     Access at,
     openPMD::json::TracingJSON jsonCfg,
     JSONIOHandlerImpl::FileFormat format,

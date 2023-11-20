@@ -372,7 +372,7 @@ void Iteration::reread(std::string const &path)
 }
 
 void Iteration::readFileBased(
-    std::string filePath, std::string const &groupPath, bool doBeginStep)
+    std::string const &filePath, std::string const &groupPath, bool doBeginStep)
 {
     if (doBeginStep)
     {

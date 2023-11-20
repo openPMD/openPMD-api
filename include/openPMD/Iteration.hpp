@@ -284,7 +284,9 @@ private:
      */
     void reread(std::string const &path);
     void readFileBased(
-        std::string filePath, std::string const &groupPath, bool beginStep);
+        std::string const &filePath,
+        std::string const &groupPath,
+        bool beginStep);
     void readGorVBased(std::string const &groupPath, bool beginStep);
     void read_impl(std::string const &groupPath);
     void readMeshes(std::string const &meshesPath);

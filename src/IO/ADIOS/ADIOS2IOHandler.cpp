@@ -1111,7 +1111,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
     }
 
     Datatype ret = switchType<detail::AttributeReader>(
-        type, *this, ba.m_IO, name, parameters.resource);
+        type, *this, ba.m_IO, name, *parameters.resource);
     *parameters.dtype = ret;
 }
 
@@ -1241,7 +1241,7 @@ void ADIOS2IOHandlerImpl::listPaths(
     }
     for (auto &path : subdirs)
     {
-        parameters.paths->emplace_back(std::move(path));
+        parameters.paths->emplace_back(path);
     }
 }
 
@@ -1284,7 +1284,7 @@ void ADIOS2IOHandlerImpl::listDatasets(
     }
     for (auto &dataset : subdirs)
     {
-        parameters.datasets->emplace_back(std::move(dataset));
+        parameters.datasets->emplace_back(dataset);
     }
 }
 
@@ -1345,7 +1345,7 @@ void ADIOS2IOHandlerImpl::closePath(
         return;
     }
     auto position = setAndGetFilePosition(writable);
-    auto const positionString = filePositionToString(position);
+    auto positionString = filePositionToString(position);
     VERIFY(
         !auxiliary::ends_with(positionString, '/'),
         "[ADIOS2] Position string has unexpected format. This is a bug "
@@ -1354,7 +1354,8 @@ void ADIOS2IOHandlerImpl::closePath(
     for (auto const &attr :
          fileData.availableAttributesPrefixed(positionString))
     {
-        fileData.m_IO.RemoveAttribute(positionString + '/' + attr);
+        fileData.m_IO.RemoveAttribute(
+            std::string(positionString).append("/").append(attr));
     }
 }
 
@@ -1491,8 +1492,8 @@ std::string
 ADIOS2IOHandlerImpl::nameOfAttribute(Writable *writable, std::string attribute)
 {
     auto pos = setAndGetFilePosition(writable);
-    return filePositionToString(
-        extendFilePosition(pos, auxiliary::removeSlashes(attribute)));
+    return filePositionToString(extendFilePosition(
+        pos, auxiliary::removeSlashes(std::move(attribute))));
 }
 
 GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
@@ -1500,8 +1501,8 @@ GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
     return setAndGetFilePosition(writable)->gd;
 }
 
-detail::BufferedActions &
-ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
+detail::BufferedActions &ADIOS2IOHandlerImpl::getFileData(
+    InvalidatableFile const &file, IfFileNotOpen flag)
 {
     VERIFY_ALWAYS(
         file.valid(),
@@ -1515,8 +1516,7 @@ ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
         case IfFileNotOpen::OpenImplicitly: {
 
             auto res = m_fileData.emplace(
-                std::move(file),
-                std::make_unique<detail::BufferedActions>(*this, file));
+                file, std::make_unique<detail::BufferedActions>(*this, file));
             return *res.first->second;
         }
         case IfFileNotOpen::ThrowError:
@@ -1531,7 +1531,7 @@ ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
     }
 }
 
-void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile file)
+void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile const &file)
 {
     auto it = m_fileData.find(file);
     if (it != m_fileData.end())
@@ -1615,7 +1615,7 @@ namespace detail
         ADIOS2IOHandlerImpl &impl,
         adios2::IO &IO,
         std::string name,
-        std::shared_ptr<Attribute::resource> resource)
+        Attribute::resource &resource)
     {
         (void)impl;
         /*
@@ -1653,11 +1653,11 @@ namespace detail
                 auto meta = IO.InquireAttribute<rep>(metaAttr);
                 if (meta.Data().size() == 1 && meta.Data()[0] == 1)
                 {
-                    *resource = bool_repr::fromRep(attr.Data()[0]);
+                    resource = bool_repr::fromRep(attr.Data()[0]);
                     return determineDatatype<bool>();
                 }
             }
-            *resource = attr.Data()[0];
+            resource = attr.Data()[0];
         }
         else if constexpr (IsUnsupportedComplex_v<T>)
         {
@@ -1674,7 +1674,7 @@ namespace detail
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            *resource = attr.Data();
+            resource = attr.Data();
         }
         else if constexpr (auxiliary::IsArray_v<T>)
         {
@@ -1691,7 +1691,7 @@ namespace detail
             {
                 res[i] = data[i];
             }
-            *resource = res;
+            resource = res;
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
@@ -1707,7 +1707,7 @@ namespace detail
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            *resource = attr.Data()[0];
+            resource = attr.Data()[0];
         }
 
         return determineDatatype<T>();
@@ -1892,7 +1892,7 @@ namespace detail
     template <typename T>
     void DatasetOpener::call(
         ADIOS2IOHandlerImpl *impl,
-        InvalidatableFile file,
+        InvalidatableFile const &file,
         const std::string &varName,
         Parameter<Operation::OPEN_DATASET> &parameters)
     {
@@ -3438,8 +3438,11 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     MPI_Comm comm,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     json::TracingJSON,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string)
     : AbstractIOHandler(std::move(path), at, comm)
 {}
@@ -3447,7 +3450,14 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path, Access at, json::TracingJSON, std::string, std::string)
+    std::string path,
+    Access at,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    json::TracingJSON,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::string,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::string)
     : AbstractIOHandler(std::move(path), at)
 {}
 

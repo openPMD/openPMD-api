@@ -30,8 +30,7 @@ std::string openPMD::getVersion()
         << OPENPMDAPI_VERSION_PATCH;
     if (std::string(OPENPMDAPI_VERSION_LABEL).size() > 0)
         api << "-" << OPENPMDAPI_VERSION_LABEL;
-    std::string const apistr = api.str();
-    return apistr;
+    return api.str();
 }
 
 std::string openPMD::getStandard()
@@ -39,8 +38,7 @@ std::string openPMD::getStandard()
     std::stringstream standard;
     standard << OPENPMD_STANDARD_MAJOR << "." << OPENPMD_STANDARD_MINOR << "."
              << OPENPMD_STANDARD_PATCH;
-    std::string const standardstr = standard.str();
-    return standardstr;
+    return standard.str();
 }
 
 std::string openPMD::getStandardMinimum()
@@ -49,6 +47,5 @@ std::string openPMD::getStandardMinimum()
     standardMin << OPENPMD_STANDARD_MIN_MAJOR << "."
                 << OPENPMD_STANDARD_MIN_MINOR << "."
                 << OPENPMD_STANDARD_MIN_PATCH;
-    std::string const standardMinstr = standardMin.str();
-    return standardMinstr;
+    return standardMin.str();
 }

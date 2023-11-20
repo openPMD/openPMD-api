@@ -64,6 +64,7 @@ TEST_CASE("deref_cast_test", "[auxiliary]")
     B const value = {123.45};
     B const *const ptr = &value;
 
+    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
     auto const a = deref_dynamic_cast<A const>(ptr);
     auto const &ra = deref_dynamic_cast<A const>(ptr);
     (void)a;
@@ -175,7 +176,7 @@ struct structure : public TestHelper
     }
     structure &setText(std::string newText)
     {
-        setAttribute("text", newText);
+        setAttribute("text", std::move(newText));
         return *this;
     }
 };
@@ -308,7 +309,7 @@ struct AttributedWidget : public TestHelper
     AttributedWidget() : TestHelper()
     {}
 
-    Attribute::resource get(std::string key)
+    Attribute::resource get(std::string const &key)
     {
         return getAttribute(key).getResource();
     }
@@ -380,7 +381,7 @@ struct Dotty : public TestHelper
     }
     Dotty &setAtt3(std::string s)
     {
-        setAttribute("att3", s);
+        setAttribute("att3", std::move(s));
         return *this;
     }
 };

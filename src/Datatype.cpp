@@ -163,7 +163,7 @@ std::ostream &operator<<(std::ostream &os, openPMD::Datatype const &d)
     return os;
 }
 
-Datatype stringToDatatype(std::string s)
+Datatype stringToDatatype(const std::string &s)
 {
     static std::unordered_map<std::string, Datatype> m{
         {"CHAR", Datatype::CHAR},
