@@ -7,7 +7,7 @@ From: debian:unstable
 Welcome to the openPMD-api container.
 This container contains a pre-installed openPMD-api library.
 This container provides serial I/O.
-Supported backends are HDF5 and ADIOS1.
+Supported backends are HDF5 and ADIOS2.
 Supported frontends are C++11 and Python3.
 
 %setup
@@ -25,7 +25,6 @@ Supported frontends are C++11 and Python3.
         ipython3 \
         python3-dev \
         pybind11-dev \
-        libadios-bin libadios-dev \
         libglib2.0-dev libbz2-dev libibverbs-dev libnetcdf-dev \
         libhdf5-dev && \
     rm -rf /var/lib/apt/lists/*
@@ -33,16 +32,12 @@ Supported frontends are C++11 and Python3.
     # python3-numpy
 
     # missing: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=900804
-    # libadios-openmpi-dev
     # libopenmpi-dev libhdf5-openmpi-dev
-
-    # libadios2-dev
 
     cd $(mktemp -d)
     cmake /opt/openpmd-api       \
         -DopenPMD_USE_MPI=OFF    \
         -DopenPMD_USE_HDF5=ON    \
-        -DopenPMD_USE_ADIOS1=ON  \
         -DopenPMD_USE_ADIOS2=OFF \
         -DopenPMD_USE_PYTHON=ON  \
         -DopenPMD_BUILD_TESTING=OFF       \
@@ -61,6 +56,5 @@ Supported frontends are C++11 and Python3.
 %labels
     openPMD_HAVE_MPI OFF
     openPMD_HAVE_HDF5 ON
-    openPMD_HAVE_ADIOS1 ON
     openPMD_HAVE_ADIOS2 OFF
     openPMD_HAVE_PYTHON ON

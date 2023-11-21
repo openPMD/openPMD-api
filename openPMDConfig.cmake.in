@@ -29,12 +29,6 @@ if(openPMD_HAVE_HDF5)
 endif()
 set(openPMD_HDF5_FOUND ${openPMD_HAVE_HDF5})
 
-set(openPMD_HAVE_ADIOS1 @openPMD_HAVE_ADIOS1@)
-if(openPMD_HAVE_ADIOS1)
-    find_dependency(ADIOS)
-endif()
-set(openPMD_ADIOS1_FOUND ${openPMD_HAVE_ADIOS1})
-
 set(openPMD_HAVE_ADIOS2 @openPMD_HAVE_ADIOS2@)
 if(openPMD_HAVE_ADIOS2)
     find_dependency(ADIOS2)
