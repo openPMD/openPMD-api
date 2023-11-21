@@ -8,7 +8,7 @@ if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
-# locate the installed FindADIOS.cmake module for ADIOS1
+# locate the installed CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Modules")
 
 # optional dependencies
