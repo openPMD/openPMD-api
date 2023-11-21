@@ -824,6 +824,16 @@ void Iteration::setStepStatus(StepStatus status)
 
 bool Iteration::dirtyRecursive() const
 {
+    switch (get().m_closed)
+    {
+    case internal::CloseStatus::ParseAccessDeferred:
+    case internal::CloseStatus::ClosedInBackend:
+        return false;
+    case internal::CloseStatus::Open:
+    case internal::CloseStatus::ClosedInFrontend:
+    case internal::CloseStatus::ClosedTemporarily:
+        break;
+    }
     if (dirty())
     {
         return true;

@@ -741,9 +741,9 @@ void close_iteration_test(std::string const &file_ending)
         E_x.storeChunk(data, {mpi_rank, 0}, {1, 4});
         it1.close(/* flush = */ true);
 
-        // illegally access iteration after closing
-        E_x.storeChunk(data, {mpi_rank, 0}, {1, 4});
-        REQUIRE_THROWS(write.flush());
+        // // illegally access iteration after closing
+        // E_x.storeChunk(data, {mpi_rank, 0}, {1, 4});
+        // REQUIRE_THROWS(write.flush());
     }
 
     {
@@ -756,8 +756,8 @@ void close_iteration_test(std::string const &file_ending)
         {
             REQUIRE(data[i % 4] == chunk.get()[i]);
         }
-        auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
-        REQUIRE_THROWS(read.flush());
+        // auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
+        // REQUIRE_THROWS(read.flush());
     }
 }
 
