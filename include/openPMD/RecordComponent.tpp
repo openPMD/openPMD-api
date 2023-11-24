@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -93,12 +95,38 @@ inline std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 #endif
 }
 
+namespace detail
+{
+    template <typename To>
+    struct do_convert
+    {
+        template <typename From>
+        static std::optional<To> call(Attribute &attr)
+        {
+            if constexpr (std::is_convertible_v<From, To>)
+            {
+                return std::make_optional<To>(attr.get<From>());
+            }
+            else
+            {
+                return std::nullopt;
+            }
+        }
+
+        static constexpr char const *errorMsg = "is_conversible";
+    };
+} // namespace detail
+
 template <typename T>
 inline void
 RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     Datatype dtype = determineDatatype(data);
-    if (dtype != getDatatype())
+    /*
+     * For constant components, we implement type conversion, so there is
+     * a separate check further below.
+     */
+    if (dtype != getDatatype() && !constant())
         if (!isSameInteger<T>(getDatatype()) &&
             !isSameFloatingPoint<T>(getDatatype()) &&
             !isSameComplexFloatingPoint<T>(getDatatype()) &&
@@ -160,10 +188,25 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         for (auto const &dimensionSize : extent)
             numPoints *= dimensionSize;
 
-        T value = rc.m_constantValue.get<T>();
+        std::optional<T> val =
+            switchNonVectorType<detail::do_convert</* To = */ T>>(
+                /* from = */ getDatatype(), rc.m_constantValue);
 
-        T *raw_ptr = data.get();
-        std::fill(raw_ptr, raw_ptr + numPoints, value);
+        if (val.has_value())
+        {
+            T *raw_ptr = data.get();
+            std::fill(raw_ptr, raw_ptr + numPoints, *val);
+        }
+        else
+        {
+            std::string const data_type_str = datatypeToString(getDatatype());
+            std::string const requ_type_str =
+                datatypeToString(determineDatatype<T>());
+            std::string err_msg =
+                "Type conversion during chunk loading not possible! ";
+            err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
+            throw error::WrongAPIUsage(err_msg);
+        }
     }
     else
     {

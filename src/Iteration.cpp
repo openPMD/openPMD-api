@@ -208,6 +208,7 @@ void Iteration::flushFileBased(
         /* create file */
         Parameter<Operation::CREATE_FILE> fCreate;
         fCreate.name = filename;
+        fCreate.openPMDversion = s.openPMD();
         IOHandler()->enqueue(IOTask(&s.writable(), fCreate));
 
         /*
