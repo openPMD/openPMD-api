@@ -1346,54 +1346,55 @@ auto JSONIOHandlerImpl::putJsonContents(
         filename.valid(),
         "[JSON] File has been overwritten/deleted before writing");
     auto it = m_jsonVals.find(filename);
-    if (it != m_jsonVals.end())
+    if (it == m_jsonVals.end())
     {
-        (*it->second)["platform_byte_widths"] = platformSpecifics();
+        return it;
+    }
 
-        auto writeSingleFile = [this, &it](std::string const &writeThisFile) {
-            auto [fh, _, fh_with_precision] =
-                getFilehandle(File(writeThisFile), Access::CREATE);
-            (void)_;
+    (*it->second)["platform_byte_widths"] = platformSpecifics();
 
-            switch (m_fileFormat)
-            {
-            case FileFormat::Json:
-                *fh_with_precision << *it->second << std::endl;
-                break;
-            case FileFormat::Toml:
-                *fh_with_precision << openPMD::json::jsonToToml(*it->second)
-                                   << std::endl;
-                break;
-            }
+    auto writeSingleFile = [this, &it](std::string const &writeThisFile) {
+        auto [fh, _, fh_with_precision] =
+            getFilehandle(File(writeThisFile), Access::CREATE);
+        (void)_;
 
-            VERIFY(fh->good(), "[JSON] Failed writing data to disk.")
-        };
+        switch (m_fileFormat)
+        {
+        case FileFormat::Json:
+            *fh_with_precision << *it->second << std::endl;
+            break;
+        case FileFormat::Toml:
+            *fh_with_precision << openPMD::json::jsonToToml(*it->second)
+                               << std::endl;
+            break;
+        }
 
-        auto serialImplementation = [&filename, &writeSingleFile]() {
-            writeSingleFile(*filename);
-        };
+        VERIFY(fh->good(), "[JSON] Failed writing data to disk.")
+    };
+
+    auto serialImplementation = [&filename, &writeSingleFile]() {
+        writeSingleFile(*filename);
+    };
 
 #if openPMD_HAVE_MPI
-        auto num_digits = [](unsigned n) -> unsigned {
-            constexpr auto max = std::numeric_limits<unsigned>::max();
-            unsigned base_10 = 1;
-            unsigned res = 1;
-            while (base_10 < max)
+    auto num_digits = [](unsigned n) -> unsigned {
+        constexpr auto max = std::numeric_limits<unsigned>::max();
+        unsigned base_10 = 1;
+        unsigned res = 1;
+        while (base_10 < max)
+        {
+            base_10 *= 10;
+            if (n / base_10 == 0)
             {
-                base_10 *= 10;
-                if (n / base_10 == 0)
-                {
-                    return res;
-                }
-                ++res;
+                return res;
             }
-            return res;
-        };
+            ++res;
+        }
+        return res;
+    };
 
-        auto parallelImplementation = [this,
-                                       &filename,
-                                       &writeSingleFile,
-                                       &num_digits](MPI_Comm comm) {
+    auto parallelImplementation =
+        [this, &filename, &writeSingleFile, &num_digits](MPI_Comm comm) {
             auto path = fullPath(*filename);
             auto dirpath = path + ".parallel";
             if (!auxiliary::create_directories(dirpath))
@@ -1453,23 +1454,22 @@ merge the .json files somehow (no tooling provided for this (yet)).
             }
         };
 
-        std::shared_ptr<nlohmann::json> res;
-        if (m_communicator.has_value())
-        {
-            parallelImplementation(m_communicator.value());
-        }
-        else
-        {
-            serialImplementation();
-        }
+    std::shared_ptr<nlohmann::json> res;
+    if (m_communicator.has_value())
+    {
+        parallelImplementation(m_communicator.value());
+    }
+    else
+    {
+        serialImplementation();
+    }
 
 #else
-        serialImplementation();
+    serialImplementation();
 #endif
-        if (unsetDirty)
-        {
-            m_dirty.erase(filename);
-        }
+    if (unsetDirty)
+    {
+        m_dirty.erase(filename);
     }
     return it;
 }
