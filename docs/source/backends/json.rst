@@ -38,19 +38,45 @@ when working with the JSON backend.
 Datasets and groups have the same namespace, meaning that there may not be a subgroup
 and a dataset with the same name contained in one group.
 
-Any **openPMD dataset** is a JSON object with three keys:
+Datasets
+........
 
- * ``attributes``: Attributes associated with the dataset. May be ``null`` or not present if no attributes are associated with the dataset.
- * ``datatype``: A string describing the type of the stored data.
- * ``data`` A nested array storing the actual data in row-major manner.
+Datasets can be stored in two modes, either as actual datasets or as dataset templates.
+The mode is selected by the :ref:`JSON/TOML parameter<backendconfig>` ``json.dataset.mode`` (resp. ``toml.dataset.mode``) with possible values ``["dataset", "template"]`` (default: ``"dataset"``).
+
+Stored as an actual dataset, an **openPMD dataset** is a JSON object with three JSON keys:
+
+ * ``datatype`` (required): A string describing the type of the stored data.
+ * ``data`` (required): A nested array storing the actual data in row-major manner.
    The data needs to be consistent with the fields ``datatype`` and ``extent``.
    Checking whether this key points to an array can be (and is internally) used to distinguish groups from datasets.
+ * ``attributes``: Attributes associated with the dataset. May be ``null`` or not present if no attributes are associated with the dataset.
 
-**Attributes** are stored as a JSON object with a key for each attribute.
+Stored as a **dataset template**, an openPMD dataset is represented by three JSON keys:
+
+* ``datatype`` (required): As above.
+* ``extent`` (required): A list of integers, describing the extent of the dataset.
+* ``attributes``: As above.
+
+This mode stores only the dataset metadata.
+Chunk load/store operations are ignored.
+
+Attributes
+..........
+
+In order to avoid name clashes, attributes are generally stored within a separate subgroup ``attributes``.
+
+Attributes can be stored in two formats.
+The format is selected by the :ref:`JSON/TOML parameter<backendconfig>` ``json.attribute.mode`` (resp. ``toml.attribute.mode``) with possible values ``["long", "short"]`` (default: ``"long"`` in openPMD 1.*, ``"short"`` in openPMD >= 2.0).
+
+Attributes in **long format** store the datatype explicitly, by representing attributes as JSON objects.
 Every such attribute is itself a JSON object with two keys:
 
  * ``datatype``: A string describing the type of the value.
  * ``value``: The actual value of type ``datatype``.
+
+Attributes in **short format** are stored as just the simple value corresponding with the attribute.
+Since JSON/TOML values are pretty-printed into a human-readable format, byte-level type details can be lost when reading those values again later on (e.g. the distinction between different integer types).
 
 TOML File Format
 ----------------
