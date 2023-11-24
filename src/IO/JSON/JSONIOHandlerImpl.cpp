@@ -455,6 +455,13 @@ void JSONIOHandlerImpl::createFile(
         access::write(m_handler->m_backendAccess),
         "[JSON] Creating a file in read-only mode is not possible.");
 
+    if (m_attributeModeSpecificationVia == SpecificationVia::DefaultValue)
+    {
+        m_attributeMode = parameters.openPMDversion >= "2."
+            ? AttributeMode::Short
+            : AttributeMode::Long;
+    }
+
     if (!writable->written)
     {
         std::string name = parameters.name + m_originalExtension;

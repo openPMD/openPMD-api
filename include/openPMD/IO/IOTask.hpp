@@ -125,6 +125,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_FILE>
     }
 
     std::string name = "";
+    std::string openPMDversion; // @todo: Maybe move this to AbstractIOHandler
 };
 
 template <>
