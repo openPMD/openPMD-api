@@ -1490,6 +1490,7 @@ void Series::flushGorVBased(
             }
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
+            fCreate.openPMDversion = openPMD();
             IOHandler()->enqueue(IOTask(this, fCreate));
 
             flushRankTable();
