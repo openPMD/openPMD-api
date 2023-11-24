@@ -392,7 +392,8 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
 #if openPMD_HAVE_MPI
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
-    MPI_Comm comm,openPMD::json::TracingJSON config,
+    MPI_Comm comm,
+    openPMD::json::TracingJSON config,
     FileFormat format,
     std::string originalExtension)
     : AbstractIOHandlerImpl(handler)
