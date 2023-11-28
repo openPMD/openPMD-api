@@ -47,8 +47,7 @@ std::string openPMD::getStandardDefault()
     standard << OPENPMD_STANDARD_DEFAULT_MAJOR << "."
              << OPENPMD_STANDARD_DEFAULT_MINOR << "."
              << OPENPMD_STANDARD_DEFAULT_PATCH;
-    std::string const standardstr = standard.str();
-    return standardstr;
+    return standard.str();
 }
 
 std::string openPMD::getStandardMinimum()
