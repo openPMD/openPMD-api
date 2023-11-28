@@ -21,11 +21,6 @@ exit /b 0
     https://github.com/ornladios/ADIOS2/archive/v2.9.2.zip
   powershell Expand-Archive adios2-2.9.2.zip -DestinationPath dep-adios2
 
-  :: Patch Static Blosc2
-  curl -sLo find-blosc2.patch ^
-      https://github.com/ornladios/ADIOS2/commit/8333d5e6ff4665d12cbbd5bae5150bfff5be2daa.patch
-  python3 -m patch -p 1 -d ADIOS2-* find-blosc2.patch
-
   cmake -S dep-adios2/ADIOS2-2.9.2 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED_LIBS=OFF     ^
