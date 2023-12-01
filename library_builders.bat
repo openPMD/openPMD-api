@@ -70,6 +70,8 @@ exit /b 0
 
   cmake -S dep-blosc2/c-blosc2-2.11.1 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
+    -DCMAKE_INSTALL_PREFIX=%BUILD_PREFIX%/blosc2  ^
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON   ^
     -DBUILD_SHARED=OFF          ^
     -DBUILD_STATIC=ON           ^
     -DBUILD_BENCHMARKS=OFF      ^
