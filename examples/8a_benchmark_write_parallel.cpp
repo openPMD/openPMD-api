@@ -240,8 +240,7 @@ std::vector<std::string> getBackends()
 {
     std::vector<std::string> res;
 #if openPMD_HAVE_ADIOS2
-    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") != "ADIOS1")
-        res.emplace_back(".bp");
+    res.emplace_back(".bp");
 #endif
 
 #if openPMD_HAVE_HDF5

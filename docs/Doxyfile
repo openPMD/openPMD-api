@@ -1,7 +1,7 @@
 PROJECT_NAME      = "openPMD-api"
 XML_OUTPUT        = xml
 INPUT             = ../src ../include ../README.md
-EXCLUDE_PATTERNS  = *CommonADIOS1IOHandler.cpp
+#EXCLUDE_PATTERNS  = *CommonADIOS1IOHandler.cpp
 
 # TAGFILES += "cppreference-doxygen-web.tag.xml=http://en.cppreference.com/w/"
 BUILTIN_STL_SUPPORT = YES
@@ -24,7 +24,6 @@ MACRO_EXPANSION   = YES
 PREDEFINED        = DOXYGEN_SHOULD_SKIP_THIS \
                     openPMD_HAVE_MPI=1 \
                     openPMD_HAVE_HDF5=1 \
-                    openPMD_HAVE_ADIOS1=1 \
                     openPMD_HAVE_ADIOS2=1 \
                     openPMD_HAVE_PYTHON=1 \
                     OPENPMD_private:=private \
