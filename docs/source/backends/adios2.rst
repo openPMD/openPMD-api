@@ -156,7 +156,7 @@ The ADIOS2 backend of the openPMD-api will then ignore attributes from all other
 .. warning::
 
   The ADIOS2 backend may also use attributes to encode openPMD groups (ref. "group table").
-  The ``adios.attribute_writing_ranks`` key also applies to those attributes, i.e. also group creation must be treated as collective then (at least on the specified ranks).
+  The ``adios2.attribute_writing_ranks`` key also applies to those attributes, i.e. also group creation must be treated as collective then (at least on the specified ranks).
 
 Experimental group table feature
 --------------------------------
