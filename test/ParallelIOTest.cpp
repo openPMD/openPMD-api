@@ -1,6 +1,7 @@
 /* Running this test in parallel with MPI requires MPI::Init.
  * To guarantee a correct call to Init, launch the tests manually.
  */
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/openPMD.hpp"
@@ -1170,10 +1171,16 @@ clevel = "1"
 doshuffle = "BLOSC_BITSHUFFLE"
 )END";
 
-    std::string writeConfigBP4 = R"END(
+    std::string writeConfigBP4 =
+        R"END(
 [adios2]
 unused = "parameter"
-
+attribute_writing_ranks = 0
+)END"
+#if openPMD_HAS_ADIOS_2_9
+        "use_group_table = true"
+#endif
+        R"END(
 [adios2.engine]
 type = "bp4"
 unused = "as well"

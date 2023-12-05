@@ -274,6 +274,8 @@ private:
         return m_useGroupTable.value();
     }
 
+    bool m_writeAttributesFromThisRank = true;
+
     struct ParameterizedOperator
     {
         adios2::Operator op;
@@ -285,7 +287,9 @@ private:
     json::TracingJSON m_config;
     static json::TracingJSON nullvalue;
 
-    void init(json::TracingJSON config);
+    template <typename Callback>
+    void
+    init(json::TracingJSON config, Callback &&callbackWriteAttributesFromRank);
 
     template <typename Key>
     json::TracingJSON config(Key &&key, json::TracingJSON &cfg)

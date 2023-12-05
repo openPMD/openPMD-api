@@ -1,5 +1,12 @@
+[adios2]
+# ignore all attribute writes not issued on these ranks
+# can also be a list if multiple ranks need to be given
+# however rank 0 should be the most common option here
+attribute_writing_ranks = 0
+
 [adios2.engine]
 type = "sst"
+preferred_flush_target = "disk"
 
 [adios2.engine.parameters]
 BufferGrowthFactor = "2.0"
