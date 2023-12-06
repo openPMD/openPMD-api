@@ -264,8 +264,25 @@ class APITest(unittest.TestCase):
         self.assertEqual(series.get_attribute("char"), "c")
         self.assertEqual(series.get_attribute("pystring"), "howdy!")
         self.assertEqual(series.get_attribute("pystring2"), "howdy, too!")
-        self.assertEqual(bytes(series.get_attribute("pystring3")),
-                         b"howdy, again!")
+        if file_ending == 'h5':
+            # A byte string b"hello" is always (really?) a vector of unsigned
+            # chars.
+            # HDF5 does not distinguish a platform char type, only explicitly
+            # signed or unsigned chars. Depending on the signed-ness of char
+            # on the current platform, the unsigned char from the byte string
+            # might then be interpreted as a char, not as an unsigned char.
+            # This means that the roundtrip might not work on platforms with
+            # unsigned char.
+            try:
+                as_bytes = bytes(series.get_attribute("pystring3"))
+                self.assertEqual(as_bytes, b"howdy, again!")
+            except TypeError:
+                self.assertEqual(
+                    series.get_attribute("pystring3"),
+                    [c for c in "howdy, again!"])
+        else:
+            self.assertEqual(bytes(series.get_attribute("pystring3")),
+                             b"howdy, again!")
         self.assertEqual(series.get_attribute("pyint"), 13)
         self.assertAlmostEqual(series.get_attribute("pyfloat"), 3.1416)
         self.assertEqual(series.get_attribute("pybool"), False)
