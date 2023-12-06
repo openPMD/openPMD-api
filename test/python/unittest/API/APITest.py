@@ -378,7 +378,11 @@ class APITest(unittest.TestCase):
         self.assertEqual(series.get_attribute("ubyte_c"), 50)
         # TODO: returns [100] instead of 100 in json/toml
         if file_ending != "json" and file_ending != "toml":
-            self.assertEqual(chr(series.get_attribute("char_c")), 'd')
+            try:
+                c = chr(series.get_attribute("char_c"))
+                self.assertEqual(c, 'd')
+            except TypeError:
+                self.assertEqual(series.get_attribute("char_c"), 'd')
         self.assertEqual(series.get_attribute("int16_c"), 2)
         self.assertEqual(series.get_attribute("int32_c"), 3)
         self.assertEqual(series.get_attribute("int64_c"), 4)
