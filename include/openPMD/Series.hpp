@@ -55,7 +55,6 @@ namespace openPMD
 class ReadIterations;
 class SeriesIterator;
 class Series;
-class Series;
 
 namespace internal
 {

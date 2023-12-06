@@ -2,6 +2,10 @@
 #
 cmake_minimum_required(VERSION 3.15.0)
 
+# macOS 10.15 is required for certain C++17 features.
+# (This variable needs to be set before calling `project`.)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version")
+
 project(openPMD VERSION 0.16.0) # LANGUAGES CXX
 
 # the openPMD "markup"/"schema" standard version
@@ -143,6 +147,7 @@ endfunction()
 openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
+openpmd_option(JULIA          "Enable Julia bindings"                     OFF)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
@@ -394,6 +399,19 @@ endif()
 
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
 
+# External library: libcxxwrap-julia
+if(openPMD_USE_JULIA)
+    find_package(JlCxx 0.8.3 REQUIRED)
+    set(openPMD_HAVE_JULIA TRUE)
+else()
+    set(openPMD_HAVE_JULIA FALSE)
+endif()
+if(openPMD_HAVE_JULIA)
+    get_target_property(JlCxx_location JlCxx::cxxwrap_julia LOCATION)
+    get_filename_component(JlCxx_location ${JlCxx_location} DIRECTORY)
+    message(STATUS "Found JlCxx version ${JlCxx_VERSION} at ${JlCxx_location}")
+endif()
+
 # external library: pybind11 (optional)
 set(_PY_DEV_MODULE Development.Module)
 if(CMAKE_VERSION VERSION_LESS 3.18.0)
@@ -597,6 +615,57 @@ if(openPMD_USE_VERIFY)
     target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=1)
 else()
     target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=0)
+endif()
+
+# Julia bindings
+if(openPMD_HAVE_JULIA)
+    add_library(openPMD.jl SHARED
+        src/binding/julia/Access.cpp
+        src/binding/julia/Attributable.cpp
+        src/binding/julia/Attribute.cpp
+        src/binding/julia/BaseRecordComponent.cpp
+        src/binding/julia/ChunkInfo.cpp
+        src/binding/julia/Container.cpp
+        src/binding/julia/Dataset.cpp
+        src/binding/julia/Datatype.cpp
+        src/binding/julia/Format.cpp
+        src/binding/julia/Iteration.cpp
+        src/binding/julia/Mesh.cpp
+        src/binding/julia/MeshRecordComponent.cpp
+        src/binding/julia/ReadIterations.cpp
+        src/binding/julia/RecordComponent.cpp
+        src/binding/julia/RecordComponent_load_chunk.cpp
+        src/binding/julia/RecordComponent_make_constant.cpp
+        src/binding/julia/RecordComponent_store_chunk.cpp
+        src/binding/julia/Series.cpp
+        src/binding/julia/UnitDimension.cpp
+        src/binding/julia/WriteIterations.cpp
+        src/binding/julia/openPMD.cpp
+        src/binding/julia/shared_ptr.cpp
+        src/binding/julia/version.cpp
+    )
+    openpmd_cxx_required(openPMD.jl)
+    target_link_libraries(openPMD.jl PRIVATE openPMD JlCxx::cxxwrap_julia_stl JlCxx::cxxwrap_julia)
+
+    set_target_properties(openPMD.jl PROPERTIES
+        COMPILE_PDB_NAME openPMD.jl
+        ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+        LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+        RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+        PDB_OUTPUT_DIRECTORY ${openPMD_PDB_OUTPUT_DIRECTORY}
+        COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
+
+        POSITION_INDEPENDENT_CODE ON
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
+
+    add_test(NAME CLI.julia_lowlevel
+        COMMAND julia
+            ${openPMD_SOURCE_DIR}/test/julia/lowlevel_test.jl
+            ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/libopenPMD.jl
+        WORKING_DIRECTORY
+            ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+    )
 endif()
 
 # python bindings
@@ -1060,10 +1129,17 @@ if(openPMD_INSTALL)
         endforeach()
     endif()
 
+    if(openPMD_HAVE_JULIA)
+        list(APPEND openPMD_INSTALL_TARGET_NAMES openPMD.jl)
+    endif()
+
     if(openPMD_INSTALL_RPATH)
         set(openPMD_INSTALL_RPATH_TARGET_NAMES ${openPMD_INSTALL_TARGET_NAMES})
         if(openPMD_HAVE_PYTHON)
             list(APPEND openPMD_INSTALL_RPATH_TARGET_NAMES openPMD.py)
+        endif()
+        if(openPMD_HAVE_JULIA)
+            list(APPEND openPMD_INSTALL_RPATH_TARGET_NAMES openPMD.jl)
         endif()
         if(NOT DEFINED CMAKE_INSTALL_RPATH)
             if(APPLE)

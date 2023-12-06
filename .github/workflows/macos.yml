@@ -24,9 +24,15 @@ jobs:
         brew update
         brew install adios2 || true
         brew install hdf5-mpi || true
+        brew install julia || true
         brew install python || true
         python3 -m pip install -U mpi4py numpy pandas
         set -e
+        # Install cmake-easyinstall
+        sudo curl -L -o /usr/local/bin/cmake-easyinstall https://git.io/JvLxY
+        sudo chmod a+x /usr/local/bin/cmake-easyinstall
+        # Install libcxxwrap-julia
+        cmake-easyinstall git+https://github.com/JuliaInterop/libcxxwrap-julia.git@v0.11.0
     - name: Build
       env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 11.0}
       # 10.14+ due to std::visit
@@ -36,12 +42,15 @@ jobs:
       run: |
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
-          -DopenPMD_USE_PYTHON=ON \
-          -DopenPMD_USE_MPI=ON    \
-          -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
+          -DopenPMD_USE_HDF5=ON   \
+          -DopenPMD_USE_JULIA=ON  \
+          -DopenPMD_USE_MPI=ON    \
+          -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 3
+        # Install the Julia side of CxxWrap
+        julia --eval 'using Pkg; Pkg.add("CxxWrap")'
         ctest --test-dir build --verbose
 
   appleclang13_py:

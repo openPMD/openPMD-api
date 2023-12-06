@@ -114,6 +114,12 @@ while those can be built either with or without:
 * MPI 2.1+, e.g. OpenMPI 1.6.5+ or MPICH2
 
 Optional language bindings:
+* Julia:
+  * Most Julia users will not build `openPMD_api` from source. The
+    Julia package `openPMD.jl` will automatically download a suitable
+    `openPMD_api` binary.
+  * Julia 1.7 - 1.10
+  * [libcxxwrap_julia](https://github.com/JuliaInterop/libcxxwrap-julia) 0.8.3 - 0.9.7
 * Python:
   * Python 3.8 - 3.12
   * pybind11 2.11.1+
