@@ -323,12 +323,14 @@ template <>
 struct char_to_explicit_char<true>
 {
     using type = signed char;
+    using opposite_type = unsigned char;
 };
 
 template <>
 struct char_to_explicit_char<false>
 {
     using type = unsigned char;
+    using opposite_type = signed char;
 };
 
 template <typename TargetType>
@@ -518,7 +520,10 @@ void init_Attributable(py::module &m)
 
         // fundamental Python types
         .def("set_attribute", &Attributable::setAttribute<bool>)
-        .def("set_attribute", &Attributable::setAttribute<unsigned char>)
+        .def(
+            "set_attribute",
+            &Attributable::setAttribute<
+                typename ::detail::char_to_explicit_char<>::opposite_type>)
         // -> handle all native python integers as long
         // .def("set_attribute", &Attributable::setAttribute< short >)
         // .def("set_attribute", &Attributable::setAttribute< int >)
