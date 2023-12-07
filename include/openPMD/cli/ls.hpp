@@ -34,7 +34,7 @@ namespace cli
 {
     namespace ls
     {
-        inline void print_help(std::string const program_name)
+        inline void print_help(std::string const &program_name)
         {
             std::cout << "Usage: " << program_name << " openPMD-series\n";
             std::cout << "List information about an openPMD data series.\n\n";
@@ -54,7 +54,7 @@ namespace cli
                       << " ./samples/serial_patch.bp\n";
         }
 
-        inline void print_version(std::string const program_name)
+        inline void print_version(std::string const &program_name)
         {
             std::cout << program_name << " (openPMD-api) " << getVersion()
                       << "\n";

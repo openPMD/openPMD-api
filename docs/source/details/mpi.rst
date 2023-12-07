@@ -42,6 +42,8 @@ Functionality                Behavior           Description
        If you want to support all backends equally, treat as a collective operation.
        Note that openPMD represents constant record components with attributes, thus inheriting this for ``::makeConstant``.
 
+       When treating attribute definitions as collective, we advise specifying the ADIOS2 :ref:`JSON/TOML key <backendconfig>` ``adios2.attribute_writing_ranks`` for metadata aggregation scalabilty, typically as ``adios2.attribute_writing_ranks = 0``.
+
 .. [4] We usually open iterations delayed on first access. This first access is usually the ``flush()`` call after a ``storeChunk``/``loadChunk`` operation. If the first access is non-collective, an explicit, collective ``Iteration::open()`` can be used to have the files already open.
        Alternatively, iterations might be accessed for the first time by immediate operations such as ``::availableChunks()``.
 

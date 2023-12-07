@@ -61,10 +61,8 @@ class CMakeBuild(build_ext):
             # static/shared libs
             '-DopenPMD_BUILD_SHARED_LIBS:BOOL=' + BUILD_SHARED_LIBS,
             '-DHDF5_USE_STATIC_LIBRARIES:BOOL=' + HDF5_USE_STATIC_LIBRARIES,
-            '-DADIOS_USE_STATIC_LIBS:BOOL=' + ADIOS_USE_STATIC_LIBS,
             # Unix: rpath to current dir when packaged
-            #       needed for shared (here non-default) builds and ADIOS1
-            #       wrapper libraries
+            #       needed for shared (here non-default) builds
             '-DCMAKE_BUILD_WITH_INSTALL_RPATH:BOOL=ON',
             '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH:BOOL=OFF',
             # Windows: has no RPath concept, all `.dll`s must be in %PATH%
@@ -129,7 +127,6 @@ with open('./README.md', encoding='utf-8') as f:
 # note: changed default for SHARED, MPI, TESTING and EXAMPLES
 openPMD_USE_MPI = os.environ.get('openPMD_USE_MPI', 'OFF')
 HDF5_USE_STATIC_LIBRARIES = os.environ.get('HDF5_USE_STATIC_LIBRARIES', 'OFF')
-ADIOS_USE_STATIC_LIBS = os.environ.get('ADIOS_USE_STATIC_LIBS', 'OFF')
 # deprecated: backwards compatibility to <= 0.13.*
 BUILD_SHARED_LIBS = os.environ.get('BUILD_SHARED_LIBS', 'OFF')
 BUILD_TESTING = os.environ.get('BUILD_TESTING', 'OFF')
@@ -226,6 +223,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         ('License :: OSI Approved :: '
          'GNU Lesser General Public License v3 or later (LGPLv3+)'),
     ],

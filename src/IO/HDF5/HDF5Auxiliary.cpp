@@ -314,7 +314,7 @@ std::string openPMD::concrete_h5_file_position(Writable *w)
 }
 
 std::vector<hsize_t> openPMD::getOptimalChunkDims(
-    std::vector<hsize_t> const dims, size_t const typeSize)
+    std::vector<hsize_t> const &dims, size_t const typeSize)
 {
     auto const ndims = dims.size();
     std::vector<hsize_t> chunk_dims(dims.size());

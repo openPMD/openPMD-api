@@ -22,7 +22,7 @@ openPMD
 -------
 
 openPMD files can be visualized with ParaView 5.9+, using 5.11+ is recommended.
-ParaView supports ADIOS1, ADIOS2 and HDF5 files, as it implements against the Python bindings of openPMD-api.
+ParaView supports ADIOS2 and HDF5 files, as it implements against the Python bindings of openPMD-api.
 
 For openPMD output to be recognized, create a small textfile with ``.pmd`` ending per data series, which can be opened with ParaView:
 

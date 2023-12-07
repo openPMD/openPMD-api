@@ -40,7 +40,8 @@ jobs:
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DMPIEXEC_EXECUTABLE=".github/workflows/mpirun_workaround.sh"
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
 

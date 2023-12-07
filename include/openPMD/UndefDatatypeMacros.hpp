@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Franz Poeschel
+/* Copyright 2023 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -19,24 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "openPMD/IO/JSON/JSONIOHandler.hpp"
-
-namespace openPMD
-{
-JSONIOHandler::~JSONIOHandler() = default;
-
-JSONIOHandler::JSONIOHandler(
-    std::string const &path,
-    Access at,
-    openPMD::json::TracingJSON jsonCfg,
-    JSONIOHandlerImpl::FileFormat format,
-    std::string originalExtension)
-    : AbstractIOHandler{path, at}
-    , m_impl{this, std::move(jsonCfg), format, std::move(originalExtension)}
-{}
-
-std::future<void> JSONIOHandler::flush(internal::ParsedFlushParams &)
-{
-    return m_impl.flush();
-}
-} // namespace openPMD
+#undef OPENPMD_FOREACH_DATATYPE
+#undef OPENPMD_FOREACH_NONVECTOR_DATATYPE
+#undef OPENPMD_FOREACH_DATASET_DATATYPE

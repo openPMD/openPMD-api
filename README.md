@@ -115,7 +115,7 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.8 - 3.11
+  * Python 3.8 - 3.12
   * pybind11 2.11.1+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
@@ -428,6 +428,7 @@ Previously supported by the Consortium for Advanced Modeling of Particles Accele
 Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration).
 This project has received funding from the European Unions Horizon 2020 research and innovation programme under grant agreement No 654220.
 This work was partially funded by the Center of Advanced Systems Understanding (CASUS), which is financed by Germany's Federal Ministry of Education and Research (BMBF) and by the Saxon Ministry for Science, Culture and Tourism (SMWK) with tax funds on the basis of the budget approved by the Saxon State Parliament.
+Supported by the HElmholtz Laser Plasma Metadata Initiative (HELPMI) project (ZT-I-PF-3-066), funded by the "Initiative and Networking Fund" of the Helmholtz Association in the framework of the "Helmholtz Metadata Collaboration" project call 2022.
 
 ### Transitive Contributions
 

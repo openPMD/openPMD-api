@@ -79,7 +79,43 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     , m_engineType(std::move(engineType))
     , m_userSpecifiedExtension{std::move(specifiedExtension)}
 {
-    init(std::move(cfg));
+    init(
+        std::move(cfg),
+        /* callbackWriteAttributesFromRank = */
+        [communicator, this](nlohmann::json const &attribute_writing_ranks) {
+            int rank = 0;
+            MPI_Comm_rank(communicator, &rank);
+            auto throw_error = []() {
+                throw error::BackendConfigSchema(
+                    {"adios2", "attribute_writing_ranks"},
+                    "Type must be either an integer or an array of integers.");
+            };
+            if (attribute_writing_ranks.is_array())
+            {
+                m_writeAttributesFromThisRank = false;
+                for (auto const &val : attribute_writing_ranks)
+                {
+                    if (!val.is_number())
+                    {
+                        throw_error();
+                    }
+                    if (val.get<int>() == rank)
+                    {
+                        m_writeAttributesFromThisRank = true;
+                        break;
+                    }
+                }
+            }
+            else if (attribute_writing_ranks.is_number())
+            {
+                m_writeAttributesFromThisRank =
+                    attribute_writing_ranks.get<int>() == rank;
+            }
+            else
+            {
+                throw_error();
+            }
+        });
 }
 
 #endif // openPMD_HAVE_MPI
@@ -94,7 +130,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     , m_engineType(std::move(engineType))
     , m_userSpecifiedExtension(std::move(specifiedExtension))
 {
-    init(std::move(cfg));
+    init(std::move(cfg), [](auto const &...) {});
 }
 
 ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
@@ -135,7 +171,9 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
     }
 }
 
-void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
+template <typename Callback>
+void ADIOS2IOHandlerImpl::init(
+    json::TracingJSON cfg, Callback &&callbackWriteAttributesFromRank)
 {
     // allow overriding through environment variable
     m_engineType =
@@ -179,6 +217,12 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
                 m_config["modifiable_attributes"].json().get<bool>()
                 ? ModifiableAttributes::Yes
                 : ModifiableAttributes::No;
+        }
+
+        if (m_config.json().contains("attribute_writing_ranks"))
+        {
+            callbackWriteAttributesFromRank(
+                m_config["attribute_writing_ranks"].json());
         }
 
         auto engineConfig = config(ADIOS2Defaults::str_engine);
@@ -915,6 +959,10 @@ void ADIOS2IOHandlerImpl::writeDataset(
 void ADIOS2IOHandlerImpl::writeAttribute(
     Writable *writable, const Parameter<Operation::WRITE_ATT> &parameters)
 {
+    if (!m_writeAttributesFromThisRank)
+    {
+        return;
+    }
 #if openPMD_HAS_ADIOS_2_9
     switch (useGroupTable())
     {
@@ -1111,7 +1159,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
     }
 
     Datatype ret = switchType<detail::AttributeReader>(
-        type, *this, ba.m_IO, name, parameters.resource);
+        type, *this, ba.m_IO, name, *parameters.resource);
     *parameters.dtype = ret;
 }
 
@@ -1241,7 +1289,7 @@ void ADIOS2IOHandlerImpl::listPaths(
     }
     for (auto &path : subdirs)
     {
-        parameters.paths->emplace_back(std::move(path));
+        parameters.paths->emplace_back(path);
     }
 }
 
@@ -1284,7 +1332,7 @@ void ADIOS2IOHandlerImpl::listDatasets(
     }
     for (auto &dataset : subdirs)
     {
-        parameters.datasets->emplace_back(std::move(dataset));
+        parameters.datasets->emplace_back(dataset);
     }
 }
 
@@ -1345,7 +1393,7 @@ void ADIOS2IOHandlerImpl::closePath(
         return;
     }
     auto position = setAndGetFilePosition(writable);
-    auto const positionString = filePositionToString(position);
+    auto positionString = filePositionToString(position);
     VERIFY(
         !auxiliary::ends_with(positionString, '/'),
         "[ADIOS2] Position string has unexpected format. This is a bug "
@@ -1354,7 +1402,8 @@ void ADIOS2IOHandlerImpl::closePath(
     for (auto const &attr :
          fileData.availableAttributesPrefixed(positionString))
     {
-        fileData.m_IO.RemoveAttribute(positionString + '/' + attr);
+        fileData.m_IO.RemoveAttribute(
+            std::string(positionString).append("/").append(attr));
     }
 }
 
@@ -1491,8 +1540,8 @@ std::string
 ADIOS2IOHandlerImpl::nameOfAttribute(Writable *writable, std::string attribute)
 {
     auto pos = setAndGetFilePosition(writable);
-    return filePositionToString(
-        extendFilePosition(pos, auxiliary::removeSlashes(attribute)));
+    return filePositionToString(extendFilePosition(
+        pos, auxiliary::removeSlashes(std::move(attribute))));
 }
 
 GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
@@ -1500,8 +1549,8 @@ GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
     return setAndGetFilePosition(writable)->gd;
 }
 
-detail::BufferedActions &
-ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
+detail::BufferedActions &ADIOS2IOHandlerImpl::getFileData(
+    InvalidatableFile const &file, IfFileNotOpen flag)
 {
     VERIFY_ALWAYS(
         file.valid(),
@@ -1515,8 +1564,7 @@ ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
         case IfFileNotOpen::OpenImplicitly: {
 
             auto res = m_fileData.emplace(
-                std::move(file),
-                std::make_unique<detail::BufferedActions>(*this, file));
+                file, std::make_unique<detail::BufferedActions>(*this, file));
             return *res.first->second;
         }
         case IfFileNotOpen::ThrowError:
@@ -1531,7 +1579,7 @@ ADIOS2IOHandlerImpl::getFileData(InvalidatableFile file, IfFileNotOpen flag)
     }
 }
 
-void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile file)
+void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile const &file)
 {
     auto it = m_fileData.find(file);
     if (it != m_fileData.end())
@@ -1615,7 +1663,7 @@ namespace detail
         ADIOS2IOHandlerImpl &impl,
         adios2::IO &IO,
         std::string name,
-        std::shared_ptr<Attribute::resource> resource)
+        Attribute::resource &resource)
     {
         (void)impl;
         /*
@@ -1653,11 +1701,11 @@ namespace detail
                 auto meta = IO.InquireAttribute<rep>(metaAttr);
                 if (meta.Data().size() == 1 && meta.Data()[0] == 1)
                 {
-                    *resource = bool_repr::fromRep(attr.Data()[0]);
+                    resource = bool_repr::fromRep(attr.Data()[0]);
                     return determineDatatype<bool>();
                 }
             }
-            *resource = attr.Data()[0];
+            resource = attr.Data()[0];
         }
         else if constexpr (IsUnsupportedComplex_v<T>)
         {
@@ -1674,7 +1722,7 @@ namespace detail
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            *resource = attr.Data();
+            resource = attr.Data();
         }
         else if constexpr (auxiliary::IsArray_v<T>)
         {
@@ -1691,7 +1739,7 @@ namespace detail
             {
                 res[i] = data[i];
             }
-            *resource = res;
+            resource = res;
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
@@ -1707,7 +1755,7 @@ namespace detail
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            *resource = attr.Data()[0];
+            resource = attr.Data()[0];
         }
 
         return determineDatatype<T>();
@@ -1892,7 +1940,7 @@ namespace detail
     template <typename T>
     void DatasetOpener::call(
         ADIOS2IOHandlerImpl *impl,
-        InvalidatableFile file,
+        InvalidatableFile const &file,
         const std::string &varName,
         Parameter<Operation::OPEN_DATASET> &parameters)
     {
@@ -3033,7 +3081,11 @@ namespace detail
         if (!initializedDefaults)
         {
             // Currently only schema 0 supported
-            m_IO.DefineAttribute<uint64_t>(ADIOS2Defaults::str_adios2Schema, 0);
+            if (m_impl->m_writeAttributesFromThisRank)
+            {
+                m_IO.DefineAttribute<uint64_t>(
+                    ADIOS2Defaults::str_adios2Schema, 0);
+            }
             initializedDefaults = true;
         }
 
@@ -3168,7 +3220,8 @@ namespace detail
         {
             if (writeOnly(m_mode) &&
                 !m_IO.InquireAttribute<bool_representation>(
-                    ADIOS2Defaults::str_usesstepsAttribute))
+                    ADIOS2Defaults::str_usesstepsAttribute) &&
+                m_impl->m_writeAttributesFromThisRank)
             {
                 m_IO.DefineAttribute<bool_representation>(
                     ADIOS2Defaults::str_usesstepsAttribute, 0);
@@ -3189,7 +3242,8 @@ namespace detail
          */
         if (calledExplicitly && writeOnly(m_mode) &&
             !m_IO.InquireAttribute<bool_representation>(
-                ADIOS2Defaults::str_usesstepsAttribute))
+                ADIOS2Defaults::str_usesstepsAttribute) &&
+            m_impl->m_writeAttributesFromThisRank)
         {
             m_IO.DefineAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute, 1);
@@ -3356,7 +3410,7 @@ namespace detail
         case UseGroupTable::Yes:
 #if openPMD_HAS_ADIOS_2_9
         {
-            if (writeOnly(m_mode))
+            if (writeOnly(m_mode) && m_impl->m_writeAttributesFromThisRank)
             {
                 requireActiveStep();
                 auto currentStepBuffered = currentStep();
@@ -3438,8 +3492,11 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     MPI_Comm comm,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     json::TracingJSON,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string)
     : AbstractIOHandler(std::move(path), at, comm)
 {}
@@ -3447,7 +3504,14 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path, Access at, json::TracingJSON, std::string, std::string)
+    std::string path,
+    Access at,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    json::TracingJSON,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::string,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::string)
     : AbstractIOHandler(std::move(path), at)
 {}
 

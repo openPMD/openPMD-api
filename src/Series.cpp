@@ -508,7 +508,7 @@ namespace
      */
     template <typename MappingFunction>
     int autoDetectPadding(
-        std::function<Match(std::string const &)> isPartOfSeries,
+        std::function<Match(std::string const &)> const &isPartOfSeries,
         std::string const &directory,
         MappingFunction &&mappingFunction)
     {
@@ -539,11 +539,11 @@ namespace
     }
 
     int autoDetectPadding(
-        std::function<Match(std::string const &)> isPartOfSeries,
+        std::function<Match(std::string const &)> const &isPartOfSeries,
         std::string const &directory)
     {
         return autoDetectPadding(
-            std::move(isPartOfSeries),
+            isPartOfSeries,
             directory,
             [](Series::IterationIndex_t index, std::string const &filename) {
                 (void)index;
@@ -707,7 +707,7 @@ void Series::initDefaults(IterationEncoding ie, bool initAll)
 std::future<void> Series::flush_impl(
     iterations_iterator begin,
     iterations_iterator end,
-    internal::FlushParams flushParams,
+    internal::FlushParams const &flushParams,
     bool flushIOHandler)
 {
     IOHandler()->m_lastFlushSuccessful = true;
@@ -745,7 +745,7 @@ std::future<void> Series::flush_impl(
 void Series::flushFileBased(
     iterations_iterator begin,
     iterations_iterator end,
-    internal::FlushParams flushParams,
+    internal::FlushParams const &flushParams,
     bool flushIOHandler)
 {
     auto &series = get();
@@ -862,7 +862,7 @@ void Series::flushFileBased(
 void Series::flushGorVBased(
     iterations_iterator begin,
     iterations_iterator end,
-    internal::FlushParams flushParams,
+    internal::FlushParams const &flushParams,
     bool flushIOHandler)
 {
     auto &series = get();
@@ -1020,7 +1020,7 @@ void Series::readFileBased()
         series.m_filenameExtension);
 
     int padding = autoDetectPadding(
-        std::move(isPartOfSeries),
+        isPartOfSeries,
         IOHandler()->directory,
         // foreach found file with `filename` and `index`:
         [&series](IterationIndex_t index, std::string const &filename) {
@@ -1457,7 +1457,7 @@ creating new iterations.
     auto readSingleIteration =
         [&series, &pOpen, this](
             IterationIndex_t index,
-            std::string path,
+            std::string const &path,
             bool guardAgainstRereading,
             bool beginStep) -> std::optional<error::ReadError> {
         if (series.iterations.contains(index))
@@ -2386,7 +2386,9 @@ ReadIterations Series::readIterations()
     // Use private constructor instead of copy constructor to avoid
     // object slicing
     return {
-        this->m_series, IOHandler()->m_frontendAccess, get().m_parsePreference};
+        Series(this->m_series),
+        IOHandler()->m_frontendAccess,
+        get().m_parsePreference};
 }
 
 void Series::parseBase()

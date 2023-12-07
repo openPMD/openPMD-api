@@ -253,7 +253,7 @@ OPENPMD_protected
     Iteration &containingIteration();
     /** @} */
 
-    void seriesFlush(internal::FlushParams);
+    void seriesFlush(internal::FlushParams const &);
 
     void flushAttributes(internal::FlushParams const &);
 

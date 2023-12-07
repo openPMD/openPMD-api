@@ -161,61 +161,61 @@ bool setAttributeFromBufferInfo(
                 ) );
         else */
         // std::cout << "+++++++++++ BUFFER: " << buf.format << std::endl;
-        if (buf.format.find("b") != std::string::npos)
+        if (buf.format.find('b') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<char>(
                     static_cast<char *>(buf.ptr),
                     static_cast<char *>(buf.ptr) + buf.size));
-        else if (buf.format.find("h") != std::string::npos)
+        else if (buf.format.find('h') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<short>(
                     static_cast<short *>(buf.ptr),
                     static_cast<short *>(buf.ptr) + buf.size));
-        else if (buf.format.find("i") != std::string::npos)
+        else if (buf.format.find('i') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<int>(
                     static_cast<int *>(buf.ptr),
                     static_cast<int *>(buf.ptr) + buf.size));
-        else if (buf.format.find("l") != std::string::npos)
+        else if (buf.format.find('l') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<long>(
                     static_cast<long *>(buf.ptr),
                     static_cast<long *>(buf.ptr) + buf.size));
-        else if (buf.format.find("q") != std::string::npos)
+        else if (buf.format.find('q') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<long long>(
                     static_cast<long long *>(buf.ptr),
                     static_cast<long long *>(buf.ptr) + buf.size));
-        else if (buf.format.find("B") != std::string::npos)
+        else if (buf.format.find('B') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<unsigned char>(
                     static_cast<unsigned char *>(buf.ptr),
                     static_cast<unsigned char *>(buf.ptr) + buf.size));
-        else if (buf.format.find("H") != std::string::npos)
+        else if (buf.format.find('H') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<unsigned short>(
                     static_cast<unsigned short *>(buf.ptr),
                     static_cast<unsigned short *>(buf.ptr) + buf.size));
-        else if (buf.format.find("I") != std::string::npos)
+        else if (buf.format.find('I') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<unsigned int>(
                     static_cast<unsigned int *>(buf.ptr),
                     static_cast<unsigned int *>(buf.ptr) + buf.size));
-        else if (buf.format.find("L") != std::string::npos)
+        else if (buf.format.find('L') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<unsigned long>(
                     static_cast<unsigned long *>(buf.ptr),
                     static_cast<unsigned long *>(buf.ptr) + buf.size));
-        else if (buf.format.find("Q") != std::string::npos)
+        else if (buf.format.find('Q') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<unsigned long long>(
@@ -240,19 +240,19 @@ bool setAttributeFromBufferInfo(
                     static_cast<std::complex<long double> *>(buf.ptr),
                     static_cast<std::complex<long double> *>(buf.ptr) +
                         buf.size));
-        else if (buf.format.find("f") != std::string::npos)
+        else if (buf.format.find('f') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<float>(
                     static_cast<float *>(buf.ptr),
                     static_cast<float *>(buf.ptr) + buf.size));
-        else if (buf.format.find("d") != std::string::npos)
+        else if (buf.format.find('d') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<double>(
                     static_cast<double *>(buf.ptr),
                     static_cast<double *>(buf.ptr) + buf.size));
-        else if (buf.format.find("g") != std::string::npos)
+        else if (buf.format.find('g') != std::string::npos)
             return attr.setAttribute(
                 key,
                 std::vector<long double>(
@@ -460,7 +460,7 @@ bool setAttributeFromObject(
     py::object &obj,
     pybind11::dtype datatype)
 {
-    Datatype requestedDatatype = dtype_from_numpy(datatype);
+    Datatype requestedDatatype = dtype_from_numpy(std::move(datatype));
     return switchNonVectorType<SetAttributeFromObject>(
         requestedDatatype, attr, key, obj);
 }
@@ -512,7 +512,8 @@ void init_Attributable(py::module &m)
                std::string const &key,
                py::object &obj,
                pybind11::dtype datatype) {
-                return setAttributeFromObject(attr, key, obj, datatype);
+                return setAttributeFromObject(
+                    attr, key, obj, std::move(datatype));
             },
             py::arg("key"),
             py::arg("value"),

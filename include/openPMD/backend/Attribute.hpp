@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 
@@ -85,9 +86,9 @@ class Attribute
           std::vector<float>,
           std::vector<double>,
           std::vector<long double>,
-          std::vector<std::complex<float> >,
-          std::vector<std::complex<double> >,
-          std::vector<std::complex<long double> >,
+          std::vector<std::complex<float>>,
+          std::vector<std::complex<double>>,
+          std::vector<std::complex<long double>>,
           std::vector<signed char>,
           std::vector<std::string>,
           std::array<double, 7>,
@@ -106,9 +107,14 @@ public:
      *
      * Fix by explicitly instantiating resource
      */
-    template <typename T>
-    Attribute(T &&val) : Variant(resource(std::forward<T>(val)))
+
+#define OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT(TYPE)                       \
+    Attribute(TYPE val) : Variant(resource(std::move(val)))                    \
     {}
+
+    OPENPMD_FOREACH_DATATYPE(OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT)
+
+#undef OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT
 
     /** Retrieve a stored specific Attribute and cast if convertible.
      *
@@ -297,3 +303,5 @@ std::optional<U> Attribute::getOptional() const
         std::move(eitherValueOrError));
 }
 } // namespace openPMD
+
+#include "openPMD/UndefDatatypeMacros.hpp"

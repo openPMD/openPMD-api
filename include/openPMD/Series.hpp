@@ -241,7 +241,13 @@ public:
         Access at,
         std::string const &options = "{}");
 
-    virtual ~Series() = default;
+    Series(Series const &) = default;
+    Series(Series &&) = default;
+
+    Series &operator=(Series const &) = default;
+    Series &operator=(Series &&) = default;
+
+    ~Series() override = default;
 
     /**
      * An unsigned integer type, used to identify Iterations in a Series.
@@ -637,12 +643,12 @@ OPENPMD_private
     std::future<void> flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     void flushFileBased(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     /*
      * Group-based and variable-based iteration layouts share a lot of logic
@@ -654,7 +660,7 @@ OPENPMD_private
     void flushGorVBased(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     void flushMeshesPath();
     void flushParticlesPath();

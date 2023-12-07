@@ -932,7 +932,7 @@ void init_RecordComponent(py::module &m)
         .def(
             "make_empty",
             [](RecordComponent &rc,
-               pybind11::dtype const dt,
+               pybind11::dtype const &dt,
                uint8_t dimensionality) {
                 return rc.makeEmpty(dtype_from_numpy(dt), dimensionality);
             })
@@ -1114,7 +1114,8 @@ void init_RecordComponent(py::module &m)
             py::arg_v("extent", Extent(1, -1u), "array.shape"))
 
         .def_property_readonly_static(
-            "SCALAR", [](py::object) { return RecordComponent::SCALAR; })
+            "SCALAR",
+            [](py::object const &) { return RecordComponent::SCALAR; })
 
         // TODO remove in future versions (deprecated)
         .def("set_unit_SI", &RecordComponent::setUnitSI) // deprecated

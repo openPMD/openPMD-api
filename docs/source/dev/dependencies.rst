@@ -27,7 +27,6 @@ Optional: I/O backends
 
 * `JSON <https://en.wikipedia.org/wiki/JSON>`_
 * `HDF5 <https://support.hdfgroup.org/HDF5>`_ 1.8.13+
-* `ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios>`_ 1.13.1+ (deprecated)
 * `ADIOS2 <https://github.com/ornladios/ADIOS2>`_ 2.7.0+
 
 while those can be build either with or without:
@@ -39,7 +38,7 @@ Optional: language bindings
 
 * Python:
 
-  * Python 3.8 - 3.11
+  * Python 3.8 - 3.12
   * pybind11 2.11.1+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)

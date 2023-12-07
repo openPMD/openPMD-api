@@ -22,7 +22,7 @@
 #include "openPMD/IO/InvalidatableFile.hpp"
 
 openPMD::InvalidatableFile::InvalidatableFile(std::string s)
-    : fileState{std::make_shared<FileState>(s)}
+    : fileState{std::make_shared<FileState>(std::move(s))}
 {}
 
 void openPMD::InvalidatableFile::invalidate()
@@ -39,11 +39,11 @@ openPMD::InvalidatableFile &openPMD::InvalidatableFile::operator=(std::string s)
 {
     if (fileState)
     {
-        fileState->name = s;
+        fileState->name = std::move(s);
     }
     else
     {
-        fileState = std::make_shared<FileState>(s);
+        fileState = std::make_shared<FileState>(std::move(s));
     }
     return *this;
 }

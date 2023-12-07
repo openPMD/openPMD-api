@@ -38,7 +38,7 @@ AbstractIOHandlerImpl::AbstractIOHandlerImpl(AbstractIOHandler *handler)
 }
 
 void AbstractIOHandlerImpl::keepSynchronous(
-    Writable *writable, Parameter<Operation::KEEP_SYNCHRONOUS> param)
+    Writable *writable, Parameter<Operation::KEEP_SYNCHRONOUS> const &param)
 {
     writable->abstractFilePosition = param.otherWritable->abstractFilePosition;
     writable->written = true;

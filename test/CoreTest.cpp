@@ -47,6 +47,15 @@ TEST_CASE("attribute_dtype_test", "[core]")
 {
     Attribute a = Attribute(static_cast<char>(' '));
     REQUIRE(Datatype::CHAR == a.dtype);
+    {
+        // check that copy constructor works
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+        [[maybe_unused]] Attribute b = a;
+    }
+    {
+        // check that move constructor works
+        [[maybe_unused]] Attribute b = std::move(a);
+    }
     a = Attribute(static_cast<unsigned char>(' '));
     REQUIRE(Datatype::UCHAR == a.dtype);
     a = Attribute(static_cast<short>(0));

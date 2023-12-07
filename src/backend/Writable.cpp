@@ -47,7 +47,7 @@ void Writable::seriesFlush(std::string backendConfig)
     seriesFlush({FlushLevel::UserFlush, std::move(backendConfig)});
 }
 
-void Writable::seriesFlush(internal::FlushParams flushParams)
+void Writable::seriesFlush(internal::FlushParams const &flushParams)
 {
     auto series =
         Attributable({attributable, [](auto const *) {}}).retrieveSeries();

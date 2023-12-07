@@ -1,6 +1,7 @@
 /* Running this test in parallel with MPI requires MPI::Init.
  * To guarantee a correct call to Init, launch the tests manually.
  */
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/openPMD.hpp"
@@ -75,9 +76,8 @@ TEST_CASE("parallel_multi_series_test", "[parallel]")
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3})
     {
-        for (auto const &t : myBackends)
+        for (auto const &file_ending : myBackends)
         {
-            auto const file_ending = t;
             std::cout << file_ending << std::endl;
             allSeries.emplace_back(
                 std::string("../samples/parallel_multi_open_test_")
@@ -115,7 +115,7 @@ TEST_CASE("parallel_multi_series_test", "[parallel]")
 
 void write_test_zero_extent(
     bool fileBased,
-    std::string file_ending,
+    std::string const &file_ending,
     bool writeAllChunks,
     bool declareFromAll)
 {
@@ -379,7 +379,7 @@ TEST_CASE("no_parallel_hdf5", "[parallel][hdf5]")
 #endif
 
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
-void available_chunks_test(std::string file_ending)
+void available_chunks_test(std::string const &file_ending)
 {
     int r_mpi_rank{-1}, r_mpi_size{-1};
     MPI_Comm_rank(MPI_COMM_WORLD, &r_mpi_rank);
@@ -628,7 +628,7 @@ TEST_CASE("hzdr_adios_sample_content_test", "[parallel][adios2][bp3]")
 #endif
 
 #if openPMD_HAVE_MPI
-void write_4D_test(std::string file_ending)
+void write_4D_test(std::string const &file_ending)
 {
     int mpi_s{-1};
     int mpi_r{-1};
@@ -662,7 +662,7 @@ TEST_CASE("write_4D_test", "[parallel]")
     }
 }
 
-void write_makeconst_some(std::string file_ending)
+void write_makeconst_some(std::string const &file_ending)
 {
     int mpi_s{-1};
     int mpi_r{-1};
@@ -695,7 +695,7 @@ TEST_CASE("write_makeconst_some", "[parallel]")
     }
 }
 
-void close_iteration_test(std::string file_ending)
+void close_iteration_test(std::string const &file_ending)
 {
     int i_mpi_rank{-1}, i_mpi_size{-1};
     MPI_Comm_rank(MPI_COMM_WORLD, &i_mpi_rank);
@@ -765,7 +765,7 @@ TEST_CASE("close_iteration_test", "[parallel]")
     }
 }
 
-void file_based_write_read(std::string file_ending)
+void file_based_write_read(std::string const &file_ending)
 {
     namespace io = openPMD;
 
@@ -872,7 +872,7 @@ TEST_CASE("file_based_write_read", "[parallel]")
     }
 }
 
-void hipace_like_write(std::string file_ending)
+void hipace_like_write(std::string const &file_ending)
 {
     namespace io = openPMD;
 
@@ -1171,10 +1171,16 @@ clevel = "1"
 doshuffle = "BLOSC_BITSHUFFLE"
 )END";
 
-    std::string writeConfigBP4 = R"END(
+    std::string writeConfigBP4 =
+        R"END(
 [adios2]
 unused = "parameter"
-
+attribute_writing_ranks = 0
+)END"
+#if openPMD_HAS_ADIOS_2_9
+        "use_group_table = true"
+#endif
+        R"END(
 [adios2.engine]
 type = "bp4"
 unused = "as well"
@@ -1397,7 +1403,7 @@ void append_mode(
     std::string const &extension,
     bool variableBased,
     ParseMode parseMode,
-    std::string jsonConfig = "{}")
+    std::string const &jsonConfig = "{}")
 {
     std::string filename =
         (variableBased ? "../samples/append/append_variablebased."
@@ -1415,7 +1421,7 @@ void append_mode(
     std::vector<int> data(10, 999);
     auto writeSomeIterations = [&data, mpi_size, mpi_rank](
                                    WriteIterations &&writeIterations,
-                                   std::vector<uint64_t> indices) {
+                                   std::vector<uint64_t> const &indices) {
         for (auto index : indices)
         {
             auto it = writeIterations[index];

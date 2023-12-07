@@ -27,6 +27,7 @@
 int main(int argc, char *argv[])
 {
     std::vector<std::string> str_argv;
+    str_argv.reserve(argc);
     for (int i = 0; i < argc; ++i)
         str_argv.emplace_back(argv[i]);
 

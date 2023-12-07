@@ -274,6 +274,8 @@ private:
         return m_useGroupTable.value();
     }
 
+    bool m_writeAttributesFromThisRank = true;
+
     struct ParameterizedOperator
     {
         adios2::Operator op;
@@ -285,7 +287,9 @@ private:
     json::TracingJSON m_config;
     static json::TracingJSON nullvalue;
 
-    void init(json::TracingJSON config);
+    template <typename Callback>
+    void
+    init(json::TracingJSON config, Callback &&callbackWriteAttributesFromRank);
 
     template <typename Key>
     json::TracingJSON config(Key &&key, json::TracingJSON &cfg)
@@ -391,9 +395,10 @@ private:
         ThrowError
     };
 
-    detail::BufferedActions &getFileData(InvalidatableFile file, IfFileNotOpen);
+    detail::BufferedActions &
+    getFileData(InvalidatableFile const &file, IfFileNotOpen);
 
-    void dropFileData(InvalidatableFile file);
+    void dropFileData(InvalidatableFile const &file);
 
     /*
      * Prepare a variable that already exists for an IO
@@ -465,7 +470,7 @@ namespace detail
             ADIOS2IOHandlerImpl &,
             adios2::IO &IO,
             std::string name,
-            std::shared_ptr<Attribute::resource> resource);
+            Attribute::resource &resource);
 
         template <int n, typename... Params>
         static Datatype call(Params &&...);
@@ -488,8 +493,8 @@ namespace detail
         template <typename T>
         static void call(
             ADIOS2IOHandlerImpl *impl,
-            InvalidatableFile,
-            const std::string &varName,
+            InvalidatableFile const &,
+            std::string const &varName,
             Parameter<Operation::OPEN_DATASET> &parameters);
 
         static constexpr char const *errorMsg = "ADIOS2: openDataset()";
