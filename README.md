@@ -372,7 +372,7 @@ openPMD-api is developed by many people.
 It was initially started by the [Computational Radiation Physics Group](https://hzdr.de/crp) at [HZDR](https://www.hzdr.de/) as successor to [libSplash](https://github.com/ComputationalRadiationPhysics/libSplash/), generalizing the [successful HDF5 & ADIOS1 implementations](https://arxiv.org/abs/1706.00522) in [PIConGPU](https://github.com/ComputationalRadiationPhysics/picongpu).
 The following people and institutions [contributed](https://github.com/openPMD/openPMD-api/graphs/contributors) to openPMD-api:
 
-* [Axel Huebl (HZDR, now LBNL)](https://github.com/ax3l):
+* [Axel Huebl (LBNL, previously HZDR)](https://github.com/ax3l):
   project lead, releases, documentation, automated CI/CD, Python bindings, Dask, installation & packaging, prior reference implementations
 * [Franz Poeschel (CASUS)](https://github.com/franzpoeschel):
   JSON & ADIOS2 backend, data staging/streaming, reworked class design
@@ -380,6 +380,12 @@ The following people and institutions [contributed](https://github.com/openPMD/o
   initial library design and implementation with HDF5 & ADIOS1 backend
 * [Junmin Gu (LBNL)](https://github.com/guj):
   non-collective parallel I/O fixes, ADIOS improvements, benchmarks
+
+Maintained by the following research groups:
+
+* [Computational Radiation Physics (CRD)](https://www.casus.science/casus/team/) at CASUS/HZDR, led by [Michael Bussmann](https://github.com/bussmann)
+* [Accelerator Modeling Program (AMP)](https://atap.lbl.gov/accelerator-modeling-program/) at LBNL, led by [Jean-Luc Vay](https://github.com/jlvay)
+* [Scientific Data Management (SDM)](https://crd.lbl.gov/divisions/scidata/sdm/) at LBNL, led by [Kesheng (John) Wu](https://github.com/john18)
 
 Further thanks go to improvements and contributions from:
 

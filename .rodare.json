@@ -19,8 +19,76 @@
       "name": "Gu, Junmin",
       "affiliation": "Lawrence Berkeley National Laboratory",
       "orcid": "0000-0002-1521-8534"
+    },
+    {
+      "affiliations": [
+        {
+          "name": "Center for Advanced Systems Understanding"
+        },
+        {
+          "name": "Helmholtz-Zentrum Dresden-Rossendorf"
+        }
+      ],
+      "person_or_org": {
+        "family_name": "Bussmann",
+        "given_name": "Michael",
+        "identifiers": [
+          {
+            "identifier": "0000-0002-8258-3881",
+            "scheme": "orcid"
+          }
+        ],
+        "name": "Michael Bussmann (Leader of the Computational Radiation Physics Research Team at CASUS/HZDR)",
+        "type": "personal"
+      },
+      "role": {
+        "id": "researchgroup"
+      }
+    },
+    {
+      "affiliations": [
+        {
+          "name": "Lawrence Berkeley National Laboratory"
+        }
+      ],
+      "person_or_org": {
+        "family_name": "Vay",
+        "given_name": "Jean-Luc",
+        "identifiers": [
+          {
+            "identifier": "0000-0002-0040-799X",
+            "scheme": "orcid"
+          }
+        ],
+        "name": "Jean-Luc Vay (Head of the Accelerator Modeling Program at LBNL)",
+        "type": "personal"
+      },
+      "role": {
+        "id": "researchgroup"
+      }
+    },
+    {
+      "affiliations": [
+        {
+          "name": "Lawrence Berkeley National Laboratory"
+        }
+      ],
+      "person_or_org": {
+        "family_name": "Wu",
+        "given_name": "Kesheng (John)",
+        "identifiers": [
+          {
+            "identifier": "0000-0002-6907-3393",
+            "scheme": "orcid"
+          }
+        ],
+        "name": "Kesheng (John) Wu (Head of the Scientific Data Management research group at LBNL)",
+        "type": "personal"
+      },
+      "role": {
+        "id": "researchgroup"
+      }
     }
-
   ],
   "contributors": [
     {

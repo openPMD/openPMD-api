@@ -3,7 +3,7 @@ message: "If you use this software, please cite it as below."
 authors:
 - family-names: Huebl
   given-names: Axel
-  affiliation: Lawrence Berkeley National Laboratory
+  affiliation: Lawrence Berkeley National Laboratory (LBNL)
   orcid: https://orcid.org/0000-0003-1943-7141
   email: axelhuebl@lbl.gov
 - family-names: Poeschel
@@ -12,16 +12,28 @@ authors:
   orcid: https://orcid.org/0000-0001-7042-5088
 - family-names: Koller
   given-names: Fabian
-  affiliation: Helmholtz-Zentrum Dresden-Rossendorf
+  affiliation: Helmholtz-Zentrum Dresden-Rossendorf (HZDR)
   orcid: https://orcid.org/0000-0001-8704-1769
 - family-names: Gu
   given-names: Junmin
-  affiliation: Lawrence Berkeley National Laboratory
+  affiliation: Lawrence Berkeley National Laboratory (LBNL)
   orcid: https://orcid.org/0000-0002-1521-8534
+- family-names: Bussmann
+  given-names: Michael
+  affiliation: Center for Advanced Systems Understanding (CASUS) and Helmholtz-Zentrum Dresden-Rossendorf (HZDR)
+  orcid: https://orcid.org/0000-0002-8258-3881
+- family-names: Vay
+  given-names: Jean-Luc
+  affiliation: Lawrence Berkeley National Laboratory (LBNL)
+  orcid: https://orcid.org/0000-0002-0040-799X
+- family-names: Wu
+  given-names: Kesheng (John)
+  affiliation: Lawrence Berkeley National Laboratory (LBNL)
+  orcid: https://orcid.org/0000-0002-6907-3393
 contact:
 - family-names: Huebl
   given-names: Axel
-  affiliation: Lawrence Berkeley National Laboratory
+  affiliation: Lawrence Berkeley National Laboratory (LBNL)
   orcid: https://orcid.org/0000-0003-1943-7141
   email: axelhuebl@lbl.gov
 title: "openPMD-api: C++ & Python API for Scientific I/O with openPMD"

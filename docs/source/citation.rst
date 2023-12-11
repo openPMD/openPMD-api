@@ -67,7 +67,7 @@ As a software citation, you almost always want to refer to a *specific version* 
 
 .. tip::
 
-   Axel Huebl, Franz Poeschel, Fabian Koller, and Junmin Gu.
+   Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu, Michael Bussmann, Jean-Luc Vay and Kesheng Wu.
    *"openPMD-api 0.14.3: C++ & Python API for Scientific I/O with openPMD,"*
    `DOI:10.14278/rodare.1234 <https://doi.org/10.14278/rodare.1234>`_ (2021)
 
@@ -77,7 +77,7 @@ We also provide a DOI that refers to all releases of openPMD-api:
 
 .. note::
 
-   Axel Huebl, Franz Poeschel, Fabian Koller, and Junmin Gu.
+   Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu, Michael Bussmann, Jean-Luc Vay and Kesheng Wu.
    *"openPMD-api: C++ & Python API for Scientific I/O with openPMD"*
    `DOI:10.14278/rodare.27 <https://doi.org/10.14278/rodare.27>`_ (2018)
 
@@ -89,7 +89,10 @@ The equivalent BibTeX code is:
      author       = {Huebl, Axel and
                      Poeschel, Franz and
                      Koller, Fabian and
-                     Gu, Junmin},
+                     Gu, Junmin and
+                     Bussmann, Michael and
+                     Vay, Jean-Luc and
+                     Wu, Kesheng},
      title        = {{openPMD-api: C++ \& Python API for Scientific I/O with openPMD}},
      month        = june,
      year         = 2018,
