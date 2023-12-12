@@ -1,0 +1,79 @@
+# This is a Spack environment file.
+#
+# Activating and installing this environment will provide all dependencies
+# that are needed for full-feature development.
+#   https//spack.readthedocs.io/en/latest/environments.html#anonymous-environments
+#
+spack:
+  specs:
+  - adios2
+  - hdf5
+  - openmpi
+
+  packages:
+    adios2:
+      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+    cmake:
+      externals:
+      - spec: cmake@3.22.1
+        prefix: /usr
+      buildable: False
+    libfabric:
+      externals:
+      - spec: libfabric@1.11.0
+        prefix: /usr
+      buildable: False
+    openmpi:
+      externals:
+      - spec: openmpi@4.1.2
+        prefix: /usr
+      buildable: False
+    perl:
+      externals:
+      - spec: perl@5.34.0
+        prefix: /usr
+      buildable: False
+    pkgconf:
+      externals:
+      - spec: pkgconf@1.8.0
+        prefix: /usr
+      buildable: False
+    python:
+      externals:
+      - spec: python@3.11.5
+        prefix: /usr
+      buildable: False
+    hdf5:
+      externals:
+      - spec: hdf5@1.10.7
+        prefix: /usr
+      buildable: False
+    all:
+      target: [aarch64]
+      variants: ~fortran
+      compiler: [gcc@11.4.0]
+
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: ubuntu22.04
+      paths:
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      spec: gcc@11.4.0
+      target: aarch64
+
+  # arm.large with 4 vCPU cores
+  #   https://circleci.com/product/features/resource-classes/
+  #   https://circleci.com/docs/using-arm/
+  config:
+    build_jobs: 4
+
+  # https://cache.spack.io
+  mirrors:
+    E4S: https://cache.e4s.io
