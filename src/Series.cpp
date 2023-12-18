@@ -1212,18 +1212,14 @@ void Series::readOneIterationFileBased(std::string const &filePath)
             series.m_iterationEncoding = IterationEncoding::fileBased;
         else if (encoding == "groupBased")
         {
-            series.m_iterationEncoding = IterationEncoding::groupBased;
-            /*
-             * Opening a single file of a file-based Series is a valid workflow,
-             * warnings are not necessary here.
-             * Leaving the old warning as a comment, because we might want to
-             * add this back in again if we add some kind of verbosity level
-             * specification or logging.
-             */
-            // std::cerr << "Series constructor called with iteration "
-            //              "regex '%T' suggests loading a "
-            //           << "time series with fileBased iteration "
-            //              "encoding. Loaded file is groupBased.\n";
+            series.m_iterationEncoding = IterationEncoding::fileBased;
+            std::cerr
+                << "Series constructor called with iteration regex '%T' "
+                   "suggests loading a time series with fileBased iteration "
+                   "encoding. Loaded file is groupBased. Will ignore the "
+                   "encoding stated in the file and continue treating this as "
+                   "file-based. Depending on what data the opened files "
+                   "actually contain, this might not yield correct results.\n";
         }
         else if (encoding == "variableBased")
         {
