@@ -366,16 +366,44 @@ std::future<void> AbstractIOHandlerImpl::flush()
         }
         catch (...)
         {
-            std::cerr << "[AbstractIOHandlerImpl] IO Task "
-                      << internal::operationAsString(i.operation)
-                      << " failed with exception. Clearing IO queue and "
-                         "passing on the exception."
-                      << std::endl;
-            while (!m_handler->m_work.empty())
+            auto base_handler = [&i, this]() {
+                std::cerr << "[AbstractIOHandlerImpl] IO Task "
+                          << internal::operationAsString(i.operation)
+                          << " failed with exception. Clearing IO queue and "
+                             "passing on the exception."
+                          << std::endl;
+                while (!m_handler->m_work.empty())
+                {
+                    m_handler->m_work.pop();
+                }
+            };
+
+            if (m_verboseIOTasks)
             {
-                m_handler->m_work.pop();
+                try
+                {
+                    // Throw again so we can distinguish between std::exception
+                    // and other exception types.
+                    throw;
+                }
+                catch (std::exception const &e)
+                {
+                    base_handler();
+                    std::cerr << "Original exception: " << e.what()
+                              << std::endl;
+                    throw;
+                }
+                catch (...)
+                {
+                    base_handler();
+                    throw;
+                }
             }
-            throw;
+            else
+            {
+                base_handler();
+                throw;
+            }
         }
         (*m_handler).m_work.pop();
     }
