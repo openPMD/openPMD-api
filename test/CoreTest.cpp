@@ -528,11 +528,10 @@ TEST_CASE("mesh_constructor_test", "[core]")
     REQUIRE(m.gridSpacing<double>() == gs);
     std::vector<double> ggo{0};
     REQUIRE(m.gridGlobalOffset() == ggo);
-    REQUIRE(m.gridUnitSI() == static_cast<double>(1));
     REQUIRE(
         m.numAttributes() ==
-        8); /* axisLabels, dataOrder, geometry, gridGlobalOffset, gridSpacing,
-               gridUnitSI, timeOffset, unitDimension */
+        7); /* axisLabels, dataOrder, geometry, gridGlobalOffset, gridSpacing,
+               timeOffset, unitDimension */
 
     o.flush();
     REQUIRE(m["x"].unitSI() == 1);
@@ -557,22 +556,22 @@ TEST_CASE("mesh_modification_test", "[core]")
 
     m.setGeometry(Mesh::Geometry::spherical);
     REQUIRE(m.geometry() == Mesh::Geometry::spherical);
-    REQUIRE(m.numAttributes() == 8);
+    REQUIRE(m.numAttributes() == 7);
     m.setDataOrder(Mesh::DataOrder::F);
     REQUIRE(m.dataOrder() == Mesh::DataOrder::F);
-    REQUIRE(m.numAttributes() == 8);
+    REQUIRE(m.numAttributes() == 7);
     std::vector<std::string> al{"z_", "y_", "x_"};
     m.setAxisLabels({"z_", "y_", "x_"});
     REQUIRE(m.axisLabels() == al);
-    REQUIRE(m.numAttributes() == 8);
+    REQUIRE(m.numAttributes() == 7);
     std::vector<double> gs{1e-5, 2e-5, 3e-5};
     m.setGridSpacing(gs);
     REQUIRE(m.gridSpacing<double>() == gs);
-    REQUIRE(m.numAttributes() == 8);
+    REQUIRE(m.numAttributes() == 7);
     std::vector<double> ggo{1e-10, 2e-10, 3e-10};
     m.setGridGlobalOffset({1e-10, 2e-10, 3e-10});
     REQUIRE(m.gridGlobalOffset() == ggo);
-    REQUIRE(m.numAttributes() == 8);
+    REQUIRE(m.numAttributes() == 7);
     m.setGridUnitSI(42.0);
     REQUIRE(m.gridUnitSI() == static_cast<double>(42));
     REQUIRE(m.numAttributes() == 8);

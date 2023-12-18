@@ -184,9 +184,8 @@ public:
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
      * simulation units to SI units.
      *
-     * Note that this API follows the legacy (openPMD 1.*) definition
-     * of gridUnitSI.
-     * In order to specify the gridUnitSI per dimension,
+     * Valid for openPMD version 1.*.
+     * In order to specify the gridUnitSI per dimension (openPMD 2.*),
      * use the vector overload or `setGridUnitSIPerDimension()`.
      *
      * @param   gridUnitSI  unit-conversion factor to multiply each value in
@@ -196,12 +195,14 @@ public:
      */
     Mesh &setGridUnitSI(double gridUnitSI);
 
-    /** Set the unit-conversion factor per dimension to multiply each value in
+    /** Alias for `setGridUnitSI(std::vector<double>)`.
+     *
+     * Set the unit-conversion factor per dimension to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
      * simulation units to SI units.
      *
-     * Note that this is a feature of openPMD 2.0.
-     * The legacy behavior (a scalar gridUnitSI) is implemented
+     * Valid for openPMD 2.*.
+     * The legacy behavior (openPMD 1.*, a scalar gridUnitSI) is implemented
      * by `setGridUnitSI(double)`.
      *
      * @param   gridUnitSI  unit-conversion factor to multiply each value in
@@ -220,14 +221,12 @@ public:
      */
     std::vector<double> gridUnitSIPerDimension() const;
 
-    /** Alias for `setGridUnitSI(std::vector<double>)`.
-     *
-     * Set the unit-conversion factor per dimension to multiply each value in
+    /* Set the unit-conversion factor per dimension to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
      * simulation units to SI units.
      *
-     * Note that this is a feature of openPMD 2.0.
-     * The legacy behavior (a scalar gridUnitSI) is implemented
+     * Valid for openPMD 2.*.
+     * The legacy behavior (openPMD 1.*, a scalar gridUnitSI) is implemented
      * by `setGridUnitSI(double)`.
      *
      * @param   gridUnitSI  unit-conversion factor to multiply each value in
