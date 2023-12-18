@@ -39,7 +39,7 @@ Writable::~Writable()
      * remove references to this object from internal data structures.
      */
     IOHandler->value()->enqueue(
-        IOTask(this, Parameter<Operation::DEREGISTER>()));
+        IOTask(this, Parameter<Operation::DEREGISTER>(parent)));
 }
 
 void Writable::seriesFlush(std::string backendConfig)

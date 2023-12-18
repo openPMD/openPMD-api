@@ -358,7 +358,11 @@ std::future<void> AbstractIOHandlerImpl::flush()
                 auto &parameter = deref_dynamic_cast<Parameter<O::DEREGISTER>>(
                     i.parameter.get());
                 writeToStderr(
-                    "[", i.writable->parent, "->", i.writable, "] DEREGISTER");
+                    "[",
+                    parameter.former_parent,
+                    "->",
+                    i.writable,
+                    "] DEREGISTER");
                 deregister(i.writable, parameter);
                 break;
             }

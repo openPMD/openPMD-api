@@ -30,6 +30,7 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
@@ -680,15 +681,23 @@ template <>
 struct OPENPMDAPI_EXPORT Parameter<Operation::DEREGISTER>
     : public AbstractParameter
 {
-    Parameter() = default;
-    Parameter(Parameter const &) : AbstractParameter()
+    Parameter(void const *ptr_in) : former_parent(ptr_in)
     {}
+
+    Parameter(Parameter const &) = default;
+    Parameter(Parameter &&) = default;
+
+    Parameter &operator=(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
 
     std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::make_unique<Parameter<Operation::DEREGISTER>>(
             std::move(*this));
     }
+
+    // Just for verbose logging.
+    void const *former_parent = nullptr;
 };
 
 /** @brief Self-contained description of a single IO operation.
