@@ -42,7 +42,6 @@ Mesh::Mesh()
     setAxisLabels({"x"}); // empty strings are not allowed in HDF5
     setGridSpacing(std::vector<double>{1});
     setGridGlobalOffset({0});
-    setGridUnitSI(1);
 }
 
 Mesh::Geometry Mesh::geometry() const
@@ -403,6 +402,18 @@ void Mesh::flush_impl(
             {
                 for (auto &comp : *this)
                     comp.second.flush(comp.first, flushParams);
+            }
+        }
+        if (!containsAttribute("gridUnitSI"))
+        {
+            if (auto series = retrieveSeries(); series.openPMD() < "2.")
+            {
+                setGridUnitSI(1);
+            }
+            else
+            {
+                setGridUnitSIPerDimension(
+                    std::vector<double>(retrieveMeshDimensionality(*this), 1));
             }
         }
         flushAttributes(flushParams);
