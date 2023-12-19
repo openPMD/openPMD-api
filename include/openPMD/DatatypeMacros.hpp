@@ -18,7 +18,11 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+
+// sic!
+// no #pragma once
+// Since the macros can be un-defined with UndefDatatypeMacros.hpp, this header
+// may be included multiple times into one translation unit
 
 #include <array>
 #include <complex>
@@ -89,7 +93,6 @@ using openpmd_array_double_7 = std::array<double, 7>;
     MACRO(std::complex<double>)                                                \
     MACRO(std::complex<long double>)                                           \
     MACRO(std::string)                                                         \
-    MACRO(array_double_7)                                                      \
     MACRO(bool)
 
 #define OPENPMD_FOREACH_DATASET_DATATYPE(MACRO)                                \
@@ -109,5 +112,4 @@ using openpmd_array_double_7 = std::array<double, 7>;
     MACRO(long double)                                                         \
     MACRO(std::complex<float>)                                                 \
     MACRO(std::complex<double>)                                                \
-    MACRO(std::complex<long double>)                                           \
-    MACRO(std::array<double, 7>)
+    MACRO(std::complex<long double>)
