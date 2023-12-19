@@ -814,6 +814,25 @@ template <typename Action, typename... Args>
 constexpr auto switchNonVectorType(Datatype dt, Args &&...args)
     -> decltype(Action::template call<char>(std::forward<Args>(args)...));
 
+/**
+ * Generalizes switching over an openPMD datatype.
+ *
+ * Will call the function template found at Action::call< T >(), instantiating T
+ * with the C++ internal datatype corresponding to the openPMD datatype.
+ * Specializes only on those types that can occur in a dataset.
+ *
+ * @tparam ReturnType The function template's return type.
+ * @tparam Action The struct containing the function template.
+ * @tparam Args The function template's argument types.
+ * @param dt The openPMD datatype.
+ * @param args The function template's arguments.
+ * @return Passes on the result of invoking the function template with the given
+ *     arguments and with the template parameter specified by dt.
+ */
+template <typename Action, typename... Args>
+constexpr auto switchDatasetType(Datatype dt, Args &&...args)
+    -> decltype(Action::template call<char>(std::forward<Args>(args)...));
+
 } // namespace openPMD
 
 #if !defined(_MSC_VER)
