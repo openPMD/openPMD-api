@@ -121,7 +121,6 @@ Explanation of the single keys:
 * ``adios2.engine.parameters``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for the available engine parameters.
   The openPMD-api does not interpret these values and instead simply forwards them to ADIOS2.
-* ``adios2.engine.usesteps``: Described more closely in the documentation for the :ref:`ADIOS2 backend<backends-adios2>` (usesteps).
 * ``adios2.engine.preferred_flush_target`` Only relevant for BP5 engine, possible values are ``"disk"`` and ``"buffer"`` (default: ``"disk"``).
 
   * If ``"disk"``, data will be moved to disk on every flush.
