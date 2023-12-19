@@ -138,6 +138,7 @@ Data Analysis
    :hidden:
 
    analysis/viewer
+   analysis/pipe
    analysis/paraview
    analysis/pandas
    analysis/dask
