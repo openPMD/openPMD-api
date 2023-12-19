@@ -29,6 +29,7 @@
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <memory>
+#include <type_traits>
 
 namespace openPMD
 {
@@ -250,7 +251,7 @@ void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
 
 template <typename T_ContiguousContainer>
 inline typename std::enable_if_t<
-    auxiliary::IsContiguousContainer_v<T_ContiguousContainer> >
+    auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>
 RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
@@ -373,4 +374,37 @@ RecordComponent::storeChunk(Offset offset, Extent extent)
 #endif
     });
 }
+
+namespace detail
+{
+    template <typename Functor, typename Res>
+    struct VisitRecordComponent
+    {
+        template <typename T, typename... Args>
+        static Res call(RecordComponent &rc, Args &&...args)
+        {
+            return Functor::template call<T>(rc, std::forward<Args>(args)...);
+        }
+
+        template <int = 0, typename... Args>
+        static Res call(Args &&...)
+        {
+            throw std::runtime_error(
+                "[RecordComponent::visit()] Unknown datatype in "
+                "RecordComponent");
+        }
+    };
+} // namespace detail
+
+template <typename Visitor, typename... Args>
+constexpr auto RecordComponent::visit(Args &&...args)
+    -> decltype(Visitor::template call<char>(
+        std::declval<RecordComponent &>(), std::forward<Args>(args)...))
+{
+    using Res = decltype(Visitor::template call<char>(
+        std::declval<RecordComponent &>(), std::forward<Args>(args)...));
+    return switchDatasetType<detail::VisitRecordComponent<Visitor, Res>>(
+        getDatatype(), *this, std::forward<Args>(args)...);
+}
+
 } // namespace openPMD
