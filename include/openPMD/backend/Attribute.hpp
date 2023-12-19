@@ -21,9 +21,12 @@
 #pragma once
 
 #include "openPMD/Datatype.hpp"
-#include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+
+// comment to prevent clang-format from moving this #include up
+// datatype macros may be included and un-included in other headers
+#include "openPMD/DatatypeMacros.hpp"
 
 #include <algorithm>
 #include <array>
@@ -46,53 +49,10 @@ namespace openPMD
 // At the moment the dirty check is done at Attributable level,
 // resulting in all of an Attributables Attributes being written to disk even if
 // only one changes
-/** Varidic datatype supporting at least all formats for attributes specified in
+/** Variant datatype supporting at least all formats for attributes specified in
  * the openPMD standard.
- *
- * @note Extending and/or modifying the available formats requires identical
- *       modifications to Datatype.
  */
-class Attribute
-    : public auxiliary::Variant<
-          Datatype,
-          char,
-          unsigned char,
-          signed char,
-          short,
-          int,
-          long,
-          long long,
-          unsigned short,
-          unsigned int,
-          unsigned long,
-          unsigned long long,
-          float,
-          double,
-          long double,
-          std::complex<float>,
-          std::complex<double>,
-          std::complex<long double>,
-          std::string,
-          std::vector<char>,
-          std::vector<short>,
-          std::vector<int>,
-          std::vector<long>,
-          std::vector<long long>,
-          std::vector<unsigned char>,
-          std::vector<unsigned short>,
-          std::vector<unsigned int>,
-          std::vector<unsigned long>,
-          std::vector<unsigned long long>,
-          std::vector<float>,
-          std::vector<double>,
-          std::vector<long double>,
-          std::vector<std::complex<float>>,
-          std::vector<std::complex<double>>,
-          std::vector<std::complex<long double>>,
-          std::vector<signed char>,
-          std::vector<std::string>,
-          std::array<double, 7>,
-          bool>
+class Attribute : public auxiliary::Variant<Datatype, attribute_types>
 {
 public:
     Attribute(resource r) : Variant(std::move(r))

@@ -23,6 +23,10 @@
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
+// comment to prevent clang-format from moving this #include up
+// datatype macros may be included and un-included in other headers
+#include "openPMD/DatatypeMacros.hpp"
+
 #include <array>
 #include <climits>
 #include <complex>
@@ -35,6 +39,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility> // std::declval
+#include <variant>
 #include <vector>
 
 namespace openPMD
@@ -93,6 +98,33 @@ enum class Datatype : int
  *
  */
 std::vector<Datatype> openPMD_Datatypes();
+
+namespace detail
+{
+    struct bottom
+    {};
+
+    // std::variant, but ignore first template parameter
+    // little trick to avoid trailing commas in the macro expansions below
+    template <typename Arg, typename... Args>
+    using variant_tail_t = std::variant<Args...>;
+} // namespace detail
+
+#define OPENPMD_ENUMERATE_TYPES(type) , type
+
+using dataset_types =
+    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_DATASET_DATATYPE(
+        OPENPMD_ENUMERATE_TYPES)>;
+
+using non_vector_types =
+    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_NONVECTOR_DATATYPE(
+        OPENPMD_ENUMERATE_TYPES)>;
+
+using attribute_types =
+    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_DATATYPE(
+        OPENPMD_ENUMERATE_TYPES)>;
+
+#undef OPENPMD_ENUMERATE_TYPES
 
 /** @brief Fundamental equivalence check for two given types T and U.
  *
@@ -811,3 +843,4 @@ inline bool operator!=(openPMD::Datatype d, openPMD::Datatype e)
 #endif
 
 #include "openPMD/Datatype.tpp"
+#include "openPMD/UndefDatatypeMacros.hpp"
