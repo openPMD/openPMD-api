@@ -2465,20 +2465,13 @@ namespace detail
                 switch (m_impl->m_handler->m_encoding)
                 {
                 /*
-                 * Writing group-based files with group table might lead to
-                 * datasets that cannot be read with ADIOS2 < v2.9.
-                 * Since we don't really encourage use of group-based encoding,
-                 * but try to give at least a somewhat bug-free experience,
-                 * this is still the best compromise.
-                 */
-                case IterationEncoding::groupBased:
-                /*
                  * For variable-based encoding, this does not matter as it is
                  * new and requires >= v2.9 features anyway.
                  */
                 case IterationEncoding::variableBased:
                     m_impl->m_useGroupTable = UseGroupTable::Yes;
                     break;
+                case IterationEncoding::groupBased:
                 case IterationEncoding::fileBased:
                     m_impl->m_useGroupTable = UseGroupTable::No;
                     break;
