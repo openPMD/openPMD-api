@@ -26,6 +26,7 @@
 #include <optional>
 #include <sstream>
 #include <stdexcept>
+#include <type_traits>
 
 #if openPMD_HAVE_HDF5
 #include "openPMD/Datatype.hpp"
@@ -1711,210 +1712,239 @@ void HDF5IOHandlerImpl::writeAttribute(
             "attribute write");
     }
 
-    using DT = Datatype;
-    switch (dtype)
+    if (m_writeAttributesFromThisRank)
     {
-    case DT::CHAR: {
-        char c = att.get<char>();
-        status = H5Awrite(attribute_id, dataType, &c);
-        break;
+        // std::cout << "Writing attribute " << parameters.name
+        //           << ", filling it with value ";
+        // std::visit(
+        //     [](auto const &val) {
+        //         using T =
+        //             std::remove_cv_t<std::remove_reference_t<decltype(val)>>;
+        //         if constexpr (
+        //             !auxiliary::IsVector_v<T> && !auxiliary::IsArray_v<T>)
+        //         {
+        //             std::cout << val;
+        //         } else
+        //         {
+        //             std::cout << "VECTOR/ARRAY";
+        //         }
+        //     },
+        //     att.getResource());
+        // std::cout << std::endl;
+        using DT = Datatype;
+        switch (dtype)
+        {
+        case DT::CHAR: {
+            char c = att.get<char>();
+            status = H5Awrite(attribute_id, dataType, &c);
+            break;
+        }
+        case DT::UCHAR: {
+            auto u = att.get<unsigned char>();
+            status = H5Awrite(attribute_id, dataType, &u);
+            break;
+        }
+        case DT::SCHAR: {
+            auto u = att.get<signed char>();
+            status = H5Awrite(attribute_id, dataType, &u);
+            break;
+        }
+        case DT::SHORT: {
+            auto i = att.get<short>();
+            status = H5Awrite(attribute_id, dataType, &i);
+            break;
+        }
+        case DT::INT: {
+            int i = att.get<int>();
+            status = H5Awrite(attribute_id, dataType, &i);
+            break;
+        }
+        case DT::LONG: {
+            long i = att.get<long>();
+            status = H5Awrite(attribute_id, dataType, &i);
+            break;
+        }
+        case DT::LONGLONG: {
+            auto i = att.get<long long>();
+            status = H5Awrite(attribute_id, dataType, &i);
+            break;
+        }
+        case DT::USHORT: {
+            auto u = att.get<unsigned short>();
+            status = H5Awrite(attribute_id, dataType, &u);
+            break;
+        }
+        case DT::UINT: {
+            auto u = att.get<unsigned int>();
+            status = H5Awrite(attribute_id, dataType, &u);
+            break;
+        }
+        case DT::ULONG: {
+            auto u = att.get<unsigned long>();
+            status = H5Awrite(attribute_id, dataType, &u);
+            break;
+        }
+        case DT::ULONGLONG: {
+            auto u = att.get<unsigned long long>();
+            status = H5Awrite(attribute_id, dataType, &u);
+            break;
+        }
+        case DT::FLOAT: {
+            auto f = att.get<float>();
+            status = H5Awrite(attribute_id, dataType, &f);
+            break;
+        }
+        case DT::DOUBLE: {
+            auto d = att.get<double>();
+            status = H5Awrite(attribute_id, dataType, &d);
+            break;
+        }
+        case DT::LONG_DOUBLE: {
+            auto d = att.get<long double>();
+            status = H5Awrite(attribute_id, dataType, &d);
+            break;
+        }
+        case DT::CFLOAT: {
+            std::complex<float> f = att.get<std::complex<float>>();
+            status = H5Awrite(attribute_id, dataType, &f);
+            break;
+        }
+        case DT::CDOUBLE: {
+            std::complex<double> d = att.get<std::complex<double>>();
+            status = H5Awrite(attribute_id, dataType, &d);
+            break;
+        }
+        case DT::CLONG_DOUBLE: {
+            std::complex<long double> d = att.get<std::complex<long double>>();
+            status = H5Awrite(attribute_id, dataType, &d);
+            break;
+        }
+        case DT::STRING:
+            status = H5Awrite(
+                attribute_id, dataType, att.get<std::string>().c_str());
+            break;
+        case DT::VEC_CHAR:
+            status = H5Awrite(
+                attribute_id, dataType, att.get<std::vector<char>>().data());
+            break;
+        case DT::VEC_SHORT:
+            status = H5Awrite(
+                attribute_id, dataType, att.get<std::vector<short>>().data());
+            break;
+        case DT::VEC_INT:
+            status = H5Awrite(
+                attribute_id, dataType, att.get<std::vector<int>>().data());
+            break;
+        case DT::VEC_LONG:
+            status = H5Awrite(
+                attribute_id, dataType, att.get<std::vector<long>>().data());
+            break;
+        case DT::VEC_LONGLONG:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<long long>>().data());
+            break;
+        case DT::VEC_UCHAR:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<unsigned char>>().data());
+            break;
+        case DT::VEC_SCHAR:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<signed char>>().data());
+            break;
+        case DT::VEC_USHORT:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<unsigned short>>().data());
+            break;
+        case DT::VEC_UINT:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<unsigned int>>().data());
+            break;
+        case DT::VEC_ULONG:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<unsigned long>>().data());
+            break;
+        case DT::VEC_ULONGLONG:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<unsigned long long>>().data());
+            break;
+        case DT::VEC_FLOAT:
+            status = H5Awrite(
+                attribute_id, dataType, att.get<std::vector<float>>().data());
+            break;
+        case DT::VEC_DOUBLE:
+            status = H5Awrite(
+                attribute_id, dataType, att.get<std::vector<double>>().data());
+            break;
+        case DT::VEC_LONG_DOUBLE:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<long double>>().data());
+            break;
+        case DT::VEC_CFLOAT:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<std::complex<float>>>().data());
+            break;
+        case DT::VEC_CDOUBLE:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<std::complex<double>>>().data());
+            break;
+        case DT::VEC_CLONG_DOUBLE:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::vector<std::complex<long double>>>().data());
+            break;
+        case DT::VEC_STRING: {
+            auto vs = att.get<std::vector<std::string>>();
+            size_t max_len = 0;
+            for (std::string const &s : vs)
+                max_len = std::max(max_len, s.size() + 1);
+            std::unique_ptr<char[]> c_str(new char[max_len * vs.size()]());
+            for (size_t i = 0; i < vs.size(); ++i)
+                strncpy(c_str.get() + i * max_len, vs[i].c_str(), max_len);
+            status = H5Awrite(attribute_id, dataType, c_str.get());
+            break;
+        }
+        case DT::ARR_DBL_7:
+            status = H5Awrite(
+                attribute_id,
+                dataType,
+                att.get<std::array<double, 7>>().data());
+            break;
+        case DT::BOOL: {
+            bool b = att.get<bool>();
+            status = H5Awrite(attribute_id, dataType, &b);
+            break;
+        }
+        case DT::UNDEFINED:
+        default:
+            throw std::runtime_error(
+                "[HDF5] Datatype not implemented in HDF5 IO");
+        }
+        VERIFY(
+            status == 0,
+            "[HDF5] Internal error: Failed to write attribute " + name +
+                " at " + concrete_h5_file_position(writable));
     }
-    case DT::UCHAR: {
-        auto u = att.get<unsigned char>();
-        status = H5Awrite(attribute_id, dataType, &u);
-        break;
-    }
-    case DT::SCHAR: {
-        auto u = att.get<signed char>();
-        status = H5Awrite(attribute_id, dataType, &u);
-        break;
-    }
-    case DT::SHORT: {
-        auto i = att.get<short>();
-        status = H5Awrite(attribute_id, dataType, &i);
-        break;
-    }
-    case DT::INT: {
-        int i = att.get<int>();
-        status = H5Awrite(attribute_id, dataType, &i);
-        break;
-    }
-    case DT::LONG: {
-        long i = att.get<long>();
-        status = H5Awrite(attribute_id, dataType, &i);
-        break;
-    }
-    case DT::LONGLONG: {
-        auto i = att.get<long long>();
-        status = H5Awrite(attribute_id, dataType, &i);
-        break;
-    }
-    case DT::USHORT: {
-        auto u = att.get<unsigned short>();
-        status = H5Awrite(attribute_id, dataType, &u);
-        break;
-    }
-    case DT::UINT: {
-        auto u = att.get<unsigned int>();
-        status = H5Awrite(attribute_id, dataType, &u);
-        break;
-    }
-    case DT::ULONG: {
-        auto u = att.get<unsigned long>();
-        status = H5Awrite(attribute_id, dataType, &u);
-        break;
-    }
-    case DT::ULONGLONG: {
-        auto u = att.get<unsigned long long>();
-        status = H5Awrite(attribute_id, dataType, &u);
-        break;
-    }
-    case DT::FLOAT: {
-        auto f = att.get<float>();
-        status = H5Awrite(attribute_id, dataType, &f);
-        break;
-    }
-    case DT::DOUBLE: {
-        auto d = att.get<double>();
-        status = H5Awrite(attribute_id, dataType, &d);
-        break;
-    }
-    case DT::LONG_DOUBLE: {
-        auto d = att.get<long double>();
-        status = H5Awrite(attribute_id, dataType, &d);
-        break;
-    }
-    case DT::CFLOAT: {
-        std::complex<float> f = att.get<std::complex<float>>();
-        status = H5Awrite(attribute_id, dataType, &f);
-        break;
-    }
-    case DT::CDOUBLE: {
-        std::complex<double> d = att.get<std::complex<double>>();
-        status = H5Awrite(attribute_id, dataType, &d);
-        break;
-    }
-    case DT::CLONG_DOUBLE: {
-        std::complex<long double> d = att.get<std::complex<long double>>();
-        status = H5Awrite(attribute_id, dataType, &d);
-        break;
-    }
-    case DT::STRING:
-        status =
-            H5Awrite(attribute_id, dataType, att.get<std::string>().c_str());
-        break;
-    case DT::VEC_CHAR:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<char>>().data());
-        break;
-    case DT::VEC_SHORT:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<short>>().data());
-        break;
-    case DT::VEC_INT:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<int>>().data());
-        break;
-    case DT::VEC_LONG:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<long>>().data());
-        break;
-    case DT::VEC_LONGLONG:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<long long>>().data());
-        break;
-    case DT::VEC_UCHAR:
-        status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<unsigned char>>().data());
-        break;
-    case DT::VEC_SCHAR:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<signed char>>().data());
-        break;
-    case DT::VEC_USHORT:
-        status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<unsigned short>>().data());
-        break;
-    case DT::VEC_UINT:
-        status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<unsigned int>>().data());
-        break;
-    case DT::VEC_ULONG:
-        status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<unsigned long>>().data());
-        break;
-    case DT::VEC_ULONGLONG:
-        status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<unsigned long long>>().data());
-        break;
-    case DT::VEC_FLOAT:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<float>>().data());
-        break;
-    case DT::VEC_DOUBLE:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<double>>().data());
-        break;
-    case DT::VEC_LONG_DOUBLE:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<long double>>().data());
-        break;
-    case DT::VEC_CFLOAT:
-        status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<std::complex<float>>>().data());
-        break;
-    case DT::VEC_CDOUBLE:
-        status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<std::complex<double>>>().data());
-        break;
-    case DT::VEC_CLONG_DOUBLE:
-        status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<std::complex<long double>>>().data());
-        break;
-    case DT::VEC_STRING: {
-        auto vs = att.get<std::vector<std::string>>();
-        size_t max_len = 0;
-        for (std::string const &s : vs)
-            max_len = std::max(max_len, s.size() + 1);
-        std::unique_ptr<char[]> c_str(new char[max_len * vs.size()]());
-        for (size_t i = 0; i < vs.size(); ++i)
-            strncpy(c_str.get() + i * max_len, vs[i].c_str(), max_len);
-        status = H5Awrite(attribute_id, dataType, c_str.get());
-        break;
-    }
-    case DT::ARR_DBL_7:
-        status = H5Awrite(
-            attribute_id, dataType, att.get<std::array<double, 7>>().data());
-        break;
-    case DT::BOOL: {
-        bool b = att.get<bool>();
-        status = H5Awrite(attribute_id, dataType, &b);
-        break;
-    }
-    case DT::UNDEFINED:
-    default:
-        throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
-    }
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to write attribute " + name + " at " +
-            concrete_h5_file_position(writable));
 
     status = H5Tclose(dataType);
     VERIFY(
