@@ -31,7 +31,8 @@ using namespace openPMD;
 
 int main(int argc, char *argv[])
 {
-    MPI_Init(&argc, &argv);
+    int provided;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
     int mpi_size;
     int mpi_rank;

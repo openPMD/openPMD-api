@@ -21,6 +21,11 @@
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
+
+#ifdef H5_HAVE_SUBFILING_VFD
+#include <H5FDsubfiling.h>
+#endif
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -164,6 +169,19 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     VERIFY(
         status >= 0,
         "[HDF5] Internal error: Failed to set HDF5 file access property");
+
+#ifdef H5_HAVE_SUBFILING_VFD
+    int thread_level = 0;
+    MPI_Query_thread(&thread_level);
+    if (thread_level >= MPI_THREAD_MULTIPLE)
+    {
+        H5FD_subfiling_config_t vfd_config;
+        // query default subfiling parameters
+        H5Pget_fapl_subfiling(m_fileAccessProperty, &vfd_config);
+        // ... and set them
+        H5Pset_fapl_subfiling(m_fileAccessProperty, &vfd_config);
+    }
+#endif
 }
 
 ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
