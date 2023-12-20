@@ -102,7 +102,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
             MPI_Comm_rank(communicator, &rank);
             auto throw_error = []() {
                 throw error::BackendConfigSchema(
-                    {"adios2", "attribute_writing_ranks"},
+                    {"attribute_writing_ranks"},
                     "Type must be either an integer or an array of integers.");
             };
             if (attribute_writing_ranks.is_array())
@@ -190,6 +190,8 @@ template <typename Callback>
 void ADIOS2IOHandlerImpl::init(
     json::TracingJSON cfg, Callback &&callbackWriteAttributesFromRank)
 {
+    std::cout << "Initializing ADIOS2 with config:\n"
+              << cfg.json() << std::endl;
     // allow overriding through environment variable
     m_engineType =
         auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", m_engineType);
@@ -206,6 +208,12 @@ void ADIOS2IOHandlerImpl::init(
     {
         m_useGroupTable =
             groupTableViaEnv == 0 ? UseGroupTable::No : UseGroupTable::Yes;
+    }
+
+    // Backend-independent options with backend-dependent implementations
+    if (cfg.json().contains("attribute_writing_ranks"))
+    {
+        callbackWriteAttributesFromRank(cfg["attribute_writing_ranks"].json());
     }
 
     if (cfg.json().contains("adios2"))
