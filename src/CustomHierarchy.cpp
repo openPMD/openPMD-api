@@ -474,8 +474,18 @@ void CustomHierarchy::read(
     {
         switch (mpp.determineType(currentPath))
         {
-            // Group is a bit of an internal misnomer here, it just means that
-            // it matches neither meshes nor particles path
+
+        case internal::ContainedType::Particle:
+            std::cerr << "[Warning] Dataset found at '"
+                      << (concatWithSep(currentPath, "/") + "/" + path)
+                      << "' inside the particles path. A particle species is "
+                         "always a group, never a dataset. Will parse as a "
+                         "custom dataset. Storing custom datasets inside the "
+                         "particles path is discouraged."
+                      << std::endl;
+            [[fallthrough]];
+        // Group is a bit of an internal misnomer here, it just means that
+        // it matches neither meshes nor particles path
         case internal::ContainedType::Group: {
             auto &rc = data.embeddedDatasets()[path];
             Parameter<Operation::OPEN_DATASET> dOpen;
@@ -512,14 +522,6 @@ void CustomHierarchy::read(
                           << err.what() << std::endl;
                 meshesMap.forget(path);
             }
-            break;
-        case internal::ContainedType::Particle:
-            std::cerr
-                << "[Warning] Dataset found at '"
-                << (concatWithSep(currentPath, "/") + "/" + path)
-                << " that matches one of the given particle paths. A particle "
-                   "species is always a group, never a dataset. Will skip."
-                << std::endl;
             break;
         }
     }
