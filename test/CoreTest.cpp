@@ -403,6 +403,12 @@ TEST_CASE("custom_hierarchies_no_rw", "[core]")
                 .asContainerOf<ParticleSpecies>()["e"]["position"]["x"];
         e_pos_x.resetDataset({Datatype::INT, {10}});
         e_pos_x.storeChunk(data, {0}, {10});
+
+        auto gnihihi = write.iterations[0]["custom_particles"]["particles"]
+                           .asContainerOf<RecordComponent>();
+        auto dataset = gnihihi["custom_dataset"];
+        dataset.resetDataset({Datatype::INT, {10}});
+        dataset.storeChunk(std::unique_ptr<int[]>(new int[10]{}), {0}, {10});
         write.close();
     }
 
