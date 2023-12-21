@@ -225,16 +225,6 @@ private:
 #if openPMD_HAVE_MPI
     std::optional<MPI_Comm> m_communicator;
 #endif
-    /*
-     * If the iteration encoding is variableBased, we default to using a group
-     * table, since it is the only reliable way to recover currently active
-     * groups.
-     * If group-based encoding is used without group table, then
-     * READ_RANDOM_ACCESS is forbidden as it will be unreliable in reporting
-     * currently available data.
-     * Use AbstractIOHandler::m_encoding for this though
-     */
-    // IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
     /**
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
@@ -981,15 +971,9 @@ namespace detail
          * @brief Begin or end an ADIOS step.
          *
          * @param mode Whether to begin or end a step.
-         * @param calledExplicitly True if called due to a public API call.
-         *     False if called from requireActiveStep.
-         *     Some engines (BP5) require that every interaction happens within
-         *     an active step, meaning that we need to call advance()
-         *     implicitly at times. When doing that, do not tag the dataset
-         *     with __openPMD_internal/useSteps (yet).
          * @return AdvanceStatus
          */
-        AdvanceStatus advance(AdvanceMode mode, bool calledExplicitly);
+        AdvanceStatus advance(AdvanceMode mode);
 
         /*
          * Delete all buffered actions without running them.

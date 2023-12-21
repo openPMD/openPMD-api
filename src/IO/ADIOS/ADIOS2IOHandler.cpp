@@ -545,6 +545,16 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
     return res;
 }
 
+/*
+ * If the iteration encoding is variableBased, we default to using a group
+ * table, since it is the only reliable way to recover currently active
+ * groups.
+ * If group-based encoding is used without group table, then
+ * READ_LINEAR is forbidden as it will be unreliable in reporting
+ * currently available data.
+ * Use AbstractIOHandler::m_encoding for implementing this logic.
+ */
+
 static constexpr char const *warningADIOS2NoGroupbasedEncoding = &R"(
 [Warning] Use of group-based encoding in ADIOS2 is discouraged as it can lead
 to drastic performance issues, no matter if I/O steps are used or not.
@@ -610,13 +620,16 @@ void ADIOS2IOHandlerImpl::createFile(
 
         if (!printedWarningsAlready.noGroupBased &&
             m_writeAttributesFromThisRank &&
-            m_handler->m_encoding == IterationEncoding::groupBased &&
+            m_handler->m_encoding == IterationEncoding::groupBased)
+        {
             // For a peaceful phase-out of group-based encoding in ADIOS2,
             // print this warning only in the new layout (with group table)
-            m_useGroupTable.value_or(UseGroupTable::No) == UseGroupTable::Yes)
-        {
-            std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
-            printedWarningsAlready.noGroupBased = true;
+            if (m_useGroupTable.value_or(UseGroupTable::No) ==
+                UseGroupTable::Yes)
+            {
+                std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
+                printedWarningsAlready.noGroupBased = true;
+            }
             fileData.m_IO.DefineAttribute(
                 ADIOS2Defaults::str_groupBasedWarning,
                 std::string("Consider using file-based or variable-based "
@@ -1399,8 +1412,7 @@ void ADIOS2IOHandlerImpl::advance(
 {
     auto file = m_files.at(writable);
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    *parameters.status =
-        ba.advance(parameters.mode, /* calledExplicitly = */ true);
+    *parameters.status = ba.advance(parameters.mode);
 }
 
 void ADIOS2IOHandlerImpl::closePath(
@@ -3177,8 +3189,7 @@ namespace detail
             /* flushUnconditionally = */ false);
     }
 
-    AdvanceStatus
-    BufferedActions::advance(AdvanceMode mode, bool calledExplicitly)
+    AdvanceStatus BufferedActions::advance(AdvanceMode mode)
     {
         if (streamStatus == StreamStatus::Undecided)
         {
@@ -3217,8 +3228,7 @@ namespace detail
                 }
             }
 
-            if (calledExplicitly && writeOnly(m_mode) &&
-                m_impl->m_writeAttributesFromThisRank &&
+            if (writeOnly(m_mode) && m_impl->m_writeAttributesFromThisRank &&
                 !m_IO.InquireAttribute<bool_representation>(
                     ADIOS2Defaults::str_usesstepsAttribute))
             {
