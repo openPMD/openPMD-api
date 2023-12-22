@@ -51,8 +51,8 @@ exit /b 0
 
   :: CMake Config package of C-Blosc 2.10.1+ only
   :: https://github.com/ornladios/ADIOS2/issues/3903
-  rmdir /s /q "%BUILD_PREFIX%/ADIOS2/lib/cmake/adios2/FindBlosc2.cmake"
-  if errorlevel 1 exit 1
+  :: rmdir /s /q "%BUILD_PREFIX%/ADIOS2/lib/cmake/adios2/FindBlosc2.cmake"
+  :: if errorlevel 1 exit 1
 
   rmdir /s /q build-adios2
   if errorlevel 1 exit 1
