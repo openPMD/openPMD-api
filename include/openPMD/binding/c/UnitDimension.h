@@ -15,7 +15,7 @@ extern "C"
         openPMD_UnitDimension_theta,
         openPMD_UnitDimension_N,
         openPMD_UnitDimension_J
-    } UnitDimension;
+    } openPMD_UnitDimension;
 
     typedef struct openPMD_ArrayDouble7
     {

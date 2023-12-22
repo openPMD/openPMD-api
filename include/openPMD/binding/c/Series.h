@@ -32,7 +32,7 @@ extern "C"
     openPMD_Series *openPMD_Series_new();
 
 #if openPMD_HAVE_MPI
-    openPMD_Series *openPMD_Series_new_parallell(
+    openPMD_Series *openPMD_Series_new_parallel(
         const char *filepath,
         openPMD_Access at,
         MPI_Comm comm,

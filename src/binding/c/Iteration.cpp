@@ -134,3 +134,10 @@ uint64_t openPMD_IndexedIteration_iterationIndex(
         (const openPMD::IndexedIteration *)indexed_iteration;
     return cxx_indexed_iteration->iterationIndex;
 }
+
+void openPMD_IndexedIteration_delete(openPMD_IndexedIteration *indexedIteration)
+{
+    const auto cxx_indexedIteration =
+        (openPMD::IndexedIteration *)indexedIteration;
+    delete cxx_indexedIteration;
+}

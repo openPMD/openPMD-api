@@ -19,6 +19,7 @@
 #include <openPMD/binding/c/backend/BaseRecordComponent.h>
 #include <openPMD/binding/c/backend/Container_MeshRecordComponent.h>
 #include <openPMD/binding/c/backend/MeshRecordComponent.h>
+#include <openPMD/binding/c/backend/ParsePreference.h>
 #include <openPMD/binding/c/version.h>
 
 #endif // #ifndef OPENPMD_H

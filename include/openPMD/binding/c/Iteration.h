@@ -61,6 +61,9 @@ extern "C"
     uint64_t openPMD_IndexedIteration_iterationIndex(
         const openPMD_IndexedIteration *indexed_iteration);
 
+    void
+    openPMD_IndexedIteration_delete(openPMD_IndexedIteration *indexedIteration);
+
 #ifdef __cplusplus
 }
 #endif
