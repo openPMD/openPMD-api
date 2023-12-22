@@ -4,7 +4,7 @@ openpmd-pipe
 ============
 
 Any Python-enabled openPMD-api installation with enabled CLI tools comes with a command-line tool named ``openpmd-pipe``.
-Naming and use are inspired from the piping concept known from UNIX shells.
+Naming and use are inspired from the `piping concept <https://en.wikipedia.org/wiki/Pipeline_(Unix)>`__ known from UNIX shells.
 
 The fundamental idea is to redirect data from an openPMD data source to another openPMD data sink.
 This concept becomes useful through the openPMD-api's ability to use different backends in different configurations; ``openpmd-pipe`` can hence be understood as a translation from one I/O configuration to another one.
