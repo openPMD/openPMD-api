@@ -484,4 +484,23 @@ void RecordComponent::storeChunk(
     auto &rc = get();
     rc.m_chunks.push(IOTask(this, std::move(dWrite)));
 }
+
+namespace
+{
+    struct LoadChunkVariant
+    {
+        template <typename T>
+        static RecordComponent::shared_ptr_dataset_types
+        call(RecordComponent &rc, Offset o, Extent e)
+        {
+            return rc.loadChunk<T>(std::move(o), std::move(e));
+        }
+    };
+} // namespace
+
+auto RecordComponent::loadChunkVariant(Offset o, Extent e)
+    -> shared_ptr_dataset_types
+{
+    return visit<LoadChunkVariant>(std::move(o), std::move(e));
+}
 } // namespace openPMD

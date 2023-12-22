@@ -1544,6 +1544,15 @@ TEST_CASE("dtype_test", "[serial]")
     }
 }
 
+struct ReadFromAnyType
+{
+    template <typename T>
+    static std::shared_ptr<void> call(RecordComponent &rc)
+    {
+        return std::static_pointer_cast<void>(rc.loadChunk<T>());
+    }
+};
+
 inline void write_test(const std::string &backend)
 {
     Series o = Series("../samples/serial_write." + backend, Access::CREATE);
@@ -1642,6 +1651,21 @@ inline void write_test(const std::string &backend)
     }
 
     o.flush();
+
+    o.close();
+
+    Series read("../samples/serial_write." + backend, Access::READ_ONLY);
+    auto rc = read.iterations[1].particles["e"]["position"]["x"];
+    auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
+
+    auto variantTypeDataset = rc.loadChunkVariant();
+    rc.seriesFlush();
+    std::visit(
+        [](auto &&shared_ptr) {
+            std::cout << "First value in loaded chunk: '" << shared_ptr.get()[0]
+                      << '\'' << std::endl;
+        },
+        variantTypeDataset);
 }
 
 TEST_CASE("write_test", "[serial]")
