@@ -66,7 +66,7 @@ The remainder of this page discusses a select number of use cases and examples f
 
 
 Conversion between backends
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Converting from ADIOS2 to HDF5:
 
@@ -87,7 +87,7 @@ Converting from the ADIOS2 BP3 engine to the (newer) ADIOS2 BP5 engine:
     #                                          or   --outconfig @cfg.json
 
 Converting between iteration encodings
---------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Converting to group-based iteration encoding:
 
@@ -105,7 +105,7 @@ Converting to variable-based iteration encoding (not yet feature-complete):
 
 
 Capturing a stream
-------------------
+^^^^^^^^^^^^^^^^^^
 
 Since the openPMD-api also supports streaming/staging I/O transports from ADIOS2, ``openpmd-pipe`` can be used to capture a stream in order to write it to disk.
 In the ADIOS2 `SST engine <https://adios2.readthedocs.io/en/latest/engines/engines.html#sst-sustainable-staging-transport>`_, a stream can have any number of readers.
@@ -128,7 +128,7 @@ This makes it possible to intercept a stream in a data processing pipeline.
 
 
 Defragmenting a file
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 Due to the file layout of ADIOS2, especially mesh-refinement-enabled simulation codes can create file output that is very strongly fragmented.
 Since only one ``load_chunk()`` and one ``store_chunk()`` call is issued per MPI rank, per dataset and per iteration, the file is implicitly defragmented by the backend when passed through ``openpmd-pipe``:
@@ -138,7 +138,7 @@ Since only one ``load_chunk()`` and one ``store_chunk()`` call is issued per MPI
     $ openpmd-pipe --infile strongly_fragmented_%T.bp --outfile defragmented_%T.bp
 
 Post-hoc compression
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 The openPMD-api can be directly used to compress data already when originally creating it.
 When however intending to compress data that has been written without compression enabled, ``openpmd-pipe`` can help:
@@ -167,6 +167,6 @@ When however intending to compress data that has been written without compressio
         --outconfig @compression_cfg.json
 
 Starting point for custom transformation and analysis
------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``openpmd-pipe`` is a Python script that can serve as basis for custom extensions, e.g. for adding, modifying, transforming or reducing data. The typical use case would be as a building block in a domain-specific data processing pipeline.
