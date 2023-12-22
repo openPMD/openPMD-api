@@ -225,12 +225,6 @@ private:
 #if openPMD_HAVE_MPI
     std::optional<MPI_Comm> m_communicator;
 #endif
-    /*
-     * If the iteration encoding is variableBased, we default to using a group
-     * table, since it is the only reliable way to recover currently active
-     * groups.
-     */
-    IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
     /**
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
@@ -439,6 +433,8 @@ namespace ADIOS2Defaults
         "__openPMD_internal/openPMD2_adios2_schema";
     constexpr const_str str_isBoolean = "__is_boolean__";
     constexpr const_str str_activeTablePrefix = "__openPMD_groups";
+    constexpr const_str str_groupBasedWarning =
+        "__openPMD_internal/warning_bugprone_groupbased_encoding";
 } // namespace ADIOS2Defaults
 
 namespace detail
@@ -914,7 +910,6 @@ namespace detail
         UseGroupTable detectGroupTable();
 
         adios2::Engine &getEngine();
-        adios2::Engine &requireActiveStep();
 
         template <typename BA>
         void enqueue(BA &&ba);
@@ -976,15 +971,9 @@ namespace detail
          * @brief Begin or end an ADIOS step.
          *
          * @param mode Whether to begin or end a step.
-         * @param calledExplicitly True if called due to a public API call.
-         *     False if called from requireActiveStep.
-         *     Some engines (BP5) require that every interaction happens within
-         *     an active step, meaning that we need to call advance()
-         *     implicitly at times. When doing that, do not tag the dataset
-         *     with __openPMD_internal/useSteps (yet).
          * @return AdvanceStatus
          */
-        AdvanceStatus advance(AdvanceMode mode, bool calledExplicitly);
+        AdvanceStatus advance(AdvanceMode mode);
 
         /*
          * Delete all buffered actions without running them.
@@ -1069,34 +1058,7 @@ namespace detail
              *    without steps. This is not a workaround since not using steps,
              *    while inefficient in ADIOS2, is something that we support.
              */
-            NoStream,
-            /**
-             * Rationale behind this state:
-             * When user code opens a Series, series.iterations should contain
-             * all available iterations.
-             * If accessing a file without opening a step, ADIOS2 will grant
-             * access to variables and attributes from all steps, allowing us
-             * to parse the complete dump.
-             * This state indicates that no step should be opened for parsing
-             * purposes (which is necessary in streaming engines, hence they
-             * are initialized with the OutsideOfStep state).
-             * A step should only be opened if an explicit ADVANCE task arrives
-             * at the backend.
-             *
-             * @todo If the streaming API is used on files, parsing the whole
-             *       Series up front is unnecessary work.
-             *       Our frontend does not yet allow to distinguish whether
-             *       parsing the whole series will be necessary since parsing
-             *       happens upon construction time of Series,
-             *       but the classical and the streaming API are both activated
-             *       afterwards from the created Series object.
-             *       Hence, improving this requires refactoring in our
-             *       user-facing API. Ideas:
-             *       (1) Delayed lazy parsing of iterations upon accessing
-             *           (would bring other benefits also).
-             *       (2) Introduce a restricted class StreamingSeries.
-             */
-            Parsing,
+            ReadWithoutStream,
             /**
              * The stream status of a file-based engine will be decided upon
              * opening the engine if in read mode. Up until then, this right
@@ -1157,8 +1119,8 @@ namespace detail
         void create_IO();
 
         void configure_IO(ADIOS2IOHandlerImpl &impl);
-        void configure_IO_Read(std::optional<bool> userSpecifiedUsesteps);
-        void configure_IO_Write(std::optional<bool> userSpecifiedUsesteps);
+        void configure_IO_Read();
+        void configure_IO_Write();
     };
 
 } // namespace detail

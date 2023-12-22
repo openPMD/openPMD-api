@@ -26,6 +26,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
@@ -38,6 +39,7 @@
 #include <iterator>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 
@@ -543,6 +545,33 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
     return res;
 }
 
+/*
+ * If the iteration encoding is variableBased, we default to using a group
+ * table, since it is the only reliable way to recover currently active
+ * groups.
+ * If group-based encoding is used without group table, then
+ * READ_LINEAR is forbidden as it will be unreliable in reporting
+ * currently available data.
+ * Use AbstractIOHandler::m_encoding for implementing this logic.
+ */
+
+static constexpr char const *warningADIOS2NoGroupbasedEncoding = &R"(
+[Warning] Use of group-based encoding in ADIOS2 is discouraged as it can lead
+to drastic performance issues, no matter if I/O steps are used or not.
+
+* If not using I/O steps: A crash will corrupt all data since there is only
+  one atomic logical write operation upon closing the file.
+  Memory performance can be pathological depending on the setup.
+* If using I/O steps: Each step will add new variables and attributes instead
+  of reusing those from earlier steps. ADIOS2 is not optimized for this and
+  especially the BP5 engine will show a quadratic increase in metadata size
+  as the number of steps increase.
+We advise you to pick either file-based encoding or variable-based encoding
+(variable-based encoding is not yet feature-complete in the openPMD-api).
+For more details, refer to
+https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html#iteration-and-series)"
+                                                                     [1];
+
 void ADIOS2IOHandlerImpl::createFile(
     Writable *writable, Parameter<Operation::CREATE_FILE> const &parameters)
 {
@@ -578,7 +607,6 @@ void ADIOS2IOHandlerImpl::createFile(
             VERIFY(success, "[ADIOS2] Could not create directory.");
         }
 
-        m_iterationEncoding = parameters.encoding;
         associateWithFile(writable, shared_name);
         this->m_dirty.emplace(shared_name);
 
@@ -586,7 +614,26 @@ void ADIOS2IOHandlerImpl::createFile(
         writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
         // enforce opening the file
         // lazy opening is deathly in parallel situations
-        getFileData(shared_name, IfFileNotOpen::OpenImplicitly);
+        auto &fileData =
+            getFileData(shared_name, IfFileNotOpen::OpenImplicitly);
+
+        if (!printedWarningsAlready.noGroupBased &&
+            m_writeAttributesFromThisRank &&
+            m_handler->m_encoding == IterationEncoding::groupBased)
+        {
+            // For a peaceful phase-out of group-based encoding in ADIOS2,
+            // print this warning only in the new layout (with group table)
+            if (m_useGroupTable.value_or(UseGroupTable::No) ==
+                UseGroupTable::Yes)
+            {
+                std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
+                printedWarningsAlready.noGroupBased = true;
+            }
+            fileData.m_IO.DefineAttribute(
+                ADIOS2Defaults::str_groupBasedWarning,
+                std::string("Consider using file-based or variable-based "
+                            "encoding instead in ADIOS2."));
+        }
     }
 }
 
@@ -832,7 +879,6 @@ void ADIOS2IOHandlerImpl::openFile(
     writable->written = true;
     writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
 
-    m_iterationEncoding = parameters.encoding;
     // enforce opening the file
     // lazy opening is deathly in parallel situations
     auto &fileData = getFileData(file, IfFileNotOpen::OpenImplicitly);
@@ -1109,8 +1155,6 @@ void ADIOS2IOHandlerImpl::getBufferView(
         break;
     }
 
-    ba.requireActiveStep();
-
     if (parameters.update)
     {
         detail::I_UpdateSpan &updater =
@@ -1145,7 +1189,6 @@ void ADIOS2IOHandlerImpl::readAttribute(
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
     detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    ba.requireActiveStep();
     auto name = nameOfAttribute(writable, parameters.name);
 
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
@@ -1183,7 +1226,6 @@ void ADIOS2IOHandlerImpl::listPaths(
      * from variables and attributes.
      */
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
-    fileData.requireActiveStep();
 
     std::unordered_set<std::string> subdirs;
     /*
@@ -1315,7 +1357,6 @@ void ADIOS2IOHandlerImpl::listDatasets(
      */
 
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
-    fileData.requireActiveStep();
 
     std::unordered_set<std::string> subdirs;
     for (auto var : fileData.availableVariablesPrefixed(myName))
@@ -1351,7 +1392,6 @@ void ADIOS2IOHandlerImpl::listAttributes(
         attributePrefix = "";
     }
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    ba.requireActiveStep(); // make sure that the attributes are present
 
     std::vector<std::string> attrs =
         ba.availableAttributesPrefixed(attributePrefix);
@@ -1371,8 +1411,7 @@ void ADIOS2IOHandlerImpl::advance(
 {
     auto file = m_files.at(writable);
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    *parameters.status =
-        ba.advance(parameters.mode, /* calledExplicitly = */ true);
+    *parameters.status = ba.advance(parameters.mode);
 }
 
 void ADIOS2IOHandlerImpl::closePath(
@@ -1416,8 +1455,8 @@ void ADIOS2IOHandlerImpl::availableChunks(
     std::string varName = nameOfVariable(writable);
     auto engine = ba.getEngine(); // make sure that data are present
     auto datatype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
-    bool allSteps = m_handler->m_frontendAccess != Access::READ_LINEAR &&
-        ba.streamStatus == detail::BufferedActions::StreamStatus::NoStream;
+    bool allSteps = ba.streamStatus ==
+        detail::BufferedActions::StreamStatus::ReadWithoutStream;
     switchAdios2VariableType<detail::RetrieveBlocksInfo>(
         datatype,
         parameters,
@@ -1786,7 +1825,6 @@ namespace detail
 
         auto &filedata = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
-        filedata.requireActiveStep();
         filedata.invalidateAttributesMap();
         adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace(std::move(file));
@@ -1946,7 +1984,6 @@ namespace detail
     {
         auto &fileData = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
-        fileData.requireActiveStep();
         auto &IO = fileData.m_IO;
         adios2::Variable<T> var = IO.InquireVariable<T>(varName);
         if (!var)
@@ -2230,9 +2267,7 @@ namespace detail
             // might have been closed previously
             if (engine)
             {
-                if (streamStatus == StreamStatus::DuringStep ||
-                    (streamStatus == StreamStatus::NoStream &&
-                     m_mode == adios2::Mode::Write))
+                if (streamStatus == StreamStatus::DuringStep)
                 {
                     engine.EndStep();
                 }
@@ -2329,36 +2364,6 @@ namespace detail
             }
             return false;
         }
-
-        bool useStepsInWriting(
-            UseGroupTable groupTable, std::string const &engineType)
-        {
-            if (engineType == "bp5")
-            {
-                /*
-                 * BP5 does not require steps when reading, but it requires
-                 * them when writing.
-                 */
-                return true;
-            }
-            switch (supportsPerstepParsing(Access::CREATE, engineType))
-            {
-            case PerstepParsing::Required:
-                return true;
-            case PerstepParsing::Supported:
-                switch (groupTable)
-                {
-                case UseGroupTable::No:
-                    return false;
-                case UseGroupTable::Yes:
-                    return true;
-                }
-                break;
-            case PerstepParsing::Unsupported:
-                return false;
-            }
-            return false; // unreachable
-        }
     } // namespace
 
     size_t BufferedActions::currentStep()
@@ -2373,18 +2378,8 @@ namespace detail
         }
     }
 
-    void BufferedActions::configure_IO_Read(
-        std::optional<bool> userSpecifiedUsesteps)
+    void BufferedActions::configure_IO_Read()
     {
-        if (userSpecifiedUsesteps.has_value() &&
-            m_impl->m_handler->m_backendAccess != Access::READ_WRITE)
-        {
-            std::cerr << "Explicitly specified `adios2.usesteps` in Read mode. "
-                         "Usage of steps will be determined by what is found "
-                         "in the file being read."
-                      << std::endl;
-        }
-
         bool upfrontParsing = supportsUpfrontParsing(
             m_impl->m_handler->m_backendAccess, m_engineType);
         PerstepParsing perstepParsing = supportsPerstepParsing(
@@ -2411,18 +2406,9 @@ namespace detail
                 m_IO.SetParameter("StreamReader", "On");
                 break;
             case PerstepParsing::Unsupported:
-                streamStatus = StreamStatus::NoStream;
-                parsePreference = ParsePreference::UpFront;
-                /*
-                 * Note that in BP4 with linear access mode, we set the
-                 * StreamReader option, disabling upfrontParsing capability.
-                 * So, this branch is only taken by niche engines, such as
-                 * BP3 or HDF5, or by BP5 without group table and normal read
-                 * mode. Need to fall back to random access parsing.
-                 */
-#if openPMD_HAS_ADIOS_2_8
-                m_mode = adios2::Mode::ReadRandomAccess;
-#endif
+                throw error::Internal(
+                    "Internal control flow error: Per-Step parsing cannot be "
+                    "unsupported when access type is READ_LINEAR");
                 break;
             }
             break;
@@ -2441,7 +2427,7 @@ namespace detail
             }
             if (upfrontParsing)
             {
-                streamStatus = StreamStatus::NoStream;
+                streamStatus = StreamStatus::ReadWithoutStream;
                 parsePreference = ParsePreference::UpFront;
             }
             else
@@ -2464,8 +2450,7 @@ namespace detail
         }
     }
 
-    void BufferedActions::configure_IO_Write(
-        std::optional<bool> userSpecifiedUsesteps)
+    void BufferedActions::configure_IO_Write()
     {
         optimizeAttributesStreaming =
             // Also, it should only be done when truly streaming, not
@@ -2473,20 +2458,7 @@ namespace detail
             // streaming engine (otherwise attributes might vanish)
             nonpersistentEngine(m_engineType);
 
-        bool useSteps = useStepsInWriting(useGroupTable(), m_engineType);
-        if (userSpecifiedUsesteps.has_value())
-        {
-            useSteps = userSpecifiedUsesteps.value();
-            if (!useSteps && nonpersistentEngine(m_engineType))
-            {
-                throw error::WrongAPIUsage(
-                    "Cannot switch off IO steps for non-persistent stream "
-                    "engines in ADIOS2.");
-            }
-        }
-
-        streamStatus =
-            useSteps ? StreamStatus::OutsideOfStep : StreamStatus::NoStream;
+        streamStatus = StreamStatus::OutsideOfStep;
     }
 
     void BufferedActions::configure_IO(ADIOS2IOHandlerImpl &impl)
@@ -2501,8 +2473,12 @@ namespace detail
 #if openPMD_HAS_ADIOS_2_9
             if (!m_impl->m_useGroupTable.has_value())
             {
-                switch (m_impl->m_iterationEncoding)
+                switch (m_impl->m_handler->m_encoding)
                 {
+                /*
+                 * For variable-based encoding, this does not matter as it is
+                 * new and requires >= v2.9 features anyway.
+                 */
                 case IterationEncoding::variableBased:
                     m_impl->m_useGroupTable = UseGroupTable::Yes;
                     break;
@@ -2516,7 +2492,8 @@ namespace detail
             if (m_impl->m_modifiableAttributes ==
                 ADIOS2IOHandlerImpl::ModifiableAttributes::Unspecified)
             {
-                m_impl->m_modifiableAttributes = m_impl->m_iterationEncoding ==
+                m_impl->m_modifiableAttributes =
+                    m_impl->m_handler->m_encoding ==
                         IterationEncoding::variableBased
                     ? ADIOS2IOHandlerImpl::ModifiableAttributes::Yes
                     : ADIOS2IOHandlerImpl::ModifiableAttributes::No;
@@ -2567,7 +2544,6 @@ namespace detail
 
         // set engine parameters
         std::set<std::string> alreadyConfigured;
-        std::optional<bool> userSpecifiedUsesteps;
         bool wasTheFlushTargetSpecifiedViaJSON = false;
         auto engineConfig = impl.config(ADIOS2Defaults::str_engine);
         if (!engineConfig.json().is_null())
@@ -2599,8 +2575,10 @@ namespace detail
                 impl.config(ADIOS2Defaults::str_usesteps, engineConfig);
             if (!_useAdiosSteps.json().is_null() && writeOnly(m_mode))
             {
-                userSpecifiedUsesteps =
-                    std::make_optional(_useAdiosSteps.json().get<bool>());
+                std::cerr << "[ADIOS2 backend] WARNING: Parameter "
+                             "`adios2.engine.usesteps` is deprecated since use "
+                             "of steps is now always enabled."
+                          << std::endl;
             }
 
             if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
@@ -2643,21 +2621,21 @@ namespace detail
         {
         case Access::READ_LINEAR:
         case Access::READ_ONLY:
-            configure_IO_Read(userSpecifiedUsesteps);
+            configure_IO_Read();
             break;
         case Access::READ_WRITE:
             if (readOnly(m_mode))
             {
-                configure_IO_Read(userSpecifiedUsesteps);
+                configure_IO_Read();
             }
             else
             {
-                configure_IO_Write(userSpecifiedUsesteps);
+                configure_IO_Write();
             }
             break;
         case Access::APPEND:
         case Access::CREATE:
-            configure_IO_Write(userSpecifiedUsesteps);
+            configure_IO_Write();
             break;
         }
 
@@ -2828,11 +2806,8 @@ namespace detail
                 // the streaming API was used.
                 m_engine = std::make_optional(
                     adios2::Engine(m_IO.Open(m_file, tempMode)));
-                if (streamStatus == StreamStatus::NoStream)
-                {
-                    // Write everything into one big step
-                    m_engine->BeginStep();
-                }
+                m_engine->BeginStep();
+                streamStatus = StreamStatus::DuringStep;
                 break;
             }
 #if openPMD_HAS_ADIOS_2_8
@@ -2911,10 +2886,45 @@ namespace detail
                                     "anything in an engine that supports "
                                     "up-front parsing.");
                             }
-                            streamStatus = StreamStatus::Parsing;
+                            streamStatus = StreamStatus::ReadWithoutStream;
                         }
                         else
                         {
+                            // If the iteration encoding is group-based and
+                            // no group table is used, we're now at a dead-end.
+                            // Step-by-Step parsing is unreliable in that mode
+                            // since groups might be reported that are not
+                            // there.
+                            // But we were only able to find this out by opening
+                            // the ADIOS2 file with an access mode that was
+                            // possibly wrong, so we would have to close and
+                            // reopen here.
+                            // Since group-based encoding is a bag of trouble in
+                            // ADIOS2 anyway, we just don't support this
+                            // particular use case.
+                            // This failure will only arise when the following
+                            // conditions are met:
+                            //
+                            // 1) group-based encoding
+                            // 2) no group table (i.e. old "ADIOS2 schema")
+                            // 3) LINEAR access mode
+                            //
+                            // This is a relatively lenient restriction compared
+                            // to forbidding group-based encoding in ADIOS2
+                            // altogether.
+                            if (m_impl->m_useGroupTable.value() ==
+                                    UseGroupTable::No &&
+                                m_IO.InquireAttribute<std::string>(
+                                    ADIOS2Defaults::str_groupBasedWarning))
+                            {
+                                throw error::OperationUnsupportedInBackend(
+                                    "ADIOS2",
+                                    "Trying to open a group-based ADIOS2 file "
+                                    "that does not have a group table with "
+                                    "LINEAR access type. That combination is "
+                                    "very buggy, so please use "
+                                    "READ_ONLY/READ_RANDOM_ACCESS instead.");
+                            }
                             if (!openedANewStep &&
                                 m_engine.value().BeginStep() !=
                                     adios2::StepStatus::OK)
@@ -2932,11 +2942,11 @@ namespace detail
                          * If openedANewStep is true, then the file consists
                          * of one large step, we just leave it open.
                          */
-                        streamStatus = StreamStatus::NoStream;
+                        streamStatus = StreamStatus::ReadWithoutStream;
                     }
                     break;
                 }
-                case StreamStatus::NoStream:
+                case StreamStatus::ReadWithoutStream:
                     // using random-access mode
                     break;
                 case StreamStatus::DuringStep:
@@ -2970,31 +2980,6 @@ namespace detail
             }
         }
         return m_engine.value();
-    }
-
-    adios2::Engine &BufferedActions::requireActiveStep()
-    {
-        adios2::Engine &eng = getEngine();
-        /*
-         * If streamStatus is Parsing, do NOT open the step.
-         */
-        if (streamStatus == StreamStatus::OutsideOfStep)
-        {
-            switch (
-                advance(AdvanceMode::BEGINSTEP, /* calledExplicitly = */ false))
-            {
-            case AdvanceStatus::OVER:
-                throw std::runtime_error(
-                    "[ADIOS2] Operation requires active step but no step is "
-                    "left.");
-            case AdvanceStatus::OK:
-            case AdvanceStatus::RANDOMACCESS:
-                // pass
-                break;
-            }
-            streamStatus = StreamStatus::DuringStep;
-        }
-        return eng;
     }
 
     template <typename BA>
@@ -3067,10 +3052,6 @@ namespace detail
                     performPutGets(*this, eng);
                 }
                 return;
-            }
-            else
-            {
-                requireActiveStep();
             }
         }
         for (auto &ba : m_buffer)
@@ -3207,46 +3188,21 @@ namespace detail
             /* flushUnconditionally = */ false);
     }
 
-    AdvanceStatus
-    BufferedActions::advance(AdvanceMode mode, bool calledExplicitly)
+    AdvanceStatus BufferedActions::advance(AdvanceMode mode)
     {
         if (streamStatus == StreamStatus::Undecided)
         {
-            // stream status gets decided on upon opening an engine
-            getEngine();
+            throw error::Internal(
+                "[BufferedActions::advance()] StreamStatus Undecided before "
+                "beginning/ending a step?");
         }
         // sic! no else
-        if (streamStatus == StreamStatus::NoStream)
+        if (streamStatus == StreamStatus::ReadWithoutStream)
         {
-            if (writeOnly(m_mode) &&
-                !m_IO.InquireAttribute<bool_representation>(
-                    ADIOS2Defaults::str_usesstepsAttribute) &&
-                m_impl->m_writeAttributesFromThisRank)
-            {
-                m_IO.DefineAttribute<bool_representation>(
-                    ADIOS2Defaults::str_usesstepsAttribute, 0);
-            }
             flush(
                 ADIOS2FlushParams{FlushLevel::UserFlush},
                 /* writeLatePuts = */ false);
             return AdvanceStatus::RANDOMACCESS;
-        }
-
-        /*
-         * If advance() is called implicitly (by requireActiveStep()), the
-         * Series is not necessarily using steps (logically).
-         * But in some ADIOS2 engines, at least one step must be opened
-         * (physically) to do anything.
-         * The usessteps tag should only be set when the Series is *logically*
-         * using steps.
-         */
-        if (calledExplicitly && writeOnly(m_mode) &&
-            !m_IO.InquireAttribute<bool_representation>(
-                ADIOS2Defaults::str_usesstepsAttribute) &&
-            m_impl->m_writeAttributesFromThisRank)
-        {
-            m_IO.DefineAttribute<bool_representation>(
-                ADIOS2Defaults::str_usesstepsAttribute, 1);
         }
 
         switch (mode)
@@ -3270,6 +3226,15 @@ namespace detail
                         "opened.");
                 }
             }
+
+            if (writeOnly(m_mode) && m_impl->m_writeAttributesFromThisRank &&
+                !m_IO.InquireAttribute<bool_representation>(
+                    ADIOS2Defaults::str_usesstepsAttribute))
+            {
+                m_IO.DefineAttribute<bool_representation>(
+                    ADIOS2Defaults::str_usesstepsAttribute, 1);
+            }
+
             flush(
                 ADIOS2FlushParams{FlushLevel::UserFlush},
                 [](BufferedActions &, adios2::Engine &eng) { eng.EndStep(); },
@@ -3412,7 +3377,6 @@ namespace detail
         {
             if (writeOnly(m_mode) && m_impl->m_writeAttributesFromThisRank)
             {
-                requireActiveStep();
                 auto currentStepBuffered = currentStep();
                 do
                 {

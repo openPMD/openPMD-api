@@ -25,6 +25,7 @@
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
+#include <stdexcept>
 
 namespace openPMD
 {
@@ -317,7 +318,22 @@ std::future<void> AbstractIOHandlerImpl::flush()
                 auto &parameter = deref_dynamic_cast<Parameter<O::ADVANCE>>(
                     i.parameter.get());
                 writeToStderr(
-                    "[", i.writable->parent, "->", i.writable, "] ADVANCE");
+                    "[",
+                    i.writable->parent,
+                    "->",
+                    i.writable,
+                    "] ADVANCE ",
+                    [&]() {
+                        switch (parameter.mode)
+                        {
+
+                        case AdvanceMode::BEGINSTEP:
+                            return "BEGINSTEP";
+                        case AdvanceMode::ENDSTEP:
+                            return "ENDSTEP";
+                        }
+                        throw std::runtime_error("Unreachable!");
+                    }());
                 advance(i.writable, parameter);
                 break;
             }

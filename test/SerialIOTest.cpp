@@ -4260,8 +4260,6 @@ TEST_CASE("adios2_bp5_flush", "[serial][adios2]")
 [adios2]
 
 [adios2.engine]
-# Check that BP5 can also be used without steps
-usesteps = false
 type = "bp5"
 preferred_flush_target = "disk"
 
@@ -4280,7 +4278,6 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 preferred_flush_target = "buffer"
 
@@ -4298,7 +4295,6 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 # preferred_flush_target = <default>
 
@@ -4321,7 +4317,6 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 preferred_flush_target = "buffer_override"
 
@@ -4339,7 +4334,6 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 preferred_flush_target = "disk_override"
 
@@ -4859,8 +4853,7 @@ this = "should not warn"
 void bp4_steps(
     std::string const &file,
     std::string const &options_write,
-    std::string const &options_read,
-    Access access = Access::READ_ONLY)
+    std::optional<Access> access = Access::READ_ONLY)
 {
     {
         Series writeSeries(file, Access::CREATE, options_write);
@@ -4880,12 +4873,12 @@ void bp4_steps(
         }
     }
 
-    if (options_read.empty())
+    if (!access.has_value())
     {
         return;
     }
 
-    Series readSeries(file, access, options_read);
+    Series readSeries(file, *access);
 
     size_t last_iteration_index = 0;
     for (auto iteration : readSeries.readIterations())
@@ -4911,104 +4904,62 @@ void bp4_steps(
 
 TEST_CASE("bp4_steps", "[serial][adios2]")
 {
-    std::string useSteps = R"(
+    std::string bp4 = json::merge(
+        R"(
     {
         "ADIOS2": {
             "engine": {
-                "type": "bp4",
-                "usesteps": true
+                "type": "bp4"
             }
         }
     }
-    )";
+    )",
+#if openPMD_HAS_ADIOS_2_9
+        R"({"ADIOS2":{"use_group_table": true}})"
+#else
+        R"({"ADIOS2":{"use_group_table": false}})"
+#endif
+    );
     std::string nullcore = R"(
     {
         "adios2": {
-            "type": "nullcore",
-            "ENGINE": {
-                "type": "bp4",
-                "usesteps": true
-            }
+            "type": "nullcore"
         }
     }
     )";
-    std::string dontUseSteps = R"(
-        # let's use TOML for this one
-        [adios2.engine]
-        type = "bp4"
-        UseSteps = false
-    )";
 
-    // sing the yes no song
-    bp4_steps("../samples/bp4steps_yes_yes.bp", useSteps, useSteps);
-    bp4_steps("../samples/bp4steps_no_yes.bp", dontUseSteps, useSteps);
-    bp4_steps("../samples/bp4steps_yes_no.bp", useSteps, dontUseSteps);
-    bp4_steps("../samples/bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
-    bp4_steps("../samples/nullcore.bp", nullcore, "");
-    bp4_steps("../samples/bp4steps_default.bp", "{}", "{}");
-
-    // bp4_steps(
-    //     "../samples/newlayout_bp4steps_yes_yes.bp",
-    //     useSteps,
-    //     useSteps,
-    //     Access::READ_LINEAR);
-    // bp4_steps(
-    //     "../samples/newlayout_bp4steps_yes_no.bp",
-    //     useSteps,
-    //     dontUseSteps,
-    //     Access::READ_LINEAR);
+    bp4_steps("../samples/bp4steps.bp", bp4);
+    bp4_steps("../samples/nullcore.bp", nullcore, std::nullopt);
+    bp4_steps("../samples/bp4steps_default.bp", "{}");
+    // Can use READ_LINEAR with ADIOS2 v2.9 because then we have the group table
+    // feature and can sensibly parse group-based encoding in step-based mode
+    bp4_steps(
+        "../samples/bp4steps.bp",
+        bp4,
+#if openPMD_HAS_ADIOS_2_9
+        Access::READ_LINEAR
+#else
+        Access::READ_ONLY
+#endif
+    );
 
 #if openPMD_HAS_ADIOS_2_9
     /*
      * Do this whole thing once more, but this time use the new attribute
      * layout.
      */
-    useSteps = R"(
+    bp4 = R"(
     {
         "adios2": {
             "use_group_table": true,
             "engine": {
-                "type": "bp4",
-                "usesteps": true
+                "type": "bp4"
             }
         }
     }
     )";
-    dontUseSteps = R"(
-    {
-        "adios2": {
-            "use_group_table": true,
-            "engine": {
-                "type": "bp4",
-                "usesteps": false
-            }
-        }
-    }
-    )";
-    // sing the yes no song
-    bp4_steps(
-        "../samples/newlayout_bp4steps_yes_yes.bp",
-        useSteps,
-        useSteps,
-        Access::READ_LINEAR);
-    bp4_steps("../samples/newlayout_bp4steps_yes_yes.bp", useSteps, useSteps);
-    bp4_steps(
-        "../samples/newlayout_bp4steps_yes_no.bp", useSteps, dontUseSteps);
-    bp4_steps(
-        "../samples/newlayout_bp4steps_no_yes.bp", dontUseSteps, useSteps);
-    bp4_steps(
-        "../samples/newlayout_bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
-
-    bp4_steps(
-        "../samples/newlayout_bp4steps_yes_yes.bp",
-        useSteps,
-        useSteps,
-        Access::READ_LINEAR);
-    bp4_steps(
-        "../samples/newlayout_bp4steps_yes_no.bp",
-        useSteps,
-        dontUseSteps,
-        Access::READ_LINEAR);
+    bp4_steps("../samples/newlayout_bp4steps.bp", bp4, Access::READ_LINEAR);
+    bp4_steps("../samples/newlayout_bp4steps.bp", bp4);
 #endif
 }
 #endif
@@ -6478,10 +6429,7 @@ void chaotic_stream(std::string filename, bool variableBased)
     std::string jsonConfig = R"(
 {
     "adios2": {
-        "use_group_table": true,
-        "engine": {
-            "usesteps": true
-        }
+        "use_group_table": true
     }
 })";
 
@@ -6552,7 +6500,8 @@ TEST_CASE("chaotic_stream", "[serial]")
 void unfinished_iteration_test(
     std::string const &ext,
     IterationEncoding encoding,
-    std::string const &config = "{}")
+    std::string const &config = "{}",
+    bool test_linear_access = true)
 {
     std::cout << "\n\nTESTING " << ext << "\n\n" << std::endl;
     std::string file = std::string("../samples/unfinished_iteration") +
@@ -6641,8 +6590,11 @@ void unfinished_iteration_test(
         }
     };
 
-    tryReading(Access::READ_LINEAR);
-    tryReading(Access::READ_LINEAR, R"({"defer_iteration_parsing": true})");
+    if (test_linear_access)
+    {
+        tryReading(Access::READ_LINEAR);
+        tryReading(Access::READ_LINEAR, R"({"defer_iteration_parsing": true})");
+    }
     if (encoding != IterationEncoding::variableBased)
     {
         /*
@@ -6661,7 +6613,10 @@ TEST_CASE("unfinished_iteration_test", "[serial]")
 {
 #if openPMD_HAVE_ADIOS2
     unfinished_iteration_test(
-        "bp", IterationEncoding::groupBased, R"({"backend": "adios2"})");
+        "bp",
+        IterationEncoding::groupBased,
+        R"({"backend": "adios2"})",
+        /* test_linear_access = */ false);
 #if openPMD_HAS_ADIOS_2_9
     unfinished_iteration_test(
         "bp5",
@@ -6822,7 +6777,8 @@ void append_mode(
     std::string const &filename,
     bool variableBased,
     ParseMode parseMode,
-    std::string const &jsonConfig = "{}")
+    std::string const &jsonConfig = "{}",
+    bool test_read_linear = true)
 {
     if (auxiliary::directory_exists("../samples/append"))
     {
@@ -6905,6 +6861,7 @@ void append_mode(
         }
     };
 
+    if (test_read_linear)
     {
         switch (parseMode)
         {
@@ -7027,6 +6984,7 @@ void append_mode(
                 write.writeIterations(), std::vector<uint64_t>{4, 5});
             write.flush();
         }
+        if (test_read_linear)
         {
             Series read(filename, Access::READ_LINEAR);
             switch (parseMode)
@@ -7091,22 +7049,14 @@ TEST_CASE("append_mode", "[serial]")
 {
     "adios2":
     {
-        "use_group_table": false,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": false
     }
 })END";
         std::string jsonConfigNew = R"END(
 {
     "adios2":
     {
-        "use_group_table": true,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": true
     }
 })END";
         if (t == "bp" || t == "bp4" || t == "bp5")
@@ -7115,7 +7065,8 @@ TEST_CASE("append_mode", "[serial]")
                 "../samples/append/append_groupbased." + t,
                 false,
                 ParseMode::LinearWithoutSnapshot,
-                jsonConfigOld);
+                jsonConfigOld,
+                /* test_read_linear = */ false);
 #if openPMD_HAS_ADIOS_2_9
             append_mode(
                 "../samples/append/append_groupbased." + t,
@@ -7152,11 +7103,7 @@ void append_mode_filebased(std::string const &extension)
 {
     "adios2":
     {
-        "use_group_table": true,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": true
     }
 })END";
     auto writeSomeIterations = [](WriteIterations &&writeIterations,

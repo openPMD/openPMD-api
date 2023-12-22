@@ -74,7 +74,6 @@ void SeriesIterator::initSeriesInLinearReadMode()
         case IE::variableBased: {
             Parameter<Operation::OPEN_FILE> fOpen;
             fOpen.name = series.get().m_name;
-            fOpen.encoding = series.iterationEncoding();
             series.IOHandler()->enqueue(IOTask(&series, fOpen));
             series.IOHandler()->flush(internal::defaultFlushParams);
             using PP = Parameter<Operation::OPEN_FILE>::ParsePreference;

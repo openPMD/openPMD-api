@@ -924,7 +924,6 @@ void Series::flushGorVBased(
             }
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
-            fCreate.encoding = iterationEncoding();
             IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
@@ -1004,7 +1003,6 @@ void Series::readFileBased()
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
     Parameter<Operation::READ_ATT> aRead;
-    fOpen.encoding = iterationEncoding();
 
     if (!auxiliary::directory_exists(IOHandler()->directory))
         throw error::ReadError(
@@ -1320,7 +1318,6 @@ auto Series::readGorVBased(
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
     fOpen.name = series.m_name;
-    fOpen.encoding = iterationEncoding();
     IOHandler()->enqueue(IOTask(this, fOpen));
     IOHandler()->flush(internal::defaultFlushParams);
     series.m_parsePreference = *fOpen.out_parsePreference;
@@ -2107,7 +2104,6 @@ void Series::openIteration(IterationIndex_t index, Iteration iteration)
         auto &series = get();
         // open the iteration's file again
         Parameter<Operation::OPEN_FILE> fOpen;
-        fOpen.encoding = iterationEncoding();
         fOpen.name = iterationFilename(index);
         IOHandler()->enqueue(IOTask(this, fOpen));
 
