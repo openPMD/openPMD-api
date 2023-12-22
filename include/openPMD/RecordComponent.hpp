@@ -476,9 +476,8 @@ public:
      *         be implicitly converted.
      */
     template <typename Visitor, typename... Args>
-    constexpr auto visit(Args &&...args)
-        -> decltype(Visitor::template call<char>(
-            std::declval<RecordComponent &>(), std::forward<Args>(args)...));
+    auto visit(Args &&...args) -> decltype(Visitor::template call<char>(
+        std::declval<RecordComponent &>(), std::forward<Args>(args)...));
 
     static constexpr char const *const SCALAR = "\vScalar";
 

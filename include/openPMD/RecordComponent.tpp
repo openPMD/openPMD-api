@@ -397,7 +397,7 @@ namespace detail
 } // namespace detail
 
 template <typename Visitor, typename... Args>
-constexpr auto RecordComponent::visit(Args &&...args)
+auto RecordComponent::visit(Args &&...args)
     -> decltype(Visitor::template call<char>(
         std::declval<RecordComponent &>(), std::forward<Args>(args)...))
 {
