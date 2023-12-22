@@ -49,6 +49,7 @@ namespace traits
     template <typename U>
     struct GenerationPolicy
     {
+        constexpr static bool is_noop = true;
         template <typename T>
         void operator()(T &)
         {}
@@ -65,7 +66,7 @@ namespace internal
         typename T,
         typename T_key = std::string,
         typename T_container = std::map<T_key, T> >
-    class ContainerData : public AttributableData
+    class ContainerData : virtual public AttributableData
     {
     public:
         using InternalContainer = T_container;
@@ -85,36 +86,6 @@ namespace internal
     };
 } // namespace internal
 
-namespace detail
-{
-    /*
-     * This converts the key (first parameter) to its string name within the
-     * openPMD hierarchy.
-     * If the key is found to be equal to RecordComponent::SCALAR, the parentKey
-     * will be returned, adding RecordComponent::SCALAR to its back.
-     * Reason: Scalar record components do not link their containing record as
-     * parent, but rather the parent's parent, so the own key within the
-     * "apparent" parent must be given as two steps.
-     */
-    template <typename T>
-    std::vector<std::string>
-    keyAsString(T &&key, std::vector<std::string> const &parentKey)
-    {
-        (void)parentKey;
-        return {std::to_string(std::forward<T>(key))};
-    }
-
-    // moved to a *.cpp file so we don't need to include RecordComponent.hpp
-    // here
-    template <>
-    std::vector<std::string> keyAsString<std::string const &>(
-        std::string const &key, std::vector<std::string> const &parentKey);
-
-    template <>
-    std::vector<std::string> keyAsString<std::string>(
-        std::string &&key, std::vector<std::string> const &parentKey);
-} // namespace detail
-
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
  *
  * @see http://en.cppreference.com/w/cpp/container/map
@@ -128,7 +99,7 @@ template <
     typename T,
     typename T_key = std::string,
     typename T_container = std::map<T_key, T> >
-class Container : public Attributable
+class Container : virtual public Attributable
 {
     static_assert(
         std::is_base_of<Attributable, T>::value,
@@ -147,7 +118,7 @@ protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
     using InternalContainer = T_container;
 
-    std::shared_ptr<ContainerData> m_containerData{new ContainerData()};
+    std::shared_ptr<ContainerData> m_containerData;
 
     inline void setData(std::shared_ptr<ContainerData> containerData)
     {
@@ -178,6 +149,9 @@ public:
     using const_pointer = typename InternalContainer::const_pointer;
     using iterator = typename InternalContainer::iterator;
     using const_iterator = typename InternalContainer::const_iterator;
+    using reverse_iterator = typename InternalContainer::reverse_iterator;
+    using const_reverse_iterator =
+        typename InternalContainer::const_reverse_iterator;
 
     iterator begin() noexcept
     {
@@ -203,6 +177,32 @@ public:
     const_iterator cend() const noexcept
     {
         return container().cend();
+    }
+
+    reverse_iterator rbegin() noexcept
+    {
+        return container().rbegin();
+    }
+    const_reverse_iterator rbegin() const noexcept
+    {
+        return container().rbegin();
+    }
+    const_reverse_iterator crbegin() const noexcept
+    {
+        return container().crbegin();
+    }
+
+    reverse_iterator rend() noexcept
+    {
+        return container().rend();
+    }
+    const_reverse_iterator rend() const noexcept
+    {
+        return container().rend();
+    }
+    const_reverse_iterator crend() const noexcept
+    {
+        return container().crend();
     }
 
     bool empty() const noexcept
@@ -234,8 +234,7 @@ public:
     {
         return container().insert(value);
     }
-    template <class P>
-    std::pair<iterator, bool> insert(P &&value)
+    std::pair<iterator, bool> insert(value_type &&value)
     {
         return container().insert(value);
     }
@@ -243,8 +242,7 @@ public:
     {
         return container().insert(hint, value);
     }
-    template <class P>
-    iterator insert(const_iterator hint, P &&value)
+    iterator insert(const_iterator hint, value_type &&value)
     {
         return container().insert(hint, value);
     }
@@ -282,7 +280,7 @@ public:
      * @throws  std::out_of_range error if in READ_ONLY mode and key does not
      * exist, otherwise key will be created
      */
-    virtual mapped_type &operator[](key_type const &key)
+    mapped_type &operator[](key_type const &key)
     {
         auto it = container().find(key);
         if (it != container().end())
@@ -300,8 +298,14 @@ public:
             T t = T();
             t.linkHierarchy(writable());
             auto &ret = container().insert({key, std::move(t)}).first->second;
-            ret.writable().ownKeyWithinParent =
-                detail::keyAsString(key, writable().ownKeyWithinParent);
+            if constexpr (std::is_same_v<T_key, std::string>)
+            {
+                ret.writable().ownKeyWithinParent = key;
+            }
+            else
+            {
+                ret.writable().ownKeyWithinParent = std::to_string(key);
+            }
             traits::GenerationPolicy<T> gen;
             gen(ret);
             return ret;
@@ -317,7 +321,7 @@ public:
      * @throws  std::out_of_range error if in READ_ONLY mode and key does not
      * exist, otherwise key will be created
      */
-    virtual mapped_type &operator[](key_type &&key)
+    mapped_type &operator[](key_type &&key)
     {
         auto it = container().find(key);
         if (it != container().end())
@@ -335,8 +339,15 @@ public:
             T t = T();
             t.linkHierarchy(writable());
             auto &ret = container().insert({key, std::move(t)}).first->second;
-            ret.writable().ownKeyWithinParent = detail::keyAsString(
-                std::move(key), writable().ownKeyWithinParent);
+            if constexpr (std::is_same_v<T_key, std::string>)
+            {
+                ret.writable().ownKeyWithinParent = std::move(key);
+            }
+            else
+            {
+                ret.writable().ownKeyWithinParent =
+                    std::to_string(std::move(key));
+            }
             traits::GenerationPolicy<T> gen;
             gen(ret);
             return ret;
@@ -381,7 +392,7 @@ public:
      * @param   key Key of the element to remove.
      * @return  Number of elements removed (either 0 or 1).
      */
-    virtual size_type erase(key_type const &key)
+    size_type erase(key_type const &key)
     {
         if (Access::READ_ONLY == IOHandler()->m_frontendAccess)
             throw std::runtime_error(
@@ -399,7 +410,7 @@ public:
     }
 
     //! @todo why does const_iterator not work compile with pybind11?
-    virtual iterator erase(iterator res)
+    iterator erase(iterator res)
     {
         if (Access::READ_ONLY == IOHandler()->m_frontendAccess)
             throw std::runtime_error(
@@ -428,10 +439,6 @@ public:
 OPENPMD_protected
     // clang-format on
 
-    Container(std::shared_ptr<ContainerData> containerData)
-        : Attributable{containerData}, m_containerData{std::move(containerData)}
-    {}
-
     void clear_unchecked()
     {
         if (written())
@@ -454,13 +461,57 @@ OPENPMD_protected
         flushAttributes(flushParams);
     }
 
-    // clang-format off
-OPENPMD_private
-    // clang-format on
-
-    Container() : Attributable{nullptr}
+    Container() : Attributable(NoInit())
     {
-        Attributable::setData(m_containerData);
+        setData(std::make_shared<ContainerData>());
+    }
+
+    Container(NoInit) : Attributable(NoInit())
+    {}
+
+public:
+    /*
+     * Need to define these manually due to the virtual inheritance from
+     * Attributable.
+     * Otherwise, they would only run from the most derived class
+     * if explicitly called.
+     * If not defining these, a user could destroy copy/move constructors/
+     * assignment operators by deriving from any class that has a virtual
+     * Attributable somewhere.
+     * Care must be taken in move constructors/assignment operators to not move
+     * multiple times (which could happen in diamond inheritance situations).
+     */
+
+    Container(Container const &other) : Attributable(NoInit())
+    {
+        m_attri = other.m_attri;
+        m_containerData = other.m_containerData;
+    }
+
+    Container(Container &&other) : Attributable(NoInit())
+    {
+        if (other.m_attri)
+        {
+            m_attri = std::move(other.m_attri);
+        }
+        m_containerData = std::move(other.m_containerData);
+    }
+
+    Container &operator=(Container const &other)
+    {
+        m_attri = other.m_attri;
+        m_containerData = other.m_containerData;
+        return *this;
+    }
+
+    Container &operator=(Container &&other)
+    {
+        if (other.m_attri)
+        {
+            m_attri = std::move(other.m_attri);
+        }
+        m_containerData = std::move(other.m_containerData);
+        return *this;
     }
 };
 
@@ -532,7 +583,8 @@ namespace internal
         ~EraseStaleEntries()
         {
             auto &map = m_originalContainer.container();
-            using iterator_t = typename BareContainer_t::const_iterator;
+            using iterator_t =
+                typename BareContainer_t::InternalContainer::const_iterator;
             std::vector<iterator_t> deleteMe;
             deleteMe.reserve(map.size() - m_accessedKeys.size());
             for (iterator_t it = map.begin(); it != map.end(); ++it)

@@ -58,9 +58,7 @@ int main()
     }
 
     openPMD::ParticleSpecies electrons = i.particles["electrons"];
-    std::shared_ptr<double> charge =
-        electrons["charge"][openPMD::RecordComponent::SCALAR]
-            .loadChunk<double>();
+    std::shared_ptr<double> charge = electrons["charge"].loadChunk<double>();
     series.flush();
     cout << "And the first electron particle has a charge = "
          << charge.get()[0];

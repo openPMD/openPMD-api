@@ -750,7 +750,7 @@ public:
         }
 
         openPMD::ParticleSpecies p = iter.particles.begin()->second;
-        RecordComponent idVal = p["id"][RecordComponent::SCALAR];
+        Record idVal = p["id"];
 
         Extent pExtent = idVal.getExtent();
 

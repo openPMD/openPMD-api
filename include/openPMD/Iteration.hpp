@@ -244,17 +244,23 @@ public:
 private:
     Iteration();
 
-    std::shared_ptr<internal::IterationData> m_iterationData{
-        new internal::IterationData};
+    using Data_t = internal::IterationData;
+    std::shared_ptr<Data_t> m_iterationData;
 
-    inline internal::IterationData const &get() const
+    inline Data_t const &get() const
     {
         return *m_iterationData;
     }
 
-    inline internal::IterationData &get()
+    inline Data_t &get()
     {
         return *m_iterationData;
+    }
+
+    inline void setData(std::shared_ptr<Data_t> data)
+    {
+        m_iterationData = std::move(data);
+        Attributable::setData(m_iterationData);
     }
 
     void flushFileBased(

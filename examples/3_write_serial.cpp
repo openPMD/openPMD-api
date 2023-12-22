@@ -49,8 +49,7 @@ int main(int argc, char *argv[])
     // in streaming setups, e.g. an iteration cannot be opened again once
     // it has been closed.
     // `Series::iterations` can be directly accessed in random-access workflows.
-    MeshRecordComponent rho =
-        series.writeIterations()[1].meshes["rho"][MeshRecordComponent::SCALAR];
+    Mesh rho = series.writeIterations()[1].meshes["rho"];
     cout << "Created a scalar mesh Record with all required openPMD "
             "attributes\n";
 

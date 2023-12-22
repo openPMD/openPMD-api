@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # printing a scalar value
     electrons = i.particles["electrons"]
-    charge = electrons["charge"][io.Mesh_Record_Component.SCALAR]
+    charge = electrons["charge"]
     series.flush()
     print("And the first electron particle has a charge {}"
           .format(charge[0]))

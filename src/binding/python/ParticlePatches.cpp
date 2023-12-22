@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ParticlePatches.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 
@@ -29,8 +30,8 @@
 
 void init_ParticlePatches(py::module &m)
 {
-    auto py_pp_cnt =
-        declare_container<PyPatchContainer>(m, "Particle_Patches_Container");
+    auto py_pp_cnt = declare_container<PyPatchContainer, Attributable>(
+        m, "Particle_Patches_Container");
 
     py::class_<ParticlePatches, Container<PatchRecord> >(m, "Particle_Patches")
         .def(

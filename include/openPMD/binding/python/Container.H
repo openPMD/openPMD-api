@@ -26,6 +26,9 @@
 #pragma once
 
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/PatchRecord.hpp"
+#include "openPMD/backend/PatchRecordComponent.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
 
@@ -43,16 +46,14 @@ namespace openPMD
  *
  * BSD-style license, see pybind11 LICENSE file.
  */
-template <
-    typename Map,
-    typename holder_type = std::unique_ptr<Map>,
-    typename... Args>
-py::class_<Map, holder_type, Attributable>
-declare_container(py::handle scope, std::string const &name, Args &&...args)
+template <typename Map, typename... Args>
+py::class_<Map, std::unique_ptr<Map>, Args...>
+declare_container(py::handle scope, std::string const &name)
 {
+    using holder_type = std::unique_ptr<Map>;
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
-    using Class_ = py::class_<Map, holder_type, Attributable>;
+    using Class_ = py::class_<Map, holder_type, Args...>;
 
     // If either type is a non-module-local bound type then make the map
     // binding non-local as well; otherwise (e.g. both types are either
@@ -65,13 +66,9 @@ declare_container(py::handle scope, std::string const &name, Args &&...args)
         local = !tinfo || tinfo->module_local;
     }
 
-    Class_ cl(
-        scope,
-        name.c_str(),
-        py::module_local(local),
-        std::forward<Args>(args)...);
+    Class_ cl(scope, name.c_str(), py::module_local(local));
 
-    cl.def(py::init<Map const &>());
+    // cl.def(py::init<Map const &>());
 
     // Register stream insertion operator (if possible)
     py::detail::map_if_insertion_operator<Map, Class_>(cl, name);
@@ -106,15 +103,11 @@ declare_container(py::handle scope, std::string const &name, Args &&...args)
     return cl;
 }
 
-template <
-    typename Map,
-    typename holder_type = std::unique_ptr<Map>>
-py::class_<Map, holder_type, Attributable>
-finalize_container(py::class_<Map, holder_type, Attributable> cl)
+template <typename Map, typename Class_>
+Class_ finalize_container(Class_ cl)
 {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
-    using Class_ = py::class_<Map, holder_type, Attributable>;
 
     cl.def(
         "items",

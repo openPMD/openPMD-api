@@ -20,6 +20,9 @@ A record is an data set with common properties, e.g. the electric field :math:`\
 A density field could be another record - which is scalar as it only has one component.
 
 In general, openPMD allows records with arbitrary number of components (tensors), as well as vector records and scalar records.
+In the case of vector records, the single components are stored as datasets within the record.
+In the case of scalar records, the record and component are equivalent.
+In the API, the record can be directly used as a component, and in the standard a scalar record is represented by the scalar dataset with attributes.
 
 Meshes and Particles
 --------------------

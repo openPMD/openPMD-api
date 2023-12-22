@@ -29,10 +29,8 @@
 
 void init_BaseRecordComponent(py::module &m)
 {
-    auto py_brc_cont = declare_container<PyBaseRecordComponentContainer>(
-        m, "Base_Record_Component_Container");
-
-    py::class_<BaseRecordComponent, Attributable>(m, "Base_Record_Component")
+    py::class_<BaseRecordComponent, Attributable>(
+        m, "Base_Record_Component", py::multiple_inheritance())
         .def(
             "__repr__",
             [](BaseRecordComponent const &brc) {
@@ -50,6 +48,4 @@ void init_BaseRecordComponent(py::module &m)
         .def_property_readonly("dtype", [](BaseRecordComponent &brc) {
             return dtype_to_numpy(brc.getDatatype());
         });
-
-    finalize_container<PyBaseRecordComponentContainer>(py_brc_cont);
 }

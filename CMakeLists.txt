@@ -462,7 +462,6 @@ set(CORE_SOURCE
         src/auxiliary/JSON.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
-        src/backend/Container.cpp
         src/backend/MeshRecordComponent.cpp
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
@@ -605,7 +604,6 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/openPMD.cpp
         src/binding/python/Access.cpp
         src/binding/python/Attributable.cpp
-        src/binding/python/BaseRecord.cpp
         src/binding/python/BaseRecordComponent.cpp
         src/binding/python/ChunkInfo.cpp
         src/binding/python/Dataset.cpp

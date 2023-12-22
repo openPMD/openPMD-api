@@ -1715,7 +1715,7 @@ void test_complex(const std::string &backend)
         }
 
         auto rcflt = i.iterations[0]
-                         .meshes["Cflt"][RecordComponent::SCALAR]
+                         .meshes["Cflt"] //[RecordComponent::SCALAR]
                          .loadChunk<std::complex<float>>();
         auto rcdbl = i.iterations[0]
                          .meshes["Cdbl"][RecordComponent::SCALAR]

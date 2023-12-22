@@ -25,6 +25,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 #include <algorithm>
 #include <climits>
@@ -37,23 +38,22 @@ namespace openPMD
 {
 namespace internal
 {
-    RecordComponentData::RecordComponentData()
-    {
-        RecordComponent impl{
-            std::shared_ptr<RecordComponentData>{this, [](auto const *) {}}};
-        impl.setUnitSI(1);
-    }
+    RecordComponentData::RecordComponentData() = default;
 } // namespace internal
 
-RecordComponent::RecordComponent() : BaseRecordComponent{nullptr}
+RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 {
-    BaseRecordComponent::setData(m_recordComponentData);
+    setData(std::make_shared<Data_t>());
 }
 
-RecordComponent::RecordComponent(
-    std::shared_ptr<internal::RecordComponentData> data)
-    : BaseRecordComponent{data}, m_recordComponentData{std::move(data)}
+RecordComponent::RecordComponent(NoInit) : BaseRecordComponent(NoInit())
 {}
+
+RecordComponent::RecordComponent(BaseRecord<RecordComponent> const &baseRecord)
+    : BaseRecordComponent(NoInit())
+{
+    setData(baseRecord.m_recordComponentData);
+}
 
 // We need to instantiate this somewhere otherwise there might be linker issues
 // despite this thing actually being constepxr
@@ -257,6 +257,10 @@ void RecordComponent::flush(
                     "[RecordComponent] Must specify dataset type and extent "
                     "before flushing (see RecordComponent::resetDataset()).");
             }
+        }
+        if (!containsAttribute("unitSI"))
+        {
+            setUnitSI(1);
         }
         if (!written())
         {

@@ -137,7 +137,8 @@ SeriesIterator::SeriesIterator(
      * This is ok due to the usual C++ iterator invalidation workflows
      * (deleting the original container invalidates the iterator).
      */
-    data.series = Series(std::shared_ptr<internal::SeriesData>(
+    data.series = Series();
+    data.series->setData(std::shared_ptr<internal::SeriesData>(
         series_in.m_series.get(), [](auto const *) {}));
     auto &series = data.series.value();
     if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&

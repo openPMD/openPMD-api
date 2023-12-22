@@ -21,6 +21,7 @@
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Record.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
@@ -33,8 +34,8 @@
 
 void init_ParticleSpecies(py::module &m)
 {
-    auto py_ps_cnt =
-        declare_container<PyPartContainer>(m, "Particle_Container");
+    auto py_ps_cnt = declare_container<PyPartContainer, Attributable>(
+        m, "Particle_Container");
 
     py::class_<ParticleSpecies, Container<Record> > cl(m, "ParticleSpecies");
     cl.def(
@@ -47,7 +48,12 @@ void init_ParticleSpecies(py::module &m)
               return stream.str();
           })
 
-        .def_readwrite("particle_patches", &ParticleSpecies::particlePatches);
+        .def_readwrite(
+            "particle_patches",
+            &ParticleSpecies::particlePatches,
+            py::return_value_policy::copy,
+            // garbage collection: return value must be freed before Series
+            py::keep_alive<1, 0>());
     add_pickle(
         cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));

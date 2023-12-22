@@ -124,8 +124,7 @@ chunks = "auto"
         Dataset differentlyCompressedDataset{Datatype::INT, {10}};
         differentlyCompressedDataset.options = differentCompressionSettings;
 
-        auto someMesh = iteration.meshes["differentCompressionSettings"]
-                                        [RecordComponent::SCALAR];
+        auto someMesh = iteration.meshes["differentCompressionSettings"];
         someMesh.resetDataset(differentlyCompressedDataset);
         std::vector<int> dataVec(10, i);
         someMesh.storeChunk(dataVec, {0}, {10});

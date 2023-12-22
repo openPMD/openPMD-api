@@ -561,7 +561,7 @@ void Series::init(
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
             std::move(ioHandler));
     series.iterations.linkHierarchy(writable());
-    series.iterations.writable().ownKeyWithinParent = {"iterations"};
+    series.iterations.writable().ownKeyWithinParent = "iterations";
 
     series.m_name = input->name;
 
@@ -2288,7 +2288,8 @@ namespace internal
          * `Series` is needlessly flushed a second time. Otherwise, error
          * messages can get very confusing.
          */
-        Series impl{{this, [](auto const *) {}}};
+        Series impl;
+        impl.setData({this, [](auto const *) {}});
         if (auto IOHandler = impl.IOHandler();
             IOHandler && IOHandler->m_lastFlushSuccessful)
         {
@@ -2315,14 +2316,8 @@ namespace internal
     }
 } // namespace internal
 
-Series::Series() : Attributable{nullptr}, iterations{}
+Series::Series() : Attributable(NoInit()), iterations{}
 {}
-
-Series::Series(std::shared_ptr<internal::SeriesData> data)
-    : Attributable{data}, m_series{std::move(data)}
-{
-    iterations = m_series->iterations;
-}
 
 #if openPMD_HAVE_MPI
 Series::Series(
@@ -2330,10 +2325,9 @@ Series::Series(
     Access at,
     MPI_Comm comm,
     std::string const &options)
-    : Attributable{nullptr}, m_series{new internal::SeriesData}
+    : Attributable(NoInit())
 {
-    Attributable::setData(m_series);
-    iterations = m_series->iterations;
+    setData(std::make_shared<internal::SeriesData>());
     json::TracingJSON optionsJson =
         json::parseOptions(options, comm, /* considerFiles = */ true);
     auto input = parseInput(filepath);
@@ -2353,10 +2347,9 @@ Series::Series(
 
 Series::Series(
     std::string const &filepath, Access at, std::string const &options)
-    : Attributable{nullptr}, m_series{new internal::SeriesData}
+    : Attributable(NoInit())
 {
-    Attributable::setData(m_series);
-    iterations = m_series->iterations;
+    setData(std::make_shared<internal::SeriesData>());
     json::TracingJSON optionsJson =
         json::parseOptions(options, /* considerFiles = */ true);
     auto input = parseInput(filepath);
@@ -2374,17 +2367,17 @@ Series::Series(
 
 Series::operator bool() const
 {
-    return m_series.operator bool();
+    return m_attri.operator bool();
 }
 
 ReadIterations Series::readIterations()
 {
     // Use private constructor instead of copy constructor to avoid
     // object slicing
-    return {
-        Series(this->m_series),
-        IOHandler()->m_frontendAccess,
-        get().m_parsePreference};
+    Series res;
+    res.setData(std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
+    return ReadIterations{
+        std::move(res), IOHandler()->m_frontendAccess, get().m_parsePreference};
 }
 
 void Series::parseBase()
@@ -2405,7 +2398,6 @@ WriteIterations Series::writeIterations()
 void Series::close()
 {
     get().close();
-    m_series.reset();
     m_attri.reset();
 }
 

@@ -20,6 +20,7 @@
  */
 #include "openPMD/backend/PatchRecord.hpp"
 
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
@@ -29,8 +30,8 @@
 
 void init_PatchRecord(py::module &m)
 {
-    auto py_pr_cnt =
-        declare_container<PyPatchRecordContainer>(m, "Patch_Record_Container");
+    auto py_pr_cnt = declare_container<PyPatchRecordContainer, Attributable>(
+        m, "Patch_Record_Container");
 
     py::class_<PatchRecord, BaseRecord<PatchRecordComponent> >(
         m, "Patch_Record")

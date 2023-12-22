@@ -48,36 +48,19 @@ Writable *getWritable(Attributable *);
 /** Type of IO operation between logical and persistent data.
  */
 OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
-    CREATE_FILE,
-    CHECK_FILE,
-    OPEN_FILE,
-    CLOSE_FILE,
+    CREATE_FILE,      CHECK_FILE,     OPEN_FILE,     CLOSE_FILE,
     DELETE_FILE,
 
-    CREATE_PATH,
-    CLOSE_PATH,
-    OPEN_PATH,
-    DELETE_PATH,
+    CREATE_PATH,      CLOSE_PATH,     OPEN_PATH,     DELETE_PATH,
     LIST_PATHS,
 
-    CREATE_DATASET,
-    EXTEND_DATASET,
-    OPEN_DATASET,
-    DELETE_DATASET,
-    WRITE_DATASET,
-    READ_DATASET,
-    LIST_DATASETS,
-    GET_BUFFER_VIEW,
+    CREATE_DATASET,   EXTEND_DATASET, OPEN_DATASET,  DELETE_DATASET,
+    WRITE_DATASET,    READ_DATASET,   LIST_DATASETS, GET_BUFFER_VIEW,
 
-    DELETE_ATT,
-    WRITE_ATT,
-    READ_ATT,
-    LIST_ATTS,
+    DELETE_ATT,       WRITE_ATT,      READ_ATT,      LIST_ATTS,
 
     ADVANCE,
     AVAILABLE_CHUNKS, //!< Query chunks that can be loaded in a dataset
-    KEEP_SYNCHRONOUS, //!< Keep two items in the object model synchronous with
-                      //!< each other
     DEREGISTER //!< Inform the backend that an object has been deleted.
 }; // note: if you change the enum members here, please update
    // docs/source/dev/design.rst
@@ -656,25 +639,6 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::AVAILABLE_CHUNKS>
 
     // output parameter
     std::shared_ptr<ChunkTable> chunks = std::make_shared<ChunkTable>();
-};
-
-template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::KEEP_SYNCHRONOUS>
-    : public AbstractParameter
-{
-    Parameter() = default;
-    Parameter(Parameter &&) = default;
-    Parameter(Parameter const &) = default;
-    Parameter &operator=(Parameter &&) = default;
-    Parameter &operator=(Parameter const &) = default;
-
-    std::unique_ptr<AbstractParameter> to_heap() && override
-    {
-        return std::make_unique<Parameter<Operation::KEEP_SYNCHRONOUS>>(
-            std::move(*this));
-    }
-
-    Writable *otherWritable;
 };
 
 template <>

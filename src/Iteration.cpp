@@ -36,14 +36,14 @@ namespace openPMD
 using internal::CloseStatus;
 using internal::DeferredParseAccess;
 
-Iteration::Iteration() : Attributable{nullptr}
+Iteration::Iteration() : Attributable(NoInit())
 {
-    Attributable::setData(m_iterationData);
+    setData(std::make_shared<Data_t>());
     setTime(static_cast<double>(0));
     setDt(static_cast<double>(1));
     setTimeUnitSI(1);
-    meshes.writable().ownKeyWithinParent = {"meshes"};
-    particles.writable().ownKeyWithinParent = {"particles"};
+    meshes.writable().ownKeyWithinParent = "meshes";
+    particles.writable().ownKeyWithinParent = "particles";
 }
 
 template <typename T>
@@ -586,8 +586,7 @@ void Iteration::readMeshes(std::string const &meshesPath)
         auto shape = std::find(att_begin, att_end, "shape");
         if (value != att_end && shape != att_end)
         {
-            MeshRecordComponent &mrc = m[MeshRecordComponent::SCALAR];
-            mrc.parent() = m.parent();
+            MeshRecordComponent &mrc = m;
             IOHandler()->enqueue(IOTask(&mrc, pOpen));
             IOHandler()->flush(internal::defaultFlushParams);
             mrc.get().m_isConstant = true;
@@ -617,8 +616,7 @@ void Iteration::readMeshes(std::string const &meshesPath)
         dOpen.name = mesh_name;
         IOHandler()->enqueue(IOTask(&m, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
-        MeshRecordComponent &mrc = m[MeshRecordComponent::SCALAR];
-        mrc.parent() = m.parent();
+        MeshRecordComponent &mrc = m;
         IOHandler()->enqueue(IOTask(&mrc, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
         mrc.written() = false;

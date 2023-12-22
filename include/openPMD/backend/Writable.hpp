@@ -137,12 +137,10 @@ OPENPMD_private
     Writable *parent = nullptr;
     bool dirty = true;
     /**
-     * If parent is not null, then this is a vector of keys such that:
-     * &(*parent)[key_1]...[key_n] == this
-     * (Notice that scalar record components do not link their direct parent,
-     * but instead their parent's parent, hence a vector of keys)
+     * If parent is not null, then this is a key such that:
+     * &(*parent)[key] == this
      */
-    std::vector<std::string> ownKeyWithinParent;
+    std::string ownKeyWithinParent;
     /**
      * @brief Whether a Writable has been written to the backend.
      *

@@ -20,6 +20,7 @@
  */
 #include "openPMD/Record.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
@@ -32,7 +33,8 @@
 
 void init_Record(py::module &m)
 {
-    auto py_r_cnt = declare_container<PyRecordContainer>(m, "Record_Container");
+    auto py_r_cnt = declare_container<PyRecordContainer, Attributable>(
+        m, "Record_Container");
 
     py::class_<Record, BaseRecord<RecordComponent> > cl(m, "Record");
     cl.def(py::init<Record const &>())

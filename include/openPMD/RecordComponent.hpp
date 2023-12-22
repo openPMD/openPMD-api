@@ -94,8 +94,23 @@ namespace internal
          * flushed to the backend
          */
         bool m_hasBeenExtended = false;
+
+        void reset() override
+        {
+            BaseRecordComponentData::reset();
+            m_chunks = std::queue<IOTask>();
+            m_constantValue = -1;
+            m_name = std::string();
+            m_isEmpty = false;
+            m_hasBeenExtended = false;
+        }
     };
+    template <typename, typename>
+    class BaseRecordData;
 } // namespace internal
+
+template <typename>
+class BaseRecord;
 
 class RecordComponent : public BaseRecordComponent
 {
@@ -103,10 +118,10 @@ class RecordComponent : public BaseRecordComponent
     friend class Container;
     friend class Iteration;
     friend class ParticleSpecies;
-    template <typename T_elem>
+    template <typename>
     friend class BaseRecord;
-    template <typename T_elem>
-    friend class BaseRecordInterface;
+    template <typename, typename>
+    friend class internal::BaseRecordData;
     friend class Record;
     friend class Mesh;
     template <typename>
@@ -121,6 +136,15 @@ public:
         API,
         AUTO
     }; // Allocation
+
+    /**
+     * @brief Avoid object slicing when using a Record as a scalar Record
+     *        Component.
+     *
+     * It's still preferred to directly use the Record, or alternatively a
+     * Record-Component-type reference to a Record.
+     */
+    RecordComponent(BaseRecord<RecordComponent> const &);
 
     RecordComponent &setUnitSI(double);
 
@@ -142,7 +166,7 @@ public:
      *
      * @return RecordComponent&
      */
-    RecordComponent &resetDataset(Dataset);
+    virtual RecordComponent &resetDataset(Dataset);
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;
@@ -431,24 +455,26 @@ private:
      */
     bool dirtyRecursive() const;
 
-    std::shared_ptr<internal::RecordComponentData> m_recordComponentData{
-        new internal::RecordComponentData()};
-
-    RecordComponent();
-
     // clang-format off
 OPENPMD_protected
     // clang-format on
 
-    RecordComponent(std::shared_ptr<internal::RecordComponentData>);
+    using Data_t = internal::RecordComponentData;
+    std::shared_ptr<Data_t> m_recordComponentData;
 
-    inline internal::RecordComponentData const &get() const
+    RecordComponent();
+    RecordComponent(NoInit);
+
+    inline Data_t const &get() const
     {
+        // cannot call this in the const overload
+        // datasetDefined(*m_recordComponentData);
         return *m_recordComponentData;
     }
 
-    inline internal::RecordComponentData &get()
+    inline Data_t &get()
     {
+        setDatasetDefined(*m_recordComponentData);
         return *m_recordComponentData;
     }
 

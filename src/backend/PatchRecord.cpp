@@ -41,7 +41,7 @@ PatchRecord::setUnitDimension(std::map<UnitDimension, double> const &udim)
 void PatchRecord::flush_impl(
     std::string const &path, internal::FlushParams const &flushParams)
 {
-    if (this->find(RecordComponent::SCALAR) == this->end())
+    if (!this->datasetDefined())
     {
         if (IOHandler()->m_frontendAccess != Access::READ_ONLY)
             Container<PatchRecordComponent>::flush(
@@ -51,7 +51,7 @@ void PatchRecord::flush_impl(
             comp.second.flush(comp.first, flushParams);
     }
     else
-        this->operator[](RecordComponent::SCALAR).flush(path, flushParams);
+        T_RecordComponent::flush(path, flushParams);
     if (flushParams.flushLevel == FlushLevel::UserFlush)
     {
         this->dirty() = false;
