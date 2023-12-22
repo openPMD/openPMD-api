@@ -34,6 +34,25 @@ namespace
         Attributable const &source,
         std::vector<std::string> ignore = {})
     {
+#if 0 // leave this in for potential future debugging
+        std::cout << "COPYING ATTRIBUTES FROM '" << [&source]() -> std::string {
+            auto vec = source.myPath().group;
+            if (vec.empty())
+            {
+                return "[]";
+            }
+            std::stringstream sstream;
+            auto it = vec.begin();
+            sstream << "[" << *it++;
+            for (; it != vec.end(); ++it)
+            {
+                sstream << ", " << *it;
+            }
+            sstream << "]";
+            return sstream.str();
+        }() << "'"
+            << std::endl;
+#endif
         auto shouldBeIgnored = [&ignore](std::string const &attrName) {
             // `ignore` is empty by default and normally has only a handful of
             // entries otherwise.
@@ -92,6 +111,25 @@ namespace
         initializeFromTemplate(
             static_cast<BaseRecordComponent &>(initializeMe),
             static_cast<BaseRecordComponent const &>(fromTemplate));
+    }
+
+    template <typename T>
+    void initializeFromTemplate(
+        BaseRecord<T> &initializeMe, BaseRecord<T> const &fromTemplate)
+    {
+        if (fromTemplate.scalar())
+        {
+            initializeMe[RecordComponent::SCALAR];
+            initializeFromTemplate(
+                static_cast<T &>(initializeMe),
+                static_cast<T const &>(fromTemplate));
+        }
+        else
+        {
+            initializeFromTemplate(
+                static_cast<Container<T> &>(initializeMe),
+                static_cast<Container<T> const &>(fromTemplate));
+        }
     }
 
     void initializeFromTemplate(
