@@ -4880,7 +4880,8 @@ void bp4_steps(
 
 TEST_CASE("bp4_steps", "[serial][adios2]")
 {
-    std::string bp4 = R"(
+    std::string bp4 = json::merge(
+        R"(
     {
         "ADIOS2": {
             "engine": {
@@ -4888,7 +4889,13 @@ TEST_CASE("bp4_steps", "[serial][adios2]")
             }
         }
     }
-    )";
+    )",
+#if openPMD_HAS_ADIOS_2_9
+        R"({"ADIOS2":{"use_group_table": true}})"
+#else
+        R"({"ADIOS2":{"use_group_table": false}})"
+#endif
+    );
     std::string nullcore = R"(
     {
         "adios2": {
