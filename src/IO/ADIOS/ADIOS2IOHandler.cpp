@@ -568,7 +568,6 @@ to drastic performance issues, no matter if I/O steps are used or not.
   as the number of steps increase.
 We advise you to pick either file-based encoding or variable-based encoding
 (variable-based encoding is not yet feature-complete in the openPMD-api).
-iteration encoding for use with ADIOS2.
 For more details, refer to
 https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html#iteration-and-series)"
                                                                      [1];
