@@ -113,8 +113,9 @@ const openPMD_Iteration *openPMD_IndexedIteration_getConstIteration(
         (const openPMD::IndexedIteration *)indexed_iteration;
     const auto cxx_iteration =
         (const openPMD::Iteration *)cxx_indexed_iteration;
-    const auto iteration = (const openPMD_Iteration *)cxx_iteration;
-    return iteration;
+    const auto cxx_new_iteration = new openPMD::Iteration(*cxx_iteration);
+    const auto new_iteration = (const openPMD_Iteration *)cxx_new_iteration;
+    return new_iteration;
 }
 
 openPMD_Iteration *openPMD_IndexedIteration_getIteration(
@@ -123,8 +124,9 @@ openPMD_Iteration *openPMD_IndexedIteration_getIteration(
     const auto cxx_indexed_iteration =
         (openPMD::IndexedIteration *)indexed_iteration;
     const auto cxx_iteration = (openPMD::Iteration *)cxx_indexed_iteration;
-    const auto iteration = (openPMD_Iteration *)cxx_iteration;
-    return iteration;
+    const auto cxx_new_iteration = new openPMD::Iteration(*cxx_iteration);
+    const auto new_iteration = (openPMD_Iteration *)cxx_new_iteration;
+    return new_iteration;
 }
 
 uint64_t openPMD_IndexedIteration_iterationIndex(
