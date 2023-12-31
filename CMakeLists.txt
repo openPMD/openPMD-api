@@ -1,6 +1,6 @@
 # Preamble ####################################################################
 #
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.24.0)
 
 project(openPMD VERSION 0.16.0) # LANGUAGES CXX
 
@@ -150,7 +150,7 @@ option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
-option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
+#option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
 option(openPMD_USE_INTERNAL_TOML11   "Use internally shipped toml11"        ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
@@ -233,6 +233,7 @@ endfunction()
 #     Clang+MPI: Potentially needed MPI::MPI_C targets in the past
 #                (exact MPI flavor & Clang version lost)
 #     BullMPI: PUBLIC dependency to MPI::MPI_CXX is missing in MPI::MPI_C target
+include(FetchContent)
 set(openPMD_MPI_LINK_C_DEFAULT OFF)
 option(openPMD_MPI_LINK_C  "Also link the MPI C targets" ${openPMD_MPI_LINK_C_DEFAULT})
 mark_as_advanced(openPMD_MPI_LINK_C)
@@ -259,14 +260,28 @@ endif()
 
 
 # external library: nlohmann-json (required)
-if(openPMD_USE_INTERNAL_JSON)
-    set(JSON_BuildTests OFF CACHE INTERNAL "")
-    set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
-    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
-    message(STATUS "nlohmann-json: Using INTERNAL version '3.9.1'")
-else()
-    find_package(nlohmann_json CONFIG REQUIRED)
-    message(STATUS "nlohmann-json: Found version '${nlohmann_json_VERSION}'")
+#if(openPMD_USE_INTERNAL_JSON)
+#    set(JSON_BuildTests OFF CACHE INTERNAL "")
+#    set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
+#    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
+#    message(STATUS "nlohmann-json: Using INTERNAL version '3.9.1'")
+#else()
+#    find_package(nlohmann_json CONFIG REQUIRED)
+#    message(STATUS "nlohmann-json: Found version '${nlohmann_json_VERSION}'")
+#endif()
+find_package(nlohmann_json CONFIG)
+if(NOT nlohmann_json_FOUND)
+    message(STATUS "Fetching nlohmann-json from https://github.com/nlohmann/json")
+    FetchContent_Declare(
+      nlohmann_json
+      GIT_REPOSITORY https://github.com/nlohmann/json.git
+      GIT_TAG v3.9.1
+      SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/json-src"
+      OVERRIDE_FIND_PACKAGE
+    )
+    set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann json defined internally with OpenPMD")
+    set(JSON_Install OFF CACHE INTERNAL "NLohmann json defined internally with OpenPMD")  # only used PRIVATE
+    FetchContent_MakeAvailable(nlohmann_json)
 endif()
 add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::nlohmann_json
