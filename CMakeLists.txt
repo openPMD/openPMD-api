@@ -276,11 +276,11 @@ if(NOT nlohmann_json_FOUND)
       nlohmann_json
       GIT_REPOSITORY https://github.com/nlohmann/json.git
       GIT_TAG v3.9.1
-      SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/json-src"
+      SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json/"
       OVERRIDE_FIND_PACKAGE
     )
-    set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann json defined internally with OpenPMD")
-    set(JSON_Install OFF CACHE INTERNAL "NLohmann json defined internally with OpenPMD")  # only used PRIVATE
+    set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON Option defined internally with OpenPMD")
+    set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON Option defined internally with OpenPMD")  # only used PRIVATE
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
