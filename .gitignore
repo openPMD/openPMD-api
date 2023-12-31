@@ -103,6 +103,7 @@ CMakeUserPresets.json
 
 # Directories which are created and filled by FetchContent
 share/openPMD/thirdParty/json/
+share/openPMD/thirdParty/toml11/
 
 #########
 # Tools #

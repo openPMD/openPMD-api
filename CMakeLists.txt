@@ -150,8 +150,6 @@ option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
-#option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
-option(openPMD_USE_INTERNAL_TOML11   "Use internally shipped toml11"        ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
@@ -260,15 +258,6 @@ endif()
 
 
 # external library: nlohmann-json (required)
-#if(openPMD_USE_INTERNAL_JSON)
-#    set(JSON_BuildTests OFF CACHE INTERNAL "")
-#    set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
-#    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
-#    message(STATUS "nlohmann-json: Using INTERNAL version '3.9.1'")
-#else()
-#    find_package(nlohmann_json CONFIG REQUIRED)
-#    message(STATUS "nlohmann-json: Found version '${nlohmann_json_VERSION}'")
-#endif()
 find_package(nlohmann_json CONFIG)
 if(NOT nlohmann_json_FOUND)
     message(STATUS "Fetching nlohmann-json from https://github.com/nlohmann/json")
@@ -279,8 +268,8 @@ if(NOT nlohmann_json_FOUND)
       SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json/"
       OVERRIDE_FIND_PACKAGE
     )
-    set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON Option defined internally with OpenPMD")
-    set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON Option defined internally with OpenPMD")  # only used PRIVATE
+    set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON option defiend internally by OpenPMD")
+    set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON option defiend internally by OpenPMD")  # only used PRIVATE
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
@@ -288,13 +277,18 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
     INTERFACE nlohmann_json::nlohmann_json)
 
 # external library: toml11
-if(openPMD_USE_INTERNAL_TOML11)
-    set(toml11_INSTALL OFF CACHE INTERNAL "")
-    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11")
-    message(STATUS "toml11: Using INTERNAL version '3.7.1'")
-else()
-    find_package(toml11 3.7.1 CONFIG REQUIRED)
-    message(STATUS "toml11: Found version '${toml11_VERSION}'")
+find_package(toml11 CONFIG)
+if(NOT toml11_FOUND)
+    message(STATUS "Fetching toml11 from https://github.com/ToruNiina/toml11")
+    FetchContent_Declare(
+      toml11
+      GIT_REPOSITORY https://github.com/ToruNiina/toml11
+      GIT_TAG v3.7.1
+      SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/"
+      OVERRIDE_FIND_PACKAGE
+    )
+    set(toml11_INSTALL OFF CACHE INTERNAL "toml11 option defiend internally by OpenPMD")
+    FetchContent_MakeAvailable(toml11)
 endif()
 add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::toml11
