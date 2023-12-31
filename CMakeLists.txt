@@ -148,7 +148,6 @@ openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
-option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
@@ -559,18 +558,21 @@ target_include_directories(openPMD PUBLIC
 
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
-    add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
-    if(openPMD_USE_INTERNAL_CATCH)
-        target_include_directories(openPMD::thirdparty::Catch2 SYSTEM INTERFACE
-            $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
+    find_package(Catch2 CONFIG)
+    if(NOT Catch2_FOUND)
+        message(STATUS "Fetching toml11 from https://github.com/catchorg/Catch2")
+        FetchContent_Declare(
+          Catch2
+          GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+          GIT_TAG v2.13.10
+          SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/"
+          OVERRIDE_FIND_PACKAGE
         )
-        message(STATUS "Catch2: Using INTERNAL version '2.13.10'")
-    else()
-        find_package(Catch2 2.13.10 REQUIRED CONFIG)
-        target_link_libraries(openPMD::thirdparty::Catch2
-            INTERFACE Catch2::Catch2)
-        message(STATUS "Catch2: Found version '${Catch2_VERSION}'")
+        FetchContent_MakeAvailable(Catch2)
     endif()
+    add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
+    target_link_libraries(openPMD::thirdparty::Catch2
+            INTERFACE Catch2::Catch2)
 endif()
 
 if(openPMD_HAVE_MPI)
