@@ -1,6 +1,7 @@
 /* Running this test in parallel with MPI requires MPI::Init.
  * To guarantee a correct call to Init, launch the tests manually.
  */
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/openPMD.hpp"
@@ -12,6 +13,7 @@
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
 #define HAS_ADIOS_2_8 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 208)
+#define HAS_ADIOS_2_9 (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 209)
 #endif
 
 #include <algorithm>
@@ -74,9 +76,8 @@ TEST_CASE("parallel_multi_series_test", "[parallel]")
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3})
     {
-        for (auto const &t : myBackends)
+        for (auto const &file_ending : myBackends)
         {
-            auto const file_ending = t;
             std::cout << file_ending << std::endl;
             allSeries.emplace_back(
                 std::string("../samples/parallel_multi_open_test_")
@@ -114,7 +115,7 @@ TEST_CASE("parallel_multi_series_test", "[parallel]")
 
 void write_test_zero_extent(
     bool fileBased,
-    std::string file_ending,
+    std::string const &file_ending,
     bool writeAllChunks,
     bool declareFromAll)
 {
@@ -378,7 +379,7 @@ TEST_CASE("no_parallel_hdf5", "[parallel][hdf5]")
 #endif
 
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
-void available_chunks_test(std::string file_ending)
+void available_chunks_test(std::string const &file_ending)
 {
     int r_mpi_rank{-1}, r_mpi_size{-1};
     MPI_Comm_rank(MPI_COMM_WORLD, &r_mpi_rank);
@@ -627,7 +628,7 @@ TEST_CASE("hzdr_adios_sample_content_test", "[parallel][adios2][bp3]")
 #endif
 
 #if openPMD_HAVE_MPI
-void write_4D_test(std::string file_ending)
+void write_4D_test(std::string const &file_ending)
 {
     int mpi_s{-1};
     int mpi_r{-1};
@@ -661,7 +662,7 @@ TEST_CASE("write_4D_test", "[parallel]")
     }
 }
 
-void write_makeconst_some(std::string file_ending)
+void write_makeconst_some(std::string const &file_ending)
 {
     int mpi_s{-1};
     int mpi_r{-1};
@@ -694,7 +695,7 @@ TEST_CASE("write_makeconst_some", "[parallel]")
     }
 }
 
-void close_iteration_test(std::string file_ending)
+void close_iteration_test(std::string const &file_ending)
 {
     int i_mpi_rank{-1}, i_mpi_size{-1};
     MPI_Comm_rank(MPI_COMM_WORLD, &i_mpi_rank);
@@ -764,7 +765,7 @@ TEST_CASE("close_iteration_test", "[parallel]")
     }
 }
 
-void file_based_write_read(std::string file_ending)
+void file_based_write_read(std::string const &file_ending)
 {
     namespace io = openPMD;
 
@@ -871,7 +872,7 @@ TEST_CASE("file_based_write_read", "[parallel]")
     }
 }
 
-void hipace_like_write(std::string file_ending)
+void hipace_like_write(std::string const &file_ending)
 {
     namespace io = openPMD;
 
@@ -1137,7 +1138,9 @@ void adios2_streaming(bool variableBasedLayout)
 
 TEST_CASE("adios2_streaming", "[pseudoserial][adios2]")
 {
+#if HAS_ADIOS_2_9
     adios2_streaming(true);
+#endif // HAS_ADIOS_2_9
     adios2_streaming(false);
 }
 
@@ -1168,10 +1171,16 @@ clevel = "1"
 doshuffle = "BLOSC_BITSHUFFLE"
 )END";
 
-    std::string writeConfigBP4 = R"END(
+    std::string writeConfigBP4 =
+        R"END(
 [adios2]
 unused = "parameter"
-
+attribute_writing_ranks = 0
+)END"
+#if openPMD_HAS_ADIOS_2_9
+        "use_group_table = true"
+#endif
+        R"END(
 [adios2.engine]
 type = "bp4"
 unused = "as well"
@@ -1377,10 +1386,10 @@ enum class ParseMode
      * Iterations are returned in ascending order.
      * If an IO step returns an iteration whose index is lower than the
      * last one, it will be skipped.
-     * This mode of parsing is not available for the BP4 engine with ADIOS2
-     * schema 0, since BP4 does not associate attributes with the step in
-     * which they were created, making it impossible to separate parsing into
-     * single steps.
+     * This mode of parsing is not available for the BP4 engine without the
+     * group table feature, since BP4 does not associate attributes with the
+     * step in which they were created, making it impossible to separate parsing
+     * into single steps.
      */
     LinearWithoutSnapshot,
     /*
@@ -1394,7 +1403,8 @@ void append_mode(
     std::string const &extension,
     bool variableBased,
     ParseMode parseMode,
-    std::string jsonConfig = "{}")
+    std::string const &jsonConfig = "{}",
+    bool test_read_linear = true)
 {
     std::string filename =
         (variableBased ? "../samples/append/append_variablebased."
@@ -1412,7 +1422,7 @@ void append_mode(
     std::vector<int> data(10, 999);
     auto writeSomeIterations = [&data, mpi_size, mpi_rank](
                                    WriteIterations &&writeIterations,
-                                   std::vector<uint64_t> indices) {
+                                   std::vector<uint64_t> const &indices) {
         for (auto index : indices)
         {
             auto it = writeIterations[index];
@@ -1491,6 +1501,7 @@ void append_mode(
         }
     };
 
+    if (test_read_linear)
     {
         switch (parseMode)
         {
@@ -1533,8 +1544,9 @@ void append_mode(
                 ++counter;
             }
             REQUIRE(counter == 8);
-            // Cannot do listSeries here because the Series is already drained
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
         break;
         case ParseMode::AheadOfTimeWithoutSnapshot: {
@@ -1543,8 +1555,8 @@ void append_mode(
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
             /*
              * This one is a bit tricky:
-             * The BP4 engine has no way of parsing a Series in the old
-             * ADIOS2 schema step-by-step, since attributes are not
+             * The BP4 engine has no way of parsing a Series step-by-step in
+             * ADIOS2 without group tables, since attributes are not
              * associated with the step in which they were created.
              * As a result, when readIterations() is called, the whole thing
              * is parsed immediately ahead-of-time.
@@ -1552,7 +1564,7 @@ void append_mode(
              * but since the IO steps don't correspond with the order of
              * iterations returned (there is no way to figure out that order),
              * we cannot load data in here.
-             * BP4 in the old ADIOS2 schema only supports either of the
+             * BP4 in ADIOS2 without group table only supports either of the
              * following: 1) A Series in which the iterations are present in
              * ascending order. 2) Or accessing the Series in READ_ONLY mode.
              */
@@ -1614,6 +1626,8 @@ void append_mode(
             write.flush();
         }
         MPI_Barrier(MPI_COMM_WORLD);
+
+        if (test_read_linear)
         {
             Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
             switch (parseMode)
@@ -1663,9 +1677,9 @@ void append_mode(
                 ++counter;
             }
             REQUIRE(counter == 8);
-            // Cannot do listSeries here because the Series is already
-            // drained
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
     }
 #endif
@@ -1679,22 +1693,14 @@ TEST_CASE("append_mode", "[serial]")
 {
     "adios2":
     {
-        "schema": 0,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": false
     }
 })END";
         std::string jsonConfigNew = R"END(
 {
     "adios2":
     {
-        "schema": 20210209,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": true
     }
 })END";
         if (t == "bp" || t == "bp4" || t == "bp5")
@@ -1708,7 +1714,13 @@ TEST_CASE("append_mode", "[serial]")
              */
 #if HAS_ADIOS_2_8
             append_mode(
-                t, false, ParseMode::LinearWithoutSnapshot, jsonConfigOld);
+                t,
+                false,
+                ParseMode::LinearWithoutSnapshot,
+                jsonConfigOld,
+                /* test_read_linear = */ false);
+#endif
+#if HAS_ADIOS_2_9
             append_mode(t, false, ParseMode::WithSnapshot, jsonConfigNew);
             // This test config does not make sense
             // append_mode(t, true, ParseMode::WithSnapshot, jsonConfigOld);

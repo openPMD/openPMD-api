@@ -18,32 +18,47 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Record.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
 
+#include <sstream>
 #include <string>
 #include <vector>
 
-namespace py = pybind11;
-using namespace openPMD;
-
 void init_ParticleSpecies(py::module &m)
 {
+    auto py_ps_cnt = declare_container<PyPartContainer, Attributable>(
+        m, "Particle_Container");
+
     py::class_<ParticleSpecies, Container<Record> > cl(m, "ParticleSpecies");
     cl.def(
           "__repr__",
-          [](ParticleSpecies const &) { return "<openPMD.ParticleSpecies>"; })
+          [](ParticleSpecies const &p) {
+              std::stringstream stream;
+              stream << "<openPMD.ParticleSpecies with " << p.size()
+                     << " record(s) and " << p.numAttributes()
+                     << " attribute(s)>";
+              return stream.str();
+          })
 
-        .def_readwrite("particle_patches", &ParticleSpecies::particlePatches);
+        .def_readwrite(
+            "particle_patches",
+            &ParticleSpecies::particlePatches,
+            py::return_value_policy::copy,
+            // garbage collection: return value must be freed before Series
+            py::keep_alive<1, 0>());
     add_pickle(
         cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
             return series.iterations[n_it].particles[group.at(3)];
         });
+
+    finalize_container<PyPartContainer>(py_ps_cnt);
 }

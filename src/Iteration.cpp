@@ -36,14 +36,14 @@ namespace openPMD
 using internal::CloseStatus;
 using internal::DeferredParseAccess;
 
-Iteration::Iteration() : Attributable{nullptr}
+Iteration::Iteration() : Attributable(NoInit())
 {
-    Attributable::setData(m_iterationData);
+    setData(std::make_shared<Data_t>());
     setTime(static_cast<double>(0));
     setDt(static_cast<double>(1));
     setTimeUnitSI(1);
-    meshes.writable().ownKeyWithinParent = {"meshes"};
-    particles.writable().ownKeyWithinParent = {"particles"};
+    meshes.writable().ownKeyWithinParent = "meshes";
+    particles.writable().ownKeyWithinParent = "particles";
 }
 
 template <typename T>
@@ -268,25 +268,38 @@ void Iteration::flushVariableBased(
         Parameter<Operation::OPEN_PATH> pOpen;
         pOpen.path = "";
         IOHandler()->enqueue(IOTask(this, pOpen));
-        /*
-         * In v-based encoding, the snapshot attribute must always be written,
-         * so don't set the `changesOverSteps` flag of the IOTask here.
-         * Reason: Even in backends that don't support changing attributes,
-         * variable-based iteration encoding can be used to write one single
-         * iteration. Then, this attribute determines which iteration it is.
-         */
-        this->setAttribute("snapshot", i);
     }
 
     switch (flushParams.flushLevel)
     {
     case FlushLevel::CreateOrOpenFiles:
-        break;
+        return;
     case FlushLevel::SkeletonOnly:
     case FlushLevel::InternalFlush:
     case FlushLevel::UserFlush:
         flush(flushParams);
         break;
+    }
+
+    if (!written())
+    {
+        /* create iteration path */
+        Parameter<Operation::OPEN_PATH> pOpen;
+        pOpen.path = "";
+        IOHandler()->enqueue(IOTask(this, pOpen));
+        /*
+         * In v-based encoding, the snapshot attribute must always be written.
+         * Reason: Even in backends that don't support changing attributes,
+         * variable-based iteration encoding can be used to write one single
+         * iteration. Then, this attribute determines which iteration it is.
+         */
+        Parameter<Operation::WRITE_ATT> wAttr;
+        wAttr.changesOverSteps =
+            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+        wAttr.name = "snapshot";
+        wAttr.resource = (unsigned long long)i;
+        wAttr.dtype = Datatype::ULONGLONG;
+        IOHandler()->enqueue(IOTask(this, wAttr));
     }
 }
 
@@ -359,7 +372,7 @@ void Iteration::reread(std::string const &path)
 }
 
 void Iteration::readFileBased(
-    std::string filePath, std::string const &groupPath, bool doBeginStep)
+    std::string const &filePath, std::string const &groupPath, bool doBeginStep)
 {
     if (doBeginStep)
     {
@@ -528,11 +541,15 @@ void Iteration::read_impl(std::string const &groupPath)
 #ifdef openPMD_USE_INVASIVE_TESTS
     if (containsAttribute("__openPMD_internal_fail"))
     {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::Other,
-            {},
-            "Deliberately failing this iteration for testing purposes");
+        if (getAttribute("__openPMD_internal_fail").get<std::string>() ==
+            "asking for trouble")
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::Other,
+                {},
+                "Deliberately failing this iteration for testing purposes");
+        }
     }
 #endif
 }
@@ -569,13 +586,11 @@ void Iteration::readMeshes(std::string const &meshesPath)
         auto shape = std::find(att_begin, att_end, "shape");
         if (value != att_end && shape != att_end)
         {
-            MeshRecordComponent &mrc = m[MeshRecordComponent::SCALAR];
-            mrc.parent() = m.parent();
+            MeshRecordComponent &mrc = m;
             IOHandler()->enqueue(IOTask(&mrc, pOpen));
             IOHandler()->flush(internal::defaultFlushParams);
             mrc.get().m_isConstant = true;
         }
-        m.read();
         try
         {
             m.read();
@@ -601,8 +616,7 @@ void Iteration::readMeshes(std::string const &meshesPath)
         dOpen.name = mesh_name;
         IOHandler()->enqueue(IOTask(&m, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
-        MeshRecordComponent &mrc = m[MeshRecordComponent::SCALAR];
-        mrc.parent() = m.parent();
+        MeshRecordComponent &mrc = m;
         IOHandler()->enqueue(IOTask(&mrc, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
         mrc.written() = false;

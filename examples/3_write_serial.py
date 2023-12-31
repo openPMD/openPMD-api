@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # it has been closed.
     # `Series.iterations` can be directly accessed in random-access workflows.
     rho = series.write_iterations()[1]. \
-        meshes["rho"][io.Mesh_Record_Component.SCALAR]
+        meshes["rho"]
 
     dataset = io.Dataset(data.dtype, data.shape)
 

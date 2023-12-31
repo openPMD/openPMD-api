@@ -24,8 +24,10 @@
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <array>
+#include <complex>
 #include <cstddef> // size_t
 #include <memory>
+#include <variant>
 #include <vector>
 
 namespace openPMD::auxiliary
@@ -52,6 +54,18 @@ namespace detail
 
     template <typename T, size_t n>
     struct IsArray<std::array<T, n>>
+    {
+        static constexpr bool value = true;
+    };
+
+    template <typename>
+    struct IsComplex
+    {
+        static constexpr bool value = false;
+    };
+
+    template <typename T>
+    struct IsComplex<std::complex<T>>
     {
         static constexpr bool value = true;
     };
@@ -114,10 +128,49 @@ using IsPointer_t = typename detail::IsPointer<T>::type;
 template <typename T>
 inline constexpr bool IsContiguousContainer_v = IsVector_v<T> || IsArray_v<T>;
 
+template <typename T>
+inline constexpr bool IsComplex_v = detail::IsComplex<T>::value;
+
 namespace
 {
     // see https://en.cppreference.com/w/cpp/language/if
     template <typename>
     inline constexpr bool dependent_false_v = false;
 } // namespace
+
+namespace detail
+{
+    struct as_shared_pointer
+    {
+        template <typename T>
+        using type = std::shared_ptr<T>;
+    };
+
+    template <typename...>
+    struct append_to_variant;
+
+    template <typename first_type, typename... other_types>
+    struct append_to_variant<first_type, std::variant<other_types...>>
+    {
+        using type = std::variant<first_type, other_types...>;
+    };
+
+    template <typename...>
+    struct map_variant;
+
+    template <typename F, typename first_type, typename... other_types>
+    struct map_variant<F, std::variant<first_type, other_types...>>
+    {
+        using type = typename append_to_variant<
+            typename F::template type<first_type>,
+            typename map_variant<F, std::variant<other_types...>>::type>::type;
+    };
+
+    template <typename F>
+    struct map_variant<F, std::variant<>>
+    {
+        using type = std::variant<>;
+    };
+} // namespace detail
+
 } // namespace openPMD::auxiliary

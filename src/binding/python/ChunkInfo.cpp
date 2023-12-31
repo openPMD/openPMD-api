@@ -18,16 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/ChunkInfo.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 
 #include <exception>
 #include <string>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 void init_Chunk(py::module &m)
 {
@@ -65,7 +61,7 @@ void init_Chunk(py::module &m)
             },
 
             // __setstate__
-            [](py::tuple t) {
+            [](py::tuple const &t) {
                 // our state tuple has exactly three values
                 if (t.size() != 3)
                     throw std::runtime_error("Invalid state!");

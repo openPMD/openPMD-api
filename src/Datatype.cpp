@@ -163,7 +163,7 @@ std::ostream &operator<<(std::ostream &os, openPMD::Datatype const &d)
     return os;
 }
 
-Datatype stringToDatatype(std::string s)
+Datatype stringToDatatype(const std::string &s)
 {
     static std::unordered_map<std::string, Datatype> m{
         {"CHAR", Datatype::CHAR},
@@ -224,46 +224,49 @@ std::string datatypeToString(openPMD::Datatype dt)
     return buf.str();
 }
 
-std::vector<Datatype> openPMD_Datatypes{
-    Datatype::CHAR,
-    Datatype::UCHAR,
-    Datatype::SCHAR,
-    Datatype::SHORT,
-    Datatype::INT,
-    Datatype::LONG,
-    Datatype::LONGLONG,
-    Datatype::USHORT,
-    Datatype::UINT,
-    Datatype::ULONG,
-    Datatype::ULONGLONG,
-    Datatype::FLOAT,
-    Datatype::DOUBLE,
-    Datatype::LONG_DOUBLE,
-    Datatype::CFLOAT,
-    Datatype::CDOUBLE,
-    Datatype::CLONG_DOUBLE,
-    Datatype::STRING,
-    Datatype::VEC_CHAR,
-    Datatype::VEC_SHORT,
-    Datatype::VEC_INT,
-    Datatype::VEC_LONG,
-    Datatype::VEC_LONGLONG,
-    Datatype::VEC_UCHAR,
-    Datatype::VEC_USHORT,
-    Datatype::VEC_UINT,
-    Datatype::VEC_ULONG,
-    Datatype::VEC_ULONGLONG,
-    Datatype::VEC_FLOAT,
-    Datatype::VEC_DOUBLE,
-    Datatype::VEC_LONG_DOUBLE,
-    Datatype::VEC_CFLOAT,
-    Datatype::VEC_CDOUBLE,
-    Datatype::VEC_CLONG_DOUBLE,
-    Datatype::VEC_SCHAR,
-    Datatype::VEC_STRING,
-    Datatype::ARR_DBL_7,
-    Datatype::BOOL,
-    Datatype::UNDEFINED};
+std::vector<Datatype> openPMD_Datatypes()
+{
+    return {
+        Datatype::CHAR,
+        Datatype::UCHAR,
+        Datatype::SCHAR,
+        Datatype::SHORT,
+        Datatype::INT,
+        Datatype::LONG,
+        Datatype::LONGLONG,
+        Datatype::USHORT,
+        Datatype::UINT,
+        Datatype::ULONG,
+        Datatype::ULONGLONG,
+        Datatype::FLOAT,
+        Datatype::DOUBLE,
+        Datatype::LONG_DOUBLE,
+        Datatype::CFLOAT,
+        Datatype::CDOUBLE,
+        Datatype::CLONG_DOUBLE,
+        Datatype::STRING,
+        Datatype::VEC_CHAR,
+        Datatype::VEC_SHORT,
+        Datatype::VEC_INT,
+        Datatype::VEC_LONG,
+        Datatype::VEC_LONGLONG,
+        Datatype::VEC_UCHAR,
+        Datatype::VEC_USHORT,
+        Datatype::VEC_UINT,
+        Datatype::VEC_ULONG,
+        Datatype::VEC_ULONGLONG,
+        Datatype::VEC_FLOAT,
+        Datatype::VEC_DOUBLE,
+        Datatype::VEC_LONG_DOUBLE,
+        Datatype::VEC_CFLOAT,
+        Datatype::VEC_CDOUBLE,
+        Datatype::VEC_CLONG_DOUBLE,
+        Datatype::VEC_SCHAR,
+        Datatype::VEC_STRING,
+        Datatype::ARR_DBL_7,
+        Datatype::BOOL,
+        Datatype::UNDEFINED};
+}
 
 namespace
 {

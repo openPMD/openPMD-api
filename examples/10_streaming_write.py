@@ -8,7 +8,8 @@ import openpmd_api as io
 # pass-through for ADIOS2 engine parameters
 # https://adios2.readthedocs.io/en/latest/engines/engines.html
 config = {'adios2': {'engine': {}, 'dataset': {}}}
-config['adios2']['engine'] = {'parameters': {'Threads': '4'}}
+config['adios2']['engine'] = {'parameters':
+                              {'Threads': '4', 'DataTransport': 'WAN'}}
 config['adios2']['dataset'] = {'operators': [{'type': 'bzip2'}]}
 
 if __name__ == "__main__":
@@ -68,7 +69,7 @@ if __name__ == "__main__":
         temperature.axis_labels = ["x", "y"]
         temperature.grid_spacing = [1., 1.]
         # temperature has no x,y,z components, so skip the last layer:
-        temperature_dataset = temperature[io.Mesh_Record_Component.SCALAR]
+        temperature_dataset = temperature
         # let's say we are in a 3x3 mesh
         temperature_dataset.reset_dataset(
             io.Dataset(np.dtype("double"), [3, 3]))

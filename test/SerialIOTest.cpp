@@ -6,14 +6,12 @@
 #define OPENPMD_protected public:
 #endif
 
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/openPMD.hpp"
 
-#if openPMD_HAVE_ADIOS2
-#include <adios2.h>
-#endif
 #include <catch2/catch.hpp>
 
 #include <algorithm>
@@ -69,7 +67,7 @@ std::vector<BackendSelection> testedBackends()
             if (lookup != extensions.end())
             {
                 std::string extension = lookup->second;
-                res.push_back({std::move(pair.first), std::move(extension)});
+                res.push_back({pair.first, std::move(extension)});
             }
         }
     }
@@ -80,135 +78,27 @@ std::vector<std::string> testedFileExtensions()
 {
     auto allExtensions = getFileExtensions();
     auto newEnd = std::remove_if(
-        allExtensions.begin(), allExtensions.end(), [](std::string const &ext) {
+        allExtensions.begin(),
+        allExtensions.end(),
+        []([[maybe_unused]] std::string const &ext) {
+#if openPMD_HAS_ADIOS_2_9
+            // sst and ssc need a receiver for testing
+            // bp5 is already tested via bp
+            // toml parsing is very slow and its implementation is equivalent to
+            // the json backend, so it is only activated for selected tests
+            return ext == "sst" || ext == "ssc" || ext == "bp5" ||
+                ext == "toml";
+#else
+            // toml parsing is very slow and its implementation is equivalent to
+            // the json backend, so it is only activated for selected tests
             // sst and ssc need a receiver for testing
             // bp4 is already tested via bp
-            return ext == "sst" || ext == "ssc" || ext == "bp4";
+            return ext == "sst" || ext == "ssc" || ext == "bp4" ||
+                ext == "toml";
+#endif
         });
     return {allExtensions.begin(), newEnd};
 }
-
-#if openPMD_HAVE_ADIOS2
-TEST_CASE("adios2_char_portability", "[serial][adios2]")
-{
-    /*
-     * This tests portability of char attributes in ADIOS2 in schema 20210209.
-     */
-
-    if (auxiliary::getEnvString("OPENPMD_NEW_ATTRIBUTE_LAYOUT", "NOT_SET") ==
-        "NOT_SET")
-    {
-        /*
-         * @todo As soon as we have added automatic detection for the new
-         *       layout, this environment variable should be ignore read-side.
-         *       Then we can delete this if condition again.
-         */
-        return;
-    }
-    // @todo remove new_attribute_layout key as soon as schema-based versioning
-    //       is merged
-    std::string const config = R"END(
-{
-    "adios2":
-    {
-        "new_attribute_layout": true,
-        "schema": 20210209
-    }
-})END";
-    {
-        adios2::ADIOS adios;
-        auto IO = adios.DeclareIO("IO");
-        auto engine = IO.Open(
-            "../samples/adios2_char_portability.bp", adios2::Mode::Write);
-        engine.BeginStep();
-
-        // write default openPMD attributes
-        auto writeAttribute = [&engine,
-                               &IO](std::string const &name, auto value) {
-            using variable_type = decltype(value);
-            engine.Put(IO.DefineVariable<variable_type>(name), value);
-        };
-        writeAttribute("/basePath", std::string("/data/%T/"));
-        writeAttribute("/date", std::string("2021-02-22 11:14:00 +0000"));
-        writeAttribute("/iterationEncoding", std::string("groupBased"));
-        writeAttribute("/iterationFormat", std::string("/data/%T/"));
-        writeAttribute("/openPMD", std::string("1.1.0"));
-        writeAttribute("/openPMDextension", uint32_t(0));
-        writeAttribute("/software", std::string("openPMD-api"));
-        writeAttribute("/softwareVersion", std::string("0.14.0-dev"));
-
-        IO.DefineAttribute<uint64_t>(
-            "__openPMD_internal/openPMD2_adios2_schema", 20210209);
-        IO.DefineAttribute<unsigned char>("__openPMD_internal/useSteps", 1);
-
-        // write char things that should be read back properly
-
-        std::string baseString = "abcdefghi";
-        // null termination not necessary, ADIOS knows the size of its variables
-        std::vector<signed char> signedVector(9);
-        std::vector<unsigned char> unsignedVector(9);
-        for (unsigned i = 0; i < 9; ++i)
-        {
-            signedVector[i] = baseString[i];
-            unsignedVector[i] = baseString[i];
-        }
-        engine.Put(
-            IO.DefineVariable<signed char>(
-                "/signedVector", {3, 3}, {0, 0}, {3, 3}),
-            signedVector.data());
-        engine.Put(
-            IO.DefineVariable<unsigned char>(
-                "/unsignedVector", {3, 3}, {0, 0}, {3, 3}),
-            unsignedVector.data());
-        engine.Put(
-            IO.DefineVariable<char>(
-                "/unspecifiedVector", {3, 3}, {0, 0}, {3, 3}),
-            baseString.c_str());
-
-        writeAttribute("/signedChar", (signed char)'a');
-        writeAttribute("/unsignedChar", (unsigned char)'a');
-        writeAttribute("/char", (char)'a');
-
-        engine.EndStep();
-        engine.Close();
-    }
-
-    {
-        Series read(
-            "../samples/adios2_char_portability.bp", Access::READ_ONLY, config);
-        auto signedVectorAttribute = read.getAttribute("signedVector");
-        REQUIRE(signedVectorAttribute.dtype == Datatype::VEC_STRING);
-        auto unsignedVectorAttribute = read.getAttribute("unsignedVector");
-        REQUIRE(unsignedVectorAttribute.dtype == Datatype::VEC_STRING);
-        auto unspecifiedVectorAttribute =
-            read.getAttribute("unspecifiedVector");
-        REQUIRE(unspecifiedVectorAttribute.dtype == Datatype::VEC_STRING);
-        std::vector<std::string> desiredVector{"abc", "def", "ghi"};
-        REQUIRE(
-            signedVectorAttribute.get<std::vector<std::string> >() ==
-            desiredVector);
-        REQUIRE(
-            unsignedVectorAttribute.get<std::vector<std::string> >() ==
-            desiredVector);
-        REQUIRE(
-            unspecifiedVectorAttribute.get<std::vector<std::string> >() ==
-            desiredVector);
-
-        auto signedCharAttribute = read.getAttribute("signedChar");
-        // we don't have that datatype yet
-        // REQUIRE(unsignedCharAttribute.dtype == Datatype::SCHAR);
-        auto unsignedCharAttribute = read.getAttribute("unsignedChar");
-        REQUIRE(unsignedCharAttribute.dtype == Datatype::UCHAR);
-        auto charAttribute = read.getAttribute("char");
-        // might currently report Datatype::UCHAR on some platforms
-        // REQUIRE(unsignedCharAttribute.dtype == Datatype::CHAR);
-
-        REQUIRE(signedCharAttribute.get<char>() == char('a'));
-        REQUIRE(unsignedCharAttribute.get<char>() == char('a'));
-        REQUIRE(charAttribute.get<char>() == char('a'));
-    }
-}
-#endif
 
 namespace detail
 {
@@ -347,9 +237,8 @@ TEST_CASE("multi_series_test", "[serial]")
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3})
     {
-        for (auto const &t : myfileExtensions)
+        for (auto const &file_ending : myfileExtensions)
         {
-            auto const file_ending = t;
             std::cout << file_ending << std::endl;
             allSeries.emplace_back(
                 std::string("../samples/multi_open_test_")
@@ -524,14 +413,13 @@ TEST_CASE("multiple_series_handles_test", "[serial]")
 #endif
 }
 
-void close_iteration_test(std::string file_ending)
+void close_iteration_test(std::string const &file_ending)
 {
     std::string name = "../samples/close_iterations_%T." + file_ending;
 
     std::vector<int> data{2, 4, 6, 8};
     // { // we do *not* need these parentheses
     Series write(name, Access::CREATE);
-    bool isAdios1 = write.backend() == "ADIOS1";
     {
         Iteration it0 = write.iterations[0];
         auto E_x = it0.meshes["E"]["x"];
@@ -542,13 +430,6 @@ void close_iteration_test(std::string file_ending)
     write.flush();
     // }
 
-    if (isAdios1)
-    {
-        // run a simplified test for Adios1 since Adios1 has issues opening
-        // twice in the same process
-        REQUIRE(auxiliary::file_exists("../samples/close_iterations_0.bp"));
-    }
-    else
     {
         Series read(name, Access::READ_ONLY);
         Iteration it0 = read.iterations[0];
@@ -574,13 +455,6 @@ void close_iteration_test(std::string file_ending)
         REQUIRE_THROWS(write.flush());
     }
 
-    if (isAdios1)
-    {
-        // run a simplified test for Adios1 since Adios1 has issues opening
-        // twice in the same process
-        REQUIRE(auxiliary::file_exists("../samples/close_iterations_1.bp"));
-    }
-    else
     {
         Series read(name, Access::READ_ONLY);
         Iteration it1 = read.iterations[1];
@@ -610,7 +484,7 @@ TEST_CASE("close_iteration_test", "[serial]")
 }
 
 void close_iteration_interleaved_test(
-    std::string const file_ending, IterationEncoding const it_encoding)
+    std::string const &file_ending, IterationEncoding const it_encoding)
 {
     std::string name = "../samples/close_iterations_interleaved_";
     if (it_encoding == IterationEncoding::fileBased)
@@ -683,11 +557,42 @@ TEST_CASE("close_iteration_interleaved_test", "[serial]")
         // run this test for ADIOS2 & JSON only
         if (t == "h5")
             continue;
+#if openPMD_HAS_ADIOS_2_9
         close_iteration_interleaved_test(t, IterationEncoding::variableBased);
+#endif // openPMD_HAS_ADIOS_2_9
     }
 }
 
-void close_and_copy_attributable_test(std::string file_ending)
+namespace detail
+{
+template <typename T>
+struct CopyableDeleter : std::function<void(T *)>
+{
+    CopyableDeleter()
+        : std::function<void(T *)>{[](T const *ptr) { delete[] ptr; }}
+    {}
+};
+
+template <typename T>
+struct NonCopyableDeleter : std::function<void(T *)>
+{
+    NonCopyableDeleter()
+        : std::function<void(T *)>{[](T const *ptr) { delete[] ptr; }}
+    {}
+    NonCopyableDeleter(NonCopyableDeleter const &) = delete;
+    NonCopyableDeleter &operator=(NonCopyableDeleter const &) = delete;
+    /*
+     * MSVC does not recognize these when declaring noexcept and this is
+     * for a test only anyway.
+     */
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+    NonCopyableDeleter(NonCopyableDeleter &&) = default;
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+    NonCopyableDeleter &operator=(NonCopyableDeleter &&) = default;
+};
+} // namespace detail
+
+void close_and_copy_attributable_test(std::string const &file_ending)
 {
     using position_t = int;
 
@@ -793,6 +698,27 @@ void close_and_copy_attributable_test(std::string file_ending)
             {0},
             {global_extent});
 
+        // UniquePtrWithLambda from unique_ptr with custom delete type
+        auto pos_v = electronPositions["v"];
+        pos_v.resetDataset(dataset);
+        std::unique_ptr<int, ::detail::CopyableDeleter<int>>
+        ptr_v_copyable_deleter(new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+        pos_v.storeChunk(
+            UniquePtrWithLambda<int>(std::move(ptr_v_copyable_deleter)),
+            {0},
+            {global_extent});
+
+        // UniquePtrWithLambda from unique_ptr with non-copyable custom delete
+        // type
+        auto posOff_v = electronPositionsOffset["v"];
+        posOff_v.resetDataset(dataset);
+        std::unique_ptr<int, ::detail::NonCopyableDeleter<int>>
+        ptr_v_noncopyable_deleter(new int[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+        posOff_v.storeChunk(
+            UniquePtrWithLambda<int>(std::move(ptr_v_noncopyable_deleter)),
+            {0},
+            {global_extent});
+
         iteration_ptr->close();
         // force re-flush of previous iterations
         series.flush();
@@ -858,7 +784,7 @@ TEST_CASE("close_iteration_throws_test", "[serial]")
 }
 #endif
 
-inline void empty_dataset_test(std::string file_ending)
+inline void empty_dataset_test(std::string const &file_ending)
 {
     {
         Series series(
@@ -962,7 +888,7 @@ TEST_CASE("empty_dataset_test", "[serial]")
     }
 }
 
-inline void constant_scalar(std::string file_ending)
+inline void constant_scalar(std::string const &file_ending)
 {
     Mesh::Geometry const geometry = Mesh::Geometry::spherical;
     std::string const geometryParameters = "dummyGeometryParameters";
@@ -1048,7 +974,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .meshes["rho"][MeshRecordComponent::SCALAR]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{1, 2, 3});
+                .get<std::vector<uint64_t>>() == Extent{1, 2, 3});
         REQUIRE(s.iterations[1]
                     .meshes["rho"][MeshRecordComponent::SCALAR]
                     .containsAttribute("value"));
@@ -1070,7 +996,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .meshes["E"]["x"]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{1, 2, 3});
+                .get<std::vector<uint64_t>>() == Extent{1, 2, 3});
         REQUIRE(s.iterations[1].meshes["E"]["x"].containsAttribute("value"));
         REQUIRE(
             s.iterations[1]
@@ -1098,7 +1024,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .particles["e"]["position"][RecordComponent::SCALAR]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{3, 2, 1});
+                .get<std::vector<uint64_t>>() == Extent{3, 2, 1});
         REQUIRE(s.iterations[1]
                     .particles["e"]["position"][RecordComponent::SCALAR]
                     .containsAttribute("value"));
@@ -1122,7 +1048,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .particles["e"]["positionOffset"][RecordComponent::SCALAR]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{3, 2, 1});
+                .get<std::vector<uint64_t>>() == Extent{3, 2, 1});
         REQUIRE(s.iterations[1]
                     .particles["e"]["positionOffset"][RecordComponent::SCALAR]
                     .containsAttribute("value"));
@@ -1144,7 +1070,7 @@ inline void constant_scalar(std::string file_ending)
             s.iterations[1]
                 .particles["e"]["velocity"]["x"]
                 .getAttribute("shape")
-                .get<std::vector<uint64_t> >() == Extent{3, 2, 1});
+                .get<std::vector<uint64_t>>() == Extent{3, 2, 1});
         REQUIRE(
             s.iterations[1].particles["e"]["velocity"]["x"].containsAttribute(
                 "value"));
@@ -1234,7 +1160,7 @@ TEST_CASE("flush_without_position_positionOffset", "[serial]")
     }
 }
 
-inline void particle_patches(std::string file_ending)
+inline void particle_patches(std::string const &file_ending)
 {
     constexpr auto SCALAR = openPMD::RecordComponent::SCALAR;
 
@@ -1339,11 +1265,10 @@ TEST_CASE("particle_patches", "[serial]")
 
 inline void dtype_test(const std::string &backend)
 {
-    bool test_long_double = (backend != "json") || sizeof(long double) <= 8;
+    bool test_long_double = backend != "json" && backend != "toml";
     bool test_long_long = (backend != "json") || sizeof(long long) <= 8;
     {
         Series s = Series("../samples/dtype_test." + backend, Access::CREATE);
-        bool adios1 = s.backend() == "ADIOS1" || s.backend() == "MPI_ADIOS1";
 
         char c = 'c';
         s.setAttribute("char", c);
@@ -1374,10 +1299,7 @@ inline void dtype_test(const std::string &backend)
         }
         std::string str = "string";
         s.setAttribute("string", str);
-        if (!adios1)
-        {
-            s.setAttribute("emptyString", "");
-        }
+        s.setAttribute("emptyString", "");
         s.setAttribute("vecChar", std::vector<char>({'c', 'h', 'a', 'r'}));
         s.setAttribute("vecInt16", std::vector<int16_t>({32766, 32767}));
         s.setAttribute(
@@ -1407,13 +1329,9 @@ inline void dtype_test(const std::string &backend)
         }
         s.setAttribute(
             "vecString", std::vector<std::string>({"vector", "of", "strings"}));
-        if (!adios1)
-        {
-            s.setAttribute(
-                "vecEmptyString", std::vector<std::string>{"", "", ""});
-            s.setAttribute(
-                "vecMixedString", std::vector<std::string>{"hi", "", "ho"});
-        }
+        s.setAttribute("vecEmptyString", std::vector<std::string>{"", "", ""});
+        s.setAttribute(
+            "vecMixedString", std::vector<std::string>{"hi", "", "ho"});
         s.setAttribute("bool", true);
         s.setAttribute("boolF", false);
 
@@ -1473,7 +1391,6 @@ inline void dtype_test(const std::string &backend)
     }
 
     Series s = Series("../samples/dtype_test." + backend, Access::READ_ONLY);
-    bool adios1 = s.backend() == "ADIOS1" || s.backend() == "MPI_ADIOS1";
 
     REQUIRE(s.getAttribute("char").get<char>() == 'c');
     REQUIRE(s.getAttribute("uchar").get<unsigned char>() == 'u');
@@ -1491,62 +1408,56 @@ inline void dtype_test(const std::string &backend)
         REQUIRE(s.getAttribute("longdouble").get<long double>() == 1.e80L);
     }
     REQUIRE(s.getAttribute("string").get<std::string>() == "string");
-    if (!adios1)
-    {
-        REQUIRE(s.getAttribute("emptyString").get<std::string>().empty());
-    }
+    REQUIRE(s.getAttribute("emptyString").get<std::string>().empty());
     REQUIRE(
-        s.getAttribute("vecChar").get<std::vector<char> >() ==
+        s.getAttribute("vecChar").get<std::vector<char>>() ==
         std::vector<char>({'c', 'h', 'a', 'r'}));
     REQUIRE(
-        s.getAttribute("vecInt16").get<std::vector<int16_t> >() ==
+        s.getAttribute("vecInt16").get<std::vector<int16_t>>() ==
         std::vector<int16_t>({32766, 32767}));
     REQUIRE(
-        s.getAttribute("vecInt32").get<std::vector<int32_t> >() ==
+        s.getAttribute("vecInt32").get<std::vector<int32_t>>() ==
         std::vector<int32_t>({2147483646, 2147483647}));
     REQUIRE(
-        s.getAttribute("vecInt64").get<std::vector<int64_t> >() ==
+        s.getAttribute("vecInt64").get<std::vector<int64_t>>() ==
         std::vector<int64_t>({9223372036854775806, 9223372036854775807}));
     REQUIRE(
-        s.getAttribute("vecUchar").get<std::vector<unsigned char> >() ==
+        s.getAttribute("vecUchar").get<std::vector<unsigned char>>() ==
         std::vector<unsigned char>({'u', 'c', 'h', 'a', 'r'}));
     REQUIRE(
-        s.getAttribute("vecSchar").get<std::vector<signed char> >() ==
+        s.getAttribute("vecSchar").get<std::vector<signed char>>() ==
         std::vector<signed char>({'s', 'c', 'h', 'a', 'r'}));
     REQUIRE(
-        s.getAttribute("vecUint16").get<std::vector<uint16_t> >() ==
+        s.getAttribute("vecUint16").get<std::vector<uint16_t>>() ==
         std::vector<uint16_t>({65534u, 65535u}));
     REQUIRE(
-        s.getAttribute("vecUint32").get<std::vector<uint32_t> >() ==
+        s.getAttribute("vecUint32").get<std::vector<uint32_t>>() ==
         std::vector<uint32_t>({4294967294u, 4294967295u}));
     REQUIRE(
-        s.getAttribute("vecUint64").get<std::vector<uint64_t> >() ==
+        s.getAttribute("vecUint64").get<std::vector<uint64_t>>() ==
         std::vector<uint64_t>({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(
-        s.getAttribute("vecFloat").get<std::vector<float> >() ==
+        s.getAttribute("vecFloat").get<std::vector<float>>() ==
         std::vector<float>({0.f, 3.40282e+38f}));
     REQUIRE(
-        s.getAttribute("vecDouble").get<std::vector<double> >() ==
+        s.getAttribute("vecDouble").get<std::vector<double>>() ==
         std::vector<double>({0., 1.79769e+308}));
     if (test_long_double)
     {
         REQUIRE(
-            s.getAttribute("vecLongdouble").get<std::vector<long double> >() ==
+            s.getAttribute("vecLongdouble").get<std::vector<long double>>() ==
             std::vector<long double>(
                 {0.L, std::numeric_limits<long double>::max()}));
     }
     REQUIRE(
-        s.getAttribute("vecString").get<std::vector<std::string> >() ==
+        s.getAttribute("vecString").get<std::vector<std::string>>() ==
         std::vector<std::string>({"vector", "of", "strings"}));
-    if (!adios1)
-    {
-        REQUIRE(
-            s.getAttribute("vecEmptyString").get<std::vector<std::string> >() ==
-            std::vector<std::string>({"", "", ""}));
-        REQUIRE(
-            s.getAttribute("vecMixedString").get<std::vector<std::string> >() ==
-            std::vector<std::string>({"hi", "", "ho"}));
-    }
+    REQUIRE(
+        s.getAttribute("vecEmptyString").get<std::vector<std::string>>() ==
+        std::vector<std::string>({"", "", ""}));
+    REQUIRE(
+        s.getAttribute("vecMixedString").get<std::vector<std::string>>() ==
+        std::vector<std::string>({"hi", "", "ho"}));
     REQUIRE(s.getAttribute("bool").get<bool>() == true);
     REQUIRE(s.getAttribute("boolF").get<bool>() == false);
 
@@ -1555,7 +1466,10 @@ inline void dtype_test(const std::string &backend)
     REQUIRE(s.getAttribute("short").dtype == Datatype::SHORT);
     REQUIRE(s.getAttribute("int").dtype == Datatype::INT);
     REQUIRE(s.getAttribute("long").dtype == Datatype::LONG);
-    REQUIRE(s.getAttribute("longlong").dtype == Datatype::LONGLONG);
+    if (test_long_long)
+    {
+        REQUIRE(s.getAttribute("longlong").dtype == Datatype::LONGLONG);
+    }
     REQUIRE(s.getAttribute("ushort").dtype == Datatype::USHORT);
     REQUIRE(s.getAttribute("uint").dtype == Datatype::UINT);
     REQUIRE(s.getAttribute("ulong").dtype == Datatype::ULONG);
@@ -1567,7 +1481,10 @@ inline void dtype_test(const std::string &backend)
     REQUIRE(s.getAttribute("vecShort").dtype == Datatype::VEC_SHORT);
     REQUIRE(s.getAttribute("vecInt").dtype == Datatype::VEC_INT);
     REQUIRE(s.getAttribute("vecLong").dtype == Datatype::VEC_LONG);
-    REQUIRE(s.getAttribute("vecLongLong").dtype == Datatype::VEC_LONGLONG);
+    if (test_long_long)
+    {
+        REQUIRE(s.getAttribute("vecLongLong").dtype == Datatype::VEC_LONGLONG);
+    }
     REQUIRE(s.getAttribute("vecUShort").dtype == Datatype::VEC_USHORT);
     REQUIRE(s.getAttribute("vecUInt").dtype == Datatype::VEC_UINT);
     REQUIRE(s.getAttribute("vecULong").dtype == Datatype::VEC_ULONG);
@@ -1616,7 +1533,25 @@ TEST_CASE("dtype_test", "[serial]")
     {
         dtype_test(t);
     }
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        dtype_test("toml");
+    }
 }
+
+struct ReadFromAnyType
+{
+    template <typename T>
+    static std::shared_ptr<void> call(RecordComponent &rc)
+    {
+        return std::static_pointer_cast<void>(rc.loadChunk<T>());
+    }
+};
 
 inline void write_test(const std::string &backend)
 {
@@ -1716,6 +1651,21 @@ inline void write_test(const std::string &backend)
     }
 
     o.flush();
+
+    o.close();
+
+    Series read("../samples/serial_write." + backend, Access::READ_ONLY);
+    auto rc = read.iterations[1].particles["e"]["position"]["x"];
+    auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
+
+    auto variantTypeDataset = rc.loadChunkVariant();
+    rc.seriesFlush();
+    std::visit(
+        [](auto &&shared_ptr) {
+            std::cout << "First value in loaded chunk: '" << shared_ptr.get()[0]
+                      << '\'' << std::endl;
+        },
+        variantTypeDataset);
 }
 
 TEST_CASE("write_test", "[serial]")
@@ -1735,13 +1685,12 @@ void test_complex(const std::string &backend)
             "../samples/serial_write_complex." + backend, Access::CREATE);
         o.setAttribute("lifeIsComplex", std::complex<double>(4.56, 7.89));
         o.setAttribute("butComplexFloats", std::complex<float>(42.3, -99.3));
-        if (o.backend() != "ADIOS2" && o.backend() != "ADIOS1" &&
-            o.backend() != "MPI_ADIOS1")
+        if (o.backend() != "ADIOS2")
             o.setAttribute(
                 "longDoublesYouSay", std::complex<long double>(5.5, -4.55));
 
         auto Cflt = o.iterations[0].meshes["Cflt"][RecordComponent::SCALAR];
-        std::vector<std::complex<float> > cfloats(3);
+        std::vector<std::complex<float>> cfloats(3);
         cfloats.at(0) = {1., 2.};
         cfloats.at(1) = {-3., 4.};
         cfloats.at(2) = {5., -6.};
@@ -1749,16 +1698,15 @@ void test_complex(const std::string &backend)
         Cflt.storeChunk(cfloats, {0});
 
         auto Cdbl = o.iterations[0].meshes["Cdbl"][RecordComponent::SCALAR];
-        std::vector<std::complex<double> > cdoubles(3);
+        std::vector<std::complex<double>> cdoubles(3);
         cdoubles.at(0) = {2., 1.};
         cdoubles.at(1) = {-4., 3.};
         cdoubles.at(2) = {6., -5.};
         Cdbl.resetDataset(Dataset(Datatype::CDOUBLE, {cdoubles.size()}));
         Cdbl.storeChunk(cdoubles, {0});
 
-        std::vector<std::complex<long double> > cldoubles(3);
-        if (o.backend() != "ADIOS2" && o.backend() != "ADIOS1" &&
-            o.backend() != "MPI_ADIOS1")
+        std::vector<std::complex<long double>> cldoubles(3);
+        if (o.backend() != "ADIOS2")
         {
             auto Cldbl =
                 o.iterations[0].meshes["Cldbl"][RecordComponent::SCALAR];
@@ -1777,37 +1725,35 @@ void test_complex(const std::string &backend)
         Series i = Series(
             "../samples/serial_write_complex." + backend, Access::READ_ONLY);
         REQUIRE(
-            i.getAttribute("lifeIsComplex").get<std::complex<double> >() ==
+            i.getAttribute("lifeIsComplex").get<std::complex<double>>() ==
             std::complex<double>(4.56, 7.89));
         REQUIRE(
-            i.getAttribute("butComplexFloats").get<std::complex<float> >() ==
+            i.getAttribute("butComplexFloats").get<std::complex<float>>() ==
             std::complex<float>(42.3, -99.3));
-        if (i.backend() != "ADIOS2" && i.backend() != "ADIOS1" &&
-            i.backend() != "MPI_ADIOS1")
+        if (i.backend() != "ADIOS2")
         {
             REQUIRE(
                 i.getAttribute("longDoublesYouSay")
-                    .get<std::complex<long double> >() ==
+                    .get<std::complex<long double>>() ==
                 std::complex<long double>(5.5, -4.55));
         }
 
         auto rcflt = i.iterations[0]
-                         .meshes["Cflt"][RecordComponent::SCALAR]
-                         .loadChunk<std::complex<float> >();
+                         .meshes["Cflt"] //[RecordComponent::SCALAR]
+                         .loadChunk<std::complex<float>>();
         auto rcdbl = i.iterations[0]
                          .meshes["Cdbl"][RecordComponent::SCALAR]
-                         .loadChunk<std::complex<double> >();
+                         .loadChunk<std::complex<double>>();
         i.flush();
 
         REQUIRE(rcflt.get()[1] == std::complex<float>(-3., 4.));
         REQUIRE(rcdbl.get()[2] == std::complex<double>(6, -5.));
 
-        if (i.backend() != "ADIOS2" && i.backend() != "ADIOS1" &&
-            i.backend() != "MPI_ADIOS1")
+        if (i.backend() != "ADIOS2")
         {
             auto rcldbl = i.iterations[0]
                               .meshes["Cldbl"][RecordComponent::SCALAR]
-                              .loadChunk<std::complex<long double> >();
+                              .loadChunk<std::complex<long double>>();
             i.flush();
             REQUIRE(rcldbl.get()[2] == std::complex<long double>(7., -6.));
         }
@@ -1823,7 +1769,7 @@ void test_complex(const std::string &backend)
 TEST_CASE("test_complex", "[serial]")
 {
     // Notes:
-    // - ADIOS1 and ADIOS 2.7.0 have no complex long double
+    // - ADIOS 2.7.0 has no complex long double
     // - JSON read-back not distinguishable yet from N+1 shaped data set
     for (auto const &t : testedFileExtensions())
     {
@@ -2214,9 +2160,18 @@ TEST_CASE("fileBased_write_test", "[serial]")
     {
         fileBased_write_test(t);
     }
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        fileBased_write_test("toml");
+    }
 }
 
-inline void sample_write_thetaMode(std::string file_ending)
+inline void sample_write_thetaMode(std::string const &file_ending)
 {
     Series o = Series(
         std::string("../samples/thetaMode_%05T.").append(file_ending),
@@ -2442,7 +2397,7 @@ TEST_CASE("deletion_test", "[serial]")
     {
         if (t == "bp" || t == "bp4" || t == "bp5")
         {
-            continue; // deletion not implemented in ADIOS1 backend
+            continue; // deletion not implemented in ADIOS2 backend
         }
         deletion_test(t);
     }
@@ -2552,8 +2507,8 @@ inline void optional_paths_110_test(const std::string &backend)
 }
 
 void git_early_chunk_query(
-    std::string const filename,
-    std::string const species,
+    std::string const &filename,
+    std::string const &species,
     int const step,
     std::string const &jsonConfig = "{}")
 {
@@ -2826,6 +2781,85 @@ TEST_CASE("git_hdf5_sample_structure_test", "[serial][hdf5]")
 #else
     std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
 #endif
+}
+
+namespace
+{
+struct LoadDataset
+{
+    template <typename T>
+    static void call(RecordComponent &rc)
+    {
+        auto chunk = rc.loadChunk<T>();
+        rc.seriesFlush();
+    }
+
+    static constexpr char const *errorMsg = "LoadDataset";
+};
+} // namespace
+
+TEST_CASE("git_hdf5_legacy_picongpu", "[serial][hdf5]")
+{
+    try
+    {
+        Series o = Series(
+            "../samples/git-sample/legacy/simData_%T.h5", Access::READ_ONLY);
+
+        /*
+         * That dataset was written directly via HDF5 (not the openPMD-api)
+         * and had two issues:
+         *
+         * 1) No unitSI defined for numParticles and numParticlesOffset.
+         *    unitSI does not really make sense there, but the openPMD-standard
+         *    is not quite clear if it is required, so the API writes it and
+         *    also required it. We will keep writing it, but we don't require
+         *    it any longer.
+         * 2) A custom enum was used for writing a boolean dataset.
+         *    At the least, the dataset should be skipped in parsing instead
+         *    of failing the entire procedure. Ideally, the custom datatype
+         *    should be upcasted to char type and treated as such.
+         */
+
+        auto radiationMask =
+            o.iterations[200]
+                .particles["e"]["radiationMask"][RecordComponent::SCALAR];
+        switchNonVectorType<LoadDataset>(
+            radiationMask.getDatatype(), radiationMask);
+
+        auto particlePatches = o.iterations[200].particles["e"].particlePatches;
+        REQUIRE(particlePatches.size() == 4);
+        for (auto key : {"extent", "offset"})
+        {
+            REQUIRE(particlePatches.contains(key));
+            REQUIRE(particlePatches.at(key).size() == 3);
+            for (auto subkey : {"x", "y", "z"})
+            {
+                REQUIRE(particlePatches.at(key).contains(subkey));
+                // unitSI is present in those records
+                particlePatches.at(key).at(subkey).unitSI();
+            }
+        }
+        for (auto key : {"numParticles", "numParticlesOffset"})
+        {
+            REQUIRE(particlePatches.contains(key));
+            REQUIRE(particlePatches.at(key).contains(RecordComponent::SCALAR));
+            // unitSI is not present in those records
+            REQUIRE_THROWS_AS(
+                particlePatches.at(key).at(RecordComponent::SCALAR).unitSI(),
+                no_such_attribute_error);
+        }
+
+        helper::listSeries(o, true, std::cout);
+    }
+    catch (error::ReadError &e)
+    {
+        if (e.reason == error::Reason::Inaccessible)
+        {
+            std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+            return;
+        }
+        throw;
+    }
 }
 
 TEST_CASE("git_hdf5_sample_attribute_test", "[serial][hdf5]")
@@ -3850,12 +3884,12 @@ TEST_CASE("no_serial_hdf5", "[serial][hdf5]")
     REQUIRE(true);
 }
 #endif
-#if openPMD_HAVE_ADIOS1
+#if openPMD_HAVE_ADIOS2
 
-TEST_CASE("hzdr_adios1_sample_content_test", "[serial][adios1]")
+TEST_CASE("hzdr_bp3_sample_content_test", "[serial][adios2][bp3]")
 {
     // since this file might not be publicly available, gracefully handle errors
-    /** @todo add bp example files to
+    /** @todo add bp3 example files to
      * https://github.com/openPMD/openPMD-example-datasets */
     try
     {
@@ -4025,108 +4059,6 @@ TEST_CASE("hzdr_adios1_sample_content_test", "[serial][adios1]")
             return;
         }
     }
-}
-
-#else
-TEST_CASE("no_serial_adios1", "[serial][adios]")
-{
-    REQUIRE(true);
-}
-#endif
-
-#if openPMD_HAVE_ADIOS1
-TEST_CASE("serial_adios1_json_config", "[serial][adios1]")
-{
-    std::string globalConfig = R"END(
-{
-  "backend": "adios1",
-  "adios1": {
-    "dataset": {
-      "transform": "deliberately use a wrong configuration..."
-    }
-  }
-})END";
-
-    std::string globalConfigWithoutCompression = R"END(
-{
-  "backend": "adios1"
-})END";
-
-    std::string localConfig = R"END(
-{
-  "adios1": {
-    "dataset": {
-      "transform": "...so we can check for the resulting errors"
-    }
-  }
-})END";
-
-    auto test1 = [&]() {
-        Series write(
-            "../samples/adios1_dataset_transform.bp",
-            Access::CREATE,
-            globalConfig);
-        auto meshes = write.writeIterations()[0].meshes;
-
-        auto defaultConfiguredMesh =
-            meshes["defaultConfigured"][RecordComponent::SCALAR];
-
-        Dataset ds{Datatype::INT, {10}};
-
-        defaultConfiguredMesh.resetDataset(ds);
-
-        std::vector<int> data(10, 2345);
-        defaultConfiguredMesh.storeChunk(data, {0}, {10});
-
-        write.flush();
-    };
-    REQUIRE_THROWS_WITH(
-        test1(),
-        Catch::Equals("[ADIOS1] Internal error: Failed to set ADIOS transform "
-                      "during Dataset creation"));
-
-    auto test2 = [&]() {
-        Series write(
-            "../samples/adios1_dataset_transform.bp",
-            Access::CREATE,
-            globalConfig);
-        auto meshes = write.writeIterations()[0].meshes;
-        auto overridenTransformMesh =
-            meshes["overridenConfig"][RecordComponent::SCALAR];
-
-        Dataset ds{Datatype::INT, {10}};
-        ds.options = localConfig;
-        overridenTransformMesh.resetDataset(ds);
-
-        std::vector<int> data(10, 2345);
-        overridenTransformMesh.storeChunk(data, {0}, {10});
-
-        write.flush();
-    };
-    REQUIRE_THROWS_WITH(
-        test2(),
-        Catch::Equals("[ADIOS1] Internal error: Failed to set ADIOS transform "
-                      "during Dataset creation"));
-
-    auto test3 = [&]() {
-        // use no dataset transform at all
-        Series write(
-            "../samples/adios1_dataset_transform.bp",
-            Access::CREATE,
-            globalConfigWithoutCompression);
-        auto meshes = write.writeIterations()[0].meshes;
-        auto defaultConfiguredMesh =
-            meshes["defaultConfigured"][RecordComponent::SCALAR];
-
-        Dataset ds{Datatype::INT, {10}};
-        defaultConfiguredMesh.resetDataset(ds);
-
-        std::vector<int> data(10, 2345);
-        defaultConfiguredMesh.storeChunk(data, {0}, {10});
-
-        write.flush();
-    };
-    test3(); // should run without exception
 }
 #endif
 
@@ -4328,7 +4260,6 @@ TEST_CASE("adios2_bp5_flush", "[serial][adios2]")
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 preferred_flush_target = "disk"
 
@@ -4347,7 +4278,6 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 preferred_flush_target = "buffer"
 
@@ -4365,7 +4295,6 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 # preferred_flush_target = <default>
 
@@ -4388,7 +4317,6 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 preferred_flush_target = "buffer_override"
 
@@ -4406,7 +4334,6 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 [adios2]
 
 [adios2.engine]
-usesteps = true
 type = "bp5"
 preferred_flush_target = "disk_override"
 
@@ -4926,8 +4853,7 @@ this = "should not warn"
 void bp4_steps(
     std::string const &file,
     std::string const &options_write,
-    std::string const &options_read,
-    Access access = Access::READ_ONLY)
+    std::optional<Access> access = Access::READ_ONLY)
 {
     {
         Series writeSeries(file, Access::CREATE, options_write);
@@ -4947,12 +4873,12 @@ void bp4_steps(
         }
     }
 
-    if (options_read.empty())
+    if (!access.has_value())
     {
         return;
     }
 
-    Series readSeries(file, access, options_read);
+    Series readSeries(file, *access);
 
     size_t last_iteration_index = 0;
     for (auto iteration : readSeries.readIterations())
@@ -4961,7 +4887,7 @@ void bp4_steps(
         auto E_x = E["x"];
         REQUIRE(
             E.getAttribute("vector_of_string")
-                .get<std::vector<std::string> >() ==
+                .get<std::vector<std::string>>() ==
             std::vector<std::string>{"vector", "of", "string"});
         REQUIRE(E_x.getDimensionality() == 1);
         REQUIRE(E_x.getExtent()[0] == 10);
@@ -4978,98 +4904,63 @@ void bp4_steps(
 
 TEST_CASE("bp4_steps", "[serial][adios2]")
 {
-    std::string useSteps = R"(
+    std::string bp4 = json::merge(
+        R"(
     {
         "ADIOS2": {
             "engine": {
-                "type": "bp4",
-                "usesteps": true
+                "type": "bp4"
             }
         }
     }
-    )";
+    )",
+#if openPMD_HAS_ADIOS_2_9
+        R"({"ADIOS2":{"use_group_table": true}})"
+#else
+        R"({"ADIOS2":{"use_group_table": false}})"
+#endif
+    );
     std::string nullcore = R"(
     {
         "adios2": {
-            "type": "nullcore",
-            "ENGINE": {
-                "type": "bp4",
-                "usesteps": true
-            }
+            "type": "nullcore"
         }
     }
     )";
-    std::string dontUseSteps = R"(
-        # let's use TOML for this one
-        [adios2.engine]
-        type = "bp4"
-        UseSteps = false
-    )";
 
-    // sing the yes no song
-    bp4_steps("../samples/bp4steps_yes_yes.bp", useSteps, useSteps);
-    bp4_steps("../samples/bp4steps_no_yes.bp", dontUseSteps, useSteps);
-    bp4_steps("../samples/bp4steps_yes_no.bp", useSteps, dontUseSteps);
-    bp4_steps("../samples/bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
-    bp4_steps("../samples/nullcore.bp", nullcore, "");
-    bp4_steps("../samples/bp4steps_default.bp", "{}", "{}");
+    bp4_steps("../samples/bp4steps.bp", bp4);
+    bp4_steps("../samples/nullcore.bp", nullcore, std::nullopt);
+    bp4_steps("../samples/bp4steps_default.bp", "{}");
+    // Can use READ_LINEAR with ADIOS2 v2.9 because then we have the group table
+    // feature and can sensibly parse group-based encoding in step-based mode
+    bp4_steps(
+        "../samples/bp4steps.bp",
+        bp4,
+#if openPMD_HAS_ADIOS_2_9
+        Access::READ_LINEAR
+#else
+        Access::READ_ONLY
+#endif
+    );
 
-    // bp4_steps(
-    //     "../samples/newlayout_bp4steps_yes_yes.bp",
-    //     useSteps,
-    //     useSteps,
-    //     Access::READ_LINEAR);
-    // bp4_steps(
-    //     "../samples/newlayout_bp4steps_yes_no.bp",
-    //     useSteps,
-    //     dontUseSteps,
-    //     Access::READ_LINEAR);
-
+#if openPMD_HAS_ADIOS_2_9
     /*
      * Do this whole thing once more, but this time use the new attribute
      * layout.
      */
-    useSteps = R"(
+    bp4 = R"(
     {
         "adios2": {
-            "schema": 20210209,
+            "use_group_table": true,
             "engine": {
-                "type": "bp4",
-                "usesteps": true
+                "type": "bp4"
             }
         }
     }
     )";
-    dontUseSteps = R"(
-    {
-        "adios2": {
-            "schema": 20210209,
-            "engine": {
-                "type": "bp4",
-                "usesteps": false
-            }
-        }
-    }
-    )";
-    // sing the yes no song
-    bp4_steps("../samples/newlayout_bp4steps_yes_yes.bp", useSteps, useSteps);
-    bp4_steps(
-        "../samples/newlayout_bp4steps_yes_no.bp", useSteps, dontUseSteps);
-    bp4_steps(
-        "../samples/newlayout_bp4steps_no_yes.bp", dontUseSteps, useSteps);
-    bp4_steps(
-        "../samples/newlayout_bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
-
-    bp4_steps(
-        "../samples/newlayout_bp4steps_yes_yes.bp",
-        useSteps,
-        useSteps,
-        Access::READ_LINEAR);
-    bp4_steps(
-        "../samples/newlayout_bp4steps_yes_no.bp",
-        useSteps,
-        dontUseSteps,
-        Access::READ_LINEAR);
+    bp4_steps("../samples/newlayout_bp4steps.bp", bp4, Access::READ_LINEAR);
+    bp4_steps("../samples/newlayout_bp4steps.bp", bp4);
+#endif
 }
 #endif
 
@@ -5133,7 +5024,7 @@ void variableBasedSingleIteration(std::string const &file)
             writeSeries.iterationEncoding() ==
             IterationEncoding::variableBased);
         auto iterations = writeSeries.writeIterations();
-        auto iteration = writeSeries.iterations[0];
+        auto iteration = iterations[0];
         auto E_x = iteration.meshes["E"]["x"];
         E_x.resetDataset(openPMD::Dataset(openPMD::Datatype::INT, {1000}));
         std::vector<int> data(1000, 0);
@@ -5143,7 +5034,8 @@ void variableBasedSingleIteration(std::string const &file)
     }
 
     {
-        Series readSeries(file, Access::READ_ONLY);
+        Series readSeries(file, Access::READ_LINEAR);
+        readSeries.parseBase();
 
         auto E_x = readSeries.iterations[0].meshes["E"]["x"];
         REQUIRE(E_x.getDimensionality() == 1);
@@ -5187,7 +5079,7 @@ struct AreEqual
 };
 
 template <typename T>
-struct AreEqual<std::vector<T> >
+struct AreEqual<std::vector<T>>
 {
     static bool areEqual(std::vector<T> v1, std::vector<T> v2)
     {
@@ -5465,20 +5357,79 @@ TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
     }
 }
 
+#if openPMD_HAS_ADIOS_2_9
+void adios2_group_table(
+    std::string const &jsonWrite,
+    std::string const &jsonRead,
+    bool canDeleteGroups)
+{
+    Series write(
+        "../samples/group_table.bp",
+        Access::CREATE,
+        json::merge(R"(iteration_encoding = "variable_based")", jsonWrite));
+    // write E_x and E_y in iteration 0, only E_x in iteration 1
+    write.writeIterations()[0].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
+    write.writeIterations()[0].meshes["E"]["y"].makeEmpty(Datatype::FLOAT, 1);
+    write.writeIterations()[1].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
+    write.close();
+
+    Series read("../samples/group_table.bp", Access::READ_LINEAR, jsonRead);
+    for (auto iteration : read.readIterations())
+    {
+        switch (iteration.iterationIndex)
+        {
+        case 0:
+            REQUIRE(iteration.meshes["E"].contains("x"));
+            REQUIRE(iteration.meshes["E"].contains("y"));
+            REQUIRE(iteration.meshes["E"].size() == 2);
+            break;
+        case 1:
+            if (canDeleteGroups)
+            {
+                REQUIRE(iteration.meshes["E"].contains("x"));
+                REQUIRE(iteration.meshes["E"].size() == 1);
+            }
+            else
+            {
+                REQUIRE(iteration.meshes["E"].contains("x"));
+                REQUIRE(iteration.meshes["E"].contains("y"));
+                REQUIRE(iteration.meshes["E"].size() == 2);
+            }
+            break;
+        }
+    }
+}
+
+TEST_CASE("adios2_group_table", "[serial]")
+{
+    std::string useGroupTable = R"(adios2.use_group_table = true)";
+    std::string noGroupTable = R"(adios2.use_group_table = false)";
+    adios2_group_table(useGroupTable, useGroupTable, true);
+    adios2_group_table(noGroupTable, useGroupTable, false);
+    adios2_group_table(useGroupTable, noGroupTable, false);
+    adios2_group_table(noGroupTable, noGroupTable, false);
+}
+
 void variableBasedSeries(std::string const &file)
 {
-    std::string selectADIOS2 = R"({"backend": "adios2"})";
     constexpr Extent::value_type extent = 1000;
-    {
-        Series writeSeries(file, Access::CREATE, selectADIOS2);
+    auto testWrite = [&file](std::string const &jsonConfig) {
+        Series writeSeries(file, Access::CREATE, jsonConfig);
         writeSeries.setAttribute("some_global", "attribute");
         writeSeries.setIterationEncoding(IterationEncoding::variableBased);
         REQUIRE(
             writeSeries.iterationEncoding() ==
             IterationEncoding::variableBased);
         auto iterations = writeSeries.writeIterations();
+        bool is_not_adios2 = writeSeries.backend() != "ADIOS2";
         for (size_t i = 0; i < 10; ++i)
         {
+            if (i > 0 && is_not_adios2)
+            {
+                REQUIRE_THROWS_AS(
+                    iterations[i], error::OperationUnsupportedInBackend);
+                return;
+            }
             auto iteration = iterations[i];
             auto E_x = iteration.meshes["E"]["x"];
             E_x.resetDataset({openPMD::Datatype::INT, {1000}});
@@ -5490,6 +5441,8 @@ void variableBasedSeries(std::string const &file)
                 iteration.setAttribute(
                     "iteration_is_larger_than_two", "it truly is");
             }
+
+            iteration.setAttribute("changing_value", i);
 
             // this tests changing extents and dimensionalities
             // across iterations
@@ -5512,24 +5465,35 @@ void variableBasedSeries(std::string const &file)
             // in others
             iteration.meshes["E"].setAttribute("attr_" + std::to_string(i), i);
 
+            auto constantMesh =
+                iteration.meshes["changing_constant"][RecordComponent::SCALAR];
+            constantMesh.resetDataset({Datatype::INT, {i}});
+            constantMesh.makeConstant(i);
+
+            auto constantParticles =
+                iteration.particles["changing_constant"]["position"]
+                                   [RecordComponent::SCALAR];
+            constantParticles.resetDataset({Datatype::INT, {i}});
+            constantParticles.makeConstant(i);
+
             iteration.close();
         }
-    }
+        REQUIRE(auxiliary::directory_exists(file));
+    };
 
-    REQUIRE(auxiliary::directory_exists(file));
-
-    auto testRead = [&file, &extent, &selectADIOS2](
-                        std::string const &jsonConfig) {
+    auto testRead = [&file, &extent](
+                        std::string const &parseMode,
+                        bool supportsModifiableAttributes) {
         /*
          * Need linear read mode to access more than a single iteration in
          * variable-based iteration encoding.
          */
-        Series readSeries(
-            file, Access::READ_LINEAR, json::merge(selectADIOS2, jsonConfig));
+        Series readSeries(file, Access::READ_LINEAR, parseMode);
+        bool is_adios2 = readSeries.backend() == "ADIOS2";
 
         size_t last_iteration_index = 0;
         REQUIRE(!readSeries.containsAttribute("some_global"));
-        readSeries.readIterations();
+        readSeries.parseBase();
         REQUIRE(
             readSeries.getAttribute("some_global").get<std::string>() ==
             "attribute");
@@ -5547,6 +5511,16 @@ void variableBasedSeries(std::string const &file)
                     "iteration_is_larger_than_two"));
             }
 
+            // If modifiable attributes are unsupported, the attribute is
+            // written once in step 0 and then never changed
+            // A warning is printed upon trying to write
+            if (is_adios2)
+            {
+                REQUIRE(
+                    iteration.getAttribute("changing_value").get<unsigned>() ==
+                    (supportsModifiableAttributes ? iteration.iterationIndex
+                                                  : 0));
+            }
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 1);
             REQUIRE(E_x.getExtent()[0] == extent);
@@ -5576,7 +5550,7 @@ void variableBasedSeries(std::string const &file)
                 REQUIRE(
                     iteration.meshes["E"].containsAttribute(
                         "attr_" + std::to_string(otherIteration)) ==
-                    (otherIteration == iteration.iterationIndex));
+                    (otherIteration <= iteration.iterationIndex));
             }
             REQUIRE(
                 iteration.meshes["E"][std::to_string(iteration.iterationIndex)]
@@ -5588,21 +5562,77 @@ void variableBasedSeries(std::string const &file)
                         "attr_" + std::to_string(iteration.iterationIndex))
                     .get<int>() == int(iteration.iterationIndex));
 
+            auto constantMesh =
+                iteration.meshes["changing_constant"][RecordComponent::SCALAR];
+            REQUIRE(
+                constantMesh.getExtent() ==
+                std::vector{iteration.iterationIndex});
+            REQUIRE(
+                constantMesh.getAttribute("value").get<unsigned>() ==
+                iteration.iterationIndex);
+
+            auto constantParticles =
+                iteration.particles["changing_constant"]["position"]
+                                   [RecordComponent::SCALAR];
+            REQUIRE(
+                constantParticles.getExtent() ==
+                std::vector{iteration.iterationIndex});
+            REQUIRE(
+                constantParticles.getAttribute("value").get<unsigned>() ==
+                iteration.iterationIndex);
+
             last_iteration_index = iteration.iterationIndex;
         }
-        REQUIRE(last_iteration_index == 9);
+        REQUIRE(last_iteration_index == (is_adios2 ? 9 : 0));
     };
 
-    testRead("{\"defer_iteration_parsing\": true}");
-    testRead("{\"defer_iteration_parsing\": false}");
+    std::string jsonConfig = R"(
+{
+  "adios2": {
+    "modifiable_attributes": true
+  }
+})";
+    testWrite(jsonConfig);
+    REQUIRE(
+        (auxiliary::directory_exists(file) || auxiliary::file_exists(file)));
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ true);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ true);
+
+    jsonConfig = "{}";
+    testWrite(jsonConfig);
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ true);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ true);
+
+    jsonConfig = R"(
+{
+  "adios2": {
+    "modifiable_attributes": false
+  }
+})";
+    testWrite(jsonConfig);
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ false);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ false);
 }
 
-#if openPMD_HAVE_ADIOS2
 TEST_CASE("variableBasedSeries", "[serial][adios2]")
 {
-    variableBasedSeries("../samples/variableBasedSeries.bp");
+    for (auto const &t : testedFileExtensions())
+    {
+        variableBasedSeries("../samples/variableBasedSeries." + t);
+    }
 }
-#endif
 
 void variableBasedParticleData()
 {
@@ -5642,7 +5672,7 @@ void variableBasedParticleData()
     {
         // open file for reading
         Series series =
-            Series("../samples/variableBasedParticles.bp", Access::READ_ONLY);
+            Series("../samples/variableBasedParticles.bp", Access::READ_LINEAR);
 
         for (IndexedIteration iteration : series.readIterations())
         {
@@ -5653,7 +5683,7 @@ void variableBasedParticleData()
 
             for (size_t i = 0; i < 3; ++i)
             {
-                std::string dim = dimensions[i];
+                std::string const &dim = dimensions[i];
                 RecordComponent rc = electronPositions[dim];
                 loadedChunks[i] = rc.loadChunk<position_t>(
                     Offset(rc.getDimensionality(), 0), rc.getExtent());
@@ -5664,7 +5694,6 @@ void variableBasedParticleData()
 
             for (size_t i = 0; i < 3; ++i)
             {
-                std::string dim = dimensions[i];
                 Extent const &extent = extents[i];
                 auto chunk = loadedChunks[i];
                 for (size_t j = 0; j < extent[0]; ++j)
@@ -5682,7 +5711,8 @@ TEST_CASE("variableBasedParticleData", "[serial][adios2]")
 {
     variableBasedParticleData();
 }
-#endif
+#endif // openPMD_HAS_ADIOS_2_9
+#endif // openPMD_HAS_ADIOS2
 
 #if openPMD_HAVE_ADIOS2
 #ifdef ADIOS2_HAVE_BZIP2
@@ -5854,7 +5884,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 
 // @todo Upon switching to ADIOS2 2.7.0, test this the other way around also
 void iterate_nonstreaming_series(
-    std::string const &file, bool variableBasedLayout, std::string jsonConfig)
+    std::string const &file,
+    bool variableBasedLayout,
+    std::string const &jsonConfig)
 {
     constexpr size_t extent = 100;
     {
@@ -6007,7 +6039,7 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
         }
 #endif
     }
-#if openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2 && openPMD_HAS_ADIOS_2_9
     iterate_nonstreaming_series(
         "../samples/iterate_nonstreaming_series_variablebased.bp",
         true,
@@ -6022,8 +6054,7 @@ void adios2_bp5_no_steps(bool usesteps)
 {
     "adios2":
     {
-        "new_attribute_layout": true,
-        "schema": 20210209
+        "use_group_table": true
     }
 })END";
     {
@@ -6275,9 +6306,10 @@ void deferred_parsing(std::string const &extension)
             {
                 padding += "0";
             }
-            infix = padding + infix;
+            infix = padding.append(infix);
             std::ofstream file;
-            file.open(basename + infix + "." + extension);
+            file.open(std::string(basename).append(infix).append(".").append(
+                extension));
             file.close();
         }
     }
@@ -6387,6 +6419,7 @@ TEST_CASE("deferred_parsing", "[serial]")
     }
 }
 
+#if openPMD_HAS_ADIOS_2_9
 void chaotic_stream(std::string filename, bool variableBased)
 {
     /*
@@ -6396,10 +6429,7 @@ void chaotic_stream(std::string filename, bool variableBased)
     std::string jsonConfig = R"(
 {
     "adios2": {
-        "schema": 20210209,
-        "engine": {
-            "usesteps": true
-        }
+        "use_group_table": true
     }
 })";
 
@@ -6464,20 +6494,28 @@ TEST_CASE("chaotic_stream", "[serial]")
         chaotic_stream("../samples/chaotic_stream_vbased." + t, true);
     }
 }
+#endif // openPMD_HAS_ADIOS_2_9
 
 #ifdef openPMD_USE_INVASIVE_TESTS
 void unfinished_iteration_test(
     std::string const &ext,
     IterationEncoding encoding,
-    std::string const &config = "{}")
+    std::string const &config = "{}",
+    bool test_linear_access = true)
 {
     std::cout << "\n\nTESTING " << ext << "\n\n" << std::endl;
     std::string file = std::string("../samples/unfinished_iteration") +
         (encoding == IterationEncoding::fileBased ? "_%T." : ".") + ext;
     {
+        std::vector<int> data{0, 1, 2, 3, 4};
         Series write(file, Access::CREATE, config);
         auto it0 = write.writeIterations()[0];
+        it0.meshes["E"]["x"].resetDataset({Datatype::INT, {5}});
+        it0.meshes["E"]["x"].storeChunk(data, {0}, {5});
         auto it5 = write.writeIterations()[5];
+        it5.meshes["E"]["x"].resetDataset({Datatype::INT, {5}});
+        it5.meshes["E"]["x"].storeChunk(data, {0}, {5});
+        ;
         /*
          * With enabled invasive tests, this attribute will let the Iteration
          * fail parsing.
@@ -6485,14 +6523,16 @@ void unfinished_iteration_test(
         it5.setAttribute("__openPMD_internal_fail", "asking for trouble");
         auto it10 = write.writeIterations()[10];
         Dataset ds(Datatype::INT, {10});
-        auto E_x = it10.meshes["E"]["x"];
+        it10.meshes["E"]["x"].resetDataset({Datatype::INT, {5}});
+        it10.meshes["E"]["x"].storeChunk(data, {0}, {5});
+        it10.setAttribute("__openPMD_internal_fail", "playing nice again");
         auto e_density = it10.meshes["e_density"][RecordComponent::SCALAR];
         auto electron_x = it10.particles["e"]["position"]["x"];
         auto electron_mass =
             it10.particles["e"]["mass"][RecordComponent::SCALAR];
 
         RecordComponent *resetThese[] = {
-            &E_x, &e_density, &electron_x, &electron_mass};
+            &e_density, &electron_x, &electron_mass};
         for (RecordComponent *rc : resetThese)
         {
             rc->resetDataset(ds);
@@ -6550,8 +6590,11 @@ void unfinished_iteration_test(
         }
     };
 
-    tryReading(Access::READ_LINEAR);
-    tryReading(Access::READ_LINEAR, R"({"defer_iteration_parsing": true})");
+    if (test_linear_access)
+    {
+        tryReading(Access::READ_LINEAR);
+        tryReading(Access::READ_LINEAR, R"({"defer_iteration_parsing": true})");
+    }
     if (encoding != IterationEncoding::variableBased)
     {
         /*
@@ -6570,32 +6613,26 @@ TEST_CASE("unfinished_iteration_test", "[serial]")
 {
 #if openPMD_HAVE_ADIOS2
     unfinished_iteration_test(
-        "bp", IterationEncoding::groupBased, R"({"backend": "adios2"})");
-    unfinished_iteration_test(
         "bp",
+        IterationEncoding::groupBased,
+        R"({"backend": "adios2"})",
+        /* test_linear_access = */ false);
+#if openPMD_HAS_ADIOS_2_9
+    unfinished_iteration_test(
+        "bp5",
         IterationEncoding::variableBased,
         R"(
     {
       "backend": "adios2",
       "iteration_encoding": "variable_based",
       "adios2": {
-        "schema": 20210209
+        "use_group_table": true
       }
     }
     )");
+#endif // openPMD_HAS_ADIOS_2_9
     unfinished_iteration_test(
         "bp", IterationEncoding::fileBased, R"({"backend": "adios2"})");
-#endif
-#if openPMD_HAVE_ADIOS1
-    /*
-     * Catching errors from ADIOS1 is not generally supported
-     */
-    // unfinished_iteration_test(
-    //     "adios1.bp", IterationEncoding::groupBased, R"({"backend":
-    //     "adios1"})");
-    // unfinished_iteration_test(
-    //     "adios1.bp", IterationEncoding::fileBased, R"({"backend":
-    //     "adios1"})");
 #endif
 #if openPMD_HAVE_HDF5
     unfinished_iteration_test("h5", IterationEncoding::groupBased);
@@ -6652,7 +6689,7 @@ TEST_CASE("late_setting_of_iterationencoding", "[serial]")
         auxiliary::file_exists("../samples/change_name_and_encoding_10.json"));
 }
 
-void varying_pattern(std::string const file_ending)
+void varying_pattern(std::string const &file_ending)
 {
     {
         std::string filename = "../samples/varying_pattern_%06T." + file_ending;
@@ -6723,10 +6760,10 @@ enum class ParseMode
      * Iterations are returned in ascending order.
      * If an IO step returns an iteration whose index is lower than the
      * last one, it will be skipped.
-     * This mode of parsing is not available for the BP4 engine with ADIOS2
-     * schema 0, since BP4 does not associate attributes with the step in
-     * which they were created, making it impossible to separate parsing into
-     * single steps.
+     * This mode of parsing is not available for the BP4 engine without the
+     * group table feature, since BP4 does not associate attributes with the
+     * step in which they were created, making it impossible to separate parsing
+     * into single steps.
      */
     LinearWithoutSnapshot,
     /*
@@ -6740,7 +6777,8 @@ void append_mode(
     std::string const &filename,
     bool variableBased,
     ParseMode parseMode,
-    std::string jsonConfig = "{}")
+    std::string const &jsonConfig = "{}",
+    bool test_read_linear = true)
 {
     if (auxiliary::directory_exists("../samples/append"))
     {
@@ -6749,7 +6787,7 @@ void append_mode(
     std::vector<int> data(10, 999);
     auto writeSomeIterations = [&data](
                                    WriteIterations &&writeIterations,
-                                   std::vector<uint64_t> indices) {
+                                   std::vector<uint64_t> const &indices) {
         for (auto index : indices)
         {
             auto it = writeIterations[index];
@@ -6779,16 +6817,6 @@ void append_mode(
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
         }
-        if (write.backend() == "ADIOS1")
-        {
-            REQUIRE_THROWS_WITH(
-                write.flush(),
-                Catch::Equals(
-                    "Operation unsupported in ADIOS1: Appending to existing "
-                    "file on disk (use Access::CREATE to overwrite)"));
-            // destructor will be noisy now
-            return;
-        }
 
         writeSomeIterations(
             write.writeIterations(), std::vector<uint64_t>{3, 2});
@@ -6807,16 +6835,6 @@ void append_mode(
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
         }
-        if (write.backend() == "ADIOS1")
-        {
-            REQUIRE_THROWS_WITH(
-                write.flush(),
-                Catch::Equals(
-                    "Operation unsupported in ADIOS1: Appending to existing "
-                    "file on disk (use Access::CREATE to overwrite)"));
-            // destructor will be noisy now
-            return;
-        }
 
         writeSomeIterations(
             write.writeIterations(), std::vector<uint64_t>{4, 3, 10});
@@ -6827,13 +6845,6 @@ void append_mode(
         if (variableBased)
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
-        }
-        if (write.backend() == "ADIOS1")
-        {
-            REQUIRE_THROWS_AS(
-                write.flush(), error::OperationUnsupportedInBackend);
-            // destructor will be noisy now
-            return;
         }
 
         writeSomeIterations(
@@ -6850,6 +6861,7 @@ void append_mode(
         }
     };
 
+    if (test_read_linear)
     {
         switch (parseMode)
         {
@@ -6892,8 +6904,9 @@ void append_mode(
                 ++counter;
             }
             REQUIRE(counter == 8);
-            // Cannot do listSeries here because the Series is already drained
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
         break;
         case ParseMode::AheadOfTimeWithoutSnapshot: {
@@ -6902,8 +6915,8 @@ void append_mode(
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
             /*
              * This one is a bit tricky:
-             * The BP4 engine has no way of parsing a Series in the old
-             * ADIOS2 schema step-by-step, since attributes are not
+             * The BP4 engine has no way of parsing a Series step-by-step in
+             * ADIOS2 without group tables, since attributes are not
              * associated with the step in which they were created.
              * As a result, when readIterations() is called, the whole thing
              * is parsed immediately ahead-of-time.
@@ -6911,7 +6924,7 @@ void append_mode(
              * but since the IO steps don't correspond with the order of
              * iterations returned (there is no way to figure out that order),
              * we cannot load data in here.
-             * BP4 in the old ADIOS2 schema only supports either of the
+             * BP4 in ADIOS2 without group table only supports either of the
              * following: 1) A Series in which the iterations are present in
              * ascending order. 2) Or accessing the Series in READ_ONLY mode.
              */
@@ -6928,7 +6941,9 @@ void append_mode(
              * should see both instances when reading.
              * Final goal: Read only the last instance.
              */
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
         break;
         }
@@ -6964,22 +6979,12 @@ void append_mode(
             {
                 write.setIterationEncoding(IterationEncoding::variableBased);
             }
-            if (write.backend() == "ADIOS1")
-            {
-                REQUIRE_THROWS_WITH(
-                    write.flush(),
-                    Catch::Equals(
-                        "Operation unsupported in ADIOS1: Appending to "
-                        "existing "
-                        "file on disk (use Access::CREATE to overwrite)"));
-                // destructor will be noisy now
-                return;
-            }
 
             writeSomeIterations(
                 write.writeIterations(), std::vector<uint64_t>{4, 5});
             write.flush();
         }
+        if (test_read_linear)
         {
             Series read(filename, Access::READ_LINEAR);
             switch (parseMode)
@@ -7028,9 +7033,9 @@ void append_mode(
                 ++counter;
             }
             REQUIRE(counter == 8);
-            // Cannot do listSeries here because the Series is already
-            // drained
-            REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
+            // listSeries will not see any iterations since they have already
+            // been read
+            helper::listSeries(read);
         }
     }
 #endif
@@ -7044,22 +7049,14 @@ TEST_CASE("append_mode", "[serial]")
 {
     "adios2":
     {
-        "schema": 0,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": false
     }
 })END";
         std::string jsonConfigNew = R"END(
 {
     "adios2":
     {
-        "schema": 20210209,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": true
     }
 })END";
         if (t == "bp" || t == "bp4" || t == "bp5")
@@ -7068,7 +7065,9 @@ TEST_CASE("append_mode", "[serial]")
                 "../samples/append/append_groupbased." + t,
                 false,
                 ParseMode::LinearWithoutSnapshot,
-                jsonConfigOld);
+                jsonConfigOld,
+                /* test_read_linear = */ false);
+#if openPMD_HAS_ADIOS_2_9
             append_mode(
                 "../samples/append/append_groupbased." + t,
                 false,
@@ -7085,6 +7084,7 @@ TEST_CASE("append_mode", "[serial]")
                 true,
                 ParseMode::WithSnapshot,
                 jsonConfigNew);
+#endif
         }
         else
         {
@@ -7096,21 +7096,18 @@ TEST_CASE("append_mode", "[serial]")
     }
 }
 
+#if openPMD_HAS_ADIOS_2_9
 void append_mode_filebased(std::string const &extension)
 {
     std::string jsonConfig = R"END(
 {
     "adios2":
     {
-        "schema": 20210209,
-        "engine":
-        {
-            "usesteps" : true
-        }
+        "use_group_table": true
     }
 })END";
     auto writeSomeIterations = [](WriteIterations &&writeIterations,
-                                  std::vector<uint64_t> indices) {
+                                  std::vector<uint64_t> const &indices) {
         for (auto index : indices)
         {
             auto it = writeIterations[index];
@@ -7175,6 +7172,7 @@ TEST_CASE("append_mode_filebased", "[serial]")
         append_mode_filebased(t);
     }
 }
+#endif // openPMD_HAS_ADIOS_2_8
 
 void groupbased_read_write(std::string const &ext)
 {
@@ -7267,5 +7265,14 @@ TEST_CASE("groupbased_read_write", "[serial]")
                 break;
             }
         }
+    }
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        groupbased_read_write("toml");
     }
 }

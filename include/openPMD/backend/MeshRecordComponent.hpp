@@ -26,19 +26,40 @@
 
 namespace openPMD
 {
+namespace internal
+{
+    template <typename, typename>
+    class BaseRecordData;
+}
+
 class MeshRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
+    template <typename>
+    friend class BaseRecord;
+    template <typename, typename>
+    friend class internal::BaseRecordData;
 
     friend class Mesh;
 
 private:
     MeshRecordComponent();
+    MeshRecordComponent(NoInit);
     void read() override;
+    void flush(std::string const &, internal::FlushParams const &);
 
 public:
     ~MeshRecordComponent() override = default;
+
+    /**
+     * @brief Avoid object slicing when using a Record as a scalar Record
+     *        Component.
+     *
+     * It's still preferred to directly use the Record, or alternatively a
+     * Record-Component-type reference to a Record.
+     */
+    MeshRecordComponent(BaseRecord<MeshRecordComponent> const &);
 
     /** Position on an element
      *

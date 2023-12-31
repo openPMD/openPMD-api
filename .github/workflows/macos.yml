@@ -28,10 +28,11 @@ jobs:
         python3 -m pip install -U mpi4py numpy pandas
         set -e
     - name: Build
-      env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 10.15}
+      env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 11.0}
       # 10.14+ due to std::visit
       # 10.15+ due to std::filesystem in toml11
       #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
+      # 11.0+ for arm64/aarch64 (M1/M2) builds
       run: |
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -39,7 +40,8 @@ jobs:
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DMPIEXEC_EXECUTABLE=".github/workflows/mpirun_workaround.sh"
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
@@ -49,16 +51,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install
-      env: {MACOSX_DEPLOYMENT_TARGET: 10.14}
+      env: {MACOSX_DEPLOYMENT_TARGET: 11.0}
       run: |
         set +e
         python3 -m pip install -U numpy pandas
         set -e
     - name: Build
-      env: {CXXFLAGS: -Werror -DTOML11_DISABLE_STD_FILESYSTEM, MACOSX_DEPLOYMENT_TARGET: 10.14}
+      env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 11.0}
       # 10.14+ due to std::visit
-      # std::filesystem in toml11 needs macOS 10.15
+      # 10.15+ due to std::filesystem in toml11
       #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
+      # 11.0+ for arm64/aarch64 (M1/M2) builds
       run: |
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -70,6 +73,9 @@ jobs:
           -DPython_EXECUTABLE=$(which python3)
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
+        rm -rf build/samples
+        share/openPMD/download_samples.sh build
+        OPENPMD2_ADIOS2_USE_GROUP_TABLE=1 ctest --test-dir build --verbose
 
 # TODO: apple_conda_ompi_all (similar to conda_ompi_all on Linux)
 #   both OpenMPI and MPICH cause startup (MPI_Init) issues on GitHub Actions

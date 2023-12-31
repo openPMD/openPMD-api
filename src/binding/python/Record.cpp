@@ -18,27 +18,34 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/Record.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/binding/python/UnitDimension.hpp"
 
 #include <string>
 #include <vector>
 
-namespace py = pybind11;
-using namespace openPMD;
-
 void init_Record(py::module &m)
 {
+    auto py_r_cnt = declare_container<PyRecordContainer, Attributable>(
+        m, "Record_Container");
+
     py::class_<Record, BaseRecord<RecordComponent> > cl(m, "Record");
     cl.def(py::init<Record const &>())
 
-        .def("__repr__", [](Record const &) { return "<openPMD.Record>"; })
+        .def(
+            "__repr__",
+            [](Record const &r) {
+                return "<openPMD.Record of " + std::to_string(r.size()) +
+                    " component(s) and " + std::to_string(r.numAttributes()) +
+                    " attribute(s)>";
+            })
 
         .def_property(
             "unit_dimension",
@@ -69,4 +76,6 @@ void init_Record(py::module &m)
             uint64_t const n_it = std::stoull(group.at(1));
             return series.iterations[n_it].particles[group.at(3)][group.at(4)];
         });
+
+    finalize_container<PyRecordContainer>(py_r_cnt);
 }

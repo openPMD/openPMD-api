@@ -90,7 +90,7 @@ if __name__ == "__main__":
     electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
     electrons["displacement"]["x"].unit_SI = 1.e-6
     del electrons["displacement"]
-    electrons["weighting"][SCALAR] \
+    electrons["weighting"] \
         .reset_dataset(Dataset(np.dtype("float32"), extent=[1])) \
         .make_constant(1.e-5)
 
@@ -137,8 +137,8 @@ if __name__ == "__main__":
     electrons["positionOffset"]["x"].reset_dataset(d)
 
     dset = Dataset(np.dtype("uint64"), extent=[2])
-    electrons.particle_patches["numParticles"][SCALAR].reset_dataset(dset)
-    electrons.particle_patches["numParticlesOffset"][SCALAR]. \
+    electrons.particle_patches["numParticles"].reset_dataset(dset)
+    electrons.particle_patches["numParticlesOffset"]. \
         reset_dataset(dset)
 
     dset = Dataset(partial_particlePos.dtype, extent=[2])
@@ -185,9 +185,9 @@ if __name__ == "__main__":
         electrons["position"]["x"][o:u] = partial_particlePos
         electrons["positionOffset"]["x"][o:u] = partial_particleOff
 
-        electrons.particle_patches["numParticles"][SCALAR].store(
+        electrons.particle_patches["numParticles"].store(
             i, np.array([numParticles], dtype=np.uint64))
-        electrons.particle_patches["numParticlesOffset"][SCALAR].store(
+        electrons.particle_patches["numParticlesOffset"].store(
             i, np.array([numParticlesOffset], dtype=np.uint64))
 
         electrons.particle_patches["offset"]["x"].store(

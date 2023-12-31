@@ -18,22 +18,19 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
-#include "openPMD/Datatype.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/Datatype.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Numpy.hpp"
 
 #include <sstream>
 
-namespace py = pybind11;
-using namespace openPMD;
-
 void init_BaseRecordComponent(py::module &m)
 {
-    py::class_<BaseRecordComponent, Attributable>(m, "Base_Record_Component")
+    py::class_<BaseRecordComponent, Attributable>(
+        m, "Base_Record_Component", py::multiple_inheritance())
         .def(
             "__repr__",
             [](BaseRecordComponent const &brc) {

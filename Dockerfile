@@ -5,8 +5,8 @@ FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
 # FROM       quay.io/pypa/manylinux1_x86_64 as build-env
 ENV        DEBIAN_FRONTEND noninteractive
 
-# Python 3.7-3.11 via "37m 38 39 311"
-ARG        PY_VERSIONS="37m 38 39 310 311"
+# Python 3.8-3.12 via "38 39 311 312"
+ARG        PY_VERSIONS="38 39 310 311 312"
 
 # static libs need relocatable symbols for linking to shared python lib
 ENV        CFLAGS="-fPIC ${CFLAGS}"
@@ -112,30 +112,6 @@ RUN         for whl in /opt/src/dist/*.whl; do \
             && du -hs /opt/src/dist/* \
             && du -hs /wheelhouse/*
 
-# test in fresh env: Debian:Buster + Python 3.7
-FROM       debian:buster
-ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp37-cp37m-manylinux2010_x86_64.whl .
-RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3 python3-pip \
-           && rm -rf /var/lib/apt/lists/*
-           # binutils
-RUN        python3 --version \
-           && python3 -m pip install -U pip \
-           && python3 -m pip install openPMD_api-*-cp37-cp37m-manylinux2010_x86_64.whl
-RUN        find / -name "openpmd*"
-RUN        ls -hal /usr/local/lib/python3.7/dist-packages/
-RUN        ls -hal /usr/local/lib/python3.7/dist-packages/openpmd_api/
-# RUN        ls -hal /usr/local/lib/python3.7/dist-packages/.libsopenpmd_api
-# RUN        objdump -x /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so | grep RPATH
-RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api/openpmd_api_cxx.cpython-37m-x86_64-linux-gnu.so
-RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3 -m openpmd_api.ls --help
-RUN        openpmd-ls --help
-#RUN        echo "* soft core 100000" >> /etc/security/limits.conf && \
-#           python3 -c "import openpmd_api as io"; \
-#           gdb -ex bt -c core
-
 # test in fresh env: Debian:Sid + Python 3.8
 FROM       debian:sid
 ENV        DEBIAN_FRONTEND noninteractive
@@ -186,7 +162,7 @@ FROM       debian:bullseye
 ENV        DEBIAN_FRONTEND noninteractive
 COPY --from=build-env /wheelhouse/openPMD_api-*-cp311-cp311-manylinux2010_x86_64.whl .
 RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3.10 python3-distutils ca-certificates curl \
+           && apt-get install -y --no-install-recommends python3.11 python3-distutils ca-certificates curl \
            && rm -rf /var/lib/apt/lists/*
 RUN        python3.11 --version \
            && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
@@ -194,6 +170,21 @@ RUN        python3.11 --version \
            && python3.11 -m pip install openPMD_api-*-cp311-cp311-manylinux2010_x86_64.whl
 RUN        python3.11 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
 RUN        python3.11 -m openpmd_api.ls --help
+RUN        openpmd-ls --help
+
+# test in fresh env: Debian:Bullseye + Python 3.12
+FROM       debian:bullseye
+ENV        DEBIAN_FRONTEND noninteractive
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp312-cp312-manylinux2010_x86_64.whl .
+RUN        apt-get update \
+           && apt-get install -y --no-install-recommends python3.12 python3-distutils ca-certificates curl \
+           && rm -rf /var/lib/apt/lists/*
+RUN        python3.12 --version \
+           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+           && python3.12 get-pip.py \
+           && python3.12 -m pip install openPMD_api-*-cp312-cp312-manylinux2010_x86_64.whl
+RUN        python3.12 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
+RUN        python3.12 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
 # copy binary artifacts (wheels)

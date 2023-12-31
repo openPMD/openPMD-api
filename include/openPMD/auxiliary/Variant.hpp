@@ -35,7 +35,7 @@ namespace auxiliary
      * @tparam T        Varaidic template argument list of datatypes to be
      * stored.
      */
-    template <class T_DTYPES, typename... T>
+    template <class T_DTYPES, typename std_variant>
     class Variant
     {
         static_assert(
@@ -43,7 +43,7 @@ namespace auxiliary
             "Datatypes to Variant must be supplied as enum.");
 
     public:
-        using resource = std::variant<T...>;
+        using resource = std_variant;
         /** Construct a lightweight wrapper around a generic object that
          * indicates the concrete datatype of the specific object stored.
          *
@@ -90,5 +90,17 @@ namespace auxiliary
     private:
         resource m_data;
     };
+
+    /*
+     * Helper type for std::visit,
+     * see https://en.cppreference.com/w/cpp/utility/variant/visit
+     */
+    template <class... Ts>
+    struct overloaded : Ts...
+    {
+        using Ts::operator()...;
+    };
+    template <class... Ts>
+    overloaded(Ts...) -> overloaded<Ts...>;
 } // namespace auxiliary
 } // namespace openPMD

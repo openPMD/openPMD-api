@@ -53,6 +53,7 @@
 namespace openPMD
 {
 class ReadIterations;
+class SeriesIterator;
 class Series;
 class Series;
 
@@ -63,8 +64,13 @@ namespace internal
      *
      * (Not movable or copyable)
      *
+     * Class is final since our std::shared_ptr<Data_t> pattern has the little
+     * disadvantage that child constructors overwrite the parent constructors.
+     * Since the SeriesData constructor does some initialization, making this
+     * class final avoids stumbling over this pitfall.
+     *
      */
-    class SeriesData : public AttributableData
+    class SeriesData final : public AttributableData
     {
     public:
         explicit SeriesData() = default;
@@ -88,6 +94,23 @@ namespace internal
          * the same instance.
          */
         std::optional<WriteIterations> m_writeIterations;
+
+        /**
+         * Series::readIterations() returns an iterator type that modifies the
+         * state of the Series (by proceeding through IO steps).
+         * Hence, we need to make sure that there is only one of them, otherwise
+         * they will both make modifications to the Series that the other
+         * iterator is not aware of.
+         *
+         * Plan: At some point, we should add a second iterator type that does
+         * not change the state. Series::readIterations() should then return
+         * either this or that iterator depending on read mode (linear or
+         * random-access) and backend capabilities.
+         *
+         * Due to include order, this member needs to be a pointer instead of
+         * an optional.
+         */
+        std::unique_ptr<SeriesIterator> m_sharedStatefulIterator;
         /**
          * For writing: Remember which iterations have been written in the
          * currently active output step. Use this later when writing the
@@ -151,14 +174,15 @@ namespace internal
          * True if a user opts into lazy parsing.
          */
         bool m_parseLazily = false;
+
         /**
-         * This is to avoid that the destructor tries flushing again if an error
-         * happened. Otherwise, this would lead to confusing error messages.
-         * Initialized as false, set to true after successful construction.
-         * If flushing results in an error, set this back to false.
-         * The destructor will only attempt flushing again if this is true.
+         * In variable-based encoding, all backends except ADIOS2 can only write
+         * one single iteration. So, we remember if we already had a step,
+         * and if yes, Parameter<Operation::ADVANCE>::isThisStepMandatory is
+         * set as true in variable-based encoding.
+         * The backend will then throw if it has no support for steps.
          */
-        bool m_lastFlushSuccessful = false;
+        bool m_wroteAtLeastOneIOStep = false;
 
         /**
          * Remember the preference that the backend specified for parsing.
@@ -188,13 +212,10 @@ class Series : public Attributable
     friend class Attributable;
     friend class Iteration;
     friend class Writable;
+    friend class ReadIterations;
     friend class SeriesIterator;
     friend class internal::SeriesData;
     friend class WriteIterations;
-
-protected:
-    // Should not be called publicly, only by implementing classes
-    Series(std::shared_ptr<internal::SeriesData>);
 
 public:
     explicit Series();
@@ -221,7 +242,13 @@ public:
         Access at,
         std::string const &options = "{}");
 
-    virtual ~Series() = default;
+    Series(Series const &) = default;
+    Series(Series &&) = default;
+
+    Series &operator=(Series const &) = default;
+    Series &operator=(Series &&) = default;
+
+    ~Series() override = default;
 
     /**
      * An unsigned integer type, used to identify Iterations in a Series.
@@ -503,6 +530,22 @@ public:
     ReadIterations readIterations();
 
     /**
+     * @brief Parse the Series.
+     *
+     * Only necessary in linear read mode.
+     * In linear read mode, the Series constructor does not do any IO accesses.
+     * This call effectively triggers the side effects of
+     * Series::readIterations(), for use cases where data needs to be accessed
+     * before iterating through the iterations.
+     *
+     * The reason for introducing this restricted alias to
+     * Series::readIterations() is that the name "readIterations" is misleading
+     * for that use case: When using IO steps, this call only ensures that the
+     * first step is parsed.
+     */
+    void parseBase();
+
+    /**
      * @brief Entry point to the writing end of the streaming API.
      *
      * Creates and returns an instance of the WriteIterations class which is an
@@ -543,9 +586,10 @@ OPENPMD_private
     using iterations_t = decltype(internal::SeriesData::iterations);
     using iterations_iterator = iterations_t::iterator;
 
-    std::shared_ptr<internal::SeriesData> m_series = nullptr;
+    using Data_t = internal::SeriesData;
+    std::shared_ptr<Data_t> m_series = nullptr;
 
-    inline internal::SeriesData &get()
+    inline Data_t &get()
     {
         if (m_series)
         {
@@ -558,7 +602,7 @@ OPENPMD_private
         }
     }
 
-    inline internal::SeriesData const &get() const
+    inline Data_t const &get() const
     {
         if (m_series)
         {
@@ -569,6 +613,13 @@ OPENPMD_private
             throw std::runtime_error(
                 "[Series] Cannot use default-constructed Series.");
         }
+    }
+
+    inline void setData(std::shared_ptr<internal::SeriesData> series)
+    {
+        m_series = std::move(series);
+        iterations = m_series->iterations;
+        Attributable::setData(m_series);
     }
 
     std::unique_ptr<ParsedInput> parseInput(std::string);
@@ -601,12 +652,12 @@ OPENPMD_private
     std::future<void> flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     void flushFileBased(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     /*
      * Group-based and variable-based iteration layouts share a lot of logic
@@ -618,7 +669,7 @@ OPENPMD_private
     void flushGorVBased(
         iterations_iterator begin,
         iterations_iterator end,
-        internal::FlushParams flushParams,
+        internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
     void flushMeshesPath();
     void flushParticlesPath();
@@ -696,7 +747,8 @@ OPENPMD_private
 
     /**
      * @brief Called at the end of an IO step to store the iterations defined
-     *        in the IO step to the snapshot attribute.
+     *        in the IO step to the snapshot attribute and to store that at
+     *        least one step was written.
      *
      * @param doFlush If true, flush the IO handler.
      */

@@ -225,7 +225,7 @@ class pipe:
             sys.stdout.flush()
         # In Linear read mode, global attributes are only present after calling
         # this method to access the first iteration
-        inseries.read_iterations()
+        inseries.parse_base()
         self.__copy(inseries, outseries)
 
     def __copy(self, src, dest, current_path="/data/"):
@@ -234,7 +234,7 @@ class pipe:
         Copies data from src to dest. May represent any point in the openPMD
         hierarchy, but src and dest must both represent the same layer.
         """
-        if (type(src) != type(dest)
+        if (type(src) is not type(dest)
                 and not isinstance(src, io.IndexedIteration)
                 and not isinstance(dest, io.Iteration)):
             raise RuntimeError(
@@ -245,23 +245,31 @@ class pipe:
         ignored_attributes = {
             io.Series:
             ["basePath", "iterationEncoding", "iterationFormat", "openPMD"],
-            io.Iteration: ["snapshot"]
+            io.Iteration: ["snapshot"],
+            io.Record_Component: ["value", "shape"] if isinstance(
+                src, io.Record_Component) and src.constant else []
         }
+        # filter the map for relevant openpmd object model types
+        from itertools import chain
+        ignored_attributes = set(chain.from_iterable(value for (
+            key, value) in ignored_attributes.items() if isinstance(src, key)))
+
         for key in src.attributes:
-            ignore_this_attribute = False
-            for openpmd_group, to_ignore_list in ignored_attributes.items():
-                if isinstance(src, openpmd_group):
-                    for to_ignore in to_ignore_list:
-                        if key == to_ignore:
-                            ignore_this_attribute = True
+            ignore_this_attribute = key in ignored_attributes
             if not ignore_this_attribute:
                 attr = src.get_attribute(key)
                 attr_type = attribute_dtypes[key]
                 dest.set_attribute(key, attr, attr_type)
+
         container_types = [
             io.Mesh_Container, io.Particle_Container, io.ParticleSpecies,
             io.Record, io.Mesh, io.Particle_Patches, io.Patch_Record
         ]
+        is_container = any([
+            isinstance(src, container_type)
+            for container_type in container_types
+        ])
+
         if isinstance(src, io.Series):
             # main loop: read iterations of src, write to dest
             write_iterations = dest.write_iterations()
@@ -299,7 +307,8 @@ class pipe:
                 self.__particle_patches.clear()
                 self.loads.clear()
                 sys.stdout.flush()
-        elif isinstance(src, io.Record_Component):
+        elif isinstance(src, io.Record_Component) and (not is_container
+                                                       or src.scalar):
             shape = src.shape
             offset = [0 for _ in shape]
             dtype = src.dtype
@@ -324,7 +333,8 @@ class pipe:
                 self.loads.append(
                     deferred_load(src, span, local_chunk.offset,
                                   local_chunk.extent))
-        elif isinstance(src, io.Patch_Record_Component):
+        elif isinstance(src, io.Patch_Record_Component) and (not is_container
+                                                             or src.scalar):
             dest.reset_dataset(io.Dataset(src.dtype, src.shape))
             if self.comm.rank == 0:
                 self.__particle_patches.append(
@@ -333,10 +343,7 @@ class pipe:
             self.__copy(src.meshes, dest.meshes, current_path + "meshes/")
             self.__copy(src.particles, dest.particles,
                         current_path + "particles/")
-        elif any([
-                isinstance(src, container_type)
-                for container_type in container_types
-        ]):
+        elif is_container:
             for key in src:
                 self.__copy(src[key], dest[key], current_path + key + "/")
             if isinstance(src, io.ParticleSpecies):

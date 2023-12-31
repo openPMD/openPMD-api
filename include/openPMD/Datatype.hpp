@@ -23,6 +23,10 @@
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
+// comment to prevent clang-format from moving this #include up
+// datatype macros may be included and un-included in other headers
+#include "openPMD/DatatypeMacros.hpp"
+
 #include <array>
 #include <climits>
 #include <complex>
@@ -35,6 +39,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility> // std::declval
+#include <variant>
 #include <vector>
 
 namespace openPMD
@@ -92,7 +97,34 @@ enum class Datatype : int
  *        listed in order in a vector.
  *
  */
-extern std::vector<Datatype> openPMD_Datatypes;
+std::vector<Datatype> openPMD_Datatypes();
+
+namespace detail
+{
+    struct bottom
+    {};
+
+    // std::variant, but ignore first template parameter
+    // little trick to avoid trailing commas in the macro expansions below
+    template <typename Arg, typename... Args>
+    using variant_tail_t = std::variant<Args...>;
+} // namespace detail
+
+#define OPENPMD_ENUMERATE_TYPES(type) , type
+
+using dataset_types =
+    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_DATASET_DATATYPE(
+        OPENPMD_ENUMERATE_TYPES)>;
+
+using non_vector_types =
+    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_NONVECTOR_DATATYPE(
+        OPENPMD_ENUMERATE_TYPES)>;
+
+using attribute_types =
+    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_DATATYPE(
+        OPENPMD_ENUMERATE_TYPES)>;
+
+#undef OPENPMD_ENUMERATE_TYPES
 
 /** @brief Fundamental equivalence check for two given types T and U.
  *
@@ -739,7 +771,7 @@ Datatype toVectorType(Datatype dt);
 
 std::string datatypeToString(Datatype dt);
 
-Datatype stringToDatatype(std::string s);
+Datatype stringToDatatype(const std::string &s);
 
 void warnWrongDtype(std::string const &key, Datatype store, Datatype request);
 
@@ -782,6 +814,25 @@ template <typename Action, typename... Args>
 constexpr auto switchNonVectorType(Datatype dt, Args &&...args)
     -> decltype(Action::template call<char>(std::forward<Args>(args)...));
 
+/**
+ * Generalizes switching over an openPMD datatype.
+ *
+ * Will call the function template found at Action::call< T >(), instantiating T
+ * with the C++ internal datatype corresponding to the openPMD datatype.
+ * Specializes only on those types that can occur in a dataset.
+ *
+ * @tparam ReturnType The function template's return type.
+ * @tparam Action The struct containing the function template.
+ * @tparam Args The function template's argument types.
+ * @param dt The openPMD datatype.
+ * @param args The function template's arguments.
+ * @return Passes on the result of invoking the function template with the given
+ *     arguments and with the template parameter specified by dt.
+ */
+template <typename Action, typename... Args>
+constexpr auto switchDatasetType(Datatype dt, Args &&...args)
+    -> decltype(Action::template call<char>(std::forward<Args>(args)...));
+
 } // namespace openPMD
 
 #if !defined(_MSC_VER)
@@ -811,3 +862,4 @@ inline bool operator!=(openPMD::Datatype d, openPMD::Datatype e)
 #endif
 
 #include "openPMD/Datatype.tpp"
+#include "openPMD/UndefDatatypeMacros.hpp"

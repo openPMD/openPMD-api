@@ -18,13 +18,13 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/Series.hpp"
+#include "openPMD/IO/Access.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 
 #if openPMD_HAVE_MPI
 //  re-implemented signatures:
@@ -32,10 +32,8 @@
 #include <mpi.h>
 #endif
 
+#include <sstream>
 #include <string>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 #if openPMD_HAVE_MPI
 /** mpi4py communicator wrapper
@@ -69,6 +67,9 @@ struct SeriesIteratorPythonAdaptor : SeriesIterator
 
 void init_Series(py::module &m)
 {
+    py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
+        .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
+
     py::class_<WriteIterations>(m, "WriteIterations", R"END(
 Writing side of the streaming API.
 
@@ -102,8 +103,6 @@ not possible once it has been closed.
             &WriteIterations::currentIteration,
             "Return the iteration that is currently being written to, if it "
             "exists.");
-    py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
-        .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
 
     py::class_<SeriesIteratorPythonAdaptor>(m, "SeriesIterator")
         .def(
@@ -250,6 +249,20 @@ not possible once it has been closed.
             py::arg("options") = "{}")
 #endif
         .def("__bool__", &Series::operator bool)
+        .def(
+            "__repr__",
+            [](Series const &s) {
+                std::stringstream stream;
+                auto myPath = s.myPath();
+                stream << "<openPMD.Series at '" << myPath.filePath()
+                       << "' with " << s.iterations.size() << " iteration(s)";
+                if (myPath.access == Access::READ_LINEAR)
+                {
+                    stream << " (currently parsed)";
+                }
+                stream << " and " << s.numAttributes() << " attributes>";
+                return stream.str();
+            })
         .def("close", &Series::close, R"(
 Closes the Series and release the data storage/transport backends.
 
@@ -321,12 +334,7 @@ this method.
         .def_readwrite(
             "iterations",
             &Series::iterations,
-            /*
-             * Need to keep reference return policy here for now to further
-             * support legacy `del series` workflows that works despite children
-             * still being alive.
-             */
-            py::return_value_policy::reference,
+            py::return_value_policy::copy,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
         .def(
@@ -349,6 +357,25 @@ For a less restrictive API in non-streaming situations,
 `Series.iterations` can be accessed directly.
 Look for the ReadIterations class for further documentation.
             )END")
+        .def(
+            "parse_base",
+            [](Series &s) {
+                py::gil_scoped_release release;
+                s.parseBase();
+            },
+            &R"END(
+Parse the Series.
+
+Only necessary in linear read mode.
+In linear read mode, the Series constructor does not do any IO accesses.
+This call effectively triggers the side effects of
+Series::readIterations(), for use cases where data needs to be accessed
+before iterating through the iterations.
+
+The reason for introducing this restricted alias to
+Series.read_iterations() is that the name "read_iterations" is misleading
+for that use case: When using IO steps, this call only ensures that the
+first step is parsed.)END"[1])
         .def(
             "write_iterations",
             &Series::writeIterations,

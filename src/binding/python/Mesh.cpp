@@ -18,31 +18,41 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/Mesh.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/binding/python/UnitDimension.hpp"
 
 #include <string>
 #include <vector>
 
-namespace py = pybind11;
-using namespace openPMD;
-
 void init_Mesh(py::module &m)
 {
+    auto py_m_cont =
+        declare_container<PyMeshContainer, Attributable>(m, "Mesh_Container");
+
     py::class_<Mesh, BaseRecord<MeshRecordComponent> > cl(m, "Mesh");
+
+    py::enum_<Mesh::Geometry>(m, "Geometry") // TODO: m -> cl
+        .value("cartesian", Mesh::Geometry::cartesian)
+        .value("thetaMode", Mesh::Geometry::thetaMode)
+        .value("cylindrical", Mesh::Geometry::cylindrical)
+        .value("spherical", Mesh::Geometry::spherical)
+        .value("other", Mesh::Geometry::other);
+
     cl.def(py::init<Mesh const &>())
 
         .def(
             "__repr__",
             [](Mesh const &mesh) {
                 return "<openPMD.Mesh record with '" +
-                    std::to_string(mesh.size()) + "' record components>";
+                    std::to_string(mesh.size()) + "' record component(s) and " +
+                    std::to_string(mesh.numAttributes()) + " attributes>";
             })
 
         .def_property(
@@ -110,10 +120,5 @@ void init_Mesh(py::module &m)
             return series.iterations[n_it].meshes[group.at(3)];
         });
 
-    py::enum_<Mesh::Geometry>(m, "Geometry")
-        .value("cartesian", Mesh::Geometry::cartesian)
-        .value("thetaMode", Mesh::Geometry::thetaMode)
-        .value("cylindrical", Mesh::Geometry::cylindrical)
-        .value("spherical", Mesh::Geometry::spherical)
-        .value("other", Mesh::Geometry::other);
+    finalize_container<PyMeshContainer>(py_m_cont);
 }

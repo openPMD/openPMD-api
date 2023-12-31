@@ -33,8 +33,8 @@ WriteIterations::SharedResources::SharedResources(
 
 WriteIterations::SharedResources::~SharedResources()
 {
-    if (currentlyOpen.has_value() &&
-        iterations.retrieveSeries().get().m_lastFlushSuccessful)
+    if (auto IOHandler = iterations.IOHandler(); currentlyOpen.has_value() &&
+        IOHandler && IOHandler->m_lastFlushSuccessful)
     {
         auto lastIterationIndex = currentlyOpen.value();
         auto &lastIteration = iterations.at(lastIterationIndex);
@@ -75,7 +75,7 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
         auto lastIteration_v = lastIteration.value();
         if (lastIteration_v.iterationIndex == key)
         {
-            return s.iterations.at(std::move(key));
+            return s.iterations.at(std::forward<key_type>(key));
         }
         else
         {
@@ -83,10 +83,20 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
         }
     }
     s.currentlyOpen = key;
-    auto &res = s.iterations[std::move(key)];
+    auto &res = s.iterations[std::forward<key_type>(key)];
     if (res.getStepStatus() == StepStatus::NoStep)
     {
-        res.beginStep(/* reread = */ false);
+        try
+        {
+            res.beginStep(/* reread = */ false);
+        }
+        catch (error::OperationUnsupportedInBackend const &)
+        {
+            s.iterations.retrieveSeries()
+                .get()
+                .m_currentlyActiveIterations.clear();
+            throw;
+        }
         res.setStepStatus(StepStatus::DuringStep);
     }
     return res;

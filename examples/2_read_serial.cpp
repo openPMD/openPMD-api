@@ -58,9 +58,7 @@ int main()
     }
 
     openPMD::ParticleSpecies electrons = i.particles["electrons"];
-    std::shared_ptr<double> charge =
-        electrons["charge"][openPMD::RecordComponent::SCALAR]
-            .loadChunk<double>();
+    std::shared_ptr<double> charge = electrons["charge"].loadChunk<double>();
     series.flush();
     cout << "And the first electron particle has a charge = "
          << charge.get()[0];
@@ -75,20 +73,25 @@ int main()
 
     Offset chunk_offset = {1, 1, 1};
     Extent chunk_extent = {2, 2, 1};
-    auto chunk_data = E_x.loadChunk<double>(chunk_offset, chunk_extent);
+    // Loading without explicit datatype here
+    auto chunk_data = E_x.loadChunkVariant(chunk_offset, chunk_extent);
     cout << "Queued the loading of a single chunk from disk, "
             "ready to execute\n";
     series.flush();
     cout << "Chunk has been read from disk\n"
          << "Read chunk contains:\n";
-    for (size_t row = 0; row < chunk_extent[0]; ++row)
-    {
-        for (size_t col = 0; col < chunk_extent[1]; ++col)
-            cout << "\t" << '(' << row + chunk_offset[0] << '|'
-                 << col + chunk_offset[1] << '|' << 1 << ")\t"
-                 << chunk_data.get()[row * chunk_extent[1] + col];
-        cout << '\n';
-    }
+    std::visit(
+        [&chunk_offset, &chunk_extent](auto &shared_ptr) {
+            for (size_t row = 0; row < chunk_extent[0]; ++row)
+            {
+                for (size_t col = 0; col < chunk_extent[1]; ++col)
+                    cout << "\t" << '(' << row + chunk_offset[0] << '|'
+                         << col + chunk_offset[1] << '|' << 1 << ")\t"
+                         << shared_ptr.get()[row * chunk_extent[1] + col];
+                cout << '\n';
+            }
+        },
+        chunk_data);
 
     auto all_data = E_x.loadChunk<double>();
 

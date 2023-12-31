@@ -26,8 +26,10 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/JSON/JSONFilePosition.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/config.hpp"
 
+#include <istream>
 #include <nlohmann/json.hpp>
 
 #include <complex>
@@ -82,7 +84,7 @@ struct File
         return fileState->valid;
     }
 
-    File &operator=(std::string s)
+    File &operator=(std::string const &s)
     {
         if (fileState)
         {
@@ -153,7 +155,17 @@ class JSONIOHandlerImpl : public AbstractIOHandlerImpl
     using json = nlohmann::json;
 
 public:
-    explicit JSONIOHandlerImpl(AbstractIOHandler *);
+    enum class FileFormat
+    {
+        Json,
+        Toml
+    };
+
+    explicit JSONIOHandlerImpl(
+        AbstractIOHandler *,
+        openPMD::json::TracingJSON config,
+        FileFormat,
+        std::string originalExtension);
 
     ~JSONIOHandlerImpl() override;
 
@@ -229,18 +241,28 @@ private:
     // files that have logically, but not physically been written to
     std::unordered_set<File> m_dirty;
 
+    /*
+     * Is set by constructor.
+     */
+    FileFormat m_fileFormat{};
+
+    std::string m_originalExtension;
+
     // HELPER FUNCTIONS
 
-    // will use the IOHandler to retrieve the correct directory
-    // shared pointer to circumvent the fact that c++ pre 17 does
-    // not enforce (only allow) copy elision in return statements
-    std::shared_ptr<FILEHANDLE> getFilehandle(
-        File,
-        Access access); //, Access
-                        // m_frontendAccess=this->m_handler->m_frontendAccess);
+    // will use the IOHandler to retrieve the correct directory.
+    // first tuple element will be the underlying opened file handle.
+    // if Access is read mode, then the second tuple element will be the istream
+    // casted to precision std::numeric_limits<double>::digits10 + 1, else null.
+    // if Access is write mode, then the second tuple element will be the
+    // ostream casted to precision std::numeric_limits<double>::digits10 + 1,
+    // else null. first tuple element needs to be a pointer, since the casted
+    // streams are references only.
+    std::tuple<std::unique_ptr<FILEHANDLE>, std::istream *, std::ostream *>
+    getFilehandle(File const &, Access access);
 
     // full operating system path of the given file
-    std::string fullPath(File);
+    std::string fullPath(File const &);
 
     std::string fullPath(std::string const &);
 
@@ -272,19 +294,17 @@ private:
     // essentially: m_i = \prod_{j=0}^{i-1} extent_j
     static Extent getMultiplicators(Extent const &extent);
 
-    static nlohmann::json initializeNDArray(Extent const &extent);
-
     static Extent getExtent(nlohmann::json &j);
 
     // remove single '/' in the beginning and end of a string
     static std::string removeSlashes(std::string);
 
     template <typename KeyT>
-    static bool hasKey(nlohmann::json &, KeyT &&key);
+    static bool hasKey(nlohmann::json const &, KeyT &&key);
 
     // make sure that the given path exists in proper form in
     // the passed json value
-    static void ensurePath(nlohmann::json *json, std::string path);
+    static void ensurePath(nlohmann::json *json, std::string const &path);
 
     // In order not to insert the same file name into the data structures
     // with a new pointer (e.g. when reopening), search for a possibly
@@ -292,24 +312,24 @@ private:
     // The bool is true iff the pointer has been newly-created.
     // The iterator is an iterator for m_files
     std::tuple<File, std::unordered_map<Writable *, File>::iterator, bool>
-    getPossiblyExisting(std::string file);
+    getPossiblyExisting(std::string const &file);
 
     // get the json value representing the whole file, possibly reading
     // from disk
-    std::shared_ptr<nlohmann::json> obtainJsonContents(File);
+    std::shared_ptr<nlohmann::json> obtainJsonContents(File const &);
 
     // get the json value at the writable's fileposition
     nlohmann::json &obtainJsonContents(Writable *writable);
 
     // write to disk the json contents associated with the file
     // remove from m_dirty if unsetDirty == true
-    void putJsonContents(File, bool unsetDirty = true);
+    void putJsonContents(File const &, bool unsetDirty = true);
 
     // figure out the file position of the writable
     // (preferring the parent's file position) and extend it
     // by extend. return the modified file position.
     std::shared_ptr<JSONFilePosition>
-    setAndGetFilePosition(Writable *, std::string extend);
+    setAndGetFilePosition(Writable *, std::string const &extend);
 
     // figure out the file position of the writable
     // (preferring the parent's file position)
@@ -325,7 +345,7 @@ private:
     void associateWithFile(Writable *writable, File);
 
     // need to check the name too in order to exclude "attributes" key
-    static bool isGroup(nlohmann::json::const_iterator it);
+    static bool isGroup(nlohmann::json::const_iterator const &it);
 
     static bool isDataset(nlohmann::json const &j);
 
@@ -366,7 +386,8 @@ private:
     struct AttributeReader
     {
         template <typename T>
-        static void call(nlohmann::json &, Parameter<Operation::READ_ATT> &);
+        static void
+        call(nlohmann::json const &, Parameter<Operation::READ_ATT> &);
 
         static constexpr char const *errorMsg = "JSON: writeAttribute";
     };

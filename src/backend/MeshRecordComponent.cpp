@@ -19,12 +19,21 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 namespace openPMD
 {
 MeshRecordComponent::MeshRecordComponent() : RecordComponent()
+{}
+
+MeshRecordComponent::MeshRecordComponent(NoInit) : RecordComponent(NoInit())
+{}
+
+MeshRecordComponent::MeshRecordComponent(
+    BaseRecord<MeshRecordComponent> const &baseRecord)
+    : RecordComponent(NoInit())
 {
-    setPosition(std::vector<double>{0});
+    setData(baseRecord.m_recordComponentData);
 }
 
 void MeshRecordComponent::read()
@@ -56,6 +65,17 @@ void MeshRecordComponent::read()
                 datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     readBase();
+}
+
+void MeshRecordComponent::flush(
+    std::string const &name, internal::FlushParams const &params)
+{
+    if (access::write(IOHandler()->m_frontendAccess) &&
+        !containsAttribute("position"))
+    {
+        setPosition(std::vector<double>{0});
+    }
+    RecordComponent::flush(name, params);
 }
 
 template <typename T>

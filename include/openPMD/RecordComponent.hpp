@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/Datatype.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
@@ -35,6 +36,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 // expose private and protected members for invasive testing
@@ -94,8 +96,23 @@ namespace internal
          * flushed to the backend
          */
         bool m_hasBeenExtended = false;
+
+        void reset() override
+        {
+            BaseRecordComponentData::reset();
+            m_chunks = std::queue<IOTask>();
+            m_constantValue = -1;
+            m_name = std::string();
+            m_isEmpty = false;
+            m_hasBeenExtended = false;
+        }
     };
+    template <typename, typename>
+    class BaseRecordData;
 } // namespace internal
+
+template <typename>
+class BaseRecord;
 
 class RecordComponent : public BaseRecordComponent
 {
@@ -103,10 +120,10 @@ class RecordComponent : public BaseRecordComponent
     friend class Container;
     friend class Iteration;
     friend class ParticleSpecies;
-    template <typename T_elem>
+    template <typename>
     friend class BaseRecord;
-    template <typename T_elem>
-    friend class BaseRecordInterface;
+    template <typename, typename>
+    friend class internal::BaseRecordData;
     friend class Record;
     friend class Mesh;
     template <typename>
@@ -121,6 +138,15 @@ public:
         API,
         AUTO
     }; // Allocation
+
+    /**
+     * @brief Avoid object slicing when using a Record as a scalar Record
+     *        Component.
+     *
+     * It's still preferred to directly use the Record, or alternatively a
+     * Record-Component-type reference to a Record.
+     */
+    RecordComponent(BaseRecord<RecordComponent> const &);
 
     RecordComponent &setUnitSI(double);
 
@@ -142,7 +168,7 @@ public:
      *
      * @return RecordComponent&
      */
-    RecordComponent &resetDataset(Dataset);
+    virtual RecordComponent &resetDataset(Dataset);
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;
@@ -197,6 +223,21 @@ public:
      */
     template <typename T>
     std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
+
+    using shared_ptr_dataset_types = auxiliary::detail::
+        map_variant<auxiliary::detail::as_shared_pointer, dataset_types>::type;
+
+    /** std::variant-based version of allocating loadChunk<T>(Offset, Extent)
+     *
+     * @return The same result that loadChunk() would return, but
+     *         as a std::variant of all possible return types, instantiated
+     *         with the actual type of this RecordComponent.
+     *
+     * Note: shared_ptr_dataset_types resolves to:
+     * std::variant<std::shared_ptr<char>, std::shared_ptr<unsigned char>,
+     *     ..., std::shared_ptr<std::complex<long double>>>
+     */
+    shared_ptr_dataset_types loadChunkVariant(Offset = {0u}, Extent = {-1u});
 
     /** Load a chunk of data into pre-allocated memory.
      *
@@ -404,6 +445,40 @@ public:
     template <typename T>
     DynamicMemoryView<T> storeChunk(Offset, Extent);
 
+    /**
+     * @brief Run a template functor on the type of the record component,
+     *        similar to std::visit().
+     *
+     * Note that unlike std::visit(), this template cannot "switch" over
+     * a single existing value, meaning that the interface needs to work
+     * a bit different.
+     * The functor is given as a struct/class with a call() operation.
+     *
+     * (Ideally, this can be harmonized by using template lambdas once we
+     * support C++20)
+     *
+     * @tparam Visitor A struct type that has a static template method:
+     *         Visitor::template call<T>(RecordComponent &, ...)
+     *         In here, T will be instantiated with this RecordComponent's type
+     *         and a reference to this RecordComponent will be passed as first
+     *         argument.
+     *
+     * @tparam Args Types of optional further arguments.
+     * @param args Optional further arguments that will be forwarded to
+     *        Visitor::template call()
+     * @return Whatever Visitor::template call() returned.
+     *         Take special note that the return types must match (i.e. cannot
+     *         be different across instantiations
+     *         of T for Visitor::template call<T>()).
+     *         Formally, the return type is that of
+     *         Visitor::template call<char>(RecordComponent &, Args&&...)
+     *         and returned values from other template instantiations might then
+     *         be implicitly converted.
+     */
+    template <typename Visitor, typename... Args>
+    auto visit(Args &&...args) -> decltype(Visitor::template call<char>(
+        std::declval<RecordComponent &>(), std::forward<Args>(args)...));
+
     static constexpr char const *const SCALAR = "\vScalar";
 
 private:
@@ -431,24 +506,26 @@ private:
      */
     bool dirtyRecursive() const;
 
-    std::shared_ptr<internal::RecordComponentData> m_recordComponentData{
-        new internal::RecordComponentData()};
-
-    RecordComponent();
-
     // clang-format off
 OPENPMD_protected
     // clang-format on
 
-    RecordComponent(std::shared_ptr<internal::RecordComponentData>);
+    using Data_t = internal::RecordComponentData;
+    std::shared_ptr<Data_t> m_recordComponentData;
 
-    inline internal::RecordComponentData const &get() const
+    RecordComponent();
+    RecordComponent(NoInit);
+
+    inline Data_t const &get() const
     {
+        // cannot call this in the const overload
+        // datasetDefined(*m_recordComponentData);
         return *m_recordComponentData;
     }
 
-    inline internal::RecordComponentData &get()
+    inline Data_t &get()
     {
+        setDatasetDefined(*m_recordComponentData);
         return *m_recordComponentData;
     }
 

@@ -23,6 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -424,6 +425,11 @@ std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
         filepath = auxiliary::replace_all(filepath, "\\", "/");
     }
 #endif
+    if (auxiliary::ends_with(filepath, auxiliary::directory_separator))
+    {
+        filepath = auxiliary::replace_last(
+            filepath, std::string(&auxiliary::directory_separator, 1), "");
+    }
     auto const pos = filepath.find_last_of(auxiliary::directory_separator);
     if (std::string::npos == pos)
     {
@@ -502,7 +508,7 @@ namespace
      */
     template <typename MappingFunction>
     int autoDetectPadding(
-        std::function<Match(std::string const &)> isPartOfSeries,
+        std::function<Match(std::string const &)> const &isPartOfSeries,
         std::string const &directory,
         MappingFunction &&mappingFunction)
     {
@@ -533,11 +539,11 @@ namespace
     }
 
     int autoDetectPadding(
-        std::function<Match(std::string const &)> isPartOfSeries,
+        std::function<Match(std::string const &)> const &isPartOfSeries,
         std::string const &directory)
     {
         return autoDetectPadding(
-            std::move(isPartOfSeries),
+            isPartOfSeries,
             directory,
             [](Series::IterationIndex_t index, std::string const &filename) {
                 (void)index;
@@ -555,7 +561,7 @@ void Series::init(
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
             std::move(ioHandler));
     series.iterations.linkHierarchy(writable());
-    series.iterations.writable().ownKeyWithinParent = {"iterations"};
+    series.iterations.writable().ownKeyWithinParent = "iterations";
 
     series.m_name = input->name;
 
@@ -660,7 +666,7 @@ Given file pattern: ')END"
         break;
     }
     }
-    series.m_lastFlushSuccessful = true;
+    IOHandler()->m_lastFlushSuccessful = true;
 }
 
 void Series::initDefaults(IterationEncoding ie, bool initAll)
@@ -701,11 +707,10 @@ void Series::initDefaults(IterationEncoding ie, bool initAll)
 std::future<void> Series::flush_impl(
     iterations_iterator begin,
     iterations_iterator end,
-    internal::FlushParams flushParams,
+    internal::FlushParams const &flushParams,
     bool flushIOHandler)
 {
-    auto &series = get();
-    series.m_lastFlushSuccessful = true;
+    IOHandler()->m_lastFlushSuccessful = true;
     try
     {
         switch (iterationEncoding())
@@ -721,16 +726,18 @@ std::future<void> Series::flush_impl(
         }
         if (flushIOHandler)
         {
+            IOHandler()->m_lastFlushSuccessful = true;
             return IOHandler()->flush(flushParams);
         }
         else
         {
+            IOHandler()->m_lastFlushSuccessful = true;
             return {};
         }
     }
     catch (...)
     {
-        series.m_lastFlushSuccessful = false;
+        IOHandler()->m_lastFlushSuccessful = false;
         throw;
     }
 }
@@ -738,7 +745,7 @@ std::future<void> Series::flush_impl(
 void Series::flushFileBased(
     iterations_iterator begin,
     iterations_iterator end,
-    internal::FlushParams flushParams,
+    internal::FlushParams const &flushParams,
     bool flushIOHandler)
 {
     auto &series = get();
@@ -855,7 +862,7 @@ void Series::flushFileBased(
 void Series::flushGorVBased(
     iterations_iterator begin,
     iterations_iterator end,
-    internal::FlushParams flushParams,
+    internal::FlushParams const &flushParams,
     bool flushIOHandler)
 {
     auto &series = get();
@@ -917,7 +924,6 @@ void Series::flushGorVBased(
             }
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
-            fCreate.encoding = iterationEncoding();
             IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
@@ -997,7 +1003,6 @@ void Series::readFileBased()
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
     Parameter<Operation::READ_ATT> aRead;
-    fOpen.encoding = iterationEncoding();
 
     if (!auxiliary::directory_exists(IOHandler()->directory))
         throw error::ReadError(
@@ -1013,7 +1018,7 @@ void Series::readFileBased()
         series.m_filenameExtension);
 
     int padding = autoDetectPadding(
-        std::move(isPartOfSeries),
+        isPartOfSeries,
         IOHandler()->directory,
         // foreach found file with `filename` and `index`:
         [&series](IterationIndex_t index, std::string const &filename) {
@@ -1205,18 +1210,14 @@ void Series::readOneIterationFileBased(std::string const &filePath)
             series.m_iterationEncoding = IterationEncoding::fileBased;
         else if (encoding == "groupBased")
         {
-            series.m_iterationEncoding = IterationEncoding::groupBased;
-            /*
-             * Opening a single file of a file-based Series is a valid workflow,
-             * warnings are not necessary here.
-             * Leaving the old warning as a comment, because we might want to
-             * add this back in again if we add some kind of verbosity level
-             * specification or logging.
-             */
-            // std::cerr << "Series constructor called with iteration "
-            //              "regex '%T' suggests loading a "
-            //           << "time series with fileBased iteration "
-            //              "encoding. Loaded file is groupBased.\n";
+            series.m_iterationEncoding = IterationEncoding::fileBased;
+            std::cerr
+                << "Series constructor called with iteration regex '%T' "
+                   "suggests loading a time series with fileBased iteration "
+                   "encoding. Loaded file is groupBased. Will ignore the "
+                   "encoding stated in the file and continue treating this as "
+                   "file-based. Depending on what data the opened files "
+                   "actually contain, this might not yield correct results.\n";
         }
         else if (encoding == "variableBased")
         {
@@ -1270,7 +1271,13 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
-        throw std::runtime_error("Unknown openPMD version - " + version);
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::UnexpectedContent,
+            std::nullopt,
+            "Unknown openPMD version - " + version +
+                ". Consider upgrading your installation of the openPMD-api "
+                "(https://openpmd-api.readthedocs.io).");
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
     readAttributes(ReadMode::IgnoreExisting);
@@ -1311,7 +1318,6 @@ auto Series::readGorVBased(
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
     fOpen.name = series.m_name;
-    fOpen.encoding = iterationEncoding();
     IOHandler()->enqueue(IOTask(this, fOpen));
     IOHandler()->flush(internal::defaultFlushParams);
     series.m_parsePreference = *fOpen.out_parsePreference;
@@ -1444,7 +1450,7 @@ creating new iterations.
     auto readSingleIteration =
         [&series, &pOpen, this](
             IterationIndex_t index,
-            std::string path,
+            std::string const &path,
             bool guardAgainstRereading,
             bool beginStep) -> std::optional<error::ReadError> {
         if (series.iterations.contains(index))
@@ -1842,6 +1848,13 @@ AdvanceStatus Series::advance(
     else
     {
         param.mode = mode;
+        if (iterationEncoding() == IterationEncoding::variableBased &&
+            access::write(IOHandler()->m_frontendAccess) &&
+            mode == AdvanceMode::BEGINSTEP && series.m_wroteAtLeastOneIOStep)
+        {
+            // If the backend does not support steps, we cannot continue here
+            param.isThisStepMandatory = true;
+        }
         IOTask task(&file.m_writable, param);
         IOHandler()->enqueue(task);
     }
@@ -1932,6 +1945,13 @@ AdvanceStatus Series::advance(AdvanceMode mode)
 
     Parameter<Operation::ADVANCE> param;
     param.mode = mode;
+    if (iterationEncoding() == IterationEncoding::variableBased &&
+        access::write(IOHandler()->m_frontendAccess) &&
+        mode == AdvanceMode::BEGINSTEP && series.m_wroteAtLeastOneIOStep)
+    {
+        // If the backend does not support steps, we cannot continue here
+        param.isThisStepMandatory = true;
+    }
     IOTask task(&series.m_writable, param);
     IOHandler()->enqueue(task);
 
@@ -1947,7 +1967,7 @@ void Series::flushStep(bool doFlush)
 {
     auto &series = get();
     if (!series.m_currentlyActiveIterations.empty() &&
-        IOHandler()->m_frontendAccess != Access::READ_ONLY)
+        access::write(IOHandler()->m_frontendAccess))
     {
         /*
          * Warning: changing attribute extents over time (probably) unsupported
@@ -1956,11 +1976,13 @@ void Series::flushStep(bool doFlush)
          * one IO step.
          */
         Parameter<Operation::WRITE_ATT> wAttr;
-        wAttr.changesOverSteps = true;
+        wAttr.changesOverSteps =
+            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
         wAttr.name = "snapshot";
         wAttr.resource = std::vector<unsigned long long>{
             series.m_currentlyActiveIterations.begin(),
             series.m_currentlyActiveIterations.end()};
+        series.m_currentlyActiveIterations.clear();
         wAttr.dtype = Datatype::VEC_ULONGLONG;
         IOHandler()->enqueue(IOTask(&series.iterations, wAttr));
         if (doFlush)
@@ -1968,6 +1990,7 @@ void Series::flushStep(bool doFlush)
             IOHandler()->flush(internal::defaultFlushParams);
         }
     }
+    series.m_wroteAtLeastOneIOStep = true;
 }
 
 auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
@@ -2081,7 +2104,6 @@ void Series::openIteration(IterationIndex_t index, Iteration iteration)
         auto &series = get();
         // open the iteration's file again
         Parameter<Operation::OPEN_FILE> fOpen;
-        fOpen.encoding = iterationEncoding();
         fOpen.name = iterationFilename(index);
         IOHandler()->enqueue(IOTask(this, fOpen));
 
@@ -2156,7 +2178,8 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
         std::map<std::string, Format> const backendDescriptors{
             {"hdf5", Format::HDF5},
             {"adios2", Format::ADIOS2_BP},
-            {"json", Format::JSON}};
+            {"json", Format::JSON},
+            {"toml", Format::TOML}};
         std::string backend;
         getJsonOptionLowerCase(options, "backend", backend);
         if (!backend.empty())
@@ -2261,12 +2284,22 @@ namespace internal
          * `Series` is needlessly flushed a second time. Otherwise, error
          * messages can get very confusing.
          */
-        if (this->m_lastFlushSuccessful && m_writable.IOHandler &&
-            m_writable.IOHandler->has_value())
+        Series impl;
+        impl.setData({this, [](auto const *) {}});
+        if (auto IOHandler = impl.IOHandler();
+            IOHandler && IOHandler->m_lastFlushSuccessful)
         {
-            Series impl{{this, [](auto const *) {}}};
             impl.flush();
-            impl.flushStep(/* doFlush = */ true);
+            /*
+             * In file-based iteration encoding, this must be triggered by
+             * Iteration::endStep() since the "snapshot" attribute is different
+             * for each file.
+             * Also, at this point the files might have already been closed.
+             */
+            if (impl.iterationEncoding() != IterationEncoding::fileBased)
+            {
+                impl.flushStep(/* doFlush = */ true);
+            }
         }
         // Not strictly necessary, but clear the map of iterations
         // This releases the openPMD hierarchy
@@ -2279,14 +2312,8 @@ namespace internal
     }
 } // namespace internal
 
-Series::Series() : Attributable{nullptr}, iterations{}
+Series::Series() : Attributable(NoInit()), iterations{}
 {}
-
-Series::Series(std::shared_ptr<internal::SeriesData> data)
-    : Attributable{data}, m_series{std::move(data)}
-{
-    iterations = m_series->iterations;
-}
 
 #if openPMD_HAVE_MPI
 Series::Series(
@@ -2294,10 +2321,9 @@ Series::Series(
     Access at,
     MPI_Comm comm,
     std::string const &options)
-    : Attributable{nullptr}, m_series{new internal::SeriesData}
+    : Attributable(NoInit())
 {
-    Attributable::setData(m_series);
-    iterations = m_series->iterations;
+    setData(std::make_shared<internal::SeriesData>());
     json::TracingJSON optionsJson =
         json::parseOptions(options, comm, /* considerFiles = */ true);
     auto input = parseInput(filepath);
@@ -2308,7 +2334,8 @@ Series::Series(
         input->format,
         input->filenameExtension,
         comm,
-        optionsJson);
+        optionsJson,
+        filepath);
     init(std::move(handler), std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
@@ -2316,31 +2343,42 @@ Series::Series(
 
 Series::Series(
     std::string const &filepath, Access at, std::string const &options)
-    : Attributable{nullptr}, m_series{new internal::SeriesData}
+    : Attributable(NoInit())
 {
-    Attributable::setData(m_series);
-    iterations = m_series->iterations;
+    setData(std::make_shared<internal::SeriesData>());
     json::TracingJSON optionsJson =
         json::parseOptions(options, /* considerFiles = */ true);
     auto input = parseInput(filepath);
     parseJsonOptions(optionsJson, *input);
     auto handler = createIOHandler(
-        input->path, at, input->format, input->filenameExtension, optionsJson);
+        input->path,
+        at,
+        input->format,
+        input->filenameExtension,
+        optionsJson,
+        filepath);
     init(std::move(handler), std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
 
 Series::operator bool() const
 {
-    return m_series.operator bool();
+    return m_attri.operator bool();
 }
 
 ReadIterations Series::readIterations()
 {
     // Use private constructor instead of copy constructor to avoid
     // object slicing
-    return {
-        this->m_series, IOHandler()->m_frontendAccess, get().m_parsePreference};
+    Series res;
+    res.setData(std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
+    return ReadIterations{
+        std::move(res), IOHandler()->m_frontendAccess, get().m_parsePreference};
+}
+
+void Series::parseBase()
+{
+    readIterations();
 }
 
 WriteIterations Series::writeIterations()
@@ -2356,7 +2394,6 @@ WriteIterations Series::writeIterations()
 void Series::close()
 {
     get().close();
-    m_series.reset();
     m_attri.reset();
 }
 

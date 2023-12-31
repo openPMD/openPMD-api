@@ -11,7 +11,6 @@ using namespace openPMD;
 int main()
 {
 #if openPMD_HAVE_ADIOS2
-    using position_t = double;
     auto backends = openPMD::getFileExtensions();
     if (std::find(backends.begin(), backends.end(), "sst") == backends.end())
     {
@@ -19,7 +18,16 @@ int main()
         return 0;
     }
 
-    Series series = Series("electrons.sst", Access::READ_LINEAR);
+    Series series = Series("electrons.sst", Access::READ_LINEAR, R"(
+{
+  "adios2": {
+    "engine": {
+      "parameters": {
+        "DataTransport": "WAN"
+      }
+    }
+  }
+})");
 
     // `Series::writeIterations()` and `Series::readIterations()` are
     // intentionally restricted APIs that ensure a workflow which also works
@@ -31,15 +39,15 @@ int main()
         std::cout << "Current iteration: " << iteration.iterationIndex
                   << std::endl;
         Record electronPositions = iteration.particles["e"]["position"];
-        std::array<std::shared_ptr<position_t>, 3> loadedChunks;
+        std::array<RecordComponent::shared_ptr_dataset_types, 3> loadedChunks;
         std::array<Extent, 3> extents;
         std::array<std::string, 3> const dimensions{{"x", "y", "z"}};
 
         for (size_t i = 0; i < 3; ++i)
         {
-            std::string dim = dimensions[i];
+            std::string const &dim = dimensions[i];
             RecordComponent rc = electronPositions[dim];
-            loadedChunks[i] = rc.loadChunk<position_t>(
+            loadedChunks[i] = rc.loadChunkVariant(
                 Offset(rc.getDimensionality(), 0), rc.getExtent());
             extents[i] = rc.getExtent();
         }
@@ -51,14 +59,18 @@ int main()
 
         for (size_t i = 0; i < 3; ++i)
         {
-            std::string dim = dimensions[i];
+            std::string const &dim = dimensions[i];
             Extent const &extent = extents[i];
             std::cout << "\ndim: " << dim << "\n" << std::endl;
             auto chunk = loadedChunks[i];
-            for (size_t j = 0; j < extent[0]; ++j)
-            {
-                std::cout << chunk.get()[j] << ", ";
-            }
+            std::visit(
+                [&extent](auto &shared_ptr) {
+                    for (size_t j = 0; j < extent[0]; ++j)
+                    {
+                        std::cout << shared_ptr.get()[j] << ", ";
+                    }
+                },
+                chunk);
             std::cout << "\n----------\n" << std::endl;
         }
     }

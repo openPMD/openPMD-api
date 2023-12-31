@@ -25,6 +25,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 #include <algorithm>
 #include <climits>
@@ -37,23 +38,22 @@ namespace openPMD
 {
 namespace internal
 {
-    RecordComponentData::RecordComponentData()
-    {
-        RecordComponent impl{
-            std::shared_ptr<RecordComponentData>{this, [](auto const *) {}}};
-        impl.setUnitSI(1);
-    }
+    RecordComponentData::RecordComponentData() = default;
 } // namespace internal
 
-RecordComponent::RecordComponent() : BaseRecordComponent{nullptr}
+RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 {
-    BaseRecordComponent::setData(m_recordComponentData);
+    setData(std::make_shared<Data_t>());
 }
 
-RecordComponent::RecordComponent(
-    std::shared_ptr<internal::RecordComponentData> data)
-    : BaseRecordComponent{data}, m_recordComponentData{std::move(data)}
+RecordComponent::RecordComponent(NoInit) : BaseRecordComponent(NoInit())
 {}
+
+RecordComponent::RecordComponent(BaseRecord<RecordComponent> const &baseRecord)
+    : BaseRecordComponent(NoInit())
+{
+    setData(baseRecord.m_recordComponentData);
+}
 
 // We need to instantiate this somewhere otherwise there might be linker issues
 // despite this thing actually being constepxr
@@ -258,10 +258,16 @@ void RecordComponent::flush(
                     "before flushing (see RecordComponent::resetDataset()).");
             }
         }
+        if (!containsAttribute("unitSI"))
+        {
+            setUnitSI(1);
+        }
         if (!written())
         {
             if (constant())
             {
+                bool isVBased = retrieveSeries().iterationEncoding() ==
+                    IterationEncoding::variableBased;
                 Parameter<Operation::CREATE_PATH> pCreate;
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
@@ -269,11 +275,21 @@ void RecordComponent::flush(
                 aWrite.name = "value";
                 aWrite.dtype = rc.m_constantValue.dtype;
                 aWrite.resource = rc.m_constantValue.getResource();
+                if (isVBased)
+                {
+                    aWrite.changesOverSteps = Parameter<
+                        Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                }
                 IOHandler()->enqueue(IOTask(this, aWrite));
                 aWrite.name = "shape";
                 Attribute a(getExtent());
                 aWrite.dtype = a.dtype;
                 aWrite.resource = a.getResource();
+                if (isVBased)
+                {
+                    aWrite.changesOverSteps = Parameter<
+                        Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                }
                 IOHandler()->enqueue(IOTask(this, aWrite));
             }
             else
@@ -291,11 +307,18 @@ void RecordComponent::flush(
         {
             if (constant())
             {
+                bool isVBased = retrieveSeries().iterationEncoding() ==
+                    IterationEncoding::variableBased;
                 Parameter<Operation::WRITE_ATT> aWrite;
                 aWrite.name = "shape";
                 Attribute a(getExtent());
                 aWrite.dtype = a.dtype;
                 aWrite.resource = a.getResource();
+                if (isVBased)
+                {
+                    aWrite.changesOverSteps = Parameter<
+                        Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                }
                 IOHandler()->enqueue(IOTask(this, aWrite));
             }
             else
@@ -460,5 +483,24 @@ void RecordComponent::storeChunk(
     dWrite.data = std::move(buffer);
     auto &rc = get();
     rc.m_chunks.push(IOTask(this, std::move(dWrite)));
+}
+
+namespace
+{
+    struct LoadChunkVariant
+    {
+        template <typename T>
+        static RecordComponent::shared_ptr_dataset_types
+        call(RecordComponent &rc, Offset o, Extent e)
+        {
+            return rc.loadChunk<T>(std::move(o), std::move(e));
+        }
+    };
+} // namespace
+
+auto RecordComponent::loadChunkVariant(Offset o, Extent e)
+    -> shared_ptr_dataset_types
+{
+    return visit<LoadChunkVariant>(std::move(o), std::move(e));
 }
 } // namespace openPMD

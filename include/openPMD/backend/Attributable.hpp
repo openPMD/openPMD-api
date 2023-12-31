@@ -81,7 +81,7 @@ namespace internal
         A_MAP m_attributes;
     };
 
-    template <typename>
+    template <typename, typename>
     class BaseRecordData;
 } // namespace internal
 
@@ -99,7 +99,7 @@ class Attributable
     friend class BaseRecord;
     template <typename T_elem>
     friend class BaseRecordInterface;
-    template <typename>
+    template <typename, typename>
     friend class internal::BaseRecordData;
     template <typename T, typename T_key, typename T_container>
     friend class Container;
@@ -111,14 +111,16 @@ class Attributable
     friend class WriteIterations;
 
 protected:
-    std::shared_ptr<internal::AttributableData> m_attri{
-        new internal::AttributableData()};
+    // tag for internal constructor
+    struct NoInit
+    {};
 
-    // Should not be called publicly, only by implementing classes
-    Attributable(std::shared_ptr<internal::AttributableData>);
+    using Data_t = internal::AttributableData;
+    std::shared_ptr<Data_t> m_attri;
 
 public:
     Attributable();
+    Attributable(NoInit);
 
     virtual ~Attributable() = default;
 
@@ -223,6 +225,7 @@ public:
          * Notice that RecordComponent::SCALAR is included in this list, too.
          */
         std::vector<std::string> group;
+        Access access;
 
         /** Reconstructs a path that can be passed to a Series constructor */
         std::string filePath() const;
@@ -252,7 +255,7 @@ OPENPMD_protected
     Iteration &containingIteration();
     /** @} */
 
-    void seriesFlush(internal::FlushParams);
+    void seriesFlush(internal::FlushParams const &);
 
     void flushAttributes(internal::FlushParams const &);
 

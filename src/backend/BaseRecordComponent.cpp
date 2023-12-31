@@ -85,13 +85,23 @@ ChunkTable BaseRecordComponent::availableChunks()
     return std::move(*param.chunks);
 }
 
-BaseRecordComponent::BaseRecordComponent(
-    std::shared_ptr<internal::BaseRecordComponentData> data)
-    : Attributable{data}, m_baseRecordComponentData{std::move(data)}
+BaseRecordComponent::BaseRecordComponent() : Attributable(NoInit())
+{
+    setData(std::make_shared<Data_t>());
+}
+
+BaseRecordComponent::BaseRecordComponent(NoInit) : Attributable(NoInit())
 {}
 
-BaseRecordComponent::BaseRecordComponent() : Attributable{nullptr}
+void BaseRecordComponent::setDatasetDefined(
+    internal::BaseRecordComponentData &data)
 {
-    Attributable::setData(m_baseRecordComponentData);
+    data.m_datasetDefined = true;
+}
+
+bool BaseRecordComponent::datasetDefined() const
+{
+    auto &data = get();
+    return data.m_datasetDefined;
 }
 } // namespace openPMD

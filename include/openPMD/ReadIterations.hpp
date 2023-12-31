@@ -57,14 +57,28 @@ class SeriesIterator
         std::set<Iteration::IterationIndex_t> ignoreIterations;
     };
 
-    std::shared_ptr<SharedData> m_data;
+    /*
+     * The shared data is never empty, emptiness is indicated by std::optional
+     */
+    std::shared_ptr<std::optional<SharedData>> m_data =
+        std::make_shared<std::optional<SharedData>>(std::nullopt);
+
+    SharedData &get()
+    {
+        return m_data->value();
+    }
+    SharedData const &get() const
+    {
+        return m_data->value();
+    }
 
 public:
     //! construct the end() iterator
     explicit SeriesIterator();
 
     SeriesIterator(
-        Series, std::optional<internal::ParsePreference> parsePreference);
+        Series const &,
+        std::optional<internal::ParsePreference> const &parsePreference);
 
     SeriesIterator &operator++();
 
@@ -79,7 +93,7 @@ public:
 private:
     inline bool setCurrentIteration()
     {
-        auto &data = *m_data;
+        auto &data = get();
         if (data.iterationsInCurrentStep.empty())
         {
             std::cerr << "[ReadIterations] Encountered a step without "
@@ -94,7 +108,7 @@ private:
 
     inline std::optional<uint64_t> peekCurrentIteration()
     {
-        auto &data = *m_data;
+        auto &data = get();
         if (data.iterationsInCurrentStep.empty())
         {
             return std::nullopt;
@@ -124,6 +138,8 @@ private:
     void deactivateDeadIteration(iteration_index_t);
 
     void initSeriesInLinearReadMode();
+
+    void close();
 };
 
 /**
@@ -151,7 +167,6 @@ private:
     using iterator_t = SeriesIterator;
 
     Series m_series;
-    std::optional<SeriesIterator> alreadyOpened;
     std::optional<internal::ParsePreference> m_parsePreference;
 
     ReadIterations(

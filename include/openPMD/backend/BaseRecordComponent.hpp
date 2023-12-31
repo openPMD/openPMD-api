@@ -35,7 +35,7 @@ namespace openPMD
 {
 namespace internal
 {
-    class BaseRecordComponentData : public AttributableData
+    class BaseRecordComponentData : virtual public AttributableData
     {
     public:
         /**
@@ -49,24 +49,85 @@ namespace internal
          * instead defined via light-weight attributes.
          */
         bool m_isConstant = false;
+        /**
+         * Tracks if there was any write access to the record component.
+         * Necessary in BaseRecord<T> to track if the scalar component has been
+         * used and is used by BaseRecord<T> to determine the return value of
+         * the BaseRecord<T>::scalar() method.
+         */
+        bool m_datasetDefined = false;
 
         BaseRecordComponentData(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData(BaseRecordComponentData &&) = delete;
-
         BaseRecordComponentData &
         operator=(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData &operator=(BaseRecordComponentData &&) = delete;
 
         BaseRecordComponentData() = default;
+
+        virtual void reset()
+        {
+            m_dataset = std::nullopt;
+            m_isConstant = false;
+            m_datasetDefined = false;
+        }
     };
 } // namespace internal
 
-class BaseRecordComponent : public Attributable
+template <typename>
+class BaseRecord;
+
+class BaseRecordComponent : virtual public Attributable
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
 
 public:
+    /*
+     * Need to define these manually due to the virtual inheritance from
+     * Attributable.
+     * Otherwise, they would only run from the most derived class
+     * if explicitly called.
+     * If not defining these, a user could destroy copy/move constructors/
+     * assignment operators by deriving from any class that has a virtual
+     * Attributable somewhere.
+     * Care must be taken in move constructors/assignment operators to not move
+     * multiple times (which could happen in diamond inheritance situations).
+     */
+
+    BaseRecordComponent(BaseRecordComponent const &other)
+        : Attributable(NoInit())
+    {
+        m_attri = other.m_attri;
+        m_baseRecordComponentData = other.m_baseRecordComponentData;
+    }
+
+    BaseRecordComponent(BaseRecordComponent &&other) : Attributable(NoInit())
+    {
+        if (other.m_attri)
+        {
+            m_attri = std::move(other.m_attri);
+        }
+        m_baseRecordComponentData = std::move(other.m_baseRecordComponentData);
+    }
+
+    BaseRecordComponent &operator=(BaseRecordComponent const &other)
+    {
+        m_attri = other.m_attri;
+        m_baseRecordComponentData = other.m_baseRecordComponentData;
+        return *this;
+    }
+
+    BaseRecordComponent &operator=(BaseRecordComponent &&other)
+    {
+        if (other.m_attri)
+        {
+            m_attri = std::move(other.m_attri);
+        }
+        m_baseRecordComponentData = std::move(other.m_baseRecordComponentData);
+        return *this;
+    }
+
     double unitSI() const;
 
     BaseRecordComponent &resetDatatype(Datatype);
@@ -102,29 +163,31 @@ public:
     ChunkTable availableChunks();
 
 protected:
-    std::shared_ptr<internal::BaseRecordComponentData>
-        m_baseRecordComponentData{new internal::BaseRecordComponentData()};
+    using Data_t = internal::BaseRecordComponentData;
+    std::shared_ptr<Data_t> m_baseRecordComponentData;
 
-    inline internal::BaseRecordComponentData const &get() const
+    inline Data_t const &get() const
     {
         return *m_baseRecordComponentData;
     }
 
-    inline internal::BaseRecordComponentData &get()
+    inline Data_t &get()
     {
         return *m_baseRecordComponentData;
     }
 
-    inline void setData(std::shared_ptr<internal::BaseRecordComponentData> data)
+    inline void setData(std::shared_ptr<Data_t> data)
     {
         m_baseRecordComponentData = std::move(data);
         Attributable::setData(m_baseRecordComponentData);
     }
 
-    BaseRecordComponent(std::shared_ptr<internal::BaseRecordComponentData>);
+    virtual void setDatasetDefined(Data_t &);
 
-private:
+    bool datasetDefined() const;
+
     BaseRecordComponent();
+    BaseRecordComponent(NoInit);
 }; // BaseRecordComponent
 
 namespace detail

@@ -7,9 +7,9 @@ C++ & Python API for Scientific I/O with openPMD
 [![Gitter chat](https://img.shields.io/gitter/room/openPMD/API)](https://gitter.im/openPMD/API)
 ![Supported Platforms][api-platforms]
 [![License](https://img.shields.io/badge/license-LGPLv3-blue)](https://www.gnu.org/licenses/lgpl-3.0.html)
-[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27.svg)](https://doi.org/10.14278/rodare.27)  
+[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27.svg)](https://doi.org/10.14278/rodare.27)
 [![CodeFactor](https://www.codefactor.io/repository/github/openpmd/openpmd-api/badge)](https://www.codefactor.io/repository/github/openpmd/openpmd-api)
-[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge)](https://coveralls.io/github/openPMD/openPMD-api)  
+[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge)](https://coveralls.io/github/openPMD/openPMD-api)
 [![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](https://openpmd-api.readthedocs.io/en/latest/?badge=latest)
 [![Linux/OSX Build Status dev](https://travis-ci.com/openPMD/openPMD-api.svg?branch=dev)](https://travis-ci.com/openPMD/openPMD-api)
 [![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
@@ -101,7 +101,7 @@ Required:
 
 Shipped internally in `share/openPMD/thirdParty/`:
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.10+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.10.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [pybind11](https://github.com/pybind/pybind11) 2.11.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 * [toml11](https://github.com/ToruNiina/toml11) 3.7.1+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
 
@@ -115,8 +115,8 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.7 - 3.11
-  * pybind11 2.10.1+
+  * Python 3.8 - 3.12
+  * pybind11 2.11.1+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)
@@ -195,7 +195,7 @@ python3 -m pip install openpmd-api
 If MPI-support shall be enabled, we always have to recompile:
 ```bash
 # optional:                                    --user
-python3 -m pip install -U pip setuptools wheel
+python3 -m pip install -U pip packaging setuptools wheel
 python3 -m pip install -U cmake
 
 # optional:                                                                   --user
@@ -267,7 +267,7 @@ The following options allow to switch to external installs:
 | CMake Option                    | Values     | Library       | Version  |
 |---------------------------------|------------|---------------|----------|
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.10+ |
-| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.10.1+ |
+| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.11.1+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |   3.9.1+ |
 | `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |   3.7.1+ |
 
@@ -372,7 +372,7 @@ openPMD-api is developed by many people.
 It was initially started by the [Computational Radiation Physics Group](https://hzdr.de/crp) at [HZDR](https://www.hzdr.de/) as successor to [libSplash](https://github.com/ComputationalRadiationPhysics/libSplash/), generalizing the [successful HDF5 & ADIOS1 implementations](https://arxiv.org/abs/1706.00522) in [PIConGPU](https://github.com/ComputationalRadiationPhysics/picongpu).
 The following people and institutions [contributed](https://github.com/openPMD/openPMD-api/graphs/contributors) to openPMD-api:
 
-* [Axel Huebl (HZDR, now LBNL)](https://github.com/ax3l):
+* [Axel Huebl (LBNL, previously HZDR)](https://github.com/ax3l):
   project lead, releases, documentation, automated CI/CD, Python bindings, Dask, installation & packaging, prior reference implementations
 * [Franz Poeschel (CASUS)](https://github.com/franzpoeschel):
   JSON & ADIOS2 backend, data staging/streaming, reworked class design
@@ -380,6 +380,12 @@ The following people and institutions [contributed](https://github.com/openPMD/o
   initial library design and implementation with HDF5 & ADIOS1 backend
 * [Junmin Gu (LBNL)](https://github.com/guj):
   non-collective parallel I/O fixes, ADIOS improvements, benchmarks
+
+Maintained by the following research groups:
+
+* [Computational Radiation Physics (CRD)](https://www.casus.science/casus/team/) at CASUS/HZDR, led by [Michael Bussmann](https://github.com/bussmann)
+* [Accelerator Modeling Program (AMP)](https://atap.lbl.gov/accelerator-modeling-program/) at LBNL, led by [Jean-Luc Vay](https://github.com/jlvay)
+* [Scientific Data Management (SDM)](https://crd.lbl.gov/divisions/scidata/sdm/) at LBNL, led by [Kesheng (John) Wu](https://github.com/john18)
 
 Further thanks go to improvements and contributions from:
 
@@ -428,6 +434,7 @@ Previously supported by the Consortium for Advanced Modeling of Particles Accele
 Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration).
 This project has received funding from the European Unions Horizon 2020 research and innovation programme under grant agreement No 654220.
 This work was partially funded by the Center of Advanced Systems Understanding (CASUS), which is financed by Germany's Federal Ministry of Education and Research (BMBF) and by the Saxon Ministry for Science, Culture and Tourism (SMWK) with tax funds on the basis of the budget approved by the Saxon State Parliament.
+Supported by the HElmholtz Laser Plasma Metadata Initiative (HELPMI) project (ZT-I-PF-3-066), funded by the "Initiative and Networking Fund" of the Helmholtz Association in the framework of the "Helmholtz Metadata Collaboration" project call 2022.
 
 ### Transitive Contributions
 

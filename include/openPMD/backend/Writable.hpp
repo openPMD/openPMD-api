@@ -50,6 +50,10 @@ namespace internal
     class AttributableData;
     class SeriesData;
 } // namespace internal
+namespace detail
+{
+    struct BufferedActions;
+}
 
 /** @brief Layer to mirror structure of logical data and persistent data in
  * file.
@@ -79,9 +83,11 @@ class Writable final
     friend class Record;
     friend class AbstractIOHandlerImpl;
     friend class ADIOS2IOHandlerImpl;
+    friend struct detail::BufferedActions;
     friend class HDF5IOHandlerImpl;
     friend class ParallelHDF5IOHandlerImpl;
-    friend class AbstractIOHandlerImplCommon<ADIOS2FilePosition>;
+    template <typename>
+    friend class AbstractIOHandlerImplCommon;
     friend class JSONIOHandlerImpl;
     friend struct test::TestHelper;
     friend std::string concrete_h5_file_position(Writable *);
@@ -113,7 +119,7 @@ public:
 OPENPMD_private
     // clang-format on
 
-    void seriesFlush(internal::FlushParams);
+    void seriesFlush(internal::FlushParams const &);
     /*
      * These members need to be shared pointers since distinct instances of
      * Writable may share them.
@@ -131,12 +137,10 @@ OPENPMD_private
     Writable *parent = nullptr;
     bool dirty = true;
     /**
-     * If parent is not null, then this is a vector of keys such that:
-     * &(*parent)[key_1]...[key_n] == this
-     * (Notice that scalar record components do not link their direct parent,
-     * but instead their parent's parent, hence a vector of keys)
+     * If parent is not null, then this is a key such that:
+     * &(*parent)[key] == this
      */
-    std::vector<std::string> ownKeyWithinParent;
+    std::string ownKeyWithinParent;
     /**
      * @brief Whether a Writable has been written to the backend.
      *

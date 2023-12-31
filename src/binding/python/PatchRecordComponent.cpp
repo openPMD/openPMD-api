@@ -18,16 +18,16 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include "openPMD/backend/PatchRecordComponent.hpp"
 
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
-#include "openPMD/backend/PatchRecordComponent.hpp"
-#include "openPMD/binding/python/Numpy.hpp"
 
-namespace py = pybind11;
-using namespace openPMD;
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
+#include "openPMD/binding/python/Numpy.hpp"
+#include "openPMD/binding/python/RecordComponent.hpp"
 
 namespace
 {
@@ -45,12 +45,39 @@ struct Prc_Load
 
 void init_PatchRecordComponent(py::module &m)
 {
+    auto py_prc_cnt =
+        declare_container<PyPatchRecordComponentContainer, Attributable>(
+            m, "Patch_Record_Component_Container");
+
     py::class_<PatchRecordComponent, BaseRecordComponent>(
         m, "Patch_Record_Component")
         .def_property(
             "unit_SI",
             &BaseRecordComponent::unitSI,
             &PatchRecordComponent::setUnitSI)
+
+        .def(
+            "__repr__",
+            [](PatchRecordComponent const &rc) {
+                std::stringstream stream;
+                stream << "<openPMD.Patch_Record_Component of type '"
+                       << rc.getDatatype() << "' and with extent ";
+                if (auto extent = rc.getExtent(); extent.empty())
+                {
+                    stream << "[]>";
+                }
+                else
+                {
+                    auto begin = extent.begin();
+                    stream << '[' << *begin++;
+                    for (; begin != extent.end(); ++begin)
+                    {
+                        stream << ", " << *begin;
+                    }
+                    stream << "]>";
+                }
+                return stream.str();
+            })
 
         .def("reset_dataset", &PatchRecordComponent::resetDataset)
         .def_property_readonly(
@@ -71,7 +98,7 @@ void init_PatchRecordComponent(py::module &m)
         // all buffer types
         .def(
             "store",
-            [](PatchRecordComponent &prc, uint64_t idx, py::buffer a) {
+            [](PatchRecordComponent &prc, uint64_t idx, py::buffer const &a) {
                 py::buffer_info buf = a.request();
                 auto const dtype = dtype_from_bufferformat(buf.format);
 
@@ -175,4 +202,16 @@ void init_PatchRecordComponent(py::module &m)
 
         // TODO remove in future versions (deprecated)
         .def("set_unit_SI", &PatchRecordComponent::setUnitSI);
+
+    finalize_container<PyPatchRecordComponentContainer>(py_prc_cnt);
+    addRecordComponentSetGet(
+        finalize_container<PyBaseRecordPatchRecordComponent>(
+            declare_container<
+                PyBaseRecordPatchRecordComponent,
+                PyPatchRecordComponentContainer,
+                PatchRecordComponent>(m, "Base_Record_Patch_Record_Component")))
+        .def_property_readonly(
+            "scalar",
+            &BaseRecord<PatchRecordComponent>::scalar,
+            &docstring::is_scalar[1]);
 }

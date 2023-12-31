@@ -26,11 +26,11 @@
 namespace openPMD
 {
 Dataset::Dataset(Datatype d, Extent e, std::string options_in)
-    : extent{e}
-    , dtype{d}
-    , rank{static_cast<uint8_t>(e.size())}
-    , options{std::move(options_in)}
-{}
+    : extent{std::move(e)}, dtype{d}, options{std::move(options_in)}
+{
+    // avoid initialization order issues
+    rank = static_cast<uint8_t>(extent.size());
+}
 
 Dataset::Dataset(Extent e) : Dataset(Datatype::UNDEFINED, std::move(e))
 {}

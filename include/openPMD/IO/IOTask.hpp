@@ -30,6 +30,7 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
@@ -47,36 +48,19 @@ Writable *getWritable(Attributable *);
 /** Type of IO operation between logical and persistent data.
  */
 OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
-    CREATE_FILE,
-    CHECK_FILE,
-    OPEN_FILE,
-    CLOSE_FILE,
+    CREATE_FILE,      CHECK_FILE,     OPEN_FILE,     CLOSE_FILE,
     DELETE_FILE,
 
-    CREATE_PATH,
-    CLOSE_PATH,
-    OPEN_PATH,
-    DELETE_PATH,
+    CREATE_PATH,      CLOSE_PATH,     OPEN_PATH,     DELETE_PATH,
     LIST_PATHS,
 
-    CREATE_DATASET,
-    EXTEND_DATASET,
-    OPEN_DATASET,
-    DELETE_DATASET,
-    WRITE_DATASET,
-    READ_DATASET,
-    LIST_DATASETS,
-    GET_BUFFER_VIEW,
+    CREATE_DATASET,   EXTEND_DATASET, OPEN_DATASET,  DELETE_DATASET,
+    WRITE_DATASET,    READ_DATASET,   LIST_DATASETS, GET_BUFFER_VIEW,
 
-    DELETE_ATT,
-    WRITE_ATT,
-    READ_ATT,
-    LIST_ATTS,
+    DELETE_ATT,       WRITE_ATT,      READ_ATT,      LIST_ATTS,
 
     ADVANCE,
     AVAILABLE_CHUNKS, //!< Query chunks that can be loaded in a dataset
-    KEEP_SYNCHRONOUS, //!< Keep two items in the object model synchronous with
-                      //!< each other
     DEREGISTER //!< Inform the backend that an object has been deleted.
 }; // note: if you change the enum members here, please update
    // docs/source/dev/design.rst
@@ -141,7 +125,6 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_FILE>
     }
 
     std::string name = "";
-    IterationEncoding encoding = IterationEncoding::groupBased;
 };
 
 template <>
@@ -188,12 +171,6 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
     }
 
     std::string name = "";
-    /*
-     * The backends might need to ensure availability of certain features
-     * for some iteration encodings, e.g. availability of ADIOS steps for
-     * variableBased encoding.
-     */
-    IterationEncoding encoding = IterationEncoding::groupBased;
     using ParsePreference = internal::ParsePreference;
     std::shared_ptr<ParsePreference> out_parsePreference =
         std::make_shared<ParsePreference>(ParsePreference::UpFront);
@@ -561,7 +538,13 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
      * otherwise writing should be skipped.
      * The frontend is responsible for handling both situations.
      */
-    bool changesOverSteps = false;
+    enum class ChangesOverSteps
+    {
+        No,
+        Yes,
+        IfPossible
+    };
+    ChangesOverSteps changesOverSteps = ChangesOverSteps::No;
     Attribute::resource resource;
 };
 
@@ -625,6 +608,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::ADVANCE>
 
     //! input parameter
     AdvanceMode mode;
+    bool isThisStepMandatory = false;
     //! output parameter
     std::shared_ptr<AdvanceStatus> status =
         std::make_shared<AdvanceStatus>(AdvanceStatus::OK);
@@ -651,37 +635,26 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::AVAILABLE_CHUNKS>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::KEEP_SYNCHRONOUS>
-    : public AbstractParameter
-{
-    Parameter() = default;
-    Parameter(Parameter &&) = default;
-    Parameter(Parameter const &) = default;
-    Parameter &operator=(Parameter &&) = default;
-    Parameter &operator=(Parameter const &) = default;
-
-    std::unique_ptr<AbstractParameter> to_heap() && override
-    {
-        return std::make_unique<Parameter<Operation::KEEP_SYNCHRONOUS>>(
-            std::move(*this));
-    }
-
-    Writable *otherWritable;
-};
-
-template <>
 struct OPENPMDAPI_EXPORT Parameter<Operation::DEREGISTER>
     : public AbstractParameter
 {
-    Parameter() = default;
-    Parameter(Parameter const &) : AbstractParameter()
+    Parameter(void const *ptr_in) : former_parent(ptr_in)
     {}
+
+    Parameter(Parameter const &) = default;
+    Parameter(Parameter &&) = default;
+
+    Parameter &operator=(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
 
     std::unique_ptr<AbstractParameter> to_heap() && override
     {
         return std::make_unique<Parameter<Operation::DEREGISTER>>(
             std::move(*this));
     }
+
+    // Just for verbose logging.
+    void const *former_parent = nullptr;
 };
 
 /** @brief Self-contained description of a single IO operation.

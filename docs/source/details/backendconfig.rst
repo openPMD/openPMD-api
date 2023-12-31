@@ -113,7 +113,7 @@ A full configuration of the ADIOS2 backend:
 .. literalinclude:: adios2.toml
    :language: toml
 
-All keys found under ``adios2.dataset`` are applicable globally as well as per dataset, keys found under ``adios2.engine`` only globally.
+All keys found under ``adios2.dataset`` are applicable globally as well as per dataset, any other keys such as those found under ``adios2.engine`` only globally.
 Explanation of the single keys:
 
 * ``adios2.engine.type``: A string that is passed directly to ``adios2::IO:::SetEngine`` for choosing the ADIOS2 engine to be used.
@@ -121,7 +121,6 @@ Explanation of the single keys:
 * ``adios2.engine.parameters``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for the available engine parameters.
   The openPMD-api does not interpret these values and instead simply forwards them to ADIOS2.
-* ``adios2.engine.usesteps``: Described more closely in the documentation for the :ref:`ADIOS2 backend<backends-adios2>` (usesteps).
 * ``adios2.engine.preferred_flush_target`` Only relevant for BP5 engine, possible values are ``"disk"`` and ``"buffer"`` (default: ``"disk"``).
 
   * If ``"disk"``, data will be moved to disk on every flush.
@@ -142,6 +141,11 @@ Explanation of the single keys:
   The openPMD-api will automatically use a fallback implementation for the span-based Put() API if any operator is added to a dataset.
   This workaround is enabled on a per-dataset level.
   The workaround can be completely deactivated by specifying ``{"adios2": {"use_span_based_put": true}}`` or it can alternatively be activated indiscriminately for all datasets by specifying ``{"adios2": {"use_span_based_put": false}}``.
+* ``adios2.attribute_writing_ranks``: A list of MPI ranks that define metadata. ADIOS2 attributes will be written only from those ranks, any other ranks will be ignored. Can be either a list of integers or a single integer.
+
+.. hint::
+
+  Specifying ``adios2.attribute_writing_ranks`` can lead to serious serialization performance improvements at large scale.
 
 Operations specified inside ``adios2.dataset.operators`` will be applied to ADIOS2 datasets in writing as well as in reading.
 Beginning with ADIOS2 2.8.0, this can be used to specify decompressor settings:

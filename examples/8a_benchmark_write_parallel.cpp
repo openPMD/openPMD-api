@@ -240,8 +240,7 @@ std::vector<std::string> getBackends()
 {
     std::vector<std::string> res;
 #if openPMD_HAVE_ADIOS2
-    if (auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") != "ADIOS1")
-        res.emplace_back(".bp");
+    res.emplace_back(".bp");
 #endif
 
 #if openPMD_HAVE_HDF5
@@ -821,8 +820,8 @@ void AbstractPattern::storeParticles(ParticleSpecies &currSpecies, int &step)
         openPMD::Dataset(openPMD::determineDatatype<uint64_t>(), {np});
     auto const realDataSet =
         openPMD::Dataset(openPMD::determineDatatype<double>(), {np});
-    currSpecies["id"][RecordComponent::SCALAR].resetDataset(intDataSet);
-    currSpecies["charge"][RecordComponent::SCALAR].resetDataset(realDataSet);
+    currSpecies["id"].resetDataset(intDataSet);
+    currSpecies["charge"].resetDataset(realDataSet);
 
     currSpecies["position"]["x"].resetDataset(realDataSet);
 
@@ -838,12 +837,10 @@ void AbstractPattern::storeParticles(ParticleSpecies &currSpecies, int &step)
         if (count > 0)
         {
             auto ids = createData<uint64_t>(count, offset, 1);
-            currSpecies["id"][RecordComponent::SCALAR].storeChunk(
-                ids, {offset}, {count});
+            currSpecies["id"].storeChunk(ids, {offset}, {count});
 
             auto charges = createData<double>(count, 0.1 * step, 0.0001);
-            currSpecies["charge"][RecordComponent::SCALAR].storeChunk(
-                charges, {offset}, {count});
+            currSpecies["charge"].storeChunk(charges, {offset}, {count});
 
             auto mx = createData<double>(count, 1.0 * step, 0.0002);
             currSpecies["position"]["x"].storeChunk(mx, {offset}, {count});

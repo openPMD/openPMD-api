@@ -24,11 +24,14 @@
 
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
-#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Numpy.hpp"
 #include "openPMD/binding/python/Pickle.hpp"
+#include "openPMD/binding/python/RecordComponent.hpp"
 
 #include <algorithm>
 #include <complex>
@@ -41,9 +44,6 @@
 #include <tuple>
 #include <type_traits>
 #include <vector>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 /** Convert a py::tuple of py::slices to Offset & Extent
  *
@@ -718,7 +718,7 @@ inline void load_chunk(
  *
  * Called with a py::tuple of slices.
  */
-inline py::array load_chunk(RecordComponent &r, py::tuple const &slices)
+py::array load_chunk(RecordComponent &r, py::tuple const &slices)
 {
     uint8_t ndim = r.getDimensionality();
     auto const full_extent = r.getExtent();
@@ -762,12 +762,32 @@ void init_RecordComponent(py::module &m)
             return view.currentView();
         });
 
+    auto py_rc_cnt =
+        declare_container<PyRecordComponentContainer, Attributable>(
+            m, "Record_Component_Container");
+
     py::class_<RecordComponent, BaseRecordComponent> cl(m, "Record_Component");
     cl.def(
           "__repr__",
           [](RecordComponent const &rc) {
-              return "<openPMD.Record_Component of dimensionality '" +
-                  std::to_string(rc.getDimensionality()) + "'>";
+              std::stringstream stream;
+              stream << "<openPMD.Record_Component of type '"
+                     << rc.getDatatype() << "' and with extent ";
+              if (auto extent = rc.getExtent(); extent.empty())
+              {
+                  stream << "[]>";
+              }
+              else
+              {
+                  auto begin = extent.begin();
+                  stream << '[' << *begin++;
+                  for (; begin != extent.end(); ++begin)
+                  {
+                      stream << ", " << *begin;
+                  }
+                  stream << "]>";
+              }
+              return stream.str();
           })
 
         .def_property(
@@ -917,60 +937,10 @@ void init_RecordComponent(py::module &m)
         .def(
             "make_empty",
             [](RecordComponent &rc,
-               pybind11::dtype const dt,
+               pybind11::dtype const &dt,
                uint8_t dimensionality) {
                 return rc.makeEmpty(dtype_from_numpy(dt), dimensionality);
             })
-
-        // TODO if we also want to support scalar arrays, we have to switch
-        //      py::array for py::buffer as in Attributable
-        //      https://github.com/pybind/pybind11/pull/1537
-
-        // slicing protocol
-        .def(
-            "__getitem__",
-            [](RecordComponent &r, py::tuple const &slices) {
-                return load_chunk(r, slices);
-            },
-            py::arg("tuple of index slices"))
-        .def(
-            "__getitem__",
-            [](RecordComponent &r, py::slice const &slice_obj) {
-                auto const slices = py::make_tuple(slice_obj);
-                return load_chunk(r, slices);
-            },
-            py::arg("slice"))
-        .def(
-            "__getitem__",
-            [](RecordComponent &r, py::int_ const &slice_obj) {
-                auto const slices = py::make_tuple(slice_obj);
-                return load_chunk(r, slices);
-            },
-            py::arg("axis index"))
-
-        .def(
-            "__setitem__",
-            [](RecordComponent &r, py::tuple const &slices, py::array &a) {
-                store_chunk(r, a, slices);
-            },
-            py::arg("tuple of index slices"),
-            py::arg("array with values to assign"))
-        .def(
-            "__setitem__",
-            [](RecordComponent &r, py::slice const &slice_obj, py::array &a) {
-                auto const slices = py::make_tuple(slice_obj);
-                store_chunk(r, a, slices);
-            },
-            py::arg("slice"),
-            py::arg("array with values to assign"))
-        .def(
-            "__setitem__",
-            [](RecordComponent &r, py::int_ const &slice_obj, py::array &a) {
-                auto const slices = py::make_tuple(slice_obj);
-                store_chunk(r, a, slices);
-            },
-            py::arg("axis index"),
-            py::arg("array with values to assign"))
 
         // deprecated: pass-through C++ API
         .def(
@@ -1099,7 +1069,8 @@ void init_RecordComponent(py::module &m)
             py::arg_v("extent", Extent(1, -1u), "array.shape"))
 
         .def_property_readonly_static(
-            "SCALAR", [](py::object) { return RecordComponent::SCALAR; })
+            "SCALAR",
+            [](py::object const &) { return RecordComponent::SCALAR; })
 
         // TODO remove in future versions (deprecated)
         .def("set_unit_SI", &RecordComponent::setUnitSI) // deprecated
@@ -1110,6 +1081,20 @@ void init_RecordComponent(py::module &m)
             return series.iterations[n_it]
                 .particles[group.at(3)][group.at(4)][group.at(5)];
         });
+
+    addRecordComponentSetGet(cl);
+
+    finalize_container<PyRecordComponentContainer>(py_rc_cnt);
+    addRecordComponentSetGet(
+        finalize_container<PyBaseRecordRecordComponent>(
+            declare_container<
+                PyBaseRecordRecordComponent,
+                PyRecordComponentContainer,
+                RecordComponent>(m, "Base_Record_Record_Component")))
+        .def_property_readonly(
+            "scalar",
+            &BaseRecord<RecordComponent>::scalar,
+            &docstring::is_scalar[1]);
 
     py::enum_<RecordComponent::Allocation>(m, "Allocation")
         .value("USER", RecordComponent::Allocation::USER)

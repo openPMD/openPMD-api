@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #
+set -eu -o pipefail
 
 # build directory as optional first argument, otherwise $PWD
 # we assume PWD is inside the CMake build directory
@@ -15,14 +16,17 @@ mkdir -p samples/git-sample/3d-bp4
 curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-3d.tar.gz
 curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-thetaMode.tar.gz
 curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-3d-bp4.tar.gz
+curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/566b356030df38f56049484941baacafef331163/legacy_datasets.tar.gz
 tar -xzf example-3d.tar.gz
 tar -xzf example-thetaMode.tar.gz
 tar -xzf example-3d-bp4.tar.gz
+tar -xzf legacy_datasets.tar.gz
 mv example-3d/hdf5/* samples/git-sample/
 mv example-thetaMode/hdf5/* samples/git-sample/thetaMode/
 mv example-3d-bp4/* samples/git-sample/3d-bp4
+mv legacy_datasets/* samples/git-sample/legacy
 chmod 777 samples/
-rm -rf example-3d.* example-3d example-thetaMode.* example-thetaMode example-3d-bp4 example-3d-bp4.*
+rm -rf example-3d.* example-3d example-thetaMode.* example-thetaMode example-3d-bp4 example-3d-bp4.* legacy_datasets legacy_datasets.*
 
 # Ref.: https://github.com/yt-project/yt/pull/1645
 mkdir -p samples/issue-sample/
@@ -43,9 +47,9 @@ rm -rf diags.zip diags
 # make sure we do not need write access when reading data
 chmod u-w samples/git-sample/*.h5
 chmod u-w samples/git-sample/thetaMode/*.h5
-chmod u-w samples/samples/issue-sample/*.h5
-chmod u-w samples/samples/issue-sample/no_fields/*.h5
-chmod u-w samples/samples/issue-sample/no_particles/*.h5
+chmod u-w samples/issue-sample/*.h5
+chmod u-w samples/issue-sample/no_fields/*.h5
+chmod u-w samples/issue-sample/no_particles/*.h5
 find samples/git-sample/3d-bp4 -type f -exec chmod u-w {} \;
 
 cd ${orgdir}

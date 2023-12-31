@@ -22,7 +22,6 @@
 
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
-#include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
@@ -68,8 +67,8 @@ namespace detail
     struct DatasetReader;
     struct AttributeReader;
     struct AttributeWriter;
-    struct OldAttributeReader;
-    struct OldAttributeWriter;
+    struct AttributeReader;
+    struct AttributeWriter;
     template <typename>
     struct AttributeTypes;
     struct DatasetOpener;
@@ -85,25 +84,11 @@ namespace detail
     struct RunUniquePtrPut;
 } // namespace detail
 
-namespace ADIOS2Schema
+enum class UseGroupTable
 {
-    using schema_t = uint64_t;
-    /*
-     * Original ADIOS schema.
-     */
-    constexpr schema_t schema_0000_00_00 = 00000000;
-    /*
-     * This introduces attribute layout via scalar ADIOS variables.
-     */
-    constexpr schema_t schema_2021_02_09 = 20210209;
-
-    enum class SupportedSchema : char
-    {
-        s_0000_00_00,
-        s_2021_02_09
-    };
-} // namespace ADIOS2Schema
-using SupportedSchema = ADIOS2Schema::SupportedSchema;
+    Yes,
+    No
+};
 
 class ADIOS2IOHandlerImpl
     : public AbstractIOHandlerImplCommon<ADIOS2FilePosition>
@@ -114,8 +99,8 @@ class ADIOS2IOHandlerImpl
     friend struct detail::DatasetReader;
     friend struct detail::AttributeReader;
     friend struct detail::AttributeWriter;
-    friend struct detail::OldAttributeReader;
-    friend struct detail::OldAttributeWriter;
+    friend struct detail::AttributeReader;
+    friend struct detail::AttributeWriter;
     template <typename>
     friend struct detail::AttributeTypes;
     friend struct detail::DatasetOpener;
@@ -240,11 +225,6 @@ private:
 #if openPMD_HAVE_MPI
     std::optional<MPI_Comm> m_communicator;
 #endif
-    /*
-     * If the iteration encoding is variableBased, we default to using the
-     * 2021_02_09 schema since it allows mutable attributes.
-     */
-    IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
     /**
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
@@ -255,9 +235,10 @@ private:
     std::string m_userSpecifiedExtension;
 
     /*
-     * Empty option: No schema has been explicitly selected, use default.
+     * Empty option: No choice about the group table has been explicitly made,
+     * use default.
      */
-    std::optional<ADIOS2Schema::schema_t> m_schema;
+    std::optional<UseGroupTable> m_useGroupTable;
 
     enum class UseSpan : char
     {
@@ -268,42 +249,26 @@ private:
 
     UseSpan m_useSpanBasedPutByDefault = UseSpan::Auto;
 
-    enum class AttributeLayout : char
+    enum class ModifiableAttributes : char
     {
-        ByAdiosAttributes,
-        ByAdiosVariables
+        Yes,
+        No,
+        Unspecified
     };
 
-    inline SupportedSchema schema() const
+    ModifiableAttributes m_modifiableAttributes =
+        ModifiableAttributes::Unspecified;
+
+    inline UseGroupTable useGroupTable() const
     {
-        if (!m_schema.has_value())
+        if (!m_useGroupTable.has_value())
         {
-            return SupportedSchema::s_0000_00_00;
+            return UseGroupTable::No;
         }
-        switch (m_schema.value())
-        {
-        case ADIOS2Schema::schema_0000_00_00:
-            return SupportedSchema::s_0000_00_00;
-        case ADIOS2Schema::schema_2021_02_09:
-            return SupportedSchema::s_2021_02_09;
-        default:
-            throw std::runtime_error(
-                "[ADIOS2] Encountered unsupported schema version: " +
-                std::to_string(m_schema.value()));
-        }
+        return m_useGroupTable.value();
     }
 
-    inline AttributeLayout attributeLayout() const
-    {
-        switch (schema())
-        {
-        case SupportedSchema::s_0000_00_00:
-            return AttributeLayout::ByAdiosAttributes;
-        case SupportedSchema::s_2021_02_09:
-            return AttributeLayout::ByAdiosVariables;
-        }
-        throw std::runtime_error("Unreachable!");
-    }
+    bool m_writeAttributesFromThisRank = true;
 
     struct ParameterizedOperator
     {
@@ -316,7 +281,9 @@ private:
     json::TracingJSON m_config;
     static json::TracingJSON nullvalue;
 
-    void init(json::TracingJSON config);
+    template <typename Callback>
+    void
+    init(json::TracingJSON config, Callback &&callbackWriteAttributesFromRank);
 
     template <typename Key>
     json::TracingJSON config(Key &&key, json::TracingJSON &cfg)
@@ -414,7 +381,7 @@ private:
      * Figure out whether the Writable corresponds with a
      * group or a dataset.
      */
-    ADIOS2FilePosition::GD groupOrDataset(Writable *);
+    GroupOrDataset groupOrDataset(Writable *);
 
     enum class IfFileNotOpen : bool
     {
@@ -422,9 +389,10 @@ private:
         ThrowError
     };
 
-    detail::BufferedActions &getFileData(InvalidatableFile file, IfFileNotOpen);
+    detail::BufferedActions &
+    getFileData(InvalidatableFile const &file, IfFileNotOpen);
 
-    void dropFileData(InvalidatableFile file);
+    void dropFileData(InvalidatableFile const &file);
 
     /*
      * Prepare a variable that already exists for an IO
@@ -440,6 +408,12 @@ private:
         Extent const &extent,
         adios2::IO &IO,
         std::string const &var);
+
+    struct
+    {
+        bool noGroupBased = false;
+        bool blosc2bp5 = false;
+    } printedWarningsAlready;
 }; // ADIOS2IOHandlerImpl
 
 /*
@@ -457,9 +431,10 @@ namespace ADIOS2Defaults
     constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
     constexpr const_str str_adios2Schema =
         "__openPMD_internal/openPMD2_adios2_schema";
-    constexpr const_str str_isBooleanOldLayout = "__is_boolean__";
-    constexpr const_str str_isBooleanNewLayout =
-        "__openPMD_internal/is_boolean";
+    constexpr const_str str_isBoolean = "__is_boolean__";
+    constexpr const_str str_activeTablePrefix = "__openPMD_groups";
+    constexpr const_str str_groupBasedWarning =
+        "__openPMD_internal/warning_bugprone_groupbased_encoding";
 } // namespace ADIOS2Defaults
 
 namespace detail
@@ -484,19 +459,20 @@ namespace detail
         static constexpr char const *errorMsg = "ADIOS2: readDataset()";
     };
 
-    struct OldAttributeReader
+    struct AttributeReader
     {
         template <typename T>
         static Datatype call(
+            ADIOS2IOHandlerImpl &,
             adios2::IO &IO,
             std::string name,
-            std::shared_ptr<Attribute::resource> resource);
+            Attribute::resource &resource);
 
         template <int n, typename... Params>
         static Datatype call(Params &&...);
     };
 
-    struct OldAttributeWriter
+    struct AttributeWriter
     {
         template <typename T>
         static void call(
@@ -508,36 +484,13 @@ namespace detail
         static void call(Params &&...);
     };
 
-    struct AttributeReader
-    {
-        template <typename T>
-        static Datatype call(
-            adios2::IO &IO,
-            detail::PreloadAdiosAttributes const &preloadedAttributes,
-            std::string name,
-            std::shared_ptr<Attribute::resource> resource);
-
-        template <int n, typename... Params>
-        static Datatype call(Params &&...);
-    };
-
-    struct AttributeWriter
-    {
-        template <typename T>
-        static void
-        call(detail::BufferedAttributeWrite &params, BufferedActions &fileData);
-
-        template <int n, typename... Params>
-        static void call(Params &&...);
-    };
-
     struct DatasetOpener
     {
         template <typename T>
         static void call(
             ADIOS2IOHandlerImpl *impl,
-            InvalidatableFile,
-            const std::string &varName,
+            InvalidatableFile const &,
+            std::string const &varName,
             Parameter<Operation::OPEN_DATASET> &parameters);
 
         static constexpr char const *errorMsg = "ADIOS2: openDataset()";
@@ -608,17 +561,6 @@ namespace detail
     template <typename T>
     struct AttributeTypes
     {
-        static void createAttribute(
-            adios2::IO &IO,
-            adios2::Engine &engine,
-            detail::BufferedAttributeWrite &params,
-            T value);
-
-        static Datatype readAttribute(
-            detail::PreloadAdiosAttributes const &,
-            std::string name,
-            std::shared_ptr<Attribute::resource> resource);
-
         /**
          * @brief Is the attribute given by parameters name and val already
          *        defined exactly in that way within the given IO?
@@ -642,27 +584,6 @@ namespace detail
     template <>
     struct AttributeTypes<std::complex<long double>>
     {
-        static void createAttribute(
-            adios2::IO &,
-            adios2::Engine &,
-            detail::BufferedAttributeWrite &,
-            std::complex<long double>)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex "
-                "attribute types");
-        }
-
-        static Datatype readAttribute(
-            detail::PreloadAdiosAttributes const &,
-            std::string,
-            std::shared_ptr<Attribute::resource>)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex "
-                "attribute types");
-        }
-
         static bool
         attributeUnchanged(adios2::IO &, std::string, std::complex<long double>)
         {
@@ -675,27 +596,6 @@ namespace detail
     template <>
     struct AttributeTypes<std::vector<std::complex<long double>>>
     {
-        static void createAttribute(
-            adios2::IO &,
-            adios2::Engine &,
-            detail::BufferedAttributeWrite &,
-            const std::vector<std::complex<long double>> &)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex "
-                "vector attribute types");
-        }
-
-        static Datatype readAttribute(
-            detail::PreloadAdiosAttributes const &,
-            std::string,
-            std::shared_ptr<Attribute::resource>)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex "
-                "vector attribute types");
-        }
-
         static bool attributeUnchanged(
             adios2::IO &, std::string, std::vector<std::complex<long double>>)
         {
@@ -708,17 +608,6 @@ namespace detail
     template <typename T>
     struct AttributeTypes<std::vector<T>>
     {
-        static void createAttribute(
-            adios2::IO &IO,
-            adios2::Engine &engine,
-            detail::BufferedAttributeWrite &params,
-            const std::vector<T> &value);
-
-        static Datatype readAttribute(
-            detail::PreloadAdiosAttributes const &,
-            std::string name,
-            std::shared_ptr<Attribute::resource> resource);
-
         static bool
         attributeUnchanged(adios2::IO &IO, std::string name, std::vector<T> val)
         {
@@ -746,17 +635,6 @@ namespace detail
     template <>
     struct AttributeTypes<std::vector<std::string>>
     {
-        static void createAttribute(
-            adios2::IO &IO,
-            adios2::Engine &engine,
-            detail::BufferedAttributeWrite &params,
-            const std::vector<std::string> &vec);
-
-        static Datatype readAttribute(
-            detail::PreloadAdiosAttributes const &,
-            std::string name,
-            std::shared_ptr<Attribute::resource> resource);
-
         static bool attributeUnchanged(
             adios2::IO &IO, std::string name, std::vector<std::string> val)
         {
@@ -784,17 +662,6 @@ namespace detail
     template <typename T, size_t n>
     struct AttributeTypes<std::array<T, n>>
     {
-        static void createAttribute(
-            adios2::IO &IO,
-            adios2::Engine &engine,
-            detail::BufferedAttributeWrite &params,
-            const std::array<T, n> &value);
-
-        static Datatype readAttribute(
-            detail::PreloadAdiosAttributes const &,
-            std::string name,
-            std::shared_ptr<Attribute::resource> resource);
-
         static bool attributeUnchanged(
             adios2::IO &IO, std::string name, std::array<T, n> val)
         {
@@ -848,17 +715,6 @@ namespace detail
         {
             return r != 0;
         }
-
-        static void createAttribute(
-            adios2::IO &IO,
-            adios2::Engine &engine,
-            detail::BufferedAttributeWrite &params,
-            bool value);
-
-        static Datatype readAttribute(
-            detail::PreloadAdiosAttributes const &,
-            std::string name,
-            std::shared_ptr<Attribute::resource> resource);
 
         static bool
         attributeUnchanged(adios2::IO &IO, std::string name, bool val)
@@ -923,32 +779,6 @@ namespace detail
         Datatype dtype = Datatype::UNDEFINED;
 
         void run(BufferedActions &);
-    };
-
-    struct OldBufferedAttributeRead : BufferedAction
-    {
-        Parameter<Operation::READ_ATT> param;
-        std::string name;
-
-        void run(BufferedActions &) override;
-    };
-
-    struct BufferedAttributeRead
-    {
-        Parameter<Operation::READ_ATT> param;
-        std::string name;
-
-        void run(BufferedActions &);
-    };
-
-    struct BufferedAttributeWrite : BufferedAction
-    {
-        std::string name;
-        Datatype dtype;
-        Attribute::resource resource;
-        std::vector<char> bufferForVecString;
-
-        void run(BufferedActions &) override;
     };
 
     struct I_UpdateSpan
@@ -1018,23 +848,6 @@ namespace detail
          */
         std::vector<std::unique_ptr<BufferedAction>> m_buffer;
         /**
-         * Buffer for attributes to be written in the new (variable-based)
-         * attribute layout.
-         * Reason: If writing one variable twice within the same ADIOS step,
-         * it is undefined which value ADIOS2 will store.
-         * We want the last write operation to succeed, so this map stores
-         * attribute writes by attribute name, allowing us to override older
-         * write commands.
-         * The queue is drained only when closing a step / the engine.
-         */
-        std::map<std::string, BufferedAttributeWrite> m_attributeWrites;
-        /**
-         * @todo This one is unnecessary, in the new schema, attribute reads do
-         * not need to be deferred, but can happen instantly without performance
-         * penalty, once preloadAttributes has been filled.
-         */
-        std::vector<BufferedAttributeRead> m_attributeReads;
-        /**
          * When receiving a unique_ptr, we know that the buffer is ours and
          * ours alone. So, for performance reasons, show the buffer to ADIOS2 as
          * late as possible and avoid unnecessary data copies in BP5 triggered
@@ -1058,7 +871,6 @@ namespace detail
          * This map is cleared upon flush points.
          */
         std::map<unsigned, std::unique_ptr<I_UpdateSpan>> m_updateSpans;
-        PreloadAdiosAttributes preloadAttributes;
 
         /*
          * We call an attribute committed if the step during which it was
@@ -1095,8 +907,9 @@ namespace detail
          */
         void finalize();
 
+        UseGroupTable detectGroupTable();
+
         adios2::Engine &getEngine();
-        adios2::Engine &requireActiveStep();
 
         template <typename BA>
         void enqueue(BA &&ba);
@@ -1134,10 +947,9 @@ namespace detail
          *     * adios2::Engine::EndStep
          *     * adios2::Engine::Perform(Puts|Gets)
          *     * adios2::Engine::Close
-         * @param writeLatePuts Some things are deferred until right before
+         * @param writeLatePuts Deferred until right before
          *        Engine::EndStep() or Engine::Close():
-         *        1) Writing attributes in new ADIOS2 schema.
-         *        2) Running unique_ptr Put()s.
+         *        Running unique_ptr Put()s.
          * @param flushUnconditionally Whether to run the functor even if no
          *     deferred IO tasks had been queued.
          */
@@ -1159,15 +971,9 @@ namespace detail
          * @brief Begin or end an ADIOS step.
          *
          * @param mode Whether to begin or end a step.
-         * @param calledExplicitly True if called due to a public API call.
-         *     False if called from requireActiveStep.
-         *     Some engines (BP5) require that every interaction happens within
-         *     an active step, meaning that we need to call advance()
-         *     implicitly at times. When doing that, do not tag the dataset
-         *     with __openPMD_internal/useSteps (yet).
          * @return AdvanceStatus
          */
-        AdvanceStatus advance(AdvanceMode mode, bool calledExplicitly);
+        AdvanceStatus advance(AdvanceMode mode);
 
         /*
          * Delete all buffered actions without running them.
@@ -1193,6 +999,10 @@ namespace detail
          * See description below.
          */
         void invalidateVariablesMap();
+
+        void markActive(Writable *);
+
+        // bool isActive(std::string const & path);
 
         /*
          * streamStatus is NoStream for file-based ADIOS engines.
@@ -1248,34 +1058,7 @@ namespace detail
              *    without steps. This is not a workaround since not using steps,
              *    while inefficient in ADIOS2, is something that we support.
              */
-            NoStream,
-            /**
-             * Rationale behind this state:
-             * When user code opens a Series, series.iterations should contain
-             * all available iterations.
-             * If accessing a file without opening a step, ADIOS2 will grant
-             * access to variables and attributes from all steps, allowing us
-             * to parse the complete dump.
-             * This state indicates that no step should be opened for parsing
-             * purposes (which is necessary in streaming engines, hence they
-             * are initialized with the OutsideOfStep state).
-             * A step should only be opened if an explicit ADVANCE task arrives
-             * at the backend.
-             *
-             * @todo If the streaming API is used on files, parsing the whole
-             *       Series up front is unnecessary work.
-             *       Our frontend does not yet allow to distinguish whether
-             *       parsing the whole series will be necessary since parsing
-             *       happens upon construction time of Series,
-             *       but the classical and the streaming API are both activated
-             *       afterwards from the created Series object.
-             *       Hence, improving this requires refactoring in our
-             *       user-facing API. Ideas:
-             *       (1) Delayed lazy parsing of iterations upon accessing
-             *           (would bring other benefits also).
-             *       (2) Introduce a restricted class StreamingSeries.
-             */
-            Parsing,
+            ReadWithoutStream,
             /**
              * The stream status of a file-based engine will be decided upon
              * opening the engine if in read mode. Up until then, this right
@@ -1285,6 +1068,8 @@ namespace detail
         };
         StreamStatus streamStatus = StreamStatus::OutsideOfStep;
 
+        size_t currentStep();
+
     private:
         ADIOS2IOHandlerImpl *m_impl;
         std::optional<adios2::Engine> m_engine; //! ADIOS engine
@@ -1292,6 +1077,12 @@ namespace detail
          * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
          */
         std::string m_engineType;
+
+        /*
+         * Not all engines support the CurrentStep() call, so we have to
+         * implement this manually.
+         */
+        size_t m_currentStep = 0;
 
         /*
          * ADIOS2 does not give direct access to its internal attribute and
@@ -1308,6 +1099,8 @@ namespace detail
         std::optional<AttributeMap_t> m_availableAttributes;
         std::optional<AttributeMap_t> m_availableVariables;
 
+        std::set<Writable *> m_pathsMarkedAsActive;
+
         /*
          * Cannot write attributes right after opening the engine
          * https://github.com/ornladios/ADIOS2/issues/3433
@@ -1318,22 +1111,16 @@ namespace detail
          */
         bool finalized = false;
 
-        inline SupportedSchema schema() const
+        [[nodiscard]] inline UseGroupTable useGroupTable() const
         {
-            return m_impl->schema();
+            return m_impl->useGroupTable();
         }
 
         void create_IO();
 
         void configure_IO(ADIOS2IOHandlerImpl &impl);
-        void configure_IO_Read(std::optional<bool> userSpecifiedUsesteps);
-        void configure_IO_Write(std::optional<bool> userSpecifiedUsesteps);
-
-        using AttributeLayout = ADIOS2IOHandlerImpl::AttributeLayout;
-        inline AttributeLayout attributeLayout() const
-        {
-            return m_impl->attributeLayout();
-        }
+        void configure_IO_Read();
+        void configure_IO_Write();
     };
 
 } // namespace detail

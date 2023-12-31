@@ -55,7 +55,16 @@ namespace internal
         operator=(PatchRecordComponentData &&) = delete;
 
         PatchRecordComponentData();
+
+        void reset() override
+        {
+            BaseRecordComponentData::reset();
+            m_chunks = std::queue<IOTask>();
+        }
     };
+
+    template <typename, typename>
+    class BaseRecordData;
 } // namespace internal
 
 /**
@@ -67,15 +76,26 @@ class PatchRecordComponent : public BaseRecordComponent
     friend class Container;
     template <typename>
     friend class BaseRecord;
+    template <typename, typename>
+    friend class internal::BaseRecordData;
     friend class ParticlePatches;
     friend class PatchRecord;
     friend class ParticleSpecies;
     friend class internal::PatchRecordComponentData;
 
 public:
+    /**
+     * @brief Avoid object slicing when using a Record as a scalar Record
+     *        Component.
+     *
+     * It's still preferred to directly use the Record, or alternatively a
+     * Record-Component-type reference to a Record.
+     */
+    PatchRecordComponent(BaseRecord<PatchRecordComponent> const &);
+
     PatchRecordComponent &setUnitSI(double);
 
-    PatchRecordComponent &resetDataset(Dataset);
+    virtual PatchRecordComponent &resetDataset(Dataset);
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;
@@ -100,7 +120,7 @@ OPENPMD_private
     // clang-format on
 
     void flush(std::string const &, internal::FlushParams const &);
-    void read();
+    virtual void read();
 
     /**
      * @brief Check recursively whether this RecordComponent is dirty.
@@ -112,29 +132,31 @@ OPENPMD_private
      */
     bool dirtyRecursive() const;
 
-    std::shared_ptr<internal::PatchRecordComponentData>
-        m_patchRecordComponentData{new internal::PatchRecordComponentData()};
-
-    PatchRecordComponent();
-
     // clang-format off
 OPENPMD_protected
     // clang-format on
 
-    PatchRecordComponent(std::shared_ptr<internal::PatchRecordComponentData>);
+    using Data_t = internal::PatchRecordComponentData;
 
-    inline internal::PatchRecordComponentData const &get() const
+    std::shared_ptr<Data_t> m_patchRecordComponentData;
+
+    PatchRecordComponent();
+    PatchRecordComponent(NoInit);
+
+    inline Data_t const &get() const
     {
+        // cannot call this in the const overload
+        // setDatasetDefined(*m_recordComponentData);
         return *m_patchRecordComponentData;
     }
 
-    inline internal::PatchRecordComponentData &get()
+    inline Data_t &get()
     {
+        setDatasetDefined(*m_patchRecordComponentData);
         return *m_patchRecordComponentData;
     }
 
-    inline void
-    setData(std::shared_ptr<internal::PatchRecordComponentData> data)
+    inline void setData(std::shared_ptr<Data_t> data)
     {
         m_patchRecordComponentData = std::move(data);
         BaseRecordComponent::setData(m_patchRecordComponentData);

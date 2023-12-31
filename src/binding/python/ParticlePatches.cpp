@@ -18,27 +18,33 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/ParticlePatches.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 
-#include <string>
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 
-namespace py = pybind11;
-using namespace openPMD;
+#include <string>
 
 void init_ParticlePatches(py::module &m)
 {
+    auto py_pp_cnt = declare_container<PyPatchContainer, Attributable>(
+        m, "Particle_Patches_Container");
+
     py::class_<ParticlePatches, Container<PatchRecord> >(m, "Particle_Patches")
         .def(
             "__repr__",
             [](ParticlePatches const &pp) {
-                return "<openPMD.Particle_Patches of size '" +
-                    std::to_string(pp.numPatches()) + "'>";
+                std::stringstream stream;
+                stream << "<openPMD.Particle_Patches with " << pp.size()
+                       << " records and " << pp.numAttributes()
+                       << " attribute(s)>";
+                return stream.str();
             })
 
         .def_property_readonly("num_patches", &ParticlePatches::numPatches);
+
+    finalize_container<PyPatchContainer>(py_pp_cnt);
 }

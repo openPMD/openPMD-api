@@ -49,7 +49,8 @@ int main(int argc, char *argv[])
     Offset chunk_offset = {static_cast<long unsigned int>(mpi_rank) + 1, 1, 1};
     Extent chunk_extent = {2, 2, 1};
 
-    auto chunk_data = E_x.loadChunk<double>(chunk_offset, chunk_extent);
+    // If you know the datatype, use `loadChunk<double>(...)` instead.
+    auto chunk_data = E_x.loadChunkVariant(chunk_offset, chunk_extent);
 
     if (0 == mpi_rank)
         cout << "Queued the loading of a single chunk per MPI rank from "
@@ -72,9 +73,20 @@ int main(int argc, char *argv[])
             for (size_t row = 0; row < chunk_extent[0]; ++row)
             {
                 for (size_t col = 0; col < chunk_extent[1]; ++col)
+                {
                     cout << "\t" << '(' << row + chunk_offset[0] << '|'
-                         << col + chunk_offset[1] << '|' << 1 << ")\t"
-                         << chunk_data.get()[row * chunk_extent[1] + col];
+                         << col + chunk_offset[1] << '|' << 1 << ")\t";
+                    /*
+                     * For hot loops, the std::visit(...) call should be moved
+                     * further up.
+                     */
+                    std::visit(
+                        [row, col, &chunk_extent](auto &shared_ptr) {
+                            cout << shared_ptr
+                                        .get()[row * chunk_extent[1] + col];
+                        },
+                        chunk_data);
+                }
                 cout << std::endl;
             }
         }

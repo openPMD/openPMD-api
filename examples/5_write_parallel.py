@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # `Series.iterations` can be directly accessed in random-access workflows.
     series.iterations[1].open()
     mymesh = series.iterations[1]. \
-        meshes["mymesh"][io.Mesh_Record_Component.SCALAR]
+        meshes["mymesh"]
 
     # example 1D domain decomposition in first index
     global_extent = [comm.size * 10, 300]

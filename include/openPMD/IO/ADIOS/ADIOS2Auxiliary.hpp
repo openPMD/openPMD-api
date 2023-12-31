@@ -21,7 +21,10 @@
 
 #pragma once
 
+#include "openPMD/Error.hpp"
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/config.hpp"
+
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
@@ -33,9 +36,17 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
+#endif
 
 namespace openPMD
 {
+enum class GroupOrDataset
+{
+    GROUP,
+    DATASET
+};
+
+#if openPMD_HAVE_ADIOS2
 namespace detail
 {
     // ADIOS2 does not natively support boolean values
@@ -119,6 +130,45 @@ namespace detail
         std::string const &attributeName,
         bool verbose,
         VariableOrAttribute voa = VariableOrAttribute::Attribute);
+
+    inline bool readOnly(adios2::Mode mode)
+    {
+        switch (mode)
+        {
+        case adios2::Mode::Append:
+        case adios2::Mode::Write:
+            return false;
+        case adios2::Mode::Read:
+#if openPMD_HAS_ADIOS_2_8
+        case adios2::Mode::ReadRandomAccess:
+#endif
+            return true;
+        case adios2::Mode::Undefined:
+        case adios2::Mode::Sync:
+        case adios2::Mode::Deferred:
+            break;
+        }
+        throw error::Internal("Control flow error: No ADIOS2 open mode.");
+    }
+    inline bool writeOnly(adios2::Mode mode)
+    {
+        switch (mode)
+        {
+        case adios2::Mode::Append:
+        case adios2::Mode::Write:
+            return true;
+        case adios2::Mode::Read:
+#if openPMD_HAS_ADIOS_2_8
+        case adios2::Mode::ReadRandomAccess:
+#endif
+            return false;
+        case adios2::Mode::Undefined:
+        case adios2::Mode::Sync:
+        case adios2::Mode::Deferred:
+            break;
+        }
+        throw error::Internal("Control flow error: No ADIOS2 open mode.");
+    }
 } // namespace detail
 
 /**
@@ -277,6 +327,5 @@ auto switchAdios2VariableType(Datatype dt, Args &&...args)
             std::to_string(static_cast<int>(dt)));
     }
 }
-} // namespace openPMD
-
 #endif // openPMD_HAVE_ADIOS2
+} // namespace openPMD

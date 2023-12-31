@@ -18,20 +18,21 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/Iteration.hpp"
+
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 
 #include <ios>
 #include <sstream>
 #include <string>
 
-namespace py = pybind11;
-using namespace openPMD;
-
 void init_Iteration(py::module &m)
 {
+    auto py_it_cont = declare_container<PyIterationContainer, Attributable>(
+        m, "Iteration_Container");
+
     py::class_<Iteration, Attributable>(m, "Iteration")
         .def(py::init<Iteration const &>())
 
@@ -40,7 +41,9 @@ void init_Iteration(py::module &m)
             [](Iteration const &it) {
                 std::stringstream ss;
                 ss << "<openPMD.Iteration at t = '" << std::scientific
-                   << it.template time<double>() * it.timeUnitSI() << " s'>";
+                   << it.template time<double>() * it.timeUnitSI()
+                   << " s' with " << std::to_string(it.numAttributes())
+                   << " attributes>";
                 return ss.str();
             })
 
@@ -95,4 +98,6 @@ void init_Iteration(py::module &m)
             py::return_value_policy::copy,
             // garbage collection: return value must be freed before Iteration
             py::keep_alive<1, 0>());
+
+    finalize_container<PyIterationContainer>(py_it_cont);
 }

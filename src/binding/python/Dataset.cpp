@@ -18,16 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/Dataset.hpp"
+
+#include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 
 #include <string>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 void init_Dataset(py::module &m)
 {
@@ -36,8 +32,8 @@ void init_Dataset(py::module &m)
         .def(py::init<Datatype, Extent>(), py::arg("dtype"), py::arg("extent"))
         .def(py::init<Extent>(), py::arg("extent"))
         .def(
-            py::init([](py::dtype dt, Extent e) {
-                auto const d = dtype_from_numpy(dt);
+            py::init([](py::dtype dt, Extent const &e) {
+                auto const d = dtype_from_numpy(std::move(dt));
                 return new Dataset{d, e};
             }),
             py::arg("dtype"),
@@ -48,8 +44,8 @@ void init_Dataset(py::module &m)
             py::arg("extent"),
             py::arg("options"))
         .def(
-            py::init([](py::dtype dt, Extent e, std::string options) {
-                auto const d = dtype_from_numpy(dt);
+            py::init([](py::dtype dt, Extent const &e, std::string options) {
+                auto const d = dtype_from_numpy(std::move(dt));
                 return new Dataset{d, e, std::move(options)};
             }),
             py::arg("dtype"),
@@ -59,8 +55,24 @@ void init_Dataset(py::module &m)
         .def(
             "__repr__",
             [](const Dataset &d) {
-                return "<openPMD.Dataset of rank '" + std::to_string(d.rank) +
-                    "'>";
+                std::stringstream stream;
+                stream << "<openPMD.Dataset of type '" << d.dtype
+                       << "' and with extent ";
+                if (d.extent.empty())
+                {
+                    stream << "[]>";
+                }
+                else
+                {
+                    auto begin = d.extent.begin();
+                    stream << '[' << *begin++;
+                    for (; begin != d.extent.end(); ++begin)
+                    {
+                        stream << ", " << *begin;
+                    }
+                    stream << "]>";
+                }
+                return stream.str();
             })
 
         .def_readonly("extent", &Dataset::extent)

@@ -18,14 +18,10 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/Datatype.hpp"
-#include "openPMD/binding/python/Numpy.hpp"
 
-namespace py = pybind11;
-using namespace openPMD;
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 void init_Datatype(py::module &m)
 {
@@ -62,7 +58,7 @@ void init_Datatype(py::module &m)
         .value("BOOL", Datatype::BOOL)
         .value("UNDEFINED", Datatype::UNDEFINED);
 
-    m.def("determine_datatype", [](py::dtype const dt) {
+    m.def("determine_datatype", [](py::dtype const &dt) {
         return dtype_from_numpy(dt);
     });
     m.def("determine_datatype", [](py::array const &a) {

@@ -35,6 +35,7 @@ enum class Format
     ADIOS2_SST,
     ADIOS2_SSC,
     JSON,
+    TOML,
     DUMMY
 };
 
