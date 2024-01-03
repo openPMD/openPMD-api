@@ -263,7 +263,7 @@ if(NOT nlohmann_json_FOUND)
     FetchContent_Declare(
       nlohmann_json
       GIT_REPOSITORY https://github.com/nlohmann/json.git
-      GIT_TAG v3.9.1
+      GIT_TAG v3.11.3
       SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json/"
       OVERRIDE_FIND_PACKAGE
     )
@@ -282,7 +282,10 @@ if(NOT toml11_FOUND)
     FetchContent_Declare(
       toml11
       GIT_REPOSITORY https://github.com/ToruNiina/toml11
-      GIT_TAG v3.7.1
+      # The last released version generates a CMake compatibility warning
+      # As soon as a new version solving this issue is released replace 
+      # git hash by version tag
+      GIT_TAG 01a0e93e5f9bef09a76d22f3d51a5257e3d923fe 
       SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/"
       OVERRIDE_FIND_PACKAGE
     )
@@ -564,7 +567,7 @@ if(openPMD_BUILD_TESTING)
         FetchContent_Declare(
           Catch2
           GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-          GIT_TAG v2.13.10
+          GIT_TAG v3.5.1
           SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/"
           OVERRIDE_FIND_PACKAGE
         )
