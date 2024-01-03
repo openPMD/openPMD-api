@@ -2,29 +2,14 @@
 #
 cmake_minimum_required(VERSION 3.24.0)
 
-project(openPMD VERSION 0.16.0) # LANGUAGES CXX
+project(openPMD LANGUAGES CXX VERSION 0.16.0)
+
+set(CMAKE_CXX_STANDARD 17)
 
 # the openPMD "markup"/"schema" standard version
 set(openPMD_STANDARD_VERSION 1.1.0)
 
 include(${openPMD_SOURCE_DIR}/cmake/openPMDFunctions.cmake)
-
-
-# CMake policies ##############################################################
-#
-# Search in <PackageName>_ROOT:
-#   https://cmake.org/cmake/help/v3.12/policy/CMP0074.html
-if(POLICY CMP0074)
-    cmake_policy(SET CMP0074 NEW)
-endif()
-
-# We use simple syntax in cmake_dependent_option, so we are compatible with the
-# extended syntax in CMake 3.22+
-# https://cmake.org/cmake/help/v3.22/policy/CMP0127.html
-if(POLICY CMP0127)
-    cmake_policy(SET CMP0127 NEW)
-endif()
-
 
 # No in-Source builds #########################################################
 #
@@ -567,7 +552,8 @@ if(openPMD_BUILD_TESTING)
         FetchContent_Declare(
           Catch2
           GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-          GIT_TAG v3.5.1
+          # ToDo Migrate to v3 and latest release
+          GIT_TAG v2.13.10
           SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/"
           OVERRIDE_FIND_PACKAGE
         )
