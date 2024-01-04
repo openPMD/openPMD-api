@@ -261,15 +261,12 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 <sup>1</sup> *e.g. changes C++ visibility keywords, breaks MSVC*
 <sup>2</sup> *this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged*
 
-Additionally, the following libraries are shipped internally.
-The following options allow to switch to external installs:
-
-| CMake Option                    | Values     | Library       | Version  |
-|---------------------------------|------------|---------------|----------|
-| `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.10+ |
-| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.11.1+ |
-| `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |   3.9.1+ |
-| `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |   3.7.1+ |
+Additionally, the following libraries are shipped internally or, if the 
+corresponding `<PACKAGENAME>_ROOT` variable is provided, can be provided externally:
+* [Catch2](https://github.com/catchorg/Catch2) (2.13.10+)
+* [PyBind11](https://github.com/pybind/pybind11) (2.11.1+)
+* [NLohmann-JSON](https://github.com/nlohmann/json) (3.9.1+)
+* [toml11](https://github.com/ToruNiina/toml11) (3.7.1+)
 
 By default, this will build as a shared library (`libopenPMD.[so|dylib|dll]`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=OFF` to the `cmake` command.

@@ -2,9 +2,7 @@
 #
 cmake_minimum_required(VERSION 3.24.0)
 
-project(openPMD LANGUAGES CXX VERSION 0.16.0)
-
-set(CMAKE_CXX_STANDARD 17)
+project(openPMD VERSION 0.16.0) # LANGUAGES CXX
 
 # the openPMD "markup"/"schema" standard version
 set(openPMD_STANDARD_VERSION 1.1.0)
@@ -267,10 +265,9 @@ if(NOT toml11_FOUND)
     FetchContent_Declare(
       toml11
       GIT_REPOSITORY https://github.com/ToruNiina/toml11
-      # The last released version generates a CMake compatibility warning
-      # As soon as a new version solving this issue is released replace 
-      # git hash by version tag
-      GIT_TAG 01a0e93e5f9bef09a76d22f3d51a5257e3d923fe 
+      # Migrate to the latest commit to remove CMake Warning which is not yet
+      # available in any official release.
+      GIT_TAG v3.7.1 
       SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/"
       OVERRIDE_FIND_PACKAGE
     )
