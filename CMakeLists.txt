@@ -393,7 +393,7 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
     find_package(Python 3.8.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
     if(Python_FOUND)
         find_package(pybind11 CONFIG)
-        if(not pybind11_FOUND)
+        if(NOT pybind11_FOUND)
             message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
             FetchContent_Declare(
                 pybind11
@@ -411,7 +411,7 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
 elseif(openPMD_USE_PYTHON)
     find_package(Python COMPONENTS Interpreter ${_PY_DEV_MODULE} REQUIRED)
     find_package(pybind11 CONFIG)
-    if(not pybind11_FOUND)
+    if(NOT pybind11_FOUND)
         message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
         FetchContent_Declare(
             pybind11
