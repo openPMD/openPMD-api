@@ -260,7 +260,7 @@ public:
      * @return Reference to modified mesh.
      */
     Mesh &setGridUnitDimension(
-        std::vector<std::map<UnitDimension, double>> const & gridUnitDimension);
+        std::vector<std::map<UnitDimension, double>> const &gridUnitDimension);
 
     /**
      * @brief Return the physical dimensions of the mesh axes.
