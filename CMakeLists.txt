@@ -267,7 +267,7 @@ if(NOT toml11_FOUND)
       GIT_REPOSITORY https://github.com/ToruNiina/toml11
       # Migrate to the latest commit to remove CMake Warning which is not yet
       # available in any official release.
-      GIT_TAG v3.7.1 
+      GIT_TAG v3.7.1
       SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/"
       OVERRIDE_FIND_PACKAGE
     )
@@ -389,42 +389,40 @@ endif()
 
 # external library: pybind11 (optional)
 set(_PY_DEV_MODULE Development.Module)
-if(CMAKE_VERSION VERSION_LESS 3.18.0)
-    # over-specification needed for CMake<3.18
-    #   https://pybind11.readthedocs.io/en/latest/compiling.html#findpython-mode
-    #   https://cmake.org/cmake/help/v3.18/module/FindPython.html
-    set(_PY_DEV_MODULE Development)
-endif()
 if(openPMD_USE_PYTHON STREQUAL AUTO)
     find_package(Python 3.8.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
     if(Python_FOUND)
-        if(openPMD_USE_INTERNAL_PYBIND11)
-            add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
-            set(openPMD_HAVE_PYTHON TRUE)
-            message(STATUS "pybind11: Using INTERNAL version 2.11.1")
-        else()
-            find_package(pybind11 2.11.1 CONFIG)
-            if(pybind11_FOUND)
-                set(openPMD_HAVE_PYTHON TRUE)
-                message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
-            else()
-                set(openPMD_HAVE_PYTHON FALSE)
-            endif()
+        find_package(pybind11 CONFIG)
+        if(not pybind11_FOUND)
+            message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
+            FetchContent_Declare(
+                pybind11
+                GIT_REPOSITORY https://github.com/pybind/pybind11.git
+                GIT_TAG v2.11.1
+                SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11/"
+                OVERRIDE_FIND_PACKAGE
+            )
+            FetchContent_MakeAvailable(pybind11)
         endif()
+        set(openPMD_HAVE_PYTHON TRUE)
     else()
         set(openPMD_HAVE_PYTHON FALSE)
     endif()
 elseif(openPMD_USE_PYTHON)
     find_package(Python COMPONENTS Interpreter ${_PY_DEV_MODULE} REQUIRED)
-    if(openPMD_USE_INTERNAL_PYBIND11)
-        add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
-        set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.11.1")
-    else()
-        find_package(pybind11 2.11.1 REQUIRED CONFIG)
-        set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
+    find_package(pybind11 CONFIG)
+    if(not pybind11_FOUND)
+        message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
+        FetchContent_Declare(
+            pybind11
+            GIT_REPOSITORY https://github.com/pybind/pybind11.git
+            GIT_TAG v2.11.1
+            SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11/"
+            OVERRIDE_FIND_PACKAGE
+        )
+        FetchContent_MakeAvailable(pybind11)
     endif()
+    set(openPMD_HAVE_PYTHON TRUE)
 else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
