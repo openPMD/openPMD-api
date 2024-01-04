@@ -16,13 +16,14 @@ namespace
     {
         template <typename T>
         static void
-        call(Attributable &object, std::string const &name, Attribute attr)
+        call(Attributable &object, std::string const &name, Attribute &attr)
         {
             object.setAttribute(name, attr.get<T>());
         }
 
         template <unsigned n>
-        static void call(Attributable &, std::string const &name, Attribute)
+        static void
+        call(Attributable &, std::string const &name, Attribute const &)
         {
             std::cerr << "Unknown datatype for template attribute '" << name
                       << "'. Will skip it." << std::endl;
