@@ -25,6 +25,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -35,6 +36,7 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <regex>
 #include <set>
 #include <string>
@@ -71,9 +73,11 @@ namespace
     struct Match
     {
         bool isContained{}; //! pattern match successful
-        int padding{}; //! number of zeros used for padding of iteration
-        Series::IterationIndex_t
-            iteration{}; //! iteration found in regex pattern (default: 0)
+        int padding{}; //! number of zeros used for padding of iteration, zero
+                       //! if no padding
+        Series::IterationIndex_t iteration =
+            0; //! iteration found in regex pattern (default: 0)
+        std::optional<std::string> extension;
 
         // support for std::tie
         operator std::tuple<bool &, int &, Series::IterationIndex_t &>()
@@ -102,7 +106,7 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        std::string const &extension);
+        std::optional<std::string> const &extension);
 } // namespace
 
 struct Series::ParsedInput
@@ -113,7 +117,7 @@ struct Series::ParsedInput
     IterationEncoding iterationEncoding;
     std::string filenamePrefix;
     std::string filenamePostfix;
-    std::string filenameExtension;
+    std::optional<std::string> filenameExtension;
     int filenamePadding = -1;
 }; // ParsedInput
 
@@ -476,6 +480,11 @@ std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
     std::tie(input->name, input->filenameExtension) =
         cleanFilename(input->name, suffix(input->format)).decompose();
 
+    if (input->filenameExtension == ".%E")
+    {
+        input->filenameExtension = std::nullopt;
+    }
+
     return input;
 }
 
@@ -512,21 +521,21 @@ namespace
         std::string const &directory,
         MappingFunction &&mappingFunction)
     {
-        bool isContained;
-        int padding;
-        Series::IterationIndex_t iterationIndex;
+        // bool isContained;
+        // int padding;
+        // Series::IterationIndex_t iterationIndex;
         std::set<int> paddings;
         if (auxiliary::directory_exists(directory))
         {
             for (auto const &entry : auxiliary::list_directory(directory))
             {
-                std::tie(isContained, padding, iterationIndex) =
-                    isPartOfSeries(entry);
-                if (isContained)
+                // std::tie(isContained, padding, iterationIndex) =
+                // auto [isContained, padding, iterationIndex, extension] =
+                Match match = isPartOfSeries(entry);
+                if (match.isContained)
                 {
-                    paddings.insert(padding);
-                    // no std::forward as this is called repeatedly
-                    mappingFunction(iterationIndex, entry);
+                    paddings.insert(match.padding);
+                    mappingFunction(entry, std::move(match));
                 }
             }
         }
@@ -542,13 +551,7 @@ namespace
         std::function<Match(std::string const &)> const &isPartOfSeries,
         std::string const &directory)
     {
-        return autoDetectPadding(
-            isPartOfSeries,
-            directory,
-            [](Series::IterationIndex_t index, std::string const &filename) {
-                (void)index;
-                (void)filename;
-            });
+        return autoDetectPadding(isPartOfSeries, directory, [](auto &&...) {});
     }
 } // namespace
 
@@ -570,7 +573,7 @@ void Series::init(
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
-    series.m_filenameExtension = input->filenameExtension;
+    series.m_filenameExtension = input->filenameExtension.value();
 
     if (series.m_iterationEncoding == IterationEncoding::fileBased &&
         !series.m_filenamePrefix.empty() &&
@@ -1026,7 +1029,8 @@ void Series::readFileBased()
         isPartOfSeries,
         IOHandler()->directory,
         // foreach found file with `filename` and `index`:
-        [&series](IterationIndex_t index, std::string const &filename) {
+        [&series](std::string const &filename, Match const &match) {
+            auto index = match.iteration;
             Iteration &i = series.iterations[index];
             i.deferParseAccess(
                 {std::to_string(index),
@@ -2206,6 +2210,7 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
                 }
                 else if (
                     input.format != Format::DUMMY &&
+                    input.format != Format::GENERIC &&
                     suffix(input.format) != suffix(it->second))
                 {
                     std::cerr << "[Warning] Supplied filename extension '"
@@ -2337,7 +2342,7 @@ Series::Series(
         input->path,
         at,
         input->format,
-        input->filenameExtension,
+        input->filenameExtension.value_or(std::string()),
         comm,
         optionsJson,
         filepath);
@@ -2354,12 +2359,64 @@ Series::Series(
     json::TracingJSON optionsJson =
         json::parseOptions(options, /* considerFiles = */ true);
     auto input = parseInput(filepath);
+    if (input->format == Format::GENERIC)
+    {
+        auto isPartOfSeries =
+            input->iterationEncoding == IterationEncoding::fileBased
+            ? matcher(
+                  input->filenamePrefix,
+                  input->filenamePadding,
+                  input->filenamePostfix,
+                  std::nullopt)
+            : matcher(input->name, -1, "", std::nullopt);
+        std::optional<std::string> extension;
+        autoDetectPadding(
+            isPartOfSeries,
+            input->path,
+            [&extension](std::string const &, Match const &match) {
+                auto const &ext = match.extension.value();
+                if (extension.has_value() && *extension != ext)
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::File,
+                        error::Reason::Other,
+                        std::nullopt,
+                        "Found inconsistent filename extensions on disk: '" +
+                            *extension + "' and '" + ext + "'.");
+                }
+                else
+                {
+                    extension = ext;
+                }
+            });
+        if (extension.has_value())
+        {
+            input->filenameExtension = *extension;
+            input->format = determineFormat(*extension);
+        }
+    }
+
     parseJsonOptions(optionsJson, *input);
+
+    if (!input->filenameExtension.has_value())
+    {
+        if (input->format == /* still */ Format::GENERIC)
+        {
+            throw error::WrongAPIUsage(
+                "Unable to automatically determine filename extension. Please "
+                "specify in some way.");
+        }
+        else
+        {
+            input->filenameExtension = suffix(input->format);
+        }
+    }
+
     auto handler = createIOHandler(
         input->path,
         at,
         input->format,
-        input->filenameExtension,
+        input->filenameExtension.value_or(std::string()),
         optionsJson,
         filepath);
     init(std::move(handler), std::move(input));
@@ -2466,12 +2523,14 @@ namespace
         }
     }
 
-    std::function<Match(std::string const &)>
-    buildMatcher(std::string const &regexPattern, int padding)
+    std::function<Match(std::string const &)> buildMatcher(
+        std::string const &regexPattern,
+        int padding,
+        std::optional<size_t> index_of_extension)
     {
-        std::regex pattern(regexPattern);
-
-        return [pattern, padding](std::string const &filename) -> Match {
+        return [index_of_extension,
+                pattern = std::regex(regexPattern),
+                padding](std::string const &filename) -> Match {
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
             int processedPadding =
@@ -2479,7 +2538,13 @@ namespace
             return {
                 match,
                 processedPadding,
-                match ? std::stoull(regexMatches[1]) : 0};
+                padding < 0 ? padding
+                    : match ? std::stoull(regexMatches[1])
+                            : 0,
+                index_of_extension.has_value()
+                    ? std::make_optional<std::string>(
+                          regexMatches[*index_of_extension])
+                    : std::nullopt};
         };
     }
 
@@ -2487,10 +2552,15 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        std::string const &filenameSuffix)
+        std::optional<std::string> const &filenameSuffix)
     {
         std::string nameReg = "^" + prefix;
-        if (padding != 0)
+        size_t index_of_extension = 0;
+        if (padding < 0)
+        {
+            index_of_extension = 1;
+        }
+        else if (padding > 0)
         {
             // The part after the question mark:
             // The number must be at least `padding` digits long
@@ -2500,15 +2570,22 @@ namespace
             // iteration number via std::stoull(regexMatches[1])
             nameReg += "(([1-9][[:digit:]]*)?([[:digit:]]";
             nameReg += "{" + std::to_string(padding) + "}))";
+            index_of_extension = 4;
         }
         else
         {
             // No padding specified, any number of digits is ok.
             nameReg += "([[:digit:]]";
             nameReg += "+)";
+            index_of_extension = 2;
         }
-        nameReg += postfix + filenameSuffix + "$";
-        return buildMatcher(nameReg, padding);
+        nameReg += postfix + filenameSuffix.value_or("(\\.[[:alnum:]]+)") + "$";
+        return buildMatcher(
+            nameReg,
+            padding,
+            !filenameSuffix.has_value()
+                ? std::make_optional<size_t>(index_of_extension)
+                : std::nullopt);
     }
 } // namespace
 } // namespace openPMD
