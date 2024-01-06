@@ -105,6 +105,7 @@ CMakeUserPresets.json
 share/openPMD/thirdParty/json/
 share/openPMD/thirdParty/toml11/
 share/openPMD/thirdParty/catch2/
+share/openPMD/thirdParty/pybind11/
 
 #########
 # Tools #

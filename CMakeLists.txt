@@ -131,7 +131,6 @@ openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
-option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
@@ -391,25 +390,12 @@ endif()
 set(_PY_DEV_MODULE Development.Module)
 if(openPMD_USE_PYTHON STREQUAL AUTO)
     find_package(Python 3.8.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
-    if(Python_FOUND)
-        find_package(pybind11 CONFIG)
-        if(NOT pybind11_FOUND)
-            message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
-            FetchContent_Declare(
-                pybind11
-                GIT_REPOSITORY https://github.com/pybind/pybind11.git
-                GIT_TAG v2.11.1
-                SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11/"
-                OVERRIDE_FIND_PACKAGE
-            )
-            FetchContent_MakeAvailable(pybind11)
-        endif()
-        set(openPMD_HAVE_PYTHON TRUE)
-    else()
-        set(openPMD_HAVE_PYTHON FALSE)
-    endif()
 elseif(openPMD_USE_PYTHON)
     find_package(Python COMPONENTS Interpreter ${_PY_DEV_MODULE} REQUIRED)
+else()
+    set(openPMD_HAVE_PYTHON FALSE)
+endif()
+if(Python_FOUND)
     find_package(pybind11 CONFIG)
     if(NOT pybind11_FOUND)
         message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
@@ -426,7 +412,6 @@ elseif(openPMD_USE_PYTHON)
 else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
-
 
 # Targets #####################################################################
 #
