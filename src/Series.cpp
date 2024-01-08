@@ -555,7 +555,78 @@ namespace
     }
 } // namespace
 
-void Series::init(
+template <typename TracingJSON, typename BuildIOHandler>
+auto Series::initIOHandler(
+    std::string const &filepath,
+    std::string const &options,
+    BuildIOHandler &&buildIOHandler)
+    -> std::tuple<
+        std::unique_ptr<AbstractIOHandler>,
+        std::unique_ptr<ParsedInput>,
+        TracingJSON>
+{
+    json::TracingJSON optionsJson =
+        json::parseOptions(options, /* considerFiles = */ true);
+    auto input = parseInput(filepath);
+    if (input->format == Format::GENERIC)
+    {
+        auto isPartOfSeries =
+            input->iterationEncoding == IterationEncoding::fileBased
+            ? matcher(
+                  input->filenamePrefix,
+                  input->filenamePadding,
+                  input->filenamePostfix,
+                  std::nullopt)
+            : matcher(input->name, -1, "", std::nullopt);
+        std::optional<std::string> extension;
+        autoDetectPadding(
+            isPartOfSeries,
+            input->path,
+            [&extension](std::string const &, Match const &match) {
+                auto const &ext = match.extension.value();
+                if (extension.has_value() && *extension != ext)
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::File,
+                        error::Reason::Other,
+                        std::nullopt,
+                        "Found inconsistent filename extensions on disk: '" +
+                            *extension + "' and '" + ext + "'.");
+                }
+                else
+                {
+                    extension = ext;
+                }
+            });
+        if (extension.has_value())
+        {
+            input->filenameExtension = *extension;
+            input->format = determineFormat(*extension);
+        }
+    }
+
+    parseJsonOptions(optionsJson, *input);
+
+    if (!input->filenameExtension.has_value())
+    {
+        if (input->format == /* still */ Format::GENERIC)
+        {
+            throw error::WrongAPIUsage(
+                "Unable to automatically determine filename extension. Please "
+                "specify in some way.");
+        }
+        else
+        {
+            input->filenameExtension = suffix(input->format);
+        }
+    }
+
+    auto handler = buildIOHandler(*input, optionsJson, filepath);
+    return std::make_tuple(
+        std::move(handler), std::move(input), std::move(optionsJson));
+}
+
+void Series::initSeries(
     std::unique_ptr<AbstractIOHandler> ioHandler,
     std::unique_ptr<Series::ParsedInput> input)
 {
@@ -2334,20 +2405,25 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    json::TracingJSON optionsJson =
-        json::parseOptions(options, comm, /* considerFiles = */ true);
-    auto input = parseInput(filepath);
-    parseJsonOptions(optionsJson, *input);
-    auto handler = createIOHandler(
-        input->path,
-        at,
-        input->format,
-        input->filenameExtension.value_or(std::string()),
-        comm,
-        optionsJson,
-        filepath);
-    init(std::move(handler), std::move(input));
-    json::warnGlobalUnusedOptions(optionsJson);
+    auto [io_handler, parsed_input, options_json] =
+        initIOHandler<json::TracingJSON>(
+            filepath,
+            options,
+            [at, comm](
+                ParsedInput const &input,
+                json::TracingJSON optionsJson,
+                std::string const &filepath) {
+                return createIOHandler(
+                    input.path,
+                    at,
+                    input.format,
+                    input.filenameExtension.value_or(std::string()),
+                    comm,
+                    std::move(optionsJson),
+                    filepath);
+            });
+    initSeries(std::move(io_handler), std::move(parsed_input));
+    json::warnGlobalUnusedOptions(options_json);
 }
 #endif
 
@@ -2356,71 +2432,24 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    json::TracingJSON optionsJson =
-        json::parseOptions(options, /* considerFiles = */ true);
-    auto input = parseInput(filepath);
-    if (input->format == Format::GENERIC)
-    {
-        auto isPartOfSeries =
-            input->iterationEncoding == IterationEncoding::fileBased
-            ? matcher(
-                  input->filenamePrefix,
-                  input->filenamePadding,
-                  input->filenamePostfix,
-                  std::nullopt)
-            : matcher(input->name, -1, "", std::nullopt);
-        std::optional<std::string> extension;
-        autoDetectPadding(
-            isPartOfSeries,
-            input->path,
-            [&extension](std::string const &, Match const &match) {
-                auto const &ext = match.extension.value();
-                if (extension.has_value() && *extension != ext)
-                {
-                    throw error::ReadError(
-                        error::AffectedObject::File,
-                        error::Reason::Other,
-                        std::nullopt,
-                        "Found inconsistent filename extensions on disk: '" +
-                            *extension + "' and '" + ext + "'.");
-                }
-                else
-                {
-                    extension = ext;
-                }
+    auto [io_handler, parsed_input, options_json] =
+        initIOHandler<json::TracingJSON>(
+            filepath,
+            options,
+            [at](
+                ParsedInput const &input,
+                json::TracingJSON optionsJson,
+                std::string const &filepath) {
+                return createIOHandler(
+                    input.path,
+                    at,
+                    input.format,
+                    input.filenameExtension.value_or(std::string()),
+                    std::move(optionsJson),
+                    filepath);
             });
-        if (extension.has_value())
-        {
-            input->filenameExtension = *extension;
-            input->format = determineFormat(*extension);
-        }
-    }
-
-    parseJsonOptions(optionsJson, *input);
-
-    if (!input->filenameExtension.has_value())
-    {
-        if (input->format == /* still */ Format::GENERIC)
-        {
-            throw error::WrongAPIUsage(
-                "Unable to automatically determine filename extension. Please "
-                "specify in some way.");
-        }
-        else
-        {
-            input->filenameExtension = suffix(input->format);
-        }
-    }
-
-    auto handler = createIOHandler(
-        input->path,
-        at,
-        input->format,
-        input->filenameExtension.value_or(std::string()),
-        optionsJson,
-        filepath);
-    init(std::move(handler), std::move(input));
-    json::warnGlobalUnusedOptions(optionsJson);
+    initSeries(std::move(io_handler), std::move(parsed_input));
+    json::warnGlobalUnusedOptions(options_json);
 }
 
 Series::operator bool() const

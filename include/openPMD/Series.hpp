@@ -33,6 +33,7 @@
 #include "openPMD/backend/ParsePreference.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
+#include <memory>
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -636,7 +637,17 @@ OPENPMD_private
     void parseJsonOptions(TracingJSON &options, ParsedInput &);
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
-    void init(std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
+    template <typename TracingJSON, typename BuildIOHandler>
+    std::tuple<
+        std::unique_ptr<AbstractIOHandler>,
+        std::unique_ptr<ParsedInput>,
+        TracingJSON>
+    initIOHandler(
+        std::string const &filepath,
+        std::string const &options,
+        BuildIOHandler &&buildIOHandler);
+    void initSeries(
+        std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
     void initDefaults(IterationEncoding, bool initAll = false);
     /**
      * @brief Internal call for flushing a Series.
@@ -688,7 +699,7 @@ OPENPMD_private
      * ReadIterations since those methods should be aware when the current step
      * is broken).
      */
-    std::optional<std::deque<IterationIndex_t> > readGorVBased(
+    std::optional<std::deque<IterationIndex_t>> readGorVBased(
         bool do_always_throw_errors,
         bool init,
         std::set<IterationIndex_t> const &ignoreIterations = {});
@@ -758,7 +769,7 @@ OPENPMD_private
      * Returns the current content of the /data/snapshot attribute.
      * (We could also add this to the public API some time)
      */
-    std::optional<std::vector<IterationIndex_t> > currentSnapshot() const;
+    std::optional<std::vector<IterationIndex_t>> currentSnapshot() const;
 }; // Series
 } // namespace openPMD
 
