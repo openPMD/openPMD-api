@@ -645,6 +645,7 @@ OPENPMD_private
     initIOHandler(
         std::string const &filepath,
         std::string const &options,
+        Access at,
         BuildIOHandler &&buildIOHandler);
     void initSeries(
         std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);

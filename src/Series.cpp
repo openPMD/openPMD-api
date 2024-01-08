@@ -22,6 +22,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
@@ -559,6 +560,7 @@ template <typename TracingJSON, typename BuildIOHandler>
 auto Series::initIOHandler(
     std::string const &filepath,
     std::string const &options,
+    Access at,
     BuildIOHandler &&buildIOHandler)
     -> std::tuple<
         std::unique_ptr<AbstractIOHandler>,
@@ -568,7 +570,7 @@ auto Series::initIOHandler(
     json::TracingJSON optionsJson =
         json::parseOptions(options, /* considerFiles = */ true);
     auto input = parseInput(filepath);
-    if (input->format == Format::GENERIC)
+    if (input->format == Format::GENERIC && access::read(at))
     {
         auto isPartOfSeries =
             input->iterationEncoding == IterationEncoding::fileBased
@@ -2409,6 +2411,7 @@ Series::Series(
         initIOHandler<json::TracingJSON>(
             filepath,
             options,
+            at,
             [at, comm](
                 ParsedInput const &input,
                 json::TracingJSON optionsJson,
@@ -2436,6 +2439,7 @@ Series::Series(
         initIOHandler<json::TracingJSON>(
             filepath,
             options,
+            at,
             [at](
                 ParsedInput const &input,
                 json::TracingJSON optionsJson,
