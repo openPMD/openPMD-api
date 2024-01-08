@@ -2415,7 +2415,7 @@ Series::Series(
             [at, comm](
                 ParsedInput const &input,
                 json::TracingJSON optionsJson,
-                std::string const &filepath) {
+                std::string const &filepath_lambda) {
                 return createIOHandler(
                     input.path,
                     at,
@@ -2423,7 +2423,7 @@ Series::Series(
                     input.filenameExtension.value_or(std::string()),
                     comm,
                     std::move(optionsJson),
-                    filepath);
+                    filepath_lambda);
             });
     initSeries(std::move(io_handler), std::move(parsed_input));
     json::warnGlobalUnusedOptions(options_json);
@@ -2443,14 +2443,14 @@ Series::Series(
             [at](
                 ParsedInput const &input,
                 json::TracingJSON optionsJson,
-                std::string const &filepath) {
+                std::string const &filepath_lambda) {
                 return createIOHandler(
                     input.path,
                     at,
                     input.format,
                     input.filenameExtension.value_or(std::string()),
                     std::move(optionsJson),
-                    filepath);
+                    filepath_lambda);
             });
     initSeries(std::move(io_handler), std::move(parsed_input));
     json::warnGlobalUnusedOptions(options_json);
