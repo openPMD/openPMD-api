@@ -106,28 +106,68 @@ public:
 namespace detail
 {
     template <typename T, typename U>
-    auto doConvert(T *pv) -> std::variant<U, std::runtime_error>
+    auto doConvert(T const *pv) -> std::variant<U, std::runtime_error>
     {
         (void)pv;
         if constexpr (std::is_convertible_v<T, U>)
         {
             return {static_cast<U>(*pv)};
         }
+        else if constexpr (
+            std::is_same_v<T, std::string> && auxiliary::IsChar_v<U>)
+        {
+            if (pv->size() == 1)
+            {
+                return static_cast<U>(pv->at(0));
+            }
+            else
+            {
+                return {
+                    std::runtime_error("getCast: cast from string to char only "
+                                       "possible if string has length 1.")};
+            }
+        }
+        else if constexpr (
+            auxiliary::IsChar_v<T> && std::is_same_v<U, std::string>)
+        {
+            return std::string(1, *pv);
+        }
         else if constexpr (auxiliary::IsVector_v<T> && auxiliary::IsVector_v<U>)
         {
+            U res{};
+            res.reserve(pv->size());
             if constexpr (std::is_convertible_v<
                               typename T::value_type,
                               typename U::value_type>)
             {
-                U res{};
-                res.reserve(pv->size());
                 std::copy(pv->begin(), pv->end(), std::back_inserter(res));
                 return {res};
             }
             else
             {
-                return {
-                    std::runtime_error("getCast: no vector cast possible.")};
+                // try a dynamic conversion recursively
+                for (auto const &val : *pv)
+                {
+                    auto conv = doConvert<
+                        typename T::value_type,
+                        typename U::value_type>(&val);
+                    if (auto conv_val =
+                            std::get_if<typename U::value_type>(&conv);
+                        conv_val)
+                    {
+                        res.push_back(std::move(*conv_val));
+                    }
+                    else
+                    {
+                        auto exception = std::get<std::runtime_error>(conv);
+                        return {std::runtime_error(
+                            std::string(
+                                "getCast: no vector cast possible, recursive "
+                                "error: ") +
+                            exception.what())};
+                    }
+                }
+                return {res};
             }
         }
         // conversion cast: array to vector
@@ -135,19 +175,40 @@ namespace detail
         // the frontend expects a vector
         else if constexpr (auxiliary::IsArray_v<T> && auxiliary::IsVector_v<U>)
         {
+            U res{};
+            res.reserve(pv->size());
             if constexpr (std::is_convertible_v<
                               typename T::value_type,
                               typename U::value_type>)
             {
-                U res{};
-                res.reserve(pv->size());
                 std::copy(pv->begin(), pv->end(), std::back_inserter(res));
                 return {res};
             }
             else
             {
-                return {std::runtime_error(
-                    "getCast: no array to vector conversion possible.")};
+                // try a dynamic conversion recursively
+                for (auto const &val : *pv)
+                {
+                    auto conv = doConvert<
+                        typename T::value_type,
+                        typename U::value_type>(&val);
+                    if (auto conv_val =
+                            std::get_if<typename U::value_type>(&conv);
+                        conv_val)
+                    {
+                        res.push_back(std::move(*conv_val));
+                    }
+                    else
+                    {
+                        auto exception = std::get<std::runtime_error>(conv);
+                        return {std::runtime_error(
+                            std::string(
+                                "getCast: no array to vector conversion "
+                                "possible, recursive error: ") +
+                            exception.what())};
+                    }
+                }
+                return {res};
             }
         }
         // conversion cast: vector to array
@@ -155,11 +216,11 @@ namespace detail
         // the frontend expects an array
         else if constexpr (auxiliary::IsVector_v<T> && auxiliary::IsArray_v<U>)
         {
+            U res{};
             if constexpr (std::is_convertible_v<
                               typename T::value_type,
                               typename U::value_type>)
             {
-                U res{};
                 if (res.size() != pv->size())
                 {
                     return std::runtime_error(
@@ -175,24 +236,60 @@ namespace detail
             }
             else
             {
-                return {std::runtime_error(
-                    "getCast: no vector to array conversion possible.")};
+                // try a dynamic conversion recursively
+                for (size_t i = 0; i <= res.size(); ++i)
+                {
+                    auto const &val = (*pv)[i];
+                    auto conv = doConvert<
+                        typename T::value_type,
+                        typename U::value_type>(&val);
+                    if (auto conv_val =
+                            std::get_if<typename U::value_type>(&conv);
+                        conv_val)
+                    {
+                        res[i] = std::move(*conv_val);
+                    }
+                    else
+                    {
+                        auto exception = std::get<std::runtime_error>(conv);
+                        return {std::runtime_error(
+                            std::string(
+                                "getCast: no vector to array conversion "
+                                "possible, recursive error: ") +
+                            exception.what())};
+                    }
+                }
+                return {res};
             }
         }
         // conversion cast: turn a single value into a 1-element vector
         else if constexpr (auxiliary::IsVector_v<U>)
         {
+            U res{};
+            res.reserve(1);
             if constexpr (std::is_convertible_v<T, typename U::value_type>)
             {
-                U res{};
-                res.reserve(1);
                 res.push_back(static_cast<typename U::value_type>(*pv));
                 return {res};
             }
             else
             {
-                return {std::runtime_error(
-                    "getCast: no scalar to vector conversion possible.")};
+                // try a dynamic conversion recursively
+                auto conv = doConvert<T, typename U::value_type>(pv);
+                if (auto conv_val = std::get_if<typename U::value_type>(&conv);
+                    conv_val)
+                {
+                    res.push_back(std::move(*conv_val));
+                    return {res};
+                }
+                else
+                {
+                    auto exception = std::get<std::runtime_error>(conv);
+                    return {std::runtime_error(
+                        std::string("getCast: no scalar to vector conversion "
+                                    "possible, recursive error: ") +
+                        exception.what())};
+                }
             }
         }
         else

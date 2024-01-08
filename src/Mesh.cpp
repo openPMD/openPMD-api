@@ -139,7 +139,7 @@ Mesh &Mesh::setDataOrder(Mesh::DataOrder dor)
 
 std::vector<std::string> Mesh::axisLabels() const
 {
-    return getAttribute("axisLabels").get<std::vector<std::string> >();
+    return getAttribute("axisLabels").get<std::vector<std::string>>();
 }
 
 Mesh &Mesh::setAxisLabels(std::vector<std::string> const &als)
@@ -165,7 +165,7 @@ template Mesh &Mesh::setGridSpacing(std::vector<long double> const &gs);
 
 std::vector<double> Mesh::gridGlobalOffset() const
 {
-    return getAttribute("gridGlobalOffset").get<std::vector<double> >();
+    return getAttribute("gridGlobalOffset").get<std::vector<double>>();
 }
 
 Mesh &Mesh::setGridGlobalOffset(std::vector<double> const &ggo)
@@ -331,9 +331,9 @@ void Mesh::read()
     aRead.name = "axisLabels";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::VEC_STRING || *aRead.dtype == DT::STRING)
-        setAxisLabels(
-            Attribute(*aRead.resource).get<std::vector<std::string> >());
+    Attribute a = Attribute(*aRead.resource);
+    if (auto val = a.getOptional<std::vector<std::string>>(); val.has_value())
+        setAxisLabels(*val);
     else
         throw error::ReadError(
             error::AffectedObject::Attribute,
@@ -346,16 +346,16 @@ void Mesh::read()
     aRead.name = "gridSpacing";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    Attribute a = Attribute(*aRead.resource);
+    a = Attribute(*aRead.resource);
     if (*aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT)
-        setGridSpacing(a.get<std::vector<float> >());
+        setGridSpacing(a.get<std::vector<float>>());
     else if (*aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE)
-        setGridSpacing(a.get<std::vector<double> >());
+        setGridSpacing(a.get<std::vector<double>>());
     else if (
         *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE)
-        setGridSpacing(a.get<std::vector<long double> >());
+        setGridSpacing(a.get<std::vector<long double>>());
     // conversion cast if a backend reports an integer type
-    else if (auto val = a.getOptional<std::vector<double> >(); val.has_value())
+    else if (auto val = a.getOptional<std::vector<double>>(); val.has_value())
         setGridSpacing(val.value());
     else
         throw error::ReadError(
@@ -370,7 +370,7 @@ void Mesh::read()
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
     if (auto val =
-            Attribute(*aRead.resource).getOptional<std::vector<double> >();
+            Attribute(*aRead.resource).getOptional<std::vector<double>>();
         val.has_value())
         setGridGlobalOffset(val.value());
     else
