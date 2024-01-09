@@ -35,6 +35,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <pybind11/pytypes.h>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -336,6 +337,16 @@ struct char_to_explicit_char<false>
 template <typename TargetType>
 std::optional<TargetType> tryCast(py::object const &obj)
 {
+    // Do a check to avoid throwing exceptions
+    if constexpr (std::is_default_constructible_v<TargetType>)
+    {
+        TargetType val{};
+        auto python_val = py::cast(std::move(val));
+        if (!py::isinstance(obj, python_val.get_type()))
+        {
+            return std::nullopt;
+        }
+    }
     try
     {
         return obj.cast<TargetType>();
