@@ -48,9 +48,20 @@ int main(int argc, char *argv[])
         cout << "Set up a 2D array with 10x300 elements per MPI rank ("
              << mpi_size << "x) that will be written to disk\n";
 
+    std::string subfiling_config = R"(
+[hdf5.vfd]
+type = "subfiling"
+ioc_selection = "every_nth_rank"
+stripe_size = 33554432
+stripe_count = -1
+        )";
+
     // open file for writing
     Series series = Series(
-        "../samples/5_parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
+        "../samples/5_parallel_write.h5",
+        Access::CREATE,
+        MPI_COMM_WORLD,
+        subfiling_config);
     if (0 == mpi_rank)
         cout << "Created an empty series in parallel with " << mpi_size
              << " MPI ranks\n";
