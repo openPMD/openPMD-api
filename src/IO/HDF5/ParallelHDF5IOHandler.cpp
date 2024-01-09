@@ -299,15 +299,17 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
             }
             else
             {
-                throw error::OperationUnsupportedInBackend(
-                    "hdf5", "Subfiling VFD requires the use of threaded MPI.");
+                std::cerr << "[HDF5 Backend] The requested subfiling VFD of "
+                             "HDF5 requires the use of threaded MPI."
+                          << std::endl;
             }
 #else
-            throw error::OperationUnsupportedInBackend(
-                "hdf5",
-                "No support for subfiling found in the installed version of "
-                "HDF5. Tip: Configure a recent version of HDF5 with "
-                "'-DHDF5_ENABLE_SUBFILING_VFD=ON'.");
+            std::cerr
+                << "[HDF5 Backend] No support for the requested subfiling VFD "
+                   "found in the installed version of HDF5. Will continue with "
+                   "default settings. Tip: Configure a recent version of HDF5 "
+                   "with '-DHDF5_ENABLE_SUBFILING_VFD=ON'."
+                << std::endl;
 #endif
         }
         else
