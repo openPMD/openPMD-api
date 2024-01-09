@@ -400,6 +400,12 @@ std::string Series::backend() const
     return IOHandler()->backendName();
 }
 
+std::string Series::backend()
+{
+    /* this activates the non-const call to IOHandler() */
+    return IOHandler()->backendName();
+}
+
 void Series::flush(std::string backendConfig)
 {
     auto &series = get();
@@ -555,6 +561,37 @@ namespace
         return autoDetectPadding(isPartOfSeries, directory, [](auto &&...) {});
     }
 } // namespace
+
+template <typename... MPI_Communicator>
+AbstractIOHandler *Series::init(
+    std::string const &filepath,
+    Access at,
+    std::string const &options,
+    // Either an MPI_Comm or none, the template works for both options
+    MPI_Communicator &&...comm)
+{
+    auto [io_handler, parsed_input, options_json] =
+        initIOHandler<json::TracingJSON>(
+            filepath,
+            options,
+            at,
+            [=](ParsedInput const &input,
+                json::TracingJSON optionsJson,
+                std::string const &filepath_lambda) {
+                return createIOHandler(
+                    input.path,
+                    at,
+                    input.format,
+                    input.filenameExtension.value_or(std::string()),
+                    comm...,
+                    std::move(optionsJson),
+                    filepath_lambda);
+            });
+    auto res = io_handler.get();
+    initSeries(std::move(io_handler), std::move(parsed_input));
+    json::warnGlobalUnusedOptions(options_json);
+    return res;
+}
 
 template <typename TracingJSON, typename BuildIOHandler>
 auto Series::initIOHandler(
@@ -2407,26 +2444,23 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    auto [io_handler, parsed_input, options_json] =
-        initIOHandler<json::TracingJSON>(
-            filepath,
-            options,
-            at,
-            [at, comm](
-                ParsedInput const &input,
-                json::TracingJSON optionsJson,
-                std::string const &filepath_lambda) {
-                return createIOHandler(
-                    input.path,
-                    at,
-                    input.format,
-                    input.filenameExtension.value_or(std::string()),
-                    comm,
-                    std::move(optionsJson),
-                    filepath_lambda);
-            });
-    initSeries(std::move(io_handler), std::move(parsed_input));
-    json::warnGlobalUnusedOptions(options_json);
+    switch (at)
+    {
+    case Access::CREATE:
+    case Access::READ_WRITE:
+    case Access::READ_ONLY:
+        init(filepath, at, options, comm);
+        break;
+    case Access::READ_LINEAR:
+    case Access::APPEND: {
+        auto &series = get();
+        series.m_deferred_initialization =
+            [this, filepath, at, comm, options]() {
+                return init(filepath, at, options, comm);
+            };
+    }
+    break;
+    }
 }
 #endif
 
@@ -2435,25 +2469,23 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    auto [io_handler, parsed_input, options_json] =
-        initIOHandler<json::TracingJSON>(
-            filepath,
-            options,
-            at,
-            [at](
-                ParsedInput const &input,
-                json::TracingJSON optionsJson,
-                std::string const &filepath_lambda) {
-                return createIOHandler(
-                    input.path,
-                    at,
-                    input.format,
-                    input.filenameExtension.value_or(std::string()),
-                    std::move(optionsJson),
-                    filepath_lambda);
-            });
-    initSeries(std::move(io_handler), std::move(parsed_input));
-    json::warnGlobalUnusedOptions(options_json);
+    switch (at)
+    {
+    case Access::CREATE:
+    case Access::READ_WRITE:
+    case Access::READ_ONLY:
+        init(filepath, at, options);
+        break;
+
+    case Access::READ_LINEAR:
+    case Access::APPEND: {
+        auto &series = get();
+        series.m_deferred_initialization = [this, filepath, at, options]() {
+            return init(filepath, at, options);
+        };
+    }
+    break;
+    }
 }
 
 Series::operator bool() const
@@ -2482,6 +2514,11 @@ WriteIterations Series::writeIterations()
     if (!series.m_writeIterations.has_value())
     {
         series.m_writeIterations = WriteIterations(this->iterations);
+    }
+    if (series.m_deferred_initialization.has_value())
+    {
+        series.m_deferred_initialization->operator()();
+        series.m_deferred_initialization = std::nullopt;
     }
     return series.m_writeIterations.value();
 }

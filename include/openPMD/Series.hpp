@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
@@ -34,6 +35,7 @@
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
 #include <memory>
+#include <stdexcept>
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -192,6 +194,9 @@ namespace internal
          * Series::readIterations(), empty before that point.
          */
         std::optional<ParsePreference> m_parsePreference;
+
+        std::optional<std::function<AbstractIOHandler *()>>
+            m_deferred_initialization = std::nullopt;
 
         void close();
     }; // SeriesData
@@ -503,6 +508,7 @@ public:
      * @return String of a pattern for data backend.
      */
     std::string backend() const;
+    std::string backend();
 
     /** Execute all required remaining IO operations to write or read data.
      *
@@ -594,6 +600,13 @@ OPENPMD_private
     {
         if (m_series)
         {
+            if (m_series->m_deferred_initialization.has_value())
+            {
+                decltype(m_series->m_deferred_initialization) steal_the_goods =
+                    std::nullopt;
+                m_series->m_deferred_initialization.swap(steal_the_goods);
+                steal_the_goods->operator()();
+            }
             return *m_series;
         }
         else
@@ -637,6 +650,12 @@ OPENPMD_private
     void parseJsonOptions(TracingJSON &options, ParsedInput &);
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
+    template <typename... MPI_Communicator>
+    AbstractIOHandler *init(
+        std::string const &filepath,
+        Access at,
+        std::string const &options,
+        MPI_Communicator &&...);
     template <typename TracingJSON, typename BuildIOHandler>
     std::tuple<
         std::unique_ptr<AbstractIOHandler>,
@@ -771,6 +790,21 @@ OPENPMD_private
      * (We could also add this to the public API some time)
      */
     std::optional<std::vector<IterationIndex_t>> currentSnapshot() const;
+
+    AbstractIOHandler *IOHandler()
+    {
+        auto res = Attributable::IOHandler();
+        if (!res)
+        {
+            get();
+            res = Attributable::IOHandler();
+        }
+        return res;
+    }
+    AbstractIOHandler const *IOHandler() const
+    {
+        return Attributable::IOHandler();
+    }
 }; // Series
 } // namespace openPMD
 

@@ -317,7 +317,8 @@ this method.
         .def_property("name", &Series::name, &Series::setName)
         .def("flush", &Series::flush, py::arg("backend_config") = "{}")
 
-        .def_property_readonly("backend", &Series::backend)
+        .def_property_readonly(
+            "backend", static_cast<std::string (Series::*)()>(&Series::backend))
 
         // TODO remove in future versions (deprecated)
         .def("set_openPMD", &Series::setOpenPMD)
