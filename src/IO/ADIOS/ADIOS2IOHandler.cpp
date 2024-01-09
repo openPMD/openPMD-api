@@ -68,17 +68,17 @@ namespace openPMD
 
 #if openPMD_HAVE_ADIOS2
 
-    std::optional<size_t> joinedDimension(adios2::Dims const &dims)
+std::optional<size_t> joinedDimension(adios2::Dims const &dims)
+{
+    for (size_t i = 0; i < dims.size(); ++i)
     {
-        for (size_t i = 0; i < dims.size(); ++i)
+        if (dims[i] == adios2::JoinedDim)
         {
-            if (dims[i] == adios2::JoinedDim)
-            {
-                return i;
-            }
+            return i;
         }
-        return std::nullopt;
     }
+    return std::nullopt;
+}
 
 #if openPMD_HAVE_MPI
 
