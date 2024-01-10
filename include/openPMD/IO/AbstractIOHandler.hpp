@@ -218,6 +218,12 @@ public:
     {}
     virtual ~AbstractIOHandler() = default;
 
+    AbstractIOHandler(AbstractIOHandler const &) = default;
+    AbstractIOHandler(AbstractIOHandler &&) = default;
+
+    AbstractIOHandler &operator=(AbstractIOHandler const &) = default;
+    AbstractIOHandler &operator=(AbstractIOHandler &&) = default;
+
     /** Add provided task to queue according to FIFO.
      *
      * @param   iotask  Task to be executed after all previously enqueued
@@ -245,7 +251,7 @@ public:
     /** The currently used backend */
     virtual std::string backendName() const = 0;
 
-    std::string const directory;
+    std::string directory;
     /*
      * Originally, the reason for distinguishing these two was that during
      * parsing in reading access modes, the access type would be temporarily
@@ -261,8 +267,8 @@ public:
      * which is entirely implemented by the frontend, which internally uses
      * the backend in CREATE mode.
      */
-    Access const m_backendAccess;
-    Access const m_frontendAccess;
+    Access m_backendAccess;
+    Access m_frontendAccess;
     internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
     std::queue<IOTask> m_work;
     /**

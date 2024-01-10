@@ -36,4 +36,9 @@ std::future<void> DummyIOHandler::flush(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }
+
+std::string DummyIOHandler::backendName() const
+{
+    return "Dummy";
+}
 } // namespace openPMD

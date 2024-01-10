@@ -23,6 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
@@ -37,6 +38,7 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <regex>
 #include <set>
@@ -289,6 +291,10 @@ IterationEncoding Series::iterationEncoding() const
 Series &Series::setIterationEncoding(IterationEncoding ie)
 {
     auto &series = get();
+    if (series.m_deferred_initialization)
+    {
+        IOHandler();
+    }
     if (written())
         throw std::runtime_error(
             "A files iterationEncoding can not (yet) be changed after it has "
@@ -670,10 +676,45 @@ void Series::initSeries(
     std::unique_ptr<Series::ParsedInput> input)
 {
     auto &series = get();
-    writable().IOHandler =
-        std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+    auto &writable = series.m_writable;
+
+    // auto print = [&](auto const &info) {
+    //     std::cout << "[" << info << "] "
+    //               << debug(writable.IOHandler ? (**writable.IOHandler).get()
+    //                                      : nullptr)
+    //               << " <- " << debug(ioHandler.get()) << std::endl;
+    // };
+    // print("begin");
+
+    std::string directory = ioHandler->directory;
+
+    if (writable.IOHandler)
+    {
+        if (writable.IOHandler->has_value())
+        {
+            ioHandler->operator=(***writable.IOHandler);
+            ioHandler->directory = std::move(directory);
+        }
+    }
+    else
+    {
+        writable.IOHandler = std::make_shared<
+            std::optional<std::unique_ptr<AbstractIOHandler>>>();
+    }
+    {
+        std::optional<std::unique_ptr<AbstractIOHandler>> *ptr =
+            writable.IOHandler.get();
+        *ptr = std::nullopt;
+        *ptr = std::make_optional<std::unique_ptr<AbstractIOHandler>>(
             std::move(ioHandler));
-    series.iterations.linkHierarchy(writable());
+    }
+    // print("after");
+    // *writable.IOHandler = std::nullopt;
+    // *writable.IOHandler =
+    //     std::make_optional<std::unique_ptr<AbstractIOHandler>>(
+    //         std::move(ioHandler));
+
+    series.iterations.linkHierarchy(writable);
     series.iterations.writable().ownKeyWithinParent = "iterations";
 
     series.m_name = input->name;
@@ -2480,6 +2521,10 @@ Series::Series(
     case Access::READ_LINEAR:
     case Access::APPEND: {
         auto &series = get();
+        writable().IOHandler =
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                std::make_unique<DummyIOHandler>("dummy", at));
+        get().iterations.linkHierarchy(writable());
         series.m_deferred_initialization = [this, filepath, at, options]() {
             return init(filepath, at, options);
         };
