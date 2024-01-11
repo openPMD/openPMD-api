@@ -42,6 +42,7 @@
 #include <optional>
 #include <regex>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -569,51 +570,96 @@ namespace
 } // namespace
 
 template <typename... MPI_Communicator>
-AbstractIOHandler *Series::init(
+void Series::init(
     std::string const &filepath,
     Access at,
     std::string const &options,
     // Either an MPI_Comm or none, the template works for both options
     MPI_Communicator &&...comm)
 {
-    auto [io_handler, parsed_input, options_json] =
-        initIOHandler<json::TracingJSON>(
-            filepath,
-            options,
+    switch (at)
+    {
+    case Access::CREATE:
+    case Access::READ_WRITE:
+    case Access::READ_ONLY: {
+        auto [parsed_input, tracing_json] =
+            initIOHandler<json::TracingJSON>(filepath, options, at, true);
+        auto io_handler = createIOHandler(
+            parsed_input->path,
             at,
-            [=](ParsedInput const &input,
-                json::TracingJSON optionsJson,
-                std::string const &filepath_lambda) {
-                return createIOHandler(
-                    input.path,
-                    at,
-                    input.format,
-                    input.filenameExtension.value_or(std::string()),
-                    comm...,
-                    std::move(optionsJson),
-                    filepath_lambda);
-            });
-    auto res = io_handler.get();
-    initSeries(std::move(io_handler), std::move(parsed_input));
-    json::warnGlobalUnusedOptions(options_json);
-    return res;
+            parsed_input->format,
+            parsed_input->filenameExtension.value_or(std::string()),
+            comm...,
+            tracing_json,
+            filepath);
+        initSeries(std::move(io_handler), std::move(parsed_input));
+        json::warnGlobalUnusedOptions(tracing_json);
+    }
+    break;
+    // case Access::CREATE:
+    case Access::READ_LINEAR:
+    case Access::APPEND: {
+        auto &series = get();
+        // Set a temporary IOHandler so that API calls which require a present
+        // IOHandler don't fail
+        writable().IOHandler =
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                std::make_unique<DummyIOHandler>("DIRECTORY_NOT_YET_SET", at));
+        series.iterations.linkHierarchy(writable());
+        initIOHandler<json::TracingJSON>(filepath, options, at, false);
+        series.m_deferred_initialization = [series = this->m_series,
+                                            called_this_already = false,
+                                            filepath,
+                                            options,
+                                            at,
+                                            comm...]() mutable {
+            if (called_this_already)
+            {
+                throw std::runtime_error("Must be called one time only");
+            }
+            else
+            {
+                called_this_already = true;
+            }
+            Series tmp_series;
+            tmp_series.setData(std::move(series));
+
+            auto [parsed_input, tracing_json] =
+                tmp_series.initIOHandler<json::TracingJSON>(
+                    filepath, options, at, true);
+
+            auto io_handler = createIOHandler(
+                parsed_input->path,
+                at,
+                parsed_input->format,
+                parsed_input->filenameExtension.value_or(std::string()),
+                comm...,
+                tracing_json,
+                filepath);
+            auto res = io_handler.get();
+            tmp_series.initSeries(
+                std::move(io_handler), std::move(parsed_input));
+            json::warnGlobalUnusedOptions(tracing_json);
+            return res;
+        };
+    }
+    break;
+    }
 }
 
-template <typename TracingJSON, typename BuildIOHandler>
+template <typename TracingJSON>
 auto Series::initIOHandler(
     std::string const &filepath,
     std::string const &options,
     Access at,
-    BuildIOHandler &&buildIOHandler)
-    -> std::tuple<
-        std::unique_ptr<AbstractIOHandler>,
-        std::unique_ptr<ParsedInput>,
-        TracingJSON>
+    bool resolve_generic_extension)
+    -> std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
 {
     json::TracingJSON optionsJson =
         json::parseOptions(options, /* considerFiles = */ true);
     auto input = parseInput(filepath);
-    if (input->format == Format::GENERIC && access::read(at))
+    if (resolve_generic_extension && input->format == Format::GENERIC &&
+        access::read(at))
     {
         auto isPartOfSeries =
             input->iterationEncoding == IterationEncoding::fileBased
@@ -665,10 +711,8 @@ auto Series::initIOHandler(
             input->filenameExtension = suffix(input->format);
         }
     }
-
-    auto handler = buildIOHandler(*input, optionsJson, filepath);
-    return std::make_tuple(
-        std::move(handler), std::move(input), std::move(optionsJson));
+    // auto handler = buildIOHandler(*input, optionsJson, filepath);
+    return std::make_tuple(std::move(input), std::move(optionsJson));
 }
 
 void Series::initSeries(
@@ -2481,29 +2525,7 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    switch (at)
-    {
-    case Access::CREATE:
-    case Access::READ_WRITE:
-    case Access::READ_ONLY:
-        init(filepath, at, options, comm);
-        break;
-    case Access::READ_LINEAR:
-    case Access::APPEND: {
-        auto &series = get();
-        // Set a temporary IOHandler so that API calls which require a present
-        // IOHandler don't fail
-        writable().IOHandler =
-            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-                std::make_unique<DummyIOHandler>("DIRECTORY_NOT_YET_SET", at));
-        get().iterations.linkHierarchy(writable());
-        series.m_deferred_initialization =
-            [this, filepath, at, comm, options]() {
-                return init(filepath, at, options, comm);
-            };
-    }
-    break;
-    }
+    init(filepath, at, options, comm);
 }
 #endif
 
@@ -2512,29 +2534,7 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    switch (at)
-    {
-    case Access::CREATE:
-    case Access::READ_WRITE:
-    case Access::READ_ONLY:
-        init(filepath, at, options);
-        break;
-
-    case Access::READ_LINEAR:
-    case Access::APPEND: {
-        auto &series = get();
-        // Set a temporary IOHandler so that API calls which require a present
-        // IOHandler don't fail
-        writable().IOHandler =
-            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-                std::make_unique<DummyIOHandler>("DIRECTORY_NOT_YET_SET", at));
-        get().iterations.linkHierarchy(writable());
-        series.m_deferred_initialization = [this, filepath, at, options]() {
-            return init(filepath, at, options);
-        };
-    }
-    break;
-    }
+    init(filepath, at, options);
 }
 
 Series::operator bool() const
@@ -2566,8 +2566,9 @@ WriteIterations Series::writeIterations()
     }
     if (series.m_deferred_initialization.has_value())
     {
-        series.m_deferred_initialization->operator()();
-        series.m_deferred_initialization = std::nullopt;
+        auto functor = std::move(*m_series->m_deferred_initialization);
+        m_series->m_deferred_initialization = std::nullopt;
+        functor();
     }
     return series.m_writeIterations.value();
 }

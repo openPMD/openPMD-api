@@ -648,21 +648,17 @@ OPENPMD_private
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
     template <typename... MPI_Communicator>
-    AbstractIOHandler *init(
+    void init(
         std::string const &filepath,
         Access at,
         std::string const &options,
         MPI_Communicator &&...);
-    template <typename TracingJSON, typename BuildIOHandler>
-    std::tuple<
-        std::unique_ptr<AbstractIOHandler>,
-        std::unique_ptr<ParsedInput>,
-        TracingJSON>
-    initIOHandler(
+    template <typename TracingJSON>
+    std::tuple<std::unique_ptr<ParsedInput>, TracingJSON> initIOHandler(
         std::string const &filepath,
         std::string const &options,
         Access at,
-        BuildIOHandler &&buildIOHandler);
+        bool resolve_generic_extension);
     void initSeries(
         std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
     void initDefaults(IterationEncoding, bool initAll = false);
