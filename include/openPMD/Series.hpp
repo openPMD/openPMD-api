@@ -788,28 +788,16 @@ OPENPMD_private
      */
     std::optional<std::vector<IterationIndex_t>> currentSnapshot() const;
 
-    static std::string debug(AbstractIOHandler const *ptr)
-    {
-        std::stringstream res;
-        res << ptr;
-        if (ptr)
-            res << '(' << ptr->directory << ')';
-        return res.str();
-    }
-
     AbstractIOHandler *IOHandler()
     {
         auto res = Attributable::IOHandler();
-        if ((!res || res->backendName() == "Dummy") &&
+        if (res && //  res->backendName() == "Dummy" &&
             m_series->m_deferred_initialization.has_value())
         {
-            decltype(m_series->m_deferred_initialization) steal_the_goods =
-                std::nullopt;
-            m_series->m_deferred_initialization.swap(steal_the_goods);
-            steal_the_goods->operator()();
-            res = Attributable::IOHandler();
+            auto functor = std::move(*m_series->m_deferred_initialization);
+            m_series->m_deferred_initialization = std::nullopt;
+            res = functor();
         }
-        // std::cout << "Returning " << debug(res) << std::endl;
         return res;
     }
     AbstractIOHandler const *IOHandler() const

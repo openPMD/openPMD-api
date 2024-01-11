@@ -678,41 +678,37 @@ void Series::initSeries(
     auto &series = get();
     auto &writable = series.m_writable;
 
-    // auto print = [&](auto const &info) {
-    //     std::cout << "[" << info << "] "
-    //               << debug(writable.IOHandler ? (**writable.IOHandler).get()
-    //                                      : nullptr)
-    //               << " <- " << debug(ioHandler.get()) << std::endl;
-    // };
-    // print("begin");
-
-    std::string directory = ioHandler->directory;
-
+    /*
+     * In Access modes READ_LINEAR and APPEND, the Series constructor might have
+     * emplaced a temporary IOHandler. Check if this is the case.
+     */
     if (writable.IOHandler)
     {
         if (writable.IOHandler->has_value())
         {
+            /*
+             * A temporary IOHandler has been used. In this case, copy the
+             * values from that IOHandler over into the real one. Before that,
+             * store the real directory in a temporary variable, since the
+             * intermediate IOHandler was initialized with a placeholder value.
+             */
+            std::string directory = ioHandler->directory;
             ioHandler->operator=(***writable.IOHandler);
             ioHandler->directory = std::move(directory);
+            *writable.IOHandler = std::move(ioHandler);
+        }
+        else
+        {
+            throw error::Internal(
+                "Control flow error. This should not happen.");
         }
     }
     else
     {
-        writable.IOHandler = std::make_shared<
-            std::optional<std::unique_ptr<AbstractIOHandler>>>();
+        writable.IOHandler =
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                std::move(ioHandler));
     }
-    {
-        std::optional<std::unique_ptr<AbstractIOHandler>> *ptr =
-            writable.IOHandler.get();
-        *ptr = std::nullopt;
-        *ptr = std::make_optional<std::unique_ptr<AbstractIOHandler>>(
-            std::move(ioHandler));
-    }
-    // print("after");
-    // *writable.IOHandler = std::nullopt;
-    // *writable.IOHandler =
-    //     std::make_optional<std::unique_ptr<AbstractIOHandler>>(
-    //         std::move(ioHandler));
 
     series.iterations.linkHierarchy(writable);
     series.iterations.writable().ownKeyWithinParent = "iterations";
@@ -2495,6 +2491,12 @@ Series::Series(
     case Access::READ_LINEAR:
     case Access::APPEND: {
         auto &series = get();
+        // Set a temporary IOHandler so that API calls which require a present
+        // IOHandler don't fail
+        writable().IOHandler =
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                std::make_unique<DummyIOHandler>("DIRECTORY_NOT_YET_SET", at));
+        get().iterations.linkHierarchy(writable());
         series.m_deferred_initialization =
             [this, filepath, at, comm, options]() {
                 return init(filepath, at, options, comm);
@@ -2521,9 +2523,11 @@ Series::Series(
     case Access::READ_LINEAR:
     case Access::APPEND: {
         auto &series = get();
+        // Set a temporary IOHandler so that API calls which require a present
+        // IOHandler don't fail
         writable().IOHandler =
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-                std::make_unique<DummyIOHandler>("dummy", at));
+                std::make_unique<DummyIOHandler>("DIRECTORY_NOT_YET_SET", at));
         get().iterations.linkHierarchy(writable());
         series.m_deferred_initialization = [this, filepath, at, options]() {
             return init(filepath, at, options);
