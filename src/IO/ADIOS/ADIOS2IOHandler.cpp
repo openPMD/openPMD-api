@@ -33,7 +33,6 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 
-#include <adios2/common/ADIOSTypes.h>
 #include <algorithm>
 #include <cctype> // std::tolower
 #include <iostream>
