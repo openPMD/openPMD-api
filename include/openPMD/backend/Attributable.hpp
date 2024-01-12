@@ -229,6 +229,8 @@ public:
 
         /** Reconstructs a path that can be passed to a Series constructor */
         std::string filePath() const;
+        /** Return the path ob the object within the openPMD file */
+        std::string openPMDPath() const;
     };
 
     /**
