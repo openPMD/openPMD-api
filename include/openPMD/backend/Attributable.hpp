@@ -222,7 +222,8 @@ public:
          * Indicates where this Attributable may be found within its Series.
          * Prefixed by the accessed object, e.g.,
          *   "iterations", "100", "meshes", "E", "x"
-         * Notice that RecordComponent::SCALAR is included in this list, too.
+         * Notice that RecordComponent::SCALAR does not get included in this
+         * list.
          */
         std::vector<std::string> group;
         Access access;
