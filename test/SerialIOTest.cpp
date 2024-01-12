@@ -5159,43 +5159,45 @@ TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
     {
         Series read(filepath, access);
 
+        // false positive by clang-tidy?
+        // NOLINTNEXTLINE(performance-for-range-copy)
         for (auto iteration : read.readIterations())
         {
-            for (auto &[mesh_name, mesh] : iteration.meshes)
+            for (auto &mesh : iteration.meshes)
             {
-                for (auto &[component_name, component] : mesh)
+                for (auto &component : mesh.second)
                 {
 #if openPMD_VERBOSE_CHUNKS
                     std::cout << "Chunks for '"
-                              << component.myPath().openPMDPath()
+                              << component.second.myPath().openPMDPath()
                               << "':" << std::endl;
-                    for (auto const &chunk : component.availableChunks())
+                    for (auto const &chunk : component.second.availableChunks())
                     {
                         std::cout << "\t" << format_chunk(chunk) << std::endl;
                     }
 #else
-                    component.availableChunks();
+                    component.second.availableChunks();
 #endif
                 }
             }
-            for (auto &[particle_species_name, particle_species] :
-                 iteration.particles)
+            for (auto &particle_species : iteration.particles)
             {
-                for (auto &[record_name, record] : particle_species)
+                for (auto &record : particle_species.second)
                 {
-                    for (auto &[component_name, component] : record)
+                    for (auto &component : record.second)
                     {
 #if openPMD_VERBOSE_CHUNKS
                         std::cout << "Chunks for '"
-                                  << component.myPath().openPMDPath()
+                                  << component.second.myPath().openPMDPath()
                                   << "':" << std::endl;
-                        for (auto const &chunk : component.availableChunks())
+                        for (auto const &chunk :
+                             component.second.availableChunks())
                         {
                             std::cout << "\t" << format_chunk(chunk)
                                       << std::endl;
                         }
 #else
-                        component.availableChunks();
+                        component.second.availableChunks();
 #endif
                     }
                 }
