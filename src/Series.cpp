@@ -294,7 +294,7 @@ Series &Series::setIterationEncoding(IterationEncoding ie)
     auto &series = get();
     if (series.m_deferred_initialization)
     {
-        IOHandler(); // @todo move the relevant bits to a helper method
+        runDeferredInitialization();
     }
     if (written())
         throw std::runtime_error(
@@ -373,7 +373,7 @@ Series &Series::setName(std::string const &n)
     auto &series = get();
     if (series.m_deferred_initialization)
     {
-        IOHandler(); // @todo move the relevant bits to a helper method
+        runDeferredInitialization();
     }
     if (written())
         throw std::runtime_error(
@@ -581,13 +581,9 @@ void Series::init(
     // Either an MPI_Comm or none, the template works for both options
     MPI_Communicator &&...comm)
 {
-    switch (at)
-    {
-    case Access::CREATE:
-    case Access::READ_WRITE:
-    case Access::READ_ONLY: {
-        auto [parsed_input, tracing_json] =
-            initIOHandler<json::TracingJSON>(filepath, options, at, true);
+    auto init_directly = [this, &comm..., at, &filepath](
+                             std::unique_ptr<ParsedInput> parsed_input,
+                             json::TracingJSON tracing_json) {
         auto io_handler = createIOHandler(
             parsed_input->path,
             at,
@@ -598,20 +594,16 @@ void Series::init(
             filepath);
         initSeries(std::move(io_handler), std::move(parsed_input));
         json::warnGlobalUnusedOptions(tracing_json);
-    }
-    break;
-    // case Access::CREATE:
-    case Access::READ_LINEAR:
-    case Access::APPEND: {
-        auto &series = get();
-        auto first_round =
-            initIOHandler<json::TracingJSON>(filepath, options, at, false);
+    };
+
+    auto init_deferred = [this, at, &filepath, &options, &comm...](
+                             std::string const &parsed_directory) {
         // Set a temporary IOHandler so that API calls which require a present
         // IOHandler don't fail
         writable().IOHandler =
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-                std::make_unique<DummyIOHandler>(
-                    std::get<0>(first_round)->path, at));
+                std::make_unique<DummyIOHandler>(parsed_directory, at));
+        auto &series = get();
         series.iterations.linkHierarchy(writable());
         series.m_deferred_initialization = [called_this_already = false,
                                             filepath,
@@ -643,6 +635,37 @@ void Series::init(
             json::warnGlobalUnusedOptions(tracing_json);
             return res;
         };
+    };
+
+    switch (at)
+    {
+    case Access::CREATE:
+    case Access::READ_WRITE:
+    case Access::READ_ONLY: {
+        auto [parsed_input, tracing_json] =
+            initIOHandler<json::TracingJSON>(filepath, options, at, true);
+        init_directly(std::move(parsed_input), std::move(tracing_json));
+    }
+    break;
+    case Access::READ_LINEAR:
+    case Access::APPEND: {
+        auto [first_parsed_input, first_tracing_json] =
+            initIOHandler<json::TracingJSON>(filepath, options, at, false);
+        if (first_parsed_input->filenameExtension.has_value())
+        {
+            init_directly(
+                std::move(first_parsed_input), std::move(first_tracing_json));
+        }
+        else
+        {
+            /*
+             * Since we are still in the constructor, we want to avoid I/O
+             * accesses to resolve the file extension at the moment.
+             * -> Defer the proper initialization of the IO handler up to the
+             * point when we actually need it.
+             */
+            init_deferred(first_parsed_input->path);
+        }
     }
     break;
     }
@@ -2563,9 +2586,7 @@ WriteIterations Series::writeIterations()
     }
     if (series.m_deferred_initialization.has_value())
     {
-        auto functor = std::move(*m_series->m_deferred_initialization);
-        m_series->m_deferred_initialization = std::nullopt;
-        functor(*this);
+        runDeferredInitialization();
     }
     return series.m_writeIterations.value();
 }
@@ -2620,6 +2641,21 @@ auto Series::currentSnapshot() const
     else
     {
         return std::optional<std::vector<uint64_t>>{};
+    }
+}
+
+AbstractIOHandler *Series::runDeferredInitialization()
+{
+    auto &series = get();
+    if (series.m_deferred_initialization.has_value())
+    {
+        auto functor = std::move(*m_series->m_deferred_initialization);
+        m_series->m_deferred_initialization = std::nullopt;
+        return functor(*this);
+    }
+    else
+    {
+        return nullptr;
     }
 }
 

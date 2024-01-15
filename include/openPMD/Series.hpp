@@ -600,10 +600,6 @@ OPENPMD_private
     {
         if (m_series)
         {
-            if (m_series->m_deferred_initialization.has_value())
-            {
-                return *m_series;
-            }
             return *m_series;
         }
         else
@@ -784,15 +780,15 @@ OPENPMD_private
      */
     std::optional<std::vector<IterationIndex_t>> currentSnapshot() const;
 
+    AbstractIOHandler *runDeferredInitialization();
+
     AbstractIOHandler *IOHandler()
     {
         auto res = Attributable::IOHandler();
         if (res && //  res->backendName() == "Dummy" &&
             m_series->m_deferred_initialization.has_value())
         {
-            auto functor = std::move(*m_series->m_deferred_initialization);
-            m_series->m_deferred_initialization = std::nullopt;
-            res = functor(*this);
+            res = runDeferredInitialization();
         }
         return res;
     }
