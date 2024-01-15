@@ -195,7 +195,7 @@ namespace internal
          */
         std::optional<ParsePreference> m_parsePreference;
 
-        std::optional<std::function<AbstractIOHandler *()>>
+        std::optional<std::function<AbstractIOHandler *(Series &)>>
             m_deferred_initialization = std::nullopt;
 
         void close();
@@ -792,7 +792,7 @@ OPENPMD_private
         {
             auto functor = std::move(*m_series->m_deferred_initialization);
             m_series->m_deferred_initialization = std::nullopt;
-            res = functor();
+            res = functor(*this);
         }
         return res;
     }

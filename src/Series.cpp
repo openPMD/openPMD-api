@@ -294,7 +294,7 @@ Series &Series::setIterationEncoding(IterationEncoding ie)
     auto &series = get();
     if (series.m_deferred_initialization)
     {
-        IOHandler();
+        IOHandler(); // @todo move the relevant bits to a helper method
     }
     if (written())
         throw std::runtime_error(
@@ -371,6 +371,10 @@ std::string Series::name() const
 Series &Series::setName(std::string const &n)
 {
     auto &series = get();
+    if (series.m_deferred_initialization)
+    {
+        IOHandler(); // @todo move the relevant bits to a helper method
+    }
     if (written())
         throw std::runtime_error(
             "A files name can not (yet) be changed after it has been written.");
@@ -600,19 +604,20 @@ void Series::init(
     case Access::READ_LINEAR:
     case Access::APPEND: {
         auto &series = get();
+        auto first_round =
+            initIOHandler<json::TracingJSON>(filepath, options, at, false);
         // Set a temporary IOHandler so that API calls which require a present
         // IOHandler don't fail
         writable().IOHandler =
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-                std::make_unique<DummyIOHandler>("DIRECTORY_NOT_YET_SET", at));
+                std::make_unique<DummyIOHandler>(
+                    std::get<0>(first_round)->path, at));
         series.iterations.linkHierarchy(writable());
-        initIOHandler<json::TracingJSON>(filepath, options, at, false);
-        series.m_deferred_initialization = [series = this->m_series,
-                                            called_this_already = false,
+        series.m_deferred_initialization = [called_this_already = false,
                                             filepath,
                                             options,
                                             at,
-                                            comm...]() mutable {
+                                            comm...](Series &s) mutable {
             if (called_this_already)
             {
                 throw std::runtime_error("Must be called one time only");
@@ -621,12 +626,9 @@ void Series::init(
             {
                 called_this_already = true;
             }
-            Series tmp_series;
-            tmp_series.setData(std::move(series));
 
             auto [parsed_input, tracing_json] =
-                tmp_series.initIOHandler<json::TracingJSON>(
-                    filepath, options, at, true);
+                s.initIOHandler<json::TracingJSON>(filepath, options, at, true);
 
             auto io_handler = createIOHandler(
                 parsed_input->path,
@@ -637,8 +639,7 @@ void Series::init(
                 tracing_json,
                 filepath);
             auto res = io_handler.get();
-            tmp_series.initSeries(
-                std::move(io_handler), std::move(parsed_input));
+            s.initSeries(std::move(io_handler), std::move(parsed_input));
             json::warnGlobalUnusedOptions(tracing_json);
             return res;
         };
@@ -698,7 +699,7 @@ auto Series::initIOHandler(
 
     parseJsonOptions(optionsJson, *input);
 
-    if (!input->filenameExtension.has_value())
+    if (resolve_generic_extension && !input->filenameExtension.has_value())
     {
         if (input->format == /* still */ Format::GENERIC)
         {
@@ -732,13 +733,9 @@ void Series::initSeries(
         {
             /*
              * A temporary IOHandler has been used. In this case, copy the
-             * values from that IOHandler over into the real one. Before that,
-             * store the real directory in a temporary variable, since the
-             * intermediate IOHandler was initialized with a placeholder value.
+             * values from that IOHandler over into the real one.
              */
-            std::string directory = ioHandler->directory;
             ioHandler->operator=(***writable.IOHandler);
-            ioHandler->directory = std::move(directory);
             *writable.IOHandler = std::move(ioHandler);
         }
         else
@@ -2568,7 +2565,7 @@ WriteIterations Series::writeIterations()
     {
         auto functor = std::move(*m_series->m_deferred_initialization);
         m_series->m_deferred_initialization = std::nullopt;
-        functor();
+        functor(*this);
     }
     return series.m_writeIterations.value();
 }
