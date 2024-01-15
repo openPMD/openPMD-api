@@ -683,7 +683,7 @@ auto Series::initIOHandler(
         json::parseOptions(options, /* considerFiles = */ true);
     auto input = parseInput(filepath);
     if (resolve_generic_extension && input->format == Format::GENERIC &&
-        access::read(at))
+        at != Access::CREATE)
     {
         auto isPartOfSeries =
             input->iterationEncoding == IterationEncoding::fileBased
@@ -717,6 +717,14 @@ auto Series::initIOHandler(
         {
             input->filenameExtension = *extension;
             input->format = determineFormat(*extension);
+        }
+        else if (access::read(at))
+        {
+            throw error::ReadError(
+                error::AffectedObject::File,
+                error::Reason::NotFound,
+                std::nullopt,
+                "No file found that matches given pattern '" + filepath + "'.");
         }
     }
 
