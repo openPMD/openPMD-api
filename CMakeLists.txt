@@ -528,7 +528,7 @@ target_include_directories(openPMD PUBLIC
 if(openPMD_BUILD_TESTING)
     find_package(Catch2 CONFIG)
     if(NOT Catch2_FOUND)
-        message(STATUS "Fetching toml11 from https://github.com/catchorg/Catch2")
+        message(STATUS "Fetching catch2 from https://github.com/catchorg/Catch2")
         FetchContent_Declare(
           Catch2
           GIT_REPOSITORY https://github.com/catchorg/Catch2.git
