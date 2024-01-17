@@ -35,6 +35,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <pybind11/pytypes.h>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -336,6 +337,16 @@ struct char_to_explicit_char<false>
 template <typename TargetType>
 std::optional<TargetType> tryCast(py::object const &obj)
 {
+    // Do a check to avoid throwing exceptions
+    if constexpr (std::is_default_constructible_v<TargetType>)
+    {
+        TargetType val{};
+        auto python_val = py::cast(std::move(val));
+        if (!py::isinstance(obj, python_val.get_type()))
+        {
+            return std::nullopt;
+        }
+    }
     try
     {
         return obj.cast<TargetType>();
@@ -358,17 +369,25 @@ bool setAttributeFromObject_char(
         std::is_same_v<Char_t, char>,
         typename char_to_explicit_char<>::type,
         Char_t>;
-    using ListChar = std::vector<char>;
     using ListString = std::vector<std::string>;
 
+    /*
+     * We cannot distinguish strings with length 1 from chars at this place,
+     * so avoid this cast. If the attribute is actually a char, skipping this
+     * branch means that it might be upcasted to string.
+     */
+#if 0
+    using ListChar = std::vector<char>;
     if (auto casted_char = tryCast<char>(obj); casted_char.has_value())
     {
         return attr.setAttribute<char>(key, *casted_char);
-    }
+    } else
+#endif
+
     // This must come after tryCast<char>
     // because tryCast<string> implicitly covers chars as well.
-    else if (auto casted_string = tryCast<std::string>(obj);
-             casted_string.has_value())
+    if (auto casted_string = tryCast<std::string>(obj);
+        casted_string.has_value())
     {
         return attr.setAttribute<std::string>(key, std::move(*casted_string));
     }
@@ -386,11 +405,20 @@ bool setAttributeFromObject_char(
     // NOW: List casts.
     // All list casts must come after all scalar casts,
     // because list casts implicitly cover scalars too.
+
+    /*
+     * We cannot distinguish strings with length 1 from chars at this place,
+     * so avoid this cast. If the attribute is actually a vector of char,
+     * skipping this branch means that it might be upcasted to a vector of
+     * string.
+     */
+#if 0
     else if (auto list_of_char = tryCast<ListChar>(obj);
              list_of_char.has_value())
     {
         return attr.setAttribute<ListChar>(key, std::move(*list_of_char));
     }
+#endif
     // this must come after tryCast<vector<char>>,
     // because tryCast<vector<string>> implicitly covers chars as well
     else if (auto list_of_string = tryCast<ListString>(obj);
