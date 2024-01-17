@@ -1455,8 +1455,9 @@ void ADIOS2IOHandlerImpl::availableChunks(
     std::string varName = nameOfVariable(writable);
     auto engine = ba.getEngine(); // make sure that data are present
     auto datatype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
-    bool allSteps = ba.streamStatus ==
-        detail::BufferedActions::StreamStatus::ReadWithoutStream;
+    bool allSteps = ba.m_mode != adios2::Mode::Read &&
+        ba.streamStatus ==
+            detail::BufferedActions::StreamStatus::ReadWithoutStream;
     switchAdios2VariableType<detail::RetrieveBlocksInfo>(
         datatype,
         parameters,

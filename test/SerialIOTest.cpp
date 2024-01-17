@@ -5096,6 +5096,39 @@ bool areEqual(T a, T b)
 } // namespace epsilon
 
 #if openPMD_HAVE_ADIOS2
+
+#define openPMD_VERBOSE_CHUNKS 0
+
+#if openPMD_VERBOSE_CHUNKS
+static std::string format_chunk(ChunkInfo const &chunk_info)
+{
+    std::stringstream result;
+    auto print_vector = [&result](auto const &vec) {
+        if (vec.empty())
+        {
+            result << "[]";
+        }
+        else
+        {
+            auto it = vec.begin();
+            result << '[' << *it++;
+            auto end = vec.end();
+            for (; it != end; ++it)
+            {
+                result << ',' << *it;
+            }
+            result << ']';
+        }
+    };
+    result << '(';
+    print_vector(chunk_info.offset);
+    result << '|';
+    print_vector(chunk_info.extent);
+    result << ')';
+    return result.str();
+}
+#endif
+
 TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
 {
     using namespace epsilon;
@@ -5105,11 +5138,73 @@ TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
 
     std::string const samplePath =
         "../samples/git-sample/3d-bp4/example-3d-bp4.bp";
+    std::string const samplePathFilebased =
+        "../samples/git-sample/3d-bp4/example-3d-bp4_%T.bp";
     if (!auxiliary::directory_exists(samplePath))
     {
         std::cerr << "git sample '" << samplePath << "' not accessible \n";
         return;
     }
+
+    /*
+     * This checks a regression introduced by
+     * https://github.com/openPMD/openPMD-api/pull/1498 and fixed by
+     * https://github.com/openPMD/openPMD-api/pull/1586
+     */
+    for (auto const &[filepath, access] :
+         {std::make_pair(samplePath, Access::READ_ONLY),
+          std::make_pair(samplePathFilebased, Access::READ_ONLY),
+          std::make_pair(samplePath, Access::READ_LINEAR),
+          std::make_pair(samplePathFilebased, Access::READ_LINEAR)})
+    {
+        Series read(filepath, access);
+
+        // false positive by clang-tidy?
+        // NOLINTNEXTLINE(performance-for-range-copy)
+        for (auto iteration : read.readIterations())
+        {
+            for (auto &mesh : iteration.meshes)
+            {
+                for (auto &component : mesh.second)
+                {
+#if openPMD_VERBOSE_CHUNKS
+                    std::cout << "Chunks for '"
+                              << component.second.myPath().openPMDPath()
+                              << "':" << std::endl;
+                    for (auto const &chunk : component.second.availableChunks())
+                    {
+                        std::cout << "\t" << format_chunk(chunk) << std::endl;
+                    }
+#else
+                    component.second.availableChunks();
+#endif
+                }
+            }
+            for (auto &particle_species : iteration.particles)
+            {
+                for (auto &record : particle_species.second)
+                {
+                    for (auto &component : record.second)
+                    {
+#if openPMD_VERBOSE_CHUNKS
+                        std::cout << "Chunks for '"
+                                  << component.second.myPath().openPMDPath()
+                                  << "':" << std::endl;
+                        for (auto const &chunk :
+                             component.second.availableChunks())
+                        {
+                            std::cout << "\t" << format_chunk(chunk)
+                                      << std::endl;
+                        }
+#else
+                        component.second.availableChunks();
+#endif
+                    }
+                }
+            }
+        }
+    }
+
     Series o(samplePath, Access::READ_ONLY, R"({"backend": "adios2"})");
     REQUIRE(o.openPMD() == "1.1.0");
     REQUIRE(o.openPMDextension() == 0);
