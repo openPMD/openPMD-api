@@ -738,6 +738,12 @@ auto Series::initIOHandler(
                 "Unable to automatically determine filename extension. Please "
                 "specify in some way.");
         }
+        else if (input->format == Format::ADIOS2_BP)
+        {
+            // Since ADIOS2 has multiple extensions depending on the engine,
+            // we need to pass this job on to the backend
+            input->filenameExtension = ".%E";
+        }
         else
         {
             input->filenameExtension = suffix(input->format);

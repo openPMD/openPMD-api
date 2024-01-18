@@ -354,17 +354,32 @@ std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
 {
     // SST engine adds its suffix unconditionally
     // so we don't add it
+#if defined(ADIOS2_HAVE_BP5) && openPMD_HAS_ADIOS_2_9
+    constexpr char const *const default_file_ending = ".bp5";
+#else
+    constexpr char const *const default_file_ending = ".bp4";
+#endif
+
     static std::map<std::string, AcceptedEndingsForEngine> const endings{
-        {"sst", {{"", ""}, {".sst", ""}}},
-        {"staging", {{"", ""}, {".sst", ""}}},
-        {"filestream", {{".bp", ".bp"}, {".bp4", ".bp4"}, {".bp5", ".bp5"}}},
-        {"bp4", {{".bp4", ".bp4"}, {".bp", ".bp"}}},
-        {"bp5", {{".bp5", ".bp5"}, {".bp", ".bp"}}},
-        {"bp3", {{".bp", ".bp"}}},
-        {"file", {{".bp", ".bp"}, {".bp4", ".bp4"}, {".bp5", ".bp5"}}},
-        {"hdf5", {{".h5", ".h5"}}},
-        {"nullcore", {{".nullcore", ".nullcore"}, {".bp", ".bp"}}},
-        {"ssc", {{".ssc", ".ssc"}}}};
+        {"sst", {{"", ""}, {".sst", ""}, {".%E", ""}}},
+        {"staging", {{"", ""}, {".sst", ""}, {".%E", ""}}},
+        {"filestream",
+         {{".bp", ".bp"},
+          {".bp4", ".bp4"},
+          {".bp5", ".bp5"},
+          {".%E", default_file_ending}}},
+        {"bp4", {{".bp4", ".bp4"}, {".bp", ".bp"}, {".%E", ".bp4"}}},
+        {"bp5", {{".bp5", ".bp5"}, {".bp", ".bp"}, {".%E", ".bp5"}}},
+        {"bp3", {{".bp", ".bp"}, {".%E", ".bp"}}},
+        {"file",
+         {{".bp", ".bp"},
+          {".bp4", ".bp4"},
+          {".bp5", ".bp5"},
+          {".%E", default_file_ending}}},
+        {"hdf5", {{".h5", ".h5"}, {".%E", ".h5"}}},
+        {"nullcore",
+         {{".nullcore", ".nullcore"}, {".bp", ".bp"}, {".%E", ".nullcore"}}},
+        {"ssc", {{".ssc", ".ssc"}, {".%E", ".ssc"}}}};
 
     if (auto engine = endings.find(m_engineType); engine != endings.end())
     {
