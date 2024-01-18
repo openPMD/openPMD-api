@@ -718,7 +718,7 @@ auto Series::initIOHandler(
             input->filenameExtension = *extension;
             input->format = determineFormat(*extension);
         }
-        else if (access::read(at))
+        else if (access::readOnly(at))
         {
             throw error::ReadError(
                 error::AffectedObject::File,
