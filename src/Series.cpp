@@ -547,8 +547,6 @@ namespace
         {
             for (auto const &entry : auxiliary::list_directory(directory))
             {
-                // std::tie(isContained, padding, iterationIndex) =
-                // auto [isContained, padding, iterationIndex, extension] =
                 Match match = isPartOfSeries(entry);
                 if (match.isContained)
                 {
@@ -764,7 +762,6 @@ auto Series::initIOHandler(
             input->filenameExtension = suffix(input->format);
         }
     }
-    // auto handler = buildIOHandler(*input, optionsJson, filepath);
     return std::make_tuple(std::move(input), std::move(optionsJson));
 }
 
@@ -2693,6 +2690,22 @@ AbstractIOHandler *Series::runDeferredInitialization()
     {
         return nullptr;
     }
+}
+
+AbstractIOHandler *Series::IOHandler()
+{
+    auto res = Attributable::IOHandler();
+    if (res && //  res->backendName() == "Dummy" &&
+        m_series->m_deferred_initialization.has_value())
+    {
+        res = runDeferredInitialization();
+    }
+    return res;
+}
+AbstractIOHandler const *Series::IOHandler() const
+{
+    auto res = Attributable::IOHandler();
+    return res;
 }
 
 namespace

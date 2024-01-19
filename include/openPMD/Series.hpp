@@ -831,22 +831,8 @@ OPENPMD_private
 
     AbstractIOHandler *runDeferredInitialization();
 
-    AbstractIOHandler *IOHandler()
-    {
-        auto res = Attributable::IOHandler();
-        if (res && //  res->backendName() == "Dummy" &&
-            m_series->m_deferred_initialization.has_value())
-        {
-            res = runDeferredInitialization();
-        }
-        return res;
-    }
-    AbstractIOHandler const *IOHandler() const
-    {
-        auto res = Attributable::IOHandler();
-        // std::cout << "Returning " << debug(res) << std::endl;
-        return res;
-    }
+    AbstractIOHandler *IOHandler();
+    AbstractIOHandler const *IOHandler() const;
 }; // Series
 } // namespace openPMD
 
