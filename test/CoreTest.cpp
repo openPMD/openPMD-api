@@ -1226,7 +1226,7 @@ TEST_CASE("wildcard_extension", "[core]")
             read.close();
         }
     };
-#if openPMD_HAS_ADIOS_2_9
+#if openPMD_HAVE_ADIOS2
 #ifdef ADIOS2_HAVE_BP5
     run_test(
         R"({"adios2": {"engine": {"type": "bp5"}}, "backend": "adios2"})",
