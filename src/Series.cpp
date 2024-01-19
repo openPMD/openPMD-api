@@ -875,6 +875,11 @@ Given file pattern: ')END"
                 series.m_filenamePrefix,
                 series.m_filenamePadding,
                 series.m_filenamePostfix,
+                /*
+                 * This might still be ".%E" if the backend is ADIOS2 and no
+                 * files are yet on disk.
+                 * In that case, this will just not find anything.
+                 */
                 series.m_filenameExtension),
             IOHandler()->directory);
         switch (padding)
@@ -884,8 +889,10 @@ Given file pattern: ')END"
                 "Cannot write to a series with inconsistent iteration padding. "
                 "Please specify '%0<N>T' or open as read-only.");
         case -1:
-            std::cerr << "No matching iterations found: " << name()
-                      << std::endl;
+            /*
+             * No matching iterations found. No problem, Append mode is also
+             * fine for creating new datasets.
+             */
             break;
         default:
             series.m_filenamePadding = padding;
