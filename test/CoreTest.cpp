@@ -7,6 +7,7 @@
 #endif
 #include "openPMD/openPMD.hpp"
 
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
@@ -1178,6 +1179,98 @@ TEST_CASE("backend_via_json", "[core]")
     }
     REQUIRE(auxiliary::file_exists(
         "../samples/optionsViaJsonPseudoFilebased%T.json"));
+}
+
+TEST_CASE("wildcard_extension", "[core]")
+{
+#if openPMD_HAVE_ADIOS2
+#if defined(ADIOS2_HAVE_BP5) && openPMD_HAS_ADIOS_2_9
+    constexpr char const *const default_file_ending = "bp5";
+#else
+    constexpr char const *const default_file_ending = "bp4";
+#endif
+#endif
+    auxiliary::remove_directory("../samples/wildcard");
+    auto run_test = [current_test = size_t(0)](
+                        std::string const &write_config,
+                        std::string const &expected_extension) mutable {
+        for (auto [write_access, infix] :
+             {std::make_pair(Access::CREATE, ""),
+              std::make_pair(Access::CREATE, "_%T"),
+              std::make_pair(Access::APPEND, ""),
+              std::make_pair(Access::APPEND, "_%T")})
+        {
+            std::string const wildcard_name = "../samples/wildcard/wildcard_" +
+                std::to_string(current_test) + std::string(infix) + ".%E";
+            std::string const explicit_name = "../samples/wildcard/wildcard_" +
+                std::to_string(current_test) + std::string(infix) + '.' +
+                expected_extension;
+            ++current_test;
+
+            Series series(wildcard_name, write_access, write_config);
+            series.setAttribute("test_index", 0);
+            series.setAttribute("json_config", write_config);
+            series.setAttribute("expected_extension", expected_extension);
+            if (*infix)
+            {
+                series.iterations[0];
+            }
+            series.close();
+
+            Series read(wildcard_name, Access::READ_ONLY);
+            REQUIRE(read.getAttribute("test_index").get<int>() == 0);
+            read.close();
+
+            read = Series(explicit_name, Access::READ_ONLY);
+            REQUIRE(read.getAttribute("test_index").get<int>() == 0);
+            read.close();
+        }
+    };
+#if openPMD_HAS_ADIOS_2_9
+#ifdef ADIOS2_HAVE_BP5
+    run_test(
+        R"({"adios2": {"engine": {"type": "bp5"}}, "backend": "adios2"})",
+        "bp5");
+#endif
+    run_test(
+        R"({"adios2": {"engine": {"type": "bp4"}}, "backend": "adios2"})",
+        "bp4");
+    run_test(R"({"backend": "adios2"})", default_file_ending);
+#endif
+#if openPMD_HAVE_HDF5
+    run_test(R"({"backend": "hdf5"})", "h5");
+#endif
+    run_test(R"({"backend": "json"})", "json");
+
+    for (auto &name :
+         {"../samples/wildcard/colliding.%E",
+          "../samples/wildcard/colliding_%T.%E"})
+    {
+        REQUIRE_THROWS_AS(
+            [&name]() {
+                Series read_nonexisting(name, Access::READ_ONLY);
+                (void)read_nonexisting;
+            }(),
+            error::ReadError);
+        Series write_json(name, Access::CREATE, R"({"backend": "json"})");
+        write_json.iterations[0];
+        write_json.close();
+        REQUIRE_NOTHROW([&name]() {
+            Series read_existing(name, Access::READ_ONLY);
+            (void)read_existing;
+        }());
+#if openPMD_HAVE_ADIOS2
+        Series write_adios(name, Access::CREATE, R"({"backend": "adios2"})");
+        write_adios.iterations[0];
+        write_adios.close();
+        REQUIRE_THROWS_AS(
+            [&name]() {
+                Series read_colliding(name, Access::READ_ONLY);
+                (void)read_colliding;
+            }(),
+            error::ReadError);
+#endif
+    }
 }
 
 TEST_CASE("custom_geometries", "[core]")
