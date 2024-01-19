@@ -694,19 +694,16 @@ auto Series::initIOHandler(
                   std::nullopt)
             : matcher(input->name, -1, "", std::nullopt);
         std::optional<std::string> extension;
+        std::set<std::string> additional_extensions;
         autoDetectPadding(
             isPartOfSeries,
             input->path,
-            [&extension](std::string const &, Match const &match) {
+            [&extension,
+             &additional_extensions](std::string const &, Match const &match) {
                 auto const &ext = match.extension.value();
                 if (extension.has_value() && *extension != ext)
                 {
-                    throw error::ReadError(
-                        error::AffectedObject::File,
-                        error::Reason::Other,
-                        std::nullopt,
-                        "Found inconsistent filename extensions on disk: '" +
-                            *extension + "' and '" + ext + "'.");
+                    additional_extensions.emplace(ext);
                 }
                 else
                 {
@@ -715,6 +712,24 @@ auto Series::initIOHandler(
             });
         if (extension.has_value())
         {
+            if (!additional_extensions.empty())
+            {
+                std::stringstream error;
+                error << "Found inconsistent filename extensions on disk: ";
+                auto it = additional_extensions.begin();
+                auto end = additional_extensions.end();
+                error << '\'' << *it++ << '\'';
+                for (; it != end; ++it)
+                {
+                    error << ", '" << *it << '\'';
+                }
+                error << " and '" + *extension + "'.";
+                throw error::ReadError(
+                    error::AffectedObject::File,
+                    error::Reason::Other,
+                    std::nullopt,
+                    error.str());
+            }
             input->filenameExtension = *extension;
             input->format = determineFormat(*extension);
         }
