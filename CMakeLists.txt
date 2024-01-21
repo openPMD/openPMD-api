@@ -1,6 +1,6 @@
 # Preamble ####################################################################
 #
-cmake_minimum_required(VERSION 3.24.0)
+cmake_minimum_required(VERSION 3.22.0)
 
 project(openPMD VERSION 0.16.0) # LANGUAGES CXX
 
@@ -247,7 +247,6 @@ if(NOT nlohmann_json_FOUND)
       GIT_REPOSITORY https://github.com/nlohmann/json.git
       GIT_TAG v3.11.3
       SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json/"
-      OVERRIDE_FIND_PACKAGE
     )
     set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON option defiend internally by OpenPMD")
     set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON option defiend internally by OpenPMD")  # only used PRIVATE
@@ -268,7 +267,6 @@ if(NOT toml11_FOUND)
       # available in any official release.
       GIT_TAG v3.7.1
       SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/"
-      OVERRIDE_FIND_PACKAGE
     )
     set(toml11_INSTALL OFF CACHE INTERNAL "toml11 option defiend internally by OpenPMD")
     FetchContent_MakeAvailable(toml11)
@@ -404,7 +402,6 @@ if(Python_FOUND)
             GIT_REPOSITORY https://github.com/pybind/pybind11.git
             GIT_TAG v2.11.1
             SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11/"
-            OVERRIDE_FIND_PACKAGE
         )
         FetchContent_MakeAvailable(pybind11)
     endif()
@@ -535,7 +532,6 @@ if(openPMD_BUILD_TESTING)
           # ToDo Migrate to v3 and latest release
           GIT_TAG v2.13.10
           SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/"
-          OVERRIDE_FIND_PACKAGE
         )
         FetchContent_MakeAvailable(Catch2)
     endif()
