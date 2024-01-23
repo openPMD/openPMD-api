@@ -76,7 +76,7 @@ namespace
             }
             auto attr = source.getAttribute(attrName);
             auto dtype = attr.dtype;
-            switchType<SetAttribute>(dtype, target, attrName, std::move(attr));
+            switchType<SetAttribute>(dtype, target, attrName, attr);
         }
     }
 
