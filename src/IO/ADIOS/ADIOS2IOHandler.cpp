@@ -228,11 +228,11 @@ void ADIOS2IOHandlerImpl::init(
                 m_config["attribute_writing_ranks"].json());
         }
 
-        auto engineConfig = config(ADIOS2Defaults::str_engine);
+        auto engineConfig = config(adios_defaults::str_engine);
         if (!engineConfig.json().is_null())
         {
             auto engineTypeConfig =
-                config(ADIOS2Defaults::str_type, engineConfig).json();
+                config(adios_defaults::str_type, engineConfig).json();
             if (!engineTypeConfig.is_null())
             {
                 // convert to string
@@ -468,14 +468,14 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
         if (adios2Config.json().contains("engine"))
         {
             auto engineConfig = adios2Config["engine"];
-            if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
+            if (engineConfig.json().contains(adios_defaults::str_flushtarget))
             {
                 auto target = json::asLowerCaseStringDynamic(
-                    engineConfig[ADIOS2Defaults::str_flushtarget].json());
+                    engineConfig[adios_defaults::str_flushtarget].json());
                 if (!target.has_value())
                 {
                     throw error::BackendConfigSchema(
-                        {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                        {"adios2", "engine", adios_defaults::str_flushtarget},
                         "Flush target must be either 'disk' or 'buffer', but "
                         "was non-literal type.");
                 }
@@ -604,7 +604,7 @@ void ADIOS2IOHandlerImpl::createFile(
                 printedWarningsAlready.noGroupBased = true;
             }
             fileData.m_IO.DefineAttribute(
-                ADIOS2Defaults::str_groupBasedWarning,
+                adios_defaults::str_groupBasedWarning,
                 std::string("Consider using file-based or variable-based "
                             "encoding instead in ADIOS2."));
         }
@@ -1247,7 +1247,7 @@ void ADIOS2IOHandlerImpl::listPaths(
     }
     case UseGroupTable::Yes: {
         {
-            auto tablePrefix = ADIOS2Defaults::str_activeTablePrefix + myName;
+            auto tablePrefix = adios_defaults::str_activeTablePrefix + myName;
             std::vector attrs =
                 fileData.availableAttributesPrefixed(tablePrefix);
             if (fileData.streamStatus ==
@@ -1628,7 +1628,7 @@ namespace detail
             }
 
             std::string metaAttr;
-            metaAttr = ADIOS2Defaults::str_isBoolean + name;
+            metaAttr = adios_defaults::str_isBoolean + name;
             /*
              * In verbose mode, attributeInfo will yield a warning if not
              * finding the requested attribute. Since we expect the attribute
@@ -1862,7 +1862,7 @@ namespace detail
         else if constexpr (std::is_same_v<T, bool>)
         {
             IO.DefineAttribute<bool_representation>(
-                ADIOS2Defaults::str_isBoolean + fullName, 1);
+                adios_defaults::str_isBoolean + fullName, 1);
             auto representation = bool_repr::toRep(value);
             defineAttribute(representation);
         }

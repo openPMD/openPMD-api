@@ -51,7 +51,7 @@ FlushTarget flushTargetFromString(std::string const &str)
     else
     {
         throw error::BackendConfigSchema(
-            {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+            {"adios2", "engine", adios_defaults::str_flushtarget},
             "Flush target must be either 'disk' or 'buffer', but "
             "was " +
                 str + ".");

@@ -70,7 +70,7 @@ namespace adios_defs
  * The following strings are used during parsing of the JSON configuration
  * string for the ADIOS2 backend.
  */
-namespace ADIOS2Defaults
+namespace adios_defaults
 {
     using const_str = char const *const;
     constexpr const_str str_engine = "engine";
@@ -85,7 +85,7 @@ namespace ADIOS2Defaults
     constexpr const_str str_activeTablePrefix = "__openPMD_groups";
     constexpr const_str str_groupBasedWarning =
         "__openPMD_internal/warning_bugprone_groupbased_encoding";
-} // namespace ADIOS2Defaults
+} // namespace adios_defaults
 
 #if openPMD_HAVE_ADIOS2
 namespace detail

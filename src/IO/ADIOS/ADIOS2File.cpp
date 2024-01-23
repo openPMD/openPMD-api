@@ -494,10 +494,10 @@ void ADIOS2File::configure_IO()
     // set engine parameters
     std::set<std::string> alreadyConfigured;
     bool wasTheFlushTargetSpecifiedViaJSON = false;
-    auto engineConfig = m_impl->config(ADIOS2Defaults::str_engine);
+    auto engineConfig = m_impl->config(adios_defaults::str_engine);
     if (!engineConfig.json().is_null())
     {
-        auto params = m_impl->config(ADIOS2Defaults::str_params, engineConfig);
+        auto params = m_impl->config(adios_defaults::str_params, engineConfig);
         params.declareFullyRead();
         if (params.json().is_object())
         {
@@ -520,7 +520,7 @@ void ADIOS2File::configure_IO()
             }
         }
         auto _useAdiosSteps =
-            m_impl->config(ADIOS2Defaults::str_usesteps, engineConfig);
+            m_impl->config(adios_defaults::str_usesteps, engineConfig);
         if (!_useAdiosSteps.json().is_null() && writeOnly(m_mode))
         {
             std::cerr << "[ADIOS2 backend] WARNING: Parameter "
@@ -529,14 +529,14 @@ void ADIOS2File::configure_IO()
                       << std::endl;
         }
 
-        if (engineConfig.json().contains(ADIOS2Defaults::str_flushtarget))
+        if (engineConfig.json().contains(adios_defaults::str_flushtarget))
         {
             auto target = json::asLowerCaseStringDynamic(
-                engineConfig[ADIOS2Defaults::str_flushtarget].json());
+                engineConfig[adios_defaults::str_flushtarget].json());
             if (!target.has_value())
             {
                 throw error::BackendConfigSchema(
-                    {"adios2", "engine", ADIOS2Defaults::str_flushtarget},
+                    {"adios2", "engine", adios_defaults::str_flushtarget},
                     "Flush target must be either 'disk' or 'buffer', but "
                     "was non-literal type.");
             }
@@ -713,10 +713,10 @@ auto ADIOS2File::detectGroupTable() -> UseGroupTable
 {
     auto const &attributes = availableAttributes();
     auto lower_bound =
-        attributes.lower_bound(ADIOS2Defaults::str_activeTablePrefix);
+        attributes.lower_bound(adios_defaults::str_activeTablePrefix);
     if (lower_bound != attributes.end() &&
         auxiliary::starts_with(
-            lower_bound->first, ADIOS2Defaults::str_activeTablePrefix))
+            lower_bound->first, adios_defaults::str_activeTablePrefix))
     {
         return UseGroupTable::Yes;
     }
@@ -819,7 +819,7 @@ adios2::Engine &ADIOS2File::getEngine()
             {
             case StreamStatus::Undecided: {
                 auto attr = m_IO.InquireAttribute<bool_representation>(
-                    ADIOS2Defaults::str_usesstepsAttribute);
+                    adios_defaults::str_usesstepsAttribute);
                 if (attr && attr.Data()[0] == 1)
                 {
                     if (parsePreference == ParsePreference::UpFront)
@@ -861,7 +861,7 @@ adios2::Engine &ADIOS2File::getEngine()
                         if (m_impl->m_useGroupTable.value() ==
                                 UseGroupTable::No &&
                             m_IO.InquireAttribute<std::string>(
-                                ADIOS2Defaults::str_groupBasedWarning))
+                                adios_defaults::str_groupBasedWarning))
                         {
                             throw error::OperationUnsupportedInBackend(
                                 "ADIOS2",
@@ -969,7 +969,7 @@ void ADIOS2File::flush_impl(
         // Currently only schema 0 supported
         if (m_impl->m_writeAttributesFromThisRank)
         {
-            m_IO.DefineAttribute<uint64_t>(ADIOS2Defaults::str_adios2Schema, 0);
+            m_IO.DefineAttribute<uint64_t>(adios_defaults::str_adios2Schema, 0);
         }
         initializedDefaults = true;
     }
@@ -1132,10 +1132,10 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
 
         if (writeOnly(m_mode) && m_impl->m_writeAttributesFromThisRank &&
             !m_IO.InquireAttribute<bool_representation>(
-                ADIOS2Defaults::str_usesstepsAttribute))
+                adios_defaults::str_usesstepsAttribute))
         {
             m_IO.DefineAttribute<bool_representation>(
-                ADIOS2Defaults::str_usesstepsAttribute, 1);
+                adios_defaults::str_usesstepsAttribute, 1);
         }
 
         flush(
@@ -1281,7 +1281,7 @@ void ADIOS2File::markActive(Writable *writable)
                 auto filePos = m_impl->setAndGetFilePosition(
                     writable, /* write = */ false);
                 auto fullPath =
-                    ADIOS2Defaults::str_activeTablePrefix + filePos->location;
+                    adios_defaults::str_activeTablePrefix + filePos->location;
                 m_IO.DefineAttribute<attr_t>(
                     fullPath,
                     currentStepBuffered,
