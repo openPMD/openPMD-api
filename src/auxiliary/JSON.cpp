@@ -62,6 +62,11 @@ nlohmann::json const &TracingJSON::getShadow() const
     return *m_positionInShadow;
 }
 
+nlohmann::json &TracingJSON::getShadow()
+{
+    return *m_positionInShadow;
+}
+
 nlohmann::json TracingJSON::invertShadow() const
 {
     nlohmann::json inverted = *m_positionInOriginal;
@@ -79,7 +84,13 @@ void TracingJSON::invertShadow(
     std::vector<std::string> toRemove;
     for (auto it = shadow.begin(); it != shadow.end(); ++it)
     {
-        nlohmann::json &partialResult = result[it.key()];
+        auto partialResultIterator = result.find(it.key());
+        if (partialResultIterator == result.end())
+        {
+            // The shadow contained a key that was not in the original dataset
+            continue;
+        }
+        nlohmann::json &partialResult = partialResultIterator.value();
         if (partialResult.is_object())
         {
             invertShadow(partialResult, it.value());

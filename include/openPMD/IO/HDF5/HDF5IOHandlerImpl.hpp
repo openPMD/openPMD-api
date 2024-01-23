@@ -120,7 +120,6 @@ protected:
     json::TracingJSON m_config;
 
 private:
-    std::string m_chunks = "auto";
     struct File
     {
         std::string name;

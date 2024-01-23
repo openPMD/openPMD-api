@@ -91,6 +91,7 @@ namespace json
          * @return nlohmann::json const&
          */
         nlohmann::json const &getShadow() const;
+        nlohmann::json &getShadow();
 
         /**
          * @brief Invert the "shadow", i.e. a copy of the original JSON value
