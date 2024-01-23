@@ -52,7 +52,7 @@ namespace internal
 } // namespace internal
 namespace detail
 {
-    struct BufferedActions;
+    class ADIOS2File;
 }
 
 /** @brief Layer to mirror structure of logical data and persistent data in
@@ -83,7 +83,7 @@ class Writable final
     friend class Record;
     friend class AbstractIOHandlerImpl;
     friend class ADIOS2IOHandlerImpl;
-    friend struct detail::BufferedActions;
+    friend class detail::ADIOS2File;
     friend class HDF5IOHandlerImpl;
     friend class ParallelHDF5IOHandlerImpl;
     template <typename>

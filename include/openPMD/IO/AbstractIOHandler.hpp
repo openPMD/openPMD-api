@@ -171,7 +171,7 @@ namespace internal
 
 namespace detail
 {
-    struct BufferedActions;
+    class ADIOS2File;
 }
 
 /** Interface for communicating between logical and physically persistent data.
@@ -186,7 +186,7 @@ class AbstractIOHandler
 {
     friend class Series;
     friend class ADIOS2IOHandlerImpl;
-    friend struct detail::BufferedActions;
+    friend class detail::ADIOS2File;
 
 private:
     IterationEncoding m_encoding = IterationEncoding::groupBased;
