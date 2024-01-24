@@ -566,7 +566,6 @@ void HDF5IOHandlerImpl::createDataset(
                 else
                 {
                     throw_chunking_error();
-                    // throw std::runtime_error("unreachable");
                 }
             }
         }
@@ -574,7 +573,7 @@ void HDF5IOHandlerImpl::createDataset(
             auxiliary::overloaded{
                 [&](chunking_t &&explicitly_specified)
                     -> std::optional<chunking_t> {
-                    return explicitly_specified;
+                    return std::move(explicitly_specified);
                 },
                 [&](std::string const &method_name)
                     -> std::optional<chunking_t> {
