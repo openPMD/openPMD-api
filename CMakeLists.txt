@@ -20,7 +20,6 @@ if(openPMD_SOURCE_DIR STREQUAL openPMD_BINARY_DIR)
           "Learn more: https://hsf-training.github.io/hsf-training-cmake-webpage/02-building/index.html")
 endif()
 
-
 # Project structure ###########################################################
 #
 get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
