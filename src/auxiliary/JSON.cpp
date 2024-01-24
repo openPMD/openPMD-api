@@ -26,6 +26,7 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <queue>
 #include <toml.hpp>
 
 #include <algorithm>
@@ -552,19 +553,19 @@ merge(nlohmann::json &defaultVal, nlohmann::json const &overwrite)
 {
     if (defaultVal.is_object() && overwrite.is_object())
     {
-        std::vector<std::string> prunedKeys;
+        std::queue<std::string> prunedKeys;
         for (auto it = overwrite.begin(); it != overwrite.end(); ++it)
         {
             auto &valueInDefault = defaultVal[it.key()];
             merge(valueInDefault, it.value());
             if (valueInDefault.is_null())
             {
-                prunedKeys.emplace_back(it.key());
+                prunedKeys.push(it.key());
             }
         }
-        for (auto const &key : prunedKeys)
+        for (; !prunedKeys.empty(); prunedKeys.pop())
         {
-            defaultVal.erase(key);
+            defaultVal.erase(prunedKeys.front());
         }
     }
     else
@@ -602,5 +603,33 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
     }
     }
     throw std::runtime_error("Unreachable!");
+}
+
+nlohmann::json &
+filterByTemplate(nlohmann::json &defaultVal, nlohmann::json const &positiveMask)
+{
+    if (defaultVal.is_object() && positiveMask.is_object())
+    {
+        std::queue<std::string> prunedKeys;
+        for (auto left_it = defaultVal.begin(); left_it != defaultVal.end();
+             ++left_it)
+        {
+            if (auto right_it = positiveMask.find(left_it.key());
+                right_it != positiveMask.end())
+            {
+                // value is covered by mask, keep it
+                filterByTemplate(left_it.value(), right_it.value());
+            }
+            else
+            {
+                prunedKeys.push(left_it.key());
+            }
+        }
+        for (; !prunedKeys.empty(); prunedKeys.pop())
+        {
+            defaultVal.erase(prunedKeys.front());
+        }
+    } // else noop
+    return defaultVal;
 }
 } // namespace openPMD::json

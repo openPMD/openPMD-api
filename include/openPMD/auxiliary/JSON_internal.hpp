@@ -248,5 +248,8 @@ namespace json
      */
     nlohmann::json &
     merge(nlohmann::json &defaultVal, nlohmann::json const &overwrite);
+
+    nlohmann::json &filterByTemplate(
+        nlohmann::json &defaultVal, nlohmann::json const &positiveMask);
 } // namespace json
 } // namespace openPMD
