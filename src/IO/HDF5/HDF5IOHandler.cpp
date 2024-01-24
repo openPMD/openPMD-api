@@ -21,6 +21,7 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include <optional>
 #include <sstream>
@@ -473,19 +474,32 @@ void HDF5IOHandlerImpl::createDataset(
         }
 
         json::TracingJSON config = [&]() {
+            if (!m_buffered_dataset_config.has_value())
+            {
+                // we are only interested in these values from the global config
+                constexpr char const *const mask_for_global_conf = R"(
+                {
+                "dataset": {
+                    "chunks": null
+                }
+                })";
+                m_buffered_dataset_config = m_config.json();
+                json::filterByTemplate(
+                    *m_buffered_dataset_config,
+                    nlohmann::json::parse(mask_for_global_conf));
+            }
             auto parsed_config = json::parseOptions(
                 parameters.options, /* considerFiles = */ false);
             if (auto hdf5_config_it = parsed_config.config.find("hdf5");
                 hdf5_config_it != parsed_config.config.end())
             {
-                hdf5_config_it.value() =
-                    json::merge(m_config.json(), hdf5_config_it.value());
+                hdf5_config_it.value() = json::merge(
+                    *m_buffered_dataset_config, hdf5_config_it.value());
             }
             else
             {
-                parsed_config.config["hdf5"] = m_config.json();
+                parsed_config.config["hdf5"] = *m_buffered_dataset_config;
             }
-            // @todo initialize shadow from global shadow
             return parsed_config;
         }();
 

@@ -118,6 +118,7 @@ protected:
 #endif
 
     json::TracingJSON m_config;
+    std::optional<nlohmann::json> m_buffered_dataset_config;
 
 private:
     struct File
