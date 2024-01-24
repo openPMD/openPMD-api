@@ -434,4 +434,9 @@ Parameters:
                  If `defaultValue` was a JSON dataset, then as a JSON string,
                  otherwise as a TOML string.
         )END");
+    m.def(
+        "filter_json_by_template",
+        &json::filterByTemplate,
+        py::arg("default_value") = "{}",
+        py::arg("positive_mask") = "{}");
 }
