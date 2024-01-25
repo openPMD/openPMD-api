@@ -150,4 +150,19 @@ ChildClass operator-(
 {
     return iterator.operator-(index);
 }
+
+#define OPENPMD_INSTANTIATE(type)                                              \
+    template class AbstractSeriesIterator<type>;                               \
+    template auto operator+(                                                   \
+        Iteration::IterationIndex_t, AbstractSeriesIterator<type> const &)     \
+        -> type;                                                               \
+    template auto operator+(                                                   \
+        Iteration::IterationIndex_t, AbstractSeriesIterator<type> &) -> type;  \
+    template auto operator-(                                                   \
+        Iteration::IterationIndex_t, AbstractSeriesIterator<type> const &)     \
+        -> type;                                                               \
+    template auto operator-(                                                   \
+        Iteration::IterationIndex_t, AbstractSeriesIterator<type> &) -> type;
+OPENPMD_INSTANTIATE(SeriesIterator)
+#undef OPENPMD_INSTANTIATE
 } // namespace openPMD

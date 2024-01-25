@@ -137,7 +137,9 @@ class Iteration : public Attributable
 
 public:
     Iteration(Iteration const &) = default;
+    Iteration(Iteration &&) = default;
     Iteration &operator=(Iteration const &) = default;
+    Iteration &operator=(Iteration &&) = default;
 
     using IterationIndex_t = uint64_t;
 
@@ -436,16 +438,17 @@ class IndexedIteration : public Iteration
 {
     friend class SeriesIterator;
     friend class WriteIterations;
+    friend class LegacyIteratorAdaptor;
 
 public:
     using index_t = Iteration::IterationIndex_t;
     index_t const iterationIndex;
 
-    inline IndexedIteration(std::pair<index_t, Iteration> &&pair)
-        : IndexedIteration(std::move(pair.second), pair.first)
+private:
+    inline IndexedIteration(std::pair<index_t const, Iteration> pair)
+        : Iteration(std::move(pair.second)), iterationIndex(pair.first)
     {}
 
-private:
     template <typename Iteration_t>
     IndexedIteration(Iteration_t &&it, index_t index)
         : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
