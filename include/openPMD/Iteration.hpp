@@ -440,6 +440,10 @@ public:
     using index_t = Iteration::IterationIndex_t;
     index_t const iterationIndex;
 
+    inline IndexedIteration(std::pair<index_t, Iteration> &&pair)
+        : IndexedIteration(std::move(pair.second), pair.first)
+    {}
+
 private:
     template <typename Iteration_t>
     IndexedIteration(Iteration_t &&it, index_t index)
