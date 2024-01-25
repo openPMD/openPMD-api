@@ -21,6 +21,7 @@
 #include "openPMD/Series.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/ReadIterations.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
 
@@ -51,10 +52,10 @@ struct openPMD_PyMPICommObject
 using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 #endif
 
-struct SeriesIteratorPythonAdaptor : SeriesIterator
+struct SeriesIteratorPythonAdaptor : LegacyIteratorAdaptor
 {
-    SeriesIteratorPythonAdaptor(SeriesIterator it)
-        : SeriesIterator(std::move(it))
+    SeriesIteratorPythonAdaptor(LegacyIteratorAdaptor it)
+        : LegacyIteratorAdaptor(std::move(it))
     {}
 
     /*
@@ -108,7 +109,7 @@ not possible once it has been closed.
         .def(
             "__next__",
             [](SeriesIteratorPythonAdaptor &iterator) {
-                if (iterator == SeriesIterator::end())
+                if (iterator == LegacyIteratorAdaptor::end())
                 {
                     throw py::stop_iteration();
                 }
@@ -126,7 +127,7 @@ not possible once it has been closed.
                     ++iterator;
                 }
                 iterator.first_iteration = false;
-                if (iterator == SeriesIterator::end())
+                if (iterator == LegacyIteratorAdaptor::end())
                 {
                     throw py::stop_iteration();
                 }

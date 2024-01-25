@@ -20,8 +20,10 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/SeriesIterator.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 
 #include <deque>
@@ -31,7 +33,7 @@
 
 namespace openPMD
 {
-class SeriesIterator
+class SeriesIterator : public AbstractSeriesIterator<SeriesIterator>
 {
     using iteration_index_t = IndexedIteration::index_t;
 
@@ -72,6 +74,8 @@ class SeriesIterator
         return m_data->value();
     }
 
+    using parent_t = AbstractSeriesIterator<SeriesIterator>;
+
 public:
     //! construct the end() iterator
     explicit SeriesIterator();
@@ -80,13 +84,51 @@ public:
         Series const &,
         std::optional<internal::ParsePreference> const &parsePreference);
 
-    SeriesIterator &operator++();
+    // dereference
+    using parent_t::operator*;
+    value_type const &operator*() const override;
 
-    IndexedIteration operator*();
+    // arithmetic random-access
+    using parent_t::operator-;
+    using parent_t::operator+;
+    SeriesIterator operator+(difference_type) const override
+    {
+        throw error::WrongAPIUsage(
+            "Random-access in global stateful iterator is inherently "
+            "non-const.");
+    }
+    SeriesIterator operator+(difference_type) override
+    {
+        throw error::WrongAPIUsage(
+            "Global stateful iterator supports no random access (yet).");
+    }
 
-    bool operator==(SeriesIterator const &other) const;
+    // increment/decrement
+    SeriesIterator &operator++() override;
+    using parent_t::operator--;
+    inline SeriesIterator &operator--() override
+    {
+        throw error::WrongAPIUsage(
+            "Global stateful iterator supports no decrement (yet).");
+    }
+    SeriesIterator operator++(int) override
+    {
+        throw error::WrongAPIUsage(
+            "Global stateful iterator supports no post-increment.");
+    }
 
-    bool operator!=(SeriesIterator const &other) const;
+    // comparison
+    difference_type operator-(AbstractSeriesIterator const &) const override
+    {
+        throw error::WrongAPIUsage(
+            "Global stateful iterator supports no relative comparison.");
+    }
+    bool operator==(SeriesIterator const &other) const override;
+    inline bool operator<(SeriesIterator const &) const override
+    {
+        throw error::WrongAPIUsage(
+            "Global stateful iterator supports no relative comparison.");
+    }
 
     static SeriesIterator end();
 
@@ -142,6 +184,46 @@ private:
     void close();
 };
 
+class LegacyIteratorAdaptor
+{
+    using value_type = IndexedIteration;
+    using parent_t = SeriesIterator;
+
+private:
+    friend class ReadIterations;
+    SeriesIterator m_iterator;
+    LegacyIteratorAdaptor(SeriesIterator iterator)
+        : m_iterator(std::move(iterator))
+    {}
+
+public:
+    inline value_type operator*() const
+    {
+        return m_iterator.operator*();
+    }
+
+    inline LegacyIteratorAdaptor &operator++()
+    {
+        ++m_iterator;
+        return *this;
+    }
+
+    static LegacyIteratorAdaptor end()
+    {
+        return SeriesIterator::end();
+    }
+
+    inline bool operator==(LegacyIteratorAdaptor const &other) const
+    {
+        return m_iterator == other.m_iterator;
+    };
+
+    inline bool operator!=(LegacyIteratorAdaptor const &other) const
+    {
+        return m_iterator != other.m_iterator;
+    };
+};
+
 /**
  * @brief Reading side of the streaming API.
  *
@@ -164,7 +246,7 @@ class ReadIterations
 
 private:
     using iterations_t = decltype(internal::SeriesData::iterations);
-    using iterator_t = SeriesIterator;
+    using iterator_t = LegacyIteratorAdaptor;
 
     Series m_series;
     std::optional<internal::ParsePreference> m_parsePreference;
