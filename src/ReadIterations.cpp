@@ -597,12 +597,13 @@ SeriesIterator &SeriesIterator::operator++()
     return *resvalue;
 }
 
-IndexedIteration SeriesIterator::operator*()
+auto SeriesIterator::operator*() const -> value_type const &
 {
     auto &data = get();
-    return IndexedIteration(
-        data.series.value().iterations[data.currentIteration],
-        data.currentIteration);
+    auto iterator = static_cast<Series::IterationsContainer_t const &>(
+                        data.series.value().iterations)
+                        .find(data.currentIteration);
+    return iterator.operator*();
 }
 
 bool SeriesIterator::operator==(SeriesIterator const &other) const
@@ -613,11 +614,6 @@ bool SeriesIterator::operator==(SeriesIterator const &other) const
          (this->get().currentIteration == other.get().currentIteration)) ||
         // or both are empty
         (!this->m_data->has_value() && !other.m_data->has_value());
-}
-
-bool SeriesIterator::operator!=(SeriesIterator const &other) const
-{
-    return !operator==(other);
 }
 
 SeriesIterator SeriesIterator::end()
@@ -636,7 +632,7 @@ ReadIterations::ReadIterations(
     {
         // Open the iterator now already, so that metadata may already be read
         data.m_sharedStatefulIterator =
-            std::make_unique<iterator_t>(m_series, m_parsePreference);
+            std::make_unique<SeriesIterator>(m_series, m_parsePreference);
     }
 }
 
@@ -646,13 +642,13 @@ ReadIterations::iterator_t ReadIterations::begin()
     if (!series.m_sharedStatefulIterator)
     {
         series.m_sharedStatefulIterator =
-            std::make_unique<iterator_t>(m_series, m_parsePreference);
+            std::make_unique<SeriesIterator>(m_series, m_parsePreference);
     }
     return *series.m_sharedStatefulIterator;
 }
 
 ReadIterations::iterator_t ReadIterations::end()
 {
-    return SeriesIterator::end();
+    return iterator_t::end();
 }
 } // namespace openPMD
