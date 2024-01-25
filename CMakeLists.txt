@@ -241,12 +241,18 @@ endif()
 find_package(nlohmann_json CONFIG)
 if(NOT nlohmann_json_FOUND)
     message(STATUS "Fetching nlohmann-json from https://github.com/nlohmann/json")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+        set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json/")
+    else()
+        set(fetchcontent_args)
+    endif()
     FetchContent_Declare(
       nlohmann_json
       GIT_REPOSITORY https://github.com/nlohmann/json.git
       GIT_TAG v3.11.3
-      SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json/"
+      "${fetchcontent_args}"
     )
+    unset(fetchcontent_args)
     set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON option defiend internally by OpenPMD")
     set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON option defiend internally by OpenPMD")  # only used PRIVATE
     FetchContent_MakeAvailable(nlohmann_json)
@@ -259,14 +265,20 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
 find_package(toml11 CONFIG)
 if(NOT toml11_FOUND)
     message(STATUS "Fetching toml11 from https://github.com/ToruNiina/toml11")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+        set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/")
+    else()
+        set(fetchcontent_args)
+    endif()
     FetchContent_Declare(
       toml11
       GIT_REPOSITORY https://github.com/ToruNiina/toml11
       # Migrate to the latest commit to remove CMake Warning which is not yet
       # available in any official release.
       GIT_TAG v3.7.1
-      SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/"
+      "${fetchcontent_args}"
     )
+    unset(fetchcontent_args)
     set(toml11_INSTALL OFF CACHE INTERNAL "toml11 option defiend internally by OpenPMD")
     FetchContent_MakeAvailable(toml11)
 endif()
@@ -396,12 +408,18 @@ if(Python_FOUND)
     find_package(pybind11 CONFIG)
     if(NOT pybind11_FOUND)
         message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+            set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11/")
+        else()
+            set(fetchcontent_args)
+        endif()
         FetchContent_Declare(
             pybind11
             GIT_REPOSITORY https://github.com/pybind/pybind11.git
             GIT_TAG v2.11.1
-            SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11/"
+            "${fetchcontent_args}"
         )
+        unset(fetchcontent_args)
         FetchContent_MakeAvailable(pybind11)
     endif()
     set(openPMD_HAVE_PYTHON TRUE)
@@ -525,13 +543,19 @@ if(openPMD_BUILD_TESTING)
     find_package(Catch2 CONFIG)
     if(NOT Catch2_FOUND)
         message(STATUS "Fetching catch2 from https://github.com/catchorg/Catch2")
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+            set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/")
+        else()
+            set(fetchcontent_args)
+        endif()
         FetchContent_Declare(
           Catch2
           GIT_REPOSITORY https://github.com/catchorg/Catch2.git
           # ToDo Migrate to v3 and latest release
           GIT_TAG v2.13.10
-          SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/"
+          "${fetchcontent_args}"
         )
+        unset(fetchcontent_args)
         FetchContent_MakeAvailable(Catch2)
     endif()
     add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
@@ -1422,7 +1446,6 @@ if(openPMD_BUILD_TESTING)
         endif()
     endif()
 endif()
-
 
 # Status Message for Build Options ############################################
 #
