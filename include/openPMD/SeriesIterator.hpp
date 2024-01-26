@@ -46,7 +46,6 @@ protected:
 
     // comparison
     virtual bool equality_operator(DynamicSeriesIterator const &) const = 0;
-    virtual bool less_than_operator(DynamicSeriesIterator const &) const = 0;
 
     virtual std::unique_ptr<DynamicSeriesIterator> clone() const = 0;
 };
@@ -77,13 +76,8 @@ public:
     ChildClass operator--(int);
 
     // comparison
-    // difference_type operator-(ChildClass const &) const = 0;
     // bool operator==(ChildClass const &) const = 0;
     bool operator!=(ChildClass const &) const;
-    // bool operator<(ChildClass const &) const = 0;
-    bool operator>(ChildClass const &) const;
-    bool operator<=(ChildClass const &) const;
-    bool operator>=(ChildClass const &) const;
 
     /*************
      * overrides *
@@ -101,7 +95,6 @@ protected:
 
     // comparison
     bool equality_operator(DynamicSeriesIterator const &) const override;
-    bool less_than_operator(DynamicSeriesIterator const &) const override;
 
     std::unique_ptr<DynamicSeriesIterator> clone() const override;
 
