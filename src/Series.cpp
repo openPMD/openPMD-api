@@ -30,6 +30,8 @@
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
+#include "openPMD/SeriesIterator.hpp"
+#include "openPMD/Snapshots.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -2926,6 +2928,33 @@ ReadIterations Series::readIterations()
     res.setData(std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
     return ReadIterations{
         std::move(res), IOHandler()->m_frontendAccess, get().m_parsePreference};
+}
+
+Snapshots Series::snapshots()
+{
+    // Use private constructor instead of copy constructor to avoid
+    // object slicing
+    Series copied_series;
+    copied_series.setData(
+        std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
+    auto begin = [s = std::move(copied_series)]() mutable {
+        auto &series = s.get();
+        if (!series.m_sharedStatefulIterator)
+        {
+            auto parse_preference = series.m_parsePreference;
+            series.m_sharedStatefulIterator = std::make_unique<SeriesIterator>(
+                std::move(s), parse_preference);
+        }
+        std::unique_ptr<DynamicSeriesIterator> internal_iterator_cloned{
+            new SeriesIterator(*series.m_sharedStatefulIterator)};
+        return OpaqueSeriesIterator(std::move(internal_iterator_cloned));
+    };
+    auto end = []() mutable {
+        std::unique_ptr<DynamicSeriesIterator> internal_iterator{
+            new SeriesIterator()};
+        return OpaqueSeriesIterator(std::move(internal_iterator));
+    };
+    return Snapshots(std::move(begin), std::move(end));
 }
 
 void Series::parseBase()
