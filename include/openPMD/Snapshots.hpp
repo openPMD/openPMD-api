@@ -29,6 +29,7 @@ namespace openPMD
 class OpaqueSeriesIterator : public AbstractSeriesIterator<OpaqueSeriesIterator>
 {
 private:
+    using parent_t = AbstractSeriesIterator<OpaqueSeriesIterator>;
     // no shared_ptr since copied iterators should not share state
     std::unique_ptr<DynamicSeriesIterator> m_internal_iterator;
 
@@ -52,57 +53,58 @@ public:
     ~OpaqueSeriesIterator() = default;
 
     // dereference
+    using parent_t::operator*;
     inline value_type const &operator*() const override
     {
         return **m_internal_iterator;
     }
 
     // member access
-    inline value_type const &operator[](difference_type diff) const override
+    inline value_type const &operator[](difference_type diff) const
     {
-        return m_internal_iterator->operator[](diff);
+        return m_internal_iterator->index_operator(diff);
     }
-    inline value_type &operator[](difference_type diff) override
+    inline value_type &operator[](difference_type diff)
     {
-        return m_internal_iterator->operator[](diff);
+        return m_internal_iterator->index_operator(diff);
     }
 
     // arithmetic random-access
-    inline OpaqueSeriesIterator operator+(difference_type diff) const override
+    inline OpaqueSeriesIterator operator+(difference_type diff) const
     {
         return OpaqueSeriesIterator(m_internal_iterator->plus_operator(diff));
     }
-    inline OpaqueSeriesIterator operator-(difference_type diff) const override
+    inline OpaqueSeriesIterator operator-(difference_type diff) const
     {
         return OpaqueSeriesIterator(m_internal_iterator->minus_operator(diff));
     }
-    inline OpaqueSeriesIterator operator+(difference_type diff) override
+    inline OpaqueSeriesIterator operator+(difference_type diff)
     {
         return OpaqueSeriesIterator(m_internal_iterator->plus_operator(diff));
     }
-    inline OpaqueSeriesIterator operator-(difference_type diff) override
+    inline OpaqueSeriesIterator operator-(difference_type diff)
     {
         return OpaqueSeriesIterator(m_internal_iterator->minus_operator(diff));
     }
 
     // increment/decrement
-    OpaqueSeriesIterator &operator++() override
+    OpaqueSeriesIterator &operator++()
     {
         m_internal_iterator->increment_operator();
         return *this;
     }
-    OpaqueSeriesIterator &operator--() override
+    OpaqueSeriesIterator &operator--()
     {
         m_internal_iterator->decrement_operator();
         return *this;
     }
-    OpaqueSeriesIterator operator++(int) override
+    OpaqueSeriesIterator operator++(int)
     {
         auto prev = *this;
         ++(*this);
         return prev;
     }
-    OpaqueSeriesIterator operator--(int) override
+    OpaqueSeriesIterator operator--(int)
     {
         auto prev = *this;
         --(*this);
@@ -110,19 +112,18 @@ public:
     }
 
     // comparison
-    inline difference_type
-    operator-(OpaqueSeriesIterator const &other) const override
+    inline difference_type operator-(OpaqueSeriesIterator const &other) const
     {
         return m_internal_iterator->difference_operator(
             *other.m_internal_iterator);
     }
 
-    inline bool operator==(OpaqueSeriesIterator const &other) const override
+    inline bool operator==(OpaqueSeriesIterator const &other) const
     {
         return m_internal_iterator->equality_operator(
             *other.m_internal_iterator);
     }
-    inline bool operator<(OpaqueSeriesIterator const &other) const override
+    inline bool operator<(OpaqueSeriesIterator const &other) const
     {
         return m_internal_iterator->less_than_operator(
             *other.m_internal_iterator);

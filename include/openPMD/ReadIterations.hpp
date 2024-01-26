@@ -91,40 +91,40 @@ public:
     // arithmetic random-access
     using parent_t::operator-;
     using parent_t::operator+;
-    SeriesIterator operator+(difference_type) const override
+    SeriesIterator operator+(difference_type) const
     {
         throw error::WrongAPIUsage(
             "Random-access in global stateful iterator is inherently "
             "non-const.");
     }
-    SeriesIterator operator+(difference_type) override
+    SeriesIterator operator+(difference_type)
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no random access (yet).");
     }
 
     // increment/decrement
-    SeriesIterator &operator++() override;
+    SeriesIterator &operator++();
     using parent_t::operator--;
-    inline SeriesIterator &operator--() override
+    inline SeriesIterator &operator--()
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no decrement (yet).");
     }
-    SeriesIterator operator++(int) override
+    SeriesIterator operator++(int)
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no post-increment.");
     }
 
     // comparison
-    difference_type operator-(SeriesIterator const &) const override
+    difference_type operator-(SeriesIterator const &) const
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no relative comparison.");
     }
-    bool operator==(SeriesIterator const &other) const override;
-    inline bool operator<(SeriesIterator const &) const override
+    bool operator==(SeriesIterator const &other) const;
+    inline bool operator<(SeriesIterator const &) const
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no relative comparison.");
