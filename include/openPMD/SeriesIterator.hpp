@@ -65,7 +65,7 @@ protected:
     virtual bool equality_operator(DynamicSeriesIterator const &) const = 0;
     virtual bool less_than_operator(DynamicSeriesIterator const &) const = 0;
 
-    std::unique_ptr<DynamicSeriesIterator> clone() const;
+    virtual std::unique_ptr<DynamicSeriesIterator> clone() const = 0;
 };
 
 // Class template with default method implementations for iterators.
@@ -131,7 +131,7 @@ protected:
     bool equality_operator(DynamicSeriesIterator const &) const override;
     bool less_than_operator(DynamicSeriesIterator const &) const override;
 
-    std::unique_ptr<DynamicSeriesIterator> clone() const;
+    std::unique_ptr<DynamicSeriesIterator> clone() const override;
 
 private:
     ChildClass *this_child();
