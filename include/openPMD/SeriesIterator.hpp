@@ -25,6 +25,8 @@
 
 namespace openPMD
 {
+// Abstract class that can be used as an abstract interface to an opaque
+// iterator implementation
 class DynamicSeriesIterator
 {
 public:
@@ -38,8 +40,8 @@ public:
     virtual value_type *operator->();
 
     // member access
-    virtual value_type const &operator[](difference_type) const;
-    virtual value_type &operator[](difference_type);
+    virtual value_type const &index_operator(difference_type) const;
+    virtual value_type &index_operator(difference_type);
 
 protected:
     friend class OpaqueSeriesIterator;
@@ -66,6 +68,12 @@ protected:
     std::unique_ptr<DynamicSeriesIterator> clone() const;
 };
 
+// Class template with default method implementations for iterators.
+// No virtual classes since there is no use.
+// Commented methods must be implemented by child classes.
+// Implement as `class MyIterator : public AbstractSeriesIterator<MyIterator>`
+// Use `using AbstractSeriesIterator<MyIterator>::operator-` to pull default
+// implementations.
 template <typename ChildClass>
 class AbstractSeriesIterator : public DynamicSeriesIterator
 {
@@ -74,33 +82,33 @@ public:
     using value_type = Container<Iteration, difference_type>::value_type;
 
     // arithmetic random-access
-    virtual ChildClass operator+(difference_type) const = 0;
-    virtual ChildClass operator+(difference_type);
-    virtual ChildClass operator-(difference_type) const;
-    virtual ChildClass operator-(difference_type);
+    // ChildClass operator+(difference_type) const = 0;
+    ChildClass operator+(difference_type);
+    ChildClass operator-(difference_type) const;
+    ChildClass operator-(difference_type);
+
+    // member access
+    value_type const &operator[](difference_type) const;
+    value_type &operator[](difference_type);
 
     // increment/decrement
-    virtual ChildClass &operator++();
-    virtual ChildClass &operator--();
-    virtual ChildClass operator++(int);
-    virtual ChildClass operator--(int);
+    ChildClass &operator++();
+    ChildClass &operator--();
+    ChildClass operator++(int);
+    ChildClass operator--(int);
 
     // comparison
-    virtual difference_type operator-(ChildClass const &) const = 0;
-    virtual bool operator==(ChildClass const &) const = 0;
-    virtual bool operator!=(ChildClass const &) const;
-    virtual bool operator<(ChildClass const &) const = 0;
-    virtual bool operator>(ChildClass const &) const;
-    virtual bool operator<=(ChildClass const &) const;
-    virtual bool operator>=(ChildClass const &) const;
+    // difference_type operator-(ChildClass const &) const = 0;
+    // bool operator==(ChildClass const &) const = 0;
+    bool operator!=(ChildClass const &) const;
+    // bool operator<(ChildClass const &) const = 0;
+    bool operator>(ChildClass const &) const;
+    bool operator<=(ChildClass const &) const;
+    bool operator>=(ChildClass const &) const;
 
     /*************
      * overrides *
      *************/
-
-    // member access
-    value_type const &operator[](difference_type) const override;
-    value_type &operator[](difference_type) override;
 
 protected:
     // arithmetic random-access

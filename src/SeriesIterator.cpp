@@ -20,12 +20,12 @@ auto DynamicSeriesIterator::operator->() -> value_type *
 }
 
 // member access
-auto DynamicSeriesIterator::operator[](difference_type diff) const
+auto DynamicSeriesIterator::index_operator(difference_type diff) const
     -> value_type const &
 {
     return **this->plus_operator(diff);
 }
-auto DynamicSeriesIterator::operator[](difference_type diff) -> value_type &
+auto DynamicSeriesIterator::index_operator(difference_type diff) -> value_type &
 {
     return **this->plus_operator(diff);
 }
@@ -64,18 +64,32 @@ DynamicSeriesIterator &DynamicSeriesIterator::decrement_operator()
 template <typename ChildClass>
 ChildClass AbstractSeriesIterator<ChildClass>::operator+(difference_type diff)
 {
-    return static_cast<AbstractSeriesIterator const *>(this)->operator+(diff);
+    return static_cast<ChildClass const *>(this)->operator+(diff);
 }
 template <typename ChildClass>
 ChildClass
 AbstractSeriesIterator<ChildClass>::operator-(difference_type diff) const
 {
-    return this->operator+(-diff);
+    return this_child()->operator+(-diff);
 }
 template <typename ChildClass>
 ChildClass AbstractSeriesIterator<ChildClass>::operator-(difference_type diff)
 {
-    return this->operator+(-diff);
+    return this_child()->operator+(-diff);
+}
+
+// member access
+template <typename ChildClass>
+auto AbstractSeriesIterator<ChildClass>::operator[](difference_type diff) const
+    -> value_type const &
+{
+    return *(*this_child() + diff);
+}
+template <typename ChildClass>
+auto AbstractSeriesIterator<ChildClass>::operator[](difference_type diff)
+    -> value_type &
+{
+    return *(*this_child() + diff);
 }
 
 // increment/decrement
@@ -111,7 +125,7 @@ template <typename ChildClass>
 bool AbstractSeriesIterator<ChildClass>::operator!=(
     ChildClass const &other) const
 {
-    return !operator==(other);
+    return !this_child()->operator==(other);
 }
 template <typename ChildClass>
 bool AbstractSeriesIterator<ChildClass>::operator>(
@@ -129,7 +143,7 @@ template <typename ChildClass>
 bool AbstractSeriesIterator<ChildClass>::operator>=(
     ChildClass const &other) const
 {
-    return !operator<(other);
+    return !this_child()->operator<(other);
 }
 
 // helpers
@@ -150,7 +164,7 @@ ChildClass operator+(
     Iteration::IterationIndex_t index,
     AbstractSeriesIterator<ChildClass> const &iterator)
 {
-    return iterator.operator+(index);
+    return static_cast<ChildClass const &>(iterator).operator+(index);
 }
 template <typename ChildClass>
 ChildClass operator+(
@@ -178,60 +192,46 @@ ChildClass operator-(
  * overrides *
  *************/
 
-// member access
-template <typename ChildClass>
-auto AbstractSeriesIterator<ChildClass>::operator[](difference_type diff) const
-    -> value_type const &
-{
-    return *(*this + diff);
-}
-template <typename ChildClass>
-auto AbstractSeriesIterator<ChildClass>::operator[](difference_type diff)
-    -> value_type &
-{
-    return *(*this + diff);
-}
-
 // arithmetic random-access
 template <typename ChildClass>
 std::unique_ptr<DynamicSeriesIterator>
 AbstractSeriesIterator<ChildClass>::plus_operator(difference_type diff) const
 {
     return std::unique_ptr<DynamicSeriesIterator>{
-        new ChildClass(operator+(diff))};
+        new ChildClass(this_child()->operator+(diff))};
 }
 template <typename ChildClass>
 std::unique_ptr<DynamicSeriesIterator>
 AbstractSeriesIterator<ChildClass>::plus_operator(difference_type diff)
 {
     return std::unique_ptr<DynamicSeriesIterator>{
-        new ChildClass(operator+(diff))};
+        new ChildClass(this_child()->operator+(diff))};
 }
 template <typename ChildClass>
 std::unique_ptr<DynamicSeriesIterator>
 AbstractSeriesIterator<ChildClass>::minus_operator(difference_type diff) const
 {
     return std::unique_ptr<DynamicSeriesIterator>{
-        new ChildClass(operator-(diff))};
+        new ChildClass(this_child()->operator-(diff))};
 }
 template <typename ChildClass>
 std::unique_ptr<DynamicSeriesIterator>
 AbstractSeriesIterator<ChildClass>::minus_operator(difference_type diff)
 {
     return std::unique_ptr<DynamicSeriesIterator>{
-        new ChildClass(operator-(diff))};
+        new ChildClass(this_child()->operator-(diff))};
 }
 
 // increment/decrement
 template <typename ChildClass>
 DynamicSeriesIterator &AbstractSeriesIterator<ChildClass>::increment_operator()
 {
-    return ++*this;
+    return ++*this_child();
 }
 template <typename ChildClass>
 DynamicSeriesIterator &AbstractSeriesIterator<ChildClass>::decrement_operator()
 {
-    return --*this;
+    return --*this_child();
 }
 
 // comparison
@@ -239,7 +239,7 @@ template <typename ChildClass>
 auto AbstractSeriesIterator<ChildClass>::difference_operator(
     DynamicSeriesIterator const &other) const -> difference_type
 {
-    return operator-(dynamic_cast<ChildClass const &>(other));
+    return this_child()->operator-(dynamic_cast<ChildClass const &>(other));
 }
 template <typename ChildClass>
 bool AbstractSeriesIterator<ChildClass>::equality_operator(
@@ -247,7 +247,7 @@ bool AbstractSeriesIterator<ChildClass>::equality_operator(
 {
     if (auto child = dynamic_cast<ChildClass const *>(&other); child)
     {
-        return operator==(*child);
+        return this_child()->operator==(*child);
     }
     else
     {
@@ -260,7 +260,7 @@ bool AbstractSeriesIterator<ChildClass>::less_than_operator(
 {
     if (auto child = dynamic_cast<ChildClass const *>(&other); child)
     {
-        return operator<(*child);
+        return this_child()->operator<(*child);
     }
     else
     {
