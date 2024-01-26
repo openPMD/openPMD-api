@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/Iteration.hpp"
+#include "openPMD/RandomAccessSnapshots.hpp"
 #include "openPMD/SeriesIterator.hpp"
 #include <functional>
 #include <memory>
@@ -33,6 +35,7 @@ class OpaqueSeriesIterator : public AbstractSeriesIterator<OpaqueSeriesIterator>
 private:
     friend class Series;
     friend class StatefulSnapshotsContainer;
+    friend class RandomAccessSnapshotsContainer;
     using parent_t = AbstractSeriesIterator<OpaqueSeriesIterator>;
     // no shared_ptr since copied iterators should not share state
     std::unique_ptr<DynamicSeriesIterator> m_internal_iterator;
@@ -93,16 +96,13 @@ public:
         return m_internal_iterator->equality_operator(
             *other.m_internal_iterator);
     }
-    inline bool operator<(OpaqueSeriesIterator const &other) const
-    {
-        return m_internal_iterator->less_than_operator(
-            *other.m_internal_iterator);
-    }
 };
 
 class AbstractSnapshotsContainer
 {
 public:
+    using value_t = Iteration;
+    using index_t = Iteration::IterationIndex_t;
     using iterator_t = OpaqueSeriesIterator;
     // using const_iterator_t = ...;
     virtual iterator_t begin() = 0;
@@ -121,6 +121,31 @@ private:
 public:
     iterator_t begin() override;
     iterator_t end() override;
+};
+
+/*
+ * @todo how to deal with iteration::open() iteration::close() ?
+ */
+class RandomAccessSnapshotsContainer : public AbstractSnapshotsContainer
+{
+private:
+    friend class Series;
+    Container<value_t, index_t> m_cont;
+    RandomAccessSnapshotsContainer(Container<value_t, index_t> cont)
+        : m_cont(std::move(cont))
+    {}
+
+public:
+    inline iterator_t begin() override
+    {
+        return OpaqueSeriesIterator(std::unique_ptr<DynamicSeriesIterator>{
+            new RandomAccessSnapshots(m_cont.begin())});
+    }
+    inline iterator_t end() override
+    {
+        return OpaqueSeriesIterator(std::unique_ptr<DynamicSeriesIterator>{
+            new RandomAccessSnapshots(m_cont.end())});
+    }
 };
 
 class Snapshots

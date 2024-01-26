@@ -1,4 +1,5 @@
 #include "openPMD/SeriesIterator.hpp"
+#include "openPMD/RandomAccessSnapshots.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/Snapshots.hpp"
 #include <memory>
@@ -53,24 +54,6 @@ bool AbstractSeriesIterator<ChildClass>::operator!=(
     ChildClass const &other) const
 {
     return !this_child()->operator==(other);
-}
-template <typename ChildClass>
-bool AbstractSeriesIterator<ChildClass>::operator>(
-    ChildClass const &other) const
-{
-    return other.operator<(*this_child());
-}
-template <typename ChildClass>
-bool AbstractSeriesIterator<ChildClass>::operator<=(
-    ChildClass const &other) const
-{
-    return !operator>(other);
-}
-template <typename ChildClass>
-bool AbstractSeriesIterator<ChildClass>::operator>=(
-    ChildClass const &other) const
-{
-    return !this_child()->operator<(other);
 }
 
 // helpers
@@ -132,19 +115,6 @@ bool AbstractSeriesIterator<ChildClass>::equality_operator(
         return false; // or throw error?
     }
 }
-template <typename ChildClass>
-bool AbstractSeriesIterator<ChildClass>::less_than_operator(
-    DynamicSeriesIterator const &other) const
-{
-    if (auto child = dynamic_cast<ChildClass const *>(&other); child)
-    {
-        return this_child()->operator<(*child);
-    }
-    else
-    {
-        return false; // or throw error?
-    }
-}
 
 template <typename ChildClass>
 std::unique_ptr<DynamicSeriesIterator>
@@ -157,5 +127,6 @@ AbstractSeriesIterator<ChildClass>::clone() const
 #define OPENPMD_INSTANTIATE(type) template class AbstractSeriesIterator<type>;
 OPENPMD_INSTANTIATE(SeriesIterator)
 OPENPMD_INSTANTIATE(OpaqueSeriesIterator)
+OPENPMD_INSTANTIATE(RandomAccessSnapshots)
 #undef OPENPMD_INSTANTIATE
 } // namespace openPMD
