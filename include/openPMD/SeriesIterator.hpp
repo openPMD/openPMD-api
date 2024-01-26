@@ -34,32 +34,17 @@ public:
     using value_type = Container<Iteration, difference_type>::value_type;
 
 protected:
+    friend class OpaqueSeriesIterator;
+
     // dereference
     virtual value_type const &dereference_operator() const = 0;
     virtual value_type &dereference_operator();
 
-    // member access
-    virtual value_type const &index_operator(difference_type) const;
-    virtual value_type &index_operator(difference_type);
-
-    friend class OpaqueSeriesIterator;
-    // arithmetic random-access
-    virtual std::unique_ptr<DynamicSeriesIterator>
-        plus_operator(difference_type) const = 0;
-    virtual std::unique_ptr<DynamicSeriesIterator>
-        plus_operator(difference_type);
-    virtual std::unique_ptr<DynamicSeriesIterator>
-        minus_operator(difference_type) const;
-    virtual std::unique_ptr<DynamicSeriesIterator>
-        minus_operator(difference_type);
-
     // increment/decrement
-    virtual DynamicSeriesIterator &increment_operator();
-    virtual DynamicSeriesIterator &decrement_operator();
+    virtual DynamicSeriesIterator &increment_operator() = 0;
+    virtual DynamicSeriesIterator &decrement_operator() = 0;
 
     // comparison
-    virtual difference_type
-    difference_operator(DynamicSeriesIterator const &) const = 0;
     virtual bool equality_operator(DynamicSeriesIterator const &) const = 0;
     virtual bool less_than_operator(DynamicSeriesIterator const &) const = 0;
 
@@ -85,19 +70,9 @@ public:
     value_type const *operator->() const;
     value_type *operator->();
 
-    // arithmetic random-access
-    // ChildClass operator+(difference_type) const = 0;
-    ChildClass operator+(difference_type);
-    ChildClass operator-(difference_type) const;
-    ChildClass operator-(difference_type);
-
-    // member access
-    value_type const &operator[](difference_type) const;
-    value_type &operator[](difference_type);
-
     // increment/decrement
-    ChildClass &operator++();
-    ChildClass &operator--();
+    // ChildClass &operator++();
+    // ChildClass &operator--();
     ChildClass operator++(int);
     ChildClass operator--(int);
 
@@ -120,23 +95,11 @@ protected:
     using parent_t::dereference_operator;
     value_type const &dereference_operator() const override;
 
-    // arithmetic random-access
-    std::unique_ptr<DynamicSeriesIterator>
-        plus_operator(difference_type) const override;
-    std::unique_ptr<DynamicSeriesIterator>
-        plus_operator(difference_type) override;
-    std::unique_ptr<DynamicSeriesIterator>
-        minus_operator(difference_type) const override;
-    std::unique_ptr<DynamicSeriesIterator>
-        minus_operator(difference_type) override;
-
     // increment/decrement
     DynamicSeriesIterator &increment_operator() override;
     DynamicSeriesIterator &decrement_operator() override;
 
     // comparison
-    difference_type
-    difference_operator(DynamicSeriesIterator const &) const override;
     bool equality_operator(DynamicSeriesIterator const &) const override;
     bool less_than_operator(DynamicSeriesIterator const &) const override;
 
