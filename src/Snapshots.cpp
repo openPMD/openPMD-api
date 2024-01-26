@@ -1,4 +1,5 @@
 #include "openPMD/Snapshots.hpp"
+#include "openPMD/ReadIterations.hpp"
 #include <stdexcept>
 
 namespace openPMD
@@ -8,4 +9,13 @@ namespace openPMD
 //     // return OpaqueSeriesIterator();
 //     throw std::runtime_error("unimplemented");
 // }
+auto StatefulSnapshotsContainer::begin() -> iterator_t
+{
+    return m_begin();
+}
+auto StatefulSnapshotsContainer::end() -> iterator_t
+{
+    return OpaqueSeriesIterator(
+        std::unique_ptr<DynamicSeriesIterator>{new SeriesIterator()});
+}
 } // namespace openPMD

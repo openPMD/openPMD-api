@@ -29,6 +29,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/RandomAccessSnapshots.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/SeriesIterator.hpp"
 #include "openPMD/Snapshots.hpp"
@@ -2930,31 +2931,77 @@ ReadIterations Series::readIterations()
         std::move(res), IOHandler()->m_frontendAccess, get().m_parsePreference};
 }
 
+namespace
+{
+    enum class IteratorKind
+    {
+        RandomAccess,
+        Stateful
+    };
+}
+
 Snapshots Series::snapshots()
 {
-    // Use private constructor instead of copy constructor to avoid
-    // object slicing
-    Series copied_series;
-    copied_series.setData(
-        std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
-    auto begin = [s = std::move(copied_series)]() mutable {
-        auto &series = s.get();
-        if (!series.m_sharedStatefulIterator)
+    auto &series = get();
+    IteratorKind iterator_kind;
+    {
+        using IK = IteratorKind;
+        switch (IOHandler()->m_frontendAccess)
         {
-            auto parse_preference = series.m_parsePreference;
-            series.m_sharedStatefulIterator = std::make_unique<SeriesIterator>(
-                std::move(s), parse_preference);
+        case Access::READ_LINEAR:
+            iterator_kind = IK::Stateful;
+            break;
+        case Access::READ_ONLY:
+            switch (series.m_parsePreference.value())
+            {
+
+            case internal::ParsePreference::UpFront:
+                iterator_kind = IK::RandomAccess;
+                break;
+            case internal::ParsePreference::PerStep:
+                iterator_kind = IK::Stateful;
+                break;
+            }
+            break;
+        case Access::READ_WRITE:
+        case Access::CREATE:
+        case Access::APPEND:
+            // @todo: consider WriteIterations
+            iterator_kind = IK::RandomAccess;
+            break;
         }
-        std::unique_ptr<DynamicSeriesIterator> internal_iterator_cloned{
-            new SeriesIterator(*series.m_sharedStatefulIterator)};
-        return OpaqueSeriesIterator(std::move(internal_iterator_cloned));
-    };
-    auto end = []() mutable {
-        std::unique_ptr<DynamicSeriesIterator> internal_iterator{
-            new SeriesIterator()};
-        return OpaqueSeriesIterator(std::move(internal_iterator));
-    };
-    return Snapshots(std::move(begin), std::move(end));
+    }
+
+    switch (iterator_kind)
+    {
+
+    case IteratorKind::RandomAccess: {
+    }
+    case IteratorKind::Stateful: {
+        // Use private constructor instead of copy constructor to avoid
+        // object slicing
+        Series copied_series;
+        copied_series.setData(
+            std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
+        auto begin = [s = std::move(copied_series)]() mutable {
+            auto &series_data = s.get();
+            if (!series_data.m_sharedStatefulIterator)
+            {
+                auto parse_preference = series_data.m_parsePreference;
+                series_data.m_sharedStatefulIterator =
+                    std::make_unique<SeriesIterator>(
+                        std::move(s), parse_preference);
+            }
+            std::unique_ptr<DynamicSeriesIterator> internal_iterator_cloned{
+                new SeriesIterator(*series_data.m_sharedStatefulIterator)};
+            return OpaqueSeriesIterator(std::move(internal_iterator_cloned));
+        };
+
+        return Snapshots(std::shared_ptr<StatefulSnapshotsContainer>(
+            new StatefulSnapshotsContainer(std::move(begin))));
+    }
+    }
+    throw std::runtime_error("unreachable!");
 }
 
 void Series::parseBase()
