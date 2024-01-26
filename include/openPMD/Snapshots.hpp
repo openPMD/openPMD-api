@@ -56,9 +56,9 @@ public:
 
     // dereference
     using parent_t::operator*;
-    inline value_type const &operator*() const override
+    inline value_type const &operator*() const
     {
-        return **m_internal_iterator;
+        return m_internal_iterator->dereference_operator();
     }
 
     // member access

@@ -5,30 +5,22 @@
 
 namespace openPMD
 {
-// dereference
-auto DynamicSeriesIterator::operator*() -> value_type &
+auto DynamicSeriesIterator::dereference_operator() -> value_type &
 {
     return const_cast<value_type &>(
-        static_cast<DynamicSeriesIterator const *>(this)->operator*());
-}
-auto DynamicSeriesIterator::operator->() const -> value_type const *
-{
-    return &operator*();
-}
-auto DynamicSeriesIterator::operator->() -> value_type *
-{
-    return &operator*();
+        static_cast<DynamicSeriesIterator const *>(this)
+            ->dereference_operator());
 }
 
 // member access
 auto DynamicSeriesIterator::index_operator(difference_type diff) const
     -> value_type const &
 {
-    return **this->plus_operator(diff);
+    return this->plus_operator(diff)->dereference_operator();
 }
 auto DynamicSeriesIterator::index_operator(difference_type diff) -> value_type &
 {
-    return **this->plus_operator(diff);
+    return this->plus_operator(diff)->dereference_operator();
 }
 
 // arithmetic random-access
@@ -59,6 +51,25 @@ DynamicSeriesIterator &DynamicSeriesIterator::decrement_operator()
 {
     *this = *minus_operator(1);
     return *this;
+}
+
+// dereference
+template <typename ChildClass>
+auto AbstractSeriesIterator<ChildClass>::operator*() -> value_type &
+{
+    return const_cast<value_type &>(
+        static_cast<ChildClass const *>(this)->operator*());
+}
+template <typename ChildClass>
+auto AbstractSeriesIterator<ChildClass>::operator->() const
+    -> value_type const *
+{
+    return &this_child()->operator*();
+}
+template <typename ChildClass>
+auto AbstractSeriesIterator<ChildClass>::operator->() -> value_type *
+{
+    return &this_child()->operator*();
 }
 
 // arithmetic random-access
@@ -192,6 +203,14 @@ ChildClass operator-(
 /*************
  * overrides *
  *************/
+
+// dereference
+template <typename ChildClass>
+auto AbstractSeriesIterator<ChildClass>::dereference_operator() const
+    -> value_type const &
+{
+    return this_child()->operator*();
+}
 
 // arithmetic random-access
 template <typename ChildClass>
