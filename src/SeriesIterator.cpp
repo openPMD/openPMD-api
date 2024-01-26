@@ -1,5 +1,6 @@
 #include "openPMD/SeriesIterator.hpp"
 #include "openPMD/ReadIterations.hpp"
+#include "openPMD/Snapshots.hpp"
 #include <memory>
 
 namespace openPMD
@@ -289,5 +290,6 @@ AbstractSeriesIterator<ChildClass>::clone() const
     template auto operator-(                                                   \
         Iteration::IterationIndex_t, AbstractSeriesIterator<type> &) -> type;
 OPENPMD_INSTANTIATE(SeriesIterator)
+OPENPMD_INSTANTIATE(OpaqueSeriesIterator)
 #undef OPENPMD_INSTANTIATE
 } // namespace openPMD

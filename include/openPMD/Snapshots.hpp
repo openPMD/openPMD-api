@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/SeriesIterator.hpp"
+#include <functional>
 #include <optional>
 
 namespace openPMD
@@ -29,6 +30,7 @@ namespace openPMD
 class OpaqueSeriesIterator : public AbstractSeriesIterator<OpaqueSeriesIterator>
 {
 private:
+    friend class Series;
     using parent_t = AbstractSeriesIterator<OpaqueSeriesIterator>;
     // no shared_ptr since copied iterators should not share state
     std::unique_ptr<DynamicSeriesIterator> m_internal_iterator;
@@ -39,11 +41,11 @@ private:
     {}
 
 public:
-    OpaqueSeriesIterator(OpaqueSeriesIterator &other)
+    OpaqueSeriesIterator(OpaqueSeriesIterator const &other)
         : m_internal_iterator(other.m_internal_iterator->clone())
     {}
     OpaqueSeriesIterator(OpaqueSeriesIterator &&other) = default;
-    OpaqueSeriesIterator &operator=(OpaqueSeriesIterator &other)
+    OpaqueSeriesIterator &operator=(OpaqueSeriesIterator const &other)
     {
         m_internal_iterator = other.m_internal_iterator->clone();
         return *this;
@@ -132,6 +134,26 @@ public:
 
 class Snapshots
 {
-    OpaqueSeriesIterator begin();
+private:
+    friend class Series;
+
+    std::function<OpaqueSeriesIterator()> m_begin;
+    std::function<OpaqueSeriesIterator()> m_end;
+
+    inline Snapshots(
+        std::function<OpaqueSeriesIterator()> begin,
+        std::function<OpaqueSeriesIterator()> end)
+        : m_begin(std::move(begin)), m_end(std::move(end))
+    {}
+
+public:
+    inline OpaqueSeriesIterator begin()
+    {
+        return m_begin();
+    }
+    inline OpaqueSeriesIterator end()
+    {
+        return m_end();
+    }
 };
 } // namespace openPMD
