@@ -12,47 +12,6 @@ auto DynamicSeriesIterator::dereference_operator() -> value_type &
             ->dereference_operator());
 }
 
-// member access
-auto DynamicSeriesIterator::index_operator(difference_type diff) const
-    -> value_type const &
-{
-    return this->plus_operator(diff)->dereference_operator();
-}
-auto DynamicSeriesIterator::index_operator(difference_type diff) -> value_type &
-{
-    return this->plus_operator(diff)->dereference_operator();
-}
-
-// arithmetic random-access
-std::unique_ptr<DynamicSeriesIterator>
-DynamicSeriesIterator::plus_operator(difference_type diff)
-{
-    return static_cast<DynamicSeriesIterator const *>(this)->plus_operator(
-        diff);
-}
-std::unique_ptr<DynamicSeriesIterator>
-DynamicSeriesIterator::minus_operator(difference_type diff) const
-{
-    return this->plus_operator(-diff);
-}
-std::unique_ptr<DynamicSeriesIterator>
-DynamicSeriesIterator::minus_operator(difference_type diff)
-{
-    return this->plus_operator(-diff);
-}
-
-// increment/decrement
-DynamicSeriesIterator &DynamicSeriesIterator::increment_operator()
-{
-    *this = *plus_operator(1);
-    return *this;
-}
-DynamicSeriesIterator &DynamicSeriesIterator::decrement_operator()
-{
-    *this = *minus_operator(1);
-    return *this;
-}
-
 // dereference
 template <typename ChildClass>
 auto AbstractSeriesIterator<ChildClass>::operator*() -> value_type &
@@ -72,63 +31,19 @@ auto AbstractSeriesIterator<ChildClass>::operator->() -> value_type *
     return &this_child()->operator*();
 }
 
-// arithmetic random-access
-template <typename ChildClass>
-ChildClass AbstractSeriesIterator<ChildClass>::operator+(difference_type diff)
-{
-    return static_cast<ChildClass const *>(this)->operator+(diff);
-}
-template <typename ChildClass>
-ChildClass
-AbstractSeriesIterator<ChildClass>::operator-(difference_type diff) const
-{
-    return this_child()->operator+(-diff);
-}
-template <typename ChildClass>
-ChildClass AbstractSeriesIterator<ChildClass>::operator-(difference_type diff)
-{
-    return this_child()->operator+(-diff);
-}
-
-// member access
-template <typename ChildClass>
-auto AbstractSeriesIterator<ChildClass>::operator[](difference_type diff) const
-    -> value_type const &
-{
-    return *(*this_child() + diff);
-}
-template <typename ChildClass>
-auto AbstractSeriesIterator<ChildClass>::operator[](difference_type diff)
-    -> value_type &
-{
-    return *(*this_child() + diff);
-}
-
 // increment/decrement
-template <typename ChildClass>
-ChildClass &AbstractSeriesIterator<ChildClass>::operator++()
-{
-    *this_child() = *this + 1;
-    return *this_child();
-}
-template <typename ChildClass>
-ChildClass &AbstractSeriesIterator<ChildClass>::operator--()
-{
-    *this_child() = *this - 1;
-    return *this_child();
-}
 template <typename ChildClass>
 ChildClass AbstractSeriesIterator<ChildClass>::operator++(int)
 {
     auto prev = *this_child();
-    operator++();
+    this_child()->operator++();
     return prev;
 }
 template <typename ChildClass>
 ChildClass AbstractSeriesIterator<ChildClass>::operator--(int)
 {
     auto prev = *this_child();
-    operator--();
+    this_child()->operator--();
     return prev;
 }
 
@@ -178,27 +93,6 @@ ChildClass operator+(
 {
     return static_cast<ChildClass const &>(iterator).operator+(index);
 }
-template <typename ChildClass>
-ChildClass operator+(
-    Iteration::IterationIndex_t index,
-    AbstractSeriesIterator<ChildClass> &iterator)
-{
-    return iterator.operator+(index);
-}
-template <typename ChildClass>
-ChildClass operator-(
-    Iteration::IterationIndex_t index,
-    AbstractSeriesIterator<ChildClass> const &iterator)
-{
-    return iterator.operator-(index);
-}
-template <typename ChildClass>
-ChildClass operator-(
-    Iteration::IterationIndex_t index,
-    AbstractSeriesIterator<ChildClass> &iterator)
-{
-    return iterator.operator-(index);
-}
 
 /*************
  * overrides *
@@ -210,36 +104,6 @@ auto AbstractSeriesIterator<ChildClass>::dereference_operator() const
     -> value_type const &
 {
     return this_child()->operator*();
-}
-
-// arithmetic random-access
-template <typename ChildClass>
-std::unique_ptr<DynamicSeriesIterator>
-AbstractSeriesIterator<ChildClass>::plus_operator(difference_type diff) const
-{
-    return std::unique_ptr<DynamicSeriesIterator>{
-        new ChildClass(this_child()->operator+(diff))};
-}
-template <typename ChildClass>
-std::unique_ptr<DynamicSeriesIterator>
-AbstractSeriesIterator<ChildClass>::plus_operator(difference_type diff)
-{
-    return std::unique_ptr<DynamicSeriesIterator>{
-        new ChildClass(this_child()->operator+(diff))};
-}
-template <typename ChildClass>
-std::unique_ptr<DynamicSeriesIterator>
-AbstractSeriesIterator<ChildClass>::minus_operator(difference_type diff) const
-{
-    return std::unique_ptr<DynamicSeriesIterator>{
-        new ChildClass(this_child()->operator-(diff))};
-}
-template <typename ChildClass>
-std::unique_ptr<DynamicSeriesIterator>
-AbstractSeriesIterator<ChildClass>::minus_operator(difference_type diff)
-{
-    return std::unique_ptr<DynamicSeriesIterator>{
-        new ChildClass(this_child()->operator-(diff))};
 }
 
 // increment/decrement
@@ -255,12 +119,6 @@ DynamicSeriesIterator &AbstractSeriesIterator<ChildClass>::decrement_operator()
 }
 
 // comparison
-template <typename ChildClass>
-auto AbstractSeriesIterator<ChildClass>::difference_operator(
-    DynamicSeriesIterator const &other) const -> difference_type
-{
-    return this_child()->operator-(dynamic_cast<ChildClass const &>(other));
-}
 template <typename ChildClass>
 bool AbstractSeriesIterator<ChildClass>::equality_operator(
     DynamicSeriesIterator const &other) const
@@ -296,18 +154,7 @@ AbstractSeriesIterator<ChildClass>::clone() const
         new ChildClass(*static_cast<ChildClass const *>(this)));
 }
 
-#define OPENPMD_INSTANTIATE(type)                                              \
-    template class AbstractSeriesIterator<type>;                               \
-    template auto operator+(                                                   \
-        Iteration::IterationIndex_t, AbstractSeriesIterator<type> const &)     \
-        -> type;                                                               \
-    template auto operator+(                                                   \
-        Iteration::IterationIndex_t, AbstractSeriesIterator<type> &) -> type;  \
-    template auto operator-(                                                   \
-        Iteration::IterationIndex_t, AbstractSeriesIterator<type> const &)     \
-        -> type;                                                               \
-    template auto operator-(                                                   \
-        Iteration::IterationIndex_t, AbstractSeriesIterator<type> &) -> type;
+#define OPENPMD_INSTANTIATE(type) template class AbstractSeriesIterator<type>;
 OPENPMD_INSTANTIATE(SeriesIterator)
 OPENPMD_INSTANTIATE(OpaqueSeriesIterator)
 #undef OPENPMD_INSTANTIATE
