@@ -118,7 +118,7 @@ public:
     }
 
     // comparison
-    difference_type operator-(AbstractSeriesIterator const &) const override
+    difference_type operator-(SeriesIterator const &) const override
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no relative comparison.");
