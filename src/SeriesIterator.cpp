@@ -40,8 +40,7 @@ auto AbstractSeriesIterator<ChildClass>::operator[](difference_type diff)
 template <typename ChildClass>
 ChildClass AbstractSeriesIterator<ChildClass>::operator+(difference_type diff)
 {
-    static_cast<AbstractSeriesIterator const *>(this)->operator+(diff);
-    return *this_child();
+    return static_cast<AbstractSeriesIterator const *>(this)->operator+(diff);
 }
 template <typename ChildClass>
 ChildClass
