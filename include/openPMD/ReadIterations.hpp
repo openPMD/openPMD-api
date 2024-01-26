@@ -86,7 +86,7 @@ public:
 
     // dereference
     using parent_t::operator*;
-    value_type const &operator*() const override;
+    value_type const &operator*() const;
 
     // arithmetic random-access
     using parent_t::operator-;

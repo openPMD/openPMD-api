@@ -33,17 +33,15 @@ public:
     using difference_type = Iteration::IterationIndex_t;
     using value_type = Container<Iteration, difference_type>::value_type;
 
+protected:
     // dereference
-    virtual value_type const &operator*() const = 0;
-    virtual value_type &operator*();
-    virtual value_type const *operator->() const;
-    virtual value_type *operator->();
+    virtual value_type const &dereference_operator() const = 0;
+    virtual value_type &dereference_operator();
 
     // member access
     virtual value_type const &index_operator(difference_type) const;
     virtual value_type &index_operator(difference_type);
 
-protected:
     friend class OpaqueSeriesIterator;
     // arithmetic random-access
     virtual std::unique_ptr<DynamicSeriesIterator>
@@ -81,6 +79,12 @@ public:
     using difference_type = Iteration::IterationIndex_t;
     using value_type = Container<Iteration, difference_type>::value_type;
 
+    // dereference
+    // value_type const &operator*() const = 0;
+    value_type &operator*();
+    value_type const *operator->() const;
+    value_type *operator->();
+
     // arithmetic random-access
     // ChildClass operator+(difference_type) const = 0;
     ChildClass operator+(difference_type);
@@ -111,6 +115,11 @@ public:
      *************/
 
 protected:
+    using parent_t = DynamicSeriesIterator;
+    // dereference
+    using parent_t::dereference_operator;
+    value_type const &dereference_operator() const override;
+
     // arithmetic random-access
     std::unique_ptr<DynamicSeriesIterator>
         plus_operator(difference_type) const override;
