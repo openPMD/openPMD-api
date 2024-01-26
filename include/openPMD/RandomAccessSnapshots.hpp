@@ -26,15 +26,41 @@ namespace openPMD
 {
 
 // @todo const iteration?
-class RandomAccessSnapshots : AbstractSeriesIterator<RandomAccessSnapshots>
+class RandomAccessSnapshots
+    : public AbstractSeriesIterator<RandomAccessSnapshots>
 {
 private:
+    friend class RandomAccessSnapshotsContainer;
     using iterator_t = Container<Iteration, difference_type>::iterator;
     iterator_t m_it;
 
     inline RandomAccessSnapshots(iterator_t it) : m_it(it)
     {}
 
+    using parent_t = AbstractSeriesIterator<RandomAccessSnapshots>;
+
 public:
+    using parent_t::operator*;
+    inline value_type const &operator*() const
+    {
+        return *m_it;
+    }
+
+    inline RandomAccessSnapshots &operator++()
+    {
+        ++m_it;
+        return *this;
+    }
+
+    inline RandomAccessSnapshots &operator--()
+    {
+        --m_it;
+        return *this;
+    }
+
+    inline bool operator==(RandomAccessSnapshots const &other) const
+    {
+        return m_it == other.m_it;
+    }
 };
 } // namespace openPMD

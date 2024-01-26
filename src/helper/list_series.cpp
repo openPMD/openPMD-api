@@ -113,10 +113,11 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
         if (longer)
             out << "  all iterations: ";
 
-        for (auto const &i : series.readIterations())
+        for (auto &[index, i] : series.snapshots())
         {
+            i.open();
             if (longer)
-                out << i.iterationIndex << " ";
+                out << index << " ";
 
             // find unique record names
             std::transform(
