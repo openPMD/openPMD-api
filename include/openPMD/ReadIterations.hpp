@@ -88,21 +88,6 @@ public:
     using parent_t::operator*;
     value_type const &operator*() const;
 
-    // arithmetic random-access
-    using parent_t::operator-;
-    using parent_t::operator+;
-    SeriesIterator operator+(difference_type) const
-    {
-        throw error::WrongAPIUsage(
-            "Random-access in global stateful iterator is inherently "
-            "non-const.");
-    }
-    SeriesIterator operator+(difference_type)
-    {
-        throw error::WrongAPIUsage(
-            "Global stateful iterator supports no random access (yet).");
-    }
-
     // increment/decrement
     SeriesIterator &operator++();
     using parent_t::operator--;

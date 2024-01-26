@@ -61,34 +61,6 @@ public:
         return m_internal_iterator->dereference_operator();
     }
 
-    // member access
-    inline value_type const &operator[](difference_type diff) const
-    {
-        return m_internal_iterator->index_operator(diff);
-    }
-    inline value_type &operator[](difference_type diff)
-    {
-        return m_internal_iterator->index_operator(diff);
-    }
-
-    // arithmetic random-access
-    inline OpaqueSeriesIterator operator+(difference_type diff) const
-    {
-        return OpaqueSeriesIterator(m_internal_iterator->plus_operator(diff));
-    }
-    inline OpaqueSeriesIterator operator-(difference_type diff) const
-    {
-        return OpaqueSeriesIterator(m_internal_iterator->minus_operator(diff));
-    }
-    inline OpaqueSeriesIterator operator+(difference_type diff)
-    {
-        return OpaqueSeriesIterator(m_internal_iterator->plus_operator(diff));
-    }
-    inline OpaqueSeriesIterator operator-(difference_type diff)
-    {
-        return OpaqueSeriesIterator(m_internal_iterator->minus_operator(diff));
-    }
-
     // increment/decrement
     OpaqueSeriesIterator &operator++()
     {
@@ -114,12 +86,6 @@ public:
     }
 
     // comparison
-    inline difference_type operator-(OpaqueSeriesIterator const &other) const
-    {
-        return m_internal_iterator->difference_operator(
-            *other.m_internal_iterator);
-    }
-
     inline bool operator==(OpaqueSeriesIterator const &other) const
     {
         return m_internal_iterator->equality_operator(
