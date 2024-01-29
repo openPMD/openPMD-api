@@ -123,6 +123,8 @@ public:
 
     static SeriesIterator end();
 
+    operator bool();
+
 private:
     inline bool setCurrentIteration()
     {

@@ -3007,11 +3007,7 @@ Snapshots Series::snapshots()
                     std::make_unique<SeriesIterator>(
                         std::move(s), parse_preference);
             }
-            std::unique_ptr<DynamicSeriesIterator<
-                Container<Iteration, IterationIndex_t>::value_type>>
-                internal_iterator_cloned{
-                    new SeriesIterator(*series_data.m_sharedStatefulIterator)};
-            return OpaqueSeriesIterator(std::move(internal_iterator_cloned));
+            return series_data.m_sharedStatefulIterator.get();
         };
 
         return Snapshots(std::shared_ptr<StatefulSnapshotsContainer>(

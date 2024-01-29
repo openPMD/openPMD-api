@@ -2,6 +2,7 @@
 
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
+#include "openPMD/snapshots/StatefulIterator.hpp"
 
 namespace openPMD
 {
@@ -9,9 +10,8 @@ class StatefulSnapshotsContainer : public AbstractSnapshotsContainer
 {
 private:
     friend class Series;
-    std::function<OpaqueSeriesIterator<value_type>()> m_begin;
-    StatefulSnapshotsContainer(
-        std::function<OpaqueSeriesIterator<value_type>()> begin);
+    std::function<SeriesIterator *()> m_begin;
+    StatefulSnapshotsContainer(std::function<SeriesIterator *()> begin);
 
 public:
     iterator begin() override;
@@ -22,6 +22,8 @@ public:
     iterator rend() override;
     const_iterator rbegin() const override;
     const_iterator rend() const override;
+
+    bool empty() const override;
 };
 
 /*
@@ -43,5 +45,7 @@ public:
     iterator rend() override;
     const_iterator rbegin() const override;
     const_iterator rend() const override;
+
+    bool empty() const override;
 };
 } // namespace openPMD

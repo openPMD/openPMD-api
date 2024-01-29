@@ -57,5 +57,7 @@ public:
     reverse_iterator rend();
     const_reverse_iterator rbegin() const;
     const_reverse_iterator rend() const;
+
+    bool empty() const;
 };
 } // namespace openPMD
