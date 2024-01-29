@@ -38,9 +38,9 @@
 #include <sstream>
 #include <string>
 
-struct SeriesIteratorPythonAdaptor : LegacyIteratorAdaptor
+struct StatefulIteratorPythonAdaptor : LegacyIteratorAdaptor
 {
-    SeriesIteratorPythonAdaptor(LegacyIteratorAdaptor it)
+    StatefulIteratorPythonAdaptor(LegacyIteratorAdaptor it)
         : LegacyIteratorAdaptor(std::move(it))
     {}
 
@@ -91,10 +91,10 @@ not possible once it has been closed.
             "Return the iteration that is currently being written to, if it "
             "exists.");
 
-    py::class_<SeriesIteratorPythonAdaptor>(m, "SeriesIterator")
+    py::class_<StatefulIteratorPythonAdaptor>(m, "StatefulIterator")
         .def(
             "__next__",
-            [](SeriesIteratorPythonAdaptor &iterator) {
+            [](StatefulIteratorPythonAdaptor &iterator) {
                 if (iterator == LegacyIteratorAdaptor::end())
                 {
                     throw py::stop_iteration();
@@ -144,10 +144,10 @@ not possible once it has been closed.
             [](ReadIterations &readIterations) {
                 // Simple iterator implementation:
                 // But we need to release the GIL inside
-                // SeriesIterator::operator++, so manually it is
+                // StatefulIterator::operator++, so manually it is
                 // return py::make_iterator(
                 //     readIterations.begin(), readIterations.end());
-                return SeriesIteratorPythonAdaptor(readIterations.begin());
+                return StatefulIteratorPythonAdaptor(readIterations.begin());
             },
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
