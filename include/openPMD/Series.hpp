@@ -59,7 +59,7 @@
 
 namespace openPMD
 {
-class StatefulIterator;
+class ReadIterations;
 class SeriesIterator;
 class Series;
 class Series;
@@ -117,7 +117,7 @@ namespace internal
          * Due to include order, this member needs to be a pointer instead of
          * an optional.
          */
-        std::unique_ptr<SeriesIterator> m_sharedStatefulIterator;
+        std::unique_ptr<SeriesIterator> m_sharedReadIterations;
         /**
          * For writing: Remember which iterations have been written in the
          * currently active output step. Use this later when writing the
@@ -252,7 +252,7 @@ class Series : public Attributable
     friend class Attributable;
     friend class Iteration;
     friend class Writable;
-    friend class StatefulIterator;
+    friend class ReadIterations;
     friend class SeriesIterator;
     friend class internal::SeriesData;
     friend class internal::AttributableData;
@@ -632,7 +632,7 @@ public:
     /**
      * @brief Entry point to the reading end of the streaming API.
      *
-     * Creates and returns an instance of the StatefulIterator class which can
+     * Creates and returns an instance of the ReadIterations class which can
      * be used for iterating over the openPMD iterations in a C++11-style for
      * loop.
      * `Series::readIterations()` is an intentionally restricted API that
@@ -640,11 +640,11 @@ public:
      * iteration cannot be opened again once it has been closed.
      * For a less restrictive API in non-streaming situations,
      * `Series::iterations` can be accessed directly.
-     * Look for the StatefulIterator class for further documentation.
+     * Look for the ReadIterations class for further documentation.
      *
-     * @return StatefulIterator
+     * @return ReadIterations
      */
-    StatefulIterator readIterations();
+    ReadIterations readIterations();
 
     Snapshots snapshots();
 
@@ -819,7 +819,7 @@ OPENPMD_private
      * and turn them into a warning (useful when parsing a Series, since parsing
      * should succeed without issue).
      * If true, the error will always be re-thrown (useful when using
-     * StatefulIterator since those methods should be aware when the current
+     * ReadIterations since those methods should be aware when the current
      * step is broken).
      */
     std::optional<std::deque<IterationIndex_t>> readGorVBased(

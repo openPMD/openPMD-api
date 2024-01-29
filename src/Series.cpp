@@ -2922,13 +2922,13 @@ Series::operator bool() const
     return m_attri.operator bool();
 }
 
-StatefulIterator Series::readIterations()
+ReadIterations Series::readIterations()
 {
     // Use private constructor instead of copy constructor to avoid
     // object slicing
     Series res;
     res.setData(std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
-    return StatefulIterator{
+    return ReadIterations{
         std::move(res), IOHandler()->m_frontendAccess, get().m_parsePreference};
 }
 
@@ -3000,14 +3000,14 @@ Snapshots Series::snapshots()
             std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
         auto begin = [s = std::move(copied_series)]() mutable {
             auto &series_data = s.get();
-            if (!series_data.m_sharedStatefulIterator)
+            if (!series_data.m_sharedReadIterations)
             {
                 auto parse_preference = series_data.m_parsePreference;
-                series_data.m_sharedStatefulIterator =
+                series_data.m_sharedReadIterations =
                     std::make_unique<SeriesIterator>(
                         std::move(s), parse_preference);
             }
-            return series_data.m_sharedStatefulIterator.get();
+            return series_data.m_sharedReadIterations.get();
         };
 
         return Snapshots(std::shared_ptr<StatefulSnapshotsContainer>(
