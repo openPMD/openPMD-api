@@ -36,6 +36,12 @@ auto RandomAccessIterator<iterator_t>::operator==(
 using iterator = Container<Iteration, Iteration::IterationIndex_t>::iterator;
 using const_iterator =
     Container<Iteration, Iteration::IterationIndex_t>::const_iterator;
+using reverse_iterator =
+    Container<Iteration, Iteration::IterationIndex_t>::reverse_iterator;
+using const_reverse_iterator =
+    Container<Iteration, Iteration::IterationIndex_t>::const_reverse_iterator;
 template class RandomAccessIterator<iterator>;
 template class RandomAccessIterator<const_iterator>;
+template class RandomAccessIterator<reverse_iterator>;
+template class RandomAccessIterator<const_reverse_iterator>;
 } // namespace openPMD

@@ -29,6 +29,32 @@ auto StatefulSnapshotsContainer::end() const -> const_iterator
     throw error::WrongAPIUsage(
         "Const iteration not possible on a stateful container/iterator.");
 }
+auto StatefulSnapshotsContainer::rbegin() -> iterator
+{
+    /*
+     * @todo maybe can adapt std::reverse_iterator as soon as the stateful
+     * iterator is powerful enough for this
+     */
+    throw std::runtime_error(
+        "Reverse iteration not (yet) implemented on a stateful "
+        "container/iterator.");
+}
+auto StatefulSnapshotsContainer::rend() -> iterator
+{
+    throw std::runtime_error(
+        "Reverse iteration not (yet) implemented on a stateful "
+        "container/iterator.");
+}
+auto StatefulSnapshotsContainer::rbegin() const -> const_iterator
+{
+    throw error::WrongAPIUsage(
+        "Const iteration not possible on a stateful container/iterator.");
+}
+auto StatefulSnapshotsContainer::rend() const -> const_iterator
+{
+    throw error::WrongAPIUsage(
+        "Const iteration not possible on a stateful container/iterator.");
+}
 
 RandomAccessIteratorContainer::RandomAccessIteratorContainer(
     Container<Iteration, key_type> cont)
@@ -57,5 +83,29 @@ auto RandomAccessIteratorContainer::end() const -> const_iterator
     return OpaqueSeriesIterator(
         std::unique_ptr<DynamicSeriesIterator<value_type const>>{
             new RandomAccessIterator(m_cont.end())});
+}
+auto RandomAccessIteratorContainer::rbegin() -> reverse_iterator
+{
+    return OpaqueSeriesIterator(
+        std::unique_ptr<DynamicSeriesIterator<value_type>>{
+            new RandomAccessIterator(m_cont.rbegin())});
+}
+auto RandomAccessIteratorContainer::rend() -> reverse_iterator
+{
+    return OpaqueSeriesIterator(
+        std::unique_ptr<DynamicSeriesIterator<value_type>>{
+            new RandomAccessIterator(m_cont.end())});
+}
+auto RandomAccessIteratorContainer::rbegin() const -> const_reverse_iterator
+{
+    return OpaqueSeriesIterator(
+        std::unique_ptr<DynamicSeriesIterator<value_type const>>{
+            new RandomAccessIterator(m_cont.rbegin())});
+}
+auto RandomAccessIteratorContainer::rend() const -> const_reverse_iterator
+{
+    return OpaqueSeriesIterator(
+        std::unique_ptr<DynamicSeriesIterator<value_type const>>{
+            new RandomAccessIterator(m_cont.rend())});
 }
 } // namespace openPMD
