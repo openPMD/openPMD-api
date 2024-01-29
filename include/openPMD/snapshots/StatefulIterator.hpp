@@ -33,9 +33,9 @@
 
 namespace openPMD
 {
-class SeriesIterator
+class StatefulIterator
     : public AbstractSeriesIterator<
-          SeriesIterator,
+          StatefulIterator,
           Container<Iteration, Iteration::IterationIndex_t>::value_type>
 {
     using iteration_index_t = IndexedIteration::index_t;
@@ -77,16 +77,16 @@ class SeriesIterator
         return m_data->value();
     }
 
-    using parent_t = AbstractSeriesIterator<SeriesIterator>;
+    using parent_t = AbstractSeriesIterator<StatefulIterator>;
 
 public:
     using value_type =
         typename Container<Iteration, Iteration::IterationIndex_t>::value_type;
     using typename parent_t ::difference_type;
     //! construct the end() iterator
-    explicit SeriesIterator();
+    explicit StatefulIterator();
 
-    SeriesIterator(
+    StatefulIterator(
         Series const &,
         std::optional<internal::ParsePreference> const &parsePreference);
 
@@ -95,33 +95,33 @@ public:
     value_type const &operator*() const;
 
     // increment/decrement
-    SeriesIterator &operator++();
+    StatefulIterator &operator++();
     using parent_t::operator--;
-    inline SeriesIterator &operator--()
+    inline StatefulIterator &operator--()
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no decrement (yet).");
     }
-    SeriesIterator operator++(int)
+    StatefulIterator operator++(int)
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no post-increment.");
     }
 
     // comparison
-    difference_type operator-(SeriesIterator const &) const
+    difference_type operator-(StatefulIterator const &) const
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no relative comparison.");
     }
-    bool operator==(SeriesIterator const &other) const;
-    inline bool operator<(SeriesIterator const &) const
+    bool operator==(StatefulIterator const &other) const;
+    inline bool operator<(StatefulIterator const &) const
     {
         throw error::WrongAPIUsage(
             "Global stateful iterator supports no relative comparison.");
     }
 
-    static SeriesIterator end();
+    static StatefulIterator end();
 
     operator bool();
 
@@ -154,7 +154,7 @@ private:
         }
     }
 
-    std::optional<SeriesIterator *> nextIterationInStep();
+    std::optional<StatefulIterator *> nextIterationInStep();
 
     /*
      * When a step cannot successfully be opened, the method nextStep() calls
@@ -166,9 +166,9 @@ private:
      * the /data/snapshot attribute, this helps figuring out which iteration
      * is now active. Hence, recursion_depth.
      */
-    std::optional<SeriesIterator *> nextStep(size_t recursion_depth);
+    std::optional<StatefulIterator *> nextStep(size_t recursion_depth);
 
-    std::optional<SeriesIterator *> loopBody();
+    std::optional<StatefulIterator *> loopBody();
 
     void deactivateDeadIteration(iteration_index_t);
 
@@ -180,12 +180,12 @@ private:
 class LegacyIteratorAdaptor
 {
     using value_type = IndexedIteration;
-    using parent_t = SeriesIterator;
+    using parent_t = StatefulIterator;
 
 private:
     friend class ReadIterations;
-    SeriesIterator m_iterator;
-    LegacyIteratorAdaptor(SeriesIterator iterator)
+    StatefulIterator m_iterator;
+    LegacyIteratorAdaptor(StatefulIterator iterator)
         : m_iterator(std::move(iterator))
     {}
 
@@ -203,7 +203,7 @@ public:
 
     static LegacyIteratorAdaptor end()
     {
-        return SeriesIterator::end();
+        return StatefulIterator::end();
     }
 
     inline bool operator==(LegacyIteratorAdaptor const &other) const
@@ -227,7 +227,7 @@ public:
  * Calling Iteration::close() manually before opening the next iteration is
  * encouraged and will implicitly flush all deferred IO actions.
  * Otherwise, Iteration::close() will be implicitly called upon
- * SeriesIterator::operator++(), i.e. upon going to the next iteration in
+ * StatefulIterator::operator++(), i.e. upon going to the next iteration in
  * the foreach loop.
  * Since this is designed for streaming mode, reopening an iteration is
  * not possible once it has been closed.

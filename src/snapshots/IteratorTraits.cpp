@@ -134,7 +134,7 @@ using iterations_container_t =
 
 #define OPENPMD_INSTANTIATE(type)                                              \
     template class AbstractSeriesIterator<type, typename type::value_type>;
-OPENPMD_INSTANTIATE(SeriesIterator)
+OPENPMD_INSTANTIATE(StatefulIterator)
 OPENPMD_INSTANTIATE(OpaqueSeriesIterator<iterations_container_t::value_type>)
 OPENPMD_INSTANTIATE(
     OpaqueSeriesIterator<iterations_container_t::value_type const>)

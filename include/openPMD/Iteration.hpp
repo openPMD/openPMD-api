@@ -129,10 +129,10 @@ class Iteration : public Attributable
     friend class Container;
     friend class Series;
     friend class WriteIterations;
-    friend class SeriesIterator;
     friend class internal::AttributableData;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    friend class StatefulIterator;
 
 public:
     Iteration(Iteration const &) = default;
@@ -435,7 +435,7 @@ inline T Iteration::dt() const
  */
 class IndexedIteration : public Iteration
 {
-    friend class SeriesIterator;
+    friend class StatefulIterator;
     friend class WriteIterations;
     friend class LegacyIteratorAdaptor;
 

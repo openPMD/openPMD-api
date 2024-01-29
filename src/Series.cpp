@@ -3004,7 +3004,7 @@ Snapshots Series::snapshots()
             {
                 auto parse_preference = series_data.m_parsePreference;
                 series_data.m_sharedReadIterations =
-                    std::make_unique<SeriesIterator>(
+                    std::make_unique<StatefulIterator>(
                         std::move(s), parse_preference);
             }
             return series_data.m_sharedReadIterations.get();

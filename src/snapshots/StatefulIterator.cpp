@@ -55,9 +55,9 @@ namespace
     }
 } // namespace
 
-SeriesIterator::SeriesIterator() = default;
+StatefulIterator::StatefulIterator() = default;
 
-void SeriesIterator::initSeriesInLinearReadMode()
+void StatefulIterator::initSeriesInLinearReadMode()
 {
     auto &data = get();
     auto &series = *data.series;
@@ -116,12 +116,12 @@ void SeriesIterator::initSeriesInLinearReadMode()
     series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
 }
 
-void SeriesIterator::close()
+void StatefulIterator::close()
 {
     *m_data = std::nullopt; // turn this into end iterator
 }
 
-SeriesIterator::SeriesIterator(
+StatefulIterator::StatefulIterator(
     Series const &series_in,
     std::optional<internal::ParsePreference> const &parsePreference)
     : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
@@ -253,10 +253,10 @@ SeriesIterator::SeriesIterator(
     }
 }
 
-std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
+std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
 {
     auto &data = get();
-    using ret_t = std::optional<SeriesIterator *>;
+    using ret_t = std::optional<StatefulIterator *>;
 
     if (data.iterationsInCurrentStep.empty())
     {
@@ -314,9 +314,10 @@ std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
         }
         catch (error::ReadError const &err)
         {
-            std::cerr << "[SeriesIterator] Cannot read iteration due to error "
-                         "below, will skip it.\n"
-                      << err.what() << std::endl;
+            std::cerr
+                << "[StatefulIterator] Cannot read iteration due to error "
+                   "below, will skip it.\n"
+                << err.what() << std::endl;
             return nextIterationInStep();
         }
 
@@ -325,7 +326,8 @@ std::optional<SeriesIterator *> SeriesIterator::nextIterationInStep()
     throw std::runtime_error("Unreachable!");
 }
 
-std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
+std::optional<StatefulIterator *>
+StatefulIterator::nextStep(size_t recursion_depth)
 {
     auto &data = get();
     // since we are in group-based iteration layout, it does not
@@ -342,7 +344,7 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
     }
     catch (error::ReadError const &err)
     {
-        std::cerr << "[SeriesIterator] Cannot read iteration due to error "
+        std::cerr << "[StatefulIterator] Cannot read iteration due to error "
                      "below, will skip it.\n"
                   << err.what() << std::endl;
         data.series->advance(AdvanceMode::ENDSTEP);
@@ -426,7 +428,7 @@ std::optional<SeriesIterator *> SeriesIterator::nextStep(size_t recursion_depth)
     return {this};
 }
 
-std::optional<SeriesIterator *> SeriesIterator::loopBody()
+std::optional<StatefulIterator *> StatefulIterator::loopBody()
 {
     auto &data = get();
     Series &series = data.series.value();
@@ -446,7 +448,7 @@ std::optional<SeriesIterator *> SeriesIterator::loopBody()
 
     auto guardReturn =
         [&series, &iterations](
-            auto const &option) -> std::optional<openPMD::SeriesIterator *> {
+            auto const &option) -> std::optional<openPMD::StatefulIterator *> {
         if (!option.has_value() || *option.value() == end())
         {
             return option;
@@ -522,7 +524,7 @@ std::optional<SeriesIterator *> SeriesIterator::loopBody()
     return guardReturn(option);
 }
 
-void SeriesIterator::deactivateDeadIteration(iteration_index_t index)
+void StatefulIterator::deactivateDeadIteration(iteration_index_t index)
 {
     auto &data = get();
     switch (data.series->iterationEncoding())
@@ -547,7 +549,7 @@ void SeriesIterator::deactivateDeadIteration(iteration_index_t index)
     data.series->iterations.container().erase(index);
 }
 
-SeriesIterator &SeriesIterator::operator++()
+StatefulIterator &StatefulIterator::operator++()
 {
     auto &data = get();
     if (!data.series.has_value())
@@ -556,7 +558,7 @@ SeriesIterator &SeriesIterator::operator++()
         return *this;
     }
     auto oldIterationIndex = data.currentIteration;
-    std::optional<SeriesIterator *> res;
+    std::optional<StatefulIterator *> res;
     /*
      * loopBody() might return an empty option to indicate a skipped iteration.
      * Loop until it returns something real for us.
@@ -597,7 +599,7 @@ SeriesIterator &SeriesIterator::operator++()
     return *resvalue;
 }
 
-auto SeriesIterator::operator*() const -> value_type const &
+auto StatefulIterator::operator*() const -> value_type const &
 {
     auto &data = get();
     auto iterator = static_cast<Series::IterationsContainer_t const &>(
@@ -606,7 +608,7 @@ auto SeriesIterator::operator*() const -> value_type const &
     return iterator.operator*();
 }
 
-bool SeriesIterator::operator==(SeriesIterator const &other) const
+bool StatefulIterator::operator==(StatefulIterator const &other) const
 {
     return
         // either both iterators are filled
@@ -616,12 +618,12 @@ bool SeriesIterator::operator==(SeriesIterator const &other) const
         (!this->m_data->has_value() && !other.m_data->has_value());
 }
 
-SeriesIterator SeriesIterator::end()
+StatefulIterator StatefulIterator::end()
 {
-    return SeriesIterator{};
+    return StatefulIterator{};
 }
 
-SeriesIterator::operator bool()
+StatefulIterator::operator bool()
 {
     return m_data->has_value();
 }
@@ -637,7 +639,7 @@ ReadIterations::ReadIterations(
     {
         // Open the iterator now already, so that metadata may already be read
         data.m_sharedReadIterations =
-            std::make_unique<SeriesIterator>(m_series, m_parsePreference);
+            std::make_unique<StatefulIterator>(m_series, m_parsePreference);
     }
 }
 
@@ -647,7 +649,7 @@ ReadIterations::iterator_t ReadIterations::begin()
     if (!series.m_sharedReadIterations)
     {
         series.m_sharedReadIterations =
-            std::make_unique<SeriesIterator>(m_series, m_parsePreference);
+            std::make_unique<StatefulIterator>(m_series, m_parsePreference);
     }
     return *series.m_sharedReadIterations;
 }

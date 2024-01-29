@@ -60,7 +60,7 @@
 namespace openPMD
 {
 class ReadIterations;
-class SeriesIterator;
+class StatefulIterator;
 class Series;
 class Series;
 
@@ -117,7 +117,7 @@ namespace internal
          * Due to include order, this member needs to be a pointer instead of
          * an optional.
          */
-        std::unique_ptr<SeriesIterator> m_sharedReadIterations;
+        std::unique_ptr<StatefulIterator> m_sharedReadIterations;
         /**
          * For writing: Remember which iterations have been written in the
          * currently active output step. Use this later when writing the
@@ -253,7 +253,7 @@ class Series : public Attributable
     friend class Iteration;
     friend class Writable;
     friend class ReadIterations;
-    friend class SeriesIterator;
+    friend class StatefulIterator;
     friend class internal::SeriesData;
     friend class internal::AttributableData;
     friend class WriteIterations;
