@@ -18,6 +18,10 @@ public:
     iterator end() override;
     const_iterator begin() const override;
     const_iterator end() const override;
+    iterator rbegin() override;
+    iterator rend() override;
+    const_iterator rbegin() const override;
+    const_iterator rend() const override;
 };
 
 /*
@@ -35,5 +39,9 @@ public:
     iterator end() override;
     const_iterator begin() const override;
     const_iterator end() const override;
+    iterator rbegin() override;
+    iterator rend() override;
+    const_iterator rbegin() const override;
+    const_iterator rend() const override;
 };
 } // namespace openPMD

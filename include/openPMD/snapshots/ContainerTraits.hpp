@@ -52,9 +52,18 @@ public:
     using value_type = Container<Iteration, key_type>::value_type;
     using iterator = OpaqueSeriesIterator<value_type>;
     using const_iterator = OpaqueSeriesIterator<value_type const>;
+    // since AbstractSnapshotsContainer abstracts away the specific mode of
+    // iteration, these are the same type
+    using reverse_iterator = OpaqueSeriesIterator<value_type>;
+    using const_reverse_iterator = OpaqueSeriesIterator<value_type const>;
+
     virtual iterator begin() = 0;
     virtual const_iterator begin() const = 0;
     virtual iterator end() = 0;
     virtual const_iterator end() const = 0;
+    virtual reverse_iterator rbegin() = 0;
+    virtual const_reverse_iterator rbegin() const = 0;
+    virtual reverse_iterator rend() = 0;
+    virtual const_reverse_iterator rend() const = 0;
 };
 } // namespace openPMD

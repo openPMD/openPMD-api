@@ -43,10 +43,19 @@ public:
     using value_type = AbstractSnapshotsContainer::value_type;
     using iterator = AbstractSnapshotsContainer::iterator;
     using const_iterator = AbstractSnapshotsContainer::const_iterator;
+    // since AbstractSnapshotsContainer abstracts away the specific mode of
+    // iteration, these are the same type
+    using reverse_iterator = AbstractSnapshotsContainer::reverse_iterator;
+    using const_reverse_iterator =
+        AbstractSnapshotsContainer::const_reverse_iterator;
 
     iterator begin();
     iterator end();
     const_iterator begin() const;
     const_iterator end() const;
+    reverse_iterator rbegin();
+    reverse_iterator rend();
+    const_reverse_iterator rbegin() const;
+    const_reverse_iterator rend() const;
 };
 } // namespace openPMD
