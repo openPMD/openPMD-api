@@ -130,7 +130,7 @@ SeriesIterator::SeriesIterator(
     data.parsePreference = parsePreference;
     /*
      * Since the iterator is stored in
-     * internal::SeriesData::m_sharedStatefulIterator,
+     * internal::SeriesData::m_sharedReadIterations,
      * we need to use a non-owning Series instance here for tie-breaking
      * purposes.
      * This is ok due to the usual C++ iterator invalidation workflows
@@ -626,33 +626,33 @@ SeriesIterator::operator bool()
     return m_data->has_value();
 }
 
-StatefulIterator::StatefulIterator(
+ReadIterations::ReadIterations(
     Series series,
     Access access,
     std::optional<internal::ParsePreference> parsePreference)
     : m_series(std::move(series)), m_parsePreference(parsePreference)
 {
     auto &data = m_series.get();
-    if (access == Access::READ_LINEAR && !data.m_sharedStatefulIterator)
+    if (access == Access::READ_LINEAR && !data.m_sharedReadIterations)
     {
         // Open the iterator now already, so that metadata may already be read
-        data.m_sharedStatefulIterator =
+        data.m_sharedReadIterations =
             std::make_unique<SeriesIterator>(m_series, m_parsePreference);
     }
 }
 
-StatefulIterator::iterator_t StatefulIterator::begin()
+ReadIterations::iterator_t ReadIterations::begin()
 {
     auto &series = m_series.get();
-    if (!series.m_sharedStatefulIterator)
+    if (!series.m_sharedReadIterations)
     {
-        series.m_sharedStatefulIterator =
+        series.m_sharedReadIterations =
             std::make_unique<SeriesIterator>(m_series, m_parsePreference);
     }
-    return *series.m_sharedStatefulIterator;
+    return *series.m_sharedReadIterations;
 }
 
-StatefulIterator::iterator_t StatefulIterator::end()
+ReadIterations::iterator_t ReadIterations::end()
 {
     return iterator_t::end();
 }
