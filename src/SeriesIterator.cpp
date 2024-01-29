@@ -1,7 +1,7 @@
 #include "openPMD/SeriesIterator.hpp"
-#include "openPMD/RandomAccessSnapshots.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/Snapshots.hpp"
+#include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include <memory>
 
 namespace openPMD
@@ -127,6 +127,6 @@ AbstractSeriesIterator<ChildClass>::clone() const
 #define OPENPMD_INSTANTIATE(type) template class AbstractSeriesIterator<type>;
 OPENPMD_INSTANTIATE(SeriesIterator)
 OPENPMD_INSTANTIATE(OpaqueSeriesIterator)
-OPENPMD_INSTANTIATE(RandomAccessSnapshots)
+OPENPMD_INSTANTIATE(RandomAccessIterator)
 #undef OPENPMD_INSTANTIATE
 } // namespace openPMD
