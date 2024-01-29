@@ -33,7 +33,10 @@
 
 namespace openPMD
 {
-class SeriesIterator : public AbstractSeriesIterator<SeriesIterator>
+class SeriesIterator
+    : public AbstractSeriesIterator<
+          SeriesIterator,
+          Container<Iteration, Iteration::IterationIndex_t>::value_type>
 {
     using iteration_index_t = IndexedIteration::index_t;
 
@@ -77,6 +80,9 @@ class SeriesIterator : public AbstractSeriesIterator<SeriesIterator>
     using parent_t = AbstractSeriesIterator<SeriesIterator>;
 
 public:
+    using value_type =
+        typename Container<Iteration, Iteration::IterationIndex_t>::value_type;
+    using typename parent_t ::difference_type;
     //! construct the end() iterator
     explicit SeriesIterator();
 

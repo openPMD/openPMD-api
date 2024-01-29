@@ -9,14 +9,17 @@ class StatefulSnapshotsContainer : public AbstractSnapshotsContainer
 {
 private:
     friend class Series;
-    std::function<OpaqueSeriesIterator()> m_begin;
-    StatefulSnapshotsContainer(std::function<OpaqueSeriesIterator()> begin)
+    std::function<OpaqueSeriesIterator<value_type>()> m_begin;
+    StatefulSnapshotsContainer(
+        std::function<OpaqueSeriesIterator<value_type>()> begin)
         : m_begin(std::move(begin))
     {}
 
 public:
-    iterator_t begin() override;
-    iterator_t end() override;
+    iterator begin() override;
+    iterator end() override;
+    const_iterator begin() const override;
+    const_iterator end() const override;
 };
 
 /*
@@ -26,21 +29,35 @@ class RandomAccessIteratorContainer : public AbstractSnapshotsContainer
 {
 private:
     friend class Series;
-    Container<value_t, index_t> m_cont;
-    RandomAccessIteratorContainer(Container<value_t, index_t> cont)
+    Container<Iteration, key_type> m_cont;
+    RandomAccessIteratorContainer(Container<Iteration, key_type> cont)
         : m_cont(std::move(cont))
     {}
 
 public:
-    inline iterator_t begin() override
+    inline iterator begin() override
     {
-        return OpaqueSeriesIterator(std::unique_ptr<DynamicSeriesIterator>{
-            new RandomAccessIterator(m_cont.begin())});
+        return OpaqueSeriesIterator(
+            std::unique_ptr<DynamicSeriesIterator<value_type>>{
+                new RandomAccessIterator(m_cont.begin())});
     }
-    inline iterator_t end() override
+    inline iterator end() override
     {
-        return OpaqueSeriesIterator(std::unique_ptr<DynamicSeriesIterator>{
-            new RandomAccessIterator(m_cont.end())});
+        return OpaqueSeriesIterator(
+            std::unique_ptr<DynamicSeriesIterator<value_type>>{
+                new RandomAccessIterator(m_cont.end())});
+    }
+    inline const_iterator begin() const override
+    {
+        return OpaqueSeriesIterator(
+            std::unique_ptr<DynamicSeriesIterator<value_type const>>{
+                new RandomAccessIterator(m_cont.begin())});
+    }
+    inline const_iterator end() const override
+    {
+        return OpaqueSeriesIterator(
+            std::unique_ptr<DynamicSeriesIterator<value_type const>>{
+                new RandomAccessIterator(m_cont.end())});
     }
 };
 } // namespace openPMD
