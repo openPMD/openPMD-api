@@ -36,9 +36,7 @@ private:
 
     std::shared_ptr<AbstractSnapshotsContainer> m_snapshots;
 
-    inline Snapshots(std::shared_ptr<AbstractSnapshotsContainer> snapshots)
-        : m_snapshots(std::move(snapshots))
-    {}
+    Snapshots(std::shared_ptr<AbstractSnapshotsContainer> snapshots);
 
 public:
     using key_type = AbstractSnapshotsContainer::key_type;
@@ -46,23 +44,9 @@ public:
     using iterator = AbstractSnapshotsContainer::iterator;
     using const_iterator = AbstractSnapshotsContainer::const_iterator;
 
-    inline iterator begin()
-    {
-        return m_snapshots->begin();
-    }
-    inline iterator end()
-    {
-        return m_snapshots->end();
-    }
-    inline const_iterator begin() const
-    {
-        return static_cast<AbstractSnapshotsContainer const &>(*m_snapshots)
-            .begin();
-    }
-    inline const_iterator end() const
-    {
-        return static_cast<AbstractSnapshotsContainer const &>(*m_snapshots)
-            .end();
-    }
+    iterator begin();
+    iterator end();
+    const_iterator begin() const;
+    const_iterator end() const;
 };
 } // namespace openPMD
