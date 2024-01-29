@@ -1,6 +1,6 @@
 #include "openPMD/snapshots/IteratorTraits.hpp"
-#include "openPMD/Snapshots.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include <memory>
 
