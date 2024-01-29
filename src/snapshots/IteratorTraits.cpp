@@ -141,5 +141,9 @@ OPENPMD_INSTANTIATE(
 OPENPMD_INSTANTIATE(RandomAccessIterator<iterations_container_t::iterator>)
 OPENPMD_INSTANTIATE(
     RandomAccessIterator<iterations_container_t::const_iterator>)
+OPENPMD_INSTANTIATE(
+    RandomAccessIterator<iterations_container_t::reverse_iterator>)
+OPENPMD_INSTANTIATE(
+    RandomAccessIterator<iterations_container_t::const_reverse_iterator>)
 #undef OPENPMD_INSTANTIATE
 } // namespace openPMD
