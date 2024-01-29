@@ -26,7 +26,6 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
-#include "openPMD/Snapshots.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/WriteIterations.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
@@ -34,6 +33,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/version.hpp"
 
 #if openPMD_HAVE_MPI

@@ -26,7 +26,6 @@
 #include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IterationEncoding.hpp"
-#include "openPMD/Snapshots.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -35,6 +34,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include "openPMD/version.hpp"
 

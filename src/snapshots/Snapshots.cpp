@@ -1,4 +1,4 @@
-#include "openPMD/Snapshots.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include <stdexcept>
 
