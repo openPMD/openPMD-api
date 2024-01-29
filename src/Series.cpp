@@ -29,7 +29,6 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
-#include "openPMD/RandomAccessSnapshots.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/SeriesIterator.hpp"
 #include "openPMD/Snapshots.hpp"
@@ -41,6 +40,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include "openPMD/version.hpp"
 
 #include <algorithm>
@@ -2974,8 +2974,8 @@ Snapshots Series::snapshots()
     switch (iterator_kind)
     {
     case IteratorKind::RandomAccess: {
-        return Snapshots(std::shared_ptr<RandomAccessSnapshotsContainer>{
-            new RandomAccessSnapshotsContainer(series.iterations)});
+        return Snapshots(std::shared_ptr<RandomAccessIteratorContainer>{
+            new RandomAccessIteratorContainer(series.iterations)});
     }
     case IteratorKind::Stateful: {
         // Use private constructor instead of copy constructor to avoid
