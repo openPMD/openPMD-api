@@ -32,6 +32,7 @@
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
