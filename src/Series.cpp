@@ -2953,15 +2953,29 @@ Snapshots Series::snapshots()
             iterator_kind = IK::Stateful;
             break;
         case Access::READ_ONLY:
-            switch (series.m_parsePreference.value())
+            if (series.m_parsePreference.has_value())
             {
-            case internal::ParsePreference::UpFront:
-                iterator_kind = IK::RandomAccess;
-                break;
-            case internal::ParsePreference::PerStep:
-                iterator_kind = IK::Stateful;
-                break;
+                switch (series.m_parsePreference.value())
+                {
+                case internal::ParsePreference::UpFront:
+                    iterator_kind = IK::RandomAccess;
+                    break;
+                case internal::ParsePreference::PerStep:
+                    iterator_kind = IK::Stateful;
+                    break;
+                }
             }
+            else if (iterationEncoding() != IterationEncoding::fileBased)
+            {
+                throw error::Internal(
+                    "READ_ONLY mode and non-fileBased iteration encoding, but "
+                    "the backend did not set a parse preference.");
+            }
+            else
+            {
+                iterator_kind = IK::RandomAccess;
+            }
+
             break;
         case Access::READ_WRITE:
         case Access::CREATE:
