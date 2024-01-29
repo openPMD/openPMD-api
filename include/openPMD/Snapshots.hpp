@@ -21,7 +21,7 @@
 #pragma once
 
 #include "openPMD/Iteration.hpp"
-#include "openPMD/SeriesIterator.hpp"
+#include "openPMD/snapshots/IteratorTraits.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include <functional>
 #include <memory>
