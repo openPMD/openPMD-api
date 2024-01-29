@@ -468,7 +468,10 @@ set(CORE_SOURCE
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
         src/helper/list_series.cpp
         src/snapshots/ContainerImpls.cpp
+        src/snapshots/ContainerTraits.cpp
         src/snapshots/IteratorTraits.cpp
+        src/snapshots/RandomAccessIterator.cpp
+        src/snapshots/Snapshots.cpp
         src/snapshots/StatefulIterator.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
