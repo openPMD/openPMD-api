@@ -23,8 +23,8 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
-#include "openPMD/SeriesIterator.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
+#include "openPMD/snapshots/IteratorTraits.hpp"
 
 #include <deque>
 #include <iostream>
