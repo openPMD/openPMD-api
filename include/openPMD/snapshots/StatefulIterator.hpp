@@ -123,7 +123,7 @@ private:
         auto &data = get();
         if (data.iterationsInCurrentStep.empty())
         {
-            std::cerr << "[ReadIterations] Encountered a step without "
+            std::cerr << "[StatefulIterator] Encountered a step without "
                          "iterations. Closing the Series."
                       << std::endl;
             *this = end();
@@ -175,7 +175,7 @@ class LegacyIteratorAdaptor
     using parent_t = SeriesIterator;
 
 private:
-    friend class ReadIterations;
+    friend class StatefulIterator;
     SeriesIterator m_iterator;
     LegacyIteratorAdaptor(SeriesIterator iterator)
         : m_iterator(std::move(iterator))
@@ -225,7 +225,7 @@ public:
  * not possible once it has been closed.
  *
  */
-class ReadIterations
+class StatefulIterator
 {
     friend class Series;
 
@@ -236,7 +236,7 @@ private:
     Series m_series;
     std::optional<internal::ParsePreference> m_parsePreference;
 
-    ReadIterations(
+    StatefulIterator(
         Series,
         Access,
         std::optional<internal::ParsePreference> parsePreference);

@@ -21,9 +21,9 @@
 #include "openPMD/Series.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IterationEncoding.hpp"
-#include "openPMD/ReadIterations.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/snapshots/StatefulIterator.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
 
@@ -139,7 +139,7 @@ not possible once it has been closed.
 
         );
 
-    py::class_<ReadIterations>(m, "ReadIterations", R"END(
+    py::class_<StatefulIterator>(m, "StatefulIterator", R"END(
 Reading side of the streaming API.
 
 Create instance via Series.readIterations().
@@ -155,7 +155,7 @@ not possible once it has been closed.
     )END")
         .def(
             "__iter__",
-            [](ReadIterations &readIterations) {
+            [](StatefulIterator &readIterations) {
                 // Simple iterator implementation:
                 // But we need to release the GIL inside
                 // SeriesIterator::operator++, so manually it is
@@ -407,7 +407,7 @@ this method.
             R"END(
 Entry point to the reading end of the streaming API.
 
-Creates and returns an instance of the ReadIterations class which can
+Creates and returns an instance of the StatefulIterator class which can
 be used for iterating over the openPMD iterations in a C++11-style for
 loop.
 `Series.read_iterations()` is an intentionally restricted API that
@@ -415,7 +415,7 @@ ensures a workflow which also works in streaming setups, e.g. an
 iteration cannot be opened again once it has been closed.
 For a less restrictive API in non-streaming situations,
 `Series.iterations` can be accessed directly.
-Look for the ReadIterations class for further documentation.
+Look for the StatefulIterator class for further documentation.
             )END")
         .def(
             "parse_base",
