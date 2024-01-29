@@ -22,24 +22,36 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
+#include <utility>
 namespace openPMD
 {
+namespace detail
+{
+    template <typename iterator_t>
+    using iterator_to_value_type =
+        // do NOT remove const from type
+        std::remove_reference_t<decltype(*std::declval<iterator_t>())>;
+}
 
-// @todo const iteration?
-class RandomAccessIterator : public AbstractSeriesIterator<RandomAccessIterator>
+template <typename iterator_t>
+class RandomAccessIterator
+    : public AbstractSeriesIterator<
+          RandomAccessIterator<iterator_t>,
+          detail::iterator_to_value_type<iterator_t>>
 {
 private:
     friend class RandomAccessIteratorContainer;
-    using iterator_t = Container<Iteration, difference_type>::iterator;
     iterator_t m_it;
 
     inline RandomAccessIterator(iterator_t it) : m_it(it)
     {}
 
-    using parent_t = AbstractSeriesIterator<RandomAccessIterator>;
+    using parent_t = AbstractSeriesIterator<RandomAccessIterator<iterator_t>>;
 
 public:
     using parent_t::operator*;
+    using typename parent_t::value_type;
+
     inline value_type const &operator*() const
     {
         return *m_it;

@@ -4,7 +4,11 @@
 #include "openPMD/snapshots/IteratorTraits.hpp"
 namespace openPMD
 {
-class OpaqueSeriesIterator : public AbstractSeriesIterator<OpaqueSeriesIterator>
+template <typename value_type_in>
+class OpaqueSeriesIterator
+    : public AbstractSeriesIterator<
+          OpaqueSeriesIterator<value_type_in>,
+          value_type_in>
 {
 private:
     friend class Series;
@@ -12,10 +16,10 @@ private:
     friend class RandomAccessIteratorContainer;
     using parent_t = AbstractSeriesIterator<OpaqueSeriesIterator>;
     // no shared_ptr since copied iterators should not share state
-    std::unique_ptr<DynamicSeriesIterator> m_internal_iterator;
+    std::unique_ptr<DynamicSeriesIterator<value_type_in>> m_internal_iterator;
 
     OpaqueSeriesIterator(
-        std::unique_ptr<DynamicSeriesIterator> internal_iterator)
+        std::unique_ptr<DynamicSeriesIterator<value_type_in>> internal_iterator)
         : m_internal_iterator(std::move(internal_iterator))
     {}
 
@@ -23,18 +27,21 @@ public:
     OpaqueSeriesIterator(OpaqueSeriesIterator const &other)
         : m_internal_iterator(other.m_internal_iterator->clone())
     {}
-    OpaqueSeriesIterator(OpaqueSeriesIterator &&other) = default;
+    OpaqueSeriesIterator(OpaqueSeriesIterator &&other) noexcept = default;
     OpaqueSeriesIterator &operator=(OpaqueSeriesIterator const &other)
     {
         m_internal_iterator = other.m_internal_iterator->clone();
         return *this;
     }
-    OpaqueSeriesIterator &operator=(OpaqueSeriesIterator &&other) = default;
+    OpaqueSeriesIterator &
+    operator=(OpaqueSeriesIterator &&other) noexcept = default;
 
     ~OpaqueSeriesIterator() = default;
 
     // dereference
     using parent_t::operator*;
+    using value_type = value_type_in;
+
     inline value_type const &operator*() const
     {
         return m_internal_iterator->dereference_operator();
@@ -75,11 +82,13 @@ public:
 class AbstractSnapshotsContainer
 {
 public:
-    using value_t = Iteration;
-    using index_t = Iteration::IterationIndex_t;
-    using iterator_t = OpaqueSeriesIterator;
-    // using const_iterator_t = ...;
-    virtual iterator_t begin() = 0;
-    virtual iterator_t end() = 0;
+    using key_type = Iteration::IterationIndex_t;
+    using value_type = Container<Iteration, key_type>::value_type;
+    using iterator = OpaqueSeriesIterator<value_type>;
+    using const_iterator = OpaqueSeriesIterator<value_type const>;
+    virtual iterator begin() = 0;
+    virtual const_iterator begin() const = 0;
+    virtual iterator end() = 0;
+    virtual const_iterator end() const = 0;
 };
 } // namespace openPMD
