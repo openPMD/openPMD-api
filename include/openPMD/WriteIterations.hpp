@@ -37,7 +37,7 @@ class Series;
  * streaming alike. Calling Iteration::close() manually before opening
  * the next iteration is encouraged and will implicitly flush all
  * deferred IO actions. Otherwise, Iteration::close() will be implicitly
- * called upon SeriesIterator::operator++(), i.e. upon going to the next
+ * called upon StatefulIterator::operator++(), i.e. upon going to the next
  * iteration in the foreach loop.
  *
  * Since this is designed for streaming mode, reopening an iteration is

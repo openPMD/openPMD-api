@@ -10,8 +10,8 @@ class StatefulSnapshotsContainer : public AbstractSnapshotsContainer
 {
 private:
     friend class Series;
-    std::function<SeriesIterator *()> m_begin;
-    StatefulSnapshotsContainer(std::function<SeriesIterator *()> begin);
+    std::function<StatefulIterator *()> m_begin;
+    StatefulSnapshotsContainer(std::function<StatefulIterator *()> begin);
 
 public:
     iterator begin() override;

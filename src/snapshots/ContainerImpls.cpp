@@ -11,18 +11,18 @@ namespace
 {
     using value_type =
         Container<Iteration, Iteration::IterationIndex_t>::value_type;
-    auto stateful_to_opaque(SeriesIterator const &it)
+    auto stateful_to_opaque(StatefulIterator const &it)
         -> OpaqueSeriesIterator<value_type>
     {
         std::unique_ptr<DynamicSeriesIterator<value_type>>
-            internal_iterator_cloned{new SeriesIterator(it)};
+            internal_iterator_cloned{new StatefulIterator(it)};
         return OpaqueSeriesIterator<value_type>(
             std::move(internal_iterator_cloned));
     }
 } // namespace
 
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
-    std::function<SeriesIterator *()> begin)
+    std::function<StatefulIterator *()> begin)
     : m_begin(std::move(begin))
 {}
 auto StatefulSnapshotsContainer::begin() -> iterator
@@ -33,7 +33,7 @@ auto StatefulSnapshotsContainer::end() -> iterator
 {
     return OpaqueSeriesIterator(
         std::unique_ptr<DynamicSeriesIterator<value_type>>{
-            new SeriesIterator()});
+            new StatefulIterator()});
 }
 auto StatefulSnapshotsContainer::begin() const -> const_iterator
 {
