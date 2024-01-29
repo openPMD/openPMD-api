@@ -27,13 +27,16 @@ namespace openPMD
 {
 // Abstract class that can be used as an abstract interface to an opaque
 // iterator implementation
+template <
+    typename value_type =
+        Container<Iteration, Iteration::IterationIndex_t>::value_type>
 class DynamicSeriesIterator
 {
 public:
     using difference_type = Iteration::IterationIndex_t;
-    using value_type = Container<Iteration, difference_type>::value_type;
 
 protected:
+    template <typename>
     friend class OpaqueSeriesIterator;
 
     // dereference
@@ -56,12 +59,14 @@ protected:
 // Implement as `class MyIterator : public AbstractSeriesIterator<MyIterator>`
 // Use `using AbstractSeriesIterator<MyIterator>::operator-` to pull default
 // implementations.
-template <typename ChildClass>
-class AbstractSeriesIterator : public DynamicSeriesIterator
+template <
+    typename ChildClass,
+    typename value_type_in = typename ChildClass::value_type>
+class AbstractSeriesIterator : public DynamicSeriesIterator<value_type_in>
 {
 public:
     using difference_type = Iteration::IterationIndex_t;
-    using value_type = Container<Iteration, difference_type>::value_type;
+    using value_type = value_type_in;
 
     // dereference
     // value_type const &operator*() const = 0;
@@ -84,19 +89,19 @@ public:
      *************/
 
 protected:
-    using parent_t = DynamicSeriesIterator;
+    using parent_t = DynamicSeriesIterator<value_type_in>;
     // dereference
     using parent_t::dereference_operator;
     value_type const &dereference_operator() const override;
 
     // increment/decrement
-    DynamicSeriesIterator &increment_operator() override;
-    DynamicSeriesIterator &decrement_operator() override;
+    parent_t &increment_operator() override;
+    parent_t &decrement_operator() override;
 
     // comparison
-    bool equality_operator(DynamicSeriesIterator const &) const override;
+    bool equality_operator(parent_t const &) const override;
 
-    std::unique_ptr<DynamicSeriesIterator> clone() const override;
+    std::unique_ptr<parent_t> clone() const override;
 
 private:
     ChildClass *this_child();
