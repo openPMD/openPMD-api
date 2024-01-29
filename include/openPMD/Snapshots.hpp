@@ -21,8 +21,8 @@
 #pragma once
 
 #include "openPMD/Iteration.hpp"
-#include "openPMD/RandomAccessSnapshots.hpp"
 #include "openPMD/SeriesIterator.hpp"
+#include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include <functional>
 #include <memory>
 #include <optional>
@@ -35,7 +35,7 @@ class OpaqueSeriesIterator : public AbstractSeriesIterator<OpaqueSeriesIterator>
 private:
     friend class Series;
     friend class StatefulSnapshotsContainer;
-    friend class RandomAccessSnapshotsContainer;
+    friend class RandomAccessIteratorContainer;
     using parent_t = AbstractSeriesIterator<OpaqueSeriesIterator>;
     // no shared_ptr since copied iterators should not share state
     std::unique_ptr<DynamicSeriesIterator> m_internal_iterator;
@@ -126,12 +126,12 @@ public:
 /*
  * @todo how to deal with iteration::open() iteration::close() ?
  */
-class RandomAccessSnapshotsContainer : public AbstractSnapshotsContainer
+class RandomAccessIteratorContainer : public AbstractSnapshotsContainer
 {
 private:
     friend class Series;
     Container<value_t, index_t> m_cont;
-    RandomAccessSnapshotsContainer(Container<value_t, index_t> cont)
+    RandomAccessIteratorContainer(Container<value_t, index_t> cont)
         : m_cont(std::move(cont))
     {}
 
@@ -139,12 +139,12 @@ public:
     inline iterator_t begin() override
     {
         return OpaqueSeriesIterator(std::unique_ptr<DynamicSeriesIterator>{
-            new RandomAccessSnapshots(m_cont.begin())});
+            new RandomAccessIterator(m_cont.begin())});
     }
     inline iterator_t end() override
     {
         return OpaqueSeriesIterator(std::unique_ptr<DynamicSeriesIterator>{
-            new RandomAccessSnapshots(m_cont.end())});
+            new RandomAccessIterator(m_cont.end())});
     }
 };
 
