@@ -41,37 +41,19 @@ class RandomAccessIterator
 {
 private:
     friend class RandomAccessIteratorContainer;
-    iterator_t m_it;
-
-    inline RandomAccessIterator(iterator_t it) : m_it(it)
-    {}
-
     using parent_t = AbstractSeriesIterator<RandomAccessIterator<iterator_t>>;
+
+    RandomAccessIterator(iterator_t it);
+
+    iterator_t m_it;
 
 public:
     using parent_t::operator*;
     using typename parent_t::value_type;
 
-    inline value_type const &operator*() const
-    {
-        return *m_it;
-    }
-
-    inline RandomAccessIterator &operator++()
-    {
-        ++m_it;
-        return *this;
-    }
-
-    inline RandomAccessIterator &operator--()
-    {
-        --m_it;
-        return *this;
-    }
-
-    inline bool operator==(RandomAccessIterator const &other) const
-    {
-        return m_it == other.m_it;
-    }
+    value_type const &operator*() const;
+    RandomAccessIterator &operator++();
+    RandomAccessIterator &operator--();
+    bool operator==(RandomAccessIterator const &other) const;
 };
 } // namespace openPMD
