@@ -621,6 +621,11 @@ SeriesIterator SeriesIterator::end()
     return SeriesIterator{};
 }
 
+SeriesIterator::operator bool()
+{
+    return m_data->has_value();
+}
+
 StatefulIterator::StatefulIterator(
     Series series,
     Access access,
