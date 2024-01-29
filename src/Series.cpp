@@ -37,6 +37,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
