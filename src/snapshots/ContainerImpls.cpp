@@ -1,17 +1,33 @@
 #include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
+#include <memory>
 #include <stdexcept>
 
 namespace openPMD
 {
+namespace
+{
+    using value_type =
+        Container<Iteration, Iteration::IterationIndex_t>::value_type;
+    auto stateful_to_opaque(SeriesIterator const &it)
+        -> OpaqueSeriesIterator<value_type>
+    {
+        std::unique_ptr<DynamicSeriesIterator<value_type>>
+            internal_iterator_cloned{new SeriesIterator(it)};
+        return OpaqueSeriesIterator<value_type>(
+            std::move(internal_iterator_cloned));
+    }
+} // namespace
+
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
-    std::function<OpaqueSeriesIterator<value_type>()> begin)
+    std::function<SeriesIterator *()> begin)
     : m_begin(std::move(begin))
 {}
 auto StatefulSnapshotsContainer::begin() -> iterator
 {
-    return m_begin();
+    return stateful_to_opaque(*m_begin());
 }
 auto StatefulSnapshotsContainer::end() -> iterator
 {
@@ -54,6 +70,11 @@ auto StatefulSnapshotsContainer::rend() const -> const_iterator
 {
     throw error::WrongAPIUsage(
         "Const iteration not possible on a stateful container/iterator.");
+}
+
+bool StatefulSnapshotsContainer::empty() const
+{
+    return m_begin()->operator bool();
 }
 
 RandomAccessIteratorContainer::RandomAccessIteratorContainer(
@@ -107,5 +128,10 @@ auto RandomAccessIteratorContainer::rend() const -> const_reverse_iterator
     return OpaqueSeriesIterator(
         std::unique_ptr<DynamicSeriesIterator<value_type const>>{
             new RandomAccessIterator(m_cont.rend())});
+}
+
+bool RandomAccessIteratorContainer::empty() const
+{
+    return m_cont.empty();
 }
 } // namespace openPMD

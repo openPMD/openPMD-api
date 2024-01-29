@@ -18,10 +18,10 @@ private:
     // no shared_ptr since copied iterators should not share state
     std::unique_ptr<DynamicSeriesIterator<value_type_in>> m_internal_iterator;
 
+public:
     OpaqueSeriesIterator(std::unique_ptr<DynamicSeriesIterator<value_type_in>>
                              internal_iterator);
 
-public:
     OpaqueSeriesIterator(OpaqueSeriesIterator const &other);
     OpaqueSeriesIterator(OpaqueSeriesIterator &&other) noexcept;
     OpaqueSeriesIterator &operator=(OpaqueSeriesIterator const &other);
@@ -65,5 +65,7 @@ public:
     virtual const_reverse_iterator rbegin() const = 0;
     virtual reverse_iterator rend() = 0;
     virtual const_reverse_iterator rend() const = 0;
+
+    virtual bool empty() const = 0;
 };
 } // namespace openPMD

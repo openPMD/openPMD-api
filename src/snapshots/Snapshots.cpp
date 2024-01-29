@@ -38,4 +38,9 @@ auto Snapshots::rend() const -> const_reverse_iterator
 {
     return static_cast<AbstractSnapshotsContainer const &>(*m_snapshots).end();
 }
+
+bool Snapshots::empty() const
+{
+    return m_snapshots->empty();
+}
 } // namespace openPMD
