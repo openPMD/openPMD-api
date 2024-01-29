@@ -459,7 +459,6 @@ set(CORE_SOURCE
         src/Mesh.cpp
         src/ParticlePatches.cpp
         src/ParticleSpecies.cpp
-        src/ReadIterations.cpp
         src/Record.cpp
         src/RecordComponent.cpp
         src/Series.cpp
@@ -478,7 +477,8 @@ set(CORE_SOURCE
         src/backend/PatchRecordComponent.cpp
         src/backend/Writable.cpp
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
-        src/helper/list_series.cpp)
+        src/helper/list_series.cpp
+        src/snapshots/StatefulIterator.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp

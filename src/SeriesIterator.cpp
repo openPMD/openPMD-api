@@ -1,7 +1,7 @@
 #include "openPMD/SeriesIterator.hpp"
-#include "openPMD/ReadIterations.hpp"
 #include "openPMD/Snapshots.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
+#include "openPMD/snapshots/StatefulIterator.hpp"
 #include <memory>
 
 namespace openPMD

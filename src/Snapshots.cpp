@@ -1,5 +1,5 @@
 #include "openPMD/Snapshots.hpp"
-#include "openPMD/ReadIterations.hpp"
+#include "openPMD/snapshots/StatefulIterator.hpp"
 #include <stdexcept>
 
 namespace openPMD

@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "openPMD/ReadIterations.hpp"
+#include "openPMD/snapshots/StatefulIterator.hpp"
 #include "openPMD/Error.hpp"
 
 #include "openPMD/Series.hpp"
@@ -621,7 +621,7 @@ SeriesIterator SeriesIterator::end()
     return SeriesIterator{};
 }
 
-ReadIterations::ReadIterations(
+StatefulIterator::StatefulIterator(
     Series series,
     Access access,
     std::optional<internal::ParsePreference> parsePreference)
@@ -636,7 +636,7 @@ ReadIterations::ReadIterations(
     }
 }
 
-ReadIterations::iterator_t ReadIterations::begin()
+StatefulIterator::iterator_t StatefulIterator::begin()
 {
     auto &series = m_series.get();
     if (!series.m_sharedStatefulIterator)
@@ -647,7 +647,7 @@ ReadIterations::iterator_t ReadIterations::begin()
     return *series.m_sharedStatefulIterator;
 }
 
-ReadIterations::iterator_t ReadIterations::end()
+StatefulIterator::iterator_t StatefulIterator::end()
 {
     return iterator_t::end();
 }

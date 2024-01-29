@@ -59,7 +59,7 @@
 
 namespace openPMD
 {
-class ReadIterations;
+class StatefulIterator;
 class SeriesIterator;
 class Series;
 class Series;
@@ -252,7 +252,7 @@ class Series : public Attributable
     friend class Attributable;
     friend class Iteration;
     friend class Writable;
-    friend class ReadIterations;
+    friend class StatefulIterator;
     friend class SeriesIterator;
     friend class internal::SeriesData;
     friend class internal::AttributableData;
@@ -632,7 +632,7 @@ public:
     /**
      * @brief Entry point to the reading end of the streaming API.
      *
-     * Creates and returns an instance of the ReadIterations class which can
+     * Creates and returns an instance of the StatefulIterator class which can
      * be used for iterating over the openPMD iterations in a C++11-style for
      * loop.
      * `Series::readIterations()` is an intentionally restricted API that
@@ -640,11 +640,11 @@ public:
      * iteration cannot be opened again once it has been closed.
      * For a less restrictive API in non-streaming situations,
      * `Series::iterations` can be accessed directly.
-     * Look for the ReadIterations class for further documentation.
+     * Look for the StatefulIterator class for further documentation.
      *
-     * @return ReadIterations
+     * @return StatefulIterator
      */
-    ReadIterations readIterations();
+    StatefulIterator readIterations();
 
     Snapshots snapshots();
 
@@ -819,8 +819,8 @@ OPENPMD_private
      * and turn them into a warning (useful when parsing a Series, since parsing
      * should succeed without issue).
      * If true, the error will always be re-thrown (useful when using
-     * ReadIterations since those methods should be aware when the current step
-     * is broken).
+     * StatefulIterator since those methods should be aware when the current
+     * step is broken).
      */
     std::optional<std::deque<IterationIndex_t>> readGorVBased(
         bool do_always_throw_errors,
@@ -908,4 +908,4 @@ namespace debug
 
 // Make sure that this one is always included if Series.hpp is included,
 // otherwise Series::readIterations() cannot be used
-#include "openPMD/ReadIterations.hpp"
+#include "openPMD/snapshots/StatefulIterator.hpp"
