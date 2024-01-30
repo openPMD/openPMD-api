@@ -316,7 +316,7 @@ private:
      */
     struct BeginStepStatus
     {
-        using AvailableIterations_t = std::optional<std::deque<uint64_t> >;
+        using AvailableIterations_t = std::deque<uint64_t>;
 
         AdvanceStatus stepStatus{};
         /*
