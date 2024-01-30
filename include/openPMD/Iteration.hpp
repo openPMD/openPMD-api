@@ -134,6 +134,7 @@ class Iteration : public Attributable
     friend T &internal::makeOwning(T &self, Series);
     friend class Writable;
     friend class StatefulIterator;
+    friend class StatefulSnapshotsContainer;
 
 public:
     Iteration(Iteration const &) = default;

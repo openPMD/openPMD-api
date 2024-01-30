@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Iteration.hpp"
+#include "openPMD/backend/Writable.hpp"
 #include <memory>
 
 namespace openPMD

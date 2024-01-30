@@ -258,6 +258,7 @@ class Series : public Attributable
     friend class internal::SeriesData;
     friend class internal::AttributableData;
     friend class WriteIterations;
+    friend class StatefulSnapshotsContainer;
 
 public:
     explicit Series();
