@@ -130,6 +130,7 @@ class Iteration : public Attributable
     friend class Series;
     friend class WriteIterations;
     friend class StatefulIterator;
+    friend class StatefulSnapshotsContainer;
 
 public:
     Iteration(Iteration const &) = default;

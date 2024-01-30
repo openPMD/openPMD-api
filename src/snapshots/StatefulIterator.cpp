@@ -61,7 +61,7 @@ StatefulIterator::StatefulIterator() = default;
 void StatefulIterator::initSeriesInLinearReadMode()
 {
     auto &data = get();
-    auto &series = *data.series;
+    auto &series = data.series;
     series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
     try
     {
@@ -122,7 +122,66 @@ void StatefulIterator::close()
     *m_data = std::nullopt; // turn this into end iterator
 }
 
+auto StatefulIterator::setCurrentIteration() -> bool
+{
+    auto &data = get();
+    if (data.iterationsInCurrentStep.empty())
+    {
+        std::cerr << "[ReadIterations] Encountered a step without "
+                     "iterations. Closing the Series."
+                  << std::endl;
+        *this = end();
+        return false;
+    }
+    data.currentIteration = *data.iterationsInCurrentStep.begin();
+    return true;
+}
+
+auto StatefulIterator::peekCurrentIteration() -> std::optional<uint64_t>
+{
+    if (!m_data || !m_data->has_value())
+    {
+        return std::nullopt;
+    }
+    auto &data = m_data->value();
+    if (data.iterationsInCurrentStep.empty())
+    {
+        return std::nullopt;
+    }
+    else
+    {
+        return {*data.iterationsInCurrentStep.begin()};
+    }
+}
+auto StatefulIterator::peekCurrentlyOpenIteration()
+    -> std::optional<IndexedIteration>
+{
+    if (!m_data || !m_data->has_value())
+    {
+        return std::nullopt;
+    }
+    auto &s = m_data->value();
+    if (!s.currentIteration.has_value())
+    {
+        return std::nullopt;
+    }
+    Iteration &currentIteration = s.series.iterations.at(*s.currentIteration);
+    if (currentIteration.closed())
+    {
+        return std::nullopt;
+    }
+    return std::make_optional<IndexedIteration>(
+        IndexedIteration(currentIteration, *s.currentIteration));
+}
+
+StatefulIterator::StatefulIterator(tag_write_t, Series const &series_in)
+    : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
+{
+    m_data->value().series = series_in;
+}
+
 StatefulIterator::StatefulIterator(
+    tag_read_t,
     Series const &series_in,
     std::optional<internal::ParsePreference> const &parsePreference)
     : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
@@ -138,9 +197,9 @@ StatefulIterator::StatefulIterator(
      * (deleting the original container invalidates the iterator).
      */
     data.series = Series();
-    data.series->setData(std::shared_ptr<internal::SeriesData>(
+    data.series.setData(std::shared_ptr<internal::SeriesData>(
         series_in.m_series.get(), [](auto const *) {}));
-    auto &series = data.series.value();
+    auto &series = data.series;
     if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
         series.iterations.empty())
     {
@@ -250,7 +309,7 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     }
     auto oldIterationIndex = data.currentIteration;
     data.currentIteration = *data.iterationsInCurrentStep.begin();
-    auto &series = data.series.value();
+    auto &series = data.series;
 
     switch (series.iterationEncoding())
     {
@@ -321,7 +380,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
     {
         std::tie(status, availableIterations) = Iteration::beginStep(
             {},
-            *data.series,
+            data.series,
             /* reread = */ reread(data.parsePreference),
             data.ignoreIterations);
     }
@@ -330,7 +389,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
         std::cerr << "[StatefulIterator] Cannot read iteration due to error "
                      "below, will skip it.\n"
                   << err.what() << std::endl;
-        data.series->advance(AdvanceMode::ENDSTEP);
+        data.series.advance(AdvanceMode::ENDSTEP);
         return nextStep(recursion_depth + 1);
     }
 
@@ -349,7 +408,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
             throw std::runtime_error(
                 "CATASTROPHE. need to think how to resolve this one.");
         }
-        auto &series = data.series.value();
+        auto &series = data.series;
         auto it = series.iterations.find(*data.currentIteration);
         auto itEnd = series.iterations.end();
         if (it == itEnd)
@@ -418,7 +477,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
 std::optional<StatefulIterator *> StatefulIterator::loopBody()
 {
     auto &data = get();
-    Series &series = data.series.value();
+    Series &series = data.series;
     auto &iterations = series.iterations;
 
     /*
@@ -515,36 +574,31 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
 void StatefulIterator::deactivateDeadIteration(iteration_index_t index)
 {
     auto &data = get();
-    switch (data.series->iterationEncoding())
+    switch (data.series.iterationEncoding())
     {
     case IterationEncoding::fileBased: {
         Parameter<Operation::CLOSE_FILE> param;
-        data.series->IOHandler()->enqueue(
-            IOTask(&data.series->iterations[index], std::move(param)));
-        data.series->IOHandler()->flush({FlushLevel::UserFlush});
+        data.series.IOHandler()->enqueue(
+            IOTask(&data.series.iterations[index], std::move(param)));
+        data.series.IOHandler()->flush({FlushLevel::UserFlush});
     }
     break;
     case IterationEncoding::variableBased:
     case IterationEncoding::groupBased: {
         Parameter<Operation::ADVANCE> param;
         param.mode = AdvanceMode::ENDSTEP;
-        data.series->IOHandler()->enqueue(
-            IOTask(&data.series->iterations[index], std::move(param)));
-        data.series->IOHandler()->flush({FlushLevel::UserFlush});
+        data.series.IOHandler()->enqueue(
+            IOTask(&data.series.iterations[index], std::move(param)));
+        data.series.IOHandler()->flush({FlushLevel::UserFlush});
     }
     break;
     }
-    data.series->iterations.container().erase(index);
+    data.series.iterations.container().erase(index);
 }
 
 StatefulIterator &StatefulIterator::operator++()
 {
     auto &data = get();
-    if (!data.series.has_value())
-    {
-        this->close();
-        return *this;
-    }
     auto oldIterationIndex = data.currentIteration;
     std::optional<StatefulIterator *> res;
     /*
@@ -562,7 +616,7 @@ StatefulIterator &StatefulIterator::operator++()
     auto resvalue = res.value();
     if (*resvalue != end())
     {
-        auto &series = data.series.value();
+        auto &series = data.series;
         auto index = data.currentIteration;
         auto &iteration = series.iterations[index.value()];
         iteration.setStepStatus(StepStatus::DuringStep);
@@ -595,7 +649,7 @@ auto StatefulIterator::operator*() const -> value_type const &
     {
 
         auto iterator = static_cast<Series::IterationsContainer_t const &>(
-                            data.series.value().iterations)
+                            data.series.iterations)
                             .find(*data.currentIteration);
         return iterator.operator*();
     }
@@ -635,8 +689,8 @@ ReadIterations::ReadIterations(
     if (access == Access::READ_LINEAR && !data.m_sharedReadIterations)
     {
         // Open the iterator now already, so that metadata may already be read
-        data.m_sharedReadIterations =
-            std::make_unique<StatefulIterator>(m_series, m_parsePreference);
+        data.m_sharedReadIterations = std::make_unique<StatefulIterator>(
+            StatefulIterator::tag_read, m_series, m_parsePreference);
     }
 }
 
@@ -645,8 +699,8 @@ ReadIterations::iterator_t ReadIterations::begin()
     auto &series = m_series.get();
     if (!series.m_sharedReadIterations)
     {
-        series.m_sharedReadIterations =
-            std::make_unique<StatefulIterator>(m_series, m_parsePreference);
+        series.m_sharedReadIterations = std::make_unique<StatefulIterator>(
+            StatefulIterator::tag_read, m_series, m_parsePreference);
     }
     return *series.m_sharedReadIterations;
 }
