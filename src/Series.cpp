@@ -737,7 +737,12 @@ std::future<void> Series::flush_impl(
     }
     catch (...)
     {
-        IOHandler()->m_lastFlushSuccessful = false;
+        auto handler = IOHandler();
+        handler->m_lastFlushSuccessful = false;
+        while (!handler->m_work.empty())
+        {
+            handler->m_work.pop();
+        }
         throw;
     }
 }
