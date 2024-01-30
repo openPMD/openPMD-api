@@ -83,4 +83,10 @@ using value_type =
     Container<Iteration, Iteration::IterationIndex_t>::value_type;
 template class OpaqueSeriesIterator<value_type>;
 template class OpaqueSeriesIterator<value_type const>;
+
+auto AbstractSnapshotsContainer::at(key_type const &key) -> mapped_type &
+{
+    return const_cast<mapped_type &>(
+        static_cast<AbstractSnapshotsContainer const *>(this)->at(key));
+}
 } // namespace openPMD

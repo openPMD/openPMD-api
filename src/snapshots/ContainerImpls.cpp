@@ -77,6 +77,27 @@ bool StatefulSnapshotsContainer::empty() const
     return m_begin()->operator bool();
 }
 
+auto StatefulSnapshotsContainer::at(key_type const &) const
+    -> mapped_type const &
+{
+    throw std::runtime_error(
+        "Item access not (yet) implemented on a stateful "
+        "container/iterator.");
+}
+auto StatefulSnapshotsContainer::at(key_type const &) -> mapped_type &
+{
+    throw std::runtime_error(
+        "Item access not (yet) implemented on a stateful "
+        "container/iterator.");
+}
+
+auto StatefulSnapshotsContainer::operator[](key_type const &) -> mapped_type &
+{
+    throw std::runtime_error(
+        "Item access not (yet) implemented on a stateful "
+        "container/iterator.");
+}
+
 RandomAccessIteratorContainer::RandomAccessIteratorContainer(
     Container<Iteration, key_type> cont)
     : m_cont(std::move(cont))
@@ -133,5 +154,17 @@ auto RandomAccessIteratorContainer::rend() const -> const_reverse_iterator
 bool RandomAccessIteratorContainer::empty() const
 {
     return m_cont.empty();
+}
+
+auto RandomAccessIteratorContainer::at(key_type const &key) const
+    -> mapped_type const &
+{
+    return m_cont.at(key);
+}
+
+auto RandomAccessIteratorContainer::operator[](key_type const &key)
+    -> mapped_type &
+{
+    return m_cont[key];
 }
 } // namespace openPMD

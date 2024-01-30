@@ -50,6 +50,7 @@ class AbstractSnapshotsContainer
 public:
     using key_type = Iteration::IterationIndex_t;
     using value_type = Container<Iteration, key_type>::value_type;
+    using mapped_type = Iteration;
     using iterator = OpaqueSeriesIterator<value_type>;
     using const_iterator = OpaqueSeriesIterator<value_type const>;
     // since AbstractSnapshotsContainer abstracts away the specific mode of
@@ -57,15 +58,20 @@ public:
     using reverse_iterator = OpaqueSeriesIterator<value_type>;
     using const_reverse_iterator = OpaqueSeriesIterator<value_type const>;
 
-    virtual iterator begin() = 0;
-    virtual const_iterator begin() const = 0;
-    virtual iterator end() = 0;
-    virtual const_iterator end() const = 0;
-    virtual reverse_iterator rbegin() = 0;
-    virtual const_reverse_iterator rbegin() const = 0;
-    virtual reverse_iterator rend() = 0;
-    virtual const_reverse_iterator rend() const = 0;
+    virtual auto begin() -> iterator = 0;
+    virtual auto begin() const -> const_iterator = 0;
+    virtual auto end() -> iterator = 0;
+    virtual auto end() const -> const_iterator = 0;
+    virtual auto rbegin() -> reverse_iterator = 0;
+    virtual auto rbegin() const -> const_reverse_iterator = 0;
+    virtual auto rend() -> reverse_iterator = 0;
+    virtual auto rend() const -> const_reverse_iterator = 0;
 
-    virtual bool empty() const = 0;
+    virtual auto empty() const -> bool = 0;
+
+    virtual auto at(key_type const &key) const -> mapped_type const & = 0;
+    virtual auto at(key_type const &key) -> mapped_type &;
+
+    virtual auto operator[](key_type const &key) -> mapped_type & = 0;
 };
 } // namespace openPMD

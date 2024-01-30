@@ -43,4 +43,17 @@ bool Snapshots::empty() const
 {
     return m_snapshots->empty();
 }
+
+auto Snapshots::at(key_type const &key) const -> mapped_type const &
+{
+    return m_snapshots->at(key);
+}
+auto Snapshots::at(key_type const &key) -> mapped_type &
+{
+    return m_snapshots->at(key);
+}
+auto Snapshots::operator[](key_type const &key) -> mapped_type &
+{
+    return m_snapshots->operator[](key);
+}
 } // namespace openPMD
