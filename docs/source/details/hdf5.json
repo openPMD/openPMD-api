@@ -2,6 +2,12 @@
   "hdf5": {
     "dataset": {
       "chunks": "auto"
+    },
+    "vfd": {
+      "type": "subfiling",
+      "ioc_selection": "every_nth_rank",
+      "stripe_size": 33554432,
+      "stripe_count": -1
     }
   }
 }

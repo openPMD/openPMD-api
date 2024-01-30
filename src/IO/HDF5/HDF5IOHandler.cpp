@@ -66,7 +66,9 @@ namespace openPMD
 #endif
 
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(
-    AbstractIOHandler *handler, json::TracingJSON config)
+    AbstractIOHandler *handler,
+    json::TracingJSON config,
+    bool do_warn_unused_params)
     : AbstractIOHandlerImpl(handler)
     , m_datasetTransferProperty{H5P_DEFAULT}
     , m_fileAccessProperty{H5P_DEFAULT}
@@ -167,23 +169,28 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
         }
 
         // unused params
-        auto shadow = m_config.invertShadow();
-        if (shadow.size() > 0)
+        if (do_warn_unused_params)
         {
-            switch (m_config.originallySpecifiedAs)
+            auto shadow = m_config.invertShadow();
+            if (shadow.size() > 0)
             {
-            case json::SupportedLanguages::JSON:
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
-                          << shadow << std::endl;
-                break;
-            case json::SupportedLanguages::TOML: {
-                auto asToml = json::jsonToToml(shadow);
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
-                          << asToml << std::endl;
-                break;
-            }
+                switch (m_config.originallySpecifiedAs)
+                {
+                case json::SupportedLanguages::JSON:
+                    std::cerr
+                        << "Warning: parts of the backend configuration for "
+                           "HDF5 remain unused:\n"
+                        << shadow << std::endl;
+                    break;
+                case json::SupportedLanguages::TOML: {
+                    auto asToml = json::jsonToToml(shadow);
+                    std::cerr
+                        << "Warning: parts of the backend configuration for "
+                           "HDF5 remain unused:\n"
+                        << asToml << std::endl;
+                    break;
+                }
+                }
             }
         }
     }

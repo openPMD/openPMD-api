@@ -15,6 +15,15 @@ I/O Method
 
 HDF5 internally either writes serially, via ``POSIX`` on Unix systems, or parallel to a single logical file via MPI-I/O.
 
+Virtual File Drivers
+********************
+
+Rudimentary support for HDF5 VFDs (`virtual file driver <https://www.hdfgroup.org/wp-content/uploads/2021/10/HDF5-VFD-Plugins-HUG.pdf>`_) is available (currently only the *subfiling* VFD).
+Note that the subfiling VFD needs to be enabled explicitly when configuring HDF5 and threaded MPI must be used.
+
+Virtual file drivers are configured via JSON/TOML.
+Refer to the page on `JSON/TOML configuration <backendconfig-hdf5>`_ for further details.
+
 
 Backend-Specific Controls
 -------------------------

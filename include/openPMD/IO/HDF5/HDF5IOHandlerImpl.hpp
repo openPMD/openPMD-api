@@ -38,7 +38,10 @@ namespace openPMD
 class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
 {
 public:
-    HDF5IOHandlerImpl(AbstractIOHandler *, json::TracingJSON config);
+    HDF5IOHandlerImpl(
+        AbstractIOHandler *,
+        json::TracingJSON config,
+        bool do_warn_unused_params = true);
     ~HDF5IOHandlerImpl() override;
 
     void
@@ -114,8 +117,9 @@ protected:
     std::optional<MPI_Comm> m_communicator;
 #endif
 
-private:
     json::TracingJSON m_config;
+
+private:
     std::string m_chunks = "auto";
     struct File
     {

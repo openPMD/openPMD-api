@@ -190,6 +190,18 @@ Explanation of the single keys:
   The default is ``"auto"`` for a heuristic.
   ``"none"`` can be used to disable chunking.
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
+* ``hdf5.vfd.type`` selects the HDF5 virtual file driver.
+  Currently available are:
+
+  * ``"default"``: Equivalent to specifying nothing.
+  * ``subfiling"``: Use the `subfiling VFD <https://www.hdfgroup.org/wp-content/uploads/2022/09/HDF5-Subfiling-VFD.pdf>`_.
+    Note that the subfiling VFD needs to be enabled explicitly when configuring HDF5 and threaded MPI must be used.
+    When using this VFD, the options described below are additionally available.
+    They correspond with the field entries of ``H5FD_subfiling_params_t``, refer to the HDF5 documentation for their detailed meanings.
+
+    * ``hdf5.vfd.ioc_selection``: Must be one of ``["one_per_node", "every_nth_rank", "with_config", "total"]``
+    * ``hdf5.vfd.stripe_size``: Must be an integer
+    * ``hdf5.vfd.stripe_count``: Must be an integer
 
 .. _backendconfig-other:
 
