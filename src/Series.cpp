@@ -1855,9 +1855,8 @@ namespace
      * otherwise. Use only where an empty subtract vector is the
      * common case.
      */
-    template <typename T>
-    void
-    vectorDifference(std::vector<T> &baseVector, std::vector<T> const &subtract)
+    template <typename V1, typename V2>
+    void vectorDifference(V1 &baseVector, V2 const &subtract)
     {
         for (auto const &elem : subtract)
         {
@@ -1877,7 +1876,7 @@ auto Series::readGorVBased(
     bool do_always_throw_errors,
     bool do_init,
     std::set<IterationIndex_t> const &ignoreIterations)
-    -> std::optional<std::deque<IterationIndex_t>>
+    -> std::deque<IterationIndex_t>
 {
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
@@ -2075,7 +2074,8 @@ creating new iterations.
      * Sic! This happens when a file-based Series is opened in group-based mode.
      */
     case IterationEncoding::fileBased: {
-        std::vector<uint64_t> unreadableIterations;
+        std::deque<IterationIndex_t> unreadableIterations;
+        std::deque<IterationIndex_t> readableIterations;
         for (auto const &it : *pList.paths)
         {
             IterationIndex_t index = std::stoull(it);
@@ -2099,6 +2099,10 @@ creating new iterations.
                 }
                 unreadableIterations.push_back(index);
             }
+            else
+            {
+                readableIterations.push_back(index);
+            }
         }
         if (currentSteps.has_value())
         {
@@ -2108,7 +2112,7 @@ creating new iterations.
         }
         else
         {
-            return std::optional<std::deque<IterationIndex_t>>();
+            return readableIterations;
         }
     }
     case IterationEncoding::variableBased: {
@@ -2981,7 +2985,7 @@ Snapshots Series::snapshots()
         case Access::CREATE:
         case Access::APPEND:
             // @todo: consider WriteIterations
-            iterator_kind = IK::RandomAccess;
+            iterator_kind = IK::Stateful;
             break;
         }
     }

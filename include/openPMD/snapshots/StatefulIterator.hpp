@@ -52,7 +52,8 @@ class StatefulIterator
 
         maybe_series_t series;
         std::deque<iteration_index_t> iterationsInCurrentStep;
-        uint64_t currentIteration{};
+        // nullopt <-> currently out of step
+        std::optional<uint64_t> currentIteration{};
         std::optional<internal::ParsePreference> parsePreference;
         /*
          * Necessary because in the old ADIOS2 schema, old iterations' metadata
@@ -123,7 +124,7 @@ public:
 
     static StatefulIterator end();
 
-    operator bool();
+    operator bool() const;
 
 private:
     inline bool setCurrentIteration()

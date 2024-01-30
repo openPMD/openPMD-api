@@ -822,7 +822,7 @@ OPENPMD_private
      * ReadIterations since those methods should be aware when the current
      * step is broken).
      */
-    std::optional<std::deque<IterationIndex_t>> readGorVBased(
+    std::deque<IterationIndex_t> readGorVBased(
         bool do_always_throw_errors,
         bool init,
         std::set<IterationIndex_t> const &ignoreIterations = {});

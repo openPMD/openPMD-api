@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 
 namespace openPMD
 {
@@ -209,32 +210,12 @@ StatefulIterator::StatefulIterator(
              * one by one in ascending order (fallback implementation in the
              * second if branch).
              */
-            if (availableIterations.has_value() &&
-                status != AdvanceStatus::RANDOMACCESS)
+            data.iterationsInCurrentStep = availableIterations;
+            if (!data.iterationsInCurrentStep.empty())
             {
-                data.iterationsInCurrentStep = availableIterations.value();
-                if (!data.iterationsInCurrentStep.empty())
-                {
-                    openIteration(series.iterations.at(
-                        data.iterationsInCurrentStep.at(0)));
-                }
+                openIteration(
+                    series.iterations.at(data.iterationsInCurrentStep.at(0)));
             }
-            else if (!series.iterations.empty())
-            {
-                /*
-                 * Fallback implementation: Assume that each step corresponds
-                 * with an iteration in ascending order.
-                 */
-                data.iterationsInCurrentStep = {
-                    series.iterations.begin()->first};
-                openIteration(series.iterations.begin()->second);
-            }
-            else
-            {
-                // this is a no-op, but let's keep it explicit
-                data.iterationsInCurrentStep = {};
-            }
-
             break;
         }
         }
@@ -275,22 +256,24 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     {
     case IterationEncoding::groupBased:
     case IterationEncoding::variableBased: {
-        auto begin = series.iterations.find(oldIterationIndex);
-        auto end = begin;
-        ++end;
-        series.flush_impl(
-            begin,
-            end,
-            {FlushLevel::UserFlush},
-            /* flushIOHandler = */ true);
-
+        if (oldIterationIndex.has_value())
+        {
+            auto begin = series.iterations.find(*oldIterationIndex);
+            auto end = begin;
+            ++end;
+            series.flush_impl(
+                begin,
+                end,
+                {FlushLevel::UserFlush},
+                /* flushIOHandler = */ true);
+        }
         try
         {
-            series.iterations[data.currentIteration].open();
+            series.iterations[*data.currentIteration].open();
         }
         catch (error::ReadError const &err)
         {
-            std::cerr << "Cannot read iteration '" << data.currentIteration
+            std::cerr << "Cannot read iteration '" << *data.currentIteration
                       << "' and will skip it due to read error:\n"
                       << err.what() << std::endl;
             return nextIterationInStep();
@@ -304,12 +287,12 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
             /*
              * Errors in here might appear due to deferred iteration parsing.
              */
-            series.iterations[data.currentIteration].open();
+            series.iterations[*data.currentIteration].open();
             /*
              * Errors in here might appear due to reparsing after opening a
              * new step.
              */
-            series.iterations[data.currentIteration].beginStep(
+            series.iterations[*data.currentIteration].beginStep(
                 /* reread = */ true);
         }
         catch (error::ReadError const &err)
@@ -351,10 +334,9 @@ StatefulIterator::nextStep(size_t recursion_depth)
         return nextStep(recursion_depth + 1);
     }
 
-    if (availableIterations.has_value() &&
-        status != AdvanceStatus::RANDOMACCESS)
+    if (status != AdvanceStatus::RANDOMACCESS)
     {
-        data.iterationsInCurrentStep = availableIterations.value();
+        data.iterationsInCurrentStep = availableIterations;
     }
     else
     {
@@ -362,8 +344,13 @@ StatefulIterator::nextStep(size_t recursion_depth)
          * Fallback implementation: Assume that each step corresponds
          * with an iteration in ascending order.
          */
+        if (!data.currentIteration.has_value())
+        {
+            throw std::runtime_error(
+                "CATASTROPHE. need to think how to resolve this one.");
+        }
         auto &series = data.series.value();
-        auto it = series.iterations.find(data.currentIteration);
+        auto it = series.iterations.find(*data.currentIteration);
         auto itEnd = series.iterations.end();
         if (it == itEnd)
         {
@@ -437,9 +424,10 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
     /*
      * Might not be present because parsing might have failed in previous step
      */
-    if (iterations.contains(data.currentIteration))
+    if (data.currentIteration.has_value() &&
+        iterations.contains(*data.currentIteration))
     {
-        auto &currentIteration = iterations[data.currentIteration];
+        auto &currentIteration = iterations[*data.currentIteration];
         if (!currentIteration.closed())
         {
             currentIteration.close();
@@ -576,10 +564,11 @@ StatefulIterator &StatefulIterator::operator++()
     {
         auto &series = data.series.value();
         auto index = data.currentIteration;
-        auto &iteration = series.iterations[index];
+        auto &iteration = series.iterations[index.value()];
         iteration.setStepStatus(StepStatus::DuringStep);
 
-        if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR)
+        if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
+            oldIterationIndex.has_value())
         {
             /*
              * Linear read mode: Any data outside the current iteration is
@@ -592,8 +581,8 @@ StatefulIterator &StatefulIterator::operator++()
              * @todo Also delete data in the backends upon doing this.
              */
             auto &container = series.iterations.container();
-            container.erase(oldIterationIndex);
-            data.ignoreIterations.emplace(oldIterationIndex);
+            container.erase(*oldIterationIndex);
+            data.ignoreIterations.emplace(*oldIterationIndex);
         }
     }
     return *resvalue;
@@ -602,10 +591,18 @@ StatefulIterator &StatefulIterator::operator++()
 auto StatefulIterator::operator*() const -> value_type const &
 {
     auto &data = get();
-    auto iterator = static_cast<Series::IterationsContainer_t const &>(
-                        data.series.value().iterations)
-                        .find(data.currentIteration);
-    return iterator.operator*();
+    if (data.currentIteration.has_value())
+    {
+
+        auto iterator = static_cast<Series::IterationsContainer_t const &>(
+                            data.series.value().iterations)
+                            .find(*data.currentIteration);
+        return iterator.operator*();
+    }
+    else
+    {
+        throw std::runtime_error("No iteration currently active.");
+    }
 }
 
 bool StatefulIterator::operator==(StatefulIterator const &other) const
@@ -623,7 +620,7 @@ StatefulIterator StatefulIterator::end()
     return StatefulIterator{};
 }
 
-StatefulIterator::operator bool()
+StatefulIterator::operator bool() const
 {
     return m_data->has_value();
 }
