@@ -23,6 +23,7 @@ exit /b 0
 
   cmake -S dep-adios2/ADIOS2-2.10.0-rc1 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
+    -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  ^
     -DBUILD_SHARED_LIBS=OFF     ^
     -DBUILD_TESTING=OFF         ^
     -DADIOS2_USE_MPI=OFF        ^
