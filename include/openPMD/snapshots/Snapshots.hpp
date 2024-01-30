@@ -41,6 +41,7 @@ private:
 public:
     using key_type = AbstractSnapshotsContainer::key_type;
     using value_type = AbstractSnapshotsContainer::value_type;
+    using mapped_type = AbstractSnapshotsContainer::mapped_type;
     using iterator = AbstractSnapshotsContainer::iterator;
     using const_iterator = AbstractSnapshotsContainer::const_iterator;
     // since AbstractSnapshotsContainer abstracts away the specific mode of
@@ -59,5 +60,10 @@ public:
     const_reverse_iterator rend() const;
 
     bool empty() const;
+
+    mapped_type const &at(key_type const &key) const;
+    mapped_type &at(key_type const &key);
+
+    mapped_type &operator[](key_type const &key);
 };
 } // namespace openPMD

@@ -14,20 +14,27 @@ private:
     StatefulSnapshotsContainer(std::function<StatefulIterator *()> begin);
 
 public:
-    iterator begin() override;
-    iterator end() override;
-    const_iterator begin() const override;
-    const_iterator end() const override;
-    iterator rbegin() override;
-    iterator rend() override;
-    const_iterator rbegin() const override;
-    const_iterator rend() const override;
+    auto begin() -> iterator override;
+    auto end() -> iterator override;
+    auto begin() const -> const_iterator override;
+    auto end() const -> const_iterator override;
+    auto rbegin() -> iterator override;
+    auto rend() -> iterator override;
+    auto rbegin() const -> const_iterator override;
+    auto rend() const -> const_iterator override;
 
-    bool empty() const override;
+    auto empty() const -> bool override;
+
+    auto at(key_type const &key) const -> mapped_type const & override;
+    auto at(key_type const &key) -> mapped_type & override;
+
+    auto operator[](key_type const &key) -> mapped_type & override;
 };
 
 /*
  * @todo how to deal with iteration::open() iteration::close() ?
+ * -> have it guaranteed with READ_LINEAR, not with READ_RANDOM_ACCESS,
+ * but need to see how to deal with write modes
  */
 class RandomAccessIteratorContainer : public AbstractSnapshotsContainer
 {
@@ -37,15 +44,19 @@ private:
     RandomAccessIteratorContainer(Container<Iteration, key_type> cont);
 
 public:
-    iterator begin() override;
-    iterator end() override;
-    const_iterator begin() const override;
-    const_iterator end() const override;
-    iterator rbegin() override;
-    iterator rend() override;
-    const_iterator rbegin() const override;
-    const_iterator rend() const override;
+    auto begin() -> iterator override;
+    auto end() -> iterator override;
+    auto begin() const -> const_iterator override;
+    auto end() const -> const_iterator override;
+    auto rbegin() -> iterator override;
+    auto rend() -> iterator override;
+    auto rbegin() const -> const_iterator override;
+    auto rend() const -> const_iterator override;
 
-    bool empty() const override;
+    auto empty() const -> bool override;
+
+    using AbstractSnapshotsContainer::at;
+    auto at(key_type const &key) const -> mapped_type const & override;
+    auto operator[](key_type const &key) -> mapped_type & override;
 };
 } // namespace openPMD
