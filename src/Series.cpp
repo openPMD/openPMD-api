@@ -2984,7 +2984,7 @@ Snapshots Series::snapshots()
         case Access::READ_WRITE:
         case Access::CREATE:
         case Access::APPEND:
-            // @todo: consider WriteIterations
+            // @todo: properly distinguish here
             iterator_kind = IK::Stateful;
             break;
         }
@@ -3002,17 +3002,37 @@ Snapshots Series::snapshots()
         Series copied_series;
         copied_series.setData(
             std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
-        auto begin = [s = std::move(copied_series)]() mutable {
-            auto &series_data = s.get();
-            if (!series_data.m_sharedReadIterations)
+        std::function<StatefulIterator *()> begin;
+
+        // @todo: distinguish read/write access
+        if (access::write(IOHandler()->m_frontendAccess))
+        {
+            if (!series.m_sharedReadIterations)
             {
-                auto parse_preference = series_data.m_parsePreference;
-                series_data.m_sharedReadIterations =
+                series.m_sharedReadIterations =
                     std::make_unique<StatefulIterator>(
-                        std::move(s), parse_preference);
+                        StatefulIterator::tag_write, std::move(copied_series));
             }
-            return series_data.m_sharedReadIterations.get();
-        };
+            begin = [ptr = series.m_sharedReadIterations.get()]() {
+                return ptr;
+            };
+        }
+        else
+        {
+            begin = [s = std::move(copied_series)]() mutable {
+                auto &series_data = s.get();
+                if (!series_data.m_sharedReadIterations)
+                {
+                    auto parse_preference = series_data.m_parsePreference;
+                    series_data.m_sharedReadIterations =
+                        std::make_unique<StatefulIterator>(
+                            StatefulIterator::tag_read,
+                            std::move(s),
+                            parse_preference);
+                }
+                return series_data.m_sharedReadIterations.get();
+            };
+        }
 
         return Snapshots(std::shared_ptr<StatefulSnapshotsContainer>(
             new StatefulSnapshotsContainer(std::move(begin))));

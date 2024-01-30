@@ -38,6 +38,8 @@ class StatefulIterator
           StatefulIterator,
           Container<Iteration, Iteration::IterationIndex_t>::value_type>
 {
+    friend class StatefulSnapshotsContainer;
+
     using iteration_index_t = IndexedIteration::index_t;
 
     using maybe_series_t = std::optional<Series>;
@@ -50,7 +52,7 @@ class StatefulIterator
         SharedData &operator=(SharedData const &) = delete;
         SharedData &operator=(SharedData &&) = delete;
 
-        maybe_series_t series;
+        Series series;
         std::deque<iteration_index_t> iterationsInCurrentStep;
         // nullopt <-> currently out of step
         std::optional<uint64_t> currentIteration{};
@@ -87,9 +89,19 @@ public:
     //! construct the end() iterator
     explicit StatefulIterator();
 
+    class tag_write_t
+    {};
+    static constexpr tag_write_t const tag_write{};
+    class tag_read_t
+    {};
+    static constexpr tag_read_t const tag_read{};
+
     StatefulIterator(
+        tag_read_t,
         Series const &,
         std::optional<internal::ParsePreference> const &parsePreference);
+
+    StatefulIterator(tag_write_t, Series const &);
 
     // dereference
     using parent_t::operator*;
@@ -127,34 +139,6 @@ public:
     operator bool() const;
 
 private:
-    inline bool setCurrentIteration()
-    {
-        auto &data = get();
-        if (data.iterationsInCurrentStep.empty())
-        {
-            std::cerr << "[ReadIterations] Encountered a step without "
-                         "iterations. Closing the Series."
-                      << std::endl;
-            *this = end();
-            return false;
-        }
-        data.currentIteration = *data.iterationsInCurrentStep.begin();
-        return true;
-    }
-
-    inline std::optional<uint64_t> peekCurrentIteration()
-    {
-        auto &data = get();
-        if (data.iterationsInCurrentStep.empty())
-        {
-            return std::nullopt;
-        }
-        else
-        {
-            return {*data.iterationsInCurrentStep.begin()};
-        }
-    }
-
     std::optional<StatefulIterator *> nextIterationInStep();
 
     /*
@@ -176,6 +160,10 @@ private:
     void initSeriesInLinearReadMode();
 
     void close();
+
+    auto setCurrentIteration() -> bool;
+    auto peekCurrentIteration() -> std::optional<uint64_t>;
+    auto peekCurrentlyOpenIteration() -> std::optional<IndexedIteration>;
 };
 
 class LegacyIteratorAdaptor

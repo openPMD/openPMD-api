@@ -1,5 +1,6 @@
 #include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include <memory>
@@ -103,11 +104,61 @@ auto StatefulSnapshotsContainer::at(key_type const &) -> mapped_type &
         "container/iterator.");
 }
 
-auto StatefulSnapshotsContainer::operator[](key_type const &) -> mapped_type &
+auto StatefulSnapshotsContainer::operator[](key_type const &key)
+    -> mapped_type &
 {
-    throw std::runtime_error(
-        "Item access not (yet) implemented on a stateful "
-        "container/iterator.");
+    auto it = get();
+    auto &shared = it->m_data;
+    if (!shared || !shared->has_value())
+    {
+        throw error::WrongAPIUsage(
+            "[WriteIterations] Trying to access after closing Series.");
+    }
+    auto &s = shared->value();
+    auto access = s.series.IOHandler()->m_frontendAccess;
+
+    // @todo distinguish read_write
+    if (access::write(access))
+    {
+        auto lastIteration = it->peekCurrentlyOpenIteration();
+        if (lastIteration.has_value())
+        {
+            auto lastIteration_v = lastIteration.value();
+            if (lastIteration_v.iterationIndex == key)
+            {
+                return s.series.iterations.at(key);
+            }
+            else
+            {
+                lastIteration_v.close(); // continue below
+            }
+        }
+        s.currentIteration = key;
+        auto &res = s.series.iterations[key];
+        if (res.getStepStatus() == StepStatus::NoStep)
+        {
+            try
+            {
+                res.beginStep(/* reread = */ false);
+            }
+            catch (error::OperationUnsupportedInBackend const &)
+            {
+                s.series.iterations.retrieveSeries()
+                    .get()
+                    .m_currentlyActiveIterations.clear();
+                throw;
+            }
+            res.setStepStatus(StepStatus::DuringStep);
+        }
+        return res;
+    }
+    else if (access::read(access))
+    {
+        throw std::runtime_error(
+            "Jumping to existing iteration not implemented in stateful "
+            "container/iterator.");
+    }
+    throw error::Internal("Control flow error: This should be unreachable.");
 }
 
 RandomAccessIteratorContainer::RandomAccessIteratorContainer(

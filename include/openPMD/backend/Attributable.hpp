@@ -209,6 +209,7 @@ class Attributable
     friend void debug::printDirty(Series const &);
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    friend class StatefulSnapshotsContainer;
 
 protected:
     // tag for internal constructor

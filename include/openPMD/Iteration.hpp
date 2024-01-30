@@ -133,6 +133,7 @@ class Iteration : public Attributable
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
     friend class StatefulIterator;
+    friend class StatefulSnapshotsContainer;
 
 public:
     Iteration(Iteration const &) = default;
