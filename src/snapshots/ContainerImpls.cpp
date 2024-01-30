@@ -25,9 +25,21 @@ StatefulSnapshotsContainer::StatefulSnapshotsContainer(
     std::function<StatefulIterator *()> begin)
     : m_begin(std::move(begin))
 {}
+auto StatefulSnapshotsContainer::get() -> StatefulIterator *
+{
+    if (!m_bufferedIterator.has_value())
+    {
+        m_bufferedIterator = m_begin();
+    }
+    return *m_bufferedIterator;
+}
+auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
+{
+    return m_bufferedIterator.value_or(nullptr);
+}
 auto StatefulSnapshotsContainer::begin() -> iterator
 {
-    return stateful_to_opaque(*m_begin());
+    return stateful_to_opaque(*get());
 }
 auto StatefulSnapshotsContainer::end() -> iterator
 {
@@ -74,7 +86,7 @@ auto StatefulSnapshotsContainer::rend() const -> const_iterator
 
 bool StatefulSnapshotsContainer::empty() const
 {
-    return m_begin()->operator bool();
+    return get()->operator bool();
 }
 
 auto StatefulSnapshotsContainer::at(key_type const &) const

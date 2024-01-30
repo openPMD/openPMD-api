@@ -13,6 +13,11 @@ private:
     std::function<StatefulIterator *()> m_begin;
     StatefulSnapshotsContainer(std::function<StatefulIterator *()> begin);
 
+    std::optional<StatefulIterator *> m_bufferedIterator = std::nullopt;
+
+    auto get() -> StatefulIterator *;
+    auto get() const -> StatefulIterator const *;
+
 public:
     auto begin() -> iterator override;
     auto end() -> iterator override;

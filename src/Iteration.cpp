@@ -21,6 +21,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
@@ -28,8 +29,11 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <algorithm>
 #include <exception>
 #include <iostream>
+#include <iterator>
+#include <stdexcept>
 #include <tuple>
 
 namespace openPMD
@@ -759,6 +763,30 @@ auto Iteration::beginStep(
         }
         IOHandl->m_seriesStatus = oldStatus;
         series.iterations.written() = previous;
+    }
+    else if (thisObject.has_value())
+    {
+        IterationIndex_t idx = series.indexOf(*thisObject)->first;
+        res.iterationsInOpenedStep = {idx};
+    }
+    else
+    {
+        switch (status)
+        {
+
+        case AdvanceStatus::OK:
+            throw error::Internal(
+                "Control flow error: Opening a new step requires reparsing.");
+        case AdvanceStatus::RANDOMACCESS:
+            std::transform(
+                series.iterations.begin(),
+                series.iterations.end(),
+                std::back_inserter(res.iterationsInOpenedStep),
+                [](auto const &pair) { return pair.first; });
+            break;
+        case AdvanceStatus::OVER:
+            break;
+        }
     }
 
     res.stepStatus = status;
