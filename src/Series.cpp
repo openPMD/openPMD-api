@@ -217,6 +217,8 @@ Series::mpiRanksMetaInfo([[maybe_unused]] bool collective)
         }
         Parameter<Operation::OPEN_FILE> openFile;
         openFile.name = iterationFilename(iterations.begin()->first);
+        // @todo: check if the series currently has an open file, check if
+        // collective is true
         IOHandler()->enqueue(IOTask(this, openFile));
     }
     Parameter<Operation::LIST_DATASETS> listDatasets;
@@ -299,9 +301,10 @@ Series::mpiRanksMetaInfo([[maybe_unused]] bool collective)
 
     if (iterationEncoding() == IterationEncoding::fileBased)
     {
+        // @todo only do this if the file was previously not open
         auto &it = iterations.begin()->second;
         Parameter<Operation::CLOSE_FILE> closeFile;
-        IOHandler()->enqueue(IOTask(&it, closeFile));
+        IOHandler()->enqueue(IOTask(this, closeFile));
         it.get().m_closed = internal::CloseStatus::ClosedTemporarily;
         IOHandler()->flush(internal::defaultFlushParams);
     }
