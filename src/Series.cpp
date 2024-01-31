@@ -399,18 +399,26 @@ void Series::flushRankTable()
 #if openPMD_HAVE_MPI
     if (series.m_communicator.has_value())
     {
-        auto comm = series.m_communicator.value();
+        auto comm = *series.m_communicator;
         MPI_Comm_rank(comm, &rank);
         MPI_Comm_size(comm, &size);
         // todo char portability
         auto [charBuffer, lineLength, numLines] =
             auxiliary::collectStringsAsMatrixTo(comm, 0, myRankInfo);
-        maxSize = lineLength;
         (void)numLines; // it's the MPI size
+        maxSize = lineLength;
+
+        if (backend() == "MPI_HDF5")
+        {
+            MPI_Bcast(&maxSize, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
+        }
+        if (rank == 0 || backend() == "MPI_HDF5")
+        {
+            createRankTable();
+        }
 
         if (rank == 0)
         {
-            createRankTable();
             auto asRawPtr = new std::vector<char>(std::move(charBuffer));
             std::shared_ptr<char> put{
                 asRawPtr->data(),
