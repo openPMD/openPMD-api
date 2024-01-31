@@ -27,7 +27,6 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
-#include "openPMD/WriteIterations.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -93,14 +92,6 @@ namespace internal
         using IterationIndex_t = Iteration::IterationIndex_t;
         using IterationsContainer_t = Container<Iteration, IterationIndex_t>;
         IterationsContainer_t iterations{};
-
-        /**
-         * For each instance of Series, there is only one instance
-         * of WriteIterations, stored in this Option.
-         * This ensures that Series::writeIteration() always returns
-         * the same instance.
-         */
-        std::optional<WriteIterations> m_writeIterations;
 
         /**
          * Series::readIterations() returns an iterator type that modifies the
@@ -256,7 +247,6 @@ class Series : public Attributable
     friend class StatefulIterator;
     friend class internal::SeriesData;
     friend class internal::AttributableData;
-    friend class WriteIterations;
     friend class StatefulSnapshotsContainer;
 
 public:

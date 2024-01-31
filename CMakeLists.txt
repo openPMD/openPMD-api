@@ -463,7 +463,6 @@ set(CORE_SOURCE
         src/RecordComponent.cpp
         src/Series.cpp
         src/version.cpp
-        src/WriteIterations.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp

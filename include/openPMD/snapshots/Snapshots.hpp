@@ -38,6 +38,9 @@ private:
 
     Snapshots(std::shared_ptr<AbstractSnapshotsContainer> snapshots);
 
+    inline auto get() const -> AbstractSnapshotsContainer const &;
+    inline auto get() -> AbstractSnapshotsContainer &;
+
 public:
     using key_type = AbstractSnapshotsContainer::key_type;
     using value_type = AbstractSnapshotsContainer::value_type;
@@ -49,6 +52,9 @@ public:
     using reverse_iterator = AbstractSnapshotsContainer::reverse_iterator;
     using const_reverse_iterator =
         AbstractSnapshotsContainer::const_reverse_iterator;
+
+    auto currentIteration() -> std::optional<value_type *>;
+    auto currentIteration() const -> std::optional<value_type const *>;
 
     iterator begin();
     iterator end();
@@ -66,4 +72,7 @@ public:
 
     mapped_type &operator[](key_type const &key);
 };
+
+// backwards compatibility
+using WriteIterations = Snapshots;
 } // namespace openPMD

@@ -128,7 +128,6 @@ class Iteration : public Attributable
     template <typename T, typename T_key, typename T_container>
     friend class Container;
     friend class Series;
-    friend class WriteIterations;
     friend class internal::AttributableData;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
@@ -437,18 +436,17 @@ inline T Iteration::dt() const
 class IndexedIteration : public Iteration
 {
     friend class StatefulIterator;
-    friend class WriteIterations;
     friend class LegacyIteratorAdaptor;
 
 public:
     using index_t = Iteration::IterationIndex_t;
     index_t const iterationIndex;
 
-private:
     inline IndexedIteration(std::pair<index_t const, Iteration> pair)
         : Iteration(std::move(pair.second)), iterationIndex(pair.first)
     {}
 
+private:
     template <typename Iteration_t>
     IndexedIteration(Iteration_t &&it, index_t index)
         : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)

@@ -2855,9 +2855,9 @@ namespace internal
     void SeriesData::close()
     {
         // WriteIterations gets the first shot at flushing
-        if (this->m_writeIterations.has_value())
+        if (this->m_sharedReadIterations)
         {
-            this->m_writeIterations.value().close();
+            this->m_sharedReadIterations->close();
         }
         /*
          * Scenario: A user calls `Series::flush()` but does not check for
@@ -2945,9 +2945,45 @@ namespace
     };
 }
 
+namespace
+{
+    auto make_writing_stateful_iterator(
+        Series copied_series, internal::SeriesData &series)
+        -> std::function<StatefulIterator *()>
+    {
+        if (!series.m_sharedReadIterations)
+        {
+            series.m_sharedReadIterations = std::make_unique<StatefulIterator>(
+                StatefulIterator::tag_write, std::move(copied_series));
+        }
+        return [ptr = series.m_sharedReadIterations.get()]() { return ptr; };
+    }
+    auto make_reading_stateful_iterator(
+        Series copied_series, internal::SeriesData &series)
+        -> std::function<StatefulIterator *()>
+    {
+        return [s = std::move(copied_series), &series]() mutable {
+            if (!series.m_sharedReadIterations)
+            {
+                auto parse_preference = series.m_parsePreference;
+                series.m_sharedReadIterations =
+                    std::make_unique<StatefulIterator>(
+                        StatefulIterator::tag_read,
+                        std::move(s),
+                        parse_preference);
+            }
+            return series.m_sharedReadIterations.get();
+        };
+    }
+} // namespace
+
 Snapshots Series::snapshots()
 {
     auto &series = get();
+    if (series.m_deferred_initialization.has_value())
+    {
+        runDeferredInitialization();
+    }
     IteratorKind iterator_kind{};
     {
         using IK = IteratorKind;
@@ -2997,43 +3033,17 @@ Snapshots Series::snapshots()
             new RandomAccessIteratorContainer(series.iterations)});
     }
     case IteratorKind::Stateful: {
-        // Use private constructor instead of copy constructor to avoid
-        // object slicing
-        Series copied_series;
-        copied_series.setData(
-            std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
         std::function<StatefulIterator *()> begin;
 
         // @todo: distinguish read/write access
         if (access::write(IOHandler()->m_frontendAccess))
         {
-            if (!series.m_sharedReadIterations)
-            {
-                series.m_sharedReadIterations =
-                    std::make_unique<StatefulIterator>(
-                        StatefulIterator::tag_write, std::move(copied_series));
-            }
-            begin = [ptr = series.m_sharedReadIterations.get()]() {
-                return ptr;
-            };
+            begin = make_writing_stateful_iterator(*this, series);
         }
         else
         {
-            begin = [s = std::move(copied_series)]() mutable {
-                auto &series_data = s.get();
-                if (!series_data.m_sharedReadIterations)
-                {
-                    auto parse_preference = series_data.m_parsePreference;
-                    series_data.m_sharedReadIterations =
-                        std::make_unique<StatefulIterator>(
-                            StatefulIterator::tag_read,
-                            std::move(s),
-                            parse_preference);
-                }
-                return series_data.m_sharedReadIterations.get();
-            };
+            begin = make_reading_stateful_iterator(*this, series);
         }
-
         return Snapshots(std::shared_ptr<StatefulSnapshotsContainer>(
             new StatefulSnapshotsContainer(std::move(begin))));
     }
@@ -3049,15 +3059,13 @@ void Series::parseBase()
 WriteIterations Series::writeIterations()
 {
     auto &series = get();
-    if (!series.m_writeIterations.has_value())
-    {
-        series.m_writeIterations = WriteIterations(this->iterations);
-    }
     if (series.m_deferred_initialization.has_value())
     {
         runDeferredInitialization();
     }
-    return series.m_writeIterations.value();
+    auto begin = make_writing_stateful_iterator(*this, series);
+    return Snapshots(std::shared_ptr<StatefulSnapshotsContainer>(
+        new StatefulSnapshotsContainer(std::move(begin))));
 }
 
 void Series::close()
