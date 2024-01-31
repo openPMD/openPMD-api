@@ -402,7 +402,6 @@ set(CORE_SOURCE
         src/Series.cpp
         src/UnitDimension.cpp
         src/version.cpp
-        src/WriteIterations.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp

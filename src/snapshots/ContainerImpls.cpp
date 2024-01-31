@@ -4,6 +4,7 @@
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include <memory>
+#include <optional>
 #include <stdexcept>
 
 namespace openPMD
@@ -37,6 +38,11 @@ auto StatefulSnapshotsContainer::get() -> StatefulIterator *
 auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
     return m_bufferedIterator.value_or(nullptr);
+}
+auto StatefulSnapshotsContainer::currentIteration() const
+    -> std::optional<value_type const *>
+{
+    return get()->peekCurrentlyOpenIteration();
 }
 auto StatefulSnapshotsContainer::begin() -> iterator
 {
@@ -124,13 +130,13 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
         if (lastIteration.has_value())
         {
             auto lastIteration_v = lastIteration.value();
-            if (lastIteration_v.iterationIndex == key)
+            if (lastIteration_v->first == key)
             {
                 return s.series.iterations.at(key);
             }
             else
             {
-                lastIteration_v.close(); // continue below
+                lastIteration_v->second.close(); // continue below
             }
         }
         s.currentIteration = key;

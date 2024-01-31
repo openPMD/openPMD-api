@@ -30,6 +30,19 @@
 
 namespace openPMD
 {
+StatefulIterator::SharedData::~SharedData()
+{
+    if (auto IOHandler = series.IOHandler(); currentIteration.has_value() &&
+        IOHandler && IOHandler->m_lastFlushSuccessful)
+    {
+        auto lastIterationIndex = currentIteration.value();
+        auto &lastIteration = series.iterations.at(lastIterationIndex);
+        if (!lastIteration.closed())
+        {
+            lastIteration.close();
+        }
+    }
+}
 
 namespace
 {
@@ -162,8 +175,8 @@ auto StatefulIterator::peekCurrentIteration() -> std::optional<uint64_t>
         return {*data.iterationsInCurrentStep.begin()};
     }
 }
-auto StatefulIterator::peekCurrentlyOpenIteration()
-    -> std::optional<IndexedIteration>
+auto StatefulIterator::peekCurrentlyOpenIteration() const
+    -> std::optional<value_type const *>
 {
     if (!m_data || !m_data->has_value())
     {
@@ -174,19 +187,49 @@ auto StatefulIterator::peekCurrentlyOpenIteration()
     {
         return std::nullopt;
     }
-    Iteration &currentIteration = s.series.iterations.at(*s.currentIteration);
-    if (currentIteration.closed())
+    // Iteration &currentIteration =
+    // s.series.iterations.at(*s.currentIteration);
+    auto currentIteration = s.series.iterations.find(*s.currentIteration);
+    if (currentIteration == s.series.iterations.end())
     {
         return std::nullopt;
     }
-    return std::make_optional<IndexedIteration>(
-        IndexedIteration(currentIteration, *s.currentIteration));
+    if (currentIteration->second.closed())
+    {
+        return std::nullopt;
+    }
+    return std::make_optional<value_type const *>(&*currentIteration);
+}
+auto StatefulIterator::peekCurrentlyOpenIteration()
+    -> std::optional<value_type *>
+{
+    if (auto res = static_cast<StatefulIterator const *>(this)
+                       ->peekCurrentlyOpenIteration();
+        res.has_value())
+    {
+        return {const_cast<value_type *>(*res)};
+    }
+    else
+    {
+        return std::nullopt;
+    }
 }
 
 StatefulIterator::StatefulIterator(tag_write_t, Series const &series_in)
     : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
 {
-    m_data->value().series = series_in;
+    auto &data = get();
+    /*
+     * Since the iterator is stored in
+     * internal::SeriesData::m_sharedReadIterations,
+     * we need to use a non-owning Series instance here for tie-breaking
+     * purposes.
+     * This is ok due to the usual C++ iterator invalidation workflows
+     * (deleting the original container invalidates the iterator).
+     */
+    data.series = Series();
+    data.series.setData(std::shared_ptr<internal::SeriesData>(
+        series_in.m_series.get(), [](auto const *) {}));
 }
 
 StatefulIterator::StatefulIterator(

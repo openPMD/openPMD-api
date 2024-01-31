@@ -3,6 +3,7 @@
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
+#include <optional>
 
 namespace openPMD
 {
@@ -19,6 +20,9 @@ private:
     auto get() const -> StatefulIterator const *;
 
 public:
+    using AbstractSnapshotsContainer::currentIteration;
+    auto currentIteration() const -> std::optional<value_type const *> override;
+
     auto begin() -> iterator override;
     auto end() -> iterator override;
     auto begin() const -> const_iterator override;

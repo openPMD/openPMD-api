@@ -1,5 +1,6 @@
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/Iteration.hpp"
+#include <optional>
 
 namespace openPMD
 {
@@ -83,6 +84,26 @@ using value_type =
     Container<Iteration, Iteration::IterationIndex_t>::value_type;
 template class OpaqueSeriesIterator<value_type>;
 template class OpaqueSeriesIterator<value_type const>;
+
+auto AbstractSnapshotsContainer::currentIteration()
+    -> std::optional<value_type *>
+{
+    if (auto maybe_value = static_cast<AbstractSnapshotsContainer const *>(this)
+                               ->currentIteration();
+        maybe_value.has_value())
+    {
+        return {const_cast<value_type *>(*maybe_value)};
+    }
+    else
+    {
+        return std::nullopt;
+    }
+}
+auto AbstractSnapshotsContainer::currentIteration() const
+    -> std::optional<value_type const *>
+{
+    return std::nullopt;
+}
 
 auto AbstractSnapshotsContainer::at(key_type const &key) -> mapped_type &
 {

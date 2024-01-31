@@ -204,7 +204,6 @@ class Attributable
     friend class Iteration;
     friend class Series;
     friend class Writable;
-    friend class WriteIterations;
     friend class internal::RecordComponentData;
     friend void debug::printDirty(Series const &);
     template <typename T>
