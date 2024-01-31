@@ -101,25 +101,6 @@ namespace host_info
     };
 
     /**
-     * @brief This defines the method identifiers used
-     *        in `{"rank_table": "hostname"}`
-     *
-     * Currently recognized are:
-     *
-     * * posix_hostname
-     * * mpi_processor_name
-     *
-     * For backwards compatibility reasons, "hostname" is also recognized as a
-     * deprecated alternative for "posix_hostname".
-     *
-     * @return Method enum identifier. The identifier is returned even if the
-     *         method is not available on the system. This should by checked
-     *         via methodAvailable().
-     * @throws std::out_of_range If an unknown string identifier is passed.
-     */
-    Method methodFromStringDescription(std::string const &descr);
-
-    /**
      * @brief Is the method available on the current system?
      *
      * @return true If it is available.
@@ -149,27 +130,6 @@ namespace host_info
      */
     chunk_assignment::RankMeta byMethodCollective(MPI_Comm, Method);
 #endif
-
-    /*
-     * The following block contains one wrapper for each native hostname
-     * retrieval method. The purpose is to have the same function pointer type
-     * for all of them.
-     */
-
-#ifdef _WIN32
-#define openPMD_POSIX_AVAILABLE false
-#else
-#define openPMD_POSIX_AVAILABLE true
-#endif
-
-#if openPMD_POSIX_AVAILABLE
-    std::string posix_hostname();
-#endif
-
-#if openPMD_HAVE_MPI
-    std::string mpi_processor_name();
-#endif
-
 } // namespace host_info
 } // namespace openPMD
 
