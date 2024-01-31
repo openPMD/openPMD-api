@@ -71,14 +71,8 @@ class StatefulIterator
     std::shared_ptr<std::optional<SharedData>> m_data =
         std::make_shared<std::optional<SharedData>>(std::nullopt);
 
-    SharedData &get()
-    {
-        return m_data->value();
-    }
-    SharedData const &get() const
-    {
-        return m_data->value();
-    }
+    auto get() -> SharedData &;
+    auto get() const -> SharedData const &;
 
     using parent_t = AbstractSeriesIterator<StatefulIterator>;
 
@@ -108,33 +102,17 @@ public:
     value_type const &operator*() const;
 
     // increment/decrement
-    StatefulIterator &operator++();
-    using parent_t::operator--;
-    inline StatefulIterator &operator--()
-    {
-        throw error::WrongAPIUsage(
-            "Global stateful iterator supports no decrement (yet).");
-    }
-    StatefulIterator operator++(int)
-    {
-        throw error::WrongAPIUsage(
-            "Global stateful iterator supports no post-increment.");
-    }
+    auto operator++() -> StatefulIterator &;
+    auto operator--() -> StatefulIterator &;
+    auto operator--(int) -> StatefulIterator;
+    auto operator++(int) -> StatefulIterator;
 
     // comparison
-    difference_type operator-(StatefulIterator const &) const
-    {
-        throw error::WrongAPIUsage(
-            "Global stateful iterator supports no relative comparison.");
-    }
+    auto operator-(StatefulIterator const &) const -> difference_type;
     bool operator==(StatefulIterator const &other) const;
-    inline bool operator<(StatefulIterator const &) const
-    {
-        throw error::WrongAPIUsage(
-            "Global stateful iterator supports no relative comparison.");
-    }
+    auto operator<(StatefulIterator const &) const -> bool;
 
-    static StatefulIterator end();
+    static auto end() -> StatefulIterator;
 
     operator bool() const;
 
@@ -174,36 +152,14 @@ class LegacyIteratorAdaptor
 private:
     friend class ReadIterations;
     StatefulIterator m_iterator;
-    LegacyIteratorAdaptor(StatefulIterator iterator)
-        : m_iterator(std::move(iterator))
-    {}
+    LegacyIteratorAdaptor(StatefulIterator iterator);
 
 public:
-    inline value_type operator*() const
-    {
-        return m_iterator.operator*();
-    }
-
-    inline LegacyIteratorAdaptor &operator++()
-    {
-        ++m_iterator;
-        return *this;
-    }
-
-    static LegacyIteratorAdaptor end()
-    {
-        return StatefulIterator::end();
-    }
-
-    inline bool operator==(LegacyIteratorAdaptor const &other) const
-    {
-        return m_iterator == other.m_iterator;
-    };
-
-    inline bool operator!=(LegacyIteratorAdaptor const &other) const
-    {
-        return m_iterator != other.m_iterator;
-    };
+    value_type operator*() const;
+    LegacyIteratorAdaptor &operator++();
+    static LegacyIteratorAdaptor end();
+    bool operator==(LegacyIteratorAdaptor const &other) const;
+    bool operator!=(LegacyIteratorAdaptor const &other) const;
 };
 
 /**
@@ -239,8 +195,7 @@ private:
         std::optional<internal::ParsePreference> parsePreference);
 
 public:
-    iterator_t begin();
-
-    iterator_t end();
+    auto begin() -> iterator_t;
+    auto end() -> iterator_t;
 };
 } // namespace openPMD

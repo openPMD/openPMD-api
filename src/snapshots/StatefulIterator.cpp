@@ -58,6 +58,15 @@ namespace
 
 StatefulIterator::StatefulIterator() = default;
 
+auto StatefulIterator::get() -> SharedData &
+{
+    return m_data->value();
+}
+auto StatefulIterator::get() const -> SharedData const &
+{
+    return m_data->value();
+}
+
 void StatefulIterator::initSeriesInLinearReadMode()
 {
     auto &data = get();
@@ -659,6 +668,29 @@ auto StatefulIterator::operator*() const -> value_type const &
     }
 }
 
+auto StatefulIterator::operator--() -> StatefulIterator &
+{
+    throw error::WrongAPIUsage(
+        "Global stateful iterator supports no decrement (yet).");
+}
+auto StatefulIterator::operator--(int) -> StatefulIterator
+{
+    throw error::WrongAPIUsage(
+        "Global stateful iterator supports no post-decrement.");
+}
+auto StatefulIterator::operator++(int) -> StatefulIterator
+{
+    throw error::WrongAPIUsage(
+        "Global stateful iterator supports no post-increment.");
+}
+
+// comparison
+auto StatefulIterator::operator-(StatefulIterator const &) const
+    -> difference_type
+{
+    throw error::WrongAPIUsage(
+        "Global stateful iterator supports no relative comparison.");
+}
 bool StatefulIterator::operator==(StatefulIterator const &other) const
 {
     return
@@ -667,6 +699,11 @@ bool StatefulIterator::operator==(StatefulIterator const &other) const
          (this->get().currentIteration == other.get().currentIteration)) ||
         // or both are empty
         (!this->m_data->has_value() && !other.m_data->has_value());
+}
+auto StatefulIterator::operator<(StatefulIterator const &) const -> bool
+{
+    throw error::WrongAPIUsage(
+        "Global stateful iterator supports no relative comparison.");
 }
 
 StatefulIterator StatefulIterator::end()
@@ -678,6 +715,38 @@ StatefulIterator::operator bool() const
 {
     return m_data->has_value();
 }
+
+LegacyIteratorAdaptor::LegacyIteratorAdaptor(StatefulIterator iterator)
+    : m_iterator(std::move(iterator))
+{}
+
+auto LegacyIteratorAdaptor::operator*() const -> value_type
+{
+    return m_iterator.operator*();
+}
+
+auto LegacyIteratorAdaptor::operator++() -> LegacyIteratorAdaptor &
+{
+    ++m_iterator;
+    return *this;
+}
+
+auto LegacyIteratorAdaptor::end() -> LegacyIteratorAdaptor
+{
+    return StatefulIterator::end();
+}
+
+auto LegacyIteratorAdaptor::operator==(LegacyIteratorAdaptor const &other) const
+    -> bool
+{
+    return m_iterator == other.m_iterator;
+};
+
+auto LegacyIteratorAdaptor::operator!=(LegacyIteratorAdaptor const &other) const
+    -> bool
+{
+    return m_iterator != other.m_iterator;
+};
 
 ReadIterations::ReadIterations(
     Series series,
