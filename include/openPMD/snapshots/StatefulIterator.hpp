@@ -33,12 +33,18 @@
 
 namespace openPMD
 {
+namespace internal
+{
+    class SeriesData;
+}
 class StatefulIterator
     : public AbstractSeriesIterator<
           StatefulIterator,
           Container<Iteration, Iteration::IterationIndex_t>::value_type>
 {
     friend class StatefulSnapshotsContainer;
+    friend class Series;
+    friend class internal::SeriesData;
 
     using iteration_index_t = IndexedIteration::index_t;
 
@@ -51,6 +57,8 @@ class StatefulIterator
         SharedData(SharedData &&) = delete;
         SharedData &operator=(SharedData const &) = delete;
         SharedData &operator=(SharedData &&) = delete;
+
+        ~SharedData();
 
         Series series;
         std::deque<iteration_index_t> iterationsInCurrentStep;
@@ -141,7 +149,9 @@ private:
 
     auto setCurrentIteration() -> bool;
     auto peekCurrentIteration() -> std::optional<uint64_t>;
-    auto peekCurrentlyOpenIteration() -> std::optional<IndexedIteration>;
+    auto peekCurrentlyOpenIteration() const
+        -> std::optional<value_type const *>;
+    auto peekCurrentlyOpenIteration() -> std::optional<value_type *>;
 };
 
 class LegacyIteratorAdaptor

@@ -20,12 +20,15 @@
  */
 #include "openPMD/Series.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include <optional>
 
 #if openPMD_HAVE_MPI
 //  re-implemented signatures:
@@ -86,13 +89,13 @@ not possible once it has been closed.
     )END")
         .def(
             "__getitem__",
-            [](WriteIterations writeIterations, Series::IterationIndex_t key) {
+            [](WriteIterations &writeIterations, Series::IterationIndex_t key) {
                 auto lastIteration = writeIterations.currentIteration();
                 if (lastIteration.has_value() &&
-                    lastIteration.value().iterationIndex != key)
+                    lastIteration.value()->first != key)
                 {
                     // this must happen under the GIL
-                    lastIteration.value().close();
+                    lastIteration.value()->second.close();
                 }
                 py::gil_scoped_release release;
                 return writeIterations[key];
@@ -101,7 +104,18 @@ not possible once it has been closed.
             py::return_value_policy::copy)
         .def(
             "current_iteration",
-            &WriteIterations::currentIteration,
+            [](WriteIterations &writeIterations)
+                -> std::optional<IndexedIteration> {
+                if (auto currentIteration = writeIterations.currentIteration();
+                    currentIteration.has_value())
+                {
+                    return IndexedIteration(**currentIteration);
+                }
+                else
+                {
+                    return std::nullopt;
+                }
+            },
             "Return the iteration that is currently being written to, if it "
             "exists.");
 
