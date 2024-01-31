@@ -20,7 +20,7 @@ private:
     auto get() const -> StatefulIterator const *;
 
 public:
-    using AbstractSnapshotsContainer::currentIteration;
+    auto currentIteration() -> std::optional<value_type *> override;
     auto currentIteration() const -> std::optional<value_type const *> override;
 
     auto begin() -> iterator override;

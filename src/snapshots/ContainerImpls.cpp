@@ -39,10 +39,29 @@ auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
     return m_bufferedIterator.value_or(nullptr);
 }
+auto StatefulSnapshotsContainer::currentIteration()
+    -> std::optional<value_type *>
+{
+    if (auto it = get(); it)
+    {
+        return it->peekCurrentlyOpenIteration();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
 auto StatefulSnapshotsContainer::currentIteration() const
     -> std::optional<value_type const *>
 {
-    return get()->peekCurrentlyOpenIteration();
+    if (auto it = get(); it)
+    {
+        return it->peekCurrentlyOpenIteration();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 auto StatefulSnapshotsContainer::begin() -> iterator
 {
@@ -93,7 +112,8 @@ auto StatefulSnapshotsContainer::rend() const -> const_iterator
 
 bool StatefulSnapshotsContainer::empty() const
 {
-    return get()->operator bool();
+    auto it = get();
+    return (!it) || it->operator bool();
 }
 
 auto StatefulSnapshotsContainer::at(key_type const &) const
