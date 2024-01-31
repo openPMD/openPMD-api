@@ -20,6 +20,7 @@
  */
 #include "openPMD/Series.hpp"
 #include "openPMD/ChunkInfo.hpp"
+#include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
@@ -336,13 +337,18 @@ void Series::flushRankTable()
         auxiliary::overloaded{
             [](internal::SeriesData::NoSourceSpecified &)
                 -> std::optional<std::string> { return std::nullopt; },
-            [](internal::SeriesData::SourceSpecifiedViaJSON &viaJson)
+            [&series](internal::SeriesData::SourceSpecifiedViaJSON &viaJson)
                 -> std::optional<std::string> {
                 host_info::Method method;
                 try
                 {
-                    method =
-                        host_info::methodFromStringDescription(viaJson.value);
+#if openPMD_HAVE_MPI
+                    bool consider_mpi = series.m_communicator.has_value();
+#else
+                    bool consider_mpi = false;
+#endif
+                    method = host_info::methodFromStringDescription(
+                        viaJson.value, consider_mpi);
                 }
                 catch (std::out_of_range const &)
                 {

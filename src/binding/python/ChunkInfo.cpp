@@ -99,7 +99,5 @@ void init_Chunk(py::module &m)
             [](host_info::Method const &self) {
                 return host_info::byMethod(self);
             })
-        .def("available", &host_info::methodAvailable)
-        .def(
-            "from_string_description", &host_info::methodFromStringDescription);
+        .def("available", &host_info::methodAvailable);
 }

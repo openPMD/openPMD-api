@@ -1,4 +1,5 @@
 // expose private and protected members for invasive testing
+#include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/Access.hpp"
 #if openPMD_USE_INVASIVE_TESTS
@@ -1568,7 +1569,7 @@ inline void write_test(const std::string &backend)
     chunk_assignment::RankMeta compare{
         {0,
          host_info::byMethod(
-             host_info::methodFromStringDescription("posix_hostname"))}};
+             host_info::methodFromStringDescription("posix_hostname", false))}};
 #endif
     Series o =
         Series("../samples/serial_write." + backend, Access::CREATE, jsonCfg);

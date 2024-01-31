@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ChunkInfo.hpp"
+#include "openPMD/ChunkInfo_internal.hpp"
 
 #include "openPMD/auxiliary/Mpi.hpp"
 
@@ -65,20 +66,23 @@ namespace host_info
 {
     constexpr size_t MAX_HOSTNAME_LENGTH = 256;
 
-    Method methodFromStringDescription(std::string const &descr)
+    Method
+    methodFromStringDescription(std::string const &descr, bool consider_mpi)
     {
-        static std::map<std::string, Method> const map{
-            {"posix_hostname", Method::POSIX_HOSTNAME},
-            {"hostname", Method::POSIX_HOSTNAME},
-            {"mpi_processor_name", Method::MPI_PROCESSOR_NAME}};
-        if (descr == "hostname")
+        static std::map<std::string, Method> const map
         {
-            std::cerr
-                << "[host_info::methodFromStringDescription] `hostname` is a "
-                   "deprecated identifier for a hostname retrieval method. "
-                   "Consider switching to `posix_hostname` instead."
-                << std::endl;
-        }
+            {"posix_hostname", Method::POSIX_HOSTNAME},
+#if openPMD_HAVE_MPI
+                {"hostname",
+                 consider_mpi ? Method::MPI_PROCESSOR_NAME
+                              : Method::POSIX_HOSTNAME},
+#else
+                {"hostname", Method::POSIX_HOSTNAME},
+#endif
+            {
+                "mpi_processor_name", Method::MPI_PROCESSOR_NAME
+            }
+        };
         return map.at(descr);
     }
 
