@@ -586,7 +586,7 @@ TEST_CASE("adios_write_test", "[parallel][adios]")
             Access::READ_LINEAR,
             MPI_COMM_WORLD);
         i.parseBase();
-        REQUIRE(i.mpiRanksMetaInfo(/* collective = */ true) == compare);
+        REQUIRE(i.rankTable(/* collective = */ true) == compare);
     }
     {
         Series i(
@@ -594,21 +594,21 @@ TEST_CASE("adios_write_test", "[parallel][adios]")
             Access::READ_LINEAR,
             MPI_COMM_WORLD);
         i.parseBase();
-        REQUIRE(i.mpiRanksMetaInfo(/* collective = */ false) == compare);
+        REQUIRE(i.rankTable(/* collective = */ false) == compare);
     }
     {
         Series i(
             "../samples/parallel_write.bp",
             Access::READ_RANDOM_ACCESS,
             MPI_COMM_WORLD);
-        REQUIRE(i.mpiRanksMetaInfo(/* collective = */ true) == compare);
+        REQUIRE(i.rankTable(/* collective = */ true) == compare);
     }
     {
         Series i(
             "../samples/parallel_write.bp",
             Access::READ_RANDOM_ACCESS,
             MPI_COMM_WORLD);
-        REQUIRE(i.mpiRanksMetaInfo(/* collective = */ false) == compare);
+        REQUIRE(i.rankTable(/* collective = */ false) == compare);
     }
 }
 
@@ -845,8 +845,7 @@ void close_iteration_test(std::string const &file_ending)
             // Need this in file-based iteration encoding
             i.iterations.begin()->second.open();
             REQUIRE(
-                i.mpiRanksMetaInfo(/* collective = */ read_collectively) ==
-                compare);
+                i.rankTable(/* collective = */ read_collectively) == compare);
         }
     }
 }

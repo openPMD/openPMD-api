@@ -1685,7 +1685,7 @@ inline void write_test(const std::string &backend)
         variantTypeDataset);
 
 #ifndef _WIN32
-    REQUIRE(read.mpiRanksMetaInfo(/* collective = */ false) == compare);
+    REQUIRE(read.rankTable(/* collective = */ false) == compare);
 #endif
 }
 
@@ -2214,9 +2214,7 @@ inline void fileBased_write_test(const std::string &backend)
             std::string fullPath =
                 std::string("../samples/subdir/") + entry->d_name;
             Series single_file(fullPath, Access::READ_ONLY);
-            REQUIRE(
-                single_file.mpiRanksMetaInfo(/* collective = */ false) ==
-                compare);
+            REQUIRE(single_file.rankTable(/* collective = */ false) == compare);
         }
         closedir(directory);
         close(dirfd);

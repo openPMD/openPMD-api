@@ -431,20 +431,19 @@ public:
      *          defined meta information per rank. Example: host name.
      */
 #if openPMD_HAVE_MPI
-    chunk_assignment::RankMeta mpiRanksMetaInfo(bool collective);
+    chunk_assignment::RankMeta rankTable(bool collective);
 #else
-    chunk_assignment::RankMeta mpiRanksMetaInfo(bool collective = false);
+    chunk_assignment::RankMeta rankTable(bool collective = false);
 #endif
 
     /**
      * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with
      *        a String per (writing) MPI rank, indicating user-
      *        defined meta information per rank. Example: host name.
-     *        @todo make private, only expose non-collective access methods
      *
      * @return Reference to modified series.
      */
-    Series &setMpiRanksMetaInfo(std::string const &myRankInfo);
+    Series &setRankTable(std::string const &myRankInfo);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
