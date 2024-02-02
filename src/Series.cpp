@@ -197,10 +197,9 @@ Series &Series::setMeshesPath(std::string const &mp)
 }
 
 #if openPMD_HAVE_MPI
-chunk_assignment::RankMeta Series::mpiRanksMetaInfo(bool collective)
+chunk_assignment::RankMeta Series::rankTable(bool collective)
 #else
-chunk_assignment::RankMeta
-Series::mpiRanksMetaInfo([[maybe_unused]] bool collective)
+chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
 #endif
 {
     auto &series = get();
@@ -333,7 +332,7 @@ Series::mpiRanksMetaInfo([[maybe_unused]] bool collective)
     return res;
 }
 
-Series &Series::setMpiRanksMetaInfo(const std::string &myRankInfo)
+Series &Series::setRankTable(const std::string &myRankInfo)
 {
     get().m_rankTable.m_rankTableSource =
         internal::SeriesData::SourceSpecifiedManually{myRankInfo};
