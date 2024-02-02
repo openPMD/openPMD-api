@@ -842,6 +842,8 @@ void close_iteration_test(std::string const &file_ending)
             {
                 i.parseBase();
             }
+            // Need this in file-based iteration encoding
+            i.iterations.begin()->second.open();
             REQUIRE(
                 i.mpiRanksMetaInfo(/* collective = */ read_collectively) ==
                 compare);
