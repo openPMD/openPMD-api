@@ -237,7 +237,7 @@ public:
 
     ADIOS2File(
         ADIOS2IOHandlerImpl &impl,
-        InvalidatableFile file,
+        internal::FileState const &file,
         adios_defs::OpenFileAs);
 
     ~ADIOS2File();
