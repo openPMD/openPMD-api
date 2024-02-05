@@ -20,76 +20,26 @@
  */
 #pragma once
 
+#include <any>
 #include <memory>
+#include <optional>
 #include <string>
 
-namespace openPMD
+namespace openPMD::internal
 {
-/**
- *  Wrapper around a shared pointer to:
- *  * a filename
- *  * and a boolean indicating whether the file still exists
- *  The wrapper adds no extra information, but some commodity functions.
- *  Invariant for any context within which this class shall be used:
- *  For any valid filename, there is at any time at most one
- *  such shared pointer (wrapper) known in said context's data structures
- *  (counting by pointer equality)
- *  This means, that a file can be invalidated (i.e. deleted or overwritten)
- *  by simply searching for one instance of the file among all known files and
- *  invalidating this instance
- *  A new instance may hence only be created after making sure that there are
- *  no valid instances in the data structures.
- */
-struct InvalidatableFile
+
+struct FileState
 {
-    explicit InvalidatableFile(std::string s);
+    std::string name;
+    std::any backendSpecificState;
 
-    InvalidatableFile() = default;
+    FileState(std::string name);
 
-    struct FileState
-    {
-        explicit FileState(std::string s);
+    FileState(FileState const &other) = delete;
+    FileState(FileState &&other) = delete;
 
-        std::string name;
-        bool valid = true;
-    };
-
-    std::shared_ptr<FileState> fileState;
-
-    void invalidate();
-
-    bool valid() const;
-
-    InvalidatableFile &operator=(std::string s);
-
-    bool operator==(InvalidatableFile const &f) const;
-
-    std::string &operator*() const;
-
-    std::string *operator->() const;
-
-    explicit operator bool() const;
+    FileState &operator=(FileState const &other) = delete;
+    FileState &operator=(FileState &&other) = delete;
 };
-} // namespace openPMD
-
-namespace std
-{
-template <>
-struct hash<openPMD::InvalidatableFile>
-{
-    using argument_type = openPMD::InvalidatableFile;
-    using result_type = std::size_t;
-
-    result_type operator()(argument_type const &s) const noexcept;
-};
-
-template <>
-struct less<openPMD::InvalidatableFile>
-{
-    using first_argument_type = openPMD::InvalidatableFile;
-    using second_argument_type = first_argument_type;
-    using result_type = bool;
-    result_type
-    operator()(first_argument_type const &, second_argument_type const &) const;
-};
-} // namespace std
+using SharedFileState = std::shared_ptr<std::optional<FileState>>;
+} // namespace openPMD::internal

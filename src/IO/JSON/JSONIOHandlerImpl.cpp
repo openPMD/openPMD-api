@@ -22,9 +22,13 @@
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
+#include "openPMD/IO/IOTask.hpp"
+#include "openPMD/IO/InvalidatableFile.hpp"
+#include "openPMD/IO/JSON/JSONFilePosition.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSONMatcher.hpp"
@@ -38,6 +42,8 @@
 
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
+#include <toml.hpp>
 
 #include <algorithm>
 #include <exception>
@@ -386,11 +392,27 @@ JSONIOHandlerImpl::getBackendConfig(openPMD::json::TracingJSON &config) const
     }
 }
 
+JSONIOHandlerImpl::BackendSpecificFileState::BackendSpecificFileState(
+    nlohmann::json data_in)
+    : data(std::move(data_in))
+{}
+
+JSONIOHandlerImpl::BackendSpecificFileState::operator nlohmann::json &()
+{
+    return data;
+}
+
+JSONIOHandlerImpl::BackendSpecificFileState::operator nlohmann::json const &()
+    const
+{
+    return data;
+}
+
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
     FileFormat format,
     std::string originalExtension)
-    : AbstractIOHandlerImpl(handler)
+    : AbstractIOHandlerImplCommon(handler)
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
@@ -403,7 +425,7 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     MPI_Comm comm,
     FileFormat format,
     std::string originalExtension)
-    : AbstractIOHandlerImpl(handler)
+    : AbstractIOHandlerImplCommon(handler)
     , m_communicator{comm}
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
@@ -455,7 +477,8 @@ std::future<void> JSONIOHandlerImpl::flush(internal::ParsedFlushParams &params)
     }
     for (auto const &file : m_dirty)
     {
-        putJsonContents(file, false);
+        if (file->has_value())
+            putJsonContents(**file);
     }
     m_dirty.clear();
     return std::future<void>();
@@ -491,21 +514,14 @@ void JSONIOHandlerImpl::createFile(
     {
         std::string name = parameters.name + m_originalExtension;
 
-        auto res_pair = getPossiblyExisting(name);
-        auto fullPathToFile = fullPath(std::get<0>(res_pair));
-        File shared_name = File(name);
-        VERIFY_ALWAYS(
-            !(m_handler->m_backendAccess == Access::READ_WRITE &&
-              (!std::get<2>(res_pair) ||
-               auxiliary::file_exists(fullPathToFile))),
-            "[JSON] Can only overwrite existing file in CREATE mode.");
+        auto file = makeFile(writable, name, /* consider_open_files = */ false);
+        auto &file_state = **file;
+        auto file_exists = auxiliary::file_exists(fullPath(file_state));
 
-        if (!std::get<2>(res_pair))
+        if (access::read(m_handler->m_backendAccess) && file_exists)
         {
-            auto file = std::get<0>(res_pair);
-            m_dirty.erase(file);
-            m_jsonVals.erase(file);
-            file.invalidate();
+            throw std::runtime_error(
+                "[JSON] Can only overwrite existing file in CREATE mode.");
         }
 
         std::string const &dir(m_handler->directory);
@@ -515,16 +531,15 @@ void JSONIOHandlerImpl::createFile(
             VERIFY(success, "[JSON] Could not create directory.");
         }
 
-        associateWithFile(writable, shared_name);
-        this->m_dirty.emplace(shared_name);
+        this->m_dirty.emplace(writable->fileState);
 
-        if (!access::append(m_handler->m_backendAccess) ||
-            !auxiliary::file_exists(fullPathToFile))
+        if (!access::append(m_handler->m_backendAccess) || !file_exists)
         {
             // if in create mode: make sure to overwrite
             // if in append mode and the file does not exist: create an empty
             // dataset
-            this->m_jsonVals[shared_name] = std::make_shared<nlohmann::json>();
+            file_state.backendSpecificState =
+                std::make_any<BackendSpecificFileState>(nlohmann::json());
         }
         // else: the JSON value is not available in m_jsonVals and will be
         // read from the file later on before overwriting
@@ -562,27 +577,24 @@ void JSONIOHandlerImpl::createPath(
         path = auxiliary::replace_last(path, "/", "");
     }
 
-    auto file = refreshFileFromParent(writable);
+    auto &file = refreshFileFromParent(writable, /* preferParentFile = */ true);
 
-    auto *jsonVal = &*obtainJsonContents(file);
+    auto *jsonVal = &obtainJsonContents(file);
+    JSONFilePosition *filepos = nullptr;
     if (!auxiliary::starts_with(path, "/"))
     { // path is relative
-        auto filepos = setAndGetFilePosition(writable, false);
-
-        jsonVal = &(*jsonVal)[filepos->id];
-        ensurePath(jsonVal, path);
-        path = filepos->id.to_string() + "/" + path;
+        filepos = setAndGetFilePosition(writable, path);
     }
     else
     {
-
-        ensurePath(jsonVal, path);
+        auto new_filepos =
+            std::make_shared<JSONFilePosition>(json::json_pointer(path));
+        filepos = new_filepos.get();
+        writable->abstractFilePosition = std::move(new_filepos);
     }
-
-    m_dirty.emplace(file);
+    ensurePath(jsonVal, filepos->id.to_string());
+    m_dirty.emplace(writable->fileState);
     writable->written = true;
-    writable->abstractFilePosition =
-        std::make_shared<JSONFilePosition>(nlohmann::json::json_pointer(path));
 }
 
 void JSONIOHandlerImpl::createDataset(
@@ -623,19 +635,11 @@ void JSONIOHandlerImpl::createDataset(
         /* Sanitize name */
         std::string name = removeSlashes(parameter.name);
 
-        auto file = refreshFileFromParent(writable);
         writable->abstractFilePosition.reset();
-        setAndGetFilePosition(writable);
-        auto &jsonVal = obtainJsonContents(writable);
-        // be sure to have a JSON object, not a list
-        if (jsonVal.empty())
-        {
-            jsonVal = nlohmann::json::object();
-        }
+        refreshFileFromParent(writable, /* preferParentFile = */ true);
         setAndGetFilePosition(writable, name);
-        auto &dset = jsonVal[name];
-        dset["datatype"] = jsonDatatypeToString(parameter.dtype);
-
+        auto &dset = obtainJsonContents(writable);
+        dset["datatype"] = datatypeToString(parameter.dtype);
         switch (localMode)
         {
         case DatasetMode::Dataset: {
@@ -678,7 +682,7 @@ void JSONIOHandlerImpl::createDataset(
             break;
         }
         writable->written = true;
-        m_dirty.emplace(file);
+        m_dirty.emplace(writable->fileState);
     }
 }
 
@@ -719,7 +723,7 @@ void JSONIOHandlerImpl::extendDataset(
     }
 
     setAndGetFilePosition(writable);
-    refreshFileFromParent(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto &j = obtainJsonContents(writable);
 
     DatasetMode localIOMode;
@@ -881,8 +885,8 @@ namespace
 void JSONIOHandlerImpl::availableChunks(
     Writable *writable, Parameter<Operation::AVAILABLE_CHUNKS> &parameters)
 {
-    refreshFileFromParent(writable);
-    auto filePosition = setAndGetFilePosition(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
+    setAndGetFilePosition(writable);
     auto &j = obtainJsonContents(writable)["data"];
     *parameters.chunks = chunksInJSON(j);
     chunk_assignment::mergeChunks(*parameters.chunks);
@@ -902,7 +906,7 @@ void JSONIOHandlerImpl::openFile(
 
     std::string name = parameter.name + m_originalExtension;
 
-    auto file = std::get<0>(getPossiblyExisting(name));
+    auto &file = makeFile(writable, name, /* consider_open_files = */ true);
 
     associateWithFile(writable, file);
 
@@ -913,42 +917,38 @@ void JSONIOHandlerImpl::openFile(
 void JSONIOHandlerImpl::closeFile(
     Writable *writable, Parameter<Operation::CLOSE_FILE> const &)
 {
-    auto fileIterator = m_files.find(writable);
-    if (fileIterator != m_files.end())
+    auto &maybe_file = writable->fileState;
+    if (!maybe_file)
     {
-        auto it = putJsonContents(fileIterator->second);
-        if (it != m_jsonVals.end())
-        {
-            m_jsonVals.erase(it);
-        }
-        m_dirty.erase(fileIterator->second);
-        // do not invalidate the file
-        // it still exists, it is just not open
-        m_files.erase(fileIterator);
+        return;
     }
+    else if (!maybe_file->has_value())
+    {
+        *maybe_file = std::nullopt;
+    }
+    auto &file = **maybe_file;
+    putJsonContents(file);
+    m_dirty.erase(maybe_file);
+    m_files.erase(file.name);
+    *maybe_file = std::nullopt;
 }
 
 void JSONIOHandlerImpl::openPath(
     Writable *writable, Parameter<Operation::OPEN_PATH> const &parameters)
 {
-    auto file = refreshFileFromParent(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ true);
 
     nlohmann::json *j = &obtainJsonContents(writable->parent);
-    auto path = removeSlashes(parameters.path);
-    path = path.empty() ? filepositionOf(writable->parent)
-                        : filepositionOf(writable->parent) + "/" + path;
 
-    if (writable->abstractFilePosition)
+    std::string path = parameters.path;
+    /* Sanitize:
+     * The JSON API does not like to have slashes in the end.
+     */
+    if (auxiliary::ends_with(path, "/"))
     {
-        *setAndGetFilePosition(writable, false) =
-            JSONFilePosition(json::json_pointer(path));
+        path = auxiliary::replace_last(path, "/", "");
     }
-    else
-    {
-        writable->abstractFilePosition =
-            std::make_shared<JSONFilePosition>(json::json_pointer(path));
-    }
-
+    setAndGetFilePosition(writable, path);
     ensurePath(j, removeSlashes(parameters.path));
 
     writable->written = true;
@@ -957,7 +957,7 @@ void JSONIOHandlerImpl::openPath(
 void JSONIOHandlerImpl::openDataset(
     Writable *writable, Parameter<Operation::OPEN_DATASET> &parameters)
 {
-    refreshFileFromParent(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ true);
     auto name = removeSlashes(parameters.name);
     auto &datasetJson = obtainJsonContents(writable->parent)[name];
     /*
@@ -991,15 +991,7 @@ void JSONIOHandlerImpl::deleteFile(
         ? parameters.name
         : parameters.name + ".json";
 
-    auto tuple = getPossiblyExisting(filename);
-    if (!std::get<2>(tuple))
-    {
-        // file is already in the system
-        auto file = std::get<0>(tuple);
-        m_dirty.erase(file);
-        m_jsonVals.erase(file);
-        file.invalidate();
-    }
+    closeFile(writable, Parameter<Operation::CLOSE_FILE>());
 
     std::remove(fullPath(filename).c_str());
 
@@ -1022,8 +1014,8 @@ void JSONIOHandlerImpl::deletePath(
         !auxiliary::starts_with(parameters.path, '/'),
         "[JSON] Paths passed for deletion should be relative, the given path "
         "is absolute (starts with '/')")
-    auto file = refreshFileFromParent(writable);
-    auto filepos = setAndGetFilePosition(writable, false);
+    auto &file = refreshFileFromParent(writable, /* preferParentFile = */ true);
+    auto filepos = setAndGetFilePosition(writable);
     auto path = removeSlashes(parameters.path);
     VERIFY(!path.empty(), "[JSON] No path passed for deletion.")
     nlohmann::json *j;
@@ -1045,7 +1037,7 @@ void JSONIOHandlerImpl::deletePath(
         // parent exists since we have verified that the current
         // directory is != root
         parentDir(s);
-        j = &(*obtainJsonContents(file))[nlohmann::json::json_pointer(s)];
+        j = &(obtainJsonContents(file))[nlohmann::json::json_pointer(s)];
     }
     else
     {
@@ -1095,9 +1087,10 @@ void JSONIOHandlerImpl::deleteDataset(
         return;
     }
 
-    auto filepos = setAndGetFilePosition(writable, false);
+    auto filepos = setAndGetFilePosition(writable);
 
-    auto file = refreshFileFromParent(writable);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto dataset = removeSlashes(parameters.name);
     nlohmann::json *parent;
     if (dataset == ".")
@@ -1113,7 +1106,7 @@ void JSONIOHandlerImpl::deleteDataset(
         dataset.replace(0, i + 1, "");
 
         parentDir(s);
-        parent = &(*obtainJsonContents(file))[nlohmann::json::json_pointer(s)];
+        parent = &(obtainJsonContents(file))[nlohmann::json::json_pointer(s)];
     }
     else
     {
@@ -1135,7 +1128,7 @@ void JSONIOHandlerImpl::deleteAttribute(
         return;
     }
     setAndGetFilePosition(writable);
-    auto file = refreshFileFromParent(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto &j = obtainJsonContents(writable);
     j.erase(parameters.name);
 }
@@ -1147,8 +1140,8 @@ void JSONIOHandlerImpl::writeDataset(
         access::write(m_handler->m_backendAccess),
         "[JSON] Cannot write data in read-only mode.");
 
-    auto pos = setAndGetFilePosition(writable);
-    auto file = refreshFileFromParent(writable);
+    setAndGetFilePosition(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto &j = obtainJsonContents(writable);
 
     switch (verifyDataset(parameters, j))
@@ -1191,12 +1184,13 @@ void JSONIOHandlerImpl::writeAttribute(
     /* Sanitize name */
     std::string name = removeSlashes(parameter.name);
 
-    auto file = refreshFileFromParent(writable);
-    auto jsonVal = obtainJsonContents(file);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto &jsonVal = obtainJsonContents(file);
     auto filePosition = setAndGetFilePosition(writable);
-    if ((*jsonVal)[filePosition->id]["attributes"].empty())
+    if (jsonVal[filePosition->id]["attributes"].empty())
     {
-        (*jsonVal)[filePosition->id]["attributes"] = nlohmann::json::object();
+        jsonVal[filePosition->id]["attributes"] = nlohmann::json::object();
     }
     nlohmann::json value;
     switchType<AttributeWriter>(
@@ -1204,17 +1198,17 @@ void JSONIOHandlerImpl::writeAttribute(
     switch (m_attributeMode.m_mode)
     {
     case AttributeMode::Long:
-        (*jsonVal)[filePosition->id]["attributes"][name] = {
+        jsonVal[filePosition->id]["attributes"][name] = {
             {"datatype", jsonDatatypeToString(parameter.dtype)},
             {"value", value}};
         break;
     case AttributeMode::Short:
         // short form
-        (*jsonVal)[filePosition->id]["attributes"][name] = value;
+        jsonVal[filePosition->id]["attributes"][name] = value;
         break;
     }
     writable->written = true;
-    m_dirty.emplace(file);
+    m_dirty.emplace(writable->fileState);
 }
 
 namespace
@@ -1241,7 +1235,7 @@ namespace
 void JSONIOHandlerImpl::readDataset(
     Writable *writable, Parameter<Operation::READ_DATASET> &parameters)
 {
-    refreshFileFromParent(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
     setAndGetFilePosition(writable);
     auto &j = obtainJsonContents(writable);
     DatasetMode localMode = verifyDataset(parameters, j);
@@ -1536,7 +1530,8 @@ void JSONIOHandlerImpl::readAttribute(
     VERIFY_ALWAYS(
         writable->written,
         "[JSON] Attributes have to be written before reading.")
-    refreshFileFromParent(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
+    setAndGetFilePosition(writable);
     auto name = removeSlashes(parameters.name);
     auto const &jsonContents = obtainJsonContents(writable);
     if (!hasKey(jsonContents, "attributes"))
@@ -1546,9 +1541,9 @@ void JSONIOHandlerImpl::readAttribute(
             error::Reason::NotFound,
             "JSON",
             "Tried looking up attribute '" + name + "' at location: " +
-                setAndGetFilePosition(writable, false)->id.to_string());
+                setAndGetFilePosition(writable)->id.to_string());
     }
-    auto const &jsonLoc = jsonContents["attributes"];
+    auto const &jsonLoc = jsonContents.at("attributes");
     setAndGetFilePosition(writable);
     if (!hasKey(jsonLoc, name))
     {
@@ -1559,7 +1554,7 @@ void JSONIOHandlerImpl::readAttribute(
             "Tried looking up attribute '" + name +
                 "' in object: " + jsonLoc.dump());
     }
-    auto &j = jsonLoc[name];
+    auto &j = jsonLoc.at(name);
     try
     {
         if (j.is_object())
@@ -1595,7 +1590,7 @@ void JSONIOHandlerImpl::listPaths(
         "[JSON] Values have to be written before reading a directory");
     auto &j = obtainJsonContents(writable);
     setAndGetFilePosition(writable);
-    refreshFileFromParent(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
     parameters.paths->clear();
     for (auto it = j.begin(); it != j.end(); it++)
     {
@@ -1611,8 +1606,8 @@ void JSONIOHandlerImpl::listDatasets(
 {
     VERIFY_ALWAYS(
         writable->written, "[JSON] Datasets have to be written before reading.")
-    refreshFileFromParent(writable);
-    auto filePosition = setAndGetFilePosition(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
+    setAndGetFilePosition(writable);
     auto &j = obtainJsonContents(writable);
     parameters.datasets->clear();
     for (auto it = j.begin(); it != j.end(); it++)
@@ -1630,8 +1625,8 @@ void JSONIOHandlerImpl::listAttributes(
     VERIFY_ALWAYS(
         writable->written,
         "[JSON] Attributes have to be written before reading.")
-    refreshFileFromParent(writable);
-    auto filePosition = setAndGetFilePosition(writable);
+    refreshFileFromParent(writable, /* preferParentFile = */ false);
+    setAndGetFilePosition(writable);
     auto const &jsonContents = obtainJsonContents(writable);
     if (!jsonContents.contains("attributes"))
     {
@@ -1645,32 +1640,26 @@ void JSONIOHandlerImpl::listAttributes(
 }
 
 void JSONIOHandlerImpl::deregister(
-    Writable *writable, Parameter<Operation::DEREGISTER> const &)
-{
-    m_files.erase(writable);
-}
+    Writable *, Parameter<Operation::DEREGISTER> const &)
+{}
 
 void JSONIOHandlerImpl::touch(
     Writable *writable, Parameter<Operation::TOUCH> const &)
 {
-    auto file = refreshFileFromParent(writable);
+    refreshFileFromParent(writable, false);
     if (access::write(m_handler->m_backendAccess))
     {
-        m_dirty.emplace(std::move(file));
-    }
-    else if (m_jsonVals.find(file) == m_jsonVals.end())
-    {
-        throw error::Internal(
-            "ADIOS2: Tried activating a file that is not open.");
+        this->m_dirty.emplace(writable->fileState);
     }
 }
 
-auto JSONIOHandlerImpl::getFilehandle(File const &fileName, Access access)
+auto JSONIOHandlerImpl::getFilehandle(
+    internal::FileState const &fileName, Access access)
     -> std::tuple<std::unique_ptr<FILEHANDLE>, std::istream *, std::ostream *>
 {
-    VERIFY_ALWAYS(
-        fileName.valid(),
-        "[JSON] Tried opening a file that has been overwritten or deleted.")
+    // VERIFY_ALWAYS(
+    //     fileName.valid(),
+    //     "[JSON] Tried opening a file that has been overwritten or deleted.")
     auto path = fullPath(fileName);
     auto fs = std::make_unique<FILEHANDLE>();
     std::istream *istream = nullptr;
@@ -1711,9 +1700,9 @@ auto JSONIOHandlerImpl::getFilehandle(File const &fileName, Access access)
     return std::make_tuple(std::move(fs), istream, ostream);
 }
 
-std::string JSONIOHandlerImpl::fullPath(File const &fileName)
+std::string JSONIOHandlerImpl::fullPath(internal::FileState const &fileName)
 {
-    return fullPath(*fileName);
+    return fullPath(fileName.name);
 }
 
 std::string JSONIOHandlerImpl::fullPath(std::string const &fileName)
@@ -1738,11 +1727,26 @@ void JSONIOHandlerImpl::parentDir(std::string &s)
     }
 }
 
-std::string JSONIOHandlerImpl::filepositionOf(Writable *writable)
+std::string
+JSONIOHandlerImpl::filePositionToString(JSONFilePosition const &filepos)
 {
-    return std::dynamic_pointer_cast<JSONFilePosition>(
-               writable->abstractFilePosition)
-        ->id.to_string();
+    return filepos.id.to_string();
+}
+
+std::shared_ptr<JSONFilePosition> JSONIOHandlerImpl::extendFilePosition(
+    JSONFilePosition const &oldPos, std::string s)
+{
+    auto path = filePositionToString(oldPos);
+    if (!auxiliary::ends_with(path, '/') && !auxiliary::starts_with(s, '/'))
+    {
+        path = path + "/";
+    }
+    else if (auxiliary::ends_with(path, '/') && auxiliary::starts_with(s, '/'))
+    {
+        path = auxiliary::replace_last(path, "/", "");
+    }
+    return std::make_shared<JSONFilePosition>(
+        json::json_pointer(path + std::move(s)));
 }
 
 template <typename T, typename Visitor>
@@ -1876,76 +1880,39 @@ void JSONIOHandlerImpl::ensurePath(
     }
 }
 
-std::tuple<File, std::unordered_map<Writable *, File>::iterator, bool>
-JSONIOHandlerImpl::getPossiblyExisting(std::string const &file)
+nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(internal::FileState &file)
 {
+    // VERIFY_ALWAYS(
+    //     file.valid(),
+    //     "[JSON] File has been overwritten or deleted before reading");
 
-    auto it = std::find_if(
-        m_files.begin(),
-        m_files.end(),
-        [file](std::unordered_map<Writable *, File>::value_type const &entry) {
-            return *entry.second == file && entry.second.valid();
-        });
-
-    bool newlyCreated;
-    File name;
-    if (it == m_files.end())
-    {
-        name = file;
-        newlyCreated = true;
-    }
-    else
-    {
-        name = it->second;
-        newlyCreated = false;
-    }
-    return std::
-        tuple<File, std::unordered_map<Writable *, File>::iterator, bool>(
-            std::move(name), it, newlyCreated);
-}
-
-std::shared_ptr<nlohmann::json>
-JSONIOHandlerImpl::obtainJsonContents(File const &file)
-{
-    VERIFY_ALWAYS(
-        file.valid(),
-        "[JSON] File has been overwritten or deleted before reading");
-    auto it = m_jsonVals.find(file);
-    if (it != m_jsonVals.end())
-    {
-        return it->second;
-    }
     // read from file
     auto serialImplementation = [&file, this]() {
         auto [fh, fh_with_precision, _] =
             getFilehandle(file, Access::READ_ONLY);
         (void)_;
-        std::shared_ptr<nlohmann::json> res =
-            std::make_shared<nlohmann::json>();
+        nlohmann::json res;
         switch (m_fileFormat)
         {
         case FileFormat::Json:
-            *fh_with_precision >> *res;
+            *fh_with_precision >> res;
             break;
         case FileFormat::Toml:
-            *res = openPMD::json::tomlToJson(
-                toml::parse(*fh_with_precision, *file));
-            break;
+            res = openPMD::json::tomlToJson(
+                toml::parse(*fh_with_precision, file.name));
         }
         VERIFY(fh->good(), "[JSON] Failed reading from a file.");
         return res;
     };
 #if openPMD_HAVE_MPI
     auto parallelImplementation = [&file, this](MPI_Comm comm) {
-        auto path = fullPath(*file);
+        auto path = fullPath(file);
         std::string collectivelyReadRawData =
             auxiliary::collective_file_read(path, comm);
-        std::shared_ptr<nlohmann::json> res =
-            std::make_shared<nlohmann::json>();
         switch (m_fileFormat)
         {
         case FileFormat::Json:
-            *res = nlohmann::json::parse(collectivelyReadRawData);
+            return nlohmann::json::parse(collectivelyReadRawData);
             break;
         case FileFormat::Toml:
             std::istringstream istream(
@@ -1954,29 +1921,41 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
             auto as_toml = toml::parse(
                 istream >> std::setprecision(
                                std::numeric_limits<double>::digits10 + 1),
-                *file);
-            *res = openPMD::json::tomlToJson(as_toml);
+                file.name);
+            return openPMD::json::tomlToJson(as_toml);
             break;
         }
-        return res;
+        throw std::runtime_error("Unreachable!");
     };
-    std::shared_ptr<nlohmann::json> res;
-    if (m_communicator.has_value())
+    if (!file.backendSpecificState.has_value())
     {
-        res = parallelImplementation(m_communicator.value());
-    }
-    else
-    {
-        res = serialImplementation();
+        if (m_communicator.has_value())
+        {
+            file.backendSpecificState = std::make_any<BackendSpecificFileState>(
+                parallelImplementation(m_communicator.value()));
+        }
+        else
+        {
+            file.backendSpecificState =
+                std::make_any<BackendSpecificFileState>(serialImplementation());
+        }
     }
 
 #else
-    auto res = serialImplementation();
+    if (!file.backendSpecificState.has_value())
+    {
+        file.backendSpecificState =
+            std::make_any<BackendSpecificFileState>(serialImplementation());
+    }
 #endif
 
-    if (res->contains(JSONDefaults::openpmd_internal))
+    auto res =
+        std::any_cast<BackendSpecificFileState>(&file.backendSpecificState);
+
+    if (res->data.contains(JSONDefaults::openpmd_internal))
     {
-        auto const &openpmd_internal = res->at(JSONDefaults::openpmd_internal);
+        auto const &openpmd_internal =
+            res->data.at(JSONDefaults::openpmd_internal);
 
         // Init dataset mode according to file's default.
         // Note that dataset parsing will expect and properly deal with both
@@ -2047,69 +2026,70 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
             }
         }
     }
-    m_jsonVals.emplace(file, res);
-    return res;
+    return *res;
 }
 
 nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(Writable *writable)
 {
-    auto file = refreshFileFromParent(writable);
-    auto filePosition = setAndGetFilePosition(writable, false);
-    return (*obtainJsonContents(file))[filePosition->id];
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto filePosition =
+        dynamic_cast<JSONFilePosition *>(writable->abstractFilePosition.get());
+    return obtainJsonContents(file)[filePosition->id];
 }
 
-auto JSONIOHandlerImpl::putJsonContents(
-    File const &filename,
-    bool unsetDirty // = true
-    ) -> decltype(m_jsonVals)::iterator
+void JSONIOHandlerImpl::putJsonContents(internal::FileState &file)
 {
-    VERIFY_ALWAYS(
-        filename.valid(),
-        "[JSON] File has been overwritten/deleted before writing");
-    auto it = m_jsonVals.find(filename);
-    if (it == m_jsonVals.end())
+    // VERIFY_ALWAYS(
+    //     filename.valid(),
+    //     "[JSON] File has been overwritten/deleted before writing");
+    if (!file.backendSpecificState.has_value())
     {
-        return it;
+        return;
     }
+
+    auto &backend_specific_filestate =
+        *std::any_cast<BackendSpecificFileState>(&file.backendSpecificState);
+    auto &contents = backend_specific_filestate.data;
 
     switch (m_datasetMode.m_mode)
     {
     case DatasetMode::Dataset:
-        (*it->second)["platform_byte_widths"] = platformSpecifics();
-        (*it->second)[JSONDefaults::openpmd_internal]
-                     [JSONDefaults::DatasetMode] = "dataset";
+        contents["platform_byte_widths"] = platformSpecifics();
+        contents[JSONDefaults::openpmd_internal][JSONDefaults::DatasetMode] =
+            "dataset";
         break;
     case DatasetMode::Template:
-        (*it->second)[JSONDefaults::openpmd_internal]
-                     [JSONDefaults::DatasetMode] = "template";
+        contents[JSONDefaults::openpmd_internal][JSONDefaults::DatasetMode] =
+            "template";
         break;
     }
 
     switch (m_attributeMode.m_mode)
     {
     case AttributeMode::Short:
-        (*it->second)[JSONDefaults::openpmd_internal]
-                     [JSONDefaults::AttributeMode] = "short";
+        contents[JSONDefaults::openpmd_internal][JSONDefaults::AttributeMode] =
+            "short";
         break;
     case AttributeMode::Long:
-        (*it->second)[JSONDefaults::openpmd_internal]
-                     [JSONDefaults::AttributeMode] = "long";
+        contents[JSONDefaults::openpmd_internal][JSONDefaults::AttributeMode] =
+            "long";
         break;
     }
 
-    auto writeSingleFile = [this, &it](std::string const &writeThisFile) {
-        auto [fh, _, fh_with_precision] =
-            getFilehandle(File(writeThisFile), Access::CREATE_RANDOM_ACCESS);
+    auto writeSingleFile = [this, &contents](std::string const &writeThisFile) {
+        auto [fh, _, fh_with_precision] = getFilehandle(
+            internal::FileState(writeThisFile), Access::CREATE_RANDOM_ACCESS);
         (void)_;
 
         switch (m_fileFormat)
         {
         case FileFormat::Json:
-            *fh_with_precision << *it->second << std::endl;
+            *fh_with_precision << contents << std::endl;
             break;
         case FileFormat::Toml:
             *fh_with_precision << openPMD::json::format_toml(
-                                      openPMD::json::jsonToToml(*it->second))
+                                      openPMD::json::jsonToToml(contents))
                                << std::endl;
             break;
         }
@@ -2117,8 +2097,8 @@ auto JSONIOHandlerImpl::putJsonContents(
         VERIFY(fh->good(), "[JSON] Failed writing data to disk.")
     };
 
-    auto serialImplementation = [&filename, &writeSingleFile]() {
-        writeSingleFile(*filename);
+    auto serialImplementation = [&file, &writeSingleFile]() {
+        writeSingleFile(file.name);
     };
 
 #if openPMD_HAVE_MPI
@@ -2139,8 +2119,12 @@ auto JSONIOHandlerImpl::putJsonContents(
     };
 
     auto parallelImplementation =
-        [this, &filename, &writeSingleFile, &num_digits](MPI_Comm comm) {
-            auto path = fullPath(*filename);
+        [this,
+         &file,
+         &writeSingleFile,
+         &num_digits,
+         &backend_specific_filestate](MPI_Comm comm) {
+            auto path = fullPath(file);
             auto dirpath = path + ".parallel";
             if (!auxiliary::create_directories(dirpath))
             {
@@ -2153,7 +2137,7 @@ auto JSONIOHandlerImpl::putJsonContents(
             MPI_Comm_size(comm, &size);
             std::stringstream subfilePath;
             // writeSingleFile will prepend the base dir
-            subfilePath << *filename << ".parallel/mpi_rank_"
+            subfilePath << file.name << ".parallel/mpi_rank_"
                         << std::setw(num_digits(size - 1)) << std::setfill('0')
                         << rank << [&]() {
                                switch (m_fileFormat)
@@ -2185,7 +2169,7 @@ merge the .json files somehow (no tooling provided for this (yet)).
                 readme_file << readme_msg + 1;
                 readme_file.close();
                 if (!readme_file.good() &&
-                    !filename.fileState->printedReadmeWarningAlready)
+                    !backend_specific_filestate.printedReadmeWarningAlready)
                 {
                     std::cerr
                         << "[Warning] Something went wrong in trying to create "
@@ -2194,7 +2178,8 @@ merge the .json files somehow (no tooling provided for this (yet)).
                         << "/README.txt'. Will ignore and continue. The README "
                            "message would have been:\n----------\n"
                         << readme_msg + 1 << "----------" << std::endl;
-                    filename.fileState->printedReadmeWarningAlready = true;
+                    backend_specific_filestate.printedReadmeWarningAlready =
+                        true;
                 }
             }
         };
@@ -2212,85 +2197,6 @@ merge the .json files somehow (no tooling provided for this (yet)).
 #else
     serialImplementation();
 #endif
-
-    if (unsetDirty)
-    {
-        m_dirty.erase(filename);
-    }
-    return it;
-}
-
-std::shared_ptr<JSONFilePosition> JSONIOHandlerImpl::setAndGetFilePosition(
-    Writable *writable, std::string const &extend)
-{
-    std::string path;
-    if (writable->abstractFilePosition)
-    {
-        // do NOT reuse the old pointer, we want to change the file position
-        // only for the writable!
-        path = filepositionOf(writable) + "/" + extend;
-    }
-    else if (writable->parent)
-    {
-        path = filepositionOf(writable->parent) + "/" + extend;
-    }
-    else
-    { // we are root
-        path = extend;
-        if (!auxiliary::starts_with(path, "/"))
-        {
-            path = "/" + path;
-        }
-    }
-    auto res = std::make_shared<JSONFilePosition>(json::json_pointer(path));
-
-    writable->abstractFilePosition = res;
-
-    return res;
-}
-
-std::shared_ptr<JSONFilePosition>
-JSONIOHandlerImpl::setAndGetFilePosition(Writable *writable, bool write)
-{
-    std::shared_ptr<AbstractFilePosition> res;
-
-    if (writable->abstractFilePosition)
-    {
-        res = writable->abstractFilePosition;
-    }
-    else if (writable->parent)
-    {
-        res = writable->parent->abstractFilePosition;
-    }
-    else
-    { // we are root
-        res = std::make_shared<JSONFilePosition>();
-    }
-    if (write)
-    {
-        writable->abstractFilePosition = res;
-    }
-    return std::dynamic_pointer_cast<JSONFilePosition>(res);
-}
-
-File JSONIOHandlerImpl::refreshFileFromParent(Writable *writable)
-{
-    if (writable->parent)
-    {
-        auto file = m_files.find(writable->parent)->second;
-        associateWithFile(writable, file);
-        return file;
-    }
-    else
-    {
-        return m_files.find(writable)->second;
-    }
-}
-
-void JSONIOHandlerImpl::associateWithFile(Writable *writable, File file)
-{
-    // make sure to overwrite
-    m_files[writable] = std::move(file);
 }
 
 bool JSONIOHandlerImpl::isDataset(nlohmann::json const &j)
@@ -2432,6 +2338,15 @@ nlohmann::json JSONIOHandlerImpl::CppToJSON<T>::operator()(const T &val)
 }
 
 template <typename T>
+nlohmann::json JSONIOHandlerImpl::CppToJSON<std::complex<T>>::operator()(
+    const std::complex<T> &v)
+{
+    nlohmann::json j;
+    to_json(j, v);
+    return j;
+}
+
+template <typename T>
 nlohmann::json JSONIOHandlerImpl::CppToJSON<std::vector<T>>::operator()(
     const std::vector<T> &v)
 {
@@ -2461,6 +2376,15 @@ template <typename T, typename Dummy>
 T JSONIOHandlerImpl::JsonToCpp<T, Dummy>::operator()(nlohmann::json const &json)
 {
     return json.get<T>();
+}
+
+template <typename T>
+std::complex<T> JSONIOHandlerImpl::JsonToCpp<std::complex<T>>::operator()(
+    nlohmann::json const &json)
+{
+    std::complex<T> res;
+    from_json(json, res);
+    return res;
 }
 
 template <typename T>
