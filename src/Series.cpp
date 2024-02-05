@@ -355,6 +355,7 @@ void Series::flushRankTable()
 #if openPMD_HAVE_MPI
                     bool consider_mpi = series.m_communicator.has_value();
 #else
+                    (void)series;
                     bool consider_mpi = false;
 #endif
                     method = host_info::methodFromStringDescription(
