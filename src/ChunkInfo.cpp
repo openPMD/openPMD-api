@@ -66,8 +66,8 @@ namespace host_info
 {
     constexpr size_t MAX_HOSTNAME_LENGTH = 256;
 
-    Method
-    methodFromStringDescription(std::string const &descr, bool consider_mpi)
+    Method methodFromStringDescription(
+        std::string const &descr, [[maybe_unused]] bool consider_mpi)
     {
         static std::map<std::string, Method> const map
         {
