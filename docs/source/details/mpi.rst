@@ -13,11 +13,13 @@ A **collective** operation needs to be executed by *all* MPI ranks of the MPI co
 Contrarily, **independent** operations can also be called by a subset of these MPI ranks.
 For more information, please see the `MPI standard documents <https://www.mpi-forum.org/docs/>`_, for example MPI-3.1 in `"Section 2.4 - Semantic Terms" <https://www.mpi-forum.org/docs/mpi-3.1/mpi31-report.pdf>`_.
 
-============================ ================== ===========================
+============================ ================== ================================
 Functionality                Behavior           Description
-============================ ================== ===========================
+============================ ================== ================================
 ``Series``                   **collective**     open and close
 ``::flush()``                **collective**     read and write
+``::setRankTable()``         **collective**     write, performed at flush
+``::rankTable()``            **coll**/indep.    behavior specified by bool param
 ``Iteration`` [1]_           independent        declare and open
 ``::open()`` [4]_            **collective**     explicit open
 ``Mesh`` [1]_                independent        declare, open, write
@@ -30,7 +32,7 @@ Functionality                Behavior           Description
 ``::storeChunk`` [1]_        independent        write
 ``::loadChunk``              independent        read
 ``::availableChunks`` [4]_   collective         read, immediate result
-============================ ================== ===========================
+============================ ================== ================================
 
 .. [1] Individual backends, i.e. :ref:`parallel HDF5 <backends-hdf5>`, will only support independent operations if the default, non-collective (aka independent) behavior is kept.
        Otherwise these operations are collective.
