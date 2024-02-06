@@ -71,10 +71,18 @@ public:
     virtual auto rend() const -> const_reverse_iterator = 0;
 
     virtual auto empty() const -> bool = 0;
+    virtual auto size() const -> size_t = 0;
 
     virtual auto at(key_type const &key) const -> mapped_type const & = 0;
     virtual auto at(key_type const &key) -> mapped_type &;
 
     virtual auto operator[](key_type const &key) -> mapped_type & = 0;
+
+    virtual auto clear() -> void = 0;
+
+    virtual auto find(key_type const &key) -> iterator = 0;
+    virtual auto find(key_type const &key) const -> const_iterator = 0;
+
+    virtual auto contains(key_type const &key) const -> bool = 0;
 };
 } // namespace openPMD

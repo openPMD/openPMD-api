@@ -59,6 +59,10 @@ bool Snapshots::empty() const
 {
     return get().empty();
 }
+auto Snapshots::size() const -> size_t
+{
+    return get().size();
+}
 
 auto Snapshots::at(key_type const &key) const -> mapped_type const &
 {
@@ -72,4 +76,29 @@ auto Snapshots::operator[](key_type const &key) -> mapped_type &
 {
     return get().operator[](key);
 }
+
+auto Snapshots::clear() -> void
+{
+    return get().clear();
+}
+
+auto Snapshots::find(key_type const &key) -> iterator
+{
+    return get().find(key);
+}
+auto Snapshots::find(key_type const &key) const -> const_iterator
+{
+    return get().find(key);
+}
+
+auto Snapshots::count(key_type const &key) const -> size_t
+{
+    return contains(key) ? 1 : 0;
+}
+
+auto Snapshots::contains(key_type const &key) const -> bool
+{
+    return get().contains(key);
+}
+
 } // namespace openPMD
