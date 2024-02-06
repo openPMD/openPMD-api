@@ -446,21 +446,35 @@ private:
             }
         }
         auto joinedDim = joinedDimension(shape);
-        for (unsigned int i = 0; i < actualDim; i++)
+        if (joinedDim.has_value())
         {
-            if (!(joinedDim.has_value() && *joinedDim == i) &&
-                offset[i] + extent[i] > shape[i])
+            if (!offset.empty())
             {
                 throw std::runtime_error(
-                    "[ADIOS2] Dataset access out of bounds.");
+                    "[ADIOS2] Offset must be an empty vector in case of joined "
+                    "array.");
+            }
+            for (unsigned int i = 0; i < actualDim; i++)
+            {
+                if (*joinedDim != i && extent[i] != shape[i])
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] store_chunk extent of non-joined dimensions "
+                        "must be equivalent to the total extent.");
+                }
             }
         }
-
-        if (joinedDim.has_value() && !offset.empty())
+        else
         {
-            throw std::runtime_error(
-                "[ADIOS2] Offset must be an empty vector in case of joined "
-                "array.");
+            for (unsigned int i = 0; i < actualDim; i++)
+            {
+                if (!(joinedDim.has_value() && *joinedDim == i) &&
+                    offset[i] + extent[i] > shape[i])
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] Dataset access out of bounds.");
+                }
+            }
         }
 
         var.SetSelection(
