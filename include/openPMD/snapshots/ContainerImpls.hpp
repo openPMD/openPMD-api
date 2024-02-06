@@ -33,11 +33,19 @@ public:
     auto rend() const -> const_iterator override;
 
     auto empty() const -> bool override;
+    auto size() const -> size_t override;
 
     auto at(key_type const &key) const -> mapped_type const & override;
     auto at(key_type const &key) -> mapped_type & override;
 
     auto operator[](key_type const &key) -> mapped_type & override;
+
+    auto clear() -> void override;
+
+    auto find(key_type const &key) -> iterator override;
+    auto find(key_type const &key) const -> const_iterator override;
+
+    auto contains(key_type const &key) const -> bool override;
 };
 
 /*
@@ -63,9 +71,17 @@ public:
     auto rend() const -> const_iterator override;
 
     auto empty() const -> bool override;
+    auto size() const -> size_t override;
 
     using AbstractSnapshotsContainer::at;
     auto at(key_type const &key) const -> mapped_type const & override;
     auto operator[](key_type const &key) -> mapped_type & override;
+
+    auto clear() -> void override;
+
+    auto find(key_type const &key) -> iterator override;
+    auto find(key_type const &key) const -> const_iterator override;
+
+    auto contains(key_type const &key) const -> bool override;
 };
 } // namespace openPMD

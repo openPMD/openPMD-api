@@ -65,12 +65,28 @@ public:
     const_reverse_iterator rbegin() const;
     const_reverse_iterator rend() const;
 
-    bool empty() const;
+    auto empty() const -> bool;
+    auto size() const -> size_t;
 
     mapped_type const &at(key_type const &key) const;
     mapped_type &at(key_type const &key);
 
     mapped_type &operator[](key_type const &key);
+
+    auto clear() -> void;
+
+    // insert
+    // swap
+
+    auto find(key_type const &key) -> iterator;
+    auto find(key_type const &key) const -> const_iterator;
+
+    auto count(key_type const &key) const -> size_t;
+
+    auto contains(key_type const &key) const -> bool;
+
+    // erase
+    // emplace
 };
 
 // backwards compatibility
