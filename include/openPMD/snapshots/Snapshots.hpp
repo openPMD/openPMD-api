@@ -56,22 +56,22 @@ public:
     auto currentIteration() -> std::optional<value_type *>;
     auto currentIteration() const -> std::optional<value_type const *>;
 
-    iterator begin();
-    iterator end();
-    const_iterator begin() const;
-    const_iterator end() const;
-    reverse_iterator rbegin();
-    reverse_iterator rend();
-    const_reverse_iterator rbegin() const;
-    const_reverse_iterator rend() const;
+    auto begin() -> iterator;
+    auto end() -> iterator;
+    auto begin() const -> const_iterator;
+    auto end() const -> const_iterator;
+    auto rbegin() -> reverse_iterator;
+    auto rend() -> reverse_iterator;
+    auto rbegin() const -> const_reverse_iterator;
+    auto rend() const -> const_reverse_iterator;
 
     auto empty() const -> bool;
     auto size() const -> size_t;
 
-    mapped_type const &at(key_type const &key) const;
-    mapped_type &at(key_type const &key);
+    auto at(key_type const &key) const -> mapped_type const &;
+    auto at(key_type const &key) -> mapped_type &;
 
-    mapped_type &operator[](key_type const &key);
+    auto operator[](key_type const &key) -> mapped_type &;
 
     auto clear() -> void;
 
