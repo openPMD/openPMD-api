@@ -76,12 +76,14 @@ auto StatefulSnapshotsContainer::end() -> iterator
 auto StatefulSnapshotsContainer::begin() const -> const_iterator
 {
     throw error::WrongAPIUsage(
-        "Const iteration not possible on a stateful container/iterator.");
+        "[StatefulSnapshotsContainer::begin] Const iteration not possible on a "
+        "stateful container/iterator.");
 }
 auto StatefulSnapshotsContainer::end() const -> const_iterator
 {
     throw error::WrongAPIUsage(
-        "Const iteration not possible on a stateful container/iterator.");
+        "[StatefulSnapshotsContainer::end] Const iteration not possible on a "
+        "stateful container/iterator.");
 }
 auto StatefulSnapshotsContainer::rbegin() -> iterator
 {
@@ -102,18 +104,24 @@ auto StatefulSnapshotsContainer::rend() -> iterator
 auto StatefulSnapshotsContainer::rbegin() const -> const_iterator
 {
     throw error::WrongAPIUsage(
-        "Const iteration not possible on a stateful container/iterator.");
+        "[StatefulSnapshotsContainer::rbegin] Const iteration not possible on "
+        "a stateful container/iterator.");
 }
 auto StatefulSnapshotsContainer::rend() const -> const_iterator
 {
     throw error::WrongAPIUsage(
-        "Const iteration not possible on a stateful container/iterator.");
+        "[StatefulSnapshotsContainer::rend] Const iteration not possible on a "
+        "stateful container/iterator.");
 }
 
 bool StatefulSnapshotsContainer::empty() const
 {
     auto it = get();
-    return (!it) || it->operator bool();
+    return (!it) || !it->operator bool();
+}
+auto StatefulSnapshotsContainer::size() const -> size_t
+{
+    throw std::runtime_error("Unimplemented");
 }
 
 auto StatefulSnapshotsContainer::at(key_type const &) const
@@ -187,6 +195,27 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     throw error::Internal("Control flow error: This should be unreachable.");
 }
 
+auto StatefulSnapshotsContainer::clear() -> void
+{
+    throw std::runtime_error("Unimplemented");
+}
+
+auto StatefulSnapshotsContainer::find(key_type const &) -> iterator
+{
+    throw std::runtime_error("Unimplemented");
+}
+auto StatefulSnapshotsContainer::find(key_type const &) const -> const_iterator
+{
+    throw error::WrongAPIUsage(
+        "[StatefulSnapshotsContainer::find] Const iteration not possible on a "
+        "stateful container/iterator.");
+}
+
+auto StatefulSnapshotsContainer::contains(key_type const &) const -> bool
+{
+    throw std::runtime_error("Unimplemented");
+}
+
 RandomAccessIteratorContainer::RandomAccessIteratorContainer(
     Container<Iteration, key_type> cont)
     : m_cont(std::move(cont))
@@ -240,9 +269,13 @@ auto RandomAccessIteratorContainer::rend() const -> const_reverse_iterator
             new RandomAccessIterator(m_cont.rend())});
 }
 
-bool RandomAccessIteratorContainer::empty() const
+auto RandomAccessIteratorContainer::empty() const -> bool
 {
     return m_cont.empty();
+}
+auto RandomAccessIteratorContainer::size() const -> size_t
+{
+    return m_cont.size();
 }
 
 auto RandomAccessIteratorContainer::at(key_type const &key) const
@@ -255,5 +288,29 @@ auto RandomAccessIteratorContainer::operator[](key_type const &key)
     -> mapped_type &
 {
     return m_cont[key];
+}
+
+auto RandomAccessIteratorContainer::clear() -> void
+{
+    throw std::runtime_error("Unimplemented");
+}
+
+auto RandomAccessIteratorContainer::find(key_type const &key) -> iterator
+{
+    return OpaqueSeriesIterator(
+        std::unique_ptr<DynamicSeriesIterator<value_type>>{
+            new RandomAccessIterator(m_cont.find(key))});
+}
+auto RandomAccessIteratorContainer::find(key_type const &key) const
+    -> const_iterator
+{
+    return OpaqueSeriesIterator(
+        std::unique_ptr<DynamicSeriesIterator<value_type const>>{
+            new RandomAccessIterator(m_cont.find(key))});
+}
+
+auto RandomAccessIteratorContainer::contains(key_type const &key) const -> bool
+{
+    return m_cont.contains(key);
 }
 } // namespace openPMD
