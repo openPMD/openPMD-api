@@ -2948,13 +2948,13 @@ namespace
 namespace
 {
     auto make_writing_stateful_iterator(
-        Series copied_series, internal::SeriesData &series)
+        Series const &copied_series, internal::SeriesData &series)
         -> std::function<StatefulIterator *()>
     {
         if (!series.m_sharedReadIterations)
         {
             series.m_sharedReadIterations = std::make_unique<StatefulIterator>(
-                StatefulIterator::tag_write, std::move(copied_series));
+                StatefulIterator::tag_write, copied_series);
         }
         return [ptr = series.m_sharedReadIterations.get()]() { return ptr; };
     }
@@ -3001,6 +3001,10 @@ Snapshots Series::snapshots()
                     iterator_kind = IK::RandomAccess;
                     break;
                 case internal::ParsePreference::PerStep:
+                    std::cerr
+                        << "[Warning] Series: Use READ_LINEAR access mode to "
+                           "access Series that requires collective processing."
+                        << std::endl;
                     iterator_kind = IK::Stateful;
                     break;
                 }
