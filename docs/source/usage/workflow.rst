@@ -25,6 +25,7 @@ Storing and reading chunks
    The chunk is then stored by specifying an empty offset vector ``{}``.
    The chunk extent vector must be equivalent to the global extent in all non-joined dimensions (i.e. joined arrays allow no further sub-chunking other than concatenation along the joined dimension).
    The joined dimension of the extent vector specifies the extent that this piece should have along the joined dimension.
+   In the Python API, the slice-based setter syntax can be used as an abbreviation since the necessary information is determined from the passed array, e.g. ``record_component[()] = local_data``.
    The global extent of the dataset along the joined dimension will then be the sum of all local chunk extents along the joined dimension.
 
    Since openPMD follows a struct-of-array layout of data, it is important not to lose correlation of data between components. E.g., joining an array must take care that ``particles/e/position/x`` and ``particles/e/position/y`` are joined in uniform way.

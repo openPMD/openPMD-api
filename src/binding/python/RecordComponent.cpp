@@ -18,12 +18,15 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include <limits>
+#include <pybind11/detail/common.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
@@ -40,6 +43,7 @@
 #include <exception>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -111,13 +115,47 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
             py::slice slice = py::cast<py::slice>(slices[i]);
 
             size_t start, stop, step, slicelength;
+            auto mocked_extent = full_extent.at(curAxis);
+            // py::ssize_t is a signed type, so we will need to use another
+            // magic number for JOINED_DIMENSION in this computation, since the
+            // C++ API's JOINED_DIMENSION would be interpreted as a negative
+            // index
+            bool undo_mocked_extent = false;
+            constexpr auto PYTHON_JOINED_DIMENSION =
+                std::numeric_limits<py::ssize_t>::max() - 1;
+            if (mocked_extent == Dataset::JOINED_DIMENSION)
+            {
+                undo_mocked_extent = true;
+                mocked_extent = PYTHON_JOINED_DIMENSION;
+            }
             if (!slice.compute(
-                    full_extent.at(curAxis),
-                    &start,
-                    &stop,
-                    &step,
-                    &slicelength))
+                    mocked_extent, &start, &stop, &step, &slicelength))
                 throw py::error_already_set();
+
+            if (undo_mocked_extent)
+            {
+                // do the same calculation again, but with another global extent
+                // (that is not smaller than the previous in order to avoid
+                // cutting off the range)
+                // this is to avoid the unlikely case
+                // that the mocked alternative value is actually the intended
+                // one
+                size_t start2, stop2, step2, slicelength2;
+                if (!slice.compute(
+                        mocked_extent + 1,
+                        &start2,
+                        &stop2,
+                        &step2,
+                        &slicelength2))
+                    throw py::error_already_set();
+                if (slicelength == slicelength2)
+                {
+                    // slicelength was given as an absolute value and
+                    // accidentally hit our mocked value
+                    // --> keep that value
+                    undo_mocked_extent = false;
+                }
+            }
 
             // TODO PySlice_AdjustIndices: Python 3.6.1+
             //      Adjust start/end slice indices assuming a sequence of the
@@ -132,7 +170,10 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
 
             // verified for size later in C++ API
             offset.at(curAxis) = start;
-            extent.at(curAxis) = slicelength; // stop - start;
+            extent.at(curAxis) =
+                undo_mocked_extent && slicelength == PYTHON_JOINED_DIMENSION
+                ? Dataset::JOINED_DIMENSION
+                : slicelength; // stop - start;
 
             continue;
         }
@@ -184,6 +225,59 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
         extent.at(curAxis) = full_extent.at(curAxis);
     }
 
+    return std::make_tuple(offset, extent, flatten);
+}
+
+inline std::tuple<Offset, Extent, std::vector<bool>> parseJoinedTupleSlices(
+    uint8_t const ndim,
+    Extent const &full_extent,
+    py::tuple const &slices,
+    size_t joined_dim,
+    py::array const &a)
+{
+
+    std::vector<bool> flatten;
+    Offset offset;
+    Extent extent;
+    std::tie(offset, extent, flatten) =
+        parseTupleSlices(ndim, full_extent, slices);
+    for (size_t i = 0; i < ndim; ++i)
+    {
+        if (offset.at(i) != 0)
+        {
+            throw std::runtime_error(
+                "Joined array: Cannot use non-zero offset in store_chunk "
+                "(offset[" +
+                std::to_string(i) + "] = " + std::to_string(offset[i]) + ").");
+        }
+        if (flatten.at(i))
+        {
+            throw std::runtime_error(
+                "Flattened slices unimplemented for joined arrays.");
+        }
+
+        if (i == joined_dim)
+        {
+            if (extent.at(i) == 0 || extent.at(i) == Dataset::JOINED_DIMENSION)
+            {
+                extent[i] = a.shape()[i];
+            }
+        }
+        else
+        {
+            if (extent.at(i) != full_extent.at(i))
+            {
+                throw std::runtime_error(
+                    "Joined array: Must use full extent in store_chunk for "
+                    "non-joined dimension "
+                    "(local_extent[" +
+                    std::to_string(i) + "] = " + std::to_string(extent[i]) +
+                    " != global_extent[" + std::to_string(i) +
+                    "] = " + std::to_string(full_extent[i]) + ").");
+            }
+        }
+    }
+    offset.clear();
     return std::make_tuple(offset, extent, flatten);
 }
 
@@ -388,8 +482,17 @@ store_chunk(RecordComponent &r, py::array &a, py::tuple const &slices)
     Offset offset;
     Extent extent;
     std::vector<bool> flatten;
-    std::tie(offset, extent, flatten) =
-        parseTupleSlices(ndim, full_extent, slices);
+    if (auto joined_dimension = r.joinedDimension();
+        joined_dimension.has_value())
+    {
+        std::tie(offset, extent, flatten) = parseJoinedTupleSlices(
+            ndim, full_extent, slices, *joined_dimension, a);
+    }
+    else
+    {
+        std::tie(offset, extent, flatten) =
+            parseTupleSlices(ndim, full_extent, slices);
+    }
 
     store_chunk(r, a, offset, extent, flatten);
 }

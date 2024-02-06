@@ -21,13 +21,14 @@ try:
         version.parse(adios2.__version__) >= version.parse('2.9.0')
 except ImportError:
     USE_JOINED_DIMENSION = False
+
 if __name__ == "__main__":
     # also works with any other MPI communicator
     comm = MPI.COMM_WORLD
 
     # global data set to write: [MPI_Size * 10, 300]
     # each rank writes a 10x300 slice with its MPI rank as values
-    local_value = comm.size
+    local_value = comm.rank
     local_data = np.ones(10 * 300,
                          dtype=np.double).reshape(10, 300) * local_value
     if 0 == comm.rank:
@@ -77,7 +78,11 @@ if __name__ == "__main__":
     # example shows a 1D domain decomposition in first index
 
     if USE_JOINED_DIMENSION:
-        mymesh.store_chunk(local_data, [], [10, 300])
+        # explicit API
+        # mymesh.store_chunk(local_data, [], [10, 300])
+        mymesh[:, :] = local_data
+        # or short:
+        # mymesh[()] = local_data
     else:
         mymesh[comm.rank*10:(comm.rank+1)*10, :] = local_data
     if 0 == comm.rank:
