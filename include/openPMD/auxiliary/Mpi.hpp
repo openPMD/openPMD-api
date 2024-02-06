@@ -71,6 +71,7 @@ namespace
  * Multiple variable-length strings represented in one single buffer
  * with a fixed line width.
  * Strings smaller than the maximum width are padded with zeros.
+ * Each line is zero-terminated with at least one zero character.
  * The length of char_buffer should be equal to the product of line_length
  * and num_lines.
  */
