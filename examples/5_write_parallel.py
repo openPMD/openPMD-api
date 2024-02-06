@@ -14,6 +14,13 @@ from mpi4py import MPI
 import numpy as np
 import openpmd_api as io
 
+try:
+    import adios2
+    from packaging import version
+    USE_JOINED_DIMENSION = \
+        version.parse(adios2.__version__) >= version.parse('2.9.0')
+except ImportError:
+    USE_JOINED_DIMENSION = False
 if __name__ == "__main__":
     # also works with any other MPI communicator
     comm = MPI.COMM_WORLD
@@ -29,7 +36,9 @@ if __name__ == "__main__":
 
     # open file for writing
     series = io.Series(
-        "../samples/5_parallel_write_py.h5",
+        "../samples/5_parallel_write_py.bp"
+            if USE_JOINED_DIMENSION
+            else "../samples/5_parallel_write_py.bp",
         io.Access.create,
         comm
     )
@@ -51,7 +60,9 @@ if __name__ == "__main__":
         meshes["mymesh"]
 
     # example 1D domain decomposition in first index
-    global_extent = [comm.size * 10, 300]
+    global_extent = [io.Dataset.JOINED_DIMENSION, 300] \
+        if USE_JOINED_DIMENSION else [comm.size * 10, 300]
+
     dataset = io.Dataset(local_data.dtype, global_extent)
 
     if 0 == comm.rank:
@@ -64,7 +75,11 @@ if __name__ == "__main__":
               "mymesh in iteration 1")
 
     # example shows a 1D domain decomposition in first index
-    mymesh[comm.rank*10:(comm.rank+1)*10, :] = local_data
+
+    if USE_JOINED_DIMENSION:
+        mymesh.store_chunk(local_data, [], [10, 300])
+    else:
+        mymesh[comm.rank*10:(comm.rank+1)*10, :] = local_data
     if 0 == comm.rank:
         print("Registered a single chunk per MPI rank containing its "
               "contribution, ready to write content to disk")

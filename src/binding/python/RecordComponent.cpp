@@ -265,23 +265,52 @@ inline void store_chunk(
                         "in record component (") +
             std::to_string(r_shape.size()) + std::string("D)"));
 
-    for (auto d = 0; d < a.ndim(); ++d)
+    if (auto joined_dim = r.joinedDimension(); joined_dim.has_value())
     {
-        // selection causes overflow of r
-        if (offset.at(d) + extent.at(d) > r_shape.at(d))
-            throw py::index_error(
-                std::string("slice ") + std::to_string(offset.at(d)) +
-                std::string(":") + std::to_string(extent.at(d)) +
-                std::string(" is out of bounds for axis ") + std::to_string(d) +
-                std::string(" with size ") + std::to_string(r_shape.at(d)));
-        // underflow of selection in r for given a
-        if (s_shape.at(d) != std::uint64_t(a.shape()[d]))
-            throw py::index_error(
-                std::string("size of chunk (") + std::to_string(a.shape()[d]) +
-                std::string(") for axis ") + std::to_string(d) +
-                std::string(" does not match selection ") +
-                std::string("size in record component (") +
-                std::to_string(s_extent.at(d)) + std::string(")"));
+        for (py::ssize_t d = 0; d < a.ndim(); ++d)
+        {
+            // selection causes overflow of r
+            if (d != py::ssize_t(*joined_dim) && extent.at(d) != r_shape.at(d))
+                throw py::index_error(
+                    std::string("selection for axis ") + std::to_string(d) +
+                    " of record component with joined dimension " +
+                    std::to_string(*joined_dim) +
+                    " must be equivalent to its global extent " +
+                    std::to_string(extent.at(d)) + ", but was " +
+                    std::to_string(r_shape.at(d)) + ".");
+            // underflow of selection in r for given a
+            if (s_shape.at(d) != std::uint64_t(a.shape()[d]))
+                throw py::index_error(
+                    std::string("size of chunk (") +
+                    std::to_string(a.shape()[d]) + std::string(") for axis ") +
+                    std::to_string(d) +
+                    std::string(" does not match selection ") +
+                    std::string("size in record component (") +
+                    std::to_string(s_extent.at(d)) + std::string(")"));
+        }
+    }
+    else
+    {
+        for (auto d = 0; d < a.ndim(); ++d)
+        {
+            // selection causes overflow of r
+            if (offset.at(d) + extent.at(d) > r_shape.at(d))
+                throw py::index_error(
+                    std::string("slice ") + std::to_string(offset.at(d)) +
+                    std::string(":") + std::to_string(extent.at(d)) +
+                    std::string(" is out of bounds for axis ") +
+                    std::to_string(d) + std::string(" with size ") +
+                    std::to_string(r_shape.at(d)));
+            // underflow of selection in r for given a
+            if (s_shape.at(d) != std::uint64_t(a.shape()[d]))
+                throw py::index_error(
+                    std::string("size of chunk (") +
+                    std::to_string(a.shape()[d]) + std::string(") for axis ") +
+                    std::to_string(d) +
+                    std::string(" does not match selection ") +
+                    std::string("size in record component (") +
+                    std::to_string(s_extent.at(d)) + std::string(")"));
+        }
     }
 
     check_buffer_is_contiguous(a);
