@@ -55,7 +55,7 @@ auto Snapshots::rend() const -> const_reverse_iterator
     return get().end();
 }
 
-bool Snapshots::empty() const
+auto Snapshots::empty() const -> bool
 {
     return get().empty();
 }
