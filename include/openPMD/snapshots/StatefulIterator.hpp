@@ -137,7 +137,7 @@ private:
      * the /data/snapshot attribute, this helps figuring out which iteration
      * is now active. Hence, recursion_depth.
      */
-    std::optional<StatefulIterator *> nextStep(size_t recursion_depth);
+    std::optional<StatefulIterator *> nextStep();
 
     std::optional<StatefulIterator *> loopBody();
 

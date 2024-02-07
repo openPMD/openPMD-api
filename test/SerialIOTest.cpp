@@ -6618,6 +6618,28 @@ void deferred_parsing(std::string const &extension)
     {
         Series series(
             basename + "%06T." + extension,
+            Access::READ_ONLY,
+            "{\"defer_iteration_parsing\": true}");
+        for (auto iteration : series.readIterations())
+        {
+            auto dataset =
+                iteration.meshes["E"]["x"].loadChunk<float>({0}, {20});
+            iteration.close();
+            for (size_t i = 0; i < 20; ++i)
+            {
+                REQUIRE(
+                    std::abs(dataset.get()[i] - float(i)) <=
+                    std::numeric_limits<float>::epsilon());
+            }
+            if (iteration.iterationIndex == 0)
+            {
+                break;
+            }
+        }
+    }
+    {
+        Series series(
+            basename + "%06T." + extension,
             Access::READ_WRITE,
             "{\"defer_iteration_parsing\": true}");
         auto dataset =
