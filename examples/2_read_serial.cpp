@@ -34,13 +34,13 @@ int main()
     cout << "Read a Series with openPMD standard version " << series.openPMD()
          << '\n';
 
-    cout << "The Series contains " << series.iterations.size()
+    cout << "The Series contains " << series.snapshots().size()
          << " iterations:";
-    for (auto const &i : series.iterations)
+    for (auto const &i : series.snapshots())
         cout << "\n\t" << i.first;
     cout << '\n';
 
-    Iteration i = series.iterations[100];
+    Iteration i = series.snapshots()[100];
     cout << "Iteration 100 contains " << i.meshes.size() << " meshes:";
     for (auto const &m : i.meshes)
         cout << "\n\t" << m.first;
