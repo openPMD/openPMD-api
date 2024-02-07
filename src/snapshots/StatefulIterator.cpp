@@ -145,37 +145,21 @@ void StatefulIterator::close()
     *m_data = std::nullopt; // turn this into end iterator
 }
 
-auto StatefulIterator::setCurrentIteration() -> bool
+auto StatefulIterator::resetCurrentIterationToBegin() -> bool
 {
     auto &data = get();
     if (data.iterationsInCurrentStep.empty())
     {
-        std::cerr << "[ReadIterations] Encountered a step without "
-                     "iterations. Closing the Series."
-                  << std::endl;
-        *this = end();
+        data.currentIteration = std::nullopt;
         return false;
-    }
-    data.currentIteration = *data.iterationsInCurrentStep.begin();
-    return true;
-}
-
-auto StatefulIterator::peekCurrentIteration() -> std::optional<uint64_t>
-{
-    if (!m_data || !m_data->has_value())
-    {
-        return std::nullopt;
-    }
-    auto &data = m_data->value();
-    if (data.iterationsInCurrentStep.empty())
-    {
-        return std::nullopt;
     }
     else
     {
-        return {*data.iterationsInCurrentStep.begin()};
+        data.currentIteration = *data.iterationsInCurrentStep.begin();
+        return true;
     }
 }
+
 auto StatefulIterator::peekCurrentlyOpenIteration() const
     -> std::optional<value_type const *>
 {
@@ -339,7 +323,7 @@ StatefulIterator::StatefulIterator(
             this->close();
             return;
         }
-        if (!setCurrentIteration())
+        if (!resetCurrentIterationToBegin())
         {
             this->close();
             return;
@@ -351,65 +335,50 @@ StatefulIterator::StatefulIterator(
 std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
 {
     auto &data = get();
-    using ret_t = std::optional<StatefulIterator *>;
+    auto no_result = [&]() {
+        data.currentIteration = std::nullopt;
+        return std::nullopt;
+    };
 
-    if (data.iterationsInCurrentStep.empty())
+    if (!data.currentIteration.has_value())
     {
-        return ret_t{};
+        return no_result();
     }
-    data.iterationsInCurrentStep.pop_front();
-    if (data.iterationsInCurrentStep.empty())
+
+    if (auto it = std::find(
+            data.iterationsInCurrentStep.begin(),
+            data.iterationsInCurrentStep.end(),
+            *data.currentIteration);
+        it != data.iterationsInCurrentStep.end())
     {
-        return ret_t{};
+        ++it;
+        if (it == data.iterationsInCurrentStep.end())
+        {
+            return no_result();
+        }
+        data.currentIteration = *it;
     }
-    data.currentIteration = *data.iterationsInCurrentStep.begin();
+    else
+    {
+        return no_result();
+    }
+
     auto &series = data.series;
 
-    switch (series.iterationEncoding())
+    try
     {
-    case IterationEncoding::groupBased:
-    case IterationEncoding::variableBased: {
-
-        try
-        {
-            series.iterations[*data.currentIteration].open();
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr << "Cannot read iteration '" << *data.currentIteration
-                      << "' and will skip it due to read error:\n"
-                      << err.what() << std::endl;
-            return nextIterationInStep();
-        }
-
-        return {this};
+        series.iterations.at(*data.currentIteration).open();
     }
-    case IterationEncoding::fileBased:
-        try
-        {
-            /*
-             * Errors in here might appear due to deferred iteration parsing.
-             */
-            series.iterations[*data.currentIteration].open();
-            /*
-             * Errors in here might appear due to reparsing after opening a
-             * new step.
-             */
-            series.iterations[*data.currentIteration].beginStep(
-                /* reread = */ true);
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr
-                << "[StatefulIterator] Cannot read iteration due to error "
-                   "below, will skip it.\n"
-                << err.what() << std::endl;
-            return nextIterationInStep();
-        }
-
-        return {this};
+    catch (error::ReadError const &err)
+    {
+        std::cerr << "[StatefulIterator] Cannot read iteration '"
+                  << *data.currentIteration
+                  << "' and will skip it due to read error:\n"
+                  << err.what() << std::endl;
+        return nextIterationInStep();
     }
-    throw std::runtime_error("Unreachable!");
+
+    return {this};
 }
 
 void breakpoint()
@@ -443,15 +412,15 @@ std::optional<StatefulIterator *> StatefulIterator::nextStep()
 
     switch (status)
     {
-    case AdvanceStatus::OK:
-        data.iterationsInCurrentStep = availableIterations;
-        break;
     case AdvanceStatus::OVER:
     case AdvanceStatus::RANDOMACCESS:
         this->close();
         break;
+    case AdvanceStatus::OK:
+        data.iterationsInCurrentStep = availableIterations;
+        resetCurrentIterationToBegin();
+        break;
     }
-
     return {this};
 }
 
@@ -467,16 +436,15 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
     if (data.currentIteration.has_value() &&
         iterations.contains(*data.currentIteration))
     {
-        auto &currentIteration = iterations[*data.currentIteration];
+        auto &currentIteration = iterations.at(*data.currentIteration);
         if (!currentIteration.closed())
         {
             currentIteration.close();
-            data.currentIteration = std::nullopt;
         }
     }
 
     auto guardReturn =
-        [&series, &iterations](
+        [&series, &iterations, &data](
             auto const &option) -> std::optional<openPMD::StatefulIterator *> {
         if (!option.has_value() || *option.value() == end())
         {
@@ -487,7 +455,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
          * This might happen when iterations from the step are ignored, e.g.
          * a duplicate iteration has been written by Append mode.
          */
-        auto currentIterationIndex = option.value()->peekCurrentIteration();
+        auto currentIterationIndex = data.currentIteration;
         if (!currentIterationIndex.has_value())
         {
             series.advance(AdvanceMode::ENDSTEP);
@@ -520,7 +488,6 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
                     return std::nullopt;
                 }
             case internal::CloseStatus::Open:
-                option.value()->setCurrentIteration();
                 return option;
             case internal::CloseStatus::ClosedInBackend:
                 // we had this iteration already, skip it
@@ -609,7 +576,7 @@ StatefulIterator &StatefulIterator::operator++()
     {
         auto &series = data.series;
         auto index = data.currentIteration;
-        auto &iteration = series.iterations[index.value()];
+        auto &iteration = series.iterations.at(index.value());
         iteration.setStepStatus(StepStatus::DuringStep);
 
         if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&

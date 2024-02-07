@@ -30,6 +30,7 @@
 #include <iostream>
 #include <optional>
 #include <set>
+#include <vector>
 
 namespace openPMD
 {
@@ -61,9 +62,9 @@ class StatefulIterator
         ~SharedData();
 
         Series series;
-        std::deque<iteration_index_t> iterationsInCurrentStep;
+        std::vector<iteration_index_t> iterationsInCurrentStep;
         // nullopt <-> currently out of step
-        std::optional<uint64_t> currentIteration{};
+        std::optional<iteration_index_t> currentIteration{};
         std::optional<internal::ParsePreference> parsePreference;
         /*
          * Necessary because in the old ADIOS2 schema, old iterations' metadata
@@ -147,8 +148,7 @@ private:
 
     void close();
 
-    auto setCurrentIteration() -> bool;
-    auto peekCurrentIteration() -> std::optional<uint64_t>;
+    auto resetCurrentIterationToBegin() -> bool;
     auto peekCurrentlyOpenIteration() const
         -> std::optional<value_type const *>;
     auto peekCurrentlyOpenIteration() -> std::optional<value_type *>;
