@@ -313,7 +313,9 @@ StatefulIterator::StatefulIterator(
              */
             Iteration::BeginStepStatus::AvailableIterations_t
                 availableIterations;
-            std::tie(status, availableIterations) = it->second.beginStep(
+            std::tie(status, availableIterations) = Iteration::beginStep(
+                {},
+                series,
                 /* reread = */ reread(data.parsePreference));
             /*
              * In random-access mode, do not use the information read in the
@@ -420,8 +422,12 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     throw std::runtime_error("Unreachable!");
 }
 
-std::optional<StatefulIterator *>
-StatefulIterator::nextStep(size_t recursion_depth)
+void breakpoint()
+{
+    std::cout << "BREAKPOINT" << std::endl;
+}
+
+std::optional<StatefulIterator *> StatefulIterator::nextStep()
 {
     auto &data = get();
     // since we are in group-based iteration layout, it does not
@@ -442,7 +448,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
                      "below, will skip it.\n"
                   << err.what() << std::endl;
         data.series.advance(AdvanceMode::ENDSTEP);
-        return nextStep(recursion_depth + 1);
+        return nextStep();
     }
 
     if (status != AdvanceStatus::RANDOMACCESS)
@@ -451,70 +457,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
     }
     else
     {
-        /*
-         * Fallback implementation: Assume that each step corresponds
-         * with an iteration in ascending order.
-         */
-        if (!data.currentIteration.has_value())
-        {
-            throw std::runtime_error(
-                "CATASTROPHE. need to think how to resolve this one.");
-        }
-        auto &series = data.series;
-        auto it = series.iterations.find(*data.currentIteration);
-        auto itEnd = series.iterations.end();
-        if (it == itEnd)
-        {
-            if (status == AdvanceStatus::RANDOMACCESS ||
-                status == AdvanceStatus::OVER)
-            {
-                this->close();
-                return {this};
-            }
-            else
-            {
-                /*
-                 * Stream still going but there was no iteration found in the
-                 * current IO step?
-                 * Might be a duplicate iteration resulting from appending,
-                 * will skip such iterations and hope to find something in a
-                 * later IO step. No need to finish right now.
-                 */
-                data.iterationsInCurrentStep = {};
-            }
-        }
-        else
-        {
-            for (size_t i = 0; i < recursion_depth && it != itEnd; ++i)
-            {
-                ++it;
-            }
-
-            if (it == itEnd)
-            {
-                if (status == AdvanceStatus::RANDOMACCESS ||
-                    status == AdvanceStatus::OVER)
-                {
-                    this->close();
-                    return {this};
-                }
-                else
-                {
-                    /*
-                     * Stream still going but there was no iteration found in
-                     * the current IO step? Might be a duplicate iteration
-                     * resulting from appending, will skip such iterations and
-                     * hope to find something in a later IO step. No need to
-                     * finish right now.
-                     */
-                    data.iterationsInCurrentStep = {};
-                }
-            }
-            else
-            {
-                data.iterationsInCurrentStep = {it->first};
-            }
-        }
+        this->close();
     }
 
     if (status == AdvanceStatus::OVER)
@@ -619,7 +562,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
         return {this};
     }
 
-    auto option = nextStep(/*recursion_depth = */ 1);
+    auto option = nextStep();
     return guardReturn(option);
 }
 
