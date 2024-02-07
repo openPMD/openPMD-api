@@ -22,6 +22,7 @@
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include "openPMD/Error.hpp"
 
+#include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
 
 #include <iostream>
@@ -361,7 +362,6 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     {
         return ret_t{};
     }
-    auto oldIterationIndex = data.currentIteration;
     data.currentIteration = *data.iterationsInCurrentStep.begin();
     auto &series = data.series;
 
@@ -369,17 +369,7 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     {
     case IterationEncoding::groupBased:
     case IterationEncoding::variableBased: {
-        if (oldIterationIndex.has_value())
-        {
-            auto begin = series.iterations.find(*oldIterationIndex);
-            auto end = begin;
-            ++end;
-            series.flush_impl(
-                begin,
-                end,
-                {FlushLevel::UserFlush},
-                /* flushIOHandler = */ true);
-        }
+
         try
         {
             series.iterations[*data.currentIteration].open();
@@ -451,19 +441,15 @@ std::optional<StatefulIterator *> StatefulIterator::nextStep()
         return nextStep();
     }
 
-    if (status != AdvanceStatus::RANDOMACCESS)
+    switch (status)
     {
+    case AdvanceStatus::OK:
         data.iterationsInCurrentStep = availableIterations;
-    }
-    else
-    {
+        break;
+    case AdvanceStatus::OVER:
+    case AdvanceStatus::RANDOMACCESS:
         this->close();
-    }
-
-    if (status == AdvanceStatus::OVER)
-    {
-        this->close();
-        return {this};
+        break;
     }
 
     return {this};
@@ -485,6 +471,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
         if (!currentIteration.closed())
         {
             currentIteration.close();
+            data.currentIteration = std::nullopt;
         }
     }
 
@@ -495,6 +482,11 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
         {
             return option;
         }
+        /*
+         * A step was successfully opened, but no iterations are contained.
+         * This might happen when iterations from the step are ignored, e.g.
+         * a duplicate iteration has been written by Append mode.
+         */
         auto currentIterationIndex = option.value()->peekCurrentIteration();
         if (!currentIterationIndex.has_value())
         {
@@ -509,14 +501,13 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
         if (iterations.contains(index))
         {
             auto iteration = iterations.at(index);
-            if (iteration.get().m_closed !=
-                internal::CloseStatus::ClosedInBackend)
+            switch (iteration.get().m_closed)
             {
+            case internal::CloseStatus::ParseAccessDeferred:
                 try
                 {
                     iterations.at(index).open();
-                    option.value()->setCurrentIteration();
-                    return option;
+                    [[fallthrough]];
                 }
                 catch (error::ReadError const &err)
                 {
@@ -528,13 +519,18 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
                         currentIterationIndex.value());
                     return std::nullopt;
                 }
-            }
-            else
-            {
+            case internal::CloseStatus::Open:
+                option.value()->setCurrentIteration();
+                return option;
+            case internal::CloseStatus::ClosedInBackend:
                 // we had this iteration already, skip it
                 iteration.endStep();
                 return std::nullopt; // empty, go into next iteration
+            case internal::CloseStatus::ClosedInFrontend:
+            case internal::CloseStatus::ClosedTemporarily:
+                throw error::Internal("Next found iteration is closed?");
             }
+            throw std::runtime_error("Unreachable!");
         }
         else
         {
