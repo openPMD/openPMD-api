@@ -168,6 +168,13 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
             }
         }
         s.currentIteration = key;
+        if (std::find(
+                s.iterationsInCurrentStep.begin(),
+                s.iterationsInCurrentStep.end(),
+                key) != s.iterationsInCurrentStep.end())
+        {
+            s.iterationsInCurrentStep.push_back(key);
+        }
         auto &res = s.series.iterations[key];
         if (res.getStepStatus() == StepStatus::NoStep)
         {

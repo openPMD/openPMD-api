@@ -49,6 +49,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <vector>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
@@ -754,7 +755,7 @@ OPENPMD_private
      * ReadIterations since those methods should be aware when the current
      * step is broken).
      */
-    std::deque<IterationIndex_t> readGorVBased(
+    std::vector<IterationIndex_t> readGorVBased(
         bool do_always_throw_errors,
         bool init,
         std::set<IterationIndex_t> const &ignoreIterations = {});
