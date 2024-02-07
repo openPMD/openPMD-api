@@ -38,8 +38,8 @@ if __name__ == "__main__":
     # open file for writing
     series = io.Series(
         "../samples/5_parallel_write_py.bp"
-            if USE_JOINED_DIMENSION
-            else "../samples/5_parallel_write_py.h5",
+        if USE_JOINED_DIMENSION
+        else "../samples/5_parallel_write_py.h5",
         io.Access.create,
         comm
     )
