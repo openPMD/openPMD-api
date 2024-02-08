@@ -1,6 +1,7 @@
 /* Running this test in parallel with MPI requires MPI::Init.
  * To guarantee a correct call to Init, launch the tests manually.
  */
+#include "openPMD/ChunkInfo.hpp"
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -2333,11 +2334,13 @@ void adios2_chunk_distribution()
         series.setRankTable(writingRanksHostnames.at(mpi_rank));
 
         auto E_x = series.iterations[0].meshes["E"]["x"];
-        openPMD::Dataset ds(openPMD::Datatype::INT, {unsigned(mpi_size), 10});
+        openPMD::Dataset ds(
+            openPMD::Datatype::INT, {unsigned(mpi_size * 2), 10});
         E_x.resetDataset(ds);
         std::vector<int> data(10, 0);
         std::iota(data.begin(), data.end(), 0);
-        E_x.storeChunk(data, {unsigned(mpi_rank), 0}, {1, 10});
+        E_x.storeChunk(data, {unsigned(mpi_rank * 2), 0}, {1, 10});
+        E_x.storeChunk(data, {unsigned(mpi_rank * 2 + 1), 0}, {1, 10});
         series.flush();
     }
 
@@ -2394,6 +2397,23 @@ void adios2_chunk_distribution()
         printChunktable(
             "HOSTNAME, LEFTOVER",
             byHostnamePartialAssignment.notAssigned,
+            rankMetaIn);
+
+        /*
+         * Same as above, but use RoundRobinOfSourceRanks this time, a strategy
+         * which ensures that each source rank's data is uniquely mapped to one
+         * sink rank. Needed in some domains.
+         */
+        ByHostname byHostname2(std::make_unique<RoundRobinOfSourceRanks>());
+        auto byHostnamePartialAssignment2 =
+            byHostname2.assign(chunkTable, rankMetaIn, readingRanksHostnames);
+        printAssignment(
+            "HOSTNAME2, ASSIGNED",
+            byHostnamePartialAssignment2.assigned,
+            readingRanksHostnames);
+        printChunktable(
+            "HOSTNAME2, LEFTOVER",
+            byHostnamePartialAssignment2.notAssigned,
             rankMetaIn);
 
         /*
