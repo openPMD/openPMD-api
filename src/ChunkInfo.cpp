@@ -24,10 +24,13 @@
 #include "openPMD/auxiliary/Mpi.hpp"
 
 #include <algorithm> // std::sort
+#include <deque>
 #include <iostream>
+#include <iterator>
 #include <list>
 #include <map>
 #include <optional>
+#include <set>
 #include <utility>
 
 #ifdef _WIN32
@@ -195,10 +198,10 @@ namespace chunk_assignment
 
     namespace
     {
-        std::map<std::string, std::list<unsigned int> >
+        std::map<std::string, std::list<unsigned int>>
         ranksPerHost(RankMeta const &rankMeta)
         {
-            std::map<std::string, std::list<unsigned int> > res;
+            std::map<std::string, std::list<unsigned int>> res;
             for (auto const &pair : rankMeta)
             {
                 auto &list = res[pair.second];
@@ -294,6 +297,44 @@ namespace chunk_assignment
         return std::unique_ptr<Strategy>(new RoundRobin);
     }
 
+    Assignment RoundRobinOfSourceRanks::assign(
+        PartialAssignment partialAssignment,
+        RankMeta const &, // ignored parameter
+        RankMeta const &out)
+    {
+        std::map<unsigned int, std::deque<WrittenChunkInfo>>
+            sortSourceChunksBySourceRank;
+        for (auto &chunk : partialAssignment.notAssigned)
+        {
+            auto sourceID = chunk.sourceID;
+            sortSourceChunksBySourceRank[sourceID].push_back(std::move(chunk));
+        }
+        partialAssignment.notAssigned.clear();
+        auto source_it = sortSourceChunksBySourceRank.begin();
+        auto sink_it = out.begin();
+        for (; source_it != sortSourceChunksBySourceRank.end();
+             ++source_it, ++sink_it)
+        {
+            if (sink_it == out.end())
+            {
+                sink_it = out.begin();
+            }
+            auto &chunks_go_here = partialAssignment.assigned[sink_it->first];
+            chunks_go_here.reserve(
+                partialAssignment.assigned.size() + source_it->second.size());
+            for (auto &chunk : source_it->second)
+            {
+                chunks_go_here.push_back(std::move(chunk));
+            }
+        }
+        return partialAssignment.assigned;
+    }
+
+    std::unique_ptr<Strategy> RoundRobinOfSourceRanks::clone() const
+    {
+        return std::unique_ptr<Strategy>(new RoundRobinOfSourceRanks);
+    }
+
     ByHostname::ByHostname(std::unique_ptr<Strategy> withinNode)
         : m_withinNode(std::move(withinNode))
     {}
@@ -332,7 +373,7 @@ namespace chunk_assignment
         // the ranks are the source ranks
 
         // which ranks live on host <string> in the sink?
-        std::map<std::string, std::list<unsigned int> > ranksPerHostSink =
+        std::map<std::string, std::list<unsigned int>> ranksPerHostSink =
             ranksPerHost(out);
         for (auto &chunkGroup : chunkGroups)
         {

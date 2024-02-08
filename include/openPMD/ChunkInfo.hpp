@@ -24,6 +24,7 @@
 
 #include "openPMD/Dataset.hpp" // Offset, Extent
 #include "openPMD/benchmark/mpi/BlockSlicer.hpp"
+#include <memory>
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -215,6 +216,16 @@ namespace chunk_assignment
      *
      */
     struct RoundRobin : Strategy
+    {
+        Assignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        virtual std::unique_ptr<Strategy> clone() const override;
+    };
+
+    struct RoundRobinOfSourceRanks : Strategy
     {
         Assignment assign(
             PartialAssignment,
