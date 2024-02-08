@@ -38,6 +38,27 @@ namespace internal
 {
     class SeriesData;
 }
+
+namespace detail
+{
+    namespace seek_types
+    {
+        struct InitNonFileBased_t
+        {};
+        struct Next_t
+        {};
+        using seek_impl = std::variant<InitNonFileBased_t, Next_t>;
+    } // namespace seek_types
+    struct Seek : seek_types::seek_impl
+    {
+        using InitNonFileBased_t = seek_types::InitNonFileBased_t;
+        using Next_t = seek_types::Next_t;
+
+        constexpr static InitNonFileBased_t InitNonFileBased{};
+        constexpr static Next_t Next{};
+    };
+} // namespace detail
+
 class StatefulIterator
     : public AbstractSeriesIterator<
           StatefulIterator,
@@ -89,6 +110,7 @@ public:
     using value_type =
         typename Container<Iteration, Iteration::IterationIndex_t>::value_type;
     using typename parent_t ::difference_type;
+    using Seek = detail::Seek;
     //! construct the end() iterator
     explicit StatefulIterator();
 
@@ -138,9 +160,9 @@ private:
      * the /data/snapshot attribute, this helps figuring out which iteration
      * is now active. Hence, recursion_depth.
      */
-    std::optional<StatefulIterator *> nextStep();
+    std::optional<StatefulIterator *> nextStep(Seek const &);
 
-    std::optional<StatefulIterator *> loopBody();
+    std::optional<StatefulIterator *> loopBody(Seek const &);
 
     void deactivateDeadIteration(iteration_index_t);
 

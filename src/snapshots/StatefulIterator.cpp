@@ -24,8 +24,10 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 
 #include <iostream>
+#include <iterator>
 #include <optional>
 #include <stdexcept>
 
@@ -243,92 +245,55 @@ StatefulIterator::StatefulIterator(
         initSeriesInLinearReadMode();
     }
 
-    auto it = series.get().iterations.begin();
-    if (it == series.get().iterations.end())
+    switch (series.iterationEncoding())
     {
-        this->close();
-        return;
-    }
-    else if (
-        it->second.get().m_closed == internal::CloseStatus::ClosedInBackend)
-    {
-        throw error::WrongAPIUsage(
-            "Trying to call Series::readIterations() on a (partially) read "
-            "Series.");
-    }
-    else
-    {
-        auto openIteration = [](Iteration &iteration) {
-            /*
-             * @todo
-             * Is that really clean?
-             * Use case: See Python ApiTest testListSeries:
-             * Call listSeries twice.
-             */
-            if (iteration.get().m_closed !=
-                internal::CloseStatus::ClosedInBackend)
-            {
-                iteration.open();
-            }
-        };
-        AdvanceStatus status{};
-        switch (series.iterationEncoding())
-        {
-        case IterationEncoding::fileBased:
-            /*
-             * The file needs to be accessed before beginning a step upon it.
-             * In file-based iteration layout it maybe is not accessed yet,
-             * so do that now. There is only one step per file, so beginning
-             * the step after parsing the file is ok.
-             */
 
-            openIteration(series.iterations.begin()->second);
-            status = it->second.beginStep(/* reread = */ true);
-            for (auto const &pair : series.iterations)
-            {
-                data.iterationsInCurrentStep.push_back(pair.first);
-            }
-            break;
-        case IterationEncoding::groupBased:
-        case IterationEncoding::variableBased: {
-            /*
-             * In group-based iteration layout, we have definitely already had
-             * access to the file until now. Better to begin a step right away,
-             * otherwise we might get another step's data.
-             */
-            Iteration::BeginStepStatus::AvailableIterations_t
-                availableIterations;
-            std::tie(status, availableIterations) = Iteration::beginStep(
-                {},
-                series,
-                /* reread = */ reread(data.parsePreference));
-            /*
-             * In random-access mode, do not use the information read in the
-             * `snapshot` attribute, instead simply go through iterations
-             * one by one in ascending order (fallback implementation in the
-             * second if branch).
-             */
-            data.iterationsInCurrentStep = availableIterations;
-            if (!data.iterationsInCurrentStep.empty())
-            {
-                openIteration(
-                    series.iterations.at(data.iterationsInCurrentStep.at(0)));
-            }
-            break;
-        }
-        }
-
-        if (status == AdvanceStatus::OVER)
+    case IterationEncoding::fileBased: {
+        if (series.iterations.empty())
         {
             this->close();
             return;
         }
-        if (!resetCurrentIterationToBegin())
+        data.iterationsInCurrentStep.reserve(series.iterations.size());
+        std::transform(
+            series.iterations.begin(),
+            series.iterations.end(),
+            std::back_inserter(data.iterationsInCurrentStep),
+            [](auto const &pair) { return pair.first; });
+        auto it = series.iterations.begin();
+        auto end = series.iterations.end();
+        for (; it != end; ++it)
+        {
+            try
+            {
+                it->second.open();
+                break;
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr << "[StatefulIterator] Cannot read iteration '"
+                          << it->first
+                          << "' and will skip it due to read error:\n"
+                          << err.what() << std::endl;
+            }
+        }
+        if (it != end)
+        {
+            data.currentIteration = it->first;
+        }
+        else
         {
             this->close();
-            return;
         }
-        it->second.setStepStatus(StepStatus::DuringStep);
+        break;
+    }
+    case IterationEncoding::groupBased:
+    case IterationEncoding::variableBased:
+        if (!loopBody({Seek::InitNonFileBased}).has_value())
+        {
+            this->close();
+        }
+        break;
     }
 }
 
@@ -381,12 +346,7 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     return {this};
 }
 
-void breakpoint()
-{
-    std::cout << "BREAKPOINT" << std::endl;
-}
-
-std::optional<StatefulIterator *> StatefulIterator::nextStep()
+std::optional<StatefulIterator *> StatefulIterator::nextStep(Seek const &seek)
 {
     auto &data = get();
     // since we are in group-based iteration layout, it does not
@@ -407,24 +367,40 @@ std::optional<StatefulIterator *> StatefulIterator::nextStep()
                      "below, will skip it.\n"
                   << err.what() << std::endl;
         data.series.advance(AdvanceMode::ENDSTEP);
-        return nextStep();
+        return nextStep(seek);
     }
 
-    switch (status)
+    bool close = [&]() {
+        switch (status)
+        {
+
+        case AdvanceStatus::OK:
+            return false;
+        case AdvanceStatus::OVER:
+            return true;
+        case AdvanceStatus::RANDOMACCESS:
+            return std::visit(
+                auxiliary::overloaded{
+                    [](Seek::InitNonFileBased_t const &) { return false; },
+                    [](Seek::Next_t const &) { return true; }},
+                seek);
+        }
+        throw std::runtime_error("Unreachable!");
+    }();
+
+    if (close)
     {
-    case AdvanceStatus::OVER:
-    case AdvanceStatus::RANDOMACCESS:
         this->close();
-        break;
-    case AdvanceStatus::OK:
+    }
+    else
+    {
         data.iterationsInCurrentStep = availableIterations;
         resetCurrentIterationToBegin();
-        break;
     }
     return {this};
 }
 
-std::optional<StatefulIterator *> StatefulIterator::loopBody()
+std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
 {
     auto &data = get();
     Series &series = data.series;
@@ -507,12 +483,20 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
         }
     };
 
+    using res_t = std::optional<StatefulIterator *>;
+    auto optionallyAStep = std::visit(
+        auxiliary::overloaded{
+            [](Seek::InitNonFileBased_t const &) -> res_t {
+                return std::nullopt;
+            },
+            [this](Seek::Next_t const &) -> res_t {
+                return nextIterationInStep();
+            }},
+        seek);
+
+    if (optionallyAStep.has_value())
     {
-        auto optionallyAStep = nextIterationInStep();
-        if (optionallyAStep.has_value())
-        {
-            return guardReturn(optionallyAStep);
-        }
+        return guardReturn(optionallyAStep);
     }
 
     // The currently active iterations have been exhausted.
@@ -525,7 +509,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
         return {this};
     }
 
-    auto option = nextStep();
+    auto option = nextStep(seek);
     return guardReturn(option);
 }
 
@@ -568,7 +552,7 @@ StatefulIterator &StatefulIterator::operator++()
      */
     do
     {
-        res = loopBody();
+        res = loopBody({Seek::Next});
     } while (!res.has_value());
 
     auto resvalue = res.value();
