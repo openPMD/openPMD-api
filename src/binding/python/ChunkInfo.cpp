@@ -298,6 +298,8 @@ void init_Chunk(py::module &m)
         }));
 
     py::class_<RoundRobin, Strategy>(m, "RoundRobin").def(py::init<>());
+    py::class_<RoundRobinOfSourceRanks, Strategy>(m, "RoundRobinOfSourceRanks")
+        .def(py::init<>());
 
     py::class_<ByHostname, PartialStrategy>(m, "ByHostname")
         .def(
