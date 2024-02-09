@@ -174,6 +174,21 @@ namespace chunk_assignment
         } while (stillChanging);
     }
 
+    auto mergeChunksFromSameSourceID(std::vector<WrittenChunkInfo> const &table)
+        -> std::map<unsigned int, std::vector<ChunkInfo>>
+    {
+        std::map<unsigned int, std::vector<ChunkInfo>> sortedBySourceID;
+        for (auto const &chunk : table)
+        {
+            sortedBySourceID[chunk.sourceID].emplace_back(chunk);
+        }
+        for (auto &pair : sortedBySourceID)
+        {
+            mergeChunks(pair.second);
+        }
+        return sortedBySourceID;
+    }
+
     template void mergeChunks<ChunkInfo>(std::vector<ChunkInfo> &);
     template void
     mergeChunks<WrittenChunkInfo>(std::vector<WrittenChunkInfo> &);

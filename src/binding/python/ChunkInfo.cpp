@@ -237,7 +237,10 @@ void init_Chunk(py::module &m)
         .def("available", &host_info::methodAvailable);
 
     py::bind_vector<ChunkTable>(m, "ChunkTable")
-        .def("merge_chunks", &chunk_assignment::mergeChunks<WrittenChunkInfo>);
+        .def("merge_chunks", &chunk_assignment::mergeChunks<WrittenChunkInfo>)
+        .def(
+            "merge_chunks_from_same_sourceID",
+            &chunk_assignment::mergeChunksFromSameSourceID);
 
     using namespace chunk_assignment;
 
