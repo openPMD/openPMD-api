@@ -94,6 +94,9 @@ namespace chunk_assignment
     template <typename Chunk_t>
     void mergeChunks(std::vector<Chunk_t> &);
 
+    auto mergeChunksFromSameSourceID(std::vector<WrittenChunkInfo> const &)
+        -> std::map<unsigned int, std::vector<ChunkInfo>>;
+
     struct PartialAssignment
     {
         ChunkTable notAssigned;
