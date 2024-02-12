@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
@@ -26,10 +27,6 @@
 
 namespace openPMD
 {
-namespace internal
-{
-    PatchRecordComponentData::PatchRecordComponentData() = default;
-} // namespace internal
 
 PatchRecordComponent &PatchRecordComponent::setUnitSI(double usi)
 {
@@ -77,19 +74,18 @@ Extent PatchRecordComponent::getExtent() const
 
 PatchRecordComponent::PatchRecordComponent(
     BaseRecord<PatchRecordComponent> const &baseRecord)
-    : BaseRecordComponent(NoInit())
+    : RecordComponent(NoInit())
 {
-    setData(baseRecord.m_patchRecordComponentData);
+    static_cast<RecordComponent &>(*this).operator=(baseRecord);
 }
 
-PatchRecordComponent::PatchRecordComponent() : BaseRecordComponent(NoInit())
+PatchRecordComponent::PatchRecordComponent() : RecordComponent(NoInit())
 {
     setData(std::make_shared<Data_t>());
     setUnitSI(1);
 }
 
-PatchRecordComponent::PatchRecordComponent(NoInit)
-    : BaseRecordComponent(NoInit())
+PatchRecordComponent::PatchRecordComponent(NoInit) : RecordComponent(NoInit())
 {}
 
 void PatchRecordComponent::flush(

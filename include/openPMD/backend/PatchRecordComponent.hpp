@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
@@ -36,41 +37,11 @@
 
 namespace openPMD
 {
-namespace internal
-{
-    class PatchRecordComponentData : public BaseRecordComponentData
-    {
-    public:
-        /**
-         * Chunk reading/writing requests on the contained dataset.
-         */
-        std::queue<IOTask> m_chunks;
-
-        PatchRecordComponentData(PatchRecordComponentData const &) = delete;
-        PatchRecordComponentData(PatchRecordComponentData &&) = delete;
-
-        PatchRecordComponentData &
-        operator=(PatchRecordComponentData const &) = delete;
-        PatchRecordComponentData &
-        operator=(PatchRecordComponentData &&) = delete;
-
-        PatchRecordComponentData();
-
-        void reset() override
-        {
-            BaseRecordComponentData::reset();
-            m_chunks = std::queue<IOTask>();
-        }
-    };
-
-    template <typename, typename>
-    class BaseRecordData;
-} // namespace internal
 
 /**
  * @todo add support for constant patch record components
  */
-class PatchRecordComponent : public BaseRecordComponent
+class PatchRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
@@ -81,7 +52,6 @@ class PatchRecordComponent : public BaseRecordComponent
     friend class ParticlePatches;
     friend class PatchRecord;
     friend class ParticleSpecies;
-    friend class internal::PatchRecordComponentData;
 
 public:
     /**
@@ -95,7 +65,7 @@ public:
 
     PatchRecordComponent &setUnitSI(double);
 
-    virtual PatchRecordComponent &resetDataset(Dataset);
+    PatchRecordComponent &resetDataset(Dataset) override;
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;
@@ -120,7 +90,7 @@ OPENPMD_private
     // clang-format on
 
     void flush(std::string const &, internal::FlushParams const &);
-    virtual void read();
+    void read() override;
 
     /**
      * @brief Check recursively whether this RecordComponent is dirty.
@@ -136,31 +106,8 @@ OPENPMD_private
 OPENPMD_protected
     // clang-format on
 
-    using Data_t = internal::PatchRecordComponentData;
-
-    std::shared_ptr<Data_t> m_patchRecordComponentData;
-
     PatchRecordComponent();
     PatchRecordComponent(NoInit);
-
-    inline Data_t const &get() const
-    {
-        // cannot call this in the const overload
-        // setDatasetDefined(*m_recordComponentData);
-        return *m_patchRecordComponentData;
-    }
-
-    inline Data_t &get()
-    {
-        setDatasetDefined(*m_patchRecordComponentData);
-        return *m_patchRecordComponentData;
-    }
-
-    inline void setData(std::shared_ptr<Data_t> data)
-    {
-        m_patchRecordComponentData = std::move(data);
-        BaseRecordComponent::setData(m_patchRecordComponentData);
-    }
 }; // PatchRecordComponent
 
 template <typename T>
