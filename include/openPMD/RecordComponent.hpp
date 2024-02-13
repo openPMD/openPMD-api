@@ -481,10 +481,11 @@ public:
 
     static constexpr char const *const SCALAR = "\vScalar";
 
-private:
+protected:
     void flush(std::string const &, internal::FlushParams const &);
-    virtual void read();
+    void read(bool require_unit_si);
 
+private:
     /**
      * Internal method to be called by all methods that create an empty dataset.
      *
@@ -535,7 +536,7 @@ OPENPMD_protected
         BaseRecordComponent::setData(m_recordComponentData);
     }
 
-    void readBase();
+    void readBase(bool require_unit_si);
 }; // RecordComponent
 
 } // namespace openPMD

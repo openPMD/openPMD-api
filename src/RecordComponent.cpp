@@ -340,9 +340,9 @@ void RecordComponent::flush(
     }
 }
 
-void RecordComponent::read()
+void RecordComponent::read(bool require_unit_si)
 {
-    readBase();
+    readBase(require_unit_si);
 }
 
 namespace
@@ -367,7 +367,7 @@ namespace
     };
 } // namespace
 
-void RecordComponent::readBase()
+void RecordComponent::readBase(bool require_unit_si)
 {
     using DT = Datatype;
     // auto & rc = get();
@@ -413,22 +413,32 @@ void RecordComponent::readBase()
         written() = true;
     }
 
-    aRead.name = "unitSI";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(*aRead.resource).getOptional<double>();
-        val.has_value())
-        setUnitSI(val.value());
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'unitSI' (expected double, "
-            "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
-
     readAttributes(ReadMode::FullyReread);
+
+    if (require_unit_si)
+    {
+        if (!containsAttribute("unitSI"))
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::NotFound,
+                {},
+                "Attribute unitSI required for record components, not found in "
+                "'" +
+                    myPath().openPMDPath() + "'.");
+        }
+        if (!getAttribute("unitSI").getOptional<double>().has_value())
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Unexpected Attribute datatype for 'unitSI' (expected double, "
+                "found " +
+                    datatypeToString(Attribute(*aRead.resource).dtype) +
+                    ") in '" + myPath().openPMDPath() + "'.");
+        }
+    }
 }
 
 bool RecordComponent::dirtyRecursive() const

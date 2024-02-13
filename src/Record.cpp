@@ -104,7 +104,7 @@ void Record::read()
         /* using operator[] will incorrectly update parent */
         try
         {
-            T_RecordComponent::read();
+            T_RecordComponent::read(/* require_unit_si = */ true);
         }
         catch (error::ReadError const &err)
         {
@@ -128,7 +128,7 @@ void Record::read()
             rc.get().m_isConstant = true;
             try
             {
-                rc.read();
+                rc.read(/* require_unit_si = */ true);
             }
             catch (error::ReadError const &err)
             {
@@ -155,7 +155,7 @@ void Record::read()
             rc.written() = true;
             try
             {
-                rc.read();
+                rc.read(/* require_unit_si = */ true);
             }
             catch (error::ReadError const &err)
             {

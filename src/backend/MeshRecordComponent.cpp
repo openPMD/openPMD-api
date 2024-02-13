@@ -64,7 +64,7 @@ void MeshRecordComponent::read()
             "of any floating point type, found " +
                 datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
-    readBase();
+    readBase(/* require_unit_si = */ true);
 }
 
 void MeshRecordComponent::flush(
