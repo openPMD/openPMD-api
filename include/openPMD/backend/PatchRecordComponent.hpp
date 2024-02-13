@@ -20,10 +20,10 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/ShareRawInternal.hpp"
-#include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/auxiliary/ShareRawInternal.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <memory>
 #include <sstream>
