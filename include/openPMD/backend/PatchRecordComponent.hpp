@@ -89,18 +89,7 @@ public:
 OPENPMD_private
     // clang-format on
 
-    void flush(std::string const &, internal::FlushParams const &);
-    void read() override;
-
-    /**
-     * @brief Check recursively whether this RecordComponent is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
+    using RecordComponent::flush;
 
     // clang-format off
 OPENPMD_protected

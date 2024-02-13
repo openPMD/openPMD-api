@@ -95,7 +95,7 @@ void PatchRecord::read()
         prc.written() = true;
         try
         {
-            prc.read();
+            prc.read(/* require_unit_si = */ false);
         }
         catch (error::ReadError const &err)
         {
