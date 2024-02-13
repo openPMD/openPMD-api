@@ -632,26 +632,4 @@ filterByTemplate(nlohmann::json &defaultVal, nlohmann::json const &positiveMask)
     } // else noop
     return defaultVal;
 }
-
-std::string filterByTemplate(
-    std::string const &defaultValue, std::string const &positiveMask)
-{
-    auto [res, returnFormat] =
-        parseOptions(defaultValue, /* considerFiles = */ false);
-    filterByTemplate(
-        res, parseOptions(positiveMask, /* considerFiles = */ false).config);
-    switch (returnFormat)
-    {
-    case SupportedLanguages::JSON:
-        return res.dump();
-        break;
-    case SupportedLanguages::TOML: {
-        auto asToml = json::jsonToToml(res);
-        std::stringstream sstream;
-        sstream << asToml;
-        return sstream.str();
-    }
-    }
-    throw std::runtime_error("Unreachable!");
-}
 } // namespace openPMD::json

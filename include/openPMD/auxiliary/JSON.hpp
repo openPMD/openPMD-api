@@ -61,8 +61,5 @@ namespace json
      */
     std::string
     merge(std::string const &defaultValue, std::string const &overwrite);
-
-    std::string filterByTemplate(
-        std::string const &defaultValue, std::string const &positiveMask);
 } // namespace json
 } // namespace openPMD
