@@ -30,21 +30,107 @@
 #include <iterator>
 #include <optional>
 #include <stdexcept>
+#include <variant>
 
 namespace openPMD
 {
+
+namespace detail
+{
+    template <typename V>
+    auto CurrentStep::get_variant() -> std::optional<V *>
+    {
+        auto res = std::get_if<V>(this);
+        if (res)
+        {
+            return std::make_optional<V *>(res);
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+
+    template <typename V>
+    auto CurrentStep::get_variant() const -> std::optional<V const *>
+    {
+        auto res = std::get_if<V>(*this);
+        if (res)
+        {
+            return {res};
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+
+    auto CurrentStep::get_iteration_index() const
+        -> std::optional<Iteration::IterationIndex_t const *>
+    {
+        using res_t = std::optional<Iteration::IterationIndex_t const *>;
+        return std::visit(
+            auxiliary::overloaded{
+                [](auto const &) -> res_t { return std::nullopt; },
+                [](During_t const &during) -> res_t {
+                    if (during.iteration_idx.has_value())
+                    {
+                        return std::make_optional<
+                            Iteration::IterationIndex_t const *>(
+                            &*during.iteration_idx);
+                    }
+                    else
+                    {
+                        return std::nullopt;
+                    }
+                }},
+            *this);
+    }
+    auto CurrentStep::get_iteration_index()
+        -> std::optional<Iteration::IterationIndex_t *>
+    {
+        auto res =
+            static_cast<CurrentStep const *>(this)->get_iteration_index();
+        if (res.has_value())
+        {
+            return const_cast<Iteration::IterationIndex_t *>(*res);
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+} // namespace detail
+
 StatefulIterator::SharedData::~SharedData()
 {
-    if (auto IOHandler = series.IOHandler(); currentIteration.has_value() &&
-        IOHandler && IOHandler->m_lastFlushSuccessful)
+    auto IOHandler = series.IOHandler();
+    auto current_iteration = currentIteration();
+    if (IOHandler && current_iteration.has_value() && IOHandler &&
+        IOHandler->m_lastFlushSuccessful)
     {
-        auto lastIterationIndex = currentIteration.value();
+        auto lastIterationIndex = **current_iteration;
+        if (!series.iterations.contains(**current_iteration))
+        {
+            return;
+        }
         auto &lastIteration = series.iterations.at(lastIterationIndex);
         if (!lastIteration.closed())
         {
             lastIteration.close();
         }
     }
+}
+
+auto StatefulIterator::SharedData::currentIteration()
+    -> std::optional<Iteration::IterationIndex_t *>
+{
+    return currentStep.get_iteration_index();
+}
+auto StatefulIterator::SharedData::currentIteration() const
+    -> std::optional<Iteration::IterationIndex_t const *>
+{
+    return currentStep.get_iteration_index();
 }
 
 namespace
@@ -147,19 +233,39 @@ void StatefulIterator::close()
     *m_data = std::nullopt; // turn this into end iterator
 }
 
-auto StatefulIterator::resetCurrentIterationToBegin() -> bool
+auto StatefulIterator::resetCurrentIterationToBegin(
+    size_t num_skipped_iterations) -> void
 {
     auto &data = get();
-    if (data.iterationsInCurrentStep.empty())
-    {
-        data.currentIteration = std::nullopt;
-        return false;
-    }
-    else
-    {
-        data.currentIteration = *data.iterationsInCurrentStep.begin();
-        return true;
-    }
+    data.currentStep.map_during_t(
+        [&](CurrentStep::During_t &during) {
+            if (data.iterationsInCurrentStep.empty())
+            {
+                during.iteration_idx = std::nullopt;
+            }
+            else
+            {
+                during.iteration_idx = *data.iterationsInCurrentStep.begin();
+            }
+        },
+        [&](CurrentStep::AtTheEdge whereAmI)
+            -> std::optional<CurrentStep::variant_t> {
+            switch (whereAmI)
+            {
+            case detail::CurrentStep::AtTheEdge::Begin:
+                if (data.iterationsInCurrentStep.empty())
+                {
+                    return std::nullopt;
+                }
+                // Begin iterating
+                return detail::CurrentStep::During_t{
+                    num_skipped_iterations,
+                    *data.iterationsInCurrentStep.begin()};
+            case detail::CurrentStep::AtTheEdge::End:
+                return std::nullopt;
+            }
+            throw std::runtime_error("Unreachable!");
+        });
 }
 
 auto StatefulIterator::peekCurrentlyOpenIteration() const
@@ -170,13 +276,14 @@ auto StatefulIterator::peekCurrentlyOpenIteration() const
         return std::nullopt;
     }
     auto &s = m_data->value();
-    if (!s.currentIteration.has_value())
+    auto const &maybeCurrentIteration = s.currentIteration();
+    if (!maybeCurrentIteration.has_value())
     {
         return std::nullopt;
     }
     // Iteration &currentIteration =
     // s.series.iterations.at(*s.currentIteration);
-    auto currentIteration = s.series.iterations.find(*s.currentIteration);
+    auto currentIteration = s.series.iterations.find(**maybeCurrentIteration);
     if (currentIteration == s.series.iterations.end())
     {
         return std::nullopt;
@@ -249,47 +356,12 @@ StatefulIterator::StatefulIterator(
     {
 
     case IterationEncoding::fileBased: {
-        if (series.iterations.empty())
-        {
-            this->close();
-            return;
-        }
-        data.iterationsInCurrentStep.reserve(series.iterations.size());
-        std::transform(
-            series.iterations.begin(),
-            series.iterations.end(),
-            std::back_inserter(data.iterationsInCurrentStep),
-            [](auto const &pair) { return pair.first; });
-        auto it = series.iterations.begin();
-        auto end = series.iterations.end();
-        for (; it != end; ++it)
-        {
-            try
-            {
-                it->second.open();
-                break;
-            }
-            catch (error::ReadError const &err)
-            {
-                std::cerr << "[StatefulIterator] Cannot read iteration '"
-                          << it->first
-                          << "' and will skip it due to read error:\n"
-                          << err.what() << std::endl;
-            }
-        }
-        if (it != end)
-        {
-            data.currentIteration = it->first;
-        }
-        else
-        {
-            this->close();
-        }
+        initIteratorFilebased();
         break;
     }
     case IterationEncoding::groupBased:
     case IterationEncoding::variableBased:
-        if (!loopBody({Seek::InitNonFileBased}).has_value())
+        if (!loopBody().has_value())
         {
             this->close();
         }
@@ -300,20 +372,31 @@ StatefulIterator::StatefulIterator(
 std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
 {
     auto &data = get();
+    auto maybeCurrentIteration =
+        data.currentStep.get_variant<CurrentStep::During_t>();
+
+    if (!maybeCurrentIteration.has_value())
+    {
+        return std::nullopt;
+    }
+    CurrentStep::During_t &currentIteration = **maybeCurrentIteration;
+
     auto no_result = [&]() {
-        data.currentIteration = std::nullopt;
+        currentIteration.iteration_idx = std::nullopt;
         return std::nullopt;
     };
 
-    if (!data.currentIteration.has_value())
+    if (!currentIteration.iteration_idx.has_value())
     {
         return no_result();
     }
 
+    auto &current_iteration_idx = *currentIteration.iteration_idx;
+
     if (auto it = std::find(
             data.iterationsInCurrentStep.begin(),
             data.iterationsInCurrentStep.end(),
-            *data.currentIteration);
+            current_iteration_idx);
         it != data.iterationsInCurrentStep.end())
     {
         ++it;
@@ -321,7 +404,7 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
         {
             return no_result();
         }
-        data.currentIteration = *it;
+        current_iteration_idx = *it;
     }
     else
     {
@@ -332,12 +415,12 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
 
     try
     {
-        series.iterations.at(*data.currentIteration).open();
+        series.iterations.at(current_iteration_idx).open();
     }
     catch (error::ReadError const &err)
     {
         std::cerr << "[StatefulIterator] Cannot read iteration '"
-                  << *data.currentIteration
+                  << *maybeCurrentIteration
                   << "' and will skip it due to read error:\n"
                   << err.what() << std::endl;
         return nextIterationInStep();
@@ -346,16 +429,16 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     return {this};
 }
 
-std::optional<StatefulIterator *> StatefulIterator::nextStep(Seek const &seek)
+std::optional<StatefulIterator *>
+StatefulIterator::nextStep(size_t recursion_depth)
 {
     auto &data = get();
     // since we are in group-based iteration layout, it does not
     // matter which iteration we begin a step upon
     AdvanceStatus status{};
-    Iteration::BeginStepStatus::AvailableIterations_t availableIterations;
     try
     {
-        std::tie(status, availableIterations) = Iteration::beginStep(
+        std::tie(status, data.iterationsInCurrentStep) = Iteration::beginStep(
             {},
             data.series,
             /* reread = */ reread(data.parsePreference),
@@ -367,7 +450,7 @@ std::optional<StatefulIterator *> StatefulIterator::nextStep(Seek const &seek)
                      "below, will skip it.\n"
                   << err.what() << std::endl;
         data.series.advance(AdvanceMode::ENDSTEP);
-        return nextStep(seek);
+        return nextStep(recursion_depth + 1);
     }
 
     bool close = [&]() {
@@ -381,9 +464,9 @@ std::optional<StatefulIterator *> StatefulIterator::nextStep(Seek const &seek)
         case AdvanceStatus::RANDOMACCESS:
             return std::visit(
                 auxiliary::overloaded{
-                    [](Seek::InitNonFileBased_t const &) { return false; },
-                    [](Seek::Next_t const &) { return true; }},
-                seek);
+                    [](CurrentStep::Before_t const &) { return false; },
+                    [](auto const &) { return true; }},
+                data.currentStep);
         }
         throw std::runtime_error("Unreachable!");
     }();
@@ -394,28 +477,29 @@ std::optional<StatefulIterator *> StatefulIterator::nextStep(Seek const &seek)
     }
     else
     {
-        data.iterationsInCurrentStep = availableIterations;
-        resetCurrentIterationToBegin();
+        resetCurrentIterationToBegin(recursion_depth);
     }
     return {this};
 }
 
-std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
+std::optional<StatefulIterator *> StatefulIterator::loopBody()
 {
     auto &data = get();
     Series &series = data.series;
     auto &iterations = series.iterations;
 
-    /*
-     * Might not be present because parsing might have failed in previous step
-     */
-    if (data.currentIteration.has_value() &&
-        iterations.contains(*data.currentIteration))
-    {
-        auto &currentIteration = iterations.at(*data.currentIteration);
-        if (!currentIteration.closed())
+    { /*
+       * Might not be present because parsing might have failed in previous step
+       */
+        auto maybe_current_iteration = data.currentStep.get_iteration_index();
+        if (maybe_current_iteration.has_value() &&
+            iterations.contains(**maybe_current_iteration))
         {
-            currentIteration.close();
+            auto &currentIteration = iterations.at(**maybe_current_iteration);
+            if (!currentIteration.closed())
+            {
+                currentIteration.close();
+            }
         }
     }
 
@@ -431,36 +515,34 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
          * This might happen when iterations from the step are ignored, e.g.
          * a duplicate iteration has been written by Append mode.
          */
-        auto currentIterationIndex = data.currentIteration;
-        if (!currentIterationIndex.has_value())
+        auto maybe_current_iteration = data.currentStep.get_iteration_index();
+        if (!maybe_current_iteration.has_value())
         {
             series.advance(AdvanceMode::ENDSTEP);
             return std::nullopt;
         }
+        auto &current_iteration = **maybe_current_iteration;
         // If we had the iteration already, then it's either not there at all
         // (because old iterations are deleted in linear access mode),
         // or it's still there but closed in random-access mode
-        auto index = currentIterationIndex.value();
 
-        if (iterations.contains(index))
+        if (iterations.contains(current_iteration))
         {
-            auto iteration = iterations.at(index);
+            auto iteration = iterations.at(current_iteration);
             switch (iteration.get().m_closed)
             {
             case internal::CloseStatus::ParseAccessDeferred:
                 try
                 {
-                    iterations.at(index).open();
+                    iterations.at(current_iteration).open();
                     [[fallthrough]];
                 }
                 catch (error::ReadError const &err)
                 {
-                    std::cerr << "Cannot read iteration '"
-                              << currentIterationIndex.value()
+                    std::cerr << "Cannot read iteration '" << current_iteration
                               << "' and will skip it due to read error:\n"
                               << err.what() << std::endl;
-                    option.value()->deactivateDeadIteration(
-                        currentIterationIndex.value());
+                    option.value()->deactivateDeadIteration(current_iteration);
                     return std::nullopt;
                 }
             case internal::CloseStatus::Open:
@@ -483,17 +565,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
         }
     };
 
-    using res_t = std::optional<StatefulIterator *>;
-    auto optionallyAStep = std::visit(
-        auxiliary::overloaded{
-            [](Seek::InitNonFileBased_t const &) -> res_t {
-                return std::nullopt;
-            },
-            [this](Seek::Next_t const &) -> res_t {
-                return nextIterationInStep();
-            }},
-        seek);
-
+    auto optionallyAStep = nextIterationInStep();
     if (optionallyAStep.has_value())
     {
         return guardReturn(optionallyAStep);
@@ -509,8 +581,49 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
         return {this};
     }
 
-    auto option = nextStep(seek);
+    auto option = nextStep(/* recursion_depth = */ 0);
     return guardReturn(option);
+}
+
+void StatefulIterator::initIteratorFilebased()
+{
+    auto &data = get();
+    auto &series = data.series;
+    if (series.iterations.empty())
+    {
+        this->close();
+        return;
+    }
+    data.iterationsInCurrentStep.reserve(series.iterations.size());
+    std::transform(
+        series.iterations.begin(),
+        series.iterations.end(),
+        std::back_inserter(data.iterationsInCurrentStep),
+        [](auto const &pair) { return pair.first; });
+    auto it = series.iterations.begin();
+    auto end = series.iterations.end();
+    for (; it != end; ++it)
+    {
+        try
+        {
+            it->second.open();
+            break;
+        }
+        catch (error::ReadError const &err)
+        {
+            std::cerr << "[StatefulIterator] Cannot read iteration '"
+                      << it->first << "' and will skip it due to read error:\n"
+                      << err.what() << std::endl;
+        }
+    }
+    if (it != end)
+    {
+        data.currentStep = CurrentStep::During_t{0, it->first};
+    }
+    else
+    {
+        this->close();
+    }
 }
 
 void StatefulIterator::deactivateDeadIteration(iteration_index_t index)
@@ -541,7 +654,17 @@ void StatefulIterator::deactivateDeadIteration(iteration_index_t index)
 StatefulIterator &StatefulIterator::operator++()
 {
     auto &data = get();
-    auto oldIterationIndex = data.currentIteration;
+    auto oldIterationIndex = [&]() -> std::optional<iteration_index_t> {
+        auto res = data.currentIteration();
+        if (res.has_value())
+        {
+            return **res;
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }();
     std::optional<StatefulIterator *> res;
     /*
      * loopBody() might return an empty option to indicate a skipped iteration.
@@ -552,15 +675,15 @@ StatefulIterator &StatefulIterator::operator++()
      */
     do
     {
-        res = loopBody({Seek::Next});
+        res = loopBody();
     } while (!res.has_value());
 
     auto resvalue = res.value();
     if (*resvalue != end())
     {
         auto &series = data.series;
-        auto index = data.currentIteration;
-        auto &iteration = series.iterations.at(index.value());
+        auto index = data.currentIteration();
+        auto &iteration = series.iterations.at(*index.value());
         iteration.setStepStatus(StepStatus::DuringStep);
 
         if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
@@ -587,12 +710,12 @@ StatefulIterator &StatefulIterator::operator++()
 auto StatefulIterator::operator*() const -> value_type const &
 {
     auto &data = get();
-    if (data.currentIteration.has_value())
+    if (auto cur = data.currentIteration(); cur.has_value())
     {
 
         auto iterator = static_cast<Series::IterationsContainer_t const &>(
                             data.series.iterations)
-                            .find(*data.currentIteration);
+                            .find(**cur);
         return iterator.operator*();
     }
     else
@@ -629,7 +752,7 @@ bool StatefulIterator::operator==(StatefulIterator const &other) const
     return
         // either both iterators are filled
         (this->m_data->has_value() && other.m_data->has_value() &&
-         (this->get().currentIteration == other.get().currentIteration)) ||
+         (this->get().currentIteration() == other.get().currentIteration())) ||
         // or both are empty
         (!this->m_data->has_value() && !other.m_data->has_value());
 }
