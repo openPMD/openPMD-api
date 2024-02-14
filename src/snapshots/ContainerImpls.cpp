@@ -167,7 +167,22 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
                 lastIteration_v->second.close(); // continue below
             }
         }
-        s.currentIteration = key;
+        s.currentStep.map_during_t(
+            [&](auto &during) {
+                ++during.idx;
+                during.iteration_idx = key;
+            },
+            [&](detail::CurrentStep::AtTheEdge whereAmI) {
+                switch (whereAmI)
+                {
+                case detail::CurrentStep::AtTheEdge::Begin:
+                    return detail::CurrentStep::During_t{0, key};
+                case detail::CurrentStep::AtTheEdge::End:
+                    throw error::WrongAPIUsage(
+                        "Creating a new step on a Series that is closed.");
+                }
+                throw std::runtime_error("Unreachable!");
+            });
         if (std::find(
                 s.iterationsInCurrentStep.begin(),
                 s.iterationsInCurrentStep.end(),
