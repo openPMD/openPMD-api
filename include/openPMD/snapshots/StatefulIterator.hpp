@@ -23,6 +23,8 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/Streaming.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
 
@@ -41,21 +43,58 @@ namespace internal
 
 namespace detail
 {
-    namespace seek_types
+    namespace step_status_types
     {
-        struct InitNonFileBased_t
+        struct Before_t
         {};
-        struct Next_t
+        struct During_t
+        {
+            size_t idx;
+            std::optional<Iteration::IterationIndex_t> iteration_idx;
+        };
+        struct After_t
         {};
-        using seek_impl = std::variant<InitNonFileBased_t, Next_t>;
-    } // namespace seek_types
-    struct Seek : seek_types::seek_impl
+    } // namespace step_status_types
+    struct CurrentStep
+        : std::variant<
+              step_status_types::Before_t,
+              step_status_types::During_t,
+              step_status_types::After_t>
     {
-        using InitNonFileBased_t = seek_types::InitNonFileBased_t;
-        using Next_t = seek_types::Next_t;
+        using Before_t = step_status_types::Before_t;
+        constexpr static Before_t Before{};
+        using During_t = step_status_types::During_t;
+        constexpr static During_t During{};
+        using After_t = step_status_types::After_t;
+        constexpr static After_t After{};
 
-        constexpr static InitNonFileBased_t InitNonFileBased{};
-        constexpr static Next_t Next{};
+        using variant_t = std::variant<
+            step_status_types::Before_t,
+            step_status_types::During_t,
+            step_status_types::After_t>;
+
+        using variant_t::operator=;
+
+        template <typename V>
+        auto get_variant() -> std::optional<V *>;
+        template <typename V>
+        auto get_variant() const -> std::optional<V const *>;
+
+        auto get_iteration_index() const
+            -> std::optional<Iteration::IterationIndex_t const *>;
+        auto get_iteration_index()
+            -> std::optional<Iteration::IterationIndex_t *>;
+
+        enum class AtTheEdge : bool
+        {
+            Begin,
+            End
+        };
+
+        template <typename F, typename G>
+        auto map_during_t(F &&map, G &&create_new);
+        template <typename F>
+        auto map_during_t(F &&map);
     };
 } // namespace detail
 
@@ -72,6 +111,8 @@ class StatefulIterator
 
     using maybe_series_t = std::optional<Series>;
 
+    using CurrentStep = detail::CurrentStep;
+
     struct SharedData
     {
         SharedData() = default;
@@ -84,8 +125,7 @@ class StatefulIterator
 
         Series series;
         std::vector<iteration_index_t> iterationsInCurrentStep;
-        // nullopt <-> currently out of step
-        std::optional<iteration_index_t> currentIteration{};
+        CurrentStep currentStep = {CurrentStep::Before};
         std::optional<internal::ParsePreference> parsePreference;
         /*
          * Necessary because in the old ADIOS2 schema, old iterations' metadata
@@ -93,6 +133,10 @@ class StatefulIterator
          * are still there and the iterations can be parsed again.
          */
         std::set<Iteration::IterationIndex_t> ignoreIterations;
+
+        auto currentIteration() -> std::optional<Iteration::IterationIndex_t *>;
+        auto currentIteration() const
+            -> std::optional<Iteration::IterationIndex_t const *>;
     };
 
     /*
@@ -110,7 +154,6 @@ public:
     using value_type =
         typename Container<Iteration, Iteration::IterationIndex_t>::value_type;
     using typename parent_t ::difference_type;
-    using Seek = detail::Seek;
     //! construct the end() iterator
     explicit StatefulIterator();
 
@@ -160,9 +203,11 @@ private:
      * the /data/snapshot attribute, this helps figuring out which iteration
      * is now active. Hence, recursion_depth.
      */
-    std::optional<StatefulIterator *> nextStep(Seek const &);
+    std::optional<StatefulIterator *> nextStep(size_t recursion_depth);
 
-    std::optional<StatefulIterator *> loopBody(Seek const &);
+    std::optional<StatefulIterator *> loopBody();
+
+    void initIteratorFilebased();
 
     void deactivateDeadIteration(iteration_index_t);
 
@@ -170,7 +215,7 @@ private:
 
     void close();
 
-    auto resetCurrentIterationToBegin() -> bool;
+    auto resetCurrentIterationToBegin(size_t num_skipped_iterations) -> void;
     auto peekCurrentlyOpenIteration() const
         -> std::optional<value_type const *>;
     auto peekCurrentlyOpenIteration() -> std::optional<value_type *>;
@@ -231,3 +276,40 @@ public:
     auto end() -> iterator_t;
 };
 } // namespace openPMD
+
+// Template definitions
+
+namespace openPMD::detail
+{
+template <typename F, typename G>
+auto CurrentStep::map_during_t(F &&map, G &&create_new)
+{
+    std::visit(
+        auxiliary::overloaded{
+            [&](During_t &during) { std::forward<F>(map)(during); },
+            [&](Before_t const &) {
+                std::optional<variant_t> res =
+                    std::forward<G>(create_new)(AtTheEdge::Begin);
+                if (res.has_value())
+                {
+                    this->swap(*res);
+                }
+            },
+            [&](After_t const &) {
+                std::optional<variant_t> res =
+                    std::forward<G>(create_new)(AtTheEdge::End);
+                if (res.has_value())
+                {
+                    this->swap(*res);
+                }
+            }},
+        *this);
+}
+
+template <typename F>
+auto CurrentStep::map_during_t(F &&map)
+{
+    map_during_t(
+        std::forward<F>(map), [](auto const &) { return std::nullopt; });
+}
+} // namespace openPMD::detail
