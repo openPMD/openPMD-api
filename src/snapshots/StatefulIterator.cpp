@@ -547,12 +547,12 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
                 [[fallthrough]];
             case internal::CloseStatus::Open:
                 return option;
-            case internal::CloseStatus::ClosedInBackend:
+            case internal::CloseStatus::Closed:
+                std::cout << "TODO: NEED A BETTER LOGIC FOR THIS" << std::endl;
                 // we had this iteration already, skip it
                 iteration.endStep();
                 return std::nullopt; // empty, go into next iteration
             case internal::CloseStatus::ClosedInFrontend:
-            case internal::CloseStatus::ClosedTemporarily:
                 throw error::Internal("Next found iteration is closed?");
             }
             throw std::runtime_error("Unreachable!");
