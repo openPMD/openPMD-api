@@ -844,7 +844,9 @@ if(openPMD_BUILD_TESTING)
     endif()
 
     foreach(testname ${openPMD_TEST_NAMES})
-        add_executable(${testname}Tests test/${testname}Test.cpp)
+        file(GLOB ADDITIONAL_SOURCE_FILES test/Files_${testname}/*.cpp)
+        add_executable(${testname}Tests test/${testname}Test.cpp ${ADDITIONAL_SOURCE_FILES})
+        target_include_directories(${testname}Tests PRIVATE test/Files_${testname}/)
         openpmd_cxx_required(${testname}Tests)
         set_target_properties(${testname}Tests PROPERTIES
             COMPILE_PDB_NAME ${testname}Tests

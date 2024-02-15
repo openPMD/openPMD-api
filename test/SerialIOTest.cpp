@@ -6,6 +6,8 @@
 #define OPENPMD_protected public:
 #endif
 
+#include "SerialIOTests.hpp"
+
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -2152,6 +2154,9 @@ inline void fileBased_write_test(const std::string &backend)
             Access::READ_ONLY};
         helper::listSeries(list);
     }
+
+    filebased_write_test::close_and_reopen_iterations(
+        "../samples/subdir/serial_fileBased_write%T." + backend);
 }
 
 TEST_CASE("fileBased_write_test", "[serial]")
