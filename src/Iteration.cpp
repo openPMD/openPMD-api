@@ -99,21 +99,8 @@ Iteration &Iteration::close(bool _flush)
     case CloseStatus::ClosedInFrontend:
         it.m_closed = CloseStatus::ClosedInFrontend;
         break;
-    case CloseStatus::ClosedTemporarily:
-        // should we bother to reopen?
-        if (dirtyRecursive())
-        {
-            // let's reopen
-            it.m_closed = CloseStatus::ClosedInFrontend;
-        }
-        else
-        {
-            // don't reopen
-            it.m_closed = CloseStatus::ClosedInBackend;
-        }
-        break;
     case CloseStatus::ParseAccessDeferred:
-    case CloseStatus::ClosedInBackend:
+    case CloseStatus::Closed:
         // just keep it like it is
         // (this means that closing an iteration that has not been parsed
         // yet keeps it re-openable)
@@ -172,15 +159,14 @@ bool Iteration::closed() const
     {
     case CloseStatus::ParseAccessDeferred:
     case CloseStatus::Open:
+        return false;
     /*
      * Temporarily closing a file is something that the openPMD API
      * does for optimization purposes.
      * Logically to the user, it is still open.
      */
-    case CloseStatus::ClosedTemporarily:
-        return false;
     case CloseStatus::ClosedInFrontend:
-    case CloseStatus::ClosedInBackend:
+    case CloseStatus::Closed:
         return true;
     }
     throw std::runtime_error("Unreachable!");

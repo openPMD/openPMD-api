@@ -1341,8 +1341,7 @@ void Series::flushFileBased(
             {
                 Parameter<Operation::CLOSE_FILE> fClose;
                 IOHandler()->enqueue(IOTask(&it->second, std::move(fClose)));
-                it->second.get().m_closed =
-                    internal::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::Closed;
             }
         }
 
@@ -1401,8 +1400,7 @@ void Series::flushFileBased(
             {
                 Parameter<Operation::CLOSE_FILE> fClose;
                 IOHandler()->enqueue(IOTask(&it->second, std::move(fClose)));
-                it->second.get().m_closed =
-                    internal::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::Closed;
             }
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
@@ -1453,8 +1451,7 @@ void Series::flushGorVBased(
                 internal::CloseStatus::ClosedInFrontend)
             {
                 // the iteration has no dedicated file in group-based mode
-                it->second.get().m_closed =
-                    internal::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::Closed;
             }
         }
 
@@ -1532,8 +1529,7 @@ void Series::flushGorVBased(
                 internal::CloseStatus::ClosedInFrontend)
             {
                 // the iteration has no dedicated file in group-based mode
-                it->second.get().m_closed =
-                    internal::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::Closed;
             }
         }
 
@@ -1639,7 +1635,7 @@ void Series::readFileBased()
         Parameter<Operation::CLOSE_FILE> fClose;
         iteration.IOHandler()->enqueue(IOTask(&iteration, fClose));
         iteration.IOHandler()->flush(internal::defaultFlushParams);
-        iteration.get().m_closed = internal::CloseStatus::ClosedTemporarily;
+        iteration.get().m_closed = internal::CloseStatus::Closed;
         return {};
     };
     std::vector<decltype(Series::iterations)::key_type> unparseableIterations;
@@ -2395,10 +2391,10 @@ AdvanceStatus Series::advance(
     {
         // Series::flush() would normally turn a `ClosedInFrontend` into
         // a `ClosedInBackend`. Do that manually.
-        itData.m_closed = internal::CloseStatus::ClosedInBackend;
+        itData.m_closed = internal::CloseStatus::Closed;
     }
     else if (
-        oldCloseStatus == internal::CloseStatus::ClosedInBackend &&
+        oldCloseStatus == internal::CloseStatus::Closed &&
         series.m_iterationEncoding == IterationEncoding::fileBased)
     {
         /*
@@ -2406,7 +2402,7 @@ AdvanceStatus Series::advance(
          * opening an iteration's file by beginning a step on it.
          * So, return now.
          */
-        iteration.get().m_closed = internal::CloseStatus::ClosedInBackend;
+        iteration.get().m_closed = internal::CloseStatus::Closed;
         return AdvanceStatus::OK;
     }
 
@@ -2416,7 +2412,7 @@ AdvanceStatus Series::advance(
     }
 
     Parameter<Operation::ADVANCE> param;
-    if (itData.m_closed == internal::CloseStatus::ClosedTemporarily &&
+    if (itData.m_closed == internal::CloseStatus::Closed &&
         series.m_iterationEncoding == IterationEncoding::fileBased)
     {
         /*
@@ -2447,12 +2443,12 @@ AdvanceStatus Series::advance(
         switch (series.m_iterationEncoding)
         {
         case IE::fileBased: {
-            if (itData.m_closed != internal::CloseStatus::ClosedTemporarily)
+            if (itData.m_closed != internal::CloseStatus::Closed)
             {
                 Parameter<Operation::CLOSE_FILE> fClose;
                 IOHandler()->enqueue(IOTask(&iteration, std::move(fClose)));
             }
-            itData.m_closed = internal::CloseStatus::ClosedInBackend;
+            itData.m_closed = internal::CloseStatus::Closed;
             break;
         }
         case IE::groupBased: {
@@ -2462,7 +2458,7 @@ AdvanceStatus Series::advance(
             // In group-based iteration layout, files are
             // not closed on a per-iteration basis
             // We will treat it as such nonetheless
-            itData.m_closed = internal::CloseStatus::ClosedInBackend;
+            itData.m_closed = internal::CloseStatus::Closed;
             break;
         }
         case IE::variableBased: // no action necessary
@@ -2586,7 +2582,7 @@ auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
         return IterationOpened::RemainsClosed;
     }
     bool const dirtyRecursive = iteration.dirtyRecursive();
-    if (iteration.get().m_closed == internal::CloseStatus::ClosedInBackend)
+    if (iteration.get().m_closed == internal::CloseStatus::Closed)
     {
         // file corresponding with the iteration has previously been
         // closed and fully flushed
@@ -2597,13 +2593,10 @@ auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
                 "[Series] Closed iteration has not been written. This "
                 "is an internal error.");
         }
-        if (dirtyRecursive)
+        if (!dirtyRecursive)
         {
-            throw std::runtime_error(
-                "[Series] Detected illegal access to iteration that "
-                "has been closed previously.");
+            return IterationOpened::RemainsClosed;
         }
-        return IterationOpened::RemainsClosed;
     }
 
     switch (iterationEncoding())
@@ -2642,13 +2635,9 @@ void Series::openIteration(IterationIndex_t index, Iteration iteration)
     switch (oldStatus)
     {
         using CL = internal::CloseStatus;
-    case CL::ClosedInBackend:
-        throw std::runtime_error(
-            "[Series] Detected illegal access to iteration that "
-            "has been closed previously.");
+    case CL::Closed:
     case CL::ParseAccessDeferred:
     case CL::Open:
-    case CL::ClosedTemporarily:
         iteration.get().m_closed = CL::Open;
         break;
     case CL::ClosedInFrontend:
