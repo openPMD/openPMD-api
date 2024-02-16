@@ -383,7 +383,7 @@ StatefulIterator::StatefulIterator(
     }
     case IterationEncoding::groupBased:
     case IterationEncoding::variableBased:
-        if (!loopBody().has_value())
+        if (!loopBody({Seek::Next}).has_value())
         {
             this->assert_end_iterator();
         }
@@ -451,6 +451,34 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     return {this};
 }
 
+auto StatefulIterator::skipToIterationInStep(Iteration::IterationIndex_t idx)
+    -> std::optional<StatefulIterator *>
+{
+    auto &data = get();
+    auto maybeCurrentIteration =
+        data.currentStep.get_variant<CurrentStep::During_t>();
+
+    if (!maybeCurrentIteration.has_value())
+    {
+        return std::nullopt;
+    }
+    CurrentStep::During_t &currentIteration = **maybeCurrentIteration;
+
+    if (std::find(
+            data.iterationsInCurrentStep.begin(),
+            data.iterationsInCurrentStep.end(),
+            idx) == data.iterationsInCurrentStep.end())
+    {
+        return std::nullopt;
+    }
+
+    // This is called upon user request, i.e. ReadErrors should be caught in
+    // user code
+    data.series.iterations.at(idx).open();
+    currentIteration.iteration_idx = idx;
+    return {this};
+}
+
 std::optional<StatefulIterator *>
 StatefulIterator::nextStep(size_t recursion_depth)
 {
@@ -504,7 +532,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
     return {this};
 }
 
-std::optional<StatefulIterator *> StatefulIterator::loopBody()
+std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
 {
     auto &data = get();
     Series &series = data.series;
@@ -589,10 +617,19 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
         }
     };
 
-    auto optionallyAStep = nextIterationInStep();
-    if (optionallyAStep.has_value())
     {
-        return guardReturn(optionallyAStep);
+        std::optional<StatefulIterator *> optionallyAStep = std::visit(
+            auxiliary::overloaded{
+                [&](Seek::Next_t) { return nextIterationInStep(); },
+                [&](Seek::Seek_Iteration_t const &skip_to_iteration) {
+                    return skipToIterationInStep(
+                        skip_to_iteration.iteration_idx);
+                }},
+            seek);
+        if (optionallyAStep.has_value())
+        {
+            return guardReturn(optionallyAStep);
+        }
     }
 
     // The currently active iterations have been exhausted.
@@ -605,7 +642,17 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
         return {this};
     }
 
-    auto option = nextStep(/* recursion_depth = */ 0);
+    auto option = std::visit(
+        auxiliary::overloaded{
+            [&](Seek::Next_t) { return nextStep(/* recursion_depth = */ 0); },
+            [](Seek::Seek_Iteration_t const &skip_to_iteration)
+                -> std::optional<StatefulIterator *> {
+                throw std::runtime_error(
+                    "[StatefulIterator] Skipping to iteration " +
+                    std::to_string(skip_to_iteration.iteration_idx) +
+                    "from another step not supported yet");
+            }},
+        seek);
     return guardReturn(option);
 }
 
@@ -677,6 +724,11 @@ void StatefulIterator::deactivateDeadIteration(iteration_index_t index)
 
 StatefulIterator &StatefulIterator::operator++()
 {
+    return *seek({Seek::Next});
+}
+
+auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator *
+{
     auto &data = get();
     auto oldIterationIndex = [&]() -> std::optional<iteration_index_t> {
         auto res = data.currentIteration();
@@ -699,7 +751,7 @@ StatefulIterator &StatefulIterator::operator++()
      */
     do
     {
-        res = loopBody();
+        res = loopBody(seek);
     } while (!res.has_value());
 
     auto resvalue = res.value();
@@ -728,7 +780,7 @@ StatefulIterator &StatefulIterator::operator++()
             data.ignoreIterations.emplace(*oldIterationIndex);
         }
     }
-    return *resvalue;
+    return resvalue;
 }
 
 auto StatefulIterator::operator*() const -> value_type const &

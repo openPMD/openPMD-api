@@ -32,6 +32,7 @@
 #include <iostream>
 #include <optional>
 #include <set>
+#include <variant>
 #include <vector>
 
 namespace openPMD
@@ -96,6 +97,24 @@ namespace detail
         template <typename F>
         auto map_during_t(F &&map);
     };
+
+    namespace seek_types
+    {
+        struct Next_t
+        {};
+        struct Seek_Iteration_t
+        {
+            Iteration::IterationIndex_t iteration_idx;
+        };
+    } // namespace seek_types
+
+    struct Seek : std::variant<seek_types::Next_t, seek_types::Seek_Iteration_t>
+    {
+        using Next_t = seek_types::Next_t;
+        using Seek_Iteration_t = seek_types::Seek_Iteration_t;
+
+        static constexpr Next_t const Next{};
+    };
 } // namespace detail
 
 class StatefulIterator
@@ -156,6 +175,8 @@ public:
     using value_type =
         typename Container<Iteration, Iteration::IterationIndex_t>::value_type;
     using typename parent_t ::difference_type;
+    using Seek = detail::Seek;
+
     //! construct the end() iterator
     explicit StatefulIterator();
 
@@ -203,8 +224,12 @@ public:
 
     operator bool() const;
 
+    // Custom non-iterator methods
+    auto seek(Seek const &) -> StatefulIterator *;
+
 private:
     std::optional<StatefulIterator *> nextIterationInStep();
+    std::optional<StatefulIterator *> skipToIterationInStep(iteration_index_t);
 
     /*
      * When a step cannot successfully be opened, the method nextStep() calls
@@ -218,7 +243,7 @@ private:
      */
     std::optional<StatefulIterator *> nextStep(size_t recursion_depth);
 
-    std::optional<StatefulIterator *> loopBody();
+    std::optional<StatefulIterator *> loopBody(Seek const &);
 
     void initIteratorFilebased();
 
