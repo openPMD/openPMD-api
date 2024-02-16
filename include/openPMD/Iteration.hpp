@@ -347,11 +347,8 @@ private:
      * Useful in group-based iteration encoding where the Iteration will only
      * be known after opening the step.
      */
-    static BeginStepStatus beginStep(
-        std::optional<Iteration> thisObject,
-        Series &series,
-        bool reread,
-        std::set<IterationIndex_t> const &ignoreIterations = {});
+    static BeginStepStatus
+    beginStep(std::optional<Iteration> thisObject, Series &series, bool reread);
 
     /**
      * @brief End an IO step on the IO file (or file-like object)

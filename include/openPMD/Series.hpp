@@ -740,7 +740,8 @@ OPENPMD_private
         bool flushIOHandler = true);
     void flushMeshesPath();
     void flushParticlesPath();
-    void readFileBased();
+    void readFileBased(
+        std::optional<IterationIndex_t> read_only_this_single_iteration);
     void readOneIterationFileBased(std::string const &filePath);
     /**
      * Note on re-parsing of a Series:
@@ -758,7 +759,7 @@ OPENPMD_private
     std::vector<IterationIndex_t> readGorVBased(
         bool do_always_throw_errors,
         bool init,
-        std::set<IterationIndex_t> const &ignoreIterations = {});
+        std::optional<IterationIndex_t> read_only_this_single_iteration);
     void readBase();
     std::string iterationFilename(IterationIndex_t i);
 
