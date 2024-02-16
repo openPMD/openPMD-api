@@ -4,9 +4,13 @@ namespace filebased_write_test
 {
 using namespace openPMD;
 
-void close_and_reopen_iterations(const std::string &filename)
+void close_and_reopen_iterations(
+    const std::string &filename,
+    openPMD::Access access,
+    std::string const &json_config,
+    bool need_to_explitly_open_iterations)
 {
-    Series list(filename, Access::READ_LINEAR);
+    Series list(filename, access, json_config);
 
     auto test_read = [](Iteration &iteration) {
         auto component = iteration.particles["e"]["position"]["x"];
@@ -39,6 +43,10 @@ void close_and_reopen_iterations(const std::string &filename)
     for (auto &[idx, iteration] : list.snapshots())
     {
         std::cout << "Seeing iteration " << idx << std::endl;
+        if (need_to_explitly_open_iterations)
+        {
+            iteration.open();
+        }
         if (iteration.particles.contains("e"))
         {
             test_read(iteration);
@@ -47,16 +55,36 @@ void close_and_reopen_iterations(const std::string &filename)
         iteration.close();
     }
     std::cout << "Trying to read iteration 3 out of line" << std::endl;
+    if (need_to_explitly_open_iterations)
+    {
+        list.snapshots()[3].open();
+    }
     test_read(list.snapshots()[3]);
 
     std::cout << "----------\nGoing again\n----------" << std::endl;
     for (auto &[idx, iteration] : list.snapshots())
     {
         std::cout << "Seeing iteration " << idx << std::endl;
+        if (need_to_explitly_open_iterations)
+        {
+            iteration.open();
+        }
         if (iteration.particles.contains("e"))
         {
             test_read(iteration);
         }
     }
+}
+
+void close_and_reopen_iterations(std::string const &filename)
+{
+    close_and_reopen_iterations(
+        filename, Access::READ_LINEAR, "defer_iteration_parsing=false", false);
+    close_and_reopen_iterations(
+        filename, Access::READ_LINEAR, "defer_iteration_parsing=true", false);
+    close_and_reopen_iterations(
+        filename, Access::READ_ONLY, "defer_iteration_parsing=false", false);
+    close_and_reopen_iterations(
+        filename, Access::READ_ONLY, "defer_iteration_parsing=true", true);
 }
 } // namespace filebased_write_test
