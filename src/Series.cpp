@@ -1140,10 +1140,13 @@ Given file pattern: ')END"
         try
         {
             if (input->iterationEncoding == IterationEncoding::fileBased)
-                readFileBased();
+                readFileBased(
+                    /* read_only_this_single_iteration = */ std::nullopt);
             else
                 readGorVBased(
-                    /* do_always_throw_errors = */ false, /* init = */ true);
+                    /* do_always_throw_errors = */ false,
+                    /* init = */ true,
+                    /* read_only_this_single_iteration = */ std::nullopt);
 
             if (series.iterations.empty())
             {
@@ -1551,7 +1554,8 @@ void Series::flushParticlesPath()
     IOHandler()->enqueue(IOTask(this, aWrite));
 }
 
-void Series::readFileBased()
+void Series::readFileBased(
+    std::optional<IterationIndex_t> read_only_this_single_iteration)
 {
     auto &series = get();
     Parameter<Operation::OPEN_FILE> fOpen;
@@ -1581,8 +1585,14 @@ void Series::readFileBased()
         isPartOfSeries,
         IOHandler()->directory,
         // foreach found file with `filename` and `index`:
-        [&series](std::string const &filename, Match const &match) {
+        [&series, &read_only_this_single_iteration](
+            std::string const &filename, Match const &match) {
             auto index = match.iteration;
+            if (read_only_this_single_iteration.has_value() &&
+                *read_only_this_single_iteration != index)
+            {
+                return;
+            }
             Iteration &i = series.iterations[index];
             i.deferParseAccess(
                 {std::to_string(index),
@@ -1639,6 +1649,11 @@ void Series::readFileBased()
         std::optional<error::ReadError> forwardFirstError;
         for (auto &pair : series.iterations)
         {
+            if (read_only_this_single_iteration.has_value() &&
+                *read_only_this_single_iteration != pair.first)
+            {
+                continue;
+            }
             if (auto error = readIterationEagerly(pair.second); error)
             {
                 std::cerr << "Cannot read iteration '" << pair.first
@@ -1688,6 +1703,11 @@ void Series::readFileBased()
         std::optional<error::ReadError> forwardFirstError;
         for (auto &iteration : series.iterations)
         {
+            if (read_only_this_single_iteration.has_value() &&
+                *read_only_this_single_iteration != iteration.first)
+            {
+                continue;
+            }
             if (auto error = readIterationEagerly(iteration.second); error)
             {
                 std::cerr << "Cannot read iteration '" << iteration.first
@@ -1872,7 +1892,7 @@ namespace
 auto Series::readGorVBased(
     bool do_always_throw_errors,
     bool do_init,
-    std::set<IterationIndex_t> const &ignoreIterations)
+    std::optional<IterationIndex_t> read_only_this_single_iteration)
     -> std::vector<IterationIndex_t>
 {
     auto &series = get();
@@ -2077,7 +2097,8 @@ creating new iterations.
         for (auto const &it : *pList.paths)
         {
             IterationIndex_t index = std::stoull(it);
-            if (ignoreIterations.find(index) != ignoreIterations.end())
+            if (read_only_this_single_iteration.has_value() &&
+                index != *read_only_this_single_iteration)
             {
                 continue;
             }
@@ -2114,14 +2135,28 @@ creating new iterations.
         }
     }
     case IterationEncoding::variableBased: {
-        if (currentSteps.has_value() && !currentSteps.value().empty())
+        if (!currentSteps.has_value() || currentSteps.value().empty())
         {
-            vectorDifference(*currentSteps, ignoreIterations);
+            currentSteps = std::vector<IterationIndex_t>{
+                read_only_this_single_iteration.has_value()
+                    ? *read_only_this_single_iteration
+                    : 0};
         }
-        else
+        else if (read_only_this_single_iteration.has_value())
         {
-            currentSteps = std::vector<IterationIndex_t>{0};
+            if (std::find(
+                    currentSteps->begin(),
+                    currentSteps->end(),
+                    *read_only_this_single_iteration) != currentSteps->end())
+            {
+                *currentSteps = {*read_only_this_single_iteration};
+            }
+            else
+            {
+                currentSteps->clear();
+            }
         }
+
         for (auto it : *currentSteps)
         {
             /*

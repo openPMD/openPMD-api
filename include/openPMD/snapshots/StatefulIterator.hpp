@@ -146,12 +146,6 @@ class StatefulIterator
         std::vector<iteration_index_t> iterationsInCurrentStep;
         CurrentStep currentStep = {CurrentStep::Before};
         std::optional<internal::ParsePreference> parsePreference;
-        /*
-         * Necessary because in the old ADIOS2 schema, old iterations' metadata
-         * will leak into new steps, making the frontend think that the groups
-         * are still there and the iterations can be parsed again.
-         */
-        std::set<Iteration::IterationIndex_t> ignoreIterations;
 
         auto currentIteration() -> std::optional<Iteration::IterationIndex_t *>;
         auto currentIteration() const
@@ -264,6 +258,8 @@ private:
     auto peekCurrentlyOpenIteration() const
         -> std::optional<value_type const *>;
     auto peekCurrentlyOpenIteration() -> std::optional<value_type *>;
+
+    auto reparse_possibly_deleted_iteration(iteration_index_t) -> void;
 };
 
 class LegacyIteratorAdaptor

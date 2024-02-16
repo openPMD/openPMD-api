@@ -35,6 +35,7 @@
 #include <exception>
 #include <iostream>
 #include <iterator>
+#include <optional>
 #include <stdexcept>
 #include <tuple>
 
@@ -684,10 +685,8 @@ auto Iteration::beginStep(bool reread) -> BeginStepStatus
 }
 
 auto Iteration::beginStep(
-    std::optional<Iteration> thisObject,
-    Series &series,
-    bool reread,
-    std::set<IterationIndex_t> const &ignoreIterations) -> BeginStepStatus
+    std::optional<Iteration> thisObject, Series &series, bool reread)
+    -> BeginStepStatus
 {
     BeginStepStatus res;
     using IE = IterationEncoding;
@@ -756,7 +755,7 @@ auto Iteration::beginStep(
             res.iterationsInOpenedStep = series.readGorVBased(
                 /* do_always_throw_errors = */ true,
                 /* init = */ false,
-                ignoreIterations);
+                /* read_only_this_single_iteration = */ std::nullopt);
         }
         catch (...)
         {
