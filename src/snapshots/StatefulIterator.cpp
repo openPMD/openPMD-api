@@ -180,7 +180,7 @@ void StatefulIterator::initSeriesInLinearReadMode()
         {
             using IE = IterationEncoding;
         case IE::fileBased:
-            series.readFileBased();
+            series.readFileBased(std::nullopt);
             break;
         case IE::groupBased:
         case IE::variableBased: {
@@ -194,11 +194,15 @@ void StatefulIterator::initSeriesInLinearReadMode()
             case PP::PerStep:
                 series.advance(AdvanceMode::BEGINSTEP);
                 series.readGorVBased(
-                    /* do_always_throw_errors = */ false, /* init = */ true);
+                    /* do_always_throw_errors = */ false,
+                    /* init = */ true,
+                    std::nullopt);
                 break;
             case PP::UpFront:
                 series.readGorVBased(
-                    /* do_always_throw_errors = */ false, /* init = */ true);
+                    /* do_always_throw_errors = */ false,
+                    /* init = */ true,
+                    std::nullopt);
                 /*
                  * In linear read mode (where no parsing at all is done upon
                  * constructing the Series), it might turn out after parsing
@@ -331,6 +335,31 @@ auto StatefulIterator::peekCurrentlyOpenIteration()
     }
 }
 
+auto StatefulIterator::reparse_possibly_deleted_iteration(iteration_index_t idx)
+    -> void
+{
+    auto &data = get();
+    if (!data.series.iterations.contains(idx))
+    {
+        withRWAccess(data.series.IOHandler()->m_seriesStatus, [&]() {
+            switch (data.series.iterationEncoding())
+            {
+
+            case IterationEncoding::fileBased:
+                data.series.readFileBased({idx});
+                break;
+            case IterationEncoding::groupBased:
+            case IterationEncoding::variableBased:
+                data.series.readGorVBased(
+                    /* do_always_throw_errors = */ true,
+                    /* init = */ false,
+                    {idx});
+                break;
+            }
+        });
+    }
+}
+
 StatefulIterator::StatefulIterator(tag_write_t, Series const &series_in)
     : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
 {
@@ -437,6 +466,7 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
 
     try
     {
+        reparse_possibly_deleted_iteration(current_iteration_idx);
         series.iterations.at(current_iteration_idx).open();
     }
     catch (error::ReadError const &err)
@@ -474,6 +504,7 @@ auto StatefulIterator::skipToIterationInStep(Iteration::IterationIndex_t idx)
 
     // This is called upon user request, i.e. ReadErrors should be caught in
     // user code
+    reparse_possibly_deleted_iteration(idx);
     data.series.iterations.at(idx).open();
     currentIteration.iteration_idx = idx;
     return {this};
@@ -491,8 +522,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
         std::tie(status, data.iterationsInCurrentStep) = Iteration::beginStep(
             {},
             data.series,
-            /* reread = */ reread(data.parsePreference),
-            data.ignoreIterations);
+            /* reread = */ reread(data.parsePreference));
     }
     catch (error::ReadError const &err)
     {
@@ -777,7 +807,6 @@ auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator *
              */
             auto &container = series.iterations.container();
             container.erase(*oldIterationIndex);
-            data.ignoreIterations.emplace(*oldIterationIndex);
         }
     }
     return resvalue;
