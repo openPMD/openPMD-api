@@ -14,7 +14,8 @@ private:
     friend class Series;
     friend class StatefulSnapshotsContainer;
     friend class RandomAccessIteratorContainer;
-    using parent_t = AbstractSeriesIterator<OpaqueSeriesIterator>;
+    using parent_t =
+        AbstractSeriesIterator<OpaqueSeriesIterator, value_type_in>;
     // no shared_ptr since copied iterators should not share state
     std::unique_ptr<DynamicSeriesIterator<value_type_in>> m_internal_iterator;
 
