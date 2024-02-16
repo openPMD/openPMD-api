@@ -189,6 +189,17 @@ public:
     auto operator<(StatefulIterator const &) const -> bool;
 
     static auto end() -> StatefulIterator;
+    /*
+     * This is considered an end iterator if:
+     *
+     * 1. The iterator has no state at all
+     *    (generic statically created end iterator)
+     * 2. The state is During_t with no iteration index
+     *    (finished reading iterations in a randomly-accessible Series)
+     * 3. The state is After_t
+     *    (closed the last step in a step-wise Series)
+     */
+    auto is_end() const -> bool;
 
     operator bool() const;
 
@@ -216,6 +227,13 @@ private:
     void initSeriesInLinearReadMode();
 
     void close();
+    enum class TypeOfEndIterator : char
+    {
+        NoMoreSteps,
+        NoMoreIterationsInStep
+    };
+    auto turn_into_end_iterator(TypeOfEndIterator) -> void;
+    auto assert_end_iterator() const -> void;
 
     auto resetCurrentIterationToBegin(size_t num_skipped_iterations) -> void;
     auto peekCurrentlyOpenIteration() const

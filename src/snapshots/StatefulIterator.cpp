@@ -233,6 +233,28 @@ void StatefulIterator::close()
     *m_data = std::nullopt; // turn this into end iterator
 }
 
+auto StatefulIterator::turn_into_end_iterator(TypeOfEndIterator type) -> void
+{
+    auto &data = get();
+    switch (type)
+    {
+    case TypeOfEndIterator::NoMoreSteps:
+        data.currentStep = CurrentStep::After;
+        break;
+    case TypeOfEndIterator::NoMoreIterationsInStep:
+        data.currentStep.map_during_t(
+            [](CurrentStep::During_t &during) {
+                during.iteration_idx = std::nullopt;
+            },
+            [](auto const &) {
+                return CurrentStep::During_t{0, std::nullopt};
+            }
+
+        );
+        break;
+    }
+}
+
 auto StatefulIterator::resetCurrentIterationToBegin(
     size_t num_skipped_iterations) -> void
 {
@@ -363,7 +385,7 @@ StatefulIterator::StatefulIterator(
     case IterationEncoding::variableBased:
         if (!loopBody().has_value())
         {
-            this->close();
+            this->assert_end_iterator();
         }
         break;
     }
@@ -473,7 +495,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
 
     if (close)
     {
-        this->close();
+        this->turn_into_end_iterator(TypeOfEndIterator::NoMoreSteps);
     }
     else
     {
@@ -506,7 +528,9 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
     auto guardReturn =
         [&series, &iterations, &data](
             auto const &option) -> std::optional<openPMD::StatefulIterator *> {
-        if (!option.has_value() || *option.value() == end())
+        if (!option.has_value() ||
+            std::holds_alternative<CurrentStep::After_t>(
+                (*option)->get().currentStep))
         {
             return option;
         }
@@ -577,7 +601,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
     if (series.iterationEncoding() == IterationEncoding::fileBased)
     {
         // this one is handled above, stream is over once it proceeds to here
-        this->close();
+        this->turn_into_end_iterator(TypeOfEndIterator::NoMoreIterationsInStep);
         return {this};
     }
 
@@ -591,7 +615,7 @@ void StatefulIterator::initIteratorFilebased()
     auto &series = data.series;
     if (series.iterations.empty())
     {
-        this->close();
+        this->turn_into_end_iterator(TypeOfEndIterator::NoMoreIterationsInStep);
         return;
     }
     data.iterationsInCurrentStep.reserve(series.iterations.size());
@@ -622,7 +646,7 @@ void StatefulIterator::initIteratorFilebased()
     }
     else
     {
-        this->close();
+        this->turn_into_end_iterator(TypeOfEndIterator::NoMoreIterationsInStep);
     }
 }
 
@@ -754,7 +778,7 @@ bool StatefulIterator::operator==(StatefulIterator const &other) const
         (this->m_data->has_value() && other.m_data->has_value() &&
          (this->get().currentIteration() == other.get().currentIteration())) ||
         // or both are empty
-        (!this->m_data->has_value() && !other.m_data->has_value());
+        (this->is_end() && other.is_end());
 }
 auto StatefulIterator::operator<(StatefulIterator const &) const -> bool
 {
@@ -765,6 +789,27 @@ auto StatefulIterator::operator<(StatefulIterator const &) const -> bool
 StatefulIterator StatefulIterator::end()
 {
     return StatefulIterator{};
+}
+
+auto StatefulIterator::is_end() const -> bool
+{
+    return !m_data || !m_data->has_value() ||
+        std::visit(
+            auxiliary::overloaded{
+                [](CurrentStep::Before_t const &) { return false; },
+                [](CurrentStep::During_t const &during) {
+                    return !during.iteration_idx.has_value();
+                },
+                [](CurrentStep::After_t const &) { return true; }},
+            (**m_data).currentStep);
+}
+
+auto StatefulIterator::assert_end_iterator() const -> void
+{
+    if (!is_end())
+    {
+        throw error::Internal("Assertion error: Iterator is no end iterator.");
+    }
 }
 
 StatefulIterator::operator bool() const
