@@ -41,7 +41,9 @@ class RandomAccessIterator
 {
 private:
     friend class RandomAccessIteratorContainer;
-    using parent_t = AbstractSeriesIterator<RandomAccessIterator<iterator_t>>;
+    using parent_t = AbstractSeriesIterator<
+        RandomAccessIterator<iterator_t>,
+        detail::iterator_to_value_type<iterator_t>>;
 
     RandomAccessIterator(iterator_t it);
 

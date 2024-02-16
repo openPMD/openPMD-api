@@ -1707,6 +1707,7 @@ detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
     {
         return *it->second;
     }
+    throw std::runtime_error("Unreachable!");
 }
 
 void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile const &file)
