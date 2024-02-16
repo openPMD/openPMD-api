@@ -210,9 +210,8 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     }
     else if (access::read(access))
     {
-        throw std::runtime_error(
-            "Jumping to existing iteration not implemented in stateful "
-            "container/iterator.");
+        auto result = it->seek({StatefulIterator::Seek::Seek_Iteration_t{key}});
+        return (*result)->second;
     }
     throw error::Internal("Control flow error: This should be unreachable.");
 }
