@@ -148,7 +148,9 @@ class StatefulIterator
     auto get() -> SharedData &;
     auto get() const -> SharedData const &;
 
-    using parent_t = AbstractSeriesIterator<StatefulIterator>;
+    using parent_t = AbstractSeriesIterator<
+        StatefulIterator,
+        Container<Iteration, Iteration::IterationIndex_t>::value_type>;
 
 public:
     using value_type =

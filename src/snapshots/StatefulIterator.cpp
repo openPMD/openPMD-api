@@ -535,7 +535,6 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
                 try
                 {
                     iterations.at(current_iteration).open();
-                    [[fallthrough]];
                 }
                 catch (error::ReadError const &err)
                 {
@@ -545,6 +544,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody()
                     option.value()->deactivateDeadIteration(current_iteration);
                     return std::nullopt;
                 }
+                [[fallthrough]];
             case internal::CloseStatus::Open:
                 return option;
             case internal::CloseStatus::ClosedInBackend:
