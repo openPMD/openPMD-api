@@ -6,7 +6,7 @@ using namespace openPMD;
 
 void close_and_reopen_iterations(const std::string &filename)
 {
-    Series list(filename, Access::READ_ONLY);
+    Series list(filename, Access::READ_LINEAR);
 
     auto test_read = [](Iteration &iteration) {
         auto component = iteration.particles["e"]["position"]["x"];
