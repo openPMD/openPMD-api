@@ -1053,25 +1053,7 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     {
         return;
     }
-#if openPMD_HAS_ADIOS_2_9
-    // switch (useGroupTable())
-    // {
-    // case UseGroupTable::No:
-    //     if (parameters.changesOverSteps ==
-    //         Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
-    //     {
-    //         // cannot do this
-    //         return;
-    //     }
-
-    //     break;
-    // case UseGroupTable::Yes: {
-    //     break;
-    // }
-    // default:
-    //     throw std::runtime_error("Unreachable!");
-    // }
-#else
+#if !openPMD_HAS_ADIOS_2_9
     if (parameters.changesOverSteps ==
         Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
     {
