@@ -1689,14 +1689,14 @@ void append_mode(
             // time but as they go
             Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
             unsigned counter = 0;
-            uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 3, 10, 7, 1, 11};
+            uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 11};
             for (auto iteration : read.readIterations())
             {
                 REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
                 verifyIteration(iteration);
                 ++counter;
             }
-            REQUIRE(counter == 10);
+            REQUIRE(counter == 8);
             // listSeries will not see any iterations since they have already
             // been read
             helper::listSeries(read);
@@ -1802,7 +1802,7 @@ void append_mode(
                 // in variable-based encodings, iterations are not parsed ahead
                 // of time but as they go
                 unsigned counter = 0;
-                uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 3, 10, 7, 4, 5};
+                uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 5};
                 for (auto iteration : read.readIterations())
                 {
                     REQUIRE(
@@ -1810,7 +1810,7 @@ void append_mode(
                     verifyIteration(iteration);
                     ++counter;
                 }
-                REQUIRE(counter == 10);
+                REQUIRE(counter == 8);
             }
             break;
             default:
