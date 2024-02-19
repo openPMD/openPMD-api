@@ -20,6 +20,7 @@
  */
 
 #include "openPMD/snapshots/StatefulIterator.hpp"
+#include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
 
 #include "openPMD/Iteration.hpp"
@@ -271,6 +272,34 @@ auto StatefulIterator::turn_into_end_iterator(TypeOfEndIterator type) -> void
     }
 }
 
+namespace
+{
+    auto restrict_to_unseen_iterations(
+        std::vector<Iteration::IterationIndex_t> &indexes,
+        std::unordered_map<Iteration::IterationIndex_t, size_t>
+            &seen_iterations,
+        size_t insert_into_step) -> void
+    {
+        for (auto vec_it = indexes.rbegin(); vec_it != indexes.rend();)
+        {
+            auto map_it = seen_iterations.find(*vec_it);
+            if (map_it == seen_iterations.end())
+            {
+                seen_iterations.emplace_hint(map_it, *vec_it, insert_into_step);
+                ++vec_it;
+            }
+            else
+            {
+                ++vec_it;
+                // sic! base() refers to the next element...
+                // erase() only invalidates iterators to the right
+                // (this is why this iterates in reverse)
+                indexes.erase(vec_it.base());
+            }
+        }
+    }
+} // namespace
+
 auto StatefulIterator::resetCurrentIterationToBegin(
     size_t num_skipped_iterations, std::vector<iteration_index_t> indexes)
     -> void
@@ -279,6 +308,8 @@ auto StatefulIterator::resetCurrentIterationToBegin(
     data.currentStep.map_during_t(
         [&](CurrentStep::During_t &during) {
             during.idx += num_skipped_iterations;
+            restrict_to_unseen_iterations(
+                indexes, data.seen_iterations, during.idx);
             during.available_iterations_in_step = std::move(indexes);
             if (during.available_iterations_in_step.empty())
             {
@@ -295,6 +326,8 @@ auto StatefulIterator::resetCurrentIterationToBegin(
             switch (whereAmI)
             {
             case detail::CurrentStep::AtTheEdge::Begin: {
+                restrict_to_unseen_iterations(
+                    indexes, data.seen_iterations, num_skipped_iterations);
                 if (indexes.empty())
                 {
                     return std::nullopt;
