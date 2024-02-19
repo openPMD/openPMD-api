@@ -192,7 +192,7 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
                 });
         }
         auto &res = s.series.iterations[key];
-        if (res.getStepStatus() == StepStatus::NoStep)
+        if (res.getStepStatus() != StepStatus::DuringStep)
         {
             try
             {

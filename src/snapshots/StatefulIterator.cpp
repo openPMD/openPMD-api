@@ -851,15 +851,7 @@ auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator *
         res = loopBody(seek);
     } while (!res.has_value());
 
-    auto resvalue = res.value();
-    if (*resvalue != end())
-    {
-        auto &series = data.series;
-        auto index = data.currentIteration();
-        auto &iteration = series.iterations.at(*index.value());
-        iteration.setStepStatus(StepStatus::DuringStep);
-    }
-    return resvalue;
+    return *res;
 }
 
 auto StatefulIterator::operator*() const -> value_type const &

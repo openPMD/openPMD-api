@@ -25,6 +25,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
@@ -112,7 +113,7 @@ Iteration &Iteration::close(bool _flush)
         if (flag == StepStatus::DuringStep)
         {
             endStep();
-            setStepStatus(StepStatus::NoStep);
+            setStepStatus(StepStatus::OutOfStep);
         }
         else
         {
@@ -141,16 +142,24 @@ Iteration &Iteration::close(bool _flush)
 Iteration &Iteration::open()
 {
     auto &it = get();
-    if (it.m_closed == CloseStatus::ParseAccessDeferred)
+    if (getStepStatus() == StepStatus::OutOfStep)
     {
-        it.m_closed = CloseStatus::Open;
-        runDeferredParseAccess();
+        beginStep(/* reread = */ false);
+        setStepStatus(StepStatus::DuringStep);
     }
-    Series s = retrieveSeries();
-    // figure out my iteration number
-    auto begin = s.indexOf(*this);
-    s.openIteration(begin->first, *this);
-    IOHandler()->flush(internal::defaultFlushParams);
+    else
+    {
+        if (it.m_closed == CloseStatus::ParseAccessDeferred)
+        {
+            it.m_closed = CloseStatus::Open;
+            runDeferredParseAccess();
+        }
+        Series s = retrieveSeries();
+        // figure out my iteration number
+        auto begin = s.indexOf(*this);
+        s.openIteration(begin->first, *this);
+        IOHandler()->flush(internal::defaultFlushParams);
+    }
     return *this;
 }
 
@@ -717,14 +726,13 @@ auto Iteration::beginStep(
     AdvanceStatus status;
     if (thisObject.has_value())
     {
+        thisObject->setStepStatus(StepStatus::DuringStep);
         status = series.advance(
-            AdvanceMode::BEGINSTEP,
-            *file,
-            series.indexOf(*thisObject),
-            *thisObject);
+            AdvanceMode::BEGINSTEP, *file, series.indexOf(*thisObject));
     }
     else
     {
+        series.get().m_stepStatus = StepStatus::DuringStep;
         status = series.advance(AdvanceMode::BEGINSTEP);
     }
 
@@ -813,7 +821,7 @@ void Iteration::endStep()
         break;
     }
     // @todo filebased check
-    series.advance(AdvanceMode::ENDSTEP, *file, series.indexOf(*this), *this);
+    series.advance(AdvanceMode::ENDSTEP, *file, series.indexOf(*this));
     series.get().m_currentlyActiveIterations.clear();
 }
 
