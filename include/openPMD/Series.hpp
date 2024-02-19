@@ -861,14 +861,12 @@ OPENPMD_private
      *             based layout, it's the Series object.
      * @param it The iterator within Series::iterations pointing to that
      *           iteration.
-     * @param iteration The actual Iteration object.
      * @return AdvanceStatus
      */
     AdvanceStatus advance(
         AdvanceMode mode,
         internal::AttributableData &file,
-        iterations_iterator it,
-        Iteration &iteration);
+        iterations_iterator it);
 
     AdvanceStatus advance(AdvanceMode mode);
 
