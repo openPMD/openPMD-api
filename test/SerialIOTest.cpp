@@ -7209,14 +7209,14 @@ void append_mode(
             // time but as they go
             Series read(filename, Access::READ_LINEAR);
             unsigned counter = 0;
-            uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 11};
+            uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 3, 10, 7, 1, 11};
             for (auto iteration : read.readIterations())
             {
                 REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
                 verifyIteration(iteration);
                 ++counter;
             }
-            REQUIRE(counter == 8);
+            REQUIRE(counter == 10);
             // listSeries will not see any iterations since they have already
             // been read
             helper::listSeries(read);
