@@ -265,6 +265,7 @@ auto StatefulIterator::resetCurrentIterationToBegin(
     auto &data = get();
     data.currentStep.map_during_t(
         [&](CurrentStep::During_t &during) {
+            during.idx += num_skipped_iterations;
             if (data.iterationsInCurrentStep.empty())
             {
                 during.iteration_idx = std::nullopt;
@@ -412,7 +413,7 @@ StatefulIterator::StatefulIterator(
     }
     case IterationEncoding::groupBased:
     case IterationEncoding::variableBased:
-        if (!loopBody({Seek::Next}).has_value())
+        if (!seek({Seek::Next}))
         {
             this->assert_end_iterator();
         }
@@ -557,6 +558,11 @@ StatefulIterator::nextStep(size_t recursion_depth)
     }
     else
     {
+        if (auto during = data.currentStep.get_variant<CurrentStep::During_t>();
+            during.has_value())
+        {
+            ++(*during)->idx;
+        }
         resetCurrentIterationToBegin(recursion_depth);
     }
     return {this};
@@ -579,6 +585,11 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
             if (!currentIteration.closed())
             {
                 currentIteration.close();
+            }
+            if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR)
+            {
+                data.series.iterations.container().erase(
+                    **maybe_current_iteration);
             }
         }
     }
@@ -630,12 +641,10 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
             case internal::CloseStatus::Open:
                 return option;
             case internal::CloseStatus::Closed:
-                std::cout << "TODO: NEED A BETTER LOGIC FOR THIS" << std::endl;
-                // we had this iteration already, skip it
-                iteration.endStep();
-                return std::nullopt; // empty, go into next iteration
             case internal::CloseStatus::ClosedInFrontend:
-                throw error::Internal("Next found iteration is closed?");
+                throw error::Internal(
+                    "[StatefulIterator] Next step returned an iteration that "
+                    "is already closed, should have opened it.");
             }
             throw std::runtime_error("Unreachable!");
         }
@@ -760,17 +769,6 @@ StatefulIterator &StatefulIterator::operator++()
 auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator *
 {
     auto &data = get();
-    auto oldIterationIndex = [&]() -> std::optional<iteration_index_t> {
-        auto res = data.currentIteration();
-        if (res.has_value())
-        {
-            return **res;
-        }
-        else
-        {
-            return std::nullopt;
-        }
-    }();
     std::optional<StatefulIterator *> res;
     /*
      * loopBody() might return an empty option to indicate a skipped iteration.
@@ -791,23 +789,6 @@ auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator *
         auto index = data.currentIteration();
         auto &iteration = series.iterations.at(*index.value());
         iteration.setStepStatus(StepStatus::DuringStep);
-
-        if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
-            oldIterationIndex.has_value())
-        {
-            /*
-             * Linear read mode: Any data outside the current iteration is
-             * inaccessible. Delete the iteration. This has two effects:
-             *
-             * 1) Avoid confusion.
-             * 2) Avoid memory buildup in long-running workflows with many
-             *    iterations.
-             *
-             * @todo Also delete data in the backends upon doing this.
-             */
-            auto &container = series.iterations.container();
-            container.erase(*oldIterationIndex);
-        }
     }
     return resvalue;
 }

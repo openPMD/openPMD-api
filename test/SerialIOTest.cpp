@@ -5663,18 +5663,24 @@ void adios2_group_table(
     write.writeIterations()[1].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
     write.close();
 
+    size_t counter = 0;
+    bool saw_iteration_0{false}, saw_iteration_1{false};
+
     Series read("../samples/group_table.bp", Access::READ_LINEAR, jsonRead);
     // NOLINTNEXTLINE(performance-for-range-copy)
     for (auto iteration : read.readIterations())
     {
+        ++counter;
         switch (iteration.iterationIndex)
         {
         case 0:
+            saw_iteration_0 = true;
             REQUIRE(iteration.meshes["E"].contains("x"));
             REQUIRE(iteration.meshes["E"].contains("y"));
             REQUIRE(iteration.meshes["E"].size() == 2);
             break;
         case 1:
+            saw_iteration_1 = true;
             if (canDeleteGroups)
             {
                 REQUIRE(iteration.meshes["E"].contains("x"));
@@ -5689,6 +5695,9 @@ void adios2_group_table(
             break;
         }
     }
+    REQUIRE(counter == 2);
+    REQUIRE(saw_iteration_0);
+    REQUIRE(saw_iteration_1);
 }
 
 TEST_CASE("adios2_group_table", "[serial]")
