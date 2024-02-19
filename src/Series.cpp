@@ -1737,7 +1737,6 @@ creating new iterations.
         [&series, &pOpen, this](
             IterationIndex_t index,
             std::string const &path,
-            bool guardAgainstRereading,
             bool beginStep) -> std::optional<error::ReadError> {
         if (series.iterations.contains(index))
         {
@@ -1745,7 +1744,7 @@ creating new iterations.
             auto &i = series.iterations.at(index);
             // i.written(): the iteration has already been parsed
             // reparsing is not needed
-            if (guardAgainstRereading && i.written())
+            if (i.written())
             {
                 return {};
             }
@@ -1810,9 +1809,7 @@ creating new iterations.
             }
             if (auto err = internal::withRWAccess(
                     IOHandler()->m_seriesStatus,
-                    [&]() {
-                        return readSingleIteration(index, it, true, false);
-                    });
+                    [&]() { return readSingleIteration(index, it, false); });
                 err)
             {
                 std::cerr << "Cannot read iteration " << index
@@ -1872,7 +1869,7 @@ creating new iterations.
             if (auto err = internal::withRWAccess(
                     IOHandler()->m_seriesStatus,
                     [&readSingleIteration, it]() {
-                        return readSingleIteration(it, "", false, true);
+                        return readSingleIteration(it, "", true);
                     });
                 err)
             {
