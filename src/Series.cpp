@@ -1621,7 +1621,8 @@ void Series::readFileBased(
      * Return true if parsing was successful
      */
     auto readIterationEagerly =
-        [](Iteration &iteration) -> std::optional<error::ReadError> {
+        [&read_only_this_single_iteration](
+            Iteration &iteration) -> std::optional<error::ReadError> {
         try
         {
             iteration.runDeferredParseAccess();
@@ -1630,10 +1631,14 @@ void Series::readFileBased(
         {
             return err;
         }
-        Parameter<Operation::CLOSE_FILE> fClose;
-        iteration.IOHandler()->enqueue(IOTask(&iteration, fClose));
-        iteration.IOHandler()->flush(internal::defaultFlushParams);
-        iteration.get().m_closed = internal::CloseStatus::Closed;
+        // If one specific iteration is requested, keep it open afterward.
+        if (!read_only_this_single_iteration.has_value())
+        {
+            Parameter<Operation::CLOSE_FILE> fClose;
+            iteration.IOHandler()->enqueue(IOTask(&iteration, fClose));
+            iteration.IOHandler()->flush(internal::defaultFlushParams);
+            iteration.get().m_closed = internal::CloseStatus::Closed;
+        }
         return {};
     };
     std::vector<decltype(Series::iterations)::key_type> unparseableIterations;
