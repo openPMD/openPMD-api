@@ -31,12 +31,24 @@
 #include <optional>
 #include <stdexcept>
 #include <variant>
+#include <vector>
 
 namespace openPMD
 {
 
 namespace detail
 {
+    step_status_types::During_t::During_t(
+        size_t idx_in,
+        std::optional<Iteration::IterationIndex_t> iteration_idx_in,
+        std::vector<Iteration::IterationIndex_t>
+            available_iterations_in_step_in)
+        : idx(idx_in)
+        , iteration_idx(iteration_idx_in)
+        , available_iterations_in_step(
+              std::move(available_iterations_in_step_in))
+    {}
+
     template <typename V>
     auto CurrentStep::get_variant() -> std::optional<V *>
     {
@@ -251,7 +263,7 @@ auto StatefulIterator::turn_into_end_iterator(TypeOfEndIterator type) -> void
                 during.iteration_idx = std::nullopt;
             },
             [](auto const &) {
-                return CurrentStep::During_t{0, std::nullopt};
+                return CurrentStep::During_t{0, std::nullopt, {}};
             }
 
         );
@@ -260,34 +272,40 @@ auto StatefulIterator::turn_into_end_iterator(TypeOfEndIterator type) -> void
 }
 
 auto StatefulIterator::resetCurrentIterationToBegin(
-    size_t num_skipped_iterations) -> void
+    size_t num_skipped_iterations, std::vector<iteration_index_t> indexes)
+    -> void
 {
     auto &data = get();
     data.currentStep.map_during_t(
         [&](CurrentStep::During_t &during) {
             during.idx += num_skipped_iterations;
-            if (data.iterationsInCurrentStep.empty())
+            during.available_iterations_in_step = std::move(indexes);
+            if (during.available_iterations_in_step.empty())
             {
                 during.iteration_idx = std::nullopt;
             }
             else
             {
-                during.iteration_idx = *data.iterationsInCurrentStep.begin();
+                during.iteration_idx =
+                    *during.available_iterations_in_step.begin();
             }
         },
         [&](CurrentStep::AtTheEdge whereAmI)
             -> std::optional<CurrentStep::variant_t> {
             switch (whereAmI)
             {
-            case detail::CurrentStep::AtTheEdge::Begin:
-                if (data.iterationsInCurrentStep.empty())
+            case detail::CurrentStep::AtTheEdge::Begin: {
+                if (indexes.empty())
                 {
                     return std::nullopt;
                 }
+                auto first_iteration = *indexes.begin();
                 // Begin iterating
                 return detail::CurrentStep::During_t{
                     num_skipped_iterations,
-                    *data.iterationsInCurrentStep.begin()};
+                    first_iteration,
+                    std::move(indexes)};
+            }
             case detail::CurrentStep::AtTheEdge::End:
                 return std::nullopt;
             }
@@ -446,13 +464,13 @@ std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
     auto &current_iteration_idx = *currentIteration.iteration_idx;
 
     if (auto it = std::find(
-            data.iterationsInCurrentStep.begin(),
-            data.iterationsInCurrentStep.end(),
+            currentIteration.available_iterations_in_step.begin(),
+            currentIteration.available_iterations_in_step.end(),
             current_iteration_idx);
-        it != data.iterationsInCurrentStep.end())
+        it != currentIteration.available_iterations_in_step.end())
     {
         ++it;
-        if (it == data.iterationsInCurrentStep.end())
+        if (it == currentIteration.available_iterations_in_step.end())
         {
             return no_result();
         }
@@ -496,9 +514,9 @@ auto StatefulIterator::skipToIterationInStep(Iteration::IterationIndex_t idx)
     CurrentStep::During_t &currentIteration = **maybeCurrentIteration;
 
     if (std::find(
-            data.iterationsInCurrentStep.begin(),
-            data.iterationsInCurrentStep.end(),
-            idx) == data.iterationsInCurrentStep.end())
+            currentIteration.available_iterations_in_step.begin(),
+            currentIteration.available_iterations_in_step.end(),
+            idx) == currentIteration.available_iterations_in_step.end())
     {
         return std::nullopt;
     }
@@ -515,12 +533,13 @@ std::optional<StatefulIterator *>
 StatefulIterator::nextStep(size_t recursion_depth)
 {
     auto &data = get();
+    std::vector<iteration_index_t> current_iterations;
     // since we are in group-based iteration layout, it does not
     // matter which iteration we begin a step upon
     AdvanceStatus status{};
     try
     {
-        std::tie(status, data.iterationsInCurrentStep) = Iteration::beginStep(
+        std::tie(status, current_iterations) = Iteration::beginStep(
             {},
             data.series,
             /* reread = */ reread(data.parsePreference));
@@ -563,7 +582,8 @@ StatefulIterator::nextStep(size_t recursion_depth)
         {
             ++(*during)->idx;
         }
-        resetCurrentIterationToBegin(recursion_depth);
+        resetCurrentIterationToBegin(
+            recursion_depth, std::move(current_iterations));
     }
     return {this};
 }
@@ -704,11 +724,12 @@ void StatefulIterator::initIteratorFilebased()
         this->turn_into_end_iterator(TypeOfEndIterator::NoMoreIterationsInStep);
         return;
     }
-    data.iterationsInCurrentStep.reserve(series.iterations.size());
+    std::vector<iteration_index_t> indexes;
+    indexes.reserve(series.iterations.size());
     std::transform(
         series.iterations.begin(),
         series.iterations.end(),
-        std::back_inserter(data.iterationsInCurrentStep),
+        std::back_inserter(indexes),
         [](auto const &pair) { return pair.first; });
     auto it = series.iterations.begin();
     auto end = series.iterations.end();
@@ -728,7 +749,8 @@ void StatefulIterator::initIteratorFilebased()
     }
     if (it != end)
     {
-        data.currentStep = CurrentStep::During_t{0, it->first};
+        data.currentStep =
+            CurrentStep::During_t{0, it->first, std::move(indexes)};
     }
     else
     {

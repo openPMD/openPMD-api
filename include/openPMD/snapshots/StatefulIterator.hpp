@@ -52,6 +52,14 @@ namespace detail
         {
             size_t idx;
             std::optional<Iteration::IterationIndex_t> iteration_idx;
+            std::vector<Iteration::IterationIndex_t>
+                available_iterations_in_step;
+
+            During_t(
+                size_t idx,
+                std::optional<Iteration::IterationIndex_t> iteration_idx,
+                std::vector<Iteration::IterationIndex_t>
+                    available_iterations_in_step);
         };
         struct After_t
         {};
@@ -65,7 +73,6 @@ namespace detail
         using Before_t = step_status_types::Before_t;
         constexpr static Before_t Before{};
         using During_t = step_status_types::During_t;
-        constexpr static During_t During{};
         using After_t = step_status_types::After_t;
         constexpr static After_t After{};
 
@@ -143,7 +150,6 @@ class StatefulIterator
         ~SharedData();
 
         Series series;
-        std::vector<iteration_index_t> iterationsInCurrentStep;
         CurrentStep currentStep = {CurrentStep::Before};
         std::optional<internal::ParsePreference> parsePreference;
 
@@ -254,7 +260,9 @@ private:
     auto turn_into_end_iterator(TypeOfEndIterator) -> void;
     auto assert_end_iterator() const -> void;
 
-    auto resetCurrentIterationToBegin(size_t num_skipped_iterations) -> void;
+    auto resetCurrentIterationToBegin(
+        size_t num_skipped_iterations,
+        std::vector<iteration_index_t> current_iterations) -> void;
     auto peekCurrentlyOpenIteration() const
         -> std::optional<value_type const *>;
     auto peekCurrentlyOpenIteration() -> std::optional<value_type *>;
