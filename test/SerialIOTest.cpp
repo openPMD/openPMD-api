@@ -451,10 +451,6 @@ void close_iteration_test(std::string const &file_ending)
         E_x.resetDataset({Datatype::INT, {2, 2}});
         E_x.storeChunk(data, {0, 0}, {2, 2});
         it1.close(/* flush = */ true);
-
-        // illegally access iteration after closing
-        E_x.storeChunk(data, {0, 0}, {2, 2});
-        // REQUIRE_THROWS(write.flush());
     }
 
     {
@@ -467,8 +463,6 @@ void close_iteration_test(std::string const &file_ending)
         {
             REQUIRE(data[i] == chunk.get()[i]);
         }
-        auto read_again = E_x_read.loadChunk<int>({0, 0}, {2, 2});
-        // REQUIRE_THROWS(read.flush());
     }
 
     {
@@ -737,52 +731,9 @@ TEST_CASE("close_and_copy_attributable_test", "[serial]")
 }
 
 #if openPMD_HAVE_ADIOS2
-TEST_CASE("close_iteration_throws_test", "[serial]")
+TEST_CASE("close_and_reopen_test", "[serial]")
 {
-    /*
-     * Iterations should not be accessed any more after closing.
-     * Test that the openPMD API detects that case and throws.
-     */
-    {
-        Series series("../samples/close_iteration_throws_1.bp", Access::CREATE);
-        auto it0 = series.iterations[0];
-        auto E_x = it0.meshes["E"]["x"];
-        E_x.resetDataset({Datatype::INT, {5}});
-        std::vector<int> data{0, 1, 2, 3, 4};
-        E_x.storeChunk(data, {0}, {5});
-        it0.close();
-
-        auto B_y = it0.meshes["B"]["y"];
-        B_y.resetDataset({Datatype::INT, {5}});
-        B_y.storeChunk(data, {0}, {5});
-        // REQUIRE_THROWS(series.flush());
-    }
-    {
-        Series series("../samples/close_iteration_throws_2.bp", Access::CREATE);
-        auto it0 = series.iterations[0];
-        auto E_x = it0.meshes["E"]["x"];
-        E_x.resetDataset({Datatype::INT, {5}});
-        std::vector<int> data{0, 1, 2, 3, 4};
-        E_x.storeChunk(data, {0}, {5});
-        it0.close();
-
-        auto e_position_x = it0.particles["e"]["position"]["x"];
-        e_position_x.resetDataset({Datatype::INT, {5}});
-        e_position_x.storeChunk(data, {0}, {5});
-        // REQUIRE_THROWS(series.flush());
-    }
-    {
-        Series series("../samples/close_iteration_throws_3.bp", Access::CREATE);
-        auto it0 = series.iterations[0];
-        auto E_x = it0.meshes["E"]["x"];
-        E_x.resetDataset({Datatype::INT, {5}});
-        std::vector<int> data{0, 1, 2, 3, 4};
-        E_x.storeChunk(data, {0}, {5});
-        it0.close();
-
-        it0.setTimeUnitSI(2.0);
-        // REQUIRE_THROWS(series.flush());
-    }
+    close_and_reopen_test::close_and_reopen_test();
 }
 #endif
 
