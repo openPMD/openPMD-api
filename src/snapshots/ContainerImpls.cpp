@@ -141,8 +141,8 @@ auto StatefulSnapshotsContainer::at(key_type const &) -> mapped_type &
 auto StatefulSnapshotsContainer::operator[](key_type const &key)
     -> mapped_type &
 {
-    auto it = get();
-    auto &shared = it->m_data;
+    auto base_iterator = get();
+    auto &shared = base_iterator->m_data;
     if (!shared || !shared->has_value())
     {
         throw error::WrongAPIUsage(
@@ -154,7 +154,7 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     // @todo distinguish read_write
     if (access::write(access))
     {
-        auto lastIteration = it->peekCurrentlyOpenIteration();
+        auto lastIteration = base_iterator->peekCurrentlyOpenIteration();
         if (lastIteration.has_value())
         {
             auto lastIteration_v = lastIteration.value();
@@ -167,23 +167,30 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
                 lastIteration_v->second.close(); // continue below
             }
         }
-        s.currentStep.map_during_t(
-            [&](detail::CurrentStep::During_t &during) {
-                ++during.idx;
-                during.iteration_idx = key;
-                during.available_iterations_in_step = {key};
-            },
-            [&](detail::CurrentStep::AtTheEdge where_am_i) {
-                switch (where_am_i)
-                {
-                case detail::CurrentStep::AtTheEdge::Begin:
-                    return detail::CurrentStep::During_t{0, key, {key}};
-                case detail::CurrentStep::AtTheEdge::End:
-                    throw error::Internal(
-                        "Trying to create a new output step, but the stream is "
-                        "closed?");
-                }
-            });
+        if (auto it = s.series.iterations.find(key);
+            it == s.series.iterations.end())
+        {
+            s.currentStep.map_during_t(
+                [&](detail::CurrentStep::During_t &during) {
+                    ++during.idx;
+                    base_iterator->get().seen_iterations[key] = during.idx;
+                    during.iteration_idx = key;
+                    during.available_iterations_in_step = {key};
+                },
+                [&](detail::CurrentStep::AtTheEdge where_am_i) {
+                    base_iterator->get().seen_iterations[key] = 0;
+                    switch (where_am_i)
+                    {
+                    case detail::CurrentStep::AtTheEdge::Begin:
+                        return detail::CurrentStep::During_t{0, key, {key}};
+                    case detail::CurrentStep::AtTheEdge::End:
+                        throw error::Internal(
+                            "Trying to create a new output step, but the "
+                            "stream is "
+                            "closed?");
+                    }
+                });
+        }
         auto &res = s.series.iterations[key];
         if (res.getStepStatus() == StepStatus::NoStep)
         {
@@ -204,7 +211,8 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     }
     else if (access::read(access))
     {
-        auto result = it->seek({StatefulIterator::Seek::Seek_Iteration_t{key}});
+        auto result = base_iterator->seek(
+            {StatefulIterator::Seek::Seek_Iteration_t{key}});
         return (*result)->second;
     }
     throw error::Internal("Control flow error: This should be unreachable.");

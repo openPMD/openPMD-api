@@ -32,6 +32,7 @@
 #include <iostream>
 #include <optional>
 #include <set>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -149,9 +150,12 @@ class StatefulIterator
 
         ~SharedData();
 
+        using step_index = size_t;
+
         Series series;
         CurrentStep currentStep = {CurrentStep::Before};
         std::optional<internal::ParsePreference> parsePreference;
+        std::unordered_map<iteration_index_t, step_index> seen_iterations;
 
         auto currentIteration() -> std::optional<Iteration::IterationIndex_t *>;
         auto currentIteration() const
