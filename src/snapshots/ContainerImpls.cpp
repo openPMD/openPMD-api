@@ -168,28 +168,22 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
             }
         }
         s.currentStep.map_during_t(
-            [&](auto &during) {
+            [&](detail::CurrentStep::During_t &during) {
                 ++during.idx;
                 during.iteration_idx = key;
+                during.available_iterations_in_step = {key};
             },
-            [&](detail::CurrentStep::AtTheEdge whereAmI) {
-                switch (whereAmI)
+            [&](detail::CurrentStep::AtTheEdge where_am_i) {
+                switch (where_am_i)
                 {
                 case detail::CurrentStep::AtTheEdge::Begin:
-                    return detail::CurrentStep::During_t{0, key};
+                    return detail::CurrentStep::During_t{0, key, {key}};
                 case detail::CurrentStep::AtTheEdge::End:
-                    throw error::WrongAPIUsage(
-                        "Creating a new step on a Series that is closed.");
+                    throw error::Internal(
+                        "Trying to create a new output step, but the stream is "
+                        "closed?");
                 }
-                throw std::runtime_error("Unreachable!");
             });
-        if (std::find(
-                s.iterationsInCurrentStep.begin(),
-                s.iterationsInCurrentStep.end(),
-                key) != s.iterationsInCurrentStep.end())
-        {
-            s.iterationsInCurrentStep.push_back(key);
-        }
         auto &res = s.series.iterations[key];
         if (res.getStepStatus() == StepStatus::NoStep)
         {
