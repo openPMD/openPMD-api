@@ -117,6 +117,20 @@ namespace detail
 
 StatefulIterator::SharedData::~SharedData()
 {
+    // debugging block
+#if 0
+    std::map<iteration_index_t, size_t> tmp;
+    std::copy(
+        seen_iterations.begin(),
+        seen_iterations.end(),
+        std::inserter(tmp, tmp.begin()));
+    std::cout << "SEEN ITERATIONS:\n";
+    for(auto [it, step]: tmp)
+    {
+        std::cout << '\t' << it << ":\t" << step << '\n';
+    }
+    std::cout << std::endl;
+#endif
     auto IOHandler = series.IOHandler();
     auto current_iteration = currentIteration();
     if (IOHandler && current_iteration.has_value() && IOHandler &&
