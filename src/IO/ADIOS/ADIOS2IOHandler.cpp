@@ -599,7 +599,8 @@ to drastic performance issues, no matter if I/O steps are used or not.
 * If using I/O steps: Each step will add new variables and attributes instead
   of reusing those from earlier steps. ADIOS2 is not optimized for this and
   especially the BP5 engine will show a quadratic increase in metadata size
-  as the number of steps increase.
+  as the number of steps increase. Consider moving to the BP4 engine if you want
+  to keep using group-based encoding.
 We advise you to pick either file-based encoding or variable-based encoding
 (variable-based encoding is not yet feature-complete in the openPMD-api).
 For more details, refer to
@@ -658,15 +659,18 @@ void ADIOS2IOHandlerImpl::createFile(
             // For a peaceful phase-out of group-based encoding in ADIOS2,
             // print this warning only in the new layout (with group table)
             if (m_useGroupTable.value_or(UseGroupTable::No) ==
-                UseGroupTable::Yes)
+                    UseGroupTable::Yes &&
+                (m_engineType == "bp5" ||
+                 (openPMD_HAS_ADIOS_2_9 &&
+                  (m_engineType == "file" || m_engineType == "filestream" ||
+                   m_engineType == "bp"))))
             {
                 std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
                 printedWarningsAlready.noGroupBased = true;
             }
             fileData.m_IO.DefineAttribute(
                 adios_defaults::str_groupBasedWarning,
-                std::string("Consider using file-based or variable-based "
-                            "encoding instead in ADIOS2."));
+                std::string(warningADIOS2NoGroupbasedEncoding));
         }
     }
 }

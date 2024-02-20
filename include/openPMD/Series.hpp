@@ -49,7 +49,11 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+<<<<<<< HEAD
 #include <variant>
+=======
+#include <unordered_map>
+>>>>>>> 881f29767 (Further test and implement reopening of Iterations)
 #include <vector>
 
 // expose private and protected members for invasive testing
@@ -116,6 +120,7 @@ namespace internal
          * snapshot attribute.
          */
         std::set<IterationIndex_t> m_currentlyActiveIterations;
+        std::unordered_map<IterationIndex_t, std::string> m_iterationFilenames;
         /**
          * Needed if reading a single iteration of a file-based series.
          * Users may specify the concrete filename of one iteration instead of
@@ -834,14 +839,14 @@ OPENPMD_private
      * parse state.
      */
     IterationOpened
-    openIterationIfDirty(IterationIndex_t index, Iteration iteration);
+    openIterationIfDirty(IterationIndex_t index, Iteration &iteration);
     /*
      * Open an iteration. Ensures that the iteration's m_closed status
      * is set properly and that any files pertaining to the iteration
      * is opened.
      * Does not create files when called in CREATE mode.
      */
-    void openIteration(IterationIndex_t index, Iteration iteration);
+    void openIteration(IterationIndex_t index, Iteration &iteration);
 
     /**
      * Find the given iteration in Series::iterations and return an iterator

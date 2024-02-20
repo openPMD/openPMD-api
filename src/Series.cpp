@@ -1594,11 +1594,9 @@ void Series::readFileBased(
                 return;
             }
             Iteration &i = series.iterations[index];
-            i.deferParseAccess(
-                {std::to_string(index),
-                 index,
-                 true,
-                 cleanFilename(filename, series.m_filenameExtension).body});
+            series.m_iterationFilenames[index] =
+                cleanFilename(filename, series.m_filenameExtension).body;
+            i.deferParseAccess({std::to_string(index), index, true});
         });
 
     if (series.iterations.empty())
@@ -1637,7 +1635,9 @@ void Series::readFileBased(
             Parameter<Operation::CLOSE_FILE> fClose;
             iteration.IOHandler()->enqueue(IOTask(&iteration, fClose));
             iteration.IOHandler()->flush(internal::defaultFlushParams);
-            iteration.get().m_closed = internal::CloseStatus::Closed;
+            auto &it_data = iteration.get();
+            it_data.m_closed = internal::CloseStatus::Closed;
+            it_data.allow_reopening_implicitly = true;
         }
         return {};
     };
@@ -2061,7 +2061,7 @@ creating new iterations.
         {
             // parse for the first time, resp. delay the parsing process
             Iteration &i = series.iterations[index];
-            i.deferParseAccess({path, index, false, "", beginStep});
+            i.deferParseAccess({path, index, false, beginStep});
             if (!series.m_parseLazily)
             {
                 try
@@ -2330,11 +2330,10 @@ std::string Series::iterationFilename(IterationIndex_t i)
     {
         return series.m_overrideFilebasedFilename.value();
     }
-    else if (auto iteration = iterations.find(i); //
-             iteration != iterations.end() &&
-             iteration->second.get().m_overrideFilebasedFilename.has_value())
+    else if (auto iteration = series.m_iterationFilenames.find(i); //
+             iteration != series.m_iterationFilenames.end())
     {
-        return iteration->second.get().m_overrideFilebasedFilename.value();
+        return iteration->second;
     }
     else
     {
@@ -2598,19 +2597,20 @@ void Series::flushStep(bool doFlush)
     series.m_wroteAtLeastOneIOStep = true;
 }
 
-auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
+auto Series::openIterationIfDirty(IterationIndex_t index, Iteration &iteration)
     -> IterationOpened
 {
+    auto &data = iteration.get();
     /*
      * Check side conditions on accessing iterations, and if they are fulfilled,
      * forward function params to openIteration().
      */
-    if (iteration.get().m_closed == internal::CloseStatus::ParseAccessDeferred)
+    if (data.m_closed == internal::CloseStatus::ParseAccessDeferred)
     {
         return IterationOpened::RemainsClosed;
     }
     bool const dirtyRecursive = iteration.dirtyRecursive();
-    if (iteration.get().m_closed == internal::CloseStatus::Closed)
+    if (data.m_closed == internal::CloseStatus::Closed)
     {
         // file corresponding with the iteration has previously been
         // closed and fully flushed
@@ -2621,9 +2621,20 @@ auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
                 "[Series] Closed iteration has not been written. This "
                 "is an internal error.");
         }
-        if (!dirtyRecursive)
+        else if (!dirtyRecursive)
         {
             return IterationOpened::RemainsClosed;
+        }
+        else if (!data.allow_reopening_implicitly)
+        {
+            throw error::WrongAPIUsage(
+                "[Series] Closed iteration (idx=" + std::to_string(index) +
+                ") must be open()ed explicitly before interacting with it "
+                "again.");
+        }
+        else
+        {
+            data.allow_reopening_implicitly = false; // only allow this once
         }
     }
 
@@ -2657,17 +2668,17 @@ auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
     return IterationOpened::RemainsClosed;
 }
 
-void Series::openIteration(IterationIndex_t index, Iteration iteration)
+void Series::openIteration(IterationIndex_t index, Iteration &iteration)
 {
     auto oldStatus = iteration.get().m_closed;
     switch (oldStatus)
     {
         using CL = internal::CloseStatus;
     case CL::Closed:
-    case CL::ParseAccessDeferred:
     case CL::Open:
         iteration.get().m_closed = CL::Open;
         break;
+    case CL::ParseAccessDeferred:
     case CL::ClosedInFrontend:
         // just keep it like it is
         break;
