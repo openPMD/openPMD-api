@@ -1,4 +1,5 @@
 #include "SerialIOTests.hpp"
+#include "openPMD/IO/Access.hpp"
 
 namespace filebased_write_test
 {
@@ -55,7 +56,7 @@ void close_and_reopen_iterations(
         iteration.close();
     }
     std::cout << "Trying to read iteration 3 out of line" << std::endl;
-    if (need_to_explitly_open_iterations)
+    if (need_to_explitly_open_iterations || access == Access::READ_ONLY)
     {
         list.snapshots()[3].open();
     }
@@ -65,7 +66,7 @@ void close_and_reopen_iterations(
     for (auto &[idx, iteration] : list.snapshots())
     {
         std::cout << "Seeing iteration " << idx << std::endl;
-        if (need_to_explitly_open_iterations)
+        if (need_to_explitly_open_iterations || access == Access::READ_ONLY)
         {
             iteration.open();
         }

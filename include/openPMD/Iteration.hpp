@@ -69,11 +69,6 @@ namespace internal
          * (Group- and variable-based parsing shares the same code logic.)
          */
         bool fileBased = false;
-        /**
-         * If fileBased == true, the file name (without file path) of the file
-         * containing this iteration.
-         */
-        std::string filename;
         bool beginStep = false;
     };
 
@@ -90,6 +85,7 @@ namespace internal
          * overwritten.
          */
         CloseStatus m_closed = CloseStatus::Open;
+        bool allow_reopening_implicitly = false;
 
         /**
          * Whether a step is currently active for this iteration.
@@ -105,14 +101,6 @@ namespace internal
          * Otherwise empty.
          */
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
-
-        /**
-         * Upon reading a file, set this field to the used file name.
-         * In inconsistent iteration paddings, we must remember the name of the
-         * file since it cannot be reconstructed from the filename pattern
-         * alone.
-         */
-        std::optional<std::string> m_overrideFilebasedFilename{};
     };
 } // namespace internal
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
@@ -290,6 +278,7 @@ private:
      */
     void reread(std::string const &path);
     void readFileBased(
+        IterationIndex_t,
         std::string const &filePath,
         std::string const &groupPath,
         bool beginStep);
