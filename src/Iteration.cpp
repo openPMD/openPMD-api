@@ -141,25 +141,23 @@ Iteration &Iteration::close(bool _flush)
 
 Iteration &Iteration::open()
 {
+    Series s = retrieveSeries();
     auto &it = get();
+    // figure out my iteration number
+    auto begin = s.indexOf(*this);
+    // ensure that files are accessed
+    s.openIteration(begin->first, *this);
+    if (it.m_closed == CloseStatus::ParseAccessDeferred)
+    {
+        it.m_closed = CloseStatus::Open;
+        runDeferredParseAccess();
+    }
     if (getStepStatus() == StepStatus::OutOfStep)
     {
         beginStep(/* reread = */ false);
         setStepStatus(StepStatus::DuringStep);
     }
-    else
-    {
-        if (it.m_closed == CloseStatus::ParseAccessDeferred)
-        {
-            it.m_closed = CloseStatus::Open;
-            runDeferredParseAccess();
-        }
-        Series s = retrieveSeries();
-        // figure out my iteration number
-        auto begin = s.indexOf(*this);
-        s.openIteration(begin->first, *this);
-        IOHandler()->flush(internal::defaultFlushParams);
-    }
+    IOHandler()->flush(internal::defaultFlushParams);
     return *this;
 }
 
@@ -326,6 +324,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             m.second.flush(m.first, flushParams);
         for (auto &species : particles)
             species.second.flush(species.first, flushParams);
+        dirty() = false;
     }
     else
     {
@@ -393,7 +392,10 @@ void Iteration::reread(std::string const &path)
 }
 
 void Iteration::readFileBased(
-    std::string const &filePath, std::string const &groupPath, bool doBeginStep)
+    IterationIndex_t idx,
+    std::string const &filePath,
+    std::string const &groupPath,
+    bool doBeginStep)
 {
     if (doBeginStep)
     {
@@ -405,7 +407,15 @@ void Iteration::readFileBased(
     auto series = retrieveSeries();
 
     series.readOneIterationFileBased(filePath);
-    get().m_overrideFilebasedFilename = filePath;
+
+    auto &series_data = series.get();
+    if (series_data.m_iterationFilenames.find(idx) ==
+        series_data.m_iterationFilenames.end())
+    {
+        throw error::Internal(
+            "[Iteration::readFileBased] Own filename should be placed into "
+            "buffer for later retrieval.");
+    }
 
     read_impl(groupPath);
 }
@@ -883,8 +893,14 @@ void Iteration::runDeferredParseAccess()
         {
             if (deferred.fileBased)
             {
+                auto const &filename =
+                    retrieveSeries().get().m_iterationFilenames.at(
+                        deferred.iteration);
                 readFileBased(
-                    deferred.filename, deferred.path, deferred.beginStep);
+                    deferred.iteration,
+                    filename,
+                    deferred.path,
+                    deferred.beginStep);
             }
             else
             {
