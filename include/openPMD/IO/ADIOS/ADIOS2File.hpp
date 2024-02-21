@@ -229,7 +229,10 @@ public:
 
     using AttributeMap_t = std::map<std::string, adios2::Params>;
 
-    ADIOS2File(ADIOS2IOHandlerImpl &impl, InvalidatableFile file);
+    ADIOS2File(
+        ADIOS2IOHandlerImpl &impl,
+        InvalidatableFile file,
+        adios_defs::OpenFileAs);
 
     ~ADIOS2File();
 

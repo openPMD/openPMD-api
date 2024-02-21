@@ -212,7 +212,8 @@ public:
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.
      */
-    adios2::Mode adios2AccessMode(std::string const &fullPath);
+    adios2::Mode
+    adios2AccessMode(std::string const &fullPath, adios_defs::OpenFileAs);
 
     FlushTarget m_flushTarget = FlushTarget::Disk;
 
@@ -403,9 +404,10 @@ private:
      */
     GroupOrDataset groupOrDataset(Writable *);
 
-    enum class IfFileNotOpen : bool
+    enum class IfFileNotOpen : char
     {
         OpenImplicitly,
+        CreateImplicitly,
         ThrowError
     };
 

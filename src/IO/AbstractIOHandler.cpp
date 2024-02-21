@@ -90,6 +90,10 @@ void AbstractIOHandler::setIterationEncoding(IterationEncoding encoding)
             break;
         }
     }
+    else
+    {
+        m_backendAccess = m_frontendAccess;
+    }
 
     m_encoding = encoding;
 }
