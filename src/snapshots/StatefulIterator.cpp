@@ -837,7 +837,6 @@ StatefulIterator &StatefulIterator::operator++()
 
 auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator *
 {
-    auto &data = get();
     std::optional<StatefulIterator *> res;
     /*
      * loopBody() might return an empty option to indicate a skipped iteration.
