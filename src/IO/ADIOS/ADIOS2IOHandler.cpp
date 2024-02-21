@@ -931,7 +931,10 @@ void ADIOS2IOHandlerImpl::openFile(
 
     // enforce opening the file
     // lazy opening is deathly in parallel situations
-    auto &fileData = getFileData(file, IfFileNotOpen::OpenImplicitly);
+    auto &fileData = getFileData(
+        file,
+        parameters.reopen ? IfFileNotOpen::ReopenImplicitly
+                          : IfFileNotOpen::OpenImplicitly);
     *parameters.out_parsePreference = fileData.parsePreference;
     m_dirty.emplace(std::move(file));
 }
@@ -1559,9 +1562,10 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
         switch (openFileAs)
         {
 
-        case adios_defs::OpenFileAs::CreateFile:
+        case adios_defs::OpenFileAs::Create:
             return adios2::Mode::Write;
-        case adios_defs::OpenFileAs::OpenFile:
+        case adios_defs::OpenFileAs::Open:
+        case adios_defs::OpenFileAs::Reopen:
             return adios2::Mode::Append;
         }
         break;
@@ -1593,7 +1597,17 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
             {
 
             case IterationEncoding::fileBased:
-                return adios2::Mode::ReadRandomAccess;
+                switch (openFileAs)
+                {
+
+                case adios_defs::OpenFileAs::Create:
+                    return adios2::Mode::Write;
+                case adios_defs::OpenFileAs::Open:
+                    return adios2::Mode::ReadRandomAccess;
+                case adios_defs::OpenFileAs::Reopen:
+                    return adios2::Mode::Append;
+                }
+                break;
             case IterationEncoding::groupBased:
             case IterationEncoding::variableBased:
                 return adios2::Mode::Read;
@@ -1700,37 +1714,41 @@ detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
         file.valid(),
         "[ADIOS2] Cannot retrieve file data for a file that has "
         "been overwritten or deleted.")
+    auto openFileAs = [&]() {
+        using OF = adios_defs::OpenFileAs;
+        switch (flag)
+        {
+        case IfFileNotOpen::ReopenImplicitly:
+            return OF::Reopen;
+        case IfFileNotOpen::OpenImplicitly:
+            return OF::Open;
+        case IfFileNotOpen::CreateImplicitly:
+            return OF::Create;
+        case IfFileNotOpen::ThrowError:
+            break;
+        }
+        return OF{};
+    }();
     auto it = m_fileData.find(file);
     if (it == m_fileData.end())
     {
         switch (flag)
         {
-        case IfFileNotOpen::OpenImplicitly: {
-
-            auto res = m_fileData.emplace(
-                file,
-                std::make_unique<detail::ADIOS2File>(
-                    *this, file, adios_defs::OpenFileAs::OpenFile));
-            return *res.first->second;
-        }
-        case IfFileNotOpen::CreateImplicitly: {
-            auto res = m_fileData.emplace(
-                file,
-                std::make_unique<detail::ADIOS2File>(
-                    *this, file, adios_defs::OpenFileAs::CreateFile));
-            return *res.first->second;
-        }
         case IfFileNotOpen::ThrowError:
             throw std::runtime_error(
                 "[ADIOS2] Requested file has not been opened yet: " +
                 (file.fileState ? file.fileState->name : "Unknown file name"));
+        default:
+            auto res = m_fileData.emplace(
+                file,
+                std::make_unique<detail::ADIOS2File>(*this, file, openFileAs));
+            return *res.first->second;
         }
     }
     else
     {
         return *it->second;
     }
-    throw std::runtime_error("Unreachable!");
 }
 
 void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile const &file)
