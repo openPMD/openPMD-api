@@ -22,6 +22,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 
 #if openPMD_USE_VERIFY
@@ -155,7 +156,10 @@ void BufferedUniquePtrPut::run(ADIOS2File &ba)
     switchAdios2VariableType<RunUniquePtrPut>(dtype, *this, ba);
 }
 
-ADIOS2File::ADIOS2File(ADIOS2IOHandlerImpl &impl, InvalidatableFile file)
+ADIOS2File::ADIOS2File(
+    ADIOS2IOHandlerImpl &impl,
+    InvalidatableFile file,
+    adios_defs::OpenFileAs openFileAs)
     : m_file(impl.fullPath(std::move(file)))
     , m_ADIOS(impl.m_ADIOS)
     , m_impl(&impl)
@@ -164,7 +168,7 @@ ADIOS2File::ADIOS2File(ADIOS2IOHandlerImpl &impl, InvalidatableFile file)
     // Declaring these members in the constructor body to avoid
     // initialization order hazards. Need the IO_ prefix since in some
     // situation there seems to be trouble with number-only IO names
-    m_mode = impl.adios2AccessMode(m_file);
+    m_mode = impl.adios2AccessMode(m_file, openFileAs);
     create_IO();
     if (!m_IO)
     {

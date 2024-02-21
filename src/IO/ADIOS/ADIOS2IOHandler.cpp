@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <cctype> // std::tolower
+#include <cstddef>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -618,7 +619,7 @@ void ADIOS2IOHandlerImpl::createFile(
         // enforce opening the file
         // lazy opening is deathly in parallel situations
         auto &fileData =
-            getFileData(shared_name, IfFileNotOpen::OpenImplicitly);
+            getFileData(shared_name, IfFileNotOpen::CreateImplicitly);
 
         if (!printedWarningsAlready.noGroupBased &&
             m_writeAttributesFromThisRank &&
@@ -1468,15 +1469,33 @@ void ADIOS2IOHandlerImpl::deregister(
     m_files.erase(writable);
 }
 
-adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
+adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
+    std::string const &fullPath, adios_defs::OpenFileAs openFileAs)
 {
     switch (m_handler->m_backendAccess)
     {
     case Access::CREATE:
-        return adios2::Mode::Write;
+        switch (openFileAs)
+        {
+
+        case adios_defs::OpenFileAs::CreateFile:
+            return adios2::Mode::Write;
+        case adios_defs::OpenFileAs::OpenFile:
+            return adios2::Mode::Append;
+        }
+        break;
 #if openPMD_HAS_ADIOS_2_8
     case Access::READ_LINEAR:
-        return adios2::Mode::Read;
+        switch (m_handler->m_encoding)
+        {
+
+        case IterationEncoding::fileBased:
+            return adios2::Mode::ReadRandomAccess;
+        case IterationEncoding::groupBased:
+        case IterationEncoding::variableBased:
+            return adios2::Mode::Read;
+        }
+        break;
     case Access::READ_ONLY:
         return adios2::Mode::ReadRandomAccess;
 #else
@@ -1489,7 +1508,16 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
             auxiliary::file_exists(fullPath))
         {
 #if openPMD_HAS_ADIOS_2_8
-            return adios2::Mode::ReadRandomAccess;
+            switch (m_handler->m_encoding)
+            {
+
+            case IterationEncoding::fileBased:
+                return adios2::Mode::ReadRandomAccess;
+            case IterationEncoding::groupBased:
+            case IterationEncoding::variableBased:
+                return adios2::Mode::Read;
+            }
+            break;
 #else
             return adios2::Mode::Read;
 #endif
@@ -1599,7 +1627,16 @@ detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
         case IfFileNotOpen::OpenImplicitly: {
 
             auto res = m_fileData.emplace(
-                file, std::make_unique<detail::ADIOS2File>(*this, file));
+                file,
+                std::make_unique<detail::ADIOS2File>(
+                    *this, file, adios_defs::OpenFileAs::OpenFile));
+            return *res.first->second;
+        }
+        case IfFileNotOpen::CreateImplicitly: {
+            auto res = m_fileData.emplace(
+                file,
+                std::make_unique<detail::ADIOS2File>(
+                    *this, file, adios_defs::OpenFileAs::CreateFile));
             return *res.first->second;
         }
         case IfFileNotOpen::ThrowError:
