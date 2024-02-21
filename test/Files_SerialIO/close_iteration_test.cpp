@@ -12,10 +12,15 @@ inline void breakpoint()
 {}
 
 template <typename WriteIterations>
-auto run_test(WriteIterations &&writeIterations, std::vector<Access> readModes)
+auto run_test(
+    WriteIterations &&writeIterations,
+    std::string const &ext,
+    std::vector<Access> const &readModes)
 {
+    std::string filename =
+        "../samples/close_iteration_reopen_groupbased." + ext;
     Series series(
-        "../samples/close_iteration_reopen_groupbased.bp4",
+        filename,
         Access::CREATE,
         R"(adios2.use_group_table = true
            adios2.modifiable_attributes = true)");
@@ -64,7 +69,7 @@ auto run_test(WriteIterations &&writeIterations, std::vector<Access> readModes)
 
     for (auto mode : readModes)
     {
-        Series read("../samples/close_iteration_reopen_groupbased.bp4", mode);
+        Series read(filename, mode);
         {
             auto it = read.snapshots()[0];
             std::vector<int> data(5);
@@ -111,14 +116,23 @@ auto close_and_reopen_test() -> void
 {
     run_test(
         [](Series &s) { return s.iterations; },
+        "bp4",
         {Access::READ_ONLY, Access::READ_LINEAR});
     // since these write data in a way that distributes one iteration's data
     // over multiple steps, only random access read mode makes sense
     run_test(
         [](Series &s) { return s.writeIterations(); },
+        "bp4",
         {Access::READ_RANDOM_ACCESS});
     run_test(
-        [](Series &s) { return s.snapshots(); }, {Access::READ_RANDOM_ACCESS});
+        [](Series &s) { return s.snapshots(); },
+        "bp4",
+        {Access::READ_RANDOM_ACCESS});
+    // that doesnt matter for json tho
+    run_test(
+        [](Series &s) { return s.snapshots(); },
+        "json",
+        {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
 }
 #else
 auto close_and_reopen_test() -> void
