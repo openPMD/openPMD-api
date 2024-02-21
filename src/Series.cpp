@@ -3078,6 +3078,8 @@ Snapshots Series::snapshots()
 
             break;
         case Access::READ_WRITE:
+            throw std::runtime_error(
+                "[Series::snapshots()] Unimplemented for READ_WRITE mode.");
         case Access::CREATE:
         case Access::APPEND:
             // @todo: properly distinguish here
