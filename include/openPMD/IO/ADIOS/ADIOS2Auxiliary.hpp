@@ -69,8 +69,9 @@ namespace adios_defs
 
     enum class OpenFileAs
     {
-        CreateFile,
-        OpenFile
+        Create,
+        Open,
+        Reopen
     };
 } // namespace adios_defs
 
