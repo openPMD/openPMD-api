@@ -1775,6 +1775,12 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 {
     auto &series = get();
 
+    IOHandler()->m_encoding = IterationEncoding::fileBased;
+    // In this case, READ_LINEAR is implemented exclusively in the frontend
+    if (IOHandler()->m_backendAccess == Access::READ_LINEAR)
+    {
+        IOHandler()->m_backendAccess = Access::READ_ONLY;
+    }
     Parameter<Operation::OPEN_FILE> fOpen;
     Parameter<Operation::READ_ATT> aRead;
 
@@ -1789,14 +1795,15 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     aRead.name = "iterationEncoding";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
+    IterationEncoding encoding_out;
     if (*aRead.dtype == DT::STRING)
     {
         std::string encoding = Attribute(*aRead.resource).get<std::string>();
         if (encoding == "fileBased")
-            series.m_iterationEncoding = IterationEncoding::fileBased;
+            encoding_out = IterationEncoding::fileBased;
         else if (encoding == "groupBased")
         {
-            series.m_iterationEncoding = IterationEncoding::fileBased;
+            encoding_out = IterationEncoding::fileBased;
             std::cerr
                 << "Series constructor called with iteration regex '%T' "
                    "suggests loading a time series with fileBased iteration "
@@ -1826,7 +1833,10 @@ void Series::readOneIterationFileBased(std::string const &filePath)
                 error::Reason::UnexpectedContent,
                 {},
                 "Unknown iterationEncoding: " + encoding);
-        setAttribute("iterationEncoding", encoding);
+        auto old_written = written();
+        written() = false;
+        setIterationEncoding(encoding_out);
+        written() = old_written;
     }
     else
         throw std::runtime_error(

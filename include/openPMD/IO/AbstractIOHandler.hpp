@@ -218,6 +218,10 @@ private:
                 break;
             }
         }
+        else
+        {
+            m_backendAccess = m_frontendAccess;
+        }
 
         m_encoding = encoding;
     }
