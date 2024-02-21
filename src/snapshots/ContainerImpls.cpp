@@ -152,6 +152,12 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     auto access = s.series.IOHandler()->m_frontendAccess;
 
     // @todo distinguish read_write
+    if (access == Access::READ_WRITE)
+    {
+        throw std::runtime_error(
+            "[StatefulSnapshotsContainer::operator[]()] Unimplemented for "
+            "READ_WRITE mode.");
+    }
     if (access::write(access))
     {
         auto lastIteration = base_iterator->peekCurrentlyOpenIteration();
