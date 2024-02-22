@@ -2296,6 +2296,12 @@ void Series::readBase()
                 "string, found " +
                     datatypeToString(Attribute(*aRead.resource).dtype) + ")");
     }
+    else
+    {
+        // Make sure that the meshesPath does not leak from one iteration into
+        // the other in file-based iteration encoding
+        get().m_attributes.erase("meshesPath");
+    }
 
     if (std::count(
             aList.attributes->begin(),
@@ -2327,6 +2333,11 @@ void Series::readBase()
                 "Unexpected Attribute datatype for 'particlesPath' (expected "
                 "string, found " +
                     datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+    }
+    {
+        // Make sure that the particlesPath does not leak from one iteration
+        // into the other in file-based iteration encoding
+        get().m_attributes.erase("particlesPath");
     }
 }
 
