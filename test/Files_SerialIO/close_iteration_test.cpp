@@ -201,9 +201,9 @@ auto run_test_groupbased(
         it.close();
 
         it.open();
-        auto e_position_x = it.particles["e"]["position"]["x"];
-        e_position_x.resetDataset({Datatype::INT, {5}});
-        e_position_x.storeChunk(data, {0}, {5});
+        auto E_y = it.meshes["E"]["y"];
+        E_y.resetDataset({Datatype::INT, {5}});
+        E_y.storeChunk(data, {0}, {5});
         it.close();
     }
     {
@@ -257,8 +257,7 @@ auto run_test_groupbased(
         {
             auto it = read.snapshots()[1].open();
             std::vector<int> data(5);
-            it.particles["e"]["position"]["x"].loadChunkRaw(
-                data.data(), {0}, {5});
+            it.meshes["E"]["y"].loadChunkRaw(data.data(), {0}, {5});
             it.close();
             REQUIRE((data == std::vector<int>{0, 1, 2, 3, 4}));
         }
@@ -270,7 +269,10 @@ auto close_and_reopen_test() -> void
     run_test_filebased([](Series &s) { return s.iterations; }, "bp");
     run_test_filebased([](Series &s) { return s.writeIterations(); }, "bp");
     run_test_filebased([](Series &s) { return s.snapshots(); }, "bp");
-    // run_test_filebased([](Series &s) { return s.snapshots(); }, "json");
+    run_test_filebased([](Series &s) { return s.snapshots(); }, "json");
+#if openPMD_HAVE_HDF5
+    run_test_filebased([](Series &s) { return s.snapshots(); }, "h5");
+#endif
 
     run_test_groupbased(
         [](Series &s) { return s.iterations; },
@@ -291,6 +293,12 @@ auto close_and_reopen_test() -> void
         [](Series &s) { return s.snapshots(); },
         "json",
         {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+#if openPMD_HAVE_HDF5
+    run_test_groupbased(
+        [](Series &s) { return s.snapshots(); },
+        "h5",
+        {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+#endif
 }
 #else
 auto close_and_reopen_test() -> void
