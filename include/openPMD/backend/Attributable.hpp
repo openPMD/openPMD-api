@@ -74,7 +74,6 @@ namespace internal
          */
         Writable m_writable;
 
-    private:
         /**
          * The attributes defined by this Attributable.
          */

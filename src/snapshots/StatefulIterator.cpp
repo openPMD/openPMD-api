@@ -471,7 +471,6 @@ StatefulIterator::StatefulIterator(
 
     switch (series.iterationEncoding())
     {
-
     case IterationEncoding::fileBased: {
         initIteratorFilebased();
         break;
@@ -646,6 +645,17 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
        */
         auto maybe_current_iteration = data.currentStep.get_iteration_index();
         if (maybe_current_iteration.has_value() &&
+            // don't deactivate the iteration if it's the one that's currently
+            // active anyway
+            std::visit(
+                auxiliary::overloaded{
+                    [&](detail::seek_types::Next_t const &) { return true; },
+                    [&](detail::seek_types::Seek_Iteration_t const
+                            &go_to_iteration) {
+                        return go_to_iteration.iteration_idx !=
+                            **maybe_current_iteration;
+                    }},
+                seek) &&
             iterations.contains(**maybe_current_iteration))
         {
             auto &currentIteration = iterations.at(**maybe_current_iteration);
@@ -653,7 +663,10 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
             {
                 currentIteration.close();
             }
-            if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR)
+            // sic! only erase if the Iteration was explicitly closed, don't
+            // implicitly sweep the iteration away from under the user
+            else if (
+                series.IOHandler()->m_frontendAccess == Access::READ_LINEAR)
             {
                 data.series.iterations.container().erase(
                     **maybe_current_iteration);
