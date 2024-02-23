@@ -101,9 +101,20 @@ namespace detail
         };
 
         template <typename F, typename G>
-        auto map_during_t(F &&map, G &&create_new);
+        void map_during_t(F &&map, G &&create_new);
         template <typename F>
-        auto map_during_t(F &&map);
+        void map_during_t(F &&map);
+
+        // casts needed because of
+        // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90943
+        inline auto as_base() const -> variant_t const &
+        {
+            return *this;
+        }
+        inline auto as_base() -> variant_t &
+        {
+            return *this;
+        }
     };
 
     namespace seek_types
@@ -122,6 +133,19 @@ namespace detail
         using Seek_Iteration_t = seek_types::Seek_Iteration_t;
 
         static constexpr Next_t const Next{};
+
+        using variant_t =
+            std::variant<seek_types::Next_t, seek_types::Seek_Iteration_t>;
+        // casts needed because of
+        // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90943
+        inline auto as_base() const -> variant_t const &
+        {
+            return *this;
+        }
+        inline auto as_base() -> variant_t &
+        {
+            return *this;
+        }
     };
 } // namespace detail
 
@@ -335,7 +359,7 @@ public:
 namespace openPMD::detail
 {
 template <typename F, typename G>
-auto CurrentStep::map_during_t(F &&map, G &&create_new)
+void CurrentStep::map_during_t(F &&map, G &&create_new)
 {
     std::visit(
         auxiliary::overloaded{
@@ -356,11 +380,11 @@ auto CurrentStep::map_during_t(F &&map, G &&create_new)
                     this->swap(*res);
                 }
             }},
-        *this);
+        this->as_base());
 }
 
 template <typename F>
-auto CurrentStep::map_during_t(F &&map)
+void CurrentStep::map_during_t(F &&map)
 {
     map_during_t(
         std::forward<F>(map), [](auto const &) { return std::nullopt; });
