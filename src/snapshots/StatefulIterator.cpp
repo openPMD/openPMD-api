@@ -97,7 +97,7 @@ namespace detail
                         return std::nullopt;
                     }
                 }},
-            *this);
+            this->as_base());
     }
     auto CurrentStep::get_iteration_index()
         -> std::optional<Iteration::IterationIndex_t *>
@@ -612,7 +612,7 @@ StatefulIterator::nextStep(size_t recursion_depth)
                 auxiliary::overloaded{
                     [](CurrentStep::Before_t const &) { return false; },
                     [](auto const &) { return true; }},
-                data.currentStep);
+                data.currentStep.as_base());
         }
         throw std::runtime_error("Unreachable!");
     }();
@@ -655,7 +655,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
                         return go_to_iteration.iteration_idx !=
                             **maybe_current_iteration;
                     }},
-                seek) &&
+                seek.as_base()) &&
             iterations.contains(**maybe_current_iteration))
         {
             auto &currentIteration = iterations.at(**maybe_current_iteration);
@@ -744,7 +744,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
                     return skipToIterationInStep(
                         skip_to_iteration.iteration_idx);
                 }},
-            seek);
+            seek.as_base());
         if (optionallyAStep.has_value())
         {
             return guardReturn(optionallyAStep);
@@ -771,7 +771,7 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
                     std::to_string(skip_to_iteration.iteration_idx) +
                     "from another step not supported yet");
             }},
-        seek);
+        seek.as_base());
     return guardReturn(option);
 }
 
@@ -936,7 +936,7 @@ auto StatefulIterator::is_end() const -> bool
                     return !during.iteration_idx.has_value();
                 },
                 [](CurrentStep::After_t const &) { return true; }},
-            (**m_data).currentStep);
+            (**m_data).currentStep.as_base());
 }
 
 auto StatefulIterator::assert_end_iterator() const -> void
@@ -976,13 +976,13 @@ auto LegacyIteratorAdaptor::operator==(LegacyIteratorAdaptor const &other) const
     -> bool
 {
     return m_iterator == other.m_iterator;
-};
+}
 
 auto LegacyIteratorAdaptor::operator!=(LegacyIteratorAdaptor const &other) const
     -> bool
 {
     return m_iterator != other.m_iterator;
-};
+}
 
 ReadIterations::ReadIterations(
     Series series,
