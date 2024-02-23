@@ -183,7 +183,8 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
                     during.iteration_idx = key;
                     during.available_iterations_in_step = {key};
                 },
-                [&](detail::CurrentStep::AtTheEdge where_am_i) {
+                [&](detail::CurrentStep::AtTheEdge where_am_i)
+                    -> detail::CurrentStep::During_t {
                     base_iterator->get().seen_iterations[key] = 0;
                     switch (where_am_i)
                     {
@@ -195,6 +196,7 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
                             "stream is "
                             "closed?");
                     }
+                    throw std::runtime_error("Unreachable!");
                 });
         }
         auto &res = s.series.iterations[key];
