@@ -16,7 +16,7 @@ spack:
     cmake:
       externals:
       - spec: cmake@3.22.1
-        prefix: /usr
+        prefix: /usr/local
       buildable: False
     libfabric:
       externals:
