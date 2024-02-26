@@ -56,10 +56,13 @@ public:
     ~RandomAccessIterator() override;
 
     RandomAccessIterator(RandomAccessIterator const &other);
-    RandomAccessIterator(RandomAccessIterator &&other) noexcept;
+    RandomAccessIterator(RandomAccessIterator &&other) noexcept(
+        noexcept(iterator_t(std::declval<iterator_t &&>())));
 
     RandomAccessIterator &operator=(RandomAccessIterator const &other);
-    RandomAccessIterator &operator=(RandomAccessIterator &&other) noexcept;
+    RandomAccessIterator &
+    operator=(RandomAccessIterator &&other) noexcept(noexcept(
+        std::declval<iterator_t>().operator=(std::declval<iterator_t &&>())));
 
     value_type const &operator*() const;
     RandomAccessIterator &operator++();
