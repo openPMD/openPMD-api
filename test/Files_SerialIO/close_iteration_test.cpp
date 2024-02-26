@@ -1,4 +1,5 @@
 #include "SerialIOTests.hpp"
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 
@@ -9,6 +10,15 @@ namespace close_and_reopen_test
 using namespace openPMD;
 #if openPMD_HAVE_ADIOS2
 
+constexpr char const *write_cfg =
+#if openPMD_HAS_ADIOS_2_9
+    R"(adios2.use_group_table = true
+           adios2.modifiable_attributes = true)";
+#else
+    R"(adios2.use_group_table = false
+           adios2.modifiable_attributes = false)";
+#endif
+
 template <typename WriteIterations>
 auto run_test_filebased(
     WriteIterations &&writeIterations, std::string const &ext)
@@ -16,11 +26,7 @@ auto run_test_filebased(
     std::string filename =
         "../samples/close_iteration_reopen/filebased_%T." + ext;
     auxiliary::remove_directory("../samples/close_iteration_reopen");
-    Series series(
-        filename,
-        Access::CREATE,
-        R"(adios2.use_group_table = true
-           adios2.modifiable_attributes = true)");
+    Series series(filename, Access::CREATE, write_cfg);
     {
         auto it = writeIterations(series)[0];
         auto E_x = it.meshes["E"]["x"];
@@ -64,11 +70,7 @@ auto run_test_filebased(
     }
     series.close();
 
-    series = Series(
-        filename,
-        Access::READ_WRITE,
-        R"(adios2.use_group_table = true
-           adios2.modifiable_attributes = true)");
+    series = Series(filename, Access::READ_WRITE, write_cfg);
 
     {
         // @todo proper support for READ_WRITE in snapshots()
@@ -172,11 +174,7 @@ auto run_test_groupbased(
 {
     std::string filename =
         "../samples/close_iteration_reopen/groupbased." + ext;
-    Series series(
-        filename,
-        Access::CREATE,
-        R"(adios2.use_group_table = true
-           adios2.modifiable_attributes = true)");
+    Series series(filename, Access::CREATE, write_cfg);
     {
         auto it = writeIterations(series)[0];
         auto E_x = it.meshes["E"]["x"];

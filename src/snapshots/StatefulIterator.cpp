@@ -65,7 +65,8 @@ namespace detail
     }
 
     template <typename V>
-    auto CurrentStep::get_variant() const -> std::optional<V const *>
+    [[nodiscard]] auto CurrentStep::get_variant() const
+        -> std::optional<V const *>
     {
         auto res = std::get_if<V>(*this);
         if (res)
