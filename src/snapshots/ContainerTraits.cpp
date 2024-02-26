@@ -85,6 +85,8 @@ using value_type =
 template class OpaqueSeriesIterator<value_type>;
 template class OpaqueSeriesIterator<value_type const>;
 
+AbstractSnapshotsContainer::~AbstractSnapshotsContainer() = default;
+
 auto AbstractSnapshotsContainer::currentIteration()
     -> std::optional<value_type *>
 {

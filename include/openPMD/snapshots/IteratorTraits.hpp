@@ -35,6 +35,7 @@ class DynamicSeriesIterator
 {
 public:
     using difference_type = Iteration::IterationIndex_t;
+    virtual ~DynamicSeriesIterator() = 0;
 
 protected:
     template <typename>
@@ -68,6 +69,8 @@ class AbstractSeriesIterator : public DynamicSeriesIterator<value_type_in>
 public:
     using difference_type = Iteration::IterationIndex_t;
     using value_type = value_type_in;
+
+    ~AbstractSeriesIterator() override;
 
     // dereference
     // value_type const &operator*() const = 0;
