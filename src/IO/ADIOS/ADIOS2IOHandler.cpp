@@ -661,10 +661,12 @@ void ADIOS2IOHandlerImpl::createFile(
             // print this warning only in the new layout (with group table)
             if (m_useGroupTable.value_or(UseGroupTable::No) ==
                     UseGroupTable::Yes &&
-                (m_engineType == "bp5" ||
-                 (openPMD_HAS_ADIOS_2_9 &&
-                  (m_engineType == "file" || m_engineType == "filestream" ||
-                   m_engineType == "bp"))))
+                (m_engineType == "bp5"
+#if openPMD_HAS_ADIOS_2_9
+                 || (m_engineType == "file" || m_engineType == "filestream" ||
+                     m_engineType == "bp")
+#endif
+                     ))
             {
                 std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
                 printedWarningsAlready.noGroupBased = true;
