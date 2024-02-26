@@ -186,6 +186,14 @@ namespace
 } // namespace
 
 StatefulIterator::StatefulIterator() = default;
+StatefulIterator::~StatefulIterator() = default;
+
+StatefulIterator::StatefulIterator(StatefulIterator const &other) = default;
+StatefulIterator::StatefulIterator(StatefulIterator &&other) noexcept = default;
+StatefulIterator &
+StatefulIterator::operator=(StatefulIterator const &other) = default;
+StatefulIterator &
+StatefulIterator::operator=(StatefulIterator &&other) noexcept = default;
 
 auto StatefulIterator::get() -> SharedData &
 {

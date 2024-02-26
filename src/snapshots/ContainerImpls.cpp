@@ -27,6 +27,16 @@ StatefulSnapshotsContainer::StatefulSnapshotsContainer(
     std::function<StatefulIterator *()> begin)
     : m_begin(std::move(begin))
 {}
+
+StatefulSnapshotsContainer::StatefulSnapshotsContainer(
+    StatefulSnapshotsContainer const &other) = default;
+StatefulSnapshotsContainer::StatefulSnapshotsContainer(
+    StatefulSnapshotsContainer &&other) noexcept = default;
+StatefulSnapshotsContainer &StatefulSnapshotsContainer::operator=(
+    StatefulSnapshotsContainer const &other) = default;
+StatefulSnapshotsContainer &StatefulSnapshotsContainer::operator=(
+    StatefulSnapshotsContainer &&other) noexcept = default;
+
 auto StatefulSnapshotsContainer::get() -> StatefulIterator *
 {
     if (!m_bufferedIterator.has_value())
@@ -63,6 +73,9 @@ auto StatefulSnapshotsContainer::currentIteration() const
         return nullptr;
     }
 }
+
+StatefulSnapshotsContainer::~StatefulSnapshotsContainer() = default;
+
 auto StatefulSnapshotsContainer::begin() -> iterator
 {
     return stateful_to_opaque(*get());
@@ -251,6 +264,18 @@ RandomAccessIteratorContainer::RandomAccessIteratorContainer(
     Container<Iteration, key_type> cont)
     : m_cont(std::move(cont))
 {}
+
+RandomAccessIteratorContainer::~RandomAccessIteratorContainer() = default;
+
+RandomAccessIteratorContainer::RandomAccessIteratorContainer(
+    RandomAccessIteratorContainer const &other) = default;
+RandomAccessIteratorContainer::RandomAccessIteratorContainer(
+    RandomAccessIteratorContainer &&other) noexcept = default;
+RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
+    RandomAccessIteratorContainer const &other) = default;
+RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
+    RandomAccessIteratorContainer &&other) noexcept = default;
+
 auto RandomAccessIteratorContainer::begin() -> iterator
 {
     return OpaqueSeriesIterator(
