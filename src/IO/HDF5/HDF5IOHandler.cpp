@@ -666,10 +666,6 @@ void HDF5IOHandlerImpl::createDataset(
 
         if (num_elements != 0u && chunking.has_value())
         {
-            //! @todo allow overwrite with user-provided chunk size
-            // for( auto const& val : parameters.chunkSize )
-            //    chunk_dims.push_back(static_cast< hsize_t >(val));
-
             if (chunking->size() != parameters.extent.size())
             {
                 std::string chunking_printed = [&]() {
