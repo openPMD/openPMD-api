@@ -59,6 +59,8 @@ public:
     using reverse_iterator = OpaqueSeriesIterator<value_type>;
     using const_reverse_iterator = OpaqueSeriesIterator<value_type const>;
 
+    virtual ~AbstractSnapshotsContainer() = 0;
+
     virtual auto currentIteration() -> std::optional<value_type *>;
     virtual auto currentIteration() const -> std::optional<value_type const *>;
 

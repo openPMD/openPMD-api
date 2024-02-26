@@ -7,12 +7,19 @@
 namespace openPMD
 {
 template <typename value_type>
+DynamicSeriesIterator<value_type>::~DynamicSeriesIterator() = default;
+
+template <typename value_type>
 auto DynamicSeriesIterator<value_type>::dereference_operator() -> value_type &
 {
     return const_cast<value_type &>(
         static_cast<DynamicSeriesIterator const *>(this)
             ->dereference_operator());
 }
+
+template <typename ChildClass, typename value_type>
+AbstractSeriesIterator<ChildClass, value_type>::~AbstractSeriesIterator() =
+    default;
 
 // dereference
 template <typename ChildClass, typename value_type>

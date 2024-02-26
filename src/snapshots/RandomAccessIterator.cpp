@@ -7,6 +7,22 @@ inline RandomAccessIterator<iterator_t>::RandomAccessIterator(iterator_t it)
 {}
 
 template <typename iterator_t>
+RandomAccessIterator<iterator_t>::~RandomAccessIterator() = default;
+
+template <typename iterator_t>
+RandomAccessIterator<iterator_t>::RandomAccessIterator(
+    RandomAccessIterator const &other) = default;
+template <typename iterator_t>
+RandomAccessIterator<iterator_t>::RandomAccessIterator(
+    RandomAccessIterator &&other) noexcept = default;
+template <typename iterator_t>
+RandomAccessIterator<iterator_t> &RandomAccessIterator<iterator_t>::operator=(
+    RandomAccessIterator const &other) = default;
+template <typename iterator_t>
+RandomAccessIterator<iterator_t> &RandomAccessIterator<iterator_t>::operator=(
+    RandomAccessIterator &&other) noexcept = default;
+
+template <typename iterator_t>
 auto RandomAccessIterator<iterator_t>::operator*() const -> value_type const &
 {
     return *m_it;

@@ -53,6 +53,14 @@ public:
     using parent_t::operator*;
     using typename parent_t::value_type;
 
+    ~RandomAccessIterator() override;
+
+    RandomAccessIterator(RandomAccessIterator const &other);
+    RandomAccessIterator(RandomAccessIterator &&other) noexcept;
+
+    RandomAccessIterator &operator=(RandomAccessIterator const &other);
+    RandomAccessIterator &operator=(RandomAccessIterator &&other) noexcept;
+
     value_type const &operator*() const;
     RandomAccessIterator &operator++();
     RandomAccessIterator &operator--();

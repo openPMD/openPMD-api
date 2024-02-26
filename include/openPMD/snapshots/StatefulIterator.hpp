@@ -207,6 +207,13 @@ public:
 
     //! construct the end() iterator
     explicit StatefulIterator();
+    ~StatefulIterator() override;
+
+    StatefulIterator(StatefulIterator const &other);
+    StatefulIterator(StatefulIterator &&other) noexcept;
+
+    StatefulIterator &operator=(StatefulIterator const &other);
+    StatefulIterator &operator=(StatefulIterator &&other) noexcept;
 
     class tag_write_t
     {};

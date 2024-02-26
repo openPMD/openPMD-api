@@ -20,6 +20,16 @@ private:
     auto get() const -> StatefulIterator const *;
 
 public:
+    ~StatefulSnapshotsContainer() override;
+
+    StatefulSnapshotsContainer(StatefulSnapshotsContainer const &other);
+    StatefulSnapshotsContainer(StatefulSnapshotsContainer &&other) noexcept;
+
+    StatefulSnapshotsContainer &
+    operator=(StatefulSnapshotsContainer const &other);
+    StatefulSnapshotsContainer &
+    operator=(StatefulSnapshotsContainer &&other) noexcept;
+
     auto currentIteration() -> std::optional<value_type *> override;
     auto currentIteration() const -> std::optional<value_type const *> override;
 
@@ -61,6 +71,17 @@ private:
     RandomAccessIteratorContainer(Container<Iteration, key_type> cont);
 
 public:
+    ~RandomAccessIteratorContainer() override;
+
+    RandomAccessIteratorContainer(RandomAccessIteratorContainer const &other);
+    RandomAccessIteratorContainer(
+        RandomAccessIteratorContainer &&other) noexcept;
+
+    RandomAccessIteratorContainer &
+    operator=(RandomAccessIteratorContainer const &other);
+    RandomAccessIteratorContainer &
+    operator=(RandomAccessIteratorContainer &&other) noexcept;
+
     auto begin() -> iterator override;
     auto end() -> iterator override;
     auto begin() const -> const_iterator override;
