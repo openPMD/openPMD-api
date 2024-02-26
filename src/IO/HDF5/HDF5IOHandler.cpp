@@ -21,6 +21,11 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
+#include <optional>
+#include <sstream>
+#include <stdexcept>
 
 #if openPMD_HAVE_HDF5
 #include "openPMD/Datatype.hpp"
@@ -134,38 +139,20 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
         m_H5T_LONG_DOUBLE_80_LE >= 0,
         "[HDF5] Internal error: Failed to create 128-bit complex long double");
 
-    m_chunks = auxiliary::getEnvString("OPENPMD_HDF5_CHUNKS", "auto");
     // JSON option can overwrite env option:
     if (config.json().contains("hdf5"))
     {
         m_config = config["hdf5"];
 
-        // check for global dataset configs
-        if (m_config.json().contains("dataset"))
         {
-            auto datasetConfig = m_config["dataset"];
-            if (datasetConfig.json().contains("chunks"))
+            constexpr char const *const init_json_shadow_str = R"(
             {
-                auto maybeChunks = json::asLowerCaseStringDynamic(
-                    datasetConfig["chunks"].json());
-                if (maybeChunks.has_value())
-                {
-                    m_chunks = std::move(maybeChunks.value());
-                }
-                else
-                {
-                    throw error::BackendConfigSchema(
-                        {"hdf5", "dataset", "chunks"},
-                        "Must be convertible to string type.");
-                }
-            }
-        }
-        if (m_chunks != "auto" && m_chunks != "none")
-        {
-            std::cerr << "Warning: HDF5 chunking option set to an invalid "
-                         "value '"
-                      << m_chunks << "'. Reset to 'auto'." << std::endl;
-            m_chunks = "auto";
+              "dataset": {
+                "chunks": null
+              }
+            })";
+            auto init_json_shadow = nlohmann::json::parse(init_json_shadow_str);
+            json::merge(m_config.getShadow(), init_json_shadow);
         }
 
         // unused params
@@ -468,8 +455,53 @@ void HDF5IOHandlerImpl::createDataset(
         if (auxiliary::ends_with(name, '/'))
             name = auxiliary::replace_last(name, "/", "");
 
-        json::TracingJSON config =
-            json::parseOptions(parameters.options, /* considerFiles = */ false);
+        std::vector<hsize_t> dims;
+        std::uint64_t num_elements = 1u;
+        for (auto const &val : parameters.extent)
+        {
+            dims.push_back(static_cast<hsize_t>(val));
+            num_elements *= val;
+        }
+
+        Datatype d = parameters.dtype;
+        if (d == Datatype::UNDEFINED)
+        {
+            // TODO handle unknown dtype
+            std::cerr << "[HDF5] Datatype::UNDEFINED caught during dataset "
+                         "creation (serial HDF5)"
+                      << std::endl;
+            d = Datatype::BOOL;
+        }
+
+        json::TracingJSON config = [&]() {
+            if (!m_buffered_dataset_config.has_value())
+            {
+                // we are only interested in these values from the global config
+                constexpr char const *const mask_for_global_conf = R"(
+                {
+                "dataset": {
+                    "chunks": null
+                }
+                })";
+                m_buffered_dataset_config = m_config.json();
+                json::filterByTemplate(
+                    *m_buffered_dataset_config,
+                    nlohmann::json::parse(mask_for_global_conf));
+            }
+            auto parsed_config = json::parseOptions(
+                parameters.options, /* considerFiles = */ false);
+            if (auto hdf5_config_it = parsed_config.config.find("hdf5");
+                hdf5_config_it != parsed_config.config.end())
+            {
+                hdf5_config_it.value() = json::merge(
+                    *m_buffered_dataset_config, hdf5_config_it.value());
+            }
+            else
+            {
+                parsed_config.config["hdf5"] = *m_buffered_dataset_config;
+            }
+            return parsed_config;
+        }();
 
         // general
         bool is_resizable_dataset = false;
@@ -478,17 +510,90 @@ void HDF5IOHandlerImpl::createDataset(
             is_resizable_dataset = config["resizable"].json().get<bool>();
         }
 
+        using chunking_t = std::vector<hsize_t>;
+        using compute_chunking_t =
+            std::variant<chunking_t, std::string /* either "none" or "auto"*/>;
+
+        bool chunking_config_from_json = false;
+        auto throw_chunking_error = [&chunking_config_from_json]() {
+            if (chunking_config_from_json)
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "chunks"},
+                    R"(Must be "auto", "none", or a an array of integer.)");
+            }
+            else
+            {
+                throw error::WrongAPIUsage(
+                    "Environment variable OPENPMD_HDF5_CHUNKS accepts values "
+                    "'auto' and 'none'.");
+            }
+        };
+
+        compute_chunking_t compute_chunking =
+            auxiliary::getEnvString("OPENPMD_HDF5_CHUNKS", "auto");
+
         // HDF5 specific
         if (config.json().contains("hdf5") &&
             config["hdf5"].json().contains("dataset"))
         {
             json::TracingJSON datasetConfig{config["hdf5"]["dataset"]};
 
-            /*
-             * @todo Read more options from config here.
-             */
-            (void)datasetConfig;
+            if (datasetConfig.json().contains("chunks"))
+            {
+                chunking_config_from_json = true;
+
+                auto chunks_json = datasetConfig["chunks"];
+                if (chunks_json.json().is_string())
+                {
+
+                    compute_chunking =
+                        json::asLowerCaseStringDynamic(chunks_json.json())
+                            .value();
+                }
+                else if (chunks_json.json().is_array())
+                {
+                    try
+                    {
+                        compute_chunking =
+                            chunks_json.json().get<std::vector<hsize_t>>();
+                    }
+                    catch (nlohmann::json::type_error const &)
+                    {
+                        throw_chunking_error();
+                    }
+                }
+                else
+                {
+                    throw_chunking_error();
+                }
+            }
         }
+        std::optional<chunking_t> chunking = std::visit(
+            auxiliary::overloaded{
+                [&](chunking_t &&explicitly_specified)
+                    -> std::optional<chunking_t> {
+                    return std::move(explicitly_specified);
+                },
+                [&](std::string const &method_name)
+                    -> std::optional<chunking_t> {
+                    if (method_name == "auto")
+                    {
+
+                        return getOptimalChunkDims(dims, toBytes(d));
+                    }
+                    else if (method_name == "none")
+                    {
+                        return std::nullopt;
+                    }
+                    else
+                    {
+                        throw_chunking_error();
+                        throw std::runtime_error("Unreachable!");
+                    }
+                }},
+            std::move(compute_chunking));
+
         parameters.warnUnusedParameters(
             config,
             "hdf5",
@@ -543,26 +648,6 @@ void HDF5IOHandlerImpl::createDataset(
             // else: link_id == 0: Link does not exist, nothing to do
         }
 
-        Datatype d = parameters.dtype;
-        if (d == Datatype::UNDEFINED)
-        {
-            // TODO handle unknown dtype
-            std::cerr << "[HDF5] Datatype::UNDEFINED caught during dataset "
-                         "creation (serial HDF5)"
-                      << std::endl;
-            d = Datatype::BOOL;
-        }
-
-        Attribute a(0);
-        a.dtype = d;
-        std::vector<hsize_t> dims;
-        std::uint64_t num_elements = 1u;
-        for (auto const &val : parameters.extent)
-        {
-            dims.push_back(static_cast<hsize_t>(val));
-            num_elements *= val;
-        }
-
         std::vector<hsize_t> max_dims(dims.begin(), dims.end());
         if (is_resizable_dataset)
             max_dims.assign(dims.size(), H5F_UNLIMITED);
@@ -579,24 +664,46 @@ void HDF5IOHandlerImpl::createDataset(
 
         H5Pset_fill_time(datasetCreationProperty, H5D_FILL_TIME_NEVER);
 
-        if (num_elements != 0u && m_chunks != "none")
+        if (num_elements != 0u && chunking.has_value())
         {
-            //! @todo add per dataset chunk control from JSON config
-
-            // get chunking dimensions
-            std::vector<hsize_t> chunk_dims =
-                getOptimalChunkDims(dims, toBytes(d));
-
-            //! @todo allow overwrite with user-provided chunk size
-            // for( auto const& val : parameters.chunkSize )
-            //    chunk_dims.push_back(static_cast< hsize_t >(val));
-
-            herr_t status = H5Pset_chunk(
-                datasetCreationProperty, chunk_dims.size(), chunk_dims.data());
-            VERIFY(
-                status == 0,
-                "[HDF5] Internal error: Failed to set chunk size during "
-                "dataset creation");
+            if (chunking->size() != parameters.extent.size())
+            {
+                std::string chunking_printed = [&]() {
+                    if (chunking->empty())
+                    {
+                        return std::string("[]");
+                    }
+                    else
+                    {
+                        std::stringstream s;
+                        auto it = chunking->begin();
+                        auto end = chunking->end();
+                        s << '[' << *it++;
+                        for (; it != end; ++it)
+                        {
+                            s << ", " << *it;
+                        }
+                        s << ']';
+                        return s.str();
+                    }
+                }();
+                std::cerr << "[HDF5] Chunking for dataset '" << name
+                          << "' was specified as " << chunking_printed
+                          << ", but dataset has dimensionality "
+                          << parameters.extent.size() << ". Will ignore."
+                          << std::endl;
+            }
+            else
+            {
+                herr_t status = H5Pset_chunk(
+                    datasetCreationProperty,
+                    chunking->size(),
+                    chunking->data());
+                VERIFY(
+                    status == 0,
+                    "[HDF5] Internal error: Failed to set chunk size during "
+                    "dataset creation");
+            }
         }
 
         std::string const &compression = ""; // @todo read from JSON
@@ -632,6 +739,8 @@ void HDF5IOHandlerImpl::createDataset(
             {typeid(std::complex<double>).name(), m_H5T_CDOUBLE},
             {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
         });
+        Attribute a(0);
+        a.dtype = d;
         hid_t datatype = getH5DataType(a);
         VERIFY(
             datatype >= 0,
@@ -1667,17 +1776,17 @@ void HDF5IOHandlerImpl::writeAttribute(
         break;
     }
     case DT::CFLOAT: {
-        std::complex<float> f = att.get<std::complex<float> >();
+        std::complex<float> f = att.get<std::complex<float>>();
         status = H5Awrite(attribute_id, dataType, &f);
         break;
     }
     case DT::CDOUBLE: {
-        std::complex<double> d = att.get<std::complex<double> >();
+        std::complex<double> d = att.get<std::complex<double>>();
         status = H5Awrite(attribute_id, dataType, &d);
         break;
     }
     case DT::CLONG_DOUBLE: {
-        std::complex<long double> d = att.get<std::complex<long double> >();
+        std::complex<long double> d = att.get<std::complex<long double>>();
         status = H5Awrite(attribute_id, dataType, &d);
         break;
     }
@@ -1687,94 +1796,90 @@ void HDF5IOHandlerImpl::writeAttribute(
         break;
     case DT::VEC_CHAR:
         status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<char> >().data());
+            attribute_id, dataType, att.get<std::vector<char>>().data());
         break;
     case DT::VEC_SHORT:
         status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<short> >().data());
+            attribute_id, dataType, att.get<std::vector<short>>().data());
         break;
     case DT::VEC_INT:
         status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<int> >().data());
+            attribute_id, dataType, att.get<std::vector<int>>().data());
         break;
     case DT::VEC_LONG:
         status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<long> >().data());
+            attribute_id, dataType, att.get<std::vector<long>>().data());
         break;
     case DT::VEC_LONGLONG:
         status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<long long> >().data());
+            attribute_id, dataType, att.get<std::vector<long long>>().data());
         break;
     case DT::VEC_UCHAR:
         status = H5Awrite(
             attribute_id,
             dataType,
-            att.get<std::vector<unsigned char> >().data());
+            att.get<std::vector<unsigned char>>().data());
         break;
     case DT::VEC_SCHAR:
         status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<signed char> >().data());
+            attribute_id, dataType, att.get<std::vector<signed char>>().data());
         break;
     case DT::VEC_USHORT:
         status = H5Awrite(
             attribute_id,
             dataType,
-            att.get<std::vector<unsigned short> >().data());
+            att.get<std::vector<unsigned short>>().data());
         break;
     case DT::VEC_UINT:
         status = H5Awrite(
             attribute_id,
             dataType,
-            att.get<std::vector<unsigned int> >().data());
+            att.get<std::vector<unsigned int>>().data());
         break;
     case DT::VEC_ULONG:
         status = H5Awrite(
             attribute_id,
             dataType,
-            att.get<std::vector<unsigned long> >().data());
+            att.get<std::vector<unsigned long>>().data());
         break;
     case DT::VEC_ULONGLONG:
         status = H5Awrite(
             attribute_id,
             dataType,
-            att.get<std::vector<unsigned long long> >().data());
+            att.get<std::vector<unsigned long long>>().data());
         break;
     case DT::VEC_FLOAT:
         status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<float> >().data());
+            attribute_id, dataType, att.get<std::vector<float>>().data());
         break;
     case DT::VEC_DOUBLE:
         status = H5Awrite(
-            attribute_id, dataType, att.get<std::vector<double> >().data());
+            attribute_id, dataType, att.get<std::vector<double>>().data());
         break;
     case DT::VEC_LONG_DOUBLE:
         status = H5Awrite(
-            attribute_id,
-            dataType,
-            att.get<std::vector<long double> >().data());
+            attribute_id, dataType, att.get<std::vector<long double>>().data());
         break;
     case DT::VEC_CFLOAT:
         status = H5Awrite(
             attribute_id,
             dataType,
-            att.get<std::vector<std::complex<float> > >().data());
+            att.get<std::vector<std::complex<float>>>().data());
         break;
     case DT::VEC_CDOUBLE:
         status = H5Awrite(
             attribute_id,
             dataType,
-            att.get<std::vector<std::complex<double> > >().data());
+            att.get<std::vector<std::complex<double>>>().data());
         break;
     case DT::VEC_CLONG_DOUBLE:
         status = H5Awrite(
             attribute_id,
             dataType,
-            att.get<std::vector<std::complex<long double> > >().data());
+            att.get<std::vector<std::complex<long double>>>().data());
         break;
     case DT::VEC_STRING: {
-        auto vs = att.get<std::vector<std::string> >();
+        auto vs = att.get<std::vector<std::string>>();
         size_t max_len = 0;
         for (std::string const &s : vs)
             max_len = std::max(max_len, s.size() + 1);
@@ -1786,7 +1891,7 @@ void HDF5IOHandlerImpl::writeAttribute(
     }
     case DT::ARR_DBL_7:
         status = H5Awrite(
-            attribute_id, dataType, att.get<std::array<double, 7> >().data());
+            attribute_id, dataType, att.get<std::array<double, 7>>().data());
         break;
     case DT::BOOL: {
         bool b = att.get<bool>();
@@ -2392,19 +2497,19 @@ void HDF5IOHandlerImpl::readAttribute(
         }
         else if (H5Tequal(attr_type, m_H5T_CFLOAT))
         {
-            std::vector<std::complex<float> > vcf(dims[0], 0);
+            std::vector<std::complex<float>> vcf(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vcf.data());
             a = Attribute(vcf);
         }
         else if (H5Tequal(attr_type, m_H5T_CDOUBLE))
         {
-            std::vector<std::complex<double> > vcd(dims[0], 0);
+            std::vector<std::complex<double>> vcd(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vcd.data());
             a = Attribute(vcd);
         }
         else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE))
         {
-            std::vector<std::complex<long double> > vcld(dims[0], 0);
+            std::vector<std::complex<long double>> vcld(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vcld.data());
             a = Attribute(vcld);
         }
@@ -2425,7 +2530,7 @@ void HDF5IOHandlerImpl::readAttribute(
                 tmpBuffer,
                 nullptr,
                 H5P_DEFAULT);
-            std::vector<std::complex<long double> > vcld{
+            std::vector<std::complex<long double>> vcld{
                 tmpBuffer, tmpBuffer + dims[0]};
             delete[] tmpBuffer;
             a = Attribute(std::move(vcld));

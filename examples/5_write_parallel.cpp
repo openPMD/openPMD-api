@@ -54,6 +54,9 @@ type = "subfiling"
 ioc_selection = "every_nth_rank"
 stripe_size = 33554432
 stripe_count = -1
+
+[hdf5.dataset]
+chunks = "auto"
         )";
 
     // open file for writing
@@ -81,7 +84,10 @@ stripe_count = -1
     // example 1D domain decomposition in first index
     Datatype datatype = determineDatatype<float>();
     Extent global_extent = {10ul * mpi_size, 300};
-    Dataset dataset = Dataset(datatype, global_extent);
+    Dataset dataset = Dataset(datatype, global_extent, R"(
+[hdf5.dataset]
+chunks = [10, 100]
+    )");
 
     if (0 == mpi_rank)
         cout << "Prepared a Dataset of size " << dataset.extent[0] << "x"

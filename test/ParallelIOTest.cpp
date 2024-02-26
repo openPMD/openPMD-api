@@ -315,8 +315,10 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     std::shared_ptr<double> position_local(new double);
     *position_local = position_global[mpi_rank];
 
-    e["position"]["x"].resetDataset(
-        Dataset(determineDatatype(position_local), {mpi_size}));
+    e["position"]["x"].resetDataset(Dataset(
+        determineDatatype(position_local),
+        {mpi_size},
+        "hdf5.dataset.chunks = [1]"));
     e["position"]["x"].storeChunk(position_local, {mpi_rank}, {1});
 
     std::vector<uint64_t> positionOffset_global(mpi_size);
@@ -328,8 +330,10 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     std::shared_ptr<uint64_t> positionOffset_local(new uint64_t);
     *positionOffset_local = positionOffset_global[mpi_rank];
 
-    e["positionOffset"]["x"].resetDataset(
-        Dataset(determineDatatype(positionOffset_local), {mpi_size}));
+    e["positionOffset"]["x"].resetDataset(Dataset(
+        determineDatatype(positionOffset_local),
+        {mpi_size},
+        "hdf5.dataset.chunks = [" + std::to_string(mpi_size) + "]"));
     e["positionOffset"]["x"].storeChunk(positionOffset_local, {mpi_rank}, {1});
 
     o.flush();
@@ -836,7 +840,10 @@ void file_based_write_read(std::string const &file_ending)
                 });
 
             auto dataset = io::Dataset(
-                io::determineDatatype<precision>(), {global_Nx, global_Nz});
+                io::determineDatatype<precision>(),
+                {global_Nx, global_Nz},
+                "hdf5.dataset.chunks = [" + std::to_string(global_Nx) + ", " +
+                    std::to_string(local_Nz) + "]");
             E_x.resetDataset(dataset);
 
             Offset chunk_offset = {0, local_Nz * mpi_rank};

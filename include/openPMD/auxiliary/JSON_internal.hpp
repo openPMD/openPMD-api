@@ -91,6 +91,7 @@ namespace json
          * @return nlohmann::json const&
          */
         nlohmann::json const &getShadow() const;
+        nlohmann::json &getShadow();
 
         /**
          * @brief Invert the "shadow", i.e. a copy of the original JSON value
@@ -247,5 +248,8 @@ namespace json
      */
     nlohmann::json &
     merge(nlohmann::json &defaultVal, nlohmann::json const &overwrite);
+
+    nlohmann::json &filterByTemplate(
+        nlohmann::json &defaultVal, nlohmann::json const &positiveMask);
 } // namespace json
 } // namespace openPMD

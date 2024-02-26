@@ -183,12 +183,15 @@ A full configuration of the HDF5 backend:
 .. literalinclude:: hdf5.json
    :language: json
 
-All keys found under ``hdf5.dataset`` are applicable globally (future: as well as per dataset).
+All keys found under ``hdf5.dataset`` are applicable globally as well as per dataset.
 Explanation of the single keys:
 
 * ``hdf5.dataset.chunks``: This key contains options for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
   The default is ``"auto"`` for a heuristic.
   ``"none"`` can be used to disable chunking.
+
+  An explicit chunk size can be specified as a list of positive integers, e.g. ``hdf5.dataset.chunks = [10, 100]``. Note that this specification should only be used per-dataset, e.g. in ``resetDataset()``/``reset_dataset()``.
+
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
 * ``hdf5.vfd.type`` selects the HDF5 virtual file driver.
   Currently available are:

@@ -65,6 +65,7 @@ Any file object greater than or equal in size to threshold bytes will be aligned
 
 ``OPENPMD_HDF5_CHUNKS``: this sets defaults for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
 Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
+The chunk size can alternatively (or additionally) be specified explicitly per dataset, by specifying a dataset-specific chunk size in the JSON/TOML configuration of ``resetDataset()``/``reset_dataset()``.
 
 ``OPENPMD_HDF5_COLLECTIVE_METADATA``: this is an option to enable collective MPI calls for HDF5 metadata operations via `H5Pset_all_coll_metadata_ops <https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetAllCollMetadataOps>`__ and `H5Pset_coll_metadata_write <https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetCollMetadataWrite>`__.
 By default, this optimization is enabled as it has proven to provide performance improvements.
