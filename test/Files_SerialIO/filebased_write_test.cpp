@@ -80,12 +80,24 @@ void close_and_reopen_iterations(
 void close_and_reopen_iterations(std::string const &filename)
 {
     close_and_reopen_iterations(
-        filename, Access::READ_LINEAR, "defer_iteration_parsing=false", false);
+        filename,
+        Access::READ_LINEAR,
+        R"({"defer_iteration_parsing":false})",
+        false);
     close_and_reopen_iterations(
-        filename, Access::READ_LINEAR, "defer_iteration_parsing=true", false);
+        filename,
+        Access::READ_LINEAR,
+        R"({"defer_iteration_parsing":true})",
+        false);
     close_and_reopen_iterations(
-        filename, Access::READ_ONLY, "defer_iteration_parsing=false", false);
+        filename,
+        Access::READ_ONLY,
+        R"({"defer_iteration_parsing":false})",
+        false);
     close_and_reopen_iterations(
-        filename, Access::READ_ONLY, "defer_iteration_parsing=true", true);
+        filename,
+        Access::READ_ONLY,
+        R"({"defer_iteration_parsing":true})",
+        true);
 }
 } // namespace filebased_write_test
