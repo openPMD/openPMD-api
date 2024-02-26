@@ -14,13 +14,18 @@ RandomAccessIterator<iterator_t>::RandomAccessIterator(
     RandomAccessIterator const &other) = default;
 template <typename iterator_t>
 RandomAccessIterator<iterator_t>::RandomAccessIterator(
-    RandomAccessIterator &&other) noexcept = default;
+    RandomAccessIterator
+        &&other) noexcept(noexcept(iterator_t(std::declval<iterator_t &&>()))) =
+    default;
 template <typename iterator_t>
 RandomAccessIterator<iterator_t> &RandomAccessIterator<iterator_t>::operator=(
     RandomAccessIterator const &other) = default;
 template <typename iterator_t>
 RandomAccessIterator<iterator_t> &RandomAccessIterator<iterator_t>::operator=(
-    RandomAccessIterator &&other) noexcept = default;
+    RandomAccessIterator
+        &&other) noexcept(noexcept(std::declval<iterator_t>().
+                                   operator=(std::declval<iterator_t &&>()))) =
+    default;
 
 template <typename iterator_t>
 auto RandomAccessIterator<iterator_t>::operator*() const -> value_type const &
