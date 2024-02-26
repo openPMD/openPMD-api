@@ -128,7 +128,7 @@ protected:
 
 public:
     Attributable();
-    Attributable(NoInit);
+    Attributable(NoInit) noexcept;
 
     virtual ~Attributable() = default;
 
