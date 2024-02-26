@@ -16,7 +16,7 @@ spack:
     cmake:
       externals:
       - spec: cmake@3.23.0
-        prefix: /usr
+        prefix: /usr/local
       buildable: False
     openmpi:
       externals:
