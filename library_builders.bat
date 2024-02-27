@@ -21,6 +21,8 @@ exit /b 0
     https://github.com/ornladios/ADIOS2/archive/refs/tags/v2.10.0-rc1.zip
   powershell Expand-Archive adios2-2.10.0-rc1.zip -DestinationPath dep-adios2
 
+  cmake --version
+
   cmake -S dep-adios2/ADIOS2-2.10.0-rc1 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  ^
@@ -68,6 +70,8 @@ exit /b 0
   curl -sLo blosc2-2.11.1.zip ^
     https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.zip
   powershell Expand-Archive blosc2-2.11.1.zip -DestinationPath dep-blosc2
+
+  cmake --version
 
   cmake -S dep-blosc2/c-blosc2-2.11.1 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
