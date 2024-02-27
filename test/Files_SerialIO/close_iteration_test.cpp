@@ -272,6 +272,11 @@ auto close_and_reopen_test() -> void
     run_test_filebased([](Series &s) { return s.snapshots(); }, "h5");
 #endif
 
+    /*
+     * This test writes the same attribute with different values over steps,
+     * triggering a bug in ADIOS2 v2.7.
+     */
+#if openPMD_HAS_ADIOS_2_8
     run_test_groupbased(
         [](Series &s) { return s.iterations; },
         "bp4",
@@ -291,12 +296,17 @@ auto close_and_reopen_test() -> void
         [](Series &s) { return s.snapshots(); },
         "json",
         {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+#endif
 #if openPMD_HAVE_HDF5
     run_test_groupbased(
         [](Series &s) { return s.snapshots(); },
         "h5",
         {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
 #endif
+    run_test_groupbased(
+        [](Series &s) { return s.snapshots(); },
+        "json",
+        {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
 }
 #else
 auto close_and_reopen_test() -> void
