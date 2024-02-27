@@ -41,12 +41,14 @@
 
 #include <cstdint> // uint64_t
 #include <deque>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private

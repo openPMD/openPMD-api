@@ -539,9 +539,6 @@ namespace
         std::string const &directory,
         MappingFunction &&mappingFunction)
     {
-        // bool isContained;
-        // int padding;
-        // Series::IterationIndex_t iterationIndex;
         std::set<int> paddings;
         if (auxiliary::directory_exists(directory))
         {
