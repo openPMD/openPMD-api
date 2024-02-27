@@ -713,7 +713,7 @@ auto Series::initIOHandler(
             if (!additional_extensions.empty())
             {
                 std::stringstream error;
-                error << "Found inconsistent filename extensions on disk: ";
+                error << "Found ambiguous filename extensions on disk: ";
                 auto it = additional_extensions.begin();
                 auto end = additional_extensions.end();
                 error << '\'' << *it++ << '\'';
