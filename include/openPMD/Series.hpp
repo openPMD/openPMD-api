@@ -34,8 +34,6 @@
 #include "openPMD/backend/ParsePreference.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
-#include <memory>
-#include <stdexcept>
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -44,8 +42,10 @@
 #include <cstdint> // uint64_t
 #include <deque>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
+#include <stdexcept>
 #include <string>
 
 // expose private and protected members for invasive testing
