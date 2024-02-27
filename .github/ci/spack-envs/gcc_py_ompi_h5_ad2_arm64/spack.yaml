@@ -6,7 +6,7 @@
 #
 spack:
   specs:
-  - adios2
+  - adios2@2.10
   - hdf5
   - openmpi
 
