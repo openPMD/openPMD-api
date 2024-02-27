@@ -5469,6 +5469,7 @@ void adios2_group_table(
     write.close();
 
     Series read("../samples/group_table.bp", Access::READ_LINEAR, jsonRead);
+    // NOLINTNEXTLINE(performance-for-range-copy)
     for (auto iteration : read.readIterations())
     {
         switch (iteration.iterationIndex)
@@ -6515,7 +6516,7 @@ TEST_CASE("deferred_parsing", "[serial]")
 }
 
 #if openPMD_HAS_ADIOS_2_9
-void chaotic_stream(std::string filename, bool variableBased)
+void chaotic_stream(std::string const &filename, bool variableBased)
 {
     /*
      * We will write iterations in the following order.
