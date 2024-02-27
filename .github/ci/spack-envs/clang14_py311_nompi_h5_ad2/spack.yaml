@@ -13,7 +13,7 @@ spack:
     hdf5:
       variants: ~mpi
     adios2:
-      variants: ~mpi ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+      variants: ~mgard ~mpi ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
     cmake:
       externals:
       - spec: cmake@3.22.1

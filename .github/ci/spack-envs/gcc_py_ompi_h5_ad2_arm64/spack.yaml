@@ -12,7 +12,7 @@ spack:
 
   packages:
     adios2:
-      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+      variants: ~mgard ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
     cmake:
       externals:
       - spec: cmake@3.22.1
