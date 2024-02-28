@@ -1370,7 +1370,7 @@ if(openPMD_BUILD_TESTING)
                             --outfile                                              \
                                 ../samples/git-sample/thetaMode/data_%T.bp &&      \
                                                                                    \
-                        ${Python_EXECUTABLE}                                       \
+                        ${MPI_TEST_EXE} ${Python_EXECUTABLE}                       \
                             ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe       \
                             --infile ../samples/git-sample/thetaMode/data_%T.bp    \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \

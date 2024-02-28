@@ -125,8 +125,23 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
             "ssc",
             std::move(originalExtension));
     case Format::JSON:
-        throw error::WrongAPIUsage(
-            "JSON backend not available in parallel openPMD.");
+        return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
+            "JSON",
+            path,
+            access,
+            comm,
+            std::move(options),
+            JSONIOHandlerImpl::FileFormat::Json,
+            std::move(originalExtension));
+    case Format::TOML:
+        return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
+            "JSON",
+            path,
+            access,
+            comm,
+            std::move(options),
+            JSONIOHandlerImpl::FileFormat::Toml,
+            std::move(originalExtension));
     default:
         throw error::WrongAPIUsage(
             "Unknown file format! Did you specify a file ending? Specified "

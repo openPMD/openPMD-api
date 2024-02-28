@@ -23,12 +23,17 @@
 #include "openPMD/Datatype.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <iomanip>
+#include <sstream>
 #include <toml.hpp>
 
 #include <algorithm>
@@ -132,6 +137,21 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {}
+
+#if openPMD_HAVE_MPI
+JSONIOHandlerImpl::JSONIOHandlerImpl(
+    AbstractIOHandler *handler,
+    MPI_Comm comm,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    [[maybe_unused]] openPMD::json::TracingJSON config,
+    FileFormat format,
+    std::string originalExtension)
+    : AbstractIOHandlerImpl(handler)
+    , m_communicator{comm}
+    , m_fileFormat{format}
+    , m_originalExtension{std::move(originalExtension)}
+{}
+#endif
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
 
@@ -618,7 +638,11 @@ void JSONIOHandlerImpl::closeFile(
     auto fileIterator = m_files.find(writable);
     if (fileIterator != m_files.end())
     {
-        putJsonContents(fileIterator->second);
+        auto it = putJsonContents(fileIterator->second);
+        if (it != m_jsonVals.end())
+        {
+            m_jsonVals.erase(it);
+        }
         m_dirty.erase(fileIterator->second);
         // do not invalidate the file
         // it still exists, it is just not open
@@ -1250,20 +1274,64 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
         return it->second;
     }
     // read from file
-    auto [fh, fh_with_precision, _] = getFilehandle(file, Access::READ_ONLY);
-    (void)_;
-    std::shared_ptr<nlohmann::json> res = std::make_shared<nlohmann::json>();
-    switch (m_fileFormat)
+    auto serialImplementation = [&file, this]() {
+        auto [fh, fh_with_precision, _] =
+            getFilehandle(file, Access::READ_ONLY);
+        (void)_;
+        std::shared_ptr<nlohmann::json> res =
+            std::make_shared<nlohmann::json>();
+        switch (m_fileFormat)
+        {
+        case FileFormat::Json:
+            *fh_with_precision >> *res;
+            break;
+        case FileFormat::Toml:
+            *res = openPMD::json::tomlToJson(
+                toml::parse(*fh_with_precision, *file));
+            break;
+        }
+        VERIFY(fh->good(), "[JSON] Failed reading from a file.");
+        return res;
+    };
+#if openPMD_HAVE_MPI
+    auto parallelImplementation = [&file, this](MPI_Comm comm) {
+        auto path = fullPath(*file);
+        std::string collectivelyReadRawData =
+            auxiliary::collective_file_read(path, comm);
+        std::shared_ptr<nlohmann::json> res =
+            std::make_shared<nlohmann::json>();
+        switch (m_fileFormat)
+        {
+        case FileFormat::Json:
+            *res = nlohmann::json::parse(collectivelyReadRawData);
+            break;
+        case FileFormat::Toml:
+            std::istringstream istream(
+                collectivelyReadRawData.c_str(),
+                std::ios_base::binary | std::ios_base::in);
+            auto as_toml = toml::parse(
+                istream >> std::setprecision(
+                               std::numeric_limits<double>::digits10 + 1),
+                *file);
+            *res = openPMD::json::tomlToJson(as_toml);
+            break;
+        }
+        return res;
+    };
+    std::shared_ptr<nlohmann::json> res;
+    if (m_communicator.has_value())
     {
-    case FileFormat::Json:
-        *fh_with_precision >> *res;
-        break;
-    case FileFormat::Toml:
-        *res =
-            openPMD::json::tomlToJson(toml::parse(*fh_with_precision, *file));
-        break;
+        res = parallelImplementation(m_communicator.value());
     }
-    VERIFY(fh->good(), "[JSON] Failed reading from a file.");
+    else
+    {
+        res = serialImplementation();
+    }
+
+#else
+    auto res = serialImplementation();
+#endif
+
     m_jsonVals.emplace(file, res);
     return res;
 }
@@ -1275,21 +1343,26 @@ nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(Writable *writable)
     return (*obtainJsonContents(file))[filePosition->id];
 }
 
-void JSONIOHandlerImpl::putJsonContents(
+auto JSONIOHandlerImpl::putJsonContents(
     File const &filename,
     bool unsetDirty // = true
-)
+    ) -> decltype(m_jsonVals)::iterator
 {
     VERIFY_ALWAYS(
         filename.valid(),
         "[JSON] File has been overwritten/deleted before writing");
     auto it = m_jsonVals.find(filename);
-    if (it != m_jsonVals.end())
+    if (it == m_jsonVals.end())
     {
+        return it;
+    }
+
+    (*it->second)["platform_byte_widths"] = platformSpecifics();
+
+    auto writeSingleFile = [this, &it](std::string const &writeThisFile) {
         auto [fh, _, fh_with_precision] =
-            getFilehandle(filename, Access::CREATE);
+            getFilehandle(File(writeThisFile), Access::CREATE);
         (void)_;
-        (*it->second)["platform_byte_widths"] = platformSpecifics();
 
         switch (m_fileFormat)
         {
@@ -1303,12 +1376,108 @@ void JSONIOHandlerImpl::putJsonContents(
         }
 
         VERIFY(fh->good(), "[JSON] Failed writing data to disk.")
-        m_jsonVals.erase(it);
-        if (unsetDirty)
+    };
+
+    auto serialImplementation = [&filename, &writeSingleFile]() {
+        writeSingleFile(*filename);
+    };
+
+#if openPMD_HAVE_MPI
+    auto num_digits = [](unsigned n) -> unsigned {
+        constexpr auto max = std::numeric_limits<unsigned>::max();
+        unsigned base_10 = 1;
+        unsigned res = 1;
+        while (base_10 < max)
         {
-            m_dirty.erase(filename);
+            base_10 *= 10;
+            if (n / base_10 == 0)
+            {
+                return res;
+            }
+            ++res;
         }
+        return res;
+    };
+
+    auto parallelImplementation =
+        [this, &filename, &writeSingleFile, &num_digits](MPI_Comm comm) {
+            auto path = fullPath(*filename);
+            auto dirpath = path + ".parallel";
+            if (!auxiliary::create_directories(dirpath))
+            {
+                throw std::runtime_error(
+                    "Failed creating directory '" + dirpath +
+                    "' for parallel JSON output");
+            }
+            int rank = 0, size = 0;
+            MPI_Comm_rank(comm, &rank);
+            MPI_Comm_size(comm, &size);
+            std::stringstream subfilePath;
+            // writeSingleFile will prepend the base dir
+            subfilePath << *filename << ".parallel/mpi_rank_"
+                        << std::setw(num_digits(size - 1)) << std::setfill('0')
+                        << rank << [&]() {
+                               switch (m_fileFormat)
+                               {
+                               case FileFormat::Json:
+                                   return ".json";
+                               case FileFormat::Toml:
+                                   return ".toml";
+                               }
+                               throw std::runtime_error("Unreachable!");
+                           }();
+            writeSingleFile(subfilePath.str());
+            if (rank == 0)
+            {
+                constexpr char const *readme_msg = R"(
+This folder has been created by a parallel instance of the JSON backend in
+openPMD. There is one JSON file for each parallel writer MPI rank.
+The parallel JSON backend performs no metadata or data aggregation at all.
+
+This functionality is intended mainly for debugging and prototyping workflows.
+There is no support in the openPMD-api for reading this folder as a single
+dataset. For reading purposes, either pick a single .json file and read that, or
+merge the .json files somehow (no tooling provided for this (yet)).
+)";
+                std::fstream readme_file;
+                readme_file.open(
+                    dirpath + "/README.txt",
+                    std::ios_base::out | std::ios_base::trunc);
+                readme_file << readme_msg + 1;
+                readme_file.close();
+                if (!readme_file.good() &&
+                    !filename.fileState->printedReadmeWarningAlready)
+                {
+                    std::cerr
+                        << "[Warning] Something went wrong in trying to create "
+                           "README file at '"
+                        << dirpath
+                        << "/README.txt'. Will ignore and continue. The README "
+                           "message would have been:\n----------\n"
+                        << readme_msg + 1 << "----------" << std::endl;
+                    filename.fileState->printedReadmeWarningAlready = true;
+                }
+            }
+        };
+
+    std::shared_ptr<nlohmann::json> res;
+    if (m_communicator.has_value())
+    {
+        parallelImplementation(m_communicator.value());
     }
+    else
+    {
+        serialImplementation();
+    }
+
+#else
+    serialImplementation();
+#endif
+    if (unsetDirty)
+    {
+        m_dirty.erase(filename);
+    }
+    return it;
 }
 
 std::shared_ptr<JSONFilePosition> JSONIOHandlerImpl::setAndGetFilePosition(
