@@ -60,6 +60,8 @@ namespace openPMD
 {
 #if openPMD_HAVE_ADIOS2
 
+std::optional<size_t> joinedDimension(adios2::Dims const &dims);
+
 class ADIOS2IOHandler;
 
 namespace detail
@@ -443,12 +445,35 @@ private:
                         std::to_string(actualDim) + ")");
             }
         }
-        for (unsigned int i = 0; i < actualDim; i++)
+        auto joinedDim = joinedDimension(shape);
+        if (joinedDim.has_value())
         {
-            if (offset[i] + extent[i] > shape[i])
+            if (!offset.empty())
             {
                 throw std::runtime_error(
-                    "[ADIOS2] Dataset access out of bounds.");
+                    "[ADIOS2] Offset must be an empty vector in case of joined "
+                    "array.");
+            }
+            for (unsigned int i = 0; i < actualDim; i++)
+            {
+                if (*joinedDim != i && extent[i] != shape[i])
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] store_chunk extent of non-joined dimensions "
+                        "must be equivalent to the total extent.");
+                }
+            }
+        }
+        else
+        {
+            for (unsigned int i = 0; i < actualDim; i++)
+            {
+                if (!(joinedDim.has_value() && *joinedDim == i) &&
+                    offset[i] + extent[i] > shape[i])
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] Dataset access out of bounds.");
+                }
             }
         }
 

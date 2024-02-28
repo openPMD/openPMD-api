@@ -68,6 +68,18 @@ namespace openPMD
 
 #if openPMD_HAVE_ADIOS2
 
+std::optional<size_t> joinedDimension(adios2::Dims const &dims)
+{
+    for (size_t i = 0; i < dims.size(); ++i)
+    {
+        if (dims[i] == adios2::JoinedDim)
+        {
+            return i;
+        }
+    }
+    return std::nullopt;
+}
+
 #if openPMD_HAVE_MPI
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
@@ -708,6 +720,13 @@ void ADIOS2IOHandlerImpl::createDataset(
             "[ADIOS2] Creating a dataset in a file opened as read "
             "only is not possible.");
     }
+#if !openPMD_HAS_ADIOS_2_9
+    if (parameters.joinedDimension.has_value())
+    {
+        error::throwOperationUnsupportedInBackend(
+            "ADIOS1", "Joined Arrays require ADIOS2 >= v2.9");
+    }
+#endif
     if (!writable->written)
     {
         /* Sanitize name */
@@ -741,8 +760,11 @@ void ADIOS2IOHandlerImpl::createDataset(
                 varName + "' remain unused:\n");
 
         // cast from openPMD::Extent to adios2::Dims
-        adios2::Dims const shape(
-            parameters.extent.begin(), parameters.extent.end());
+        adios2::Dims shape(parameters.extent.begin(), parameters.extent.end());
+        if (auto jd = parameters.joinedDimension; jd.has_value())
+        {
+            shape[jd.value()] = adios2::JoinedDim;
+        }
 
         auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
 

@@ -326,6 +326,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_DATASET>
     Extent extent = {};
     Datatype dtype = Datatype::UNDEFINED;
     std::string options = "{}";
+    std::optional<size_t> joinedDimension;
 
     /** Warn about unused JSON paramters
      *

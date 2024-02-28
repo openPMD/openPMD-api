@@ -259,8 +259,17 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
     Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
+    if (o.size() == 1u && o.at(0) == 0u)
+    {
+        if (joinedDimension().has_value())
+        {
+            offset.clear();
+        }
+        else if (dim > 1u)
+        {
+            offset = Offset(dim, 0u);
+        }
+    }
 
     //   extent = {-1u}: take full size
     Extent extent(dim, 1u);
@@ -278,38 +287,7 @@ template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
-    if (constant())
-        throw std::runtime_error(
-            "Chunks cannot be written for a constant RecordComponent.");
-    if (empty())
-        throw std::runtime_error(
-            "Chunks cannot be written for an empty RecordComponent.");
-    Datatype dtype = determineDatatype<T>();
-    if (dtype != getDatatype())
-    {
-        std::ostringstream oss;
-        oss << "Datatypes of chunk data (" << dtype
-            << ") and record component (" << getDatatype() << ") do not match.";
-        throw std::runtime_error(oss.str());
-    }
-    uint8_t dim = getDimensionality();
-    if (e.size() != dim || o.size() != dim)
-    {
-        std::ostringstream oss;
-        oss << "Dimensionality of chunk ("
-            << "offset=" << o.size() << "D, "
-            << "extent=" << e.size() << "D) "
-            << "and record component (" << int(dim) << "D) "
-            << "do not match.";
-        throw std::runtime_error(oss.str());
-    }
-    Extent dse = getExtent();
-    for (uint8_t i = 0; i < dim; ++i)
-        if (dse[i] < o[i] + e[i])
-            throw std::runtime_error(
-                "Chunk does not reside inside dataset (Dimension on index " +
-                std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
-                " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
+    verifyChunk<T>(o, e);
 
     /*
      * The openPMD backend might not yet know about this dataset.
@@ -334,6 +312,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         dCreate.name = rc.m_name;
         dCreate.extent = getExtent();
         dCreate.dtype = getDatatype();
+        dCreate.joinedDimension = joinedDimension();
         if (!rc.m_dataset.has_value())
         {
             throw error::WrongAPIUsage(
@@ -407,4 +386,9 @@ auto RecordComponent::visit(Args &&...args)
         getDatatype(), *this, std::forward<Args>(args)...);
 }
 
+template <typename T>
+void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
+{
+    verifyChunk(determineDatatype<T>(), o, e);
+}
 } // namespace openPMD

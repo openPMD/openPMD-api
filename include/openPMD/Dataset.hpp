@@ -22,7 +22,9 @@
 
 #include "openPMD/Datatype.hpp"
 
+#include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -37,6 +39,11 @@ class Dataset
     friend class RecordComponent;
 
 public:
+    enum : std::uint64_t
+    {
+        JOINED_DIMENSION = std::numeric_limits<std::uint64_t>::max()
+    };
+
     Dataset(Datatype, Extent, std::string options = "{}");
 
     /**
@@ -53,5 +60,9 @@ public:
     Datatype dtype;
     uint8_t rank;
     std::string options = "{}"; //!< backend-dependent JSON configuration
+
+    bool empty() const;
+
+    std::optional<size_t> joinedDimension() const;
 };
 } // namespace openPMD

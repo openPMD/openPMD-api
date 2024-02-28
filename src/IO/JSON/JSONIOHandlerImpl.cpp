@@ -260,6 +260,12 @@ void JSONIOHandlerImpl::createDataset(
             "[JSON] Creating a dataset in a file opened as read only is not "
             "possible.");
     }
+    if (parameter.joinedDimension.has_value())
+    {
+        error::throwOperationUnsupportedInBackend(
+            "ADIOS1", "Joined Arrays currently only supported in ADIOS2");
+    }
+
     if (!writable->written)
     {
         /* Sanitize name */

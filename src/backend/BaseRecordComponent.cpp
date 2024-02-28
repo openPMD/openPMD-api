@@ -65,6 +65,19 @@ bool BaseRecordComponent::constant() const
     return get().m_isConstant;
 }
 
+std::optional<size_t> BaseRecordComponent::joinedDimension() const
+{
+    auto &rc = get();
+    if (rc.m_dataset.has_value())
+    {
+        return rc.m_dataset.value().joinedDimension();
+    }
+    else
+    {
+        return false;
+    }
+}
+
 ChunkTable BaseRecordComponent::availableChunks()
 {
     auto &rc = get();

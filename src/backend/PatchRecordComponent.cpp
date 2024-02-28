@@ -42,14 +42,11 @@ PatchRecordComponent &PatchRecordComponent::resetDataset(Dataset d)
             "written.");
     if (d.extent.empty())
         throw std::runtime_error("Dataset extent must be at least 1D.");
-    if (std::any_of(
-            d.extent.begin(), d.extent.end(), [](Extent::value_type const &i) {
-                return i == 0u;
-            }))
+    if (d.empty())
         throw std::runtime_error(
             "Dataset extent must not be zero in any dimension.");
 
-    get().m_dataset = d;
+    get().m_dataset = std::move(d);
     dirty() = true;
     return *this;
 }
