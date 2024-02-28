@@ -154,4 +154,10 @@ namespace internal
         }
     }
 } // namespace internal
+
+IOTask::IOTask(IOTask const &) = default;
+IOTask::IOTask(IOTask &&) noexcept = default;
+
+IOTask &IOTask::operator=(IOTask const &) = default;
+IOTask &IOTask::operator=(IOTask &&) noexcept = default;
 } // namespace openPMD

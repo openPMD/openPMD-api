@@ -4436,6 +4436,7 @@ TEST_CASE("adios2_engines_and_file_endings")
                 filesystemExt.empty() ? name : basename + filesystemExt;
             {
                 Series write(name, Access::CREATE, jsonCfg);
+                write.close();
             }
             if (directory)
             {
@@ -5020,9 +5021,6 @@ void variableBasedSingleIteration(std::string const &file)
             file,
             Access::CREATE,
             R"({"iteration_encoding": "variable_based"})");
-        REQUIRE(
-            writeSeries.iterationEncoding() ==
-            IterationEncoding::variableBased);
         auto iterations = writeSeries.writeIterations();
         auto iteration = iterations[0];
         auto E_x = iteration.meshes["E"]["x"];
@@ -5031,6 +5029,9 @@ void variableBasedSingleIteration(std::string const &file)
         std::iota(data.begin(), data.end(), 0);
         E_x.storeChunk(data, {0}, {1000});
         writeSeries.flush();
+        REQUIRE(
+            writeSeries.iterationEncoding() ==
+            IterationEncoding::variableBased);
     }
 
     {

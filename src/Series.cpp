@@ -22,9 +22,12 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/Access.hpp"
+#include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -35,8 +38,11 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <memory>
+#include <optional>
 #include <regex>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -71,9 +77,11 @@ namespace
     struct Match
     {
         bool isContained{}; //! pattern match successful
-        int padding{}; //! number of zeros used for padding of iteration
-        Series::IterationIndex_t
-            iteration{}; //! iteration found in regex pattern (default: 0)
+        int padding{}; //! number of zeros used for padding of iteration, zero
+                       //! if no padding
+        Series::IterationIndex_t iteration =
+            0; //! iteration found in regex pattern (default: 0)
+        std::optional<std::string> extension;
 
         // support for std::tie
         operator std::tuple<bool &, int &, Series::IterationIndex_t &>()
@@ -102,7 +110,7 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        std::string const &extension);
+        std::optional<std::string> const &extension);
 } // namespace
 
 struct Series::ParsedInput
@@ -113,7 +121,7 @@ struct Series::ParsedInput
     IterationEncoding iterationEncoding;
     std::string filenamePrefix;
     std::string filenamePostfix;
-    std::string filenameExtension;
+    std::optional<std::string> filenameExtension;
     int filenamePadding = -1;
 }; // ParsedInput
 
@@ -284,6 +292,10 @@ IterationEncoding Series::iterationEncoding() const
 Series &Series::setIterationEncoding(IterationEncoding ie)
 {
     auto &series = get();
+    if (series.m_deferred_initialization)
+    {
+        runDeferredInitialization();
+    }
     if (written())
         throw std::runtime_error(
             "A files iterationEncoding can not (yet) be changed after it has "
@@ -359,6 +371,10 @@ std::string Series::name() const
 Series &Series::setName(std::string const &n)
 {
     auto &series = get();
+    if (series.m_deferred_initialization)
+    {
+        runDeferredInitialization();
+    }
     if (written())
         throw std::runtime_error(
             "A files name can not (yet) be changed after it has been written.");
@@ -392,6 +408,12 @@ Series &Series::setName(std::string const &n)
 
 std::string Series::backend() const
 {
+    return IOHandler()->backendName();
+}
+
+std::string Series::backend()
+{
+    /* this activates the non-const call to IOHandler() */
     return IOHandler()->backendName();
 }
 
@@ -476,6 +498,11 @@ std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
     std::tie(input->name, input->filenameExtension) =
         cleanFilename(input->name, suffix(input->format)).decompose();
 
+    if (input->filenameExtension == ".%E")
+    {
+        input->filenameExtension = std::nullopt;
+    }
+
     return input;
 }
 
@@ -512,21 +539,16 @@ namespace
         std::string const &directory,
         MappingFunction &&mappingFunction)
     {
-        bool isContained;
-        int padding;
-        Series::IterationIndex_t iterationIndex;
         std::set<int> paddings;
         if (auxiliary::directory_exists(directory))
         {
             for (auto const &entry : auxiliary::list_directory(directory))
             {
-                std::tie(isContained, padding, iterationIndex) =
-                    isPartOfSeries(entry);
-                if (isContained)
+                Match match = isPartOfSeries(entry);
+                if (match.isContained)
                 {
-                    paddings.insert(padding);
-                    // no std::forward as this is called repeatedly
-                    mappingFunction(iterationIndex, entry);
+                    paddings.insert(match.padding);
+                    mappingFunction(entry, std::move(match));
                 }
             }
         }
@@ -542,25 +564,240 @@ namespace
         std::function<Match(std::string const &)> const &isPartOfSeries,
         std::string const &directory)
     {
-        return autoDetectPadding(
-            isPartOfSeries,
-            directory,
-            [](Series::IterationIndex_t index, std::string const &filename) {
-                (void)index;
-                (void)filename;
-            });
+        return autoDetectPadding(isPartOfSeries, directory, [](auto &&...) {});
     }
 } // namespace
 
+template <typename... MPI_Communicator>
 void Series::init(
+    std::string const &filepath,
+    Access at,
+    std::string const &options,
+    // Either an MPI_Comm or none, the template works for both options
+    MPI_Communicator &&...comm)
+{
+    auto init_directly = [this, &comm..., at, &filepath](
+                             std::unique_ptr<ParsedInput> parsed_input,
+                             json::TracingJSON tracing_json) {
+        auto io_handler = createIOHandler(
+            parsed_input->path,
+            at,
+            parsed_input->format,
+            parsed_input->filenameExtension.value_or(std::string()),
+            comm...,
+            tracing_json,
+            filepath);
+        initSeries(std::move(io_handler), std::move(parsed_input));
+        json::warnGlobalUnusedOptions(tracing_json);
+    };
+
+    auto init_deferred = [this, at, &filepath, &options, &comm...](
+                             std::string const &parsed_directory) {
+        // Set a temporary IOHandler so that API calls which require a present
+        // IOHandler don't fail
+        writable().IOHandler =
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                std::make_unique<DummyIOHandler>(parsed_directory, at));
+        auto &series = get();
+        series.iterations.linkHierarchy(writable());
+        series.m_deferred_initialization = [called_this_already = false,
+                                            filepath,
+                                            options,
+                                            at,
+                                            comm...](Series &s) mutable {
+            if (called_this_already)
+            {
+                throw std::runtime_error("Must be called one time only");
+            }
+            else
+            {
+                called_this_already = true;
+            }
+
+            auto [parsed_input, tracing_json] =
+                s.initIOHandler<json::TracingJSON>(filepath, options, at, true);
+
+            auto io_handler = createIOHandler(
+                parsed_input->path,
+                at,
+                parsed_input->format,
+                parsed_input->filenameExtension.value_or(std::string()),
+                comm...,
+                tracing_json,
+                filepath);
+            auto res = io_handler.get();
+            s.initSeries(std::move(io_handler), std::move(parsed_input));
+            json::warnGlobalUnusedOptions(tracing_json);
+            return res;
+        };
+    };
+
+    switch (at)
+    {
+    case Access::CREATE:
+    case Access::READ_WRITE:
+    case Access::READ_ONLY: {
+        auto [parsed_input, tracing_json] =
+            initIOHandler<json::TracingJSON>(filepath, options, at, true);
+        init_directly(std::move(parsed_input), std::move(tracing_json));
+    }
+    break;
+    case Access::READ_LINEAR:
+    case Access::APPEND: {
+        auto [first_parsed_input, first_tracing_json] =
+            initIOHandler<json::TracingJSON>(filepath, options, at, false);
+        if (first_parsed_input->filenameExtension.has_value())
+        {
+            init_directly(
+                std::move(first_parsed_input), std::move(first_tracing_json));
+        }
+        else
+        {
+            /*
+             * Since we are still in the constructor, we want to avoid I/O
+             * accesses to resolve the file extension at the moment.
+             * -> Defer the proper initialization of the IO handler up to the
+             * point when we actually need it.
+             */
+            init_deferred(first_parsed_input->path);
+        }
+    }
+    break;
+    }
+}
+
+template <typename TracingJSON>
+auto Series::initIOHandler(
+    std::string const &filepath,
+    std::string const &options,
+    Access at,
+    bool resolve_generic_extension)
+    -> std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
+{
+    json::TracingJSON optionsJson =
+        json::parseOptions(options, /* considerFiles = */ true);
+    auto input = parseInput(filepath);
+    if (resolve_generic_extension && input->format == Format::GENERIC &&
+        at != Access::CREATE)
+    {
+        auto isPartOfSeries =
+            input->iterationEncoding == IterationEncoding::fileBased
+            ? matcher(
+                  input->filenamePrefix,
+                  input->filenamePadding,
+                  input->filenamePostfix,
+                  std::nullopt)
+            : matcher(input->name, -1, "", std::nullopt);
+        std::optional<std::string> extension;
+        std::set<std::string> additional_extensions;
+        autoDetectPadding(
+            isPartOfSeries,
+            input->path,
+            [&extension,
+             &additional_extensions](std::string const &, Match const &match) {
+                auto const &ext = match.extension.value();
+                if (extension.has_value() && *extension != ext)
+                {
+                    additional_extensions.emplace(ext);
+                }
+                else
+                {
+                    extension = ext;
+                }
+            });
+        if (extension.has_value())
+        {
+            if (!additional_extensions.empty())
+            {
+                std::stringstream error;
+                error << "Found ambiguous filename extensions on disk: ";
+                auto it = additional_extensions.begin();
+                auto end = additional_extensions.end();
+                error << '\'' << *it++ << '\'';
+                for (; it != end; ++it)
+                {
+                    error << ", '" << *it << '\'';
+                }
+                error << " and '" + *extension + "'.";
+                throw error::ReadError(
+                    error::AffectedObject::File,
+                    error::Reason::Other,
+                    std::nullopt,
+                    error.str());
+            }
+            input->filenameExtension = *extension;
+            input->format = determineFormat(*extension);
+        }
+        else if (access::read(at))
+        {
+            throw error::ReadError(
+                error::AffectedObject::File,
+                error::Reason::NotFound,
+                std::nullopt,
+                "No file found that matches given pattern '" + filepath + "'.");
+        }
+    }
+
+    parseJsonOptions(optionsJson, *input);
+
+    if (resolve_generic_extension && !input->filenameExtension.has_value())
+    {
+        if (input->format == /* still */ Format::GENERIC)
+        {
+            throw error::WrongAPIUsage(
+                "Unable to automatically determine filename extension. Please "
+                "specify in some way.");
+        }
+        else if (input->format == Format::ADIOS2_BP)
+        {
+            // Since ADIOS2 has multiple extensions depending on the engine,
+            // we need to pass this job on to the backend
+            input->filenameExtension = ".%E";
+        }
+        else
+        {
+            input->filenameExtension = suffix(input->format);
+        }
+    }
+    return std::make_tuple(std::move(input), std::move(optionsJson));
+}
+
+void Series::initSeries(
     std::unique_ptr<AbstractIOHandler> ioHandler,
     std::unique_ptr<Series::ParsedInput> input)
 {
     auto &series = get();
-    writable().IOHandler =
-        std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            std::move(ioHandler));
-    series.iterations.linkHierarchy(writable());
+    auto &writable = series.m_writable;
+
+    /*
+     * In Access modes READ_LINEAR and APPEND, the Series constructor might have
+     * emplaced a temporary IOHandler. Check if this is the case.
+     */
+    if (writable.IOHandler)
+    {
+        if (writable.IOHandler->has_value())
+        {
+            /*
+             * A temporary IOHandler has been used. In this case, copy the
+             * values from that IOHandler over into the real one.
+             */
+            ioHandler->operator=(***writable.IOHandler);
+            *writable.IOHandler = std::move(ioHandler);
+        }
+        else
+        {
+            throw error::Internal(
+                "Control flow error. This should not happen.");
+        }
+    }
+    else
+    {
+        writable.IOHandler =
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                std::move(ioHandler));
+    }
+
+    series.iterations.linkHierarchy(writable);
     series.iterations.writable().ownKeyWithinParent = "iterations";
 
     series.m_name = input->name;
@@ -570,7 +807,7 @@ void Series::init(
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
-    series.m_filenameExtension = input->filenameExtension;
+    series.m_filenameExtension = input->filenameExtension.value();
 
     if (series.m_iterationEncoding == IterationEncoding::fileBased &&
         !series.m_filenamePrefix.empty() &&
@@ -647,6 +884,11 @@ Given file pattern: ')END"
                 series.m_filenamePrefix,
                 series.m_filenamePadding,
                 series.m_filenamePostfix,
+                /*
+                 * This might still be ".%E" if the backend is ADIOS2 and no
+                 * files are yet on disk.
+                 * In that case, this will just not find anything.
+                 */
                 series.m_filenameExtension),
             IOHandler()->directory);
         switch (padding)
@@ -656,8 +898,10 @@ Given file pattern: ')END"
                 "Cannot write to a series with inconsistent iteration padding. "
                 "Please specify '%0<N>T' or open as read-only.");
         case -1:
-            std::cerr << "No matching iterations found: " << name()
-                      << std::endl;
+            /*
+             * No matching iterations found. No problem, Append mode is also
+             * fine for creating new datasets.
+             */
             break;
         default:
             series.m_filenamePadding = padding;
@@ -1026,7 +1270,8 @@ void Series::readFileBased()
         isPartOfSeries,
         IOHandler()->directory,
         // foreach found file with `filename` and `index`:
-        [&series](IterationIndex_t index, std::string const &filename) {
+        [&series](std::string const &filename, Match const &match) {
+            auto index = match.iteration;
             Iteration &i = series.iterations[index];
             i.deferParseAccess(
                 {std::to_string(index),
@@ -2206,6 +2451,7 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
                 }
                 else if (
                     input.format != Format::DUMMY &&
+                    input.format != Format::GENERIC &&
                     suffix(input.format) != suffix(it->second))
                 {
                     std::cerr << "[Warning] Supplied filename extension '"
@@ -2329,20 +2575,7 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    json::TracingJSON optionsJson =
-        json::parseOptions(options, comm, /* considerFiles = */ true);
-    auto input = parseInput(filepath);
-    parseJsonOptions(optionsJson, *input);
-    auto handler = createIOHandler(
-        input->path,
-        at,
-        input->format,
-        input->filenameExtension,
-        comm,
-        optionsJson,
-        filepath);
-    init(std::move(handler), std::move(input));
-    json::warnGlobalUnusedOptions(optionsJson);
+    init(filepath, at, options, comm);
 }
 #endif
 
@@ -2351,19 +2584,7 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    json::TracingJSON optionsJson =
-        json::parseOptions(options, /* considerFiles = */ true);
-    auto input = parseInput(filepath);
-    parseJsonOptions(optionsJson, *input);
-    auto handler = createIOHandler(
-        input->path,
-        at,
-        input->format,
-        input->filenameExtension,
-        optionsJson,
-        filepath);
-    init(std::move(handler), std::move(input));
-    json::warnGlobalUnusedOptions(optionsJson);
+    init(filepath, at, options);
 }
 
 Series::operator bool() const
@@ -2392,6 +2613,10 @@ WriteIterations Series::writeIterations()
     if (!series.m_writeIterations.has_value())
     {
         series.m_writeIterations = WriteIterations(this->iterations);
+    }
+    if (series.m_deferred_initialization.has_value())
+    {
+        runDeferredInitialization();
     }
     return series.m_writeIterations.value();
 }
@@ -2449,6 +2674,37 @@ auto Series::currentSnapshot() const
     }
 }
 
+AbstractIOHandler *Series::runDeferredInitialization()
+{
+    auto &series = get();
+    if (series.m_deferred_initialization.has_value())
+    {
+        auto functor = std::move(*m_series->m_deferred_initialization);
+        m_series->m_deferred_initialization = std::nullopt;
+        return functor(*this);
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+AbstractIOHandler *Series::IOHandler()
+{
+    auto res = Attributable::IOHandler();
+    if (res && //  res->backendName() == "Dummy" &&
+        m_series->m_deferred_initialization.has_value())
+    {
+        res = runDeferredInitialization();
+    }
+    return res;
+}
+AbstractIOHandler const *Series::IOHandler() const
+{
+    auto res = Attributable::IOHandler();
+    return res;
+}
+
 namespace
 {
     CleanedFilename cleanFilename(
@@ -2466,12 +2722,14 @@ namespace
         }
     }
 
-    std::function<Match(std::string const &)>
-    buildMatcher(std::string const &regexPattern, int padding)
+    std::function<Match(std::string const &)> buildMatcher(
+        std::string const &regexPattern,
+        int padding,
+        std::optional<size_t> index_of_extension)
     {
-        std::regex pattern(regexPattern);
-
-        return [pattern, padding](std::string const &filename) -> Match {
+        return [index_of_extension,
+                pattern = std::regex(regexPattern),
+                padding](std::string const &filename) -> Match {
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
             int processedPadding =
@@ -2479,7 +2737,13 @@ namespace
             return {
                 match,
                 processedPadding,
-                match ? std::stoull(regexMatches[1]) : 0};
+                padding < 0 ? padding
+                    : match ? std::stoull(regexMatches[1])
+                            : 0,
+                index_of_extension.has_value()
+                    ? std::make_optional<std::string>(
+                          regexMatches[*index_of_extension])
+                    : std::nullopt};
         };
     }
 
@@ -2487,10 +2751,15 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        std::string const &filenameSuffix)
+        std::optional<std::string> const &filenameSuffix)
     {
         std::string nameReg = "^" + prefix;
-        if (padding != 0)
+        size_t index_of_extension = 0;
+        if (padding < 0)
+        {
+            index_of_extension = 1;
+        }
+        else if (padding > 0)
         {
             // The part after the question mark:
             // The number must be at least `padding` digits long
@@ -2500,15 +2769,22 @@ namespace
             // iteration number via std::stoull(regexMatches[1])
             nameReg += "(([1-9][[:digit:]]*)?([[:digit:]]";
             nameReg += "{" + std::to_string(padding) + "}))";
+            index_of_extension = 4;
         }
         else
         {
             // No padding specified, any number of digits is ok.
             nameReg += "([[:digit:]]";
             nameReg += "+)";
+            index_of_extension = 2;
         }
-        nameReg += postfix + filenameSuffix + "$";
-        return buildMatcher(nameReg, padding);
+        nameReg += postfix + filenameSuffix.value_or("(\\.[[:alnum:]]+)") + "$";
+        return buildMatcher(
+            nameReg,
+            padding,
+            !filenameSuffix.has_value()
+                ? std::make_optional<size_t>(index_of_extension)
+                : std::nullopt);
     }
 } // namespace
 } // namespace openPMD

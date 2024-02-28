@@ -45,5 +45,6 @@ public:
      * without IO.
      */
     std::future<void> flush(internal::ParsedFlushParams &) override;
+    std::string backendName() const override;
 }; // DummyIOHandler
 } // namespace openPMD

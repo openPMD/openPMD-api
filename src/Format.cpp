@@ -45,6 +45,8 @@ Format determineFormat(std::string const &filename)
         return Format::JSON;
     if (auxiliary::ends_with(filename, ".toml"))
         return Format::TOML;
+    if (auxiliary::ends_with(filename, ".%E"))
+        return Format::GENERIC;
 
     // Format might still be specified via JSON
     return Format::DUMMY;
@@ -70,6 +72,8 @@ std::string suffix(Format f)
         return ".json";
     case Format::TOML:
         return ".toml";
+    case Format::GENERIC:
+        return ".%E";
     default:
         return "";
     }

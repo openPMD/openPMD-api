@@ -86,7 +86,7 @@ C++17
 .. code-block:: cpp
 
    auto series = io::Series(
-       "data%T.h5",
+       "data_%T.h5",
        io::Access::READ_ONLY);
 
 
@@ -96,8 +96,19 @@ Python
 .. code-block:: python3
 
    series = io.Series(
-       "data%T.h5",
+       "data_%T.h5",
        io.Access.read_only)
+
+.. tip::
+
+   Replace the file ending ``.h5`` with a wildcard ``.%E`` to let openPMD autodetect the ending from the file system.
+   Use the wildcard ``%T`` to match filename encoded iterations.
+
+.. tip::
+
+   More detailed options can be passed via JSON or TOML as a further constructor parameter.
+   Try ``{"defer_iteration_parsing": true}`` to speed up the first access.
+   (Remember to explicitly ``it.open()`` iterations in that case.)
 
 Iteration
 ---------

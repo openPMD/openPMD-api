@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
@@ -40,10 +41,14 @@
 
 #include <cstdint> // uint64_t
 #include <deque>
+#include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
+#include <stdexcept>
 #include <string>
+#include <tuple>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
@@ -192,6 +197,9 @@ namespace internal
          */
         std::optional<ParsePreference> m_parsePreference;
 
+        std::optional<std::function<AbstractIOHandler *(Series &)>>
+            m_deferred_initialization = std::nullopt;
+
         void close();
     }; // SeriesData
 
@@ -221,6 +229,18 @@ public:
     explicit Series();
 
 #if openPMD_HAVE_MPI
+    /**
+     * @brief Construct a new Series
+     *
+     * For further details, refer to the documentation of the non-MPI overload.
+     *
+     * @param filepath The file path.
+     * @param at Access mode.
+     * @param comm The MPI communicator.
+     * @param options Advanced backend configuration via JSON.
+     *      May be specified as a JSON-formatted string directly, or as a path
+     *      to a JSON textfile, prepended by an at sign '@'.
+     */
     Series(
         std::string const &filepath,
         Access at,
@@ -229,13 +249,50 @@ public:
 #endif
 
     /**
-     * @brief Construct a new Series
+     * @brief Construct a new Series.
      *
-     * @param filepath The backend will be determined by the filepath extension.
+     * For details on access modes, JSON/TOML configuration and iteration
+     * encoding, refer to:
+     *
+     * * https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#access-modes
+     * * https://openpmd-api.readthedocs.io/en/latest/details/backendconfig.html
+     * * https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html#iteration-and-series
+     *
+     * In case of file-based iteration encoding, the file names for each
+     * iteration are determined by an expansion pattern that must be specified.
+     * It takes one out of two possible forms:
+     *
+     * 1. Simple form: %T is replaced with the iteration index, e.g.
+     *    `simData_%T.bp` becomes `simData_50.bp`.
+     * 2. Padded form: e.g. %06T is replaced with the iteration index padded to
+     *    at least six digits. `simData_%06T.bp` becomes `simData_000050.bp`.
+     *
+     * The backend is determined:
+     *
+     * 1. Explicitly via the JSON/TOML parameter `backend`, e.g. `{"backend":
+     *    "adios2"}`.
+     * 2. Otherwise implicitly from the filename extension, e.g.
+     *    `simData_%T.h5`.
+     *
+     * The filename extension can be replaced with a globbing pattern %E.
+     * It will be replaced with an automatically determined file name extension:
+     *
+     * 1. In CREATE mode: The extension is set to a backend-specific default
+     *    extension. This requires that the backend is specified via JSON/TOML.
+     * 2. In READ_ONLY, READ_WRITE and READ_LINEAR modes: These modes require
+     *    that files already exist on disk. The disk will be scanned for files
+     *    that match the pattern and the resulting file extension will be used.
+     *    If the result is ambiguous or no such file is found, an error is
+     *    raised.
+     * 3. In APPEND mode: Like (2.), except if no matching file is found. In
+     *    that case, the procedure of (1.) is used, owing to the fact that
+     *    APPEND mode can be used to create new datasets.
+     *
+     * @param filepath The file path.
      * @param at Access mode.
      * @param options Advanced backend configuration via JSON.
-     *      May be specified as a JSON-formatted string directly, or as a path
-     *      to a JSON textfile, prepended by an at sign '@'.
+     *      May be specified as a JSON/TOML-formatted string directly, or as a
+     *      path to a JSON/TOML textfile, prepended by an at sign '@'.
      */
     Series(
         std::string const &filepath,
@@ -502,6 +559,7 @@ public:
      * @return String of a pattern for data backend.
      */
     std::string backend() const;
+    std::string backend();
 
     /** Execute all required remaining IO operations to write or read data.
      *
@@ -636,7 +694,20 @@ OPENPMD_private
     void parseJsonOptions(TracingJSON &options, ParsedInput &);
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
-    void init(std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
+    template <typename... MPI_Communicator>
+    void init(
+        std::string const &filepath,
+        Access at,
+        std::string const &options,
+        MPI_Communicator &&...);
+    template <typename TracingJSON>
+    std::tuple<std::unique_ptr<ParsedInput>, TracingJSON> initIOHandler(
+        std::string const &filepath,
+        std::string const &options,
+        Access at,
+        bool resolve_generic_extension);
+    void initSeries(
+        std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
     void initDefaults(IterationEncoding, bool initAll = false);
     /**
      * @brief Internal call for flushing a Series.
@@ -688,7 +759,7 @@ OPENPMD_private
      * ReadIterations since those methods should be aware when the current step
      * is broken).
      */
-    std::optional<std::deque<IterationIndex_t> > readGorVBased(
+    std::optional<std::deque<IterationIndex_t>> readGorVBased(
         bool do_always_throw_errors,
         bool init,
         std::set<IterationIndex_t> const &ignoreIterations = {});
@@ -758,7 +829,12 @@ OPENPMD_private
      * Returns the current content of the /data/snapshot attribute.
      * (We could also add this to the public API some time)
      */
-    std::optional<std::vector<IterationIndex_t> > currentSnapshot() const;
+    std::optional<std::vector<IterationIndex_t>> currentSnapshot() const;
+
+    AbstractIOHandler *runDeferredInitialization();
+
+    AbstractIOHandler *IOHandler();
+    AbstractIOHandler const *IOHandler() const;
 }; // Series
 } // namespace openPMD
 
