@@ -100,7 +100,7 @@ Python
 Iteration
 ---------
 
-Grouping by an arbitrary, positive integer number ``<N>`` in a series:
+Grouping by an arbitrary, nonnegative integer number ``<N>`` in a series:
 
 C++17
 ^^^^^
