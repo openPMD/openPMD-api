@@ -871,6 +871,7 @@ void Series::init(
                 std::make_unique<DummyIOHandler>(parsed_directory, at));
         auto &series = get();
         series.iterations.linkHierarchy(writable());
+        series.m_rankTable.m_attributable.linkHierarchy(writable());
         series.m_deferred_initialization =
             [called_this_already = false, filepath, options, at, comm...](
                 Series &s) mutable {
@@ -2873,7 +2874,9 @@ Series::Series(
     std::string const &options)
     : Attributable(NoInit())
 {
-    setData(std::make_shared<internal::SeriesData>());
+    auto data = std::make_shared<internal::SeriesData>();
+    data->m_communicator = comm;
+    setData(std::move(data));
     init(filepath, at, options, comm);
 }
 #endif
