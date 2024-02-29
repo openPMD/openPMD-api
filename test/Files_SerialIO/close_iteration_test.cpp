@@ -64,9 +64,16 @@ auto run_test_filebased(
         E_x.storeChunk(data, {0}, {5});
         it.close();
 
-        it.open();
-        it.setTimeUnitSI(2.0);
-        it.close();
+#if !openPMD_HAS_ADIOS_2_8
+        if (series.backend() != "ADIOS2")
+        {
+#endif
+            it.open();
+            it.setTimeUnitSI(2.0);
+            it.close();
+#if !openPMD_HAS_ADIOS_2_8
+        }
+#endif
     }
     series.close();
 
