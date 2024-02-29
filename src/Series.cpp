@@ -857,7 +857,7 @@ void Series::initSeries(
     std::unique_ptr<Series::ParsedInput> input)
 {
     auto &series = get();
-    auto &writable = series.m_writable;
+    auto &writable = series.asSharedPtrOfAttributable()->m_writable;
 
     /*
      * In Access modes READ_LINEAR and APPEND, the Series constructor might have
