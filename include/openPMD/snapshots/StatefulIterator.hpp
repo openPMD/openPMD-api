@@ -230,8 +230,8 @@ public:
     StatefulIterator(tag_write_t, Series const &);
 
     // dereference
-    using parent_t::operator*;
-    value_type const &operator*() const;
+    auto operator*() -> value_type &;
+    auto operator*() const -> value_type const &;
 
     // increment/decrement
     auto operator++() -> StatefulIterator &;

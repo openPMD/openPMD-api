@@ -50,7 +50,6 @@ private:
     iterator_t m_it;
 
 public:
-    using parent_t::operator*;
     using typename parent_t::value_type;
 
     ~RandomAccessIterator() override;
@@ -64,9 +63,15 @@ public:
     operator=(RandomAccessIterator &&other) noexcept(noexcept(
         std::declval<iterator_t>().operator=(std::declval<iterator_t &&>())));
 
-    value_type const &operator*() const;
-    RandomAccessIterator &operator++();
-    RandomAccessIterator &operator--();
+    auto operator*() -> value_type &;
+    auto operator*() const -> value_type const &;
+
+    auto operator++() -> RandomAccessIterator &;
+    auto operator--() -> RandomAccessIterator &;
+    auto operator++(int) -> RandomAccessIterator;
+    auto operator--(int) -> RandomAccessIterator;
+
+    using parent_t::operator!=;
     bool operator==(RandomAccessIterator const &other) const;
 };
 } // namespace openPMD

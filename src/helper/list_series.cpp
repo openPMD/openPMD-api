@@ -30,6 +30,9 @@
 #include <string>
 #include <utility>
 
+inline void breakpoint()
+{}
+
 namespace openPMD::helper
 {
 std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
