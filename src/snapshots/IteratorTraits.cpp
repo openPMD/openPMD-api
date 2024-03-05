@@ -3,6 +3,7 @@
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include <memory>
+#include <stdexcept>
 
 namespace openPMD
 {
@@ -23,12 +24,6 @@ AbstractSeriesIterator<ChildClass, value_type>::~AbstractSeriesIterator() =
 
 // dereference
 template <typename ChildClass, typename value_type>
-auto AbstractSeriesIterator<ChildClass, value_type>::operator*() -> value_type &
-{
-    return const_cast<value_type &>(
-        static_cast<ChildClass const *>(this)->operator*());
-}
-template <typename ChildClass, typename value_type>
 auto AbstractSeriesIterator<ChildClass, value_type>::operator->() const
     -> value_type const *
 {
@@ -43,14 +38,16 @@ auto AbstractSeriesIterator<ChildClass, value_type>::operator->()
 
 // increment/decrement
 template <typename ChildClass, typename value_type>
-ChildClass AbstractSeriesIterator<ChildClass, value_type>::operator++(int)
+ChildClass
+AbstractSeriesIterator<ChildClass, value_type>::default_increment_operator(int)
 {
     auto prev = *this_child();
     this_child()->operator++();
     return prev;
 }
 template <typename ChildClass, typename value_type>
-ChildClass AbstractSeriesIterator<ChildClass, value_type>::operator--(int)
+ChildClass
+AbstractSeriesIterator<ChildClass, value_type>::default_decrement_operator(int)
 {
     auto prev = *this_child();
     this_child()->operator--();

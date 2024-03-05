@@ -39,6 +39,11 @@ OpaqueSeriesIterator<value_type>::~OpaqueSeriesIterator() = default;
 
 // dereference
 template <typename value_type>
+auto OpaqueSeriesIterator<value_type>::operator*() -> value_type &
+{
+    return m_internal_iterator->dereference_operator();
+}
+template <typename value_type>
 auto OpaqueSeriesIterator<value_type>::operator*() const -> value_type const &
 {
     return m_internal_iterator->dereference_operator();
