@@ -11,10 +11,15 @@ class StatefulSnapshotsContainer : public AbstractSnapshotsContainer
 {
 private:
     friend class Series;
-    std::function<StatefulIterator *()> m_begin;
-    StatefulSnapshotsContainer(std::function<StatefulIterator *()> begin);
 
-    std::optional<StatefulIterator *> m_bufferedIterator = std::nullopt;
+    struct Members
+    {
+        std::function<StatefulIterator *()> m_begin;
+        std::optional<StatefulIterator *> m_bufferedIterator = std::nullopt;
+    };
+    Members members;
+
+    StatefulSnapshotsContainer(std::function<StatefulIterator *()> begin);
 
     auto get() -> StatefulIterator *;
     auto get() const -> StatefulIterator const *;
@@ -23,12 +28,14 @@ public:
     ~StatefulSnapshotsContainer() override;
 
     StatefulSnapshotsContainer(StatefulSnapshotsContainer const &other);
-    StatefulSnapshotsContainer(StatefulSnapshotsContainer &&other) noexcept;
+    StatefulSnapshotsContainer(StatefulSnapshotsContainer &&other) noexcept(
+        noexcept(Members(std::declval<Members &&>())));
 
     StatefulSnapshotsContainer &
     operator=(StatefulSnapshotsContainer const &other);
     StatefulSnapshotsContainer &
-    operator=(StatefulSnapshotsContainer &&other) noexcept;
+    operator=(StatefulSnapshotsContainer &&other) noexcept(noexcept(
+        std::declval<Members>().operator=(std::declval<Members &&>())));
 
     auto currentIteration() -> std::optional<value_type *> override;
     auto currentIteration() const -> std::optional<value_type const *> override;

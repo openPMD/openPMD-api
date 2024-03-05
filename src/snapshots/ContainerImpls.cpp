@@ -25,29 +25,32 @@ namespace
 
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
     std::function<StatefulIterator *()> begin)
-    : m_begin(std::move(begin))
+    : members{std::move(begin)}
 {}
 
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
     StatefulSnapshotsContainer const &other) = default;
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
-    StatefulSnapshotsContainer &&other) noexcept = default;
+    StatefulSnapshotsContainer
+        &&other) noexcept(noexcept(Members(std::declval<Members &&>()))) =
+    default;
 StatefulSnapshotsContainer &StatefulSnapshotsContainer::operator=(
     StatefulSnapshotsContainer const &other) = default;
-StatefulSnapshotsContainer &StatefulSnapshotsContainer::operator=(
-    StatefulSnapshotsContainer &&other) noexcept = default;
+StatefulSnapshotsContainer &StatefulSnapshotsContainer::
+operator=(StatefulSnapshotsContainer &&other) noexcept(noexcept(
+    std::declval<Members>().operator=(std::declval<Members &&>()))) = default;
 
 auto StatefulSnapshotsContainer::get() -> StatefulIterator *
 {
-    if (!m_bufferedIterator.has_value())
+    if (!members.m_bufferedIterator.has_value())
     {
-        m_bufferedIterator = m_begin();
+        members.m_bufferedIterator = members.m_begin();
     }
-    return *m_bufferedIterator;
+    return *members.m_bufferedIterator;
 }
 auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
-    return m_bufferedIterator.value_or(nullptr);
+    return members.m_bufferedIterator.value_or(nullptr);
 }
 auto StatefulSnapshotsContainer::currentIteration()
     -> std::optional<value_type *>
