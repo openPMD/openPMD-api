@@ -875,6 +875,12 @@ auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator *
     return *res;
 }
 
+auto StatefulIterator::operator*() -> value_type &
+{
+    return const_cast<value_type &>(
+        static_cast<StatefulIterator const *>(this)->operator*());
+}
+
 auto StatefulIterator::operator*() const -> value_type const &
 {
     auto &data = get();

@@ -72,17 +72,26 @@ public:
 
     ~AbstractSeriesIterator() override;
 
+    /*
+     * Default definitions that can be pulled in implementing child classes with
+     * `using` declarations. Does not work for overloaded methods due to
+     * compiler bugs in ICPC, hence e.g. `default_increment_operator` instead of
+     * `operator++`.
+     */
+
     // dereference
     // value_type const &operator*() const = 0;
-    value_type &operator*();
-    value_type const *operator->() const;
-    value_type *operator->();
+    // value_type &operator*() = 0;
+    auto operator->() const -> value_type const *;
+    auto operator->() -> value_type *;
 
     // increment/decrement
     // ChildClass &operator++();
     // ChildClass &operator--();
-    ChildClass operator++(int);
-    ChildClass operator--(int);
+    // ChildClass &operator++(int);
+    // ChildClass &operator--(int);
+    auto default_increment_operator(int) -> ChildClass;
+    auto default_decrement_operator(int) -> ChildClass;
 
     // comparison
     // bool operator==(ChildClass const &) const = 0;
@@ -96,16 +105,16 @@ protected:
     using parent_t = DynamicSeriesIterator<value_type_in>;
     // dereference
     using parent_t::dereference_operator;
-    value_type const &dereference_operator() const override;
+    auto dereference_operator() const -> value_type const & override;
 
     // increment/decrement
-    parent_t &increment_operator() override;
-    parent_t &decrement_operator() override;
+    auto increment_operator() -> parent_t & override;
+    auto decrement_operator() -> parent_t & override;
 
     // comparison
-    bool equality_operator(parent_t const &) const override;
+    auto equality_operator(parent_t const &) const -> bool override;
 
-    std::unique_ptr<parent_t> clone() const override;
+    auto clone() const -> std::unique_ptr<parent_t> override;
 
 private:
     ChildClass *this_child();

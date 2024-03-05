@@ -28,6 +28,12 @@ RandomAccessIterator<iterator_t> &RandomAccessIterator<iterator_t>::operator=(
     default;
 
 template <typename iterator_t>
+auto RandomAccessIterator<iterator_t>::operator*() -> value_type &
+{
+    return *m_it;
+}
+
+template <typename iterator_t>
 auto RandomAccessIterator<iterator_t>::operator*() const -> value_type const &
 {
     return *m_it;
@@ -45,6 +51,18 @@ auto RandomAccessIterator<iterator_t>::operator--() -> RandomAccessIterator &
 {
     --m_it;
     return *this;
+}
+
+template <typename iterator_t>
+auto RandomAccessIterator<iterator_t>::operator++(int i) -> RandomAccessIterator
+{
+    return parent_t::default_increment_operator(i);
+}
+
+template <typename iterator_t>
+auto RandomAccessIterator<iterator_t>::operator--(int i) -> RandomAccessIterator
+{
+    return parent_t::default_decrement_operator(i);
 }
 
 template <typename iterator_t>
