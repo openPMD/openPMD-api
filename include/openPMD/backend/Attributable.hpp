@@ -83,6 +83,8 @@ namespace internal
 
     template <typename, typename>
     class BaseRecordData;
+
+    class RecordComponentData;
 } // namespace internal
 
 /** @brief Layer to manage storage of attributes associated with file objects.
@@ -109,6 +111,7 @@ class Attributable
     friend class Series;
     friend class Writable;
     friend class WriteIterations;
+    friend class internal::RecordComponentData;
 
 protected:
     // tag for internal constructor

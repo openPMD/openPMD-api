@@ -25,6 +25,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
 #include <algorithm>
@@ -39,6 +40,17 @@ namespace openPMD
 namespace internal
 {
     RecordComponentData::RecordComponentData() = default;
+    auto RecordComponentData::push_chunk(IOTask &&task) -> void
+    {
+        Attributable a;
+        a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
+        if (a.containingIteration().closed())
+        {
+            throw error::WrongAPIUsage(
+                "Cannot write/read chunks to/from closed Iterations.");
+        }
+        m_chunks.push(std::move(task));
+    }
 } // namespace internal
 
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
@@ -448,6 +460,12 @@ bool RecordComponent::dirtyRecursive() const
     return !get().m_chunks.empty();
 }
 
+// need to define this in a cpp due to inclusion order
+bool RecordComponent::containingIterationClosed() const
+{
+    return containingIteration().closed();
+}
+
 void RecordComponent::storeChunk(
     auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
 {
@@ -460,7 +478,7 @@ void RecordComponent::storeChunk(
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::move(buffer);
     auto &rc = get();
-    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
+    rc.push_chunk(IOTask(this, std::move(dWrite)));
 }
 
 void RecordComponent::verifyChunk(

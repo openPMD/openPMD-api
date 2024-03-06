@@ -69,6 +69,8 @@ namespace internal
          * Chunk reading/writing requests on the contained dataset.
          */
         std::queue<IOTask> m_chunks;
+
+        auto push_chunk(IOTask &&task) -> void;
         /**
          * Stores the value for constant record components.
          * Ignored otherwise.
@@ -506,6 +508,8 @@ private:
      * @return false Otherwise.
      */
     bool dirtyRecursive() const;
+
+    bool containingIterationClosed() const;
 
     // clang-format off
 OPENPMD_protected

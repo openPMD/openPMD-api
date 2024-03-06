@@ -172,7 +172,7 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         dRead.extent = extent;
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast<void>(data);
-        rc.m_chunks.push(IOTask(this, dRead));
+        rc.push_chunk(IOTask(this, dRead));
     }
 }
 
@@ -287,6 +287,11 @@ template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
+    if (containingIterationClosed())
+    {
+        throw error::WrongAPIUsage("Cannot write chunks to closed Iterations.");
+    }
+
     verifyChunk<T>(o, e);
 
     /*
