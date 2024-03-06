@@ -207,11 +207,18 @@ public:
 
     /**
      * @brief Has the iteration been closed?
-     *        A closed iteration may not (yet) be reopened.
      *
      * @return Whether the iteration has been closed.
      */
     bool closed() const;
+
+    /**
+     * @brief Has the iteration been parsed yet?
+              If not, it will contain no structure yet.
+     *
+     * @return Whether the iteration has been parsed.
+     */
+    bool parsed() const;
 
     /**
      * @brief Has the iteration been closed by the writer?

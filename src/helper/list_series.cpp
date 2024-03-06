@@ -118,7 +118,10 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
 
         for (auto &[index, i] : series.snapshots())
         {
-            i.open();
+            if (!i.parsed())
+            {
+                i.open();
+            }
             if (longer)
                 out << index << " ";
 
@@ -135,6 +138,10 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
                 [](std::pair<std::string, ParticleSpecies> const &p) {
                     return p.first;
                 });
+            if (!i.closed())
+            {
+                i.close();
+            }
         }
 
         if (longer)

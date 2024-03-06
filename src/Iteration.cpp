@@ -180,6 +180,20 @@ bool Iteration::closed() const
     throw std::runtime_error("Unreachable!");
 }
 
+bool Iteration::parsed() const
+{
+    switch (get().m_closed)
+    {
+    case CloseStatus::ParseAccessDeferred:
+        return false;
+    case CloseStatus::Open:
+    case CloseStatus::ClosedInFrontend:
+    case CloseStatus::Closed:
+        return true;
+    }
+    throw std::runtime_error("Unreachable!");
+}
+
 bool Iteration::closedByWriter() const
 {
     using bool_type = unsigned char;

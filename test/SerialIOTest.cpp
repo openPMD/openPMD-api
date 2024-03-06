@@ -38,6 +38,7 @@
 #ifdef __unix__
 #include <dirent.h>
 #include <fcntl.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -160,6 +161,13 @@ TEST_CASE("char_roundtrip", "[serial]")
 void write_and_read_many_iterations(
     std::string const &ext, bool intermittentFlushes)
 {
+#ifdef __unix__
+    struct rlimit rlim;
+    getrlimit(RLIMIT_NOFILE, &rlim);
+    auto old_soft_limit = rlim.rlim_cur;
+    rlim.rlim_cur = 512;
+    setrlimit(RLIMIT_NOFILE, &rlim);
+#endif
     // the idea here is to trigger the maximum allowed number of file handles,
     // e.g., the upper limit in "ulimit -n" (default: often 1024). Once this
     // is reached, files should be closed automatically for open iterations
@@ -172,6 +180,7 @@ void write_and_read_many_iterations(
         auxiliary::getEnvNum("OPENPMD_TEST_NFILES_MAX", 1030);
     std::string filename =
         "../samples/many_iterations/many_iterations_%T." + ext;
+    // std::cout << "WRITE " << filename << std::endl;
 
     std::vector<float> data(10);
     std::iota(data.begin(), data.end(), 0.);
@@ -194,6 +203,7 @@ void write_and_read_many_iterations(
         }
         // ~Series intentionally not yet called
 
+        // std::cout << "READ " << filename << std::endl;
         Series read(
             filename, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}");
         for (auto iteration : read.iterations)
@@ -219,6 +229,10 @@ void write_and_read_many_iterations(
 
     Series list(filename, Access::READ_ONLY);
     helper::listSeries(list);
+#ifdef __unix__
+    rlim.rlim_cur = old_soft_limit;
+    setrlimit(RLIMIT_NOFILE, &rlim);
+#endif
 }
 
 TEST_CASE("write_and_read_many_iterations", "[serial]")
