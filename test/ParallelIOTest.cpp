@@ -436,6 +436,48 @@ void available_chunks_test(std::string const &file_ending)
         auto E_x = it0.meshes["E"]["x"];
         E_x.resetDataset({Datatype::INT, {mpi_size, 4}});
         E_x.storeChunk(data, {mpi_rank, 0}, {1, 4});
+
+        auto electrons = it0.particles["e"].particlePatches;
+        auto numParticles = electrons["numParticles"];
+        auto numParticlesOffset = electrons["numParticlesOffset"];
+        for (auto rc : {&numParticles, &numParticlesOffset})
+        {
+            rc->resetDataset(
+                {Datatype::ULONG,
+                 {Extent::value_type{mpi_size}},
+                 R"(adios2.dataset.shape = "local_value")"});
+        }
+        numParticles.storeChunk(
+            std::make_unique<unsigned long>(10), {size_t(mpi_rank)}, {1});
+        numParticlesOffset.storeChunk(
+            std::make_unique<unsigned long>(10 * ((unsigned long)mpi_rank)),
+            {size_t(mpi_rank)},
+            {1});
+        auto offset = electrons["offset"];
+        for (auto const &dim : {"x", "y", "z"})
+        {
+            auto rc = offset[dim];
+            rc.resetDataset(
+                {Datatype::ULONG,
+                 {Extent::value_type{mpi_size}},
+                 R"(adios2.dataset.shape = "local_value")"});
+            rc.storeChunk(
+                std::make_unique<unsigned long>((unsigned long)mpi_rank),
+                {size_t(mpi_rank)},
+                {1});
+        }
+        auto extent = electrons["extent"];
+        for (auto const &dim : {"x", "y", "z"})
+        {
+            auto rc = extent[dim];
+            rc.resetDataset(
+                {Datatype::ULONG,
+                 {Extent::value_type{mpi_size}},
+                 R"(adios2.dataset.shape = "local_value")"});
+            rc.storeChunk(
+                std::make_unique<unsigned long>(1), {size_t(mpi_rank)}, {1});
+        }
+
         it0.close();
     }
 

@@ -34,7 +34,6 @@
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
-#include <stdexcept>
 
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
@@ -459,6 +458,10 @@ private:
         }
         // TODO leave this check to ADIOS?
         adios2::Dims shape = var.Shape();
+        if (shape == adios2::Dims{adios2::LocalValueDim})
+        {
+            return var;
+        }
         auto actualDim = shape.size();
         {
             auto requiredDim = extent.size();
