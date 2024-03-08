@@ -112,7 +112,21 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     std::nullopt,
                     ba.variables());
 
-                engine.Put(var, ptr);
+                if (var.Shape() == adios2::Dims{adios2::LocalValue})
+                {
+                    if (bp.param.extent != Extent{1})
+                    {
+                        throw error::OperationUnsupportedInBackend(
+                            "ADIOS2",
+                            "Can only write a single element to LocalValue "
+                            "variables (extent == Extent{1}).");
+                    }
+                    engine.Put(var, *ptr);
+                }
+                else
+                {
+                    engine.Put(var, ptr);
+                }
             }
             else if constexpr (
                 std::is_same_v<
@@ -175,7 +189,21 @@ struct RunUniquePtrPut
             bufferedPut.name,
             std::nullopt,
             ba.variables());
-        engine.Put(var, ptr);
+        if (var.Shape() == adios2::Dims{adios2::LocalValue})
+        {
+            if (bufferedPut.extent != Extent{1})
+            {
+                throw error::OperationUnsupportedInBackend(
+                    "ADIOS2",
+                    "Can only write a single element to LocalValue "
+                    "variables (extent == Extent{1}).");
+            }
+            engine.Put(var, *ptr);
+        }
+        else
+        {
+            engine.Put(var, ptr);
+        }
     }
 
     static constexpr char const *errorMsg = "RunUniquePtrPut";

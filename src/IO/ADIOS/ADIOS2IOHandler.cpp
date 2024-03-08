@@ -240,7 +240,8 @@ void ADIOS2IOHandlerImpl::init(
         {
           "adios2": {
             "dataset": {
-              "operators": null
+              "operators": null,
+              "shape": null
             }
           }
         })";
@@ -423,12 +424,12 @@ ADIOS2IOHandlerImpl::getOperators()
 }
 
 template <typename Parameter>
-auto ADIOS2IOHandlerImpl::getDatasetOperators(
+auto ADIOS2IOHandlerImpl::parseDatasetConfig(
     Parameter const &parameters,
     Writable *writable,
     std::string const &varName,
     std::vector<ParameterizedOperator> operators)
-    -> std::vector<ParameterizedOperator>
+    -> std::tuple<std::vector<ParameterizedOperator>, Shape>
 {
     json::TracingJSON config = [&]() {
         if (!m_buffered_dataset_config.has_value())
@@ -462,21 +463,58 @@ auto ADIOS2IOHandlerImpl::getDatasetOperators(
         return parsed_config;
     }();
 
-    if (config.json().contains("adios2"))
-    {
-        json::TracingJSON datasetConfig(config["adios2"]);
-        auto maybe_operators = getOperators(datasetConfig);
-        if (maybe_operators)
+    Shape arrayShape = Shape::GlobalArray;
+    [&]() {
+        if (!config.json().contains("adios2"))
         {
-            operators = std::move(*maybe_operators);
+            return;
+        };
+        json::TracingJSON adios2Config(config["adios2"]);
+        auto datasetOperators = getOperators(adios2Config);
+        if (datasetOperators.has_value())
+        {
+            operators = std::move(*datasetOperators);
         }
-    }
+        if (!adios2Config.json().contains("dataset"))
+        {
+            return;
+        }
+        auto datasetConfig = adios2Config["dataset"];
+        if (!datasetConfig.json().contains("shape"))
+        {
+            return;
+        }
+        auto maybe_shape =
+            json::asLowerCaseStringDynamic(datasetConfig["shape"].json());
+        if (!maybe_shape.has_value())
+        {
+            throw error::BackendConfigSchema(
+                {"adios2", "dataset", "shape"},
+                "Must be convertible to string type.");
+        }
+        auto const &shape = *maybe_shape;
+        if (shape == "global_array")
+        {
+            arrayShape = Shape::GlobalArray;
+        }
+        else if (shape == "local_value")
+        {
+            arrayShape = Shape::LocalValue;
+        }
+        else
+        {
+            throw error::BackendConfigSchema(
+                {"adios2", "dataset", "shape"},
+                "Unknown value: '" + shape + "'.");
+        }
+    }();
+
     parameters.warnUnusedParameters(
         config,
         "adios2",
         "Warning: parts of the backend configuration for ADIOS2 dataset '" +
             varName + "' remain unused:\n");
-    return operators;
+    return {std::move(operators), arrayShape};
 }
 
 using AcceptedEndingsForEngine = std::map<std::string, std::string>;
@@ -906,15 +944,47 @@ void ADIOS2IOHandlerImpl::createDataset(
         filePos->gd = GroupOrDataset::DATASET;
         auto const varName = nameOfVariable(writable);
 
-        std::vector<ParameterizedOperator> operators =
-            getDatasetOperators(parameters, writable, varName);
+        // Captured structured bindings are a C++20 extension...
+        std::vector<ParameterizedOperator> operators;
+        Shape arrayShape;
+        std::tie(operators, arrayShape) =
+            parseDatasetConfig(parameters, writable, varName);
 
-        // cast from openPMD::Extent to adios2::Dims
-        adios2::Dims shape(parameters.extent.begin(), parameters.extent.end());
-        if (auto jd = parameters.joinedDimension; jd.has_value())
-        {
-            shape[jd.value()] = adios2::JoinedDim;
-        }
+        adios2::Dims shape = [&, arrayShape = arrayShape]() {
+            switch (arrayShape)
+            {
+
+            case Shape::GlobalArray: {
+                // cast from openPMD::Extent to adios2::Dims
+                adios2::Dims res(
+                    parameters.extent.begin(), parameters.extent.end());
+                if (auto jd = parameters.joinedDimension; jd.has_value())
+                {
+                    res[jd.value()] = adios2::JoinedDim;
+                }
+                return res;
+            }
+            case Shape::LocalValue: {
+                int required_size = 1;
+#if openPMD_HAVE_MPI
+                if (m_communicator.has_value())
+                {
+                    MPI_Comm_size(*m_communicator, &required_size);
+                }
+#endif
+                if (parameters.extent !=
+                    Extent{Extent::value_type(required_size)})
+                {
+                    throw error::OperationUnsupportedInBackend(
+                        "ADIOS2",
+                        "Shape for local value array must be a 1D array "
+                        "equivalent to the MPI size.");
+                }
+                return adios2::Dims{adios2::LocalValueDim};
+            }
+            }
+            throw std::runtime_error("Unreachable!");
+        }();
 
         auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
 
@@ -1189,8 +1259,8 @@ void ADIOS2IOHandlerImpl::openDataset(
      * reading, so the dataset-specific configuration should still be explored
      * here.
      */
-    std::vector<ParameterizedOperator> operators =
-        getDatasetOperators(parameters, writable, varName);
+    [[maybe_unused]] auto [operators, _] =
+        parseDatasetConfig(parameters, writable, varName);
     switchAdios2VariableType<detail::DatasetOpener>(
         *parameters.dtype,
         this,
@@ -1294,6 +1364,11 @@ namespace detail
                 varName,
                 std::nullopt,
                 ba.variables());
+            if (variable.Shape() == adios2::Dims{adios2::LocalValueDim})
+            {
+                params.out->backendManagedBuffer = false;
+                return;
+            }
             adios2::Dims offset(params.offset.begin(), params.offset.end());
             adios2::Dims extent(params.extent.begin(), params.extent.end());
             variable.SetSelection({std::move(offset), std::move(extent)});
