@@ -36,6 +36,7 @@
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/JSONMatcher.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
@@ -234,6 +235,19 @@ void ADIOS2IOHandlerImpl::init(
             groupTableViaEnv == 0 ? UseGroupTable::No : UseGroupTable::Yes;
     }
 
+    {
+        constexpr char const *const init_json_shadow_str = R"(
+        {
+          "adios2": {
+            "dataset": {
+              "operators": null
+            }
+          }
+        })";
+        auto init_json_shadow = nlohmann::json::parse(init_json_shadow_str);
+        json::merge(cfg.getShadow(), init_json_shadow);
+    }
+
     if (cfg.json().contains("adios2"))
     {
         m_config = cfg["adios2"];
@@ -310,7 +324,7 @@ void ADIOS2IOHandlerImpl::init(
         auto operators = getOperators();
         if (operators)
         {
-            defaultOperators = std::move(operators.value());
+            readOperators = std::move(operators.value());
         }
     }
 }
@@ -410,27 +424,55 @@ ADIOS2IOHandlerImpl::getOperators()
 
 template <typename Parameter>
 auto ADIOS2IOHandlerImpl::getDatasetOperators(
-    Parameter const &parameters, Writable *writable, std::string const &varName)
+    Parameter const &parameters,
+    Writable *writable,
+    std::string const &varName,
+    std::vector<ParameterizedOperator> operators)
     -> std::vector<ParameterizedOperator>
 {
-    std::vector<ParameterizedOperator> operators;
-    json::TracingJSON options =
-        parameters.template compileJSONConfig<json::ParsedConfig>(
-            writable, *m_handler->jsonMatcher, "adios2");
-    if (options.json().contains("adios2"))
-    {
-        json::TracingJSON datasetConfig(options["adios2"]);
-        auto datasetOperators = getOperators(datasetConfig);
+    json::TracingJSON config = [&]() {
+        if (!m_buffered_dataset_config.has_value())
+        {
+            // we are only interested in these values from the global config
+            constexpr char const *const mask_for_global_conf = R"(
+                {
+                "dataset": {
+                    "operators": null,
+                    "shape": null
+                }
+                })";
+            m_buffered_dataset_config = m_config.json();
+            json::filterByTemplate(
+                *m_buffered_dataset_config,
+                nlohmann::json::parse(mask_for_global_conf));
+        }
+        auto parsed_config =
+            parameters.template compileJSONConfig<json::ParsedConfig>(
+                writable, *m_handler->jsonMatcher, "adios2");
+        if (auto adios2_config_it = parsed_config.config.find("adios2");
+            adios2_config_it != parsed_config.config.end())
+        {
+            adios2_config_it.value() = json::merge(
+                *m_buffered_dataset_config, adios2_config_it.value());
+        }
+        else
+        {
+            parsed_config.config["adios2"] = *m_buffered_dataset_config;
+        }
+        return parsed_config;
+    }();
 
-        operators = datasetOperators ? std::move(datasetOperators.value())
-                                     : defaultOperators;
-    }
-    else
+    if (config.json().contains("adios2"))
     {
-        operators = defaultOperators;
+        json::TracingJSON datasetConfig(config["adios2"]);
+        auto maybe_operators = getOperators(datasetConfig);
+        if (maybe_operators)
+        {
+            operators = std::move(*maybe_operators);
+        }
     }
     parameters.warnUnusedParameters(
-        options,
+        config,
         "adios2",
         "Warning: parts of the backend configuration for ADIOS2 dataset '" +
             varName + "' remain unused:\n");
