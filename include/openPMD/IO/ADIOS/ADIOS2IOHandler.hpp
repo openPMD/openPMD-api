@@ -298,9 +298,12 @@ private:
         adios2::Params params;
     };
 
-    std::vector<ParameterizedOperator> defaultOperators;
+    // read operators can (currently) not be specified per dataset, so parse
+    // them once and then buffer them
+    std::vector<ParameterizedOperator> readOperators;
 
     json::TracingJSON m_config;
+    std::optional<nlohmann::json> m_buffered_dataset_config;
     static json::TracingJSON nullvalue;
 
     template <typename Callback>
