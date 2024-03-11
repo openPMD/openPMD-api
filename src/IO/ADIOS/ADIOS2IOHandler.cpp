@@ -431,7 +431,7 @@ auto ADIOS2IOHandlerImpl::parseDatasetConfig(
     std::vector<ParameterizedOperator> operators)
     -> std::tuple<std::vector<ParameterizedOperator>, Shape>
 {
-    json::TracingJSON config = [&]() {
+    json::TracingJSON config = [&]() -> json::ParsedConfig {
         if (!m_buffered_dataset_config.has_value())
         {
             // we are only interested in these values from the global config
@@ -447,18 +447,21 @@ auto ADIOS2IOHandlerImpl::parseDatasetConfig(
                 *m_buffered_dataset_config,
                 nlohmann::json::parse(mask_for_global_conf));
         }
+        auto const &buffered_config = *m_buffered_dataset_config;
         auto parsed_config =
             parameters.template compileJSONConfig<json::ParsedConfig>(
                 writable, *m_handler->jsonMatcher, "adios2");
         if (auto adios2_config_it = parsed_config.config.find("adios2");
             adios2_config_it != parsed_config.config.end())
         {
-            adios2_config_it.value() = json::merge(
-                *m_buffered_dataset_config, adios2_config_it.value());
+            auto copy = buffered_config;
+            json::merge(copy, adios2_config_it.value());
+            copy = nlohmann::json{{"adios2", std::move(copy)}};
+            parsed_config.config = std::move(copy);
         }
         else
         {
-            parsed_config.config["adios2"] = *m_buffered_dataset_config;
+            parsed_config.config["adios2"] = buffered_config;
         }
         return parsed_config;
     }();
@@ -978,7 +981,11 @@ void ADIOS2IOHandlerImpl::createDataset(
                     throw error::OperationUnsupportedInBackend(
                         "ADIOS2",
                         "Shape for local value array must be a 1D array "
-                        "equivalent to the MPI size.");
+                        "equivalent to the MPI size ('" +
+                            varName + "' has shape " +
+                            auxiliary::format_vec(parameters.extent) +
+                            ", but should have shape [" +
+                            std::to_string(required_size) + "]).");
                 }
                 return adios2::Dims{adios2::LocalValueDim};
             }
