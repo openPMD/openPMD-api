@@ -336,6 +336,13 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
         "hdf5.dataset.chunks = [" + std::to_string(mpi_size) + "]"));
     e["positionOffset"]["x"].storeChunk(positionOffset_local, {mpi_rank}, {1});
 
+    // Test that chunking settings are not carried over to other datasets.
+    // Just declare a dataset smaller than the previously chunks size to trigger
+    // a failure in case the chunking is erroneously carried over.
+    e["positionOffset"]["y"].resetDataset({Datatype::FLOAT, {1}});
+    e["positionOffset"]["y"].storeChunk(
+        std::make_unique<float>(3.141592654), {0}, {1});
+
     o.flush();
 }
 

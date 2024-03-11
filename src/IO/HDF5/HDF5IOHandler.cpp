@@ -494,17 +494,20 @@ void HDF5IOHandlerImpl::createDataset(
                     *m_buffered_dataset_config,
                     nlohmann::json::parse(mask_for_global_conf));
             }
+            auto const &buffered_config = *m_buffered_dataset_config;
             auto parsed_config = json::parseOptions(
                 parameters.options, /* considerFiles = */ false);
             if (auto hdf5_config_it = parsed_config.config.find("hdf5");
                 hdf5_config_it != parsed_config.config.end())
             {
-                hdf5_config_it.value() = json::merge(
-                    *m_buffered_dataset_config, hdf5_config_it.value());
+                auto copy = buffered_config;
+                json::merge(copy, hdf5_config_it.value());
+                copy = nlohmann::json{{"hdf5", std::move(copy)}};
+                parsed_config.config = std::move(copy);
             }
             else
             {
-                parsed_config.config["hdf5"] = *m_buffered_dataset_config;
+                parsed_config.config["hdf5"] = buffered_config;
             }
             return parsed_config;
         }();
