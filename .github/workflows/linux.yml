@@ -85,6 +85,8 @@ jobs:
 
   clang7_nopy_ompi_h5_ad2:
     runs-on: ubuntu-20.04
+    permissions:
+      packages: write
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
@@ -95,12 +97,19 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install clang-7 gfortran libopenmpi-dev python3
-        sudo .github/workflows/dependencies/install_spack
+    - name: Set up Spack
+      uses: spack/setup-spack@v2
+      with:
+        ref: 187b8adb4faa7ad8e5de0baab9a610d158772823
+        buildcache: true
+        color: true
+        path: /opt/spack
     - name: Build
       env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror}
+      shell: spack-bash {0}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad2/)
-        spack install
+        spack install --no-check-signature
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -113,6 +122,12 @@ jobs:
         cmake --build build --parallel 2
         cd build
         ctest --output-on-failure
+
+    - name: Push packages and update index
+      run: |
+        spack -e . mirror set --push --oci-username ${{ github.actor }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
+        spack -e . buildcache push --base-image ubuntu:20.04 --update-index local-buildcache
+      if: ${{ !cancelled() }}
 
 # TODO
 #  clang7_py36_nompi_h5_ad2_libstdc++
