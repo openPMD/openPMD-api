@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 
 #if openPMD_USE_VERIFY
 #define VERIFY(CONDITION, TEXT)                                                \
@@ -87,14 +88,16 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                 adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
                     bp.param.offset, bp.param.extent, ba.m_IO, bp.name);
 
-                if (var.Shape() == adios2::Dims{adios2::LocalValue})
+                if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
                 {
                     if (bp.param.extent != Extent{1})
                     {
                         throw error::OperationUnsupportedInBackend(
                             "ADIOS2",
                             "Can only write a single element to LocalValue "
-                            "variables (extent == Extent{1}).");
+                            "variables (extent == Extent{1}, but extent of '" +
+                                bp.name + " was " +
+                                auxiliary::format_vec(bp.param.extent) + "').");
                     }
                     ba.getEngine().Put(var, *ptr);
                 }
@@ -158,14 +161,16 @@ struct RunUniquePtrPut
         auto ptr = static_cast<T const *>(bufferedPut.data.get());
         adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
             bufferedPut.offset, bufferedPut.extent, ba.m_IO, bufferedPut.name);
-        if (var.Shape() == adios2::Dims{adios2::LocalValue})
+        if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
         {
             if (bufferedPut.extent != Extent{1})
             {
                 throw error::OperationUnsupportedInBackend(
                     "ADIOS2",
                     "Can only write a single element to LocalValue "
-                    "variables (extent == Extent{1}).");
+                    "variables (extent == Extent{1}, but extent of '" +
+                        bufferedPut.name + " was " +
+                        auxiliary::format_vec(bufferedPut.extent) + "').");
             }
             ba.getEngine().Put(var, *ptr);
         }
