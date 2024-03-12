@@ -3,7 +3,7 @@
 
 set -eu -o pipefail
 
-spack_ver="0.21.1"
+spack_ver="0.21.2"
 
 cd /opt
 if [[ -d spack && ! -f spack_${spack_ver} ]]
