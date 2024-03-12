@@ -26,6 +26,10 @@
 #include <memory>
 #include <numeric> // std::iota
 
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
+
 using std::cout;
 using namespace openPMD;
 
