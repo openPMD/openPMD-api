@@ -112,14 +112,16 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     std::nullopt,
                     ba.variables());
 
-                if (var.Shape() == adios2::Dims{adios2::LocalValue})
+                if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
                 {
                     if (bp.param.extent != Extent{1})
                     {
                         throw error::OperationUnsupportedInBackend(
                             "ADIOS2",
                             "Can only write a single element to LocalValue "
-                            "variables (extent == Extent{1}).");
+                            "variables (extent == Extent{1}, but extent of '" +
+                                bp.name + " was " +
+                                auxiliary::format_vec(bp.param.extent) + "').");
                     }
                     engine.Put(var, *ptr);
                 }
@@ -189,14 +191,16 @@ struct RunUniquePtrPut
             bufferedPut.name,
             std::nullopt,
             ba.variables());
-        if (var.Shape() == adios2::Dims{adios2::LocalValue})
+        if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
         {
             if (bufferedPut.extent != Extent{1})
             {
                 throw error::OperationUnsupportedInBackend(
                     "ADIOS2",
                     "Can only write a single element to LocalValue "
-                    "variables (extent == Extent{1}).");
+                    "variables (extent == Extent{1}, but extent of '" +
+                        bufferedPut.name + " was " +
+                        auxiliary::format_vec(bufferedPut.extent) + "').");
             }
             engine.Put(var, *ptr);
         }
