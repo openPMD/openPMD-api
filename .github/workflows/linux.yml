@@ -103,7 +103,7 @@ jobs:
         ref: 187b8adb4faa7ad8e5de0baab9a610d158772823
         buildcache: true
         color: true
-        path: /opt/spack
+        path: opt/spack
     - name: Build
       env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror}
       shell: spack-bash {0}
