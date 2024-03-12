@@ -12,11 +12,11 @@ spack:
 
   packages:
     adios2:
-      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+      variants: ~mgard ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
     cmake:
       externals:
       - spec: cmake@3.23.0
-        prefix: /usr
+        prefix: /usr/local
       buildable: False
     openmpi:
       externals:
@@ -60,3 +60,6 @@ spack:
 
   mirrors:
     E4S: https://cache.e4s.io
+    local-buildcache:
+      url: oci://ghcr.io/openPMD/spack-buildcache
+      signed: false
