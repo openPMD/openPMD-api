@@ -807,7 +807,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         filePos->gd = GroupOrDataset::DATASET;
         auto const varName = nameOfVariable(writable);
 
-        json::TracingJSON config = [&]() -> json::ParsedConfig {
+        json::TracingJSON parsedConfig = [&]() -> json::ParsedConfig {
             if (!m_buffered_dataset_config.has_value())
             {
                 // we are only interested in these values from the global config
@@ -845,11 +845,11 @@ void ADIOS2IOHandlerImpl::createDataset(
 
         Shape arrayShape = Shape::GlobalArray;
         [&]() {
-            if (!config.json().contains("adios2"))
+            if (!parsedConfig.json().contains("adios2"))
             {
                 return;
             };
-            json::TracingJSON adios2Config(config["adios2"]);
+            json::TracingJSON adios2Config(parsedConfig["adios2"]);
             auto datasetOperators = getOperators(adios2Config);
             if (datasetOperators.has_value())
             {
@@ -899,7 +899,7 @@ void ADIOS2IOHandlerImpl::createDataset(
 #endif
 
         parameters.warnUnusedParameters(
-            config,
+            parsedConfig,
             "adios2",
             "Warning: parts of the backend configuration for ADIOS2 dataset '" +
                 varName + "' remain unused:\n");
