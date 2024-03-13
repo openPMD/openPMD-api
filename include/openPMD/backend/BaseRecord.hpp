@@ -494,15 +494,6 @@ private:
     virtual void
     flush_impl(std::string const &, internal::FlushParams const &) = 0;
 
-    /**
-     * @brief Check recursively whether this BaseRecord is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
     void eraseScalar();
 }; // BaseRecord
 
@@ -1001,23 +992,6 @@ inline void BaseRecord<T_elem>::flush(
     this->flush_impl(name, flushParams);
     // flush_impl must take care to correctly set the dirty() flag so this
     // method doesn't do it
-}
-
-template <typename T_elem>
-inline bool BaseRecord<T_elem>::dirtyRecursive() const
-{
-    if (this->dirty())
-    {
-        return true;
-    }
-    for (auto const &pair : *this)
-    {
-        if (pair.second.dirtyRecursive())
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 template <typename T_elem>

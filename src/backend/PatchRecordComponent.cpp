@@ -47,7 +47,7 @@ PatchRecordComponent &PatchRecordComponent::resetDataset(Dataset d)
             "Dataset extent must not be zero in any dimension.");
 
     get().m_dataset = std::move(d);
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 

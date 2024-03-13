@@ -331,7 +331,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         }
         else
         {
-            meshes.dirty() = false;
+            meshes.setDirty(false);
         }
 
         if (!particles.empty() || s.containsAttribute("particlesPath"))
@@ -347,11 +347,12 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         }
         else
         {
-            particles.dirty() = false;
+            particles.setDirty(false);
         }
 
         flushAttributes(flushParams);
     }
+    setDirty(false);
 }
 
 void Iteration::deferParseAccess(DeferredParseAccess dr)
@@ -509,12 +510,12 @@ void Iteration::read_impl(std::string const &groupPath)
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
             meshes = {};
-            meshes.dirty() = false;
+            meshes.setDirty(false);
         }
     }
     else
     {
-        meshes.dirty() = false;
+        meshes.setDirty(false);
     }
 
     if (hasParticles)
@@ -529,12 +530,12 @@ void Iteration::read_impl(std::string const &groupPath)
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
             particles = {};
-            particles.dirty() = false;
+            particles.setDirty(false);
         }
     }
     else
     {
-        particles.dirty() = false;
+        particles.setDirty(false);
     }
 
     readAttributes(ReadMode::FullyReread);
@@ -820,43 +821,6 @@ void Iteration::setStepStatus(StepStatus status)
     default:
         throw std::runtime_error("[Iteration] unreachable");
     }
-}
-
-bool Iteration::dirtyRecursive() const
-{
-    switch (get().m_closed)
-    {
-    case internal::CloseStatus::ParseAccessDeferred:
-    case internal::CloseStatus::ClosedInBackend:
-        return false;
-    case internal::CloseStatus::Open:
-    case internal::CloseStatus::ClosedInFrontend:
-    case internal::CloseStatus::ClosedTemporarily:
-        break;
-    }
-    if (dirty())
-    {
-        return true;
-    }
-    if (particles.dirty() || meshes.dirty())
-    {
-        return true;
-    }
-    for (auto const &pair : particles)
-    {
-        if (pair.second.dirtyRecursive())
-        {
-            return true;
-        }
-    }
-    for (auto const &pair : meshes)
-    {
-        if (pair.second.dirtyRecursive())
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 void Iteration::linkHierarchy(Writable &w)

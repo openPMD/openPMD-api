@@ -104,6 +104,7 @@ void ParticleSpecies::read()
         auto &container = particlePatches.container();
         container.erase("numParticles");
         container.erase("numParticlesOffset");
+        particlePatches.setDirty(false);
     }
 
     /* obtain all scalar records */
@@ -184,32 +185,10 @@ void ParticleSpecies::flush(
             for (auto &patch : particlePatches)
                 patch.second.flush(patch.first, flushParams);
         }
-    }
-}
-
-bool ParticleSpecies::dirtyRecursive() const
-{
-    if (dirty())
-    {
-        return true;
-    }
-    for (auto const &pair : *this)
-    {
-        if (pair.second.dirtyRecursive())
+        else
         {
-            return true;
+            particlePatches.setDirty(false);
         }
     }
-    if (flushParticlePatches(particlePatches))
-    {
-        for (auto const &pair : particlePatches)
-        {
-            if (pair.second.dirtyRecursive())
-            {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 } // namespace openPMD

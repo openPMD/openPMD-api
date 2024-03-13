@@ -381,11 +381,31 @@ OPENPMD_protected
 
     bool dirty() const
     {
-        return writable().dirty;
+        return writable().dirtySelf;
     }
-    bool &dirty()
+    bool dirtyRecursive() const
     {
-        return writable().dirty;
+        return writable().dirtyRecursive;
+    }
+    void setDirty(bool dirty_in)
+    {
+        auto &w = writable();
+        w.dirtySelf = dirty_in;
+        setDirtyRecursive(dirty_in);
+    }
+    void setDirtyRecursive(bool dirty_in)
+    {
+        auto &w = writable();
+        w.dirtyRecursive = dirty_in;
+        if (dirty_in)
+        {
+            auto current = w.parent;
+            while (current && !current->dirtyRecursive)
+            {
+                current->dirtyRecursive = true;
+                current = current->parent;
+            }
+        }
     }
     bool written() const
     {
@@ -420,7 +440,7 @@ inline bool Attributable::setAttribute(std::string const &key, T value)
         error::throwNoSuchAttribute(out_of_range_msg(key));
     }
 
-    dirty() = true;
+    setDirty(true);
     auto it = attri.m_attributes.lower_bound(key);
     if (it != attri.m_attributes.end() &&
         !attri.m_attributes.key_comp()(key, it->first))

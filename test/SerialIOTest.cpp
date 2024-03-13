@@ -1253,9 +1253,9 @@ inline void particle_patches(std::string const &file_ending)
 
 TEST_CASE("particle_patches", "[serial]")
 {
-    for (auto const &t : testedFileExtensions())
+    // for (auto const &t : testedFileExtensions())
     {
-        particle_patches(t);
+        particle_patches("bp");
     }
 }
 

@@ -380,16 +380,6 @@ private:
      */
     void setStepStatus(StepStatus);
 
-    /*
-     * @brief Check recursively whether this Iteration is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
-
     /**
      * @brief Link with parent.
      *

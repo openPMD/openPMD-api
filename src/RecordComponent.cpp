@@ -49,6 +49,7 @@ namespace internal
             throw error::WrongAPIUsage(
                 "Cannot write/read chunks to/from closed Iterations.");
         }
+        a.setDirtyRecursive(true);
         m_chunks.push(std::move(task));
     }
 } // namespace internal
@@ -120,7 +121,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         rc.m_dataset = std::move(d);
     }
 
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -213,7 +214,7 @@ RecordComponent &RecordComponent::makeEmpty(Dataset d)
         throw std::runtime_error("Dataset extent must be at least 1D.");
 
     rc.m_isEmpty = true;
-    dirty() = true;
+    setDirty(true);
     if (!written())
     {
         switchType<detail::DefaultValue<RecordComponent> >(
@@ -243,6 +244,7 @@ void RecordComponent::flush(
             IOHandler()->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
+        setDirty(false);
     }
     else
     {
@@ -449,15 +451,6 @@ void RecordComponent::readBase(bool require_unit_si)
                     ") in '" + myPath().openPMDPath() + "'.");
         }
     }
-}
-
-bool RecordComponent::dirtyRecursive() const
-{
-    if (this->dirty())
-    {
-        return true;
-    }
-    return !get().m_chunks.empty();
 }
 
 // need to define this in a cpp due to inclusion order

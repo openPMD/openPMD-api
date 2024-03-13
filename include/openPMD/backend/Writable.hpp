@@ -135,7 +135,8 @@ OPENPMD_private
         IOHandler = nullptr;
     internal::AttributableData *attributable = nullptr;
     Writable *parent = nullptr;
-    bool dirty = true;
+    bool dirtySelf = true;
+    bool dirtyRecursive = true;
     /**
      * If parent is not null, then this is a key such that:
      * &(*parent)[key] == this

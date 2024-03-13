@@ -185,7 +185,7 @@ Series &Series::setMeshesPath(std::string const &mp)
         setAttribute("meshesPath", mp);
     else
         setAttribute("meshesPath", mp + "/");
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -211,7 +211,7 @@ Series &Series::setParticlesPath(std::string const &pp)
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -402,7 +402,7 @@ Series &Series::setName(std::string const &n)
     }
 
     series.m_name = n;
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -1061,7 +1061,7 @@ void Series::flushFileBased(
                 written() = false;
                 series.iterations.written() = false;
 
-                dirty() |= it->second.dirty();
+                setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);
 
                 if (!it->second.written())
@@ -1100,9 +1100,9 @@ void Series::flushFileBased(
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
              */
-            dirty() = allDirty;
+            setDirty(allDirty);
         }
-        dirty() = false;
+        setDirty(false);
         break;
     }
     }

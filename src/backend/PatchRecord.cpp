@@ -54,7 +54,7 @@ void PatchRecord::flush_impl(
         T_RecordComponent::flush(path, flushParams);
     if (flushParams.flushLevel == FlushLevel::UserFlush)
     {
-        this->dirty() = false;
+        setDirty(false);
     }
 }
 
@@ -106,6 +106,6 @@ void PatchRecord::read()
             this->container().erase(component_name);
         }
     }
-    dirty() = false;
+    setDirty(false);
 }
 } // namespace openPMD
