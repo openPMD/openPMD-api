@@ -431,7 +431,7 @@ auto ADIOS2IOHandlerImpl::parseDatasetConfig(
     std::vector<ParameterizedOperator> operators)
     -> std::tuple<std::vector<ParameterizedOperator>, Shape>
 {
-    json::TracingJSON config = [&]() -> json::ParsedConfig {
+    json::TracingJSON parsedConfig = [&]() -> json::ParsedConfig {
         if (!m_buffered_dataset_config.has_value())
         {
             // we are only interested in these values from the global config
@@ -468,11 +468,11 @@ auto ADIOS2IOHandlerImpl::parseDatasetConfig(
 
     Shape arrayShape = Shape::GlobalArray;
     [&]() {
-        if (!config.json().contains("adios2"))
+        if (!parsedConfig.json().contains("adios2"))
         {
             return;
         };
-        json::TracingJSON adios2Config(config["adios2"]);
+        json::TracingJSON adios2Config(parsedConfig["adios2"]);
         auto datasetOperators = getOperators(adios2Config);
         if (datasetOperators.has_value())
         {
@@ -512,11 +512,21 @@ auto ADIOS2IOHandlerImpl::parseDatasetConfig(
         }
     }();
 
+#if 0
+        std::cout << "Operations for '" << varName << "':";
+        for(auto const & op: operators)
+        {
+            std::cout << " '" << op.op.Type() << "'";
+        }
+        std::cout << std::endl;
+#endif
+
     parameters.warnUnusedParameters(
-        config,
+        parsedConfig,
         "adios2",
         "Warning: parts of the backend configuration for ADIOS2 dataset '" +
             varName + "' remain unused:\n");
+
     return {std::move(operators), arrayShape};
 }
 
@@ -953,7 +963,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         std::tie(operators, arrayShape) =
             parseDatasetConfig(parameters, writable, varName);
 
-        adios2::Dims shape = [&, arrayShape = arrayShape]() {
+        adios2::Dims shape = [&]() {
             switch (arrayShape)
             {
 
