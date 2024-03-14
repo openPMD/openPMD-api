@@ -1,6 +1,6 @@
 # Preamble ####################################################################
 #
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.22.0)
 
 project(openPMD VERSION 0.16.0) # LANGUAGES CXX
 
@@ -8,23 +8,6 @@ project(openPMD VERSION 0.16.0) # LANGUAGES CXX
 set(openPMD_STANDARD_VERSION 1.1.0)
 
 include(${openPMD_SOURCE_DIR}/cmake/openPMDFunctions.cmake)
-
-
-# CMake policies ##############################################################
-#
-# Search in <PackageName>_ROOT:
-#   https://cmake.org/cmake/help/v3.12/policy/CMP0074.html
-if(POLICY CMP0074)
-    cmake_policy(SET CMP0074 NEW)
-endif()
-
-# We use simple syntax in cmake_dependent_option, so we are compatible with the
-# extended syntax in CMake 3.22+
-# https://cmake.org/cmake/help/v3.22/policy/CMP0127.html
-if(POLICY CMP0127)
-    cmake_policy(SET CMP0127 NEW)
-endif()
-
 
 # No in-Source builds #########################################################
 #
@@ -36,7 +19,6 @@ if(openPMD_SOURCE_DIR STREQUAL openPMD_BINARY_DIR)
           "Then run CMake in a temporary build directory. "
           "Learn more: https://hsf-training.github.io/hsf-training-cmake-webpage/02-building/index.html")
 endif()
-
 
 # Project structure ###########################################################
 #
@@ -148,10 +130,6 @@ openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
-option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
-option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
-option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
-option(openPMD_USE_INTERNAL_TOML11   "Use internally shipped toml11"        ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
@@ -233,6 +211,7 @@ endfunction()
 #     Clang+MPI: Potentially needed MPI::MPI_C targets in the past
 #                (exact MPI flavor & Clang version lost)
 #     BullMPI: PUBLIC dependency to MPI::MPI_CXX is missing in MPI::MPI_C target
+include(FetchContent)
 set(openPMD_MPI_LINK_C_DEFAULT OFF)
 option(openPMD_MPI_LINK_C  "Also link the MPI C targets" ${openPMD_MPI_LINK_C_DEFAULT})
 mark_as_advanced(openPMD_MPI_LINK_C)
@@ -259,27 +238,49 @@ endif()
 
 
 # external library: nlohmann-json (required)
-if(openPMD_USE_INTERNAL_JSON)
-    set(JSON_BuildTests OFF CACHE INTERNAL "")
-    set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
-    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
-    message(STATUS "nlohmann-json: Using INTERNAL version '3.9.1'")
-else()
-    find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
-    message(STATUS "nlohmann-json: Found version '${nlohmann_json_VERSION}'")
+find_package(nlohmann_json CONFIG)
+if(NOT nlohmann_json_FOUND)
+    message(STATUS "Fetching nlohmann-json from https://github.com/nlohmann/json")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+        set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json/")
+    else()
+        set(fetchcontent_args)
+    endif()
+    FetchContent_Declare(
+      nlohmann_json
+      GIT_REPOSITORY https://github.com/nlohmann/json.git
+      GIT_TAG v3.11.3
+      "${fetchcontent_args}"
+    )
+    unset(fetchcontent_args)
+    set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON option defiend internally by OpenPMD")
+    set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON option defiend internally by OpenPMD")  # only used PRIVATE
+    FetchContent_MakeAvailable(nlohmann_json)
 endif()
 add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::nlohmann_json
     INTERFACE nlohmann_json::nlohmann_json)
 
 # external library: toml11
-if(openPMD_USE_INTERNAL_TOML11)
-    set(toml11_INSTALL OFF CACHE INTERNAL "")
-    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11")
-    message(STATUS "toml11: Using INTERNAL version '3.7.1'")
-else()
-    find_package(toml11 3.7.1 CONFIG REQUIRED)
-    message(STATUS "toml11: Found version '${toml11_VERSION}'")
+find_package(toml11 CONFIG)
+if(NOT toml11_FOUND)
+    message(STATUS "Fetching toml11 from https://github.com/ToruNiina/toml11")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+        set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/")
+    else()
+        set(fetchcontent_args)
+    endif()
+    FetchContent_Declare(
+      toml11
+      GIT_REPOSITORY https://github.com/ToruNiina/toml11
+      # Migrate to the latest commit to remove CMake Warning which is not yet
+      # available in any official release.
+      GIT_TAG v3.7.1
+      "${fetchcontent_args}"
+    )
+    unset(fetchcontent_args)
+    set(toml11_INSTALL OFF CACHE INTERNAL "toml11 option defiend internally by OpenPMD")
+    FetchContent_MakeAvailable(toml11)
 endif()
 add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::toml11
@@ -396,46 +397,35 @@ endif()
 
 # external library: pybind11 (optional)
 set(_PY_DEV_MODULE Development.Module)
-if(CMAKE_VERSION VERSION_LESS 3.18.0)
-    # over-specification needed for CMake<3.18
-    #   https://pybind11.readthedocs.io/en/latest/compiling.html#findpython-mode
-    #   https://cmake.org/cmake/help/v3.18/module/FindPython.html
-    set(_PY_DEV_MODULE Development)
-endif()
 if(openPMD_USE_PYTHON STREQUAL AUTO)
     find_package(Python 3.8.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
-    if(Python_FOUND)
-        if(openPMD_USE_INTERNAL_PYBIND11)
-            add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
-            set(openPMD_HAVE_PYTHON TRUE)
-            message(STATUS "pybind11: Using INTERNAL version 2.11.1")
-        else()
-            find_package(pybind11 2.11.1 CONFIG)
-            if(pybind11_FOUND)
-                set(openPMD_HAVE_PYTHON TRUE)
-                message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
-            else()
-                set(openPMD_HAVE_PYTHON FALSE)
-            endif()
-        endif()
-    else()
-        set(openPMD_HAVE_PYTHON FALSE)
-    endif()
 elseif(openPMD_USE_PYTHON)
     find_package(Python COMPONENTS Interpreter ${_PY_DEV_MODULE} REQUIRED)
-    if(openPMD_USE_INTERNAL_PYBIND11)
-        add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
-        set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.11.1")
-    else()
-        find_package(pybind11 2.11.1 REQUIRED CONFIG)
-        set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
-    endif()
 else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
-
+if(Python_FOUND)
+    find_package(pybind11 CONFIG)
+    if(NOT pybind11_FOUND)
+        message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+            set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11/")
+        else()
+            set(fetchcontent_args)
+        endif()
+        FetchContent_Declare(
+            pybind11
+            GIT_REPOSITORY https://github.com/pybind/pybind11.git
+            GIT_TAG v2.11.1
+            "${fetchcontent_args}"
+        )
+        unset(fetchcontent_args)
+        FetchContent_MakeAvailable(pybind11)
+    endif()
+    set(openPMD_HAVE_PYTHON TRUE)
+else()
+    set(openPMD_HAVE_PYTHON FALSE)
+endif()
 
 # Targets #####################################################################
 #
@@ -551,18 +541,27 @@ target_include_directories(openPMD PUBLIC
 
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
-    add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
-    if(openPMD_USE_INTERNAL_CATCH)
-        target_include_directories(openPMD::thirdparty::Catch2 SYSTEM INTERFACE
-            $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
+    find_package(Catch2 CONFIG)
+    if(NOT Catch2_FOUND)
+        message(STATUS "Fetching catch2 from https://github.com/catchorg/Catch2")
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+            set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/")
+        else()
+            set(fetchcontent_args)
+        endif()
+        FetchContent_Declare(
+          Catch2
+          GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+          # ToDo Migrate to v3 and latest release
+          GIT_TAG v2.13.10
+          "${fetchcontent_args}"
         )
-        message(STATUS "Catch2: Using INTERNAL version '2.13.10'")
-    else()
-        find_package(Catch2 2.13.10 REQUIRED CONFIG)
-        target_link_libraries(openPMD::thirdparty::Catch2
-            INTERFACE Catch2::Catch2)
-        message(STATUS "Catch2: Found version '${Catch2_VERSION}'")
+        unset(fetchcontent_args)
+        FetchContent_MakeAvailable(Catch2)
     endif()
+    add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
+    target_link_libraries(openPMD::thirdparty::Catch2
+            INTERFACE Catch2::Catch2)
 endif()
 
 if(openPMD_HAVE_MPI)
@@ -1448,7 +1447,6 @@ if(openPMD_BUILD_TESTING)
         endif()
     endif()
 endif()
-
 
 # Status Message for Build Options ############################################
 #

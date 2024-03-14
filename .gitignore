@@ -97,6 +97,17 @@ Temporary Items
 spack.lock
 
 #########
+# CMake #
+#########
+CMakeUserPresets.json
+
+# Directories which are created and filled by FetchContent
+share/openPMD/thirdParty/json/
+share/openPMD/thirdParty/toml11/
+share/openPMD/thirdParty/catch2/
+share/openPMD/thirdParty/pybind11/
+
+#########
 # Tools #
 #########
 .stfolder
