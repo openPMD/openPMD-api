@@ -353,6 +353,8 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         flushAttributes(flushParams);
     }
     setDirty(false);
+    meshes.setDirty(false);
+    particles.setDirty(false);
 }
 
 void Iteration::deferParseAccess(DeferredParseAccess dr)
@@ -510,13 +512,9 @@ void Iteration::read_impl(std::string const &groupPath)
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
             meshes = {};
-            meshes.setDirty(false);
         }
     }
-    else
-    {
-        meshes.setDirty(false);
-    }
+    meshes.setDirty(false);
 
     if (hasParticles)
     {
@@ -530,13 +528,9 @@ void Iteration::read_impl(std::string const &groupPath)
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
             particles = {};
-            particles.setDirty(false);
         }
     }
-    else
-    {
-        particles.setDirty(false);
-    }
+    particles.setDirty(false);
 
     readAttributes(ReadMode::FullyReread);
 #ifdef openPMD_USE_INVASIVE_TESTS

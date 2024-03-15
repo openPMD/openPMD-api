@@ -164,6 +164,10 @@ void ParticleSpecies::flush(
             record.second.flush(record.first, flushParams);
         for (auto &patch : particlePatches)
             patch.second.flush(patch.first, flushParams);
+        if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+        {
+            particlePatches.setDirty(false);
+        }
     }
     else
     {
@@ -189,6 +193,10 @@ void ParticleSpecies::flush(
         {
             particlePatches.setDirty(false);
         }
+    }
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        setDirty(false);
     }
 }
 } // namespace openPMD

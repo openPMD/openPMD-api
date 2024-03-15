@@ -1221,8 +1221,12 @@ inline void particle_patches(std::string const &file_ending)
     {
         Series s = Series(
             "../samples/particle_patches%T." + file_ending, Access::READ_ONLY);
+        std::cout << "\n\n\n11111111111\n\n\n" << std::endl;
+        printDirty(s);
 
         auto e = s.iterations[42].particles["electrons"];
+        std::cout << "\n\n\n222222222\n\n\n" << std::endl;
+        printDirty(s);
 
         auto numParticles =
             e.particlePatches["numParticles"][SCALAR].template load<uint64_t>();
@@ -1230,11 +1234,17 @@ inline void particle_patches(std::string const &file_ending)
             e.particlePatches["numParticlesOffset"][SCALAR]
                 .template load<uint64_t>();
         auto extent_x = e.particlePatches["extent"]["x"].template load<float>();
+        std::cout << "\n\n\n3333333333\n\n\n" << std::endl;
+        printDirty(s);
         auto extent_y = e.particlePatches["extent"]["y"].template load<float>();
         auto offset_x = e.particlePatches["offset"]["x"].template load<float>();
         auto offset_y = e.particlePatches["offset"]["y"].template load<float>();
+        std::cout << "\n\n\n44444444444\n\n\n" << std::endl;
+        printDirty(s);
 
         s.flush();
+        std::cout << "\n\n\n555555555555555\n\n\n" << std::endl;
+        printDirty(s);
 
         REQUIRE(numParticles.get()[0] == 10);
         REQUIRE(numParticles.get()[1] == 113);

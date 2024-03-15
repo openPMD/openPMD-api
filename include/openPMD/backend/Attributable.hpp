@@ -112,6 +112,7 @@ class Attributable
     friend class Writable;
     friend class WriteIterations;
     friend class internal::RecordComponentData;
+    friend void printDirty(Series const &);
 
 protected:
     // tag for internal constructor

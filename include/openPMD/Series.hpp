@@ -836,6 +836,8 @@ OPENPMD_private
     AbstractIOHandler *IOHandler();
     AbstractIOHandler const *IOHandler() const;
 }; // Series
+
+void printDirty(Series const &);
 } // namespace openPMD
 
 // Make sure that this one is always included if Series.hpp is included,

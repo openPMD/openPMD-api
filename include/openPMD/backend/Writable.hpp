@@ -65,6 +65,7 @@ namespace detail
  *                      - whether the logical object has been modified compared
  *                        to last persistent state
  */
+class Series;
 class Writable final
 {
     friend class internal::AttributableData;
@@ -94,6 +95,7 @@ class Writable final
     friend std::string concrete_bp1_file_position(Writable *);
     template <typename>
     friend class Span;
+    friend void printDirty(Series const &);
 
 private:
     Writable(internal::AttributableData *);

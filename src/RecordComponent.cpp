@@ -244,7 +244,6 @@ void RecordComponent::flush(
             IOHandler()->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
-        setDirty(false);
     }
     else
     {
@@ -349,6 +348,10 @@ void RecordComponent::flush(
         }
 
         flushAttributes(flushParams);
+    }
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        setDirty(false);
     }
 }
 

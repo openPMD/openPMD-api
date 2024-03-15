@@ -32,6 +32,7 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/version.hpp"
 
 #include <cctype>
@@ -2787,4 +2788,78 @@ namespace
                 : std::nullopt);
     }
 } // namespace
+
+void printDirty(Series const &series)
+{
+    auto print = [](Attributable const &attr) {
+        size_t indent = 0;
+        {
+            auto current = attr.parent();
+            while (current)
+            {
+                ++indent;
+                current = current->parent;
+            }
+        }
+        auto make_indent = [&]() {
+            for (size_t i = 0; i < indent; ++i)
+            {
+                std::cout << "\t";
+            }
+        };
+        make_indent();
+        auto const &w = attr.writable();
+        std::cout << w.ownKeyWithinParent << '\n';
+        make_indent();
+        std::cout << "Self: " << w.dirtySelf << "\tRec: " << w.dirtyRecursive
+                  << '\n';
+        std::cout << std::endl;
+    };
+    print(series);
+    print(series.iterations);
+    for (auto const &[it_name, it] : series.iterations)
+    {
+        print(it);
+        print(it.meshes);
+        for (auto const &[mesh_name, mesh] : it.meshes)
+        {
+            print(mesh);
+            if (!mesh.scalar())
+            {
+                for (auto const &[comp_name, comp] : mesh)
+                {
+                    print(comp);
+                }
+            }
+        }
+        print(it.particles);
+        for (auto const &[species_name, species] : it.particles)
+        {
+            print(species);
+            print(species.particlePatches);
+            for (auto const &[patch_name, patch] : species.particlePatches)
+            {
+                print(patch);
+                if (!patch.scalar())
+                {
+                    for (auto const &[component_name, component] : patch)
+                    {
+                        print(component);
+                    }
+                }
+            }
+            for (auto const &[record_name, record] : species)
+            {
+                print(record);
+                if (!record.scalar())
+                {
+                    for (auto const &[comp_name, comp] : record)
+                    {
+                        print(comp);
+                    }
+                }
+            }
+        }
+    }
+}
 } // namespace openPMD
