@@ -774,8 +774,8 @@ TEST_CASE("close_iteration_throws_test", "[serial]")
         E_x.storeChunk(data, {0}, {5});
         it0.close();
 
-        it0.setTimeUnitSI(2.0); // will be silently ignored...
-        series.flush();
+        it0.setTimeUnitSI(2.0);
+        REQUIRE_THROWS(series.flush());
     }
 }
 #endif

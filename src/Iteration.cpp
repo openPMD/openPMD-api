@@ -21,6 +21,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -352,9 +353,12 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 
         flushAttributes(flushParams);
     }
-    setDirty(false);
-    meshes.setDirty(false);
-    particles.setDirty(false);
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        setDirty(false);
+        meshes.setDirty(false);
+        particles.setDirty(false);
+    }
 }
 
 void Iteration::deferParseAccess(DeferredParseAccess dr)
