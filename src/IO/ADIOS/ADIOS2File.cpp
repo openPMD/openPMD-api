@@ -20,6 +20,7 @@
  */
 
 #include "openPMD/IO/ADIOS/ADIOS2File.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 
@@ -1188,7 +1189,12 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
 
 void ADIOS2File::drop()
 {
-    m_buffer.clear();
+    if (!m_buffer.empty())
+    {
+        throw error::Internal(
+            "ADIOS2 backend: File data for '" + m_file +
+            "' dropped, but there were enqueued operations.");
+    }
 }
 
 static std::vector<std::string> availableAttributesOrVariablesPrefixed(
