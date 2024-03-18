@@ -451,7 +451,8 @@ void close_iteration_test(std::string const &file_ending)
         it1.close(/* flush = */ true);
 
         // illegally access iteration after closing
-        REQUIRE_THROWS(E_x.storeChunk(data, {0, 0}, {2, 2}));
+        E_x.storeChunk(data, {0, 0}, {2, 2});
+        REQUIRE_THROWS(write.flush());
     }
 
     {
@@ -464,7 +465,8 @@ void close_iteration_test(std::string const &file_ending)
         {
             REQUIRE(data[i] == chunk.get()[i]);
         }
-        REQUIRE_THROWS(E_x_read.loadChunk<int>({0, 0}, {2, 2}));
+        auto read_again = E_x_read.loadChunk<int>({0, 0}, {2, 2});
+        REQUIRE_THROWS(read.flush());
     }
 
     {
@@ -750,7 +752,8 @@ TEST_CASE("close_iteration_throws_test", "[serial]")
 
         auto B_y = it0.meshes["B"]["y"];
         B_y.resetDataset({Datatype::INT, {5}});
-        REQUIRE_THROWS(B_y.storeChunk(data, {0}, {5}));
+        B_y.storeChunk(data, {0}, {5});
+        REQUIRE_THROWS(series.flush());
     }
     {
         Series series("../samples/close_iteration_throws_2.bp", Access::CREATE);
@@ -763,7 +766,8 @@ TEST_CASE("close_iteration_throws_test", "[serial]")
 
         auto e_position_x = it0.particles["e"]["position"]["x"];
         e_position_x.resetDataset({Datatype::INT, {5}});
-        REQUIRE_THROWS(e_position_x.storeChunk(data, {0}, {5}));
+        e_position_x.storeChunk(data, {0}, {5});
+        REQUIRE_THROWS(series.flush());
     }
     {
         Series series("../samples/close_iteration_throws_3.bp", Access::CREATE);

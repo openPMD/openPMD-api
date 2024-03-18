@@ -44,11 +44,14 @@ namespace internal
     {
         Attributable a;
         a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
+// this check can be too costly in some setups
+#if 0
         if (a.containingIteration().closed())
         {
             throw error::WrongAPIUsage(
                 "Cannot write/read chunks to/from closed Iterations.");
         }
+#endif
         a.setDirtyRecursive(true);
         m_chunks.push(std::move(task));
     }
