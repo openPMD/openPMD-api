@@ -44,6 +44,7 @@ template <typename FilePositionType>
 class AbstractIOHandlerImplCommon;
 template <typename>
 class Span;
+class Series;
 
 namespace internal
 {
@@ -53,6 +54,11 @@ namespace internal
 namespace detail
 {
     class ADIOS2File;
+}
+
+namespace debug
+{
+    void printDirty(Series const &);
 }
 
 /** @brief Layer to mirror structure of logical data and persistent data in
@@ -65,7 +71,6 @@ namespace detail
  *                      - whether the logical object has been modified compared
  *                        to last persistent state
  */
-class Series;
 class Writable final
 {
     friend class internal::AttributableData;
@@ -95,7 +100,7 @@ class Writable final
     friend std::string concrete_bp1_file_position(Writable *);
     template <typename>
     friend class Span;
-    friend void printDirty(Series const &);
+    friend void debug::printDirty(Series const &);
 
 private:
     Writable(internal::AttributableData *);

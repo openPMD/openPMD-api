@@ -2789,85 +2789,88 @@ namespace
     }
 } // namespace
 
-void printDirty(Series const &series)
+namespace debug
 {
-    auto print = [](Attributable const &attr) {
-        size_t indent = 0;
-        {
-            auto current = attr.parent();
-            while (current)
-            {
-                ++indent;
-                current = current->parent;
-            }
-        }
-        auto make_indent = [&]() {
-            for (size_t i = 0; i < indent; ++i)
-            {
-                std::cout << "\t";
-            }
-        };
-        make_indent();
-        auto const &w = attr.writable();
-        std::cout << w.ownKeyWithinParent << '\n';
-        make_indent();
-        std::cout << "Self: " << w.dirtySelf << "\tRec: " << w.dirtyRecursive
-                  << '\n';
-        std::cout << std::endl;
-    };
-    print(series);
-    print(series.iterations);
-    for (auto const &[it_name, it] : series.iterations)
+    void printDirty(Series const &series)
     {
-        (void)it_name;
-        print(it);
-        print(it.meshes);
-        for (auto const &[mesh_name, mesh] : it.meshes)
-        {
-            (void)mesh_name;
-            print(mesh);
-            if (!mesh.scalar())
+        auto print = [](Attributable const &attr) {
+            size_t indent = 0;
             {
-                for (auto const &[comp_name, comp] : mesh)
+                auto current = attr.parent();
+                while (current)
                 {
-                    (void)comp_name;
-                    print(comp);
+                    ++indent;
+                    current = current->parent;
                 }
             }
-        }
-        print(it.particles);
-        for (auto const &[species_name, species] : it.particles)
-        {
-            (void)species_name;
-            print(species);
-            print(species.particlePatches);
-            for (auto const &[patch_name, patch] : species.particlePatches)
-            {
-                (void)patch_name;
-                print(patch);
-                if (!patch.scalar())
+            auto make_indent = [&]() {
+                for (size_t i = 0; i < indent; ++i)
                 {
-                    for (auto const &[component_name, component] : patch)
-                    {
-                        (void)component_name;
-                        print(component);
-                    }
+                    std::cout << "\t";
                 }
-            }
-            for (auto const &[record_name, record] : species)
+            };
+            make_indent();
+            auto const &w = attr.writable();
+            std::cout << w.ownKeyWithinParent << '\n';
+            make_indent();
+            std::cout << "Self: " << w.dirtySelf
+                      << "\tRec: " << w.dirtyRecursive << '\n';
+            std::cout << std::endl;
+        };
+        print(series);
+        print(series.iterations);
+        for (auto const &[it_name, it] : series.iterations)
+        {
+            (void)it_name;
+            print(it);
+            print(it.meshes);
+            for (auto const &[mesh_name, mesh] : it.meshes)
             {
-                (void)record_name;
-                print(record);
-                if (!record.scalar())
+                (void)mesh_name;
+                print(mesh);
+                if (!mesh.scalar())
                 {
-                    for (auto const &[comp_name, comp] : record)
+                    for (auto const &[comp_name, comp] : mesh)
                     {
                         (void)comp_name;
                         print(comp);
                     }
                 }
             }
+            print(it.particles);
+            for (auto const &[species_name, species] : it.particles)
+            {
+                (void)species_name;
+                print(species);
+                print(species.particlePatches);
+                for (auto const &[patch_name, patch] : species.particlePatches)
+                {
+                    (void)patch_name;
+                    print(patch);
+                    if (!patch.scalar())
+                    {
+                        for (auto const &[component_name, component] : patch)
+                        {
+                            (void)component_name;
+                            print(component);
+                        }
+                    }
+                }
+                for (auto const &[record_name, record] : species)
+                {
+                    (void)record_name;
+                    print(record);
+                    if (!record.scalar())
+                    {
+                        for (auto const &[comp_name, comp] : record)
+                        {
+                            (void)comp_name;
+                            print(comp);
+                        }
+                    }
+                }
+            }
         }
     }
-}
+} // namespace debug
 } // namespace openPMD

@@ -87,6 +87,11 @@ namespace internal
     class RecordComponentData;
 } // namespace internal
 
+namespace debug
+{
+    void printDirty(Series const &);
+}
+
 /** @brief Layer to manage storage of attributes associated with file objects.
  *
  * Mandatory and user-defined Attributes and their data for every object in the
@@ -112,7 +117,7 @@ class Attributable
     friend class Writable;
     friend class WriteIterations;
     friend class internal::RecordComponentData;
-    friend void printDirty(Series const &);
+    friend void debug::printDirty(Series const &);
 
 protected:
     // tag for internal constructor
