@@ -142,7 +142,24 @@ OPENPMD_private
         IOHandler = nullptr;
     internal::AttributableData *attributable = nullptr;
     Writable *parent = nullptr;
+
+    /** Tracks if there are unwritten changes for this specific Writable.
+     *
+     * Manipulate via Attributable::dirty() and Attributable::setDirty().
+     */
     bool dirtySelf = true;
+    /**
+     * Tracks if there are unwritten changes anywhere in the
+     * tree whose ancestor this Writable is.
+     *
+     * Invariant: this->dirtyRecursive implies parent->dirtyRecursive.
+     *
+     * dirtySelf and dirtyRecursive are separated since that allows specifying
+     * that `this` is not dirty, but some child is.
+     *
+     * Manipulate via Attributable::dirtyRecursive() and
+     * Attributable::setDirtyRecursive().
+     */
     bool dirtyRecursive = true;
     /**
      * If parent is not null, then this is a key such that:

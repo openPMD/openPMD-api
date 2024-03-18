@@ -389,6 +389,8 @@ OPENPMD_protected
     {
         return writable().dirtySelf;
     }
+    /** O(1).
+     */
     bool dirtyRecursive() const
     {
         return writable().dirtyRecursive;
@@ -399,6 +401,22 @@ OPENPMD_protected
         w.dirtySelf = dirty_in;
         setDirtyRecursive(dirty_in);
     }
+    /* Amortized O(1) if dirty_in is true, else O(1).
+     *
+     * Must be used carefully with `dirty_in == false` since it is assumed that
+     * all children are not dirty.
+     *
+     * Invariant of dirtyRecursive:
+     *   this->dirtyRecursive implies parent->dirtyRecursive.
+     *
+     * Hence:
+     *
+     * * If dirty_in is true: This needs only go up far enough until a parent is
+     *   found that itself is dirtyRecursive.
+     * * If dirty_in is false: Only sets `this` to `dirtyRecursive == false`.
+     *   The caller must ensure that the invariant holds (e.g. clearing
+     *   everything during flushing or reading logic).
+     */
     void setDirtyRecursive(bool dirty_in)
     {
         auto &w = writable();
