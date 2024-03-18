@@ -2819,15 +2819,18 @@ void printDirty(Series const &series)
     print(series.iterations);
     for (auto const &[it_name, it] : series.iterations)
     {
+        (void)it_name;
         print(it);
         print(it.meshes);
         for (auto const &[mesh_name, mesh] : it.meshes)
         {
+            (void)mesh_name;
             print(mesh);
             if (!mesh.scalar())
             {
                 for (auto const &[comp_name, comp] : mesh)
                 {
+                    (void)comp_name;
                     print(comp);
                 }
             }
@@ -2835,26 +2838,31 @@ void printDirty(Series const &series)
         print(it.particles);
         for (auto const &[species_name, species] : it.particles)
         {
+            (void)species_name;
             print(species);
             print(species.particlePatches);
             for (auto const &[patch_name, patch] : species.particlePatches)
             {
+                (void)patch_name;
                 print(patch);
                 if (!patch.scalar())
                 {
                     for (auto const &[component_name, component] : patch)
                     {
+                        (void)component_name;
                         print(component);
                     }
                 }
             }
             for (auto const &[record_name, record] : species)
             {
+                (void)record_name;
                 print(record);
                 if (!record.scalar())
                 {
                     for (auto const &[comp_name, comp] : record)
                     {
+                        (void)comp_name;
                         print(comp);
                     }
                 }
