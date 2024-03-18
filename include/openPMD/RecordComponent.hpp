@@ -70,7 +70,7 @@ namespace internal
          */
         std::queue<IOTask> m_chunks;
 
-        auto push_chunk(IOTask &&task) -> void;
+        void push_chunk(IOTask &&task);
         /**
          * Stores the value for constant record components.
          * Ignored otherwise.
