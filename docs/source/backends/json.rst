@@ -67,7 +67,7 @@ Attributes
 In order to avoid name clashes, attributes are generally stored within a separate subgroup ``attributes``.
 
 Attributes can be stored in two formats.
-The format is selected by the :ref:`JSON/TOML parameter<backendconfig>` ``json.attribute.mode`` (resp. ``toml.attribute.mode``) with possible values ``["long", "short"]`` (default: ``"long"`` in openPMD 1.*, ``"short"`` in openPMD >= 2.0).
+The format is selected by the :ref:`JSON/TOML parameter<backendconfig>` ``json.attribute.mode`` (resp. ``toml.attribute.mode``) with possible values ``["long", "short"]`` (default: ``"long"`` for JSON in openPMD 1.*, ``"short"`` otherwise, i.e. generally in openPMD 2.*, but always in TOML).
 
 Attributes in **long format** store the datatype explicitly, by representing attributes as JSON objects.
 Every such attribute is itself a JSON object with two keys:
