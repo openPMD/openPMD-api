@@ -112,6 +112,7 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     std::nullopt,
                     ba.variables());
 
+                // https://adios2.readthedocs.io/en/v2.9.2/components/components.html#shapes
                 if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
                 {
                     if (bp.param.extent != Extent{1})
@@ -191,6 +192,7 @@ struct RunUniquePtrPut
             bufferedPut.name,
             std::nullopt,
             ba.variables());
+        // https://adios2.readthedocs.io/en/v2.9.2/components/components.html#shapes
         if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
         {
             if (bufferedPut.extent != Extent{1})
