@@ -145,6 +145,7 @@ Series &Series::setOpenPMD(std::string const &o)
                   << std::endl;
     }
     setAttribute("openPMD", o);
+    IOHandler()->m_openPMDVersion = o;
     return *this;
 }
 
@@ -1478,7 +1479,6 @@ void Series::flushGorVBased(
             }
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
-            fCreate.openPMDversion = openPMD();
             IOHandler()->enqueue(IOTask(this, fCreate));
 
             flushRankTable();
