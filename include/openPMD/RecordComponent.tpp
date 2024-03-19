@@ -287,11 +287,6 @@ template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
-    if (containingIterationClosed())
-    {
-        throw error::WrongAPIUsage("Cannot write chunks to closed Iterations.");
-    }
-
     verifyChunk<T>(o, e);
 
     /*

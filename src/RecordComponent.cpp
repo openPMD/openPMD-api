@@ -459,12 +459,6 @@ void RecordComponent::readBase(bool require_unit_si)
     }
 }
 
-// need to define this in a cpp due to inclusion order
-bool RecordComponent::containingIterationClosed() const
-{
-    return containingIteration().closed();
-}
-
 void RecordComponent::storeChunk(
     auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
 {

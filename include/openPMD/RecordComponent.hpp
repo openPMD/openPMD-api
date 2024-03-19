@@ -499,8 +499,6 @@ private:
     void storeChunk(
         auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
 
-    bool containingIterationClosed() const;
-
     // clang-format off
 OPENPMD_protected
     // clang-format on
