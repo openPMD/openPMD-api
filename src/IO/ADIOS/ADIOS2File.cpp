@@ -88,6 +88,7 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                 adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
                     bp.param.offset, bp.param.extent, ba.m_IO, bp.name);
 
+                // https://adios2.readthedocs.io/en/v2.9.2/components/components.html#shapes
                 if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
                 {
                     if (bp.param.extent != Extent{1})
@@ -161,6 +162,7 @@ struct RunUniquePtrPut
         auto ptr = static_cast<T const *>(bufferedPut.data.get());
         adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
             bufferedPut.offset, bufferedPut.extent, ba.m_IO, bufferedPut.name);
+        // https://adios2.readthedocs.io/en/v2.9.2/components/components.html#shapes
         if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
         {
             if (bufferedPut.extent != Extent{1})
