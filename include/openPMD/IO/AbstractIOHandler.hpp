@@ -201,6 +201,7 @@ class AbstractIOHandler
 {
     friend class Series;
     friend class ADIOS2IOHandlerImpl;
+    friend class JSONIOHandlerImpl;
     friend class detail::ADIOS2File;
 
 private:
