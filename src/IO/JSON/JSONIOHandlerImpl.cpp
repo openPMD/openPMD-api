@@ -461,7 +461,7 @@ void JSONIOHandlerImpl::createFile(
         {
 
         case FileFormat::Json:
-            m_attributeMode = parameters.openPMDversion >= "2."
+            m_attributeMode = m_handler->m_openPMDVersion >= "2."
                 ? AttributeMode::Short
                 : AttributeMode::Long;
             break;
