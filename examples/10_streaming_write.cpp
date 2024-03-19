@@ -87,6 +87,7 @@ int main()
         // fully interconnected communication meshes for data that needs to be
         // read by each reader. A local value dataset can only contain a single
         // item per MPI rank, forming an array of length equal to the MPI size.
+        // https://adios2.readthedocs.io/en/v2.9.2/components/components.html#shapes
 
         auto e_patches = iteration.particles["e"].particlePatches;
         auto numParticles = e_patches["numParticles"];
