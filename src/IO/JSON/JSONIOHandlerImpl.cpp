@@ -457,9 +457,18 @@ void JSONIOHandlerImpl::createFile(
 
     if (m_attributeModeSpecificationVia == SpecificationVia::DefaultValue)
     {
-        m_attributeMode = parameters.openPMDversion >= "2."
-            ? AttributeMode::Short
-            : AttributeMode::Long;
+        switch (m_fileFormat)
+        {
+
+        case FileFormat::Json:
+            m_attributeMode = parameters.openPMDversion >= "2."
+                ? AttributeMode::Short
+                : AttributeMode::Long;
+            break;
+        case FileFormat::Toml:
+            m_attributeMode = AttributeMode::Short;
+            break;
+        }
     }
 
     if (!writable->written)
