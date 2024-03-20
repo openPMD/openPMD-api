@@ -700,12 +700,13 @@ OPENPMD_private
         Access at,
         std::string const &options,
         MPI_Communicator &&...);
-    template <typename TracingJSON>
+    template <typename TracingJSON, typename... MPI_Communicator>
     std::tuple<std::unique_ptr<ParsedInput>, TracingJSON> initIOHandler(
         std::string const &filepath,
         std::string const &options,
         Access at,
-        bool resolve_generic_extension);
+        bool resolve_generic_extension,
+        MPI_Communicator &&...);
     void initSeries(
         std::unique_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
     void initDefaults(IterationEncoding, bool initAll = false);
