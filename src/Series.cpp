@@ -600,36 +600,39 @@ void Series::init(
                 std::make_unique<DummyIOHandler>(parsed_directory, at));
         auto &series = get();
         series.iterations.linkHierarchy(writable());
-        series.m_deferred_initialization = [called_this_already = false,
-                                            filepath,
-                                            options,
-                                            at,
-                                            comm...](Series &s) mutable {
-            if (called_this_already)
-            {
-                throw std::runtime_error("Must be called one time only");
-            }
-            else
-            {
-                called_this_already = true;
-            }
+        series.m_deferred_initialization =
+            [called_this_already = false, filepath, options, at, comm...](
+                Series &s) mutable {
+                if (called_this_already)
+                {
+                    throw std::runtime_error("Must be called one time only");
+                }
+                else
+                {
+                    called_this_already = true;
+                }
 
-            auto [parsed_input, tracing_json] =
-                s.initIOHandler<json::TracingJSON>(filepath, options, at, true);
+                auto [parsed_input, tracing_json] =
+                    s.initIOHandler<json::TracingJSON>(
+                        filepath,
+                        options,
+                        at,
+                        true,
+                        std::forward<MPI_Communicator>(comm)...);
 
-            auto io_handler = createIOHandler(
-                parsed_input->path,
-                at,
-                parsed_input->format,
-                parsed_input->filenameExtension.value_or(std::string()),
-                comm...,
-                tracing_json,
-                filepath);
-            auto res = io_handler.get();
-            s.initSeries(std::move(io_handler), std::move(parsed_input));
-            json::warnGlobalUnusedOptions(tracing_json);
-            return res;
-        };
+                auto io_handler = createIOHandler(
+                    parsed_input->path,
+                    at,
+                    parsed_input->format,
+                    parsed_input->filenameExtension.value_or(std::string()),
+                    comm...,
+                    tracing_json,
+                    filepath);
+                auto res = io_handler.get();
+                s.initSeries(std::move(io_handler), std::move(parsed_input));
+                json::warnGlobalUnusedOptions(tracing_json);
+                return res;
+            };
     };
 
     switch (at)
@@ -637,15 +640,24 @@ void Series::init(
     case Access::CREATE:
     case Access::READ_WRITE:
     case Access::READ_ONLY: {
-        auto [parsed_input, tracing_json] =
-            initIOHandler<json::TracingJSON>(filepath, options, at, true);
+        auto [parsed_input, tracing_json] = initIOHandler<json::TracingJSON>(
+            filepath,
+            options,
+            at,
+            true,
+            std::forward<MPI_Communicator>(comm)...);
         init_directly(std::move(parsed_input), std::move(tracing_json));
     }
     break;
     case Access::READ_LINEAR:
     case Access::APPEND: {
         auto [first_parsed_input, first_tracing_json] =
-            initIOHandler<json::TracingJSON>(filepath, options, at, false);
+            initIOHandler<json::TracingJSON>(
+                filepath,
+                options,
+                at,
+                false,
+                std::forward<MPI_Communicator>(comm)...);
         if (first_parsed_input->filenameExtension.has_value())
         {
             init_directly(
@@ -666,16 +678,19 @@ void Series::init(
     }
 }
 
-template <typename TracingJSON>
+template <typename TracingJSON, typename... MPI_Communicator>
 auto Series::initIOHandler(
     std::string const &filepath,
     std::string const &options,
     Access at,
-    bool resolve_generic_extension)
+    bool resolve_generic_extension,
+    MPI_Communicator &&...comm)
     -> std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
 {
-    json::TracingJSON optionsJson =
-        json::parseOptions(options, /* considerFiles = */ true);
+    json::TracingJSON optionsJson = json::parseOptions(
+        options,
+        std::forward<MPI_Communicator>(comm)...,
+        /* considerFiles = */ true);
     auto input = parseInput(filepath);
     if (resolve_generic_extension && input->format == Format::GENERIC &&
         at != Access::CREATE)
