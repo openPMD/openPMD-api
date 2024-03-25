@@ -135,11 +135,9 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
     if (extent.size() != dim || offset.size() != dim)
     {
         std::ostringstream oss;
-        oss << "Dimensionality of chunk ("
-            << "offset=" << offset.size() << "D, "
-            << "extent=" << extent.size() << "D) "
-            << "and record component (" << int(dim) << "D) "
-            << "do not match.";
+        oss << "Dimensionality of chunk (" << "offset=" << offset.size()
+            << "D, " << "extent=" << extent.size() << "D) "
+            << "and record component (" << int(dim) << "D) " << "do not match.";
         throw std::runtime_error(oss.str());
     }
     Extent dse = getExtent();

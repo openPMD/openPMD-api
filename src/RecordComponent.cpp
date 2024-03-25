@@ -499,8 +499,8 @@ void RecordComponent::verifyChunk(
         {
             std::ostringstream oss;
             oss << "Joined array: Must specify an empty offset (given: "
-                << "offset=" << o.size() << "D, "
-                << "extent=" << e.size() << "D).";
+                << "offset=" << o.size() << "D, " << "extent=" << e.size()
+                << "D).";
             throw std::runtime_error(oss.str());
         }
         if (e.size() != dim)
@@ -508,8 +508,8 @@ void RecordComponent::verifyChunk(
             std::ostringstream oss;
             oss << "Joined array: Dimensionalities of chunk extent and dataset "
                    "extent must be equivalent (given: "
-                << "offset=" << o.size() << "D, "
-                << "extent=" << e.size() << "D).";
+                << "offset=" << o.size() << "D, " << "extent=" << e.size()
+                << "D).";
             throw std::runtime_error(oss.str());
         }
         for (size_t i = 0; i < dim; ++i)
@@ -529,11 +529,9 @@ void RecordComponent::verifyChunk(
         if (e.size() != dim || o.size() != dim)
         {
             std::ostringstream oss;
-            oss << "Dimensionality of chunk ("
-                << "offset=" << o.size() << "D, "
-                << "extent=" << e.size() << "D) "
-                << "and record component (" << int(dim) << "D) "
-                << "do not match.";
+            oss << "Dimensionality of chunk (" << "offset=" << o.size() << "D, "
+                << "extent=" << e.size() << "D) " << "and record component ("
+                << int(dim) << "D) " << "do not match.";
             throw std::runtime_error(oss.str());
         }
         for (uint8_t i = 0; i < dim; ++i)

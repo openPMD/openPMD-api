@@ -414,8 +414,7 @@ void available_chunks_test(std::string const &file_ending)
             "parameters":
             {
                 "NumAggregators":)END"
-               << "\"" << std::to_string(mpi_size) << "\""
-               << R"END(
+               << "\"" << std::to_string(mpi_size) << "\"" << R"END(
             }
         }
     }
@@ -957,8 +956,7 @@ void hipace_like_write(std::string const &file_ending)
         int const step = first_rank_step - my_first_step;
 
         if (verbose)
-            std::cout << "[" << i_mpi_rank << "] "
-                      << "step: " << step
+            std::cout << "[" << i_mpi_rank << "] " << "step: " << step
                       << " | first_ranks_step: " << first_rank_step
                       << std::endl;
         // do we start writing to a new step?
