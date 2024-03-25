@@ -543,6 +543,7 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
             p.second->drop();
         }
     }
+    m_dirty.clear();
     return res;
 }
 

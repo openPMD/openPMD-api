@@ -172,7 +172,7 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         dRead.extent = extent;
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast<void>(data);
-        rc.m_chunks.push(IOTask(this, dRead));
+        rc.push_chunk(IOTask(this, dRead));
     }
 }
 

@@ -32,6 +32,7 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/version.hpp"
 
 #include <cctype>
@@ -185,7 +186,7 @@ Series &Series::setMeshesPath(std::string const &mp)
         setAttribute("meshesPath", mp);
     else
         setAttribute("meshesPath", mp + "/");
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -211,7 +212,7 @@ Series &Series::setParticlesPath(std::string const &pp)
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -402,7 +403,7 @@ Series &Series::setName(std::string const &n)
     }
 
     series.m_name = n;
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -1076,7 +1077,7 @@ void Series::flushFileBased(
                 written() = false;
                 series.iterations.written() = false;
 
-                dirty() |= it->second.dirty();
+                setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);
 
                 if (!it->second.written())
@@ -1115,9 +1116,9 @@ void Series::flushFileBased(
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
              */
-            dirty() = allDirty;
+            setDirty(allDirty);
         }
-        dirty() = false;
+        setDirty(false);
         break;
     }
     }
@@ -2802,4 +2803,89 @@ namespace
                 : std::nullopt);
     }
 } // namespace
+
+namespace debug
+{
+    void printDirty(Series const &series)
+    {
+        auto print = [](Attributable const &attr) {
+            size_t indent = 0;
+            {
+                auto current = attr.parent();
+                while (current)
+                {
+                    ++indent;
+                    current = current->parent;
+                }
+            }
+            auto make_indent = [&]() {
+                for (size_t i = 0; i < indent; ++i)
+                {
+                    std::cout << "\t";
+                }
+            };
+            make_indent();
+            auto const &w = attr.writable();
+            std::cout << w.ownKeyWithinParent << '\n';
+            make_indent();
+            std::cout << "Self: " << w.dirtySelf
+                      << "\tRec: " << w.dirtyRecursive << '\n';
+            std::cout << std::endl;
+        };
+        print(series);
+        print(series.iterations);
+        for (auto const &[it_name, it] : series.iterations)
+        {
+            (void)it_name;
+            print(it);
+            print(it.meshes);
+            for (auto const &[mesh_name, mesh] : it.meshes)
+            {
+                (void)mesh_name;
+                print(mesh);
+                if (!mesh.scalar())
+                {
+                    for (auto const &[comp_name, comp] : mesh)
+                    {
+                        (void)comp_name;
+                        print(comp);
+                    }
+                }
+            }
+            print(it.particles);
+            for (auto const &[species_name, species] : it.particles)
+            {
+                (void)species_name;
+                print(species);
+                print(species.particlePatches);
+                for (auto const &[patch_name, patch] : species.particlePatches)
+                {
+                    (void)patch_name;
+                    print(patch);
+                    if (!patch.scalar())
+                    {
+                        for (auto const &[component_name, component] : patch)
+                        {
+                            (void)component_name;
+                            print(component);
+                        }
+                    }
+                }
+                for (auto const &[record_name, record] : species)
+                {
+                    (void)record_name;
+                    print(record);
+                    if (!record.scalar())
+                    {
+                        for (auto const &[comp_name, comp] : record)
+                        {
+                            (void)comp_name;
+                            print(comp);
+                        }
+                    }
+                }
+            }
+        }
+    }
+} // namespace debug
 } // namespace openPMD

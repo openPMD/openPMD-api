@@ -44,6 +44,7 @@ template <typename FilePositionType>
 class AbstractIOHandlerImplCommon;
 template <typename>
 class Span;
+class Series;
 
 namespace internal
 {
@@ -53,6 +54,11 @@ namespace internal
 namespace detail
 {
     class ADIOS2File;
+}
+
+namespace debug
+{
+    void printDirty(Series const &);
 }
 
 /** @brief Layer to mirror structure of logical data and persistent data in
@@ -94,6 +100,7 @@ class Writable final
     friend std::string concrete_bp1_file_position(Writable *);
     template <typename>
     friend class Span;
+    friend void debug::printDirty(Series const &);
 
 private:
     Writable(internal::AttributableData *);
@@ -135,7 +142,25 @@ OPENPMD_private
         IOHandler = nullptr;
     internal::AttributableData *attributable = nullptr;
     Writable *parent = nullptr;
-    bool dirty = true;
+
+    /** Tracks if there are unwritten changes for this specific Writable.
+     *
+     * Manipulate via Attributable::dirty() and Attributable::setDirty().
+     */
+    bool dirtySelf = true;
+    /**
+     * Tracks if there are unwritten changes anywhere in the
+     * tree whose ancestor this Writable is.
+     *
+     * Invariant: this->dirtyRecursive implies parent->dirtyRecursive.
+     *
+     * dirtySelf and dirtyRecursive are separated since that allows specifying
+     * that `this` is not dirty, but some child is.
+     *
+     * Manipulate via Attributable::dirtyRecursive() and
+     * Attributable::setDirtyRecursive().
+     */
+    bool dirtyRecursive = true;
     /**
      * If parent is not null, then this is a key such that:
      * &(*parent)[key] == this

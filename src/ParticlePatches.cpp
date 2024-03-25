@@ -97,7 +97,7 @@ void ParticlePatches::read()
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
         prc.written() = true;
 
-        pr.dirty() = false;
+        pr.setDirty(false);
         try
         {
             prc.PatchRecordComponent::read(/* require_unit_si = */ false);
@@ -111,5 +111,6 @@ void ParticlePatches::read()
             Container<PatchRecord>::container().erase(component_name);
         }
     }
+    setDirty(false);
 }
 } // namespace openPMD

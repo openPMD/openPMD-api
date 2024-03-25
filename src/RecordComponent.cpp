@@ -25,6 +25,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
 #include <algorithm>
@@ -39,6 +40,21 @@ namespace openPMD
 namespace internal
 {
     RecordComponentData::RecordComponentData() = default;
+    auto RecordComponentData::push_chunk(IOTask &&task) -> void
+    {
+        Attributable a;
+        a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
+// this check can be too costly in some setups
+#if 0
+        if (a.containingIteration().closed())
+        {
+            throw error::WrongAPIUsage(
+                "Cannot write/read chunks to/from closed Iterations.");
+        }
+#endif
+        a.setDirtyRecursive(true);
+        m_chunks.push(std::move(task));
+    }
 } // namespace internal
 
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
@@ -108,7 +124,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         rc.m_dataset = std::move(d);
     }
 
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -201,7 +217,7 @@ RecordComponent &RecordComponent::makeEmpty(Dataset d)
         throw std::runtime_error("Dataset extent must be at least 1D.");
 
     rc.m_isEmpty = true;
-    dirty() = true;
+    setDirty(true);
     if (!written())
     {
         switchType<detail::DefaultValue<RecordComponent> >(
@@ -336,6 +352,10 @@ void RecordComponent::flush(
 
         flushAttributes(flushParams);
     }
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        setDirty(false);
+    }
 }
 
 void RecordComponent::read(bool require_unit_si)
@@ -439,15 +459,6 @@ void RecordComponent::readBase(bool require_unit_si)
     }
 }
 
-bool RecordComponent::dirtyRecursive() const
-{
-    if (this->dirty())
-    {
-        return true;
-    }
-    return !get().m_chunks.empty();
-}
-
 void RecordComponent::storeChunk(
     auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
 {
@@ -460,7 +471,7 @@ void RecordComponent::storeChunk(
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::move(buffer);
     auto &rc = get();
-    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
+    rc.push_chunk(IOTask(this, std::move(dWrite)));
 }
 
 void RecordComponent::verifyChunk(

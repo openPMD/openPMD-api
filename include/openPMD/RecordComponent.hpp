@@ -69,6 +69,8 @@ namespace internal
          * Chunk reading/writing requests on the contained dataset.
          */
         std::queue<IOTask> m_chunks;
+
+        void push_chunk(IOTask &&task);
         /**
          * Stores the value for constant record components.
          * Ignored otherwise.
@@ -496,16 +498,6 @@ private:
 
     void storeChunk(
         auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
-
-    /**
-     * @brief Check recursively whether this RecordComponent is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
 
     // clang-format off
 OPENPMD_protected

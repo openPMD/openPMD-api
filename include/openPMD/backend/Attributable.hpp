@@ -83,7 +83,14 @@ namespace internal
 
     template <typename, typename>
     class BaseRecordData;
+
+    class RecordComponentData;
 } // namespace internal
+
+namespace debug
+{
+    void printDirty(Series const &);
+}
 
 /** @brief Layer to manage storage of attributes associated with file objects.
  *
@@ -109,6 +116,8 @@ class Attributable
     friend class Series;
     friend class Writable;
     friend class WriteIterations;
+    friend class internal::RecordComponentData;
+    friend void debug::printDirty(Series const &);
 
 protected:
     // tag for internal constructor
@@ -378,11 +387,49 @@ OPENPMD_protected
 
     bool dirty() const
     {
-        return writable().dirty;
+        return writable().dirtySelf;
     }
-    bool &dirty()
+    /** O(1).
+     */
+    bool dirtyRecursive() const
     {
-        return writable().dirty;
+        return writable().dirtyRecursive;
+    }
+    void setDirty(bool dirty_in)
+    {
+        auto &w = writable();
+        w.dirtySelf = dirty_in;
+        setDirtyRecursive(dirty_in);
+    }
+    /* Amortized O(1) if dirty_in is true, else O(1).
+     *
+     * Must be used carefully with `dirty_in == false` since it is assumed that
+     * all children are not dirty.
+     *
+     * Invariant of dirtyRecursive:
+     *   this->dirtyRecursive implies parent->dirtyRecursive.
+     *
+     * Hence:
+     *
+     * * If dirty_in is true: This needs only go up far enough until a parent is
+     *   found that itself is dirtyRecursive.
+     * * If dirty_in is false: Only sets `this` to `dirtyRecursive == false`.
+     *   The caller must ensure that the invariant holds (e.g. clearing
+     *   everything during flushing or reading logic).
+     */
+    void setDirtyRecursive(bool dirty_in)
+    {
+        auto &w = writable();
+        w.dirtyRecursive = dirty_in;
+        if (dirty_in)
+        {
+            auto current = w.parent;
+            while (current && !current->dirtyRecursive)
+            {
+                current->dirtyRecursive = true;
+                current = current->parent;
+            }
+        }
     }
     bool written() const
     {
@@ -417,7 +464,7 @@ inline bool Attributable::setAttribute(std::string const &key, T value)
         error::throwNoSuchAttribute(out_of_range_msg(key));
     }
 
-    dirty() = true;
+    setDirty(true);
     auto it = attri.m_attributes.lower_bound(key);
     if (it != attri.m_attributes.end() &&
         !attri.m_attributes.key_comp()(key, it->first))

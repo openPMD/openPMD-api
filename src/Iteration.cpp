@@ -21,6 +21,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -331,7 +332,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         }
         else
         {
-            meshes.dirty() = false;
+            meshes.setDirty(false);
         }
 
         if (!particles.empty() || s.containsAttribute("particlesPath"))
@@ -347,10 +348,16 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         }
         else
         {
-            particles.dirty() = false;
+            particles.setDirty(false);
         }
 
         flushAttributes(flushParams);
+    }
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        setDirty(false);
+        meshes.setDirty(false);
+        particles.setDirty(false);
     }
 }
 
@@ -509,13 +516,9 @@ void Iteration::read_impl(std::string const &groupPath)
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
             meshes = {};
-            meshes.dirty() = false;
         }
     }
-    else
-    {
-        meshes.dirty() = false;
-    }
+    meshes.setDirty(false);
 
     if (hasParticles)
     {
@@ -529,13 +532,9 @@ void Iteration::read_impl(std::string const &groupPath)
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
             particles = {};
-            particles.dirty() = false;
         }
     }
-    else
-    {
-        particles.dirty() = false;
-    }
+    particles.setDirty(false);
 
     readAttributes(ReadMode::FullyReread);
 #ifdef openPMD_USE_INVASIVE_TESTS
@@ -820,33 +819,6 @@ void Iteration::setStepStatus(StepStatus status)
     default:
         throw std::runtime_error("[Iteration] unreachable");
     }
-}
-
-bool Iteration::dirtyRecursive() const
-{
-    if (dirty())
-    {
-        return true;
-    }
-    if (particles.dirty() || meshes.dirty())
-    {
-        return true;
-    }
-    for (auto const &pair : particles)
-    {
-        if (pair.second.dirtyRecursive())
-        {
-            return true;
-        }
-    }
-    for (auto const &pair : meshes)
-    {
-        if (pair.second.dirtyRecursive())
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 void Iteration::linkHierarchy(Writable &w)
