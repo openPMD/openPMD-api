@@ -17,14 +17,15 @@ exit /b 0
 
 :build_adios2
   if exist adios2-stamp exit /b 0
-  ::curl -sLo adios2-2.9.1.zip ^
-  ::  https://github.com/ornladios/ADIOS2/archive/v2.9.1.zip
-  curl -sLo adios2-2.9.1.zip ^
-    https://github.com/ax3l/ADIOS2/archive/refs/heads/release-2.9.1-bp-wheels.zip
-  powershell Expand-Archive adios2-2.9.1.zip -DestinationPath dep-adios2
+  curl -sLo adios2-2.10.0.zip ^
+    https://github.com/vicentebolea/ADIOS2/archive/refs/heads/fix-static-blosc2-build.zip
+  powershell Expand-Archive adios2-2.10.0.zip -DestinationPath dep-adios2
 
-  cmake -S dep-adios2/ADIOS2-release-2.9.1-bp-wheels -B build-adios2 ^
+  cmake --version
+
+  cmake -S dep-adios2/ADIOS2-fix-static-blosc2-build -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
+    -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  ^
     -DBUILD_SHARED_LIBS=OFF     ^
     -DBUILD_TESTING=OFF         ^
     -DADIOS2_USE_MPI=OFF        ^
@@ -51,6 +52,11 @@ exit /b 0
   cmake --build build-adios2 --target install --config Release
   if errorlevel 1 exit 1
 
+  :: CMake Config package of C-Blosc 2.10.1+ only
+  :: https://github.com/ornladios/ADIOS2/issues/3903
+  :: rmdir /s /q "%BUILD_PREFIX%/ADIOS2/lib/cmake/adios2/FindBlosc2.cmake"
+  :: if errorlevel 1 exit 1
+
   rmdir /s /q build-adios2
   if errorlevel 1 exit 1
 
@@ -61,19 +67,16 @@ exit /b 0
 :build_blosc2
   if exist blosc2-stamp exit /b 0
 
-  curl -sLo blosc2-2.10.2.zip ^
-    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.2.zip
-  powershell Expand-Archive blosc2-2.10.2.zip -DestinationPath dep-blosc2
+  curl -sLo blosc2-2.11.1.zip ^
+    https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.zip
+  powershell Expand-Archive blosc2-2.11.1.zip -DestinationPath dep-blosc2
 
-  :: Fix Threads search in Blosc2Config.cmake
-  :: https://github.com/Blosc/c-blosc2/pull/549
-  curl -sLo blosc2-threads.patch ^
-    https://github.com/Blosc/c-blosc2/pull/549.patch
-  python -m patch -p 1 -d dep-blosc2/c-blosc2-2.10.2 blosc2-threads.patch
-  if errorlevel 1 exit 1
+  cmake --version
 
-  cmake -S dep-blosc2/c-blosc2-2.10.2 -B build-blosc2 ^
+  cmake -S dep-blosc2/c-blosc2-2.11.1 -B build-blosc2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
+    -DCMAKE_INSTALL_PREFIX=%BUILD_PREFIX%/blosc2  ^
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON   ^
     -DBUILD_SHARED=OFF          ^
     -DBUILD_STATIC=ON           ^
     -DBUILD_BENCHMARKS=OFF      ^
