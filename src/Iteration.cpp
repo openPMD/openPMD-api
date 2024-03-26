@@ -338,7 +338,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             m.second.flush(m.first, flushParams);
         for (auto &species : particles)
             species.second.flush(species.first, flushParams);
-        dirty() = false;
+        setDirty(false);
     }
     else
     {
