@@ -5,6 +5,8 @@
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
 #endif
+
+#include "openPMD/ChunkInfo.hpp"
 #include "openPMD/openPMD.hpp"
 
 #include "openPMD/IO/ADIOS/macros.hpp"
@@ -29,6 +31,92 @@
 using namespace openPMD;
 
 Dataset globalDataset(Datatype::CHAR, {1});
+
+namespace test_chunk_assignment
+{
+using namespace openPMD::chunk_assignment;
+struct Params
+{
+    ChunkTable table;
+    RankMeta metaSource;
+    RankMeta metaSink;
+
+    void init(
+        size_t sourceRanks,
+        size_t sinkRanks,
+        size_t in_per_host,
+        size_t out_per_host)
+    {
+        for (size_t rank = 0; rank < sourceRanks; ++rank)
+        {
+            table.emplace_back(Offset{rank, rank}, Extent{rank, rank}, rank);
+            table.emplace_back(
+                Offset{rank, 100 * rank}, Extent{rank, 100 * rank}, rank);
+            metaSource.emplace(rank, std::to_string(rank / in_per_host));
+        }
+        for (size_t rank = 0; rank < sinkRanks; ++rank)
+        {
+            metaSink.emplace(rank, std::to_string(rank / out_per_host));
+        }
+    }
+};
+void print(RankMeta const &meta, ChunkTable const &table)
+{
+    for (auto const &chunk : table)
+    {
+        std::cout << "[HOST: " << meta.at(chunk.sourceID)
+                  << ",\tRank: " << chunk.sourceID << ",\tOffset: ";
+        for (auto offset : chunk.offset)
+        {
+            std::cout << offset << ", ";
+        }
+        std::cout << "\tExtent: ";
+        for (auto extent : chunk.extent)
+        {
+            std::cout << extent << ", ";
+        }
+        std::cout << "]" << std::endl;
+    }
+}
+void print(RankMeta const &meta, Assignment const &table)
+{
+    for (auto &[rank, chunkList] : table)
+    {
+        std::cout << "[HOST: " << meta.at(rank) << ",\tRank: " << rank << "]"
+                  << std::endl;
+        for (auto const &chunk : chunkList)
+        {
+            std::cout << "\t[Offset: ";
+            for (auto offset : chunk.offset)
+            {
+                std::cout << offset << ", ";
+            }
+            std::cout << "\tExtent: ";
+            for (auto extent : chunk.extent)
+            {
+                std::cout << extent << ", ";
+            }
+            std::cout << "]" << std::endl;
+        }
+    }
+}
+} // namespace test_chunk_assignment
+
+TEST_CASE("chunk_assignment", "[core]")
+{
+    using namespace chunk_assignment;
+    test_chunk_assignment::Params params;
+    params.init(6, 2, 2, 1);
+    test_chunk_assignment::print(params.metaSource, params.table);
+    ByHostname byHostname(std::make_unique<RoundRobin>());
+    FromPartialStrategy fullStrategy(
+        std::make_unique<ByHostname>(std::move(byHostname)),
+        std::make_unique<BinPacking>());
+    Assignment res =
+        fullStrategy.assign(params.table, params.metaSource, params.metaSink);
+    std::cout << "\nRESULTS:" << std::endl;
+    test_chunk_assignment::print(params.metaSink, res);
+}
 
 TEST_CASE("versions_test", "[core]")
 {

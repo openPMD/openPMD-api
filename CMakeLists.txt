@@ -460,6 +460,7 @@ set(CORE_SOURCE
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp
+        src/auxiliary/Mpi.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
         src/backend/MeshRecordComponent.cpp
@@ -1353,7 +1354,7 @@ if(openPMD_BUILD_TESTING)
                 )
                 add_test(NAME CLI.pipe.py
                     COMMAND sh -c
-                        "${MPI_TEST_EXE} ${Python_EXECUTABLE}                      \
+                        "${MPI_TEST_EXE} -n 2 ${Python_EXECUTABLE}                 \
                             ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe       \
                             --infile ../samples/git-sample/data%T.h5               \
                             --outfile ../samples/git-sample/data%T.bp &&           \
@@ -1364,7 +1365,7 @@ if(openPMD_BUILD_TESTING)
                             --outfile                                              \
                                 ../samples/git-sample/single_iteration_%T.bp &&    \
                                                                                    \
-                        ${MPI_TEST_EXE} ${Python_EXECUTABLE}                       \
+                        ${MPI_TEST_EXE} -n 2 ${Python_EXECUTABLE}                  \
                             ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe       \
                             --infile ../samples/git-sample/thetaMode/data%T.h5     \
                             --outfile                                              \
