@@ -118,7 +118,7 @@ void read()
     // Have to define the dataset for E/z as it is not defined in the template
     // @todo check that the dataset is defined only upon destruction, not at
     // flushing already
-    cloned.writeIterations()[0].meshes["E"]["z"].resetDataset(
+    cloned.writeIterations()[0].meshes["E"].at("z").resetDataset(
         {openPMD::Datatype::INT});
 }
 
