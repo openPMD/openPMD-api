@@ -116,6 +116,7 @@ protected:
      */
     std::optional<MPI_Comm> m_communicator;
 #endif
+    bool m_writeAttributesFromThisRank = true;
 
     json::TracingJSON m_config;
     std::optional<nlohmann::json> m_buffered_dataset_config;

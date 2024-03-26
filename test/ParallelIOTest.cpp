@@ -1187,9 +1187,10 @@ doshuffle = "BLOSC_BITSHUFFLE"
 
     std::string writeConfigBP4 =
         R"END(
+attribute_writing_ranks = 0
+
 [adios2]
 unused = "parameter"
-attribute_writing_ranks = 0
 )END"
 #if openPMD_HAS_ADIOS_2_9
         "use_group_table = true"

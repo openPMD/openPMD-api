@@ -20,10 +20,13 @@
  */
 #include <openPMD/openPMD.hpp>
 
+#include <openPMD/auxiliary/Environment.hpp>
+
 #include <mpi.h>
 
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <vector> // std::vector
 
 using std::cout;
@@ -58,6 +61,19 @@ stripe_count = -1
 [hdf5.dataset]
 chunks = "auto"
         )";
+
+#if 1
+    subfiling_config =
+        []() {
+            std::stringstream res;
+            res << "attribute_writing_ranks = ["
+                << auxiliary::getEnvString("RANKS", "0") << "]";
+            auto res_str = res.str();
+            std::cout << "RETURNING: '" << res_str << "'" << std::endl;
+            return res_str;
+        }() +
+        subfiling_config;
+#endif
 
     // open file for writing
     Series series = Series(

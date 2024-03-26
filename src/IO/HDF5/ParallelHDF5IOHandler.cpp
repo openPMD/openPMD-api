@@ -70,7 +70,7 @@ std::future<void> ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &)
 
 ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     AbstractIOHandler *handler, MPI_Comm comm, json::TracingJSON config)
-    : HDF5IOHandlerImpl{handler, std::move(config), /* do_warn_unused_params = */ false}
+    : HDF5IOHandlerImpl{handler, config, /* do_warn_unused_params = */ false}
     , m_mpiComm{comm}
     , m_mpiInfo{MPI_INFO_NULL} /* MPI 3.0+: MPI_INFO_ENV */
 {
@@ -80,6 +80,44 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     m_datasetTransferProperty = H5Pcreate(H5P_DATASET_XFER);
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
     m_fileCreateProperty = H5Pcreate(H5P_FILE_CREATE);
+
+    if (config.json().contains("attribute_writing_ranks"))
+    {
+        auto const &attribute_writing_ranks =
+            config["attribute_writing_ranks"].json();
+        int rank = 0;
+        MPI_Comm_rank(comm, &rank);
+        auto throw_error = []() {
+            throw error::BackendConfigSchema(
+                {"attribute_writing_ranks"},
+                "Type must be either an integer or an array of integers.");
+        };
+        if (attribute_writing_ranks.is_array())
+        {
+            m_writeAttributesFromThisRank = false;
+            for (auto const &val : attribute_writing_ranks)
+            {
+                if (!val.is_number())
+                {
+                    throw_error();
+                }
+                if (val.get<int>() == rank)
+                {
+                    m_writeAttributesFromThisRank = true;
+                    break;
+                }
+            }
+        }
+        else if (attribute_writing_ranks.is_number())
+        {
+            m_writeAttributesFromThisRank =
+                attribute_writing_ranks.get<int>() == rank;
+        }
+        else
+        {
+            throw_error();
+        }
+    }
 
 #if H5_VERSION_GE(1, 10, 1)
     auto const hdf5_spaced_allocation =

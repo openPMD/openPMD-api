@@ -2436,6 +2436,21 @@ namespace
 template <typename TracingJSON>
 void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
 {
+    constexpr std::array
+        backend_independent_options_with_backend_specific_implementation = {
+            "attribute_writing_ranks"};
+
+    for (auto const &opt :
+         backend_independent_options_with_backend_specific_implementation)
+    {
+        // Suppress warnings for these options: The backends might or might not
+        // take those hints
+        if (options.json().contains(opt))
+        {
+            options[opt];
+        }
+    }
+
     auto &series = get();
     getJsonOption<bool>(
         options, "defer_iteration_parsing", series.m_parseLazily);
