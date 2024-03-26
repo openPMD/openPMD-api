@@ -27,8 +27,10 @@
 #include <algorithm>
 #include <complex>
 #include <iostream>
+#include <optional>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 
 namespace openPMD
 {
@@ -119,19 +121,38 @@ void Attributable::seriesFlush(std::string backendConfig)
     writable().seriesFlush(std::move(backendConfig));
 }
 
-Series Attributable::retrieveSeries() const
+std::optional<Series> Attributable::retrieveSeries_optional() const
 {
     Writable const *findSeries = &writable();
     while (findSeries->parent)
     {
         findSeries = findSeries->parent;
     }
-    auto seriesData = &auxiliary::deref_dynamic_cast<internal::SeriesData>(
-        findSeries->attributable);
+    auto maybeSeriesData =
+        auxiliary::dynamic_cast_optional<internal::SeriesData>(
+            findSeries->attributable);
+    if (!maybeSeriesData.has_value())
+    {
+        return std::nullopt;
+    }
+    auto seriesData = *maybeSeriesData;
     Series res;
     res.setData(
         std::shared_ptr<internal::SeriesData>{seriesData, [](auto const *) {}});
     return res;
+}
+
+Series Attributable::retrieveSeries() const
+{
+    if (auto maybeSeries = retrieveSeries_optional(); maybeSeries.has_value())
+    {
+        return *maybeSeries;
+    }
+    else
+    {
+        throw std::runtime_error(
+            "[Attributable::retrieveSeries] Was not able to retrieve Series.");
+    }
 }
 
 Iteration const &Attributable::containingIteration() const
