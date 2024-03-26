@@ -20,8 +20,16 @@
  */
 #pragma once
 
+#include "openPMD/config.hpp"
+
 #include "openPMD/Dataset.hpp" // Offset, Extent
 
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <map>
+#include <string>
 #include <vector>
 
 namespace openPMD
@@ -73,4 +81,56 @@ struct WrittenChunkInfo : ChunkInfo
 };
 
 using ChunkTable = std::vector<WrittenChunkInfo>;
+
+namespace chunk_assignment
+{
+    using RankMeta = std::map<unsigned int, std::string>;
+} // namespace chunk_assignment
+
+namespace host_info
+{
+    /**
+     * Methods for retrieving hostname / processor identifiers that openPMD-api
+     * is aware of. These can be used for locality-aware chunk distribution
+     * schemes in streaming setups.
+     */
+    enum class Method
+    {
+        POSIX_HOSTNAME,
+        MPI_PROCESSOR_NAME
+    };
+
+    /**
+     * @brief Is the method available on the current system?
+     *
+     * @return true If it is available.
+     * @return false Otherwise.
+     */
+    bool methodAvailable(Method);
+
+    /**
+     * @brief Wrapper for the native hostname retrieval functions such as
+     *        POSIX gethostname().
+     *
+     * @return std::string The hostname / processor name returned by the native
+     *                     function.
+     */
+    std::string byMethod(Method);
+
+#if openPMD_HAVE_MPI
+    /**
+     * @brief Retrieve the hostname information on all MPI ranks and distribute
+     *        a map of "rank -> hostname" to all ranks.
+     *
+     * This call is MPI collective.
+     *
+     * @return chunk_assignment::RankMeta Hostname / processor name information
+     *         for all MPI ranks known to the communicator.
+     *         The result is returned on all ranks.
+     */
+    chunk_assignment::RankMeta byMethodCollective(MPI_Comm, Method);
+#endif
+} // namespace host_info
 } // namespace openPMD
+
+#undef openPMD_POSIX_AVAILABLE
