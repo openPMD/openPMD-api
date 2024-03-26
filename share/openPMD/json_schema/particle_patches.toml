@@ -1,0 +1,48 @@
+type = "object"
+title = "Particle Patches"
+description = "Recommended group for post-processing. It logically orders the 1D arrays of attributes into local patches of particles that can be read and processed in parallel."
+
+required = ["numParticles", "numParticlesOffset", "offset", "extent"]
+
+################################
+# General layout of attributes #
+################################
+
+[properties.attributes]
+title = "Attribute layout"
+description = "Custom attributes allowed, no required attributes defined."
+"$ref" = "attributes.json"
+
+#######################################################
+# Definition of particle patches via                  #
+# numParticles, numParticlesOffset, offset and extent #
+#######################################################
+
+[properties.numParticles]
+title = "numParticles"
+description = "number of particles in this patch"
+allOf = [
+    { "$ref" = "record_component.json" },
+    { "$ref" = "dataset_defs.json#/$defs/int_type_dataset" },
+]
+
+
+[properties.numParticlesOffset]
+title = "numParticles"
+description = "offset within the one-dimensional records of the particle species where the first particle in this patch is stored"
+allOf = [
+    { "$ref" = "record_component.json" },
+    { "$ref" = "dataset_defs.json#/$defs/int_type_dataset" },
+]
+
+
+[properties.offset]
+title = "Offset"
+description = "absolute position (position + positionOffset as defined above) where the particle patch begins: defines the (inclusive) lower bound with positions that are associated with the patch; the same requirements as for regular record components apply"
+"$ref" = "patch_record.json"
+
+
+[properties.extent]
+title = "Extent"
+description = "extent of the particle patch; the offset + extent must be larger than the maximum absolute position of particles in the patch as the exact upper bound of position offset + extent is excluded from the patch; the same requirements as for regular record components apply"
+"$ref" = "patch_record.json"

@@ -1,0 +1,27 @@
+title = "Mesh Record Component"
+
+#############################################
+# Requirement 1: This is a record component #
+#############################################
+
+[[allOf]]
+title = "Record Component"
+"$ref" = "record_component.json"
+
+##################################################
+# Requirement 2: Mesh Record Component Specifics #
+##################################################
+
+[[allOf]]
+title = "Mesh Record Component"
+description = "Single component in a mesh record."
+type = "object"
+required = ["attributes"]
+
+[allOf.properties.attributes]
+required = ["position"]
+title = "Record Component attributes"
+description = "Standard-defined attributes at the Record Component level."
+
+[allOf.properties.attributes.properties]
+position."$ref" = "attribute_defs.json#/$defs/vec_float_attribute"

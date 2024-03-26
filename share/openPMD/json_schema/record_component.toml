@@ -1,0 +1,65 @@
+##############################################
+# Requirement 1: Record Component attributes #
+##############################################
+
+[[allOf]]
+title = "Record Component"
+description = "Single component in a record."
+type = "object"
+required = ["attributes"]
+
+[allOf.properties.attributes]
+title = "Attributes"
+
+################################################
+# Requirement 1.1: Standard-defined attributes #
+################################################
+
+[[allOf.properties.attributes.allOf]]
+title = "Record Component attributes"
+description = "Standard-defined attributes at the Record Component level."
+required = ["unitSI"]
+
+[allOf.properties.attributes.allOf.properties]
+unitSI."$ref" = "attribute_defs.json#/$defs/float_attribute"
+
+#############################################
+# Requirement 1.2: Generic attribute layout #
+#############################################
+
+[[allOf.properties.attributes.allOf]]
+title = "Attribute layout"
+"$ref" = "attributes.json"
+
+###########################################
+# Requirement 2: Either array or constant #
+###########################################
+
+[[allOf]]
+title = "Either array or constant"
+
+#####################
+# Option 2.1: Array #
+#####################
+
+[[allOf.oneOf]]
+description = "An n-dimensional dataset containing the payload."
+title = "Array dataset"
+
+"$ref" = "dataset_defs.json#/$defs/any_type_dataset"
+
+########################
+# Option 2.2: Constant #
+########################
+
+[[allOf.oneOf]]
+title = "Constant dataset"
+description = "A dataset represented by two attributes: The constant value and its shape."
+required = ["attributes"]
+
+[allOf.oneOf.properties.attributes]
+required = ["shape", "value"]
+
+[allOf.oneOf.properties.attributes.properties]
+value."$ref" = "attribute_defs.json#/$defs/float_attribute"
+shape."$ref" = "attribute_defs.json#/$defs/vec_int_attribute"
