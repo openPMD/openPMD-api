@@ -2314,7 +2314,7 @@ void Series::readBase()
     {
         // Make sure that the meshesPath does not leak from one iteration into
         // the other in file-based iteration encoding
-        get().m_attributes.erase("meshesPath");
+        Attributable::get().m_attributes.erase("meshesPath");
     }
 
     if (std::count(
@@ -2351,7 +2351,7 @@ void Series::readBase()
     {
         // Make sure that the particlesPath does not leak from one iteration
         // into the other in file-based iteration encoding
-        get().m_attributes.erase("particlesPath");
+        Attributable::get().m_attributes.erase("particlesPath");
     }
 }
 
