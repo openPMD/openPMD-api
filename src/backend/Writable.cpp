@@ -21,6 +21,7 @@
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include "openPMD/backend/Attributable.hpp"
 
 namespace openPMD
 {

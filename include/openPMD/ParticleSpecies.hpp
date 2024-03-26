@@ -35,6 +35,7 @@ class ParticleSpecies : public Container<Record>
     friend class Container<ParticleSpecies>;
     friend class Container<Record>;
     friend class Iteration;
+    friend class CustomHierarchy;
 
 public:
     ParticlePatches particlePatches;
