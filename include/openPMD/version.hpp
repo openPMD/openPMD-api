@@ -37,9 +37,18 @@
  * compile-time)
  * @{
  */
-#define OPENPMD_STANDARD_MAJOR 1
-#define OPENPMD_STANDARD_MINOR 1
+#define OPENPMD_STANDARD_MAJOR 2
+#define OPENPMD_STANDARD_MINOR 0
 #define OPENPMD_STANDARD_PATCH 0
+/** @} */
+
+/** maximum supported version of the openPMD standard (read & write,
+ * compile-time)
+ * @{
+ */
+#define OPENPMD_STANDARD_DEFAULT_MAJOR 1
+#define OPENPMD_STANDARD_DEFAULT_MINOR 1
+#define OPENPMD_STANDARD_DEFAULT_PATCH 0
 /** @} */
 
 /** minimum supported version of the openPMD standard (read, compile-time)
@@ -77,7 +86,17 @@ std::string getVersion();
  *
  * @return std::string openPMD standard version (dot separated)
  */
-std::string getStandard();
+[[deprecated(
+    "Deprecated due to unclear semantics. Use one of getStandardMinimum, "
+    "getStandardMaximum() or getStandardDefault instead.")]] std::string
+getStandard();
+
+/** Return the default used version of the openPMD standard (read & write,
+ * run-time)
+ *
+ * @return std::string openPMD standard version (dot separated)
+ */
+std::string getStandardDefault();
 
 /** Return the minimum supported version of the openPMD standard (read,
  * run-time)
@@ -85,6 +104,13 @@ std::string getStandard();
  * @return std::string minimum openPMD standard version (dot separated)
  */
 std::string getStandardMinimum();
+
+/** Return the minimum supported version of the openPMD standard (read,
+ * run-time)
+ *
+ * @return std::string minimum openPMD standard version (dot separated)
+ */
+std::string getStandardMaximum();
 
 /** Return the feature variants of the openPMD-api library (run-time)
  *

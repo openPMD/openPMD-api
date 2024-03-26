@@ -134,6 +134,7 @@ std::string Series::openPMD() const
 Series &Series::setOpenPMD(std::string const &o)
 {
     setAttribute("openPMD", o);
+    IOHandler()->m_openPMDVersion = o;
     return *this;
 }
 
@@ -156,9 +157,10 @@ std::string Series::basePath() const
 Series &Series::setBasePath(std::string const &bp)
 {
     std::string version = openPMD();
-    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
+    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0" ||
+        version == "2.0.0")
         throw std::runtime_error(
-            "Custom basePath not allowed in openPMD <=1.1.0");
+            "Custom basePath not allowed in openPMD <=2.0");
 
     setAttribute("basePath", bp);
     return *this;
@@ -944,7 +946,7 @@ void Series::initDefaults(IterationEncoding ie, bool initAll)
         }
     }
     if (!containsAttribute("openPMD"))
-        setOpenPMD(getStandard());
+        setOpenPMD(getStandardDefault());
     /*
      * In Append mode, only init the rest of the defaults after checking that
      * the file does not yet exist to avoid overriding more than needed.
@@ -1534,7 +1536,8 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 
     Parameter<Operation::OPEN_PATH> pOpen;
     std::string version = openPMD();
-    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
+    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0" ||
+        version == "2.0.0")
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
         throw error::ReadError(
@@ -1686,7 +1689,8 @@ creating new iterations.
 
     Parameter<Operation::OPEN_PATH> pOpen;
     std::string version = openPMD();
-    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
+    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0" ||
+        version == "2.0.0")
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
         throw error::ReadError(
@@ -2658,19 +2662,13 @@ auto Series::currentSnapshot() const
     if (series.iterations.containsAttribute("snapshot"))
     {
         auto const &attribute = series.iterations.getAttribute("snapshot");
-        switch (attribute.dtype)
+        auto res = attribute.getOptional<vec_t>();
+        if (res.has_value())
         {
-        case Datatype::ULONGLONG:
-        case Datatype::VEC_ULONGLONG: {
-            auto const &vec = attribute.get<std::vector<unsigned long long>>();
-            return vec_t{vec.begin(), vec.end()};
+            return res.value();
         }
-        case Datatype::ULONG:
-        case Datatype::VEC_ULONG: {
-            auto const &vec = attribute.get<std::vector<unsigned long>>();
-            return vec_t{vec.begin(), vec.end()};
-        }
-        default: {
+        else
+        {
             std::stringstream s;
             s << "Unexpected datatype for '/data/snapshot': " << attribute.dtype
               << " (expected a vector of integer, found " +
@@ -2681,7 +2679,6 @@ auto Series::currentSnapshot() const
                 error::Reason::UnexpectedContent,
                 {},
                 s.str());
-        }
         }
     }
     else
