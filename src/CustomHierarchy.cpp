@@ -546,6 +546,7 @@ void CustomHierarchy::read(
             data.embeddedDatasets().container().erase(path);
         }
     }
+    setDirty(false);
 }
 
 void CustomHierarchy::flush_internal(
@@ -633,6 +634,7 @@ void CustomHierarchy::flush_internal(
     {
         dataset.flush(name, flushParams, /* set_defaults = */ false);
     }
+    setDirty(false);
 }
 
 void CustomHierarchy::flush(

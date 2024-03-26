@@ -223,7 +223,7 @@ Series &Series::setMeshesPath(std::vector<std::string> const &mp)
         setAttribute("meshesPath", mp);
         break;
     }
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -286,7 +286,7 @@ Series &Series::setParticlesPath(std::vector<std::string> const &pp)
         setAttribute("particlesPath", pp);
         break;
     }
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
