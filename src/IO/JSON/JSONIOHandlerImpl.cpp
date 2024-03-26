@@ -643,14 +643,16 @@ void JSONIOHandlerImpl::createDataset(
             break;
         }
         case IOMode::Template:
-            if (parameter.extent != Extent{0})
+            if (parameter.extent != Extent{0} &&
+                parameter.dtype != Datatype::UNDEFINED)
             {
                 dset["extent"] = parameter.extent;
             }
             else
             {
                 // no-op
-                // If extent is empty, don't bother writing it
+                // If extent is empty or no datatype is defined, don't bother
+                // writing it
             }
             break;
         }

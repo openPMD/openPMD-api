@@ -20,6 +20,10 @@ void write()
     std::string config = R"(
 {
   "iteration_encoding": "variable_based",
+  "json": {
+    "dataset": {"mode": "template"},
+    "attribute": {"mode": "short"}
+  },
   "toml": {
     "dataset": {"mode": "template"},
     "attribute": {"mode": "short"}
