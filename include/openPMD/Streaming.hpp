@@ -45,6 +45,7 @@ enum class AdvanceMode : unsigned char
 enum class StepStatus : unsigned char
 {
     DuringStep, /* step is currently active */
+    OutOfStep, /* steps used, but currently no step active */
     NoStep /* no step is currently active */
 };
 } // namespace openPMD

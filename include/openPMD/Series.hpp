@@ -27,12 +27,12 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
-#include "openPMD/WriteIterations.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/version.hpp"
 
 #if openPMD_HAVE_MPI
@@ -49,6 +49,8 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <unordered_map>
+#include <vector>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
@@ -58,7 +60,7 @@
 namespace openPMD
 {
 class ReadIterations;
-class SeriesIterator;
+class StatefulIterator;
 class Series;
 class Series;
 
@@ -93,14 +95,6 @@ namespace internal
         IterationsContainer_t iterations{};
 
         /**
-         * For each instance of Series, there is only one instance
-         * of WriteIterations, stored in this Option.
-         * This ensures that Series::writeIteration() always returns
-         * the same instance.
-         */
-        std::optional<WriteIterations> m_writeIterations;
-
-        /**
          * Series::readIterations() returns an iterator type that modifies the
          * state of the Series (by proceeding through IO steps).
          * Hence, we need to make sure that there is only one of them, otherwise
@@ -115,13 +109,14 @@ namespace internal
          * Due to include order, this member needs to be a pointer instead of
          * an optional.
          */
-        std::unique_ptr<SeriesIterator> m_sharedStatefulIterator;
+        std::unique_ptr<StatefulIterator> m_sharedReadIterations;
         /**
          * For writing: Remember which iterations have been written in the
          * currently active output step. Use this later when writing the
          * snapshot attribute.
          */
         std::set<IterationIndex_t> m_currentlyActiveIterations;
+        std::unordered_map<IterationIndex_t, std::string> m_iterationFilenames;
         /**
          * Needed if reading a single iteration of a file-based series.
          * Users may specify the concrete filename of one iteration instead of
@@ -221,9 +216,9 @@ class Series : public Attributable
     friend class Iteration;
     friend class Writable;
     friend class ReadIterations;
-    friend class SeriesIterator;
+    friend class StatefulIterator;
     friend class internal::SeriesData;
-    friend class WriteIterations;
+    friend class StatefulSnapshotsContainer;
 
 public:
     explicit Series();
@@ -587,6 +582,8 @@ public:
      */
     ReadIterations readIterations();
 
+    Snapshots snapshots();
+
     /**
      * @brief Parse the Series.
      *
@@ -745,7 +742,8 @@ OPENPMD_private
         bool flushIOHandler = true);
     void flushMeshesPath();
     void flushParticlesPath();
-    void readFileBased();
+    void readFileBased(
+        std::optional<IterationIndex_t> read_only_this_single_iteration);
     void readOneIterationFileBased(std::string const &filePath);
     /**
      * Note on re-parsing of a Series:
@@ -757,13 +755,13 @@ OPENPMD_private
      * and turn them into a warning (useful when parsing a Series, since parsing
      * should succeed without issue).
      * If true, the error will always be re-thrown (useful when using
-     * ReadIterations since those methods should be aware when the current step
-     * is broken).
+     * ReadIterations since those methods should be aware when the current
+     * step is broken).
      */
-    std::optional<std::deque<IterationIndex_t>> readGorVBased(
+    std::vector<IterationIndex_t> readGorVBased(
         bool do_always_throw_errors,
         bool init,
-        std::set<IterationIndex_t> const &ignoreIterations = {});
+        std::optional<IterationIndex_t> read_only_this_single_iteration);
     void readBase();
     std::string iterationFilename(IterationIndex_t i);
 
@@ -779,14 +777,14 @@ OPENPMD_private
      * parse state.
      */
     IterationOpened
-    openIterationIfDirty(IterationIndex_t index, Iteration iteration);
+    openIterationIfDirty(IterationIndex_t index, Iteration &iteration);
     /*
      * Open an iteration. Ensures that the iteration's m_closed status
      * is set properly and that any files pertaining to the iteration
      * is opened.
      * Does not create files when called in CREATE mode.
      */
-    void openIteration(IterationIndex_t index, Iteration iteration);
+    void openIteration(IterationIndex_t index, Iteration &iteration);
 
     /**
      * Find the given iteration in Series::iterations and return an iterator
@@ -806,14 +804,12 @@ OPENPMD_private
      *             based layout, it's the Series object.
      * @param it The iterator within Series::iterations pointing to that
      *           iteration.
-     * @param iteration The actual Iteration object.
      * @return AdvanceStatus
      */
     AdvanceStatus advance(
         AdvanceMode mode,
         internal::AttributableData &file,
-        iterations_iterator it,
-        Iteration &iteration);
+        iterations_iterator it);
 
     AdvanceStatus advance(AdvanceMode mode);
 
@@ -846,4 +842,4 @@ namespace debug
 
 // Make sure that this one is always included if Series.hpp is included,
 // otherwise Series::readIterations() cannot be used
-#include "openPMD/ReadIterations.hpp"
+#include "openPMD/snapshots/StatefulIterator.hpp"

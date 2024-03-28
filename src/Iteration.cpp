@@ -21,15 +21,21 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <algorithm>
 #include <exception>
 #include <iostream>
+#include <iterator>
+#include <optional>
+#include <stdexcept>
 #include <tuple>
 
 namespace openPMD
@@ -93,21 +99,8 @@ Iteration &Iteration::close(bool _flush)
     case CloseStatus::ClosedInFrontend:
         it.m_closed = CloseStatus::ClosedInFrontend;
         break;
-    case CloseStatus::ClosedTemporarily:
-        // should we bother to reopen?
-        if (dirtyRecursive())
-        {
-            // let's reopen
-            it.m_closed = CloseStatus::ClosedInFrontend;
-        }
-        else
-        {
-            // don't reopen
-            it.m_closed = CloseStatus::ClosedInBackend;
-        }
-        break;
     case CloseStatus::ParseAccessDeferred:
-    case CloseStatus::ClosedInBackend:
+    case CloseStatus::Closed:
         // just keep it like it is
         // (this means that closing an iteration that has not been parsed
         // yet keeps it re-openable)
@@ -118,7 +111,7 @@ Iteration &Iteration::close(bool _flush)
         if (flag == StepStatus::DuringStep)
         {
             endStep();
-            setStepStatus(StepStatus::NoStep);
+            setStepStatus(StepStatus::OutOfStep);
         }
         else
         {
@@ -146,16 +139,22 @@ Iteration &Iteration::close(bool _flush)
 
 Iteration &Iteration::open()
 {
+    Series s = retrieveSeries();
     auto &it = get();
+    // figure out my iteration number
+    auto begin = s.indexOf(*this);
+    // ensure that files are accessed
+    s.openIteration(begin->first, *this);
     if (it.m_closed == CloseStatus::ParseAccessDeferred)
     {
         it.m_closed = CloseStatus::Open;
         runDeferredParseAccess();
     }
-    Series s = retrieveSeries();
-    // figure out my iteration number
-    auto begin = s.indexOf(*this);
-    s.openIteration(begin->first, *this);
+    if (getStepStatus() == StepStatus::OutOfStep)
+    {
+        beginStep(/* reread = */ false);
+        setStepStatus(StepStatus::DuringStep);
+    }
     IOHandler()->flush(internal::defaultFlushParams);
     return *this;
 }
@@ -166,15 +165,28 @@ bool Iteration::closed() const
     {
     case CloseStatus::ParseAccessDeferred:
     case CloseStatus::Open:
+        return false;
     /*
      * Temporarily closing a file is something that the openPMD API
      * does for optimization purposes.
      * Logically to the user, it is still open.
      */
-    case CloseStatus::ClosedTemporarily:
-        return false;
     case CloseStatus::ClosedInFrontend:
-    case CloseStatus::ClosedInBackend:
+    case CloseStatus::Closed:
+        return true;
+    }
+    throw std::runtime_error("Unreachable!");
+}
+
+bool Iteration::parsed() const
+{
+    switch (get().m_closed)
+    {
+    case CloseStatus::ParseAccessDeferred:
+        return false;
+    case CloseStatus::Open:
+    case CloseStatus::ClosedInFrontend:
+    case CloseStatus::Closed:
         return true;
     }
     throw std::runtime_error("Unreachable!");
@@ -312,6 +324,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             m.second.flush(m.first, flushParams);
         for (auto &species : particles)
             species.second.flush(species.first, flushParams);
+        setDirty(false);
     }
     else
     {
@@ -379,7 +392,10 @@ void Iteration::reread(std::string const &path)
 }
 
 void Iteration::readFileBased(
-    std::string const &filePath, std::string const &groupPath, bool doBeginStep)
+    IterationIndex_t idx,
+    std::string const &filePath,
+    std::string const &groupPath,
+    bool doBeginStep)
 {
     if (doBeginStep)
     {
@@ -391,7 +407,15 @@ void Iteration::readFileBased(
     auto series = retrieveSeries();
 
     series.readOneIterationFileBased(filePath);
-    get().m_overrideFilebasedFilename = filePath;
+
+    auto &series_data = series.get();
+    if (series_data.m_iterationFilenames.find(idx) ==
+        series_data.m_iterationFilenames.end())
+    {
+        throw error::Internal(
+            "[Iteration::readFileBased] Own filename should be placed into "
+            "buffer for later retrieval.");
+    }
 
     read_impl(groupPath);
 }
@@ -680,10 +704,8 @@ auto Iteration::beginStep(bool reread) -> BeginStepStatus
 }
 
 auto Iteration::beginStep(
-    std::optional<Iteration> thisObject,
-    Series &series,
-    bool reread,
-    std::set<IterationIndex_t> const &ignoreIterations) -> BeginStepStatus
+    std::optional<Iteration> thisObject, Series &series, bool reread)
+    -> BeginStepStatus
 {
     BeginStepStatus res;
     using IE = IterationEncoding;
@@ -713,14 +735,13 @@ auto Iteration::beginStep(
     AdvanceStatus status;
     if (thisObject.has_value())
     {
+        thisObject->setStepStatus(StepStatus::DuringStep);
         status = series.advance(
-            AdvanceMode::BEGINSTEP,
-            *file,
-            series.indexOf(*thisObject),
-            *thisObject);
+            AdvanceMode::BEGINSTEP, *file, series.indexOf(*thisObject));
     }
     else
     {
+        series.get().m_stepStatus = StepStatus::DuringStep;
         status = series.advance(AdvanceMode::BEGINSTEP);
     }
 
@@ -750,7 +771,7 @@ auto Iteration::beginStep(
             res.iterationsInOpenedStep = series.readGorVBased(
                 /* do_always_throw_errors = */ true,
                 /* init = */ false,
-                ignoreIterations);
+                /* read_only_this_single_iteration = */ std::nullopt);
         }
         catch (...)
         {
@@ -759,6 +780,30 @@ auto Iteration::beginStep(
         }
         IOHandl->m_seriesStatus = oldStatus;
         series.iterations.written() = previous;
+    }
+    else if (thisObject.has_value())
+    {
+        IterationIndex_t idx = series.indexOf(*thisObject)->first;
+        res.iterationsInOpenedStep = {idx};
+    }
+    else
+    {
+        switch (status)
+        {
+
+        case AdvanceStatus::OK:
+            throw error::Internal(
+                "Control flow error: Opening a new step requires reparsing.");
+        case AdvanceStatus::RANDOMACCESS:
+            std::transform(
+                series.iterations.begin(),
+                series.iterations.end(),
+                std::back_inserter(res.iterationsInOpenedStep),
+                [](auto const &pair) { return pair.first; });
+            break;
+        case AdvanceStatus::OVER:
+            break;
+        }
     }
 
     res.stepStatus = status;
@@ -783,7 +828,7 @@ void Iteration::endStep()
         break;
     }
     // @todo filebased check
-    series.advance(AdvanceMode::ENDSTEP, *file, series.indexOf(*this), *this);
+    series.advance(AdvanceMode::ENDSTEP, *file, series.indexOf(*this));
     series.get().m_currentlyActiveIterations.clear();
 }
 
@@ -845,8 +890,14 @@ void Iteration::runDeferredParseAccess()
         {
             if (deferred.fileBased)
             {
+                auto const &filename =
+                    retrieveSeries().get().m_iterationFilenames.at(
+                        deferred.iteration);
                 readFileBased(
-                    deferred.filename, deferred.path, deferred.beginStep);
+                    deferred.iteration,
+                    filename,
+                    deferred.path,
+                    deferred.beginStep);
             }
             else
             {

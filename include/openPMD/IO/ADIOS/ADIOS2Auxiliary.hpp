@@ -64,6 +64,13 @@ namespace adios_defs
         Yes,
         No
     };
+
+    enum class OpenFileAs
+    {
+        Create,
+        Open,
+        Reopen
+    };
 } // namespace adios_defs
 
 /*

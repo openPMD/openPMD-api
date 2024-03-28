@@ -30,6 +30,9 @@
 #include <string>
 #include <utility>
 
+inline void breakpoint()
+{}
+
 namespace openPMD::helper
 {
 std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
@@ -113,10 +116,14 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
         if (longer)
             out << "  all iterations: ";
 
-        for (auto const &i : series.readIterations())
+        for (auto &[index, i] : series.snapshots())
         {
+            if (!i.parsed())
+            {
+                i.open();
+            }
             if (longer)
-                out << i.iterationIndex << " ";
+                out << index << " ";
 
             // find unique record names
             std::transform(
@@ -131,6 +138,10 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
                 [](std::pair<std::string, ParticleSpecies> const &p) {
                     return p.first;
                 });
+            if (!i.closed())
+            {
+                i.close();
+            }
         }
 
         if (longer)

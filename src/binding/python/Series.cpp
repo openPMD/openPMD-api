@@ -20,11 +20,15 @@
  */
 #include "openPMD/Series.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
+#include "openPMD/snapshots/StatefulIterator.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include <optional>
 
 #if openPMD_HAVE_MPI
 //  re-implemented signatures:
@@ -51,10 +55,10 @@ struct openPMD_PyMPICommObject
 using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 #endif
 
-struct SeriesIteratorPythonAdaptor : SeriesIterator
+struct StatefulIteratorPythonAdaptor : LegacyIteratorAdaptor
 {
-    SeriesIteratorPythonAdaptor(SeriesIterator it)
-        : SeriesIterator(std::move(it))
+    StatefulIteratorPythonAdaptor(LegacyIteratorAdaptor it)
+        : LegacyIteratorAdaptor(std::move(it))
     {}
 
     /*
@@ -85,13 +89,13 @@ not possible once it has been closed.
     )END")
         .def(
             "__getitem__",
-            [](WriteIterations writeIterations, Series::IterationIndex_t key) {
+            [](WriteIterations &writeIterations, Series::IterationIndex_t key) {
                 auto lastIteration = writeIterations.currentIteration();
                 if (lastIteration.has_value() &&
-                    lastIteration.value().iterationIndex != key)
+                    lastIteration.value()->first != key)
                 {
                     // this must happen under the GIL
-                    lastIteration.value().close();
+                    lastIteration.value()->second.close();
                 }
                 py::gil_scoped_release release;
                 return writeIterations[key];
@@ -100,15 +104,26 @@ not possible once it has been closed.
             py::return_value_policy::copy)
         .def(
             "current_iteration",
-            &WriteIterations::currentIteration,
+            [](WriteIterations &writeIterations)
+                -> std::optional<IndexedIteration> {
+                if (auto currentIteration = writeIterations.currentIteration();
+                    currentIteration.has_value())
+                {
+                    return IndexedIteration(**currentIteration);
+                }
+                else
+                {
+                    return std::nullopt;
+                }
+            },
             "Return the iteration that is currently being written to, if it "
             "exists.");
 
-    py::class_<SeriesIteratorPythonAdaptor>(m, "SeriesIterator")
+    py::class_<StatefulIteratorPythonAdaptor>(m, "StatefulIterator")
         .def(
             "__next__",
-            [](SeriesIteratorPythonAdaptor &iterator) {
-                if (iterator == SeriesIterator::end())
+            [](StatefulIteratorPythonAdaptor &iterator) {
+                if (iterator == LegacyIteratorAdaptor::end())
                 {
                     throw py::stop_iteration();
                 }
@@ -126,7 +141,7 @@ not possible once it has been closed.
                     ++iterator;
                 }
                 iterator.first_iteration = false;
-                if (iterator == SeriesIterator::end())
+                if (iterator == LegacyIteratorAdaptor::end())
                 {
                     throw py::stop_iteration();
                 }
@@ -157,10 +172,10 @@ not possible once it has been closed.
             [](ReadIterations &readIterations) {
                 // Simple iterator implementation:
                 // But we need to release the GIL inside
-                // SeriesIterator::operator++, so manually it is
+                // StatefulIterator::operator++, so manually it is
                 // return py::make_iterator(
                 //     readIterations.begin(), readIterations.end());
-                return SeriesIteratorPythonAdaptor(readIterations.begin());
+                return StatefulIteratorPythonAdaptor(readIterations.begin());
             },
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());

@@ -74,7 +74,6 @@ namespace internal
          */
         Writable m_writable;
 
-    private:
         /**
          * The attributes defined by this Attributable.
          */
@@ -115,9 +114,9 @@ class Attributable
     friend class Iteration;
     friend class Series;
     friend class Writable;
-    friend class WriteIterations;
     friend class internal::RecordComponentData;
     friend void debug::printDirty(Series const &);
+    friend class StatefulSnapshotsContainer;
 
 protected:
     // tag for internal constructor
@@ -129,7 +128,7 @@ protected:
 
 public:
     Attributable();
-    Attributable(NoInit);
+    Attributable(NoInit) noexcept;
 
     virtual ~Attributable() = default;
 

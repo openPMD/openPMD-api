@@ -196,12 +196,29 @@ private:
         /*
          * In file-based iteration encoding, the APPEND mode is handled entirely
          * by the frontend, the backend should just treat it as CREATE mode
+         * Same with READ_LINEAR
          */
-        if (encoding == IterationEncoding::fileBased &&
-            m_backendAccess == Access::APPEND)
+        if (encoding == IterationEncoding::fileBased)
         {
-            // do we really want to have those as const members..?
-            *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
+            switch (m_backendAccess)
+            {
+            case Access::APPEND:
+                // do we really want to have those as const members..?
+                *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
+                break;
+            case Access::READ_LINEAR:
+                *const_cast<Access *>(&m_backendAccess) =
+                    Access::READ_RANDOM_ACCESS;
+                break;
+            case Access::READ_ONLY:
+            case Access::READ_WRITE:
+            case Access::CREATE:
+                break;
+            }
+        }
+        else
+        {
+            m_backendAccess = m_frontendAccess;
         }
 
         m_encoding = encoding;

@@ -113,7 +113,7 @@ class Container : virtual public Attributable
     friend class Series;
     template <typename>
     friend class internal::EraseStaleEntries;
-    friend class SeriesIterator;
+    friend class StatefulIterator;
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
@@ -489,7 +489,7 @@ public:
         m_containerData = other.m_containerData;
     }
 
-    Container(Container &&other) : Attributable(NoInit())
+    Container(Container &&other) noexcept : Attributable(NoInit())
     {
         if (other.m_attri)
         {
@@ -505,7 +505,7 @@ public:
         return *this;
     }
 
-    Container &operator=(Container &&other)
+    Container &operator=(Container &&other) noexcept
     {
         if (other.m_attri)
         {

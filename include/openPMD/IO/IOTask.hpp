@@ -171,6 +171,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
     }
 
     std::string name = "";
+    // true <-> file was previously created and is now opened again
+    bool reopen = false;
     using ParsePreference = internal::ParsePreference;
     std::shared_ptr<ParsePreference> out_parsePreference =
         std::make_shared<ParsePreference>(ParsePreference::UpFront);

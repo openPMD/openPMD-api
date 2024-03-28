@@ -451,12 +451,10 @@ set(CORE_SOURCE
         src/Mesh.cpp
         src/ParticlePatches.cpp
         src/ParticleSpecies.cpp
-        src/ReadIterations.cpp
         src/Record.cpp
         src/RecordComponent.cpp
         src/Series.cpp
         src/version.cpp
-        src/WriteIterations.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp
@@ -467,7 +465,13 @@ set(CORE_SOURCE
         src/backend/PatchRecordComponent.cpp
         src/backend/Writable.cpp
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
-        src/helper/list_series.cpp)
+        src/helper/list_series.cpp
+        src/snapshots/ContainerImpls.cpp
+        src/snapshots/ContainerTraits.cpp
+        src/snapshots/IteratorTraits.cpp
+        src/snapshots/RandomAccessIterator.cpp
+        src/snapshots/Snapshots.cpp
+        src/snapshots/StatefulIterator.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
@@ -840,7 +844,9 @@ if(openPMD_BUILD_TESTING)
     endif()
 
     foreach(testname ${openPMD_TEST_NAMES})
-        add_executable(${testname}Tests test/${testname}Test.cpp)
+        file(GLOB ADDITIONAL_SOURCE_FILES test/Files_${testname}/*.cpp)
+        add_executable(${testname}Tests test/${testname}Test.cpp ${ADDITIONAL_SOURCE_FILES})
+        target_include_directories(${testname}Tests PRIVATE test/Files_${testname}/)
         openpmd_cxx_required(${testname}Tests)
         set_target_properties(${testname}Tests PROPERTIES
             COMPILE_PDB_NAME ${testname}Tests

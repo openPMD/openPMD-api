@@ -48,10 +48,8 @@ namespace internal
         Open, //!< Iteration has not been closed
         ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
                                been propagated to the backend */
-        ClosedInBackend, /*!< Iteration has been closed and task has been
+        Closed, /*!< Iteration has been closed and task has been
                               propagated to the backend */
-        ClosedTemporarily /*!< Iteration has been closed internally and may
-                               be reopened later */
     };
 
     struct DeferredParseAccess
@@ -71,11 +69,6 @@ namespace internal
          * (Group- and variable-based parsing shares the same code logic.)
          */
         bool fileBased = false;
-        /**
-         * If fileBased == true, the file name (without file path) of the file
-         * containing this iteration.
-         */
-        std::string filename;
         bool beginStep = false;
     };
 
@@ -92,6 +85,7 @@ namespace internal
          * overwritten.
          */
         CloseStatus m_closed = CloseStatus::Open;
+        bool allow_reopening_implicitly = false;
 
         /**
          * Whether a step is currently active for this iteration.
@@ -107,14 +101,6 @@ namespace internal
          * Otherwise empty.
          */
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
-
-        /**
-         * Upon reading a file, set this field to the used file name.
-         * In inconsistent iteration paddings, we must remember the name of the
-         * file since it cannot be reconstructed from the filename pattern
-         * alone.
-         */
-        std::optional<std::string> m_overrideFilebasedFilename{};
     };
 } // namespace internal
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
@@ -128,12 +114,14 @@ class Iteration : public Attributable
     template <typename T, typename T_key, typename T_container>
     friend class Container;
     friend class Series;
-    friend class WriteIterations;
-    friend class SeriesIterator;
+    friend class StatefulIterator;
+    friend class StatefulSnapshotsContainer;
 
 public:
     Iteration(Iteration const &) = default;
+    Iteration(Iteration &&) = default;
     Iteration &operator=(Iteration const &) = default;
+    Iteration &operator=(Iteration &&) = default;
 
     using IterationIndex_t = uint64_t;
 
@@ -216,11 +204,18 @@ public:
 
     /**
      * @brief Has the iteration been closed?
-     *        A closed iteration may not (yet) be reopened.
      *
      * @return Whether the iteration has been closed.
      */
     bool closed() const;
+
+    /**
+     * @brief Has the iteration been parsed yet?
+              If not, it will contain no structure yet.
+     *
+     * @return Whether the iteration has been parsed.
+     */
+    bool parsed() const;
 
     /**
      * @brief Has the iteration been closed by the writer?
@@ -290,6 +285,7 @@ private:
      */
     void reread(std::string const &path);
     void readFileBased(
+        IterationIndex_t,
         std::string const &filePath,
         std::string const &groupPath,
         bool beginStep);
@@ -305,7 +301,7 @@ private:
      */
     struct BeginStepStatus
     {
-        using AvailableIterations_t = std::optional<std::deque<uint64_t> >;
+        using AvailableIterations_t = std::vector<uint64_t>;
 
         AdvanceStatus stepStatus{};
         /*
@@ -347,11 +343,8 @@ private:
      * Useful in group-based iteration encoding where the Iteration will only
      * be known after opening the step.
      */
-    static BeginStepStatus beginStep(
-        std::optional<Iteration> thisObject,
-        Series &series,
-        bool reread,
-        std::set<IterationIndex_t> const &ignoreIterations = {});
+    static BeginStepStatus
+    beginStep(std::optional<Iteration> thisObject, Series &series, bool reread);
 
     /**
      * @brief End an IO step on the IO file (or file-like object)
@@ -425,12 +418,16 @@ inline T Iteration::dt() const
  */
 class IndexedIteration : public Iteration
 {
-    friend class SeriesIterator;
-    friend class WriteIterations;
+    friend class StatefulIterator;
+    friend class LegacyIteratorAdaptor;
 
 public:
     using index_t = Iteration::IterationIndex_t;
     index_t const iterationIndex;
+
+    inline IndexedIteration(std::pair<index_t const, Iteration> pair)
+        : Iteration(std::move(pair.second)), iterationIndex(pair.first)
+    {}
 
 private:
     template <typename Iteration_t>
