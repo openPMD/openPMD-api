@@ -29,6 +29,7 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 
 namespace openPMD
 {
@@ -126,8 +127,17 @@ Series Attributable::retrieveSeries() const
     {
         findSeries = findSeries->parent;
     }
-    auto seriesData = &auxiliary::deref_dynamic_cast<internal::SeriesData>(
-        findSeries->attributable);
+    auto *seriesData =
+        dynamic_cast<internal::SeriesData *>(findSeries->attributable);
+    if (!seriesData)
+    {
+        throw std::runtime_error(
+            "[Attributable::retrieveSeries] Error when trying to retrieve the "
+            "Series object. Note: An instance of the Series object must still "
+            "exist when flushing. A common cause for this error is using a "
+            "flush call on a handle e.g. `Iteration::seriesFlush()` when the "
+            "original Series object has already gone out of scope.");
+    }
     Series res;
     res.setData(
         std::shared_ptr<internal::SeriesData>{seriesData, [](auto const *) {}});
