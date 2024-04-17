@@ -60,24 +60,6 @@ void PatchRecord::flush_impl(
 
 void PatchRecord::read()
 {
-    Parameter<Operation::READ_ATT> aRead;
-    aRead.name = "unitDimension";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-
-    if (auto val =
-            Attribute(*aRead.resource).getOptional<std::array<double, 7> >();
-        val.has_value())
-        this->setAttribute("unitDimension", val.value());
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'unitDimension' (expected an "
-            "array of seven floating point numbers, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
-
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));
     IOHandler()->flush(internal::defaultFlushParams);
