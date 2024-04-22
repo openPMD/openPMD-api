@@ -152,6 +152,17 @@ Explanation of the single keys:
 
   * ``type`` supported ADIOS operator type, e.g. zfp, sz
   * ``parameters`` is an associative map of string parameters for the operator (e.g. compression levels)
+* ``adios2.dataset.shape`` (advanced): Specify the `dataset shape <https://adios2.readthedocs.io/en/v2.10.0/components/components.html#shapes>`_ for the ADIOS2 variable.
+  Note that variable shapes will generally imply a different way of interacting with a variable, and some variable shapes (such as *joined arrays*) may not be accessible via this parameter, but via different API calls instead.
+  This parameter's purpose to select different implementations for the same used API call.
+  Supported values by this parameter are:
+
+  * ``"global_array"`` (default): The variable is a (n-dimensional) array with a globally defined size. Local blocks, subsets of the global region, are written by parallel writers.
+  * ``"local_value"``: Each parallel writer contributes one single value to the dataset, joined into a 1-dimensional array.
+    Since there (currently) exists no dedicated API call for this shape in the openPMD-api, this setting is only useful as an optimization since "local value" variables participate in ADIOS2 metadata aggregation.
+    Can only be applied if the global shape (1-dimensional array the same length as number of parallel instances) and the local blocks (a single data item) are specified correctly.
+    Use global or joined arrays otherwise.
+
 * ``adios2.use_span_based_put``: The openPMD-api exposes the `span-based Put() API <https://adios2.readthedocs.io/en/latest/components/components.html#put-modes-and-memory-contracts>`_ of ADIOS2 via an overload of ``RecordComponent::storeChunk()``.
   This API is incompatible with compression operators as described above.
   The openPMD-api will automatically use a fallback implementation for the span-based Put() API if any operator is added to a dataset.
