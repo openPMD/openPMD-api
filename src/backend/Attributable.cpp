@@ -135,7 +135,7 @@ Series Attributable::retrieveSeries() const
             "[Attributable::retrieveSeries] Error when trying to retrieve the "
             "Series object. Note: An instance of the Series object must still "
             "exist when flushing. A common cause for this error is using a "
-            "flush call on a handle e.g. `Iteration::seriesFlush()` when the "
+            "flush call on a handle (e.g. `Iteration::seriesFlush()`) when the "
             "original Series object has already gone out of scope.");
     }
     Series res;
