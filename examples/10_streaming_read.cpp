@@ -1,4 +1,4 @@
-#include "openPMD/auxiliary/StringManip.hpp"
+#include <openPMD/auxiliary/StringManip.hpp>
 #include <openPMD/openPMD.hpp>
 
 #include <algorithm>
