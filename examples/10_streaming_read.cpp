@@ -87,8 +87,8 @@ int main()
                 for (auto const &chunk : rc.second.availableChunks())
                 {
                     std::cout << "\n\tRank " << chunk.sourceID << "\t"
-                              << auxiliary::format_vec(chunk.offset) << "\t– "
-                              << auxiliary::format_vec(chunk.extent);
+                              << auxiliary::vec_as_string(chunk.offset) << "\t– "
+                              << auxiliary::vec_as_string(chunk.extent);
                 }
                 std::cout << std::endl;
             }

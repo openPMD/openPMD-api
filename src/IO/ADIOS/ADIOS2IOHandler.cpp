@@ -993,7 +993,7 @@ void ADIOS2IOHandlerImpl::createDataset(
                         "Shape for local value array must be a 1D array "
                         "equivalent to the MPI size ('" +
                             varName + "' has shape " +
-                            auxiliary::format_vec(parameters.extent) +
+                            auxiliary::vec_as_string(parameters.extent) +
                             ", but should have shape [" +
                             std::to_string(required_size) + "]).");
                 }

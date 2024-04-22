@@ -122,7 +122,8 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                             "Can only write a single element to LocalValue "
                             "variables (extent == Extent{1}, but extent of '" +
                                 bp.name + " was " +
-                                auxiliary::format_vec(bp.param.extent) + "').");
+                                auxiliary::vec_as_string(bp.param.extent) +
+                                "').");
                     }
                     engine.Put(var, *ptr);
                 }
@@ -202,7 +203,7 @@ struct RunUniquePtrPut
                     "Can only write a single element to LocalValue "
                     "variables (extent == Extent{1}, but extent of '" +
                         bufferedPut.name + " was " +
-                        auxiliary::format_vec(bufferedPut.extent) + "').");
+                        auxiliary::vec_as_string(bufferedPut.extent) + "').");
             }
             engine.Put(var, *ptr);
         }
