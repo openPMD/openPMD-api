@@ -243,6 +243,13 @@ namespace auxiliary
         return std::forward<S>(s);
     }
 
+    /** Create a string representation of a vector or another iterable
+     *  container.
+     *
+     * @param v The vector or other iterable container.
+     * @return A string that shows the items of the container. Each item is
+     *         formatted using the default definition for operator<<().
+     */
     template <typename Vec>
     auto format_vec(Vec const &v) -> std::string
     {
@@ -254,6 +261,7 @@ namespace auxiliary
         auto end = v.end();
         std::stringstream res;
         res << '[' << *it++;
+        res.operator<<(*it);
         for (; it != end; ++it)
         {
             res << ", " << *it;

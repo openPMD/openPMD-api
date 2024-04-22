@@ -5,6 +5,7 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/backend/PatchRecordComponent.hpp"
 #include "openPMD/openPMD.hpp"
 #include <catch2/catch.hpp>
 
@@ -403,7 +404,7 @@ void available_chunks_test(std::string const &file_ending)
     MPI_Comm_size(MPI_COMM_WORLD, &r_mpi_size);
     unsigned mpi_rank{static_cast<unsigned>(r_mpi_rank)},
         mpi_size{static_cast<unsigned>(r_mpi_size)};
-    std::string name = "../samples/available_chunks." + file_ending;
+    std::string name = "../samples/parallel_available_chunks." + file_ending;
 
     /*
      * ADIOS2 assigns writerIDs to blocks in a BP file by id of the substream
@@ -416,7 +417,6 @@ void available_chunks_test(std::string const &file_ending)
     {
         "engine":
         {
-            "type": "bp4",
             "parameters":
             {
                 "NumAggregators":)END"
@@ -436,6 +436,14 @@ void available_chunks_test(std::string const &file_ending)
         auto E_x = it0.meshes["E"]["x"];
         E_x.resetDataset({Datatype::INT, {mpi_size, 4}});
         E_x.storeChunk(data, {mpi_rank, 0}, {1, 4});
+
+        /*
+         * Verify that block decomposition also works in "local value" variable
+         * shape. That shape instructs the data to participate in ADIOS2
+         * metadata aggregation, hence there is only one "real" written block,
+         * the aggregated one. We still need the original logical blocks to be
+         * present in reading.
+         */
 
         auto electrons = it0.particles["e"].particlePatches;
         auto numParticles = electrons["numParticles"];
@@ -509,12 +517,40 @@ void available_chunks_test(std::string const &file_ending)
         {
             REQUIRE(ranks[i] == i);
         }
+
+        auto electrons = it0.particles["e"].particlePatches;
+        for (PatchRecordComponent *prc :
+             {static_cast<PatchRecordComponent *>(&electrons["numParticles"]),
+              static_cast<PatchRecordComponent *>(
+                  &electrons["numParticlesOffset"]),
+              &electrons["offset"]["x"],
+              &electrons["offset"]["y"],
+              &electrons["extent"]["z"],
+              &electrons["offset"]["x"],
+              &electrons["extent"]["y"],
+              &electrons["extent"]["z"]})
+        {
+            auto available_chunks = prc->availableChunks();
+            REQUIRE(size_t(r_mpi_size) == available_chunks.size());
+            for (size_t i = 0; i < available_chunks.size(); ++i)
+            {
+                auto const &chunk = available_chunks[i];
+                REQUIRE(chunk.extent == Extent{1});
+                REQUIRE(chunk.offset == Offset{i});
+                REQUIRE(chunk.sourceID == i);
+            }
+        }
     }
 }
 
 TEST_CASE("available_chunks_test", "[parallel][adios]")
 {
+#if HAS_ADIOS_2_9
+    available_chunks_test("bp4");
+    available_chunks_test("bp5");
+#else
     available_chunks_test("bp");
+#endif
 }
 #endif
 
