@@ -335,6 +335,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         out.ptr = static_cast<void *>(data.get());
         storeChunk(std::move(data), std::move(o), std::move(e));
     }
+    setDirtyRecursive(true);
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
 }
 
