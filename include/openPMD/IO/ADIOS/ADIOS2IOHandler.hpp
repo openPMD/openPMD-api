@@ -409,10 +409,9 @@ private:
             {
                 std::stringstream errorMessage;
                 errorMessage << "Trying to access a dataset with wrong type "
-                                "(trying to access dataset with type "
-                             << determineDatatype<T>() << ", but has type "
-                             << detail::fromADIOS2Type(actualType, false)
-                             << ")";
+                                "(trying to access dataset with type '"
+                             << requiredType << "', but has type '"
+                             << actualType << "')";
                 throw error::ReadError(
                     error::AffectedObject::Dataset,
                     error::Reason::UnexpectedContent,
