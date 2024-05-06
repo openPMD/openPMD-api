@@ -270,7 +270,10 @@ normalizingVariableType(const adios2::IO &IO, const std::string &name)
 {
     auto const &unsanitized_result = IO.VariableType(name);
     auto openpmd_type = fromADIOS2Type(unsanitized_result);
-    return switchAdios2VariableType<ToDatatype>(openpmd_type);
+    auto res = switchAdios2VariableType<ToDatatype>(openpmd_type);
+    std::cout << "[normalizingVariableType] for '" << name << "' " << res
+              << " (non-normalized: " << unsanitized_result << ")" << std::endl;
+    return res;
 }
 } // namespace openPMD::detail
 #endif
