@@ -408,7 +408,7 @@ inline void store_chunk(
     size_t const numFlattenDims =
         std::count(flatten.begin(), flatten.end(), true);
     auto const r_extent = r.getExtent();
-    auto const s_extent(extent); // selected extent in r
+    auto const &s_extent(extent); // selected extent in r
     std::vector<std::uint64_t> r_shape(r_extent.size() - numFlattenDims);
     std::vector<std::uint64_t> s_shape(s_extent.size() - numFlattenDims);
     auto maskIt = flatten.begin();
