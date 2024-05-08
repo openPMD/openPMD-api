@@ -24,7 +24,6 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/config.hpp"
-#include <sstream>
 
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/Dataset.hpp"
@@ -41,9 +40,6 @@
 
 namespace openPMD
 {
-
-extern std::stringstream debugging_log;
-
 enum class GroupOrDataset
 {
     GROUP,

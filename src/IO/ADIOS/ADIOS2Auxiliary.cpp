@@ -21,7 +21,6 @@
 
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/config.hpp"
-#include <sstream>
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/Datatype.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
@@ -272,15 +271,9 @@ normalizingVariableType(const adios2::IO &IO, const std::string &name)
     auto const &unsanitized_result = IO.VariableType(name);
     auto openpmd_type = fromADIOS2Type(unsanitized_result);
     auto res = switchAdios2VariableType<ToDatatype>(openpmd_type);
-    debugging_log << "[normalizingVariableType] for '" << name << "' " << res
-                  << " (non-normalized: " << unsanitized_result << ")"
-                  << std::endl;
+    std::cout << "[normalizingVariableType] for '" << name << "' " << res
+              << " (non-normalized: " << unsanitized_result << ")" << std::endl;
     return res;
 }
-
 } // namespace openPMD::detail
-namespace openPMD
-{
-std::stringstream debugging_log;
-}
 #endif

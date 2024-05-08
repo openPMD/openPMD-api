@@ -411,9 +411,7 @@ private:
                 errorMessage << "Trying to access a dataset with wrong type "
                                 "(trying to access dataset with type '"
                              << requiredType << "', but has type '"
-                             << actualType << "')\nLOG IS:\n"
-                             << debugging_log.str();
-                debugging_log.clear();
+                             << actualType << "')";
                 throw error::ReadError(
                     error::AffectedObject::Dataset,
                     error::Reason::UnexpectedContent,
