@@ -24,6 +24,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "openPMD/Dataset.hpp"
+#include "openPMD/Datatype.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
@@ -309,6 +311,75 @@ inline void check_buffer_is_contiguous(py::array &a)
     //       loop over the input data strides in store/load calls
 }
 
+namespace
+{
+struct StoreChunkFromPythonArray
+{
+    template <typename T>
+    static void call(
+        RecordComponent &r,
+        py::array &a,
+        Offset const &offset,
+        Extent const &extent)
+    {
+        // here, we increase a reference on the user-passed data so that
+        // temporary and lost-scope variables stay alive until we flush
+        // note: this does not yet prevent the user, as in C++, to build
+        // a race condition by manipulating the data that was passed
+        a.inc_ref();
+        void *data = a.mutable_data();
+        std::shared_ptr<T> shared((T *)data, [a](T *) { a.dec_ref(); });
+        r.storeChunk(std::move(shared), offset, extent);
+    }
+
+    static constexpr char const *errorMsg = "store_chunk()";
+};
+struct LoadChunkIntoPythonArray
+{
+    template <typename T>
+    static void call(
+        RecordComponent &r,
+        py::array &a,
+        Offset const &offset,
+        Extent const &extent)
+    {
+        // here, we increase a reference on the user-passed data so that
+        // temporary and lost-scope variables stay alive until we flush
+        // note: this does not yet prevent the user, as in C++, to build
+        // a race condition by manipulating the data that was passed
+        a.inc_ref();
+        void *data = a.mutable_data();
+        std::shared_ptr<T> shared((T *)data, [a](T *) { a.dec_ref(); });
+        r.loadChunk(std::move(shared), offset, extent);
+    }
+
+    static constexpr char const *errorMsg = "load_chunk()";
+};
+struct LoadChunkIntoPythonBuffer
+{
+    template <typename T>
+    static void call(
+        RecordComponent &r,
+        py::buffer &buffer,
+        py::buffer_info const &buffer_info,
+        Offset const &offset,
+        Extent const &extent)
+    {
+        // here, we increase a reference on the user-passed data so that
+        // temporary and lost-scope variables stay alive until we flush
+        // note: this does not yet prevent the user, as in C++, to build
+        // a race condition by manipulating the data that was passed
+        buffer.inc_ref();
+        void *data = buffer_info.ptr;
+        std::shared_ptr<T> shared(
+            (T *)data, [buffer](T *) { buffer.dec_ref(); });
+        r.loadChunk(std::move(shared), offset, extent);
+    }
+
+    static constexpr char const *errorMsg = "load_chunk()";
+};
+} // namespace
+
 /** Store Chunk
  *
  * Called with offset and extent that are already in the record component's
@@ -335,7 +406,7 @@ inline void store_chunk(
     size_t const numFlattenDims =
         std::count(flatten.begin(), flatten.end(), true);
     auto const r_extent = r.getExtent();
-    auto const s_extent(extent); // selected extent in r
+    auto const &s_extent(extent); // selected extent in r
     std::vector<std::uint64_t> r_shape(r_extent.size() - numFlattenDims);
     std::vector<std::uint64_t> s_shape(s_extent.size() - numFlattenDims);
     auto maskIt = flatten.begin();
@@ -409,64 +480,9 @@ inline void store_chunk(
 
     check_buffer_is_contiguous(a);
 
-    // here, we increase a reference on the user-passed data so that
-    // temporary and lost-scope variables stay alive until we flush
-    // note: this does not yet prevent the user, as in C++, to build
-    //       a race condition by manipulating the data they passed
-    auto store_data = [&r, &a, &offset, &extent](auto cxxtype) {
-        using CXXType = decltype(cxxtype);
-        a.inc_ref();
-        void *data = a.mutable_data();
-        std::shared_ptr<CXXType> shared(
-            (CXXType *)data, [a](CXXType *) { a.dec_ref(); });
-        r.storeChunk(std::move(shared), offset, extent);
-    };
-
-    // store
-    auto const dtype = dtype_from_numpy(a.dtype());
-    if (dtype == Datatype::CHAR)
-        store_data(char());
-    else if (dtype == Datatype::UCHAR)
-        store_data((unsigned char)0);
-    else if (dtype == Datatype::SHORT)
-        store_data(short());
-    else if (dtype == Datatype::INT)
-        store_data(int());
-    else if (dtype == Datatype::LONG)
-        store_data(long());
-    else if (dtype == Datatype::LONGLONG)
-        store_data((long long)0);
-    else if (dtype == Datatype::USHORT)
-        store_data((unsigned short)0);
-    else if (dtype == Datatype::UINT)
-        store_data((unsigned int)0);
-    else if (dtype == Datatype::ULONG)
-        store_data((unsigned long)0);
-    else if (dtype == Datatype::ULONGLONG)
-        store_data((unsigned long long)0);
-    else if (dtype == Datatype::LONG_DOUBLE)
-        store_data((long double)0);
-    else if (dtype == Datatype::DOUBLE)
-        store_data(double());
-    else if (dtype == Datatype::FLOAT)
-        store_data(float());
-    else if (dtype == Datatype::CLONG_DOUBLE)
-        store_data(std::complex<long double>());
-    else if (dtype == Datatype::CDOUBLE)
-        store_data(std::complex<double>());
-    else if (dtype == Datatype::CFLOAT)
-        store_data(std::complex<float>());
-    /* @todo
-    .value("STRING", Datatype::STRING)
-    .value("VEC_STRING", Datatype::VEC_STRING)
-    .value("ARR_DBL_7", Datatype::ARR_DBL_7)
-    */
-    else if (dtype == Datatype::BOOL)
-        store_data(bool());
-    else
-        throw std::runtime_error(
-            std::string("Datatype '") + std::string(py::str(a.dtype())) +
-            std::string("' not known in 'storeChunk'!"));
+    // dtype_from_numpy(a.dtype())
+    switchDatasetType<StoreChunkFromPythonArray>(
+        r.getDatatype(), r, a, offset, extent);
 }
 
 /** Store Chunk
@@ -682,60 +698,8 @@ void load_chunk(
         }
     }
 
-    // here, we increase a reference on the user-passed data so that
-    // temporary and lost-scope variables stay alive until we flush
-    // note: this does not yet prevent the user, as in C++, to build
-    //       a race condition by manipulating the data they passed
-    auto load_data =
-        [&r, &buffer, &buffer_info, &offset, &extent](auto cxxtype) {
-            using CXXType = decltype(cxxtype);
-            buffer.inc_ref();
-            // buffer_info.inc_ref();
-            void *data = buffer_info.ptr;
-            std::shared_ptr<CXXType> shared(
-                (CXXType *)data, [buffer](CXXType *) { buffer.dec_ref(); });
-            r.loadChunk(std::move(shared), offset, extent);
-        };
-
-    if (r.getDatatype() == Datatype::CHAR)
-        load_data((char)0);
-    else if (r.getDatatype() == Datatype::UCHAR)
-        load_data((unsigned char)0);
-    else if (r.getDatatype() == Datatype::SCHAR)
-        load_data((signed char)0);
-    else if (r.getDatatype() == Datatype::SHORT)
-        load_data((short)0);
-    else if (r.getDatatype() == Datatype::INT)
-        load_data((int)0);
-    else if (r.getDatatype() == Datatype::LONG)
-        load_data((long)0);
-    else if (r.getDatatype() == Datatype::LONGLONG)
-        load_data((long long)0);
-    else if (r.getDatatype() == Datatype::USHORT)
-        load_data((unsigned short)0);
-    else if (r.getDatatype() == Datatype::UINT)
-        load_data((unsigned int)0);
-    else if (r.getDatatype() == Datatype::ULONG)
-        load_data((unsigned long)0);
-    else if (r.getDatatype() == Datatype::ULONGLONG)
-        load_data((unsigned long long)0);
-    else if (r.getDatatype() == Datatype::LONG_DOUBLE)
-        load_data((long double)0);
-    else if (r.getDatatype() == Datatype::DOUBLE)
-        load_data((double)0);
-    else if (r.getDatatype() == Datatype::FLOAT)
-        load_data((float)0);
-    else if (r.getDatatype() == Datatype::CLONG_DOUBLE)
-        load_data((std::complex<long double>)0);
-    else if (r.getDatatype() == Datatype::CDOUBLE)
-        load_data((std::complex<double>)0);
-    else if (r.getDatatype() == Datatype::CFLOAT)
-        load_data((std::complex<float>)0);
-    else if (r.getDatatype() == Datatype::BOOL)
-        load_data((bool)0);
-    else
-        throw std::runtime_error(
-            std::string("Datatype not known in 'loadChunk'!"));
+    switchNonVectorType<LoadChunkIntoPythonBuffer>(
+        r.getDatatype(), r, buffer, buffer_info, offset, extent);
 }
 
 /** Load Chunk
@@ -792,58 +756,8 @@ inline void load_chunk(
 
     check_buffer_is_contiguous(a);
 
-    // here, we increase a reference on the user-passed data so that
-    // temporary and lost-scope variables stay alive until we flush
-    // note: this does not yet prevent the user, as in C++, to build
-    //       a race condition by manipulating the data they passed
-    auto load_data = [&r, &a, &offset, &extent](auto cxxtype) {
-        using CXXType = decltype(cxxtype);
-        a.inc_ref();
-        void *data = a.mutable_data();
-        std::shared_ptr<CXXType> shared(
-            (CXXType *)data, [a](CXXType *) { a.dec_ref(); });
-        r.loadChunk(std::move(shared), offset, extent);
-    };
-
-    if (r.getDatatype() == Datatype::CHAR)
-        load_data(char());
-    else if (r.getDatatype() == Datatype::UCHAR)
-        load_data((unsigned char)0);
-    else if (r.getDatatype() == Datatype::SCHAR)
-        load_data((signed char)0);
-    else if (r.getDatatype() == Datatype::SHORT)
-        load_data(short());
-    else if (r.getDatatype() == Datatype::INT)
-        load_data(int());
-    else if (r.getDatatype() == Datatype::LONG)
-        load_data(long());
-    else if (r.getDatatype() == Datatype::LONGLONG)
-        load_data((long long)0);
-    else if (r.getDatatype() == Datatype::USHORT)
-        load_data((unsigned short)0);
-    else if (r.getDatatype() == Datatype::UINT)
-        load_data((unsigned int)0);
-    else if (r.getDatatype() == Datatype::ULONG)
-        load_data((unsigned long)0);
-    else if (r.getDatatype() == Datatype::ULONGLONG)
-        load_data((unsigned long long)0);
-    else if (r.getDatatype() == Datatype::LONG_DOUBLE)
-        load_data((long double)0);
-    else if (r.getDatatype() == Datatype::DOUBLE)
-        load_data(double());
-    else if (r.getDatatype() == Datatype::FLOAT)
-        load_data(float());
-    else if (r.getDatatype() == Datatype::CLONG_DOUBLE)
-        load_data(std::complex<long double>());
-    else if (r.getDatatype() == Datatype::CDOUBLE)
-        load_data(std::complex<double>());
-    else if (r.getDatatype() == Datatype::CFLOAT)
-        load_data(std::complex<float>());
-    else if (r.getDatatype() == Datatype::BOOL)
-        load_data(bool());
-    else
-        throw std::runtime_error(
-            std::string("Datatype not known in 'load_chunk'!"));
+    switchDatasetType<LoadChunkIntoPythonArray>(
+        r.getDatatype(), r, a, offset, extent);
 }
 
 /** Load Chunk

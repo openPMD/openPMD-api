@@ -22,6 +22,7 @@
 #include "openPMD/version.hpp"
 
 #if openPMD_HAVE_ADIOS2
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include <adios2.h>
 #endif
 #include <map>
@@ -60,7 +61,7 @@ std::vector<std::string> openPMD::getFileExtensions()
     // BP4 is always available in ADIOS2
     fext.emplace_back("bp4");
 #endif
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     fext.emplace_back("bp5");
 #endif
 #ifdef ADIOS2_HAVE_SST
