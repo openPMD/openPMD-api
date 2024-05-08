@@ -95,6 +95,39 @@ namespace detail
     // we represent booleans as unsigned chars
     using bool_representation = unsigned char;
 
+    template <typename T>
+    struct ToDatatypeHelper
+    {
+        static std::string type();
+    };
+
+    template <typename T>
+    struct ToDatatypeHelper<std::vector<T>>
+    {
+        static std::string type();
+    };
+
+    template <typename T, size_t n>
+    struct ToDatatypeHelper<std::array<T, n>>
+    {
+        static std::string type();
+    };
+
+    template <>
+    struct ToDatatypeHelper<bool>
+    {
+        static std::string type();
+    };
+
+    struct ToDatatype
+    {
+        template <typename T>
+        std::string operator()();
+
+        template <int n>
+        std::string operator()();
+    };
+
     /**
      * @brief Convert ADIOS2 datatype to openPMD type.
      * @param dt
@@ -177,9 +210,6 @@ namespace detail
         }
         throw error::Internal("Control flow error: No ADIOS2 open mode.");
     }
-
-    std::string
-    normalizingVariableType(adios2::IO const &, std::string const &name);
 } // namespace detail
 
 /**

@@ -19,7 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/Datatype.hpp"
@@ -62,6 +61,45 @@ FlushTarget flushTargetFromString(std::string const &str)
 
 namespace openPMD::detail
 {
+template <typename T>
+std::string ToDatatypeHelper<T>::type()
+{
+    return adios2::GetType<T>();
+}
+
+template <typename T>
+std::string ToDatatypeHelper<std::vector<T>>::type()
+{
+    return
+
+        adios2::GetType<T>();
+}
+
+template <typename T, size_t n>
+std::string ToDatatypeHelper<std::array<T, n>>::type()
+{
+    return
+
+        adios2::GetType<T>();
+}
+
+std::string ToDatatypeHelper<bool>::type()
+{
+    return ToDatatypeHelper<bool_representation>::type();
+}
+
+template <typename T>
+std::string ToDatatype::operator()()
+{
+    return ToDatatypeHelper<T>::type();
+}
+
+template <int n>
+std::string ToDatatype::operator()()
+{
+    return "";
+}
+
 Datatype fromADIOS2Type(std::string const &dt, bool verbose)
 {
     static std::map<std::string, Datatype> map{
@@ -233,44 +271,6 @@ Datatype attributeInfo(
         }
         throw std::runtime_error("Unreachable!");
     }
-}
-
-namespace
-{
-    struct ToDatatype
-    {
-        template <typename T>
-        static std::string call()
-        {
-            if constexpr (std::is_same_v<T, bool>)
-            {
-                return ToDatatype::call<bool_representation>();
-            }
-            else if constexpr (
-                auxiliary::IsVector_v<T> || auxiliary::IsArray_v<T>)
-            {
-                return ToDatatype::call<typename T::value_type>();
-            }
-            else
-            {
-                return adios2::GetType<T>();
-            }
-        }
-
-        template <int>
-        static std::string call()
-        {
-            return {};
-        }
-    };
-} // namespace
-
-std::string
-normalizingVariableType(const adios2::IO &IO, const std::string &name)
-{
-    auto const &unsanitized_result = IO.VariableType(name);
-    auto openpmd_type = fromADIOS2Type(unsanitized_result);
-    return switchAdios2VariableType<ToDatatype>(openpmd_type);
 }
 } // namespace openPMD::detail
 #endif
