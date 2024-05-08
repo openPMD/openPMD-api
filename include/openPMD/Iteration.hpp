@@ -130,6 +130,7 @@ class Iteration : public Attributable
     friend class Series;
     friend class WriteIterations;
     friend class SeriesIterator;
+    friend class internal::AttributableData;
 
 public:
     Iteration(Iteration const &) = default;

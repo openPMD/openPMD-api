@@ -53,6 +53,9 @@ class Series;
 
 namespace internal
 {
+    class IterationData;
+    class SeriesData;
+
     class AttributableData
     {
         friend class openPMD::Attributable;
@@ -73,6 +76,42 @@ namespace internal
          * objects, Writable captures the part that backends can see.
          */
         Writable m_writable;
+
+        template <typename T>
+        T asInternalCopyOf()
+        {
+            auto *self = dynamic_cast<typename T::Data_t *>(this);
+            if (!self)
+            {
+                if constexpr (std::is_same_v<Series, T>)
+                {
+                    throw std::runtime_error(
+                        "[Attributable::retrieveSeries] Error when trying to "
+                        "retrieve the Series object. Note: An instance of the "
+                        "Series object must still exist when flushing. A "
+                        "common cause for this error is using a flush call on "
+                        "a handle (e.g. `Iteration::seriesFlush()`) when the "
+                        "original Series object has already gone out of "
+                        "scope.");
+                }
+                else
+                {
+                    throw std::runtime_error(
+
+                        "[AttributableData::asInternalCopyOf<T>] Error when "
+                        "trying to retrieve a containing object. Note: An "
+                        "instance of the Series object must still exist when "
+                        "flushing. A common cause for this error is using a "
+                        "flush call on a handle (e.g. "
+                        "`Iteration::seriesFlush()`) when the original Series "
+                        "object has already gone out of scope.");
+                }
+            }
+            T res;
+            res.setData(
+                std::shared_ptr<typename T::Data_t>(self, [](auto const *) {}));
+            return res;
+        }
 
     private:
         /**
@@ -263,8 +302,13 @@ OPENPMD_protected
      * Throws an error otherwise, e.g., for Series objects.
      * @{
      */
-    Iteration const &containingIteration() const;
-    Iteration &containingIteration();
+    [[nodiscard]] auto containingIteration() const
+        -> std::pair<
+            std::optional<internal::IterationData const *>,
+            internal::SeriesData const *>;
+    auto containingIteration() -> std::pair<
+                                   std::optional<internal::IterationData *>,
+                                   internal::SeriesData *>;
     /** @} */
 
     void seriesFlush(internal::FlushParams const &);

@@ -127,24 +127,13 @@ Series Attributable::retrieveSeries() const
     {
         findSeries = findSeries->parent;
     }
-    auto *seriesData =
-        dynamic_cast<internal::SeriesData *>(findSeries->attributable);
-    if (!seriesData)
-    {
-        throw std::runtime_error(
-            "[Attributable::retrieveSeries] Error when trying to retrieve the "
-            "Series object. Note: An instance of the Series object must still "
-            "exist when flushing. A common cause for this error is using a "
-            "flush call on a handle (e.g. `Iteration::seriesFlush()`) when the "
-            "original Series object has already gone out of scope.");
-    }
-    Series res;
-    res.setData(
-        std::shared_ptr<internal::SeriesData>{seriesData, [](auto const *) {}});
-    return res;
+    return findSeries->attributable->asInternalCopyOf<Series>();
 }
 
-Iteration const &Attributable::containingIteration() const
+auto Attributable::containingIteration() const
+    -> std::pair<
+        std::optional<internal::IterationData const *>,
+        internal::SeriesData const *>
 {
     std::vector<Writable const *> searchQueue;
     searchQueue.reserve(7);
@@ -157,40 +146,34 @@ Iteration const &Attributable::containingIteration() const
     }
     // End of the queue:
     // Iteration -> Series.iterations -> Series
+    auto *series = &auxiliary::deref_dynamic_cast<internal::SeriesData>(
+        (*searchQueue.rbegin())->attributable);
     if (searchQueue.size() < 3)
     {
-        throw std::runtime_error(
-            "containingIteration(): Must be called for an object contained in "
-            "an iteration.");
+        return std::make_pair(std::nullopt, series);
     }
-    auto end = searchQueue.rbegin();
-    internal::AttributableData const *attr = (*(end + 2))->attributable;
-    if (attr == nullptr)
-        throw std::runtime_error(
-            "containingIteration(): attributable must not be a nullptr.");
-    /*
-     * We now know the unique instance of Attributable that corresponds with
-     * the iteration.
-     * Since the class Iteration itself still follows the old class design,
-     * we will have to take a detour via Series.
-     */
-    auto &series = auxiliary::deref_dynamic_cast<internal::SeriesData>(
-        (*searchQueue.rbegin())->attributable);
-    for (auto const &pair : series.iterations)
+    else
     {
-        if (&static_cast<Attributable const &>(pair.second).get() == attr)
-        {
-            return pair.second;
-        }
+        auto end = searchQueue.rbegin();
+        auto *iteration =
+            &auxiliary::deref_dynamic_cast<internal::IterationData>(
+                (*(end + 2))->attributable);
+        return std::make_pair(std::make_optional(iteration), series);
     }
-    throw std::runtime_error(
-        "Containing iteration not found in containing Series.");
 }
 
-Iteration &Attributable::containingIteration()
+auto Attributable::containingIteration()
+    -> std::
+        pair<std::optional<internal::IterationData *>, internal::SeriesData *>
 {
-    return const_cast<Iteration &>(
-        static_cast<Attributable const *>(this)->containingIteration());
+    auto const_res =
+        static_cast<Attributable const *>(this)->containingIteration();
+    return std::make_pair(
+        const_res.first.has_value()
+            ? std::make_optional(
+                  const_cast<internal::IterationData *>(*const_res.first))
+            : std::nullopt,
+        const_cast<internal::SeriesData *>(const_res.second));
 }
 
 std::string Attributable::MyPath::filePath() const
