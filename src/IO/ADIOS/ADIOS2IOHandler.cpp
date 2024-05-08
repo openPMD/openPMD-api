@@ -965,8 +965,6 @@ void ADIOS2IOHandlerImpl::openDataset(
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
     *parameters.dtype = detail::fromADIOS2Type(
         detail::normalizingVariableType(fileData.m_IO, varName));
-    std::cout << "[openDataset] opened '" << varName << "'as "
-              << *parameters.dtype << std::endl;
     switchAdios2VariableType<detail::DatasetOpener>(
         *parameters.dtype, this, file, varName, parameters);
     writable->written = true;
