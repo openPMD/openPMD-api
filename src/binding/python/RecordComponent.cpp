@@ -19,7 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <limits>
-#include <pybind11/buffer_info.h>
 #include <pybind11/detail/common.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -371,7 +370,6 @@ struct LoadChunkIntoPythonBuffer
         // note: this does not yet prevent the user, as in C++, to build
         // a race condition by manipulating the data that was passed
         buffer.inc_ref();
-        // buffer_info.inc_ref();
         void *data = buffer_info.ptr;
         std::shared_ptr<T> shared(
             (T *)data, [buffer](T *) { buffer.dec_ref(); });
