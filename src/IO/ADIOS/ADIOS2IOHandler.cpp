@@ -865,8 +865,7 @@ void ADIOS2IOHandlerImpl::extendDataset(
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     std::string name = nameOfVariable(writable);
     auto &filedata = getFileData(file, IfFileNotOpen::ThrowError);
-    Datatype dt = detail::fromADIOS2Type(
-        detail::normalizingVariableType(filedata.m_IO, name));
+    Datatype dt = detail::fromADIOS2Type(filedata.m_IO.VariableType(name));
     switchAdios2VariableType<detail::DatasetExtender>(
         dt, filedata.m_IO, name, parameters.extent);
 }
@@ -963,8 +962,8 @@ void ADIOS2IOHandlerImpl::openDataset(
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ true);
     auto varName = nameOfVariable(writable);
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
-    *parameters.dtype = detail::fromADIOS2Type(
-        detail::normalizingVariableType(fileData.m_IO, varName));
+    *parameters.dtype =
+        detail::fromADIOS2Type(fileData.m_IO.VariableType(varName));
     switchAdios2VariableType<detail::DatasetOpener>(
         *parameters.dtype, this, file, varName, parameters);
     writable->written = true;
@@ -1465,8 +1464,7 @@ void ADIOS2IOHandlerImpl::availableChunks(
     detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
     std::string varName = nameOfVariable(writable);
     auto engine = ba.getEngine(); // make sure that data are present
-    auto datatype = detail::fromADIOS2Type(
-        detail::normalizingVariableType(ba.m_IO, varName));
+    auto datatype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
     bool allSteps = ba.m_mode != adios2::Mode::Read &&
         ba.streamStatus == detail::ADIOS2File::StreamStatus::ReadWithoutStream;
     switchAdios2VariableType<detail::RetrieveBlocksInfo>(

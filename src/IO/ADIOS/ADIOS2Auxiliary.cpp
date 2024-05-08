@@ -166,7 +166,7 @@ Datatype attributeInfo(
         type = IO.AttributeType(attributeName);
         break;
     case VariableOrAttribute::Variable:
-        type = normalizingVariableType(IO, attributeName);
+        type = IO.VariableType(attributeName);
         break;
     }
     if (type.empty())

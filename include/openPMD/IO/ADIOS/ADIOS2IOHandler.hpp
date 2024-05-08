@@ -403,7 +403,7 @@ private:
     {
         {
             auto requiredType = adios2::GetType<T>();
-            auto actualType = detail::normalizingVariableType(IO, varName);
+            auto actualType = IO.VariableType(varName);
 
             if (requiredType != actualType)
             {
