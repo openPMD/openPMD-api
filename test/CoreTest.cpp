@@ -1184,7 +1184,7 @@ TEST_CASE("backend_via_json", "[core]")
 TEST_CASE("wildcard_extension", "[core]")
 {
 #if openPMD_HAVE_ADIOS2
-#if defined(ADIOS2_HAVE_BP5) && openPMD_HAS_ADIOS_2_9
+#if openPMD_HAVE_ADIOS2_BP5 && openPMD_HAS_ADIOS_2_9
     constexpr char const *const default_file_ending = "bp5";
 #else
     constexpr char const *const default_file_ending = "bp4";
@@ -1227,7 +1227,7 @@ TEST_CASE("wildcard_extension", "[core]")
         }
     };
 #if openPMD_HAVE_ADIOS2
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     run_test(
         R"({"adios2": {"engine": {"type": "bp5"}}, "backend": "adios2"})",
         "bp5");

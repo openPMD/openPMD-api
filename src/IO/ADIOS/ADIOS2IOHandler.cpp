@@ -354,7 +354,7 @@ std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
 {
     // SST engine adds its suffix unconditionally
     // so we don't add it
-#if defined(ADIOS2_HAVE_BP5) && openPMD_HAS_ADIOS_2_9
+#if openPMD_HAVE_ADIOS2_BP5 && openPMD_HAS_ADIOS_2_9
     constexpr char const *const default_file_ending = ".bp5";
 #else
     constexpr char const *const default_file_ending = ".bp4";

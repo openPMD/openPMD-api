@@ -4075,7 +4075,7 @@ TEST_CASE("git_adios2_early_chunk_query", "[serial][adios2]")
 /*
  * Require __unix__ since we need all that filestat stuff for this test.
  */
-#if defined(__unix__) && defined(ADIOS2_HAVE_BP5)
+#if defined(__unix__) && openPMD_HAVE_ADIOS2_BP5
 
 enum class FlushDuringStep
 {
@@ -4406,7 +4406,7 @@ TEST_CASE("adios2_engines_and_file_endings")
     groupbased_test_explicit_backend(
         "", true, "bp4", "", "adios2.engine.type = \"bp4\"");
 
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     // BP5 tests
     groupbased_test_explicit_backend(".bp5", true, "bp5", "");
     groupbased_test_explicit_backend(
@@ -4472,7 +4472,7 @@ TEST_CASE("adios2_engines_and_file_endings")
     REQUIRE_THROWS(groupbased_test_no_explicit_backend(
         "", true, "bp4", "", "adios2.engine.type = \"bp4\""));
 
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     // BP5 tests
     groupbased_test_no_explicit_backend(".bp5", true, "bp5", "");
     groupbased_test_no_explicit_backend(
@@ -4551,7 +4551,7 @@ TEST_CASE("adios2_engines_and_file_endings")
     filebased_test_explicit_backend(
         "", true, "bp4", "", "adios2.engine.type = \"bp4\"");
 
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     // BP5 tests
     filebased_test_explicit_backend(".bp5", true, "bp5", "");
     filebased_test_explicit_backend(
@@ -4627,7 +4627,7 @@ TEST_CASE("adios2_engines_and_file_endings")
     REQUIRE_THROWS(filebased_test_no_explicit_backend(
         "", true, "bp4", "", "adios2.engine.type = \"bp4\""));
 
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     // BP5 tests
     filebased_test_no_explicit_backend(".bp5", true, "bp5", "");
     filebased_test_no_explicit_backend(
@@ -6118,7 +6118,7 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
                 backend.extension,
             false,
             backend.jsonBaseConfig());
-#if openPMD_HAVE_ADIOS2 && defined(ADIOS2_HAVE_BP5)
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_ADIOS2_BP5
         if (backend.extension == "bp")
         {
             iterate_nonstreaming_series(
@@ -6144,7 +6144,7 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
 #endif
 }
 
-#if openPMD_HAVE_ADIOS2 && defined(ADIOS2_HAVE_BP5)
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_ADIOS2_BP5
 void adios2_bp5_no_steps(bool usesteps)
 {
     std::string const config = R"END(
