@@ -135,30 +135,40 @@ auto Attributable::containingIteration() const
         std::optional<internal::IterationData const *>,
         internal::SeriesData const *>
 {
-    std::vector<Writable const *> searchQueue;
-    searchQueue.reserve(7);
+    constexpr size_t search_queue_size = 3;
+    Writable const *search_queue[search_queue_size]{nullptr};
+    size_t search_queue_idx = 0;
     Writable const *findSeries = &writable();
-    while (findSeries)
+    while (true)
     {
-        searchQueue.push_back(findSeries);
+        search_queue[search_queue_idx] = findSeries;
         // we don't need to push the last Writable since it's the Series anyway
         findSeries = findSeries->parent;
+        if (!findSeries)
+        {
+            break;
+        }
+        else
+        {
+            search_queue_idx = (search_queue_idx + 1) % search_queue_size;
+        }
     }
     // End of the queue:
     // Iteration -> Series.iterations -> Series
-    auto *series = &auxiliary::deref_dynamic_cast<internal::SeriesData>(
-        (*searchQueue.rbegin())->attributable);
-    if (searchQueue.size() < 3)
+    auto *series = &auxiliary::deref_dynamic_cast<internal::SeriesData const>(
+        search_queue[search_queue_idx]->attributable);
+    auto maybe_iteration = search_queue
+        [(search_queue_idx + (search_queue_size - 2)) % search_queue_size];
+    if (maybe_iteration)
     {
-        return std::make_pair(std::nullopt, series);
+        auto *iteration =
+            &auxiliary::deref_dynamic_cast<internal::IterationData const>(
+                maybe_iteration->attributable);
+        return std::make_pair(std::make_optional(iteration), series);
     }
     else
     {
-        auto end = searchQueue.rbegin();
-        auto *iteration =
-            &auxiliary::deref_dynamic_cast<internal::IterationData>(
-                (*(end + 2))->attributable);
-        return std::make_pair(std::make_optional(iteration), series);
+        return std::make_pair(std::nullopt, series);
     }
 }
 
