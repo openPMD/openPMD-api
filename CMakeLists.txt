@@ -456,6 +456,7 @@ set(CORE_SOURCE
         src/Format.cpp
         src/Iteration.cpp
         src/IterationEncoding.cpp
+        src/LoadStoreChunk.cpp
         src/Mesh.cpp
         src/ParticlePatches.cpp
         src/ParticleSpecies.cpp
