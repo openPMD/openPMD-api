@@ -321,7 +321,8 @@ template <typename T>
 inline constexpr Datatype determineDatatype(T &&val)
 {
     (void)val; // don't need this, it only has a name for Doxygen
-    using T_stripped = std::remove_cv_t<std::remove_reference_t<T>>;
+    using T_stripped =
+        std::remove_extent_t<std::remove_cv_t<std::remove_reference_t<T>>>;
     if constexpr (auxiliary::IsPointer_v<T_stripped>)
     {
         return determineDatatype<auxiliary::IsPointer_t<T_stripped>>();

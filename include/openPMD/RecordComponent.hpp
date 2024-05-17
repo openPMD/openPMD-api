@@ -268,25 +268,6 @@ public:
     template <typename T>
     void loadChunk(std::shared_ptr<T> data, Offset offset, Extent extent);
 
-    /** Load a chunk of data into pre-allocated memory, array version.
-     *
-     * @param data   Preallocated, contiguous buffer, large enough to load the
-     *               the requested data into it.
-     *               The shared pointer must own and manage the buffer.
-     *               Optimizations might be implemented based on this
-     *               assumption (e.g. skipping the operation if the backend
-     *               is the unique owner).
-     *               The array-based overload helps avoid having to manually
-     *               specify the delete[] destructor (C++17 feature).
-     * @param offset Offset within the dataset. Set to {0u} for full selection.
-     * @param extent Extent within the dataset, counted from the offset.
-     *               Set to {-1u} for full selection.
-     *               If offset is non-zero and extent is {-1u} the leftover
-     *               extent in the record component will be selected.
-     */
-    template <typename T>
-    void loadChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
-
     /** Load a chunk of data into pre-allocated memory, raw pointer version.
      *
      * @param data   Preallocated, contiguous buffer, large enough to load the
@@ -325,18 +306,6 @@ public:
      */
     template <typename T>
     void storeChunk(std::shared_ptr<T> data, Offset offset, Extent extent);
-
-    /** Store a chunk of data from a chunk of memory, array version.
-     *
-     * @param data   Preallocated, contiguous buffer, large enough to read the
-     *               the specified data from it.
-     *               The array-based overload helps avoid having to manually
-     *               specify the delete[] destructor (C++17 feature).
-     * @param offset Offset within the dataset.
-     * @param extent Extent within the dataset, counted from the offset.
-     */
-    template <typename T>
-    void storeChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
 
     /** Store a chunk of data from a chunk of memory, unique pointer version.
      *

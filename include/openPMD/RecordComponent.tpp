@@ -93,10 +93,11 @@ inline std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 #endif
 }
 
-template <typename T>
-inline void
-RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
+template <typename T_with_extent>
+inline void RecordComponent::loadChunk(
+    std::shared_ptr<T_with_extent> data, Offset o, Extent e)
 {
+    using T = std::remove_extent_t<T_with_extent>;
     Datatype dtype = determineDatatype(data);
     if (dtype != getDatatype())
         if (!isSameInteger<T>(getDatatype()) &&
@@ -162,7 +163,7 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 
         T value = rc.m_constantValue.get<T>();
 
-        T *raw_ptr = data.get();
+        auto raw_ptr = static_cast<T *>(data.get());
         std::fill(raw_ptr, raw_ptr + numPoints, value);
     }
     else
@@ -174,16 +175,6 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         dRead.data = std::static_pointer_cast<void>(data);
         rc.push_chunk(IOTask(this, dRead));
     }
-}
-
-template <typename T>
-inline void RecordComponent::loadChunk(
-    std::shared_ptr<T[]> ptr, Offset offset, Extent extent)
-{
-    loadChunk(
-        std::static_pointer_cast<T>(std::move(ptr)),
-        std::move(offset),
-        std::move(extent));
 }
 
 template <typename T>
@@ -231,16 +222,6 @@ RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
 {
     storeChunk(
         UniquePtrWithLambda<T>(std::move(data)), std::move(o), std::move(e));
-}
-
-template <typename T>
-inline void
-RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
-{
-    storeChunk(
-        std::static_pointer_cast<T>(std::move(data)),
-        std::move(o),
-        std::move(e));
 }
 
 template <typename T>
