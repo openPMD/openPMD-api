@@ -2,9 +2,10 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Span.hpp"
-#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
+
 #include <optional>
+#include <type_traits>
 
 namespace openPMD
 {
@@ -30,8 +31,8 @@ private:
     ConfigureStoreChunk(RecordComponent &rc);
 
 public:
-    using return_type = auxiliary::IfIsVoid_t<
-        ChildClass,
+    using return_type = std::conditional_t<
+        std::is_void_v<ChildClass>,
         /*then*/ ConfigureStoreChunk<void>,
         /*else*/ ChildClass>;
 

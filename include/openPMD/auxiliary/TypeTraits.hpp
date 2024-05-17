@@ -196,19 +196,4 @@ namespace detail
         using type = std::variant<>;
     };
 } // namespace detail
-
-template <typename IsThisVoid, typename Then, typename Else>
-struct IfIsVoid
-{
-    using type = Else;
-};
-
-template <typename Then, typename Else>
-struct IfIsVoid<void, Then, Else>
-{
-    using type = Then;
-};
-template <typename IsThisVoid, typename Then, typename Else>
-using IfIsVoid_t = typename IfIsVoid<IsThisVoid, Then, Else>::type;
-
 } // namespace openPMD::auxiliary
