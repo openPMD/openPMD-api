@@ -37,8 +37,8 @@ namespace
     template <typename T>
     auto asWriteBuffer(UniquePtrWithLambda<T> &&ptr) -> auxiliary::WriteBuffer
     {
-        return auxiliary::WriteBuffer{
-            std::move(ptr).template static_cast_<void const>()};
+        return auxiliary::WriteBuffer(
+            std::move(ptr).template static_cast_<void>());
     }
 } // namespace
 
@@ -178,12 +178,12 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
         ConfigureStoreChunk<                                                   \
             TypedConfigureStoreChunk<std::shared_ptr<dtype const>>>,           \
         dtype)                                                                 \
-    template class TypedConfigureStoreChunk<UniquePtrWithLambda<dtype const>>; \
+    template class TypedConfigureStoreChunk<UniquePtrWithLambda<dtype>>;       \
     template class ConfigureStoreChunk<                                        \
-        TypedConfigureStoreChunk<UniquePtrWithLambda<dtype const>>>;           \
+        TypedConfigureStoreChunk<UniquePtrWithLambda<dtype>>>;                 \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
         ConfigureStoreChunk<                                                   \
-            TypedConfigureStoreChunk<UniquePtrWithLambda<dtype const>>>,       \
+            TypedConfigureStoreChunk<UniquePtrWithLambda<dtype>>>,             \
         dtype)
 
 OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_TYPED_STORE_CHUNK)

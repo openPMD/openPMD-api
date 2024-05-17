@@ -201,29 +201,32 @@ template <typename T>
 inline void
 RecordComponent::storeChunk(UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype<>(data);
-
-    storeChunk_impl(
-        auxiliary::WriteBuffer{std::move(data).template static_cast_<void>()},
-        dtype,
-        {std::move(o), std::move(e), std::nullopt});
+    prepareStoreChunk()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .fromUniquePtr(std::move(data))
+        .enqueue();
 }
 
 template <typename T, typename Del>
 inline void
 RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
 {
-    storeChunk(
-        UniquePtrWithLambda<T>(std::move(data)), std::move(o), std::move(e));
+    prepareStoreChunk()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .fromUniquePtr(std::move(data))
+        .enqueue();
 }
 
 template <typename T>
 void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    storeChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
+    prepareStoreChunk()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .fromRawPtr(ptr)
+        .enqueue();
 }
 
 template <typename T_ContiguousContainer>
@@ -231,33 +234,19 @@ inline typename std::enable_if_t<
     auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>
 RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
-    uint8_t dim = getDimensionality();
+    auto storeChunkConfig = prepareStoreChunk();
 
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u)
+    auto joined_dim = joinedDimension();
+    if (!joined_dim.has_value() && (o.size() != 1 || o.at(0) != 0u))
     {
-        if (joinedDimension().has_value())
-        {
-            offset.clear();
-        }
-        else if (dim > 1u)
-        {
-            offset = Offset(dim, 0u);
-        }
+        storeChunkConfig.offset(std::move(o));
+    }
+    if (e.size() != 1 || e.at(0) != -1u)
+    {
+        storeChunkConfig.extent(std::move(e));
     }
 
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    //   avoid outsmarting the user:
-    //   - stdlib data container implement 1D -> 1D chunk to write
-    if (e.size() == 1u && e.at(0) == -1u && dim == 1u)
-        extent.at(0) = data.size();
-    else
-        extent = e;
-
-    storeChunk(auxiliary::shareRaw(data.data()), offset, extent);
+    std::move(storeChunkConfig).fromContiguousContainer(data).enqueue();
 }
 
 template <typename T, typename F>

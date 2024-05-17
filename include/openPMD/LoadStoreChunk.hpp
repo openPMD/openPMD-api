@@ -68,8 +68,7 @@ public:
         /*then*/ ConfigureStoreChunk<void>,
         /*else*/ ChildClass>;
     template <typename T>
-    using normalize_dataset_type =
-        std::remove_cv_t<std::remove_extent_t<T>> const;
+    using normalize_dataset_type = std::remove_cv_t<std::remove_extent_t<T>>;
 
     auto offset(Offset) -> return_type &;
     auto extent(Extent) -> return_type &;
@@ -77,7 +76,8 @@ public:
     // @todo rvalue references..?
     template <typename T>
     auto fromSharedPtr(std::shared_ptr<T>)
-        -> TypedConfigureStoreChunk<std::shared_ptr<normalize_dataset_type<T>>>;
+        -> TypedConfigureStoreChunk<
+            std::shared_ptr<normalize_dataset_type<T> const>>;
     template <typename T>
     auto fromUniquePtr(UniquePtrWithLambda<T>)
         -> TypedConfigureStoreChunk<
@@ -87,13 +87,15 @@ public:
         -> TypedConfigureStoreChunk<
             UniquePtrWithLambda<normalize_dataset_type<T>>>;
     template <typename T>
-    auto fromRawPtr(T *data) -> TypedConfigureStoreChunk<std::shared_ptr<T>>;
+    auto
+    fromRawPtr(T *data) -> TypedConfigureStoreChunk<
+                            std::shared_ptr<normalize_dataset_type<T> const>>;
     template <typename T_ContiguousContainer>
     auto fromContiguousContainer(T_ContiguousContainer &data) ->
         typename std::enable_if_t<
             auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
-            TypedConfigureStoreChunk<
-                std::shared_ptr<typename T_ContiguousContainer::value_type>>>;
+            TypedConfigureStoreChunk<std::shared_ptr<normalize_dataset_type<
+                typename T_ContiguousContainer::value_type> const>>>;
 
     template <typename T>
     auto enqueue() -> DynamicMemoryView<T>;
@@ -135,15 +137,18 @@ public:
 template <typename ChildClass>
 template <typename T>
 auto ConfigureStoreChunk<ChildClass>::fromSharedPtr(std::shared_ptr<T> data)
-    -> TypedConfigureStoreChunk<std::shared_ptr<normalize_dataset_type<T>>>
+    -> TypedConfigureStoreChunk<
+        std::shared_ptr<normalize_dataset_type<T> const>>
 {
     if (!data)
     {
         throw std::runtime_error(
             "Unallocated pointer passed during chunk store.");
     }
-    return TypedConfigureStoreChunk<std::shared_ptr<normalize_dataset_type<T>>>(
-        std::static_pointer_cast<normalize_dataset_type<T>>(std::move(data)),
+    return TypedConfigureStoreChunk<
+        std::shared_ptr<normalize_dataset_type<T> const>>(
+        std::static_pointer_cast<normalize_dataset_type<T> const>(
+            std::move(data)),
         {std::move(*this)});
 }
 template <typename ChildClass>
@@ -164,14 +169,16 @@ auto ConfigureStoreChunk<ChildClass>::fromUniquePtr(UniquePtrWithLambda<T> data)
 template <typename ChildClass>
 template <typename T>
 auto ConfigureStoreChunk<ChildClass>::fromRawPtr(T *data)
-    -> TypedConfigureStoreChunk<std::shared_ptr<T>>
+    -> TypedConfigureStoreChunk<
+        std::shared_ptr<normalize_dataset_type<T> const>>
 {
     if (!data)
     {
         throw std::runtime_error(
             "Unallocated pointer passed during chunk store.");
     }
-    return TypedConfigureStoreChunk<std::shared_ptr<T>>(
+    return TypedConfigureStoreChunk<
+        std::shared_ptr<normalize_dataset_type<T> const>>(
         auxiliary::shareRaw(data), {std::move(*this)});
 }
 
@@ -189,8 +196,8 @@ auto ConfigureStoreChunk<ChildClass>::fromContiguousContainer(
     T_ContiguousContainer &data) ->
     typename std::enable_if_t<
         auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
-        TypedConfigureStoreChunk<
-            std::shared_ptr<typename T_ContiguousContainer::value_type>>>
+        TypedConfigureStoreChunk<std::shared_ptr<normalize_dataset_type<
+            typename T_ContiguousContainer::value_type> const>>>
 {
     if (!m_extent.has_value() && dim() == 1)
     {
