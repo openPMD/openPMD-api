@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "openPMD/Error.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -268,6 +270,27 @@ template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
+    return prepareStoreChunk()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .enqueue<T>(std::forward<F>(createBuffer));
+}
+
+template <typename T>
+inline DynamicMemoryView<T>
+RecordComponent::storeChunk(Offset offset, Extent extent)
+{
+    return prepareStoreChunk()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .enqueue<T>();
+}
+
+template <typename T, typename F>
+inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
+    internal::StoreChunkConfig cfg, F &&createBuffer)
+{
+    auto [o, e] = std::move(cfg);
     verifyChunk<T>(o, e);
 
     /*
@@ -322,20 +345,6 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
 }
 
-template <typename T>
-inline DynamicMemoryView<T>
-RecordComponent::storeChunk(Offset offset, Extent extent)
-{
-    return storeChunk<T>(std::move(offset), std::move(extent), [](size_t size) {
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
-    (defined(__apple_build_version__) && __clang_major__ < 14)
-        return std::shared_ptr<T>{new T[size], [](auto *ptr) { delete[] ptr; }};
-#else
-            return std::shared_ptr< T[] >{ new T[ size ] };
-#endif
-    });
-}
-
 namespace detail
 {
     template <typename Functor, typename Res>
@@ -372,5 +381,15 @@ template <typename T>
 void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
 {
     verifyChunk(determineDatatype<T>(), o, e);
+}
+
+// definitions for LoadStoreChunk.hpp
+template <typename ChildClass>
+template <typename T, typename F>
+auto ConfigureStoreChunk<ChildClass>::enqueue(F &&createBuffer)
+    -> DynamicMemoryView<T>
+{
+    return m_rc.storeChunkSpanCreateBuffer_impl<T>(
+        storeChunkConfig(), std::forward<F>(createBuffer));
 }
 } // namespace openPMD

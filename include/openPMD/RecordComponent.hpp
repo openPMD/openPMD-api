@@ -22,6 +22,7 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
@@ -135,6 +136,10 @@ class RecordComponent : public BaseRecordComponent
     friend class MeshRecordComponent;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    template <typename ChildClass>
+    friend class ConfigureStoreChunk;
+    template <typename Ptr_Type>
+    friend class TypedConfigureStoreChunk;
 
 public:
     enum class Allocation
@@ -285,6 +290,8 @@ public:
      */
     template <typename T>
     void loadChunkRaw(T *data, Offset offset, Extent extent);
+
+    ConfigureStoreChunk<void> prepareStoreChunk();
 
     /** Store a chunk of data from a chunk of memory.
      *
@@ -471,6 +478,12 @@ private:
 
     void storeChunk(
         auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
+
+    template <typename T>
+    DynamicMemoryView<T> storeChunkSpan_impl(internal::StoreChunkConfig);
+    template <typename T, typename F>
+    DynamicMemoryView<T> storeChunkSpanCreateBuffer_impl(
+        internal::StoreChunkConfig, F &&createBuffer);
 
     // clang-format off
 OPENPMD_protected

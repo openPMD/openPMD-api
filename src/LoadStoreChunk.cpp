@@ -1,23 +1,87 @@
 
 
 #include "openPMD/LoadStoreChunk.hpp"
-#include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/Span.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
+
+// comment to keep clang-format from reordering
+#include "openPMD/DatatypeMacros.hpp"
+
 #include <stdexcept>
 
 namespace openPMD
 {
 template <typename ChildClass>
 ConfigureStoreChunk<ChildClass>::ConfigureStoreChunk(RecordComponent &rc)
-    : m_rc(rc), m_offset(rc.getDimensionality(), 0), m_extent{rc.getExtent()}
+    : m_rc(rc)
 {}
 
 template <typename ChildClass>
-template <typename T>
-auto ConfigureStoreChunk<ChildClass>::enqueue() && -> DynamicMemoryView<T>
+auto ConfigureStoreChunk<ChildClass>::dim() const -> uint8_t
 {
-    throw std::runtime_error("Unimplemented!");
+    return m_rc.getDimensionality();
+}
+
+template <typename ChildClass>
+auto ConfigureStoreChunk<ChildClass>::getOffset() const -> Offset
+{
+    if (m_offset.has_value())
+    {
+        return *m_offset;
+    }
+    else
+    {
+        if (m_rc.joinedDimension().has_value())
+        {
+            return Offset{};
+        }
+        else
+        {
+            return Offset(dim(), 0);
+        }
+    }
+}
+
+template <typename ChildClass>
+auto ConfigureStoreChunk<ChildClass>::getExtent() const -> Extent
+{
+    if (m_extent.has_value())
+    {
+        return *m_extent;
+    }
+    else
+    {
+        return Extent(dim(), 0);
+    }
+}
+
+template <typename ChildClass>
+auto ConfigureStoreChunk<ChildClass>::storeChunkConfig() const
+    -> internal::StoreChunkConfig
+{
+    return internal::StoreChunkConfig{getOffset(), getExtent()};
+}
+
+template <typename ChildClass>
+auto ConfigureStoreChunk<ChildClass>::extent(Extent extent) -> return_type &
+{
+    m_extent = std::move(extent);
+    return *this;
+}
+
+template <typename ChildClass>
+auto ConfigureStoreChunk<ChildClass>::offset(Offset offset) -> return_type &
+{
+    m_offset = std::move(offset);
+    return *this;
+}
+
+template <typename ChildClass>
+template <typename T>
+auto ConfigureStoreChunk<ChildClass>::enqueue() -> DynamicMemoryView<T>
+{
+    return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
 }
 
 template <typename ChildClass>
@@ -42,8 +106,30 @@ auto ConfigureStoreChunk<ChildClass>::fromRawPtr(
     throw std::runtime_error("Unimplemented!");
 }
 
+template <typename Ptr_Type>
+TypedConfigureStoreChunk<Ptr_Type>::TypedConfigureStoreChunk(
+    Ptr_Type buffer, parent_t &&parent)
+    : parent_t(std::move(parent)), m_buffer(std::move(buffer))
+{}
+
+template <typename Ptr_Type>
+auto TypedConfigureStoreChunk<Ptr_Type>::as_parent() && -> parent_t &&
+{
+    return std::move(*this);
+}
+template <typename Ptr_Type>
+auto TypedConfigureStoreChunk<Ptr_Type>::as_parent() & -> parent_t &
+{
+    return *this;
+}
+template <typename Ptr_Type>
+auto TypedConfigureStoreChunk<Ptr_Type>::as_parent() const & -> parent_t const &
+{
+    return *this;
+}
+
 #define INSTANTIATE_METHOD_TEMPLATES(base_class, dtype)                        \
-    template auto base_class::enqueue() && -> DynamicMemoryView<dtype>;        \
+    template auto base_class::enqueue() -> DynamicMemoryView<dtype>;           \
     template auto base_class::fromSharedPtr(std::shared_ptr<dtype>)            \
         && -> TypedConfigureStoreChunk<std::shared_ptr<dtype>>;                \
     template auto base_class::fromUniquePtr(UniquePtrWithLambda<dtype>)        \
@@ -51,11 +137,10 @@ auto ConfigureStoreChunk<ChildClass>::fromRawPtr(
     template auto base_class::fromRawPtr(                                      \
         dtype *) && -> TypedConfigureStoreChunk<std::shared_ptr<dtype>>;
 
-template class ConfigureStoreChunk<void>;
-
 #define INSTANTIATE_METHOD_TEMPLATES_FOR_BASE(dtype)                           \
     INSTANTIATE_METHOD_TEMPLATES(ConfigureStoreChunk<void>, dtype)
 
+template class ConfigureStoreChunk<void>;
 OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
 
 #undef INSTANTIATE_METHOD_TEMPLATES_FOR_BASE

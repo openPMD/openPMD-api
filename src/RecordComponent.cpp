@@ -23,10 +23,14 @@
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+
+// comment
+#include "openPMD/DatatypeMacros.hpp"
 
 #include <algorithm>
 #include <climits>
@@ -61,6 +65,42 @@ RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 {
     setData(std::make_shared<Data_t>());
 }
+
+ConfigureStoreChunk<void> RecordComponent::prepareStoreChunk()
+{
+    return ConfigureStoreChunk<void>{*this};
+}
+
+namespace
+{
+#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
+    (defined(__apple_build_version__) && __clang_major__ < 14)
+    template <typename T>
+    auto createSpanBufferFallback(size_t size) -> std::shared_ptr<T>
+    {
+        return std::shared_ptr<T>{new T[size], [](auto *ptr) { delete[] ptr; }};
+    }
+#else
+    template <typename T>
+    auto createSpanBufferFallback(size_t size) -> std::shared_ptr<T[]>
+    {
+        return std::shared_ptr<T[]>{new T[size]};
+    }
+#endif
+} // namespace
+
+template <typename T>
+DynamicMemoryView<T>
+RecordComponent::storeChunkSpan_impl(internal::StoreChunkConfig cfg)
+{
+    return storeChunkSpanCreateBuffer_impl<T>(
+        std::move(cfg), &createSpanBufferFallback<T>);
+}
+#define OPENPMD_INSTANTIATE(dtype)                                             \
+    template DynamicMemoryView<dtype> RecordComponent::storeChunkSpan_impl(    \
+        internal::StoreChunkConfig cfg);
+OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
+#undef OPENPMD_INSTANTIATE
 
 RecordComponent::RecordComponent(NoInit) : BaseRecordComponent(NoInit())
 {}
