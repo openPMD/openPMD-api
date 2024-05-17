@@ -31,6 +31,7 @@
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <memory>
+#include <optional>
 #include <type_traits>
 
 namespace openPMD
@@ -189,17 +190,11 @@ template <typename T>
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype(data);
-
-    /* std::static_pointer_cast correctly reference-counts the pointer */
-    storeChunk(
-        auxiliary::WriteBuffer(std::static_pointer_cast<void const>(data)),
-        dtype,
-        std::move(o),
-        std::move(e));
+    prepareStoreChunk()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .fromSharedPtr(std::move(data))
+        .enqueue();
 }
 
 template <typename T>
@@ -211,11 +206,10 @@ RecordComponent::storeChunk(UniquePtrWithLambda<T> data, Offset o, Extent e)
             "Unallocated pointer passed during chunk store.");
     Datatype dtype = determineDatatype<>(data);
 
-    storeChunk(
+    storeChunk_impl(
         auxiliary::WriteBuffer{std::move(data).template static_cast_<void>()},
         dtype,
-        std::move(o),
-        std::move(e));
+        {std::move(o), std::move(e), std::nullopt});
 }
 
 template <typename T, typename Del>

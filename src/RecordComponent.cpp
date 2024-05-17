@@ -499,9 +499,12 @@ void RecordComponent::readBase(bool require_unit_si)
     }
 }
 
-void RecordComponent::storeChunk(
-    auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
+void RecordComponent::storeChunk_impl(
+    auxiliary::WriteBuffer buffer,
+    Datatype dtype,
+    internal::StoreChunkConfigFromBuffer cfg)
 {
+    auto [o, e, memorySelection] = std::move(cfg);
     verifyChunk(dtype, o, e);
 
     Parameter<Operation::WRITE_DATASET> dWrite;

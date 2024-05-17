@@ -476,8 +476,10 @@ private:
      */
     RecordComponent &makeEmpty(Dataset d);
 
-    void storeChunk(
-        auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
+    void storeChunk_impl(
+        auxiliary::WriteBuffer buffer,
+        Datatype datatype,
+        internal::StoreChunkConfigFromBuffer);
 
     template <typename T>
     DynamicMemoryView<T> storeChunkSpan_impl(internal::StoreChunkConfig);
