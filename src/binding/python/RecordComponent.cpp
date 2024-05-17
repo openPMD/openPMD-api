@@ -628,7 +628,7 @@ inline PythonDynamicMemoryView store_chunk_span(
         std::begin(shape),
         [&maskIt](std::uint64_t) { return !*(maskIt++); });
 
-    return switchNonVectorType<StoreChunkSpan>(
+    return switchDatasetType<StoreChunkSpan>(
         r.getDatatype(), r, offset, extent);
 }
 
