@@ -1533,6 +1533,13 @@ void HDF5IOHandlerImpl::writeDataset(
             "[HDF5] Writing into a dataset in a file opened as read only is "
             "not possible.");
 
+    if (parameters.memorySelection.has_value())
+    {
+        throw error::OperationUnsupportedInBackend(
+            "HDF5",
+            "Non-contiguous memory selections not supported in HDF5 backend.");
+    }
+
     auto res = getFile(writable);
     File file = res ? res.value() : getFile(writable->parent).value();
 
