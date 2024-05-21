@@ -24,6 +24,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
@@ -509,6 +510,7 @@ private:
         var.SetSelection(
             {adios2::Dims(offset.begin(), offset.end()),
              adios2::Dims(extent.begin(), extent.end())});
+
         if (memorySelection.has_value())
         {
             var.SetMemorySelection(
@@ -518,7 +520,30 @@ private:
                  adios2::Dims(
                      memorySelection->extent.begin(),
                      memorySelection->extent.end())});
+            if constexpr (!CanTheMemorySelectionBeReset)
+            {
+                if (!printedWarningsAlready.memorySelection)
+                {
+                    std::cerr
+                        << "[Warning] Using a version of ADIOS2 that cannot "
+                           "reset memory selections on a variable, once "
+                           "specified. When using memory selections, then "
+                           "please specify it explicitly on all storeChunk() "
+                           "calls. Further info: "
+                           "https://github.com/ornladios/ADIOS2/pull/4169."
+                        << std::endl;
+                    printedWarningsAlready.memorySelection = true;
+                }
+            }
         }
+        else
+        {
+            if constexpr (CanTheMemorySelectionBeReset)
+            {
+                var.SetMemorySelection();
+            }
+        }
+
         return var;
     }
 
@@ -526,6 +551,7 @@ private:
     {
         bool noGroupBased = false;
         bool blosc2bp5 = false;
+        bool memorySelection = false;
     } printedWarningsAlready;
 }; // ADIOS2IOHandlerImpl
 

@@ -120,7 +120,7 @@ private:
     auto storeChunkConfig() const -> internal::StoreChunkConfigFromBuffer;
 
 public:
-    auto memorySelection(MemorySelection) & -> ConfigureStoreChunkFromBuffer &;
+    auto memorySelection(MemorySelection) -> ConfigureStoreChunkFromBuffer &;
 
     auto as_parent() && -> parent_t &&;
     auto as_parent() & -> parent_t &;

@@ -429,13 +429,42 @@ void available_chunks_test(std::string const &file_ending)
 }
 )END";
 
-    std::vector<int> data{2, 4, 6, 8};
+    std::vector<int> xdata{2, 4, 6, 8};
+    std::vector<int> ydata{0, 0, 0, 0, 0, //
+                           0, 1, 2, 3, 0, //
+                           0, 4, 5, 6, 0, //
+                           0, 7, 8, 9, 0, //
+                           0, 0, 0, 0, 0};
+    std::vector<int> ydata_firstandlastrow{-1, -1, -1};
     {
         Series write(name, Access::CREATE, MPI_COMM_WORLD, parameters.str());
         Iteration it0 = write.iterations[0];
         auto E_x = it0.meshes["E"]["x"];
         E_x.resetDataset({Datatype::INT, {mpi_size, 4}});
-        E_x.storeChunk(data, {mpi_rank, 0}, {1, 4});
+        E_x.storeChunk(xdata, {mpi_rank, 0}, {1, 4});
+        auto E_y = it0.meshes["E"]["y"];
+        E_y.resetDataset({Datatype::INT, {5, 3ul * mpi_size}});
+        E_y.prepareStoreChunk()
+            .fromContiguousContainer(ydata_firstandlastrow)
+            .offset({0, 3ul * mpi_rank})
+            .extent({1, 3})
+            .enqueue();
+        E_y.prepareStoreChunk()
+            .offset({1, 3ul * mpi_rank})
+            .extent({3, 3})
+            .fromContiguousContainer(ydata)
+            .memorySelection({{1, 1}, {5, 5}})
+            .enqueue();
+        // if condition checks if this PR is available in ADIOS2:
+        // https://github.com/ornladios/ADIOS2/pull/4169
+        if constexpr (CanTheMemorySelectionBeReset)
+        {
+            E_y.prepareStoreChunk()
+                .fromContiguousContainer(ydata_firstandlastrow)
+                .offset({4, 3ul * mpi_rank})
+                .extent({1, 3})
+                .enqueue();
+        }
         it0.close();
     }
 
@@ -466,6 +495,36 @@ void available_chunks_test(std::string const &file_ending)
         for (int i = 0; i < int(ranks.size()); ++i)
         {
             REQUIRE(ranks[i] == i);
+        }
+
+        auto E_y = it0.meshes["E"]["y"];
+        auto width = E_y.getExtent()[1];
+        auto first_row = E_y.loadChunk<int>({0, 0}, {1, width});
+        auto middle_rows = E_y.loadChunk<int>({1, 0}, {3, width});
+        auto last_row = E_y.loadChunk<int>({4, 0}, {1, width});
+        read.flush();
+
+        for (auto row : [&]() -> std::vector<std::shared_ptr<int> *> {
+                 if constexpr (CanTheMemorySelectionBeReset)
+                 {
+                     return {&first_row, &last_row};
+                 }
+                 else
+                 {
+                     return {&first_row};
+                 }
+             }())
+        {
+            for (size_t i = 0; i < width; ++i)
+            {
+                REQUIRE(row->get()[i] == -1);
+            }
+        }
+        for (size_t i = 0; i < width * 3; ++i)
+        {
+            size_t row = i / width;
+            int required_value = row * 3 + (i % 3) + 1;
+            REQUIRE(middle_rows.get()[i] == required_value);
         }
     }
 }

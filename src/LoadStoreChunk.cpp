@@ -13,6 +13,7 @@
 #include "openPMD/DatatypeMacros.hpp"
 
 #include <memory>
+#include <optional>
 #include <stdexcept>
 
 namespace openPMD
@@ -149,6 +150,14 @@ auto ConfigureStoreChunkFromBuffer<Ptr_Type>::storeChunkConfig() const
 {
     return internal::StoreChunkConfigFromBuffer{
         this->getOffset(), this->getExtent(), m_mem_select};
+}
+
+template <typename Ptr_Type>
+auto ConfigureStoreChunkFromBuffer<Ptr_Type>::memorySelection(
+    MemorySelection sel) -> ConfigureStoreChunkFromBuffer &
+{
+    this->m_mem_select = std::make_optional<MemorySelection>(std::move(sel));
+    return *this;
 }
 
 template <typename Ptr_Type>
