@@ -69,20 +69,16 @@ namespace host_info
     Method methodFromStringDescription(
         std::string const &descr, [[maybe_unused]] bool consider_mpi)
     {
-        static std::map<std::string, Method> const map
-        {
+        static std::map<std::string, Method> const map{
             {"posix_hostname", Method::POSIX_HOSTNAME},
 #if openPMD_HAVE_MPI
-                {"hostname",
-                 consider_mpi ? Method::MPI_PROCESSOR_NAME
-                              : Method::POSIX_HOSTNAME},
+            {"hostname",
+             consider_mpi ? Method::MPI_PROCESSOR_NAME
+                          : Method::POSIX_HOSTNAME},
 #else
-                {"hostname", Method::POSIX_HOSTNAME},
+            {"hostname", Method::POSIX_HOSTNAME},
 #endif
-            {
-                "mpi_processor_name", Method::MPI_PROCESSOR_NAME
-            }
-        };
+            {"mpi_processor_name", Method::MPI_PROCESSOR_NAME}};
         return map.at(descr);
     }
 
@@ -101,13 +97,12 @@ namespace host_info
 
     std::string byMethod(Method method)
     {
-        static std::map<Method, std::string (*)()> const map
-        {
+        static std::map<Method, std::string (*)()> const map{
 #if openPMD_POSIX_AVAILABLE
             {Method::POSIX_HOSTNAME, &posix_hostname},
 #endif
 #if openPMD_HAVE_MPI
-                {Method::MPI_PROCESSOR_NAME, &mpi_processor_name},
+            {Method::MPI_PROCESSOR_NAME, &mpi_processor_name},
 #endif
         };
         try

@@ -81,8 +81,8 @@ namespace
     using self_or_invoked_t = typename self_or_invoked<T>::type;
 
     template <typename DeferredString>
-    auto undefer_string(DeferredString &&str)
-        -> self_or_invoked_t<DeferredString &&>
+    auto
+    undefer_string(DeferredString &&str) -> self_or_invoked_t<DeferredString &&>
     {
         if constexpr (std::is_invocable_v<DeferredString &&>)
         {
