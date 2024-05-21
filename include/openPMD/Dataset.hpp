@@ -34,6 +34,12 @@ namespace openPMD
 using Extent = std::vector<std::uint64_t>;
 using Offset = std::vector<std::uint64_t>;
 
+struct MemorySelection
+{
+    Offset offset;
+    Extent extent;
+};
+
 class Dataset
 {
     friend class RecordComponent;

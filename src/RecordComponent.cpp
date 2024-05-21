@@ -510,6 +510,7 @@ void RecordComponent::storeChunk_impl(
     Parameter<Operation::WRITE_DATASET> dWrite;
     dWrite.offset = std::move(o);
     dWrite.extent = std::move(e);
+    dWrite.memorySelection = memorySelection;
     dWrite.dtype = dtype;
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::move(buffer);

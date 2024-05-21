@@ -20,11 +20,13 @@
  */
 #pragma once
 
+#include "openPMD/Dataset.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/config.hpp"
+#include <optional>
 
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
@@ -106,6 +108,7 @@ struct BufferedUniquePtrPut
     std::string name;
     Offset offset;
     Extent extent;
+    std::optional<MemorySelection> memorySelection;
     UniquePtrWithLambda<void> data;
     Datatype dtype = Datatype::UNDEFINED;
 

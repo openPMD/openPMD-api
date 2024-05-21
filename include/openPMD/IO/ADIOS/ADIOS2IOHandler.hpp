@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/Dataset.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
@@ -426,6 +427,7 @@ private:
     adios2::Variable<T> verifyDataset(
         Offset const &offset,
         Extent const &extent,
+        std::optional<MemorySelection> const &memorySelection,
         adios2::IO &IO,
         std::string const &varName)
     {
@@ -507,6 +509,16 @@ private:
         var.SetSelection(
             {adios2::Dims(offset.begin(), offset.end()),
              adios2::Dims(extent.begin(), extent.end())});
+        if (memorySelection.has_value())
+        {
+            var.SetMemorySelection(
+                {adios2::Dims(
+                     memorySelection->offset.begin(),
+                     memorySelection->offset.end()),
+                 adios2::Dims(
+                     memorySelection->extent.begin(),
+                     memorySelection->extent.end())});
+        }
         return var;
     }
 

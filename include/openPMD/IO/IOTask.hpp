@@ -33,6 +33,7 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -436,6 +437,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_DATASET>
 
     Extent extent = {};
     Offset offset = {};
+    std::optional<MemorySelection> memorySelection = std::nullopt;
     Datatype dtype = Datatype::UNDEFINED;
     auxiliary::WriteBuffer data;
 };

@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 
 #include <stdexcept>
+#include <optional>
 
 #if openPMD_USE_VERIFY
 #define VERIFY(CONDITION, TEXT)                                                \
@@ -59,8 +60,8 @@ void DatasetReader::call(
     adios2::Engine &engine,
     std::string const &fileName)
 {
-    adios2::Variable<T> var =
-        impl->verifyDataset<T>(bp.param.offset, bp.param.extent, IO, bp.name);
+    adios2::Variable<T> var = impl->verifyDataset<T>(
+        bp.param.offset, bp.param.extent, std::nullopt, IO, bp.name);
     if (!var)
     {
         throw std::runtime_error(
@@ -89,7 +90,11 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                 auto ptr = static_cast<T const *>(arg.get());
 
                 adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
-                    bp.param.offset, bp.param.extent, ba.m_IO, bp.name);
+                    bp.param.offset,
+                    bp.param.extent,
+                    bp.param.memorySelection,
+                    ba.m_IO,
+                    bp.name);
 
                 ba.getEngine().Put(var, ptr);
             }
@@ -101,6 +106,7 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                 bput.name = std::move(bp.name);
                 bput.offset = std::move(bp.param.offset);
                 bput.extent = std::move(bp.param.extent);
+                bput.memorySelection = std::move(bp.param.memorySelection);
                 /*
                  * Note: Moving is required here since it's a unique_ptr.
                  * std::forward<>() would theoretically work, but it
@@ -147,7 +153,11 @@ struct RunUniquePtrPut
     {
         auto ptr = static_cast<T const *>(bufferedPut.data.get());
         adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
-            bufferedPut.offset, bufferedPut.extent, ba.m_IO, bufferedPut.name);
+            bufferedPut.offset,
+            bufferedPut.extent,
+            bufferedPut.memorySelection,
+            ba.m_IO,
+            bufferedPut.name);
         ba.getEngine().Put(var, ptr);
     }
 

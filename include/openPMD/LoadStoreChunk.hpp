@@ -16,12 +16,6 @@ class ConfigureStoreChunkFromBuffer;
 template <typename T>
 class DynamicMemoryView;
 
-struct MemorySelection
-{
-    Offset offset;
-    Extent extent;
-};
-
 namespace internal
 {
     struct StoreChunkConfig

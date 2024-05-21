@@ -40,6 +40,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -1110,7 +1111,7 @@ namespace detail
             auto &IO = ba.m_IO;
             auto &engine = ba.getEngine();
             adios2::Variable<T> variable = impl->verifyDataset<T>(
-                params.offset, params.extent, IO, varName);
+                params.offset, params.extent, std::nullopt, IO, varName);
             adios2::Dims offset(params.offset.begin(), params.offset.end());
             adios2::Dims extent(params.extent.begin(), params.extent.end());
             variable.SetSelection({std::move(offset), std::move(extent)});
