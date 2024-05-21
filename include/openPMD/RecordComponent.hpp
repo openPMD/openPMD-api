@@ -139,7 +139,7 @@ class RecordComponent : public BaseRecordComponent
     template <typename ChildClass>
     friend class ConfigureStoreChunk;
     template <typename Ptr_Type>
-    friend class TypedConfigureStoreChunk;
+    friend class ConfigureStoreChunkFromBuffer;
 
 public:
     enum class Allocation

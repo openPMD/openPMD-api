@@ -121,29 +121,30 @@ auto ConfigureStoreChunk<ChildClass>::enqueue() -> DynamicMemoryView<T>
 }
 
 template <typename Ptr_Type>
-TypedConfigureStoreChunk<Ptr_Type>::TypedConfigureStoreChunk(
+ConfigureStoreChunkFromBuffer<Ptr_Type>::ConfigureStoreChunkFromBuffer(
     Ptr_Type buffer, parent_t &&parent)
     : parent_t(std::move(parent)), m_buffer(std::move(buffer))
 {}
 
 template <typename Ptr_Type>
-auto TypedConfigureStoreChunk<Ptr_Type>::as_parent() && -> parent_t &&
+auto ConfigureStoreChunkFromBuffer<Ptr_Type>::as_parent() && -> parent_t &&
 {
     return std::move(*this);
 }
 template <typename Ptr_Type>
-auto TypedConfigureStoreChunk<Ptr_Type>::as_parent() & -> parent_t &
+auto ConfigureStoreChunkFromBuffer<Ptr_Type>::as_parent() & -> parent_t &
 {
     return *this;
 }
 template <typename Ptr_Type>
-auto TypedConfigureStoreChunk<Ptr_Type>::as_parent() const & -> parent_t const &
+auto ConfigureStoreChunkFromBuffer<Ptr_Type>::as_parent()
+    const & -> parent_t const &
 {
     return *this;
 }
 
 template <typename Ptr_Type>
-auto TypedConfigureStoreChunk<Ptr_Type>::storeChunkConfig() const
+auto ConfigureStoreChunkFromBuffer<Ptr_Type>::storeChunkConfig() const
     -> internal::StoreChunkConfigFromBuffer
 {
     return internal::StoreChunkConfigFromBuffer{
@@ -151,7 +152,7 @@ auto TypedConfigureStoreChunk<Ptr_Type>::storeChunkConfig() const
 }
 
 template <typename Ptr_Type>
-auto TypedConfigureStoreChunk<Ptr_Type>::enqueue() -> void
+auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueue() -> void
 {
     this->m_rc.storeChunk_impl(
         asWriteBuffer(std::move(m_buffer)),
@@ -170,25 +171,26 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
 
 #undef INSTANTIATE_METHOD_TEMPLATES_FOR_BASE
 
-#define INSTANTIATE_TYPED_STORE_CHUNK(dtype)                                   \
-    template class TypedConfigureStoreChunk<std::shared_ptr<dtype const>>;     \
+#define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
+    template class ConfigureStoreChunkFromBuffer<                              \
+        std::shared_ptr<dtype const>>;                                         \
     template class ConfigureStoreChunk<                                        \
-        TypedConfigureStoreChunk<std::shared_ptr<dtype const>>>;               \
+        ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>;          \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
         ConfigureStoreChunk<                                                   \
-            TypedConfigureStoreChunk<std::shared_ptr<dtype const>>>,           \
+            ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>,      \
         dtype)                                                                 \
-    template class TypedConfigureStoreChunk<UniquePtrWithLambda<dtype>>;       \
+    template class ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>;  \
     template class ConfigureStoreChunk<                                        \
-        TypedConfigureStoreChunk<UniquePtrWithLambda<dtype>>>;                 \
+        ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>;            \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
         ConfigureStoreChunk<                                                   \
-            TypedConfigureStoreChunk<UniquePtrWithLambda<dtype>>>,             \
+            ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>,        \
         dtype)
 
-OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_TYPED_STORE_CHUNK)
+OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_STORE_CHUNK_FROM_BUFFER)
 
-#undef INSTANTIATE_TYPED_STORE_CHUNK
+#undef INSTANTIATE_STORE_CHUNK_FROM_BUFFER
 #undef INSTANTIATE_METHOD_TEMPLATES
 
 } // namespace openPMD

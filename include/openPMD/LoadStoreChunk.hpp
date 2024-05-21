@@ -12,7 +12,7 @@ namespace openPMD
 {
 class RecordComponent;
 template <typename Ptr_Type>
-class TypedConfigureStoreChunk;
+class ConfigureStoreChunkFromBuffer;
 template <typename T>
 class DynamicMemoryView;
 
@@ -76,26 +76,27 @@ public:
     // @todo rvalue references..?
     template <typename T>
     auto fromSharedPtr(std::shared_ptr<T>)
-        -> TypedConfigureStoreChunk<
+        -> ConfigureStoreChunkFromBuffer<
             std::shared_ptr<normalize_dataset_type<T> const>>;
     template <typename T>
     auto fromUniquePtr(UniquePtrWithLambda<T>)
-        -> TypedConfigureStoreChunk<
+        -> ConfigureStoreChunkFromBuffer<
             UniquePtrWithLambda<normalize_dataset_type<T>>>;
     template <typename T, typename Del>
     auto fromUniquePtr(std::unique_ptr<T, Del>)
-        -> TypedConfigureStoreChunk<
+        -> ConfigureStoreChunkFromBuffer<
             UniquePtrWithLambda<normalize_dataset_type<T>>>;
     template <typename T>
     auto
-    fromRawPtr(T *data) -> TypedConfigureStoreChunk<
+    fromRawPtr(T *data) -> ConfigureStoreChunkFromBuffer<
                             std::shared_ptr<normalize_dataset_type<T> const>>;
     template <typename T_ContiguousContainer>
     auto fromContiguousContainer(T_ContiguousContainer &data) ->
         typename std::enable_if_t<
             auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
-            TypedConfigureStoreChunk<std::shared_ptr<normalize_dataset_type<
-                typename T_ContiguousContainer::value_type> const>>>;
+            ConfigureStoreChunkFromBuffer<
+                std::shared_ptr<normalize_dataset_type<
+                    typename T_ContiguousContainer::value_type> const>>>;
 
     template <typename T>
     auto enqueue() -> DynamicMemoryView<T>;
@@ -105,13 +106,13 @@ public:
     auto enqueue(F &&createBuffer) -> DynamicMemoryView<T>;
 };
 
-// @todo rename as ConfigureStoreChunkFromBuffer
 template <typename Ptr_Type>
-class TypedConfigureStoreChunk
-    : public ConfigureStoreChunk<TypedConfigureStoreChunk<Ptr_Type>>
+class ConfigureStoreChunkFromBuffer
+    : public ConfigureStoreChunk<ConfigureStoreChunkFromBuffer<Ptr_Type>>
 {
 public:
-    using parent_t = ConfigureStoreChunk<TypedConfigureStoreChunk<Ptr_Type>>;
+    using parent_t =
+        ConfigureStoreChunk<ConfigureStoreChunkFromBuffer<Ptr_Type>>;
 
 private:
     template <typename T>
@@ -120,12 +121,12 @@ private:
     Ptr_Type m_buffer;
     std::optional<MemorySelection> m_mem_select;
 
-    TypedConfigureStoreChunk(Ptr_Type buffer, parent_t &&);
+    ConfigureStoreChunkFromBuffer(Ptr_Type buffer, parent_t &&);
 
     auto storeChunkConfig() const -> internal::StoreChunkConfigFromBuffer;
 
 public:
-    auto memorySelection(MemorySelection) & -> TypedConfigureStoreChunk &;
+    auto memorySelection(MemorySelection) & -> ConfigureStoreChunkFromBuffer &;
 
     auto as_parent() && -> parent_t &&;
     auto as_parent() & -> parent_t &;
@@ -137,7 +138,7 @@ public:
 template <typename ChildClass>
 template <typename T>
 auto ConfigureStoreChunk<ChildClass>::fromSharedPtr(std::shared_ptr<T> data)
-    -> TypedConfigureStoreChunk<
+    -> ConfigureStoreChunkFromBuffer<
         std::shared_ptr<normalize_dataset_type<T> const>>
 {
     if (!data)
@@ -145,7 +146,7 @@ auto ConfigureStoreChunk<ChildClass>::fromSharedPtr(std::shared_ptr<T> data)
         throw std::runtime_error(
             "Unallocated pointer passed during chunk store.");
     }
-    return TypedConfigureStoreChunk<
+    return ConfigureStoreChunkFromBuffer<
         std::shared_ptr<normalize_dataset_type<T> const>>(
         std::static_pointer_cast<normalize_dataset_type<T> const>(
             std::move(data)),
@@ -154,14 +155,15 @@ auto ConfigureStoreChunk<ChildClass>::fromSharedPtr(std::shared_ptr<T> data)
 template <typename ChildClass>
 template <typename T>
 auto ConfigureStoreChunk<ChildClass>::fromUniquePtr(UniquePtrWithLambda<T> data)
-    -> TypedConfigureStoreChunk<UniquePtrWithLambda<normalize_dataset_type<T>>>
+    -> ConfigureStoreChunkFromBuffer<
+        UniquePtrWithLambda<normalize_dataset_type<T>>>
 {
     if (!data)
     {
         throw std::runtime_error(
             "Unallocated pointer passed during chunk store.");
     }
-    return TypedConfigureStoreChunk<
+    return ConfigureStoreChunkFromBuffer<
         UniquePtrWithLambda<normalize_dataset_type<T>>>(
         std::move(data).template static_cast_<normalize_dataset_type<T>>(),
         {std::move(*this)});
@@ -169,7 +171,7 @@ auto ConfigureStoreChunk<ChildClass>::fromUniquePtr(UniquePtrWithLambda<T> data)
 template <typename ChildClass>
 template <typename T>
 auto ConfigureStoreChunk<ChildClass>::fromRawPtr(T *data)
-    -> TypedConfigureStoreChunk<
+    -> ConfigureStoreChunkFromBuffer<
         std::shared_ptr<normalize_dataset_type<T> const>>
 {
     if (!data)
@@ -177,7 +179,7 @@ auto ConfigureStoreChunk<ChildClass>::fromRawPtr(T *data)
         throw std::runtime_error(
             "Unallocated pointer passed during chunk store.");
     }
-    return TypedConfigureStoreChunk<
+    return ConfigureStoreChunkFromBuffer<
         std::shared_ptr<normalize_dataset_type<T> const>>(
         auxiliary::shareRaw(data), {std::move(*this)});
 }
@@ -186,7 +188,8 @@ template <typename ChildClass>
 template <typename T, typename Del>
 auto ConfigureStoreChunk<ChildClass>::fromUniquePtr(
     std::unique_ptr<T, Del> data)
-    -> TypedConfigureStoreChunk<UniquePtrWithLambda<normalize_dataset_type<T>>>
+    -> ConfigureStoreChunkFromBuffer<
+        UniquePtrWithLambda<normalize_dataset_type<T>>>
 {
     return fromUniquePtr(UniquePtrWithLambda<T>(std::move(data)));
 }
@@ -196,7 +199,7 @@ auto ConfigureStoreChunk<ChildClass>::fromContiguousContainer(
     T_ContiguousContainer &data) ->
     typename std::enable_if_t<
         auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
-        TypedConfigureStoreChunk<std::shared_ptr<normalize_dataset_type<
+        ConfigureStoreChunkFromBuffer<std::shared_ptr<normalize_dataset_type<
             typename T_ContiguousContainer::value_type> const>>>
 {
     if (!m_extent.has_value() && dim() == 1)
