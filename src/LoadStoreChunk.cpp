@@ -216,15 +216,15 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
 #undef INSTANTIATE_METHOD_TEMPLATES_FOR_BASE
 
 #define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
-    template class ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype const>>; \
+    template class ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>;       \
     template class ConfigureStoreChunkFromBuffer<                              \
-        std::shared_ptr<dtype const>,                                          \
-        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype const>>>;           \
+        std::shared_ptr<dtype>,                                                \
+        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>;                 \
     template class ConfigureLoadStore<                                         \
-        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype const>>>;           \
+        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>;                 \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
         ConfigureLoadStore<                                                    \
-            ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype const>>>,       \
+            ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>,             \
         dtype)                                                                 \
     template class ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>;  \
     template class ConfigureLoadStore<                                         \
@@ -232,6 +232,14 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
     INSTANTIATE_METHOD_TEMPLATES(                                              \
         ConfigureLoadStore<                                                    \
             ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>,        \
+        dtype)                                                                 \
+    template class ConfigureStoreChunkFromBuffer<                              \
+        std::shared_ptr<dtype const>>;                                         \
+    template class ConfigureLoadStore<                                         \
+        ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>;          \
+    INSTANTIATE_METHOD_TEMPLATES(                                              \
+        ConfigureLoadStore<                                                    \
+            ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>,      \
         dtype)
 
 OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_STORE_CHUNK_FROM_BUFFER)

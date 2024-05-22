@@ -63,15 +63,35 @@ public:
         std::is_void_v<ChildClass>,
         /*then*/ ConfigureLoadStore<void>,
         /*else*/ ChildClass>;
-    template <typename T>
-    using normalize_dataset_type = std::remove_cv_t<std::remove_extent_t<T>>;
 
     auto offset(Offset) -> return_type &;
     auto extent(Extent) -> return_type &;
 
     template <typename T>
-    using shared_ptr_return_type = ConfigureLoadStoreFromBuffer<
-        std::shared_ptr<normalize_dataset_type<T> const>>;
+    struct shared_ptr_return_type_impl
+    {
+        using type = ConfigureLoadStoreFromBuffer<
+            std::shared_ptr<std::remove_extent_t<T>>>;
+    };
+    template <typename T>
+    struct shared_ptr_return_type_impl<T const>
+    {
+        using type =
+            ConfigureStoreChunkFromBuffer<std::shared_ptr<T const>, void>;
+    };
+    template <typename T>
+    struct shared_ptr_return_type_impl<T const[]>
+    {
+        using type =
+            ConfigureStoreChunkFromBuffer<std::shared_ptr<T const>, void>;
+    };
+
+    template <typename T>
+    using shared_ptr_return_type =
+        typename shared_ptr_return_type_impl<T>::type;
+
+    template <typename T>
+    using normalize_dataset_type = std::remove_cv_t<std::remove_extent_t<T>>;
     template <typename T>
     using unique_ptr_return_type = ConfigureStoreChunkFromBuffer<
         UniquePtrWithLambda<normalize_dataset_type<T>>,
@@ -137,6 +157,14 @@ public:
     auto as_parent() const & -> parent_t const &;
 
     auto enqueueStore() -> void;
+    template <typename X = void>
+    auto enqueueLoad()
+    {
+        static_assert(
+            auxiliary::dependent_false_v<X>,
+            "Cannot load chunk data into a buffer that is const or a "
+            "unique_ptr.");
+    }
 };
 
 template <typename Ptr_Type>

@@ -15,8 +15,7 @@ auto ConfigureLoadStore<ChildClass>::fromSharedPtr(std::shared_ptr<T> data)
             "Unallocated pointer passed during chunk store.");
     }
     return shared_ptr_return_type<T>(
-        std::static_pointer_cast<normalize_dataset_type<T> const>(
-            std::move(data)),
+        std::static_pointer_cast<std::remove_extent_t<T>>(std::move(data)),
         {std::move(*this)});
 }
 template <typename ChildClass>

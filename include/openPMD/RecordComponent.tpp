@@ -83,6 +83,7 @@ template <typename T>
 inline std::shared_ptr<T>
 RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
 {
+    static_assert(!std::is_same_v<T, std::string>, "EVIL");
     auto [o, e] = std::move(cfg);
 
     size_t numPoints = 1;
@@ -112,6 +113,7 @@ template <typename T_with_extent>
 inline void RecordComponent::loadChunk(
     std::shared_ptr<T_with_extent> data, Offset o, Extent e)
 {
+    static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
     uint8_t dim = getDimensionality();
     auto operation = prepareLoadStore();
 
@@ -183,9 +185,8 @@ inline void RecordComponent::loadChunk_impl(
 
         T value = rc.m_constantValue.get<T>();
 
-        // @todo
-        // auto raw_ptr = static_cast<T *>(data.get());
-        // std::fill(raw_ptr, raw_ptr + numPoints, value);
+        auto raw_ptr = static_cast<T *>(data.get());
+        std::fill(raw_ptr, raw_ptr + numPoints, value);
     }
     else
     {
@@ -193,8 +194,7 @@ inline void RecordComponent::loadChunk_impl(
         dRead.offset = offset;
         dRead.extent = extent;
         dRead.dtype = getDatatype();
-        // @todo
-        // dRead.data = std::static_pointer_cast<void>(data);
+        dRead.data = std::static_pointer_cast<void>(data);
         rc.push_chunk(IOTask(this, dRead));
     }
 }
@@ -202,7 +202,11 @@ inline void RecordComponent::loadChunk_impl(
 template <typename T>
 inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    loadChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
+    prepareLoadStore()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .fromRawPtr(ptr)
+        .enqueueLoad();
 }
 
 template <typename T>
