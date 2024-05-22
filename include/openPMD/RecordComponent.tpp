@@ -96,7 +96,11 @@ RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
     (defined(__apple_build_version__) && __clang_major__ < 14)
     auto newData =
         std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
-    loadChunk(newData, offset, extent);
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .fromSharedPtr(newData)
+        .enqueueLoad();
     return newData;
 #else
     auto newData = std::shared_ptr<T[]>(new T[numPoints]);

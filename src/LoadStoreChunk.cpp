@@ -108,14 +108,14 @@ auto ConfigureLoadStore<ChildClass>::storeChunkConfig()
 template <typename ChildClass>
 auto ConfigureLoadStore<ChildClass>::extent(Extent extent) -> return_type &
 {
-    m_extent = std::move(extent);
+    m_extent = std::make_optional<Extent>(std::move(extent));
     return *static_cast<return_type *>(this);
 }
 
 template <typename ChildClass>
 auto ConfigureLoadStore<ChildClass>::offset(Offset offset) -> return_type &
 {
-    m_offset = std::move(offset);
+    m_offset = std::make_optional<Offset>(std::move(offset));
     return *static_cast<return_type *>(this);
 }
 
@@ -215,23 +215,33 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
 
 #undef INSTANTIATE_METHOD_TEMPLATES_FOR_BASE
 
+/*
+ * In the following macro, we replace `dtype` with `std::remove_cv_t<dtype
+ * const>` since otherwise clang-tidy won't understand it's a type and we cannot
+ * surround it with parentheses. The type names are surrounded with angle
+ * brackets, so the warning is useless.
+ */
+
 #define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
-    template class ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>;       \
+    template class ConfigureLoadStoreFromBuffer<                               \
+        std::shared_ptr<std::remove_cv_t<dtype const>>>;                       \
     template class ConfigureStoreChunkFromBuffer<                              \
         std::shared_ptr<dtype>,                                                \
-        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>;                 \
-    template class ConfigureLoadStore<                                         \
-        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>;                 \
+        ConfigureLoadStoreFromBuffer<                                          \
+            std::shared_ptr<std::remove_cv_t<dtype const>>>>;                  \
+    template class ConfigureLoadStore<ConfigureLoadStoreFromBuffer<            \
+        std::shared_ptr<std::remove_cv_t<dtype const>>>>;                      \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureLoadStore<                                                    \
-            ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>,             \
+        ConfigureLoadStore<ConfigureLoadStoreFromBuffer<                       \
+            std::shared_ptr<std::remove_cv_t<dtype const>>>>,                  \
         dtype)                                                                 \
-    template class ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>;  \
-    template class ConfigureLoadStore<                                         \
-        ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>;            \
+    template class ConfigureStoreChunkFromBuffer<                              \
+        UniquePtrWithLambda<std::remove_cv_t<dtype const>>>;                   \
+    template class ConfigureLoadStore<ConfigureStoreChunkFromBuffer<           \
+        UniquePtrWithLambda<std::remove_cv_t<dtype const>>>>;                  \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureLoadStore<                                                    \
-            ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>,        \
+        ConfigureLoadStore<ConfigureStoreChunkFromBuffer<                      \
+            UniquePtrWithLambda<std::remove_cv_t<dtype const>>>>,              \
         dtype)                                                                 \
     template class ConfigureStoreChunkFromBuffer<                              \
         std::shared_ptr<dtype const>>;                                         \
