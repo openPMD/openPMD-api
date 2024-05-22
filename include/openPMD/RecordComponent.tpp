@@ -194,7 +194,7 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .fromSharedPtr(std::move(data))
-        .enqueue();
+        .enqueueStore();
 }
 
 template <typename T>
@@ -205,7 +205,7 @@ RecordComponent::storeChunk(UniquePtrWithLambda<T> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .fromUniquePtr(std::move(data))
-        .enqueue();
+        .enqueueStore();
 }
 
 template <typename T, typename Del>
@@ -216,7 +216,7 @@ RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .fromUniquePtr(std::move(data))
-        .enqueue();
+        .enqueueStore();
 }
 
 template <typename T>
@@ -226,7 +226,7 @@ void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .fromRawPtr(ptr)
-        .enqueue();
+        .enqueueStore();
 }
 
 template <typename T_ContiguousContainer>
@@ -246,7 +246,7 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
         storeChunkConfig.extent(std::move(e));
     }
 
-    std::move(storeChunkConfig).fromContiguousContainer(data).enqueue();
+    std::move(storeChunkConfig).fromContiguousContainer(data).enqueueStore();
 }
 
 template <typename T, typename F>
@@ -256,7 +256,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     return prepareStoreChunk()
         .offset(std::move(o))
         .extent(std::move(e))
-        .enqueue<T>(std::forward<F>(createBuffer));
+        .enqueueStore<T>(std::forward<F>(createBuffer));
 }
 
 template <typename T>
@@ -266,7 +266,7 @@ RecordComponent::storeChunk(Offset offset, Extent extent)
     return prepareStoreChunk()
         .offset(std::move(offset))
         .extent(std::move(extent))
-        .enqueue<T>();
+        .enqueueStore<T>();
 }
 
 template <typename T, typename F>
@@ -369,7 +369,7 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
 // definitions for LoadStoreChunk.hpp
 template <typename ChildClass>
 template <typename T, typename F>
-auto ConfigureStoreChunk<ChildClass>::enqueue(F &&createBuffer)
+auto ConfigureLoadStore<ChildClass>::enqueueStore(F &&createBuffer)
     -> DynamicMemoryView<T>
 {
     return m_rc.storeChunkSpanCreateBuffer_impl<T>(

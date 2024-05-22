@@ -44,24 +44,24 @@ namespace
 } // namespace
 
 template <typename ChildClass>
-ConfigureStoreChunk<ChildClass>::ConfigureStoreChunk(RecordComponent &rc)
+ConfigureLoadStore<ChildClass>::ConfigureLoadStore(RecordComponent &rc)
     : ConfigureStoreChunkData(rc)
 {}
 
 template <typename ChildClass>
-ConfigureStoreChunk<ChildClass>::ConfigureStoreChunk(
+ConfigureLoadStore<ChildClass>::ConfigureLoadStore(
     internal::ConfigureStoreChunkData &&data)
     : ConfigureStoreChunkData(std::move(data))
 {}
 
 template <typename ChildClass>
-auto ConfigureStoreChunk<ChildClass>::dim() const -> uint8_t
+auto ConfigureLoadStore<ChildClass>::dim() const -> uint8_t
 {
     return m_rc.getDimensionality();
 }
 
 template <typename ChildClass>
-auto ConfigureStoreChunk<ChildClass>::getOffset() const -> Offset
+auto ConfigureLoadStore<ChildClass>::getOffset() const -> Offset
 {
     if (m_offset.has_value())
     {
@@ -81,7 +81,7 @@ auto ConfigureStoreChunk<ChildClass>::getOffset() const -> Offset
 }
 
 template <typename ChildClass>
-auto ConfigureStoreChunk<ChildClass>::getExtent() const -> Extent
+auto ConfigureLoadStore<ChildClass>::getExtent() const -> Extent
 {
     if (m_extent.has_value())
     {
@@ -94,21 +94,21 @@ auto ConfigureStoreChunk<ChildClass>::getExtent() const -> Extent
 }
 
 template <typename ChildClass>
-auto ConfigureStoreChunk<ChildClass>::storeChunkConfig() const
+auto ConfigureLoadStore<ChildClass>::storeChunkConfig() const
     -> internal::StoreChunkConfig
 {
     return internal::StoreChunkConfig{getOffset(), getExtent()};
 }
 
 template <typename ChildClass>
-auto ConfigureStoreChunk<ChildClass>::extent(Extent extent) -> return_type &
+auto ConfigureLoadStore<ChildClass>::extent(Extent extent) -> return_type &
 {
     m_extent = std::move(extent);
     return *static_cast<return_type *>(this);
 }
 
 template <typename ChildClass>
-auto ConfigureStoreChunk<ChildClass>::offset(Offset offset) -> return_type &
+auto ConfigureLoadStore<ChildClass>::offset(Offset offset) -> return_type &
 {
     m_offset = std::move(offset);
     return *static_cast<return_type *>(this);
@@ -116,7 +116,7 @@ auto ConfigureStoreChunk<ChildClass>::offset(Offset offset) -> return_type &
 
 template <typename ChildClass>
 template <typename T>
-auto ConfigureStoreChunk<ChildClass>::enqueue() -> DynamicMemoryView<T>
+auto ConfigureLoadStore<ChildClass>::enqueueStore() -> DynamicMemoryView<T>
 {
     return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
 }
@@ -161,7 +161,7 @@ auto ConfigureStoreChunkFromBuffer<Ptr_Type>::memorySelection(
 }
 
 template <typename Ptr_Type>
-auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueue() -> void
+auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueueStore() -> void
 {
     this->m_rc.storeChunk_impl(
         asWriteBuffer(std::move(m_buffer)),
@@ -170,12 +170,12 @@ auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueue() -> void
 }
 
 #define INSTANTIATE_METHOD_TEMPLATES(base_class, dtype)                        \
-    template auto base_class::enqueue() -> DynamicMemoryView<dtype>;
+    template auto base_class::enqueueStore() -> DynamicMemoryView<dtype>;
 
 #define INSTANTIATE_METHOD_TEMPLATES_FOR_BASE(dtype)                           \
-    INSTANTIATE_METHOD_TEMPLATES(ConfigureStoreChunk<void>, dtype)
+    INSTANTIATE_METHOD_TEMPLATES(ConfigureLoadStore<void>, dtype)
 
-template class ConfigureStoreChunk<void>;
+template class ConfigureLoadStore<void>;
 OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
 
 #undef INSTANTIATE_METHOD_TEMPLATES_FOR_BASE
@@ -183,17 +183,17 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
 #define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
     template class ConfigureStoreChunkFromBuffer<                              \
         std::shared_ptr<dtype const>>;                                         \
-    template class ConfigureStoreChunk<                                        \
+    template class ConfigureLoadStore<                                         \
         ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>;          \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureStoreChunk<                                                   \
+        ConfigureLoadStore<                                                    \
             ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>,      \
         dtype)                                                                 \
     template class ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>;  \
-    template class ConfigureStoreChunk<                                        \
+    template class ConfigureLoadStore<                                         \
         ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>;            \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureStoreChunk<                                                   \
+        ConfigureLoadStore<                                                    \
             ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>,        \
         dtype)
 

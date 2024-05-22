@@ -137,7 +137,7 @@ class RecordComponent : public BaseRecordComponent
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
     template <typename ChildClass>
-    friend class ConfigureStoreChunk;
+    friend class ConfigureLoadStore;
     template <typename Ptr_Type>
     friend class ConfigureStoreChunkFromBuffer;
 
@@ -291,7 +291,7 @@ public:
     template <typename T>
     void loadChunkRaw(T *data, Offset offset, Extent extent);
 
-    ConfigureStoreChunk<void> prepareStoreChunk();
+    ConfigureLoadStore<void> prepareStoreChunk();
 
     /** Store a chunk of data from a chunk of memory.
      *
