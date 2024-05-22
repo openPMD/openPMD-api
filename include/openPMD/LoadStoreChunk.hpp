@@ -20,21 +20,21 @@ class DynamicMemoryView;
 
 namespace internal
 {
-    struct StoreChunkConfig
+    struct LoadStoreConfig
     {
         Offset offset;
         Extent extent;
     };
-    struct StoreChunkConfigFromBuffer
+    struct LoadStoreConfigWithBuffer
     {
         Offset offset;
         Extent extent;
         std::optional<MemorySelection> memorySelection;
     };
 
-    struct ConfigureStoreChunkData
+    struct ConfigureLoadStoreData
     {
-        ConfigureStoreChunkData(RecordComponent &);
+        ConfigureLoadStoreData(RecordComponent &);
 
         RecordComponent &m_rc;
         std::optional<Offset> m_offset;
@@ -43,7 +43,7 @@ namespace internal
 } // namespace internal
 
 template <typename ChildClass = void>
-class ConfigureLoadStore : protected internal::ConfigureStoreChunkData
+class ConfigureLoadStore : protected internal::ConfigureLoadStoreData
 {
     friend class RecordComponent;
     template <typename>
@@ -51,12 +51,12 @@ class ConfigureLoadStore : protected internal::ConfigureStoreChunkData
 
 protected:
     ConfigureLoadStore(RecordComponent &rc);
-    ConfigureLoadStore(ConfigureStoreChunkData &&);
+    ConfigureLoadStore(ConfigureLoadStoreData &&);
 
     auto dim() const -> uint8_t;
-    auto getOffset() const -> Offset;
-    auto getExtent() const -> Extent;
-    auto storeChunkConfig() const -> internal::StoreChunkConfig;
+    auto getOffset() -> Offset const &;
+    auto getExtent() -> Extent const &;
+    auto storeChunkConfig() -> internal::LoadStoreConfig;
 
 public:
     using return_type = std::conditional_t<
@@ -117,14 +117,14 @@ public:
         /*else*/ ChildClass>;
     using parent_t = ConfigureLoadStore<return_type>;
 
-private:
+protected:
     template <typename T>
     friend class ConfigureLoadStore;
 
     Ptr_Type m_buffer;
     std::optional<MemorySelection> m_mem_select;
 
-    auto storeChunkConfig() const -> internal::StoreChunkConfigFromBuffer;
+    auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
 
 protected:
     ConfigureStoreChunkFromBuffer(Ptr_Type buffer, parent_t &&);

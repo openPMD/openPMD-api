@@ -2892,7 +2892,7 @@ TEST_CASE("git_hdf5_legacy_picongpu", "[serial][hdf5]")
         auto radiationMask =
             o.iterations[200]
                 .particles["e"]["radiationMask"][RecordComponent::SCALAR];
-        switchNonVectorType<LoadDataset>(
+        switchDatasetType<LoadDataset>(
             radiationMask.getDatatype(), radiationMask);
 
         auto particlePatches = o.iterations[200].particles["e"].particlePatches;

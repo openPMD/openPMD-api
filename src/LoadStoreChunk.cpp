@@ -21,7 +21,7 @@ namespace openPMD
 
 namespace internal
 {
-    ConfigureStoreChunkData::ConfigureStoreChunkData(RecordComponent &rc)
+    ConfigureLoadStoreData::ConfigureLoadStoreData(RecordComponent &rc)
         : m_rc(rc)
     {}
 } // namespace internal
@@ -45,13 +45,13 @@ namespace
 
 template <typename ChildClass>
 ConfigureLoadStore<ChildClass>::ConfigureLoadStore(RecordComponent &rc)
-    : ConfigureStoreChunkData(rc)
+    : ConfigureLoadStoreData(rc)
 {}
 
 template <typename ChildClass>
 ConfigureLoadStore<ChildClass>::ConfigureLoadStore(
-    internal::ConfigureStoreChunkData &&data)
-    : ConfigureStoreChunkData(std::move(data))
+    internal::ConfigureLoadStoreData &&data)
+    : ConfigureLoadStoreData(std::move(data))
 {}
 
 template <typename ChildClass>
@@ -61,43 +61,48 @@ auto ConfigureLoadStore<ChildClass>::dim() const -> uint8_t
 }
 
 template <typename ChildClass>
-auto ConfigureLoadStore<ChildClass>::getOffset() const -> Offset
+auto ConfigureLoadStore<ChildClass>::getOffset() -> Offset const &
 {
-    if (m_offset.has_value())
-    {
-        return *m_offset;
-    }
-    else
+    if (!m_offset.has_value())
     {
         if (m_rc.joinedDimension().has_value())
         {
-            return Offset{};
+            m_offset = std::make_optional<Offset>();
         }
         else
         {
-            return Offset(dim(), 0);
+            m_offset = std::make_optional<Offset>(dim(), 0);
         }
     }
+    return *m_offset;
 }
 
 template <typename ChildClass>
-auto ConfigureLoadStore<ChildClass>::getExtent() const -> Extent
+auto ConfigureLoadStore<ChildClass>::getExtent() -> Extent const &
 {
-    if (m_extent.has_value())
+    if (!m_extent.has_value())
     {
-        return *m_extent;
+        m_extent = std::make_optional<Extent>(m_rc.getExtent());
+        if (m_offset.has_value())
+        {
+            auto it_o = m_offset->begin();
+            auto end_o = m_offset->end();
+            auto it_e = m_extent->begin();
+            auto end_e = m_extent->end();
+            for (; it_o != end_o && it_e != end_e; ++it_e, ++it_o)
+            {
+                *it_e -= *it_o;
+            }
+        }
     }
-    else
-    {
-        return Extent(dim(), 0);
-    }
+    return *m_extent;
 }
 
 template <typename ChildClass>
-auto ConfigureLoadStore<ChildClass>::storeChunkConfig() const
-    -> internal::StoreChunkConfig
+auto ConfigureLoadStore<ChildClass>::storeChunkConfig()
+    -> internal::LoadStoreConfig
 {
-    return internal::StoreChunkConfig{getOffset(), getExtent()};
+    return internal::LoadStoreConfig{getOffset(), getExtent()};
 }
 
 template <typename ChildClass>
@@ -119,6 +124,13 @@ template <typename T>
 auto ConfigureLoadStore<ChildClass>::enqueueStore() -> DynamicMemoryView<T>
 {
     return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
+}
+
+template <typename ChildClass>
+template <typename T>
+auto ConfigureLoadStore<ChildClass>::enqueueLoad() -> std::shared_ptr<T>
+{
+    return m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
 }
 
 template <typename Ptr_Type, typename ChildClass>
@@ -148,9 +160,9 @@ auto ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::as_parent()
 
 template <typename Ptr_Type, typename ChildClass>
 auto ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::storeChunkConfig()
-    const -> internal::StoreChunkConfigFromBuffer
+    -> internal::LoadStoreConfigWithBuffer
 {
-    return internal::StoreChunkConfigFromBuffer{
+    return internal::LoadStoreConfigWithBuffer{
         this->getOffset(), this->getExtent(), m_mem_select};
 }
 
@@ -184,8 +196,16 @@ ConfigureLoadStoreFromBuffer<Ptr_Type>::ConfigureLoadStoreFromBuffer(
         "type.");
 }
 
+template <typename Ptr_Type>
+auto ConfigureLoadStoreFromBuffer<Ptr_Type>::enqueueLoad() -> void
+{
+    this->m_rc.loadChunk_impl(
+        std::move(this->m_buffer), this->storeChunkConfig());
+}
+
 #define INSTANTIATE_METHOD_TEMPLATES(base_class, dtype)                        \
-    template auto base_class::enqueueStore() -> DynamicMemoryView<dtype>;
+    template auto base_class::enqueueStore() -> DynamicMemoryView<dtype>;      \
+    template auto base_class::enqueueLoad() -> std::shared_ptr<dtype>;
 
 #define INSTANTIATE_METHOD_TEMPLATES_FOR_BASE(dtype)                           \
     INSTANTIATE_METHOD_TEMPLATES(ConfigureLoadStore<void>, dtype)

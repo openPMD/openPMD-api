@@ -140,6 +140,8 @@ class RecordComponent : public BaseRecordComponent
     friend class ConfigureLoadStore;
     template <typename Ptr_Type, typename ChildClass>
     friend class ConfigureStoreChunkFromBuffer;
+    template <typename>
+    friend class ConfigureLoadStoreFromBuffer;
 
 public:
     enum class Allocation
@@ -291,7 +293,7 @@ public:
     template <typename T>
     void loadChunkRaw(T *data, Offset offset, Extent extent);
 
-    ConfigureLoadStore<void> prepareStoreChunk();
+    ConfigureLoadStore<void> prepareLoadStore();
 
     /** Store a chunk of data from a chunk of memory.
      *
@@ -479,13 +481,19 @@ private:
     void storeChunk_impl(
         auxiliary::WriteBuffer buffer,
         Datatype datatype,
-        internal::StoreChunkConfigFromBuffer);
+        internal::LoadStoreConfigWithBuffer);
 
     template <typename T>
-    DynamicMemoryView<T> storeChunkSpan_impl(internal::StoreChunkConfig);
+    DynamicMemoryView<T> storeChunkSpan_impl(internal::LoadStoreConfig);
     template <typename T, typename F>
     DynamicMemoryView<T> storeChunkSpanCreateBuffer_impl(
-        internal::StoreChunkConfig, F &&createBuffer);
+        internal::LoadStoreConfig, F &&createBuffer);
+
+    template <typename T>
+    void
+        loadChunk_impl(std::shared_ptr<T>, internal::LoadStoreConfigWithBuffer);
+    template <typename T>
+    std::shared_ptr<T> loadChunkAllocate_impl(internal::LoadStoreConfig);
 
     // clang-format off
 OPENPMD_protected

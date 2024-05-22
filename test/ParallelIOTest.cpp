@@ -444,12 +444,12 @@ void available_chunks_test(std::string const &file_ending)
         E_x.storeChunk(xdata, {mpi_rank, 0}, {1, 4});
         auto E_y = it0.meshes["E"]["y"];
         E_y.resetDataset({Datatype::INT, {5, 3ul * mpi_size}});
-        E_y.prepareStoreChunk()
+        E_y.prepareLoadStore()
             .fromContiguousContainer(ydata_firstandlastrow)
             .offset({0, 3ul * mpi_rank})
             .extent({1, 3})
             .enqueueStore();
-        E_y.prepareStoreChunk()
+        E_y.prepareLoadStore()
             .offset({1, 3ul * mpi_rank})
             .extent({3, 3})
             .fromContiguousContainer(ydata)
@@ -459,7 +459,7 @@ void available_chunks_test(std::string const &file_ending)
         // https://github.com/ornladios/ADIOS2/pull/4169
         if constexpr (CanTheMemorySelectionBeReset)
         {
-            E_y.prepareStoreChunk()
+            E_y.prepareLoadStore()
                 .fromContiguousContainer(ydata_firstandlastrow)
                 .offset({4, 3ul * mpi_rank})
                 .extent({1, 3})

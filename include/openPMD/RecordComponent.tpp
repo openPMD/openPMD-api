@@ -61,27 +61,35 @@ template <typename T>
 inline std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
+    auto operation = prepareLoadStore();
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
+    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    {
+        operation.offset(std::move(o));
+    }
 
     //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if (e.size() == 1u && e.at(0) == -1u)
+    if (e.size() != 1u || e.at(0) != -1u)
     {
-        extent = getExtent();
-        for (uint8_t i = 0u; i < dim; ++i)
-            extent[i] -= offset[i];
+        operation.extent(std::move(e));
     }
-    else
-        extent = e;
 
-    uint64_t numPoints = 1u;
-    for (auto const &dimensionSize : extent)
-        numPoints *= dimensionSize;
+    return operation.enqueueLoad<T>();
+}
+
+template <typename T>
+inline std::shared_ptr<T>
+RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
+{
+    auto [o, e] = std::move(cfg);
+
+    size_t numPoints = 1;
+    for (auto val : e)
+    {
+        numPoints *= val;
+    }
 
 #if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
     (defined(__apple_build_version__) && __clang_major__ < 14)
@@ -91,7 +99,11 @@ inline std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
     return newData;
 #else
     auto newData = std::shared_ptr<T[]>(new T[numPoints]);
-    loadChunk(newData, offset, extent);
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .fromSharedPtr(newData)
+        .enqueueLoad();
     return std::static_pointer_cast<T>(std::move(newData));
 #endif
 }
@@ -100,7 +112,31 @@ template <typename T_with_extent>
 inline void RecordComponent::loadChunk(
     std::shared_ptr<T_with_extent> data, Offset o, Extent e)
 {
-    using T = std::remove_extent_t<T_with_extent>;
+    uint8_t dim = getDimensionality();
+    auto operation = prepareLoadStore();
+
+    // default arguments
+    //   offset = {0u}: expand to right dim {0u, 0u, ...}
+    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    {
+        operation.offset(std::move(o));
+    }
+
+    //   extent = {-1u}: take full size
+    if (e.size() != 1u || e.at(0) != -1u)
+    {
+        operation.extent(std::move(e));
+    }
+
+    operation.fromSharedPtr(std::move(data)).enqueueLoad();
+}
+
+template <typename T_with_extent>
+inline void RecordComponent::loadChunk_impl(
+    std::shared_ptr<T_with_extent> data,
+    internal::LoadStoreConfigWithBuffer cfg)
+{
+    using T = std::remove_cv_t<std::remove_extent_t<T_with_extent>>;
     Datatype dtype = determineDatatype(data);
     if (dtype != getDatatype())
         if (!isSameInteger<T>(getDatatype()) &&
@@ -117,24 +153,8 @@ inline void RecordComponent::loadChunk(
             throw std::runtime_error(err_msg);
         }
 
-    uint8_t dim = getDimensionality();
-
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
-
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if (e.size() == 1u && e.at(0) == -1u)
-    {
-        extent = getExtent();
-        for (uint8_t i = 0u; i < dim; ++i)
-            extent[i] -= offset[i];
-    }
-    else
-        extent = e;
+    auto dim = getDimensionality();
+    auto [offset, extent, memorySelection] = std::move(cfg);
 
     if (extent.size() != dim || offset.size() != dim)
     {
@@ -153,9 +173,6 @@ inline void RecordComponent::loadChunk(
                 "Chunk does not reside inside dataset (Dimension on index " +
                 std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
                 " - Chunk: " + std::to_string(offset[i] + extent[i]) + ")");
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk loading.");
 
     auto &rc = get();
     if (constant())
@@ -166,8 +183,9 @@ inline void RecordComponent::loadChunk(
 
         T value = rc.m_constantValue.get<T>();
 
-        auto raw_ptr = static_cast<T *>(data.get());
-        std::fill(raw_ptr, raw_ptr + numPoints, value);
+        // @todo
+        // auto raw_ptr = static_cast<T *>(data.get());
+        // std::fill(raw_ptr, raw_ptr + numPoints, value);
     }
     else
     {
@@ -175,7 +193,8 @@ inline void RecordComponent::loadChunk(
         dRead.offset = offset;
         dRead.extent = extent;
         dRead.dtype = getDatatype();
-        dRead.data = std::static_pointer_cast<void>(data);
+        // @todo
+        // dRead.data = std::static_pointer_cast<void>(data);
         rc.push_chunk(IOTask(this, dRead));
     }
 }
@@ -190,7 +209,7 @@ template <typename T>
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    prepareStoreChunk()
+    prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
         .fromSharedPtr(std::move(data))
@@ -201,7 +220,7 @@ template <typename T>
 inline void
 RecordComponent::storeChunk(UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    prepareStoreChunk()
+    prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
         .fromUniquePtr(std::move(data))
@@ -212,7 +231,7 @@ template <typename T, typename Del>
 inline void
 RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
 {
-    prepareStoreChunk()
+    prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
         .fromUniquePtr(std::move(data))
@@ -222,7 +241,7 @@ RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
 template <typename T>
 void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    prepareStoreChunk()
+    prepareLoadStore()
         .offset(std::move(offset))
         .extent(std::move(extent))
         .fromRawPtr(ptr)
@@ -234,7 +253,7 @@ inline typename std::enable_if_t<
     auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>
 RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
-    auto storeChunkConfig = prepareStoreChunk();
+    auto storeChunkConfig = prepareLoadStore();
 
     auto joined_dim = joinedDimension();
     if (!joined_dim.has_value() && (o.size() != 1 || o.at(0) != 0u))
@@ -253,7 +272,7 @@ template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
-    return prepareStoreChunk()
+    return prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
         .enqueueStore<T>(std::forward<F>(createBuffer));
@@ -263,7 +282,7 @@ template <typename T>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset offset, Extent extent)
 {
-    return prepareStoreChunk()
+    return prepareLoadStore()
         .offset(std::move(offset))
         .extent(std::move(extent))
         .enqueueStore<T>();
@@ -271,7 +290,7 @@ RecordComponent::storeChunk(Offset offset, Extent extent)
 
 template <typename T, typename F>
 inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
-    internal::StoreChunkConfig cfg, F &&createBuffer)
+    internal::LoadStoreConfig cfg, F &&createBuffer)
 {
     auto [o, e] = std::move(cfg);
     verifyChunk<T>(o, e);

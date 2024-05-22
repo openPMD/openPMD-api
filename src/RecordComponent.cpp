@@ -66,7 +66,7 @@ RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
     setData(std::make_shared<Data_t>());
 }
 
-ConfigureLoadStore<void> RecordComponent::prepareStoreChunk()
+ConfigureLoadStore<void> RecordComponent::prepareLoadStore()
 {
     return ConfigureLoadStore<void>{*this};
 }
@@ -91,14 +91,14 @@ namespace
 
 template <typename T>
 DynamicMemoryView<T>
-RecordComponent::storeChunkSpan_impl(internal::StoreChunkConfig cfg)
+RecordComponent::storeChunkSpan_impl(internal::LoadStoreConfig cfg)
 {
     return storeChunkSpanCreateBuffer_impl<T>(
         std::move(cfg), &createSpanBufferFallback<T>);
 }
 #define OPENPMD_INSTANTIATE(dtype)                                             \
     template DynamicMemoryView<dtype> RecordComponent::storeChunkSpan_impl(    \
-        internal::StoreChunkConfig cfg);
+        internal::LoadStoreConfig cfg);
 OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
 #undef OPENPMD_INSTANTIATE
 
@@ -502,7 +502,7 @@ void RecordComponent::readBase(bool require_unit_si)
 void RecordComponent::storeChunk_impl(
     auxiliary::WriteBuffer buffer,
     Datatype dtype,
-    internal::StoreChunkConfigFromBuffer cfg)
+    internal::LoadStoreConfigWithBuffer cfg)
 {
     auto [o, e, memorySelection] = std::move(cfg);
     verifyChunk(dtype, o, e);
