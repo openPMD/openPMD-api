@@ -121,52 +121,67 @@ auto ConfigureLoadStore<ChildClass>::enqueueStore() -> DynamicMemoryView<T>
     return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
 }
 
-template <typename Ptr_Type>
-ConfigureStoreChunkFromBuffer<Ptr_Type>::ConfigureStoreChunkFromBuffer(
-    Ptr_Type buffer, parent_t &&parent)
+template <typename Ptr_Type, typename ChildClass>
+ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::
+    ConfigureStoreChunkFromBuffer(Ptr_Type buffer, parent_t &&parent)
     : parent_t(std::move(parent)), m_buffer(std::move(buffer))
 {}
 
-template <typename Ptr_Type>
-auto ConfigureStoreChunkFromBuffer<Ptr_Type>::as_parent() && -> parent_t &&
+template <typename Ptr_Type, typename ChildClass>
+auto ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::as_parent()
+    && -> parent_t &&
 {
     return std::move(*this);
 }
-template <typename Ptr_Type>
-auto ConfigureStoreChunkFromBuffer<Ptr_Type>::as_parent() & -> parent_t &
+template <typename Ptr_Type, typename ChildClass>
+auto ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::as_parent()
+    & -> parent_t &
 {
     return *this;
 }
-template <typename Ptr_Type>
-auto ConfigureStoreChunkFromBuffer<Ptr_Type>::as_parent()
+template <typename Ptr_Type, typename ChildClass>
+auto ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::as_parent()
     const & -> parent_t const &
 {
     return *this;
 }
 
-template <typename Ptr_Type>
-auto ConfigureStoreChunkFromBuffer<Ptr_Type>::storeChunkConfig() const
-    -> internal::StoreChunkConfigFromBuffer
+template <typename Ptr_Type, typename ChildClass>
+auto ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::storeChunkConfig()
+    const -> internal::StoreChunkConfigFromBuffer
 {
     return internal::StoreChunkConfigFromBuffer{
         this->getOffset(), this->getExtent(), m_mem_select};
 }
 
-template <typename Ptr_Type>
-auto ConfigureStoreChunkFromBuffer<Ptr_Type>::memorySelection(
-    MemorySelection sel) -> ConfigureStoreChunkFromBuffer &
+template <typename Ptr_Type, typename ChildClass>
+auto ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::memorySelection(
+    MemorySelection sel) -> return_type &
 {
     this->m_mem_select = std::make_optional<MemorySelection>(std::move(sel));
-    return *this;
+    return *static_cast<return_type *>(this);
 }
 
-template <typename Ptr_Type>
-auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueueStore() -> void
+template <typename Ptr_Type, typename ChildClass>
+auto ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::enqueueStore() -> void
 {
     this->m_rc.storeChunk_impl(
         asWriteBuffer(std::move(m_buffer)),
         determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
         storeChunkConfig());
+}
+
+template <typename Ptr_Type>
+ConfigureLoadStoreFromBuffer<Ptr_Type>::ConfigureLoadStoreFromBuffer(
+    Ptr_Type buffer, typename parent_t::parent_t &&parent)
+    : parent_t(std::move(buffer), std::move(parent))
+{
+    static_assert(
+        std::is_same_v<
+            Ptr_Type,
+            std::shared_ptr<typename Ptr_Type::element_type>>,
+        "ConfigureLoadStoreFromBuffer must be instantiated with a shared_ptr "
+        "type.");
 }
 
 #define INSTANTIATE_METHOD_TEMPLATES(base_class, dtype)                        \
@@ -181,13 +196,15 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
 #undef INSTANTIATE_METHOD_TEMPLATES_FOR_BASE
 
 #define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
+    template class ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype const>>; \
     template class ConfigureStoreChunkFromBuffer<                              \
-        std::shared_ptr<dtype const>>;                                         \
+        std::shared_ptr<dtype const>,                                          \
+        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype const>>>;           \
     template class ConfigureLoadStore<                                         \
-        ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>;          \
+        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype const>>>;           \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
         ConfigureLoadStore<                                                    \
-            ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>,      \
+            ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype const>>>,       \
         dtype)                                                                 \
     template class ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>;  \
     template class ConfigureLoadStore<                                         \

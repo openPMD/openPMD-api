@@ -11,8 +11,10 @@
 namespace openPMD
 {
 class RecordComponent;
-template <typename Ptr_Type>
+template <typename Ptr_Type, typename ChildClass>
 class ConfigureStoreChunkFromBuffer;
+template <typename Ptr_Type>
+class ConfigureLoadStoreFromBuffer;
 template <typename T>
 class DynamicMemoryView;
 
@@ -67,30 +69,28 @@ public:
     auto offset(Offset) -> return_type &;
     auto extent(Extent) -> return_type &;
 
+    template <typename T>
+    using shared_ptr_return_type = ConfigureLoadStoreFromBuffer<
+        std::shared_ptr<normalize_dataset_type<T> const>>;
+    template <typename T>
+    using unique_ptr_return_type = ConfigureStoreChunkFromBuffer<
+        UniquePtrWithLambda<normalize_dataset_type<T>>,
+        void>;
+
     // @todo rvalue references..?
     template <typename T>
-    auto fromSharedPtr(std::shared_ptr<T>)
-        -> ConfigureStoreChunkFromBuffer<
-            std::shared_ptr<normalize_dataset_type<T> const>>;
+    auto fromSharedPtr(std::shared_ptr<T>) -> shared_ptr_return_type<T>;
     template <typename T>
-    auto fromUniquePtr(UniquePtrWithLambda<T>)
-        -> ConfigureStoreChunkFromBuffer<
-            UniquePtrWithLambda<normalize_dataset_type<T>>>;
+    auto fromUniquePtr(UniquePtrWithLambda<T>) -> unique_ptr_return_type<T>;
     template <typename T, typename Del>
-    auto fromUniquePtr(std::unique_ptr<T, Del>)
-        -> ConfigureStoreChunkFromBuffer<
-            UniquePtrWithLambda<normalize_dataset_type<T>>>;
+    auto fromUniquePtr(std::unique_ptr<T, Del>) -> unique_ptr_return_type<T>;
     template <typename T>
-    auto
-    fromRawPtr(T *data) -> ConfigureStoreChunkFromBuffer<
-                            std::shared_ptr<normalize_dataset_type<T> const>>;
+    auto fromRawPtr(T *data) -> shared_ptr_return_type<T>;
     template <typename T_ContiguousContainer>
-    auto fromContiguousContainer(T_ContiguousContainer &data) ->
-        typename std::enable_if_t<
+    auto fromContiguousContainer(T_ContiguousContainer &data)
+        -> std::enable_if_t<
             auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
-            ConfigureStoreChunkFromBuffer<
-                std::shared_ptr<normalize_dataset_type<
-                    typename T_ContiguousContainer::value_type> const>>>;
+            shared_ptr_return_type<typename T_ContiguousContainer::value_type>>;
 
     template <typename T>
     [[nodiscard]] auto enqueueStore() -> DynamicMemoryView<T>;
@@ -98,15 +98,24 @@ public:
     // definition of class RecordComponent.
     template <typename T, typename F>
     [[nodiscard]] auto enqueueStore(F &&createBuffer) -> DynamicMemoryView<T>;
+
+    template <typename T>
+    [[nodiscard]] auto enqueueLoad() -> std::shared_ptr<T>;
 };
 
-template <typename Ptr_Type>
+template <typename Ptr_Type, typename ChildClass = void>
 class ConfigureStoreChunkFromBuffer
-    : public ConfigureLoadStore<ConfigureStoreChunkFromBuffer<Ptr_Type>>
+    : public ConfigureLoadStore<std::conditional_t<
+          std::is_void_v<ChildClass>,
+          /*then*/ ConfigureStoreChunkFromBuffer<Ptr_Type, void>,
+          /*else*/ ChildClass>>
 {
 public:
-    using parent_t =
-        ConfigureLoadStore<ConfigureStoreChunkFromBuffer<Ptr_Type>>;
+    using return_type = std::conditional_t<
+        std::is_void_v<ChildClass>,
+        /*then*/ ConfigureStoreChunkFromBuffer<Ptr_Type, void>,
+        /*else*/ ChildClass>;
+    using parent_t = ConfigureLoadStore<return_type>;
 
 private:
     template <typename T>
@@ -115,18 +124,37 @@ private:
     Ptr_Type m_buffer;
     std::optional<MemorySelection> m_mem_select;
 
-    ConfigureStoreChunkFromBuffer(Ptr_Type buffer, parent_t &&);
-
     auto storeChunkConfig() const -> internal::StoreChunkConfigFromBuffer;
 
+protected:
+    ConfigureStoreChunkFromBuffer(Ptr_Type buffer, parent_t &&);
+
 public:
-    auto memorySelection(MemorySelection) -> ConfigureStoreChunkFromBuffer &;
+    auto memorySelection(MemorySelection) -> return_type &;
 
     auto as_parent() && -> parent_t &&;
     auto as_parent() & -> parent_t &;
     auto as_parent() const & -> parent_t const &;
 
     auto enqueueStore() -> void;
+};
+
+template <typename Ptr_Type>
+class ConfigureLoadStoreFromBuffer
+    : public ConfigureStoreChunkFromBuffer<
+          Ptr_Type,
+          ConfigureLoadStoreFromBuffer<Ptr_Type>>
+{
+    using parent_t = ConfigureStoreChunkFromBuffer<
+        Ptr_Type,
+        ConfigureLoadStoreFromBuffer<Ptr_Type>>;
+    template <typename>
+    friend class ConfigureLoadStore;
+    ConfigureLoadStoreFromBuffer(
+        Ptr_Type buffer, typename parent_t::parent_t &&);
+
+public:
+    auto enqueueLoad() -> void;
 };
 } // namespace openPMD
 

@@ -138,7 +138,7 @@ class RecordComponent : public BaseRecordComponent
     friend T &internal::makeOwning(T &self, Series);
     template <typename ChildClass>
     friend class ConfigureLoadStore;
-    template <typename Ptr_Type>
+    template <typename Ptr_Type, typename ChildClass>
     friend class ConfigureStoreChunkFromBuffer;
 
 public:
