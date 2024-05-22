@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
@@ -75,6 +76,12 @@ void DatasetReader::call(
 template <class>
 inline constexpr bool always_false_v = false;
 
+static constexpr char const *warningMemorySelection =
+    "[Warning] Using a version of ADIOS2 that cannot reset memory selections "
+    "on a variable, once specified. When using memory selections, then please "
+    "specify it explicitly on all storeChunk() calls. Further info: "
+    "https://github.com/ornladios/ADIOS2/pull/4169.";
+
 template <typename T>
 void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
 {
@@ -97,6 +104,19 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     bp.name);
 
                 ba.getEngine().Put(var, ptr);
+                if (bp.param.memorySelection.has_value())
+                {
+                    if constexpr (CanTheMemorySelectionBeReset)
+                    {
+                        var.SetMemorySelection();
+                    }
+                    else if (!ba.m_impl->printedWarningsAlready.memorySelection)
+                    {
+                        std::cerr << warningMemorySelection << std::endl;
+                        ba.m_impl->printedWarningsAlready.memorySelection =
+                            true;
+                    }
+                }
             }
             else if constexpr (std::is_same_v<
                                    ptr_type,
@@ -159,6 +179,18 @@ struct RunUniquePtrPut
             ba.m_IO,
             bufferedPut.name);
         ba.getEngine().Put(var, ptr);
+        if (bufferedPut.memorySelection.has_value())
+        {
+            if constexpr (CanTheMemorySelectionBeReset)
+            {
+                var.SetMemorySelection();
+            }
+            else if (!ba.m_impl->printedWarningsAlready.memorySelection)
+            {
+                std::cerr << warningMemorySelection << std::endl;
+                ba.m_impl->printedWarningsAlready.memorySelection = true;
+            }
+        }
     }
 
     static constexpr char const *errorMsg = "RunUniquePtrPut";
