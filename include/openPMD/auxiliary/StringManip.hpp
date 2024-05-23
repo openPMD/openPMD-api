@@ -261,7 +261,6 @@ namespace auxiliary
         auto end = v.end();
         std::stringstream res;
         res << '[' << *it++;
-        res.operator<<(*it);
         for (; it != end; ++it)
         {
             res << ", " << *it;
