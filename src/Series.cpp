@@ -139,6 +139,11 @@ std::string Series::openPMD() const
 
 Series &Series::setOpenPMD(std::string const &o)
 {
+    if (o >= "2.0")
+    {
+        std::cerr << "[Warning] openPMD 2.0 is still under development."
+                  << std::endl;
+    }
     setAttribute("openPMD", o);
     return *this;
 }
