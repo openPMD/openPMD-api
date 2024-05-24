@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
@@ -278,10 +279,10 @@ void Attributable::flushAttributes(internal::FlushParams const &flushParams)
         }
     }
     // Do this outside the if branch to also setDirty to dirtyRecursive
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-    {
-        setDirty(false);
-    }
+    assert(
+        flushParams.flushLevel != FlushLevel::SkeletonOnly &&
+        flushParams.flushLevel != FlushLevel::CreateOrOpenFiles);
+    setDirty(false);
 }
 
 void Attributable::readAttributes(ReadMode mode)

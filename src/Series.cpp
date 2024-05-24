@@ -1412,9 +1412,13 @@ void Series::flushFileBased(
     case Access::READ_WRITE:
     case Access::CREATE:
     case Access::APPEND: {
-        bool allDirty = dirty();
+        bool const allDirty = dirty();
         for (auto it = begin; it != end; ++it)
         {
+            /* reset the dirty bit for every iteration (i.e. file)
+             * otherwise only the first iteration will have updates attributes
+             */
+            setDirty(allDirty);
             // Phase 1
             switch (openIterationIfDirty(it->first, it->second))
             {
@@ -1461,12 +1465,7 @@ void Series::flushFileBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
-            /* reset the dirty bit for every iteration (i.e. file)
-             * otherwise only the first iteration will have updates attributes
-             */
-            setDirty(allDirty);
         }
-        setDirty(false);
 
         // Phase 3
         if (flushIOHandler)

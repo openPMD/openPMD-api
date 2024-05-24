@@ -634,7 +634,11 @@ void CustomHierarchy::flush_internal(
     {
         dataset.flush(name, flushParams, /* set_defaults = */ false);
     }
-    setDirty(false);
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly &&
+        flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
+    {
+        setDirty(false);
+    }
 }
 
 void CustomHierarchy::flush(

@@ -364,12 +364,13 @@ void Iteration::flushIteration(internal::FlushParams const &flushParams)
         s.setParticlesPath(particlesPaths);
     }
 
-    if (access::write(IOHandler()->m_frontendAccess))
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly &&
+        flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
     {
-        flushAttributes(flushParams);
-    }
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-    {
+        if (access::write(IOHandler()->m_frontendAccess))
+        {
+            flushAttributes(flushParams);
+        }
         setDirty(false);
         meshes.setDirty(false);
         particles.setDirty(false);
