@@ -99,7 +99,7 @@ RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
     prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
-        .fromSharedPtr(newData)
+        .withSharedPtr(newData)
         .enqueueLoad();
     return newData;
 #else
@@ -107,7 +107,7 @@ RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
     prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
-        .fromSharedPtr(newData)
+        .withSharedPtr(newData)
         .enqueueLoad();
     return std::static_pointer_cast<T>(std::move(newData));
 #endif
@@ -134,7 +134,7 @@ inline void RecordComponent::loadChunk(
         operation.extent(std::move(e));
     }
 
-    operation.fromSharedPtr(std::move(data)).enqueueLoad();
+    operation.withSharedPtr(std::move(data)).enqueueLoad();
 }
 
 template <typename T_with_extent>
@@ -209,7 +209,7 @@ inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
     prepareLoadStore()
         .offset(std::move(offset))
         .extent(std::move(extent))
-        .fromRawPtr(ptr)
+        .withRawPtr(ptr)
         .enqueueLoad();
 }
 
@@ -220,7 +220,7 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
     prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
-        .fromSharedPtr(std::move(data))
+        .withSharedPtr(std::move(data))
         .enqueueStore();
 }
 
@@ -231,7 +231,7 @@ RecordComponent::storeChunk(UniquePtrWithLambda<T> data, Offset o, Extent e)
     prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
-        .fromUniquePtr(std::move(data))
+        .withUniquePtr(std::move(data))
         .enqueueStore();
 }
 
@@ -242,7 +242,7 @@ RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
     prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
-        .fromUniquePtr(std::move(data))
+        .withUniquePtr(std::move(data))
         .enqueueStore();
 }
 
@@ -252,7 +252,7 @@ void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
     prepareLoadStore()
         .offset(std::move(offset))
         .extent(std::move(extent))
-        .fromRawPtr(ptr)
+        .withRawPtr(ptr)
         .enqueueStore();
 }
 
@@ -273,7 +273,7 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
         storeChunkConfig.extent(std::move(e));
     }
 
-    std::move(storeChunkConfig).fromContiguousContainer(data).enqueueStore();
+    std::move(storeChunkConfig).withContiguousContainer(data).enqueueStore();
 }
 
 template <typename T, typename F>

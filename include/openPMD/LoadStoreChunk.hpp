@@ -99,15 +99,15 @@ public:
 
     // @todo rvalue references..?
     template <typename T>
-    auto fromSharedPtr(std::shared_ptr<T>) -> shared_ptr_return_type<T>;
+    auto withSharedPtr(std::shared_ptr<T>) -> shared_ptr_return_type<T>;
     template <typename T>
-    auto fromUniquePtr(UniquePtrWithLambda<T>) -> unique_ptr_return_type<T>;
+    auto withUniquePtr(UniquePtrWithLambda<T>) -> unique_ptr_return_type<T>;
     template <typename T, typename Del>
-    auto fromUniquePtr(std::unique_ptr<T, Del>) -> unique_ptr_return_type<T>;
+    auto withUniquePtr(std::unique_ptr<T, Del>) -> unique_ptr_return_type<T>;
     template <typename T>
-    auto fromRawPtr(T *data) -> shared_ptr_return_type<T>;
+    auto withRawPtr(T *data) -> shared_ptr_return_type<T>;
     template <typename T_ContiguousContainer>
-    auto fromContiguousContainer(T_ContiguousContainer &data)
+    auto withContiguousContainer(T_ContiguousContainer &data)
         -> std::enable_if_t<
             auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
             shared_ptr_return_type<typename T_ContiguousContainer::value_type>>;
