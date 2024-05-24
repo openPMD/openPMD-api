@@ -1676,13 +1676,17 @@ inline void write_test(const std::string &backend)
     auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
 
     auto variantTypeDataset = rc.loadChunkVariant();
+    auto variantTypeDataset2 = rc.prepareLoadStore().enqueueLoadVariant();
     rc.seriesFlush();
-    std::visit(
-        [](auto &&shared_ptr) {
-            std::cout << "First value in loaded chunk: '" << shared_ptr.get()[0]
-                      << '\'' << std::endl;
-        },
-        variantTypeDataset);
+    for (auto ptr : {&variantTypeDataset, &variantTypeDataset2})
+    {
+        std::visit(
+            [](auto &&shared_ptr) {
+                std::cout << "First value in loaded chunk: '"
+                          << shared_ptr.get()[0] << '\'' << std::endl;
+            },
+            *ptr);
+    }
 
 #ifndef _WIN32
     REQUIRE(read.rankTable(/* collective = */ false) == compare);

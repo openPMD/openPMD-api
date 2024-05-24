@@ -133,6 +133,29 @@ auto ConfigureLoadStore<ChildClass>::enqueueLoad() -> std::shared_ptr<T>
     return m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
 }
 
+namespace
+{
+    template <typename ConfigureLoadStore_t>
+    struct VisitorEnqueueLoadVariant
+    {
+        template <typename T>
+        static auto call(RecordComponent const &, ConfigureLoadStore_t &cfg) ->
+            typename ConfigureLoadStore_t::shared_ptr_dataset_types
+        {
+            return cfg.template enqueueLoad<T>();
+        }
+    };
+} // namespace
+
+template <typename ChildClass>
+auto ConfigureLoadStore<ChildClass>::enqueueLoadVariant()
+    -> shared_ptr_dataset_types
+{
+    return m_rc
+        .visit<VisitorEnqueueLoadVariant<ConfigureLoadStore<ChildClass>>>(
+            *this);
+}
+
 template <typename Ptr_Type, typename ChildClass>
 ConfigureStoreChunkFromBuffer<Ptr_Type, ChildClass>::
     ConfigureStoreChunkFromBuffer(Ptr_Type buffer, parent_t &&parent)

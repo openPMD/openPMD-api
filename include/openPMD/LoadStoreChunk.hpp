@@ -121,6 +121,10 @@ public:
 
     template <typename T>
     [[nodiscard]] auto enqueueLoad() -> std::shared_ptr<T>;
+
+    using shared_ptr_dataset_types = auxiliary::detail::
+        map_variant<auxiliary::detail::as_shared_pointer, dataset_types>::type;
+    [[nodiscard]] auto enqueueLoadVariant() -> shared_ptr_dataset_types;
 };
 
 template <typename Ptr_Type, typename ChildClass = void>
