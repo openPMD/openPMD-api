@@ -3035,12 +3035,12 @@ namespace
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
             int processedPadding =
-                padding != 0 ? padding : (match ? regexMatches[1].length() : 0);
+                padding != 0 ? padding : (match ? regexMatches[2].length() : 0);
             return {
                 match,
                 processedPadding,
                 padding < 0 ? padding
-                    : match ? std::stoull(regexMatches[1])
+                    : match ? std::stoull(regexMatches[2])
                             : 0,
                 index_of_extension.has_value()
                     ? std::make_optional<std::string>(
@@ -3049,17 +3049,26 @@ namespace
         };
     }
 
+    namespace
+    {
+        auto sanitize_regex(std::string const &input) -> std::string
+        {
+            std::regex specialChars{R"([-[\]{}()*+?.,\^$|#\s])"};
+            return std::regex_replace(input, specialChars, R"(\$&)");
+        }
+    } // namespace
+
     std::function<Match(std::string const &)> matcher(
         std::string const &prefix,
         int padding,
         std::string const &postfix,
         std::optional<std::string> const &filenameSuffix)
     {
-        std::string nameReg = "^" + prefix;
+        std::string nameReg = "^(" + sanitize_regex(prefix) + ")";
         size_t index_of_extension = 0;
         if (padding < 0)
         {
-            index_of_extension = 1;
+            index_of_extension = 3;
         }
         else if (padding > 0)
         {
@@ -3071,16 +3080,17 @@ namespace
             // iteration number via std::stoull(regexMatches[1])
             nameReg += "(([1-9][[:digit:]]*)?([[:digit:]]";
             nameReg += "{" + std::to_string(padding) + "}))";
-            index_of_extension = 4;
+            index_of_extension = 6;
         }
         else
         {
             // No padding specified, any number of digits is ok.
             nameReg += "([[:digit:]]";
             nameReg += "+)";
-            index_of_extension = 2;
+            index_of_extension = 4;
         }
-        nameReg += postfix + filenameSuffix.value_or("(\\.[[:alnum:]]+)") + "$";
+        nameReg += "(" + sanitize_regex(postfix) + ")" +
+            filenameSuffix.value_or("(\\.[[:alnum:]]+)") + "$";
         return buildMatcher(
             nameReg,
             padding,
