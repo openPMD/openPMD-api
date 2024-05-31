@@ -95,3 +95,30 @@ This pays tribute to the fact that in streaming mode, an iteration is sent to th
 
 .. literalinclude:: 10_streaming_write.py
    :language: python3
+
+
+Chunk provenance tracking using a rank table
+--------------------------------------------
+
+.. _rank_table:
+
+In a large parallel streaming setup, it is important to adhere to a certain concept of data locality when deciding which data to load from the producer.
+The openPMD-api has some mechanisms to help with this process:
+
+The API call ``BaseRecordComponent::availableChunks()``/``Base_Record_Component.available_chunks()`` returns the data chunks within a specific dataset that are available for loading, each chunk hereby annotating its MPI rank within the *data producer* in ``WrittenChunkInfo::sourceID``/``WrittenChunkInfo::source_ID``.
+
+In order to correlate this information with the MPI ranks of the *data consumer*, a **rank table** can be used in order to transmit an additional tag for each of the producer's MPI ranks. On the data producer side, the rank table can be set manually or automatically:
+
+
+* **automatically** Using the :ref:`JSON/TOML option <backend_independent_config>` ``rank_table``.
+  The suggested specification is ``{"rank_table": "hostname"}``, although the explicit values ``"mpi_processor_name"`` and ``"posix_hostname"`` are also accepted.
+  ``"hostname"`` resolves to the MPI processor name when the Series has been initialized with MPI, to the POSIX hostname otherwise (if that is available).
+* **manually:** Using the API call ``Series::setRankTable(std::string const &myRankInfo)`` that specifies the current rank's tag.
+  This can be used to set custom tags, identifying e.g. NUMA nodes or groups of compute nodes.
+
+The rank table takes the form of a 2-dimensional dataset, listing the tags as null-terminated strings line by line in order of the MPI ranks and can be loaded using ``Series::rankTable()``/``Series.get_rank_table()``.
+
+Setting the rank table is **collective**, though the collective action is only performed upon flushing.
+Reading the rank table requires specifying if the read operation should be done collectively (better for performance), or independently.
+
+In order to retrieve the corresponding information on the **consumer side**, the function ``host_info::byMethod()``/``HostInfo.get()`` can be used for retrieving the local rank's information, or alternatively ``host_info::byMethodCollective()``/``HostInfo.get_info()`` for retrieving the rank table for all consumer ranks.

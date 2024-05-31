@@ -2,6 +2,7 @@
  * To guarantee a correct call to Init, launch the tests manually.
  */
 #include "openPMD/IO/ADIOS/macros.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/openPMD.hpp"
@@ -417,7 +418,8 @@ void available_chunks_test(std::string const &file_ending)
                << "\"" << std::to_string(mpi_size) << "\"" << R"END(
             }
         }
-    }
+    },
+    "rank_table": "hostname"
 }
 )END";
 
@@ -525,8 +527,11 @@ TEST_CASE("extend_dataset", "[parallel]")
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 TEST_CASE("adios_write_test", "[parallel][adios]")
 {
-    Series o =
-        Series("../samples/parallel_write.bp", Access::CREATE, MPI_COMM_WORLD);
+    Series o = Series(
+        "../samples/parallel_write.bp",
+        Access::CREATE,
+        MPI_COMM_WORLD,
+        R"(rank_table= "hostname")");
 
     int size{-1};
     int rank{-1};
@@ -564,6 +569,48 @@ TEST_CASE("adios_write_test", "[parallel][adios]")
     e["positionOffset"]["x"].storeChunk(positionOffset_local, {mpi_rank}, {1});
 
     o.flush();
+    o.close();
+
+    chunk_assignment::RankMeta compare;
+    {
+        auto hostname =
+            host_info::byMethod(host_info::Method::MPI_PROCESSOR_NAME);
+        for (int i = 0; i < size; ++i)
+        {
+            compare[i] = hostname;
+        }
+    }
+
+    {
+        Series i(
+            "../samples/parallel_write.bp",
+            Access::READ_LINEAR,
+            MPI_COMM_WORLD);
+        i.parseBase();
+        REQUIRE(i.rankTable(/* collective = */ true) == compare);
+    }
+    {
+        Series i(
+            "../samples/parallel_write.bp",
+            Access::READ_LINEAR,
+            MPI_COMM_WORLD);
+        i.parseBase();
+        REQUIRE(i.rankTable(/* collective = */ false) == compare);
+    }
+    {
+        Series i(
+            "../samples/parallel_write.bp",
+            Access::READ_RANDOM_ACCESS,
+            MPI_COMM_WORLD);
+        REQUIRE(i.rankTable(/* collective = */ true) == compare);
+    }
+    {
+        Series i(
+            "../samples/parallel_write.bp",
+            Access::READ_RANDOM_ACCESS,
+            MPI_COMM_WORLD);
+        REQUIRE(i.rankTable(/* collective = */ false) == compare);
+    }
 }
 
 TEST_CASE("adios_write_test_zero_extent", "[parallel][adios]")
@@ -716,7 +763,8 @@ void close_iteration_test(std::string const &file_ending)
 
     std::vector<int> data{2, 4, 6, 8};
     // { // we do *not* need these parentheses
-    Series write(name, Access::CREATE, MPI_COMM_WORLD);
+    Series write(
+        name, Access::CREATE, MPI_COMM_WORLD, R"(rank_table= "hostname")");
     {
         Iteration it0 = write.iterations[0];
         auto E_x = it0.meshes["E"]["x"];
@@ -764,6 +812,42 @@ void close_iteration_test(std::string const &file_ending)
         }
         auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
         REQUIRE_THROWS(read.flush());
+    }
+
+    chunk_assignment::RankMeta compare;
+    {
+        auto hostname =
+            host_info::byMethod(host_info::Method::MPI_PROCESSOR_NAME);
+        for (unsigned i = 0; i < mpi_size; ++i)
+        {
+            compare[i] = hostname;
+        }
+    }
+
+    for (auto const &filename :
+         {"../samples/close_iterations_parallel_%T.",
+          "../samples/close_iterations_parallel_0.",
+          "../samples/close_iterations_parallel_1."})
+    {
+        for (auto const &[at, read_collectively] :
+             {std::make_pair(Access::READ_LINEAR, true),
+              std::make_pair(Access::READ_LINEAR, false),
+              std::make_pair(Access::READ_RANDOM_ACCESS, true),
+              std::make_pair(Access::READ_RANDOM_ACCESS, false)})
+        {
+            std::cout << filename << file_ending << "\t"
+                      << (at == Access::READ_LINEAR ? "linear" : "random")
+                      << "\t" << read_collectively << std::endl;
+            Series i(filename + file_ending, at, MPI_COMM_WORLD);
+            if (at == Access::READ_LINEAR)
+            {
+                i.parseBase();
+            }
+            // Need this in file-based iteration encoding
+            i.iterations.begin()->second.open();
+            REQUIRE(
+                i.rankTable(/* collective = */ read_collectively) == compare);
+        }
     }
 }
 

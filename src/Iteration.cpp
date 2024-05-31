@@ -209,6 +209,15 @@ void Iteration::flushFileBased(
         fCreate.name = filename;
         IOHandler()->enqueue(IOTask(&s.writable(), fCreate));
 
+        /*
+         * If it was written before, then in the context of another iteration.
+         */
+        s.get().m_rankTable.m_attributable.written() = false;
+        s.get()
+            .m_rankTable.m_attributable.get()
+            .m_writable.abstractFilePosition.reset();
+        s.flushRankTable();
+
         /* create basePath */
         Parameter<Operation::CREATE_PATH> pCreate;
         pCreate.path = auxiliary::replace_first(s.basePath(), "%T/", "");

@@ -77,6 +77,8 @@ For a consistent user interface, backends shall follow the following rules:
 Backend-independent JSON configuration
 --------------------------------------
 
+.. _backend_independent_config:
+
 The openPMD backend can be chosen via the JSON/TOML key ``backend`` which recognizes the alternatives ``["hdf5", "adios2", "json"]``.
 
 The iteration encoding can be chosen via the JSON/TOML key ``iteration_encoding`` which recognizes the alternatives ``["file_based", "group_based", "variable_based"]``.
@@ -96,6 +98,8 @@ The key ``resizable`` can be passed to ``Dataset`` options.
 It if set to ``{"resizable": true}``, this declares that it shall be allowed to increased the ``Extent`` of a ``Dataset`` via ``resetDataset()`` at a later time, i.e., after it has been first declared (and potentially written).
 For HDF5, resizable Datasets come with a performance penalty.
 For JSON and ADIOS2, all datasets are resizable, independent of this option.
+
+The key ``rank_table`` allows specifying the creation of a **rank table**, used for tracking :ref:`chunk provenance especially in streaming setups <rank_table>`, refer to the streaming documentation for details.
 
 Configuration Structure per Backend
 -----------------------------------
