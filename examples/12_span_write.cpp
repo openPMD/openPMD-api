@@ -28,8 +28,28 @@ void span_write(std::string const &filename)
     for (size_t i = 0; i < 10; ++i)
     {
         Iteration iteration = iterations[i];
-        Record electronPositions = iteration.particles["e"]["position"];
+        auto patches = iteration.particles["e"].particlePatches;
 
+        for (auto record : {"offset", "extent"})
+        {
+            for (auto component : {"x", "y", "z"})
+            {
+                patches[record][component].resetDataset(
+                    {Datatype::DOUBLE, {1}});
+                *patches[record][component]
+                     .storeChunk<double>({0}, {1})
+                     .currentBuffer()
+                     .data() = 4.2;
+            }
+        }
+        for (auto record : {"numParticlesOffset", "numParticles"})
+        {
+            patches[record].resetDataset({Datatype::INT, {1}});
+            *patches[record].storeChunk<int>({0}, {1}).currentBuffer().data() =
+                42;
+        }
+
+        Record electronPositions = iteration.particles["e"]["position"];
         size_t j = 0;
         for (auto const &dim : {"x", "y", "z"})
         {

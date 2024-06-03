@@ -148,10 +148,7 @@ namespace
 {
     bool flushParticlePatches(ParticlePatches const &particlePatches)
     {
-        return particlePatches.find("numParticles") != particlePatches.end() &&
-            particlePatches.find("numParticlesOffset") !=
-            particlePatches.end() &&
-            particlePatches.size() >= 3;
+        return !particlePatches.empty();
     }
 } // namespace
 
