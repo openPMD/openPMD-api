@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 
 #if openPMD_USE_VERIFY
 #define VERIFY(CONDITION, TEXT)                                                \
@@ -1044,7 +1045,14 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
                 performDataWrite = false;
                 break;
             }
-            performDataWrite = performDataWrite && m_engineType == "bp5";
+            performDataWrite = performDataWrite &&
+                (m_engineType == "bp5" ||
+                 /* this second check should be sufficient, but we leave the
+                    first check in as a safeguard against renamings in ADIOS2.
+                    Also do a lowerCase transform since the docstring of
+                    `Engine::Type()` claims that the return value is in
+                    lowercase, but for BP5 this does not seem true. */
+                 auxiliary::lowerCase(engine.Type()) == "bp5writer");
 
             if (performDataWrite)
             {
