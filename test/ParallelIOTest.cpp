@@ -1135,6 +1135,41 @@ TEST_CASE("hipace_like_write", "[parallel]")
 }
 #endif
 
+#if openPMD_HAVE_ADIOS2 && openPMD_HAS_ADIOS_2_9
+TEST_CASE("independent_write_with_collective_flush", "[parallel]")
+{
+    Series write(
+        "../samples/independent_write_with_collective_flush.bp5",
+        Access::CREATE,
+        MPI_COMM_WORLD,
+        "adios2.engine.preferred_flush_target = \"buffer\"");
+    int size, rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    auto iteration = write.iterations[0];
+    auto E_x = iteration.meshes["E"]["x"];
+    E_x.resetDataset({Datatype::DOUBLE, {10}});
+    write.flush();
+    if (rank == 1)
+    {
+        E_x.storeChunk(
+            std::unique_ptr<double[]>{new double[10]{4.2}}, {0}, {10});
+    }
+    /*
+     * Now, the iteration is dirty only on rank 1. But the following flush must
+     * run collectively anyway. The test has been designed in such a way that
+     * the PerformDataWrite() call required by the disk flush target will
+     * conflict with the default buffer target that will run in the destructor,
+     * unless the flush in the next line really is collective.
+     */
+    std::cout << "ENTER" << std::endl;
+    MPI_Barrier(MPI_COMM_WORLD);
+    iteration.seriesFlush("adios2.engine.preferred_flush_target = \"disk\"");
+    MPI_Barrier(MPI_COMM_WORLD);
+    std::cout << "LEAVE" << std::endl;
+}
+#endif
+
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 
 void adios2_streaming(bool variableBasedLayout)
