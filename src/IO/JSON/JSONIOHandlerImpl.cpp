@@ -1039,6 +1039,13 @@ void JSONIOHandlerImpl::deregister(
     m_files.erase(writable);
 }
 
+void JSONIOHandlerImpl::touch(
+    Writable *writable, Parameter<Operation::TOUCH> const &)
+{
+    auto file = refreshFileFromParent(writable);
+    m_dirty.emplace(std::move(file));
+}
+
 auto JSONIOHandlerImpl::getFilehandle(File const &fileName, Access access)
     -> std::tuple<std::unique_ptr<FILEHANDLE>, std::istream *, std::ostream *>
 {

@@ -240,6 +240,8 @@ public:
     void
     deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
 
+    void touch(Writable *, Parameter<Operation::TOUCH> const &) override;
+
     std::future<void> flush();
 
 private:

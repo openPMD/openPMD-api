@@ -22,6 +22,7 @@
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/IOTask.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -315,6 +316,8 @@ void Iteration::flushVariableBased(
 
 void Iteration::flush(internal::FlushParams const &flushParams)
 {
+    Parameter<Operation::TOUCH> touch;
+    IOHandler()->enqueue(IOTask(&writable(), touch));
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         for (auto &m : meshes)

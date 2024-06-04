@@ -80,6 +80,7 @@ public:
     void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
     void
     deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
+    void touch(Writable *, Parameter<Operation::TOUCH> const &) override;
 
     std::unordered_map<Writable *, std::string> m_fileNames;
     std::unordered_map<std::string, hid_t> m_fileNamesWithID;

@@ -895,6 +895,7 @@ void ADIOS2IOHandlerImpl::openFile(
     // lazy opening is deathly in parallel situations
     auto &fileData = getFileData(file, IfFileNotOpen::OpenImplicitly);
     *parameters.out_parsePreference = fileData.parsePreference;
+    m_dirty.emplace(std::move(file));
 }
 
 void ADIOS2IOHandlerImpl::closeFile(
@@ -1480,6 +1481,13 @@ void ADIOS2IOHandlerImpl::deregister(
     Writable *writable, Parameter<Operation::DEREGISTER> const &)
 {
     m_files.erase(writable);
+}
+
+void ADIOS2IOHandlerImpl::touch(
+    Writable *writable, Parameter<Operation::TOUCH> const &)
+{
+    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    m_dirty.emplace(std::move(file));
 }
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)

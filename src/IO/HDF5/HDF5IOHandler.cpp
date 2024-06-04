@@ -2910,6 +2910,11 @@ void HDF5IOHandlerImpl::deregister(
     m_fileNames.erase(writable);
 }
 
+void HDF5IOHandlerImpl::touch(Writable *, Parameter<Operation::TOUCH> const &)
+{
+    // no-op
+}
+
 std::optional<HDF5IOHandlerImpl::File>
 HDF5IOHandlerImpl::getFile(Writable *writable)
 {

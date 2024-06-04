@@ -421,6 +421,14 @@ std::future<void> AbstractIOHandlerImpl::flush()
                 deregister(i.writable, parameter);
                 break;
             }
+            case O::TOUCH: {
+                auto &parameter =
+                    deref_dynamic_cast<Parameter<O::TOUCH>>(i.parameter.get());
+                writeToStderr(
+                    "[", i.writable->parent, "->", i.writable, "] DEREGISTER");
+                touch(i.writable, parameter);
+                break;
+            }
             }
         }
         catch (...)

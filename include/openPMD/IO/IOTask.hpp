@@ -48,20 +48,36 @@ Writable *getWritable(Attributable *);
 /** Type of IO operation between logical and persistent data.
  */
 OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
-    CREATE_FILE,      CHECK_FILE,     OPEN_FILE,     CLOSE_FILE,
+    CREATE_FILE,
+    CHECK_FILE,
+    OPEN_FILE,
+    CLOSE_FILE,
     DELETE_FILE,
 
-    CREATE_PATH,      CLOSE_PATH,     OPEN_PATH,     DELETE_PATH,
+    CREATE_PATH,
+    CLOSE_PATH,
+    OPEN_PATH,
+    DELETE_PATH,
     LIST_PATHS,
 
-    CREATE_DATASET,   EXTEND_DATASET, OPEN_DATASET,  DELETE_DATASET,
-    WRITE_DATASET,    READ_DATASET,   LIST_DATASETS, GET_BUFFER_VIEW,
+    CREATE_DATASET,
+    EXTEND_DATASET,
+    OPEN_DATASET,
+    DELETE_DATASET,
+    WRITE_DATASET,
+    READ_DATASET,
+    LIST_DATASETS,
+    GET_BUFFER_VIEW,
 
-    DELETE_ATT,       WRITE_ATT,      READ_ATT,      LIST_ATTS,
+    DELETE_ATT,
+    WRITE_ATT,
+    READ_ATT,
+    LIST_ATTS,
 
     ADVANCE,
     AVAILABLE_CHUNKS, //!< Query chunks that can be loaded in a dataset
-    DEREGISTER //!< Inform the backend that an object has been deleted.
+    DEREGISTER, //!< Inform the backend that an object has been deleted.
+    TOUCH //!< tell the backend that the file is to be considered active
 }; // note: if you change the enum members here, please update
    // docs/source/dev/design.rst
 
@@ -656,6 +672,23 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DEREGISTER>
 
     // Just for verbose logging.
     void const *former_parent = nullptr;
+};
+
+template <>
+struct OPENPMDAPI_EXPORT Parameter<Operation::TOUCH> : public AbstractParameter
+{
+    explicit Parameter() = default;
+
+    Parameter(Parameter const &) = default;
+    Parameter(Parameter &&) = default;
+
+    Parameter &operator=(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+
+    std::unique_ptr<AbstractParameter> to_heap() && override
+    {
+        return std::make_unique<Parameter<Operation::TOUCH>>(std::move(*this));
+    }
 };
 
 /** @brief Self-contained description of a single IO operation.
