@@ -133,8 +133,7 @@ void write_test_zero_extent(
     Series o = Series(
         filePath.append(".").append(file_ending),
         Access::CREATE,
-        MPI_COMM_WORLD,
-        "adios2.engine.preferred_flush_target = \"buffer\"");
+        MPI_COMM_WORLD);
 
     int const max_step = 100;
 
