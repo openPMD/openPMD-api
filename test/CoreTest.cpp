@@ -418,7 +418,7 @@ TEST_CASE("particleSpecies_modification_test", "[core]")
     species["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     REQUIRE(1 == species.count("positionOffset"));
     auto &patches = species.particlePatches;
-    REQUIRE(2 == patches.size());
+    REQUIRE(0 == patches.size());
     REQUIRE(0 == patches.numAttributes());
     auto &offset = patches["offset"];
     REQUIRE(0 == offset.size());
@@ -720,10 +720,10 @@ TEST_CASE("structure_test", "[core]")
             .parent() == getWritable(&o.iterations[1].particles["P"]));
 
     REQUIRE(
-        1 ==
+        0 ==
         o.iterations[1].particles["P"].particlePatches.count("numParticles"));
     REQUIRE(
-        1 ==
+        0 ==
         o.iterations[1].particles["P"].particlePatches.count(
             "numParticlesOffset"));
 
