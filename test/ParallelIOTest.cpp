@@ -1031,10 +1031,16 @@ void hipace_like_write(std::string const &file_ending)
     int const last_step = 100;
     int const my_first_step = i_mpi_rank * int(local_Nz);
     int const all_last_step = last_step + (i_mpi_size - 1) * int(local_Nz);
+
+    bool participate_in_barrier = true;
     for (int first_rank_step = 0; first_rank_step < all_last_step;
          ++first_rank_step)
     {
-        MPI_Barrier(MPI_COMM_WORLD);
+        if (participate_in_barrier)
+        {
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
+        participate_in_barrier = true;
 
         // first_rank_step: this step will "lead" the opening of an output step
         // step on the local rank
@@ -1073,16 +1079,25 @@ void hipace_like_write(std::string const &file_ending)
 
         // has this ranks started computations yet?
         if (step < 0)
+        {
+            participate_in_barrier = false;
             continue;
+        }
         // has this ranks stopped computations?
         if (step > last_step)
+        {
+            participate_in_barrier = false;
             continue;
+        }
         // does this rank contribute to with output currently?
         bool const rank_in_output_step =
             std::find(iterations.begin(), iterations.end(), step) !=
             iterations.end();
         if (!rank_in_output_step)
+        {
+            participate_in_barrier = false;
             continue;
+        }
 
         // now we write (parallel, independent I/O)
         auto it = series.iterations[step];
