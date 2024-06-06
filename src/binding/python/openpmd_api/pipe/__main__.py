@@ -166,28 +166,6 @@ class deferred_load:
         self.extent = extent
 
 
-class particle_patch_load:
-    """
-    A deferred load/store operation for a particle patch.
-    Our particle-patch API requires that users pass a concrete value for
-    storing, even if the actual write operation occurs much later at
-    series.flush().
-    So, unlike other record components, we cannot call .store_chunk() with
-    a buffer that has not yet been filled, but must wait until the point where
-    we actual have the data at hand already.
-    In short: calling .store() must be deferred, until the data has been fully
-    read from the sink.
-    This class stores the needed parameters to .store().
-    """
-    def __init__(self, data, dest):
-        self.data = data
-        self.dest = dest
-
-    def run(self):
-        for index, item in enumerate(self.data):
-            self.dest.store(index, item)
-
-
 class pipe:
     """
     Represents the configuration of one "pipe" pass.
@@ -292,7 +270,6 @@ class pipe:
                             print("\t {0}".format(r))
                 out_iteration = write_iterations[in_iteration.iteration_index]
                 sys.stdout.flush()
-                self.__particle_patches = []
                 self.__copy(
                     in_iteration, out_iteration,
                     current_path + str(in_iteration.iteration_index) + "/")
@@ -301,10 +278,6 @@ class pipe:
                         deferred.dynamicView.current_buffer(), deferred.offset,
                         deferred.extent)
                 in_iteration.close()
-                for patch_load in self.__particle_patches:
-                    patch_load.run()
-                out_iteration.close()
-                self.__particle_patches.clear()
                 self.loads.clear()
                 sys.stdout.flush()
         elif isinstance(src, io.Record_Component) and (not is_container
@@ -333,12 +306,6 @@ class pipe:
                 self.loads.append(
                     deferred_load(src, span, local_chunk.offset,
                                   local_chunk.extent))
-        elif isinstance(src, io.Patch_Record_Component) and (not is_container
-                                                             or src.scalar):
-            dest.reset_dataset(io.Dataset(src.dtype, src.shape))
-            if self.comm.rank == 0:
-                self.__particle_patches.append(
-                    particle_patch_load(src.load(), dest))
         elif isinstance(src, io.Iteration):
             self.__copy(src.meshes, dest.meshes, current_path + "meshes/")
             self.__copy(src.particles, dest.particles,
