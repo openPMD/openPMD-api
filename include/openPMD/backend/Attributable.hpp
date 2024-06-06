@@ -246,6 +246,8 @@ public:
      * of parents. This method will walk up the parent list until it reaches
      * an object that has no parent, which is the Series object, and flush()-es
      * it.
+     * If the Attributable is an Iteration or any object contained in an
+     * Iteration, that Iteration will be flushed regardless of its dirty status.
      *
      * @param backendConfig Further backend-specific instructions on how to
      *                      implement this flush call.
