@@ -14,7 +14,8 @@
 # This script provides a workaround by putting the called sub-command into
 # a script in a temporary file.
 
-mpiexec -n 1 ls --all \
+ls="$(which ls)"
+mpiexec "$ls" -m \
     && echo "MPIRUN WORKING AGAIN, PLEASE REMOVE WORKAROUND" >&2 \
     && exit 1 \
     || true
