@@ -49,11 +49,8 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
-<<<<<<< HEAD
-#include <variant>
-=======
 #include <unordered_map>
->>>>>>> 881f29767 (Further test and implement reopening of Iterations)
+#include <variant>
 #include <vector>
 
 // expose private and protected members for invasive testing
