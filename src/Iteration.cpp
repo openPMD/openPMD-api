@@ -718,8 +718,9 @@ auto Iteration::beginStep(bool reread) -> BeginStepStatus
 }
 
 auto Iteration::beginStep(
-    std::optional<Iteration> thisObject, Series &series, bool reread)
-    -> BeginStepStatus
+    std::optional<Iteration> thisObject,
+    Series &series,
+    bool reread) -> BeginStepStatus
 {
     BeginStepStatus res;
     using IE = IterationEncoding;

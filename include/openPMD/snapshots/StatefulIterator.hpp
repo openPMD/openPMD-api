@@ -91,8 +91,8 @@ namespace detail
 
         auto get_iteration_index() const
             -> std::optional<Iteration::IterationIndex_t const *>;
-        auto get_iteration_index()
-            -> std::optional<Iteration::IterationIndex_t *>;
+        auto
+        get_iteration_index() -> std::optional<Iteration::IterationIndex_t *>;
 
         enum class AtTheEdge : bool
         {
@@ -298,8 +298,8 @@ private:
     auto resetCurrentIterationToBegin(
         size_t num_skipped_iterations,
         std::vector<iteration_index_t> current_iterations) -> void;
-    auto peekCurrentlyOpenIteration() const
-        -> std::optional<value_type const *>;
+    auto
+    peekCurrentlyOpenIteration() const -> std::optional<value_type const *>;
     auto peekCurrentlyOpenIteration() -> std::optional<value_type *>;
 
     auto reparse_possibly_deleted_iteration(iteration_index_t) -> void;

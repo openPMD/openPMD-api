@@ -3029,8 +3029,8 @@ namespace
 namespace
 {
     auto make_writing_stateful_iterator(
-        Series const &copied_series, internal::SeriesData &series)
-        -> std::function<StatefulIterator *()>
+        Series const &copied_series,
+        internal::SeriesData &series) -> std::function<StatefulIterator *()>
     {
         if (!series.m_sharedReadIterations)
         {
@@ -3040,8 +3040,8 @@ namespace
         return [ptr = series.m_sharedReadIterations.get()]() { return ptr; };
     }
     auto make_reading_stateful_iterator(
-        Series copied_series, internal::SeriesData &series)
-        -> std::function<StatefulIterator *()>
+        Series copied_series,
+        internal::SeriesData &series) -> std::function<StatefulIterator *()>
     {
         return [s = std::move(copied_series), &series]() mutable {
             if (!series.m_sharedReadIterations)
