@@ -46,8 +46,7 @@ void init_CustomHierarchy(py::module &m)
         CustomHierarchy,
         ConversibleContainer<CustomHierarchy>,
         Container<CustomHierarchy>,
-        Attributable>
-        custom_hierarchy(m, "CustomHierarchy");
+        Attributable> custom_hierarchy(m, "CustomHierarchy");
 
     finalize_container<PyCustomHierarchyContainer>(py_ch_cont);
 }
