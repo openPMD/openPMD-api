@@ -1603,28 +1603,18 @@ struct ReadFromAnyType
     }
 };
 
-inline void write_test(const std::string &backend)
+inline void write_test(
+    const std::string &backend,
+    std::string jsonCfg = "{}",
+    bool test_rank_table = true)
 {
-#ifdef _WIN32
-    std::string jsonCfg = "{}";
-#else
-    std::string jsonCfg = R"({"rank_table": "posix_hostname"})";
+#ifndef _WIN32
+    jsonCfg = json::merge(jsonCfg, R"({"rank_table": "posix_hostname"})");
     chunk_assignment::RankMeta compare{
         {0,
          host_info::byMethod(
              host_info::methodFromStringDescription("posix_hostname", false))}};
 #endif
-    jsonCfg = json::merge(jsonCfg, R"(
-{
-  "json": {
-    "dataset": {
-      "mode": "template"
-    },
-    "attribute": {
-      "mode": "short"
-    }
-  }
-})");
     Series o =
         Series("../samples/serial_write." + backend, Access::CREATE, jsonCfg);
 
@@ -1741,7 +1731,10 @@ inline void write_test(const std::string &backend)
         variantTypeDataset);
 
 #ifndef _WIN32
-    REQUIRE(read.rankTable(/* collective = */ false) == compare);
+    if (test_rank_table)
+    {
+        REQUIRE(read.rankTable(/* collective = */ false) == compare);
+    }
 #endif
 }
 
@@ -1749,7 +1742,41 @@ TEST_CASE("write_test", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        write_test(t);
+        if (t == "json")
+        {
+            write_test(
+                "template." + t,
+                R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})",
+                false);
+            write_test(
+                t,
+                R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "dataset"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})",
+                true);
+        }
+        else
+        {
+            write_test(t);
+        }
         Series list{"../samples/serial_write." + t, Access::READ_ONLY};
         helper::listSeries(list);
     }
