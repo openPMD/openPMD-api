@@ -137,21 +137,41 @@ bool StatefulSnapshotsContainer::empty() const
 }
 auto StatefulSnapshotsContainer::size() const -> size_t
 {
-    throw std::runtime_error("Unimplemented");
+    /*
+     * This should return the sum over all IO steps, counting the number of
+     * snapshots contained in each step. This information should be tracked in
+     * future in order to have knowledge on where to find an Iteration once it
+     * was seen.
+     */
+    throw std::runtime_error(
+        "[StatefulSnapshotsContainer::size()] Unimplemented");
 }
 
-auto StatefulSnapshotsContainer::at(key_type const &) const
+auto StatefulSnapshotsContainer::at(key_type const &key) const
     -> mapped_type const &
 {
-    throw std::runtime_error(
-        "Item access not (yet) implemented on a stateful "
-        "container/iterator.");
+    auto it = get();
+    auto current_iteration = it->peekCurrentlyOpenIteration();
+    if (!current_iteration.has_value() || (*current_iteration)->first != key)
+    {
+        throw std::out_of_range(
+            "[StatefulSnapshotsContainer::at()] Cannot skip to a Snapshot that "
+            "is currently not active in a const context.");
+    }
+    return (*current_iteration)->second;
 }
-auto StatefulSnapshotsContainer::at(key_type const &) -> mapped_type &
+auto StatefulSnapshotsContainer::at(key_type const &key) -> mapped_type &
 {
-    throw std::runtime_error(
-        "Item access not (yet) implemented on a stateful "
-        "container/iterator.");
+    auto base_iterator = get();
+    auto result =
+        base_iterator->seek({StatefulIterator::Seek::Seek_Iteration_t{key}});
+    if (result->is_end())
+    {
+        throw std::out_of_range(
+            "[StatefulSnapshotsContainer::at()] Cannot (yet) skip to "
+            "a Snapshot from an I/O step that is not active.");
+    }
+    return (*result)->second;
 }
 
 auto StatefulSnapshotsContainer::operator[](key_type const &key)
@@ -167,12 +187,9 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     auto &s = shared->value();
     auto access = s.series.IOHandler()->m_frontendAccess;
 
-    // @todo distinguish read_write
     if (access == Access::READ_WRITE)
     {
-        throw std::runtime_error(
-            "[StatefulSnapshotsContainer::operator[]()] Unimplemented for "
-            "READ_WRITE mode.");
+        throw std::runtime_error("Stateful iteration on a read-write Series.");
     }
     if (access::write(access))
     {
@@ -237,6 +254,12 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     {
         auto result = base_iterator->seek(
             {StatefulIterator::Seek::Seek_Iteration_t{key}});
+        if (result->is_end())
+        {
+            throw std::out_of_range(
+                "[StatefulSnapshotsContainer::operator[]()] Cannot (yet) skip "
+                "to a Snapshot from an I/O step that is not active.");
+        }
         return (*result)->second;
     }
     throw error::Internal("Control flow error: This should be unreachable.");
@@ -244,18 +267,23 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
 
 auto StatefulSnapshotsContainer::clear() -> void
 {
-    throw std::runtime_error("Unimplemented");
+    throw std::runtime_error(
+        "[StatefulSnapshotsContainer::clear()] Unimplemented");
 }
 
 auto StatefulSnapshotsContainer::find(key_type const &) -> iterator
 {
-    throw std::runtime_error("Unimplemented");
+    throw error::WrongAPIUsage(
+        "[StatefulSnapshotsContainer::find] `find()` not available in stateful "
+        "iteration as there is only one shared iterator per Series and "
+        "`find()` would need to modify that.");
 }
 auto StatefulSnapshotsContainer::find(key_type const &) const -> const_iterator
 {
     throw error::WrongAPIUsage(
-        "[StatefulSnapshotsContainer::find] Const iteration not possible on a "
-        "stateful container/iterator.");
+        "[StatefulSnapshotsContainer::find] `find()` not available in stateful "
+        "iteration as there is only one shared iterator per Series and "
+        "`find()` would need to modify that.");
 }
 
 auto StatefulSnapshotsContainer::contains(key_type const &) const -> bool
