@@ -82,6 +82,8 @@ enum class Access
     APPEND //!< write new iterations to an existing series without reading
 }; // Access
 
+std::ostream &operator<<(std::ostream &o, Access const &a);
+
 namespace access
 {
     inline bool readOnly(Access access)

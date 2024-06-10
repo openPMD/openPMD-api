@@ -3044,22 +3044,56 @@ namespace
     }
 } // namespace
 
-Snapshots Series::snapshots()
+Snapshots Series::snapshots(std::optional<bool> const access_synchronously)
 {
     auto &series = get();
     if (series.m_deferred_initialization.has_value())
     {
         runDeferredInitialization();
     }
+    auto access = IOHandler()->m_frontendAccess;
+    auto guard_wrong_access_specification =
+        [&](bool access_must_be_synchronous) {
+            if (!access_synchronously.has_value())
+            {
+                return;
+            }
+            if (access_must_be_synchronous != *access_synchronously)
+            {
+                std::stringstream error;
+                error << "[Series::snapshots()] Specified "
+                      << (*access_synchronously ? "synchronous"
+                                                : "non-synchronous")
+                      << " iteration in method parameter "
+                         "`access_synchronously`, but access type "
+                      << access << " requires "
+                      << (access_must_be_synchronous ? "synchronous"
+                                                     : "non-synchronous")
+                      << " iteration. Please remove the parameter, there is no "
+                         "need to specify it under "
+                      << access << " mode." << std::endl;
+                throw error::WrongAPIUsage(error.str());
+            }
+            else
+            {
+                std::cerr
+                    << "[Series::snapshots()] No need to explicitly specify "
+                       "synchronous or non-synchronous access via method "
+                       "parameter `access_synchronously` in mode '"
+                    << access << ". Will ignore." << std::endl;
+            }
+        };
     IteratorKind iterator_kind{};
     {
         using IK = IteratorKind;
-        switch (IOHandler()->m_frontendAccess)
+        switch (access)
         {
         case Access::READ_LINEAR:
+            guard_wrong_access_specification(true);
             iterator_kind = IK::Stateful;
             break;
         case Access::READ_ONLY:
+            guard_wrong_access_specification(false);
             if (series.m_parsePreference.has_value())
             {
                 switch (series.m_parsePreference.value())
@@ -3068,12 +3102,12 @@ Snapshots Series::snapshots()
                     iterator_kind = IK::RandomAccess;
                     break;
                 case internal::ParsePreference::PerStep:
-                    std::cerr
-                        << "[Warning] Series: Use READ_LINEAR access mode to "
-                           "access Series that requires collective processing."
-                        << std::endl;
-                    iterator_kind = IK::Stateful;
-                    break;
+                    throw error::ReadError(
+                        error::AffectedObject::File,
+                        error::Reason::UnexpectedContent,
+                        std::nullopt,
+                        "[Series::snapshots()] Series requires collective "
+                        "processing with READ_LINEAR access mode.");
                 }
             }
             else if (iterationEncoding() != IterationEncoding::fileBased)
@@ -3088,13 +3122,28 @@ Snapshots Series::snapshots()
             }
 
             break;
+        case Access::READ_WRITE:
             // Our Read-Write workflows are entirely random-access based (so
             // far).
-        case Access::READ_WRITE:
-            // Stateful Iteration accessed via Series::writeIterations().
+            // (Might be possible to allow stateful access actually, but there's
+            // no real use, so keep it simple.)
+            guard_wrong_access_specification(false);
+            iterator_kind = IK::RandomAccess;
+            break;
+
         case Access::CREATE:
         case Access::APPEND:
-            iterator_kind = IK::RandomAccess;
+            // Users can select.
+            if (access_synchronously.value_or(
+                    /* random-access logic by default */
+                    false))
+            {
+                iterator_kind = IK::Stateful;
+            }
+            else
+            {
+                iterator_kind = IK::RandomAccess;
+            }
             break;
         }
     }

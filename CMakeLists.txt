@@ -485,6 +485,7 @@ set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
         src/IO/AbstractIOHandlerHelper.cpp
+        src/IO/Access.cpp
         src/IO/DummyIOHandler.cpp
         src/IO/IOTask.cpp
         src/IO/FlushParams.cpp

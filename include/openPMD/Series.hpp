@@ -640,7 +640,8 @@ public:
      */
     ReadIterations readIterations();
 
-    Snapshots snapshots();
+    Snapshots
+    snapshots(std::optional<bool> access_synchronously = std::nullopt);
 
     /**
      * @brief Parse the Series.
