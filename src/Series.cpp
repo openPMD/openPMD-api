@@ -3005,15 +3005,6 @@ ReadIterations Series::readIterations()
 
 namespace
 {
-    enum class IteratorKind
-    {
-        RandomAccess,
-        Stateful
-    };
-}
-
-namespace
-{
     auto make_writing_stateful_iterator(
         Series const &copied_series,
         internal::SeriesData &series) -> std::function<StatefulIterator *()>
@@ -3044,7 +3035,8 @@ namespace
     }
 } // namespace
 
-Snapshots Series::snapshots(std::optional<bool> const access_synchronously)
+Snapshots
+Series::snapshots(std::optional<SnapshotAccess> const access_synchronously)
 {
     auto &series = get();
     if (series.m_deferred_initialization.has_value())
@@ -3053,22 +3045,24 @@ Snapshots Series::snapshots(std::optional<bool> const access_synchronously)
     }
     auto access = IOHandler()->m_frontendAccess;
     auto guard_wrong_access_specification =
-        [&](bool access_must_be_synchronous) {
+        [&](SnapshotAccess required_access) {
             if (!access_synchronously.has_value())
             {
-                return;
+                return required_access;
             }
-            if (access_must_be_synchronous != *access_synchronously)
+            if (required_access != *access_synchronously)
             {
                 std::stringstream error;
                 error << "[Series::snapshots()] Specified "
-                      << (*access_synchronously ? "synchronous"
-                                                : "non-synchronous")
+                      << (*access_synchronously == SnapshotAccess::Linear
+                              ? "linear"
+                              : "random-access")
                       << " iteration in method parameter "
                          "`access_synchronously`, but access type "
                       << access << " requires "
-                      << (access_must_be_synchronous ? "synchronous"
-                                                     : "non-synchronous")
+                      << (required_access == SnapshotAccess::Linear
+                              ? "linear"
+                              : "random-access")
                       << " iteration. Please remove the parameter, there is no "
                          "need to specify it under "
                       << access << " mode." << std::endl;
@@ -3082,24 +3076,26 @@ Snapshots Series::snapshots(std::optional<bool> const access_synchronously)
                        "parameter `access_synchronously` in mode '"
                     << access << ". Will ignore." << std::endl;
             }
+            return required_access;
         };
-    IteratorKind iterator_kind{};
+    SnapshotAccess usedSnapshotAccess{};
     {
-        using IK = IteratorKind;
         switch (access)
         {
         case Access::READ_LINEAR:
-            guard_wrong_access_specification(true);
-            iterator_kind = IK::Stateful;
+            usedSnapshotAccess =
+                guard_wrong_access_specification(SnapshotAccess::Linear);
             break;
         case Access::READ_ONLY:
-            guard_wrong_access_specification(false);
+            usedSnapshotAccess =
+                guard_wrong_access_specification(SnapshotAccess::RandomAccess);
+
+            // Some error checks
             if (series.m_parsePreference.has_value())
             {
                 switch (series.m_parsePreference.value())
                 {
                 case internal::ParsePreference::UpFront:
-                    iterator_kind = IK::RandomAccess;
                     break;
                 case internal::ParsePreference::PerStep:
                     throw error::ReadError(
@@ -3116,45 +3112,33 @@ Snapshots Series::snapshots(std::optional<bool> const access_synchronously)
                     "READ_ONLY mode and non-fileBased iteration encoding, but "
                     "the backend did not set a parse preference.");
             }
-            else
-            {
-                iterator_kind = IK::RandomAccess;
-            }
-
             break;
         case Access::READ_WRITE:
             // Our Read-Write workflows are entirely random-access based (so
             // far).
             // (Might be possible to allow stateful access actually, but there's
             // no real use, so keep it simple.)
-            guard_wrong_access_specification(false);
-            iterator_kind = IK::RandomAccess;
+            usedSnapshotAccess =
+                guard_wrong_access_specification(SnapshotAccess::RandomAccess);
             break;
 
         case Access::CREATE:
         case Access::APPEND:
             // Users can select.
-            if (access_synchronously.value_or(
-                    /* random-access logic by default */
-                    false))
-            {
-                iterator_kind = IK::Stateful;
-            }
-            else
-            {
-                iterator_kind = IK::RandomAccess;
-            }
+            usedSnapshotAccess = access_synchronously.value_or(
+                /* random-access logic by default */
+                SnapshotAccess::RandomAccess);
             break;
         }
     }
 
-    switch (iterator_kind)
+    switch (usedSnapshotAccess)
     {
-    case IteratorKind::RandomAccess: {
+    case SnapshotAccess::RandomAccess: {
         return Snapshots(std::shared_ptr<RandomAccessIteratorContainer>{
             new RandomAccessIteratorContainer(series.iterations)});
     }
-    case IteratorKind::Stateful: {
+    case SnapshotAccess::Linear: {
         std::function<StatefulIterator *()> begin;
 
         if (access::write(IOHandler()->m_frontendAccess))

@@ -640,8 +640,13 @@ public:
      */
     ReadIterations readIterations();
 
-    Snapshots
-    snapshots(std::optional<bool> access_synchronously = std::nullopt);
+    enum class SnapshotAccess
+    {
+        RandomAccess,
+        Linear
+    };
+    Snapshots snapshots(
+        std::optional<SnapshotAccess> access_synchronously = std::nullopt);
 
     /**
      * @brief Parse the Series.
@@ -893,6 +898,8 @@ OPENPMD_private
     AbstractIOHandler *IOHandler();
     AbstractIOHandler const *IOHandler() const;
 }; // Series
+
+using SnapshotAccess = Series::SnapshotAccess;
 
 namespace debug
 {
