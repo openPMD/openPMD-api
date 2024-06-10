@@ -65,11 +65,6 @@ public:
     auto contains(key_type const &key) const -> bool override;
 };
 
-/*
- * @todo how to deal with iteration::open() iteration::close() ?
- * -> have it guaranteed with READ_LINEAR, not with READ_RANDOM_ACCESS,
- * but need to see how to deal with write modes
- */
 class RandomAccessIteratorContainer : public AbstractSnapshotsContainer
 {
 private:
