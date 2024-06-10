@@ -3088,13 +3088,13 @@ Snapshots Series::snapshots()
             }
 
             break;
+            // Our Read-Write workflows are entirely random-access based (so
+            // far).
         case Access::READ_WRITE:
-            throw std::runtime_error(
-                "[Series::snapshots()] Unimplemented for READ_WRITE mode.");
+            // Stateful Iteration accessed via Series::writeIterations().
         case Access::CREATE:
         case Access::APPEND:
-            // @todo: properly distinguish here
-            iterator_kind = IK::Stateful;
+            iterator_kind = IK::RandomAccess;
             break;
         }
     }
@@ -3108,7 +3108,6 @@ Snapshots Series::snapshots()
     case IteratorKind::Stateful: {
         std::function<StatefulIterator *()> begin;
 
-        // @todo: distinguish read/write access
         if (access::write(IOHandler()->m_frontendAccess))
         {
             begin = make_writing_stateful_iterator(*this, series);
