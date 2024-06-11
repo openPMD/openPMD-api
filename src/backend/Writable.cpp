@@ -51,7 +51,14 @@ void Writable::seriesFlush(internal::FlushParams const &flushParams)
 {
     Attributable impl;
     impl.setData({attributable, [](auto const *) {}});
-    auto series = impl.retrieveSeries();
+    auto [iteration_internal, series_internal] = impl.containingIteration();
+    if (iteration_internal)
+    {
+        (*iteration_internal)
+            ->asInternalCopyOf<Iteration>()
+            .setDirtyRecursive(true);
+    }
+    auto series = series_internal->asInternalCopyOf<Series>();
     series.flush_impl(
         series.iterations.begin(), series.iterations.end(), flushParams);
 }

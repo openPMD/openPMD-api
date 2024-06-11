@@ -19,7 +19,10 @@
 #define openPMD_HAS_ADIOS_2_9                                                  \
     (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 209)
 
-#if defined(ADIOS2_HAVE_BP5) || openPMD_HAS_ADIOS_2_9
+#define openPMD_HAS_ADIOS_2_10                                                 \
+    (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 210)
+
+#if defined(ADIOS2_HAVE_BP5) || openPMD_HAS_ADIOS_2_10
 // ADIOS2 v2.10 no longer defines this
 #define openPMD_HAVE_ADIOS2_BP5 1
 #else

@@ -206,6 +206,8 @@ public:
     void
     deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
 
+    void touch(Writable *, Parameter<Operation::TOUCH> const &) override;
+
     /**
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.

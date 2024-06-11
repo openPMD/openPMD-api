@@ -4414,6 +4414,25 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 )";
 
     adios2_bp5_flush(cfg5, /* flushDuringStep = */ FlushDuringStep::Always);
+
+#if openPMD_HAVE_ADIOS2_BP5
+    std::string cfg6 = R"(
+[adios2]
+
+[adios2.engine]
+preferred_flush_target = "disk"
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(
+        cfg6, /* flushDuringStep = */ FlushDuringStep::Default_Yes);
+#endif
 }
 #endif
 

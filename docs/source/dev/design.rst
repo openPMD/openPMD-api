@@ -23,7 +23,7 @@ Therefore, enabling users to handle hierarchical, self-describing file formats w
 
 .. literalinclude:: IOTask.hpp
    :language: cpp
-   :lines: 48-78
+   :lines: 50-81
 
 Every task is designed to be a fully self-contained description of one such atomic operation. By describing a required minimal step of work (without any side-effect), these operations are the foundation of the unified handling mechanism across suitable file formats.
 The actual low-level exchange of data is implemented in ``IOHandlers``, one per file format (possibly two if handlingi MPI-parallel work is possible and requires different behaviour).

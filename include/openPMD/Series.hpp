@@ -254,6 +254,7 @@ class Series : public Attributable
     friend class ReadIterations;
     friend class SeriesIterator;
     friend class internal::SeriesData;
+    friend class internal::AttributableData;
     friend class WriteIterations;
 
 public:

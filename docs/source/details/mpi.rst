@@ -49,6 +49,12 @@ Functionality                Behavior           Description
 .. [4] We usually open iterations delayed on first access. This first access is usually the ``flush()`` call after a ``storeChunk``/``loadChunk`` operation. If the first access is non-collective, an explicit, collective ``Iteration::open()`` can be used to have the files already open.
        Alternatively, iterations might be accessed for the first time by immediate operations such as ``::availableChunks()``.
 
+.. warning::
+
+  The openPMD-api will by default flush only those Iterations which are dirty, i.e. have been written to.
+  This is somewhat unfortunate in parallel setups since only the dirty status of the current MPI rank can be considered.
+  As a workaround, use ``Attributable::seriesFlush()`` on an Iteration (or an object contained within an Iteration) to force flush that Iteration regardless of its dirty status.
+
 .. tip::
 
    Just because an operation is independent does not mean it is allowed to be inconsistent.

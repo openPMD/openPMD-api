@@ -395,6 +395,11 @@ public:
     virtual void
     deregister(Writable *, Parameter<Operation::DEREGISTER> const &param) = 0;
 
+    /** Treat this writable's file as open/active/dirty.
+     */
+    virtual void
+    touch(Writable *, Parameter<Operation::TOUCH> const &param) = 0;
+
     AbstractIOHandler *m_handler;
     bool m_verboseIOTasks = false;
 

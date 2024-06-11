@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/Iteration.hpp"
 
 namespace openPMD
@@ -90,7 +91,17 @@ ChunkTable BaseRecordComponent::availableChunks()
         Offset offset(rc.m_dataset.value().extent.size(), 0);
         return ChunkTable{{std::move(offset), rc.m_dataset.value().extent}};
     }
-    containingIteration().open();
+    if (auto iteration_data = containingIteration().first;
+        iteration_data.has_value())
+    {
+        (*iteration_data)->asInternalCopyOf<Iteration>().open();
+    }
+    else
+    {
+        throw error::Internal(
+            "Containing Iteration of BaseRecordComponent could not be "
+            "retrieved.");
+    }
     Parameter<Operation::AVAILABLE_CHUNKS> param;
     IOTask task(this, param);
     IOHandler()->enqueue(task);

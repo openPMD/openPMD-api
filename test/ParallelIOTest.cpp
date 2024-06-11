@@ -1031,10 +1031,16 @@ void hipace_like_write(std::string const &file_ending)
     int const last_step = 100;
     int const my_first_step = i_mpi_rank * int(local_Nz);
     int const all_last_step = last_step + (i_mpi_size - 1) * int(local_Nz);
+
+    bool participate_in_barrier = true;
     for (int first_rank_step = 0; first_rank_step < all_last_step;
          ++first_rank_step)
     {
-        MPI_Barrier(MPI_COMM_WORLD);
+        if (participate_in_barrier)
+        {
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
+        participate_in_barrier = true;
 
         // first_rank_step: this step will "lead" the opening of an output step
         // step on the local rank
@@ -1073,16 +1079,25 @@ void hipace_like_write(std::string const &file_ending)
 
         // has this ranks started computations yet?
         if (step < 0)
+        {
+            participate_in_barrier = false;
             continue;
+        }
         // has this ranks stopped computations?
         if (step > last_step)
+        {
+            participate_in_barrier = false;
             continue;
+        }
         // does this rank contribute to with output currently?
         bool const rank_in_output_step =
             std::find(iterations.begin(), iterations.end(), step) !=
             iterations.end();
         if (!rank_in_output_step)
+        {
+            participate_in_barrier = false;
             continue;
+        }
 
         // now we write (parallel, independent I/O)
         auto it = series.iterations[step];
@@ -1132,6 +1147,41 @@ TEST_CASE("hipace_like_write", "[parallel]")
     {
         hipace_like_write(t);
     }
+}
+#endif
+
+#if openPMD_HAVE_ADIOS2 && openPMD_HAS_ADIOS_2_9
+TEST_CASE("independent_write_with_collective_flush", "[parallel]")
+{
+    Series write(
+        "../samples/independent_write_with_collective_flush.bp5",
+        Access::CREATE,
+        MPI_COMM_WORLD,
+        "adios2.engine.preferred_flush_target = \"buffer\"");
+    int size, rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    auto iteration = write.iterations[0];
+    auto E_x = iteration.meshes["E"]["x"];
+    E_x.resetDataset({Datatype::DOUBLE, {10}});
+    write.flush();
+    if (rank == 1)
+    {
+        E_x.storeChunk(
+            std::unique_ptr<double[]>{new double[10]{4.2}}, {0}, {10});
+    }
+    /*
+     * Now, the iteration is dirty only on rank 1. But the following flush must
+     * run collectively anyway. The test has been designed in such a way that
+     * the PerformDataWrite() call required by the disk flush target will
+     * conflict with the default buffer target that will run in the destructor,
+     * unless the flush in the next line really is collective.
+     */
+    std::cout << "ENTER" << std::endl;
+    MPI_Barrier(MPI_COMM_WORLD);
+    iteration.seriesFlush("adios2.engine.preferred_flush_target = \"disk\"");
+    MPI_Barrier(MPI_COMM_WORLD);
+    std::cout << "LEAVE" << std::endl;
 }
 #endif
 
