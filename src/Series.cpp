@@ -3053,7 +3053,9 @@ namespace
     {
         auto sanitize_regex(std::string const &input) -> std::string
         {
+             // need to escape special characters reserved for regexes, see https://stackoverflow.com/questions/40195412/c11-regex-search-for-exact-string-escape
             std::regex specialChars{R"([-[\]{}()*+?.,\^$|#\s])"};
+            // `$&` is the matched substring, see https://en.cppreference.com/w/cpp/regex/regex_replace
             return std::regex_replace(input, specialChars, R"(\$&)");
         }
     } // namespace
