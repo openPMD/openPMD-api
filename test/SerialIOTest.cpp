@@ -5095,8 +5095,16 @@ TEST_CASE("serial_iterator", "[serial][adios2]")
 {
     for (auto const &t : testedFileExtensions())
     {
+#ifdef _WIN32
         serial_iterator("../samples/serial_iterator_filebased_%T." + t);
         serial_iterator("../samples/serial_iterator_groupbased." + t);
+#else
+        // Add some regex characters into the file names to see that we can deal
+        // with that. Don't do that on Windows because Windows does not like
+        // those characters within file paths.
+        serial_iterator("../samples/serial_iterator_filebased_+?_%T." + t);
+        serial_iterator("../samples/serial_iterator_groupbased_+?." + t);
+#endif
     }
 }
 
