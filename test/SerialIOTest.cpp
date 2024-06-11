@@ -4440,39 +4440,43 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 
 TEST_CASE("adios2_flush_via_step")
 {
-    for (auto const suffix : {"bp4", "bp5"})
+    Series write(
+        "../samples/adios2_flush_via_step/simData_%T.bp5",
+        Access::CREATE,
+        R"(adios2.engine.parameters.FlattenSteps = "on")");
+    std::vector<float> data(10);
+    for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
     {
-        Series write(
-            "../samples/adios2_flush_via_step/simData_%T." +
-                std::string(suffix),
-            Access::CREATE);
-        std::vector<float> data(10);
-        for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+        Iteration it = write.writeIterations()[i];
+        auto E_x = it.meshes["E"]["x"];
+        E_x.resetDataset({Datatype::FLOAT, {10, 10}});
+        for (Extent::value_type j = 0; j < 10; ++j)
         {
-            Iteration it = write.writeIterations()[i];
-            auto E_x = it.meshes["E"]["x"];
-            E_x.resetDataset({Datatype::FLOAT, {10, 10}});
-            for (Extent::value_type j = 0; j < 10; ++j)
-            {
-                std::iota(data.begin(), data.end(), i * 100 + j * 10);
-                E_x.storeChunk(data, {j, 0}, {1, 10});
-                write.flush(
-                    R"(adios2.engine.preferred_flush_target = "new_step")");
-            }
-            it.close();
+            std::iota(data.begin(), data.end(), i * 100 + j * 10);
+            E_x.storeChunk(data, {j, 0}, {1, 10});
+            write.flush(R"(adios2.engine.preferred_flush_target = "new_step")");
         }
+        it.close();
+    }
 
-        for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+#if openPMD_HAS_ADIOS_2_10_1
+    for (auto access : {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR})
+    {
+        Series read(
+            "../samples/adios2_flush_via_step/simData_%T.bp5",
+            Access::READ_RANDOM_ACCESS);
+        std::vector<float> load_data(100);
+        data.resize(100);
+        for (auto iteration : read.readIterations())
         {
-            std::string filename = "../samples/adios2_flush_via_step/simData_" +
-                std::to_string(i) + "." + suffix;
-            adios2::ADIOS adios;
-            auto IO = adios.DeclareIO("IO");
-            auto engine = IO.Open(filename, adios2::Mode::Read);
-            REQUIRE(engine.Steps() == (suffix == std::string("bp4") ? 10 : 11));
-            engine.Close();
+            std::iota(data.begin(), data.end(), iteration.iterationIndex * 100);
+            iteration.meshes["E"]["x"].loadChunkRaw(
+                load_data.data(), {0, 0}, {10, 10});
+            iteration.close();
+            REQUIRE(load_data == data);
         }
     }
+#endif
 }
 
 TEST_CASE("adios2_engines_and_file_endings")
