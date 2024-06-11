@@ -28,6 +28,8 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -200,6 +202,14 @@ AbstractIOHandlerImplCommon<FilePositionType>::refreshFileFromParent(
     Writable *writable, bool preferParentFile)
 {
     auto getFileFromParent = [writable, this]() {
+        auto file_it = m_files.find(writable->parent);
+        if (file_it == m_files.end())
+        {
+            std::stringstream s;
+            s << "Parent Writable " << writable->parent << " of Writable "
+              << writable << " has no associated file.";
+            throw std::runtime_error(s.str());
+        }
         auto file = m_files.find(writable->parent)->second;
         associateWithFile(writable, file);
         return file;

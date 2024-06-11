@@ -56,11 +56,6 @@ namespace traits
         void operator()(T &ret)
         {
             ret.particlePatches.linkHierarchy(ret.writable());
-
-            auto &np = ret.particlePatches["numParticles"];
-            np.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
-            auto &npo = ret.particlePatches["numParticlesOffset"];
-            npo.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
         }
     };
 } // namespace traits
