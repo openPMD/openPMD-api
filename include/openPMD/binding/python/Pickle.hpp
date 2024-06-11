@@ -58,7 +58,7 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
         },
 
         // __setstate__
-        [&seriesAccessor](py::tuple t) {
+        [&seriesAccessor](py::tuple const &t) {
             // our tuple has exactly two elements: filePath & group
             if (t.size() != 2)
                 throw std::runtime_error("Invalid state!");

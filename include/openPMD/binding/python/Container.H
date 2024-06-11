@@ -34,6 +34,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <pybind11/attr.h>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -118,11 +119,12 @@ Class_ finalize_container(Class_ cl)
     // keep same policy as Container class: missing keys are created
     cl.def(
         "__getitem__",
-        [](Map &m, KeyType const &k) -> MappedType & { return m[k]; },
+        [](Map &m, KeyType const &k) -> MappedType { return m[k]; },
         // copy + keepalive
         // All objects in the openPMD object model are handles, so using a copy
         // is safer and still performant.
-        py::return_value_policy::copy);
+        py::return_value_policy::move,
+        py::keep_alive<0, 1>());
 
     // Assignment provided only if the type is copyable
     py::detail::map_assignment<Map, Class_>(cl);

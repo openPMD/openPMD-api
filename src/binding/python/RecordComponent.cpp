@@ -1124,8 +1124,8 @@ void init_RecordComponent(py::module &m)
     add_pickle(
         cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            return series.iterations[n_it]
-                .particles[group.at(3)][group.at(4)][group.at(5)];
+            return series.iterations[n_it].particles[group.at(3)][group.at(
+                4)][group.size() < 6 ? RecordComponent::SCALAR : group.at(5)];
         });
 
     addRecordComponentSetGet(cl);
