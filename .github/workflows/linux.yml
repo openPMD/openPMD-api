@@ -100,7 +100,7 @@ jobs:
     - name: Set up Spack
       uses: spack/setup-spack@v2
       with:
-        ref: 187b8adb4faa7ad8e5de0baab9a610d158772823
+        ref: v0.22.0
         buildcache: true
         color: true
         path: opt/spack
