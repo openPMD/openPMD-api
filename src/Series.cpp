@@ -3055,7 +3055,8 @@ namespace
         {
             // need to escape special characters reserved for regexes, see
             // https://stackoverflow.com/questions/40195412/c11-regex-search-for-exact-string-escape
-            std::regex specialChars{R"([-[\]{}()*+?.,\^$|#\s])"};
+            // https://regex101.com/r/GDPK7E/3
+            std::regex specialChars{R"([-[\]{}()*+?.,\^$|#\s\\])"};
             // `$&` is the matched substring, see
             // https://en.cppreference.com/w/cpp/regex/regex_replace
             return std::regex_replace(input, specialChars, R"(\$&)");
