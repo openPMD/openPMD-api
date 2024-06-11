@@ -2,6 +2,7 @@
 #include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/Access.hpp"
+#include <adios2/cxx11/ADIOS.h>
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -4436,6 +4437,43 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 #endif
 }
 #endif
+
+TEST_CASE("adios2_flush_via_step")
+{
+    for (auto const suffix : {"bp4", "bp5"})
+    {
+        Series write(
+            "../samples/adios2_flush_via_step/simData_%T." +
+                std::string(suffix),
+            Access::CREATE);
+        std::vector<float> data(10);
+        for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+        {
+            Iteration it = write.writeIterations()[i];
+            auto E_x = it.meshes["E"]["x"];
+            E_x.resetDataset({Datatype::FLOAT, {10, 10}});
+            for (Extent::value_type j = 0; j < 10; ++j)
+            {
+                std::iota(data.begin(), data.end(), i * 100 + j * 10);
+                E_x.storeChunk(data, {j, 0}, {1, 10});
+                write.flush(
+                    R"(adios2.engine.preferred_flush_target = "new_step")");
+            }
+            it.close();
+        }
+
+        for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+        {
+            std::string filename = "../samples/adios2_flush_via_step/simData_" +
+                std::to_string(i) + "." + suffix;
+            adios2::ADIOS adios;
+            auto IO = adios.DeclareIO("IO");
+            auto engine = IO.Open(filename, adios2::Mode::Read);
+            REQUIRE(engine.Steps() == (suffix == std::string("bp4") ? 10 : 11));
+            engine.Close();
+        }
+    }
+}
 
 TEST_CASE("adios2_engines_and_file_endings")
 {

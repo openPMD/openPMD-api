@@ -48,6 +48,10 @@ FlushTarget flushTargetFromString(std::string const &str)
     {
         return FlushTarget::Disk_Override;
     }
+    else if (str == "new_step")
+    {
+        return FlushTarget::NewStep;
+    }
     else
     {
         throw error::BackendConfigSchema(

@@ -25,6 +25,8 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <stdexcept>
+
 #if openPMD_USE_VERIFY
 #define VERIFY(CONDITION, TEXT)                                                \
     {                                                                          \
@@ -1028,60 +1030,94 @@ void ADIOS2File::flush_impl(
 
 void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
 {
-    auto decideFlushAPICall =
-        [this, flushTarget = flushParams.flushTarget](adios2::Engine &engine) {
+    auto decideFlushAPICall = [this, flushTarget = flushParams.flushTarget](
+                                  adios2::Engine &engine) {
 #if ADIOS2_VERSION_MAJOR * 1000000000 + ADIOS2_VERSION_MINOR * 100000000 +     \
         ADIOS2_VERSION_PATCH * 1000000 + ADIOS2_VERSION_TWEAK >=               \
     2701001223
-            bool performDataWrite{};
-            switch (flushTarget)
-            {
-            case FlushTarget::Disk:
-            case FlushTarget::Disk_Override:
-                performDataWrite = true;
-                break;
-            case FlushTarget::Buffer:
-            case FlushTarget::Buffer_Override:
-                performDataWrite = false;
-                break;
-            }
-            performDataWrite = performDataWrite &&
-                (m_engineType == "bp5" ||
-                 /* this second check should be sufficient, but we leave the
-                    first check in as a safeguard against renamings in ADIOS2.
-                    Also do a lowerCase transform since the docstring of
-                    `Engine::Type()` claims that the return value is in
-                    lowercase, but for BP5 this does not seem true. */
-                 auxiliary::lowerCase(engine.Type()) == "bp5writer");
+        enum class CleanedFlushTarget
+        {
+            Buffer,
+            Disk,
+            Step
+        };
 
-            if (performDataWrite)
+        CleanedFlushTarget target{};
+        switch (flushTarget)
+        {
+        case FlushTarget::Disk:
+        case FlushTarget::Disk_Override:
+            if (m_engineType == "bp5" ||
+                /* this second check should be sufficient, but we leave the
+                   first check in as a safeguard against renamings in
+                   ADIOS2. Also do a lowerCase transform since the docstring
+                   of `Engine::Type()` claims that the return value is in
+                   lowercase, but for BP5 this does not seem true. */
+                auxiliary::lowerCase(engine.Type()) == "bp5writer")
             {
-                /*
-                 * Deliberately don't write buffered attributes now since
-                 * readers won't be able to see them before EndStep anyway,
-                 * so there's no use. In fact, writing them now is harmful
-                 * because they can't be overwritten after this anymore in the
-                 * current step.
-                 * Draining the uniquePtrPuts now is good however, since we
-                 * should use this chance to free the memory.
-                 */
-                for (auto &entry : m_uniquePtrPuts)
-                {
-                    entry.run(*this);
-                }
-                engine.PerformDataWrite();
-                m_uniquePtrPuts.clear();
+                target = CleanedFlushTarget::Disk;
             }
             else
             {
-                engine.PerformPuts();
+                target = CleanedFlushTarget::Buffer;
             }
-#else
-            (void)this;
-            (void)flushTarget;
+            break;
+        case FlushTarget::Buffer:
+        case FlushTarget::Buffer_Override:
+            target = CleanedFlushTarget::Buffer;
+            break;
+        case FlushTarget::NewStep:
+            target = CleanedFlushTarget::Step;
+            break;
+        }
+
+        switch (target)
+        {
+        case CleanedFlushTarget::Disk:
+            /*
+             * Draining the uniquePtrPuts now to use this chance to free the
+             * memory.
+             */
+            for (auto &entry : m_uniquePtrPuts)
+            {
+                entry.run(*this);
+            }
+            engine.PerformDataWrite();
+            m_uniquePtrPuts.clear();
+            m_updateSpans.clear();
+            break;
+        case CleanedFlushTarget::Buffer:
             engine.PerformPuts();
+            break;
+        case CleanedFlushTarget::Step:
+            if (streamStatus != StreamStatus::DuringStep)
+            {
+                throw error::OperationUnsupportedInBackend(
+                    "ADIOS2",
+                    "Trying to flush to a new step while no step is active");
+            }
+            /*
+             * Draining the uniquePtrPuts now to use this chance to free the
+             * memory.
+             */
+            for (auto &entry : m_uniquePtrPuts)
+            {
+                entry.run(*this);
+            }
+            engine.EndStep();
+            engine.BeginStep();
+            // ++m_currentStep; // think we should keep this as the logical step
+            m_uniquePtrPuts.clear();
+            uncommittedAttributes.clear();
+            m_updateSpans.clear();
+            break;
+        }
+#else
+        (void)this;
+        (void)flushTarget;
+        engine.PerformPuts();
 #endif
-        };
+    };
 
     flush_impl(
         flushParams,
