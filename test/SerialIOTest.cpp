@@ -4462,9 +4462,7 @@ TEST_CASE("adios2_flush_via_step")
 #if openPMD_HAS_ADIOS_2_10_1
     for (auto access : {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR})
     {
-        Series read(
-            "../samples/adios2_flush_via_step/simData_%T.bp5",
-            Access::READ_RANDOM_ACCESS);
+        Series read("../samples/adios2_flush_via_step/simData_%T.%E", access);
         std::vector<float> load_data(100);
         data.resize(100);
         for (auto iteration : read.readIterations())

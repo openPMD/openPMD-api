@@ -1550,6 +1550,13 @@ void Series::readFileBased()
     Parameter<Operation::OPEN_FILE> fOpen;
     Parameter<Operation::READ_ATT> aRead;
 
+    // Tell the backend that we are parsing file-based iteration encoding.
+    // This especially means that READ_RANDOM_ACCESS will be used instead of
+    // READ_LINEAR, as READ_LINEAR is implemented in the frontend for file-based
+    // encoding. Don't set the iteration encoding in the frontend yet, will be
+    // set after reading the iteration encoding attribute from the opened file.
+    IOHandler()->setIterationEncoding(IterationEncoding::fileBased);
+
     if (!auxiliary::directory_exists(IOHandler()->directory))
         throw error::ReadError(
             error::AffectedObject::File,
