@@ -20,9 +20,11 @@
  */
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Iteration.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Attribute.hpp"
 
 #include <algorithm>
 #include <complex>
@@ -505,4 +507,22 @@ void Attributable::linkHierarchy(Writable &w)
     writable().parent = &w;
     setDirty(true);
 }
+
+namespace internal
+{
+    template <typename T>
+    T createOwningCopy(T &self, Series s)
+    {
+        std::shared_ptr<typename T::Data_t> data_ptr = self.T::getShared();
+        T res(Attributable::NoInit{});
+        auto raw_ptr = data_ptr.get();
+        res.setData(std::shared_ptr<typename T::Data_t>{
+            raw_ptr,
+            [s_lambda = std::move(s), data_ptr_lambda = std::move(data_ptr)](
+                auto const *) { /* no-op */ }});
+        return res;
+    }
+
+    template RecordComponent createOwningCopy(RecordComponent &, Series);
+} // namespace internal
 } // namespace openPMD

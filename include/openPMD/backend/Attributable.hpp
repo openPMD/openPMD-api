@@ -124,6 +124,9 @@ namespace internal
     class BaseRecordData;
 
     class RecordComponentData;
+
+    template <typename T>
+    T createOwningCopy(T &self, Series);
 } // namespace internal
 
 namespace debug
@@ -157,6 +160,8 @@ class Attributable
     friend class WriteIterations;
     friend class internal::RecordComponentData;
     friend void debug::printDirty(Series const &);
+    template <typename T>
+    friend T internal::createOwningCopy(T &self, Series);
 
 protected:
     // tag for internal constructor
