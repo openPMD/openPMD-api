@@ -16,7 +16,7 @@ from API.APITest import APITest
 # Define the test suite.
 def suite():
     suites = [
-               unittest.makeSuite(APITest, prefix="testPickle"),
+               unittest.makeSuite(APITest),
              ]
 
     return unittest.TestSuite(suites)
