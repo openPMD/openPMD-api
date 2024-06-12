@@ -35,6 +35,8 @@ class ParticleSpecies : public Container<Record>
     friend class Container<ParticleSpecies>;
     friend class Container<Record>;
     friend class Iteration;
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
 public:
     ParticlePatches particlePatches;
@@ -44,6 +46,13 @@ private:
 
     void read();
     void flush(std::string const &, internal::FlushParams const &) override;
+
+    using Data_t = Container<Record>::ContainerData;
+
+    inline std::shared_ptr<Data_t> getShared()
+    {
+        return m_containerData;
+    }
 };
 
 namespace traits

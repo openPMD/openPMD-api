@@ -114,8 +114,6 @@ class Container : virtual public Attributable
     template <typename>
     friend class internal::EraseStaleEntries;
     friend class SeriesIterator;
-    template <typename X>
-    friend X internal::makeOwning(X &self, Series);
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
@@ -137,11 +135,6 @@ protected:
     inline InternalContainer &container()
     {
         return m_containerData->m_container;
-    }
-
-    inline std::shared_ptr<Data_t> getShared()
-    {
-        return m_containerData;
     }
 
 public:

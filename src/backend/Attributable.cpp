@@ -527,6 +527,6 @@ namespace internal
     template MeshRecordComponent &makeOwning(MeshRecordComponent &, Series);
     template Mesh &makeOwning(Mesh &, Series);
     template Record &makeOwning(Record &, Series);
-    // template ParticleSpecies &makeOwning(ParticleSpecies &, Series);
+    template ParticleSpecies &makeOwning(ParticleSpecies &, Series);
 } // namespace internal
 } // namespace openPMD
