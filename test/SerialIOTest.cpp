@@ -4437,6 +4437,7 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 }
 #endif
 
+#if openPMD_HAVE_ADIOS2_BP5
 TEST_CASE("adios2_flush_via_step")
 {
     Series write(
@@ -4475,6 +4476,7 @@ TEST_CASE("adios2_flush_via_step")
     }
 #endif
 }
+#endif
 
 TEST_CASE("adios2_engines_and_file_endings")
 {
