@@ -2,7 +2,6 @@
 #include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/Access.hpp"
-#include <adios2/cxx11/ADIOS.h>
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
