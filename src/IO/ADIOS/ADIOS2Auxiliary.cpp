@@ -52,11 +52,15 @@ FlushTarget flushTargetFromString(std::string const &str)
     {
         return FlushTarget::NewStep;
     }
+    else if (str == "new_step_override")
+    {
+        return FlushTarget::NewStep_Override;
+    }
     else
     {
         throw error::BackendConfigSchema(
             {"adios2", "engine", adios_defaults::str_flushtarget},
-            "Flush target must be either 'disk' or 'buffer', but "
+            "Flush target must be either 'disk', 'buffer' or 'new_step', but "
             "was " +
                 str + ".");
     }

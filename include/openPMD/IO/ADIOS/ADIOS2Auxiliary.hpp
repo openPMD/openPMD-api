@@ -54,7 +54,8 @@ namespace adios_defs
         Buffer_Override,
         Disk,
         Disk_Override,
-        NewStep
+        NewStep,
+        NewStep_Override
     };
 
     using FlushTarget = adios_defs::FlushTarget;

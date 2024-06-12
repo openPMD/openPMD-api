@@ -22,6 +22,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
@@ -1067,6 +1068,7 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
             target = CleanedFlushTarget::Buffer;
             break;
         case FlushTarget::NewStep:
+        case FlushTarget::NewStep_Override:
             target = CleanedFlushTarget::Step;
             break;
         }
