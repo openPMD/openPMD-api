@@ -71,7 +71,8 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
             // This is a big hack for now, but it works for our use
             // case, which is spinning up remote serial read series
             // for DASK.
-            static auto series = openPMD::Series(filename, Access::READ_ONLY);
+            static auto series = openPMD::Series(
+                filename, Access::READ_ONLY, "defer_iteration_parsing = true");
             return seriesAccessor(series, group);
         }));
 }

@@ -74,7 +74,8 @@ void init_Record(py::module &m)
     add_pickle(
         cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            return series.iterations[n_it].particles[group.at(3)][group.at(4)];
+            return series.iterations[n_it].open().particles[group.at(3)]
+                                                           [group.at(4)];
         });
 
     finalize_container<PyRecordContainer>(py_r_cnt);

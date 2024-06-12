@@ -85,6 +85,7 @@ void init_MeshRecordComponent(py::module &m)
         cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
             return series.iterations[n_it]
+                .open()
                 .meshes[group.at(3)]
                        [group.size() < 5 ? MeshRecordComponent::SCALAR
                                          : group.at(4)];

@@ -117,7 +117,7 @@ void init_Mesh(py::module &m)
     add_pickle(
         cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            return series.iterations[n_it].meshes[group.at(3)];
+            return series.iterations[n_it].open().meshes[group.at(3)];
         });
 
     finalize_container<PyMeshContainer>(py_m_cont);
