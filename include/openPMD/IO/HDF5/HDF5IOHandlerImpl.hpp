@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_HDF5
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
@@ -108,6 +109,8 @@ public:
      */
     hid_t m_H5T_LONG_DOUBLE_80_LE;
     hid_t m_H5T_CLONG_DOUBLE_80_LE;
+
+    std::future<void> flush(internal::ParsedFlushParams &);
 
 protected:
 #if openPMD_HAVE_MPI

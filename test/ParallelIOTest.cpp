@@ -322,6 +322,8 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
         "hdf5.dataset.chunks = [1]"));
     e["position"]["x"].storeChunk(position_local, {mpi_rank}, {1});
 
+    o.flush("hdf5.independent_stores = true");
+
     std::vector<uint64_t> positionOffset_global(mpi_size);
     uint64_t posOff{0};
     std::generate(
@@ -344,7 +346,7 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     e["positionOffset"]["y"].storeChunk(
         std::make_unique<float>(3.141592654), {0}, {1});
 
-    o.flush();
+    o.flush("hdf5.independent_stores = false");
 }
 
 TEST_CASE("hdf5_write_test_zero_extent", "[parallel][hdf5]")

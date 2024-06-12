@@ -63,9 +63,10 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
-std::future<void> ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void>
+ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &params)
 {
-    return m_impl->flush();
+    return m_impl->flush(params);
 }
 
 ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
@@ -121,14 +122,14 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     }
 
     H5FD_mpio_xfer_t xfer_mode = H5FD_MPIO_COLLECTIVE;
-    auto const hdf5_collective =
+    auto const hdf5_independent =
         auxiliary::getEnvString("OPENPMD_HDF5_INDEPENDENT", "ON");
-    if (hdf5_collective == "ON")
+    if (hdf5_independent == "ON")
         xfer_mode = H5FD_MPIO_INDEPENDENT;
     else
     {
         VERIFY(
-            hdf5_collective == "OFF",
+            hdf5_independent == "OFF",
             "[HDF5] Internal error: OPENPMD_HDF5_INDEPENDENT property must be "
             "either ON or OFF");
     }

@@ -19,6 +19,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -2934,6 +2937,73 @@ HDF5IOHandlerImpl::getFile(Writable *writable)
     res.id = it2->second;
     return std::make_optional(std::move(res));
 }
+
+std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
+{
+    std::optional<H5FD_mpio_xfer_t> old_value;
+    if (params.backendConfig.json().contains("hdf5"))
+    {
+        auto hdf5_config = params.backendConfig["hdf5"];
+
+        if (hdf5_config.json().contains("independent_stores"))
+        {
+            auto independent_stores_json = hdf5_config["independent_stores"];
+            if (!independent_stores_json.json().is_boolean())
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "independent_stores"}, "Requires boolean value.");
+            }
+            bool independent_stores =
+                independent_stores_json.json().get<bool>();
+            old_value = std::make_optional<H5FD_mpio_xfer_t>();
+            herr_t status =
+                H5Pget_dxpl_mpio(m_datasetTransferProperty, &*old_value);
+            VERIFY(
+                status >= 0,
+                "[HDF5] Internal error: Failed to query the global data "
+                "transfer mode before flushing.");
+            H5FD_mpio_xfer_t new_value = independent_stores
+                ? H5FD_MPIO_INDEPENDENT
+                : H5FD_MPIO_COLLECTIVE;
+            status = H5Pset_dxpl_mpio(m_datasetTransferProperty, new_value);
+            VERIFY(
+                status >= 0,
+                "[HDF5] Internal error: Failed to set the local data "
+                "transfer mode before flushing.");
+        }
+
+        if (auto shadow = hdf5_config.invertShadow(); shadow.size() > 0)
+        {
+            switch (hdf5_config.originallySpecifiedAs)
+            {
+            case json::SupportedLanguages::JSON:
+                std::cerr << "Warning: parts of the backend configuration for "
+                             "HDF5 remain unused:\n"
+                          << shadow << std::endl;
+                break;
+            case json::SupportedLanguages::TOML: {
+                auto asToml = json::jsonToToml(shadow);
+                std::cerr << "Warning: parts of the backend configuration for "
+                             "HDF5 remain unused:\n"
+                          << asToml << std::endl;
+                break;
+            }
+            }
+        }
+    }
+    auto res = AbstractIOHandlerImpl::flush();
+
+    if (old_value.has_value())
+    {
+        herr_t status = H5Pset_dxpl_mpio(m_datasetTransferProperty, *old_value);
+        VERIFY(
+            status >= 0,
+            "[HDF5] Internal error: Failed to reset the global data "
+            "transfer mode after flushing.");
+    }
+
+    return res;
+}
 #endif
 
 #if openPMD_HAVE_HDF5
@@ -2945,9 +3015,9 @@ HDF5IOHandler::HDF5IOHandler(
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 
-std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &params)
 {
-    return m_impl->flush();
+    return m_impl->flush(params);
 }
 #else
 
