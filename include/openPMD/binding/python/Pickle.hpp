@@ -67,13 +67,9 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
             std::vector<std::string> const group =
                 t[1].cast<std::vector<std::string> >();
 
-            // Create a new openPMD Series and keep it alive.
-            // This is a big hack for now, but it works for our use
-            // case, which is spinning up remote serial read series
-            // for DASK.
-            static auto series = openPMD::Series(
+            openPMD::Series series(
                 filename, Access::READ_ONLY, "defer_iteration_parsing = true");
-            return seriesAccessor(series, group);
+            return seriesAccessor(std::move(series), group);
         }));
 }
 } // namespace openPMD

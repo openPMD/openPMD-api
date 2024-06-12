@@ -20,6 +20,7 @@
  */
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Iteration.hpp"
+#include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
@@ -511,18 +512,21 @@ void Attributable::linkHierarchy(Writable &w)
 namespace internal
 {
     template <typename T>
-    T createOwningCopy(T &self, Series s)
+    T &makeOwning(T &self, Series s)
     {
         std::shared_ptr<typename T::Data_t> data_ptr = self.T::getShared();
-        T res(Attributable::NoInit{});
         auto raw_ptr = data_ptr.get();
-        res.setData(std::shared_ptr<typename T::Data_t>{
+        self.setData(std::shared_ptr<typename T::Data_t>{
             raw_ptr,
             [s_lambda = std::move(s), data_ptr_lambda = std::move(data_ptr)](
                 auto const *) { /* no-op */ }});
-        return res;
+        return self;
     }
 
-    template RecordComponent createOwningCopy(RecordComponent &, Series);
+    template RecordComponent &makeOwning(RecordComponent &, Series);
+    template MeshRecordComponent &makeOwning(MeshRecordComponent &, Series);
+    template Mesh &makeOwning(Mesh &, Series);
+    template Record &makeOwning(Record &, Series);
+    // template ParticleSpecies &makeOwning(ParticleSpecies &, Series);
 } // namespace internal
 } // namespace openPMD

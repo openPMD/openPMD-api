@@ -237,6 +237,8 @@ private:
     friend class internal::BaseRecordData;
     template <typename, typename, typename>
     friend class internal::ScalarIterator;
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
     using Data_t =
         internal::BaseRecordData<T_elem, typename T_RecordComponent::Data_t>;
@@ -254,6 +256,11 @@ private:
     inline Data_t &get()
     {
         return *m_baseRecordData;
+    }
+
+    inline std::shared_ptr<Data_t> getShared()
+    {
+        return m_baseRecordData;
     }
 
     BaseRecord();

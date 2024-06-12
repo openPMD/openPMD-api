@@ -134,7 +134,7 @@ class RecordComponent : public BaseRecordComponent
     friend class internal::RecordComponentData;
     friend class MeshRecordComponent;
     template <typename T>
-    friend T internal::createOwningCopy(T &self, Series);
+    friend T &internal::makeOwning(T &self, Series);
 
 public:
     enum class Allocation
