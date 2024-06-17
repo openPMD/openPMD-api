@@ -528,5 +528,6 @@ namespace internal
     template Mesh &makeOwning(Mesh &, Series);
     template Record &makeOwning(Record &, Series);
     template ParticleSpecies &makeOwning(ParticleSpecies &, Series);
+    template Iteration &makeOwning(Iteration &, Series);
 } // namespace internal
 } // namespace openPMD
