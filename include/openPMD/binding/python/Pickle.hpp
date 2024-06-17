@@ -22,6 +22,7 @@
 
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
 #include "Common.hpp"
@@ -75,7 +76,9 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
                 try
                 {
                     return !series.has_value() || !series->operator bool() ||
-                        series->myPath().filePath() != filename;
+                        auxiliary::replace_all(
+                            series->myPath().filePath(), "\\", "/") !=
+                        auxiliary::replace_all(filename, "\\", "/");
                 }
                 /*
                  * Better safe than sorry, if anything goes wrong because the
