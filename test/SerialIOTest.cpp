@@ -177,7 +177,9 @@ void write_and_read_many_iterations(
 
     {
         Series write(filename, Access::CREATE);
-        REQUIRE(write.myPath().filePath() == filename);
+        REQUIRE(
+            auxiliary::replace_all(write.myPath().filePath(), "\\", "/") ==
+            auxiliary::replace_all(filename, "\\", "/"));
         for (unsigned int i = 0; i < nIterations; ++i)
         {
             // std::cout << "Putting iteration " << i << std::endl;
@@ -1852,8 +1854,11 @@ inline void fileBased_write_test(const std::string &backend)
             Access::CREATE,
             jsonCfg);
         REQUIRE(
-            o.myPath().filePath() ==
-            ("../samples/subdir/serial_fileBased_write%03T." + backend));
+            auxiliary::replace_all(o.myPath().filePath(), "\\", "/") ==
+            auxiliary::replace_all(
+                "../samples/subdir/serial_fileBased_write%03T." + backend,
+                "\\",
+                "/"));
 
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
