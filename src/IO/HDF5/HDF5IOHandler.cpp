@@ -42,6 +42,7 @@
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Attribute.hpp"
 
+#include <H5FDmpio.h>
 #include <hdf5.h>
 #endif
 
