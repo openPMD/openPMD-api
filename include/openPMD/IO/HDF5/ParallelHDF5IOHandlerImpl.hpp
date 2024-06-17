@@ -43,6 +43,8 @@ public:
 
     MPI_Comm m_mpiComm;
     MPI_Info m_mpiInfo;
+
+    std::future<void> flush(internal::ParsedFlushParams &);
 }; // ParallelHDF5IOHandlerImpl
 #else
 class ParallelHDF5IOHandlerImpl

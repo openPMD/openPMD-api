@@ -20,6 +20,8 @@
  */
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/FlushParametersInternal.hpp"
+#include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -355,6 +357,55 @@ ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
                 << "Internal error: Failed to close HDF5 file (parallel)\n";
         m_openFileIDs.erase(file);
     }
+}
+
+std::future<void>
+ParallelHDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
+{
+    std::optional<H5FD_mpio_xfer_t> old_value;
+    if (params.backendConfig.json().contains("hdf5"))
+    {
+        auto hdf5_config = params.backendConfig["hdf5"];
+
+        if (hdf5_config.json().contains("independent_stores"))
+        {
+            auto independent_stores_json = hdf5_config["independent_stores"];
+            if (!independent_stores_json.json().is_boolean())
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "independent_stores"}, "Requires boolean value.");
+            }
+            bool independent_stores =
+                independent_stores_json.json().get<bool>();
+            old_value = std::make_optional<H5FD_mpio_xfer_t>();
+            herr_t status =
+                H5Pget_dxpl_mpio(m_datasetTransferProperty, &*old_value);
+            VERIFY(
+                status >= 0,
+                "[HDF5] Internal error: Failed to query the global data "
+                "transfer mode before flushing.");
+            H5FD_mpio_xfer_t new_value = independent_stores
+                ? H5FD_MPIO_INDEPENDENT
+                : H5FD_MPIO_COLLECTIVE;
+            status = H5Pset_dxpl_mpio(m_datasetTransferProperty, new_value);
+            VERIFY(
+                status >= 0,
+                "[HDF5] Internal error: Failed to set the local data "
+                "transfer mode before flushing.");
+        }
+    }
+    auto res = HDF5IOHandlerImpl::flush(params);
+
+    if (old_value.has_value())
+    {
+        herr_t status = H5Pset_dxpl_mpio(m_datasetTransferProperty, *old_value);
+        VERIFY(
+            status >= 0,
+            "[HDF5] Internal error: Failed to reset the global data "
+            "transfer mode after flushing.");
+    }
+
+    return res;
 }
 #else
 
