@@ -67,9 +67,38 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
             std::vector<std::string> const group =
                 t[1].cast<std::vector<std::string> >();
 
-            openPMD::Series series(
-                filename, Access::READ_ONLY, "defer_iteration_parsing = true");
-            return seriesAccessor(std::move(series), group);
+            /*
+             * Cache the Series per thread.
+             */
+            thread_local std::optional<openPMD::Series> series;
+            bool re_initialize = [&]() {
+                try
+                {
+                    return !series.has_value() || !series->operator bool() ||
+                        series->myPath().filePath() != filename;
+                }
+                /*
+                 * Better safe than sorry, if anything goes wrong because the
+                 * Series is in a weird state, just reinitialize it.
+                 */
+                catch (...)
+                {
+                    return true;
+                }
+            }();
+            if (re_initialize)
+            {
+                /*
+                 * Do NOT close the old Series, it might still be active in
+                 * terms of handed-out handles.
+                 */
+                series = std::make_optional<Series>(
+                    filename,
+                    Access::READ_ONLY,
+                    "defer_iteration_parsing = true");
+            }
+
+            return seriesAccessor(*series, group);
         }));
 }
 } // namespace openPMD
