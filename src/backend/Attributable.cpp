@@ -514,12 +514,39 @@ namespace internal
     template <typename T>
     T &makeOwning(T &self, Series s)
     {
+        /*
+         * `self` is a handle object such as RecordComponent or Mesh (see
+         * instantiations below).
+         * These objects don't normally keep alive the Series, i.e. as soon as
+         * the Series is destroyed, the handle becomes invalid.
+         * This function modifies the handle such that it actually keeps the
+         * Series alive and behaves otherwise identically.
+         * First, get the internal shared pointer of the handle.
+         */
         std::shared_ptr<typename T::Data_t> data_ptr = self.T::getShared();
         auto raw_ptr = data_ptr.get();
+        /*
+         * Now, create a new shared pointer pointing to the same address as the
+         * actual pointer and replace the old internal shared pointer by the new
+         * one.
+         */
         self.setData(std::shared_ptr<typename T::Data_t>{
             raw_ptr,
-            [s_lambda = std::move(s), data_ptr_lambda = std::move(data_ptr)](
-                auto const *) { /* no-op */ }});
+            /*
+             * Here comes the main trick.
+             * The new shared pointer stores (and thus keeps alive) two items
+             * via lambda capture in its destructor:
+             * 1. The old shared pointer.
+             * 2. The Series.
+             * It's important to notice that these two items are only stored
+             * within the newly created handle, and not internally within the
+             * actual openPMD object model. This means that no reference cycles
+             * can occur.
+             */
+            [s_lambda = std::move(s),
+             data_ptr_lambda = std::move(data_ptr)](auto const *) {
+                /* no-op, the lambda captures simply go out of scope */
+            }});
         return self;
     }
 
