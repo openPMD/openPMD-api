@@ -1514,8 +1514,12 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
         constexpr std::array<pair_t, 4> modeNames{
             pair_t{"write", adios2::Mode::Write},
             pair_t{"read", adios2::Mode::Read},
-            pair_t{"append", adios2::Mode::Append},
-            pair_t{"readrandomaccess", adios2::Mode::ReadRandomAccess}};
+            pair_t{"append", adios2::Mode::Append}
+#if openPMD_HAS_ADIOS_2_8
+            ,
+            pair_t{"readrandomaccess", adios2::Mode::ReadRandomAccess}
+#endif
+        };
         for (auto const &[name, mode] : modeNames)
         {
             if (name == access_mode_string)
