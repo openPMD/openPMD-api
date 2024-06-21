@@ -102,6 +102,8 @@ The openPMD-api distinguishes between a number of different access modes:
   We suggest to fully define iterations when using Append mode (i.e. as if using Create mode) to avoid implementation-specific behavior.
   Appending to an openPMD Series is only supported on a per-iteration level.
 
+  **Tip:** Use the ``adios2.engine.access_mode`` :ref:`backend key <backendconfig>` of the :ref:`ADIOS2 backend <backends-adios2>` to finetune the backend-specific behavior of Append mode for niche use cases.
+
   **Warning:** There is no reading involved in using Append mode.
   It is a user's responsibility to ensure that the appended dataset and the appended-to dataset are compatible with each other.
   The results of using incompatible backend configurations are undefined.
