@@ -32,6 +32,12 @@ namespace internal
         std::optional<MemorySelection> memorySelection;
     };
 
+    /*
+     * Actual data members of `ConfigureLoadStore<>`. They don't depend on the
+     * template parameter of that class template, so by extracting the members
+     * to this struct, we can pass them around between different instances of
+     * the class template.
+     */
     struct ConfigureLoadStoreData
     {
         ConfigureLoadStoreData(RecordComponent &);
@@ -42,6 +48,13 @@ namespace internal
     };
 } // namespace internal
 
+/** Basic configuration for a Load/Store operation.
+ *
+ * @tparam ChildClass CRT pattern.
+ *         The purpose is that in child classes `return *this` should return
+ *         an instance of the child class, not of ConfigureLoadStore.
+ *         Instantiate with void when using without subclass.
+ */
 template <typename ChildClass = void>
 class ConfigureLoadStore : protected internal::ConfigureLoadStoreData
 {
@@ -53,7 +66,7 @@ protected:
     ConfigureLoadStore(RecordComponent &rc);
     ConfigureLoadStore(ConfigureLoadStoreData &&);
 
-    auto dim() const -> uint8_t;
+    [[nodiscard]] auto dim() const -> uint8_t;
     auto getOffset() -> Offset const &;
     auto getExtent() -> Extent const &;
     auto storeChunkConfig() -> internal::LoadStoreConfig;
@@ -67,20 +80,21 @@ public:
     auto offset(Offset) -> return_type &;
     auto extent(Extent) -> return_type &;
 
+    /*
+     * If the type is non-const, then the return type should be
+     * ConfigureLoadStoreFromBuffer<>, ...
+     */
     template <typename T>
     struct shared_ptr_return_type_impl
     {
-        using type = ConfigureLoadStoreFromBuffer<
-            std::shared_ptr<std::remove_extent_t<T>>>;
+        using type = ConfigureLoadStoreFromBuffer<std::shared_ptr<T>>;
     };
+    /*
+     * ..., but if it is a const type, Load operations make no sense, so the
+     * return type should be ConfigureStoreChunkFromBuffer<>.
+     */
     template <typename T>
     struct shared_ptr_return_type_impl<T const>
-    {
-        using type =
-            ConfigureStoreChunkFromBuffer<std::shared_ptr<T const>, void>;
-    };
-    template <typename T>
-    struct shared_ptr_return_type_impl<T const[]>
     {
         using type =
             ConfigureStoreChunkFromBuffer<std::shared_ptr<T const>, void>;
@@ -88,13 +102,15 @@ public:
 
     template <typename T>
     using shared_ptr_return_type =
-        typename shared_ptr_return_type_impl<T>::type;
+        typename shared_ptr_return_type_impl<std::remove_extent_t<T>>::type;
 
-    template <typename T>
-    using normalize_dataset_type = std::remove_cv_t<std::remove_extent_t<T>>;
+    /*
+     * As loading into unique pointer types makes no sense, the case is simpler
+     * for unique pointers. Just remove the array extents here.
+     */
     template <typename T>
     using unique_ptr_return_type = ConfigureStoreChunkFromBuffer<
-        UniquePtrWithLambda<normalize_dataset_type<T>>,
+        UniquePtrWithLambda<std::remove_extent_t<T>>,
         void>;
 
     // @todo rvalue references..?
@@ -127,6 +143,19 @@ public:
     [[nodiscard]] auto enqueueLoadVariant() -> shared_ptr_dataset_types;
 };
 
+/** Configuration for a Store operation with a buffer type.
+ *
+ * This class does intentionally not support Load operations since there are
+ * pointer types (const pointers, unique pointers) where Load operations make no
+ * sense. See the \ref ConfigureLoadStoreFromBuffer class template for both
+ * Load/Store operations.
+ *
+ * @tparam Ptr_Type The type of pointer used internally.
+ * @tparam ChildClass CRT pattern.
+ *         The purpose is that in child classes `return *this` should return
+ *         an instance of the child class, not of ConfigureStoreChunkFromBuffer.
+ *         Instantiate with void when using without subclass.
+ */
 template <typename Ptr_Type, typename ChildClass = void>
 class ConfigureStoreChunkFromBuffer
     : public ConfigureLoadStore<std::conditional_t<
@@ -161,6 +190,12 @@ public:
     auto as_parent() const & -> parent_t const &;
 
     auto enqueueStore() -> void;
+
+    /** This intentionally shadows the parent class's enqueueLoad method in
+     * order to show a compile error when using enqueueLoad() on an object of
+     * this class. The parent method can still be accessed through as_parent()
+     * if needed.
+     */
     template <typename X = void>
     auto enqueueLoad()
     {
@@ -171,6 +206,14 @@ public:
     }
 };
 
+/** Configuration for a Load/Store operation with a buffer type.
+ *
+ * Only instantiated for pointer types where Load operations make sense (e.g. no
+ * const pointers and no unique pointers).
+ * \ref ConfigureStoreChunkFromBuffer is used otherwise.
+ *
+ * @tparam Ptr_Type The type of pointer used internally.
+ */
 template <typename Ptr_Type>
 class ConfigureLoadStoreFromBuffer
     : public ConfigureStoreChunkFromBuffer<
