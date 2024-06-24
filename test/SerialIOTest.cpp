@@ -928,7 +928,11 @@ inline void constant_scalar(std::string const &file_ending)
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
-        E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
+        // check that const-type unique pointers work in the builder pattern
+        E_y.prepareLoadStore()
+            .extent({1, 2, 3})
+            .withUniquePtr(std::move(E).static_cast_<unsigned int const>())
+            .enqueueStore();
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.iterations[1].meshes["E"];

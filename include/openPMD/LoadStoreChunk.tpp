@@ -24,10 +24,6 @@ auto ConfigureLoadStore<ChildClass>::withUniquePtr(UniquePtrWithLambda<T> data)
     -> unique_ptr_return_type<T>
 
 {
-    // should we support them?
-    static_assert(
-        !std::is_const_v<T>,
-        "Unique pointers to const types not supported as storeChunk buffers.");
     if (!data)
     {
         throw std::runtime_error(

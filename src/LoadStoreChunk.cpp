@@ -41,6 +41,22 @@ namespace
         return auxiliary::WriteBuffer(
             std::move(ptr).template static_cast_<void>());
     }
+
+    /*
+     * There is no backend support currently for const unique pointers.
+     * We support these mostly for providing a clean API to users that have such
+     * pointers and want to store from them, but there will be no
+     * backend-specific optimizations for such buffers as there are for
+     * non-const unique pointers.
+     */
+    template <typename T>
+    auto
+    asWriteBuffer(UniquePtrWithLambda<T const> &&ptr) -> auxiliary::WriteBuffer
+    {
+        auto raw_ptr = ptr.get();
+        return asWriteBuffer(std::shared_ptr<T const>{
+            raw_ptr, [ptr_lambda = std::move(ptr)](auto const *) {}});
+    }
 } // namespace
 
 template <typename ChildClass>
@@ -272,6 +288,14 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
     INSTANTIATE_METHOD_TEMPLATES(                                              \
         ConfigureLoadStore<                                                    \
             ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>,      \
+        dtype)                                                                 \
+    template class ConfigureStoreChunkFromBuffer<                              \
+        UniquePtrWithLambda<dtype const>>;                                     \
+    template class ConfigureLoadStore<                                         \
+        ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype const>>>;      \
+    INSTANTIATE_METHOD_TEMPLATES(                                              \
+        ConfigureLoadStore<                                                    \
+            ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype const>>>,  \
         dtype)
 // clang-format on
 
