@@ -142,6 +142,11 @@ inline void RecordComponent::loadChunk_impl(
     std::shared_ptr<T_with_extent> data,
     internal::LoadStoreConfigWithBuffer cfg)
 {
+    if (cfg.memorySelection.has_value())
+    {
+        throw error::WrongAPIUsage(
+            "Unsupported: Memory selections in chunk loading.");
+    }
     using T = std::remove_cv_t<std::remove_extent_t<T_with_extent>>;
     Datatype dtype = determineDatatype(data);
     if (dtype != getDatatype())
