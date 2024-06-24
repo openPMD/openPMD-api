@@ -238,33 +238,32 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
 
 #undef INSTANTIATE_METHOD_TEMPLATES_FOR_BASE
 
-/*
- * In the following macro, we replace `dtype` with `std::remove_cv_t<dtype
- * const>` since otherwise clang-tidy won't understand it's a type and we cannot
- * surround it with parentheses. The type names are surrounded with angle
- * brackets, so the warning is useless.
- */
-
+/* clang-format would destroy the NOLINT comments */
+// clang-format off
 #define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
-    template class ConfigureLoadStoreFromBuffer<                               \
-        std::shared_ptr<std::remove_cv_t<dtype const>>>;                       \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
+    template class ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>;       \
     template class ConfigureStoreChunkFromBuffer<                              \
         std::shared_ptr<dtype>,                                                \
-        ConfigureLoadStoreFromBuffer<                                          \
-            std::shared_ptr<std::remove_cv_t<dtype const>>>>;                  \
-    template class ConfigureLoadStore<ConfigureLoadStoreFromBuffer<            \
-        std::shared_ptr<std::remove_cv_t<dtype const>>>>;                      \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
+    ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>;                     \
+    template class ConfigureLoadStore<                                         \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
+        ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>;                 \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureLoadStore<ConfigureLoadStoreFromBuffer<                       \
-            std::shared_ptr<std::remove_cv_t<dtype const>>>>,                  \
+        ConfigureLoadStore<                                                    \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
+            ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>,             \
         dtype)                                                                 \
-    template class ConfigureStoreChunkFromBuffer<                              \
-        UniquePtrWithLambda<std::remove_cv_t<dtype const>>>;                   \
-    template class ConfigureLoadStore<ConfigureStoreChunkFromBuffer<           \
-        UniquePtrWithLambda<std::remove_cv_t<dtype const>>>>;                  \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
+    template class ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>;  \
+    template class ConfigureLoadStore<                                         \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
+        ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>;            \
     INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureLoadStore<ConfigureStoreChunkFromBuffer<                      \
-            UniquePtrWithLambda<std::remove_cv_t<dtype const>>>>,              \
+        ConfigureLoadStore<                                                    \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
+            ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>,        \
         dtype)                                                                 \
     template class ConfigureStoreChunkFromBuffer<                              \
         std::shared_ptr<dtype const>>;                                         \
@@ -274,6 +273,7 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
         ConfigureLoadStore<                                                    \
             ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>,      \
         dtype)
+// clang-format on
 
 OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_STORE_CHUNK_FROM_BUFFER)
 
