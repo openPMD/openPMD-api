@@ -128,22 +128,20 @@ jobs:
     - name: Install
       run: |
         sudo apt update
-        # Remove the default Python and link python3.11 in its stead to avoid
-        # compatibility issues between the two versions.
-        sudo apt -y autoremove python3
-        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
-        python="$(which python3.11)"
-        sudo ln -s "$python" "${python%.11}"
-        sudo ln -s "$python" "${python%3.11}"
-        wget https://bootstrap.pypa.io/get-pip.py
-        python3.11 get-pip.py
-        python3.11 -m pip install numpy pandas
+        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget python3.11-venv
         sudo .github/workflows/dependencies/install_spack
+        python3.11 -m venv /opt/python_venv
+        . /opt/python_venv/bin/activate
+        python -m pip install numpy pandas
     - name: Build
       env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
+        # Build Spack packages against system Python
+        # and activate the virtual environment just for the openPMD build.
+        # Spack does not play nice with venv.
         eval $(spack env activate --sh .github/ci/spack-envs/clang14_py311_nompi_h5_ad2/)
         spack install
+        . /opt/python_venv/bin/activate
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -153,7 +151,7 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON     \
-          -DPython_EXECUTABLE=$(which python3.11)
+          -DPython_EXECUTABLE="$(which python)"
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
