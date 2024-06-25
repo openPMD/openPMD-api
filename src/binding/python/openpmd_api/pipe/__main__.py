@@ -278,6 +278,7 @@ class pipe:
                         deferred.dynamicView.current_buffer(), deferred.offset,
                         deferred.extent)
                 in_iteration.close()
+                out_iteration.close()
                 self.loads.clear()
                 sys.stdout.flush()
         elif isinstance(src, io.Record_Component) and (not is_container
