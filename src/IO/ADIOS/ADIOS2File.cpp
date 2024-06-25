@@ -1197,12 +1197,7 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
 
 void ADIOS2File::drop()
 {
-    if (!m_buffer.empty())
-    {
-        throw error::Internal(
-            "ADIOS2 backend: File data for '" + m_file +
-            "' dropped, but there were enqueued operations.");
-    }
+    assert(m_buffer.empty());
 }
 
 static std::vector<std::string> availableAttributesOrVariablesPrefixed(

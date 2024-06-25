@@ -1321,12 +1321,12 @@ void Series::flushFileBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
+        }
 
-            // Phase 3
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
+        // Phase 3
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
         }
         break;
     case Access::READ_WRITE:
@@ -1379,18 +1379,18 @@ void Series::flushFileBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
-
-            // Phase 3
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
              */
             setDirty(allDirty);
         }
         setDirty(false);
+
+        // Phase 3
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
+        }
         break;
     }
     }
@@ -1431,14 +1431,14 @@ void Series::flushGorVBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
+        }
 
-            // Phase 3
-            Parameter<Operation::TOUCH> touch;
-            IOHandler()->enqueue(IOTask(&writable(), touch));
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
+        // Phase 3
+        Parameter<Operation::TOUCH> touch;
+        IOHandler()->enqueue(IOTask(&writable(), touch));
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
         }
     }
     else
