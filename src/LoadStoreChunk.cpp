@@ -53,9 +53,12 @@ namespace
     auto
     asWriteBuffer(UniquePtrWithLambda<T const> &&ptr) -> auxiliary::WriteBuffer
     {
-        auto raw_ptr = ptr.get();
+        auto raw_ptr = ptr.release();
         return asWriteBuffer(std::shared_ptr<T const>{
-            raw_ptr, [ptr_lambda = std::move(ptr)](auto const *) {}});
+            raw_ptr,
+            [deleter = std::move(ptr.get_deleter())](auto const *delete_me) {
+                deleter(delete_me);
+            }});
     }
 } // namespace
 
