@@ -425,8 +425,16 @@ std::future<void> AbstractIOHandlerImpl::flush()
                 auto &parameter =
                     deref_dynamic_cast<Parameter<O::TOUCH>>(i.parameter.get());
                 writeToStderr(
-                    "[", i.writable->parent, "->", i.writable, "] DEREGISTER");
+                    "[", i.writable->parent, "->", i.writable, "] TOUCH");
                 touch(i.writable, parameter);
+                break;
+            }
+            case O::SET_WRITTEN: {
+                auto &parameter = deref_dynamic_cast<Parameter<O::SET_WRITTEN>>(
+                    i.parameter.get());
+                writeToStderr(
+                    "[", i.writable->parent, "->", i.writable, "] SET_WRITTEN");
+                setWritten(i.writable, parameter);
                 break;
             }
             }
@@ -475,5 +483,11 @@ std::future<void> AbstractIOHandlerImpl::flush()
         (*m_handler).m_work.pop();
     }
     return std::future<void>();
+}
+
+void AbstractIOHandlerImpl::setWritten(
+    Writable *w, Parameter<Operation::SET_WRITTEN> const &param)
+{
+    w->written = param.target_status;
 }
 } // namespace openPMD

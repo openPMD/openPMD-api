@@ -1344,10 +1344,16 @@ void Series::flushFileBased(
                  * emulate the file belonging to each iteration as not yet
                  * written, even if the iteration itself is already written
                  * (to ensure that the Series gets reassociated with the
-                 * current iteration)
+                 * current iteration by the backend)
                  */
-                written() = false;
-                series.iterations.written() = false;
+                Parameter<Operation::SET_WRITTEN> setWritten;
+                setWritten.target_status = false;
+                for (auto a :
+                     std::array<Attributable *, 2>{this, &series.iterations})
+                {
+                    a->writable().written = false;
+                    IOHandler()->enqueue(IOTask(a, setWritten));
+                }
 
                 setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);

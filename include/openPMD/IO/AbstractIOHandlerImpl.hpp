@@ -400,6 +400,9 @@ public:
     virtual void
     touch(Writable *, Parameter<Operation::TOUCH> const &param) = 0;
 
+    virtual void
+    setWritten(Writable *, Parameter<Operation::SET_WRITTEN> const &param);
+
     AbstractIOHandler *m_handler;
     bool m_verboseIOTasks = false;
 
