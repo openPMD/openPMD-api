@@ -292,6 +292,7 @@ void JSONIOHandlerImpl::createDataset(
         std::string name = removeSlashes(parameter.name);
 
         auto file = refreshFileFromParent(writable);
+        writable->abstractFilePosition.reset();
         setAndGetFilePosition(writable);
         auto &jsonVal = obtainJsonContents(writable);
         // be sure to have a JSON object, not a list
@@ -1346,12 +1347,8 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
 nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(Writable *writable)
 {
     auto file = refreshFileFromParent(writable);
-    std::cout << "Getting JSON contents from file '" << *file
-              << "':" << std::endl;
     auto filePosition = setAndGetFilePosition(writable, false);
-    auto &res = (*obtainJsonContents(file))[filePosition->id];
-    std::cout << "\t" << res << std::endl;
-    return res;
+    return (*obtainJsonContents(file))[filePosition->id];
 }
 
 auto JSONIOHandlerImpl::putJsonContents(

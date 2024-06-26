@@ -750,6 +750,7 @@ void ADIOS2IOHandlerImpl::createDataset(
 
         auto const file =
             refreshFileFromParent(writable, /* preferParentFile = */ true);
+        writable->abstractFilePosition.reset();
         auto filePos = setAndGetFilePosition(writable, name);
         filePos->gd = GroupOrDataset::DATASET;
         auto const varName = nameOfVariable(writable);
