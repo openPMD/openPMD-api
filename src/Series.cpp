@@ -1138,12 +1138,12 @@ Given file pattern: ')END"
             {
                 /* Access::READ_WRITE can be used to create a new Series
                  * allow setting attributes in that case */
-                written() = false;
+                setWritten(false);
 
                 initDefaults(input->iterationEncoding);
                 setIterationEncoding(input->iterationEncoding);
 
-                written() = true;
+                setWritten(true);
             }
         }
         catch (...)
@@ -1346,14 +1346,8 @@ void Series::flushFileBased(
                  * (to ensure that the Series gets reassociated with the
                  * current iteration by the backend)
                  */
-                Parameter<Operation::SET_WRITTEN> setWritten;
-                setWritten.target_status = false;
-                for (auto a :
-                     std::array<Attributable *, 2>{this, &series.iterations})
-                {
-                    a->writable().written = false;
-                    IOHandler()->enqueue(IOTask(a, setWritten));
-                }
+                this->setWritten(false);
+                series.iterations.setWritten(false);
 
                 setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);
@@ -1804,9 +1798,9 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
-        written() = false;
+        setWritten(false);
         setIterationFormat(Attribute(*aRead.resource).get<std::string>());
-        written() = true;
+        setWritten(true);
     }
     else
         throw error::ReadError(
@@ -1955,9 +1949,9 @@ creating new iterations.
         IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
-            written() = false;
+            setWritten(false);
             setIterationFormat(Attribute(*aRead.resource).get<std::string>());
-            written() = true;
+            setWritten(true);
         }
         else
             throw error::ReadError(
@@ -2222,12 +2216,12 @@ void Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
-                it.second.meshes.written() = false;
+                it.second.meshes.setWritten(false);
 
             setMeshesPath(val.value());
 
             for (auto &it : series.iterations)
-                it.second.meshes.written() = true;
+                it.second.meshes.setWritten(true);
         }
         else
             throw error::ReadError(
@@ -2252,12 +2246,12 @@ void Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
-                it.second.particles.written() = false;
+                it.second.particles.setWritten(false);
 
             setParticlesPath(val.value());
 
             for (auto &it : series.iterations)
-                it.second.particles.written() = true;
+                it.second.particles.setWritten(true);
         }
         else
             throw error::ReadError(

@@ -213,7 +213,8 @@ void Iteration::flushFileBased(
         /*
          * If it was written before, then in the context of another iteration.
          */
-        s.get().m_rankTable.m_attributable.written() = false;
+        auto &attr = s.get().m_rankTable.m_attributable;
+        attr.setWritten(false);
         s.get()
             .m_rankTable.m_attributable.get()
             .m_writable.abstractFilePosition.reset();
@@ -630,9 +631,9 @@ void Iteration::readMeshes(std::string const &meshesPath)
         MeshRecordComponent &mrc = m;
         IOHandler()->enqueue(IOTask(&mrc, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
-        mrc.written() = false;
+        mrc.setWritten(false);
         mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        mrc.written() = true;
+        mrc.setWritten(true);
         try
         {
             m.read();
@@ -754,7 +755,7 @@ auto Iteration::beginStep(
         access::read(series.IOHandler()->m_frontendAccess))
     {
         bool previous = series.iterations.written();
-        series.iterations.written() = false;
+        series.iterations.setWritten(false);
         auto oldStatus = IOHandl->m_seriesStatus;
         IOHandl->m_seriesStatus = internal::SeriesStatus::Parsing;
         try
@@ -770,7 +771,7 @@ auto Iteration::beginStep(
             throw;
         }
         IOHandl->m_seriesStatus = oldStatus;
-        series.iterations.written() = previous;
+        series.iterations.setWritten(previous);
     }
 
     res.stepStatus = status;

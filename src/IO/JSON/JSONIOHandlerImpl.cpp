@@ -1346,8 +1346,12 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
 nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(Writable *writable)
 {
     auto file = refreshFileFromParent(writable);
+    std::cout << "Getting JSON contents from file '" << *file
+              << "':" << std::endl;
     auto filePosition = setAndGetFilePosition(writable, false);
-    return (*obtainJsonContents(file))[filePosition->id];
+    auto &res = (*obtainJsonContents(file))[filePosition->id];
+    std::cout << "\t" << res << std::endl;
+    return res;
 }
 
 auto JSONIOHandlerImpl::putJsonContents(

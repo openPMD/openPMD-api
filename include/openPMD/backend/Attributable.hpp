@@ -481,9 +481,12 @@ OPENPMD_protected
     {
         return writable().written;
     }
-    bool &written()
+    void setWritten(bool val)
     {
-        return writable().written;
+        Parameter<Operation::SET_WRITTEN> param;
+        param.target_status = val;
+        IOHandler()->enqueue(IOTask(this, param));
+        writable().written = val;
     }
 
 private:

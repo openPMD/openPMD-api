@@ -2071,6 +2071,7 @@ inline void fileBased_write_test(const std::string &backend)
             .makeConstant<double>(1.0);
 
         o.iterations[overlong_it].setTime(static_cast<double>(overlong_it));
+        o.flush();
         REQUIRE(o.iterations.size() == 7);
     }
     REQUIRE(
