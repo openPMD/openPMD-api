@@ -399,9 +399,9 @@ void RecordComponent::readBase(bool require_unit_si)
 
         Attribute a(*aRead.resource);
         DT dtype = *aRead.dtype;
-        written() = false;
+        setWritten(false);
         switchNonVectorType<MakeConstant>(dtype, *this, a);
-        written() = true;
+        setWritten(true);
 
         aRead.name = "shape";
         IOHandler()->enqueue(IOTask(this, aRead));
@@ -426,9 +426,9 @@ void RecordComponent::readBase(bool require_unit_si)
                 oss.str());
         }
 
-        written() = false;
+        setWritten(false);
         resetDataset(Dataset(dtype, e));
-        written() = true;
+        setWritten(true);
     }
 
     readAttributes(ReadMode::FullyReread);

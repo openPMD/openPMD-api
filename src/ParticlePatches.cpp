@@ -93,9 +93,9 @@ void ParticlePatches::read()
                     datatypeToString(*dOpen.dtype) + ")");
 
         /* allow all attributes to be set */
-        prc.written() = false;
+        prc.setWritten(false);
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        prc.written() = true;
+        prc.setWritten(true);
 
         pr.setDirty(false);
         try
