@@ -1138,12 +1138,12 @@ Given file pattern: ')END"
             {
                 /* Access::READ_WRITE can be used to create a new Series
                  * allow setting attributes in that case */
-                setWritten(false);
+                setWritten(false, false);
 
                 initDefaults(input->iterationEncoding);
                 setIterationEncoding(input->iterationEncoding);
 
-                setWritten(true);
+                setWritten(true, false);
             }
         }
         catch (...)
@@ -1346,8 +1346,8 @@ void Series::flushFileBased(
                  * (to ensure that the Series gets reassociated with the
                  * current iteration by the backend)
                  */
-                this->setWritten(false);
-                series.iterations.setWritten(false);
+                this->setWritten(false, true);
+                series.iterations.setWritten(false, true);
 
                 setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);
@@ -1798,9 +1798,9 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
-        setWritten(false);
+        setWritten(false, false);
         setIterationFormat(Attribute(*aRead.resource).get<std::string>());
-        setWritten(true);
+        setWritten(true, false);
     }
     else
         throw error::ReadError(
@@ -1949,9 +1949,9 @@ creating new iterations.
         IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
-            setWritten(false);
+            setWritten(false, false);
             setIterationFormat(Attribute(*aRead.resource).get<std::string>());
-            setWritten(true);
+            setWritten(true, false);
         }
         else
             throw error::ReadError(
@@ -2216,12 +2216,12 @@ void Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
-                it.second.meshes.setWritten(false);
+                it.second.meshes.setWritten(false, false);
 
             setMeshesPath(val.value());
 
             for (auto &it : series.iterations)
-                it.second.meshes.setWritten(true);
+                it.second.meshes.setWritten(true, false);
         }
         else
             throw error::ReadError(
@@ -2246,12 +2246,12 @@ void Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
-                it.second.particles.setWritten(false);
+                it.second.particles.setWritten(false, false);
 
             setParticlesPath(val.value());
 
             for (auto &it : series.iterations)
-                it.second.particles.setWritten(true);
+                it.second.particles.setWritten(true, false);
         }
         else
             throw error::ReadError(

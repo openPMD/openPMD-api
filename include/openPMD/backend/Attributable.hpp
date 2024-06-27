@@ -481,11 +481,14 @@ OPENPMD_protected
     {
         return writable().written;
     }
-    void setWritten(bool val)
+    void setWritten(bool val, bool asynchronous)
     {
-        Parameter<Operation::SET_WRITTEN> param;
-        param.target_status = val;
-        IOHandler()->enqueue(IOTask(this, param));
+        if (asynchronous)
+        {
+            Parameter<Operation::SET_WRITTEN> param;
+            param.target_status = val;
+            IOHandler()->enqueue(IOTask(this, param));
+        }
         writable().written = val;
     }
 

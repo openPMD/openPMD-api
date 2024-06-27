@@ -90,9 +90,9 @@ void PatchRecord::read()
         IOHandler()->enqueue(IOTask(&prc, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
         /* allow all attributes to be set */
-        prc.setWritten(false);
+        prc.setWritten(false, false);
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        prc.setWritten(true);
+        prc.setWritten(true, false);
         try
         {
             prc.read(/* require_unit_si = */ false);

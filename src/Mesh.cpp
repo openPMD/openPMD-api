@@ -438,9 +438,9 @@ void Mesh::read()
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush(internal::defaultFlushParams);
-            rc.setWritten(false);
+            rc.setWritten(false, false);
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-            rc.setWritten(true);
+            rc.setWritten(true, false);
             try
             {
                 rc.read();
