@@ -425,7 +425,7 @@ std::future<void> AbstractIOHandlerImpl::flush()
                 auto &parameter =
                     deref_dynamic_cast<Parameter<O::TOUCH>>(i.parameter.get());
                 writeToStderr(
-                    "[", i.writable->parent, "->", i.writable, "] DEREGISTER");
+                    "[", i.writable->parent, "->", i.writable, "] TOUCH");
                 touch(i.writable, parameter);
                 break;
             }
