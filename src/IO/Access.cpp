@@ -1,5 +1,8 @@
 #include "openPMD/IO/Access.hpp"
 
+#include <iostream>
+#include <string>
+
 namespace openPMD
 {
 std::ostream &operator<<(std::ostream &o, Access const &a)
