@@ -149,7 +149,17 @@ int main()
         d = io::Dataset(dtype, mpiDims);
         electrons["positionOffset"]["x"].resetDataset(d);
 
-        auto dset = io::Dataset(io::determineDatatype<uint64_t>(), {2});
+        auto dset = io::Dataset(
+            io::determineDatatype<uint64_t>(),
+            {2},
+            R"(
+                hdf5.dataset.chunks = "auto"
+
+                hdf5.dataset.permanent_filters = [
+                    {type = "zlib", aggression = 5},
+                    2
+                ]
+            )");
         electrons.particlePatches["numParticles"].resetDataset(dset);
         electrons.particlePatches["numParticlesOffset"].resetDataset(dset);
 

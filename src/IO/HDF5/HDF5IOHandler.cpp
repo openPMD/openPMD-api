@@ -26,6 +26,7 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include <H5Ppublic.h>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -468,8 +469,19 @@ namespace
     using chunking_t = std::vector<hsize_t>;
     struct DatasetParams
     {
+        struct Zlib
+        {
+            unsigned aggression = 1;
+        };
+        using filter_t = std::variant<
+            // generic
+            H5Z_filter_t,
+            // H5Pset_deflate
+            Zlib>;
+
         std::optional<chunking_t> chunking;
         bool resizable = false;
+        std::vector<filter_t> filters;
     };
 
     auto parse_dataset_config(
@@ -502,6 +514,19 @@ namespace
                     "Environment variable OPENPMD_HDF5_CHUNKS accepts values "
                     "'auto' and 'none'.");
             }
+        };
+
+        auto filter_error = []() {
+            return error::BackendConfigSchema(
+                {"hdf5", "dataset", "permanent_filters"},
+                "Must be either a scalar filter or a vector of filters, "
+                "where a filter is either an integer ID for the filter or "
+                "a JSON object identifying a builtin filter.");
+        };
+        auto builtin_filter_error = []() {
+            return error::BackendConfigSchema(
+                {"hdf5", "dataset", "permanent_filters"},
+                R"(A builtin filter is a JSON object with mandatory string type key "type". The only supported filter is currently "zlib", which optionally takes an unsigned integer type key "aggression" (default value 1).)");
         };
 
         compute_chunking_t compute_chunking =
@@ -542,8 +567,75 @@ namespace
                     throw_chunking_error();
                 }
             }
+
+            if (datasetConfig.json().contains("permanent_filters"))
+            {
+                auto parse_filter =
+                    [&filter_error, &builtin_filter_error](
+                        auto &filter_config,
+                        auto &&json_accessor) -> DatasetParams::filter_t {
+                    if (json_accessor(filter_config).is_number_integer())
+                    {
+                        return json_accessor(filter_config)
+                            .template get<H5Z_filter_t>();
+                    }
+                    else if (json_accessor(filter_config).is_object())
+                    {
+                        if (!json_accessor(filter_config).contains("type"))
+                        {
+                            throw builtin_filter_error();
+                        }
+                        if (auto const &type_config =
+                                json::asLowerCaseStringDynamic(
+                                    json_accessor(filter_config["type"]));
+                            !type_config.has_value() || *type_config != "zlib")
+                        {
+                            throw builtin_filter_error();
+                        }
+
+                        DatasetParams::Zlib zlib;
+                        if (json_accessor(filter_config).contains("aggression"))
+                        {
+                            auto const &aggression_config =
+                                json_accessor(filter_config["aggression"]);
+                            if (!aggression_config.is_number_integer())
+                            {
+                                throw builtin_filter_error();
+                            }
+                            zlib.aggression =
+                                aggression_config.template get<unsigned>();
+                        }
+                        return zlib;
+                    }
+                    else
+                    {
+                        throw filter_error();
+                    }
+                };
+                auto permanent_filters = datasetConfig["permanent_filters"];
+                if (permanent_filters.json().is_array())
+                {
+                    permanent_filters.declareFullyRead();
+                    res.filters.reserve(permanent_filters.json().size());
+                    for (auto const &entry : permanent_filters.json())
+                    {
+                        res.filters.push_back(parse_filter(
+                            entry, [](auto const &j) -> nlohmann::json const & {
+                                return j;
+                            }));
+                    }
+                }
+                else
+                {
+                    res.filters = {parse_filter(
+                        permanent_filters,
+                        [](auto &&j) -> nlohmann::json const & {
+                            return j.json();
+                        })};
+                }
+            }
         }
-        std::optional<chunking_t> chunking = std::visit(
+        res.chunking = std::visit(
             auxiliary::overloaded{
                 [&](chunking_t &&explicitly_specified)
                     -> std::optional<chunking_t> {
@@ -630,7 +722,7 @@ void HDF5IOHandlerImpl::createDataset(
             return parsed_config;
         }();
 
-        auto [chunking, is_resizable_dataset] =
+        auto [chunking, is_resizable_dataset, filters] =
             parse_dataset_config(config, dims, d);
 
         parameters.warnUnusedParameters(
@@ -755,11 +847,25 @@ void HDF5IOHandlerImpl::createDataset(
             }
         }
 
-        std::string const &compression = ""; // @todo read from JSON
-        if (!compression.empty())
-            std::cerr
-                << "[HDF5] Compression not yet implemented in HDF5 backend."
-                << std::endl;
+        for (auto const &filter : filters)
+        {
+            herr_t status = std::visit(
+                auxiliary::overloaded{
+                    [&](H5Z_filter_t filter_id) {
+                        return H5Pset_filter(
+                            datasetCreationProperty, filter_id, 0, 0, nullptr);
+                    },
+                    [&](DatasetParams::Zlib const &zlib) {
+                        return H5Pset_deflate(
+                            datasetCreationProperty, zlib.aggression);
+                    }},
+                filter);
+            VERIFY(
+                status == 0,
+                "[HDF5] Internal error: Failed to set filter during dataset "
+                "creation");
+        }
+
         /*
         {
             std::vector< std::string > args = auxiliary::split(compression,
