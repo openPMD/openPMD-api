@@ -74,6 +74,26 @@ namespace openPMD
     } while (0)
 #endif
 
+constexpr char const *const init_json_shadow_str = &R"(
+{
+    "dataset": {
+    "chunks": null
+    },
+    "independent_stores": null
+})"[1];
+constexpr char const *dataset_cfg_mask = &R"(
+{
+  "dataset": {
+    "chunks": null,
+    "permanent_filters": null
+  }
+}
+)"[1];
+constexpr char const *const flush_cfg_mask = &R"(
+{
+    "independent_stores": null
+})"[1];
+
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     AbstractIOHandler *handler,
     json::TracingJSON config,
@@ -149,23 +169,6 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
         m_config = config["hdf5"];
 
         {
-            constexpr char const *const init_json_shadow_str = R"(
-            {
-              "dataset": {
-                "chunks": null
-              },
-              "independent_stores": null
-            })";
-            constexpr char const *const dataset_cfg_mask = R"(
-            {
-              "dataset": {
-                "chunks": null
-              }
-            })";
-            constexpr char const *const flush_cfg_mask = R"(
-            {
-              "independent_stores": null
-            })";
             m_global_dataset_config = m_config.json();
             json::filterByTemplate(
                 m_global_dataset_config,
@@ -460,72 +463,28 @@ void HDF5IOHandlerImpl::createPath(
         "creation");
 }
 
-void HDF5IOHandlerImpl::createDataset(
-    Writable *writable, Parameter<Operation::CREATE_DATASET> const &parameters)
+namespace
 {
-    if (access::readOnly(m_handler->m_backendAccess))
-        throw std::runtime_error(
-            "[HDF5] Creating a dataset in a file opened as read only is not "
-            "possible.");
-
-    if (parameters.joinedDimension.has_value())
+    using chunking_t = std::vector<hsize_t>;
+    struct DatasetParams
     {
-        error::throwOperationUnsupportedInBackend(
-            "ADIOS1", "Joined Arrays currently only supported in ADIOS2");
-    }
+        std::optional<chunking_t> chunking;
+        bool resizable = false;
+    };
 
-    if (!writable->written)
+    auto parse_dataset_config(
+        json::TracingJSON &config,
+        std::vector<hsize_t> const &dims,
+        Datatype const d) -> DatasetParams
     {
-        /* Sanitize name */
-        std::string name = parameters.name;
-        if (auxiliary::starts_with(name, '/'))
-            name = auxiliary::replace_first(name, "/", "");
-        if (auxiliary::ends_with(name, '/'))
-            name = auxiliary::replace_last(name, "/", "");
-
-        std::vector<hsize_t> dims;
-        std::uint64_t num_elements = 1u;
-        for (auto const &val : parameters.extent)
-        {
-            dims.push_back(static_cast<hsize_t>(val));
-            num_elements *= val;
-        }
-
-        Datatype d = parameters.dtype;
-        if (d == Datatype::UNDEFINED)
-        {
-            // TODO handle unknown dtype
-            std::cerr << "[HDF5] Datatype::UNDEFINED caught during dataset "
-                         "creation (serial HDF5)"
-                      << std::endl;
-            d = Datatype::BOOL;
-        }
-
-        json::TracingJSON config = [&]() {
-            auto parsed_config = json::parseOptions(
-                parameters.options, /* considerFiles = */ false);
-            if (auto hdf5_config_it = parsed_config.config.find("hdf5");
-                hdf5_config_it != parsed_config.config.end())
-            {
-                auto copy = m_global_dataset_config;
-                json::merge(copy, hdf5_config_it.value());
-                hdf5_config_it.value() = std::move(copy);
-            }
-            else
-            {
-                parsed_config.config["hdf5"] = m_global_dataset_config;
-            }
-            return parsed_config;
-        }();
+        DatasetParams res;
 
         // general
-        bool is_resizable_dataset = false;
         if (config.json().contains("resizable"))
         {
-            is_resizable_dataset = config["resizable"].json().get<bool>();
+            res.resizable = config["resizable"].json().get<bool>();
         }
 
-        using chunking_t = std::vector<hsize_t>;
         using compute_chunking_t =
             std::variant<chunking_t, std::string /* either "none" or "auto"*/>;
 
@@ -608,6 +567,71 @@ void HDF5IOHandlerImpl::createDataset(
                     }
                 }},
             std::move(compute_chunking));
+
+        return res;
+    }
+} // namespace
+
+void HDF5IOHandlerImpl::createDataset(
+    Writable *writable, Parameter<Operation::CREATE_DATASET> const &parameters)
+{
+    if (access::readOnly(m_handler->m_backendAccess))
+        throw std::runtime_error(
+            "[HDF5] Creating a dataset in a file opened as read only is not "
+            "possible.");
+
+    if (parameters.joinedDimension.has_value())
+    {
+        error::throwOperationUnsupportedInBackend(
+            "ADIOS1", "Joined Arrays currently only supported in ADIOS2");
+    }
+
+    if (!writable->written)
+    {
+        /* Sanitize name */
+        std::string name = parameters.name;
+        if (auxiliary::starts_with(name, '/'))
+            name = auxiliary::replace_first(name, "/", "");
+        if (auxiliary::ends_with(name, '/'))
+            name = auxiliary::replace_last(name, "/", "");
+
+        std::vector<hsize_t> dims;
+        std::uint64_t num_elements = 1u;
+        for (auto const &val : parameters.extent)
+        {
+            dims.push_back(static_cast<hsize_t>(val));
+            num_elements *= val;
+        }
+
+        Datatype d = parameters.dtype;
+        if (d == Datatype::UNDEFINED)
+        {
+            // TODO handle unknown dtype
+            std::cerr << "[HDF5] Datatype::UNDEFINED caught during dataset "
+                         "creation (serial HDF5)"
+                      << std::endl;
+            d = Datatype::BOOL;
+        }
+
+        json::TracingJSON config = [&]() {
+            auto parsed_config = json::parseOptions(
+                parameters.options, /* considerFiles = */ false);
+            if (auto hdf5_config_it = parsed_config.config.find("hdf5");
+                hdf5_config_it != parsed_config.config.end())
+            {
+                auto copy = m_global_dataset_config;
+                json::merge(copy, hdf5_config_it.value());
+                hdf5_config_it.value() = std::move(copy);
+            }
+            else
+            {
+                parsed_config.config["hdf5"] = m_global_dataset_config;
+            }
+            return parsed_config;
+        }();
+
+        auto [chunking, is_resizable_dataset] =
+            parse_dataset_config(config, dims, d);
 
         parameters.warnUnusedParameters(
             config,
