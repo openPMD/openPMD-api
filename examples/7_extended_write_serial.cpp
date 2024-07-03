@@ -154,7 +154,7 @@ int main()
 
                 hdf5.dataset.permanent_filters = [
                     {type = "zlib", aggression = 5},
-                    2
+                    {id = "shuffle"}
                 ]
             )");
         electrons.particlePatches["numParticles"].resetDataset(dset);
