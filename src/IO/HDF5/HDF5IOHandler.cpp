@@ -492,6 +492,137 @@ namespace
     };
 
     template <typename JSON, typename Accessor>
+    auto parse_filter_by_id(JSON &filter_config, Accessor &&json_accessor)
+        -> DatasetParams::ByID
+    {
+        DatasetParams::ByID byID;
+        if (!json_accessor(filter_config).contains("id"))
+        {
+            throw error::BackendConfigSchema(
+                {"hdf5", "dataset", "permanent_filters", "id"},
+                "Required key for selecting a filter by ID.");
+        }
+        byID.id = [&]() -> H5Z_filter_t {
+            auto const &id_config = json_accessor(filter_config["id"]);
+            using pair_t = std::pair<std::string, H5Z_filter_t>;
+            std::array<pair_t, 6> filter_types{
+                pair_t{"deflate", H5Z_FILTER_DEFLATE},
+                pair_t{"shuffle", H5Z_FILTER_SHUFFLE},
+                pair_t{"fletcher32", H5Z_FILTER_FLETCHER32},
+                pair_t{"szip", H5Z_FILTER_SZIP},
+                pair_t{"nbit", H5Z_FILTER_NBIT},
+                pair_t{"scaleoffset", H5Z_FILTER_SCALEOFFSET}};
+            auto id_error = [&]() {
+                std::stringstream error;
+                error << "Must be either of unsigned integer type or one of:";
+                for (auto const &pair : filter_types)
+                {
+                    error << " '" << pair.first << "'";
+                }
+                error << ".";
+                return error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "id"},
+                    error.str());
+            };
+            if (id_config.is_number_integer())
+            {
+                return id_config.template get<H5Z_filter_t>();
+            }
+            auto maybe_string = json::asLowerCaseStringDynamic(id_config);
+            if (!maybe_string.has_value())
+            {
+                throw id_error();
+            }
+            for (auto const &[key, res_type] : filter_types)
+            {
+                if (*maybe_string == key)
+                {
+                    return res_type;
+                }
+            }
+            throw id_error();
+        }();
+        byID.flags = [&]() -> unsigned int {
+            if (!json_accessor(filter_config).contains("flags"))
+            {
+                return 0;
+            }
+            auto const &flag_config = json_accessor(filter_config["flags"]);
+            using pair_t = std::pair<std::string, unsigned int>;
+            std::array<pair_t, 2> filter_types{
+                pair_t{"optional", H5Z_FLAG_OPTIONAL},
+                pair_t{"mandatory", H5Z_FLAG_MANDATORY}};
+            auto flag_error = [&]() {
+                std::stringstream error;
+                error << "Must be either of unsigned integer type or one of:";
+                for (auto const &pair : filter_types)
+                {
+                    error << " '" << pair.first << "'";
+                }
+                error << ".";
+                return error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "flags"},
+                    error.str());
+            };
+            if (flag_config.is_number_integer())
+            {
+                return flag_config.template get<unsigned int>();
+            }
+            auto maybe_string = json::asLowerCaseStringDynamic(flag_config);
+            if (!maybe_string.has_value())
+            {
+                throw flag_error();
+            }
+            for (auto const &[key, res_type] : filter_types)
+            {
+                if (*maybe_string == key)
+                {
+                    return res_type;
+                }
+            }
+            throw flag_error();
+        }();
+        if (json_accessor(filter_config).contains("c_values"))
+        {
+            auto const &c_values_config =
+                json_accessor(filter_config["c_values"]);
+            try
+            {
+
+                byID.c_values =
+                    c_values_config.template get<std::vector<unsigned int>>();
+            }
+            catch (nlohmann::json::type_error const &)
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "c_values"},
+                    "Must be an array of unsigned integers.");
+            }
+        }
+        return byID;
+    }
+
+    template <typename JSON, typename Accessor>
+    auto parse_filter_zlib(JSON &filter_config, Accessor &&json_accessor)
+        -> DatasetParams::Zlib
+    {
+        DatasetParams::Zlib zlib;
+        if (json_accessor(filter_config).contains("aggression"))
+        {
+            auto const &aggression_config =
+                json_accessor(filter_config["aggression"]);
+            if (!aggression_config.is_number_integer())
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "aggression"},
+                    "Must be of unsigned integer type.");
+            }
+            zlib.aggression = aggression_config.template get<unsigned>();
+        }
+        return zlib;
+    }
+
+    template <typename JSON, typename Accessor>
     auto parse_filter(JSON &filter_config, Accessor &&json_accessor)
         -> DatasetParams::filter_t
     {
@@ -552,134 +683,10 @@ namespace
 
         switch (type)
         {
-        case filter_type::ByID: {
-            DatasetParams::ByID byID;
-            if (!json_accessor(filter_config).contains("id"))
-            {
-                throw error::BackendConfigSchema(
-                    {"hdf5", "dataset", "permanent_filters", "id"},
-                    "Required key for selecting a filter by ID.");
-            }
-            byID.id = [&]() -> H5Z_filter_t {
-                auto const &id_config = json_accessor(filter_config["id"]);
-                using pair_t = std::pair<std::string, H5Z_filter_t>;
-                std::array<pair_t, 6> filter_types{
-                    pair_t{"deflate", H5Z_FILTER_DEFLATE},
-                    pair_t{"shuffle", H5Z_FILTER_SHUFFLE},
-                    pair_t{"fletcher32", H5Z_FILTER_FLETCHER32},
-                    pair_t{"szip", H5Z_FILTER_SZIP},
-                    pair_t{"nbit", H5Z_FILTER_NBIT},
-                    pair_t{"scaleoffset", H5Z_FILTER_SCALEOFFSET}};
-                auto id_error = [&]() {
-                    std::stringstream error;
-                    error
-                        << "Must be either of unsigned integer type or one of:";
-                    for (auto const &pair : filter_types)
-                    {
-                        error << " '" << pair.first << "'";
-                    }
-                    error << ".";
-                    return error::BackendConfigSchema(
-                        {"hdf5", "dataset", "permanent_filters", "id"},
-                        error.str());
-                };
-                if (id_config.is_number_integer())
-                {
-                    return id_config.template get<H5Z_filter_t>();
-                }
-                auto maybe_string = json::asLowerCaseStringDynamic(id_config);
-                if (!maybe_string.has_value())
-                {
-                    throw id_error();
-                }
-                for (auto const &[key, res_type] : filter_types)
-                {
-                    if (*maybe_string == key)
-                    {
-                        return res_type;
-                    }
-                }
-                throw id_error();
-            }();
-            byID.flags = [&]() -> unsigned int {
-                if (!json_accessor(filter_config).contains("flags"))
-                {
-                    return 0;
-                }
-                auto const &flag_config = json_accessor(filter_config["flags"]);
-                using pair_t = std::pair<std::string, unsigned int>;
-                std::array<pair_t, 2> filter_types{
-                    pair_t{"optional", H5Z_FLAG_OPTIONAL},
-                    pair_t{"mandatory", H5Z_FLAG_MANDATORY}};
-                auto flag_error = [&]() {
-                    std::stringstream error;
-                    error
-                        << "Must be either of unsigned integer type or one of:";
-                    for (auto const &pair : filter_types)
-                    {
-                        error << " '" << pair.first << "'";
-                    }
-                    error << ".";
-                    return error::BackendConfigSchema(
-                        {"hdf5", "dataset", "permanent_filters", "flags"},
-                        error.str());
-                };
-                if (flag_config.is_number_integer())
-                {
-                    return flag_config.template get<unsigned int>();
-                }
-                auto maybe_string = json::asLowerCaseStringDynamic(flag_config);
-                if (!maybe_string.has_value())
-                {
-                    throw flag_error();
-                }
-                for (auto const &[key, res_type] : filter_types)
-                {
-                    if (*maybe_string == key)
-                    {
-                        return res_type;
-                    }
-                }
-                throw flag_error();
-            }();
-            if (json_accessor(filter_config).contains("c_values"))
-            {
-                auto const &c_values_config =
-                    json_accessor(filter_config["c_values"]);
-                try
-                {
-
-                    byID.c_values =
-                        c_values_config
-                            .template get<std::vector<unsigned int>>();
-                }
-                catch (nlohmann::json::type_error const &)
-                {
-                    throw error::BackendConfigSchema(
-                        {"hdf5", "dataset", "permanent_filters", "c_values"},
-                        "Must be an array of unsigned integers.");
-                }
-            }
-            return byID;
-        }
-        break;
-        case filter_type::Zlib: {
-            DatasetParams::Zlib zlib;
-            if (json_accessor(filter_config).contains("aggression"))
-            {
-                auto const &aggression_config =
-                    json_accessor(filter_config["aggression"]);
-                if (!aggression_config.is_number_integer())
-                {
-                    throw error::BackendConfigSchema(
-                        {"hdf5", "dataset", "permanent_filters", "aggression"},
-                        "Must be of unsigned integer type.");
-                }
-                zlib.aggression = aggression_config.template get<unsigned>();
-            }
-            return zlib;
-        }
-        break;
+        case filter_type::ByID:
+            return parse_filter_by_id(filter_config, json_accessor);
+        case filter_type::Zlib:
+            return parse_filter_zlib(filter_config, json_accessor);
         }
         throw std::runtime_error("Unreachable!");
     }
