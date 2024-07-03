@@ -120,6 +120,15 @@ int main()
         }
       ]
     }
+  },
+  "hdf5": {
+    "dataset": {
+      "chunks": "auto",
+      "permanent_filters": {
+        "id": "fletcher32",
+        "flags": "optional"
+      }
+    }
   }
 })END";
         d.options = datasetConfig;
@@ -154,7 +163,7 @@ int main()
 
                 hdf5.dataset.permanent_filters = [
                     {type = "zlib", aggression = 5},
-                    {id = "shuffle"}
+                    {id = "shuffle", "flags" = "MANDATORY"}
                 ]
             )");
         electrons.particlePatches["numParticles"].resetDataset(dset);
