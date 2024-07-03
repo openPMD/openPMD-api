@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include <H5Ppublic.h>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -600,6 +601,65 @@ namespace
                 }
                 throw id_error();
             }();
+            byID.flags = [&]() -> unsigned int {
+                if (!json_accessor(filter_config).contains("flags"))
+                {
+                    return 0;
+                }
+                auto const &flag_config = json_accessor(filter_config["flags"]);
+                using pair_t = std::pair<std::string, unsigned int>;
+                std::array<pair_t, 2> filter_types{
+                    pair_t{"optional", H5Z_FLAG_OPTIONAL},
+                    pair_t{"mandatory", H5Z_FLAG_MANDATORY}};
+                auto flag_error = [&]() {
+                    std::stringstream error;
+                    error
+                        << "Must be either of unsigned integer type or one of:";
+                    for (auto const &pair : filter_types)
+                    {
+                        error << " '" << pair.first << "'";
+                    }
+                    error << ".";
+                    return error::BackendConfigSchema(
+                        {"hdf5", "dataset", "permanent_filters", "flags"},
+                        error.str());
+                };
+                if (flag_config.is_number_integer())
+                {
+                    return flag_config.template get<unsigned int>();
+                }
+                auto maybe_string = json::asLowerCaseStringDynamic(flag_config);
+                if (!maybe_string.has_value())
+                {
+                    throw flag_error();
+                }
+                for (auto const &[key, res_type] : filter_types)
+                {
+                    if (*maybe_string == key)
+                    {
+                        return res_type;
+                    }
+                }
+                throw flag_error();
+            }();
+            if (json_accessor(filter_config).contains("c_values"))
+            {
+                auto const &c_values_config =
+                    json_accessor(filter_config["c_values"]);
+                try
+                {
+
+                    byID.c_values =
+                        c_values_config
+                            .template get<std::vector<unsigned int>>();
+                }
+                catch (nlohmann::json::type_error const &)
+                {
+                    throw error::BackendConfigSchema(
+                        {"hdf5", "dataset", "permanent_filters", "c_values"},
+                        "Must be an array of unsigned integers.");
+                }
+            }
             return byID;
         }
         break;
