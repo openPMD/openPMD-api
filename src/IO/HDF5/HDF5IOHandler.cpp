@@ -26,8 +26,6 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
-#include <H5Ppublic.h>
-#include <nlohmann/json.hpp>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
