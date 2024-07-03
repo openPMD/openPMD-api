@@ -954,25 +954,27 @@ void HDF5IOHandlerImpl::createDataset(
         {
             if (chunking->size() != parameters.extent.size())
             {
-                std::string chunking_printed = [&]() {
-                    if (chunking->empty())
-                    {
-                        return std::string("[]");
-                    }
-                    else
-                    {
-                        std::stringstream s;
-                        auto it = chunking->begin();
-                        auto end = chunking->end();
-                        s << '[' << *it++;
-                        for (; it != end; ++it)
+                // captured structured bindings are a C++20 extension
+                std::string chunking_printed =
+                    [&, &captured_chunking = chunking]() {
+                        if (captured_chunking->empty())
                         {
-                            s << ", " << *it;
+                            return std::string("[]");
                         }
-                        s << ']';
-                        return s.str();
-                    }
-                }();
+                        else
+                        {
+                            std::stringstream s;
+                            auto it = captured_chunking->begin();
+                            auto end = captured_chunking->end();
+                            s << '[' << *it++;
+                            for (; it != end; ++it)
+                            {
+                                s << ", " << *it;
+                            }
+                            s << ']';
+                            return s.str();
+                        }
+                    }();
                 std::cerr << "[HDF5] Chunking for dataset '" << name
                           << "' was specified as " << chunking_printed
                           << ", but dataset has dimensionality "
