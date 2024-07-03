@@ -162,13 +162,23 @@ int main()
             io::determineDatatype<uint64_t>(),
             {2},
             R"(
-                hdf5.dataset.chunks = "auto"
-
-                hdf5.dataset.permanent_filters = [
-                    {type = "zlib", aggression = 5},
-                    {id = "shuffle", "flags" = "MANDATORY"}
-                ]
-            )");
+            {
+              "hdf5": {
+                "dataset": {
+                  "chunks": "auto",
+                  "permanent_filters": [
+                    {
+                      "aggression": 5,
+                      "type": "zlib"
+                    },
+                    {
+                      "flags": "MANDATORY",
+                      "id": "shuffle"
+                    }
+                  ]
+                }
+              }
+            })");
         electrons.particlePatches["numParticles"].resetDataset(dset);
         electrons.particlePatches["numParticlesOffset"].resetDataset(dset);
 
