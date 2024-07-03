@@ -209,13 +209,9 @@ namespace
 {
     uint64_t retrieveMeshDimensionality(Mesh const &m)
     {
-        try
+        if (m.containsAttribute("axisLabels"))
         {
             return m.axisLabels().size();
-        }
-        catch (no_such_attribute_error const &)
-        {
-            // no-op, continue with fallback below
         }
 
         // maybe we have record components and can ask them
@@ -233,7 +229,27 @@ namespace
 
 std::vector<double> Mesh::gridUnitSIPerDimension() const
 {
-    return getAttribute("gridUnitSI").get<std::vector<double>>();
+    if (containsAttribute("gridUnitSI"))
+    {
+        if (auto series_opt = retrieveSeries_optional(); series_opt.has_value())
+        {
+            if (auto version = series_opt->openPMD(); version < "2.")
+            {
+                // If the openPMD version is lower than 2.0, the gridUnitSI is a
+                // scalar interpreted for all axes. Copy it d times.
+                return std::vector<double>(
+                    retrieveMeshDimensionality(*this),
+                    getAttribute("gridUnitSI").get<double>());
+            }
+        }
+        return getAttribute("gridUnitSI").get<std::vector<double>>();
+    }
+    else
+    {
+        // gridUnitSI is an optional attribute
+        // if it is missing, the mesh is interpreted as unscaled
+        return std::vector<double>(retrieveMeshDimensionality(*this), 1.);
+    }
 }
 
 Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
@@ -328,7 +344,7 @@ std::vector<std::array<double, 7>> Mesh::gridUnitDimension() const
     }
     else
     {
-        // gridUnitSI is an optional attribute
+        // gridUnitDimension is an optional attribute
         // if it is missing, the mesh is interpreted as spatial
         std::array<double, 7> spatialMesh;
         fromMapOfUnitDimension(spatialMesh.begin(), {{UnitDimension::L, 1}});

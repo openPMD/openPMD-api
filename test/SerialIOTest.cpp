@@ -947,10 +947,15 @@ inline void constant_scalar(std::string const &file_ending)
         E_mesh.setDataOrder(dataOrder);
         E_mesh.setGridSpacing(gridSpacing);
         E_mesh.setGridGlobalOffset(gridGlobalOffset);
-        E_mesh.setGridUnitSI(std::vector(3, gridUnitSI));
         E_mesh.setAxisLabels(axisLabels);
         E_mesh.setUnitDimension(unitDimensions);
         E_mesh.setTimeOffset(timeOffset);
+        REQUIRE(
+            E_mesh.gridUnitSIPerDimension() == std::vector<double>{1., 1., 1.});
+        E_mesh.setGridUnitSI(std::vector(3, gridUnitSI));
+        REQUIRE(
+            E_mesh.gridUnitSIPerDimension() ==
+            std::vector<double>{gridUnitSI, gridUnitSI, gridUnitSI});
 
         // constant scalar
         auto pos =
