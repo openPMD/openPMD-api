@@ -469,13 +469,19 @@ namespace
     using chunking_t = std::vector<hsize_t>;
     struct DatasetParams
     {
+        struct ByID
+        {
+            H5Z_filter_t id = 0;
+            unsigned int flags = 0;
+            std::vector<unsigned int> c_values;
+        };
         struct Zlib
         {
             unsigned aggression = 1;
         };
         using filter_t = std::variant<
             // generic
-            H5Z_filter_t,
+            ByID,
             // H5Pset_deflate
             Zlib>;
 
@@ -483,6 +489,140 @@ namespace
         bool resizable = false;
         std::vector<filter_t> filters;
     };
+
+    template <typename JSON, typename Accessor>
+    auto parse_filter(JSON &filter_config, Accessor &&json_accessor)
+        -> DatasetParams::filter_t
+    {
+        auto filter_error = []() {
+            return error::BackendConfigSchema(
+                {"hdf5", "dataset", "permanent_filters"},
+                "Must be either a JSON object or a vector of JSON objects.");
+        };
+        if (!json_accessor(filter_config).is_object())
+        {
+            throw filter_error();
+        }
+
+        enum class filter_type
+        {
+            ByID,
+            Zlib
+        };
+
+        filter_type type = [&]() -> filter_type {
+            if (json_accessor(filter_config).contains("type"))
+            {
+                auto res = json::asLowerCaseStringDynamic(
+                    json_accessor(filter_config["type"]));
+                if (!res.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"hdf5", "dataset", "permanent_filters", "type"},
+                        "Must be of type string.");
+                }
+                using pair_t = std::pair<std::string, filter_type>;
+                std::array<pair_t, 2> filter_types{
+                    pair_t{"by_id", filter_type::ByID},
+                    pair_t{"zlib", filter_type::Zlib}};
+                for (auto const &[key, res_type] : filter_types)
+                {
+                    if (*res == key)
+                    {
+                        return res_type;
+                    }
+                }
+                std::stringstream error;
+                error << "Must be one of:";
+                for (auto const &pair : filter_types)
+                {
+                    error << " '" << pair.first << "'";
+                }
+                error << ".";
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "type"},
+                    error.str());
+            }
+            else
+            {
+                return filter_type::ByID;
+            }
+        }();
+
+        switch (type)
+        {
+        case filter_type::ByID: {
+            DatasetParams::ByID byID;
+            if (!json_accessor(filter_config).contains("id"))
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "id"},
+                    "Required key for selecting a filter by ID.");
+            }
+            byID.id = [&]() -> H5Z_filter_t {
+                auto const &id_config = json_accessor(filter_config["id"]);
+                using pair_t = std::pair<std::string, H5Z_filter_t>;
+                std::array<pair_t, 6> filter_types{
+                    pair_t{"deflate", H5Z_FILTER_DEFLATE},
+                    pair_t{"shuffle", H5Z_FILTER_SHUFFLE},
+                    pair_t{"fletcher32", H5Z_FILTER_FLETCHER32},
+                    pair_t{"szip", H5Z_FILTER_SZIP},
+                    pair_t{"nbit", H5Z_FILTER_NBIT},
+                    pair_t{"scaleoffset", H5Z_FILTER_SCALEOFFSET}};
+                auto id_error = [&]() {
+                    std::stringstream error;
+                    error
+                        << "Must be either of unsigned integer type or one of:";
+                    for (auto const &pair : filter_types)
+                    {
+                        error << " '" << pair.first << "'";
+                    }
+                    error << ".";
+                    return error::BackendConfigSchema(
+                        {"hdf5", "dataset", "permanent_filters", "id"},
+                        error.str());
+                };
+                if (id_config.is_number_integer())
+                {
+                    return id_config.template get<H5Z_filter_t>();
+                }
+                auto maybe_string = json::asLowerCaseStringDynamic(id_config);
+                if (!maybe_string.has_value())
+                {
+                    throw id_error();
+                }
+                for (auto const &[key, res_type] : filter_types)
+                {
+                    if (*maybe_string == key)
+                    {
+                        return res_type;
+                    }
+                }
+                throw id_error();
+            }();
+            return byID;
+        }
+        break;
+        case filter_type::Zlib: {
+            DatasetParams::Zlib zlib;
+            if (json_accessor(filter_config).contains("aggression"))
+            {
+                auto const &aggression_config =
+                    json_accessor(filter_config["aggression"]);
+                if (!aggression_config.is_number_integer())
+                {
+                    throw error::BackendConfigSchema(
+                        {"hdf5", "dataset", "permanent_filters", "aggression"},
+                        "Must be of unsigned integer type.");
+                }
+                zlib.aggression = aggression_config.template get<unsigned>();
+            }
+            return zlib;
+        }
+        break;
+        }
+        throw std::runtime_error("Unreachable!");
+    }
 
     auto parse_dataset_config(
         json::TracingJSON &config,
@@ -514,19 +654,6 @@ namespace
                     "Environment variable OPENPMD_HDF5_CHUNKS accepts values "
                     "'auto' and 'none'.");
             }
-        };
-
-        auto filter_error = []() {
-            return error::BackendConfigSchema(
-                {"hdf5", "dataset", "permanent_filters"},
-                "Must be either a scalar filter or a vector of filters, "
-                "where a filter is either an integer ID for the filter or "
-                "a JSON object identifying a builtin filter.");
-        };
-        auto builtin_filter_error = []() {
-            return error::BackendConfigSchema(
-                {"hdf5", "dataset", "permanent_filters"},
-                R"(A builtin filter is a JSON object with mandatory string type key "type". The only supported filter is currently "zlib", which optionally takes an unsigned integer type key "aggression" (default value 1).)");
         };
 
         compute_chunking_t compute_chunking =
@@ -570,48 +697,6 @@ namespace
 
             if (datasetConfig.json().contains("permanent_filters"))
             {
-                auto parse_filter =
-                    [&filter_error, &builtin_filter_error](
-                        auto &filter_config,
-                        auto &&json_accessor) -> DatasetParams::filter_t {
-                    if (json_accessor(filter_config).is_number_integer())
-                    {
-                        return json_accessor(filter_config)
-                            .template get<H5Z_filter_t>();
-                    }
-                    else if (json_accessor(filter_config).is_object())
-                    {
-                        if (!json_accessor(filter_config).contains("type"))
-                        {
-                            throw builtin_filter_error();
-                        }
-                        if (auto const &type_config =
-                                json::asLowerCaseStringDynamic(
-                                    json_accessor(filter_config["type"]));
-                            !type_config.has_value() || *type_config != "zlib")
-                        {
-                            throw builtin_filter_error();
-                        }
-
-                        DatasetParams::Zlib zlib;
-                        if (json_accessor(filter_config).contains("aggression"))
-                        {
-                            auto const &aggression_config =
-                                json_accessor(filter_config["aggression"]);
-                            if (!aggression_config.is_number_integer())
-                            {
-                                throw builtin_filter_error();
-                            }
-                            zlib.aggression =
-                                aggression_config.template get<unsigned>();
-                        }
-                        return zlib;
-                    }
-                    else
-                    {
-                        throw filter_error();
-                    }
-                };
                 auto permanent_filters = datasetConfig["permanent_filters"];
                 if (permanent_filters.json().is_array())
                 {
@@ -851,9 +936,13 @@ void HDF5IOHandlerImpl::createDataset(
         {
             herr_t status = std::visit(
                 auxiliary::overloaded{
-                    [&](H5Z_filter_t filter_id) {
+                    [&](DatasetParams::ByID const &by_id) {
                         return H5Pset_filter(
-                            datasetCreationProperty, filter_id, 0, 0, nullptr);
+                            datasetCreationProperty,
+                            by_id.id,
+                            by_id.flags,
+                            by_id.c_values.size(),
+                            by_id.c_values.data());
                     },
                     [&](DatasetParams::Zlib const &zlib) {
                         return H5Pset_deflate(
