@@ -30,9 +30,6 @@
 #include <string>
 #include <utility>
 
-inline void breakpoint()
-{}
-
 namespace openPMD::helper
 {
 std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
@@ -118,6 +115,8 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
 
         for (auto &[index, i] : series.snapshots())
         {
+            // Necessary only if Series was opened in READ_RANDOM_ACCESS mode
+            // with `defer_iteration_parsing = true`.
             if (!i.parsed())
             {
                 i.open();
@@ -138,10 +137,7 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
                 [](std::pair<std::string, ParticleSpecies> const &p) {
                     return p.first;
                 });
-            if (!i.closed())
-            {
-                i.close();
-            }
+            i.close();
         }
 
         if (longer)

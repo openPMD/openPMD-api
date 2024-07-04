@@ -1610,6 +1610,12 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
                     return adios2::Mode::Read;
 #endif
                 case adios_defs::OpenFileAs::Reopen:
+                    /* In order to write new data to an Iteration that was
+                     * created and closed previously, the only applicable access
+                     * mode is Append mode, ideally in conjunction with
+                     * `SetParameter("FlattenSteps", "ON")`.
+                     * See test/Files_SerialIO/close_iteration_test.cpp.
+                     */
                     return adios2::Mode::Append;
                 }
                 break;

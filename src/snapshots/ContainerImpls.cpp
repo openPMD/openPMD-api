@@ -39,18 +39,7 @@ auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
     return members.m_bufferedIterator.value_or(nullptr);
 }
-auto StatefulSnapshotsContainer::currentIteration()
-    -> std::optional<value_type *>
-{
-    if (auto it = get(); it)
-    {
-        return it->peekCurrentlyOpenIteration();
-    }
-    else
-    {
-        return nullptr;
-    }
-}
+
 auto StatefulSnapshotsContainer::currentIteration() const
     -> std::optional<value_type const *>
 {
@@ -150,15 +139,15 @@ auto StatefulSnapshotsContainer::at(key_type const &key) const
 auto StatefulSnapshotsContainer::at(key_type const &key) -> mapped_type &
 {
     auto base_iterator = get();
-    auto result =
+    auto &result =
         base_iterator->seek({StatefulIterator::Seek::Seek_Iteration_t{key}});
-    if (result->is_end())
+    if (result.is_end())
     {
         throw std::out_of_range(
             "[StatefulSnapshotsContainer::at()] Cannot (yet) skip to "
             "a Snapshot from an I/O step that is not active.");
     }
-    return (*result)->second;
+    return result->second;
 }
 
 auto StatefulSnapshotsContainer::operator[](key_type const &key)
@@ -198,8 +187,9 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
         {
             s.currentStep.map_during_t(
                 [&](detail::CurrentStep::During_t &during) {
-                    ++during.idx;
-                    base_iterator->get().seen_iterations[key] = during.idx;
+                    ++during.step_count;
+                    base_iterator->get().seen_iterations[key] =
+                        during.step_count;
                     during.iteration_idx = key;
                     during.available_iterations_in_step = {key};
                 },
@@ -239,15 +229,15 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     }
     else if (access::read(access))
     {
-        auto result = base_iterator->seek(
+        auto &result = base_iterator->seek(
             {StatefulIterator::Seek::Seek_Iteration_t{key}});
-        if (result->is_end())
+        if (result.is_end())
         {
             throw std::out_of_range(
                 "[StatefulSnapshotsContainer::operator[]()] Cannot (yet) skip "
                 "to a Snapshot from an I/O step that is not active.");
         }
-        return (*result)->second;
+        return result->second;
     }
     throw error::Internal("Control flow error: This should be unreachable.");
 }
@@ -293,6 +283,19 @@ RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
     RandomAccessIteratorContainer const &other) = default;
 RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
     RandomAccessIteratorContainer &&other) noexcept = default;
+
+auto RandomAccessIteratorContainer::currentIteration() const
+    -> std::optional<value_type const *>
+{
+    if (auto begin = m_cont.begin(); begin != m_cont.end())
+    {
+        return std::make_optional<value_type const *>(&*begin);
+    }
+    else
+    {
+        return std::nullopt;
+    }
+}
 
 auto RandomAccessIteratorContainer::begin() -> iterator
 {
