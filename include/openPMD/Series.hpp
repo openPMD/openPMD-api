@@ -907,6 +907,6 @@ namespace debug
 }
 } // namespace openPMD
 
-// Make sure that this one is always included if Series.hpp is included,
-// otherwise Series::readIterations() cannot be used
-#include "openPMD/snapshots/StatefulIterator.hpp"
+// Make sure that this legacy header is always included if Series.hpp is
+// included, otherwise Series::readIterations() cannot be used
+#include "openPMD/ReadIterations.hpp"
