@@ -109,7 +109,7 @@ not possible once it has been closed.
         .def(
             "__next__",
             [](StatefulIteratorPythonAdaptor &iterator) {
-                if (iterator == LegacyIteratorAdaptor::end())
+                if (iterator == ReadIterations::end())
                 {
                     throw py::stop_iteration();
                 }
@@ -127,7 +127,7 @@ not possible once it has been closed.
                     ++iterator;
                 }
                 iterator.first_iteration = false;
-                if (iterator == LegacyIteratorAdaptor::end())
+                if (iterator == ReadIterations::end())
                 {
                     throw py::stop_iteration();
                 }

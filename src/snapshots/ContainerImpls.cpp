@@ -2,6 +2,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
+#include "openPMD/snapshots/IteratorHelpers.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include <memory>
 #include <optional>
@@ -9,20 +10,6 @@
 
 namespace openPMD
 {
-namespace
-{
-    using value_type =
-        Container<Iteration, Iteration::IterationIndex_t>::value_type;
-    auto stateful_to_opaque(StatefulIterator const &it)
-        -> OpaqueSeriesIterator<value_type>
-    {
-        std::unique_ptr<DynamicSeriesIterator<value_type>>
-            internal_iterator_cloned{new StatefulIterator(it)};
-        return OpaqueSeriesIterator<value_type>(
-            std::move(internal_iterator_cloned));
-    }
-} // namespace
-
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
     std::function<StatefulIterator *()> begin)
     : members{std::move(begin)}

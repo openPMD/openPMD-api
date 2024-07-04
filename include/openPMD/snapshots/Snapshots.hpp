@@ -22,7 +22,6 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
-#include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include <functional>
 #include <memory>
 #include <optional>
