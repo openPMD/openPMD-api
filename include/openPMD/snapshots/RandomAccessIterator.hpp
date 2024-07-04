@@ -22,7 +22,14 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
+
 #include <utility>
+
+/*
+ * Private header not included in user code.
+ * Implements the Iterator interface for the random-access workflow.
+ */
+
 namespace openPMD
 {
 namespace detail
@@ -47,6 +54,7 @@ private:
 
     RandomAccessIterator(iterator_t it);
 
+    /* Internal iterator */
     iterator_t m_it;
 
 public:

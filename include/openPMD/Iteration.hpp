@@ -85,6 +85,13 @@ namespace internal
          * overwritten.
          */
         CloseStatus m_closed = CloseStatus::Open;
+        /*
+         * While parsing a file-based Series, each file is opened, read, then
+         * closed again. Explicitly `Iteration::open()`ing a file should only be
+         * necessary after having explicitly closed it (or in
+         * defer_iteration_parsing mode). So, the parsing procedures will set
+         * this flag as true when closing an Iteration.
+         */
         bool allow_reopening_implicitly = false;
 
         /**

@@ -45,7 +45,7 @@ int main()
     // in streaming setups, e.g. an iteration cannot be opened again once
     // it has been closed.
     // `Series::iterations` can be directly accessed in random-access workflows.
-    auto iterations = series.snapshots(SnapshotAccess::Linear);
+    auto iterations = series.snapshots(SnapshotWorkflow::Synchronous);
     for (size_t i = 0; i < 100; ++i)
     {
         Iteration iteration = iterations[i];

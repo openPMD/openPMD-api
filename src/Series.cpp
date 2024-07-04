@@ -2922,9 +2922,9 @@ namespace internal
     void SeriesData::close()
     {
         // WriteIterations gets the first shot at flushing
-        if (this->m_sharedReadIterations)
+        if (this->m_sharedStatefulIterator)
         {
-            this->m_sharedReadIterations->close();
+            this->m_sharedStatefulIterator->close();
         }
         /*
          * Scenario: A user calls `Series::flush()` but does not check for
@@ -2997,10 +2997,11 @@ ReadIterations Series::readIterations()
 {
     // Use private constructor instead of copy constructor to avoid
     // object slicing
-    Series res;
-    res.setData(std::dynamic_pointer_cast<internal::SeriesData>(this->m_attri));
+    auto series = m_attri->asInternalCopyOf<Series>();
     return ReadIterations{
-        std::move(res), IOHandler()->m_frontendAccess, get().m_parsePreference};
+        std::move(series),
+        IOHandler()->m_frontendAccess,
+        get().m_parsePreference};
 }
 
 namespace
@@ -3009,34 +3010,35 @@ namespace
         Series const &copied_series,
         internal::SeriesData &series) -> std::function<StatefulIterator *()>
     {
-        if (!series.m_sharedReadIterations)
+        if (!series.m_sharedStatefulIterator)
         {
-            series.m_sharedReadIterations = std::make_unique<StatefulIterator>(
-                StatefulIterator::tag_write, copied_series);
+            series.m_sharedStatefulIterator =
+                std::make_unique<StatefulIterator>(
+                    StatefulIterator::tag_write, copied_series);
         }
-        return [ptr = series.m_sharedReadIterations.get()]() { return ptr; };
+        return [ptr = series.m_sharedStatefulIterator.get()]() { return ptr; };
     }
     auto make_reading_stateful_iterator(
         Series copied_series,
         internal::SeriesData &series) -> std::function<StatefulIterator *()>
     {
         return [s = std::move(copied_series), &series]() mutable {
-            if (!series.m_sharedReadIterations)
+            if (!series.m_sharedStatefulIterator)
             {
                 auto parse_preference = series.m_parsePreference;
-                series.m_sharedReadIterations =
+                series.m_sharedStatefulIterator =
                     std::make_unique<StatefulIterator>(
                         StatefulIterator::tag_read,
                         std::move(s),
                         parse_preference);
             }
-            return series.m_sharedReadIterations.get();
+            return series.m_sharedStatefulIterator.get();
         };
     }
 } // namespace
 
 Snapshots
-Series::snapshots(std::optional<SnapshotAccess> const access_synchronously)
+Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
 {
     auto &series = get();
     if (series.m_deferred_initialization.has_value())
@@ -3045,22 +3047,22 @@ Series::snapshots(std::optional<SnapshotAccess> const access_synchronously)
     }
     auto access = IOHandler()->m_frontendAccess;
     auto guard_wrong_access_specification =
-        [&](SnapshotAccess required_access) {
-            if (!access_synchronously.has_value())
+        [&](SnapshotWorkflow required_access) {
+            if (!snapshot_workflow.has_value())
             {
                 return required_access;
             }
-            if (required_access != *access_synchronously)
+            if (required_access != *snapshot_workflow)
             {
                 std::stringstream error;
                 error << "[Series::snapshots()] Specified "
-                      << (*access_synchronously == SnapshotAccess::Linear
+                      << (*snapshot_workflow == SnapshotWorkflow::Synchronous
                               ? "linear"
                               : "random-access")
                       << " iteration in method parameter "
-                         "`access_synchronously`, but access type "
+                         "`snapshot_workflow`, but access type "
                       << access << " requires "
-                      << (required_access == SnapshotAccess::Linear
+                      << (required_access == SnapshotWorkflow::Synchronous
                               ? "linear"
                               : "random-access")
                       << " iteration. Please remove the parameter, there is no "
@@ -3073,22 +3075,22 @@ Series::snapshots(std::optional<SnapshotAccess> const access_synchronously)
                 std::cerr
                     << "[Series::snapshots()] No need to explicitly specify "
                        "synchronous or non-synchronous access via method "
-                       "parameter `access_synchronously` in mode '"
+                       "parameter `snapshot_workflow` in mode '"
                     << access << ". Will ignore." << std::endl;
             }
             return required_access;
         };
-    SnapshotAccess usedSnapshotAccess{};
+    SnapshotWorkflow usedSnapshotWorkflow{};
     {
         switch (access)
         {
         case Access::READ_LINEAR:
-            usedSnapshotAccess =
-                guard_wrong_access_specification(SnapshotAccess::Linear);
+            usedSnapshotWorkflow =
+                guard_wrong_access_specification(SnapshotWorkflow::Synchronous);
             break;
         case Access::READ_ONLY:
-            usedSnapshotAccess =
-                guard_wrong_access_specification(SnapshotAccess::RandomAccess);
+            usedSnapshotWorkflow = guard_wrong_access_specification(
+                SnapshotWorkflow::RandomAccess);
 
             // Some error checks
             if (series.m_parsePreference.has_value())
@@ -3118,27 +3120,27 @@ Series::snapshots(std::optional<SnapshotAccess> const access_synchronously)
             // far).
             // (Might be possible to allow stateful access actually, but there's
             // no real use, so keep it simple.)
-            usedSnapshotAccess =
-                guard_wrong_access_specification(SnapshotAccess::RandomAccess);
+            usedSnapshotWorkflow = guard_wrong_access_specification(
+                SnapshotWorkflow::RandomAccess);
             break;
 
         case Access::CREATE:
         case Access::APPEND:
             // Users can select.
-            usedSnapshotAccess = access_synchronously.value_or(
+            usedSnapshotWorkflow = snapshot_workflow.value_or(
                 /* random-access logic by default */
-                SnapshotAccess::RandomAccess);
+                SnapshotWorkflow::RandomAccess);
             break;
         }
     }
 
-    switch (usedSnapshotAccess)
+    switch (usedSnapshotWorkflow)
     {
-    case SnapshotAccess::RandomAccess: {
+    case SnapshotWorkflow::RandomAccess: {
         return Snapshots(std::shared_ptr<RandomAccessIteratorContainer>{
             new RandomAccessIteratorContainer(series.iterations)});
     }
-    case SnapshotAccess::Linear: {
+    case SnapshotWorkflow::Synchronous: {
         std::function<StatefulIterator *()> begin;
 
         if (access::write(IOHandler()->m_frontendAccess))

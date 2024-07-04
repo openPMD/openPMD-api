@@ -110,13 +110,29 @@ namespace internal
          * Due to include order, this member needs to be a pointer instead of
          * an optional.
          */
-        std::unique_ptr<StatefulIterator> m_sharedReadIterations;
+        std::unique_ptr<StatefulIterator> m_sharedStatefulIterator;
         /**
          * For writing: Remember which iterations have been written in the
          * currently active output step. Use this later when writing the
          * snapshot attribute.
          */
         std::set<IterationIndex_t> m_currentlyActiveIterations;
+        /**
+         * This map contains the filenames of those Iterations which were found
+         * on the file system upon opening the Series for reading in file-based
+         * encoding. It is only written to by readFileBased().
+         * Other files that we create anew have names generated live by
+         * iterationFilename(), but files that existed previously might have
+         * different padding.
+         * This information is required for re-opening Iterations after closing.
+         * Since ADIOS2 has no read-write mode, this is important in our own
+         * READ_WRITE mode when re-opening a closed file in file-based encoding:
+         * A file that existed previously is re-opened in Read mode and will
+         * not support updating its contents.
+         * A file that we created anew is re-opened in Append mode to continue
+         * writing data to it. Using `adios2.engine.parameters.FlattenSteps =
+         * "ON"` is recommended in this case.
+         */
         std::unordered_map<IterationIndex_t, std::string> m_iterationFilenames;
         /**
          * Needed if reading a single iteration of a file-based series.
@@ -640,13 +656,62 @@ public:
      */
     ReadIterations readIterations();
 
-    enum class SnapshotAccess
+    /** Parameter for Series::snapshots(), see there.
+     */
+    enum class SnapshotWorkflow
     {
         RandomAccess,
-        Linear
+        Synchronous
     };
-    Snapshots snapshots(
-        std::optional<SnapshotAccess> access_synchronously = std::nullopt);
+
+    /** @brief Preferred way to access Iterations/Snapshots. Single API for all
+     *         workflows and access modi.
+     *
+     * Two fundamental workflows for Iteration/Snapshot processing exist:
+     *
+     * 1. Random-access workflow: Iterations/Snapshots are accessed
+     *    independently from one another. Users must take care to open()
+     *    and close() them as needed.
+     *    More than one Iteration can be open at the same time.
+     * 2. Linear/Synchronous workflow:
+     *    The (parallel) Series has one shared state. The effect is twofold:
+     *      (a) Advancing one iterator, e.g. via `operator++()` will advance all
+     *          other iterators as well.
+     *      (b) Advancing an iterator is collective, all MPI ranks must
+                participate.
+     *    The workflow is generally managed more automatically,
+     *    `Iteration::open()` is not needed, `Iteration::close()` is
+     *    recommended, but not needed. In READ_LINEAR mode, parsed Iteration
+     *    data is deleted upon closing (and will be reparsed upon reopening)
+     *    for a better support of datasets with many Snapshots/Iterations. This
+     *    happens only if user code explicitly calls Iteration::close().
+     *    This mode generally brings better performance than random access mode
+     *    due to the more restricted workflow.
+     *    For accessing some kinds of Series, Synchronous access is even
+     *    necessary, e.g. for Streaming workflows or variable-based encoding.
+     *    (In future, random-access of Series with variable-based encoding will
+     *    be possible under the condition that each Iteration/Snapshot has the
+     *    same internal structure).
+     *
+     * As a rule of thumb, the synchronous workflow should be preferred as long
+     * as possible. The random-access workflow should be chosen when more
+     * flexible interaction with Snapshots is needed.
+     *
+     * Random-vs.-Synchronous access is determined automatically
+     * in READ workflows: Access::READ_LINEAR uses the synchronous workflow,
+     * while Access::READ_ONLY and Access::READ_WRITE use the random-access
+     * workflow.
+     *
+     * Conversely, the Access::CREATE and Access::APPEND access modes both
+     * resolve to random-access by default, but can be specified to use
+     * Synchronous workflow if needed.
+     *
+     * @param snapshot_workflow Specify the intended workflow
+     *            in Access::CREATE and Access::APPEND. Leave unspecified in
+     *            other access modes as those support only one workflow each.
+     */
+    Snapshots
+    snapshots(std::optional<SnapshotWorkflow> snapshot_workflow = std::nullopt);
 
     /**
      * @brief Parse the Series.
@@ -807,6 +872,9 @@ OPENPMD_private
     void flushMeshesPath();
     void flushParticlesPath();
     void flushRankTable();
+    /* Parameter `read_only_this_single_iteration` used for reopening an
+     * Iteration after closing it.
+     */
     void readFileBased(
         std::optional<IterationIndex_t> read_only_this_single_iteration);
     void readOneIterationFileBased(std::string const &filePath);
@@ -820,8 +888,10 @@ OPENPMD_private
      * and turn them into a warning (useful when parsing a Series, since parsing
      * should succeed without issue).
      * If true, the error will always be re-thrown (useful when using
-     * ReadIterations since those methods should be aware when the current
-     * step is broken).
+     * ReadIterations since those methods should be aware when the current step
+     * is broken).
+     * Parameter `read_only_this_single_iteration` used for reopening an
+     * Iteration after closing it.
      */
     std::vector<IterationIndex_t> readGorVBased(
         bool do_always_throw_errors,
@@ -899,7 +969,7 @@ OPENPMD_private
     AbstractIOHandler const *IOHandler() const;
 }; // Series
 
-using SnapshotAccess = Series::SnapshotAccess;
+using SnapshotWorkflow = Series::SnapshotWorkflow;
 
 namespace debug
 {

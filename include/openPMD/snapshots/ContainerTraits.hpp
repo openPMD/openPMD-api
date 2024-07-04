@@ -2,8 +2,17 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
+
+/* Public header due to use of AbstractSnapshotsContainer and its iterator type
+ * OpaqueSeriesIterator in Snapshots class header. No direct user interaction
+ * required with this header.
+ */
+
 namespace openPMD
 {
+/** Counterpart to Snapshots class:
+ *  Iterator type that can wrap different implementations internally.
+ */
 template <typename value_type_in>
 class OpaqueSeriesIterator
     : public AbstractSeriesIterator<
@@ -38,14 +47,26 @@ public:
 
     // increment/decrement
     OpaqueSeriesIterator &operator++();
+    /** Not implemented for synchronous workflow:
+     *  Reverse iteration not possible.
+     */
     OpaqueSeriesIterator &operator--();
+    /** Not implemented for synchronous workflow:
+     *  Post increment not possible.
+     */
     OpaqueSeriesIterator operator++(int);
+    /** Not implemented for synchronous workflow:
+     *  Reverse iteration not possible.
+     */
     OpaqueSeriesIterator operator--(int);
 
     // comparison
     bool operator==(OpaqueSeriesIterator const &other) const;
 };
 
+// Internal interface used by Snapshots class for interacting with containers.
+// This needs to be in a public header since the type definition is used in
+// private members of the Snapshots class which itself is a public class.
 class AbstractSnapshotsContainer
 {
 public:
@@ -62,7 +83,8 @@ public:
     virtual ~AbstractSnapshotsContainer() = 0;
 
     virtual auto currentIteration() -> std::optional<value_type *>;
-    virtual auto currentIteration() const -> std::optional<value_type const *>;
+    virtual auto
+    currentIteration() const -> std::optional<value_type const *> = 0;
 
     virtual auto begin() -> iterator = 0;
     virtual auto begin() const -> const_iterator = 0;

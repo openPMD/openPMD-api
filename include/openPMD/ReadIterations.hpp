@@ -10,6 +10,11 @@
 
 namespace openPMD
 {
+/** @brief Legacy Iterator type for `Series::readIterations()`
+ *
+ * Wraps the Iterator type of `Series::snapshots()`, but has `IndexedIteration`
+ * as value_type instead of `std::pair<uint64_t, Iteration>`.
+ */
 class LegacyIteratorAdaptor
 {
     using value_type = IndexedIteration;
@@ -28,7 +33,12 @@ public:
 };
 
 /**
- * @brief Reading side of the streaming API.
+ * @brief Legacy class as return type for `Series::readIterations()`.
+ *
+ * This is a feature-restricted subset for the functionality of
+ * `Series::snapshots()`, prefer using that. The compatibility layer is needed
+ * due to the different value_type for `Series::readIterations()`-based
+ * iteration (`IterationIndex` instead of `std::pair<uint64_t, Iteration>`).
  *
  * Create instance via Series::readIterations().
  * For use in a C++11-style foreach loop over iterations.
@@ -39,8 +49,6 @@ public:
  * Otherwise, Iteration::close() will be implicitly called upon
  * StatefulIterator::operator++(), i.e. upon going to the next iteration in
  * the foreach loop.
- * Since this is designed for streaming mode, reopening an iteration is
- * not possible once it has been closed.
  *
  */
 class ReadIterations

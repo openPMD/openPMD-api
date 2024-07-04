@@ -38,7 +38,7 @@ namespace openPMD
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/UnitDimension.hpp"
-#include "openPMD/snapshots/StatefulIterator.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"

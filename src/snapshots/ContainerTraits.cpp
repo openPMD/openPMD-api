@@ -106,12 +106,6 @@ auto AbstractSnapshotsContainer::currentIteration()
         return std::nullopt;
     }
 }
-auto AbstractSnapshotsContainer::currentIteration() const
-    -> std::optional<value_type const *>
-{
-    return std::nullopt;
-}
-
 auto AbstractSnapshotsContainer::at(key_type const &key) -> mapped_type &
 {
     return const_cast<mapped_type &>(

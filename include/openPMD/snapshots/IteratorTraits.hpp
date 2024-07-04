@@ -22,12 +22,33 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/backend/Writable.hpp"
+
 #include <memory>
+
+/*
+ * Public header due to use in OpaqueSeriesIterator type which is the public
+ * iterator type of Snapshots class.
+ */
 
 namespace openPMD
 {
-// Abstract class that can be used as an abstract interface to an opaque
-// iterator implementation
+/*
+ * Abstract class that can be used as an abstract interface to an opaque
+ * iterator implementation
+ *
+ * This has renamed operator names for two reasons:
+ *
+ * 1. Name shadowing of default implementations is too finnicky.
+ * 2. The return type for the actual operators should be a reference to the
+ *    child class, but for an Interface we need a common return type.
+ *
+ * For returning a reference to the child class, we need a CRT-style template to
+ * know the type. That does not work for an interface. As a result, this generic
+ * Iterator interface is split in two parts, class DynamicSeriesIterator which
+ * can be used generically without specifying the child class. All methods that
+ * need to know the child class type are put into the CRT-style class template
+ * AbstractSeriesIterator below.
+ */
 template <
     typename value_type =
         Container<Iteration, Iteration::IterationIndex_t>::value_type>
@@ -54,13 +75,17 @@ protected:
 
     virtual std::unique_ptr<DynamicSeriesIterator> clone() const = 0;
 };
-
-// Class template with default method implementations for iterators.
-// No virtual classes since there is no use.
-// Commented methods must be implemented by child classes.
-// Implement as `class MyIterator : public AbstractSeriesIterator<MyIterator>`
-// Use `using AbstractSeriesIterator<MyIterator>::operator-` to pull default
-// implementations.
+/*
+ * Class template with default method implementations for iterators.
+ * Complementary class to above class DynamicSeriesIterator, containing those
+ * methods that have the specific Iterator type in their type specification. See
+ * the documentation for DynamicSeriesIterator for more details.
+ * No virtual classes since there is no use.
+ * Commented methods must be implemented by child classes.
+ * Implement as `class MyIterator : public AbstractSeriesIterator<MyIterator>`
+ * Use `using AbstractSeriesIterator<MyIterator>::operator-` to pull default
+ * implementations.
+ */
 template <
     typename ChildClass,
     typename value_type_in = typename ChildClass::value_type>
