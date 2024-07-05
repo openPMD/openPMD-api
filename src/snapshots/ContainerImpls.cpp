@@ -60,7 +60,7 @@ auto StatefulSnapshotsContainer::currentIteration() const
     }
     else
     {
-        return nullptr;
+        return std::nullopt;
     }
 }
 
