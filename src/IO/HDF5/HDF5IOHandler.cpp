@@ -174,7 +174,7 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
                     std::cerr
                         << "Warning: parts of the backend configuration for "
                            "HDF5 remain unused:\n"
-                        << asToml << std::endl;
+                        << toml::format(asToml) << std::endl;
                     break;
                 }
                 }

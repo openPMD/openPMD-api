@@ -208,10 +208,6 @@ namespace
             }
             return result;
         }
-        else if (val.is_uninitialized())
-        {
-            return nlohmann::json(); // null
-        }
 
         // @todo maybe generalize error type
         throw error::BackendConfigSchema(
@@ -556,7 +552,7 @@ void warnGlobalUnusedOptions(TracingJSON const &config)
             std::cerr
                 << "[Series] The following parts of the global TOML config "
                    "remains unused:\n"
-                << asToml << std::endl;
+                << toml::format(asToml) << std::endl;
         }
         }
     }
@@ -612,7 +608,7 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
     case SupportedLanguages::TOML: {
         auto asToml = json::jsonToToml(res);
         std::stringstream sstream;
-        sstream << asToml;
+        sstream << toml::format(asToml);
         return sstream.str();
     }
     }

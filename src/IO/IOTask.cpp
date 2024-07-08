@@ -66,7 +66,7 @@ void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
             break;
         case json::SupportedLanguages::TOML: {
             auto asToml = json::jsonToToml(shadow);
-            std::cerr << warningMessage << asToml << std::endl;
+            std::cerr << warningMessage << toml::format(asToml) << std::endl;
             break;
         }
         }
