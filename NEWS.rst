@@ -13,6 +13,10 @@ Please transition to ADIOS2.
 For reading legacy ADIOS1 BP3 files, either use an older version of openPMD-api or the BP3 backend in ADIOS2.
 Note that ADIOS2 does not support compression in BP3 files.
 
+For converting ADIOS1 BP3 files to ADIOS2, use a version of the openPMD-api that still supports ADIOS1 and run the conversion with ``openpmd-pipe``, e.g. ``openpmd-pipe --infile adios1_data_%T.bp --inconfig '{"backend": "adios1"}' --outfile adios2_data_%T.bp --outconfig '{"backend": "adios2"}'``.
+
+Group-Based encoding is deprecated in ADIOS2 due to performance considerations. As alternatives, consider file-based encoding for regular file I/O or variable-based encoding (currently restricted to streaming and streaming-like workflows).
+
 CMake 3.22.0 is now the minimally supported version for CMake.
 pybind11 2.13.0 is now the minimally supported version for Python support.
 Python 3.12 & 3.13 are now supported, Python 3.7 is removed.
