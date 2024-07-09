@@ -205,17 +205,14 @@ std::string Attributable::MyPath::openPMDPath() const
 {
     if (group.empty())
     {
-        return std::string();
+        return std::string("/");
     }
     else
     {
         std::stringstream res;
-        auto it = group.begin();
-        auto end = group.end();
-        res << *it++;
-        for (; it != end; ++it)
+        for (auto const &element : group)
         {
-            res << '/' << *it;
+            res << '/' << element;
         }
         return res.str();
     }
