@@ -788,7 +788,8 @@ void ADIOS2IOHandlerImpl::createDataset(
 
         std::vector<ParameterizedOperator> operators;
         json::TracingJSON options =
-            json::parseOptions(parameters.options, /* considerFiles = */ false);
+            parameters.compileJSONConfig<json::ParsedConfig>(
+                writable, *m_handler->jsonMatcher);
         if (options.json().contains("adios2"))
         {
             json::TracingJSON datasetConfig(options["adios2"]);

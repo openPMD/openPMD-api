@@ -34,13 +34,10 @@ int main()
 # be passed by adding an at-sign `@` in front of the path
 # The format will then be recognized by filename extension, i.e. .json or .toml
 
-backend = "adios2"
+backend = "hdf5"
 iteration_encoding = "group_based"
 # The following is only relevant in read mode
 defer_iteration_parsing = true
-
-[adios1.dataset]
-transform = "blosc:compressor=zlib,shuffle=bit,lvl=5;nometa"
 
 [adios2.engine]
 type = "bp4"
@@ -60,13 +57,18 @@ parameters.clevel = 5
 # type = "some other parameter"
 # # ...
 
-[hdf5.dataset]
-chunks = "auto"
+[[hdf5.dataset]]
+cfg.chunks = "auto"
+
+[[hdf5.dataset]]
+select = "particles/e/.*"
+cfg.chunks = [10]
+cfg.chornks = []
 )END";
 
     // open file for writing
     Series series =
-        Series("../samples/dynamicConfig.bp", Access::CREATE, defaults);
+        Series("../samples/dynamicConfig.h5", Access::CREATE, defaults);
 
     Datatype datatype = determineDatatype<position_t>();
     constexpr unsigned long length = 10ul;
@@ -103,11 +105,6 @@ chunks = "auto"
         std::string const differentCompressionSettings = R"END(
 {
   "resizable": true,
-  "adios1": {
-    "dataset": {
-      "transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
-    }
-  },
   "adios2": {
     "dataset": {
       "operators": [
