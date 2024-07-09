@@ -50,7 +50,7 @@ void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
     auto shadow = config.invertShadow();
     // The backends are supposed to deal with this
     // Only global options here
-    for (auto const &backendKey : json::backendKeys())
+    for (auto const &backendKey : json::backendKeys)
     {
         if (backendKey != currentBackendName)
         {

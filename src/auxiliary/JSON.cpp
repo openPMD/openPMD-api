@@ -481,6 +481,12 @@ nlohmann::json &lowerCase(nlohmann::json &json)
                   * We use "\vnum" to indicate "any array index".
                   */
                  "\vnum",
+                 "parameters"},
+                {"adios2",
+                 "dataset",
+                 "\vnum",
+                 "operators",
+                 "\vnum",
                  "parameters"}};
             for (auto const &ignored : ignoredPaths)
             {
@@ -524,17 +530,12 @@ std::optional<std::string> asLowerCaseStringDynamic(nlohmann::json const &value)
     return maybeString;
 }
 
-std::vector<std::string> backendKeys()
-{
-    return {"adios2", "json", "toml", "hdf5"};
-}
-
 void warnGlobalUnusedOptions(TracingJSON const &config)
 {
     auto shadow = config.invertShadow();
     // The backends are supposed to deal with this
     // Only global options here
-    for (auto const &backendKey : json::backendKeys())
+    for (auto const &backendKey : json::backendKeys)
     {
         shadow.erase(backendKey);
     }
