@@ -1081,7 +1081,7 @@ void Series::initSeries(
     }
 
     series.iterations.linkHierarchy(writable);
-    series.iterations.writable().ownKeyWithinParent = "iterations";
+    series.iterations.writable().ownKeyWithinParent = "data";
     series.m_rankTable.m_attributable.linkHierarchy(writable);
 
     series.m_name = input->name;

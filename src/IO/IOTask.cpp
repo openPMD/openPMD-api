@@ -88,8 +88,8 @@ json::ParsedConfig Parameter<Operation::CREATE_DATASET>::compileJSONConfig(
     return json::ParsedConfig{
         std::move(base_config.config),
         (options.empty() || options == "{}")
-            ? manual_config.originallySpecifiedAs
-            : base_config.originallySpecifiedAs};
+            ? base_config.originallySpecifiedAs
+            : manual_config.originallySpecifiedAs};
 }
 
 namespace internal
