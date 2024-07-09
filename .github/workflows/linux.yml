@@ -133,6 +133,17 @@ jobs:
         python3.11 -m venv /opt/python_venv
         . /opt/python_venv/bin/activate
         python -m pip install numpy pandas
+        git clone https://github.com/ToruNiina/toml11
+        cd toml11
+        git checkout v4.0.3
+        mkdir build
+        cd build
+        cmake ..                                      \
+          -DCMAKE_INSTALL_PREFIX=../../toml11_install \
+          -DCMAKE_CXX_STANDARD_REQUIRED=OFF           \
+          -DCMAKE_CXX_STANDARD=11
+        make -j 2 install
+        cd ../..
     - name: Build
       env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
@@ -144,13 +155,15 @@ jobs:
         . /opt/python_venv/bin/activate
 
         share/openPMD/download_samples.sh build
+        export CMAKE_PREFIX_PATH="$(realpath toml_install):$CMAKE_PREFIX_PATH"
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DCMAKE_VERBOSE_MAKEFILE=ON     \
+          -DopenPMD_USE_INVASIVE_TESTS=ON   \
+          -DopenPMD_USE_INTERNAL_TOML11=OFF \
+          -DCMAKE_VERBOSE_MAKEFILE=ON       \
           -DPython_EXECUTABLE="$(which python)"
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
