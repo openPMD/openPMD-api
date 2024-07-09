@@ -644,12 +644,24 @@ filterByTemplate(nlohmann::json &defaultVal, nlohmann::json const &positiveMask)
     return defaultVal;
 }
 
+constexpr int toml_precision = std::numeric_limits<double>::digits10 + 1;
+
+#if TOML11_VERSION_MAJOR < 4
+template <typename toml_t>
+std ::string format_toml(toml_t &&val)
+{
+    std::stringstream res;
+    res << std::setprecision(toml_precision) << std::forward<toml_t>(val);
+    return res.str();
+}
+
+#else
+
 namespace
 {
     auto set_precision(toml::value &) -> void;
     auto set_precision(toml::value &val) -> void
     {
-        constexpr int precision = std::numeric_limits<double>::digits10 + 1;
         if (val.is_table())
         {
             for (auto &pair : val.as_table())
@@ -666,7 +678,7 @@ namespace
         }
         else if (val.is_floating())
         {
-            val.as_floating_fmt().prec = precision;
+            val.as_floating_fmt().prec = toml_precision;
         }
     }
 } // namespace
@@ -675,8 +687,10 @@ template <typename toml_t>
 std::string format_toml(toml_t &&val)
 {
     set_precision(val);
-    return toml::format(val);
+    return toml::format(std::forward<toml_t>(val));
 }
+
+#endif
 
 template std::string format_toml(toml::value &&);
 template std::string format_toml(toml::value &);
