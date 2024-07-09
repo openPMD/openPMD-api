@@ -1074,7 +1074,7 @@ void Series::initSeries(
              * A temporary IOHandler has been used. In this case, copy the
              * values from that IOHandler over into the real one.
              */
-            ioHandler->operator=(***writable.IOHandler);
+            ioHandler->operator=(std::move(***writable.IOHandler));
             *writable.IOHandler = std::move(ioHandler);
         }
         else

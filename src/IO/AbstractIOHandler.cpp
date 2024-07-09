@@ -22,6 +22,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #include "openPMD/IO/FlushParametersInternal.hpp"
+#include "openPMD/auxiliary/JSONMatcher.hpp"
 
 namespace openPMD
 {
@@ -43,4 +44,42 @@ std::future<void> AbstractIOHandler::flush(internal::FlushParams const &params)
     json::warnGlobalUnusedOptions(parsedParams.backendConfig);
     return future;
 }
+
+#if openPMD_HAVE_MPI
+template <typename TracingJSON>
+AbstractIOHandler::AbstractIOHandler(
+    std::string path, Access at, TracingJSON &&jsonConfig, MPI_Comm)
+    : jsonMatcher(std::make_unique<json::JsonMatcher>(
+          std::forward<TracingJSON>(jsonConfig)))
+    , directory{std::move(path)}
+    , m_backendAccess{at}
+    , m_frontendAccess{at}
+{}
+
+template AbstractIOHandler::AbstractIOHandler(
+    std::string path, Access at, json::TracingJSON &&jsonConfig, MPI_Comm);
+#endif
+
+template <typename TracingJSON>
+AbstractIOHandler::AbstractIOHandler(
+    std::string path, Access at, TracingJSON &&jsonConfig)
+    : jsonMatcher(std::make_unique<json::JsonMatcher>(
+          std::forward<TracingJSON>(jsonConfig)))
+    , directory{std::move(path)}
+    , m_backendAccess{at}
+    , m_frontendAccess{at}
+{}
+
+template AbstractIOHandler::AbstractIOHandler(
+    std::string path, Access at, json::TracingJSON &&jsonConfig);
+
+AbstractIOHandler::~AbstractIOHandler() = default;
+
+// AbstractIOHandler::AbstractIOHandler(AbstractIOHandler const &) = default;
+AbstractIOHandler::AbstractIOHandler(AbstractIOHandler &&) noexcept = default;
+
+// AbstractIOHandler &
+// AbstractIOHandler::operator=(AbstractIOHandler const &) = default;
+AbstractIOHandler &
+AbstractIOHandler::operator=(AbstractIOHandler &&) noexcept = default;
 } // namespace openPMD
