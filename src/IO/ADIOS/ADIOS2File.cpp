@@ -565,7 +565,7 @@ void ADIOS2File::configure_IO()
             auto asToml = json::jsonToToml(shadow);
             std::cerr << "Warning: parts of the backend configuration for "
                          "ADIOS2 remain unused:\n"
-                      << toml::format(asToml) << std::endl;
+                      << json::format_toml(asToml) << std::endl;
             break;
         }
         }

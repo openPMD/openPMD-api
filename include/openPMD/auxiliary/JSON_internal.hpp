@@ -251,5 +251,8 @@ namespace json
 
     nlohmann::json &filterByTemplate(
         nlohmann::json &defaultVal, nlohmann::json const &positiveMask);
+
+    template <typename toml_t>
+    std::string format_toml(toml_t &&);
 } // namespace json
 } // namespace openPMD

@@ -25,8 +25,9 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 
-#include <nlohmann/json.hpp>
+#include <limits>
 #include <queue>
 #include <toml.hpp>
 
@@ -552,7 +553,7 @@ void warnGlobalUnusedOptions(TracingJSON const &config)
             std::cerr
                 << "[Series] The following parts of the global TOML config "
                    "remains unused:\n"
-                << toml::format(asToml) << std::endl;
+                << json::format_toml(asToml) << std::endl;
         }
         }
     }
@@ -608,7 +609,7 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
     case SupportedLanguages::TOML: {
         auto asToml = json::jsonToToml(res);
         std::stringstream sstream;
-        sstream << toml::format(asToml);
+        sstream << json::format_toml(asToml);
         return sstream.str();
     }
     }
@@ -642,4 +643,41 @@ filterByTemplate(nlohmann::json &defaultVal, nlohmann::json const &positiveMask)
     } // else noop
     return defaultVal;
 }
+
+namespace
+{
+    auto set_precision(toml::value &) -> void;
+    auto set_precision(toml::value &val) -> void
+    {
+        constexpr int precision = std::numeric_limits<double>::digits10 + 1;
+        if (val.is_table())
+        {
+            for (auto &pair : val.as_table())
+            {
+                set_precision(pair.second);
+            }
+        }
+        else if (val.is_array())
+        {
+            for (auto &entry : val.as_array())
+            {
+                set_precision(entry);
+            }
+        }
+        else if (val.is_floating())
+        {
+            val.as_floating_fmt().prec = precision;
+        }
+    }
+} // namespace
+
+template <typename toml_t>
+std::string format_toml(toml_t &&val)
+{
+    set_precision(val);
+    return toml::format(val);
+}
+
+template std::string format_toml(toml::value &&);
+template std::string format_toml(toml::value &);
 } // namespace openPMD::json
