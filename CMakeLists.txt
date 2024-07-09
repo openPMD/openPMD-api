@@ -279,6 +279,9 @@ if(openPMD_USE_INTERNAL_TOML11)
     message(STATUS "toml11: Using INTERNAL version '3.7.1'")
 else()
     find_package(toml11 CONFIG REQUIRED)
+    # Need to check the version manually. toml11 4.0 was a breaking change, so
+    # find_package(toml11 3.7.1) would not accept versions 4.0+.
+    # We support both 3.* and 4.*.
     if(${toml11_VERSION} VERSION_LESS 3.7.1)
         message(FATAL_ERROR "toml11: Found version '${toml11_VERSION}', but requires version '3.7.1' at least.")
     else()
