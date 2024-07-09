@@ -155,7 +155,7 @@ jobs:
         . /opt/python_venv/bin/activate
 
         share/openPMD/download_samples.sh build
-        export CMAKE_PREFIX_PATH="$(realpath toml_install):$CMAKE_PREFIX_PATH"
+        export CMAKE_PREFIX_PATH="$(realpath toml11_install):$CMAKE_PREFIX_PATH"
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
