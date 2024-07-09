@@ -208,6 +208,7 @@ class Attributable
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
     friend class StatefulSnapshotsContainer;
+    friend class internal::AttributableData;
 
 protected:
     // tag for internal constructor

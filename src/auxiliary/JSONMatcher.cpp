@@ -1,7 +1,9 @@
 #include "openPMD/auxiliary/JSONMatcher.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 namespace openPMD::json
 {
@@ -26,6 +28,19 @@ namespace
         std::optional<nlohmann::json> &defaultConfig,
         nlohmann::json object) -> void;
 } // namespace
+
+Pattern::Pattern(std::string const &pattern_in, nlohmann::json config_in)
+    : config(std::move(config_in))
+{
+    // transform the regex such that the path to the Iteration is optional
+    std::stringstream build_pattern;
+    build_pattern << "(/data/[0-9]+/)?(" << pattern_in << ")";
+    // we construct the patterns once and use them often, so let's ask for
+    // some optimization
+    pattern = std::regex(
+        build_pattern.str(),
+        std::regex_constants::egrep | std::regex_constants::optimize);
+}
 
 void MatcherPerBackend::init(TracingJSON tracing_config)
 {

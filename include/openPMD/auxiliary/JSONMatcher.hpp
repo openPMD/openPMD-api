@@ -32,12 +32,7 @@ struct Pattern
     std::regex pattern;
     nlohmann::json config;
 
-    Pattern(std::string const &pattern_in, nlohmann::json config_in)
-        // we construct the patterns once and use them often, so let's ask for
-        // some optimization
-        : pattern{pattern_in, std::regex_constants::egrep | std::regex_constants::optimize}
-        , config{std::move(config_in)}
-    {}
+    Pattern(std::string const &pattern_in, nlohmann::json config_in);
 };
 
 /**

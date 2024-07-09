@@ -503,8 +503,9 @@ void HDF5IOHandlerImpl::createDataset(
         }
 
         json::TracingJSON config = [&]() {
-            auto parsed_config = json::parseOptions(
-                parameters.options, /* considerFiles = */ false);
+            auto parsed_config =
+                parameters.compileJSONConfig<json::ParsedConfig>(
+                    writable, *m_handler->jsonMatcher);
             if (auto hdf5_config_it = parsed_config.config.find("hdf5");
                 hdf5_config_it != parsed_config.config.end())
             {
