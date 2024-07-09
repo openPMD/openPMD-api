@@ -48,7 +48,7 @@ namespace json
 
     struct ParsedConfig
     {
-        nlohmann::json config;
+        nlohmann::json config = nlohmann::json::object();
         SupportedLanguages originallySpecifiedAs{SupportedLanguages::JSON};
     };
 

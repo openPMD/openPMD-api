@@ -122,7 +122,6 @@ public:
     ADIOS2IOHandlerImpl(
         AbstractIOHandler *,
         MPI_Comm,
-        json::TracingJSON config,
         std::string engineType,
         std::string specifiedExtension);
 
@@ -130,7 +129,6 @@ public:
 
     explicit ADIOS2IOHandlerImpl(
         AbstractIOHandler *,
-        json::TracingJSON config,
         std::string engineType,
         std::string specifiedExtension);
 

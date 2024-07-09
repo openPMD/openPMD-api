@@ -34,6 +34,7 @@
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSONMatcher.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
@@ -106,7 +107,6 @@ std::optional<size_t> joinedDimension(adios2::Dims const &dims)
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler *handler,
     MPI_Comm communicator,
-    json::TracingJSON cfg,
     std::string engineType,
     std::string specifiedExtension)
     : AbstractIOHandlerImplCommon(handler)
@@ -116,7 +116,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     , m_userSpecifiedExtension{std::move(specifiedExtension)}
 {
     init(
-        std::move(cfg),
+        handler->jsonMatcher->getDefault(),
         /* callbackWriteAttributesFromRank = */
         [communicator, this](nlohmann::json const &attribute_writing_ranks) {
             int rank = 0;
@@ -158,7 +158,6 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler *handler,
-    json::TracingJSON cfg,
     std::string engineType,
     std::string specifiedExtension)
     : AbstractIOHandlerImplCommon(handler)
@@ -166,7 +165,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     , m_engineType(std::move(engineType))
     , m_userSpecifiedExtension(std::move(specifiedExtension))
 {
-    init(std::move(cfg), [](auto const &...) {});
+    init(handler->jsonMatcher->getDefault(), [](auto const &...) {});
 }
 
 ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
@@ -2355,13 +2354,8 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     json::TracingJSON options,
     std::string engineType,
     std::string specifiedExtension)
-    : AbstractIOHandler(std::move(path), at, comm)
-    , m_impl{
-          this,
-          comm,
-          std::move(options),
-          std::move(engineType),
-          std::move(specifiedExtension)}
+    : AbstractIOHandler(std::move(path), at, std::move(options), comm)
+    , m_impl{this, comm, std::move(engineType), std::move(specifiedExtension)}
 {}
 
 #endif
@@ -2372,12 +2366,8 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     json::TracingJSON options,
     std::string engineType,
     std::string specifiedExtension)
-    : AbstractIOHandler(std::move(path), at)
-    , m_impl{
-          this,
-          std::move(options),
-          std::move(engineType),
-          std::move(specifiedExtension)}
+    : AbstractIOHandler(std::move(path), at, std::move(options))
+    , m_impl{this, std::move(engineType), std::move(specifiedExtension)}
 {}
 
 std::future<void>

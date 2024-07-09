@@ -21,12 +21,12 @@
 
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 #include "openPMD/Datatype.hpp"
-#include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSONMatcher.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
@@ -387,21 +387,19 @@ JSONIOHandlerImpl::getBackendConfig(openPMD::json::TracingJSON &config) const
 
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
-    openPMD::json::TracingJSON config,
     FileFormat format,
     std::string originalExtension)
     : AbstractIOHandlerImpl(handler)
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
-    init(std::move(config));
+    init(handler->jsonMatcher->getDefault());
 }
 
 #if openPMD_HAVE_MPI
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
     MPI_Comm comm,
-    openPMD::json::TracingJSON config,
     FileFormat format,
     std::string originalExtension)
     : AbstractIOHandlerImpl(handler)
@@ -409,7 +407,7 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
-    init(std::move(config));
+    init(handler->jsonMatcher->getDefault());
 }
 #endif
 
