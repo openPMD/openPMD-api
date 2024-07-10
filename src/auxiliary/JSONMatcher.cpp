@@ -2,8 +2,10 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <sstream>
+#include <stdexcept>
 
 namespace openPMD::json
 {
@@ -16,6 +18,8 @@ namespace
      * The "select" key is optional, indicating the default configuration if it
      * is missing.
      *
+     * @param backend_name For error messages.
+     * @param index_in_list For error messages.
      * @param patterns Output parameter: Emplace a parsed pattern into this
      * list.
      * @param defaultConfig Output parameter: If the pattern was the default
@@ -24,6 +28,8 @@ namespace
      * @return Whether the pattern was the default configuration or not.
      */
     auto readPattern(
+        std::string const &backend_name,
+        size_t index_in_list,
         std::vector<Pattern> &patterns,
         std::optional<nlohmann::json> &defaultConfig,
         nlohmann::json object) -> void;
@@ -53,9 +59,14 @@ void MatcherPerBackend::init(TracingJSON tracing_config)
     {
         std::optional<nlohmann::json> defaultConfig;
         // enhanced PIConGPU-defined layout
-        for (auto &value : config)
+        for (size_t i = 0; i < config.size(); ++i)
         {
-            readPattern(m_patterns, defaultConfig, std::move(value));
+            readPattern(
+                backendName,
+                i,
+                m_patterns,
+                defaultConfig,
+                std::move(config.at(i)));
         }
         // now replace the pattern list with the default config
         tracing_config.json() =
@@ -63,9 +74,8 @@ void MatcherPerBackend::init(TracingJSON tracing_config)
     }
     else
     {
-        throw std::runtime_error(
-            "[openPMD plugin] Expecting an object or an array as JSON "
-            "configuration.");
+        throw error::BackendConfigSchema(
+            {backendName, "dataset"}, "Expecting an object or an array.");
     }
 }
 
@@ -171,66 +181,104 @@ auto JsonMatcher::getDefault() -> TracingJSON
 namespace
 {
     auto readPattern(
+        std::string const &backend_name,
+        size_t index_in_list,
         std::vector<Pattern> &patterns,
         std::optional<nlohmann::json> &defaultConfig,
         nlohmann::json object) -> void
     {
-        constexpr char const *errorMsg = &R"END(
-Each single pattern in an extended JSON configuration must be a JSON object
-with keys 'select' and 'cfg'.
-The key 'select' is optional, indicating a default configuration if it is
-not set.
-The key 'select' must point to either a single string or an array of strings.)END"
-                                             [1];
+        constexpr char const *errorMsg = R"END(
+Each single pattern in an dataset-specific JSON/TOML configuration must be
+an object with mandatory key 'cfg' and optional key 'select'.
+When the key 'select' is not specified, the given configuration is used
+for setting up the default dataset configuration upon backend initialization.
+The key 'select' must point to either a single string or an array of strings
+and is interpreted as a regular expression against which the dataset name
+(full path or path within an iteration) must match.)END";
+        auto throw_up = [&](std::string const &additional_info,
+                            auto &&...additional_path) {
+            throw error::BackendConfigSchema(
+                {backend_name,
+                 "dataset",
+                 std::to_string(index_in_list),
+                 additional_path...},
+                additional_info + errorMsg);
+        };
 
         if (!object.is_object())
         {
-            throw std::runtime_error(errorMsg);
+            throw_up("Not an object!");
         }
-        try
+        if (!object.contains("cfg"))
         {
-            nlohmann::json &cfg = object.at("cfg");
-            if (!object.contains("select"))
+            throw_up("Mandatory key missing: 'cfg'!");
+        }
+        {
+            std::vector<std::string> unrecognized_keys;
+            for (auto it = object.begin(); it != object.end(); ++it)
             {
-                if (defaultConfig.has_value())
+                if (it.key() == "select" || it.key() == "cfg")
                 {
-                    throw std::runtime_error(
-                        "Specified more than one default configuration.");
+                    continue;
                 }
-                defaultConfig.emplace(std::move(cfg));
-                return;
+                unrecognized_keys.emplace_back(it.key());
             }
-            else
+            if (!unrecognized_keys.empty())
             {
-                nlohmann::json const &pattern = object.at("select");
-                std::string pattern_str = [&]() -> std::string {
-                    if (pattern.is_string())
-                    {
-                        return pattern.get<std::string>();
-                    }
-                    else if (pattern.is_array())
-                    {
-                        std::stringstream res;
-                        res << "($^)";
-                        for (auto const &sub_pattern : pattern)
-                        {
-                            res << "|(" << sub_pattern.get<std::string>()
-                                << ")";
-                        }
-                        return res.str();
-                    }
-                    else
-                    {
-                        throw std::runtime_error(errorMsg);
-                    }
-                }();
-                patterns.emplace_back(pattern_str, std::move(cfg));
-                return;
+                std::cerr << "[Warning] JSON/TOML config at '" << backend_name
+                          << ".dataset." << index_in_list
+                          << "' has unrecognized keys:";
+                for (auto const &item : unrecognized_keys)
+                {
+                    std::cerr << " '" << item << '\'';
+                }
+                std::cerr << '.' << std::endl;
             }
         }
-        catch (nlohmann::json::out_of_range const &)
+
+        nlohmann::json &cfg = object.at("cfg");
+        if (!object.contains("select"))
         {
-            throw std::runtime_error(errorMsg);
+            if (defaultConfig.has_value())
+            {
+                throw_up("Specified more than one default configuration!");
+            }
+            defaultConfig.emplace(std::move(cfg));
+            return;
+        }
+        else
+        {
+            nlohmann::json const &pattern = object.at("select");
+            std::string pattern_str = [&]() -> std::string {
+                if (pattern.is_string())
+                {
+                    return pattern.get<std::string>();
+                }
+                else if (pattern.is_array())
+                {
+                    std::stringstream res;
+                    res << "($^)";
+                    for (auto const &sub_pattern : pattern)
+                    {
+                        if (!sub_pattern.is_string())
+                        {
+                            throw_up(
+                                "Must be a string or an array of string!",
+                                "select");
+                        }
+                        res << "|(" << sub_pattern.get<std::string>() << ")";
+                    }
+                    return res.str();
+                }
+                else
+                {
+                    throw_up(
+                        "Must be a string or an array of string!", "select");
+                    throw std::runtime_error("Unreachable!");
+                }
+            }();
+            patterns.emplace_back(pattern_str, std::move(cfg));
+            return;
         }
     }
 } // namespace
