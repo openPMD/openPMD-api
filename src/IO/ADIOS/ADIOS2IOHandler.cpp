@@ -2178,13 +2178,12 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     MPI_Comm comm,
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    json::TracingJSON,
+    json::TracingJSON config,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string)
-    : AbstractIOHandler(std::move(path), at, comm)
+    : AbstractIOHandler(std::move(path), at, std::move(config), comm)
 {}
 
 #endif // openPMD_HAVE_MPI
@@ -2192,13 +2191,12 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    json::TracingJSON,
+    json::TracingJSON config,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string)
-    : AbstractIOHandler(std::move(path), at)
+    : AbstractIOHandler(std::move(path), at, std::move(config))
 {}
 
 std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
