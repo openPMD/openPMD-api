@@ -10,7 +10,7 @@ using namespace openPMD;
 
 int main()
 {
-    if (!getVariants()["adios2"])
+    if (!getVariants()["hdf5"])
     {
         // Example configuration below selects the ADIOS2 backend
         return 0;
@@ -57,13 +57,40 @@ parameters.clevel = 5
 # type = "some other parameter"
 # # ...
 
+# Sometimes, dataset configurations should not affect all datasets, but only
+# specific ones, e.g. only particle data.
+# Dataset configurations can be given as a list, here at the example of HDF5.
+# In such lists, each entry is an object with two keys:
+#
+# 1. 'cfg': Mandatory key, this is the actual dataset configuration.
+# 2. 'select': A Regex or a list of Regexes to match against the dataset name.
+#
+# This makes it possible to give dataset-specific configurations.
+# The dataset name is the same as returned
+# by `Attributable::myPath().openPMDPath()`.
+# The regex must match against either the full path (e.g. "/data/1/meshes/E/x")
+# or against the path within the iteration (e.g. "meshes/E/x").
+
+# Example:
+# Let HDF5 datasets be automatically chunked by default
 [[hdf5.dataset]]
 cfg.chunks = "auto"
 
+# For particles, we can specify the chunking explicitly
 [[hdf5.dataset]]
+# Multiple selection regexes can be given as a list.
+# They will be fused into a single regex '($^)|(regex1)|(regex2)|(regex3)|...'.
+select = ["/data/1/particles/e/.*", "/data/2/particles/e/.*"]
+cfg.chunks = [5]
+
+# Selecting a match works top-down, the order of list entries is important.
+[[hdf5.dataset]]
+# Specifying only a single regex.
+# The regex can match against the full dataset path
+# or against the path within the Iteration.
+# Capitalization is irrelevant.
 select = "particles/e/.*"
-cfg.chunks = [10]
-cfg.chornks = []
+CFG.CHUNKS = [10]
 )END";
 
     // open file for writing
