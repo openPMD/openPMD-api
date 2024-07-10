@@ -247,7 +247,9 @@ public:
     virtual ~AbstractIOHandler();
 
     AbstractIOHandler(AbstractIOHandler const &) = delete;
-    AbstractIOHandler(AbstractIOHandler &&) noexcept;
+    // std::queue::queue(queue&&) is not noexcept
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+    AbstractIOHandler(AbstractIOHandler &&) noexcept(false);
 
     AbstractIOHandler &operator=(AbstractIOHandler const &) = delete;
     AbstractIOHandler &operator=(AbstractIOHandler &&) noexcept;
