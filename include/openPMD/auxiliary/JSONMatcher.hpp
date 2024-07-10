@@ -1,21 +1,23 @@
 #pragma once
 
-/* Copyright 2021-2023 Franz Poeschel
+/* Copyright 2021-2024 Franz Poeschel
  *
- * This file is part of PIConGPU.
+ * This file is part of openPMD-api.
  *
- * PIConGPU is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * PIConGPU is distributed in the hope that it will be useful,
+ * openPMD-api is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with PIConGPU.
+ * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -57,15 +59,14 @@ public:
      *
      * This constructor will parse the given config.
      * It will distinguish between ordinary openPMD JSON configurations
-     * and extended configurations as defined by PIConGPU.
-     * If an ordinary JSON configuration was detected, given regex
-     * patterns will be matched against "" (the empty string).
+     * and dataset-specific configurations.
      *
+     * @param backendName The backend's JSON key.
      * @param config The JSON configuration for one backend.
      *               E.g. for ADIOS2, this will be the sub-object/array found
      * under config["adios2"]["dataset"].
      */
-    MatcherPerBackend(std::string backendName_in, TracingJSON config);
+    MatcherPerBackend(std::string backendName, TracingJSON config);
 
     std::string backendName;
 
@@ -78,8 +79,7 @@ public:
     auto get(std::string const &datasetPath) const -> nlohmann::json const &;
 };
 /**
- * @brief Class to handle extended JSON configurations as used by
- *        the openPMD plugin.
+ * @brief Class to handle default and dataset-specific JSON configurations.
  *
  * This class handles parsing of the extended JSON patterns as well as
  * selection of one JSON configuration by regex.
@@ -100,22 +100,18 @@ public:
     explicit JsonMatcher();
 
     /**
-     * @brief Initialize JSON matcher from command line arguments.
+     * @brief Initialize JSON matcher from a parsed JSON config.
      *
-     * This constructor will parse the given config, after reading it
-     * from a file if needed. In this case, the constructor is
-     * MPI-collective.
-     * It will distinguish between ordinary openPMD JSON configurations
-     * and extended configurations as defined by PIConGPU.
-     * If an ordinary JSON configuration was detected, given regex
-     * patterns will be matched against "" (the empty string).
+     * Will go through the backends' configurations (keys defined by
+     * `backendKeys` in JSON_internal.hpp) and check for dataset-specific
+     * configurations. It will then construct:
      *
-     * @param config The JSON configuration, exactly as in
-     *               --openPMD.json.
-     * @param comm MPI communicator for collective file reading,
-     *             if needed.
+     * 1. A default configuration.
+     * 2. Matchers for retrieving dataset-specific configurations.
+     *
+     * @param config The parsed JSON configuration as specified by the user.
      */
-    JsonMatcher(openPMD::json::TracingJSON);
+    JsonMatcher(openPMD::json::TracingJSON config);
 
     /**
      * @brief Get the JSON config associated with a regex pattern.
