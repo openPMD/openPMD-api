@@ -408,12 +408,7 @@ Look for the WriteIterations class for further documentation.
             return series;
         });
 
-    m.def(
-        "merge_json",
-        &json::merge,
-        py::arg("default_value") = "{}",
-        py::arg("overwrite") = "{}",
-        R"END(
+    constexpr char const *docs_merge_json = &R"END(
 Merge two JSON/TOML datasets into one.
 
 Merging rules:
@@ -445,5 +440,37 @@ Parameters:
 * returns:       The merged dataset, according to the above rules.
                  If `defaultValue` was a JSON dataset, then as a JSON string,
                  otherwise as a TOML string.
-        )END");
+        )END"[1];
+
+    m.def(
+         "merge_json",
+         py::overload_cast<std::string const &, std::string const &>(
+             &json::merge),
+         py::arg("default_value") = "{}",
+         py::arg("overwrite") = "{}",
+         docs_merge_json)
+#if openPMD_HAVE_MPI
+        .def(
+            "merge_json",
+            [](std::string const &default_value,
+               std::string const &overwrite,
+               py::object &comm) {
+                auto variant = pythonObjectAsMpiComm(comm);
+                if (auto errorMsg = std::get_if<std::string>(&variant))
+                {
+                    throw std::runtime_error("[merge_json] " + *errorMsg);
+                }
+                else
+                {
+                    py::gil_scoped_release release;
+                    return json::merge(
+                        default_value, overwrite, std::get<MPI_Comm>(variant));
+                }
+            },
+            py::arg("default_value") = "{}",
+            py::arg("overwrite") = "{}",
+            py::arg("comm"),
+            docs_merge_json)
+#endif
+        ;
 }

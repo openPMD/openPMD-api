@@ -21,6 +21,12 @@
 
 #pragma once
 
+#include "openPMD/config.hpp"
+
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <string>
 
 namespace openPMD
@@ -61,5 +67,12 @@ namespace json
      */
     std::string
     merge(std::string const &defaultValue, std::string const &overwrite);
+
+#if openPMD_HAVE_MPI
+    std::string merge(
+        std::string const &defaultValue,
+        std::string const &overwrite,
+        MPI_Comm);
+#endif
 } // namespace json
 } // namespace openPMD
