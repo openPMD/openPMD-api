@@ -150,11 +150,13 @@ public:
      * extent of parameters.extent. If possible, the new dataset should be
      * extensible. If possible, the new dataset should be divided into chunks
      * with size parameters.chunkSize. If possible, the new dataset should be
-     * compressed according to parameters.compression. This may be
-     * format-specific. If possible, the new dataset should be transformed
-     * accoring to parameters.transform. This may be format-specific. The
-     * Writables file position should correspond to the newly created dataset.
-     * The Writable should be marked written when the operation completes
+     * compressed/transformed according to the backend-specific configuration in
+     * parameters.options. The Writables file position should correspond to the
+     * newly created dataset. Any pre-existing file position should be ignored,
+     * the new file position will be based upon the parent object and the newly
+     * created path. (The old file position might still contain data due to
+     * reuse of Writable objects across files in file-based encoding.) The
+     * Writable should be marked written when the operation completes
      * successfully.
      */
     virtual void
