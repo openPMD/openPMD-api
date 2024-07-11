@@ -645,7 +645,7 @@ auto BaseRecord<T_elem>::erase(key_type const &key) -> size_type
 
     if (keyScalar)
     {
-        this->written() = false;
+        this->setWritten(false, Attributable::EnqueueAsynchronously::No);
         this->writable().abstractFilePosition.reset();
         this->get().m_datasetDefined = false;
     }

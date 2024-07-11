@@ -292,6 +292,7 @@ void JSONIOHandlerImpl::createDataset(
         std::string name = removeSlashes(parameter.name);
 
         auto file = refreshFileFromParent(writable);
+        writable->abstractFilePosition.reset();
         setAndGetFilePosition(writable);
         auto &jsonVal = obtainJsonContents(writable);
         // be sure to have a JSON object, not a list

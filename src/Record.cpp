@@ -150,9 +150,9 @@ void Record::read()
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush(internal::defaultFlushParams);
-            rc.written() = false;
+            rc.setWritten(false, Attributable::EnqueueAsynchronously::No);
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-            rc.written() = true;
+            rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
             try
             {
                 rc.read(/* require_unit_si = */ true);

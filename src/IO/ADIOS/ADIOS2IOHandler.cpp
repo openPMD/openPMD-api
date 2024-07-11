@@ -532,16 +532,17 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
         }
     }
 
-    for (auto &p : m_fileData)
+    for (auto const &file : m_dirty)
     {
-        if (m_dirty.find(p.first) != m_dirty.end())
+        auto file_data = m_fileData.find(file);
+        if (file_data == m_fileData.end())
         {
-            p.second->flush(adios2FlushParams, /* writeLatePuts = */ false);
+            throw error::Internal(
+                "[ADIOS2 backend] No associated data found for file'" + *file +
+                "'.");
         }
-        else
-        {
-            p.second->drop();
-        }
+        file_data->second->flush(
+            adios2FlushParams, /* writeLatePuts = */ false);
     }
     m_dirty.clear();
     return res;
@@ -750,6 +751,7 @@ void ADIOS2IOHandlerImpl::createDataset(
 
         auto const file =
             refreshFileFromParent(writable, /* preferParentFile = */ true);
+        writable->abstractFilePosition.reset();
         auto filePos = setAndGetFilePosition(writable, name);
         filePos->gd = GroupOrDataset::DATASET;
         auto const varName = nameOfVariable(writable);

@@ -124,9 +124,9 @@ void ParticleSpecies::read()
             RecordComponent &rc = r;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush(internal::defaultFlushParams);
-            rc.written() = false;
+            rc.setWritten(false, Attributable::EnqueueAsynchronously::No);
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-            rc.written() = true;
+            rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
             r.read();
         }
         catch (error::ReadError const &err)

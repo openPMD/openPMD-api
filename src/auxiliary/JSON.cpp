@@ -26,6 +26,7 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <nlohmann/json.hpp>
 #include <queue>
 #include <toml.hpp>
 
@@ -293,9 +294,22 @@ namespace
 {
     ParsedConfig parseInlineOptions(std::string const &options)
     {
+        // speed up default options
+        ParsedConfig res;
+        if (options.empty())
+        {
+            res.originallySpecifiedAs = SupportedLanguages::TOML;
+            res.config = nlohmann::json::object();
+            return res;
+        }
+        else if (options == "{}")
+        {
+            res.originallySpecifiedAs = SupportedLanguages::JSON;
+            res.config = nlohmann::json::object();
+            return res;
+        }
         std::string trimmed =
             auxiliary::trim(options, [](char c) { return std::isspace(c); });
-        ParsedConfig res;
         if (trimmed.empty())
         {
             return res;

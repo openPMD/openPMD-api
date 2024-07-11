@@ -481,6 +481,23 @@ void Attributable::readAttributes(ReadMode mode)
     setDirty(false);
 }
 
+void Attributable::setWritten(bool val, EnqueueAsynchronously ea)
+{
+    switch (ea)
+    {
+
+    case EnqueueAsynchronously::Yes: {
+        Parameter<Operation::SET_WRITTEN> param;
+        param.target_status = val;
+        IOHandler()->enqueue(IOTask(this, param));
+    }
+    break;
+    case EnqueueAsynchronously::No:
+        break;
+    }
+    writable().written = val;
+}
+
 void Attributable::linkHierarchy(Writable &w)
 {
     auto handler = w.IOHandler;

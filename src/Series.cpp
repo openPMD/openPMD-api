@@ -1138,12 +1138,12 @@ Given file pattern: ')END"
             {
                 /* Access::READ_WRITE can be used to create a new Series
                  * allow setting attributes in that case */
-                written() = false;
+                setWritten(false, Attributable::EnqueueAsynchronously::No);
 
                 initDefaults(input->iterationEncoding);
                 setIterationEncoding(input->iterationEncoding);
 
-                written() = true;
+                setWritten(true, Attributable::EnqueueAsynchronously::No);
             }
         }
         catch (...)
@@ -1321,12 +1321,12 @@ void Series::flushFileBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
+        }
 
-            // Phase 3
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
+        // Phase 3
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
         }
         break;
     case Access::READ_WRITE:
@@ -1344,10 +1344,12 @@ void Series::flushFileBased(
                  * emulate the file belonging to each iteration as not yet
                  * written, even if the iteration itself is already written
                  * (to ensure that the Series gets reassociated with the
-                 * current iteration)
+                 * current iteration by the backend)
                  */
-                written() = false;
-                series.iterations.written() = false;
+                this->setWritten(
+                    false, Attributable::EnqueueAsynchronously::Yes);
+                series.iterations.setWritten(
+                    false, Attributable::EnqueueAsynchronously::Yes);
 
                 setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);
@@ -1379,18 +1381,18 @@ void Series::flushFileBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
-
-            // Phase 3
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
              */
             setDirty(allDirty);
         }
         setDirty(false);
+
+        // Phase 3
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
+        }
         break;
     }
     }
@@ -1431,14 +1433,14 @@ void Series::flushGorVBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
+        }
 
-            // Phase 3
-            Parameter<Operation::TOUCH> touch;
-            IOHandler()->enqueue(IOTask(&writable(), touch));
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
+        // Phase 3
+        Parameter<Operation::TOUCH> touch;
+        IOHandler()->enqueue(IOTask(&writable(), touch));
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
         }
     }
     else
@@ -1798,9 +1800,9 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
-        written() = false;
+        setWritten(false, Attributable::EnqueueAsynchronously::No);
         setIterationFormat(Attribute(*aRead.resource).get<std::string>());
-        written() = true;
+        setWritten(true, Attributable::EnqueueAsynchronously::No);
     }
     else
         throw error::ReadError(
@@ -1949,9 +1951,9 @@ creating new iterations.
         IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
-            written() = false;
+            setWritten(false, Attributable::EnqueueAsynchronously::No);
             setIterationFormat(Attribute(*aRead.resource).get<std::string>());
-            written() = true;
+            setWritten(true, Attributable::EnqueueAsynchronously::No);
         }
         else
             throw error::ReadError(
@@ -2216,12 +2218,14 @@ void Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
-                it.second.meshes.written() = false;
+                it.second.meshes.setWritten(
+                    false, Attributable::EnqueueAsynchronously::No);
 
             setMeshesPath(val.value());
 
             for (auto &it : series.iterations)
-                it.second.meshes.written() = true;
+                it.second.meshes.setWritten(
+                    true, Attributable::EnqueueAsynchronously::No);
         }
         else
             throw error::ReadError(
@@ -2246,12 +2250,14 @@ void Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
-                it.second.particles.written() = false;
+                it.second.particles.setWritten(
+                    false, Attributable::EnqueueAsynchronously::No);
 
             setParticlesPath(val.value());
 
             for (auto &it : series.iterations)
-                it.second.particles.written() = true;
+                it.second.particles.setWritten(
+                    true, Attributable::EnqueueAsynchronously::No);
         }
         else
             throw error::ReadError(

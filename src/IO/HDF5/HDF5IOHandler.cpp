@@ -617,6 +617,7 @@ void HDF5IOHandlerImpl::createDataset(
         }
 #endif
 
+        writable->abstractFilePosition.reset();
         /* Open H5Object to write into */
         File file{};
         if (auto opt = getFile(writable->parent); opt.has_value())

@@ -481,10 +481,22 @@ OPENPMD_protected
     {
         return writable().written;
     }
-    bool &written()
+    enum class EnqueueAsynchronously : bool
     {
-        return writable().written;
-    }
+        Yes,
+        No
+    };
+    /*
+     * setWritten() will take effect immediately.
+     * But it might additionally be necessary in some situations to enqueue a
+     * SET_WRITTEN task to the backend:
+     * A single flush() operation might encompass different Iterations. In
+     * file-based Iteration encoding, some objects must be written to every
+     * single file, thus their `written` flag must be restored to `false` for
+     * each Iteration. When flushing multiple Iterations at once, this must
+     * happen as an asynchronous IO task.
+     */
+    void setWritten(bool val, EnqueueAsynchronously);
 
 private:
     /**
