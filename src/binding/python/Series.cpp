@@ -435,10 +435,16 @@ users to overwrite default options, while keeping any other ones.
 
 Parameters:
 * default_value: A string containing either a JSON or a TOML dataset.
+                 If the string begins with an `@`, the JSON/TOML dataset will be
+                 read from the filesystem at the specified path.
+                 An MPI communicator can be passed to read in parallel.
 * overwrite:     A string containing either a JSON or TOML dataset (does
                  not need to be the same as `defaultValue`).
+                 If the string begins with an `@`, the JSON/TOML dataset will be
+                 read from the filesystem at the specified path.
+                 An MPI communicator can be passed to read in parallel.
 * returns:       The merged dataset, according to the above rules.
-                 If `defaultValue` was a JSON dataset, then as a JSON string,
+                 If `overwrite` was a JSON dataset, then as a JSON string,
                  otherwise as a TOML string.
         )END"[1];
 
