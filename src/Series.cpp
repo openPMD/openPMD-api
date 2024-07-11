@@ -1835,9 +1835,9 @@ void Series::readOneIterationFileBased(std::string const &filePath)
                 {},
                 "Unknown iterationEncoding: " + encoding);
         auto old_written = written();
-        written() = false;
+        setWritten(false, Attributable::EnqueueAsynchronously::No);
         setIterationEncoding(encoding_out);
-        written() = old_written;
+        setWritten(old_written, Attributable::EnqueueAsynchronously::Yes);
     }
     else
         throw std::runtime_error(
