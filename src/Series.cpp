@@ -959,6 +959,8 @@ auto Series::initIOHandler(
     MPI_Communicator &&...comm)
     -> std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
 {
+    auto &series = get();
+
     json::TracingJSON optionsJson = json::parseOptions(
         options,
         std::forward<MPI_Communicator>(comm)...,
@@ -1025,6 +1027,10 @@ auto Series::initIOHandler(
         }
     }
 
+    // default options
+    series.m_parseLazily = at == Access::READ_LINEAR;
+
+    // now check for user-specified options
     parseJsonOptions(optionsJson, *input);
 
     if (resolve_generic_extension && !input->filenameExtension.has_value())
