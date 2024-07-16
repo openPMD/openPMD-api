@@ -133,17 +133,12 @@ jobs:
         python3.11 -m venv /opt/python_venv
         . /opt/python_venv/bin/activate
         python -m pip install numpy pandas
-        git clone https://github.com/ToruNiina/toml11
-        cd toml11
-        git checkout v4.0.3
-        mkdir build
-        cd build
-        cmake ..                                      \
-          -DCMAKE_INSTALL_PREFIX=../../toml11_install \
+        git clone -b v4.0.3 https://github.com/ToruNiina/toml11
+        cmake -S toml11 -B build_toml11               \
+          -DCMAKE_INSTALL_PREFIX=toml11_install \
           -DCMAKE_CXX_STANDARD_REQUIRED=OFF           \
           -DCMAKE_CXX_STANDARD=11
-        make -j 2 install
-        cd ../..
+        cmake --build build_toml11 -j 2 --target install
     - name: Build
       env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
