@@ -2492,11 +2492,8 @@ AdvanceStatus Series::advance(
         switch (series.m_iterationEncoding)
         {
         case IE::fileBased: {
-            if (itData.m_closed != internal::CloseStatus::Closed)
-            {
-                Parameter<Operation::CLOSE_FILE> fClose;
-                IOHandler()->enqueue(IOTask(&iteration, std::move(fClose)));
-            }
+            Parameter<Operation::CLOSE_FILE> fClose;
+            IOHandler()->enqueue(IOTask(&iteration, std::move(fClose)));
             itData.m_closed = internal::CloseStatus::Closed;
             break;
         }
