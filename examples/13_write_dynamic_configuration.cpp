@@ -17,6 +17,8 @@ int main()
     }
 
     using position_t = double;
+
+#if !__NVCOMPILER // see https://github.com/ToruNiina/toml11/issues/205
     /*
      * This example demonstrates how to use JSON/TOML-based dynamic
      * configuration for openPMD.
@@ -92,6 +94,65 @@ cfg.chunks = [5]
 select = "particles/e/.*"
 CFG.CHUNKS = [10]
 )END";
+#else
+    /*
+     * This is the same configuration in JSON. We need this in deprecated
+     * NVHPC-compilers due to problems that those compilers have with the
+     * toruniina::toml11 library.
+     */
+    std::string const defaults = R"(
+{
+  "backend": "hdf5",
+  "defer_iteration_parsing": true,
+  "iteration_encoding": "group_based",
+
+  "adios2": {
+    "engine": {
+      "type": "bp4"
+    },
+    "dataset": {
+      "operators": [
+        {
+          "parameters": {
+            "clevel": 5
+          },
+          "type": "zlib"
+        }
+      ]
+    }
+  },
+
+  "hdf5": {
+    "dataset": [
+      {
+        "cfg": {
+          "chunks": "auto"
+        }
+      },
+      {
+        "select": [
+          "/data/1/particles/e/.*",
+          "/data/2/particles/e/.*"
+        ],
+        "cfg": {
+          "chunks": [
+            5
+          ]
+        }
+      },
+      {
+        "select": "particles/e/.*",
+        "CFG": {
+          "CHUNKS": [
+            10
+          ]
+        }
+      }
+    ]
+  }
+}
+)";
+#endif
 
     // open file for writing
     Series series =
