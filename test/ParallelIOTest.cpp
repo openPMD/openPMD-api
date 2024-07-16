@@ -1150,7 +1150,7 @@ TEST_CASE("hipace_like_write", "[parallel]")
 }
 #endif
 
-#if openPMD_HAVE_ADIOS2 && openPMD_HAS_ADIOS_2_9
+#if openPMD_HAVE_ADIOS2 && openPMD_HAS_ADIOS_2_9 && openPMD_HAVE_MPI
 TEST_CASE("independent_write_with_collective_flush", "[parallel]")
 {
     Series write(
