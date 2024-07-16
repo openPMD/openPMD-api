@@ -3,6 +3,7 @@
 #include <openPMD/auxiliary/JSON_internal.hpp>
 
 #include <iostream>
+#include <sstream>
 #include <string>
 
 namespace json = openPMD::json;
@@ -38,7 +39,11 @@ int main(int argc, char const **argv)
         // Just read the whole stream into memory
         // Not very elegant, but we'll hold the entire JSON/TOML dataset
         // in memory at some point anyway, so it doesn't really matter
-        std::cin >> jsonOrToml;
+        {
+            std::stringbuf readEverything;
+            std::cin >> &readEverything;
+            jsonOrToml = readEverything.str();
+        }
         break;
     case 2:
         if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)
