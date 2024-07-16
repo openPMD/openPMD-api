@@ -459,9 +459,11 @@ overrideFlushTarget(FlushTarget &inplace, FlushTarget new_val)
         {
         case FlushTarget::Buffer:
         case FlushTarget::Disk:
+        case FlushTarget::NewStep:
             return true;
         case FlushTarget::Buffer_Override:
         case FlushTarget::Disk_Override:
+        case FlushTarget::NewStep_Override:
             return false;
         }
         return true;

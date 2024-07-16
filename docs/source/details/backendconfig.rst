@@ -129,10 +129,11 @@ Explanation of the single keys:
 
   * If ``"disk"``, data will be moved to disk on every flush.
   * If ``"buffer"``, then only upon ending an IO step or closing an engine.
+  * If ``new_step``, then a new step will be created. This should be used in combination with the ADIOS2 option ``adios2.engine.parameters.FlattenSteps = "on"``.
 
   This behavior can be overridden on a per-flush basis by specifying this JSON/TOML key as an optional parameter to the ``Series::flush()`` or ``Attributable::seriesFlush()`` methods.
 
-  Additionally, specifying ``"disk_override"`` or ``"buffer_override"`` will take precedence over options specified without the ``_override`` suffix, allowing to invert the normal precedence order.
+  Additionally, specifying ``"disk_override"``, ``"buffer_override"`` or ``"new_step_override"`` will take precedence over options specified without the ``_override`` suffix, allowing to invert the normal precedence order.
   This way, a data producing code can hardcode the preferred flush target per ``flush()`` call, but users can e.g. still entirely deactivate flushing to disk in the ``Series`` constructor by specifying ``preferred_flush_target = buffer_override``.
   This is useful when applying the asynchronous IO capabilities of the BP5 engine.
 * ``adios2.dataset.operators``: This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.

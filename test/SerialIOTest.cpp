@@ -4437,6 +4437,47 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 }
 #endif
 
+#if openPMD_HAVE_ADIOS2_BP5
+TEST_CASE("adios2_flush_via_step")
+{
+    Series write(
+        "../samples/adios2_flush_via_step/simData_%T.bp5",
+        Access::CREATE,
+        R"(adios2.engine.parameters.FlattenSteps = "on")");
+    std::vector<float> data(10);
+    for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+    {
+        Iteration it = write.writeIterations()[i];
+        auto E_x = it.meshes["E"]["x"];
+        E_x.resetDataset({Datatype::FLOAT, {10, 10}});
+        for (Extent::value_type j = 0; j < 10; ++j)
+        {
+            std::iota(data.begin(), data.end(), i * 100 + j * 10);
+            E_x.storeChunk(data, {j, 0}, {1, 10});
+            write.flush(R"(adios2.engine.preferred_flush_target = "new_step")");
+        }
+        it.close();
+    }
+
+#if openPMD_HAS_ADIOS_2_10_1
+    for (auto access : {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR})
+    {
+        Series read("../samples/adios2_flush_via_step/simData_%T.%E", access);
+        std::vector<float> load_data(100);
+        data.resize(100);
+        for (auto iteration : read.readIterations())
+        {
+            std::iota(data.begin(), data.end(), iteration.iterationIndex * 100);
+            iteration.meshes["E"]["x"].loadChunkRaw(
+                load_data.data(), {0, 0}, {10, 10});
+            iteration.close();
+            REQUIRE(load_data == data);
+        }
+    }
+#endif
+}
+#endif
+
 TEST_CASE("adios2_engines_and_file_endings")
 {
     size_t filenameCounter = 0;
