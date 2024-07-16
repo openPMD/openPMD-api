@@ -273,7 +273,7 @@ jobs:
         ctest --output-on-failure
 
         python3 -m pip install jsonschema
-        cd share/openPMD/json_schema
+        cd ../share/openPMD/json_schema
         PATH="../../../build/bin:$PATH" make -j 2
         # We need to exclude the thetaMode example since that has a different
         # meshesPath and the JSON schema needs to hardcode that.
