@@ -5,11 +5,11 @@ namespace filebased_write_test
 {
 using namespace openPMD;
 
-void close_and_reopen_iterations(
+auto close_and_reopen_iterations(
     const std::string &filename,
     openPMD::Access access,
     std::string const &json_config,
-    bool need_to_explitly_open_iterations)
+    bool need_to_explitly_open_iterations) -> void
 {
     Series list(filename, access, json_config);
 
@@ -77,7 +77,7 @@ void close_and_reopen_iterations(
     }
 }
 
-void close_and_reopen_iterations(std::string const &filename)
+auto close_and_reopen_iterations(std::string const &filename) -> void
 {
     close_and_reopen_iterations(
         filename,
