@@ -2082,4 +2082,119 @@ TEST_CASE("joined_dim", "[parallel]")
     }
 }
 
+#if openPMD_HAVE_ADIOS2_BP5
+// Parallel version of the same test from SerialIOTest.cpp
+TEST_CASE("adios2_flush_via_step")
+{
+    int size_i(0), rank_i(0);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank_i);
+    MPI_Comm_size(MPI_COMM_WORLD, &size_i);
+    Extent::value_type const size(size_i), rank(rank_i);
+
+    Series write(
+        "../samples/adios2_flush_via_step_parallel/simData_%T.bp5",
+        Access::CREATE,
+        MPI_COMM_WORLD,
+        R"(adios2.engine.parameters.FlattenSteps = "on")");
+    std::vector<float> data(10);
+    for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+    {
+        Iteration it = write.writeIterations()[i];
+        auto E_x = it.meshes["E"]["x"];
+        E_x.resetDataset({Datatype::FLOAT, {size, 10, 10}});
+        for (Extent::value_type j = 0; j < 10; ++j)
+        {
+            std::iota(
+                data.begin(), data.end(), i * 100 * size + rank * 100 + j * 10);
+            E_x.storeChunk(data, {rank, j, 0}, {1, 1, 10});
+            write.flush(R"(adios2.engine.preferred_flush_target = "new_step")");
+        }
+        it.close();
+    }
+
+#if openPMD_HAS_ADIOS_2_10_1
+    for (auto access : {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR})
+    {
+        Series read(
+            "../samples/adios2_flush_via_step_parallel/simData_%T.%E",
+            access,
+            MPI_COMM_WORLD);
+        std::vector<float> load_data(100 * size);
+        data.resize(100 * size);
+        for (auto iteration : read.readIterations())
+        {
+            std::iota(
+                data.begin(),
+                data.end(),
+                iteration.iterationIndex * size * 100);
+            iteration.meshes["E"]["x"].loadChunkRaw(
+                load_data.data(), {0, 0, 0}, {size, 10, 10});
+            iteration.close();
+            REQUIRE(load_data == data);
+        }
+    }
+#endif
+
+    /*
+     * Now emulate restarting from a checkpoint after a crash and continuing to
+     * write to the output Series. The semantics of openPMD::Access::APPEND
+     * don't fully fit here since that mode is for adding new Iterations to an
+     * existing Series. What we truly want to do is to continue writing to an
+     * Iteration without replacing it with a new one. So we must use the option
+     * adios2.engine.access_mode = "append" to tell the ADIOS2 backend that new
+     * steps should be added to an existing Iteration file.
+     */
+
+    write = Series(
+        "../samples/adios2_flush_via_step_parallel/simData_%T.bp5",
+        Access::APPEND,
+        MPI_COMM_WORLD,
+        R"(
+            [adios2.engine]
+            access_mode = "append"
+            parameters.FlattenSteps = "on"
+        )");
+    for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+    {
+        Iteration it = write.writeIterations()[i];
+        auto E_x = it.meshes["E"]["y"];
+        E_x.resetDataset({Datatype::FLOAT, {size, 10, 10}});
+        for (Extent::value_type j = 0; j < 10; ++j)
+        {
+            std::iota(
+                data.begin(), data.end(), i * 100 * size + rank * 100 + j * 10);
+            E_x.storeChunk(data, {rank, j, 0}, {1, 1, 10});
+            write.flush(R"(adios2.engine.preferred_flush_target = "new_step")");
+        }
+        it.close();
+    }
+
+#if openPMD_HAS_ADIOS_2_10_1
+    for (auto access : {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR})
+    {
+        Series read(
+            "../samples/adios2_flush_via_step_parallel/simData_%T.%E",
+            access,
+            MPI_COMM_WORLD);
+        std::vector<float> load_data(100 * size);
+        data.resize(100 * size);
+        for (auto iteration : read.readIterations())
+        {
+            std::iota(
+                data.begin(),
+                data.end(),
+                iteration.iterationIndex * size * 100);
+            iteration.meshes["E"]["x"].loadChunkRaw(
+                load_data.data(), {0, 0, 0}, {size, 10, 10});
+            iteration.meshes["E"]["y"].loadChunkRaw(
+                load_data.data(), {0, 0, 0}, {size, 10, 10});
+            iteration.close();
+            REQUIRE(load_data == data);
+            REQUIRE(load_data == data);
+        }
+    }
+#endif
+}
+#endif
+
 #endif // openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
