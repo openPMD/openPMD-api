@@ -321,6 +321,8 @@ jobs:
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
+          -DCMAKE_CXX_FLAGS="-Wno-error=stringop-overread" \
+          -DCMAKE_C_FLAGS="-Wno-error=stringop-overread" \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
