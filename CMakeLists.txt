@@ -278,11 +278,14 @@ if(openPMD_USE_INTERNAL_TOML11)
     add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11")
     message(STATUS "toml11: Using INTERNAL version '3.7.1'")
 else()
-    # Since toml11 4.0 was a breaking change,
-    # it needs separate find_package() calls
-    find_package(toml11 3.7.0 CONFIG QUIET)
+    # toml11 4.0 was a breaking change. This is reflected in the library's CMake
+    # logic: version 4.0 is not accepted by a call to find_package(toml11 3.7).
+    # Since we support both incompatible versions, we use two find_package()
+    # calls. Search for version 4 first in order to prefer that
+    # in (the unlikely) case that both versions are installed.
+    find_package(toml11 4.0 CONFIG QUIET)
     if(NOT toml11_FOUND)
-        find_package(toml11 4.0 CONFIG REQUIRED)
+        find_package(toml11 3.7.1 CONFIG REQUIRED)
     endif()
     message(STATUS "toml11: Found version '${toml11_VERSION}'")
 endif()
