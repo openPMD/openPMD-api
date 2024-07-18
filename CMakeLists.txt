@@ -25,12 +25,6 @@ if(POLICY CMP0127)
     cmake_policy(SET CMP0127 NEW)
 endif()
 
-# return() should check its arguments
-# https://cmake.org/cmake/help/latest/policy/CMP0140.html
-if(POLICY CMP0140)
-    cmake_policy(SET CMP0140 NEW)
-endif()
-
 
 # No in-Source builds #########################################################
 #
@@ -861,15 +855,14 @@ if(openPMD_BUILD_TESTING)
         target_compile_definitions(CatchRunner PUBLIC openPMD_HAVE_MPI=1)
     endif()
 
-    function(additional_testing_sources test_name out_list)
+    macro(additional_testing_sources test_name out_list)
         if(${test_name} STREQUAL "SerialIO")
             list(APPEND ${out_list}
                 test/Files_SerialIO/close_iteration_test.cpp
                 test/Files_SerialIO/filebased_write_test.cpp
             )
         endif()
-        return(PROPAGATE ${out_list})
-    endfunction()
+    endmacro()
 
     foreach(testname ${openPMD_TEST_NAMES})
         set(ADDITIONAL_SOURCE_FILES "")
