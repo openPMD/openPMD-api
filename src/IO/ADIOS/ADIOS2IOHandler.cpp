@@ -264,6 +264,25 @@ void ADIOS2IOHandlerImpl::init(
                         "Must be convertible to string type.");
                 }
             }
+
+            if (engineConfig.json().contains(
+                    adios_defaults::str_treat_unsupported_engine_like))
+            {
+                auto maybeEngine = json::asLowerCaseStringDynamic(
+                    engineConfig
+                        [adios_defaults::str_treat_unsupported_engine_like]
+                            .json());
+                if (!maybeEngine.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2",
+                         adios_defaults::str_engine,
+                         adios_defaults::str_treat_unsupported_engine_like},
+                        "Must be convertible to string type.");
+                }
+                m_realEngineType = std::move(m_engineType);
+                m_engineType = std::move(*maybeEngine);
+            }
         }
         auto operators = getOperators();
         if (operators)
@@ -361,6 +380,12 @@ std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
 #else
     constexpr char const *const default_file_ending = ".bp4";
 #endif
+
+    if (m_realEngineType.has_value())
+    {
+        // unknown engine type, use whatever ending the user specified
+        return m_userSpecifiedExtension;
+    }
 
     static std::map<std::string, AcceptedEndingsForEngine> const endings{
         {"sst", {{"", ""}, {".sst", ""}, {".%E", ""}}},
@@ -656,7 +681,7 @@ void ADIOS2IOHandlerImpl::checkFile(
 
 bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
 {
-    if (m_engineType == "bp3")
+    if (realEngineType() == "bp3")
     {
         if (!auxiliary::ends_with(fullFilePath, ".bp"))
         {
@@ -666,7 +691,7 @@ bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
             fullFilePath += ".bp";
         }
     }
-    else if (m_engineType == "sst")
+    else if (realEngineType() == "sst")
     {
         /*
          * SST will add this ending indiscriminately
@@ -1144,7 +1169,7 @@ void ADIOS2IOHandlerImpl::getBufferView(
             begin(optInEngines),
             end(optInEngines),
             [this](std::string const &engine) {
-                return engine == this->m_engineType;
+                return engine == this->realEngineType();
             }))
     {
         parameters.out->backendManagedBuffer = false;

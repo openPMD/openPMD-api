@@ -413,10 +413,6 @@ public:
 private:
     ADIOS2IOHandlerImpl *m_impl;
     std::optional<adios2::Engine> m_engine; //! ADIOS engine
-    /**
-     * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
-     */
-    std::string m_engineType;
 
     /*
      * Not all engines support the CurrentStep() call, so we have to

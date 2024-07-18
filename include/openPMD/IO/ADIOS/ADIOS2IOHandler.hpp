@@ -225,6 +225,19 @@ private:
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
     std::string m_engineType;
+    std::optional<std::string> m_realEngineType;
+
+    inline std::string const &realEngineType() const
+    {
+        if (m_realEngineType.has_value())
+        {
+            return *m_realEngineType;
+        }
+        else
+        {
+            return m_engineType;
+        }
+    }
     /*
      * The filename extension specified by the user.
      */

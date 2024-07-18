@@ -163,7 +163,6 @@ ADIOS2File::ADIOS2File(ADIOS2IOHandlerImpl &impl, InvalidatableFile file)
     : m_file(impl.fullPath(std::move(file)))
     , m_ADIOS(impl.m_ADIOS)
     , m_impl(&impl)
-    , m_engineType(impl.m_engineType)
 {
     // Declaring these members in the constructor body to avoid
     // initialization order hazards. Need the IO_ prefix since in some
@@ -324,7 +323,7 @@ namespace
 
 size_t ADIOS2File::currentStep()
 {
-    if (nonpersistentEngine(m_engineType))
+    if (nonpersistentEngine(m_impl->m_engineType))
     {
         return m_currentStep;
     }
@@ -337,9 +336,9 @@ size_t ADIOS2File::currentStep()
 void ADIOS2File::configure_IO_Read()
 {
     bool upfrontParsing = supportsUpfrontParsing(
-        m_impl->m_handler->m_backendAccess, m_engineType);
+        m_impl->m_handler->m_backendAccess, m_impl->m_engineType);
     PerstepParsing perstepParsing = supportsPerstepParsing(
-        m_impl->m_handler->m_backendAccess, m_engineType);
+        m_impl->m_handler->m_backendAccess, m_impl->m_engineType);
 
     switch (m_impl->m_handler->m_backendAccess)
     {
@@ -355,7 +354,7 @@ void ADIOS2File::configure_IO_Read()
              * In non-persistent (streaming) engines, per-step parsing is
              * always fine and always required.
              */
-            streamStatus = nonpersistentEngine(m_engineType)
+            streamStatus = nonpersistentEngine(m_impl->m_engineType)
                 ? StreamStatus::OutsideOfStep
                 : StreamStatus::Undecided;
             parsePreference = ParsePreference::PerStep;
@@ -374,7 +373,7 @@ void ADIOS2File::configure_IO_Read()
          * Prefer up-front parsing, but try to fallback to per-step parsing
          * if possible.
          */
-        if (upfrontParsing == nonpersistentEngine(m_engineType))
+        if (upfrontParsing == nonpersistentEngine(m_impl->m_engineType))
         {
             throw error::Internal(
                 "Internal control flow error: With access types "
@@ -412,7 +411,7 @@ void ADIOS2File::configure_IO_Write()
         // Also, it should only be done when truly streaming, not
         // when using a disk-based engine that behaves like a
         // streaming engine (otherwise attributes might vanish)
-        nonpersistentEngine(m_engineType);
+        nonpersistentEngine(m_impl->m_engineType);
 
     streamStatus = StreamStatus::OutsideOfStep;
 }
@@ -466,13 +465,13 @@ void ADIOS2File::configure_IO()
 
     // set engine type
     {
-        m_IO.SetEngine(m_engineType);
+        m_IO.SetEngine(m_impl->realEngineType());
     }
 
-    if (!supportedEngine(m_engineType))
+    if (!supportedEngine(m_impl->m_engineType))
     {
         std::stringstream sstream;
-        sstream << "User-selected ADIOS2 engine '" << m_engineType
+        sstream << "User-selected ADIOS2 engine '" << m_impl->m_engineType
                 << "' is not recognized by the openPMD-api. Select one of: '";
         bool first_entry = true;
         auto add_entries = [&first_entry, &sstream](auto &list) {
@@ -687,7 +686,7 @@ void ADIOS2File::configure_IO()
             auxiliary::getEnvNum("OPENPMD_ADIOS2_STATS_LEVEL", 0);
         m_IO.SetParameter("StatsLevel", std::to_string(stats_level));
     }
-    if (m_engineType == "sst" && notYetConfigured("QueueLimit"))
+    if (m_impl->realEngineType() == "sst" && notYetConfigured("QueueLimit"))
     {
         /*
          * By default, the SST engine of ADIOS2 does not set a limit on its
@@ -773,7 +772,8 @@ adios2::Engine &ADIOS2File::getEngine()
             bool openedANewStep = false;
             {
                 if (!supportsUpfrontParsing(
-                        m_impl->m_handler->m_backendAccess, m_engineType))
+                        m_impl->m_handler->m_backendAccess,
+                        m_impl->m_engineType))
                 {
                     /*
                      * In BP5 with Linear read mode, we now need to
@@ -1048,7 +1048,7 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
         {
         case FlushTarget::Disk:
         case FlushTarget::Disk_Override:
-            if (m_engineType == "bp5" ||
+            if (m_impl->realEngineType() == "bp5" ||
                 /* this second check should be sufficient, but we leave the
                    first check in as a safeguard against renamings in
                    ADIOS2. Also do a lowerCase transform since the docstring
