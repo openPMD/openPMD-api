@@ -500,13 +500,14 @@ void available_chunks_test(std::string const &file_ending)
         auto E_y = it0.meshes["E"]["y"];
         auto width = E_y.getExtent()[1];
         auto first_row =
-            E_y.prepareLoadStore().extent({1, width}).enqueueLoad<int>();
+            E_y.prepareLoadStore().extent({1, width}).enqueueLoad<int>().get();
         auto middle_rows = E_y.prepareLoadStore()
                                .offset({1, 0})
                                .extent({3, width})
-                               .enqueueLoad<int>();
+                               .enqueueLoad<int>()
+                               .get();
         auto last_row =
-            E_y.prepareLoadStore().offset({4, 0}).enqueueLoad<int>();
+            E_y.prepareLoadStore().offset({4, 0}).enqueueLoad<int>().get();
         read.flush();
 
         for (auto row : [&]() -> std::vector<std::shared_ptr<int> *> {

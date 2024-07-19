@@ -4,6 +4,7 @@
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
+#include <future>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
@@ -47,6 +48,18 @@ namespace internal
         std::optional<Extent> m_extent;
     };
 } // namespace internal
+
+namespace auxiliary::detail
+{
+    using future_to_shared_ptr_dataset_types =
+        map_variant<as_shared_pointer, dataset_types>::type;
+} // namespace auxiliary::detail
+
+enum class EnqueuePolicy
+{
+    Defer,
+    Immediate
+};
 
 /** Basic configuration for a Load/Store operation.
  *
@@ -136,11 +149,13 @@ public:
     [[nodiscard]] auto enqueueStore(F &&createBuffer) -> DynamicMemoryView<T>;
 
     template <typename T>
-    [[nodiscard]] auto enqueueLoad() -> std::shared_ptr<T>;
+    [[nodiscard]] auto enqueueLoad() -> std::future<std::shared_ptr<T>>;
 
-    using shared_ptr_dataset_types = auxiliary::detail::
-        map_variant<auxiliary::detail::as_shared_pointer, dataset_types>::type;
-    [[nodiscard]] auto enqueueLoadVariant() -> shared_ptr_dataset_types;
+    template <typename T>
+    [[nodiscard]] auto load(EnqueuePolicy) -> std::shared_ptr<T>;
+
+    [[nodiscard]] auto enqueueLoadVariant()
+        -> std::future<auxiliary::detail::future_to_shared_ptr_dataset_types>;
 };
 
 /** Configuration for a Store operation with a buffer type.
@@ -230,6 +245,8 @@ class ConfigureLoadStoreFromBuffer
 
 public:
     auto enqueueLoad() -> void;
+
+    auto load(EnqueuePolicy) -> void;
 };
 } // namespace openPMD
 

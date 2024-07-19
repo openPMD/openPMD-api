@@ -142,6 +142,7 @@ class RecordComponent : public BaseRecordComponent
     friend class ConfigureStoreChunkFromBuffer;
     template <typename>
     friend class ConfigureLoadStoreFromBuffer;
+    friend struct VisitorEnqueueLoadVariant;
 
 public:
     enum class Allocation

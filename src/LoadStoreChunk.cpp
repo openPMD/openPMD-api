@@ -12,6 +12,7 @@
 // comment to keep clang-format from reordering
 #include "openPMD/DatatypeMacros.hpp"
 
+#include <future>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -147,32 +148,65 @@ auto ConfigureLoadStore<ChildClass>::enqueueStore() -> DynamicMemoryView<T>
 
 template <typename ChildClass>
 template <typename T>
-auto ConfigureLoadStore<ChildClass>::enqueueLoad() -> std::shared_ptr<T>
+auto ConfigureLoadStore<ChildClass>::enqueueLoad()
+    -> std::future<std::shared_ptr<T>>
 {
-    return m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
+    auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
+    return std::async(
+        std::launch::deferred,
+        [res_lambda = std::move(res), rc = m_rc]() mutable {
+            rc.seriesFlush();
+            return res_lambda;
+        });
 }
 
-namespace
+template <typename ChildClass>
+template <typename T>
+auto ConfigureLoadStore<ChildClass>::load(EnqueuePolicy ep)
+    -> std::shared_ptr<T>
 {
-    template <typename ConfigureLoadStore_t>
-    struct VisitorEnqueueLoadVariant
+    auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
+    switch (ep)
     {
-        template <typename T>
-        static auto call(RecordComponent const &, ConfigureLoadStore_t &cfg) ->
-            typename ConfigureLoadStore_t::shared_ptr_dataset_types
-        {
-            return cfg.template enqueueLoad<T>();
-        }
-    };
-} // namespace
+    case EnqueuePolicy::Defer:
+        break;
+    case EnqueuePolicy::Immediate:
+        m_rc.seriesFlush();
+        break;
+    }
+    return res;
+}
+
+struct VisitorEnqueueLoadVariant
+{
+    template <typename T>
+    static auto call(RecordComponent &rc, internal::LoadStoreConfig cfg)
+        -> std::future<auxiliary::detail::future_to_shared_ptr_dataset_types>
+    {
+        auto res = rc.loadChunkAllocate_impl<T>(std::move(cfg));
+        return std::async(
+            std::launch::deferred,
+            [res_lambda = std::move(res), rc_lambda = rc]() mutable
+            -> auxiliary::detail::future_to_shared_ptr_dataset_types {
+                rc_lambda.seriesFlush();
+                return res_lambda;
+            });
+    }
+
+    static auto non_templated_implementation(
+        RecordComponent &rc, internal::LoadStoreConfig cfg)
+        -> std::future<auxiliary::detail::future_to_shared_ptr_dataset_types>
+    {
+        return rc.visit<VisitorEnqueueLoadVariant>(std::move(cfg));
+    }
+};
 
 template <typename ChildClass>
 auto ConfigureLoadStore<ChildClass>::enqueueLoadVariant()
-    -> shared_ptr_dataset_types
+    -> std::future<auxiliary::detail::future_to_shared_ptr_dataset_types>
 {
-    return m_rc
-        .visit<VisitorEnqueueLoadVariant<ConfigureLoadStore<ChildClass>>>(
-            *this);
+    return VisitorEnqueueLoadVariant::non_templated_implementation(
+        m_rc, this->storeChunkConfig());
 }
 
 template <typename Ptr_Type, typename ChildClass>
@@ -245,9 +279,31 @@ auto ConfigureLoadStoreFromBuffer<Ptr_Type>::enqueueLoad() -> void
         std::move(this->m_buffer), this->storeChunkConfig());
 }
 
+template <typename Ptr_Type>
+auto ConfigureLoadStoreFromBuffer<Ptr_Type>::load(EnqueuePolicy ep) -> void
+{
+    this->m_rc.loadChunk_impl(
+        std::move(this->m_buffer), this->storeChunkConfig());
+    switch (ep)
+    {
+
+    case EnqueuePolicy::Defer:
+        break;
+    case EnqueuePolicy::Immediate:
+        this->m_rc.seriesFlush();
+        break;
+    }
+}
+
+/* clang-format would destroy the NOLINT comments */
+// clang-format off
 #define INSTANTIATE_METHOD_TEMPLATES(base_class, dtype)                        \
-    template auto base_class::enqueueStore() -> DynamicMemoryView<dtype>;      \
-    template auto base_class::enqueueLoad() -> std::shared_ptr<dtype>;
+    template auto base_class::enqueueStore()->DynamicMemoryView<dtype>;        \
+    template auto base_class::enqueueLoad()                                    \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses) */                           \
+        ->std::future<std::shared_ptr<dtype>>;                                 \
+    template auto base_class::load(EnqueuePolicy)->std::shared_ptr<dtype>;
+// clang-format on
 
 #define INSTANTIATE_METHOD_TEMPLATES_FOR_BASE(dtype)                           \
     INSTANTIATE_METHOD_TEMPLATES(ConfigureLoadStore<void>, dtype)

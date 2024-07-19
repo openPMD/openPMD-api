@@ -76,7 +76,7 @@ inline std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
         operation.extent(std::move(e));
     }
 
-    return operation.enqueueLoad<T>();
+    return operation.load<T>(EnqueuePolicy::Defer);
 }
 
 template <typename T>
@@ -100,7 +100,7 @@ RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr(newData)
-        .enqueueLoad();
+        .load(EnqueuePolicy::Defer);
     return newData;
 #else
     auto newData = std::shared_ptr<T[]>(new T[numPoints]);
@@ -108,7 +108,7 @@ RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr(newData)
-        .enqueueLoad();
+        .load(EnqueuePolicy::Defer);
     return std::static_pointer_cast<T>(std::move(newData));
 #endif
 }
@@ -134,7 +134,7 @@ inline void RecordComponent::loadChunk(
         operation.extent(std::move(e));
     }
 
-    operation.withSharedPtr(std::move(data)).enqueueLoad();
+    operation.withSharedPtr(std::move(data)).load(EnqueuePolicy::Defer);
 }
 
 template <typename T_with_extent>
@@ -215,7 +215,7 @@ inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
-        .enqueueLoad();
+        .load(EnqueuePolicy::Defer);
 }
 
 template <typename T>

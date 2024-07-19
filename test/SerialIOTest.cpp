@@ -1680,7 +1680,7 @@ inline void write_test(const std::string &backend)
     auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
 
     auto variantTypeDataset = rc.loadChunkVariant();
-    auto variantTypeDataset2 = rc.prepareLoadStore().enqueueLoadVariant();
+    auto variantTypeDataset2 = rc.prepareLoadStore().enqueueLoadVariant().get();
     rc.seriesFlush();
     for (auto ptr : {&variantTypeDataset, &variantTypeDataset2})
     {
