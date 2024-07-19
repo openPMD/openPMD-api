@@ -4,9 +4,8 @@
 
 namespace openPMD
 {
-template <typename ChildClass>
 template <typename T>
-auto ConfigureLoadStore<ChildClass>::withSharedPtr(std::shared_ptr<T> data)
+auto ConfigureLoadStoreCore::withSharedPtr(std::shared_ptr<T> data)
     -> shared_ptr_return_type<T>
 {
     if (!data)
@@ -18,9 +17,8 @@ auto ConfigureLoadStore<ChildClass>::withSharedPtr(std::shared_ptr<T> data)
         std::static_pointer_cast<std::remove_extent_t<T>>(std::move(data)),
         {std::move(*this)});
 }
-template <typename ChildClass>
 template <typename T>
-auto ConfigureLoadStore<ChildClass>::withUniquePtr(UniquePtrWithLambda<T> data)
+auto ConfigureLoadStoreCore::withUniquePtr(UniquePtrWithLambda<T> data)
     -> unique_ptr_return_type<T>
 
 {
@@ -33,10 +31,8 @@ auto ConfigureLoadStore<ChildClass>::withUniquePtr(UniquePtrWithLambda<T> data)
         std::move(data).template static_cast_<std::remove_extent_t<T>>(),
         {std::move(*this)});
 }
-template <typename ChildClass>
 template <typename T>
-auto ConfigureLoadStore<ChildClass>::withRawPtr(T *data)
-    -> shared_ptr_return_type<T>
+auto ConfigureLoadStoreCore::withRawPtr(T *data) -> shared_ptr_return_type<T>
 {
     if (!data)
     {
@@ -47,16 +43,14 @@ auto ConfigureLoadStore<ChildClass>::withRawPtr(T *data)
         auxiliary::shareRaw(data), {std::move(*this)});
 }
 
-template <typename ChildClass>
 template <typename T, typename Del>
-auto ConfigureLoadStore<ChildClass>::withUniquePtr(std::unique_ptr<T, Del> data)
+auto ConfigureLoadStoreCore::withUniquePtr(std::unique_ptr<T, Del> data)
     -> unique_ptr_return_type<T>
 {
     return withUniquePtr(UniquePtrWithLambda<T>(std::move(data)));
 }
-template <typename ChildClass>
 template <typename T_ContiguousContainer>
-auto ConfigureLoadStore<ChildClass>::withContiguousContainer(
+auto ConfigureLoadStoreCore::withContiguousContainer(
     T_ContiguousContainer &data)
     -> std::enable_if_t<
         auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,

@@ -19,14 +19,6 @@
 
 namespace openPMD
 {
-
-namespace internal
-{
-    ConfigureLoadStoreData::ConfigureLoadStoreData(RecordComponent &rc)
-        : m_rc(rc)
-    {}
-} // namespace internal
-
 namespace
 {
     template <typename T>
@@ -63,25 +55,26 @@ namespace
     }
 } // namespace
 
+ConfigureLoadStoreCore::ConfigureLoadStoreCore(RecordComponent &rc) : m_rc(rc)
+{}
+
 template <typename ChildClass>
 ConfigureLoadStore<ChildClass>::ConfigureLoadStore(RecordComponent &rc)
-    : ConfigureLoadStoreData(rc)
+    : ConfigureLoadStoreCore(rc)
 {}
 
 template <typename ChildClass>
 ConfigureLoadStore<ChildClass>::ConfigureLoadStore(
-    internal::ConfigureLoadStoreData &&data)
-    : ConfigureLoadStoreData(std::move(data))
+    ConfigureLoadStoreCore &&data)
+    : ConfigureLoadStoreCore(std::move(data))
 {}
 
-template <typename ChildClass>
-auto ConfigureLoadStore<ChildClass>::dim() const -> uint8_t
+auto ConfigureLoadStoreCore::dim() const -> uint8_t
 {
     return m_rc.getDimensionality();
 }
 
-template <typename ChildClass>
-auto ConfigureLoadStore<ChildClass>::getOffset() -> Offset const &
+auto ConfigureLoadStoreCore::getOffset() -> Offset const &
 {
     if (!m_offset.has_value())
     {
@@ -97,8 +90,7 @@ auto ConfigureLoadStore<ChildClass>::getOffset() -> Offset const &
     return *m_offset;
 }
 
-template <typename ChildClass>
-auto ConfigureLoadStore<ChildClass>::getExtent() -> Extent const &
+auto ConfigureLoadStoreCore::getExtent() -> Extent const &
 {
     if (!m_extent.has_value())
     {
@@ -118,9 +110,7 @@ auto ConfigureLoadStore<ChildClass>::getExtent() -> Extent const &
     return *m_extent;
 }
 
-template <typename ChildClass>
-auto ConfigureLoadStore<ChildClass>::storeChunkConfig()
-    -> internal::LoadStoreConfig
+auto ConfigureLoadStoreCore::storeChunkConfig() -> internal::LoadStoreConfig
 {
     return internal::LoadStoreConfig{getOffset(), getExtent()};
 }
@@ -139,17 +129,14 @@ auto ConfigureLoadStore<ChildClass>::offset(Offset offset) -> return_type &
     return *static_cast<return_type *>(this);
 }
 
-template <typename ChildClass>
 template <typename T>
-auto ConfigureLoadStore<ChildClass>::enqueueStore() -> DynamicMemoryView<T>
+auto ConfigureLoadStoreCore::enqueueStore() -> DynamicMemoryView<T>
 {
     return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
 }
 
-template <typename ChildClass>
 template <typename T>
-auto ConfigureLoadStore<ChildClass>::enqueueLoad()
-    -> std::future<std::shared_ptr<T>>
+auto ConfigureLoadStoreCore::enqueueLoad() -> std::future<std::shared_ptr<T>>
 {
     auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
     return std::async(
@@ -160,10 +147,8 @@ auto ConfigureLoadStore<ChildClass>::enqueueLoad()
         });
 }
 
-template <typename ChildClass>
 template <typename T>
-auto ConfigureLoadStore<ChildClass>::load(EnqueuePolicy ep)
-    -> std::shared_ptr<T>
+auto ConfigureLoadStoreCore::load(EnqueuePolicy ep) -> std::shared_ptr<T>
 {
     auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
     switch (ep)
@@ -201,8 +186,7 @@ struct VisitorEnqueueLoadVariant
     }
 };
 
-template <typename ChildClass>
-auto ConfigureLoadStore<ChildClass>::enqueueLoadVariant()
+auto ConfigureLoadStoreCore::enqueueLoadVariant()
     -> std::future<auxiliary::detail::future_to_shared_ptr_dataset_types>
 {
     return VisitorEnqueueLoadVariant::non_templated_implementation(
@@ -297,21 +281,20 @@ auto ConfigureLoadStoreFromBuffer<Ptr_Type>::load(EnqueuePolicy ep) -> void
 
 /* clang-format would destroy the NOLINT comments */
 // clang-format off
-#define INSTANTIATE_METHOD_TEMPLATES(base_class, dtype)                        \
-    template auto base_class::enqueueStore()->DynamicMemoryView<dtype>;        \
-    template auto base_class::enqueueLoad()                                    \
-    /* NOLINTNEXTLINE(bugprone-macro-parentheses) */                           \
+#define INSTANTIATE_METHOD_TEMPLATES(dtype)                                    \
+    template auto ConfigureLoadStoreCore::enqueueStore()                       \
+        ->DynamicMemoryView<dtype>;                                            \
+    template auto ConfigureLoadStoreCore::enqueueLoad()                        \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
         ->std::future<std::shared_ptr<dtype>>;                                 \
-    template auto base_class::load(EnqueuePolicy)->std::shared_ptr<dtype>;
+    template auto ConfigureLoadStoreCore::load(EnqueuePolicy)                  \
+        ->std::shared_ptr<dtype>;
 // clang-format on
 
-#define INSTANTIATE_METHOD_TEMPLATES_FOR_BASE(dtype)                           \
-    INSTANTIATE_METHOD_TEMPLATES(ConfigureLoadStore<void>, dtype)
-
 template class ConfigureLoadStore<void>;
-OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
+OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES)
 
-#undef INSTANTIATE_METHOD_TEMPLATES_FOR_BASE
+#undef INSTANTIATE_METHOD_TEMPLATES
 
 /* clang-format would destroy the NOLINT comments */
 // clang-format off
@@ -325,37 +308,19 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES_FOR_BASE)
     template class ConfigureLoadStore<                                         \
     /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
         ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>;                 \
-    INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureLoadStore<                                                    \
-    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
-            ConfigureLoadStoreFromBuffer<std::shared_ptr<dtype>>>,             \
-        dtype)                                                                 \
     /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
     template class ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>;  \
     template class ConfigureLoadStore<                                         \
     /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
         ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>;            \
-    INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureLoadStore<                                                    \
-    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
-            ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype>>>,        \
-        dtype)                                                                 \
     template class ConfigureStoreChunkFromBuffer<                              \
         std::shared_ptr<dtype const>>;                                         \
     template class ConfigureLoadStore<                                         \
         ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>;          \
-    INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureLoadStore<                                                    \
-            ConfigureStoreChunkFromBuffer<std::shared_ptr<dtype const>>>,      \
-        dtype)                                                                 \
     template class ConfigureStoreChunkFromBuffer<                              \
         UniquePtrWithLambda<dtype const>>;                                     \
     template class ConfigureLoadStore<                                         \
-        ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype const>>>;      \
-    INSTANTIATE_METHOD_TEMPLATES(                                              \
-        ConfigureLoadStore<                                                    \
-            ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype const>>>,  \
-        dtype)
+        ConfigureStoreChunkFromBuffer<UniquePtrWithLambda<dtype const>>>;
 // clang-format on
 
 OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_STORE_CHUNK_FROM_BUFFER)

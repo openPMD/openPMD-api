@@ -33,20 +33,6 @@ namespace internal
         std::optional<MemorySelection> memorySelection;
     };
 
-    /*
-     * Actual data members of `ConfigureLoadStore<>`. They don't depend on the
-     * template parameter of that class template, so by extracting the members
-     * to this struct, we can pass them around between different instances of
-     * the class template.
-     */
-    struct ConfigureLoadStoreData
-    {
-        ConfigureLoadStoreData(RecordComponent &);
-
-        RecordComponent &m_rc;
-        std::optional<Offset> m_offset;
-        std::optional<Extent> m_extent;
-    };
 } // namespace internal
 
 namespace auxiliary::detail
@@ -61,38 +47,27 @@ enum class EnqueuePolicy
     Immediate
 };
 
-/** Basic configuration for a Load/Store operation.
- *
- * @tparam ChildClass CRT pattern.
- *         The purpose is that in child classes `return *this` should return
- *         an instance of the child class, not of ConfigureLoadStore.
- *         Instantiate with void when using without subclass.
+/*
+ * Actual data members of `ConfigureLoadStore<>` and methods that don't depend
+ * on the ChildClass template parameter. By extracting the members to this
+ * struct, we can pass them around between different instances of the class
+ * template. Numbers of method instantiations can be reduced.
  */
-template <typename ChildClass = void>
-class ConfigureLoadStore : protected internal::ConfigureLoadStoreData
+struct ConfigureLoadStoreCore
 {
-    friend class RecordComponent;
-    template <typename>
-    friend class ConfigureLoadStore;
+    ConfigureLoadStoreCore(RecordComponent &);
+
+    RecordComponent &m_rc;
+    std::optional<Offset> m_offset;
+    std::optional<Extent> m_extent;
 
 protected:
-    ConfigureLoadStore(RecordComponent &rc);
-    ConfigureLoadStore(ConfigureLoadStoreData &&);
-
     [[nodiscard]] auto dim() const -> uint8_t;
     auto getOffset() -> Offset const &;
     auto getExtent() -> Extent const &;
     auto storeChunkConfig() -> internal::LoadStoreConfig;
 
 public:
-    using return_type = std::conditional_t<
-        std::is_void_v<ChildClass>,
-        /*then*/ ConfigureLoadStore<void>,
-        /*else*/ ChildClass>;
-
-    auto offset(Offset) -> return_type &;
-    auto extent(Extent) -> return_type &;
-
     /*
      * If the type is non-const, then the return type should be
      * ConfigureLoadStoreFromBuffer<>, ...
@@ -158,6 +133,33 @@ public:
         -> std::future<auxiliary::detail::future_to_shared_ptr_dataset_types>;
 };
 
+/** Basic configuration for a Load/Store operation.
+ *
+ * @tparam ChildClass CRT pattern.
+ *         The purpose is that in child classes `return *this` should return
+ *         an instance of the child class, not of ConfigureLoadStore.
+ *         Instantiate with void when using without subclass.
+ */
+template <typename ChildClass = void>
+class ConfigureLoadStore : public ConfigureLoadStoreCore
+{
+    friend class RecordComponent;
+    friend struct ConfigureLoadStoreCore;
+
+protected:
+    ConfigureLoadStore(RecordComponent &rc);
+    ConfigureLoadStore(ConfigureLoadStoreCore &&);
+
+public:
+    using return_type = std::conditional_t<
+        std::is_void_v<ChildClass>,
+        /*then*/ ConfigureLoadStore<void>,
+        /*else*/ ChildClass>;
+
+    auto offset(Offset) -> return_type &;
+    auto extent(Extent) -> return_type &;
+};
+
 /** Configuration for a Store operation with a buffer type.
  *
  * This class does intentionally not support Load operations since there are
@@ -186,8 +188,7 @@ public:
     using parent_t = ConfigureLoadStore<return_type>;
 
 protected:
-    template <typename T>
-    friend class ConfigureLoadStore;
+    friend struct ConfigureLoadStoreCore;
 
     Ptr_Type m_buffer;
     std::optional<MemorySelection> m_mem_select;
@@ -238,8 +239,7 @@ class ConfigureLoadStoreFromBuffer
     using parent_t = ConfigureStoreChunkFromBuffer<
         Ptr_Type,
         ConfigureLoadStoreFromBuffer<Ptr_Type>>;
-    template <typename>
-    friend class ConfigureLoadStore;
+    friend struct ConfigureLoadStoreCore;
     ConfigureLoadStoreFromBuffer(
         Ptr_Type buffer, typename parent_t::parent_t &&);
 
