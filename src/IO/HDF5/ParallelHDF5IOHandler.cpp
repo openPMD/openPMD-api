@@ -334,7 +334,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
                 auto asToml = json::jsonToToml(shadow);
                 std::cerr << "Warning: parts of the backend configuration for "
                              "HDF5 remain unused:\n"
-                          << asToml << std::endl;
+                          << json::format_toml(asToml) << std::endl;
                 break;
             }
             }

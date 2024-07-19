@@ -1378,7 +1378,8 @@ auto JSONIOHandlerImpl::putJsonContents(
             *fh_with_precision << *it->second << std::endl;
             break;
         case FileFormat::Toml:
-            *fh_with_precision << openPMD::json::jsonToToml(*it->second)
+            *fh_with_precision << openPMD::json::format_toml(
+                                      openPMD::json::jsonToToml(*it->second))
                                << std::endl;
             break;
         }

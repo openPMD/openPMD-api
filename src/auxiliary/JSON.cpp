@@ -25,8 +25,9 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 
-#include <nlohmann/json.hpp>
+#include <limits>
 #include <queue>
 #include <toml.hpp>
 
@@ -207,10 +208,6 @@ namespace
                 currentPath.pop_back();
             }
             return result;
-        }
-        else if (val.is_uninitialized())
-        {
-            return nlohmann::json(); // null
         }
 
         // @todo maybe generalize error type
@@ -556,7 +553,7 @@ void warnGlobalUnusedOptions(TracingJSON const &config)
             std::cerr
                 << "[Series] The following parts of the global TOML config "
                    "remains unused:\n"
-                << asToml << std::endl;
+                << json::format_toml(asToml) << std::endl;
         }
         }
     }
@@ -612,7 +609,7 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
     case SupportedLanguages::TOML: {
         auto asToml = json::jsonToToml(res);
         std::stringstream sstream;
-        sstream << asToml;
+        sstream << json::format_toml(asToml);
         return sstream.str();
     }
     }
@@ -646,4 +643,55 @@ filterByTemplate(nlohmann::json &defaultVal, nlohmann::json const &positiveMask)
     } // else noop
     return defaultVal;
 }
+
+constexpr int toml_precision = std::numeric_limits<double>::digits10 + 1;
+
+#if TOML11_VERSION_MAJOR < 4
+template <typename toml_t>
+std ::string format_toml(toml_t &&val)
+{
+    std::stringstream res;
+    res << std::setprecision(toml_precision) << std::forward<toml_t>(val);
+    return res.str();
+}
+
+#else
+
+namespace
+{
+    auto set_precision(toml::value &) -> void;
+    auto set_precision(toml::value &val) -> void
+    {
+        if (val.is_table())
+        {
+            for (auto &pair : val.as_table())
+            {
+                set_precision(pair.second);
+            }
+        }
+        else if (val.is_array())
+        {
+            for (auto &entry : val.as_array())
+            {
+                set_precision(entry);
+            }
+        }
+        else if (val.is_floating())
+        {
+            val.as_floating_fmt().prec = toml_precision;
+        }
+    }
+} // namespace
+
+template <typename toml_t>
+std::string format_toml(toml_t &&val)
+{
+    set_precision(val);
+    return toml::format(std::forward<toml_t>(val));
+}
+
+#endif
+
+template std::string format_toml(toml::value &&);
+template std::string format_toml(toml::value &);
 } // namespace openPMD::json
