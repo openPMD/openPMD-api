@@ -12,7 +12,7 @@ jobs:
 #  appleclang10_py37_h5_ad2_libcpp
 #  appleclang11_nopy_nompi_h5_ad2
 
-  appleclang14_py_mpi_h5_ad2:
+  appleclang15_py_mpi_h5_ad2:
     runs-on: macos-latest
     if: github.event.pull_request.draft == false
     steps:
@@ -45,8 +45,8 @@ jobs:
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
-  appleclang13_py:
-    runs-on: macos-11
+  appleclang14_py:
+    runs-on: macos-12
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v3
