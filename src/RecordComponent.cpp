@@ -66,9 +66,9 @@ RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
     setData(std::make_shared<Data_t>());
 }
 
-ConfigureLoadStore<void> RecordComponent::prepareLoadStore()
+ConfigureLoadStore RecordComponent::prepareLoadStore()
 {
-    return ConfigureLoadStore<void>{*this};
+    return ConfigureLoadStore{*this};
 }
 
 namespace

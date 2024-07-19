@@ -12,7 +12,7 @@
 namespace openPMD
 {
 class RecordComponent;
-template <typename Ptr_Type, typename ChildClass>
+template <typename Ptr_Type>
 class ConfigureStoreChunkFromBuffer;
 template <typename Ptr_Type>
 class ConfigureLoadStoreFromBuffer;
@@ -40,6 +40,15 @@ namespace auxiliary::detail
     using future_to_shared_ptr_dataset_types =
         map_variant<as_shared_pointer, dataset_types>::type;
 } // namespace auxiliary::detail
+
+namespace auxiliary
+{
+    template <typename possibly_void, typename alternative>
+    using non_void_or = std::conditional_t<
+        !std::is_void_v<possibly_void>,
+        /*then*/ possibly_void,
+        /*else*/ alternative>;
+} // namespace auxiliary
 
 enum class EnqueuePolicy
 {
@@ -84,8 +93,7 @@ public:
     template <typename T>
     struct shared_ptr_return_type_impl<T const>
     {
-        using type =
-            ConfigureStoreChunkFromBuffer<std::shared_ptr<T const>, void>;
+        using type = ConfigureStoreChunkFromBuffer<std::shared_ptr<T const>>;
     };
 
     template <typename T>
@@ -98,8 +106,7 @@ public:
      */
     template <typename T>
     using unique_ptr_return_type = ConfigureStoreChunkFromBuffer<
-        UniquePtrWithLambda<std::remove_extent_t<T>>,
-        void>;
+        UniquePtrWithLambda<std::remove_extent_t<T>>>;
 
     // @todo rvalue references..?
     template <typename T>
@@ -133,77 +140,17 @@ public:
         -> std::future<auxiliary::detail::future_to_shared_ptr_dataset_types>;
 };
 
-/** Basic configuration for a Load/Store operation.
- *
- * @tparam ChildClass CRT pattern.
- *         The purpose is that in child classes `return *this` should return
- *         an instance of the child class, not of ConfigureLoadStore.
- *         Instantiate with void when using without subclass.
- */
-template <typename ChildClass = void>
-class ConfigureLoadStore : public ConfigureLoadStoreCore
-{
-    friend class RecordComponent;
-    friend struct ConfigureLoadStoreCore;
-
-protected:
-    ConfigureLoadStore(RecordComponent &rc);
-    ConfigureLoadStore(ConfigureLoadStoreCore &&);
-
-public:
-    using return_type = std::conditional_t<
-        std::is_void_v<ChildClass>,
-        /*then*/ ConfigureLoadStore<void>,
-        /*else*/ ChildClass>;
-
-    auto offset(Offset) -> return_type &;
-    auto extent(Extent) -> return_type &;
-};
-
-/** Configuration for a Store operation with a buffer type.
- *
- * This class does intentionally not support Load operations since there are
- * pointer types (const pointers, unique pointers) where Load operations make no
- * sense. See the \ref ConfigureLoadStoreFromBuffer class template for both
- * Load/Store operations.
- *
- * @tparam Ptr_Type The type of pointer used internally.
- * @tparam ChildClass CRT pattern.
- *         The purpose is that in child classes `return *this` should return
- *         an instance of the child class, not of ConfigureStoreChunkFromBuffer.
- *         Instantiate with void when using without subclass.
- */
-template <typename Ptr_Type, typename ChildClass = void>
-class ConfigureStoreChunkFromBuffer
-    : public ConfigureLoadStore<std::conditional_t<
-          std::is_void_v<ChildClass>,
-          /*then*/ ConfigureStoreChunkFromBuffer<Ptr_Type, void>,
-          /*else*/ ChildClass>>
+template <typename Ptr_Type>
+class ConfigureStoreChunkFromBufferCore : public ConfigureLoadStoreCore
 {
 public:
-    using return_type = std::conditional_t<
-        std::is_void_v<ChildClass>,
-        /*then*/ ConfigureStoreChunkFromBuffer<Ptr_Type, void>,
-        /*else*/ ChildClass>;
-    using parent_t = ConfigureLoadStore<return_type>;
-
-protected:
-    friend struct ConfigureLoadStoreCore;
-
     Ptr_Type m_buffer;
     std::optional<MemorySelection> m_mem_select;
 
+    ConfigureStoreChunkFromBufferCore(
+        Ptr_Type buffer, ConfigureLoadStoreCore &&);
+
     auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
-
-protected:
-    ConfigureStoreChunkFromBuffer(Ptr_Type buffer, parent_t &&);
-
-public:
-    auto memorySelection(MemorySelection) -> return_type &;
-
-    auto as_parent() && -> parent_t &&;
-    auto as_parent() & -> parent_t &;
-    auto as_parent() const & -> parent_t const &;
 
     auto enqueueStore() -> void;
 
@@ -222,31 +169,94 @@ public:
     }
 };
 
-/** Configuration for a Load/Store operation with a buffer type.
- *
- * Only instantiated for pointer types where Load operations make sense (e.g. no
- * const pointers and no unique pointers).
- * \ref ConfigureStoreChunkFromBuffer is used otherwise.
- *
- * @tparam Ptr_Type The type of pointer used internally.
- */
 template <typename Ptr_Type>
-class ConfigureLoadStoreFromBuffer
-    : public ConfigureStoreChunkFromBuffer<
-          Ptr_Type,
-          ConfigureLoadStoreFromBuffer<Ptr_Type>>
+class ConfigureLoadStoreFromBufferCore
+    : public ConfigureStoreChunkFromBufferCore<Ptr_Type>
 {
-    using parent_t = ConfigureStoreChunkFromBuffer<
-        Ptr_Type,
-        ConfigureLoadStoreFromBuffer<Ptr_Type>>;
-    friend struct ConfigureLoadStoreCore;
-    ConfigureLoadStoreFromBuffer(
-        Ptr_Type buffer, typename parent_t::parent_t &&);
-
 public:
+    using ConfigureStoreChunkFromBufferCore<
+        Ptr_Type>::ConfigureStoreChunkFromBufferCore;
+
     auto enqueueLoad() -> void;
 
     auto load(EnqueuePolicy) -> void;
+};
+
+namespace compose
+{
+    /** Basic configuration for a Load/Store operation.
+     *
+     * @tparam ChildClass CRT pattern.
+     *         The purpose is that in child classes `return *this` should return
+     *         an instance of the child class, not of ConfigureLoadStore.
+     *         Instantiate with void when using without subclass.
+     */
+    template <typename ChildClass>
+    class ConfigureLoadStore
+    {
+    public:
+        auto offset(Offset) -> ChildClass &;
+        auto extent(Extent) -> ChildClass &;
+    };
+
+    /** Configuration for a Store operation with a buffer type.
+     *
+     * This class does intentionally not support Load operations since there are
+     * pointer types (const pointers, unique pointers) where Load operations
+     * make no sense. See the \ref ConfigureLoadStoreFromBuffer class template
+     * for both Load/Store operations.
+     *
+     * @tparam Ptr_Type The type of pointer used internally.
+     * @tparam ChildClass CRT pattern.
+     *         The purpose is that in child classes `return *this` should return
+     *         an instance of the child class, not of
+     * ConfigureStoreChunkFromBuffer. Instantiate with void when using without
+     * subclass.
+     */
+    template <typename ChildClass = void>
+    class ConfigureStoreChunkFromBuffer
+    {
+    public:
+        auto memorySelection(MemorySelection) -> ChildClass &;
+    };
+} // namespace compose
+
+class ConfigureLoadStore
+    : public ConfigureLoadStoreCore
+    , public compose::ConfigureLoadStore<ConfigureLoadStore>
+{
+    friend class RecordComponent;
+    friend struct ConfigureLoadStoreCore;
+
+    ConfigureLoadStore(RecordComponent &rc);
+    ConfigureLoadStore(ConfigureLoadStoreCore &&);
+};
+
+template <typename Ptr_Type>
+class ConfigureStoreChunkFromBuffer
+    : public ConfigureStoreChunkFromBufferCore<Ptr_Type>
+    , public compose::ConfigureLoadStore<
+          ConfigureStoreChunkFromBuffer<Ptr_Type>>
+    , public compose::ConfigureStoreChunkFromBuffer<
+          ConfigureStoreChunkFromBuffer<Ptr_Type>>
+{
+    friend struct ConfigureLoadStoreCore;
+
+    using ConfigureStoreChunkFromBufferCore<
+        Ptr_Type>::ConfigureStoreChunkFromBufferCore;
+};
+
+template <typename Ptr_Type>
+class ConfigureLoadStoreFromBuffer
+    : public ConfigureLoadStoreFromBufferCore<Ptr_Type>
+    , public compose::ConfigureLoadStore<ConfigureLoadStoreFromBuffer<Ptr_Type>>
+    , public compose::ConfigureStoreChunkFromBuffer<
+          ConfigureLoadStoreFromBuffer<Ptr_Type>>
+{
+    friend struct ConfigureLoadStoreCore;
+
+    using ConfigureLoadStoreFromBufferCore<
+        Ptr_Type>::ConfigureLoadStoreFromBufferCore;
 };
 } // namespace openPMD
 

@@ -137,12 +137,10 @@ class RecordComponent : public BaseRecordComponent
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
     friend struct ConfigureLoadStoreCore;
-    template <typename ChildClass>
-    friend class ConfigureLoadStore;
-    template <typename Ptr_Type, typename ChildClass>
-    friend class ConfigureStoreChunkFromBuffer;
     template <typename>
-    friend class ConfigureLoadStoreFromBuffer;
+    friend class ConfigureLoadStoreFromBufferCore;
+    template <typename>
+    friend class ConfigureStoreChunkFromBufferCore;
     friend struct VisitorEnqueueLoadVariant;
 
 public:
@@ -295,7 +293,7 @@ public:
     template <typename T>
     void loadChunkRaw(T *data, Offset offset, Extent extent);
 
-    ConfigureLoadStore<void> prepareLoadStore();
+    ConfigureLoadStore prepareLoadStore();
 
     /** Store a chunk of data from a chunk of memory.
      *
