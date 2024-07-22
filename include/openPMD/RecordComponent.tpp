@@ -226,7 +226,7 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr(std::move(data))
-        .enqueueStore();
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T>
@@ -237,7 +237,7 @@ RecordComponent::storeChunk(UniquePtrWithLambda<T> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
-        .enqueueStore();
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T, typename Del>
@@ -248,7 +248,7 @@ RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
-        .enqueueStore();
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T>
@@ -258,7 +258,7 @@ void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
-        .enqueueStore();
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T_ContiguousContainer>
@@ -278,7 +278,9 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
         storeChunkConfig.extent(std::move(e));
     }
 
-    std::move(storeChunkConfig).withContiguousContainer(data).enqueueStore();
+    std::move(storeChunkConfig)
+        .withContiguousContainer(data)
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T, typename F>
