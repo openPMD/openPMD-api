@@ -117,11 +117,12 @@ namespace core
         -> auxiliary::DeferredFuture<std::shared_ptr<T>>
     {
         auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
-        return auxiliary::DeferredFuture(std::packaged_task(
-            [res_lambda = std::move(res), rc = m_rc]() mutable {
-                rc.seriesFlush();
-                return res_lambda;
-            }));
+        return auxiliary::DeferredFuture<std::shared_ptr<T>>(
+            std::packaged_task<std::shared_ptr<T>()>(
+                [res_lambda = std::move(res), rc = m_rc]() mutable {
+                    rc.seriesFlush();
+                    return res_lambda;
+                }));
     }
 
     template <typename T>
@@ -147,12 +148,15 @@ namespace core
                 auxiliary::detail::shared_ptr_dataset_types>
         {
             auto res = rc.loadChunkAllocate_impl<T>(std::move(cfg));
-            return auxiliary::DeferredFuture(std::packaged_task(
-                [res_lambda = std::move(res), rc_lambda = rc]() mutable
-                -> auxiliary::detail::shared_ptr_dataset_types {
-                    rc_lambda.seriesFlush();
-                    return res_lambda;
-                }));
+            return auxiliary::DeferredFuture<
+                auxiliary::detail::shared_ptr_dataset_types>(
+                std::packaged_task<
+                    auxiliary::detail::shared_ptr_dataset_types()>(
+                    [res_lambda = std::move(res), rc_lambda = rc]() mutable
+                    -> auxiliary::detail::shared_ptr_dataset_types {
+                        rc_lambda.seriesFlush();
+                        return res_lambda;
+                    }));
         }
     };
 
@@ -210,7 +214,7 @@ namespace core
             asWriteBuffer(std::move(m_buffer)),
             determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
             storeChunkConfig());
-        return auxiliary::DeferredFuture(std::packaged_task(
+        return auxiliary::DeferredFuture<void>(std::packaged_task<void()>(
             [rc_lambda = m_rc]() mutable -> void { rc_lambda.seriesFlush(); }));
     }
 
