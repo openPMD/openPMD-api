@@ -468,6 +468,7 @@ set(CORE_SOURCE
         src/WriteIterations.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
+        src/auxiliary/Future.cpp
         src/auxiliary/JSON.cpp
         src/auxiliary/Mpi.cpp
         src/backend/Attributable.cpp

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/Future.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
@@ -141,13 +142,15 @@ namespace core
         enqueueStore(F &&createBuffer) -> DynamicMemoryView<T>;
 
         template <typename T>
-        [[nodiscard]] auto enqueueLoad() -> std::future<std::shared_ptr<T>>;
+        [[nodiscard]] auto
+        enqueueLoad() -> auxiliary::DeferredFuture<std::shared_ptr<T>>;
 
         template <typename T>
         [[nodiscard]] auto load(EnqueuePolicy) -> std::shared_ptr<T>;
 
-        [[nodiscard]] auto enqueueLoadVariant()
-            -> std::future<auxiliary::detail::shared_ptr_dataset_types>;
+        [[nodiscard]] auto
+        enqueueLoadVariant() -> auxiliary::DeferredFuture<
+                                 auxiliary::detail::shared_ptr_dataset_types>;
 
         [[nodiscard]] auto loadVariant(EnqueuePolicy)
             -> auxiliary::detail::shared_ptr_dataset_types;
@@ -164,7 +167,7 @@ namespace core
 
         auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
 
-        auto enqueueStore() -> std::future<void>;
+        auto enqueueStore() -> auxiliary::DeferredFuture<void>;
 
         auto store(EnqueuePolicy) -> void;
 

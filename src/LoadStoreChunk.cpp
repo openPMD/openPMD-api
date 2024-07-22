@@ -113,15 +113,15 @@ namespace core
     }
 
     template <typename T>
-    auto ConfigureLoadStore::enqueueLoad() -> std::future<std::shared_ptr<T>>
+    auto ConfigureLoadStore::enqueueLoad()
+        -> auxiliary::DeferredFuture<std::shared_ptr<T>>
     {
         auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
-        return std::async(
-            std::launch::deferred,
+        return auxiliary::DeferredFuture(std::packaged_task(
             [res_lambda = std::move(res), rc = m_rc]() mutable {
                 rc.seriesFlush();
                 return res_lambda;
-            });
+            }));
     }
 
     template <typename T>
@@ -143,21 +143,22 @@ namespace core
     {
         template <typename T>
         static auto call(RecordComponent &rc, internal::LoadStoreConfig cfg)
-            -> std::future<auxiliary::detail::shared_ptr_dataset_types>
+            -> auxiliary::DeferredFuture<
+                auxiliary::detail::shared_ptr_dataset_types>
         {
             auto res = rc.loadChunkAllocate_impl<T>(std::move(cfg));
-            return std::async(
-                std::launch::deferred,
+            return auxiliary::DeferredFuture(std::packaged_task(
                 [res_lambda = std::move(res), rc_lambda = rc]() mutable
                 -> auxiliary::detail::shared_ptr_dataset_types {
                     rc_lambda.seriesFlush();
                     return res_lambda;
-                });
+                }));
         }
     };
 
     auto ConfigureLoadStore::enqueueLoadVariant()
-        -> std::future<auxiliary::detail::shared_ptr_dataset_types>
+        -> auxiliary::DeferredFuture<
+            auxiliary::detail::shared_ptr_dataset_types>
     {
         return m_rc.visit<VisitorEnqueueLoadVariant>(this->storeChunkConfig());
     }
@@ -202,16 +203,15 @@ namespace core
     }
 
     template <typename Ptr_Type>
-    auto
-    ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueueStore() -> std::future<void>
+    auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueueStore()
+        -> auxiliary::DeferredFuture<void>
     {
         this->m_rc.storeChunk_impl(
             asWriteBuffer(std::move(m_buffer)),
             determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
             storeChunkConfig());
-        return std::async(
-            std::launch::deferred,
-            [rc_lambda = m_rc]() mutable -> void { rc_lambda.seriesFlush(); });
+        return auxiliary::DeferredFuture(std::packaged_task(
+            [rc_lambda = m_rc]() mutable -> void { rc_lambda.seriesFlush(); }));
     }
 
     template <typename Ptr_Type>
@@ -300,7 +300,7 @@ template class compose::ConfigureLoadStore<ConfigureLoadStore>;
     template auto core::ConfigureLoadStore::enqueueStore()                     \
         -> DynamicMemoryView<dtype>;                                           \
     template auto core::ConfigureLoadStore::enqueueLoad()                      \
-        -> std::future<std::shared_ptr<dtype>>;                                \
+        -> auxiliary::DeferredFuture<std::shared_ptr<dtype>>;                  \
     template auto core::ConfigureLoadStore::load(EnqueuePolicy)                \
         ->std::shared_ptr<dtype>;
 // clang-format on
@@ -310,13 +310,15 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES)
 #undef INSTANTIATE_METHOD_TEMPLATES
 
 /* clang-format would destroy the NOLINT comments */
-//// clang-format off
+// clang-format off
 #define INSTANTIATE_HALF(pointer_type)                                         \
     template class ConfigureStoreChunkFromBuffer<pointer_type>;                \
     template class core::ConfigureStoreChunkFromBuffer<pointer_type>;          \
     template class compose::ConfigureLoadStore<                                \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
         ConfigureStoreChunkFromBuffer<pointer_type>>;                          \
     template class compose::ConfigureStoreChunkFromBuffer<                     \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
         ConfigureStoreChunkFromBuffer<pointer_type>>;
 // clang-format on
 
@@ -325,7 +327,7 @@ OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_METHOD_TEMPLATES)
 #define INSTANTIATE_FULL(pointer_type)                                         \
     INSTANTIATE_HALF(pointer_type)                                             \
     template class ConfigureLoadStoreFromBuffer<pointer_type>;                 \
-    template class core::ConfigureLoadStoreFromBuffer<pointer_type>;             \
+    template class core::ConfigureLoadStoreFromBuffer<pointer_type>;           \
     template class compose::ConfigureLoadStore<                                \
     /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
   ConfigureLoadStoreFromBuffer<pointer_type>>;                                 \
