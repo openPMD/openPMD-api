@@ -115,6 +115,17 @@ namespace internal
     class BaseRecordData;
 } // namespace internal
 
+namespace core
+{
+    class ConfigureLoadStore;
+    template <typename>
+    class ConfigureLoadStoreFromBuffer;
+    template <typename>
+    class ConfigureStoreChunkFromBuffer;
+    struct VisitorEnqueueLoadVariant;
+    struct VisitorLoadVariant;
+} // namespace core
+
 template <typename>
 class BaseRecord;
 
@@ -137,11 +148,13 @@ class RecordComponent : public BaseRecordComponent
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
     friend struct ConfigureLoadStoreCore;
+    friend class core::ConfigureLoadStore;
     template <typename>
-    friend class ConfigureLoadStoreFromBufferCore;
+    friend class core::ConfigureLoadStoreFromBuffer;
     template <typename>
-    friend class ConfigureStoreChunkFromBufferCore;
-    friend struct VisitorEnqueueLoadVariant;
+    friend class core::ConfigureStoreChunkFromBuffer;
+    friend struct core::VisitorEnqueueLoadVariant;
+    friend struct core::VisitorLoadVariant;
 
 public:
     enum class Allocation
@@ -236,8 +249,8 @@ public:
     template <typename T>
     std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
 
-    using shared_ptr_dataset_types = auxiliary::detail::
-        map_variant<auxiliary::detail::as_shared_pointer, dataset_types>::type;
+    using shared_ptr_dataset_types =
+        auxiliary::detail::shared_ptr_dataset_types;
 
     /** std::variant-based version of allocating loadChunk<T>(Offset, Extent)
      *

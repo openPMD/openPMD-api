@@ -400,7 +400,7 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
 
 // definitions for LoadStoreChunk.hpp
 template <typename T, typename F>
-auto ConfigureLoadStoreCore::enqueueStore(F &&createBuffer)
+auto core::ConfigureLoadStore::enqueueStore(F &&createBuffer)
     -> DynamicMemoryView<T>
 {
     return m_rc.storeChunkSpanCreateBuffer_impl<T>(

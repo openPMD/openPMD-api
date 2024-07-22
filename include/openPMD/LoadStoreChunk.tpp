@@ -2,10 +2,10 @@
 
 #include "openPMD/LoadStoreChunk.hpp"
 
-namespace openPMD
+namespace openPMD::core
 {
 template <typename T>
-auto ConfigureLoadStoreCore::withSharedPtr(std::shared_ptr<T> data)
+auto ConfigureLoadStore::withSharedPtr(std::shared_ptr<T> data)
     -> shared_ptr_return_type<T>
 {
     if (!data)
@@ -18,7 +18,7 @@ auto ConfigureLoadStoreCore::withSharedPtr(std::shared_ptr<T> data)
         {std::move(*this)});
 }
 template <typename T>
-auto ConfigureLoadStoreCore::withUniquePtr(UniquePtrWithLambda<T> data)
+auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
     -> unique_ptr_return_type<T>
 
 {
@@ -32,7 +32,7 @@ auto ConfigureLoadStoreCore::withUniquePtr(UniquePtrWithLambda<T> data)
         {std::move(*this)});
 }
 template <typename T>
-auto ConfigureLoadStoreCore::withRawPtr(T *data) -> shared_ptr_return_type<T>
+auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
 {
     if (!data)
     {
@@ -44,14 +44,13 @@ auto ConfigureLoadStoreCore::withRawPtr(T *data) -> shared_ptr_return_type<T>
 }
 
 template <typename T, typename Del>
-auto ConfigureLoadStoreCore::withUniquePtr(std::unique_ptr<T, Del> data)
+auto ConfigureLoadStore::withUniquePtr(std::unique_ptr<T, Del> data)
     -> unique_ptr_return_type<T>
 {
     return withUniquePtr(UniquePtrWithLambda<T>(std::move(data)));
 }
 template <typename T_ContiguousContainer>
-auto ConfigureLoadStoreCore::withContiguousContainer(
-    T_ContiguousContainer &data)
+auto ConfigureLoadStore::withContiguousContainer(T_ContiguousContainer &data)
     -> std::enable_if_t<
         auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
         shared_ptr_return_type<typename T_ContiguousContainer::value_type>>
@@ -62,4 +61,4 @@ auto ConfigureLoadStoreCore::withContiguousContainer(
     }
     return withRawPtr(data.data());
 }
-} // namespace openPMD
+} // namespace openPMD::core
