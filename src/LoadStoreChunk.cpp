@@ -295,11 +295,12 @@ namespace compose
 template class compose::ConfigureLoadStore<ConfigureLoadStore>;
 
 /* clang-format would destroy the NOLINT comments */
-//// clang-format off
+// clang-format off
 #define INSTANTIATE_METHOD_TEMPLATES(dtype)                                    \
     template auto core::ConfigureLoadStore::enqueueStore()                     \
         -> DynamicMemoryView<dtype>;                                           \
     template auto core::ConfigureLoadStore::enqueueLoad()                      \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
         -> auxiliary::DeferredFuture<std::shared_ptr<dtype>>;                  \
     template auto core::ConfigureLoadStore::load(EnqueuePolicy)                \
         ->std::shared_ptr<dtype>;

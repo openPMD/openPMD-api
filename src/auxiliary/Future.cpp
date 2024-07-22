@@ -42,10 +42,13 @@ auto DeferredFuture<T>::wait() -> void
 
 template class DeferredFuture<void>;
 template class DeferredFuture<auxiliary::detail::shared_ptr_dataset_types>;
+// clang-format off
 #define INSTANTIATE_FUTURE(dtype)                                              \
+    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
     template class DeferredFuture<std::shared_ptr<dtype>>;
 OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_FUTURE)
 #undef INSTANTIATE_FUTURE
+// clang-format on
 } // namespace openPMD::auxiliary
 
 #include "openPMD/UndefDatatypeMacros.hpp"
