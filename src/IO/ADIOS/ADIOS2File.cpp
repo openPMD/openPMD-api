@@ -22,13 +22,13 @@
 #include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
-#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/ADIOS/macros.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
-#include <stdexcept>
 #include <optional>
+#include <stdexcept>
 
 #if openPMD_USE_VERIFY
 #define VERIFY(CONDITION, TEXT)                                                \
