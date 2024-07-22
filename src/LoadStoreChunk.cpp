@@ -202,12 +202,34 @@ namespace core
     }
 
     template <typename Ptr_Type>
-    auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueueStore() -> void
+    auto
+    ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueueStore() -> std::future<void>
     {
         this->m_rc.storeChunk_impl(
             asWriteBuffer(std::move(m_buffer)),
             determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
             storeChunkConfig());
+        return std::async(
+            std::launch::deferred,
+            [rc_lambda = m_rc]() mutable -> void { rc_lambda.seriesFlush(); });
+    }
+
+    template <typename Ptr_Type>
+    auto
+    ConfigureStoreChunkFromBuffer<Ptr_Type>::store(EnqueuePolicy ep) -> void
+    {
+        this->m_rc.storeChunk_impl(
+            asWriteBuffer(std::move(m_buffer)),
+            determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
+            storeChunkConfig());
+        switch (ep)
+        {
+        case EnqueuePolicy::Defer:
+            break;
+        case EnqueuePolicy::Immediate:
+            m_rc.seriesFlush();
+            break;
+        }
     }
 
     template <typename Ptr_Type>

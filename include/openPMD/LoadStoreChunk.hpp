@@ -164,7 +164,9 @@ namespace core
 
         auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
 
-        auto enqueueStore() -> void;
+        auto enqueueStore() -> std::future<void>;
+
+        auto store(EnqueuePolicy) -> void;
 
         /** This intentionally shadows the parent class's enqueueLoad methods in
          * order to show a compile error when using enqueueLoad() on an object
