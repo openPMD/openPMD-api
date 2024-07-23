@@ -124,6 +124,21 @@ namespace internal
     class BaseRecordData;
 
     class RecordComponentData;
+
+    /*
+     * Internal function to turn a handle into an owning handle that will keep
+     * not only itself, but the entire Series alive. Works by hiding a copy of
+     * the Series into the destructor lambda of the internal shared pointer. The
+     * returned handle is entirely safe to use in just the same ways as a normal
+     * handle, just the surrounding Series needs not be kept alive any more
+     * since it is stored within the handle. By storing the Series in the
+     * handle, not in the actual data, reference cycles are avoided.
+     *
+     * Instantiations for T exist for types RecordComponent,
+     * MeshRecordComponent, Mesh, Record, ParticleSpecies, Iteration.
+     */
+    template <typename T>
+    T &makeOwning(T &self, Series);
 } // namespace internal
 
 namespace debug
@@ -157,6 +172,8 @@ class Attributable
     friend class WriteIterations;
     friend class internal::RecordComponentData;
     friend void debug::printDirty(Series const &);
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
 protected:
     // tag for internal constructor

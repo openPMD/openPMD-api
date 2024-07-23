@@ -22,6 +22,7 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/config.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
@@ -149,6 +150,13 @@ not possible once it has been closed.
             },
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
+
+    // `clang-format on/off` doesn't help here.
+    // Writing this without a macro would lead to a huge diff due to
+    // clang-format.
+#define OPENPMD_AVOID_CLANG_FORMAT auto cl =
+    OPENPMD_AVOID_CLANG_FORMAT
+#undef OPENPMD_AVOID_CLANG_FORMAT
 
     py::class_<Series, Attributable>(m, "Series")
 
@@ -393,6 +401,11 @@ There is only one shared iterator state per Series, even when calling
 this method twice.
 Look for the WriteIterations class for further documentation.
             )END");
+
+    add_pickle(
+        cl, [](openPMD::Series series, std::vector<std::string> const &) {
+            return series;
+        });
 
     m.def(
         "merge_json",

@@ -131,6 +131,8 @@ class Iteration : public Attributable
     friend class WriteIterations;
     friend class SeriesIterator;
     friend class internal::AttributableData;
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
 public:
     Iteration(Iteration const &) = default;
@@ -256,6 +258,11 @@ private:
     inline Data_t &get()
     {
         return *m_iterationData;
+    }
+
+    inline std::shared_ptr<Data_t> getShared()
+    {
+        return m_iterationData;
     }
 
     inline void setData(std::shared_ptr<Data_t> data)

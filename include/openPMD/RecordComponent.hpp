@@ -25,6 +25,7 @@
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <array>
@@ -132,6 +133,8 @@ class RecordComponent : public BaseRecordComponent
     friend class DynamicMemoryView;
     friend class internal::RecordComponentData;
     friend class MeshRecordComponent;
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
 public:
     enum class Allocation
@@ -521,6 +524,11 @@ OPENPMD_protected
     {
         setDatasetDefined(*m_recordComponentData);
         return *m_recordComponentData;
+    }
+
+    inline std::shared_ptr<Data_t> getShared()
+    {
+        return m_recordComponentData;
     }
 
     inline void setData(std::shared_ptr<internal::RecordComponentData> data)

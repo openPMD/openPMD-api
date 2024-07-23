@@ -971,6 +971,8 @@ class APITest(unittest.TestCase):
         series.flush()
 
         # Pickle
+        pickled_s = pickle.dumps(series)
+        pickled_i = pickle.dumps(i)
         pickled_E = pickle.dumps(E)
         pickled_E_x = pickle.dumps(E_x)
         pickled_electrons = pickle.dumps(electrons)
@@ -980,6 +982,7 @@ class APITest(unittest.TestCase):
         pickled_w = pickle.dumps(w)
         print(f"This is my pickled object:\n{pickled_E_x}\n")
 
+        series.close()
         del E
         del E_x
         del electrons
@@ -987,9 +990,12 @@ class APITest(unittest.TestCase):
         del pos
         del pos_y
         del w
+        del i
         del series
 
         # Unpickling the object
+        series = pickle.loads(pickled_s)
+        i = pickle.loads(pickled_i)
         E = pickle.loads(pickled_E)
         E_x = pickle.loads(pickled_E_x)
         electrons = pickle.loads(pickled_electrons)
@@ -1000,6 +1006,8 @@ class APITest(unittest.TestCase):
         print(
             f"This is E_x.position of the unpickled object:\n{E_x.position}\n")
 
+        self.assertIsInstance(series, io.Series)
+        self.assertIsInstance(i, io.Iteration)
         self.assertIsInstance(E, io.Mesh)
         self.assertIsInstance(E_x, io.Mesh_Record_Component)
         self.assertIsInstance(electrons, io.ParticleSpecies)
