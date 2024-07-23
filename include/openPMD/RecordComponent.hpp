@@ -147,7 +147,6 @@ class RecordComponent : public BaseRecordComponent
     friend class MeshRecordComponent;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
-    friend struct ConfigureLoadStoreCore;
     friend class core::ConfigureLoadStore;
     template <typename>
     friend class core::ConfigureLoadStoreFromBuffer;
