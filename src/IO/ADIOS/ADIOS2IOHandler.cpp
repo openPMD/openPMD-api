@@ -30,6 +30,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
@@ -40,6 +41,7 @@
 #include <iterator>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -1496,6 +1498,46 @@ void ADIOS2IOHandlerImpl::touch(
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
 {
+    if (m_config.json().contains("engine") &&
+        m_config["engine"].json().contains("access_mode"))
+    {
+        auto const &access_mode_json = m_config["engine"]["access_mode"].json();
+        auto maybe_access_mode_string =
+            json::asLowerCaseStringDynamic(access_mode_json);
+        if (!maybe_access_mode_string.has_value())
+        {
+            throw error::BackendConfigSchema(
+                {"adios2", "engine", "access_mode"}, "Must be of string type.");
+        }
+        auto access_mode_string = *maybe_access_mode_string;
+        using pair_t = std::pair<char const *, adios2::Mode>;
+        constexpr std::array<pair_t, 4> modeNames{
+            pair_t{"write", adios2::Mode::Write},
+            pair_t{"read", adios2::Mode::Read},
+            pair_t{"append", adios2::Mode::Append}
+#if openPMD_HAS_ADIOS_2_8
+            ,
+            pair_t{"readrandomaccess", adios2::Mode::ReadRandomAccess}
+#endif
+        };
+        for (auto const &[name, mode] : modeNames)
+        {
+            if (name == access_mode_string)
+            {
+                return mode;
+            }
+        }
+        std::stringstream error;
+        error << "Unsupported value '" << access_mode_string
+              << "'. Must be one of:";
+        for (auto const &pair : modeNames)
+        {
+            error << " '" << pair.first << "'";
+        }
+        error << '.';
+        throw error::BackendConfigSchema(
+            {"adios2", "engine", "access_mode"}, error.str());
+    }
     switch (m_handler->m_backendAccess)
     {
     case Access::CREATE:

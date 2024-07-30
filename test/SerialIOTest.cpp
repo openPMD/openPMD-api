@@ -4475,6 +4475,58 @@ TEST_CASE("adios2_flush_via_step")
         }
     }
 #endif
+
+    /*
+     * Now emulate restarting from a checkpoint after a crash and continuing to
+     * write to the output Series. The semantics of openPMD::Access::APPEND
+     * don't fully fit here since that mode is for adding new Iterations to an
+     * existing Series. What we truly want to do is to continue writing to an
+     * Iteration without replacing it with a new one. So we must use the option
+     * adios2.engine.access_mode = "append" to tell the ADIOS2 backend that new
+     * steps should be added to an existing Iteration file.
+     */
+
+    write = Series(
+        "../samples/adios2_flush_via_step/simData_%T.bp5",
+        Access::APPEND,
+        R"(
+            [adios2.engine]
+            access_mode = "append"
+            parameters.FlattenSteps = "on"
+        )");
+    for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+    {
+        Iteration it = write.writeIterations()[i];
+        auto E_x = it.meshes["E"]["y"];
+        E_x.resetDataset({Datatype::FLOAT, {10, 10}});
+        for (Extent::value_type j = 0; j < 10; ++j)
+        {
+            std::iota(data.begin(), data.end(), i * 100 + j * 10);
+            E_x.storeChunk(data, {j, 0}, {1, 10});
+            write.flush(R"(adios2.engine.preferred_flush_target = "new_step")");
+        }
+        it.close();
+    }
+
+#if openPMD_HAS_ADIOS_2_10_1
+    for (auto access : {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR})
+    {
+        Series read("../samples/adios2_flush_via_step/simData_%T.%E", access);
+        std::vector<float> load_data(100);
+        data.resize(100);
+        for (auto iteration : read.readIterations())
+        {
+            std::iota(data.begin(), data.end(), iteration.iterationIndex * 100);
+            iteration.meshes["E"]["x"].loadChunkRaw(
+                load_data.data(), {0, 0}, {10, 10});
+            iteration.meshes["E"]["y"].loadChunkRaw(
+                load_data.data(), {0, 0}, {10, 10});
+            iteration.close();
+            REQUIRE(load_data == data);
+            REQUIRE(load_data == data);
+        }
+    }
+#endif
 }
 #endif
 

@@ -122,6 +122,9 @@ Explanation of the single keys:
 
 * ``adios2.engine.type``: A string that is passed directly to ``adios2::IO:::SetEngine`` for choosing the ADIOS2 engine to be used.
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
+* ``adios2.engine.access_mode``: One of ``"Write", "Read", "Append", "ReadRandomAccess"``.
+  Only needed in specific use cases, the access mode is usually determined from the specified ``openPMD::Access``.
+  Useful for finetuning the backend-specific behavior of ADIOS2 when overwriting existing Iterations in file-based Append mode.
 * ``adios2.engine.parameters``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for the available engine parameters.
   The openPMD-api does not interpret these values and instead simply forwards them to ADIOS2.
