@@ -854,7 +854,8 @@ namespace detail
             {
                 dims.push_back(ext);
             }
-            var.SetShape(dims);
+            if (var.ShapeID() != adios2::ShapeID::JoinedArray)
+                var.SetShape(dims);
         }
 
         static constexpr char const *errorMsg = "ADIOS2: extendDataset()";
@@ -2032,7 +2033,8 @@ namespace detail
         }
         else
         {
-            var.SetShape(shape);
+            if (var.ShapeID() != adios2::ShapeID::JoinedArray)
+                var.SetShape(shape);
             if (count.size() > 0)
             {
                 var.SetSelection({start, count});
