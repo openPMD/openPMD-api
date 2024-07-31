@@ -48,6 +48,10 @@ Exceptions to this are the BP3 and SST engines which require their endings ``.bp
 
 For file engines, we currently leverage the default ADIOS2 transport parameters, i.e. ``POSIX`` on Unix systems and ``FStream`` on Windows.
 
+.. tip::
+
+  Use the ``adios2.engine.treat_unsupported_engine_as`` :ref:`JSON/TOML parameter <backendconfig-adios2>` for experimentally interacting with an unsupported ADIOS2 engine.
+
 Steps
 -----
 

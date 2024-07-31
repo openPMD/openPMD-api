@@ -122,6 +122,14 @@ Explanation of the single keys:
 
 * ``adios2.engine.type``: A string that is passed directly to ``adios2::IO:::SetEngine`` for choosing the ADIOS2 engine to be used.
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
+* ``adios2.engine.treat_unsupported_engine_like``: May be used for experimentally testing an ADIOS2 engine that is not explicitly supported by the openPMD-api.
+  Specify the actual engine via ``adios2.engine.type`` and use ``adios2.engine.treat_unsupported_engine_like`` to make the ADIOS2 backend pretend that it is in fact using another engine that it knows.
+  Some advanced engine-specific features will be turned off indiscriminately:
+
+  * The Span API will use a fallback implementation
+  * ``PerformDataWrite()`` will not be used, even when specifying ``adios2.engine.preferred_flush_target = "disk"``.
+  * Engine-specific parameters such as ``QueueLimit`` will not be set by default.
+  * No engine-specific filename extension handling will be executed, the extension specified by the user is taken "as is".
 * ``adios2.engine.access_mode``: One of ``"Write", "Read", "Append", "ReadRandomAccess"``.
   Only needed in specific use cases, the access mode is usually determined from the specified ``openPMD::Access``.
   Useful for finetuning the backend-specific behavior of ADIOS2 when overwriting existing Iterations in file-based Append mode.
