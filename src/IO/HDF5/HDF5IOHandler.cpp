@@ -153,8 +153,26 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             {
               "dataset": {
                 "chunks": null
+              },
+              "independent_stores": null
+            })";
+            constexpr char const *const dataset_cfg_mask = R"(
+            {
+              "dataset": {
+                "chunks": null
               }
             })";
+            constexpr char const *const flush_cfg_mask = R"(
+            {
+              "independent_stores": null
+            })";
+            m_global_dataset_config = m_config.json();
+            json::filterByTemplate(
+                m_global_dataset_config,
+                nlohmann::json::parse(dataset_cfg_mask));
+            m_global_flush_config = m_config.json();
+            json::filterByTemplate(
+                m_global_flush_config, nlohmann::json::parse(flush_cfg_mask));
             auto init_json_shadow = nlohmann::json::parse(init_json_shadow_str);
             json::merge(m_config.getShadow(), init_json_shadow);
         }
@@ -484,34 +502,18 @@ void HDF5IOHandlerImpl::createDataset(
         }
 
         json::TracingJSON config = [&]() {
-            if (!m_buffered_dataset_config.has_value())
-            {
-                // we are only interested in these values from the global config
-                constexpr char const *const mask_for_global_conf = R"(
-                {
-                "dataset": {
-                    "chunks": null
-                }
-                })";
-                m_buffered_dataset_config = m_config.json();
-                json::filterByTemplate(
-                    *m_buffered_dataset_config,
-                    nlohmann::json::parse(mask_for_global_conf));
-            }
-            auto const &buffered_config = *m_buffered_dataset_config;
             auto parsed_config = json::parseOptions(
                 parameters.options, /* considerFiles = */ false);
             if (auto hdf5_config_it = parsed_config.config.find("hdf5");
                 hdf5_config_it != parsed_config.config.end())
             {
-                auto copy = buffered_config;
+                auto copy = m_global_dataset_config;
                 json::merge(copy, hdf5_config_it.value());
-                copy = nlohmann::json{{"hdf5", std::move(copy)}};
-                parsed_config.config = std::move(copy);
+                hdf5_config_it.value() = std::move(copy);
             }
             else
             {
-                parsed_config.config["hdf5"] = buffered_config;
+                parsed_config.config["hdf5"] = m_global_dataset_config;
             }
             return parsed_config;
         }();

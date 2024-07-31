@@ -302,8 +302,11 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     auto mpi_size = static_cast<uint64_t>(mpi_s);
     auto mpi_rank = static_cast<uint64_t>(mpi_r);
-    Series o =
-        Series("../samples/parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
+    Series o = Series(
+        "../samples/parallel_write.h5",
+        Access::CREATE,
+        MPI_COMM_WORLD,
+        "hdf5.independent_stores = false");
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies &e = o.iterations[1].particles["e"];

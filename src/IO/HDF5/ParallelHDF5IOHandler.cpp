@@ -68,6 +68,17 @@ ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 std::future<void>
 ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &params)
 {
+    if (auto hdf5_config_it = params.backendConfig.json().find("hdf5");
+        hdf5_config_it != params.backendConfig.json().end())
+    {
+        auto copied_global_cfg = m_impl->m_global_flush_config;
+        json::merge(copied_global_cfg, hdf5_config_it.value());
+        hdf5_config_it.value() = std::move(copied_global_cfg);
+    }
+    else
+    {
+        params.backendConfig["hdf5"].json() = m_impl->m_global_flush_config;
+    }
     return m_impl->flush(params);
 }
 
@@ -321,26 +332,26 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
                 {"hdf5", "vfd", "type"},
                 "Unknown value: '" + user_specified_type + "'.");
         }
+    }
 
-        // unused params
-        auto shadow = m_config.invertShadow();
-        if (shadow.size() > 0)
+    // unused params
+    auto shadow = m_config.invertShadow();
+    if (shadow.size() > 0)
+    {
+        switch (m_config.originallySpecifiedAs)
         {
-            switch (m_config.originallySpecifiedAs)
-            {
-            case json::SupportedLanguages::JSON:
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
-                          << shadow << std::endl;
-                break;
-            case json::SupportedLanguages::TOML: {
-                auto asToml = json::jsonToToml(shadow);
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
-                          << json::format_toml(asToml) << std::endl;
-                break;
-            }
-            }
+        case json::SupportedLanguages::JSON:
+            std::cerr << "Warning: parts of the backend configuration for "
+                         "HDF5 remain unused:\n"
+                      << shadow << std::endl;
+            break;
+        case json::SupportedLanguages::TOML: {
+            auto asToml = json::jsonToToml(shadow);
+            std::cerr << "Warning: parts of the backend configuration for "
+                         "HDF5 remain unused:\n"
+                      << json::format_toml(asToml) << std::endl;
+            break;
+        }
         }
     }
 }

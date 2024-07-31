@@ -38,6 +38,9 @@ namespace openPMD
 #if openPMD_HAVE_HDF5
 class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
 {
+    friend class HDF5IOHandler;
+    friend class ParallelHDF5IOHandler;
+
 public:
     HDF5IOHandlerImpl(
         AbstractIOHandler *,
@@ -122,7 +125,8 @@ protected:
 #endif
 
     json::TracingJSON m_config;
-    std::optional<nlohmann::json> m_buffered_dataset_config;
+    nlohmann::json m_global_dataset_config;
+    nlohmann::json m_global_flush_config;
 
 private:
     struct File
