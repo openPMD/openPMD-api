@@ -211,6 +211,13 @@ Explanation of the single keys:
     * ``hdf5.vfd.stripe_size``: Must be an integer
     * ``hdf5.vfd.stripe_count``: Must be an integer
 
+Flush calls, e.g. ``Series::flush()`` can be configured via JSON/TOML as well.
+The parameters eligible for being passed to flush calls may be configured globally as well, i.e. in the constructor of ``Series``, to provide default settings used for the entire Series.
+
+* ``hdf5.independent_stores``: A boolean that sets the ``H5FD_MPIO_INDEPENDENT`` dataset transfer property if true, otherwise ``H5FD_MPIO_COLLECTIVE``.
+  Only available when using HDF5 in combination with MPI.
+  See the `HDF5 subpage <backends-hdf5>`_ for further information on independent vs. collective flushing.
+
 .. _backendconfig-other:
 
 Other backends

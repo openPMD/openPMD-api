@@ -22,7 +22,7 @@ Rudimentary support for HDF5 VFDs (`virtual file driver <https://www.hdfgroup.or
 Note that the subfiling VFD needs to be enabled explicitly when configuring HDF5 and threaded MPI must be used.
 
 Virtual file drivers are configured via JSON/TOML.
-Refer to the page on `JSON/TOML configuration <backendconfig-hdf5>`_ for further details.
+Refer to the page on :ref:`JSON/TOML configuration <backendconfig-hdf5>` for further details.
 
 
 Backend-Specific Controls
@@ -53,6 +53,10 @@ Attribute writes are always collective in parallel HDF5.
 Although we choose the default to be non-collective (independent) for ease of use, be advised that performance penalties may occur, although this depends heavily on the use-case.
 For independent parallel I/O, potentially prefer using a modern version of the MPICH implementation (especially, use ROMIO instead of OpenMPI's ompio implementation).
 Please refer to the `HDF5 manual, function H5Pset_dxpl_mpio <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_dxpl_mpio.htm>`_ for more details.
+
+.. tip::
+
+  Instead of using an environment variable, independent/collective data transfer can also be configured at the API level via :ref:`JSON/TOML <backendconfig-hdf5>`.
 
 ``OPENPMD_HDF5_ALIGNMENT``: this sets the alignment in Bytes for writes via the ``H5Pset_alignment`` function.
 According to the `HDF5 documentation <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm>`_:
