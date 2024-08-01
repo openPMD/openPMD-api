@@ -849,13 +849,14 @@ namespace detail
                     variable + "'.");
             }
             adios2::Dims dims;
-            dims.reserve(newShape.size());
-            for (auto ext : newShape)
-            {
-                dims.push_back(ext);
+            dims.assign(newShape.begin(), newShape.end());
+            // keep the joined dim intact
+            auto joined_dim = joinedDimension(var.Shape());
+            if (joined_dim.has_value()) {
+              auto idx = joined_dim.value();
+              dims[idx] = var.Shape()[idx];
             }
-            if (var.ShapeID() != adios2::ShapeID::JoinedArray)
-                var.SetShape(dims);
+            var.SetShape(dims);
         }
 
         static constexpr char const *errorMsg = "ADIOS2: extendDataset()";
@@ -2033,8 +2034,18 @@ namespace detail
         }
         else
         {
-            if (var.ShapeID() != adios2::ShapeID::JoinedArray)
-                var.SetShape(shape);
+            // keep the joined dim intact
+            auto joined_dim = joinedDimension(var.Shape());
+            if (joined_dim.has_value())
+            {
+                 adios2::Dims cc;
+                 cc.assign(shape.begin(), shape.end());
+                 cc[joined_dim.value()] = var.ShapeID()[joined_dim.value()];
+                 var.SetShape(cc);
+            } else
+                 var.SetShape(shape);
+
+
             if (count.size() > 0)
             {
                 var.SetSelection({start, count});
