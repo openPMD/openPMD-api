@@ -50,7 +50,7 @@ For file engines, we currently leverage the default ADIOS2 transport parameters,
 
 .. tip::
 
-  Use the ``adios2.engine.treat_unsupported_engine_as`` :ref:`JSON/TOML parameter <backendconfig-adios2>` for experimentally interacting with an unsupported ADIOS2 engine.
+   Use the ``adios2.engine.treat_unsupported_engine_as`` :ref:`JSON/TOML parameter <backendconfig-adios2>` for experimentally interacting with an unsupported ADIOS2 engine.
 
 Steps
 -----
