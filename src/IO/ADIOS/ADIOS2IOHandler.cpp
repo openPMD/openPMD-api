@@ -852,9 +852,10 @@ namespace detail
             dims.assign(newShape.begin(), newShape.end());
             // keep the joined dim intact
             auto joined_dim = joinedDimension(var.Shape());
-            if (joined_dim.has_value()) {
-              auto idx = joined_dim.value();
-              dims[idx] = var.Shape()[idx];
+            if (joined_dim.has_value())
+            {
+                auto idx = joined_dim.value();
+                dims[idx] = var.Shape()[idx];
             }
             var.SetShape(dims);
         }
@@ -2038,13 +2039,13 @@ namespace detail
             auto joined_dim = joinedDimension(var.Shape());
             if (joined_dim.has_value())
             {
-                 adios2::Dims cc;
-                 cc.assign(shape.begin(), shape.end());
-                 cc[joined_dim.value()] = var.ShapeID()[joined_dim.value()];
-                 var.SetShape(cc);
-            } else
-                 var.SetShape(shape);
-
+                adios2::Dims cc;
+                cc.assign(shape.begin(), shape.end());
+                cc[joined_dim.value()] = var.ShapeID()[joined_dim.value()];
+                var.SetShape(cc);
+            }
+            else
+                var.SetShape(shape);
 
             if (count.size() > 0)
             {
