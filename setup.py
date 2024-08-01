@@ -60,7 +60,6 @@ class CMakeBuild(build_ext):
             '-DopenPMD_BUILD_TESTING:BOOL=' + BUILD_TESTING,
             # static/shared libs
             '-DopenPMD_BUILD_SHARED_LIBS:BOOL=' + BUILD_SHARED_LIBS,
-            '-DHDF5_USE_STATIC_LIBRARIES:BOOL=' + HDF5_USE_STATIC_LIBRARIES,
             # Unix: rpath to current dir when packaged
             #       needed for shared (here non-default) builds
             '-DCMAKE_BUILD_WITH_INSTALL_RPATH:BOOL=ON',
@@ -68,6 +67,12 @@ class CMakeBuild(build_ext):
             # Windows: has no RPath concept, all `.dll`s must be in %PATH%
             #          or same dir as calling executable
         ]
+        if HDF5_USE_STATIC_LIBRARIES is not None:
+            cmake_args.append('-DHDF5_USE_STATIC_LIBRARIES:BOOL=' +
+                              HDF5_USE_STATIC_LIBRARIES)
+        if ZLIB_USE_STATIC_LIBS is not None:
+            cmake_args.append('-DZLIB_USE_STATIC_LIBS:BOOL=' +
+                              ZLIB_USE_STATIC_LIBS)
         if CMAKE_INTERPROCEDURAL_OPTIMIZATION is not None:
             cmake_args.append('-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=' +
                               CMAKE_INTERPROCEDURAL_OPTIMIZATION)
@@ -126,7 +131,8 @@ with open('./README.md', encoding='utf-8') as f:
 # Work-around for https://github.com/pypa/setuptools/issues/1712
 # note: changed default for SHARED, MPI, TESTING and EXAMPLES
 openPMD_USE_MPI = os.environ.get('openPMD_USE_MPI', 'OFF')
-HDF5_USE_STATIC_LIBRARIES = os.environ.get('HDF5_USE_STATIC_LIBRARIES', 'OFF')
+HDF5_USE_STATIC_LIBRARIES = os.environ.get('HDF5_USE_STATIC_LIBRARIES', None)
+ZLIB_USE_STATIC_LIBS = os.environ.get('ZLIB_USE_STATIC_LIBS', None)
 # deprecated: backwards compatibility to <= 0.13.*
 BUILD_SHARED_LIBS = os.environ.get('BUILD_SHARED_LIBS', 'OFF')
 BUILD_TESTING = os.environ.get('BUILD_TESTING', 'OFF')
