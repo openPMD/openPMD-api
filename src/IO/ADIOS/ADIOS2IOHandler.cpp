@@ -2041,7 +2041,7 @@ namespace detail
             {
                 adios2::Dims cc;
                 cc.assign(shape.begin(), shape.end());
-                cc[joined_dim.value()] = var.ShapeID()[joined_dim.value()];
+                cc[joined_dim.value()] = var.Shape()[joined_dim.value()];
                 var.SetShape(cc);
             }
             else
