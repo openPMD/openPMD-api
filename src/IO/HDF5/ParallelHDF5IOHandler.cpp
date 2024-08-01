@@ -20,6 +20,8 @@
  */
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/FlushParametersInternal.hpp"
+#include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -63,9 +65,21 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
-std::future<void> ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void>
+ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &params)
 {
-    return m_impl->flush();
+    if (auto hdf5_config_it = params.backendConfig.json().find("hdf5");
+        hdf5_config_it != params.backendConfig.json().end())
+    {
+        auto copied_global_cfg = m_impl->m_global_flush_config;
+        json::merge(copied_global_cfg, hdf5_config_it.value());
+        hdf5_config_it.value() = std::move(copied_global_cfg);
+    }
+    else
+    {
+        params.backendConfig["hdf5"].json() = m_impl->m_global_flush_config;
+    }
+    return m_impl->flush(params);
 }
 
 ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
@@ -121,14 +135,14 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     }
 
     H5FD_mpio_xfer_t xfer_mode = H5FD_MPIO_COLLECTIVE;
-    auto const hdf5_collective =
+    auto const hdf5_independent =
         auxiliary::getEnvString("OPENPMD_HDF5_INDEPENDENT", "ON");
-    if (hdf5_collective == "ON")
+    if (hdf5_independent == "ON")
         xfer_mode = H5FD_MPIO_INDEPENDENT;
     else
     {
         VERIFY(
-            hdf5_collective == "OFF",
+            hdf5_independent == "OFF",
             "[HDF5] Internal error: OPENPMD_HDF5_INDEPENDENT property must be "
             "either ON or OFF");
     }
@@ -318,26 +332,26 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
                 {"hdf5", "vfd", "type"},
                 "Unknown value: '" + user_specified_type + "'.");
         }
+    }
 
-        // unused params
-        auto shadow = m_config.invertShadow();
-        if (shadow.size() > 0)
+    // unused params
+    auto shadow = m_config.invertShadow();
+    if (shadow.size() > 0)
+    {
+        switch (m_config.originallySpecifiedAs)
         {
-            switch (m_config.originallySpecifiedAs)
-            {
-            case json::SupportedLanguages::JSON:
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
-                          << shadow << std::endl;
-                break;
-            case json::SupportedLanguages::TOML: {
-                auto asToml = json::jsonToToml(shadow);
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
-                          << json::format_toml(asToml) << std::endl;
-                break;
-            }
-            }
+        case json::SupportedLanguages::JSON:
+            std::cerr << "Warning: parts of the backend configuration for "
+                         "HDF5 remain unused:\n"
+                      << shadow << std::endl;
+            break;
+        case json::SupportedLanguages::TOML: {
+            auto asToml = json::jsonToToml(shadow);
+            std::cerr << "Warning: parts of the backend configuration for "
+                         "HDF5 remain unused:\n"
+                      << json::format_toml(asToml) << std::endl;
+            break;
+        }
         }
     }
 }
@@ -354,6 +368,55 @@ ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
                 << "Internal error: Failed to close HDF5 file (parallel)\n";
         m_openFileIDs.erase(file);
     }
+}
+
+std::future<void>
+ParallelHDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
+{
+    std::optional<H5FD_mpio_xfer_t> old_value;
+    if (params.backendConfig.json().contains("hdf5"))
+    {
+        auto hdf5_config = params.backendConfig["hdf5"];
+
+        if (hdf5_config.json().contains("independent_stores"))
+        {
+            auto independent_stores_json = hdf5_config["independent_stores"];
+            if (!independent_stores_json.json().is_boolean())
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "independent_stores"}, "Requires boolean value.");
+            }
+            bool independent_stores =
+                independent_stores_json.json().get<bool>();
+            old_value = std::make_optional<H5FD_mpio_xfer_t>();
+            herr_t status =
+                H5Pget_dxpl_mpio(m_datasetTransferProperty, &*old_value);
+            VERIFY(
+                status >= 0,
+                "[HDF5] Internal error: Failed to query the global data "
+                "transfer mode before flushing.");
+            H5FD_mpio_xfer_t new_value = independent_stores
+                ? H5FD_MPIO_INDEPENDENT
+                : H5FD_MPIO_COLLECTIVE;
+            status = H5Pset_dxpl_mpio(m_datasetTransferProperty, new_value);
+            VERIFY(
+                status >= 0,
+                "[HDF5] Internal error: Failed to set the local data "
+                "transfer mode before flushing.");
+        }
+    }
+    auto res = HDF5IOHandlerImpl::flush(params);
+
+    if (old_value.has_value())
+    {
+        herr_t status = H5Pset_dxpl_mpio(m_datasetTransferProperty, *old_value);
+        VERIFY(
+            status >= 0,
+            "[HDF5] Internal error: Failed to reset the global data "
+            "transfer mode after flushing.");
+    }
+
+    return res;
 }
 #else
 

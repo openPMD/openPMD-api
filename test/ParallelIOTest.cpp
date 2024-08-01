@@ -302,8 +302,11 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     auto mpi_size = static_cast<uint64_t>(mpi_s);
     auto mpi_rank = static_cast<uint64_t>(mpi_r);
-    Series o =
-        Series("../samples/parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
+    Series o = Series(
+        "../samples/parallel_write.h5",
+        Access::CREATE,
+        MPI_COMM_WORLD,
+        "hdf5.independent_stores = false");
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies &e = o.iterations[1].particles["e"];
@@ -321,6 +324,8 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
         {mpi_size},
         "hdf5.dataset.chunks = [1]"));
     e["position"]["x"].storeChunk(position_local, {mpi_rank}, {1});
+
+    o.flush("hdf5.independent_stores = true");
 
     std::vector<uint64_t> positionOffset_global(mpi_size);
     uint64_t posOff{0};
@@ -344,7 +349,7 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     e["positionOffset"]["y"].storeChunk(
         std::make_unique<float>(3.141592654), {0}, {1});
 
-    o.flush();
+    o.flush("hdf5.independent_stores = false");
 }
 
 TEST_CASE("hdf5_write_test_zero_extent", "[parallel][hdf5]")

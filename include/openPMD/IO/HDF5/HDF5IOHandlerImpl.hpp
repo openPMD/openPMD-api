@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_HDF5
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
@@ -37,6 +38,9 @@ namespace openPMD
 #if openPMD_HAVE_HDF5
 class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
 {
+    friend class HDF5IOHandler;
+    friend class ParallelHDF5IOHandler;
+
 public:
     HDF5IOHandlerImpl(
         AbstractIOHandler *,
@@ -109,6 +113,8 @@ public:
     hid_t m_H5T_LONG_DOUBLE_80_LE;
     hid_t m_H5T_CLONG_DOUBLE_80_LE;
 
+    std::future<void> flush(internal::ParsedFlushParams &);
+
 protected:
 #if openPMD_HAVE_MPI
     /*
@@ -119,7 +125,8 @@ protected:
 #endif
 
     json::TracingJSON m_config;
-    std::optional<nlohmann::json> m_buffered_dataset_config;
+    nlohmann::json m_global_dataset_config;
+    nlohmann::json m_global_flush_config;
 
 private:
     struct File
