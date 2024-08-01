@@ -122,8 +122,8 @@ Explanation of the single keys:
 
 * ``adios2.engine.type``: A string that is passed directly to ``adios2::IO:::SetEngine`` for choosing the ADIOS2 engine to be used.
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
-* ``adios2.engine.treat_unsupported_engine_like``: May be used for experimentally testing an ADIOS2 engine that is not explicitly supported by the openPMD-api.
-  Specify the actual engine via ``adios2.engine.type`` and use ``adios2.engine.treat_unsupported_engine_like`` to make the ADIOS2 backend pretend that it is in fact using another engine that it knows.
+* ``adios2.engine.pretend_engine``: May be used for experimentally testing an ADIOS2 engine that is not explicitly supported by the openPMD-api.
+  Specify the actual engine via ``adios2.engine.type`` and use ``adios2.engine.pretend_engine`` to make the ADIOS2 backend pretend that it is in fact using another engine that it knows.
   Some advanced engine-specific features will be turned off indiscriminately:
 
   * The Span API will use a fallback implementation

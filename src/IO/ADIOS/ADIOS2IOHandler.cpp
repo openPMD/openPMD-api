@@ -192,14 +192,17 @@ template <typename Callback>
 void ADIOS2IOHandlerImpl::init(
     json::TracingJSON cfg, Callback &&callbackWriteAttributesFromRank)
 {
+    if (auto unsupported_engine_cfg =
+            auxiliary::getEnvString("OPENPMD_ADIOS2_PRETEND_ENGINE", "");
+        !unsupported_engine_cfg.empty())
+    {
+        auxiliary::lowerCase(unsupported_engine_cfg);
+        pretendEngine(std::move(unsupported_engine_cfg));
+    }
     // allow overriding through environment variable
-    m_engineType =
+    realEngineType() =
         auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", m_engineType);
-    std::transform(
-        m_engineType.begin(),
-        m_engineType.end(),
-        m_engineType.begin(),
-        [](unsigned char c) { return std::tolower(c); });
+    auxiliary::lowerCase(realEngineType());
 
     // environment-variable based configuration
     if (int groupTableViaEnv =
@@ -255,7 +258,7 @@ void ADIOS2IOHandlerImpl::init(
                 if (maybeEngine.has_value())
                 {
                     // override engine type by JSON/TOML configuration
-                    m_engineType = std::move(maybeEngine.value());
+                    realEngineType() = std::move(maybeEngine.value());
                 }
                 else
                 {
@@ -280,8 +283,7 @@ void ADIOS2IOHandlerImpl::init(
                          adios_defaults::str_treat_unsupported_engine_like},
                         "Must be convertible to string type.");
                 }
-                m_realEngineType = std::move(m_engineType);
-                m_engineType = std::move(*maybeEngine);
+                pretendEngine(std::move(*maybeEngine));
             }
         }
         auto operators = getOperators();

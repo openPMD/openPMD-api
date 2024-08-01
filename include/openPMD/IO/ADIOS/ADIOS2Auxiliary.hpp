@@ -77,8 +77,7 @@ namespace adios_defaults
     using const_str = char const *const;
     constexpr const_str str_engine = "engine";
     constexpr const_str str_type = "type";
-    constexpr const_str str_treat_unsupported_engine_like =
-        "treat_unsupported_engine_like";
+    constexpr const_str str_treat_unsupported_engine_like = "pretend_engine";
     constexpr const_str str_params = "parameters";
     constexpr const_str str_usesteps = "usesteps";
     constexpr const_str str_flushtarget = "preferred_flush_target";
