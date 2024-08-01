@@ -225,6 +225,32 @@ private:
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
     std::string m_engineType;
+    std::optional<std::string> m_realEngineType;
+
+    inline std::string const &realEngineType() const
+    {
+        if (m_realEngineType.has_value())
+        {
+            return *m_realEngineType;
+        }
+        else
+        {
+            return m_engineType;
+        }
+    }
+    inline std::string &realEngineType()
+    {
+        return const_cast<std::string &>(
+            static_cast<ADIOS2IOHandlerImpl const *>(this)->realEngineType());
+    }
+    inline void pretendEngine(std::string facade_engine)
+    {
+        if (!m_realEngineType.has_value())
+        {
+            m_realEngineType = std::move(m_engineType);
+        }
+        m_engineType = std::move(facade_engine);
+    }
     /*
      * The filename extension specified by the user.
      */

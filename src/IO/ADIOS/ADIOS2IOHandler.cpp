@@ -192,14 +192,17 @@ template <typename Callback>
 void ADIOS2IOHandlerImpl::init(
     json::TracingJSON cfg, Callback &&callbackWriteAttributesFromRank)
 {
+    if (auto unsupported_engine_cfg =
+            auxiliary::getEnvString("OPENPMD_ADIOS2_PRETEND_ENGINE", "");
+        !unsupported_engine_cfg.empty())
+    {
+        auxiliary::lowerCase(unsupported_engine_cfg);
+        pretendEngine(std::move(unsupported_engine_cfg));
+    }
     // allow overriding through environment variable
-    m_engineType =
+    realEngineType() =
         auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", m_engineType);
-    std::transform(
-        m_engineType.begin(),
-        m_engineType.end(),
-        m_engineType.begin(),
-        [](unsigned char c) { return std::tolower(c); });
+    auxiliary::lowerCase(realEngineType());
 
     // environment-variable based configuration
     if (int groupTableViaEnv =
@@ -255,7 +258,7 @@ void ADIOS2IOHandlerImpl::init(
                 if (maybeEngine.has_value())
                 {
                     // override engine type by JSON/TOML configuration
-                    m_engineType = std::move(maybeEngine.value());
+                    realEngineType() = std::move(maybeEngine.value());
                 }
                 else
                 {
@@ -263,6 +266,24 @@ void ADIOS2IOHandlerImpl::init(
                         {"adios2", "engine", "type"},
                         "Must be convertible to string type.");
                 }
+            }
+
+            if (engineConfig.json().contains(
+                    adios_defaults::str_treat_unsupported_engine_like))
+            {
+                auto maybeEngine = json::asLowerCaseStringDynamic(
+                    engineConfig
+                        [adios_defaults::str_treat_unsupported_engine_like]
+                            .json());
+                if (!maybeEngine.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2",
+                         adios_defaults::str_engine,
+                         adios_defaults::str_treat_unsupported_engine_like},
+                        "Must be convertible to string type.");
+                }
+                pretendEngine(std::move(*maybeEngine));
             }
         }
         auto operators = getOperators();
@@ -361,6 +382,12 @@ std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
 #else
     constexpr char const *const default_file_ending = ".bp4";
 #endif
+
+    if (m_realEngineType.has_value())
+    {
+        // unknown engine type, use whatever ending the user specified
+        return m_userSpecifiedExtension;
+    }
 
     static std::map<std::string, AcceptedEndingsForEngine> const endings{
         {"sst", {{"", ""}, {".sst", ""}, {".%E", ""}}},
@@ -656,7 +683,7 @@ void ADIOS2IOHandlerImpl::checkFile(
 
 bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
 {
-    if (m_engineType == "bp3")
+    if (realEngineType() == "bp3")
     {
         if (!auxiliary::ends_with(fullFilePath, ".bp"))
         {
@@ -666,7 +693,7 @@ bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
             fullFilePath += ".bp";
         }
     }
-    else if (m_engineType == "sst")
+    else if (realEngineType() == "sst")
     {
         /*
          * SST will add this ending indiscriminately
@@ -1144,7 +1171,7 @@ void ADIOS2IOHandlerImpl::getBufferView(
             begin(optInEngines),
             end(optInEngines),
             [this](std::string const &engine) {
-                return engine == this->m_engineType;
+                return engine == this->realEngineType();
             }))
     {
         parameters.out->backendManagedBuffer = false;

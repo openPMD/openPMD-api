@@ -48,6 +48,10 @@ Exceptions to this are the BP3 and SST engines which require their endings ``.bp
 
 For file engines, we currently leverage the default ADIOS2 transport parameters, i.e. ``POSIX`` on Unix systems and ``FStream`` on Windows.
 
+.. tip::
+
+   Use the ``adios2.engine.treat_unsupported_engine_as`` :ref:`JSON/TOML parameter <backendconfig-adios2>` for experimentally interacting with an unsupported ADIOS2 engine.
+
 Steps
 -----
 
@@ -81,6 +85,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
 ``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``      Number of files to be created, 0 indicates maximum number possible.
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
+``OPENPMD_ADIOS2_PRETEND_ENGINE``     *empty*    Pretend that an (unknown) ADIOS2 engine is in fact another one (also see the ``adios2.pretend_engine`` :ref:`parameter <backendconfig-adios2>`).
 ``OPENPMD2_ADIOS2_USE_GROUP_TABLE``   ``0``      Use group table (see below)
 ``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
 ``OPENPMD_ADIOS2_ASYNC_WRITE``        ``0``      ADIOS2 BP5 engine: 1 means setting "AsyncWrite" in ADIOS2 to "on". Flushes will go to the buffer by default (see ``preferred_flush_target``).
