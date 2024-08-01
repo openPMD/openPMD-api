@@ -114,7 +114,7 @@ def iterations_to_dataframe(series, species_name):
     df = pd.concat(
         (
             series.iterations[i]
-            .particles["electrons"]
+            .particles[species_name]
             .to_df()
             .assign(iteration=i)
             for i in series.iterations
@@ -171,7 +171,7 @@ def iterations_to_cudf(series, species_name):
         (
             cudf.from_pandas(
                 series.iterations[i]
-                      .particles["electrons"]
+                      .particles[species_name]
                       .to_df()
                       .assign(iteration=i)
             )
