@@ -2,25 +2,22 @@
 
 #include "openPMD/auxiliary/TypeTraits.hpp"
 
-#include <future>
+#include <functional>
 
 namespace openPMD::auxiliary
 {
 template <typename T>
-class DeferredFuture
+class DeferredComputation
 {
-    using task_type = std::packaged_task<T()>;
-    using future_type = std::future<T>;
-    future_type m_future;
+    using task_type = std::function<T()>;
     task_type m_task;
+    bool m_valid = false;
 
 public:
-    DeferredFuture(task_type);
+    DeferredComputation(task_type);
 
     auto get() -> T;
 
     [[nodiscard]] auto valid() const noexcept -> bool;
-
-    auto wait() -> void;
 };
 } // namespace openPMD::auxiliary

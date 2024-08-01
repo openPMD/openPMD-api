@@ -114,15 +114,14 @@ namespace core
 
     template <typename T>
     auto ConfigureLoadStore::enqueueLoad()
-        -> auxiliary::DeferredFuture<std::shared_ptr<T>>
+        -> auxiliary::DeferredComputation<std::shared_ptr<T>>
     {
         auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
-        return auxiliary::DeferredFuture<std::shared_ptr<T>>(
-            std::packaged_task<std::shared_ptr<T>()>(
-                [res_lambda = std::move(res), rc = m_rc]() mutable {
-                    rc.seriesFlush();
-                    return res_lambda;
-                }));
+        return auxiliary::DeferredComputation<std::shared_ptr<T>>(
+            [res_lambda = std::move(res), rc = m_rc]() mutable {
+                rc.seriesFlush();
+                return res_lambda;
+            });
     }
 
     template <typename T>
@@ -144,24 +143,25 @@ namespace core
     {
         template <typename T>
         static auto call(RecordComponent &rc, internal::LoadStoreConfig cfg)
-            -> auxiliary::DeferredFuture<
+            -> auxiliary::DeferredComputation<
                 auxiliary::detail::shared_ptr_dataset_types>
         {
             auto res = rc.loadChunkAllocate_impl<T>(std::move(cfg));
-            return auxiliary::DeferredFuture<
+            return auxiliary::DeferredComputation<
                 auxiliary::detail::shared_ptr_dataset_types>(
-                std::packaged_task<
-                    auxiliary::detail::shared_ptr_dataset_types()>(
-                    [res_lambda = std::move(res), rc_lambda = rc]() mutable
-                    -> auxiliary::detail::shared_ptr_dataset_types {
-                        rc_lambda.seriesFlush();
-                        return res_lambda;
-                    }));
+
+                [res_lambda = std::move(res), rc_lambda = rc]() mutable
+                -> auxiliary::detail::shared_ptr_dataset_types {
+                    std::cout << "Flushing Series from Future" << std::endl;
+                    rc_lambda.seriesFlush();
+                    std::cout << "Flushed Series from Future" << std::endl;
+                    return res_lambda;
+                });
         }
     };
 
     auto ConfigureLoadStore::enqueueLoadVariant()
-        -> auxiliary::DeferredFuture<
+        -> auxiliary::DeferredComputation<
             auxiliary::detail::shared_ptr_dataset_types>
     {
         return m_rc.visit<VisitorEnqueueLoadVariant>(this->storeChunkConfig());
@@ -208,14 +208,14 @@ namespace core
 
     template <typename Ptr_Type>
     auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueueStore()
-        -> auxiliary::DeferredFuture<void>
+        -> auxiliary::DeferredComputation<void>
     {
         this->m_rc.storeChunk_impl(
             asWriteBuffer(std::move(m_buffer)),
             determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
             storeChunkConfig());
-        return auxiliary::DeferredFuture<void>(std::packaged_task<void()>(
-            [rc_lambda = m_rc]() mutable -> void { rc_lambda.seriesFlush(); }));
+        return auxiliary::DeferredComputation<void>(
+            [rc_lambda = m_rc]() mutable -> void { rc_lambda.seriesFlush(); });
     }
 
     template <typename Ptr_Type>
@@ -305,7 +305,7 @@ template class compose::ConfigureLoadStore<ConfigureLoadStore>;
         -> DynamicMemoryView<dtype>;                                           \
     template auto core::ConfigureLoadStore::enqueueLoad()                      \
     /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
-        -> auxiliary::DeferredFuture<std::shared_ptr<dtype>>;                  \
+        -> auxiliary::DeferredComputation<std::shared_ptr<dtype>>;                  \
     template auto core::ConfigureLoadStore::load(EnqueuePolicy)                \
         ->std::shared_ptr<dtype>;
 // clang-format on

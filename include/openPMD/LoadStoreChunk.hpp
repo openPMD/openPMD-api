@@ -143,13 +143,13 @@ namespace core
 
         template <typename T>
         [[nodiscard]] auto
-        enqueueLoad() -> auxiliary::DeferredFuture<std::shared_ptr<T>>;
+        enqueueLoad() -> auxiliary::DeferredComputation<std::shared_ptr<T>>;
 
         template <typename T>
         [[nodiscard]] auto load(EnqueuePolicy) -> std::shared_ptr<T>;
 
         [[nodiscard]] auto
-        enqueueLoadVariant() -> auxiliary::DeferredFuture<
+        enqueueLoadVariant() -> auxiliary::DeferredComputation<
                                  auxiliary::detail::shared_ptr_dataset_types>;
 
         [[nodiscard]] auto loadVariant(EnqueuePolicy)
@@ -167,7 +167,7 @@ namespace core
 
         auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
 
-        auto enqueueStore() -> auxiliary::DeferredFuture<void>;
+        auto enqueueStore() -> auxiliary::DeferredComputation<void>;
 
         auto store(EnqueuePolicy) -> void;
 
