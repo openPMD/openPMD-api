@@ -44,6 +44,9 @@ VERSION_STR_SUFFIX = VERSION_STR + (f"-{SUFFIX}" if SUFFIX else "")
 print()
 print(f"Your new version is: {VERSION_STR_SUFFIX}")
 
+# Recover the old version from the Readme.
+# Do not use CMakeLists.txt as it might already contain the upcoming version
+# code.
 with open(str(REPO_DIR.joinpath("README.md")), encoding="utf-8") as f:
     for line in f:
         match = re.search(r"find_package.*openPMD *([^ ]*) *CONFIG\).*", line)
@@ -64,11 +67,7 @@ if REPLY not in ["Y", "y", ""]:
 
 # Ask for new #################################################################
 
-print(
-    """We will now run a few sed commands on your source directory.
-Please answer the following questions about the version number
-you want to require from AMReX:\n"""
-)
+print("""We will now run a few sed commands on your source directory.\n""")
 
 # Updates #####################################################################
 
