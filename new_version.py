@@ -29,7 +29,7 @@ print(f"\nYour current source directory is: {REPO_DIR}")
 
 REPLY = input("Are you sure you want to continue? [Y/n] ")
 print()
-if not REPLY in ["Y", "y", ""]:
+if REPLY not in ["Y", "y", ""]:
     print("You did not confirm with 'y', aborting.")
     sys.exit(1)
 
@@ -57,7 +57,7 @@ print()
 
 REPLY = input("Is this information correct? Will now start updating! [y/N] ")
 print()
-if not REPLY in ["Y", "y", ""]:
+if REPLY not in ["Y", "y", ""]:
     print("You did not confirm with 'y', aborting.")
     sys.exit(1)
 
