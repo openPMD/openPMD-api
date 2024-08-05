@@ -151,7 +151,7 @@ namespace
                 auto asToml = openPMD::json::jsonToToml(shadow);
                 std::cerr << "Warning: parts of the backend configuration for "
                              "JSON/TOML backend remain unused:\n"
-                          << asToml << std::endl;
+                          << json::format_toml(asToml) << std::endl;
                 break;
             }
             }
