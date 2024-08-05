@@ -16,6 +16,14 @@ try:
 except ImportError:
     print("pandas NOT found. Install pandas to run this example.")
     sys.exit()
+
+found_cudf = False
+try:
+    import cudf
+    found_cudf = True
+except ImportError:
+    print("cudf NOT found. Install RAPIDS for CUDA DataFrame example.")
+
 found_dask = False
 try:
     import dask
@@ -38,6 +46,19 @@ if __name__ == "__main__":
     # only first 100 particles
     df = electrons.to_df(np.s_[:100])
     print(df)
+
+    # all particles over all steps
+    df = s.to_df("electrons")
+    print(df)
+
+    if found_cudf:
+        # all particles - to GPU
+        cdf = cudf.from_pandas(electrons.to_df())
+        print(cdf)
+
+        # all particles over all steps - to GPU
+        cdf = s.to_cudf("electrons")
+        print(cdf)
 
     # Particles
     if found_dask:
