@@ -252,6 +252,7 @@ For further details, refer to the non-MPI overload.
             )END")
 #endif
         .def("__bool__", &Series::operator bool)
+        .def("__len__", [](Series const &s) { return s.iterations.size(); })
         .def(
             "__repr__",
             [](Series const &s) {
