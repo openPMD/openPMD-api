@@ -20,7 +20,7 @@ void parsed_main(std::string jsonOrToml)
         using SL = json::SupportedLanguages;
     case SL::JSON: {
         auto asToml = json::jsonToToml(config);
-        std::cout << asToml;
+        std::cout << json::format_toml(asToml);
     }
     break;
     case SL::TOML:
