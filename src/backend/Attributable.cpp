@@ -241,6 +241,11 @@ auto Attributable::myPath() const -> MyPath
     return res;
 }
 
+void Attributable::touch()
+{
+    setDirtyRecursive(true);
+}
+
 void Attributable::seriesFlush(
     internal::FlushParams const &flushParams, bool flush_entire_series)
 {

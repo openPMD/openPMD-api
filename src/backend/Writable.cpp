@@ -58,9 +58,7 @@ void Writable::seriesFlush(
     auto [iteration_internal, series_internal] = impl.containingIteration();
     if (iteration_internal)
     {
-        (*iteration_internal)
-            ->asInternalCopyOf<Iteration>()
-            .setDirtyRecursive(true);
+        (*iteration_internal)->asInternalCopyOf<Iteration>().touch();
     }
     auto series = series_internal->asInternalCopyOf<Series>();
     auto [begin, end] = [&, &iteration_internal_lambda = iteration_internal]()

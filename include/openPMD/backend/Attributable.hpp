@@ -314,6 +314,12 @@ public:
      */
     MyPath myPath() const;
 
+    /**
+     * @brief Sets the object dirty to make internal procedures think it has
+     *        been modified.
+     */
+    void touch();
+
     // clang-format off
 OPENPMD_protected
     // clang-format on
