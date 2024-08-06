@@ -1182,11 +1182,11 @@ TEST_CASE("independent_write_with_collective_flush", "[parallel]")
      * conflict with the default buffer target that will run in the destructor,
      * unless the flush in the next line really is collective.
      */
-    std::cout << "ENTER" << std::endl;
     MPI_Barrier(MPI_COMM_WORLD);
-    iteration.seriesFlush("adios2.engine.preferred_flush_target = \"disk\"");
+    iteration.seriesFlush(
+        "adios2.engine.preferred_flush_target = \"disk\"",
+        /* flush_entire_series = */ false);
     MPI_Barrier(MPI_COMM_WORLD);
-    std::cout << "LEAVE" << std::endl;
 }
 #endif
 

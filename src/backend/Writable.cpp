@@ -19,8 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include <stdexcept>
 
 namespace openPMD
 {
@@ -42,12 +44,14 @@ Writable::~Writable()
         IOTask(this, Parameter<Operation::DEREGISTER>(parent)));
 }
 
-void Writable::seriesFlush(std::string backendConfig)
+void Writable::seriesFlush(std::string backendConfig, bool flush_entire_series)
 {
-    seriesFlush({FlushLevel::UserFlush, std::move(backendConfig)});
+    seriesFlush(
+        {FlushLevel::UserFlush, std::move(backendConfig)}, flush_entire_series);
 }
 
-void Writable::seriesFlush(internal::FlushParams const &flushParams)
+void Writable::seriesFlush(
+    internal::FlushParams const &flushParams, bool flush_entire_series)
 {
     Attributable impl;
     impl.setData({attributable, [](auto const *) {}});
@@ -59,8 +63,33 @@ void Writable::seriesFlush(internal::FlushParams const &flushParams)
             .setDirtyRecursive(true);
     }
     auto series = series_internal->asInternalCopyOf<Series>();
-    series.flush_impl(
-        series.iterations.begin(), series.iterations.end(), flushParams);
+    auto [begin, end] = [&, &iteration_internal_lambda = iteration_internal]()
+        -> std::pair<Series::iterations_iterator, Series::iterations_iterator> {
+        if (flush_entire_series && iteration_internal_lambda)
+        {
+            auto it = series.iterations.begin();
+            auto end_lambda = series.iterations.end();
+            for (; it != end_lambda; ++it)
+            {
+                if (&it->second.Iteration::get() == *iteration_internal_lambda)
+                {
+                    auto next = it;
+                    ++next;
+                    return {it, next};
+                }
+            }
+            throw std::runtime_error(
+                "[Writable::seriesFlush()] Found a containing Iteration that "
+                "seems to not be part of the containing Series?? You might try "
+                "running this with `flushing_entire_series=false` as a "
+                "workaround, but something is still wrong.");
+        }
+        else
+        {
+            return {series.iterations.begin(), series.iterations.end()};
+        }
+    }();
+    series.flush_impl(begin, end, flushParams);
 }
 
 } // namespace openPMD

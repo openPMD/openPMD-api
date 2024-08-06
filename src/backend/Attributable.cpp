@@ -118,9 +118,10 @@ Attributable &Attributable::setComment(std::string const &c)
     return *this;
 }
 
-void Attributable::seriesFlush(std::string backendConfig)
+void Attributable::seriesFlush(
+    std::string backendConfig, bool flush_entire_series)
 {
-    writable().seriesFlush(std::move(backendConfig));
+    writable().seriesFlush(std::move(backendConfig), flush_entire_series);
 }
 
 Series Attributable::retrieveSeries() const
@@ -240,9 +241,10 @@ auto Attributable::myPath() const -> MyPath
     return res;
 }
 
-void Attributable::seriesFlush(internal::FlushParams const &flushParams)
+void Attributable::seriesFlush(
+    internal::FlushParams const &flushParams, bool flush_entire_series)
 {
-    writable().seriesFlush(flushParams);
+    writable().seriesFlush(flushParams, flush_entire_series);
 }
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)

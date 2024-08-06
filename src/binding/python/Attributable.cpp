@@ -515,8 +515,9 @@ void init_Attributable(py::module &m)
             })
         .def(
             "series_flush",
-            py::overload_cast<std::string>(&Attributable::seriesFlush),
-            py::arg("backend_config") = "{}")
+            py::overload_cast<std::string, bool>(&Attributable::seriesFlush),
+            py::arg("backend_config") = "{}",
+            py::arg("flush_entire_series") = true)
 
         .def_property_readonly(
             "attributes",
