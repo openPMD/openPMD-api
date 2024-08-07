@@ -76,8 +76,7 @@ void ParticleSpecies::read()
             auto att_begin = aList.attributes->begin();
             auto att_end = aList.attributes->end();
             auto value = std::find(att_begin, att_end, "value");
-            auto shape = std::find(att_begin, att_end, "shape");
-            if (value != att_end && shape != att_end)
+            if (value != att_end)
             {
                 RecordComponent &rc = r;
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
