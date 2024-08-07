@@ -37,14 +37,26 @@ PatchRecordComponent &PatchRecordComponent::setUnitSI(double usi)
 PatchRecordComponent &PatchRecordComponent::resetDataset(Dataset d)
 {
     if (written())
+    {
         throw std::runtime_error(
             "A Records Dataset can not (yet) be changed after it has been "
             "written.");
-    if (d.extent.empty())
-        throw std::runtime_error("Dataset extent must be at least 1D.");
+    }
     if (d.empty())
-        throw std::runtime_error(
-            "Dataset extent must not be zero in any dimension.");
+    {
+        if (d.extent.empty())
+        {
+            throw error::Internal(
+                "A zero-dimensional dataset is not to be considered empty, but "
+                "undefined. This is an internal safeguard against future "
+                "changes that might not consider this.");
+        }
+        else
+        {
+            throw std::runtime_error(
+                "Dataset extent must not be zero in any dimension.");
+        }
+    }
 
     get().m_dataset = std::move(d);
     setDirty(true);

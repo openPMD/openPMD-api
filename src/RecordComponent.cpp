@@ -109,10 +109,19 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         throw error::WrongAPIUsage(
             "[RecordComponent] Must set specific datatype.");
     }
-    // if( d.extent.empty() )
-    //    throw std::runtime_error("Dataset extent must be at least 1D.");
+    if (d.extent.empty())
+        throw std::runtime_error("Dataset extent must be at least 1D.");
     if (d.empty())
+    {
+        if (d.extent.empty())
+        {
+            throw error::Internal(
+                "A zero-dimensional dataset is not to be considered empty, but "
+                "undefined. This is an internal safeguard against future "
+                "changes that might not consider this.");
+        }
         return makeEmpty(std::move(d));
+    }
 
     rc.m_isEmpty = false;
     if (written())
@@ -275,6 +284,13 @@ void RecordComponent::flush(
         {
             setUnitSI(1);
         }
+        auto constant_component_write_shape = [&]() {
+            auto extent = getExtent();
+            return !extent.empty() &&
+                std::none_of(extent.begin(), extent.end(), [](auto val) {
+                    return val == Dataset::JOINED_DIMENSION;
+                });
+        };
         if (!written())
         {
             if (constant())
@@ -294,16 +310,20 @@ void RecordComponent::flush(
                         Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
                 }
                 IOHandler()->enqueue(IOTask(this, aWrite));
-                aWrite.name = "shape";
-                Attribute a(getExtent());
-                aWrite.dtype = a.dtype;
-                aWrite.resource = a.getResource();
-                if (isVBased)
+                if (constant_component_write_shape())
                 {
-                    aWrite.changesOverSteps = Parameter<
-                        Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+
+                    aWrite.name = "shape";
+                    Attribute a(getExtent());
+                    aWrite.dtype = a.dtype;
+                    aWrite.resource = a.getResource();
+                    if (isVBased)
+                    {
+                        aWrite.changesOverSteps = Parameter<
+                            Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                    }
+                    IOHandler()->enqueue(IOTask(this, aWrite));
                 }
-                IOHandler()->enqueue(IOTask(this, aWrite));
             }
             else
             {
@@ -321,6 +341,13 @@ void RecordComponent::flush(
         {
             if (constant())
             {
+                if (!constant_component_write_shape())
+                {
+                    throw error::WrongAPIUsage(
+                        "Extended constant component from a previous shape to "
+                        "one that cannot be written (empty or with joined "
+                        "dimension).");
+                }
                 bool isVBased = retrieveSeries().iterationEncoding() ==
                     IterationEncoding::variableBased;
                 Parameter<Operation::WRITE_ATT> aWrite;
@@ -385,28 +412,35 @@ namespace
     };
 } // namespace
 
+inline void breakpoint()
+{}
+
 void RecordComponent::readBase(bool require_unit_si)
 {
     using DT = Datatype;
-    // auto & rc = get();
-    Parameter<Operation::READ_ATT> aRead;
+    auto &rc = get();
 
-    if (constant() && !empty())
+    readAttributes(ReadMode::FullyReread);
+
+    auto read_constant =
+        [&]() // comment for forcing clang-format into putting a newline here
     {
-        aRead.name = "value";
-        IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush(internal::defaultFlushParams);
-
-        Attribute a(*aRead.resource);
-        DT dtype = *aRead.dtype;
+        Attribute a = rc.readAttribute("value");
+        DT dtype = a.dtype;
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         switchNonVectorType<MakeConstant>(dtype, *this, a);
         setWritten(true, Attributable::EnqueueAsynchronously::No);
 
-        aRead.name = "shape";
-        IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush(internal::defaultFlushParams);
-        a = Attribute(*aRead.resource);
+        if (!containsAttribute("shape"))
+        {
+            setWritten(false, Attributable::EnqueueAsynchronously::No);
+            resetDataset(Dataset(dtype, {}));
+            setWritten(true, Attributable::EnqueueAsynchronously::No);
+
+            return;
+        }
+
+        a = rc.attributes().at("shape");
         Extent e;
 
         // uint64_t check
@@ -416,7 +450,7 @@ void RecordComponent::readBase(bool require_unit_si)
         else
         {
             std::ostringstream oss;
-            oss << "Unexpected datatype (" << *aRead.dtype
+            oss << "Unexpected datatype (" << a.dtype
                 << ") for attribute 'shape' (" << determineDatatype<uint64_t>()
                 << " aka uint64_t)";
             throw error::ReadError(
@@ -429,9 +463,13 @@ void RecordComponent::readBase(bool require_unit_si)
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         resetDataset(Dataset(dtype, e));
         setWritten(true, Attributable::EnqueueAsynchronously::No);
-    }
+    };
 
-    readAttributes(ReadMode::FullyReread);
+    if (constant() && !empty())
+    {
+        breakpoint();
+        read_constant();
+    }
 
     if (require_unit_si)
     {
@@ -445,7 +483,8 @@ void RecordComponent::readBase(bool require_unit_si)
                 "'" +
                     myPath().openPMDPath() + "'.");
         }
-        if (!getAttribute("unitSI").getOptional<double>().has_value())
+        if (auto attr = getAttribute("unitSI");
+            !attr.getOptional<double>().has_value())
         {
             throw error::ReadError(
                 error::AffectedObject::Attribute,
@@ -453,8 +492,8 @@ void RecordComponent::readBase(bool require_unit_si)
                 {},
                 "Unexpected Attribute datatype for 'unitSI' (expected double, "
                 "found " +
-                    datatypeToString(Attribute(*aRead.resource).dtype) +
-                    ") in '" + myPath().openPMDPath() + "'.");
+                    datatypeToString(attr.dtype) + ") in '" +
+                    myPath().openPMDPath() + "'.");
         }
     }
 }

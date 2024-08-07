@@ -595,8 +595,7 @@ void Iteration::readMeshes(std::string const &meshesPath)
         auto att_begin = aList.attributes->begin();
         auto att_end = aList.attributes->end();
         auto value = std::find(att_begin, att_end, "value");
-        auto shape = std::find(att_begin, att_end, "shape");
-        if (value != att_end && shape != att_end)
+        if (value != att_end)
         {
             MeshRecordComponent &mrc = m;
             IOHandler()->enqueue(IOTask(&mrc, pOpen));
