@@ -57,7 +57,7 @@ void init_ParticleSpecies(py::module &m)
     add_pickle(
         cl, [](openPMD::Series series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            ParticleSpecies &res =
+            ParticleSpecies res =
                 series.iterations[n_it].open().particles[group.at(3)];
             return internal::makeOwning(res, std::move(series));
         });
