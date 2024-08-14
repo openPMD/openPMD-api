@@ -84,7 +84,7 @@ void init_MeshRecordComponent(py::module &m)
     add_pickle(
         cl, [](openPMD::Series series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            auto &res =
+            auto res =
                 series.iterations[n_it]
                     .open()
                     .meshes[group.at(3)]

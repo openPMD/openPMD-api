@@ -110,7 +110,7 @@ void init_Iteration(py::module &m)
     add_pickle(
         cl, [](openPMD::Series series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            auto &res = series.iterations[n_it];
+            auto res = series.iterations[n_it];
             return internal::makeOwning(res, std::move(series));
         });
 
