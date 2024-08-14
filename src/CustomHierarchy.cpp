@@ -402,8 +402,8 @@ void CustomHierarchy::read(
 
     std::deque<std::string> constantComponentsPushback;
     auto &data = get();
-    EraseStaleMeshes meshesMap(data.embeddedMeshes());
-    EraseStaleParticles particlesMap(data.embeddedParticles());
+    EraseStaleMeshes meshesMap(data.embeddedMeshesWrapped());
+    EraseStaleParticles particlesMap(data.embeddedParticlesWrapped());
     for (auto const &path : *pList.paths)
     {
         switch (mpp.determineType(currentPath))
@@ -487,7 +487,8 @@ void CustomHierarchy::read(
         // Group is a bit of an internal misnomer here, it just means that
         // it matches neither meshes nor particles path
         case internal::ContainedType::Group: {
-            auto &rc = data.embeddedDatasets()[path];
+            auto embeddedDatasets = data.embeddedDatasetsWrapped();
+            auto &rc = embeddedDatasets[path];
             Parameter<Operation::OPEN_DATASET> dOpen;
             dOpen.name = path;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
@@ -505,7 +506,7 @@ void CustomHierarchy::read(
                           << "' at path '" << myPath().openPMDPath()
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
-                data.embeddedDatasets().container().erase(path);
+                embeddedDatasets.erase(path);
             }
             break;
         }
@@ -528,7 +529,8 @@ void CustomHierarchy::read(
 
     for (auto const &path : constantComponentsPushback)
     {
-        auto &rc = data.embeddedDatasets()[path];
+        auto embeddedDatasets = data.embeddedDatasetsWrapped();
+        auto &rc = embeddedDatasets[path];
         try
         {
             Parameter<Operation::OPEN_PATH> pOpen;
@@ -543,7 +545,7 @@ void CustomHierarchy::read(
                       << myPath().openPMDPath() << "/" << path
                       << "' and will skip it due to read error:\n"
                       << err.what() << std::endl;
-            data.embeddedDatasets().container().erase(path);
+            embeddedDatasets.erase(path);
         }
     }
     setDirty(false);
@@ -580,7 +582,7 @@ void CustomHierarchy::flush_internal(
         subpath.flush_internal(flushParams, mpp, currentPath);
         currentPath.pop_back();
     }
-    for (auto &[name, mesh] : data.embeddedMeshes())
+    for (auto &[name, mesh] : data.embeddedMeshesInternal())
     {
         if (!mpp.isMeshContainer(currentPath))
         {
@@ -604,7 +606,7 @@ void CustomHierarchy::flush_internal(
         }
         mesh.flush(name, flushParams);
     }
-    for (auto &[name, particleSpecies] : data.embeddedParticles())
+    for (auto &[name, particleSpecies] : data.embeddedParticlesInternal())
     {
         if (!mpp.isParticleContainer(currentPath))
         {
@@ -630,7 +632,7 @@ void CustomHierarchy::flush_internal(
         }
         particleSpecies.flush(name, flushParams);
     }
-    for (auto &[name, dataset] : get().embeddedDatasets())
+    for (auto &[name, dataset] : get().embeddedDatasetsInternal())
     {
         dataset.flush(name, flushParams, /* set_defaults = */ false);
     }
@@ -652,27 +654,6 @@ void CustomHierarchy::flush(
 void CustomHierarchy::linkHierarchy(Writable &w)
 {
     Attributable::linkHierarchy(w);
-}
-
-bool CustomHierarchy::dirtyRecursive() const
-{
-    if (dirty())
-    {
-        return true;
-    }
-    auto check = [](auto const &container) {
-        for (auto const &pair : container)
-        {
-            if (pair.second.dirtyRecursive())
-            {
-                return true;
-            }
-        }
-        return false;
-    };
-    auto &data = const_cast<Data_t &>(get()); // @todo do this better
-    return check(data.embeddedMeshes()) || check(data.embeddedParticles()) ||
-        check(data.embeddedDatasets()) || check(data.customHierarchies());
 }
 } // namespace openPMD
 

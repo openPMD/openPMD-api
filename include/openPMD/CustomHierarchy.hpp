@@ -85,7 +85,8 @@ namespace internal
 
         void syncAttributables();
 
-        Container<CustomHierarchy> customHierarchies()
+#if 0
+        inline Container<CustomHierarchy> customHierarchiesWrapped()
         {
             Container<CustomHierarchy> res;
             res.setData(
@@ -93,7 +94,8 @@ namespace internal
                  [](auto const *) {}});
             return res;
         }
-        Container<RecordComponent> embeddedDatasets()
+#endif
+        inline Container<RecordComponent> embeddedDatasetsWrapped()
         {
             Container<RecordComponent> res;
             res.setData(
@@ -101,7 +103,7 @@ namespace internal
                  [](auto const *) {}});
             return res;
         }
-        Container<Mesh> embeddedMeshes()
+        inline Container<Mesh> embeddedMeshesWrapped()
         {
             Container<Mesh> res;
             res.setData(
@@ -110,13 +112,39 @@ namespace internal
             return res;
         }
 
-        Container<ParticleSpecies> embeddedParticles()
+        inline Container<ParticleSpecies> embeddedParticlesWrapped()
         {
             Container<ParticleSpecies> res;
             res.setData(
                 {static_cast<ContainerData<ParticleSpecies> *>(this),
                  [](auto const *) {}});
             return res;
+        }
+
+#if 0
+        inline Container<CustomHierarchy>::InternalContainer &
+        customHierarchiesInternal()
+        {
+            return static_cast<ContainerData<CustomHierarchy> *>(this)
+                ->m_container;
+        }
+#endif
+        inline Container<RecordComponent>::InternalContainer &
+        embeddedDatasetsInternal()
+        {
+            return static_cast<ContainerData<RecordComponent> *>(this)
+                ->m_container;
+        }
+        inline Container<Mesh>::InternalContainer &embeddedMeshesInternal()
+        {
+            return static_cast<ContainerData<Mesh> *>(this)->m_container;
+        }
+
+        inline Container<ParticleSpecies>::InternalContainer &
+        embeddedParticlesInternal()
+        {
+            return static_cast<ContainerData<ParticleSpecies> *>(this)
+                ->m_container;
         }
     };
 } // namespace internal
@@ -217,16 +245,6 @@ protected:
      * @param w The Writable representing the parent.
      */
     void linkHierarchy(Writable &w) override;
-
-    /*
-     * @brief Check recursively whether this object is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
 
 public:
     CustomHierarchy(CustomHierarchy const &other) = default;
