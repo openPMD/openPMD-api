@@ -122,6 +122,12 @@ namespace error
         , description(std::move(description_in))
     {}
 
+    IllegalInOpenPMDStandard::IllegalInOpenPMDStandard(std::string what_in)
+        : Error(
+              "Operation leads to illegal use of the openPMD standard:\n" +
+              std::move(what_in))
+    {}
+
     void throwReadError(
         AffectedObject affectedObject,
         Reason reason,

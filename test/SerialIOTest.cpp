@@ -2,6 +2,7 @@
 #include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -11,6 +12,7 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/TemplateFile.hpp"
 #include "openPMD/openPMD.hpp"
 
 #include <catch2/catch.hpp>
@@ -912,6 +914,7 @@ inline void constant_scalar(std::string const &file_ending)
         // constant scalar
         Series s =
             Series("../samples/constant_scalar." + file_ending, Access::CREATE);
+        s.setOpenPMD("2.0.0");
         auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
         REQUIRE(s.iterations[1].meshes["rho"].scalar());
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
@@ -1270,13 +1273,24 @@ TEST_CASE("particle_patches", "[serial]")
     }
 }
 
-inline void dtype_test(const std::string &backend)
+inline void dtype_test(
+    const std::string &backend,
+    std::optional<std::string> activateTemplateMode = {})
 {
     bool test_long_double = backend != "json" && backend != "toml";
     bool test_long_long = (backend != "json") || sizeof(long long) <= 8;
     {
-        Series s = Series("../samples/dtype_test." + backend, Access::CREATE);
-
+        Series s = activateTemplateMode.has_value()
+            ? Series(
+                  "../samples/dtype_test." + backend,
+                  Access::CREATE,
+                  activateTemplateMode.value())
+            :
+            // test TOML long attribute mode by default
+            Series(
+                "../samples/dtype_test." + backend,
+                Access::CREATE,
+                R"({"toml":{"attribute":{"mode":"long"}}})");
         char c = 'c';
         s.setAttribute("char", c);
         unsigned char uc = 'u';
@@ -1397,8 +1411,12 @@ inline void dtype_test(const std::string &backend)
         }
     }
 
-    Series s = Series("../samples/dtype_test." + backend, Access::READ_ONLY);
-
+    Series s = activateTemplateMode.has_value()
+        ? Series(
+              "../samples/dtype_test." + backend,
+              Access::READ_ONLY,
+              activateTemplateMode.value())
+        : Series("../samples/dtype_test." + backend, Access::READ_ONLY);
     REQUIRE(s.getAttribute("char").get<char>() == 'c');
     REQUIRE(s.getAttribute("uchar").get<unsigned char>() == 'u');
     REQUIRE(s.getAttribute("schar").get<signed char>() == 's');
@@ -1468,6 +1486,16 @@ inline void dtype_test(const std::string &backend)
     REQUIRE(s.getAttribute("bool").get<bool>() == true);
     REQUIRE(s.getAttribute("boolF").get<bool>() == false);
 
+    if (activateTemplateMode.has_value())
+    {
+        Series out(
+            "../samples/dtype_test_from_template." + backend,
+            Access::CREATE,
+            activateTemplateMode.value());
+        auxiliary::initializeFromTemplate(out, s, 1000);
+        out.flush();
+        return;
+    }
     // same implementation types (not necessary aliases) detection
 #if !defined(_MSC_VER)
     REQUIRE(s.getAttribute("short").dtype == Datatype::SHORT);
@@ -1538,8 +1566,27 @@ TEST_CASE("dtype_test", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        dtype_test(t);
+        if (t == "json")
+        {
+            dtype_test(t);
+            dtype_test(t, R"(json.mode = "template")");
+        }
+        else
+        {
+            dtype_test(t);
+        }
     }
+    dtype_test("json", R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})");
     if (auto extensions = getFileExtensions();
         std::find(extensions.begin(), extensions.end(), "toml") !=
         extensions.end())
@@ -1548,6 +1595,17 @@ TEST_CASE("dtype_test", "[serial]")
        * testing it here.
        */
         dtype_test("toml");
+        dtype_test("toml", R"(
+{
+  "toml": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})");
     }
 }
 
@@ -1560,12 +1618,13 @@ struct ReadFromAnyType
     }
 };
 
-inline void write_test(const std::string &backend)
+inline void write_test(
+    const std::string &backend,
+    std::string jsonCfg = "{}",
+    bool test_rank_table = true)
 {
-#ifdef _WIN32
-    std::string jsonCfg = "{}";
-#else
-    std::string jsonCfg = R"({"rank_table": "posix_hostname"})";
+#ifndef _WIN32
+    jsonCfg = json::merge(jsonCfg, R"({"rank_table": "posix_hostname"})");
     chunk_assignment::RankMeta compare{
         {0,
          host_info::byMethod(
@@ -1598,8 +1657,10 @@ inline void write_test(const std::string &backend)
             return posOff++;
         });
     std::shared_ptr<uint64_t> positionOffset_local_1(new uint64_t);
-    e_1["positionOffset"]["x"].resetDataset(
-        Dataset(determineDatatype(positionOffset_local_1), {4}));
+    e_1["positionOffset"]["x"].resetDataset(Dataset(
+        determineDatatype(positionOffset_local_1),
+        {4},
+        R"({"json":{"dataset":{"mode":"dataset"}}})"));
 
     for (uint64_t i = 0; i < 4; ++i)
     {
@@ -1685,7 +1746,10 @@ inline void write_test(const std::string &backend)
         variantTypeDataset);
 
 #ifndef _WIN32
-    REQUIRE(read.rankTable(/* collective = */ false) == compare);
+    if (test_rank_table)
+    {
+        REQUIRE(read.rankTable(/* collective = */ false) == compare);
+    }
 #endif
 }
 
@@ -1693,7 +1757,41 @@ TEST_CASE("write_test", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        write_test(t);
+        if (t == "json")
+        {
+            write_test(
+                "template." + t,
+                R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})",
+                false);
+            write_test(
+                t,
+                R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "dataset"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})",
+                true);
+        }
+        else
+        {
+            write_test(t);
+        }
         Series list{"../samples/serial_write." + t, Access::READ_ONLY};
         helper::listSeries(list);
     }
@@ -1849,7 +1947,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%03T." + backend,
             Access::CREATE,
-            jsonCfg);
+            json::merge(jsonCfg, R"({"toml":{"dataset":{"mode":"dataset"}}})"));
 
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -2933,21 +3031,21 @@ TEST_CASE("git_hdf5_legacy_picongpu", "[serial][hdf5]")
 
 TEST_CASE("git_hdf5_sample_attribute_test", "[serial][hdf5]")
 {
-    try
-    {
-        Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
-
+    auto verifySeries = [](Series o, bool this_is_the_original_file) {
         REQUIRE(o.openPMD() == "1.1.0");
         REQUIRE(o.openPMDextension() == 1);
         REQUIRE(o.basePath() == "/data/%T/");
         REQUIRE(o.meshesPath() == "fields/");
         REQUIRE(o.particlesPath() == "particles/");
-        REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
-        REQUIRE(o.iterationFormat() == "data%T.h5");
-        REQUIRE(o.name() == "data%T");
+        if (this_is_the_original_file)
+        {
+            REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
+            REQUIRE(o.iterationFormat() == "data%T.h5");
+            REQUIRE(o.name() == "data%T");
 
-        REQUIRE(o.iterations.size() == 5);
-        REQUIRE(o.iterations.count(100) == 1);
+            REQUIRE(o.iterations.size() == 5);
+            REQUIRE(o.iterations.count(100) == 1);
+        }
 
         Iteration &iteration_100 = o.iterations[100];
         REQUIRE(iteration_100.time<double>() == 3.2847121452090077e-14);
@@ -3177,6 +3275,30 @@ TEST_CASE("git_hdf5_sample_attribute_test", "[serial][hdf5]")
         REQUIRE(weighting_scalar.getDatatype() == Datatype::DOUBLE);
         REQUIRE(weighting_scalar.getDimensionality() == 1);
         REQUIRE(weighting_scalar.getExtent() == e);
+    };
+
+    try
+    {
+        {
+            Series o =
+                Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
+            verifySeries(o, true);
+
+            Series fromTemplate(
+                "../samples/initialized_from_git_sample.json",
+                Access::CREATE,
+                R"(json.mode = "template")");
+            auxiliary::initializeFromTemplate(fromTemplate, o, 100);
+            fromTemplate.flush();
+        }
+
+        {
+            Series o(
+                "../samples/initialized_from_git_sample.json",
+                Access::READ_ONLY,
+                R"(json.mode = "template")");
+            verifySeries(o, false);
+        }
     }
     catch (error::ReadError &e)
     {
@@ -7467,7 +7589,10 @@ void groupbased_read_write(std::string const &ext)
     std::string filename = "../samples/groupbased_read_write." + ext;
 
     {
-        Series write(filename, Access::CREATE);
+        Series write(
+            filename,
+            Access::CREATE,
+            R"({"toml":{"dataset":{"mode":"dataset"}}})");
         auto E_x = write.iterations[0].meshes["E"]["x"];
         auto E_y = write.iterations[0].meshes["E"]["y"];
         E_x.resetDataset(ds);
@@ -7480,7 +7605,10 @@ void groupbased_read_write(std::string const &ext)
     }
 
     {
-        Series write(filename, Access::READ_WRITE);
+        Series write(
+            filename,
+            Access::READ_WRITE,
+            R"({"toml":{"dataset":{"mode":"dataset"}}})");
         // create a new iteration
         auto E_x = write.iterations[1].meshes["E"]["x"];
         E_x.resetDataset(ds);
@@ -7520,7 +7648,10 @@ void groupbased_read_write(std::string const &ext)
 
     // check that truncation works correctly
     {
-        Series write(filename, Access::CREATE);
+        Series write(
+            filename,
+            Access::CREATE,
+            R"({"toml":{"dataset":{"mode":"dataset"}}})");
         // create a new iteration
         auto E_x = write.iterations[2].meshes["E"]["x"];
         E_x.resetDataset(ds);

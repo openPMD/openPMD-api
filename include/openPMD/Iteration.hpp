@@ -115,6 +115,15 @@ namespace internal
          * alone.
          */
         std::optional<std::string> m_overrideFilebasedFilename{};
+
+        enum TernaryBool
+        {
+            Undefined,
+            True,
+            False
+        };
+        TernaryBool hasMeshes = TernaryBool::Undefined;
+        TernaryBool hasParticles = TernaryBool::Undefined;
     };
 } // namespace internal
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
@@ -241,6 +250,9 @@ public:
 
     Container<Mesh> meshes{};
     Container<ParticleSpecies> particles{}; // particleSpecies?
+
+    bool hasMeshes() const;
+    bool hasParticles() const;
 
     virtual ~Iteration() = default;
 

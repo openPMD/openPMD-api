@@ -38,6 +38,50 @@ namespace openPMD
 using internal::CloseStatus;
 using internal::DeferredParseAccess;
 
+bool Iteration::hasMeshes() const
+{
+    /*
+     * Currently defined at the Series level, but might be defined at the
+     * Iteration level in next standard iterations.
+     * Hence an Iteration:: method.
+     */
+
+    switch (get().hasMeshes)
+    {
+    case internal::IterationData::TernaryBool::True:
+        return true;
+    case internal::IterationData::TernaryBool::False:
+        return false;
+    case internal::IterationData::TernaryBool::Undefined: {
+        Series s = retrieveSeries();
+        return !meshes.empty() || s.containsAttribute("meshesPath");
+    };
+    }
+    throw std::runtime_error("Unreachable!");
+}
+
+bool Iteration::hasParticles() const
+{
+    /*
+     * Currently defined at the Series level, but might be defined at the
+     * Iteration level in next standard iterations.
+     * Hence an Iteration:: method.
+     */
+
+    switch (get().hasParticles)
+    {
+    case internal::IterationData::TernaryBool::True:
+        return true;
+    case internal::IterationData::TernaryBool::False:
+        return false;
+    case internal::IterationData::TernaryBool::Undefined: {
+        Series s = retrieveSeries();
+        return !particles.empty() || s.containsAttribute("particlesPath");
+    };
+    }
+    throw std::runtime_error("Unreachable!");
+}
+
 Iteration::Iteration() : Attributable(NoInit())
 {
     setData(std::make_shared<Data_t>());
@@ -332,7 +376,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
          * meshesPath and particlesPath are stored there */
         Series s = retrieveSeries();
 
-        if (!meshes.empty() || s.containsAttribute("meshesPath"))
+        if (hasMeshes())
         {
             if (!s.containsAttribute("meshesPath"))
             {
@@ -348,7 +392,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             meshes.setDirty(false);
         }
 
-        if (!particles.empty() || s.containsAttribute("particlesPath"))
+        if (hasParticles())
         {
             if (!s.containsAttribute("particlesPath"))
             {
@@ -515,6 +559,12 @@ void Iteration::read_impl(std::string const &groupPath)
     {
         hasMeshes = s.containsAttribute("meshesPath");
         hasParticles = s.containsAttribute("particlesPath");
+    }
+    {
+        using TB = internal::IterationData::TernaryBool;
+        auto &data = get();
+        data.hasMeshes = hasMeshes ? TB::True : TB::False;
+        data.hasParticles = hasParticles ? TB::True : TB::False;
     }
 
     if (hasMeshes)

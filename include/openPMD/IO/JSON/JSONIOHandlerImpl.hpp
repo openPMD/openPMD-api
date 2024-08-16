@@ -180,6 +180,8 @@ public:
         std::string originalExtension);
 #endif
 
+    void init(openPMD::json::TracingJSON config);
+
     ~JSONIOHandlerImpl() override;
 
     void
@@ -265,7 +267,68 @@ private:
      */
     FileFormat m_fileFormat{};
 
+    std::string backendConfigKey() const;
+
+    /*
+     * First return value: The location of the JSON value (either "json" or
+     * "toml") Second return value: The value that was maybe found at this place
+     */
+    std::pair<std::string, std::optional<openPMD::json::TracingJSON>>
+    getBackendConfig(openPMD::json::TracingJSON &) const;
+
     std::string m_originalExtension;
+
+    enum class SpecificationVia
+    {
+        DefaultValue,
+        Manually
+    };
+
+    /////////////////////
+    // Dataset IO mode //
+    /////////////////////
+
+    enum class IOMode
+    {
+        Dataset,
+        Template
+    };
+
+    IOMode m_mode = IOMode::Dataset;
+    SpecificationVia m_IOModeSpecificationVia = SpecificationVia::DefaultValue;
+    bool m_printedSkippedWriteWarningAlready = false;
+
+    struct DatasetMode
+    {
+        IOMode m_IOMode;
+        SpecificationVia m_specificationVia;
+        bool m_skipWarnings;
+
+        template <typename A, typename B, typename C>
+        operator std::tuple<A, B, C>()
+        {
+            return std::tuple<A, B, C>{
+                m_IOMode, m_specificationVia, m_skipWarnings};
+        }
+    };
+    DatasetMode retrieveDatasetMode(openPMD::json::TracingJSON &config) const;
+
+    ///////////////////////
+    // Attribute IO mode //
+    ///////////////////////
+
+    enum class AttributeMode
+    {
+        Short,
+        Long
+    };
+
+    AttributeMode m_attributeMode = AttributeMode::Long;
+    SpecificationVia m_attributeModeSpecificationVia =
+        SpecificationVia::DefaultValue;
+
+    std::pair<AttributeMode, SpecificationVia>
+    retrieveAttributeMode(openPMD::json::TracingJSON &config) const;
 
     // HELPER FUNCTIONS
 
@@ -313,7 +376,7 @@ private:
     // essentially: m_i = \prod_{j=0}^{i-1} extent_j
     static Extent getMultiplicators(Extent const &extent);
 
-    static Extent getExtent(nlohmann::json &j);
+    static std::pair<Extent, IOMode> getExtent(nlohmann::json &j);
 
     // remove single '/' in the beginning and end of a string
     static std::string removeSlashes(std::string);
@@ -371,7 +434,7 @@ private:
 
     // check whether the json reference contains a valid dataset
     template <typename Param>
-    void verifyDataset(Param const &parameters, nlohmann::json &);
+    IOMode verifyDataset(Param const &parameters, nlohmann::json &);
 
     static nlohmann::json platformSpecifics();
 

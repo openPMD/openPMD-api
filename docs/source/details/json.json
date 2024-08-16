@@ -1,0 +1,10 @@
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+}
