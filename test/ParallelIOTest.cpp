@@ -2461,6 +2461,14 @@ void adios2_chunk_distribution()
         auto blocksAssignment = blocksStrategy.assign(
             chunkTable, rankMetaIn, readingRanksHostnames);
         printAssignment("BLOCKS", blocksAssignment, readingRanksHostnames);
+
+        BlocksOfSourceRanks blocksOfSourceRanksStrategy(mpi_rank, mpi_size);
+        auto blocksOfSourceRanksAssignment = blocksOfSourceRanksStrategy.assign(
+            chunkTable, rankMetaIn, readingRanksHostnames);
+        printAssignment(
+            "BLOCKS OF SOURCE RANKS",
+            blocksOfSourceRanksAssignment,
+            readingRanksHostnames);
     }
 }
 

@@ -361,6 +361,47 @@ namespace chunk_assignment
         return std::unique_ptr<Strategy>(new Blocks(*this));
     }
 
+    BlocksOfSourceRanks::BlocksOfSourceRanks(
+        unsigned int mpi_rank_in, unsigned int mpi_size_in)
+        : mpi_size(mpi_size_in), mpi_rank(mpi_rank_in)
+    {}
+
+    Assignment BlocksOfSourceRanks::assign(
+        PartialAssignment pa, RankMeta const &, RankMeta const &)
+    {
+        auto [notAssigned, res] = std::move(pa);
+        std::map<unsigned int, std::deque<WrittenChunkInfo>>
+            sortSourceChunksBySourceRank;
+        for (auto &chunk : notAssigned)
+        {
+            auto sourceID = chunk.sourceID;
+            sortSourceChunksBySourceRank[sourceID].push_back(std::move(chunk));
+        }
+        notAssigned.clear();
+        auto [myChunksFrom, myChunksTo] =
+            OneDimensionalBlockSlicer::n_th_block_inside(
+                sortSourceChunksBySourceRank.size(), mpi_rank, mpi_size);
+        auto it = sortSourceChunksBySourceRank.begin();
+        for (size_t i = 0; i < myChunksFrom; ++i)
+        {
+            ++it;
+        }
+        for (size_t i = 0; i < myChunksTo; ++i, ++it)
+        {
+            std::transform(
+                it->second.begin(),
+                it->second.end(),
+                std::back_inserter(res[mpi_rank]),
+                [](WrittenChunkInfo &chunk) { return std::move(chunk); });
+        }
+        return res;
+    }
+
+    std::unique_ptr<Strategy> BlocksOfSourceRanks::clone() const
+    {
+        return std::unique_ptr<Strategy>(new BlocksOfSourceRanks(*this));
+    }
+
     ByHostname::ByHostname(std::unique_ptr<Strategy> withinNode)
         : m_withinNode(std::move(withinNode))
     {}

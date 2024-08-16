@@ -305,6 +305,11 @@ void init_Chunk(py::module &m)
             py::init<unsigned int, unsigned int>(),
             py::arg("mpi_rank"),
             py::arg("mpi_size"));
+    py::class_<BlocksOfSourceRanks, Strategy>(m, "BlocksOfSourceRanks")
+        .def(
+            py::init<unsigned int, unsigned int>(),
+            py::arg("mpi_rank"),
+            py::arg("mpi_size"));
 
     py::class_<ByHostname, PartialStrategy>(m, "ByHostname")
         .def(
