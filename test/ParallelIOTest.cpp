@@ -2473,6 +2473,11 @@ void adios2_chunk_distribution()
             chunkTable, rankMetaIn, readingRanksHostnames);
         printAssignment(
             "CUBOID SLICE", cuboidSliceAssignment, readingRanksHostnames);
+
+        Blocks blocksStrategy(mpi_rank, mpi_size);
+        auto blocksAssignment = blocksStrategy.assign(
+            chunkTable, rankMetaIn, readingRanksHostnames);
+        printAssignment("BLOCKS", blocksAssignment, readingRanksHostnames);
     }
 }
 

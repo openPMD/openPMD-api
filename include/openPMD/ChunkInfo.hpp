@@ -235,6 +235,22 @@ namespace chunk_assignment
         virtual std::unique_ptr<Strategy> clone() const override;
     };
 
+    struct Blocks : Strategy
+    {
+    private:
+        unsigned int mpi_size, mpi_rank;
+
+    public:
+        Blocks(unsigned int mpi_rank, unsigned int mpi_size);
+
+        Assignment assign(
+            PartialAssignment,
+            RankMeta const &in,
+            RankMeta const &out) override;
+
+        [[nodiscard]] std::unique_ptr<Strategy> clone() const override;
+    };
+
     /**
      * @brief Strategy that assigns chunks to be read by processes within
      *        the same host that produced the chunk.

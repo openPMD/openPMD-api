@@ -22,6 +22,7 @@
 #include "openPMD/ChunkInfo_internal.hpp"
 
 #include "openPMD/auxiliary/Mpi.hpp"
+#include "openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp"
 
 #include <algorithm> // std::sort
 #include <deque>
@@ -29,6 +30,7 @@
 #include <iterator>
 #include <list>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <utility>
@@ -333,6 +335,30 @@ namespace chunk_assignment
     std::unique_ptr<Strategy> RoundRobinOfSourceRanks::clone() const
     {
         return std::unique_ptr<Strategy>(new RoundRobinOfSourceRanks);
+    }
+
+    Blocks::Blocks(unsigned int mpi_rank_in, unsigned int mpi_size_in)
+        : mpi_size(mpi_size_in), mpi_rank(mpi_rank_in)
+    {}
+
+    Assignment
+    Blocks::assign(PartialAssignment pa, RankMeta const &, RankMeta const &)
+    {
+        auto [notAssigned, res] = std::move(pa);
+        auto [myChunksFrom, myChunksTo] =
+            OneDimensionalBlockSlicer::n_th_block_inside(
+                notAssigned.size(), mpi_rank, mpi_size);
+        std::transform(
+            notAssigned.begin() + myChunksFrom,
+            notAssigned.begin() + (myChunksFrom + myChunksTo),
+            std::back_inserter(res[mpi_rank]),
+            [](WrittenChunkInfo &chunk) { return std::move(chunk); });
+        return res;
+    }
+
+    std::unique_ptr<Strategy> Blocks::clone() const
+    {
+        return std::unique_ptr<Strategy>(new Blocks(*this));
     }
 
     ByHostname::ByHostname(std::unique_ptr<Strategy> withinNode)
