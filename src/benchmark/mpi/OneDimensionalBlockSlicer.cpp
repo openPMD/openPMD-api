@@ -29,18 +29,13 @@ OneDimensionalBlockSlicer::OneDimensionalBlockSlicer(Extent::value_type dim)
     : m_dim{dim}
 {}
 
-std::pair<Offset, Extent>
-OneDimensionalBlockSlicer::sliceBlock(Extent &totalExtent, int size, int rank)
+std::pair<size_t, size_t> OneDimensionalBlockSlicer::n_th_block_inside(
+    size_t length, size_t rank, size_t size)
 {
-    Offset offs(totalExtent.size(), 0);
-
     if (rank >= size)
     {
-        Extent extent(totalExtent.size(), 0);
-        return std::make_pair(std::move(offs), std::move(extent));
+        return {length, 0};
     }
-
-    auto dim = this->m_dim;
 
     // for more equal balancing, we want the start index
     // at the upper gaussian bracket of (N/n*rank)
@@ -48,10 +43,9 @@ OneDimensionalBlockSlicer::sliceBlock(Extent &totalExtent, int size, int rank)
     // and n the MPI size
     // for avoiding integer overflow, this is the same as:
     // (N div n)*rank + round((N%n)/n*rank)
-    auto f = [&totalExtent, size, dim](int threadRank) {
-        auto N = totalExtent[dim];
-        auto res = (N / size) * threadRank;
-        auto padDivident = (N % size) * threadRank;
+    auto f = [length, size](size_t rank_lambda) {
+        auto res = (length / size) * rank_lambda;
+        auto padDivident = (length % size) * rank_lambda;
         auto pad = padDivident / size;
         if (pad * size < padDivident)
         {
@@ -60,16 +54,35 @@ OneDimensionalBlockSlicer::sliceBlock(Extent &totalExtent, int size, int rank)
         return res + pad;
     };
 
-    offs[dim] = f(rank);
+    size_t offset = f(rank);
+    size_t extent = [&]() {
+        if (rank >= size - 1)
+        {
+            return length - offset;
+        }
+        else
+        {
+            return f(rank + 1) - offset;
+        }
+    }();
+    return {offset, extent};
+}
+
+std::pair<Offset, Extent>
+OneDimensionalBlockSlicer::sliceBlock(Extent &totalExtent, int size, int rank)
+{
+    Offset localOffset(totalExtent.size(), 0);
     Extent localExtent{totalExtent};
-    if (rank >= size - 1)
-    {
-        localExtent[dim] -= offs[dim];
-    }
-    else
-    {
-        localExtent[dim] = f(rank + 1) - offs[dim];
-    }
-    return std::make_pair(std::move(offs), std::move(localExtent));
+
+    auto [offset_dim, extent_dim] =
+        n_th_block_inside(totalExtent.at(this->m_dim), rank, size);
+    localOffset[m_dim] = offset_dim;
+    localExtent[m_dim] = extent_dim;
+    return std::make_pair(std::move(localOffset), std::move(localExtent));
+}
+
+std::unique_ptr<BlockSlicer> OneDimensionalBlockSlicer::clone() const
+{
+    return std::unique_ptr<BlockSlicer>(new OneDimensionalBlockSlicer(m_dim));
 }
 } // namespace openPMD
