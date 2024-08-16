@@ -33,6 +33,9 @@ public:
 
     explicit OneDimensionalBlockSlicer(Extent::value_type dim = 0);
 
+    static std::pair<size_t, size_t>
+    n_th_block_inside(size_t length, size_t rank, size_t size);
+
     std::pair<Offset, Extent>
     sliceBlock(Extent &totalExtent, int size, int rank) override;
 
