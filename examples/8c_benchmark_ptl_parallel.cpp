@@ -140,16 +140,16 @@ public:
     {
         m_Tag = tag;
         m_Rank = rank;
-	m_Start = MaxResSteadyClock::now();
+    m_Start = MaxResSteadyClock::now();
 
-	/*
-	m_Silent = silent;
-	if (!m_Silent)
+    /*
+    m_Silent = silent;
+    if (!m_Silent)
            MemoryProfiler(rank, tag);
-	*/
-	m_Silent = vl;
-	if (m_Silent == FULL)
-	  MemoryProfiler(rank, tag);
+    */
+    m_Silent = vl;
+    if (m_Silent == FULL)
+      MemoryProfiler(rank, tag);
     }
 
     double getDuration()
@@ -157,7 +157,7 @@ public:
         auto curr = MaxResSteadyClock::now();
 
         double secs = std::chrono::duration_cast<std::chrono::duration<double> > (curr - m_Start).count();
-	return secs;
+    return secs;
     }
   
     ~Timer()
@@ -171,14 +171,14 @@ public:
           MemoryProfiler mp(m_Rank, tt.c_str());
        }
 
-	double secs = getDuration();
-	
+    double secs = getDuration();
+
         if (m_Rank > 0)
             return;
 
-        std::cout << "  [" << m_Tag << "] took:" << secs << " seconds";	
+        std::cout << "  [" << m_Tag << "] took:" << secs << " seconds";
         std::cout << "     Time Elapsed:"
-                  << secs + std::chrono::duration_cast< std::chrono::duration<double> > (m_Start - m_ProgStart).count()	  
+                  << secs + std::chrono::duration_cast< std::chrono::duration<double> > (m_Start - m_ProgStart).count()
                   << std::endl;
 
         std::cout << std::endl;
@@ -416,18 +416,18 @@ void parse(TestInput &input, std::string line)
     // Apply a specific backend instead of trying all available ones
     if (vec.at(0).compare("backend") == 0)
       {
-	if (vec[1][0] != '.')
-	  input.m_Backend += '.';
-	
-	input.m_Backend += vec[1];
+    if (vec[1][0] != '.')
+      input.m_Backend += '.';
+
+    input.m_Backend += vec[1];
       }
 
     if (vec[0].compare("joinedArray") == 0)
-    {      
+    {
         if (vec[1].size() > 0) {
-	  if ( (vec[1][0] == 't') or (vec[1][0] == 'T') )
+      if ( (vec[1][0] == 't') or (vec[1][0] == 'T') )
             input.m_UseJoinedDim = true;
-	}
+    }
         return;
     }
 
@@ -449,11 +449,11 @@ void parse(TestInput &input, std::string line)
     if (vec[0].compare("minMil") == 0)
     {
         input.m_PtlMin = ( (unsigned long) atoi(vec[1].c_str()) ) * (unsigned long) 1000000;
-	if (input.m_PtlMin > input.m_PtlMax)
-	  input.m_PtlMin = input.m_PtlMax;
+    if (input.m_PtlMin > input.m_PtlMax)
+      input.m_PtlMin = input.m_PtlMax;
         return;
     }
-    
+
     if (vec[0].compare("steps") == 0)
     {
         input.m_Steps = atoi(vec[1].c_str());
@@ -487,7 +487,7 @@ int parseArgs(int argc, char *argv[], TestInput &input)
         }
 
         infile.close();
-	return 1;
+    return 1;
     }
     std::cout<<" Expecting: "<<argv[0]<<" <input file> "<<std::endl;
     return -1;
@@ -508,18 +508,18 @@ void doWork(TestInput & input)
     {
        if ( 0 < input.m_Backend.size() )
        {
- 	    BasicParticlePattern p(input);
-	    p.printMe();
-	    p.run();
+         BasicParticlePattern p(input);
+        p.printMe();
+        p.run();
        }
-       else 
-       {	
+       else
+       {
           for (auto const &which : backends)
           {
             input.m_Backend = which;
-	    BasicParticlePattern p(input);
-	    p.printMe();
-	    p.run();
+        BasicParticlePattern p(input);
+        p.printMe();
+        p.run();
           }
        }
     }
@@ -554,21 +554,21 @@ int main(int argc, char *argv[])
     {
       MPI_Barrier(MPI_COMM_WORLD);
       if ( 0 == input.m_MPIRank ) {
-	std::cout<<" ============= GLOBAL PROFILER SUMMARY =========="<<std::endl;
-	std::cout<<"NAME: \t\t  NumCalls: \t Min(sec): \t Max (secs): \n";
+        std::cout<<" ============= GLOBAL PROFILER SUMMARY =========="<<std::endl;
+        std::cout<<"NAME: \t\t  NumCalls: \t Min(sec): \t Max (secs): \n";
       }
-      
-      for (const auto& [name, p] : m_GlobalProfilers)
-	{
-	  std::vector<double> result(input.m_MPISize, 0);
-	  //unsigned long  buffer[m_Input.m_MPISize];
-	  MPI_Allgather (&p.m_Total, 1, MPI_DOUBLE, result.data(), 1, MPI_DOUBLE, MPI_COMM_WORLD);
 
-	  auto [min, max] = std::minmax_element(result.begin(),result.end());	  
-	  
-	  if ( 0 == input.m_MPIRank )
-	    std::cout << name << "\t\t "<<p.m_Counter << "\t"<<*min<<" \t "<<*max<<" \t :peek "<<result[0]<<" "<<result[input.m_MPISize-1]<<std::endl;
-	}
+      for (const auto& [name, p] : m_GlobalProfilers)
+      {
+        std::vector<double> result(input.m_MPISize, 0);
+        //unsigned long  buffer[m_Input.m_MPISize];
+        MPI_Allgather (&p.m_Total, 1, MPI_DOUBLE, result.data(), 1, MPI_DOUBLE, MPI_COMM_WORLD);
+
+        auto [min, max] = std::minmax_element(result.begin(),result.end());
+
+        if ( 0 == input.m_MPIRank )
+             std::cout << name << "\t\t "<<p.m_Counter << "\t"<<*min<<" \t "<<*max<<" \t :peek "<<result[0]<<" "<<result[input.m_MPISize-1]<<std::endl;
+       }
     }
     
     MPI_Finalize();
@@ -596,7 +596,7 @@ void BasicParticlePattern::run()
         std::ostringstream s;
         s << m_Input.m_Prefix << "/" <<getBaseFileName()
           << "_%07T" << m_Input.m_Backend;
-	 
+
         std::string filename = s.str();
 
         {
@@ -629,7 +629,7 @@ void BasicParticlePattern::run()
             series.setIterationEncoding(m_Input.m_Encoding);
             series.setMeshesPath("fields");
             for (int step = 1; step <= m_Input.m_Steps; step++)
-            {	      
+            {
                 store(series, step);
             }
         }
@@ -714,14 +714,14 @@ void BasicParticlePattern::storeParticles(ParticleSpecies &currSpecies, int &ste
     Checkpoint remove3("  SP_cs", m_Input.m_MPIRank);    
     if (count > 0)
       {
-	auto ids = createData<uint64_t>(count, offset, 1);
-	currSpecies["id"].storeChunk(ids, ProperExtent(offset, false), {count});
-	
-	auto charges = createData<double>(count, 0.1 * step, 0.0001);
-	currSpecies["charge"].storeChunk(charges, ProperExtent(offset, false), {count});
+       auto ids = createData<uint64_t>(count, offset, 1);
+       currSpecies["id"].storeChunk(ids, ProperExtent(offset, false), {count});
 
-	auto mx = createData<double>(count, 1.0 * step, 0.0002);
-	currSpecies["position"]["x"].storeChunk(mx, ProperExtent(offset, false), {count});
+       auto charges = createData<double>(count, 0.1 * step, 0.0001);
+       currSpecies["charge"].storeChunk(charges, ProperExtent(offset, false), {count});
+
+       auto mx = createData<double>(count, 1.0 * step, 0.0002);
+       currSpecies["position"]["x"].storeChunk(mx, ProperExtent(offset, false), {count});
       }    
 } // storeParticles
 
@@ -760,14 +760,14 @@ void BasicParticlePattern::getParticleLayout(unsigned long& offset, unsigned lon
   std::vector<unsigned long> result(m_Input.m_MPISize, 0);
   //unsigned long  buffer[m_Input.m_MPISize];
   MPI_Allgather (&count, 1, MPI_UNSIGNED_LONG, result.data(), 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
-		 
+
   total = 0;
   auto const num_results = static_cast<int>(result.size());
   for (int i=0; i<num_results; i++)
     {
       total += result[i];
       if (i < m_Input.m_MPIRank) {
-	offset += result[i];
+    offset += result[i];
       }
     }
 
@@ -807,9 +807,9 @@ void BasicParticlePattern::printMe()
     std::cout << " ====>  This is a Particle Only test,  With Joined Dimension applied to ADIOS."<<pdw_status<<std::endl;
   else
     std::cout << " ====>  This is a Particle Only test. " <<pdw_status<<std::endl;
-  
+
   std::cout << "\t  Num steps: "<<m_Input.m_Steps
-	    << "\n\t  NumPtls (millions) per rank/step: "<<m_Input.m_PtlMin/1000000<<"  to "<<m_Input.m_PtlMax/1000000      
+        << "\n\t  NumPtls (millions) per rank/step: "<<m_Input.m_PtlMin/1000000<<"  to "<<m_Input.m_PtlMax/1000000
             << std::endl;
 } // printMe
 
