@@ -373,6 +373,7 @@ public:
     std::string m_Backend = ""; //!< I/O backend by file ending
 
     bool m_UseJoinedDim=false;
+    bool m_CallPDW=false;
     openPMD::IterationEncoding m_Encoding =
         openPMD::IterationEncoding::variableBased;
 
@@ -427,6 +428,15 @@ void parse(TestInput &input, std::string line)
 	  if ( (vec[1][0] == 't') or (vec[1][0] == 'T') )
             input.m_UseJoinedDim = true;
 	}
+        return;
+    }
+
+    if (vec[0].compare("usePDW") == 0)
+    {
+        if (vec[1].size() > 0) {
+          if ( (vec[1][0] == 't') or (vec[1][0] == 'T') )
+            input.m_CallPDW = true;
+        }
         return;
     }
 
@@ -648,6 +658,9 @@ void BasicParticlePattern::store(Series &series, int step)
 
     storeParticles(currSpecies, step);
 
+    if (m_Input.m_CallPDW)
+      series.flush();
+
     {
       Checkpoint remove2("Barrier_3", m_Input.m_MPIRank);
       MPI_Barrier(MPI_COMM_WORLD);
@@ -778,7 +791,6 @@ openPMD::Extent BasicParticlePattern::ProperExtent (unsigned long long n, bool i
    else
      return {};
 }
-
 /*
  * Print pattern layout
  */
@@ -787,10 +799,14 @@ void BasicParticlePattern::printMe()
   if ( 0 < m_Input.m_MPIRank )
     return;
 
+  std::string pdw_status=" just EndStep";
+  if (m_Input.m_CallPDW)
+    pdw_status=" PDW + EndStep";
+
   if (m_Input.m_UseJoinedDim)
-    std::cout << " ====>  This is a Particle Only test,  With Joined Dimension applied to ADIOS " <<std::endl;
+    std::cout << " ====>  This is a Particle Only test,  With Joined Dimension applied to ADIOS."<<pdw_status<<std::endl;
   else
-    std::cout << " ====>  This is a Particle Only test. " <<std::endl;
+    std::cout << " ====>  This is a Particle Only test. " <<pdw_status<<std::endl;
   
   std::cout << "\t  Num steps: "<<m_Input.m_Steps
 	    << "\n\t  NumPtls (millions) per rank/step: "<<m_Input.m_PtlMin/1000000<<"  to "<<m_Input.m_PtlMax/1000000      
