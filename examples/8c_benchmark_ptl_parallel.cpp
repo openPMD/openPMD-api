@@ -227,12 +227,12 @@ public:
   {
     m_GlobalProfilers[m_name].update(*m_Timer);
     
-    if (m_Timer != NULL)
+    if (m_Timer != nullptr)
       delete m_Timer;
   }
 
 private:
-  Timer* m_Timer = NULL;
+  Timer* m_Timer = nullptr;
   std::string m_name;
 };
 
@@ -345,11 +345,11 @@ public:
     unsigned long countMe(const Extent &count);
     unsigned long indexMe(const Offset &count);
 
-    const std::string getBaseFileName() const;
+    [[nodiscard]] const std::string getBaseFileName() const;
     const TestInput &m_Input;
 
     void printMe();
-    openPMD::Extent ProperExtent (unsigned long long n, bool init) const;
+    [[nodiscard]] openPMD::Extent ProperExtent (unsigned long long n, bool init) const;
 }; // class BasicParticlePattern
 
 
