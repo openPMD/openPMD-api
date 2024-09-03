@@ -159,7 +159,7 @@ public:
         double secs = std::chrono::duration_cast<std::chrono::duration<double> > (curr - m_Start).count();
     return secs;
     }
-  
+
     ~Timer()
     {
        if (m_Silent == NONE)
@@ -199,10 +199,10 @@ public:
   LocalProfiler() = default;
   ~LocalProfiler () = default;
 
-  void setRank(int r) {m_Rank = r;}  
+  void setRank(int r) {m_Rank = r;}
   void update(Timer& timer) { m_Counter ++;  m_Total += timer.getDuration(); }
-  
-  int m_Rank = 0; // info only  
+
+  int m_Rank = 0; // info only
   int m_Counter=0;
   double m_Total = 0;
 };
@@ -226,7 +226,7 @@ public:
   ~Checkpoint()
   {
     m_GlobalProfilers[m_name].update(*m_Timer);
-    
+
     if (m_Timer != nullptr)
       delete m_Timer;
   }
@@ -298,7 +298,7 @@ createData(const unsigned long &size, const T &val, const T &increment)
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   Checkpoint c("  CreateData", rank);
-    
+
 #if openPMD_HAVE_CUDA_EXAMPLES
     return createDataGPU(size, val, increment);
 #else
@@ -312,7 +312,7 @@ createData(const unsigned long &size, const T &val, const T &increment)
  */
 std::vector<std::string> getBackends(bool bpOnly)
 {
-    std::vector<std::string> res;    
+    std::vector<std::string> res;
 #if openPMD_HAVE_ADIOS2
     res.emplace_back(".bp");
 #endif
@@ -335,9 +335,9 @@ class BasicParticlePattern
 {
 public:
     BasicParticlePattern(const TestInput &input);
-  
+
     void getParticleLayout(unsigned long& offset, unsigned long &count, unsigned long &total);
-      
+
     void run();
     void store(Series &series, int step);
     void storeParticles(ParticleSpecies &currSpecies, int &step);
@@ -367,8 +367,8 @@ public:
 
   // default distribution is between 1 - 2 million ptls per rank
     unsigned long  m_PtlMin = 1000000;
-    unsigned long  m_PtlMax = 2000000; 
-  
+    unsigned long  m_PtlMax = 2000000;
+
     int m_Steps = 1; //!< num of iterations
     std::string m_Backend = ""; //!< I/O backend by file ending
 
@@ -543,14 +543,14 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &input.m_MPIRank);
 
     int succ = parseArgs(argc, argv, input);
-    if (succ <= 0) 
+    if (succ <= 0)
     {
         return -1;
     }
 
-     
-    doWork(input); 
-    
+
+    doWork(input);
+
     {
       MPI_Barrier(MPI_COMM_WORLD);
       if ( 0 == input.m_MPIRank ) {
@@ -570,9 +570,9 @@ int main(int argc, char *argv[])
              std::cout << name << "\t\t "<<p.m_Counter << "\t"<<*min<<" \t "<<*max<<" \t :peek "<<result[0]<<" "<<result[input.m_MPISize-1]<<std::endl;
        }
     }
-    
+
     MPI_Finalize();
-    
+
 
     return 0;
 }
@@ -645,14 +645,14 @@ void BasicParticlePattern::run()
  */
 void BasicParticlePattern::store(Series &series, int step)
 {
-  /*  
+  /*
     if ( 0 == m_Input.m_MPIRank )
          std::cout<<" STEP: "<<step<<std::endl;
   */
   std::string stepStr = "STEP "+std::to_string(step);
   //Timer timer(stepStr, m_Input.m_MPIRank, Timer::MIN);
   Timer timer(stepStr, m_Input.m_MPIRank, Timer::FULL);
-  
+
     ParticleSpecies &currSpecies =
         series.writeIterations()[step].particles["ion"];
 
@@ -665,8 +665,8 @@ void BasicParticlePattern::store(Series &series, int step)
       Checkpoint remove2("Barrier_3", m_Input.m_MPIRank);
       MPI_Barrier(MPI_COMM_WORLD);
     }
-    
-    Checkpoint k("CloseIteration", m_Input.m_MPIRank);        
+
+    Checkpoint k("CloseIteration", m_Input.m_MPIRank);
     series.writeIterations()[step].close();
 }
 
@@ -689,9 +689,9 @@ void BasicParticlePattern::storeParticles(ParticleSpecies &currSpecies, int &ste
       Checkpoint remove1("  SP_Barrier_1", m_Input.m_MPIRank);
       MPI_Barrier(MPI_COMM_WORLD);
     }
-    
+
     getParticleLayout(offset, count, np);
-    
+
     auto const intDataSet =
       openPMD::Dataset(openPMD::determineDatatype<uint64_t>(), ProperExtent(np, true));
     auto const realDataSet =
@@ -711,7 +711,7 @@ void BasicParticlePattern::storeParticles(ParticleSpecies &currSpecies, int &ste
     }
 
 
-    Checkpoint remove3("  SP_cs", m_Input.m_MPIRank);    
+    Checkpoint remove3("  SP_cs", m_Input.m_MPIRank);
     if (count > 0)
       {
        auto ids = createData<uint64_t>(count, offset, 1);
@@ -722,7 +722,7 @@ void BasicParticlePattern::storeParticles(ParticleSpecies &currSpecies, int &ste
 
        auto mx = createData<double>(count, 1.0 * step, 0.0002);
        currSpecies["position"]["x"].storeChunk(mx, ProperExtent(offset, false), {count});
-      }    
+      }
 } // storeParticles
 
 /*
@@ -732,14 +732,14 @@ void BasicParticlePattern::storeParticles(ParticleSpecies &currSpecies, int &ste
  */
 void BasicParticlePattern::getParticleLayout(unsigned long& offset, unsigned long &count, unsigned long &total)
 {
-  { 
+  {
      Checkpoint x1("  ComputeLayout", m_Input.m_MPIRank);
   if (m_Input.m_PtlMin >= m_Input.m_PtlMax)
     {
       count = m_Input.m_PtlMax;
     }
   else
-    {      
+    {
       std::random_device rd;  // a seed source for the random number engine
       std::mt19937 gen(rd()); // mersenne_twister_engine seeded with rd()
       std::uniform_int_distribution<> distrib(m_Input.m_PtlMin, m_Input.m_PtlMax);
@@ -756,7 +756,7 @@ void BasicParticlePattern::getParticleLayout(unsigned long& offset, unsigned lon
   }
   //Timer g("Gather Particle logistics ", m_Input.m_MPIRank);
   Checkpoint x("  GetPTLOffset", m_Input.m_MPIRank);
-  
+
   std::vector<unsigned long> result(m_Input.m_MPISize, 0);
   //unsigned long  buffer[m_Input.m_MPISize];
   MPI_Allgather (&count, 1, MPI_UNSIGNED_LONG, result.data(), 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
