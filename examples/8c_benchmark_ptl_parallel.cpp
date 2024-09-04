@@ -487,10 +487,10 @@ int parseArgs(int argc, char *argv[], TestInput &input)
         }
 
         infile.close();
-    return 1;
+        return 1;
     }
-    std::cout<<" Expecting: "<<argv[0]<<" <input file> "<<std::endl;
-    return -1;
+    std::cout<<" No input file. Using defaults.  Otherwise, try: "<<argv[0]<<" <input file> "<<std::endl;
+    return 1;
 }
 
 
