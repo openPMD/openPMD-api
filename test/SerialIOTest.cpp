@@ -928,7 +928,11 @@ inline void constant_scalar(std::string const &file_ending)
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
-        E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
+        // check that const-type unique pointers work in the builder pattern
+        E_y.prepareLoadStore()
+            .extent({1, 2, 3})
+            .withUniquePtr(std::move(E).static_cast_<unsigned int const>())
+            .enqueueStore();
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.iterations[1].meshes["E"];
@@ -1676,13 +1680,17 @@ inline void write_test(const std::string &backend)
     auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
 
     auto variantTypeDataset = rc.loadChunkVariant();
+    auto variantTypeDataset2 = rc.prepareLoadStore().enqueueLoadVariant().get();
     rc.seriesFlush();
-    std::visit(
-        [](auto &&shared_ptr) {
-            std::cout << "First value in loaded chunk: '" << shared_ptr.get()[0]
-                      << '\'' << std::endl;
-        },
-        variantTypeDataset);
+    for (auto ptr : {&variantTypeDataset, &variantTypeDataset2})
+    {
+        std::visit(
+            [](auto &&shared_ptr) {
+                std::cout << "First value in loaded chunk: '"
+                          << shared_ptr.get()[0] << '\'' << std::endl;
+            },
+            *ptr);
+    }
 
 #ifndef _WIN32
     REQUIRE(read.rankTable(/* collective = */ false) == compare);
@@ -2892,7 +2900,7 @@ TEST_CASE("git_hdf5_legacy_picongpu", "[serial][hdf5]")
         auto radiationMask =
             o.iterations[200]
                 .particles["e"]["radiationMask"][RecordComponent::SCALAR];
-        switchNonVectorType<LoadDataset>(
+        switchDatasetType<LoadDataset>(
             radiationMask.getDatatype(), radiationMask);
 
         auto particlePatches = o.iterations[200].particles["e"].particlePatches;

@@ -23,10 +23,14 @@
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+
+// comment
+#include "openPMD/DatatypeMacros.hpp"
 
 #include <algorithm>
 #include <climits>
@@ -61,6 +65,42 @@ RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 {
     setData(std::make_shared<Data_t>());
 }
+
+ConfigureLoadStore RecordComponent::prepareLoadStore()
+{
+    return ConfigureLoadStore{*this};
+}
+
+namespace
+{
+#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
+    (defined(__apple_build_version__) && __clang_major__ < 14)
+    template <typename T>
+    auto createSpanBufferFallback(size_t size) -> std::shared_ptr<T>
+    {
+        return std::shared_ptr<T>{new T[size], [](auto *ptr) { delete[] ptr; }};
+    }
+#else
+    template <typename T>
+    auto createSpanBufferFallback(size_t size) -> std::shared_ptr<T[]>
+    {
+        return std::shared_ptr<T[]>{new T[size]};
+    }
+#endif
+} // namespace
+
+template <typename T>
+DynamicMemoryView<T>
+RecordComponent::storeChunkSpan_impl(internal::LoadStoreConfig cfg)
+{
+    return storeChunkSpanCreateBuffer_impl<T>(
+        std::move(cfg), &createSpanBufferFallback<T>);
+}
+#define OPENPMD_INSTANTIATE(dtype)                                             \
+    template DynamicMemoryView<dtype> RecordComponent::storeChunkSpan_impl(    \
+        internal::LoadStoreConfig cfg);
+OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
+#undef OPENPMD_INSTANTIATE
 
 RecordComponent::RecordComponent(NoInit) : BaseRecordComponent(NoInit())
 {}
@@ -459,14 +499,18 @@ void RecordComponent::readBase(bool require_unit_si)
     }
 }
 
-void RecordComponent::storeChunk(
-    auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
+void RecordComponent::storeChunk_impl(
+    auxiliary::WriteBuffer buffer,
+    Datatype dtype,
+    internal::LoadStoreConfigWithBuffer cfg)
 {
+    auto [o, e, memorySelection] = std::move(cfg);
     verifyChunk(dtype, o, e);
 
     Parameter<Operation::WRITE_DATASET> dWrite;
     dWrite.offset = std::move(o);
     dWrite.extent = std::move(e);
+    dWrite.memorySelection = memorySelection;
     dWrite.dtype = dtype;
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::move(buffer);

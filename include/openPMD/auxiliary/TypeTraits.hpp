@@ -196,5 +196,4 @@ namespace detail
         using type = std::variant<>;
     };
 } // namespace detail
-
 } // namespace openPMD::auxiliary

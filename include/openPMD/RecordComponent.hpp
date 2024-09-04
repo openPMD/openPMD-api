@@ -22,6 +22,7 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
@@ -114,6 +115,17 @@ namespace internal
     class BaseRecordData;
 } // namespace internal
 
+namespace core
+{
+    class ConfigureLoadStore;
+    template <typename>
+    class ConfigureLoadStoreFromBuffer;
+    template <typename>
+    class ConfigureStoreChunkFromBuffer;
+    struct VisitorEnqueueLoadVariant;
+    struct VisitorLoadVariant;
+} // namespace core
+
 template <typename>
 class BaseRecord;
 
@@ -135,6 +147,13 @@ class RecordComponent : public BaseRecordComponent
     friend class MeshRecordComponent;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    friend class core::ConfigureLoadStore;
+    template <typename>
+    friend class core::ConfigureLoadStoreFromBuffer;
+    template <typename>
+    friend class core::ConfigureStoreChunkFromBuffer;
+    friend struct core::VisitorEnqueueLoadVariant;
+    friend struct core::VisitorLoadVariant;
 
 public:
     enum class Allocation
@@ -229,8 +248,8 @@ public:
     template <typename T>
     std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
 
-    using shared_ptr_dataset_types = auxiliary::detail::
-        map_variant<auxiliary::detail::as_shared_pointer, dataset_types>::type;
+    using shared_ptr_dataset_types =
+        auxiliary::detail::shared_ptr_dataset_types;
 
     /** std::variant-based version of allocating loadChunk<T>(Offset, Extent)
      *
@@ -268,25 +287,6 @@ public:
     template <typename T>
     void loadChunk(std::shared_ptr<T> data, Offset offset, Extent extent);
 
-    /** Load a chunk of data into pre-allocated memory, array version.
-     *
-     * @param data   Preallocated, contiguous buffer, large enough to load the
-     *               the requested data into it.
-     *               The shared pointer must own and manage the buffer.
-     *               Optimizations might be implemented based on this
-     *               assumption (e.g. skipping the operation if the backend
-     *               is the unique owner).
-     *               The array-based overload helps avoid having to manually
-     *               specify the delete[] destructor (C++17 feature).
-     * @param offset Offset within the dataset. Set to {0u} for full selection.
-     * @param extent Extent within the dataset, counted from the offset.
-     *               Set to {-1u} for full selection.
-     *               If offset is non-zero and extent is {-1u} the leftover
-     *               extent in the record component will be selected.
-     */
-    template <typename T>
-    void loadChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
-
     /** Load a chunk of data into pre-allocated memory, raw pointer version.
      *
      * @param data   Preallocated, contiguous buffer, large enough to load the
@@ -304,6 +304,8 @@ public:
      */
     template <typename T>
     void loadChunkRaw(T *data, Offset offset, Extent extent);
+
+    ConfigureLoadStore prepareLoadStore();
 
     /** Store a chunk of data from a chunk of memory.
      *
@@ -325,18 +327,6 @@ public:
      */
     template <typename T>
     void storeChunk(std::shared_ptr<T> data, Offset offset, Extent extent);
-
-    /** Store a chunk of data from a chunk of memory, array version.
-     *
-     * @param data   Preallocated, contiguous buffer, large enough to read the
-     *               the specified data from it.
-     *               The array-based overload helps avoid having to manually
-     *               specify the delete[] destructor (C++17 feature).
-     * @param offset Offset within the dataset.
-     * @param extent Extent within the dataset, counted from the offset.
-     */
-    template <typename T>
-    void storeChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
 
     /** Store a chunk of data from a chunk of memory, unique pointer version.
      *
@@ -500,8 +490,22 @@ private:
      */
     RecordComponent &makeEmpty(Dataset d);
 
-    void storeChunk(
-        auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
+    void storeChunk_impl(
+        auxiliary::WriteBuffer buffer,
+        Datatype datatype,
+        internal::LoadStoreConfigWithBuffer);
+
+    template <typename T>
+    DynamicMemoryView<T> storeChunkSpan_impl(internal::LoadStoreConfig);
+    template <typename T, typename F>
+    DynamicMemoryView<T> storeChunkSpanCreateBuffer_impl(
+        internal::LoadStoreConfig, F &&createBuffer);
+
+    template <typename T>
+    void
+        loadChunk_impl(std::shared_ptr<T>, internal::LoadStoreConfigWithBuffer);
+    template <typename T>
+    std::shared_ptr<T> loadChunkAllocate_impl(internal::LoadStoreConfig);
 
     // clang-format off
 OPENPMD_protected

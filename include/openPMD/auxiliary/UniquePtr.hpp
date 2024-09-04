@@ -170,10 +170,11 @@ template <typename U>
 UniquePtrWithLambda<U> UniquePtrWithLambda<T>::static_cast_() &&
 {
     using other_type = std::remove_extent_t<U>;
+    auto original_ptr = this->release();
     return UniquePtrWithLambda<U>{
-        static_cast<other_type *>(this->release()),
-        [deleter = std::move(this->get_deleter())](other_type *ptr) {
-            deleter(static_cast<T_decayed *>(ptr));
+        static_cast<other_type *>(original_ptr),
+        [deleter = std::move(this->get_deleter()), original_ptr](other_type *) {
+            deleter(original_ptr);
         }};
 }
 } // namespace openPMD

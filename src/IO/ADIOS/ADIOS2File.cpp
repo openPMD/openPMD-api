@@ -22,10 +22,12 @@
 #include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <optional>
 #include <stdexcept>
 
 #if openPMD_USE_VERIFY
@@ -59,8 +61,8 @@ void DatasetReader::call(
     adios2::Engine &engine,
     std::string const &fileName)
 {
-    adios2::Variable<T> var =
-        impl->verifyDataset<T>(bp.param.offset, bp.param.extent, IO, bp.name);
+    adios2::Variable<T> var = impl->verifyDataset<T>(
+        bp.param.offset, bp.param.extent, std::nullopt, IO, bp.name);
     if (!var)
     {
         throw std::runtime_error(
@@ -73,6 +75,12 @@ void DatasetReader::call(
 
 template <class>
 inline constexpr bool always_false_v = false;
+
+static constexpr char const *warningMemorySelection =
+    "[Warning] Using a version of ADIOS2 that cannot reset memory selections "
+    "on a variable, once specified. When using memory selections, then please "
+    "specify it explicitly on all storeChunk() calls. Further info: "
+    "https://github.com/ornladios/ADIOS2/pull/4169.";
 
 template <typename T>
 void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
@@ -89,9 +97,26 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                 auto ptr = static_cast<T const *>(arg.get());
 
                 adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
-                    bp.param.offset, bp.param.extent, ba.m_IO, bp.name);
+                    bp.param.offset,
+                    bp.param.extent,
+                    bp.param.memorySelection,
+                    ba.m_IO,
+                    bp.name);
 
                 ba.getEngine().Put(var, ptr);
+                if (bp.param.memorySelection.has_value())
+                {
+                    if constexpr (CanTheMemorySelectionBeReset)
+                    {
+                        var.SetMemorySelection();
+                    }
+                    else if (!ba.m_impl->printedWarningsAlready.memorySelection)
+                    {
+                        std::cerr << warningMemorySelection << std::endl;
+                        ba.m_impl->printedWarningsAlready.memorySelection =
+                            true;
+                    }
+                }
             }
             else if constexpr (std::is_same_v<
                                    ptr_type,
@@ -101,6 +126,7 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                 bput.name = std::move(bp.name);
                 bput.offset = std::move(bp.param.offset);
                 bput.extent = std::move(bp.param.extent);
+                bput.memorySelection = std::move(bp.param.memorySelection);
                 /*
                  * Note: Moving is required here since it's a unique_ptr.
                  * std::forward<>() would theoretically work, but it
@@ -147,8 +173,24 @@ struct RunUniquePtrPut
     {
         auto ptr = static_cast<T const *>(bufferedPut.data.get());
         adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
-            bufferedPut.offset, bufferedPut.extent, ba.m_IO, bufferedPut.name);
+            bufferedPut.offset,
+            bufferedPut.extent,
+            bufferedPut.memorySelection,
+            ba.m_IO,
+            bufferedPut.name);
         ba.getEngine().Put(var, ptr);
+        if (bufferedPut.memorySelection.has_value())
+        {
+            if constexpr (CanTheMemorySelectionBeReset)
+            {
+                var.SetMemorySelection();
+            }
+            else if (!ba.m_impl->printedWarningsAlready.memorySelection)
+            {
+                std::cerr << warningMemorySelection << std::endl;
+                ba.m_impl->printedWarningsAlready.memorySelection = true;
+            }
+        }
     }
 
     static constexpr char const *errorMsg = "RunUniquePtrPut";

@@ -600,14 +600,6 @@ struct StoreChunkSpan
 
     static constexpr char const *errorMsg = "RecordComponent.store_chunk()";
 };
-
-template <>
-PythonDynamicMemoryView StoreChunkSpan::call<std::string>(
-    RecordComponent &, Offset const &, Extent const &)
-{
-    throw std::runtime_error(
-        "[RecordComponent.store_chunk()] Only PODs allowed.");
-}
 } // namespace
 
 inline PythonDynamicMemoryView store_chunk_span(
@@ -628,7 +620,7 @@ inline PythonDynamicMemoryView store_chunk_span(
         std::begin(shape),
         [&maskIt](std::uint64_t) { return !*(maskIt++); });
 
-    return switchNonVectorType<StoreChunkSpan>(
+    return switchDatasetType<StoreChunkSpan>(
         r.getDatatype(), r, offset, extent);
 }
 
@@ -698,7 +690,7 @@ void load_chunk(
         }
     }
 
-    switchNonVectorType<LoadChunkIntoPythonBuffer>(
+    switchDatasetType<LoadChunkIntoPythonBuffer>(
         r.getDatatype(), r, buffer, buffer_info, offset, extent);
 }
 

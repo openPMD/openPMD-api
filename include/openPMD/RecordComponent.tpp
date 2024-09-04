@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "openPMD/Error.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -29,6 +31,7 @@
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <memory>
+#include <optional>
 #include <type_traits>
 
 namespace openPMD
@@ -58,45 +61,93 @@ template <typename T>
 inline std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
+    auto operation = prepareLoadStore();
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
+    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    {
+        operation.offset(std::move(o));
+    }
 
     //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if (e.size() == 1u && e.at(0) == -1u)
+    if (e.size() != 1u || e.at(0) != -1u)
     {
-        extent = getExtent();
-        for (uint8_t i = 0u; i < dim; ++i)
-            extent[i] -= offset[i];
+        operation.extent(std::move(e));
     }
-    else
-        extent = e;
 
-    uint64_t numPoints = 1u;
-    for (auto const &dimensionSize : extent)
-        numPoints *= dimensionSize;
+    return operation.load<T>(EnqueuePolicy::Defer);
+}
+
+template <typename T>
+inline std::shared_ptr<T>
+RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
+{
+    static_assert(!std::is_same_v<T, std::string>, "EVIL");
+    auto [o, e] = std::move(cfg);
+
+    size_t numPoints = 1;
+    for (auto val : e)
+    {
+        numPoints *= val;
+    }
 
 #if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
     (defined(__apple_build_version__) && __clang_major__ < 14)
     auto newData =
         std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
-    loadChunk(newData, offset, extent);
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withSharedPtr(newData)
+        .load(EnqueuePolicy::Defer);
     return newData;
 #else
     auto newData = std::shared_ptr<T[]>(new T[numPoints]);
-    loadChunk(newData, offset, extent);
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withSharedPtr(newData)
+        .load(EnqueuePolicy::Defer);
     return std::static_pointer_cast<T>(std::move(newData));
 #endif
 }
 
-template <typename T>
-inline void
-RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
+template <typename T_with_extent>
+inline void RecordComponent::loadChunk(
+    std::shared_ptr<T_with_extent> data, Offset o, Extent e)
 {
+    static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
+    uint8_t dim = getDimensionality();
+    auto operation = prepareLoadStore();
+
+    // default arguments
+    //   offset = {0u}: expand to right dim {0u, 0u, ...}
+    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    {
+        operation.offset(std::move(o));
+    }
+
+    //   extent = {-1u}: take full size
+    if (e.size() != 1u || e.at(0) != -1u)
+    {
+        operation.extent(std::move(e));
+    }
+
+    operation.withSharedPtr(std::move(data)).load(EnqueuePolicy::Defer);
+}
+
+template <typename T_with_extent>
+inline void RecordComponent::loadChunk_impl(
+    std::shared_ptr<T_with_extent> data,
+    internal::LoadStoreConfigWithBuffer cfg)
+{
+    if (cfg.memorySelection.has_value())
+    {
+        throw error::WrongAPIUsage(
+            "Unsupported: Memory selections in chunk loading.");
+    }
+    using T = std::remove_cv_t<std::remove_extent_t<T_with_extent>>;
     Datatype dtype = determineDatatype(data);
     if (dtype != getDatatype())
         if (!isSameInteger<T>(getDatatype()) &&
@@ -113,24 +164,8 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
             throw std::runtime_error(err_msg);
         }
 
-    uint8_t dim = getDimensionality();
-
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
-
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if (e.size() == 1u && e.at(0) == -1u)
-    {
-        extent = getExtent();
-        for (uint8_t i = 0u; i < dim; ++i)
-            extent[i] -= offset[i];
-    }
-    else
-        extent = e;
+    auto dim = getDimensionality();
+    auto [offset, extent, memorySelection] = std::move(cfg);
 
     if (extent.size() != dim || offset.size() != dim)
     {
@@ -149,9 +184,6 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
                 "Chunk does not reside inside dataset (Dimension on index " +
                 std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
                 " - Chunk: " + std::to_string(offset[i] + extent[i]) + ")");
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk loading.");
 
     auto &rc = get();
     if (constant())
@@ -162,7 +194,7 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 
         T value = rc.m_constantValue.get<T>();
 
-        T *raw_ptr = data.get();
+        auto raw_ptr = static_cast<T *>(data.get());
         std::fill(raw_ptr, raw_ptr + numPoints, value);
     }
     else
@@ -177,76 +209,56 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 }
 
 template <typename T>
-inline void RecordComponent::loadChunk(
-    std::shared_ptr<T[]> ptr, Offset offset, Extent extent)
-{
-    loadChunk(
-        std::static_pointer_cast<T>(std::move(ptr)),
-        std::move(offset),
-        std::move(extent));
-}
-
-template <typename T>
 inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    loadChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
+    prepareLoadStore()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .withRawPtr(ptr)
+        .load(EnqueuePolicy::Defer);
 }
 
 template <typename T>
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype(data);
-
-    /* std::static_pointer_cast correctly reference-counts the pointer */
-    storeChunk(
-        auxiliary::WriteBuffer(std::static_pointer_cast<void const>(data)),
-        dtype,
-        std::move(o),
-        std::move(e));
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withSharedPtr(std::move(data))
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T>
 inline void
 RecordComponent::storeChunk(UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype<>(data);
-
-    storeChunk(
-        auxiliary::WriteBuffer{std::move(data).template static_cast_<void>()},
-        dtype,
-        std::move(o),
-        std::move(e));
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withUniquePtr(std::move(data))
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T, typename Del>
 inline void
 RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
 {
-    storeChunk(
-        UniquePtrWithLambda<T>(std::move(data)), std::move(o), std::move(e));
-}
-
-template <typename T>
-inline void
-RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
-{
-    storeChunk(
-        std::static_pointer_cast<T>(std::move(data)),
-        std::move(o),
-        std::move(e));
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withUniquePtr(std::move(data))
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T>
 void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    storeChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
+    prepareLoadStore()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .withRawPtr(ptr)
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T_ContiguousContainer>
@@ -254,39 +266,48 @@ inline typename std::enable_if_t<
     auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>
 RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
-    uint8_t dim = getDimensionality();
+    auto storeChunkConfig = prepareLoadStore();
 
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u)
+    auto joined_dim = joinedDimension();
+    if (!joined_dim.has_value() && (o.size() != 1 || o.at(0) != 0u))
     {
-        if (joinedDimension().has_value())
-        {
-            offset.clear();
-        }
-        else if (dim > 1u)
-        {
-            offset = Offset(dim, 0u);
-        }
+        storeChunkConfig.offset(std::move(o));
+    }
+    if (e.size() != 1 || e.at(0) != -1u)
+    {
+        storeChunkConfig.extent(std::move(e));
     }
 
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    //   avoid outsmarting the user:
-    //   - stdlib data container implement 1D -> 1D chunk to write
-    if (e.size() == 1u && e.at(0) == -1u && dim == 1u)
-        extent.at(0) = data.size();
-    else
-        extent = e;
-
-    storeChunk(auxiliary::shareRaw(data.data()), offset, extent);
+    std::move(storeChunkConfig)
+        .withContiguousContainer(data)
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
+    return prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .enqueueStore<T>(std::forward<F>(createBuffer));
+}
+
+template <typename T>
+inline DynamicMemoryView<T>
+RecordComponent::storeChunk(Offset offset, Extent extent)
+{
+    return prepareLoadStore()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .enqueueStore<T>();
+}
+
+template <typename T, typename F>
+inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
+    internal::LoadStoreConfig cfg, F &&createBuffer)
+{
+    auto [o, e] = std::move(cfg);
     verifyChunk<T>(o, e);
 
     /*
@@ -341,20 +362,6 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
 }
 
-template <typename T>
-inline DynamicMemoryView<T>
-RecordComponent::storeChunk(Offset offset, Extent extent)
-{
-    return storeChunk<T>(std::move(offset), std::move(extent), [](size_t size) {
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
-    (defined(__apple_build_version__) && __clang_major__ < 14)
-        return std::shared_ptr<T>{new T[size], [](auto *ptr) { delete[] ptr; }};
-#else
-            return std::shared_ptr< T[] >{ new T[ size ] };
-#endif
-    });
-}
-
 namespace detail
 {
     template <typename Functor, typename Res>
@@ -391,5 +398,14 @@ template <typename T>
 void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
 {
     verifyChunk(determineDatatype<T>(), o, e);
+}
+
+// definitions for LoadStoreChunk.hpp
+template <typename T, typename F>
+auto core::ConfigureLoadStore::enqueueStore(F &&createBuffer)
+    -> DynamicMemoryView<T>
+{
+    return m_rc.storeChunkSpanCreateBuffer_impl<T>(
+        storeChunkConfig(), std::forward<F>(createBuffer));
 }
 } // namespace openPMD

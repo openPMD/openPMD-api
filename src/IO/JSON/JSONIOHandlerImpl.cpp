@@ -873,6 +873,13 @@ void JSONIOHandlerImpl::writeDataset(
         access::write(m_handler->m_backendAccess),
         "[JSON] Cannot write data in read-only mode.");
 
+    if (parameters.memorySelection.has_value())
+    {
+        throw error::OperationUnsupportedInBackend(
+            "JSON",
+            "Non-contiguous memory selections not supported in JSON backend.");
+    }
+
     auto pos = setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable);
     auto &j = obtainJsonContents(writable);

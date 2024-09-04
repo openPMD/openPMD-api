@@ -180,9 +180,10 @@ namespace auxiliary
         WriteBuffer() : m_buffer(UniquePtrWithLambda<void>())
         {}
 
-        template <typename... Args>
-        explicit WriteBuffer(Args &&...args)
-            : m_buffer(std::forward<Args>(args)...)
+        WriteBuffer(std::shared_ptr<void const> ptr) : m_buffer(std::move(ptr))
+        {}
+
+        WriteBuffer(UniquePtrWithLambda<void> ptr) : m_buffer(std::move(ptr))
         {}
 
         WriteBuffer(WriteBuffer &&) = default;
@@ -196,7 +197,7 @@ namespace auxiliary
             return *this;
         }
 
-        WriteBuffer const &operator=(UniquePtrWithLambda<void const> ptr)
+        WriteBuffer const &operator=(UniquePtrWithLambda<void> ptr)
         {
             m_buffer = std::move(ptr);
             return *this;

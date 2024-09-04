@@ -239,7 +239,7 @@ MPIBenchmark<DatasetFillerProvider>::runBenchmark(int rootThread)
     }
     for (Datatype dt : datatypes)
     {
-        switchType<BenchmarkExecution<Clock>>(dt, exec, res, rootThread);
+        switchDatasetType<BenchmarkExecution<Clock>>(dt, exec, res, rootThread);
     }
 
     return res;
