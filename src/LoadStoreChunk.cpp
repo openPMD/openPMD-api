@@ -237,7 +237,8 @@ namespace core
     }
 
     template <typename Ptr_Type>
-    auto ConfigureLoadStoreFromBuffer<Ptr_Type>::enqueueLoad() -> void
+    auto ConfigureLoadStoreFromBuffer<Ptr_Type>::enqueueLoad()
+        -> auxiliary::DeferredComputation<void>
     {
         static_assert(
             std::is_same_v<
@@ -249,6 +250,10 @@ namespace core
             "shared_ptr type.");
         this->m_rc.loadChunk_impl(
             std::move(this->m_buffer), this->storeChunkConfig());
+        return auxiliary::DeferredComputation<void>(
+            [rc_lambda = this->m_rc]() mutable -> void {
+                rc_lambda.seriesFlush();
+            });
     }
 
     template <typename Ptr_Type>

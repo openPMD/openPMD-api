@@ -203,7 +203,7 @@ namespace core
         using ConfigureStoreChunkFromBuffer<
             Ptr_Type>::ConfigureStoreChunkFromBuffer;
 
-        auto enqueueLoad() -> void;
+        auto enqueueLoad() -> auxiliary::DeferredComputation<void>;
 
         auto load(EnqueuePolicy) -> void;
     };
