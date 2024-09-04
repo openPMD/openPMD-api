@@ -28,6 +28,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/WriteIterations.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -691,6 +692,17 @@ public:
      * this method.
      */
     void close();
+
+    /**
+     * This overrides Attributable::iterationFlush() which will fail on Series.
+     */
+    template <typename X = void, typename... Args>
+    auto iterationFlush(Args &&...)
+    {
+        static_assert(
+            auxiliary::dependent_false_v<X>,
+            "Cannot call this on an instance of Series.");
+    }
 
     // clang-format off
 OPENPMD_private
