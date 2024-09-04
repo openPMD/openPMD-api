@@ -20,6 +20,7 @@
  */
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include <stdexcept>
@@ -44,14 +45,17 @@ Writable::~Writable()
         IOTask(this, Parameter<Operation::DEREGISTER>(parent)));
 }
 
-void Writable::seriesFlush(std::string backendConfig, bool flush_entire_series)
+template <bool flush_entire_series>
+void Writable::seriesFlush(std::string backendConfig)
 {
-    seriesFlush(
-        {FlushLevel::UserFlush, std::move(backendConfig)}, flush_entire_series);
+    seriesFlush<flush_entire_series>(
+        {FlushLevel::UserFlush, std::move(backendConfig)});
 }
+template void Writable::seriesFlush<true>(std::string backendConfig);
+template void Writable::seriesFlush<false>(std::string backendConfig);
 
-void Writable::seriesFlush(
-    internal::FlushParams const &flushParams, bool flush_entire_series)
+template <bool flush_entire_series>
+void Writable::seriesFlush(internal::FlushParams const &flushParams)
 {
     Attributable impl;
     impl.setData({attributable, [](auto const *) {}});
@@ -63,8 +67,14 @@ void Writable::seriesFlush(
     auto series = series_internal->asInternalCopyOf<Series>();
     auto [begin, end] = [&, &iteration_internal_lambda = iteration_internal]()
         -> std::pair<Series::iterations_iterator, Series::iterations_iterator> {
-        if (flush_entire_series && iteration_internal_lambda)
+        if (!flush_entire_series)
         {
+            if (!iteration_internal_lambda.has_value())
+            {
+                throw std::runtime_error(
+                    "[Writable::seriesFlush()] Requested flushing the "
+                    "containing Iteration, but no Iteration was found?");
+            }
             auto it = series.iterations.begin();
             auto end_lambda = series.iterations.end();
             for (; it != end_lambda; ++it)
@@ -89,5 +99,8 @@ void Writable::seriesFlush(
     }();
     series.flush_impl(begin, end, flushParams);
 }
-
+template void
+Writable::seriesFlush<true>(internal::FlushParams const &flushParams);
+template void
+Writable::seriesFlush<false>(internal::FlushParams const &flushParams);
 } // namespace openPMD

@@ -270,14 +270,22 @@ public:
      *                      implement this flush call.
      *                      Must be provided in-line, configuration is not read
      *                      from files.
-     * @param flush_entire_series By default, this method is just a shortcut
-     *        for Series::flush() when you don't currently have a Series handle
-     *        at hand. If however the current object is an Iteration or
-     *        contained within an Iteration, flushing can be restricted to that
-     *        specific Iteration by setting this flag to false.
      */
-    void seriesFlush(
-        std::string backendConfig = "{}", bool flush_entire_series = true);
+    void seriesFlush(std::string backendConfig = "{}");
+
+    /** Flush the containing Iteration.
+     *
+     * Writable connects all objects of an openPMD series through a linked list
+     * of parents. This method will walk up the parent list to find
+     * the containing Iteration.
+     * The Iteration will be flushed regardless if it is dirty.
+     *
+     * @param backendConfig Further backend-specific instructions on how to
+     *                      implement this flush call.
+     *                      Must be provided in-line, configuration is not read
+     *                      from files.
+     */
+    void iterationFlush(std::string backendConfig = "{}");
 
     /** String serialization to describe an Attributable
      *
@@ -342,7 +350,8 @@ OPENPMD_protected
                                    internal::SeriesData *>;
     /** @} */
 
-    void seriesFlush(internal::FlushParams const &, bool flush_entire_series);
+    template <bool flush_entire_series>
+    void seriesFlush(internal::FlushParams const &);
 
     void flushAttributes(internal::FlushParams const &);
 

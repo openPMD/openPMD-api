@@ -118,10 +118,16 @@ Attributable &Attributable::setComment(std::string const &c)
     return *this;
 }
 
-void Attributable::seriesFlush(
-    std::string backendConfig, bool flush_entire_series)
+void Attributable::seriesFlush(std::string backendConfig)
 {
-    writable().seriesFlush(std::move(backendConfig), flush_entire_series);
+    writable().seriesFlush</* flush_entire_series = */ true>(
+        std::move(backendConfig));
+}
+
+void Attributable::iterationFlush(std::string backendConfig)
+{
+    writable().seriesFlush</* flush_entire_series = */ false>(
+        std::move(backendConfig));
 }
 
 Series Attributable::retrieveSeries() const
@@ -246,11 +252,15 @@ void Attributable::touch()
     setDirtyRecursive(true);
 }
 
-void Attributable::seriesFlush(
-    internal::FlushParams const &flushParams, bool flush_entire_series)
+template <bool flush_entire_series>
+void Attributable::seriesFlush(internal::FlushParams const &flushParams)
 {
-    writable().seriesFlush(flushParams, flush_entire_series);
+    writable().seriesFlush<flush_entire_series>(flushParams);
 }
+template void
+Attributable::seriesFlush<true>(internal::FlushParams const &flushParams);
+template void
+Attributable::seriesFlush<false>(internal::FlushParams const &flushParams);
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)
 {
