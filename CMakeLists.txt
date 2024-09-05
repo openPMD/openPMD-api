@@ -215,6 +215,10 @@ endfunction()
 
 # Dependencies ################################################################
 #
+include(FetchContent)
+
+message(STATUS "Attempt superbuild: ${openPMD_SUPERBUILD}")
+
 # external library: MPI (optional)
 # Implementation quirks for BullMPI, Clang+MPI and Brew's MPICH
 #   definitely w/o MPI::MPI_C:
@@ -225,7 +229,6 @@ endfunction()
 #     Clang+MPI: Potentially needed MPI::MPI_C targets in the past
 #                (exact MPI flavor & Clang version lost)
 #     BullMPI: PUBLIC dependency to MPI::MPI_CXX is missing in MPI::MPI_C target
-include(FetchContent)
 set(openPMD_MPI_LINK_C_DEFAULT OFF)
 option(openPMD_MPI_LINK_C  "Also link the MPI C targets" ${openPMD_MPI_LINK_C_DEFAULT})
 mark_as_advanced(openPMD_MPI_LINK_C)
@@ -253,21 +256,25 @@ endif()
 
 # external library: nlohmann-json (required)
 if(openPMD_USE_INTERNAL_JSON)
-    message(STATUS "Fetching nlohmann-json from https://github.com/nlohmann/json")
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
-        set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json/")
-    else()
-        set(fetchcontent_args)
-    endif()
-    FetchContent_Declare(
-      nlohmann_json
-      GIT_REPOSITORY https://github.com/nlohmann/json.git
-      GIT_TAG v3.11.3
-      "${fetchcontent_args}"
-    )
-    unset(fetchcontent_args)
     set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON option defiend internally by openPMD")
     set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON option defiend internally by openPMD")  # only used PRIVATE
+
+    # Git fetcher
+    set(openPMD_json_repo "https://github.com/nlohmann/json.git"
+        CACHE STRING
+        "Repository URI to pull and build nlohmann-json from if(openPMD_USE_INTERNAL_JSON)")
+    set(openPMD_json_branch "v3.11.3"
+        CACHE STRING
+        "Repository branch for openPMD_json_repo if(openPMD_USE_INTERNAL_JSON)")
+
+    message(STATUS "Downloading nlohmann-json ...")
+    message(STATUS "nlohmann-json repository: ${openPMD_json_repo} (${openPMD_json_branch})")
+
+    FetchContent_Declare(nlohmann_json
+      GIT_REPOSITORY  ${openPMD_json_repo}
+      GIT_TAG         ${openPMD_json_branch}
+      BUILD_IN_SOURCE 0
+    )
     FetchContent_MakeAvailable(nlohmann_json)
 else()
     find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
@@ -279,22 +286,25 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
 
 # external library: toml11
 if(openPMD_USE_INTERNAL_TOML11)
-    message(STATUS "Fetching toml11 from https://github.com/ToruNiina/toml11")
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
-        set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11/")
-    else()
-        set(fetchcontent_args)
-    endif()
+    set(toml11_INSTALL OFF CACHE INTERNAL "toml11 option defined internally by openPMD")
+
+    # Git fetcher
+    set(openPMD_toml11_repo "https://github.com/ToruNiina/toml11.git"
+        CACHE STRING
+        "Repository URI to pull and build toml11 from if(openPMD_USE_INTERNAL_TOML11)")
+    set(openPMD_toml11_branch "v3.7.1"
+        CACHE STRING
+        "Repository branch for openPMD_toml11_branch if(openPMD_USE_INTERNAL_TOML11)")
+
+    message(STATUS "Downloading toml11 ...")
+    message(STATUS "toml11 repository: ${openPMD_toml11_repo} (${openPMD_toml11_branch})")
+
     FetchContent_Declare(
       toml11
-      GIT_REPOSITORY https://github.com/ToruNiina/toml11
-      # Migrate to the latest commit to remove CMake Warning which is not yet
-      # available in any official release.
-      GIT_TAG v4.2.0
-      "${fetchcontent_args}"
+      GIT_REPOSITORY  ${openPMD_toml11_repo}
+      GIT_TAG         ${openPMD_toml11_branch}
+      BUILD_IN_SOURCE 0
     )
-    unset(fetchcontent_args)
-    set(toml11_INSTALL OFF CACHE INTERNAL "toml11 option defiend internally by openPMD")
     FetchContent_MakeAvailable(toml11)
 else()
     # toml11 4.0 was a breaking change. This is reflected in the library's CMake
@@ -431,19 +441,23 @@ else()
 endif()
 if(Python_FOUND)
     if(openPMD_USE_INTERNAL_PYBIND11)
-        message(STATUS "Fetching pybind11 from https://github.com/pybind/pybind11")
-        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
-            set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11/")
-        else()
-            set(fetchcontent_args)
-        endif()
+        # Git fetcher
+        set(openPMD_pybind11_repo "https://github.com/pybind/pybind11.git"
+            CACHE STRING
+            "Repository URI to pull and build pybind11 from if(openPMD_USE_INTERNAL_PYBIND11)")
+        set(openPMD_pybind11_branch "v2.12.0"
+            CACHE STRING
+            "Repository branch for openPMD_pybind11_repo if(openPMD_USE_INTERNAL_PYBIND11)")
+
+        message(STATUS "Downloading pybind11 ...")
+        message(STATUS "pybind11 repository: ${openPMD_pybind11_repo} (${openPMD_pybind11_branch})")
+
         FetchContent_Declare(
             pybind11
-            GIT_REPOSITORY https://github.com/pybind/pybind11.git
-            GIT_TAG v2.12.0
-            "${fetchcontent_args}"
+            GIT_REPOSITORY  ${openPMD_pybind11_repo}
+            GIT_TAG         ${openPMD_pybind11_branch}
+            BUILD_IN_SOURCE 0
         )
-        unset(fetchcontent_args)
         FetchContent_MakeAvailable(pybind11)
     else()
         find_package(pybind11 2.12.0 CONFIG)
@@ -576,20 +590,23 @@ target_include_directories(openPMD PUBLIC
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
     if(openPMD_USE_INTERNAL_CATCH)
-        message(STATUS "Fetching catch2 from https://github.com/catchorg/Catch2")
-        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
-            set(fetchcontent_args SOURCE_DIR "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/")
-        else()
-            set(fetchcontent_args)
-        endif()
+        # Git fetcher
+        set(openPMD_catch_repo "https://github.com/catchorg/Catch2.git"
+            CACHE STRING
+            "Repository URI to pull and build catch2 from if(openPMD_USE_INTERNAL_CATCH)")
+        set(openPMD_catch_branch "v2.13.10"  # ToDo Migrate to v3 and latest release
+            CACHE STRING
+            "Repository branch for openPMD_catch_branch if(openPMD_USE_INTERNAL_CATCH)")
+
+        message(STATUS "Downloading Catch2 ...")
+        message(STATUS "Catch2 repository: ${openPMD_catch_repo} (${openPMD_catch_branch})")
+
         FetchContent_Declare(
-          Catch2
-          GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-          # ToDo Migrate to v3 and latest release
-          GIT_TAG v2.13.10
-          "${fetchcontent_args}"
+            Catch2
+            GIT_REPOSITORY  ${openPMD_catch_repo}
+            GIT_TAG         ${openPMD_catch_branch}
+            BUILD_IN_SOURCE 0
         )
-        unset(fetchcontent_args)
         FetchContent_MakeAvailable(Catch2)
     else()
         find_package(Catch2 2.13.10 REQUIRED CONFIG)
