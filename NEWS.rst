@@ -15,6 +15,9 @@ Note that ADIOS2 does not support compression in BP3 files.
 
 pybind11 2.12.0 is now the minimally supported version for Python support.
 
+The ``len(...)`` of many classes has been reworked for consistency and returns now the number of entries (iterations, record components, etc.).
+Previously, this sporadically returned the number of attributes, which is better queried via ``len(<object>.attributes)``.
+
 
 0.15.0
 ------

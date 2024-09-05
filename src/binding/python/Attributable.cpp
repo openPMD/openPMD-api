@@ -629,8 +629,6 @@ void init_Attributable(py::module &m)
         .def("delete_attribute", &Attributable::deleteAttribute)
         .def("contains_attribute", &Attributable::containsAttribute)
 
-        .def("__len__", &Attributable::numAttributes)
-
         // @todo _ipython_key_completions_ if we find a way to add a []
         // interface
 
