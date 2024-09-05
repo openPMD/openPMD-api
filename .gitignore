@@ -97,6 +97,11 @@ Temporary Items
 spack.lock
 
 #########
+# CMake #
+#########
+CMakeUserPresets.json
+
+#########
 # Tools #
 #########
 .stfolder

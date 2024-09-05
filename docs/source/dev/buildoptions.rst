@@ -59,7 +59,7 @@ In order to build with debug symbols, pass ``-DCMAKE_BUILD_TYPE=Debug`` to your 
 Shipped Dependencies
 --------------------
 
-Additionally, the following libraries are shipped internally for convenience.
+Additionally, the following libraries are downloaded and built internally for convenience, with defaults controlled by the ``openPMD_SUPERBUILD`` option.
 These might get installed in your :ref:`CMAKE_INSTALL_PREFIX <install-cmake>` if the option is ``ON``.
 
 The following options allow to switch to external installs of dependencies:
@@ -67,10 +67,11 @@ The following options allow to switch to external installs of dependencies:
 ================================= =========== ======== ============= ========
 CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
-``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2        2.13.10+
-``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11       2.12.0+
-``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.9.1+
-``openPMD_USE_INTERNAL_TOML11``   **ON**/OFF  No       toml11          3.7.1+
+``openPMD_SUPERBUILD``            **ON**/OFF
+``openPMD_USE_INTERNAL_CATCH``    ON/OFF      No       Catch2        2.13.10+
+``openPMD_USE_INTERNAL_PYBIND11`` ON/OFF      No       pybind11       2.12.0+
+``openPMD_USE_INTERNAL_JSON``     ON/OFF      No       NLohmann-JSON   3.9.1+
+``openPMD_USE_INTERNAL_TOML11``   ON/OFF      No       toml11          3.7.1+
 ================================= =========== ======== ============= ========
 
 
