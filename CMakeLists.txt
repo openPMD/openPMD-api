@@ -217,7 +217,7 @@ endfunction()
 #
 include(FetchContent)
 
-message(STATUS "Attempt superbuild: ${openPMD_SUPERBUILD}")
+message(STATUS "openPMD-api superbuild: ${openPMD_SUPERBUILD}")
 
 # external library: MPI (optional)
 # Implementation quirks for BullMPI, Clang+MPI and Brew's MPICH
@@ -255,7 +255,10 @@ endif()
 
 
 # external library: nlohmann-json (required)
-if(openPMD_USE_INTERNAL_JSON)
+if(TARGET nlohmann_json::nlohmann_json)
+    # nothing to do, target already exists in the superbuild
+    message(STATUS "nlohmann_json::nlohmann_json target already imported")
+elseif(openPMD_USE_INTERNAL_JSON)
     set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON option defiend internally by openPMD")
     set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON option defiend internally by openPMD")  # only used PRIVATE
 
@@ -285,7 +288,10 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
     INTERFACE nlohmann_json::nlohmann_json)
 
 # external library: toml11
-if(openPMD_USE_INTERNAL_TOML11)
+if(TARGET toml11::toml11)
+    # nothing to do, target already exists in the superbuild
+    message(STATUS "toml11::toml11 target already imported")
+elseif(openPMD_USE_INTERNAL_TOML11)
     set(toml11_INSTALL OFF CACHE INTERNAL "toml11 option defined internally by openPMD")
 
     # Git fetcher
@@ -440,7 +446,10 @@ else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
 if(Python_FOUND)
-    if(openPMD_USE_INTERNAL_PYBIND11)
+    if(TARGET pybind11::module)
+        # nothing to do, target already exists in the superbuild
+        message(STATUS "pybind11::module target already imported")
+    elseif(openPMD_USE_INTERNAL_PYBIND11)
         # Git fetcher
         set(openPMD_pybind11_repo "https://github.com/pybind/pybind11.git"
             CACHE STRING
@@ -589,7 +598,10 @@ target_include_directories(openPMD PUBLIC
 
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
-    if(openPMD_USE_INTERNAL_CATCH)
+    if(TARGET Catch2::Catch2)
+        # nothing to do, target already exists in the superbuild
+        message(STATUS "Catch2::Catch2 target already imported")
+    elseif(openPMD_USE_INTERNAL_CATCH)
         # Git fetcher
         set(openPMD_catch_repo "https://github.com/catchorg/Catch2.git"
             CACHE STRING
