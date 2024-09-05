@@ -294,7 +294,8 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
      * Flush the openPMD hierarchy to the backend without flushing any actual
      * data yet.
      */
-    seriesFlush</* flush_entire_series = */ false>({FlushLevel::SkeletonOnly});
+    seriesFlush_impl</* flush_entire_series = */ false>(
+        {FlushLevel::SkeletonOnly});
 
     size_t size = 1;
     for (auto ext : e)

@@ -253,14 +253,14 @@ void Attributable::touch()
 }
 
 template <bool flush_entire_series>
-void Attributable::seriesFlush(internal::FlushParams const &flushParams)
+void Attributable::seriesFlush_impl(internal::FlushParams const &flushParams)
 {
     writable().seriesFlush<flush_entire_series>(flushParams);
 }
 template void
-Attributable::seriesFlush<true>(internal::FlushParams const &flushParams);
+Attributable::seriesFlush_impl<true>(internal::FlushParams const &flushParams);
 template void
-Attributable::seriesFlush<false>(internal::FlushParams const &flushParams);
+Attributable::seriesFlush_impl<false>(internal::FlushParams const &flushParams);
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)
 {
