@@ -35,6 +35,8 @@ class ParticleSpecies : public Container<Record>
     friend class Container<ParticleSpecies>;
     friend class Container<Record>;
     friend class Iteration;
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
 public:
     ParticlePatches particlePatches;
@@ -45,15 +47,12 @@ private:
     void read();
     void flush(std::string const &, internal::FlushParams const &) override;
 
-    /**
-     * @brief Check recursively whether this ParticleSpecies is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
+    using Data_t = Container<Record>::ContainerData;
+
+    inline std::shared_ptr<Data_t> getShared()
+    {
+        return m_containerData;
+    }
 };
 
 namespace traits
@@ -66,11 +65,6 @@ namespace traits
         void operator()(T &ret)
         {
             ret.particlePatches.linkHierarchy(ret.writable());
-
-            auto &np = ret.particlePatches["numParticles"];
-            np.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
-            auto &npo = ret.particlePatches["numParticlesOffset"];
-            npo.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
         }
     };
 } // namespace traits

@@ -22,6 +22,7 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/config.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
@@ -29,27 +30,12 @@
 #if openPMD_HAVE_MPI
 //  re-implemented signatures:
 //  include <mpi4py/mpi4py.h>
+#include "openPMD/binding/python/Mpi.hpp"
 #include <mpi.h>
 #endif
 
 #include <sstream>
 #include <string>
-
-#if openPMD_HAVE_MPI
-/** mpi4py communicator wrapper
- *
- * refs:
- * - https://github.com/mpi4py/mpi4py/blob/3.0.0/src/mpi4py/libmpi.pxd#L35-L36
- * - https://github.com/mpi4py/mpi4py/blob/3.0.0/src/mpi4py/MPI.pxd#L100-L105
- * - installed: include/mpi4py/mpi4py.MPI.h
- */
-struct openPMD_PyMPICommObject
-{
-    PyObject_HEAD MPI_Comm ob_mpi;
-    unsigned int flags;
-};
-using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
-#endif
 
 struct SeriesIteratorPythonAdaptor : SeriesIterator
 {
@@ -165,6 +151,13 @@ not possible once it has been closed.
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
 
+    // `clang-format on/off` doesn't help here.
+    // Writing this without a macro would lead to a huge diff due to
+    // clang-format.
+#define OPENPMD_AVOID_CLANG_FORMAT auto cl =
+    OPENPMD_AVOID_CLANG_FORMAT
+#undef OPENPMD_AVOID_CLANG_FORMAT
+
     py::class_<Series, Attributable>(m, "Series")
 
         .def(
@@ -176,77 +169,87 @@ not possible once it has been closed.
             }),
             py::arg("filepath"),
             py::arg("access"),
-            py::arg("options") = "{}")
+            py::arg("options") = "{}",
+            R"END(
+Construct a new Series. Parameters:
+
+* filepath: The file path.
+* at: Access mode.
+* options: Advanced backend configuration via JSON.
+    May be specified as a JSON-formatted string directly, or as a path
+    to a JSON textfile, prepended by an at sign '@'.
+
+For details on access modes, JSON/TOML configuration and iteration encoding,
+refer to:
+
+* https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#access-modes
+* https://openpmd-api.readthedocs.io/en/latest/details/backendconfig.html
+* https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html#iteration-and-series
+
+In case of file-based iteration encoding, the file names for each
+iteration are determined by an expansion pattern that must be specified.
+It takes one out of two possible forms:
+
+1. Simple form: %T is replaced with the iteration index, e.g.
+   `simData_%T.bp` becomes `simData_50.bp`.
+2. Padded form: e.g. %06T is replaced with the iteration index padded to
+   at least six digits. `simData_%06T.bp` becomes `simData_000050.bp`.
+
+The backend is determined:
+
+1. Explicitly via the JSON/TOML parameter `backend`, e.g. `{"backend":
+   "adios2"}`.
+2. Otherwise implicitly from the filename extension, e.g.
+   `simData_%T.h5`.
+
+The filename extension can be replaced with a globbing pattern %E.
+It will be replaced with an automatically determined file name extension:
+
+1. In CREATE mode: The extension is set to a backend-specific default
+   extension. This requires that the backend is specified via JSON/TOML.
+2. In READ_ONLY, READ_WRITE and READ_LINEAR modes: These modes require
+   that files already exist on disk. The disk will be scanned for files
+   that match the pattern and the resulting file extension will be used.
+   If the result is ambiguous or no such file is found, an error is
+   raised.
+3. In APPEND mode: Like (2.), except if no matching file is found. In
+   that case, the procedure of (1.) is used, owing to the fact that
+   APPEND mode can be used to create new datasets.
+            )END")
 #if openPMD_HAVE_MPI
         .def(
             py::init([](std::string const &filepath,
                         Access at,
                         py::object &comm,
                         std::string const &options) {
-                //! TODO perform mpi4py import test and check min-version
-                //!       careful: double MPI_Init risk? only import mpi4py.MPI?
-                //!       required C-API init? probably just checks:
-                //! refs:
-                //! -
-                //! https://bitbucket.org/mpi4py/mpi4py/src/3.0.0/demo/wrap-c/helloworld.c
-                //! - installed: include/mpi4py/mpi4py.MPI_api.h
-                // if( import_mpi4py() < 0 ) { here be dragons }
-
-                if (comm.ptr() == Py_None)
-                    throw std::runtime_error(
-                        "Series: MPI communicator cannot be None.");
-                if (comm.ptr() == nullptr)
-                    throw std::runtime_error(
-                        "Series: MPI communicator is a nullptr.");
-
-                // check type string to see if this is mpi4py
-                //   __str__ (pretty)
-                //   __repr__ (unambiguous)
-                //   mpi4py: <mpi4py.MPI.Intracomm object at 0x7f998e6e28d0>
-                //   pyMPI:  ... (TODO)
-                py::str const comm_pystr = py::repr(comm);
-                std::string const comm_str = comm_pystr.cast<std::string>();
-                if (comm_str.substr(0, 12) != std::string("<mpi4py.MPI."))
-                    throw std::runtime_error(
-                        "Series: comm is not an mpi4py communicator: " +
-                        comm_str);
-                // only checks same layout, e.g. an `int` in `PyObject` could
-                // pass this
-                if (!py::isinstance<py::class_<openPMD_PyMPIIntracommObject> >(
-                        comm.get_type()))
-                    // TODO add mpi4py version from above import check to error
-                    // message
-                    throw std::runtime_error(
-                        "Series: comm has unexpected type layout in " +
-                        comm_str +
-                        " (Mismatched MPI at compile vs. runtime? "
-                        "Breaking mpi4py release?)");
-
-                // todo other possible implementations:
-                // - pyMPI (inactive since 2008?): import mpi; mpi.WORLD
-
-                // reimplementation of mpi4py's:
-                // MPI_Comm* mpiCommPtr = PyMPIComm_Get(comm.ptr());
-                MPI_Comm *mpiCommPtr =
-                    &((openPMD_PyMPIIntracommObject *)(comm.ptr()))->ob_mpi;
-
-                if (PyErr_Occurred())
-                    throw std::runtime_error(
-                        "Series: MPI communicator access error.");
-                if (mpiCommPtr == nullptr)
+                auto variant = pythonObjectAsMpiComm(comm);
+                if (auto errorMsg = std::get_if<std::string>(&variant))
                 {
-                    throw std::runtime_error(
-                        "Series: MPI communicator cast failed. "
-                        "(Mismatched MPI at compile vs. runtime?)");
+                    throw std::runtime_error("[Series] " + *errorMsg);
                 }
-
-                py::gil_scoped_release release;
-                return new Series(filepath, at, *mpiCommPtr, options);
+                else
+                {
+                    py::gil_scoped_release release;
+                    return new Series(
+                        filepath, at, std::get<MPI_Comm>(variant), options);
+                }
             }),
             py::arg("filepath"),
             py::arg("access"),
             py::arg("mpi_communicator"),
-            py::arg("options") = "{}")
+            py::arg("options") = "{}",
+            R"END(
+Construct a new Series. Parameters:
+
+* filepath: The file path.
+* at: Access mode.
+* options: Advanced backend configuration via JSON.
+    May be specified as a JSON-formatted string directly, or as a path
+    to a JSON textfile, prepended by an at sign '@'.
+* mpi_communicator: The MPI communicator
+
+For further details, refer to the non-MPI overload.
+            )END")
 #endif
         .def("__bool__", &Series::operator bool)
         .def(
@@ -280,6 +283,8 @@ this method.
         .def_property("base_path", &Series::basePath, &Series::setBasePath)
         .def_property(
             "meshes_path", &Series::meshesPath, &Series::setMeshesPath)
+        .def("get_rank_table", &Series::rankTable, py::arg("collective"))
+        .def("set_rank_table", &Series::setRankTable, py::arg("my_rank_info"))
         .def_property(
             "particles_path", &Series::particlesPath, &Series::setParticlesPath)
         .def_property("author", &Series::author, &Series::setAuthor)
@@ -317,7 +322,8 @@ this method.
         .def_property("name", &Series::name, &Series::setName)
         .def("flush", &Series::flush, py::arg("backend_config") = "{}")
 
-        .def_property_readonly("backend", &Series::backend)
+        .def_property_readonly(
+            "backend", static_cast<std::string (Series::*)()>(&Series::backend))
 
         // TODO remove in future versions (deprecated)
         .def("set_openPMD", &Series::setOpenPMD)
@@ -395,6 +401,11 @@ There is only one shared iterator state per Series, even when calling
 this method twice.
 Look for the WriteIterations class for further documentation.
             )END");
+
+    add_pickle(
+        cl, [](openPMD::Series series, std::vector<std::string> const &) {
+            return series;
+        });
 
     m.def(
         "merge_json",

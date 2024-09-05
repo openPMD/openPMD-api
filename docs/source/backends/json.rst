@@ -92,7 +92,6 @@ propagate the exception thrown by Niels Lohmann's library.
 
 The (keys) names ``"attributes"``, ``"data"`` and ``"datatype"`` are reserved and must not be used for base/mesh/particles path, records and their components.
 
-A parallel (i.e. MPI) implementation is *not* available.
 
 TOML Restrictions
 -----------------
@@ -106,7 +105,41 @@ TOML does not support null values.
 
 The (keys) names ``"attributes"``, ``"data"`` and ``"datatype"`` are reserved and must not be used for base/mesh/particles path, records and their components.
 
-A parallel (i.e. MPI) implementation is *not* available.
+
+Using in parallel (MPI)
+-----------------------
+
+Parallel I/O is not a first-class citizen in the JSON and TOML backends, and neither backend will "go out of its way" to support parallel workflows.
+
+However there is a rudimentary form of read and write support in parallel:
+
+Parallel reading
+................
+
+In order not to overload the parallel filesystem with parallel reads, read access to JSON datasets is done by rank 0 and then broadcast to all other ranks.
+Note that there is no granularity whatsoever in reading a JSON file.
+A JSON file is always read into memory and broadcast to all other ranks in its entirety.
+
+Parallel writing
+................
+
+When executed in an MPI context, the JSON/TOML backends will not directly output a single text file, but instead a folder containing one file per MPI rank.
+Neither backend will perform any data aggregation at all.
+
+.. note::
+
+  The parallel write support of the JSON/TOML backends is intended mainly for debugging and prototyping workflows.
+
+The folder will use the specified Series name, but append the postfix ``.parallel``.
+(This is a deliberate indication that this folder cannot directly be opened again by the openPMD-api as a JSON/TOML dataset.)
+This folder contains for each MPI rank *i* a file ``mpi_rank_<i>.json`` (resp. ``mpi_rank_<i>.toml``), containing the serial output of that rank.
+A ``README.txt`` with basic usage instructions is also written.
+
+.. note::
+
+  There is no direct support in the openPMD-api to read a JSON/TOML dataset written in this parallel fashion. The single files (e.g. ``data.json.parallel/mpi_rank_0.json``) are each valid openPMD files and can be read separately, however.
+
+  Note that the auxiliary function ``json::merge()`` (or in Python ``openpmd_api.merge_json()``) is not adequate for merging the single JSON/TOML files back into one, since it does not merge anything below the array level.
 
 
 Example

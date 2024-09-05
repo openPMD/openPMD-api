@@ -31,6 +31,9 @@
 
 #include <istream>
 #include <nlohmann/json.hpp>
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
 
 #include <complex>
 #include <fstream>
@@ -70,6 +73,7 @@ struct File
 
         std::string name;
         bool valid = true;
+        bool printedReadmeWarningAlready = false;
     };
 
     std::shared_ptr<FileState> fileState;
@@ -167,6 +171,15 @@ public:
         FileFormat,
         std::string originalExtension);
 
+#if openPMD_HAVE_MPI
+    JSONIOHandlerImpl(
+        AbstractIOHandler *,
+        MPI_Comm,
+        openPMD::json::TracingJSON config,
+        FileFormat,
+        std::string originalExtension);
+#endif
+
     ~JSONIOHandlerImpl() override;
 
     void
@@ -227,9 +240,15 @@ public:
     void
     deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
 
+    void touch(Writable *, Parameter<Operation::TOUCH> const &) override;
+
     std::future<void> flush();
 
 private:
+#if openPMD_HAVE_MPI
+    std::optional<MPI_Comm> m_communicator;
+#endif
+
     using FILEHANDLE = std::fstream;
 
     // map each Writable to its associated file
@@ -323,7 +342,8 @@ private:
 
     // write to disk the json contents associated with the file
     // remove from m_dirty if unsetDirty == true
-    void putJsonContents(File const &, bool unsetDirty = true);
+    auto putJsonContents(File const &, bool unsetDirty = true)
+        -> decltype(m_jsonVals)::iterator;
 
     // figure out the file position of the writable
     // (preferring the parent's file position) and extend it

@@ -74,3 +74,111 @@ def particles_to_dataframe(particle_species, slice=None):
     df.index.name = "row"
 
     return df
+
+
+def iterations_to_dataframe(series, species_name):
+    """
+    Load all iterations of a particle species into a Pandas DataFrame.
+
+    Parameters
+    ----------
+    series : openpmd_api.Series
+        A Series class in openPMD-api.
+    species_name : string
+        The name of a particle species.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A pandas dataframe with particles as index and openPMD record
+        components of the particle_species as columns. Particles might be
+        repeated over multiple iterations and an "iteration" column is
+        added.
+
+    Raises
+    ------
+    ImportError
+        Raises an exception if pandas is not installed
+
+    See Also
+    --------
+    pandas.DataFrame : the central dataframe object created here
+    """
+    # import pandas here for a lazy import
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError("pandas NOT found. Install pandas for DataFrame "
+                          "support.")
+
+    df = pd.concat(
+        (
+            series.iterations[i]
+            .particles[species_name]
+            .to_df()
+            .assign(iteration=i)
+            for i in series.iterations
+        ),
+        axis=0,
+        ignore_index=True,
+    )
+
+    return df
+
+
+def iterations_to_cudf(series, species_name):
+    """
+    Load all iterations of a particle species into a cuDF DataFrame.
+
+    Parameters
+    ----------
+    series : openpmd_api.Series
+        A Series class in openPMD-api.
+    species_name : string
+        The name of a particle species.
+
+    Returns
+    -------
+    cudf.DataFrame
+        A cuDF (RAPIDS) dataframe with particles as index and openPMD record
+        components of the particle_species as columns. Particles might be
+        repeated over multiple iterations and an "iteration" column is
+        added.
+
+    Raises
+    ------
+    ImportError
+        Raises an exception if cuDF (RAPIDS) is not installed
+
+    See Also
+    --------
+    cudf.DataFrame : the central dataframe object created here
+    """
+    # import pandas here for a lazy import
+    try:
+        import pandas  # noqa
+    except ImportError:
+        raise ImportError("pandas NOT found. Install pandas for DataFrame "
+                          "support.")
+    # import cudf here for a lazy import
+    try:
+        import cudf
+    except ImportError:
+        raise ImportError("cudf NOT found. Install RAPIDS for CUDA DataFrame "
+                          "support.")
+
+    cdf = cudf.concat(
+        (
+            cudf.from_pandas(
+                series.iterations[i]
+                      .particles[species_name]
+                      .to_df()
+                      .assign(iteration=i)
+            )
+            for i in series.iterations
+        ),
+        axis=0,
+        ignore_index=True,
+    )
+
+    return cdf

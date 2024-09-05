@@ -49,7 +49,7 @@ void init_PatchRecordComponent(py::module &m)
         declare_container<PyPatchRecordComponentContainer, Attributable>(
             m, "Patch_Record_Component_Container");
 
-    py::class_<PatchRecordComponent, BaseRecordComponent>(
+    py::class_<PatchRecordComponent, RecordComponent, BaseRecordComponent>(
         m, "Patch_Record_Component")
         .def_property(
             "unit_SI",
@@ -189,12 +189,14 @@ void init_PatchRecordComponent(py::module &m)
         // allowed python intrinsics, after (!) buffer matching
         .def(
             "store",
-            &PatchRecordComponent::store<double>,
+            py::overload_cast<uint64_t, double>(
+                &PatchRecordComponent::store<double>),
             py::arg("idx"),
             py::arg("data"))
         .def(
             "store",
-            &PatchRecordComponent::store<long>,
+            py::overload_cast<uint64_t, long>(
+                &PatchRecordComponent::store<long>),
             py::arg("idx"),
             py::arg("data"))
 

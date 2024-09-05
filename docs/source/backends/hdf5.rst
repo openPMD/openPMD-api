@@ -15,6 +15,15 @@ I/O Method
 
 HDF5 internally either writes serially, via ``POSIX`` on Unix systems, or parallel to a single logical file via MPI-I/O.
 
+Virtual File Drivers
+********************
+
+Rudimentary support for HDF5 VFDs (`virtual file driver <https://www.hdfgroup.org/wp-content/uploads/2021/10/HDF5-VFD-Plugins-HUG.pdf>`_) is available (currently only the *subfiling* VFD).
+Note that the subfiling VFD needs to be enabled explicitly when configuring HDF5 and threaded MPI must be used.
+
+Virtual file drivers are configured via JSON/TOML.
+Refer to the page on :ref:`JSON/TOML configuration <backendconfig-hdf5>` for further details.
+
 
 Backend-Specific Controls
 -------------------------
@@ -45,6 +54,10 @@ Although we choose the default to be non-collective (independent) for ease of us
 For independent parallel I/O, potentially prefer using a modern version of the MPICH implementation (especially, use ROMIO instead of OpenMPI's ompio implementation).
 Please refer to the `HDF5 manual, function H5Pset_dxpl_mpio <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_dxpl_mpio.htm>`_ for more details.
 
+.. tip::
+
+  Instead of using an environment variable, independent/collective data transfer can also be configured at the API level via :ref:`JSON/TOML <backendconfig-hdf5>`.
+
 ``OPENPMD_HDF5_ALIGNMENT``: this sets the alignment in Bytes for writes via the ``H5Pset_alignment`` function.
 According to the `HDF5 documentation <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm>`_:
 *For MPI IO and other parallel systems, choose an alignment which is a multiple of the disk block size.*
@@ -56,6 +69,7 @@ Any file object greater than or equal in size to threshold bytes will be aligned
 
 ``OPENPMD_HDF5_CHUNKS``: this sets defaults for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
 Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
+The chunk size can alternatively (or additionally) be specified explicitly per dataset, by specifying a dataset-specific chunk size in the JSON/TOML configuration of ``resetDataset()``/``reset_dataset()``.
 
 ``OPENPMD_HDF5_COLLECTIVE_METADATA``: this is an option to enable collective MPI calls for HDF5 metadata operations via `H5Pset_all_coll_metadata_ops <https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetAllCollMetadataOps>`__ and `H5Pset_coll_metadata_write <https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetCollMetadataWrite>`__.
 By default, this optimization is enabled as it has proven to provide performance improvements.

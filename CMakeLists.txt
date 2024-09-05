@@ -262,7 +262,16 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
     INTERFACE nlohmann_json::nlohmann_json)
 
 # external library: toml11
-find_package(toml11 CONFIG)
+# toml11 4.0 was a breaking change. This is reflected in the library's CMake
+# logic: version 4.0 is not accepted by a call to find_package(toml11 3.7).
+# Since we support both incompatible versions, we use two find_package()
+# calls. Search for version 4 first in order to prefer that
+# in (the unlikely) case that both versions are installed.
+find_package(toml11 4.0 CONFIG QUIET)
+if(NOT toml11_FOUND)
+    find_package(toml11 3.7.1 CONFIG REQUIRED)
+endif()
+message(STATUS "toml11: Found version '${toml11_VERSION}'")
 if(NOT toml11_FOUND)
     message(STATUS "Fetching toml11 from https://github.com/ToruNiina/toml11")
     if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
@@ -275,7 +284,7 @@ if(NOT toml11_FOUND)
       GIT_REPOSITORY https://github.com/ToruNiina/toml11
       # Migrate to the latest commit to remove CMake Warning which is not yet
       # available in any official release.
-      GIT_TAG v3.7.1
+      GIT_TAG v4.2.0
       "${fetchcontent_args}"
     )
     unset(fetchcontent_args)
@@ -405,7 +414,7 @@ else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
 if(Python_FOUND)
-    find_package(pybind11 CONFIG)
+    find_package(pybind11 2.12.0 CONFIG)
     if(NOT pybind11_FOUND)
         message(STATUS "Fetching PyBind11 from https://github.com/pybind/pybind11")
         if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
@@ -416,7 +425,7 @@ if(Python_FOUND)
         FetchContent_Declare(
             pybind11
             GIT_REPOSITORY https://github.com/pybind/pybind11.git
-            GIT_TAG v2.11.1
+            GIT_TAG v2.12.0
             "${fetchcontent_args}"
         )
         unset(fetchcontent_args)
@@ -450,6 +459,7 @@ set(CORE_SOURCE
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp
+        src/auxiliary/Mpi.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
         src/backend/MeshRecordComponent.cpp
@@ -472,6 +482,7 @@ set(IO_SOURCE
         src/IO/JSON/JSONIOHandlerImpl.cpp
         src/IO/JSON/JSONFilePosition.cpp
         src/IO/ADIOS/ADIOS2IOHandler.cpp
+        src/IO/ADIOS/ADIOS2File.cpp
         src/IO/ADIOS/ADIOS2Auxiliary.cpp
         src/IO/InvalidatableFile.cpp)
 
@@ -1368,7 +1379,7 @@ if(openPMD_BUILD_TESTING)
                             --outfile                                              \
                                 ../samples/git-sample/thetaMode/data_%T.bp &&      \
                                                                                    \
-                        ${Python_EXECUTABLE}                                       \
+                        ${MPI_TEST_EXE} ${Python_EXECUTABLE}                       \
                             ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe       \
                             --infile ../samples/git-sample/thetaMode/data_%T.bp    \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \

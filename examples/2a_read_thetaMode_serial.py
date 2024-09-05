@@ -9,6 +9,8 @@ License: LGPLv3+
 import openpmd_api as io
 
 if __name__ == "__main__":
+    # The pattern %E instructs the openPMD-api to determine the file ending
+    # automatically. It can also be given explicitly, e.g. `data%T.h5`.
     series = io.Series("../samples/git-sample/thetaMode/data%T.h5",
                        io.Access.read_only)
 

@@ -28,6 +28,45 @@
 
 #include <iostream>
 
+namespace openPMD::adios_defs
+{
+FlushTarget flushTargetFromString(std::string const &str)
+{
+    if (str == "buffer")
+    {
+        return FlushTarget::Buffer;
+    }
+    else if (str == "disk")
+    {
+        return FlushTarget::Disk;
+    }
+    else if (str == "buffer_override")
+    {
+        return FlushTarget::Buffer_Override;
+    }
+    else if (str == "disk_override")
+    {
+        return FlushTarget::Disk_Override;
+    }
+    else if (str == "new_step")
+    {
+        return FlushTarget::NewStep;
+    }
+    else if (str == "new_step_override")
+    {
+        return FlushTarget::NewStep_Override;
+    }
+    else
+    {
+        throw error::BackendConfigSchema(
+            {"adios2", "engine", adios_defaults::str_flushtarget},
+            "Flush target must be either 'disk', 'buffer' or 'new_step', but "
+            "was " +
+                str + ".");
+    }
+}
+} // namespace openPMD::adios_defs
+
 namespace openPMD::detail
 {
 template <typename T>

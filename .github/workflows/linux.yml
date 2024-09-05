@@ -128,26 +128,38 @@ jobs:
     - name: Install
       run: |
         sudo apt update
-        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
-        wget https://bootstrap.pypa.io/get-pip.py
-        python3.11 get-pip.py
-        python3.11 -m pip install numpy pandas
+        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget python3.11-venv
         sudo .github/workflows/dependencies/install_spack
+        python3.11 -m venv /opt/python_venv
+        . /opt/python_venv/bin/activate
+        python -m pip install numpy pandas
+        git clone -b v4.0.3 https://github.com/ToruNiina/toml11
+        cmake -S toml11 -B build_toml11               \
+          -DCMAKE_INSTALL_PREFIX=toml11_install \
+          -DCMAKE_CXX_STANDARD_REQUIRED=OFF           \
+          -DCMAKE_CXX_STANDARD=11
+        cmake --build build_toml11 -j 2 --target install
     - name: Build
       env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
+        # Build Spack packages against system Python
+        # and activate the virtual environment just for the openPMD build.
+        # Spack does not play nice with venv.
         eval $(spack env activate --sh .github/ci/spack-envs/clang14_py311_nompi_h5_ad2/)
         spack install
+        . /opt/python_venv/bin/activate
 
         share/openPMD/download_samples.sh build
+        export CMAKE_PREFIX_PATH="$(realpath toml11_install):$CMAKE_PREFIX_PATH"
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DCMAKE_VERBOSE_MAKEFILE=ON     \
-          -DPython_EXECUTABLE=$(which python3.11)
+          -DopenPMD_USE_INVASIVE_TESTS=ON   \
+          -DopenPMD_USE_INTERNAL_TOML11=OFF \
+          -DCMAKE_VERBOSE_MAKEFILE=ON       \
+          -DPython_EXECUTABLE="$(which python)"
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
@@ -271,17 +283,22 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        python3.10 -m pip install numpy
+        # Use a virtual environment in order to avoid compatibility issues
+        # between the various Python installations in this image.
+        python3.10 -m venv /opt/python_env
+        . /opt/python_env/bin/activate
+        python -m pip install numpy
     - name: Build
       env: {CXXFLAGS: -Werror}
       run: |
+        . /opt/python_env/bin/activate
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DPython_EXECUTABLE=$(which python3.10)
+          -DPython_EXECUTABLE=$(which python)
         cmake --build build --parallel 2
         cd build
         ctest --output-on-failure
@@ -312,11 +329,14 @@ jobs:
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
+          -DCMAKE_CXX_FLAGS="-Wno-error=stringop-overread" \
+          -DCMAKE_C_FLAGS="-Wno-error=stringop-overread" \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DMPIEXEC_EXECUTABLE=".github/workflows/mpirun_workaround.sh"
         cmake --build build --parallel 2
         cd build
         ctest --output-on-failure

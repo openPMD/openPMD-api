@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
 #include <initializer_list>
@@ -289,7 +290,7 @@ public:
         {
             if (IOHandler()->m_seriesStatus !=
                     internal::SeriesStatus::Parsing &&
-                Access::READ_ONLY == IOHandler()->m_frontendAccess)
+                access::readOnly(IOHandler()->m_frontendAccess))
             {
                 auxiliary::OutOfRangeMsg const out_of_range_msg;
                 throw std::out_of_range(out_of_range_msg(key));
@@ -330,7 +331,7 @@ public:
         {
             if (IOHandler()->m_seriesStatus !=
                     internal::SeriesStatus::Parsing &&
-                Access::READ_ONLY == IOHandler()->m_frontendAccess)
+                access::readOnly(IOHandler()->m_frontendAccess))
             {
                 auxiliary::OutOfRangeMsg out_of_range_msg;
                 throw std::out_of_range(out_of_range_msg(key));

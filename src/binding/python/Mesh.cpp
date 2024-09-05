@@ -115,9 +115,10 @@ void init_Mesh(py::module &m)
         .def("set_grid_global_offset", &Mesh::setGridGlobalOffset)
         .def("set_grid_unit_SI", &Mesh::setGridUnitSI);
     add_pickle(
-        cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
+        cl, [](openPMD::Series series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            return series.iterations[n_it].meshes[group.at(3)];
+            auto res = series.iterations[n_it].open().meshes[group.at(3)];
+            return internal::makeOwning(res, std::move(series));
         });
 
     finalize_container<PyMeshContainer>(py_m_cont);

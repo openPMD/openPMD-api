@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
@@ -36,41 +38,11 @@
 
 namespace openPMD
 {
-namespace internal
-{
-    class PatchRecordComponentData : public BaseRecordComponentData
-    {
-    public:
-        /**
-         * Chunk reading/writing requests on the contained dataset.
-         */
-        std::queue<IOTask> m_chunks;
-
-        PatchRecordComponentData(PatchRecordComponentData const &) = delete;
-        PatchRecordComponentData(PatchRecordComponentData &&) = delete;
-
-        PatchRecordComponentData &
-        operator=(PatchRecordComponentData const &) = delete;
-        PatchRecordComponentData &
-        operator=(PatchRecordComponentData &&) = delete;
-
-        PatchRecordComponentData();
-
-        void reset() override
-        {
-            BaseRecordComponentData::reset();
-            m_chunks = std::queue<IOTask>();
-        }
-    };
-
-    template <typename, typename>
-    class BaseRecordData;
-} // namespace internal
 
 /**
  * @todo add support for constant patch record components
  */
-class PatchRecordComponent : public BaseRecordComponent
+class PatchRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
@@ -81,7 +53,6 @@ class PatchRecordComponent : public BaseRecordComponent
     friend class ParticlePatches;
     friend class PatchRecord;
     friend class ParticleSpecies;
-    friend class internal::PatchRecordComponentData;
 
 public:
     /**
@@ -95,7 +66,7 @@ public:
 
     PatchRecordComponent &setUnitSI(double);
 
-    virtual PatchRecordComponent &resetDataset(Dataset);
+    PatchRecordComponent &resetDataset(Dataset) override;
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;
@@ -115,52 +86,21 @@ public:
     template <typename T>
     void store(uint64_t idx, T);
 
+    template <typename T>
+    void store(T);
+
     // clang-format off
 OPENPMD_private
     // clang-format on
 
-    void flush(std::string const &, internal::FlushParams const &);
-    virtual void read();
-
-    /**
-     * @brief Check recursively whether this RecordComponent is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
+    using RecordComponent::flush;
 
     // clang-format off
 OPENPMD_protected
     // clang-format on
 
-    using Data_t = internal::PatchRecordComponentData;
-
-    std::shared_ptr<Data_t> m_patchRecordComponentData;
-
     PatchRecordComponent();
     PatchRecordComponent(NoInit);
-
-    inline Data_t const &get() const
-    {
-        // cannot call this in the const overload
-        // setDatasetDefined(*m_recordComponentData);
-        return *m_patchRecordComponentData;
-    }
-
-    inline Data_t &get()
-    {
-        setDatasetDefined(*m_patchRecordComponentData);
-        return *m_patchRecordComponentData;
-    }
-
-    inline void setData(std::shared_ptr<Data_t> data)
-    {
-        m_patchRecordComponentData = std::move(data);
-        BaseRecordComponent::setData(m_patchRecordComponentData);
-    }
 }; // PatchRecordComponent
 
 template <typename T>
@@ -203,7 +143,7 @@ inline void PatchRecordComponent::load(std::shared_ptr<T> data)
     dRead.dtype = getDatatype();
     dRead.data = std::static_pointer_cast<void>(data);
     auto &rc = get();
-    rc.m_chunks.push(IOTask(this, dRead));
+    rc.push_chunk(IOTask(this, dRead));
 }
 
 template <typename T>
@@ -242,6 +182,35 @@ inline void PatchRecordComponent::store(uint64_t idx, T data)
     dWrite.dtype = dtype;
     dWrite.data = std::make_shared<T>(data);
     auto &rc = get();
-    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
+    rc.push_chunk(IOTask(this, std::move(dWrite)));
+}
+
+template <typename T>
+inline void PatchRecordComponent::store(T data)
+{
+    Datatype dtype = determineDatatype<T>();
+    if (dtype != getDatatype())
+    {
+        std::ostringstream oss;
+        oss << "Datatypes of patch data (" << dtype << ") and dataset ("
+            << getDatatype() << ") do not match.";
+        throw std::runtime_error(oss.str());
+    }
+
+    if (!joinedDimension().has_value())
+    {
+        throw error::WrongAPIUsage(
+            "[PatchRecordComponent::store] API call without explicit "
+            "specification of index only allowed when a joined dimension is "
+            "specified.");
+    }
+
+    Parameter<Operation::WRITE_DATASET> dWrite;
+    dWrite.offset = {};
+    dWrite.extent = {1};
+    dWrite.dtype = dtype;
+    dWrite.data = std::make_shared<T>(data);
+    auto &rc = get();
+    rc.push_chunk(IOTask(this, std::move(dWrite)));
 }
 } // namespace openPMD

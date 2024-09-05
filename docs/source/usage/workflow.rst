@@ -3,6 +3,49 @@
 Workflow
 ========
 
+Storing and reading chunks
+--------------------------
+
+1. **Chunks within an n-dimensional dataset**
+
+   Most commonly, chunks within an n-dimensional dataset are identified by their offset and extent.
+   The extent is the size of the chunk in each dimension, NOT the absolute coordinate within the entire dataset.
+
+   In the Python API, this is modeled to conform to the conventional ``__setitem__``/``__getitem__`` protocol.
+
+2. **Joined arrays (write only)**
+
+   (Currently) only supported in ADIOS2 no older than v2.9.0 under the conditions listed in the `ADIOS2 documentation on joined arrays <https://adios2.readthedocs.io/en/latest/components/components.html#shapes>`_.
+
+   In some cases, the concrete chunk within a dataset does not matter and the computation of indexes is a needless computational and mental overhead.
+   This commonly occurs for particle data which the openPMD-standard models as a list of particles.
+   The order of particles does not matter greatly, and making different parallel processes agree on indexing is error-prone boilerplate.
+
+   In such a case, at most one *joined dimension* can be specified in the Dataset, e.g. ``{Dataset::JOINED_DIMENSION, 128, 128}`` (3D for the sake of explanation, particle data would normally be 1D).
+   The chunk is then stored by specifying an empty offset vector ``{}``.
+   The chunk extent vector must be equivalent to the global extent in all non-joined dimensions (i.e. joined arrays allow no further sub-chunking other than concatenation along the joined dimension).
+   The joined dimension of the extent vector specifies the extent that this piece should have along the joined dimension.
+   In the Python API, the slice-based setter syntax can be used as an abbreviation since the necessary information is determined from the passed array, e.g. ``record_component[()] = local_data``.
+   The global extent of the dataset along the joined dimension will then be the sum of all local chunk extents along the joined dimension.
+
+   Since openPMD follows a struct-of-array layout of data, it is important not to lose correlation of data between components. E.g., joining an array must take care that ``particles/e/position/x`` and ``particles/e/position/y`` are joined in uniform way.
+
+   The openPMD-api makes the **following guarantee**:
+
+   Consider a Series written from ``N`` parallel processes between two (collective) flush points. For each parallel process ``n`` and dataset ``D``, let:
+
+    * ``chunk(D, n, i)`` be the ``i``'th chunk written to dataset ``D`` on process ``n``
+    * ``num_chunks(D, n)`` be the count of chunks written by ``n`` to ``D``
+    * ``joined_index(D, c)`` be the index of chunk ``c`` in the joining order of ``D``
+
+  Then for any two datasets ``x`` and ``y``:
+
+    * If for any parallel process ``n`` the condition holds that ``num_chunks(x, n) = num_chunks(y, n)`` (between the two flush points!)...
+    * ...then for any parallel process ``n`` and chunk index ``i`` less than ``num_chunks(x, n)``: ``joined_index(x, chunk(x, n, i)) = joined_index(y, chunk(y, n, i))``.
+
+  **TLDR:** Writing chunks to two joined arrays in synchronous way (**1.** same order of store operations and **2.** between the same flush operations) will result in the same joining order in both arrays.
+
+
 Access modes
 ------------
 
@@ -58,6 +101,8 @@ The openPMD-api distinguishes between a number of different access modes:
 
   We suggest to fully define iterations when using Append mode (i.e. as if using Create mode) to avoid implementation-specific behavior.
   Appending to an openPMD Series is only supported on a per-iteration level.
+
+  **Tip:** Use the ``adios2.engine.access_mode`` :ref:`backend key <backendconfig>` of the :ref:`ADIOS2 backend <backends-adios2>` to finetune the backend-specific behavior of Append mode for niche use cases.
 
   **Warning:** There is no reading involved in using Append mode.
   It is a user's responsibility to ensure that the appended dataset and the appended-to dataset are compatible with each other.

@@ -3,5 +3,5 @@ name: openPMD-api-dev
 channels:
   - conda-forge
 dependencies:
-  - clang-format-12=12.0.1
+  - clang-format-18=18.1.2
   - bash=5

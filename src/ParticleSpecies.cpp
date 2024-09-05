@@ -104,6 +104,7 @@ void ParticleSpecies::read()
         auto &container = particlePatches.container();
         container.erase("numParticles");
         container.erase("numParticlesOffset");
+        particlePatches.setDirty(false);
     }
 
     /* obtain all scalar records */
@@ -123,9 +124,9 @@ void ParticleSpecies::read()
             RecordComponent &rc = r;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush(internal::defaultFlushParams);
-            rc.written() = false;
+            rc.setWritten(false, Attributable::EnqueueAsynchronously::No);
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-            rc.written() = true;
+            rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
             r.read();
         }
         catch (error::ReadError const &err)
@@ -147,10 +148,7 @@ namespace
 {
     bool flushParticlePatches(ParticlePatches const &particlePatches)
     {
-        return particlePatches.find("numParticles") != particlePatches.end() &&
-            particlePatches.find("numParticlesOffset") !=
-            particlePatches.end() &&
-            particlePatches.size() >= 3;
+        return !particlePatches.empty();
     }
 } // namespace
 
@@ -163,6 +161,10 @@ void ParticleSpecies::flush(
             record.second.flush(record.first, flushParams);
         for (auto &patch : particlePatches)
             patch.second.flush(patch.first, flushParams);
+        if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+        {
+            particlePatches.setDirty(false);
+        }
     }
     else
     {
@@ -184,32 +186,14 @@ void ParticleSpecies::flush(
             for (auto &patch : particlePatches)
                 patch.second.flush(patch.first, flushParams);
         }
-    }
-}
-
-bool ParticleSpecies::dirtyRecursive() const
-{
-    if (dirty())
-    {
-        return true;
-    }
-    for (auto const &pair : *this)
-    {
-        if (pair.second.dirtyRecursive())
+        else
         {
-            return true;
+            particlePatches.setDirty(false);
         }
     }
-    if (flushParticlePatches(particlePatches))
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
-        for (auto const &pair : particlePatches)
-        {
-            if (pair.second.dirtyRecursive())
-            {
-                return true;
-            }
-        }
+        setDirty(false);
     }
-    return false;
 }
 } // namespace openPMD

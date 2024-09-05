@@ -237,6 +237,8 @@ private:
     friend class internal::BaseRecordData;
     template <typename, typename, typename>
     friend class internal::ScalarIterator;
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
     using Data_t =
         internal::BaseRecordData<T_elem, typename T_RecordComponent::Data_t>;
@@ -254,6 +256,11 @@ private:
     inline Data_t &get()
     {
         return *m_baseRecordData;
+    }
+
+    inline std::shared_ptr<Data_t> getShared()
+    {
+        return m_baseRecordData;
     }
 
     BaseRecord();
@@ -494,15 +501,6 @@ private:
     virtual void
     flush_impl(std::string const &, internal::FlushParams const &) = 0;
 
-    /**
-     * @brief Check recursively whether this BaseRecord is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
     void eraseScalar();
 }; // BaseRecord
 
@@ -654,7 +652,7 @@ auto BaseRecord<T_elem>::erase(key_type const &key) -> size_type
 
     if (keyScalar)
     {
-        this->written() = false;
+        this->setWritten(false, Attributable::EnqueueAsynchronously::No);
         this->writable().abstractFilePosition.reset();
         this->get().m_datasetDefined = false;
     }
@@ -999,25 +997,12 @@ inline void BaseRecord<T_elem>::flush(
     }
 
     this->flush_impl(name, flushParams);
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        this->setDirty(false);
+    }
     // flush_impl must take care to correctly set the dirty() flag so this
     // method doesn't do it
-}
-
-template <typename T_elem>
-inline bool BaseRecord<T_elem>::dirtyRecursive() const
-{
-    if (this->dirty())
-    {
-        return true;
-    }
-    for (auto const &pair : *this)
-    {
-        if (pair.second.dirtyRecursive())
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 template <typename T_elem>

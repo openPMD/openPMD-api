@@ -171,7 +171,7 @@ namespace internal
 
 namespace detail
 {
-    struct BufferedActions;
+    class ADIOS2File;
 }
 
 /** Interface for communicating between logical and physically persistent data.
@@ -186,7 +186,7 @@ class AbstractIOHandler
 {
     friend class Series;
     friend class ADIOS2IOHandlerImpl;
-    friend struct detail::BufferedActions;
+    friend class detail::ADIOS2File;
 
 private:
     IterationEncoding m_encoding = IterationEncoding::groupBased;
@@ -195,13 +195,28 @@ private:
     {
         /*
          * In file-based iteration encoding, the APPEND mode is handled entirely
-         * by the frontend, the backend should just treat it as CREATE mode
+         * by the frontend, the backend should just treat it as CREATE mode.
+         * Similar for READ_LINEAR which should be treated as READ_RANDOM_ACCESS
+         * in the backend.
          */
-        if (encoding == IterationEncoding::fileBased &&
-            m_backendAccess == Access::APPEND)
+        if (encoding == IterationEncoding::fileBased)
         {
-            // do we really want to have those as const members..?
-            *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
+            switch (m_backendAccess)
+            {
+
+            case Access::READ_LINEAR:
+                // do we really want to have those as const members..?
+                *const_cast<Access *>(&m_backendAccess) =
+                    Access::READ_RANDOM_ACCESS;
+                break;
+            case Access::APPEND:
+                *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
+                break;
+            case Access::READ_RANDOM_ACCESS:
+            case Access::READ_WRITE:
+            case Access::CREATE:
+                break;
+            }
         }
 
         m_encoding = encoding;
@@ -217,6 +232,12 @@ public:
         : directory{std::move(path)}, m_backendAccess{at}, m_frontendAccess{at}
     {}
     virtual ~AbstractIOHandler() = default;
+
+    AbstractIOHandler(AbstractIOHandler const &) = default;
+    AbstractIOHandler(AbstractIOHandler &&) = default;
+
+    AbstractIOHandler &operator=(AbstractIOHandler const &) = default;
+    AbstractIOHandler &operator=(AbstractIOHandler &&) = default;
 
     /** Add provided task to queue according to FIFO.
      *
@@ -245,7 +266,7 @@ public:
     /** The currently used backend */
     virtual std::string backendName() const = 0;
 
-    std::string const directory;
+    std::string directory;
     /*
      * Originally, the reason for distinguishing these two was that during
      * parsing in reading access modes, the access type would be temporarily
@@ -261,8 +282,8 @@ public:
      * which is entirely implemented by the frontend, which internally uses
      * the backend in CREATE mode.
      */
-    Access const m_backendAccess;
-    Access const m_frontendAccess;
+    Access m_backendAccess;
+    Access m_frontendAccess;
     internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
     std::queue<IOTask> m_work;
     /**

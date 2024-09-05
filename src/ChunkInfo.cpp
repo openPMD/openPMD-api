@@ -19,8 +19,21 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ChunkInfo.hpp"
+#include "openPMD/ChunkInfo_internal.hpp"
+
+#include "openPMD/auxiliary/Mpi.hpp"
 
 #include <utility>
+
+#ifdef _WIN32
+#define openPMD_POSIX_AVAILABLE false
+#else
+#define openPMD_POSIX_AVAILABLE true
+#endif
+
+#if openPMD_POSIX_AVAILABLE
+#include <unistd.h>
+#endif
 
 namespace openPMD
 {
@@ -48,4 +61,108 @@ bool WrittenChunkInfo::operator==(WrittenChunkInfo const &other) const
     return this->sourceID == other.sourceID &&
         this->ChunkInfo::operator==(other);
 }
+
+namespace host_info
+{
+    constexpr size_t MAX_HOSTNAME_LENGTH = 256;
+
+    Method methodFromStringDescription(
+        std::string const &descr, [[maybe_unused]] bool consider_mpi)
+    {
+        static std::map<std::string, Method> const map{
+            {"posix_hostname", Method::POSIX_HOSTNAME},
+#if openPMD_HAVE_MPI
+            {"hostname",
+             consider_mpi ? Method::MPI_PROCESSOR_NAME
+                          : Method::POSIX_HOSTNAME},
+#else
+            {"hostname", Method::POSIX_HOSTNAME},
+#endif
+            {"mpi_processor_name", Method::MPI_PROCESSOR_NAME}};
+        return map.at(descr);
+    }
+
+    bool methodAvailable(Method method)
+    {
+        switch (method)
+        {
+
+        case Method::POSIX_HOSTNAME:
+            return openPMD_POSIX_AVAILABLE;
+        case Method::MPI_PROCESSOR_NAME:
+            return openPMD_HAVE_MPI == 1;
+        }
+        throw std::runtime_error("Unreachable!");
+    }
+
+    std::string byMethod(Method method)
+    {
+        static std::map<Method, std::string (*)()> const map{
+#if openPMD_POSIX_AVAILABLE
+            {Method::POSIX_HOSTNAME, &posix_hostname},
+#endif
+#if openPMD_HAVE_MPI
+            {Method::MPI_PROCESSOR_NAME, &mpi_processor_name},
+#endif
+        };
+        try
+        {
+            return (*map.at(method))();
+        }
+        catch (std::out_of_range const &)
+        {
+            throw std::runtime_error(
+                "[hostname::byMethod] Specified method is not available.");
+        }
+    }
+
+#if openPMD_HAVE_MPI
+    chunk_assignment::RankMeta byMethodCollective(MPI_Comm comm, Method method)
+    {
+        auto myHostname = byMethod(method);
+        chunk_assignment::RankMeta res;
+        auto allHostnames =
+            auxiliary::distributeStringsToAllRanks(comm, myHostname);
+        for (size_t i = 0; i < allHostnames.size(); ++i)
+        {
+            res[i] = allHostnames[i];
+        }
+        return res;
+    }
+
+    std::string mpi_processor_name()
+    {
+        std::string res;
+        res.resize(MPI_MAX_PROCESSOR_NAME);
+        int string_len;
+        if (MPI_Get_processor_name(res.data(), &string_len) != 0)
+        {
+            throw std::runtime_error(
+                "[mpi_processor_name] Could not inquire processor name.");
+        }
+        // MPI_Get_processor_name returns the string length without null
+        // terminator and std::string::resize() does not use null terminator
+        // either. So, no +-1 necessary.
+        res.resize(string_len);
+        res.shrink_to_fit();
+        return res;
+    }
+#endif
+
+#if openPMD_POSIX_AVAILABLE
+    std::string posix_hostname()
+    {
+        char hostname[MAX_HOSTNAME_LENGTH];
+        if (gethostname(hostname, MAX_HOSTNAME_LENGTH))
+        {
+            throw std::runtime_error(
+                "[posix_hostname] Could not inquire hostname.");
+        }
+        std::string res(hostname);
+        return res;
+    }
+#endif
+} // namespace host_info
 } // namespace openPMD
+
+#undef openPMD_POSIX_AVAILABLE

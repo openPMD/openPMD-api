@@ -25,6 +25,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
 #include <algorithm>
@@ -39,6 +40,21 @@ namespace openPMD
 namespace internal
 {
     RecordComponentData::RecordComponentData() = default;
+    auto RecordComponentData::push_chunk(IOTask &&task) -> void
+    {
+        Attributable a;
+        a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
+// this check can be too costly in some setups
+#if 0
+        if (a.containingIteration().closed())
+        {
+            throw error::WrongAPIUsage(
+                "Cannot write/read chunks to/from closed Iterations.");
+        }
+#endif
+        a.setDirtyRecursive(true);
+        m_chunks.push(std::move(task));
+    }
 } // namespace internal
 
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
@@ -95,10 +111,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
     }
     // if( d.extent.empty() )
     //    throw std::runtime_error("Dataset extent must be at least 1D.");
-    if (std::any_of(
-            d.extent.begin(), d.extent.end(), [](Extent::value_type const &i) {
-                return i == 0u;
-            }))
+    if (d.empty())
         return makeEmpty(std::move(d));
 
     rc.m_isEmpty = false;
@@ -111,7 +124,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         rc.m_dataset = std::move(d);
     }
 
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -204,7 +217,7 @@ RecordComponent &RecordComponent::makeEmpty(Dataset d)
         throw std::runtime_error("Dataset extent must be at least 1D.");
 
     rc.m_isEmpty = true;
-    dirty() = true;
+    setDirty(true);
     if (!written())
     {
         switchType<detail::DefaultValue<RecordComponent> >(
@@ -299,6 +312,7 @@ void RecordComponent::flush(
                 dCreate.extent = getExtent();
                 dCreate.dtype = getDatatype();
                 dCreate.options = rc.m_dataset.value().options;
+                dCreate.joinedDimension = joinedDimension();
                 IOHandler()->enqueue(IOTask(this, dCreate));
             }
         }
@@ -338,11 +352,15 @@ void RecordComponent::flush(
 
         flushAttributes(flushParams);
     }
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        setDirty(false);
+    }
 }
 
-void RecordComponent::read()
+void RecordComponent::read(bool require_unit_si)
 {
-    readBase();
+    readBase(require_unit_si);
 }
 
 namespace
@@ -367,7 +385,7 @@ namespace
     };
 } // namespace
 
-void RecordComponent::readBase()
+void RecordComponent::readBase(bool require_unit_si)
 {
     using DT = Datatype;
     // auto & rc = get();
@@ -381,9 +399,9 @@ void RecordComponent::readBase()
 
         Attribute a(*aRead.resource);
         DT dtype = *aRead.dtype;
-        written() = false;
+        setWritten(false, Attributable::EnqueueAsynchronously::No);
         switchNonVectorType<MakeConstant>(dtype, *this, a);
-        written() = true;
+        setWritten(true, Attributable::EnqueueAsynchronously::No);
 
         aRead.name = "shape";
         IOHandler()->enqueue(IOTask(this, aRead));
@@ -408,40 +426,56 @@ void RecordComponent::readBase()
                 oss.str());
         }
 
-        written() = false;
+        setWritten(false, Attributable::EnqueueAsynchronously::No);
         resetDataset(Dataset(dtype, e));
-        written() = true;
+        setWritten(true, Attributable::EnqueueAsynchronously::No);
     }
-
-    aRead.name = "unitSI";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(*aRead.resource).getOptional<double>();
-        val.has_value())
-        setUnitSI(val.value());
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'unitSI' (expected double, "
-            "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
     readAttributes(ReadMode::FullyReread);
-}
 
-bool RecordComponent::dirtyRecursive() const
-{
-    if (this->dirty())
+    if (require_unit_si)
     {
-        return true;
+        if (!containsAttribute("unitSI"))
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::NotFound,
+                {},
+                "Attribute unitSI required for record components, not found in "
+                "'" +
+                    myPath().openPMDPath() + "'.");
+        }
+        if (!getAttribute("unitSI").getOptional<double>().has_value())
+        {
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                "Unexpected Attribute datatype for 'unitSI' (expected double, "
+                "found " +
+                    datatypeToString(Attribute(*aRead.resource).dtype) +
+                    ") in '" + myPath().openPMDPath() + "'.");
+        }
     }
-    return !get().m_chunks.empty();
 }
 
 void RecordComponent::storeChunk(
     auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
+{
+    verifyChunk(dtype, o, e);
+
+    Parameter<Operation::WRITE_DATASET> dWrite;
+    dWrite.offset = std::move(o);
+    dWrite.extent = std::move(e);
+    dWrite.dtype = dtype;
+    /* std::static_pointer_cast correctly reference-counts the pointer */
+    dWrite.data = std::move(buffer);
+    auto &rc = get();
+    rc.push_chunk(IOTask(this, std::move(dWrite)));
+}
+
+void RecordComponent::verifyChunk(
+    Datatype dtype, Offset const &o, Extent const &e) const
 {
     if (constant())
         throw std::runtime_error(
@@ -457,32 +491,59 @@ void RecordComponent::storeChunk(
         throw std::runtime_error(oss.str());
     }
     uint8_t dim = getDimensionality();
-    if (e.size() != dim || o.size() != dim)
-    {
-        std::ostringstream oss;
-        oss << "Dimensionality of chunk ("
-            << "offset=" << o.size() << "D, "
-            << "extent=" << e.size() << "D) "
-            << "and record component (" << int(dim) << "D) "
-            << "do not match.";
-        throw std::runtime_error(oss.str());
-    }
     Extent dse = getExtent();
-    for (uint8_t i = 0; i < dim; ++i)
-        if (dse[i] < o[i] + e[i])
-            throw std::runtime_error(
-                "Chunk does not reside inside dataset (Dimension on index " +
-                std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
-                " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
 
-    Parameter<Operation::WRITE_DATASET> dWrite;
-    dWrite.offset = o;
-    dWrite.extent = e;
-    dWrite.dtype = dtype;
-    /* std::static_pointer_cast correctly reference-counts the pointer */
-    dWrite.data = std::move(buffer);
-    auto &rc = get();
-    rc.m_chunks.push(IOTask(this, std::move(dWrite)));
+    if (auto jd = joinedDimension(); jd.has_value())
+    {
+        if (o.size() != 0)
+        {
+            std::ostringstream oss;
+            oss << "Joined array: Must specify an empty offset (given: "
+                << "offset=" << o.size() << "D, "
+                << "extent=" << e.size() << "D).";
+            throw std::runtime_error(oss.str());
+        }
+        if (e.size() != dim)
+        {
+            std::ostringstream oss;
+            oss << "Joined array: Dimensionalities of chunk extent and dataset "
+                   "extent must be equivalent (given: "
+                << "offset=" << o.size() << "D, "
+                << "extent=" << e.size() << "D).";
+            throw std::runtime_error(oss.str());
+        }
+        for (size_t i = 0; i < dim; ++i)
+        {
+            if (i != jd.value() && e[i] != dse[i])
+            {
+                throw std::runtime_error(
+                    "Joined array: Chunk extent on non-joined dimensions must "
+                    "be equivalent to dataset extents (Dimension on index " +
+                    std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                    " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
+            }
+        }
+    }
+    else
+    {
+        if (e.size() != dim || o.size() != dim)
+        {
+            std::ostringstream oss;
+            oss << "Dimensionality of chunk ("
+                << "offset=" << o.size() << "D, "
+                << "extent=" << e.size() << "D) "
+                << "and record component (" << int(dim) << "D) "
+                << "do not match.";
+            throw std::runtime_error(oss.str());
+        }
+        for (uint8_t i = 0; i < dim; ++i)
+            if (dse[i] < o[i] + e[i])
+                throw std::runtime_error(
+                    "Chunk does not reside inside dataset (Dimension on "
+                    "index " +
+                    std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                    " - Chunk: " + std::to_string(o[i] + e[i]) + ")");
+    }
 }
 
 namespace

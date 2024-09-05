@@ -23,6 +23,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Container.H"
+#include "openPMD/binding/python/Pickle.hpp"
 
 #include <ios>
 #include <sstream>
@@ -32,6 +33,13 @@ void init_Iteration(py::module &m)
 {
     auto py_it_cont = declare_container<PyIterationContainer, Attributable>(
         m, "Iteration_Container");
+
+    // `clang-format on/off` doesn't help here.
+    // Writing this without a macro would lead to a huge diff due to
+    // clang-format.
+#define OPENPMD_AVOID_CLANG_FORMAT auto cl =
+    OPENPMD_AVOID_CLANG_FORMAT
+#undef OPENPMD_AVOID_CLANG_FORMAT
 
     py::class_<Iteration, Attributable>(m, "Iteration")
         .def(py::init<Iteration const &>())
@@ -98,6 +106,13 @@ void init_Iteration(py::module &m)
             py::return_value_policy::copy,
             // garbage collection: return value must be freed before Iteration
             py::keep_alive<1, 0>());
+
+    add_pickle(
+        cl, [](openPMD::Series series, std::vector<std::string> const &group) {
+            uint64_t const n_it = std::stoull(group.at(1));
+            auto res = series.iterations[n_it];
+            return internal::makeOwning(res, std::move(series));
+        });
 
     finalize_container<PyIterationContainer>(py_it_cont);
 }

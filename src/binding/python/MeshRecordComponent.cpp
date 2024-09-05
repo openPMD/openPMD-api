@@ -82,9 +82,15 @@ void init_MeshRecordComponent(py::module &m)
             "Relative position of the component on an element "
             "(node/cell/voxel) of the mesh");
     add_pickle(
-        cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
+        cl, [](openPMD::Series series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            return series.iterations[n_it].meshes[group.at(3)][group.at(4)];
+            auto res =
+                series.iterations[n_it]
+                    .open()
+                    .meshes[group.at(3)]
+                           [group.size() < 5 ? MeshRecordComponent::SCALAR
+                                             : group.at(4)];
+            return internal::makeOwning(res, std::move(series));
         });
 
     finalize_container<PyMeshRecordComponentContainer>(py_mrc_cnt);

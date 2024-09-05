@@ -46,6 +46,50 @@ enum class GroupOrDataset
     DATASET
 };
 
+namespace adios_defs
+{
+    enum class FlushTarget : unsigned char
+    {
+        Buffer,
+        Buffer_Override,
+        Disk,
+        Disk_Override,
+        NewStep,
+        NewStep_Override
+    };
+
+    using FlushTarget = adios_defs::FlushTarget;
+    FlushTarget flushTargetFromString(std::string const &str);
+
+    enum class UseGroupTable
+    {
+        Yes,
+        No
+    };
+} // namespace adios_defs
+
+/*
+ * The following strings are used during parsing of the JSON configuration
+ * string for the ADIOS2 backend.
+ */
+namespace adios_defaults
+{
+    using const_str = char const *const;
+    constexpr const_str str_engine = "engine";
+    constexpr const_str str_type = "type";
+    constexpr const_str str_treat_unsupported_engine_like = "pretend_engine";
+    constexpr const_str str_params = "parameters";
+    constexpr const_str str_usesteps = "usesteps";
+    constexpr const_str str_flushtarget = "preferred_flush_target";
+    constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
+    constexpr const_str str_adios2Schema =
+        "__openPMD_internal/openPMD2_adios2_schema";
+    constexpr const_str str_isBoolean = "__is_boolean__";
+    constexpr const_str str_activeTablePrefix = "__openPMD_groups";
+    constexpr const_str str_groupBasedWarning =
+        "__openPMD_internal/warning_bugprone_groupbased_encoding";
+} // namespace adios_defaults
+
 #if openPMD_HAVE_ADIOS2
 namespace detail
 {

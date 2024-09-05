@@ -20,14 +20,19 @@
  */
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Iteration.hpp"
+#include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Attribute.hpp"
 
 #include <algorithm>
 #include <complex>
 #include <iostream>
 #include <set>
+#include <sstream>
+#include <stdexcept>
 
 namespace openPMD
 {
@@ -125,66 +130,88 @@ Series Attributable::retrieveSeries() const
     {
         findSeries = findSeries->parent;
     }
-    auto seriesData = &auxiliary::deref_dynamic_cast<internal::SeriesData>(
-        findSeries->attributable);
-    Series res;
-    res.setData(
-        std::shared_ptr<internal::SeriesData>{seriesData, [](auto const *) {}});
-    return res;
+    return findSeries->attributable->asInternalCopyOf<Series>();
 }
 
-Iteration const &Attributable::containingIteration() const
+auto Attributable::containingIteration() const
+    -> std::pair<
+        std::optional<internal::IterationData const *>,
+        internal::SeriesData const *>
 {
-    std::vector<Writable const *> searchQueue;
-    searchQueue.reserve(7);
+    constexpr size_t search_queue_size = 3;
+    Writable const *search_queue[search_queue_size]{nullptr};
+    size_t search_queue_idx = 0;
     Writable const *findSeries = &writable();
-    while (findSeries)
+    while (true)
     {
-        searchQueue.push_back(findSeries);
+        search_queue[search_queue_idx] = findSeries;
         // we don't need to push the last Writable since it's the Series anyway
         findSeries = findSeries->parent;
+        if (!findSeries)
+        {
+            break;
+        }
+        else
+        {
+            search_queue_idx = (search_queue_idx + 1) % search_queue_size;
+        }
     }
     // End of the queue:
     // Iteration -> Series.iterations -> Series
-    if (searchQueue.size() < 3)
+    auto *series = &auxiliary::deref_dynamic_cast<internal::SeriesData const>(
+        search_queue[search_queue_idx]->attributable);
+    auto maybe_iteration = search_queue
+        [(search_queue_idx + (search_queue_size - 2)) % search_queue_size];
+    if (maybe_iteration)
     {
-        throw std::runtime_error(
-            "containingIteration(): Must be called for an object contained in "
-            "an iteration.");
+        auto *iteration =
+            &auxiliary::deref_dynamic_cast<internal::IterationData const>(
+                maybe_iteration->attributable);
+        return std::make_pair(std::make_optional(iteration), series);
     }
-    auto end = searchQueue.rbegin();
-    internal::AttributableData const *attr = (*(end + 2))->attributable;
-    if (attr == nullptr)
-        throw std::runtime_error(
-            "containingIteration(): attributable must not be a nullptr.");
-    /*
-     * We now know the unique instance of Attributable that corresponds with
-     * the iteration.
-     * Since the class Iteration itself still follows the old class design,
-     * we will have to take a detour via Series.
-     */
-    auto &series = auxiliary::deref_dynamic_cast<internal::SeriesData>(
-        (*searchQueue.rbegin())->attributable);
-    for (auto const &pair : series.iterations)
+    else
     {
-        if (&static_cast<Attributable const &>(pair.second).get() == attr)
-        {
-            return pair.second;
-        }
+        return std::make_pair(std::nullopt, series);
     }
-    throw std::runtime_error(
-        "Containing iteration not found in containing Series.");
 }
 
-Iteration &Attributable::containingIteration()
+auto Attributable::containingIteration()
+    -> std::
+        pair<std::optional<internal::IterationData *>, internal::SeriesData *>
 {
-    return const_cast<Iteration &>(
-        static_cast<Attributable const *>(this)->containingIteration());
+    auto const_res =
+        static_cast<Attributable const *>(this)->containingIteration();
+    return std::make_pair(
+        const_res.first.has_value()
+            ? std::make_optional(
+                  const_cast<internal::IterationData *>(*const_res.first))
+            : std::nullopt,
+        const_cast<internal::SeriesData *>(const_res.second));
 }
 
 std::string Attributable::MyPath::filePath() const
 {
     return directory + seriesName + seriesExtension;
+}
+
+std::string Attributable::MyPath::openPMDPath() const
+{
+    if (group.empty())
+    {
+        return std::string();
+    }
+    else
+    {
+        std::stringstream res;
+        auto it = group.begin();
+        auto end = group.end();
+        res << *it++;
+        for (; it != end; ++it)
+        {
+            res << '/' << *it;
+        }
+        return res.str();
+    }
 }
 
 auto Attributable::myPath() const -> MyPath
@@ -240,8 +267,11 @@ void Attributable::flushAttributes(internal::FlushParams const &flushParams)
             aWrite.dtype = getAttribute(att_name).dtype;
             IOHandler()->enqueue(IOTask(this, aWrite));
         }
-
-        dirty() = false;
+    }
+    // Do this outside the if branch to also setDirty to dirtyRecursive
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        setDirty(false);
     }
 }
 
@@ -451,7 +481,24 @@ void Attributable::readAttributes(ReadMode mode)
         }
     }
 
-    dirty() = false;
+    setDirty(false);
+}
+
+void Attributable::setWritten(bool val, EnqueueAsynchronously ea)
+{
+    switch (ea)
+    {
+
+    case EnqueueAsynchronously::Yes: {
+        Parameter<Operation::SET_WRITTEN> param;
+        param.target_status = val;
+        IOHandler()->enqueue(IOTask(this, param));
+    }
+    break;
+    case EnqueueAsynchronously::No:
+        break;
+    }
+    writable().written = val;
 }
 
 void Attributable::linkHierarchy(Writable &w)
@@ -459,5 +506,55 @@ void Attributable::linkHierarchy(Writable &w)
     auto handler = w.IOHandler;
     writable().IOHandler = handler;
     writable().parent = &w;
+    setDirty(true);
 }
+
+namespace internal
+{
+    template <typename T>
+    T &makeOwning(T &self, Series s)
+    {
+        /*
+         * `self` is a handle object such as RecordComponent or Mesh (see
+         * instantiations below).
+         * These objects don't normally keep alive the Series, i.e. as soon as
+         * the Series is destroyed, the handle becomes invalid.
+         * This function modifies the handle such that it actually keeps the
+         * Series alive and behaves otherwise identically.
+         * First, get the internal shared pointer of the handle.
+         */
+        std::shared_ptr<typename T::Data_t> data_ptr = self.T::getShared();
+        auto raw_ptr = data_ptr.get();
+        /*
+         * Now, create a new shared pointer pointing to the same address as the
+         * actual pointer and replace the old internal shared pointer by the new
+         * one.
+         */
+        self.setData(std::shared_ptr<typename T::Data_t>{
+            raw_ptr,
+            /*
+             * Here comes the main trick.
+             * The new shared pointer stores (and thus keeps alive) two items
+             * via lambda capture in its destructor:
+             * 1. The old shared pointer.
+             * 2. The Series.
+             * It's important to notice that these two items are only stored
+             * within the newly created handle, and not internally within the
+             * actual openPMD object model. This means that no reference cycles
+             * can occur.
+             */
+            [s_lambda = std::move(s),
+             data_ptr_lambda = std::move(data_ptr)](auto const *) {
+                /* no-op, the lambda captures simply go out of scope */
+            }});
+        return self;
+    }
+
+    template RecordComponent &makeOwning(RecordComponent &, Series);
+    template MeshRecordComponent &makeOwning(MeshRecordComponent &, Series);
+    template Mesh &makeOwning(Mesh &, Series);
+    template Record &makeOwning(Record &, Series);
+    template ParticleSpecies &makeOwning(ParticleSpecies &, Series);
+    template Iteration &makeOwning(Iteration &, Series);
+} // namespace internal
 } // namespace openPMD

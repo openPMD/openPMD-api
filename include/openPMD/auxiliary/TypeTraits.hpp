@@ -103,6 +103,27 @@ namespace detail
         constexpr static bool value = true;
         using type = T;
     };
+
+    template <typename>
+    struct IsChar
+    {
+        constexpr static bool value = false;
+    };
+    template <>
+    struct IsChar<char>
+    {
+        constexpr static bool value = true;
+    };
+    template <>
+    struct IsChar<signed char>
+    {
+        constexpr static bool value = true;
+    };
+    template <>
+    struct IsChar<unsigned char>
+    {
+        constexpr static bool value = true;
+    };
 } // namespace detail
 
 template <typename T>
@@ -116,6 +137,9 @@ inline constexpr bool IsPointer_v = detail::IsPointer<T>::value;
 
 template <typename T>
 using IsPointer_t = typename detail::IsPointer<T>::type;
+
+template <typename C>
+inline constexpr bool IsChar_v = detail::IsChar<C>::value;
 
 /** Emulate in the C++ concept ContiguousContainer
  *

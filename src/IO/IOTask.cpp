@@ -66,7 +66,8 @@ void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
             break;
         case json::SupportedLanguages::TOML: {
             auto asToml = json::jsonToToml(shadow);
-            std::cerr << warningMessage << asToml << std::endl;
+            std::cerr << warningMessage << json::format_toml(asToml)
+                      << std::endl;
             break;
         }
         }
@@ -154,4 +155,10 @@ namespace internal
         }
     }
 } // namespace internal
+
+IOTask::IOTask(IOTask const &) = default;
+IOTask::IOTask(IOTask &&) noexcept = default;
+
+IOTask &IOTask::operator=(IOTask const &) = default;
+IOTask &IOTask::operator=(IOTask &&) noexcept = default;
 } // namespace openPMD

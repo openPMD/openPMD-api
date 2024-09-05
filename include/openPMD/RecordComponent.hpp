@@ -25,6 +25,7 @@
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <array>
@@ -69,6 +70,8 @@ namespace internal
          * Chunk reading/writing requests on the contained dataset.
          */
         std::queue<IOTask> m_chunks;
+
+        void push_chunk(IOTask &&task);
         /**
          * Stores the value for constant record components.
          * Ignored otherwise.
@@ -130,6 +133,8 @@ class RecordComponent : public BaseRecordComponent
     friend class DynamicMemoryView;
     friend class internal::RecordComponentData;
     friend class MeshRecordComponent;
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
 public:
     enum class Allocation
@@ -477,14 +482,16 @@ public:
      */
     template <typename Visitor, typename... Args>
     auto visit(Args &&...args) -> decltype(Visitor::template call<char>(
-        std::declval<RecordComponent &>(), std::forward<Args>(args)...));
+                                   std::declval<RecordComponent &>(),
+                                   std::forward<Args>(args)...));
 
     static constexpr char const *const SCALAR = "\vScalar";
 
-private:
+protected:
     void flush(std::string const &, internal::FlushParams const &);
-    virtual void read();
+    void read(bool require_unit_si);
 
+private:
     /**
      * Internal method to be called by all methods that create an empty dataset.
      *
@@ -495,16 +502,6 @@ private:
 
     void storeChunk(
         auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
-
-    /**
-     * @brief Check recursively whether this RecordComponent is dirty.
-     *        It is dirty if any attribute or dataset is read from or written to
-     *        the backend.
-     *
-     * @return true If dirty.
-     * @return false Otherwise.
-     */
-    bool dirtyRecursive() const;
 
     // clang-format off
 OPENPMD_protected
@@ -529,13 +526,23 @@ OPENPMD_protected
         return *m_recordComponentData;
     }
 
+    inline std::shared_ptr<Data_t> getShared()
+    {
+        return m_recordComponentData;
+    }
+
     inline void setData(std::shared_ptr<internal::RecordComponentData> data)
     {
         m_recordComponentData = std::move(data);
         BaseRecordComponent::setData(m_recordComponentData);
     }
 
-    void readBase();
+    void readBase(bool require_unit_si);
+
+    template <typename T>
+    void verifyChunk(Offset const &, Extent const &) const;
+
+    void verifyChunk(Datatype, Offset const &, Extent const &) const;
 }; // RecordComponent
 
 } // namespace openPMD

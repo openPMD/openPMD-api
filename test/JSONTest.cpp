@@ -210,7 +210,7 @@ right = "val"
                 raw, std::ios_base::binary | std::ios_base::in);
             toml::value tomlVal = toml::parse(istream);
             std::stringstream sstream;
-            sstream << tomlVal;
+            sstream << toml::format(tomlVal);
             return sort_lines(sstream.str());
         }();
 

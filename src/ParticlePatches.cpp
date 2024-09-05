@@ -93,14 +93,14 @@ void ParticlePatches::read()
                     datatypeToString(*dOpen.dtype) + ")");
 
         /* allow all attributes to be set */
-        prc.written() = false;
+        prc.setWritten(false, Attributable::EnqueueAsynchronously::No);
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        prc.written() = true;
+        prc.setWritten(true, Attributable::EnqueueAsynchronously::No);
 
-        pr.dirty() = false;
+        pr.setDirty(false);
         try
         {
-            prc.PatchRecordComponent::read();
+            prc.PatchRecordComponent::read(/* require_unit_si = */ false);
         }
         catch (error::ReadError const &err)
         {
@@ -111,5 +111,6 @@ void ParticlePatches::read()
             Container<PatchRecord>::container().erase(component_name);
         }
     }
+    setDirty(false);
 }
 } // namespace openPMD

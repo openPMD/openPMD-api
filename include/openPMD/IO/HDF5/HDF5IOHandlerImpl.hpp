@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_HDF5
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
@@ -37,8 +38,14 @@ namespace openPMD
 #if openPMD_HAVE_HDF5
 class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
 {
+    friend class HDF5IOHandler;
+    friend class ParallelHDF5IOHandler;
+
 public:
-    HDF5IOHandlerImpl(AbstractIOHandler *, json::TracingJSON config);
+    HDF5IOHandlerImpl(
+        AbstractIOHandler *,
+        json::TracingJSON config,
+        bool do_warn_unused_params = true);
     ~HDF5IOHandlerImpl() override;
 
     void
@@ -77,6 +84,7 @@ public:
     void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
     void
     deregister(Writable *, Parameter<Operation::DEREGISTER> const &) override;
+    void touch(Writable *, Parameter<Operation::TOUCH> const &) override;
 
     std::unordered_map<Writable *, std::string> m_fileNames;
     std::unordered_map<std::string, hid_t> m_fileNamesWithID;
@@ -105,6 +113,8 @@ public:
     hid_t m_H5T_LONG_DOUBLE_80_LE;
     hid_t m_H5T_CLONG_DOUBLE_80_LE;
 
+    std::future<void> flush(internal::ParsedFlushParams &);
+
 protected:
 #if openPMD_HAVE_MPI
     /*
@@ -114,9 +124,11 @@ protected:
     std::optional<MPI_Comm> m_communicator;
 #endif
 
-private:
     json::TracingJSON m_config;
-    std::string m_chunks = "auto";
+    nlohmann::json m_global_dataset_config;
+    nlohmann::json m_global_flush_config;
+
+private:
     struct File
     {
         std::string name;

@@ -1,4 +1,5 @@
 // expose private and protected members for invasive testing
+#include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/Access.hpp"
 #if openPMD_USE_INVASIVE_TESTS
@@ -38,6 +39,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
+// windows.h defines this macro and it breaks any function with the same name
+#undef max
 #endif
 
 using namespace openPMD;
@@ -1555,7 +1562,17 @@ struct ReadFromAnyType
 
 inline void write_test(const std::string &backend)
 {
-    Series o = Series("../samples/serial_write." + backend, Access::CREATE);
+#ifdef _WIN32
+    std::string jsonCfg = "{}";
+#else
+    std::string jsonCfg = R"({"rank_table": "posix_hostname"})";
+    chunk_assignment::RankMeta compare{
+        {0,
+         host_info::byMethod(
+             host_info::methodFromStringDescription("posix_hostname", false))}};
+#endif
+    Series o =
+        Series("../samples/serial_write." + backend, Access::CREATE, jsonCfg);
 
     ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -1666,6 +1683,10 @@ inline void write_test(const std::string &backend)
                       << '\'' << std::endl;
         },
         variantTypeDataset);
+
+#ifndef _WIN32
+    REQUIRE(read.rankTable(/* collective = */ false) == compare);
+#endif
 }
 
 TEST_CASE("write_test", "[serial]")
@@ -1816,13 +1837,19 @@ fileBased_add_EDpic(ParticleSpecies &e, uint64_t const num_particles)
 
 inline void fileBased_write_test(const std::string &backend)
 {
+#ifdef _WIN32
+    std::string jsonCfg = "{}";
+#else
+    std::string jsonCfg = R"({"rank_table": "posix_hostname"})";
+#endif
     if (auxiliary::directory_exists("../samples/subdir"))
         auxiliary::remove_directory("../samples/subdir");
 
     {
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%03T." + backend,
-            Access::CREATE);
+            Access::CREATE,
+            jsonCfg);
 
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -1941,7 +1968,8 @@ inline void fileBased_write_test(const std::string &backend)
     {
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
-            Access::READ_ONLY);
+            Access::READ_ONLY,
+            jsonCfg);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(1) == 1);
@@ -2018,7 +2046,8 @@ inline void fileBased_write_test(const std::string &backend)
         // padding
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
-            Access::READ_WRITE);
+            Access::READ_WRITE,
+            jsonCfg);
 
         REQUIRE(o.iterations.size() == 5);
         o.iterations[6];
@@ -2042,6 +2071,7 @@ inline void fileBased_write_test(const std::string &backend)
             .makeConstant<double>(1.0);
 
         o.iterations[overlong_it].setTime(static_cast<double>(overlong_it));
+        o.flush();
         REQUIRE(o.iterations.size() == 7);
     }
     REQUIRE(
@@ -2059,7 +2089,8 @@ inline void fileBased_write_test(const std::string &backend)
     {
         Series o = Series(
             "../samples/subdir/serial_fileBased_write%01T." + backend,
-            Access::READ_WRITE);
+            Access::READ_WRITE,
+            jsonCfg);
 
         REQUIRE(o.iterations.size() == 1);
         /*
@@ -2152,6 +2183,44 @@ inline void fileBased_write_test(const std::string &backend)
             Access::READ_ONLY};
         helper::listSeries(list);
     }
+
+#ifdef __unix__
+    /*
+     * Check that the ranktable was written correctly to every iteration file.
+     */
+    {
+        int dirfd = open("../samples/subdir/", O_RDONLY);
+        if (dirfd < 0)
+        {
+            throw std::system_error(
+                std::error_code(errno, std::system_category()));
+        }
+        DIR *directory = fdopendir(dirfd);
+        if (!directory)
+        {
+            close(dirfd);
+            throw std::system_error(
+                std::error_code(errno, std::system_category()));
+        }
+        chunk_assignment::RankMeta compare{{0, host_info::posix_hostname()}};
+        dirent *entry;
+        while ((entry = readdir(directory)) != nullptr)
+        {
+            if (strcmp(entry->d_name, ".") == 0 ||
+                strcmp(entry->d_name, "..") == 0 ||
+                !auxiliary::ends_with(entry->d_name, "." + backend))
+            {
+                continue;
+            }
+            std::string fullPath =
+                std::string("../samples/subdir/") + entry->d_name;
+            Series single_file(fullPath, Access::READ_ONLY);
+            REQUIRE(single_file.rankTable(/* collective = */ false) == compare);
+        }
+        closedir(directory);
+        close(dirfd);
+    }
+#endif // defined(__unix__)
 }
 
 TEST_CASE("fileBased_write_test", "[serial]")
@@ -4075,7 +4144,7 @@ TEST_CASE("git_adios2_early_chunk_query", "[serial][adios2]")
 /*
  * Require __unix__ since we need all that filestat stuff for this test.
  */
-#if defined(__unix__) && defined(ADIOS2_HAVE_BP5)
+#if defined(__unix__) && openPMD_HAVE_ADIOS2_BP5
 
 enum class FlushDuringStep
 {
@@ -4217,11 +4286,11 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
             REQUIRE(currentSize <= 4096);
         }
 
-        bool has_been_deleted = false;
+        auto has_been_deleted = std::make_shared<bool>(false);
         UniquePtrWithLambda<int32_t> copied_as_unique(
-            new int[size], [&has_been_deleted](int const *ptr) {
+            new int[size], [has_been_deleted](int const *ptr) {
                 delete[] ptr;
-                has_been_deleted = true;
+                *has_been_deleted = true;
             });
         std::copy_n(data.data(), size, copied_as_unique.get());
         {
@@ -4239,13 +4308,13 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         {
             // should now be roughly within 1% of 16Mb
             REQUIRE(std::abs(1 - double(currentSize) / (16 * size)) <= 0.01);
-            REQUIRE(has_been_deleted);
+            REQUIRE(*has_been_deleted);
         }
         else
         {
             // should be roughly zero
             REQUIRE(currentSize <= 4096);
-            REQUIRE(!has_been_deleted);
+            REQUIRE(!*has_been_deleted);
         }
     }
     auto currentSize = getsize();
@@ -4346,6 +4415,118 @@ BufferChunkSize = 2147483646 # 2^31 - 2
 )";
 
     adios2_bp5_flush(cfg5, /* flushDuringStep = */ FlushDuringStep::Always);
+
+#if openPMD_HAVE_ADIOS2_BP5
+    std::string cfg6 = R"(
+[adios2]
+
+[adios2.engine]
+preferred_flush_target = "disk"
+
+[adios2.engine.parameters]
+AggregationType = "TwoLevelShm"
+MaxShmSize = 3221225472
+NumSubFiles = 1
+NumAggregators = 1
+BufferChunkSize = 2147483646 # 2^31 - 2
+)";
+
+    adios2_bp5_flush(
+        cfg6, /* flushDuringStep = */ FlushDuringStep::Default_Yes);
+#endif
+}
+#endif
+
+#if openPMD_HAVE_ADIOS2_BP5
+TEST_CASE("adios2_flush_via_step")
+{
+    Series write(
+        "../samples/adios2_flush_via_step/simData_%T.bp5",
+        Access::CREATE,
+        R"(adios2.engine.parameters.FlattenSteps = "on")");
+    std::vector<float> data(10);
+    for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+    {
+        Iteration it = write.writeIterations()[i];
+        auto E_x = it.meshes["E"]["x"];
+        E_x.resetDataset({Datatype::FLOAT, {10, 10}});
+        for (Extent::value_type j = 0; j < 10; ++j)
+        {
+            std::iota(data.begin(), data.end(), i * 100 + j * 10);
+            E_x.storeChunk(data, {j, 0}, {1, 10});
+            write.flush(R"(adios2.engine.preferred_flush_target = "new_step")");
+        }
+        it.close();
+    }
+
+#if openPMD_HAS_ADIOS_2_10_1
+    for (auto access : {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR})
+    {
+        Series read("../samples/adios2_flush_via_step/simData_%T.%E", access);
+        std::vector<float> load_data(100);
+        data.resize(100);
+        for (auto iteration : read.readIterations())
+        {
+            std::iota(data.begin(), data.end(), iteration.iterationIndex * 100);
+            iteration.meshes["E"]["x"].loadChunkRaw(
+                load_data.data(), {0, 0}, {10, 10});
+            iteration.close();
+            REQUIRE(load_data == data);
+        }
+    }
+#endif
+
+    /*
+     * Now emulate restarting from a checkpoint after a crash and continuing to
+     * write to the output Series. The semantics of openPMD::Access::APPEND
+     * don't fully fit here since that mode is for adding new Iterations to an
+     * existing Series. What we truly want to do is to continue writing to an
+     * Iteration without replacing it with a new one. So we must use the option
+     * adios2.engine.access_mode = "append" to tell the ADIOS2 backend that new
+     * steps should be added to an existing Iteration file.
+     */
+
+    write = Series(
+        "../samples/adios2_flush_via_step/simData_%T.bp5",
+        Access::APPEND,
+        R"(
+            [adios2.engine]
+            access_mode = "append"
+            parameters.FlattenSteps = "on"
+        )");
+    for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
+    {
+        Iteration it = write.writeIterations()[i];
+        auto E_x = it.meshes["E"]["y"];
+        E_x.resetDataset({Datatype::FLOAT, {10, 10}});
+        for (Extent::value_type j = 0; j < 10; ++j)
+        {
+            std::iota(data.begin(), data.end(), i * 100 + j * 10);
+            E_x.storeChunk(data, {j, 0}, {1, 10});
+            write.flush(R"(adios2.engine.preferred_flush_target = "new_step")");
+        }
+        it.close();
+    }
+
+#if openPMD_HAS_ADIOS_2_10_1
+    for (auto access : {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR})
+    {
+        Series read("../samples/adios2_flush_via_step/simData_%T.%E", access);
+        std::vector<float> load_data(100);
+        data.resize(100);
+        for (auto iteration : read.readIterations())
+        {
+            std::iota(data.begin(), data.end(), iteration.iterationIndex * 100);
+            iteration.meshes["E"]["x"].loadChunkRaw(
+                load_data.data(), {0, 0}, {10, 10});
+            iteration.meshes["E"]["y"].loadChunkRaw(
+                load_data.data(), {0, 0}, {10, 10});
+            iteration.close();
+            REQUIRE(load_data == data);
+            REQUIRE(load_data == data);
+        }
+    }
+#endif
 }
 #endif
 
@@ -4406,7 +4587,7 @@ TEST_CASE("adios2_engines_and_file_endings")
     groupbased_test_explicit_backend(
         "", true, "bp4", "", "adios2.engine.type = \"bp4\"");
 
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     // BP5 tests
     groupbased_test_explicit_backend(".bp5", true, "bp5", "");
     groupbased_test_explicit_backend(
@@ -4436,6 +4617,7 @@ TEST_CASE("adios2_engines_and_file_endings")
                 filesystemExt.empty() ? name : basename + filesystemExt;
             {
                 Series write(name, Access::CREATE, jsonCfg);
+                write.close();
             }
             if (directory)
             {
@@ -4471,7 +4653,7 @@ TEST_CASE("adios2_engines_and_file_endings")
     REQUIRE_THROWS(groupbased_test_no_explicit_backend(
         "", true, "bp4", "", "adios2.engine.type = \"bp4\""));
 
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     // BP5 tests
     groupbased_test_no_explicit_backend(".bp5", true, "bp5", "");
     groupbased_test_no_explicit_backend(
@@ -4550,7 +4732,7 @@ TEST_CASE("adios2_engines_and_file_endings")
     filebased_test_explicit_backend(
         "", true, "bp4", "", "adios2.engine.type = \"bp4\"");
 
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     // BP5 tests
     filebased_test_explicit_backend(".bp5", true, "bp5", "");
     filebased_test_explicit_backend(
@@ -4626,7 +4808,7 @@ TEST_CASE("adios2_engines_and_file_endings")
     REQUIRE_THROWS(filebased_test_no_explicit_backend(
         "", true, "bp4", "", "adios2.engine.type = \"bp4\""));
 
-#ifdef ADIOS2_HAVE_BP5
+#if openPMD_HAVE_ADIOS2_BP5
     // BP5 tests
     filebased_test_no_explicit_backend(".bp5", true, "bp5", "");
     filebased_test_no_explicit_backend(
@@ -5007,8 +5189,16 @@ TEST_CASE("serial_iterator", "[serial][adios2]")
 {
     for (auto const &t : testedFileExtensions())
     {
+#ifdef _WIN32
         serial_iterator("../samples/serial_iterator_filebased_%T." + t);
         serial_iterator("../samples/serial_iterator_groupbased." + t);
+#else
+        // Add some regex characters into the file names to see that we can deal
+        // with that. Don't do that on Windows because Windows does not like
+        // those characters within file paths.
+        serial_iterator("../samples/serial_iterator_filebased_+?_%T." + t);
+        serial_iterator("../samples/serial_iterator_groupbased_+?." + t);
+#endif
     }
 }
 
@@ -5020,9 +5210,6 @@ void variableBasedSingleIteration(std::string const &file)
             file,
             Access::CREATE,
             R"({"iteration_encoding": "variable_based"})");
-        REQUIRE(
-            writeSeries.iterationEncoding() ==
-            IterationEncoding::variableBased);
         auto iterations = writeSeries.writeIterations();
         auto iteration = iterations[0];
         auto E_x = iteration.meshes["E"]["x"];
@@ -5031,6 +5218,9 @@ void variableBasedSingleIteration(std::string const &file)
         std::iota(data.begin(), data.end(), 0);
         E_x.storeChunk(data, {0}, {1000});
         writeSeries.flush();
+        REQUIRE(
+            writeSeries.iterationEncoding() ==
+            IterationEncoding::variableBased);
     }
 
     {
@@ -5096,6 +5286,39 @@ bool areEqual(T a, T b)
 } // namespace epsilon
 
 #if openPMD_HAVE_ADIOS2
+
+#define openPMD_VERBOSE_CHUNKS 0
+
+#if openPMD_VERBOSE_CHUNKS
+static std::string format_chunk(ChunkInfo const &chunk_info)
+{
+    std::stringstream result;
+    auto print_vector = [&result](auto const &vec) {
+        if (vec.empty())
+        {
+            result << "[]";
+        }
+        else
+        {
+            auto it = vec.begin();
+            result << '[' << *it++;
+            auto end = vec.end();
+            for (; it != end; ++it)
+            {
+                result << ',' << *it;
+            }
+            result << ']';
+        }
+    };
+    result << '(';
+    print_vector(chunk_info.offset);
+    result << '|';
+    print_vector(chunk_info.extent);
+    result << ')';
+    return result.str();
+}
+#endif
+
 TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
 {
     using namespace epsilon;
@@ -5105,11 +5328,73 @@ TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
 
     std::string const samplePath =
         "../samples/git-sample/3d-bp4/example-3d-bp4.bp";
+    std::string const samplePathFilebased =
+        "../samples/git-sample/3d-bp4/example-3d-bp4_%T.bp";
     if (!auxiliary::directory_exists(samplePath))
     {
         std::cerr << "git sample '" << samplePath << "' not accessible \n";
         return;
     }
+
+    /*
+     * This checks a regression introduced by
+     * https://github.com/openPMD/openPMD-api/pull/1498 and fixed by
+     * https://github.com/openPMD/openPMD-api/pull/1586
+     */
+    for (auto const &[filepath, access] :
+         {std::make_pair(samplePath, Access::READ_ONLY),
+          std::make_pair(samplePathFilebased, Access::READ_ONLY),
+          std::make_pair(samplePath, Access::READ_LINEAR),
+          std::make_pair(samplePathFilebased, Access::READ_LINEAR)})
+    {
+        Series read(filepath, access);
+
+        // false positive by clang-tidy?
+        // NOLINTNEXTLINE(performance-for-range-copy)
+        for (auto iteration : read.readIterations())
+        {
+            for (auto &mesh : iteration.meshes)
+            {
+                for (auto &component : mesh.second)
+                {
+#if openPMD_VERBOSE_CHUNKS
+                    std::cout << "Chunks for '"
+                              << component.second.myPath().openPMDPath()
+                              << "':" << std::endl;
+                    for (auto const &chunk : component.second.availableChunks())
+                    {
+                        std::cout << "\t" << format_chunk(chunk) << std::endl;
+                    }
+#else
+                    component.second.availableChunks();
+#endif
+                }
+            }
+            for (auto &particle_species : iteration.particles)
+            {
+                for (auto &record : particle_species.second)
+                {
+                    for (auto &component : record.second)
+                    {
+#if openPMD_VERBOSE_CHUNKS
+                        std::cout << "Chunks for '"
+                                  << component.second.myPath().openPMDPath()
+                                  << "':" << std::endl;
+                        for (auto const &chunk :
+                             component.second.availableChunks())
+                        {
+                            std::cout << "\t" << format_chunk(chunk)
+                                      << std::endl;
+                        }
+#else
+                        component.second.availableChunks();
+#endif
+                    }
+                }
+            }
+        }
+    }
+
     Series o(samplePath, Access::READ_ONLY, R"({"backend": "adios2"})");
     REQUIRE(o.openPMD() == "1.1.0");
     REQUIRE(o.openPMDextension() == 0);
@@ -5374,6 +5659,7 @@ void adios2_group_table(
     write.close();
 
     Series read("../samples/group_table.bp", Access::READ_LINEAR, jsonRead);
+    // NOLINTNEXTLINE(performance-for-range-copy)
     for (auto iteration : read.readIterations())
     {
         switch (iteration.iterationIndex)
@@ -6021,7 +6307,7 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
                 backend.extension,
             false,
             backend.jsonBaseConfig());
-#if openPMD_HAVE_ADIOS2 && defined(ADIOS2_HAVE_BP5)
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_ADIOS2_BP5
         if (backend.extension == "bp")
         {
             iterate_nonstreaming_series(
@@ -6047,7 +6333,7 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
 #endif
 }
 
-#if openPMD_HAVE_ADIOS2 && defined(ADIOS2_HAVE_BP5)
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_ADIOS2_BP5
 void adios2_bp5_no_steps(bool usesteps)
 {
     std::string const config = R"END(
@@ -6420,7 +6706,7 @@ TEST_CASE("deferred_parsing", "[serial]")
 }
 
 #if openPMD_HAS_ADIOS_2_9
-void chaotic_stream(std::string filename, bool variableBased)
+void chaotic_stream(std::string const &filename, bool variableBased)
 {
     /*
      * We will write iterations in the following order.
@@ -7274,5 +7560,149 @@ TEST_CASE("groupbased_read_write", "[serial]")
        * testing it here.
        */
         groupbased_read_write("toml");
+    }
+}
+
+void joined_dim(std::string const &ext)
+{
+    using type = float;
+    using patchType = uint64_t;
+    constexpr size_t patches_per_rank = 5;
+    constexpr size_t length_of_patch = 10;
+
+    {
+        Series s("../samples/joinedDimParallel." + ext, Access::CREATE);
+        std::vector<UniquePtrWithLambda<type>> writeFrom(patches_per_rank);
+
+        auto it = s.writeIterations()[100];
+
+        Dataset numParticlesDS(
+            determineDatatype<patchType>(), {Dataset::JOINED_DIMENSION});
+        auto numParticles =
+            it.particles["e"]
+                .particlePatches["numParticles"][RecordComponent::SCALAR];
+        auto numParticlesOffset =
+            it.particles["e"]
+                .particlePatches["numParticlesOffset"][RecordComponent::SCALAR];
+        numParticles.resetDataset(numParticlesDS);
+        numParticlesOffset.resetDataset(numParticlesDS);
+
+        auto patchOffset = it.particles["e"].particlePatches["offset"]["x"];
+        auto patchExtent = it.particles["e"].particlePatches["extent"]["x"];
+        Dataset particlePatchesDS(
+            determineDatatype<float>(), {Dataset::JOINED_DIMENSION});
+        patchOffset.resetDataset(particlePatchesDS);
+        patchExtent.resetDataset(particlePatchesDS);
+
+        for (size_t i = 0; i < 5; ++i)
+        {
+            writeFrom[i] = UniquePtrWithLambda<type>(
+                new type[length_of_patch],
+                [](auto const *ptr) { delete[] ptr; });
+            std::iota(
+                writeFrom[i].get(),
+                writeFrom[i].get() + 10,
+                length_of_patch * i);
+            patchOffset.store<type>(length_of_patch * i);
+        }
+
+        auto epx = it.particles["e"]["position"]["x"];
+        Dataset ds(determineDatatype<type>(), {Dataset::JOINED_DIMENSION});
+        epx.resetDataset(ds);
+
+        size_t counter = 0;
+        for (auto &chunk : writeFrom)
+        {
+            epx.storeChunk(std::move(chunk), {}, {length_of_patch});
+            numParticles.store<patchType>(length_of_patch);
+            /*
+             * For the sake of the test case, we know that the
+             * numParticlesOffset has this value. In general, the purpose of the
+             * joined array is that we don't need to know these values, so the
+             * specification of particle patches is somewhat difficult.
+             */
+            numParticlesOffset.store<patchType>(counter++ * length_of_patch);
+            patchExtent.store<type>(10);
+        }
+        writeFrom.clear();
+        it.close();
+        s.close();
+    }
+
+    {
+        Series s("../samples/joinedDimParallel." + ext, Access::READ_ONLY);
+        auto it = s.iterations[100];
+        auto e = it.particles["e"];
+
+        auto particleData = e["position"]["x"].loadChunk<type>();
+        auto numParticles =
+            e.particlePatches["numParticles"][RecordComponent::SCALAR]
+                .load<patchType>();
+        auto numParticlesOffset =
+            e.particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
+                .load<patchType>();
+        auto patchOffset = e.particlePatches["offset"]["x"].load<type>();
+        auto patchExtent = e.particlePatches["extent"]["x"].load<type>();
+
+        it.close();
+
+        // check validity of particle patches
+        auto numPatches =
+            e.particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
+                .getExtent()[0];
+        REQUIRE(
+            e.particlePatches["numParticles"][RecordComponent::SCALAR]
+                .getExtent()[0] == numPatches);
+        for (size_t i = 0; i < numPatches; ++i)
+        {
+            for (size_t j = 0; j < numParticles.get()[i]; ++j)
+            {
+                REQUIRE(
+                    patchOffset.get()[i] <=
+                    particleData.get()[numParticlesOffset.get()[i] + j]);
+                REQUIRE(
+                    particleData.get()[numParticlesOffset.get()[i] + j] <
+                    patchOffset.get()[i] + patchExtent.get()[i]);
+            }
+        }
+
+        /*
+         * Check that:
+         * 1. Joined array joins writes from lower ranks before higher ranks
+         * 2. Joined array joins early writes before later writes from the same
+         *    rank
+         */
+        for (size_t i = 0; i < length_of_patch * patches_per_rank; ++i)
+        {
+            REQUIRE(float(i) == particleData.get()[i]);
+        }
+        for (size_t i = 0; i < patches_per_rank; ++i)
+        {
+            REQUIRE(length_of_patch * i == numParticlesOffset.get()[i]);
+            REQUIRE(type(length_of_patch * i) == patchOffset.get()[i]);
+        }
+    }
+}
+
+TEST_CASE("joined_dim", "[serial]")
+{
+#if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
+        10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
+    209000000
+    constexpr char const *supportsJoinedDims[] = {"bp", "bp4", "bp5"};
+#else
+    // no zero-size arrays
+    std::vector<char const *> supportsJoinedDims;
+#endif
+    for (auto const &t : testedFileExtensions())
+    {
+        for (auto const supported : supportsJoinedDims)
+        {
+            if (t == supported)
+            {
+                joined_dim(t);
+                break;
+            }
+        }
     }
 }

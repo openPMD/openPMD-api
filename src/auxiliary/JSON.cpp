@@ -25,7 +25,10 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 
+#include <limits>
+#include <queue>
 #include <toml.hpp>
 
 #include <algorithm>
@@ -62,6 +65,11 @@ nlohmann::json const &TracingJSON::getShadow() const
     return *m_positionInShadow;
 }
 
+nlohmann::json &TracingJSON::getShadow()
+{
+    return *m_positionInShadow;
+}
+
 nlohmann::json TracingJSON::invertShadow() const
 {
     nlohmann::json inverted = *m_positionInOriginal;
@@ -79,7 +87,13 @@ void TracingJSON::invertShadow(
     std::vector<std::string> toRemove;
     for (auto it = shadow.begin(); it != shadow.end(); ++it)
     {
-        nlohmann::json &partialResult = result[it.key()];
+        auto partialResultIterator = result.find(it.key());
+        if (partialResultIterator == result.end())
+        {
+            // The shadow contained a key that was not in the original dataset
+            continue;
+        }
+        nlohmann::json &partialResult = partialResultIterator.value();
         if (partialResult.is_object())
         {
             invertShadow(partialResult, it.value());
@@ -195,10 +209,6 @@ namespace
             }
             return result;
         }
-        else if (val.is_uninitialized())
-        {
-            return nlohmann::json(); // null
-        }
 
         // @todo maybe generalize error type
         throw error::BackendConfigSchema(
@@ -281,9 +291,22 @@ namespace
 {
     ParsedConfig parseInlineOptions(std::string const &options)
     {
+        // speed up default options
+        ParsedConfig res;
+        if (options.empty())
+        {
+            res.originallySpecifiedAs = SupportedLanguages::TOML;
+            res.config = nlohmann::json::object();
+            return res;
+        }
+        else if (options == "{}")
+        {
+            res.originallySpecifiedAs = SupportedLanguages::JSON;
+            res.config = nlohmann::json::object();
+            return res;
+        }
         std::string trimmed =
             auxiliary::trim(options, [](char c) { return std::isspace(c); });
-        ParsedConfig res;
         if (trimmed.empty())
         {
             return res;
@@ -530,7 +553,7 @@ void warnGlobalUnusedOptions(TracingJSON const &config)
             std::cerr
                 << "[Series] The following parts of the global TOML config "
                    "remains unused:\n"
-                << asToml << std::endl;
+                << json::format_toml(asToml) << std::endl;
         }
         }
     }
@@ -541,19 +564,19 @@ merge(nlohmann::json &defaultVal, nlohmann::json const &overwrite)
 {
     if (defaultVal.is_object() && overwrite.is_object())
     {
-        std::vector<std::string> prunedKeys;
+        std::queue<std::string> prunedKeys;
         for (auto it = overwrite.begin(); it != overwrite.end(); ++it)
         {
             auto &valueInDefault = defaultVal[it.key()];
             merge(valueInDefault, it.value());
             if (valueInDefault.is_null())
             {
-                prunedKeys.emplace_back(it.key());
+                prunedKeys.push(it.key());
             }
         }
-        for (auto const &key : prunedKeys)
+        for (; !prunedKeys.empty(); prunedKeys.pop())
         {
-            defaultVal.erase(key);
+            defaultVal.erase(prunedKeys.front());
         }
     }
     else
@@ -586,10 +609,89 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
     case SupportedLanguages::TOML: {
         auto asToml = json::jsonToToml(res);
         std::stringstream sstream;
-        sstream << asToml;
+        sstream << json::format_toml(asToml);
         return sstream.str();
     }
     }
     throw std::runtime_error("Unreachable!");
 }
+
+nlohmann::json &
+filterByTemplate(nlohmann::json &defaultVal, nlohmann::json const &positiveMask)
+{
+    if (defaultVal.is_object() && positiveMask.is_object())
+    {
+        std::queue<std::string> prunedKeys;
+        for (auto left_it = defaultVal.begin(); left_it != defaultVal.end();
+             ++left_it)
+        {
+            if (auto right_it = positiveMask.find(left_it.key());
+                right_it != positiveMask.end())
+            {
+                // value is covered by mask, keep it
+                filterByTemplate(left_it.value(), right_it.value());
+            }
+            else
+            {
+                prunedKeys.push(left_it.key());
+            }
+        }
+        for (; !prunedKeys.empty(); prunedKeys.pop())
+        {
+            defaultVal.erase(prunedKeys.front());
+        }
+    } // else noop
+    return defaultVal;
+}
+
+constexpr int toml_precision = std::numeric_limits<double>::digits10 + 1;
+
+#if TOML11_VERSION_MAJOR < 4
+template <typename toml_t>
+std ::string format_toml(toml_t &&val)
+{
+    std::stringstream res;
+    res << std::setprecision(toml_precision) << std::forward<toml_t>(val);
+    return res.str();
+}
+
+#else
+
+namespace
+{
+    auto set_precision(toml::value &) -> void;
+    auto set_precision(toml::value &val) -> void
+    {
+        if (val.is_table())
+        {
+            for (auto &pair : val.as_table())
+            {
+                set_precision(pair.second);
+            }
+        }
+        else if (val.is_array())
+        {
+            for (auto &entry : val.as_array())
+            {
+                set_precision(entry);
+            }
+        }
+        else if (val.is_floating())
+        {
+            val.as_floating_fmt().prec = toml_precision;
+        }
+    }
+} // namespace
+
+template <typename toml_t>
+std::string format_toml(toml_t &&val)
+{
+    set_precision(val);
+    return toml::format(std::forward<toml_t>(val));
+}
+
+#endif
+
+template std::string format_toml(toml::value &&);
+template std::string format_toml(toml::value &);
 } // namespace openPMD::json

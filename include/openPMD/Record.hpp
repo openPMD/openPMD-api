@@ -52,7 +52,7 @@ private:
 
     void
     flush_impl(std::string const &, internal::FlushParams const &) override;
-    void read() override;
+    void read();
 }; // Record
 
 template <typename T>

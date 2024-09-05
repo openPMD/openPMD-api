@@ -40,7 +40,8 @@ The following options switch between static and shared builds and control if dep
 CMake Option                   Values          Description
 ============================== =============== ==================================================
 ``openPMD_BUILD_SHARED_LIBS``  **ON**/OFF      Build the C++ API as shared library
-``HDF5_USE_STATIC_LIBRARIES``  ON/**OFF**      Require static HDF5 library
+``HDF5_USE_STATIC_LIBRARIES``  ON/OFF          Require static HDF5 library
+``ZLIB_USE_STATIC_LIBS``       ON/OFF          Require static ZLIB library
 ============================== =============== ==================================================
 
 Note that python modules (``openpmd_api.cpython.[...].so`` or ``openpmd_api.pyd``) are always dynamic libraries.
@@ -67,7 +68,7 @@ The following options allow to switch to external installs of dependencies:
 CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
 ``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2        2.13.10+
-``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11       2.11.1+
+``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11       2.12.0+
 ``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.9.1+
 ``openPMD_USE_INTERNAL_TOML11``   **ON**/OFF  No       toml11          3.7.1+
 ================================= =========== ======== ============= ========

@@ -21,6 +21,8 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/IOTask.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -208,6 +210,16 @@ void Iteration::flushFileBased(
         fCreate.name = filename;
         IOHandler()->enqueue(IOTask(&s.writable(), fCreate));
 
+        /*
+         * If it was written before, then in the context of another iteration.
+         */
+        auto &attr = s.get().m_rankTable.m_attributable;
+        attr.setWritten(false, Attributable::EnqueueAsynchronously::Yes);
+        s.get()
+            .m_rankTable.m_attributable.get()
+            .m_writable.abstractFilePosition.reset();
+        s.flushRankTable();
+
         /* create basePath */
         Parameter<Operation::CREATE_PATH> pCreate;
         pCreate.path = auxiliary::replace_first(s.basePath(), "%T/", "");
@@ -305,6 +317,8 @@ void Iteration::flushVariableBased(
 
 void Iteration::flush(internal::FlushParams const &flushParams)
 {
+    Parameter<Operation::TOUCH> touch;
+    IOHandler()->enqueue(IOTask(&writable(), touch));
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         for (auto &m : meshes)
@@ -331,7 +345,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         }
         else
         {
-            meshes.dirty() = false;
+            meshes.setDirty(false);
         }
 
         if (!particles.empty() || s.containsAttribute("particlesPath"))
@@ -347,10 +361,16 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         }
         else
         {
-            particles.dirty() = false;
+            particles.setDirty(false);
         }
 
         flushAttributes(flushParams);
+    }
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+    {
+        setDirty(false);
+        meshes.setDirty(false);
+        particles.setDirty(false);
     }
 }
 
@@ -509,13 +529,9 @@ void Iteration::read_impl(std::string const &groupPath)
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
             meshes = {};
-            meshes.dirty() = false;
         }
     }
-    else
-    {
-        meshes.dirty() = false;
-    }
+    meshes.setDirty(false);
 
     if (hasParticles)
     {
@@ -529,13 +545,9 @@ void Iteration::read_impl(std::string const &groupPath)
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
             particles = {};
-            particles.dirty() = false;
         }
     }
-    else
-    {
-        particles.dirty() = false;
-    }
+    particles.setDirty(false);
 
     readAttributes(ReadMode::FullyReread);
 #ifdef openPMD_USE_INVASIVE_TESTS
@@ -619,9 +631,9 @@ void Iteration::readMeshes(std::string const &meshesPath)
         MeshRecordComponent &mrc = m;
         IOHandler()->enqueue(IOTask(&mrc, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
-        mrc.written() = false;
+        mrc.setWritten(false, Attributable::EnqueueAsynchronously::No);
         mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        mrc.written() = true;
+        mrc.setWritten(true, Attributable::EnqueueAsynchronously::No);
         try
         {
             m.read();
@@ -743,7 +755,8 @@ auto Iteration::beginStep(
         access::read(series.IOHandler()->m_frontendAccess))
     {
         bool previous = series.iterations.written();
-        series.iterations.written() = false;
+        series.iterations.setWritten(
+            false, Attributable::EnqueueAsynchronously::Yes);
         auto oldStatus = IOHandl->m_seriesStatus;
         IOHandl->m_seriesStatus = internal::SeriesStatus::Parsing;
         try
@@ -759,7 +772,8 @@ auto Iteration::beginStep(
             throw;
         }
         IOHandl->m_seriesStatus = oldStatus;
-        series.iterations.written() = previous;
+        series.iterations.setWritten(
+            previous, Attributable::EnqueueAsynchronously::Yes);
     }
 
     res.stepStatus = status;
@@ -820,33 +834,6 @@ void Iteration::setStepStatus(StepStatus status)
     default:
         throw std::runtime_error("[Iteration] unreachable");
     }
-}
-
-bool Iteration::dirtyRecursive() const
-{
-    if (dirty())
-    {
-        return true;
-    }
-    if (particles.dirty() || meshes.dirty())
-    {
-        return true;
-    }
-    for (auto const &pair : particles)
-    {
-        if (pair.second.dirtyRecursive())
-        {
-            return true;
-        }
-    }
-    for (auto const &pair : meshes)
-    {
-        if (pair.second.dirtyRecursive())
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 void Iteration::linkHierarchy(Writable &w)

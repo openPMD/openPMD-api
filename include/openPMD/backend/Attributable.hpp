@@ -53,6 +53,9 @@ class Series;
 
 namespace internal
 {
+    class IterationData;
+    class SeriesData;
+
     class AttributableData
     {
         friend class openPMD::Attributable;
@@ -74,6 +77,42 @@ namespace internal
          */
         Writable m_writable;
 
+        template <typename T>
+        T asInternalCopyOf()
+        {
+            auto *self = dynamic_cast<typename T::Data_t *>(this);
+            if (!self)
+            {
+                if constexpr (std::is_same_v<Series, T>)
+                {
+                    throw std::runtime_error(
+                        "[Attributable::retrieveSeries] Error when trying to "
+                        "retrieve the Series object. Note: An instance of the "
+                        "Series object must still exist when flushing. A "
+                        "common cause for this error is using a flush call on "
+                        "a handle (e.g. `Iteration::seriesFlush()`) when the "
+                        "original Series object has already gone out of "
+                        "scope.");
+                }
+                else
+                {
+                    throw std::runtime_error(
+
+                        "[AttributableData::asInternalCopyOf<T>] Error when "
+                        "trying to retrieve a containing object. Note: An "
+                        "instance of the Series object must still exist when "
+                        "flushing. A common cause for this error is using a "
+                        "flush call on a handle (e.g. "
+                        "`Iteration::seriesFlush()`) when the original Series "
+                        "object has already gone out of scope.");
+                }
+            }
+            T res;
+            res.setData(
+                std::shared_ptr<typename T::Data_t>(self, [](auto const *) {}));
+            return res;
+        }
+
     private:
         /**
          * The attributes defined by this Attributable.
@@ -83,7 +122,29 @@ namespace internal
 
     template <typename, typename>
     class BaseRecordData;
+
+    class RecordComponentData;
+
+    /*
+     * Internal function to turn a handle into an owning handle that will keep
+     * not only itself, but the entire Series alive. Works by hiding a copy of
+     * the Series into the destructor lambda of the internal shared pointer. The
+     * returned handle is entirely safe to use in just the same ways as a normal
+     * handle, just the surrounding Series needs not be kept alive any more
+     * since it is stored within the handle. By storing the Series in the
+     * handle, not in the actual data, reference cycles are avoided.
+     *
+     * Instantiations for T exist for types RecordComponent,
+     * MeshRecordComponent, Mesh, Record, ParticleSpecies, Iteration.
+     */
+    template <typename T>
+    T &makeOwning(T &self, Series);
 } // namespace internal
+
+namespace debug
+{
+    void printDirty(Series const &);
+}
 
 /** @brief Layer to manage storage of attributes associated with file objects.
  *
@@ -109,6 +170,10 @@ class Attributable
     friend class Series;
     friend class Writable;
     friend class WriteIterations;
+    friend class internal::RecordComponentData;
+    friend void debug::printDirty(Series const &);
+    template <typename T>
+    friend T &internal::makeOwning(T &self, Series);
 
 protected:
     // tag for internal constructor
@@ -198,6 +263,8 @@ public:
      * of parents. This method will walk up the parent list until it reaches
      * an object that has no parent, which is the Series object, and flush()-es
      * it.
+     * If the Attributable is an Iteration or any object contained in an
+     * Iteration, that Iteration will be flushed regardless of its dirty status.
      *
      * @param backendConfig Further backend-specific instructions on how to
      *                      implement this flush call.
@@ -222,13 +289,16 @@ public:
          * Indicates where this Attributable may be found within its Series.
          * Prefixed by the accessed object, e.g.,
          *   "iterations", "100", "meshes", "E", "x"
-         * Notice that RecordComponent::SCALAR is included in this list, too.
+         * Notice that RecordComponent::SCALAR does not get included in this
+         * list.
          */
         std::vector<std::string> group;
         Access access;
 
         /** Reconstructs a path that can be passed to a Series constructor */
         std::string filePath() const;
+        /** Return the path ob the object within the openPMD file */
+        std::string openPMDPath() const;
     };
 
     /**
@@ -251,8 +321,13 @@ OPENPMD_protected
      * Throws an error otherwise, e.g., for Series objects.
      * @{
      */
-    Iteration const &containingIteration() const;
-    Iteration &containingIteration();
+    [[nodiscard]] auto containingIteration() const
+        -> std::pair<
+            std::optional<internal::IterationData const *>,
+            internal::SeriesData const *>;
+    auto containingIteration() -> std::pair<
+                                   std::optional<internal::IterationData *>,
+                                   internal::SeriesData *>;
     /** @} */
 
     void seriesFlush(internal::FlushParams const &);
@@ -375,20 +450,70 @@ OPENPMD_protected
 
     bool dirty() const
     {
-        return writable().dirty;
+        return writable().dirtySelf;
     }
-    bool &dirty()
+    /** O(1).
+     */
+    bool dirtyRecursive() const
     {
-        return writable().dirty;
+        return writable().dirtyRecursive;
+    }
+    void setDirty(bool dirty_in)
+    {
+        auto &w = writable();
+        w.dirtySelf = dirty_in;
+        setDirtyRecursive(dirty_in);
+    }
+    /* Amortized O(1) if dirty_in is true, else O(1).
+     *
+     * Must be used carefully with `dirty_in == false` since it is assumed that
+     * all children are not dirty.
+     *
+     * Invariant of dirtyRecursive:
+     *   this->dirtyRecursive implies parent->dirtyRecursive.
+     *
+     * Hence:
+     *
+     * * If dirty_in is true: This needs only go up far enough until a parent is
+     *   found that itself is dirtyRecursive.
+     * * If dirty_in is false: Only sets `this` to `dirtyRecursive == false`.
+     *   The caller must ensure that the invariant holds (e.g. clearing
+     *   everything during flushing or reading logic).
+     */
+    void setDirtyRecursive(bool dirty_in)
+    {
+        auto &w = writable();
+        w.dirtyRecursive = dirty_in;
+        if (dirty_in)
+        {
+            auto current = w.parent;
+            while (current && !current->dirtyRecursive)
+            {
+                current->dirtyRecursive = true;
+                current = current->parent;
+            }
+        }
     }
     bool written() const
     {
         return writable().written;
     }
-    bool &written()
+    enum class EnqueueAsynchronously : bool
     {
-        return writable().written;
-    }
+        Yes,
+        No
+    };
+    /*
+     * setWritten() will take effect immediately.
+     * But it might additionally be necessary in some situations to enqueue a
+     * SET_WRITTEN task to the backend:
+     * A single flush() operation might encompass different Iterations. In
+     * file-based Iteration encoding, some objects must be written to every
+     * single file, thus their `written` flag must be restored to `false` for
+     * each Iteration. When flushing multiple Iterations at once, this must
+     * happen as an asynchronous IO task.
+     */
+    void setWritten(bool val, EnqueueAsynchronously);
 
 private:
     /**
@@ -414,7 +539,7 @@ inline bool Attributable::setAttribute(std::string const &key, T value)
         error::throwNoSuchAttribute(out_of_range_msg(key));
     }
 
-    dirty() = true;
+    setDirty(true);
     auto it = attri.m_attributes.lower_bound(key);
     if (it != attri.m_attributes.end() &&
         !attri.m_attributes.key_comp()(key, it->first))

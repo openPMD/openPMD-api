@@ -58,7 +58,7 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
         },
 
         // __setstate__
-        [&seriesAccessor](py::tuple t) {
+        [&seriesAccessor](py::tuple const &t) {
             // our tuple has exactly two elements: filePath & group
             if (t.size() != 2)
                 throw std::runtime_error("Invalid state!");
@@ -67,12 +67,9 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
             std::vector<std::string> const group =
                 t[1].cast<std::vector<std::string> >();
 
-            // Create a new openPMD Series and keep it alive.
-            // This is a big hack for now, but it works for our use
-            // case, which is spinning up remote serial read series
-            // for DASK.
-            static auto series = openPMD::Series(filename, Access::READ_ONLY);
-            return seriesAccessor(series, group);
+            openPMD::Series series(
+                filename, Access::READ_ONLY, "defer_iteration_parsing = true");
+            return seriesAccessor(std::move(series), group);
         }));
 }
 } // namespace openPMD

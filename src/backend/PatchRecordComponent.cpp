@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
@@ -26,10 +27,6 @@
 
 namespace openPMD
 {
-namespace internal
-{
-    PatchRecordComponentData::PatchRecordComponentData() = default;
-} // namespace internal
 
 PatchRecordComponent &PatchRecordComponent::setUnitSI(double usi)
 {
@@ -45,15 +42,12 @@ PatchRecordComponent &PatchRecordComponent::resetDataset(Dataset d)
             "written.");
     if (d.extent.empty())
         throw std::runtime_error("Dataset extent must be at least 1D.");
-    if (std::any_of(
-            d.extent.begin(), d.extent.end(), [](Extent::value_type const &i) {
-                return i == 0u;
-            }))
+    if (d.empty())
         throw std::runtime_error(
             "Dataset extent must not be zero in any dimension.");
 
-    get().m_dataset = d;
-    dirty() = true;
+    get().m_dataset = std::move(d);
+    setDirty(true);
     return *this;
 }
 
@@ -77,111 +71,17 @@ Extent PatchRecordComponent::getExtent() const
 
 PatchRecordComponent::PatchRecordComponent(
     BaseRecord<PatchRecordComponent> const &baseRecord)
-    : BaseRecordComponent(NoInit())
+    : RecordComponent(NoInit())
 {
-    setData(baseRecord.m_patchRecordComponentData);
+    static_cast<RecordComponent &>(*this).operator=(baseRecord);
 }
 
-PatchRecordComponent::PatchRecordComponent() : BaseRecordComponent(NoInit())
+PatchRecordComponent::PatchRecordComponent() : RecordComponent(NoInit())
 {
     setData(std::make_shared<Data_t>());
     setUnitSI(1);
 }
 
-PatchRecordComponent::PatchRecordComponent(NoInit)
-    : BaseRecordComponent(NoInit())
+PatchRecordComponent::PatchRecordComponent(NoInit) : RecordComponent(NoInit())
 {}
-
-void PatchRecordComponent::flush(
-    std::string const &name, internal::FlushParams const &flushParams)
-{
-    auto &rc = get();
-    if (access::readOnly(IOHandler()->m_frontendAccess))
-    {
-        while (!rc.m_chunks.empty())
-        {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
-        }
-    }
-    else
-    {
-        if (!rc.m_dataset.has_value())
-        {
-            // The check for !written() is technically not needed, just
-            // defensive programming against internal bugs that go on us.
-            if (!written() && rc.m_chunks.empty())
-            {
-                // No data written yet, just accessed the object so far without
-                // doing anything
-                // Just do nothing and skip this record component.
-                return;
-            }
-            else
-            {
-                throw error::WrongAPIUsage(
-                    "[PatchRecordComponent] Must specify dataset type and "
-                    "extent before flushing (see "
-                    "RecordComponent::resetDataset()).");
-            }
-        }
-        if (!containsAttribute("unitSI"))
-        {
-            setUnitSI(1);
-        }
-        if (!written())
-        {
-            Parameter<Operation::CREATE_DATASET> dCreate;
-            dCreate.name = name;
-            dCreate.extent = getExtent();
-            dCreate.dtype = getDatatype();
-            dCreate.options = rc.m_dataset.value().options;
-            IOHandler()->enqueue(IOTask(this, dCreate));
-        }
-
-        while (!rc.m_chunks.empty())
-        {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
-        }
-
-        flushAttributes(flushParams);
-    }
-}
-
-void PatchRecordComponent::read()
-{
-    readAttributes(ReadMode::FullyReread); // this will set dirty() = false
-
-    if (containsAttribute("unitSI"))
-    {
-        /*
-         * No need to call setUnitSI
-         * If it's in the attributes map, then it's already set
-         * Just verify that it has the right type (getOptional<>() does
-         * conversions if possible, so this check is non-intrusive)
-         */
-        if (auto val = getAttribute("unitSI").getOptional<double>();
-            !val.has_value())
-        {
-            throw error::ReadError(
-                error::AffectedObject::Attribute,
-                error::Reason::UnexpectedContent,
-                {},
-                "Unexpected Attribute datatype for 'unitSI' (expected double, "
-                "found " +
-                    datatypeToString(getAttribute("unitSI").dtype) + ")");
-        }
-    }
-}
-
-bool PatchRecordComponent::dirtyRecursive() const
-{
-    if (this->dirty())
-    {
-        return true;
-    }
-    auto &rc = get();
-    return !rc.m_chunks.empty();
-}
 } // namespace openPMD

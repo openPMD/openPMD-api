@@ -19,24 +19,37 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Series.hpp"
+#include "openPMD/ChunkInfo.hpp"
+#include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/Access.hpp"
+#include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ReadIterations.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/version.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <memory>
+#include <optional>
 #include <regex>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -71,9 +84,11 @@ namespace
     struct Match
     {
         bool isContained{}; //! pattern match successful
-        int padding{}; //! number of zeros used for padding of iteration
-        Series::IterationIndex_t
-            iteration{}; //! iteration found in regex pattern (default: 0)
+        int padding{}; //! number of zeros used for padding of iteration, zero
+                       //! if no padding
+        Series::IterationIndex_t iteration =
+            0; //! iteration found in regex pattern (default: 0)
+        std::optional<std::string> extension;
 
         // support for std::tie
         operator std::tuple<bool &, int &, Series::IterationIndex_t &>()
@@ -102,7 +117,7 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        std::string const &extension);
+        std::optional<std::string> const &extension);
 } // namespace
 
 struct Series::ParsedInput
@@ -113,7 +128,7 @@ struct Series::ParsedInput
     IterationEncoding iterationEncoding;
     std::string filenamePrefix;
     std::string filenamePostfix;
-    std::string filenameExtension;
+    std::optional<std::string> filenameExtension;
     int filenamePadding = -1;
 }; // ParsedInput
 
@@ -177,8 +192,272 @@ Series &Series::setMeshesPath(std::string const &mp)
         setAttribute("meshesPath", mp);
     else
         setAttribute("meshesPath", mp + "/");
-    dirty() = true;
+    setDirty(true);
     return *this;
+}
+
+#if openPMD_HAVE_MPI
+chunk_assignment::RankMeta Series::rankTable(bool collective)
+#else
+chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
+#endif
+{
+    auto &series = get();
+    auto &rankTable = series.m_rankTable;
+    if (rankTable.m_bufferedRead.has_value())
+    {
+        return *rankTable.m_bufferedRead;
+    }
+    if (iterationEncoding() == IterationEncoding::fileBased)
+    {
+        std::cerr << "[Series] Use rank table in file-based iteration encoding "
+                     "at your own risk. Make sure to have an iteration open "
+                     "before calling this."
+                  << std::endl;
+        if (iterations.empty())
+        {
+            return {};
+        }
+#if 0
+        Parameter<Operation::OPEN_FILE> openFile;
+        openFile.name = iterationFilename(iterations.begin()->first);
+        // @todo: check if the series currently has an open file, check if
+        // collective is true
+        IOHandler()->enqueue(IOTask(this, openFile));
+#endif
+    }
+    Parameter<Operation::LIST_DATASETS> listDatasets;
+    IOHandler()->enqueue(IOTask(this, listDatasets));
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (std::none_of(
+            listDatasets.datasets->begin(),
+            listDatasets.datasets->end(),
+            [](std::string const &str) { return str == "rankTable"; }))
+    {
+        rankTable.m_bufferedRead = chunk_assignment::RankMeta{};
+        return {};
+    }
+    Parameter<Operation::OPEN_DATASET> openDataset;
+    openDataset.name = "rankTable";
+    IOHandler()->enqueue(IOTask(&rankTable.m_attributable, openDataset));
+
+    IOHandler()->flush(internal::defaultFlushParams);
+    if (openDataset.extent->size() != 2)
+    {
+        // @todo use better error type
+        throw std::runtime_error("[Series] rankTable must be 2D.");
+    }
+    if (*openDataset.dtype != Datatype::CHAR &&
+        *openDataset.dtype != Datatype::UCHAR &&
+        *openDataset.dtype != Datatype::SCHAR)
+    {
+        // @todo use better error type
+        throw std::runtime_error("[Series] rankTable must have char type.");
+    }
+
+    auto writerRanks = (*openDataset.extent)[0];
+    auto lineWidth = (*openDataset.extent)[1];
+
+    if (lineWidth < 1)
+    {
+        // Check this because our indexing logic later relies on this
+        // @todo use better error type
+        throw std::runtime_error("[Series] rankTable lines must not be empty.");
+    }
+
+    std::shared_ptr<char> get{
+        new char[writerRanks * lineWidth],
+        [](char const *ptr) { delete[] ptr; }};
+
+    auto doReadDataset = [&openDataset, this, &get, &rankTable]() {
+        Parameter<Operation::READ_DATASET> readDataset;
+        // read the whole thing
+        readDataset.offset.resize(2);
+        readDataset.extent = *openDataset.extent;
+        // @todo better cross-platform support by switching over
+        // *openDataset.dtype
+        readDataset.dtype = Datatype::CHAR;
+        readDataset.data = get;
+
+        IOHandler()->enqueue(IOTask(&rankTable.m_attributable, readDataset));
+        IOHandler()->flush(internal::defaultFlushParams);
+    };
+
+#if openPMD_HAVE_MPI
+    if (collective && series.m_communicator.has_value())
+    {
+        auto comm = series.m_communicator.value();
+        int rank{0}, size{1};
+        MPI_Comm_rank(comm, &rank);
+        MPI_Comm_size(comm, &size);
+        if (rank == 0)
+        {
+            doReadDataset();
+        }
+        MPI_Bcast(get.get(), writerRanks * lineWidth, MPI_CHAR, 0, comm);
+    }
+    else
+    {
+        doReadDataset();
+    }
+#else
+    doReadDataset();
+#endif
+
+#if 0
+    if (iterationEncoding() == IterationEncoding::fileBased)
+    {
+        // @todo only do this if the file was previously not open
+        auto &it = iterations.begin()->second;
+        Parameter<Operation::CLOSE_FILE> closeFile;
+        IOHandler()->enqueue(IOTask(this, closeFile));
+        it.get().m_closed = internal::CloseStatus::ClosedTemporarily;
+        IOHandler()->flush(internal::defaultFlushParams);
+    }
+#endif
+
+    chunk_assignment::RankMeta res;
+    for (size_t i = 0; i < writerRanks; ++i)
+    {
+        if (get.get()[(i + 1) * lineWidth - 1] != 0)
+        {
+            throw std::runtime_error(
+                "[Series] rankTable lines must be null-terminated strings.");
+        }
+        // Use C-String constructor for std::string in the following line
+        // std::string::string(char const*);
+        res[i] = get.get() + i * lineWidth;
+    }
+    rankTable.m_bufferedRead = res;
+    return res;
+}
+
+Series &Series::setRankTable(const std::string &myRankInfo)
+{
+    get().m_rankTable.m_rankTableSource =
+        internal::SeriesData::SourceSpecifiedManually{myRankInfo};
+    return *this;
+}
+
+void Series::flushRankTable()
+{
+    auto &series = get();
+    auto &rankTable = series.m_rankTable;
+    auto maybeMyRankInfo = std::visit(
+        auxiliary::overloaded{
+            [](internal::SeriesData::NoSourceSpecified &)
+                -> std::optional<std::string> { return std::nullopt; },
+            [&series](internal::SeriesData::SourceSpecifiedViaJSON &viaJson)
+                -> std::optional<std::string> {
+                host_info::Method method;
+                try
+                {
+#if openPMD_HAVE_MPI
+                    bool consider_mpi = series.m_communicator.has_value();
+#else
+                    (void)series;
+                    bool consider_mpi = false;
+#endif
+                    method = host_info::methodFromStringDescription(
+                        viaJson.value, consider_mpi);
+                }
+                catch (std::out_of_range const &)
+                {
+                    throw error::WrongAPIUsage(
+                        "[Series] Wrong value for JSON option 'rank_table': '" +
+                        viaJson.value + "'.");
+                }
+                return host_info::byMethod(method);
+            },
+            [](internal::SeriesData::SourceSpecifiedManually &manually)
+                -> std::optional<std::string> { return manually.value; }},
+        rankTable.m_rankTableSource);
+    if (!maybeMyRankInfo.has_value())
+    {
+        return;
+    }
+
+    auto myRankInfo = std::move(*maybeMyRankInfo);
+
+    unsigned long long mySize = myRankInfo.size() + 1; // null character
+    int rank{0}, size{1};
+    unsigned long long maxSize = mySize;
+
+    auto createRankTable = [&size, &maxSize, &rankTable, this]() {
+        if (rankTable.m_attributable.written())
+        {
+            return;
+        }
+        Parameter<Operation::CREATE_DATASET> param;
+        param.name = "rankTable";
+        param.dtype = Datatype::CHAR;
+        param.extent = {uint64_t(size), uint64_t(maxSize)};
+        IOHandler()->enqueue(
+            IOTask(&rankTable.m_attributable, std::move(param)));
+    };
+
+    auto writeDataset = [&rank, &maxSize, this, &rankTable](
+                            std::shared_ptr<char> put, size_t num_lines = 1) {
+        Parameter<Operation::WRITE_DATASET> chunk;
+        chunk.dtype = Datatype::CHAR;
+        chunk.offset = {uint64_t(rank), 0};
+        chunk.extent = {num_lines, maxSize};
+        chunk.data = std::move(put);
+        IOHandler()->enqueue(
+            IOTask(&rankTable.m_attributable, std::move(chunk)));
+    };
+
+#if openPMD_HAVE_MPI
+    if (series.m_communicator.has_value())
+    {
+        auto comm = *series.m_communicator;
+        MPI_Comm_rank(comm, &rank);
+        MPI_Comm_size(comm, &size);
+        // todo char portability
+        auto [charBuffer, lineLength, numLines] =
+            auxiliary::collectStringsAsMatrixTo(comm, 0, myRankInfo);
+        (void)numLines; // it's the MPI size
+        maxSize = lineLength;
+
+        if (backend() == "MPI_HDF5")
+        {
+            MPI_Bcast(&maxSize, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
+        }
+        if (rank == 0 || backend() == "MPI_HDF5")
+        {
+            createRankTable();
+        }
+
+        if (rank == 0)
+        {
+            auto asRawPtr = new std::vector<char>(std::move(charBuffer));
+            std::shared_ptr<char> put{
+                asRawPtr->data(),
+                /*
+                 * A nicer solution would be to std::move() the vector into the
+                 * closure and let RAII deal with it. But clang6 doesn't
+                 * correctly implement C++17 closure move initialization, so
+                 * we go the extra mile and use raw pointers.
+                 * > [m_charBuffer = std::move(charBuffer)](char *){
+                 * >     // no-op
+                 * > }
+                 */
+                [asRawPtr](char *) { delete asRawPtr; }};
+            writeDataset(std::move(put), /* num_lines = */ size);
+        }
+        return;
+    }
+#endif
+    // sic! no else
+    // if the Series was initialized without a communicator, then this code will
+    // run as well
+    createRankTable();
+
+    std::shared_ptr<char> put{
+        new char[maxSize]{}, [](char const *ptr) { delete[] ptr; }};
+    std::copy_n(myRankInfo.c_str(), mySize, put.get());
+
+    writeDataset(std::move(put));
 }
 
 std::string Series::particlesPath() const
@@ -203,7 +482,7 @@ Series &Series::setParticlesPath(std::string const &pp)
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
@@ -284,6 +563,10 @@ IterationEncoding Series::iterationEncoding() const
 Series &Series::setIterationEncoding(IterationEncoding ie)
 {
     auto &series = get();
+    if (series.m_deferred_initialization)
+    {
+        runDeferredInitialization();
+    }
     if (written())
         throw std::runtime_error(
             "A files iterationEncoding can not (yet) be changed after it has "
@@ -359,6 +642,10 @@ std::string Series::name() const
 Series &Series::setName(std::string const &n)
 {
     auto &series = get();
+    if (series.m_deferred_initialization)
+    {
+        runDeferredInitialization();
+    }
     if (written())
         throw std::runtime_error(
             "A files name can not (yet) be changed after it has been written.");
@@ -386,12 +673,18 @@ Series &Series::setName(std::string const &n)
     }
 
     series.m_name = n;
-    dirty() = true;
+    setDirty(true);
     return *this;
 }
 
 std::string Series::backend() const
 {
+    return IOHandler()->backendName();
+}
+
+std::string Series::backend()
+{
+    /* this activates the non-const call to IOHandler() */
     return IOHandler()->backendName();
 }
 
@@ -476,6 +769,11 @@ std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
     std::tie(input->name, input->filenameExtension) =
         cleanFilename(input->name, suffix(input->format)).decompose();
 
+    if (input->filenameExtension == ".%E")
+    {
+        input->filenameExtension = std::nullopt;
+    }
+
     return input;
 }
 
@@ -512,21 +810,16 @@ namespace
         std::string const &directory,
         MappingFunction &&mappingFunction)
     {
-        bool isContained;
-        int padding;
-        Series::IterationIndex_t iterationIndex;
         std::set<int> paddings;
         if (auxiliary::directory_exists(directory))
         {
             for (auto const &entry : auxiliary::list_directory(directory))
             {
-                std::tie(isContained, padding, iterationIndex) =
-                    isPartOfSeries(entry);
-                if (isContained)
+                Match match = isPartOfSeries(entry);
+                if (match.isContained)
                 {
-                    paddings.insert(padding);
-                    // no std::forward as this is called repeatedly
-                    mappingFunction(iterationIndex, entry);
+                    paddings.insert(match.padding);
+                    mappingFunction(entry, std::move(match));
                 }
             }
         }
@@ -542,26 +835,264 @@ namespace
         std::function<Match(std::string const &)> const &isPartOfSeries,
         std::string const &directory)
     {
-        return autoDetectPadding(
-            isPartOfSeries,
-            directory,
-            [](Series::IterationIndex_t index, std::string const &filename) {
-                (void)index;
-                (void)filename;
-            });
+        return autoDetectPadding(isPartOfSeries, directory, [](auto &&...) {});
     }
 } // namespace
 
+template <typename... MPI_Communicator>
 void Series::init(
+    std::string const &filepath,
+    Access at,
+    std::string const &options,
+    // Either an MPI_Comm or none, the template works for both options
+    MPI_Communicator &&...comm)
+{
+    auto init_directly = [this, &comm..., at, &filepath](
+                             std::unique_ptr<ParsedInput> parsed_input,
+                             json::TracingJSON tracing_json) {
+        auto io_handler = createIOHandler(
+            parsed_input->path,
+            at,
+            parsed_input->format,
+            parsed_input->filenameExtension.value_or(std::string()),
+            comm...,
+            tracing_json,
+            filepath);
+        initSeries(std::move(io_handler), std::move(parsed_input));
+        json::warnGlobalUnusedOptions(tracing_json);
+    };
+
+    auto init_deferred = [this, at, &filepath, &options, &comm...](
+                             std::string const &parsed_directory) {
+        // Set a temporary IOHandler so that API calls which require a present
+        // IOHandler don't fail
+        writable().IOHandler =
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                std::make_unique<DummyIOHandler>(parsed_directory, at));
+        auto &series = get();
+        series.iterations.linkHierarchy(writable());
+        series.m_rankTable.m_attributable.linkHierarchy(writable());
+        series.m_deferred_initialization =
+            [called_this_already = false, filepath, options, at, comm...](
+                Series &s) mutable {
+                if (called_this_already)
+                {
+                    throw std::runtime_error("Must be called one time only");
+                }
+                else
+                {
+                    called_this_already = true;
+                }
+
+                auto [parsed_input, tracing_json] =
+                    s.initIOHandler<json::TracingJSON>(
+                        filepath,
+                        options,
+                        at,
+                        true,
+                        std::forward<MPI_Communicator>(comm)...);
+
+                auto io_handler = createIOHandler(
+                    parsed_input->path,
+                    at,
+                    parsed_input->format,
+                    parsed_input->filenameExtension.value_or(std::string()),
+                    comm...,
+                    tracing_json,
+                    filepath);
+                auto res = io_handler.get();
+                s.initSeries(std::move(io_handler), std::move(parsed_input));
+                json::warnGlobalUnusedOptions(tracing_json);
+                return res;
+            };
+    };
+
+    switch (at)
+    {
+    case Access::CREATE:
+    case Access::READ_WRITE:
+    case Access::READ_ONLY: {
+        auto [parsed_input, tracing_json] = initIOHandler<json::TracingJSON>(
+            filepath,
+            options,
+            at,
+            true,
+            std::forward<MPI_Communicator>(comm)...);
+        init_directly(std::move(parsed_input), std::move(tracing_json));
+    }
+    break;
+    case Access::READ_LINEAR:
+    case Access::APPEND: {
+        auto [first_parsed_input, first_tracing_json] =
+            initIOHandler<json::TracingJSON>(
+                filepath,
+                options,
+                at,
+                false,
+                std::forward<MPI_Communicator>(comm)...);
+        if (first_parsed_input->filenameExtension.has_value())
+        {
+            init_directly(
+                std::move(first_parsed_input), std::move(first_tracing_json));
+        }
+        else
+        {
+            /*
+             * Since we are still in the constructor, we want to avoid I/O
+             * accesses to resolve the file extension at the moment.
+             * -> Defer the proper initialization of the IO handler up to the
+             * point when we actually need it.
+             */
+            init_deferred(first_parsed_input->path);
+        }
+    }
+    break;
+    }
+}
+
+template <typename TracingJSON, typename... MPI_Communicator>
+auto Series::initIOHandler(
+    std::string const &filepath,
+    std::string const &options,
+    Access at,
+    bool resolve_generic_extension,
+    MPI_Communicator &&...comm)
+    -> std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
+{
+    auto &series = get();
+
+    json::TracingJSON optionsJson = json::parseOptions(
+        options,
+        std::forward<MPI_Communicator>(comm)...,
+        /* considerFiles = */ true);
+    auto input = parseInput(filepath);
+    if (resolve_generic_extension && input->format == Format::GENERIC &&
+        at != Access::CREATE)
+    {
+        auto isPartOfSeries =
+            input->iterationEncoding == IterationEncoding::fileBased
+            ? matcher(
+                  input->filenamePrefix,
+                  input->filenamePadding,
+                  input->filenamePostfix,
+                  std::nullopt)
+            : matcher(input->name, -1, "", std::nullopt);
+        std::optional<std::string> extension;
+        std::set<std::string> additional_extensions;
+        autoDetectPadding(
+            isPartOfSeries,
+            input->path,
+            [&extension,
+             &additional_extensions](std::string const &, Match const &match) {
+                auto const &ext = match.extension.value();
+                if (extension.has_value() && *extension != ext)
+                {
+                    additional_extensions.emplace(ext);
+                }
+                else
+                {
+                    extension = ext;
+                }
+            });
+        if (extension.has_value())
+        {
+            if (!additional_extensions.empty())
+            {
+                std::stringstream error;
+                error << "Found ambiguous filename extensions on disk: ";
+                auto it = additional_extensions.begin();
+                auto end = additional_extensions.end();
+                error << '\'' << *it++ << '\'';
+                for (; it != end; ++it)
+                {
+                    error << ", '" << *it << '\'';
+                }
+                error << " and '" + *extension + "'.";
+                throw error::ReadError(
+                    error::AffectedObject::File,
+                    error::Reason::Other,
+                    std::nullopt,
+                    error.str());
+            }
+            input->filenameExtension = *extension;
+            input->format = determineFormat(*extension);
+        }
+        else if (access::read(at))
+        {
+            throw error::ReadError(
+                error::AffectedObject::File,
+                error::Reason::NotFound,
+                std::nullopt,
+                "No file found that matches given pattern '" + filepath + "'.");
+        }
+    }
+
+    // default options
+    series.m_parseLazily = at == Access::READ_LINEAR;
+
+    // now check for user-specified options
+    parseJsonOptions(optionsJson, *input);
+
+    if (resolve_generic_extension && !input->filenameExtension.has_value())
+    {
+        if (input->format == /* still */ Format::GENERIC)
+        {
+            throw error::WrongAPIUsage(
+                "Unable to automatically determine filename extension. Please "
+                "specify in some way.");
+        }
+        else if (input->format == Format::ADIOS2_BP)
+        {
+            // Since ADIOS2 has multiple extensions depending on the engine,
+            // we need to pass this job on to the backend
+            input->filenameExtension = ".%E";
+        }
+        else
+        {
+            input->filenameExtension = suffix(input->format);
+        }
+    }
+    return std::make_tuple(std::move(input), std::move(optionsJson));
+}
+
+void Series::initSeries(
     std::unique_ptr<AbstractIOHandler> ioHandler,
     std::unique_ptr<Series::ParsedInput> input)
 {
     auto &series = get();
-    writable().IOHandler =
-        std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            std::move(ioHandler));
-    series.iterations.linkHierarchy(writable());
+    auto &writable = series.m_writable;
+
+    /*
+     * In Access modes READ_LINEAR and APPEND, the Series constructor might have
+     * emplaced a temporary IOHandler. Check if this is the case.
+     */
+    if (writable.IOHandler)
+    {
+        if (writable.IOHandler->has_value())
+        {
+            /*
+             * A temporary IOHandler has been used. In this case, copy the
+             * values from that IOHandler over into the real one.
+             */
+            ioHandler->operator=(***writable.IOHandler);
+            *writable.IOHandler = std::move(ioHandler);
+        }
+        else
+        {
+            throw error::Internal(
+                "Control flow error. This should not happen.");
+        }
+    }
+    else
+    {
+        writable.IOHandler =
+            std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
+                std::move(ioHandler));
+    }
+
+    series.iterations.linkHierarchy(writable);
     series.iterations.writable().ownKeyWithinParent = "iterations";
+    series.m_rankTable.m_attributable.linkHierarchy(writable);
 
     series.m_name = input->name;
 
@@ -570,7 +1101,7 @@ void Series::init(
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
-    series.m_filenameExtension = input->filenameExtension;
+    series.m_filenameExtension = input->filenameExtension.value();
 
     if (series.m_iterationEncoding == IterationEncoding::fileBased &&
         !series.m_filenamePrefix.empty() &&
@@ -613,12 +1144,12 @@ Given file pattern: ')END"
             {
                 /* Access::READ_WRITE can be used to create a new Series
                  * allow setting attributes in that case */
-                written() = false;
+                setWritten(false, Attributable::EnqueueAsynchronously::No);
 
                 initDefaults(input->iterationEncoding);
                 setIterationEncoding(input->iterationEncoding);
 
-                written() = true;
+                setWritten(true, Attributable::EnqueueAsynchronously::No);
             }
         }
         catch (...)
@@ -647,6 +1178,11 @@ Given file pattern: ')END"
                 series.m_filenamePrefix,
                 series.m_filenamePadding,
                 series.m_filenamePostfix,
+                /*
+                 * This might still be ".%E" if the backend is ADIOS2 and no
+                 * files are yet on disk.
+                 * In that case, this will just not find anything.
+                 */
                 series.m_filenameExtension),
             IOHandler()->directory);
         switch (padding)
@@ -656,8 +1192,10 @@ Given file pattern: ')END"
                 "Cannot write to a series with inconsistent iteration padding. "
                 "Please specify '%0<N>T' or open as read-only.");
         case -1:
-            std::cerr << "No matching iterations found: " << name()
-                      << std::endl;
+            /*
+             * No matching iterations found. No problem, Append mode is also
+             * fine for creating new datasets.
+             */
             break;
         default:
             series.m_filenamePadding = padding;
@@ -737,7 +1275,12 @@ std::future<void> Series::flush_impl(
     }
     catch (...)
     {
-        IOHandler()->m_lastFlushSuccessful = false;
+        auto handler = IOHandler();
+        handler->m_lastFlushSuccessful = false;
+        while (!handler->m_work.empty())
+        {
+            handler->m_work.pop();
+        }
         throw;
     }
 }
@@ -784,12 +1327,12 @@ void Series::flushFileBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
+        }
 
-            // Phase 3
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
+        // Phase 3
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
         }
         break;
     case Access::READ_WRITE:
@@ -807,12 +1350,14 @@ void Series::flushFileBased(
                  * emulate the file belonging to each iteration as not yet
                  * written, even if the iteration itself is already written
                  * (to ensure that the Series gets reassociated with the
-                 * current iteration)
+                 * current iteration by the backend)
                  */
-                written() = false;
-                series.iterations.written() = false;
+                this->setWritten(
+                    false, Attributable::EnqueueAsynchronously::Yes);
+                series.iterations.setWritten(
+                    false, Attributable::EnqueueAsynchronously::Yes);
 
-                dirty() |= it->second.dirty();
+                setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);
 
                 if (!it->second.written())
@@ -842,18 +1387,18 @@ void Series::flushFileBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
-
-            // Phase 3
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
              */
-            dirty() = allDirty;
+            setDirty(allDirty);
         }
-        dirty() = false;
+        setDirty(false);
+
+        // Phase 3
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
+        }
         break;
     }
     }
@@ -866,6 +1411,7 @@ void Series::flushGorVBased(
     bool flushIOHandler)
 {
     auto &series = get();
+
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         for (auto it = begin; it != end; ++it)
@@ -893,12 +1439,14 @@ void Series::flushGorVBased(
                 it->second.get().m_closed =
                     internal::CloseStatus::ClosedInBackend;
             }
+        }
 
-            // Phase 3
-            if (flushIOHandler)
-            {
-                IOHandler()->flush(flushParams);
-            }
+        // Phase 3
+        Parameter<Operation::TOUCH> touch;
+        IOHandler()->enqueue(IOTask(&writable(), touch));
+        if (flushIOHandler)
+        {
+            IOHandler()->flush(flushParams);
         }
     }
     else
@@ -925,6 +1473,8 @@ void Series::flushGorVBased(
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
             IOHandler()->enqueue(IOTask(this, fCreate));
+
+            flushRankTable();
         }
 
         series.iterations.flush(
@@ -971,6 +1521,8 @@ void Series::flushGorVBased(
         }
 
         flushAttributes(flushParams);
+        Parameter<Operation::TOUCH> touch;
+        IOHandler()->enqueue(IOTask(&writable(), touch));
         if (flushIOHandler)
         {
             IOHandler()->flush(flushParams);
@@ -1004,6 +1556,13 @@ void Series::readFileBased()
     Parameter<Operation::OPEN_FILE> fOpen;
     Parameter<Operation::READ_ATT> aRead;
 
+    // Tell the backend that we are parsing file-based iteration encoding.
+    // This especially means that READ_RANDOM_ACCESS will be used instead of
+    // READ_LINEAR, as READ_LINEAR is implemented in the frontend for file-based
+    // encoding. Don't set the iteration encoding in the frontend yet, will be
+    // set after reading the iteration encoding attribute from the opened file.
+    IOHandler()->setIterationEncoding(IterationEncoding::fileBased);
+
     if (!auxiliary::directory_exists(IOHandler()->directory))
         throw error::ReadError(
             error::AffectedObject::File,
@@ -1021,7 +1580,8 @@ void Series::readFileBased()
         isPartOfSeries,
         IOHandler()->directory,
         // foreach found file with `filename` and `index`:
-        [&series](IterationIndex_t index, std::string const &filename) {
+        [&series](std::string const &filename, Match const &match) {
+            auto index = match.iteration;
             Iteration &i = series.iterations[index];
             i.deferParseAccess(
                 {std::to_string(index),
@@ -1253,9 +1813,9 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
-        written() = false;
+        setWritten(false, Attributable::EnqueueAsynchronously::No);
         setIterationFormat(Attribute(*aRead.resource).get<std::string>());
-        written() = true;
+        setWritten(true, Attributable::EnqueueAsynchronously::No);
     }
     else
         throw error::ReadError(
@@ -1404,9 +1964,9 @@ creating new iterations.
         IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
-            written() = false;
+            setWritten(false, Attributable::EnqueueAsynchronously::No);
             setIterationFormat(Attribute(*aRead.resource).get<std::string>());
-            written() = true;
+            setWritten(true, Attributable::EnqueueAsynchronously::No);
         }
         else
             throw error::ReadError(
@@ -1671,12 +2231,14 @@ void Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
-                it.second.meshes.written() = false;
+                it.second.meshes.setWritten(
+                    false, Attributable::EnqueueAsynchronously::No);
 
             setMeshesPath(val.value());
 
             for (auto &it : series.iterations)
-                it.second.meshes.written() = true;
+                it.second.meshes.setWritten(
+                    true, Attributable::EnqueueAsynchronously::No);
         }
         else
             throw error::ReadError(
@@ -1701,12 +2263,14 @@ void Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for (auto &it : series.iterations)
-                it.second.particles.written() = false;
+                it.second.particles.setWritten(
+                    false, Attributable::EnqueueAsynchronously::No);
 
             setParticlesPath(val.value());
 
             for (auto &it : series.iterations)
-                it.second.particles.written() = true;
+                it.second.particles.setWritten(
+                    true, Attributable::EnqueueAsynchronously::No);
         }
         else
             throw error::ReadError(
@@ -2147,7 +2711,7 @@ namespace
      * The string is converted to lower case.
      */
     template <typename Dest = std::string>
-    void getJsonOptionLowerCase(
+    bool getJsonOptionLowerCase(
         json::TracingJSON &config, std::string const &key, Dest &dest)
     {
         if (config.json().contains(key))
@@ -2163,6 +2727,11 @@ namespace
                 throw error::BackendConfigSchema(
                     {key}, "Must be convertible to string type.");
             }
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 } // namespace
@@ -2173,6 +2742,11 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
     auto &series = get();
     getJsonOption<bool>(
         options, "defer_iteration_parsing", series.m_parseLazily);
+    internal::SeriesData::SourceSpecifiedViaJSON rankTableSource;
+    if (getJsonOptionLowerCase(options, "rank_table", rankTableSource.value))
+    {
+        series.m_rankTable.m_rankTableSource = std::move(rankTableSource);
+    }
     // backend key
     {
         std::map<std::string, Format> const backendDescriptors{
@@ -2201,6 +2775,7 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
                 }
                 else if (
                     input.format != Format::DUMMY &&
+                    input.format != Format::GENERIC &&
                     suffix(input.format) != suffix(it->second))
                 {
                     std::cerr << "[Warning] Supplied filename extension '"
@@ -2323,21 +2898,10 @@ Series::Series(
     std::string const &options)
     : Attributable(NoInit())
 {
-    setData(std::make_shared<internal::SeriesData>());
-    json::TracingJSON optionsJson =
-        json::parseOptions(options, comm, /* considerFiles = */ true);
-    auto input = parseInput(filepath);
-    parseJsonOptions(optionsJson, *input);
-    auto handler = createIOHandler(
-        input->path,
-        at,
-        input->format,
-        input->filenameExtension,
-        comm,
-        optionsJson,
-        filepath);
-    init(std::move(handler), std::move(input));
-    json::warnGlobalUnusedOptions(optionsJson);
+    auto data = std::make_shared<internal::SeriesData>();
+    data->m_communicator = comm;
+    setData(std::move(data));
+    init(filepath, at, options, comm);
 }
 #endif
 
@@ -2346,19 +2910,7 @@ Series::Series(
     : Attributable(NoInit())
 {
     setData(std::make_shared<internal::SeriesData>());
-    json::TracingJSON optionsJson =
-        json::parseOptions(options, /* considerFiles = */ true);
-    auto input = parseInput(filepath);
-    parseJsonOptions(optionsJson, *input);
-    auto handler = createIOHandler(
-        input->path,
-        at,
-        input->format,
-        input->filenameExtension,
-        optionsJson,
-        filepath);
-    init(std::move(handler), std::move(input));
-    json::warnGlobalUnusedOptions(optionsJson);
+    init(filepath, at, options);
 }
 
 Series::operator bool() const
@@ -2387,6 +2939,10 @@ WriteIterations Series::writeIterations()
     if (!series.m_writeIterations.has_value())
     {
         series.m_writeIterations = WriteIterations(this->iterations);
+    }
+    if (series.m_deferred_initialization.has_value())
+    {
+        runDeferredInitialization();
     }
     return series.m_writeIterations.value();
 }
@@ -2444,6 +3000,37 @@ auto Series::currentSnapshot() const
     }
 }
 
+AbstractIOHandler *Series::runDeferredInitialization()
+{
+    auto &series = get();
+    if (series.m_deferred_initialization.has_value())
+    {
+        auto functor = std::move(*m_series->m_deferred_initialization);
+        m_series->m_deferred_initialization = std::nullopt;
+        return functor(*this);
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+AbstractIOHandler *Series::IOHandler()
+{
+    auto res = Attributable::IOHandler();
+    if (res && //  res->backendName() == "Dummy" &&
+        m_series->m_deferred_initialization.has_value())
+    {
+        res = runDeferredInitialization();
+    }
+    return res;
+}
+AbstractIOHandler const *Series::IOHandler() const
+{
+    auto res = Attributable::IOHandler();
+    return res;
+}
+
 namespace
 {
     CleanedFilename cleanFilename(
@@ -2461,31 +3048,58 @@ namespace
         }
     }
 
-    std::function<Match(std::string const &)>
-    buildMatcher(std::string const &regexPattern, int padding)
+    std::function<Match(std::string const &)> buildMatcher(
+        std::string const &regexPattern,
+        int padding,
+        std::optional<size_t> index_of_extension)
     {
-        std::regex pattern(regexPattern);
-
-        return [pattern, padding](std::string const &filename) -> Match {
+        return [index_of_extension,
+                pattern = std::regex(regexPattern),
+                padding](std::string const &filename) -> Match {
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
             int processedPadding =
-                padding != 0 ? padding : (match ? regexMatches[1].length() : 0);
+                padding != 0 ? padding : (match ? regexMatches[2].length() : 0);
             return {
                 match,
                 processedPadding,
-                match ? std::stoull(regexMatches[1]) : 0};
+                padding < 0 ? padding
+                    : match ? std::stoull(regexMatches[2])
+                            : 0,
+                index_of_extension.has_value()
+                    ? std::make_optional<std::string>(
+                          regexMatches[*index_of_extension])
+                    : std::nullopt};
         };
     }
+
+    namespace
+    {
+        auto sanitize_regex(std::string const &input) -> std::string
+        {
+            // need to escape special characters reserved for regexes, see
+            // https://stackoverflow.com/questions/40195412/c11-regex-search-for-exact-string-escape
+            // https://regex101.com/r/GDPK7E/3
+            std::regex specialChars{R"([-[\]{}()*+?.,\^$|#\s\\])"};
+            // `$&` is the matched substring, see
+            // https://en.cppreference.com/w/cpp/regex/regex_replace
+            return std::regex_replace(input, specialChars, R"(\$&)");
+        }
+    } // namespace
 
     std::function<Match(std::string const &)> matcher(
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        std::string const &filenameSuffix)
+        std::optional<std::string> const &filenameSuffix)
     {
-        std::string nameReg = "^" + prefix;
-        if (padding != 0)
+        std::string nameReg = "^(" + sanitize_regex(prefix) + ")";
+        size_t index_of_extension = 0;
+        if (padding < 0)
+        {
+            index_of_extension = 3;
+        }
+        else if (padding > 0)
         {
             // The part after the question mark:
             // The number must be at least `padding` digits long
@@ -2495,15 +3109,108 @@ namespace
             // iteration number via std::stoull(regexMatches[1])
             nameReg += "(([1-9][[:digit:]]*)?([[:digit:]]";
             nameReg += "{" + std::to_string(padding) + "}))";
+            index_of_extension = 6;
         }
         else
         {
             // No padding specified, any number of digits is ok.
             nameReg += "([[:digit:]]";
             nameReg += "+)";
+            index_of_extension = 4;
         }
-        nameReg += postfix + filenameSuffix + "$";
-        return buildMatcher(nameReg, padding);
+        nameReg += "(" + sanitize_regex(postfix) + ")" +
+            filenameSuffix.value_or("(\\.[[:alnum:]]+)") + "$";
+        return buildMatcher(
+            nameReg,
+            padding,
+            !filenameSuffix.has_value()
+                ? std::make_optional<size_t>(index_of_extension)
+                : std::nullopt);
     }
 } // namespace
+
+namespace debug
+{
+    void printDirty(Series const &series)
+    {
+        auto print = [](Attributable const &attr) {
+            size_t indent = 0;
+            {
+                auto current = attr.parent();
+                while (current)
+                {
+                    ++indent;
+                    current = current->parent;
+                }
+            }
+            auto make_indent = [&]() {
+                for (size_t i = 0; i < indent; ++i)
+                {
+                    std::cout << "\t";
+                }
+            };
+            make_indent();
+            auto const &w = attr.writable();
+            std::cout << w.ownKeyWithinParent << '\n';
+            make_indent();
+            std::cout << "Self: " << w.dirtySelf
+                      << "\tRec: " << w.dirtyRecursive << '\n';
+            std::cout << std::endl;
+        };
+        print(series);
+        print(series.iterations);
+        for (auto const &[it_name, it] : series.iterations)
+        {
+            (void)it_name;
+            print(it);
+            print(it.meshes);
+            for (auto const &[mesh_name, mesh] : it.meshes)
+            {
+                (void)mesh_name;
+                print(mesh);
+                if (!mesh.scalar())
+                {
+                    for (auto const &[comp_name, comp] : mesh)
+                    {
+                        (void)comp_name;
+                        print(comp);
+                    }
+                }
+            }
+            print(it.particles);
+            for (auto const &[species_name, species] : it.particles)
+            {
+                (void)species_name;
+                print(species);
+                print(species.particlePatches);
+                for (auto const &[patch_name, patch] : species.particlePatches)
+                {
+                    (void)patch_name;
+                    print(patch);
+                    if (!patch.scalar())
+                    {
+                        for (auto const &[component_name, component] : patch)
+                        {
+                            (void)component_name;
+                            print(component);
+                        }
+                    }
+                }
+                for (auto const &[record_name, record] : species)
+                {
+                    (void)record_name;
+                    print(record);
+                    if (!record.scalar())
+                    {
+                        for (auto const &[comp_name, comp] : record)
+                        {
+                            (void)comp_name;
+                            print(comp);
+                        }
+                    }
+                }
+            }
+        }
+    }
+} // namespace debug
 } // namespace openPMD
