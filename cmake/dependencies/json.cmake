@@ -1,0 +1,55 @@
+function(find_json)
+    if(TARGET nlohmann_json::nlohmann_json)
+        message(STATUS "nlohmann_json::nlohmann_json target already imported")
+    elseif(openPMD_json_src)
+        message(STATUS "Compiling local nlohmann_json ...")
+        message(STATUS "nlohmann_json source path: ${openPMD_json_src}")
+        if(NOT IS_DIRECTORY ${openPMD_json_src})
+            message(FATAL_ERROR "Specified directory openPMD_json_src='${openPMD_json_src}' does not exist!")
+        endif()
+    elseif(openPMD_USE_INTERNAL_JSON)
+        message(STATUS "Downloading nlohmann_json ...")
+        message(STATUS "nlohmann_json repository: ${openPMD_json_repo} (${openPMD_json_branch})")
+        include(FetchContent)
+    endif()
+    if(TARGET nlohmann_json::nlohmann_json)
+        # nothing to do, target already exists in the superbuild
+    elseif(openPMD_USE_INTERNAL_JSON OR openPMD_json_src)
+        if(openPMD_json_src)
+            add_subdirectory(${openPMD_json_src} _deps/localnlohmann_json-build/)
+        else()
+            FetchContent_Declare(fetchednlohmann_json
+                GIT_REPOSITORY ${openPMD_json_repo}
+                GIT_TAG        ${openPMD_json_branch}
+                BUILD_IN_SOURCE 0
+            )
+            FetchContent_MakeAvailable(fetchednlohmann_json)
+
+            # advanced fetch options
+            mark_as_advanced(FETCHCONTENT_BASE_DIR)
+            mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
+            mark_as_advanced(FETCHCONTENT_QUIET)
+            #mark_as_advanced(FETCHCONTENT_SOURCE_DIR_FETCHEDnlohmann_json)
+            mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
+            #mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FETCHEDnlohmann_json)
+        endif()
+    elseif(NOT openPMD_USE_INTERNAL_JSON)
+        find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
+        message(STATUS "nlohmann_json: Found version '${nlohmann_json_VERSION}'")
+    endif()
+endfunction()
+
+# local source-tree
+set(openPMD_json_src ""
+    CACHE PATH
+    "Local path to nlohmann_json source directory (preferred if set)")
+
+# Git fetcher
+set(openPMD_json_repo "https://github.com/nlohmann/json.git"
+    CACHE STRING
+    "Repository URI to pull and build nlohmann_json from if(openPMD_USE_INTERNAL_JSON)")
+set(openPMD_json_branch "v3.11.3"
+    CACHE STRING
+    "Repository branch for openPMD_json_repo if(openPMD_USE_INTERNAL_JSON)")
+
+find_json()

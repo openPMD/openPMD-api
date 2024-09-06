@@ -215,8 +215,6 @@ endfunction()
 
 # Dependencies ################################################################
 #
-include(FetchContent)
-
 message(STATUS "openPMD-api superbuild: ${openPMD_SUPERBUILD}")
 
 # external library: MPI (optional)
@@ -255,79 +253,16 @@ endif()
 
 
 # external library: nlohmann-json (required)
-if(TARGET nlohmann_json::nlohmann_json)
-    # nothing to do, target already exists in the superbuild
-    message(STATUS "nlohmann_json::nlohmann_json target already imported")
-elseif(openPMD_USE_INTERNAL_JSON)
-    set(JSON_BuildTests OFF CACHE INTERNAL "NLohmann JSON option defiend internally by openPMD")
-    set(JSON_Install OFF CACHE INTERNAL "NLohmann JSON option defiend internally by openPMD")  # only used PRIVATE
-
-    # Git fetcher
-    set(openPMD_json_repo "https://github.com/nlohmann/json.git"
-        CACHE STRING
-        "Repository URI to pull and build nlohmann-json from if(openPMD_USE_INTERNAL_JSON)")
-    set(openPMD_json_branch "v3.11.3"
-        CACHE STRING
-        "Repository branch for openPMD_json_repo if(openPMD_USE_INTERNAL_JSON)")
-
-    message(STATUS "Downloading nlohmann-json ...")
-    message(STATUS "nlohmann-json repository: ${openPMD_json_repo} (${openPMD_json_branch})")
-
-    FetchContent_Declare(nlohmann_json
-      GIT_REPOSITORY  ${openPMD_json_repo}
-      GIT_TAG         ${openPMD_json_branch}
-      BUILD_IN_SOURCE 0
-    )
-    FetchContent_MakeAvailable(nlohmann_json)
-else()
-    find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
-    message(STATUS "nlohmann-json: Found version '${nlohmann_json_VERSION}'")
-endif()
+include(${openPMD_SOURCE_DIR}/cmake/dependencies/json.cmake)
 add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::nlohmann_json
     INTERFACE nlohmann_json::nlohmann_json)
 
-# external library: toml11
-if(TARGET toml11::toml11)
-    # nothing to do, target already exists in the superbuild
-    message(STATUS "toml11::toml11 target already imported")
-elseif(openPMD_USE_INTERNAL_TOML11)
-    set(toml11_INSTALL OFF CACHE INTERNAL "toml11 option defined internally by openPMD")
-
-    # Git fetcher
-    set(openPMD_toml11_repo "https://github.com/ToruNiina/toml11.git"
-        CACHE STRING
-        "Repository URI to pull and build toml11 from if(openPMD_USE_INTERNAL_TOML11)")
-    set(openPMD_toml11_branch "v3.7.1"
-        CACHE STRING
-        "Repository branch for openPMD_toml11_branch if(openPMD_USE_INTERNAL_TOML11)")
-
-    message(STATUS "Downloading toml11 ...")
-    message(STATUS "toml11 repository: ${openPMD_toml11_repo} (${openPMD_toml11_branch})")
-
-    FetchContent_Declare(
-      toml11
-      GIT_REPOSITORY  ${openPMD_toml11_repo}
-      GIT_TAG         ${openPMD_toml11_branch}
-      BUILD_IN_SOURCE 0
-    )
-    FetchContent_MakeAvailable(toml11)
-else()
-    # toml11 4.0 was a breaking change. This is reflected in the library's CMake
-    # logic: version 4.0 is not accepted by a call to find_package(toml11 3.7).
-    # Since we support both incompatible versions, we use two find_package()
-    # calls. Search for version 4 first in order to prefer that
-    # in (the unlikely) case that both versions are installed.
-    find_package(toml11 4.0 CONFIG QUIET)
-    if(NOT toml11_FOUND)
-        find_package(toml11 3.7.1 CONFIG REQUIRED)
-    endif()
-    message(STATUS "toml11: Found version '${toml11_VERSION}'")
-endif()
+# external library: toml11 (required)
+include(${openPMD_SOURCE_DIR}/cmake/dependencies/toml11.cmake)
 add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::toml11
     INTERFACE toml11::toml11)
-
 
 # external: CUDA (optional)
 if(openPMD_BUILD_EXAMPLES)  # currently only used in examples
@@ -434,54 +369,11 @@ elseif(openPMD_USE_ADIOS2)
 else()
     set(openPMD_HAVE_ADIOS2 FALSE)
 endif()
-
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
 
 # external library: pybind11 (optional)
-if(openPMD_USE_PYTHON STREQUAL AUTO)
-    find_package(Python 3.8.0 COMPONENTS Interpreter Development.Module)
-elseif(openPMD_USE_PYTHON)
-    find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
-else()
-    set(openPMD_HAVE_PYTHON FALSE)
-endif()
-if(Python_FOUND)
-    if(TARGET pybind11::module)
-        # nothing to do, target already exists in the superbuild
-        message(STATUS "pybind11::module target already imported")
-    elseif(openPMD_USE_INTERNAL_PYBIND11)
-        # Git fetcher
-        set(openPMD_pybind11_repo "https://github.com/pybind/pybind11.git"
-            CACHE STRING
-            "Repository URI to pull and build pybind11 from if(openPMD_USE_INTERNAL_PYBIND11)")
-        set(openPMD_pybind11_branch "v2.12.0"
-            CACHE STRING
-            "Repository branch for openPMD_pybind11_repo if(openPMD_USE_INTERNAL_PYBIND11)")
+include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 
-        message(STATUS "Downloading pybind11 ...")
-        message(STATUS "pybind11 repository: ${openPMD_pybind11_repo} (${openPMD_pybind11_branch})")
-
-        FetchContent_Declare(
-            pybind11
-            GIT_REPOSITORY  ${openPMD_pybind11_repo}
-            GIT_TAG         ${openPMD_pybind11_branch}
-            BUILD_IN_SOURCE 0
-        )
-        FetchContent_MakeAvailable(pybind11)
-    else()
-        find_package(pybind11 2.12.0 CONFIG)
-        if(pybind11_FOUND)
-            set(openPMD_HAVE_PYTHON TRUE)
-            message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
-        else()
-            set(openPMD_HAVE_PYTHON FALSE)
-        endif()
-
-    endif()
-    set(openPMD_HAVE_PYTHON TRUE)
-else()
-    set(openPMD_HAVE_PYTHON FALSE)
-endif()
 
 # Targets #####################################################################
 #
@@ -598,34 +490,7 @@ target_include_directories(openPMD PUBLIC
 
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
-    if(TARGET Catch2::Catch2)
-        # nothing to do, target already exists in the superbuild
-        message(STATUS "Catch2::Catch2 target already imported")
-    elseif(openPMD_USE_INTERNAL_CATCH)
-        # Git fetcher
-        set(openPMD_catch_repo "https://github.com/catchorg/Catch2.git"
-            CACHE STRING
-            "Repository URI to pull and build catch2 from if(openPMD_USE_INTERNAL_CATCH)")
-        set(openPMD_catch_branch "v2.13.10"  # ToDo Migrate to v3 and latest release
-            CACHE STRING
-            "Repository branch for openPMD_catch_branch if(openPMD_USE_INTERNAL_CATCH)")
-
-        message(STATUS "Downloading Catch2 ...")
-        message(STATUS "Catch2 repository: ${openPMD_catch_repo} (${openPMD_catch_branch})")
-
-        FetchContent_Declare(
-            Catch2
-            GIT_REPOSITORY  ${openPMD_catch_repo}
-            GIT_TAG         ${openPMD_catch_branch}
-            BUILD_IN_SOURCE 0
-        )
-        FetchContent_MakeAvailable(Catch2)
-    else()
-        find_package(Catch2 2.13.10 REQUIRED CONFIG)
-        target_link_libraries(openPMD::thirdparty::Catch2
-            INTERFACE Catch2::Catch2)
-        message(STATUS "Catch2: Found version '${Catch2_VERSION}'")
-    endif()
+    include(${openPMD_SOURCE_DIR}/cmake/dependencies/catch.cmake)
     add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
     target_link_libraries(openPMD::thirdparty::Catch2
             INTERFACE Catch2::Catch2)
