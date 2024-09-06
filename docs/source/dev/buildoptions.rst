@@ -74,6 +74,25 @@ CMake Option                      Values      Installs Library       Version
 ``openPMD_USE_INTERNAL_TOML11``   ON/OFF      No       toml11          3.7.1+
 ================================= =========== ======== ============= ========
 
+Developers can also use a local copy of the source directories or control the exact version to download:
+
+============================= ============================================== ===========================================================
+CMake Option                  Default & Values                               Description
+============================= ============================================== ===========================================================
+``openPMD_catch_src``         *None*                                         Path to Catch2 source directory (preferred if set)
+``openPMD_catch_repo``        ``https://github.com/catchorg/Catch2.git``     Repository URI to pull and build Catch2 from
+``openPMD_catch_branch``      *we set and maintain a compatible commit*      Repository branch for ``openPMD_catch_repo``
+``openPMD_pybind11_src``      *None*                                         Path to pybind11 source directory (preferred if set)
+``openPMD_pybind11_repo``     ``https://github.com/pybind/pybind11.git``     Repository URI to pull and build pybind11 from
+``openPMD_pybind11_branch``   *we set and maintain a compatible commit*      Repository branch for ``openPMD_pybind11_repo``
+``openPMD_json_src``          *None*                                         Path to NLohmann JSON source directory (preferred if set)
+``openPMD_json_repo``         ``https://github.com/nlohmann/json.git``       Repository URI to pull and build NLohmann JSON from
+``openPMD_json_branch``       *we set and maintain a compatible commit*      Repository branch for ``openPMD_json_repo``
+``openPMD_toml11_src``        *None*                                         Path to TOML11 source directory (preferred if set)
+``openPMD_toml11_repo``       ``https://github.com/ToruNiina/toml11.git``    Repository URI to pull and build TOML11 from
+``openPMD_toml11_branch``     *we set and maintain a compatible commit*      Repository branch for ``openPMD_toml11_repo``
+============================= ============================================== ===========================================================
+
 
 Tests, Examples and Command Line Tools
 --------------------------------------
