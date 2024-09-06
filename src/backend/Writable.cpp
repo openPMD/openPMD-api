@@ -49,7 +49,7 @@ template <bool flush_entire_series>
 void Writable::seriesFlush(std::string backendConfig)
 {
     seriesFlush<flush_entire_series>(
-        {FlushLevel::UserFlush, std::move(backendConfig)});
+        internal::FlushParams{FlushLevel::UserFlush, std::move(backendConfig)});
 }
 template void Writable::seriesFlush<true>(std::string backendConfig);
 template void Writable::seriesFlush<false>(std::string backendConfig);
