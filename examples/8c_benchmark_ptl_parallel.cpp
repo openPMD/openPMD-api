@@ -317,6 +317,12 @@ std::vector<std::string> getBackends(bool bpOnly)
     res.emplace_back(".bp");
 #endif
 
+    if (bpOnly) {
+       if (res.size() == 0)
+           std::cerr<<" BP is not supported "<<std::endl;
+       return res;
+    }
+
 #if openPMD_HAVE_HDF5
     if (!bpOnly)
        res.emplace_back(".h5");
@@ -416,18 +422,17 @@ void parse(TestInput &input, std::string line)
     // Apply a specific backend instead of trying all available ones
     if (vec.at(0).compare("backend") == 0)
       {
-    if (vec[1][0] != '.')
-      input.m_Backend += '.';
-
-    input.m_Backend += vec[1];
+        if (vec[1][0] != '.')
+           input.m_Backend += '.';
+        input.m_Backend += vec[1];
       }
 
     if (vec[0].compare("joinedArray") == 0)
     {
         if (vec[1].size() > 0) {
-      if ( (vec[1][0] == 't') or (vec[1][0] == 'T') )
-            input.m_UseJoinedDim = true;
-    }
+            if ( (vec[1][0] == 't') or (vec[1][0] == 'T') )
+                input.m_UseJoinedDim = true;
+        }
         return;
     }
 
@@ -509,17 +514,17 @@ void doWork(TestInput & input)
        if ( 0 < input.m_Backend.size() )
        {
          BasicParticlePattern p(input);
-        p.printMe();
-        p.run();
+         p.printMe();
+         p.run();
        }
        else
        {
           for (auto const &which : backends)
           {
             input.m_Backend = which;
-        BasicParticlePattern p(input);
-        p.printMe();
-        p.run();
+            BasicParticlePattern p(input);
+            p.printMe();
+            p.run();
           }
        }
     }
@@ -812,4 +817,3 @@ void BasicParticlePattern::printMe()
         << "\n\t  NumPtls (millions) per rank/step: "<<m_Input.m_PtlMin/1000000<<"  to "<<m_Input.m_PtlMax/1000000
             << std::endl;
 } // printMe
-
