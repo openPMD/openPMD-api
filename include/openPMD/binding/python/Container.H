@@ -85,6 +85,12 @@ declare_container(py::handle scope, std::string const &name)
         // keep container alive while iterator exists
         py::keep_alive<0, 1>());
 
+    // overwrite to avoid that the __len__ of Attributable is used
+    cl.def(
+        "__len__",
+        [](const Map &m) { return m.size(); },
+        "Number of elements in the container to iterate.");
+
     cl.def("__repr__", [name](Map const &m) {
         std::stringstream stream;
         stream << "<openPMD." << name << " with ";
