@@ -283,11 +283,25 @@ this method.
             &Series::setOpenPMDextension)
         .def_property("base_path", &Series::basePath, &Series::setBasePath)
         .def_property(
-            "meshes_path", &Series::meshesPath, &Series::setMeshesPath)
+            "meshes_path",
+            &Series::meshesPath,
+            py::overload_cast<std::string const &>(&Series::setMeshesPath))
         .def("get_rank_table", &Series::rankTable, py::arg("collective"))
         .def("set_rank_table", &Series::setRankTable, py::arg("my_rank_info"))
         .def_property(
-            "particles_path", &Series::particlesPath, &Series::setParticlesPath)
+            "particles_path",
+            &Series::particlesPath,
+            py::overload_cast<std::string const &>(&Series::setParticlesPath))
+        .def_property(
+            "meshes_paths",
+            &Series::meshesPath,
+            py::overload_cast<std::vector<std::string> const &>(
+                &Series::setMeshesPath))
+        .def_property(
+            "particles_paths",
+            &Series::particlesPath,
+            py::overload_cast<std::vector<std::string> const &>(
+                &Series::setParticlesPath))
         .def_property("author", &Series::author, &Series::setAuthor)
         .def_property(
             "machine",
@@ -330,8 +344,20 @@ this method.
         .def("set_openPMD", &Series::setOpenPMD)
         .def("set_openPMD_extension", &Series::setOpenPMDextension)
         .def("set_base_path", &Series::setBasePath)
-        .def("set_meshes_path", &Series::setMeshesPath)
-        .def("set_particles_path", &Series::setParticlesPath)
+        .def(
+            "set_meshes_path",
+            py::overload_cast<std::string const &>(&Series::setMeshesPath))
+        .def(
+            "set_meshes_path",
+            py::overload_cast<std::vector<std::string> const &>(
+                &Series::setMeshesPath))
+        .def(
+            "set_particles_path",
+            py::overload_cast<std::vector<std::string> const &>(
+                &Series::setParticlesPath))
+        .def(
+            "set_particles_path",
+            py::overload_cast<std::string const &>(&Series::setParticlesPath))
         .def("set_author", &Series::setAuthor)
         .def("set_date", &Series::setDate)
         .def("set_iteration_encoding", &Series::setIterationEncoding)

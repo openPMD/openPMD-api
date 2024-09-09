@@ -57,11 +57,26 @@ namespace traits
     };
 } // namespace traits
 
+class CustomHierarchy;
+
 namespace internal
 {
+    template <typename T>
+    constexpr inline bool isDerivedFromAttributable =
+        std::is_base_of_v<Attributable, T>;
+
+    /*
+     * Opt out from this check due to the recursive definition of
+     * class CustomHierarchy : public Container<CustomHierarchy>{ ... };
+     * Cannot check this while CustomHierarchy is still an incomplete type.
+     */
+    template <>
+    constexpr inline bool isDerivedFromAttributable<CustomHierarchy> = true;
+
     class SeriesData;
     template <typename>
     class EraseStaleEntries;
+    struct CustomHierarchyData;
 
     template <
         typename T,
@@ -103,7 +118,7 @@ template <
 class Container : virtual public Attributable
 {
     static_assert(
-        std::is_base_of<Attributable, T>::value,
+        internal::isDerivedFromAttributable<T>,
         "Type of container element must be derived from Writable");
 
     friend class Iteration;
@@ -114,6 +129,8 @@ class Container : virtual public Attributable
     template <typename>
     friend class internal::EraseStaleEntries;
     friend class SeriesIterator;
+    friend struct internal::CustomHierarchyData;
+    friend class CustomHierarchy;
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;

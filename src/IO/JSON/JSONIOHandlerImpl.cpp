@@ -25,6 +25,8 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/IO/Access.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -256,13 +258,13 @@ void JSONIOHandlerImpl::createPath(
         auto filepos = setAndGetFilePosition(writable, false);
 
         jsonVal = &(*jsonVal)[filepos->id];
-        ensurePath(jsonVal, path);
+        ensurePath(jsonVal, path, m_handler->m_backendAccess);
         path = filepos->id.to_string() + "/" + path;
     }
     else
     {
 
-        ensurePath(jsonVal, path);
+        ensurePath(jsonVal, path, m_handler->m_backendAccess);
     }
 
     m_dirty.emplace(file);
@@ -672,7 +674,10 @@ void JSONIOHandlerImpl::openPath(
             std::make_shared<JSONFilePosition>(json::json_pointer(path));
     }
 
-    ensurePath(j, removeSlashes(parameters.path));
+    ensurePath(
+        j,
+        removeSlashes(parameters.path),
+        /* Must not modify j */ Access::READ_ONLY);
 
     writable->written = true;
 }
@@ -1226,18 +1231,45 @@ bool JSONIOHandlerImpl::hasKey(nlohmann::json const &j, KeyT &&key)
 }
 
 void JSONIOHandlerImpl::ensurePath(
-    nlohmann::json *jsonp, std::string const &path)
+    nlohmann::json *jsonp, std::string const &path, Access access)
 {
     auto groups = auxiliary::split(path, "/");
-    for (std::string &group : groups)
+    if (access::readOnly(access))
     {
-        // Enforce a JSON object
-        // the library will automatically create a list if the first
-        // key added to it is parseable as an int
-        jsonp = &(*jsonp)[group];
-        if (jsonp->is_null())
+        for (std::string const &group : groups)
         {
-            *jsonp = nlohmann::json::object();
+            if (!jsonp->contains(group))
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Group,
+                    error::Reason::NotFound,
+                    "JSON",
+                    "Required group '" + path + "' not present.");
+            }
+            jsonp = &(*jsonp).at(group);
+            if (!jsonp->is_object())
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Group,
+                    error::Reason::UnexpectedContent,
+                    "JSON",
+                    "Required group '" + path +
+                        "' is present, but not a JSON object.");
+            }
+        }
+    }
+    else
+    {
+        for (std::string const &group : groups)
+        {
+            // Enforce a JSON object
+            // the library will automatically create a list if the first
+            // key added to it is parseable as an int
+            jsonp = &(*jsonp)[group];
+            if (jsonp->is_null())
+            {
+                *jsonp = nlohmann::json::object();
+            }
         }
     }
 }

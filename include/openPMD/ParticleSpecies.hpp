@@ -37,6 +37,7 @@ class ParticleSpecies : public Container<Record>
     friend class Iteration;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    friend class CustomHierarchy;
 
 public:
     ParticlePatches particlePatches;

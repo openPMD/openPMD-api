@@ -2720,8 +2720,16 @@ TEST_CASE("git_hdf5_sample_structure_test", "[serial][hdf5]")
             o.iterations[100].meshes.parent() ==
             getWritable(&o.iterations[100]));
         REQUIRE(
+            getWritable(
+                &o.iterations[100]["fields"].asContainerOf<Mesh>()["E"]) ==
+            getWritable(&o.iterations[100].meshes["E"]));
+        REQUIRE(
+            o.iterations[100]["fields"].asContainerOf<Mesh>()["E"].parent() ==
+            &o.iterations[100]["fields"].asContainerOf<Mesh>().writable());
+        REQUIRE(
             o.iterations[100].meshes["E"].parent() ==
-            getWritable(&o.iterations[100].meshes));
+            // Iteration::meshes is only an alias, this is the actual parent
+            &o.iterations[100]["fields"].asContainerOf<Mesh>().writable());
         REQUIRE(
             o.iterations[100].meshes["E"]["x"].parent() ==
             getWritable(&o.iterations[100].meshes["E"]));
@@ -2732,12 +2740,16 @@ TEST_CASE("git_hdf5_sample_structure_test", "[serial][hdf5]")
             o.iterations[100].meshes["E"]["z"].parent() ==
             getWritable(&o.iterations[100].meshes["E"]));
         REQUIRE(
+            getWritable(&o.iterations[100].meshes["rho"]) ==
+            getWritable(
+                &o.iterations[100]["fields"].asContainerOf<Mesh>()["rho"]));
+        REQUIRE(
             o.iterations[100].meshes["rho"].parent() ==
-            getWritable(&o.iterations[100].meshes));
+            getWritable(&o.iterations[100]["fields"]));
         REQUIRE(
             o.iterations[100]
                 .meshes["rho"][MeshRecordComponent::SCALAR]
-                .parent() == getWritable(&o.iterations[100].meshes));
+                .parent() == getWritable(&o.iterations[100]["fields"]));
         REQUIRE_THROWS_AS(
             o.iterations[100].meshes["cherries"], std::out_of_range);
         REQUIRE(
@@ -2745,7 +2757,11 @@ TEST_CASE("git_hdf5_sample_structure_test", "[serial][hdf5]")
             getWritable(&o.iterations[100]));
         REQUIRE(
             o.iterations[100].particles["electrons"].parent() ==
-            getWritable(&o.iterations[100].particles));
+            getWritable(&o.iterations[100]["particles"]));
+        REQUIRE(
+            getWritable(&o.iterations[100].particles["electrons"]) ==
+            getWritable(&o.iterations[100]["particles"]
+                             .asContainerOf<ParticleSpecies>()["electrons"]));
         REQUIRE(
             o.iterations[100].particles["electrons"]["charge"].parent() ==
             getWritable(&o.iterations[100].particles["electrons"]));

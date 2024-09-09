@@ -1,6 +1,7 @@
 // expose private and protected members for invasive testing
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/Access.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -168,6 +169,252 @@ TEST_CASE("attribute_dtype_test", "[core]")
     }
 }
 
+TEST_CASE("custom_hierarchies", "[core]")
+{
+    std::string filePath = "../samples/custom_hierarchies.json";
+    Series write(filePath, Access::CREATE);
+    write.iterations[0];
+    write.close();
+
+    Series read(filePath, Access::READ_ONLY);
+    REQUIRE(read.iterations[0].size() == 0);
+    read.close();
+
+    write = Series(filePath, Access::READ_WRITE);
+    write.iterations[0]["custom"]["hierarchy"];
+    write.iterations[0]["custom"].setAttribute("string", "attribute");
+    write.iterations[0]["custom"]["hierarchy"].setAttribute("number", 3);
+    write.iterations[0]["no_attributes"];
+    write.close();
+
+    read = Series(filePath, Access::READ_ONLY);
+    REQUIRE(read.iterations[0].size() == 2);
+    REQUIRE(read.iterations[0].count("custom") == 1);
+    REQUIRE(read.iterations[0].count("no_attributes") == 1);
+    REQUIRE(read.iterations[0]["custom"].size() == 1);
+    REQUIRE(read.iterations[0]["custom"].count("hierarchy") == 1);
+    REQUIRE(read.iterations[0]["custom"]["hierarchy"].size() == 0);
+    REQUIRE(read.iterations[0]["no_attributes"].size() == 0);
+    REQUIRE(
+        read.iterations[0]["custom"]
+            .getAttribute("string")
+            .get<std::string>() == "attribute");
+    REQUIRE(
+        read.iterations[0]["custom"]["hierarchy"]
+            .getAttribute("number")
+            .get<int>() == 3);
+    read.close();
+
+    write = Series(filePath, Access::READ_WRITE);
+    {
+        write.iterations[0]["custom"]["hierarchy"];
+        write.iterations[0]["custom"]
+            .asContainerOf<RecordComponent>()["emptyDataset"]
+            .makeEmpty(Datatype::FLOAT, 3);
+        write.iterations[0]["custom"]["hierarchy"].setAttribute("number", 3);
+        write.iterations[0]["no_attributes"];
+        auto iteration_level_ds =
+            write.iterations[0]
+                .asContainerOf<RecordComponent>()["iteration_level_dataset"];
+        iteration_level_ds.resetDataset({Datatype::INT, {10}});
+        std::vector<int> data(10, 5);
+        iteration_level_ds.storeChunk(data);
+
+        auto meshesViaAlias = write.iterations[0].meshes;
+        meshesViaAlias["E"]["x"].makeEmpty<float>(2);
+        write.setMeshesPath(std::vector<std::string>{"fields/", "%%/meshes/"});
+        auto meshesManually =
+            write.iterations[0]["fields"].asContainerOf<Mesh>();
+        REQUIRE(meshesManually.size() == 0);
+        write.flush(); // Synchronized upon flushing
+        REQUIRE(meshesManually.contains("E"));
+        REQUIRE(meshesManually.size() == 1);
+        meshesManually["B"]["x"].makeEmpty<float>(2);
+        REQUIRE(meshesViaAlias.size() == 1);
+        write.flush();
+        REQUIRE(meshesViaAlias.contains("B"));
+        REQUIRE(meshesViaAlias.size() == 2);
+
+        write.setParticlesPath("species");
+        auto particlesManually =
+            write.iterations[0]["species"].asContainerOf<ParticleSpecies>();
+        particlesManually["e"]["position"]["x"].makeEmpty<float>(1);
+        auto particlesViaAlias = write.iterations[0].particles;
+        particlesViaAlias["i"]["position"]["x"].makeEmpty<float>(1);
+
+        write.close();
+    }
+
+    read = Series(filePath, Access::READ_ONLY);
+    {
+        REQUIRE(read.iterations[0].size() == 4);
+        REQUIRE(read.iterations[0].count("custom") == 1);
+        REQUIRE(read.iterations[0].count("no_attributes") == 1);
+        REQUIRE(read.iterations[0].count("fields") == 1);
+        REQUIRE(read.iterations[0].count("species") == 1);
+        REQUIRE(read.iterations[0]["custom"].size() == 1);
+        REQUIRE(read.iterations[0]["custom"].count("hierarchy") == 1);
+        REQUIRE(read.iterations[0]["custom"]["hierarchy"].size() == 0);
+        REQUIRE(read.iterations[0]["no_attributes"].size() == 0);
+        REQUIRE(read.iterations[0]["fields"].asContainerOf<Mesh>().size() == 2);
+        REQUIRE(
+            read.iterations[0]["fields"].asContainerOf<Mesh>().contains("E"));
+        REQUIRE(
+            read.iterations[0]["fields"].asContainerOf<Mesh>().contains("B"));
+        REQUIRE(read.iterations[0].meshes.size() == 2);
+        REQUIRE(read.iterations[0].meshes.contains("E"));
+        REQUIRE(read.iterations[0].meshes.contains("B"));
+        REQUIRE(
+            read.iterations[0]["species"]
+                .asContainerOf<ParticleSpecies>()
+                .size() == 2);
+        REQUIRE(read.iterations[0]["species"]
+                    .asContainerOf<ParticleSpecies>()
+                    .contains("e"));
+        REQUIRE(read.iterations[0]["species"]
+                    .asContainerOf<ParticleSpecies>()
+                    .contains("i"));
+        REQUIRE(read.iterations[0].particles.size() == 2);
+        REQUIRE(read.iterations[0].particles.contains("e"));
+        REQUIRE(read.iterations[0].particles.contains("i"));
+
+        REQUIRE(
+            read.iterations[0].asContainerOf<RecordComponent>().size() == 1);
+        REQUIRE(
+            read.iterations[0]["custom"]
+                .asContainerOf<RecordComponent>()
+                .size() == 1);
+        REQUIRE(
+            read.iterations[0]["custom"]["hierarchy"]
+                .asContainerOf<RecordComponent>()
+                .size() == 0);
+        REQUIRE(
+            read.iterations[0]["no_attributes"]
+                .asContainerOf<RecordComponent>()
+                .size() == 0);
+
+        auto iteration_level_ds =
+            read.iterations[0]
+                .asContainerOf<RecordComponent>()["iteration_level_dataset"];
+        REQUIRE(iteration_level_ds.getDatatype() == Datatype::INT);
+        REQUIRE(iteration_level_ds.getExtent() == Extent{10});
+        auto loaded_chunk = iteration_level_ds.loadChunk<int>();
+        iteration_level_ds.seriesFlush();
+        for (size_t i = 0; i < 10; ++i)
+        {
+            REQUIRE(loaded_chunk.get()[i] == 5);
+        }
+
+        auto constant_dataset =
+            read.iterations[0]["custom"]
+                .asContainerOf<RecordComponent>()["emptyDataset"];
+        REQUIRE(constant_dataset.getDatatype() == Datatype::FLOAT);
+        REQUIRE(constant_dataset.getExtent() == Extent{0, 0, 0});
+    }
+    read.close();
+
+    write = Series(filePath, Access::READ_WRITE);
+    {
+        std::vector<int> data(10, 3);
+
+        auto E_x = write.iterations[0]["custom_meshes"]["meshes"]
+                       .asContainerOf<Mesh>()["E"]["x"];
+        E_x.resetDataset({Datatype::INT, {10}});
+        E_x.storeChunk(data, {0}, {10});
+
+        auto e_pos_x =
+            write.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()["e"]["position"]["x"];
+        e_pos_x.resetDataset({Datatype::INT, {10}});
+        e_pos_x.storeChunk(data, {0}, {10});
+        write.close();
+    }
+
+    read = Series(filePath, Access::READ_ONLY);
+    {
+        auto it0 = read.iterations[0];
+        auto custom_meshes = it0["custom_meshes"];
+        REQUIRE(custom_meshes["meshes"].asContainerOf<Mesh>().size() == 1);
+        REQUIRE(
+            read.iterations[0]["custom_meshes"]["meshes"]
+                .asContainerOf<Mesh>()
+                .count("E") == 1);
+        auto E_x_loaded = read.iterations[0]["custom_meshes"]["meshes"]
+                              .asContainerOf<Mesh>()["E"]["x"]
+                              .loadChunk<int>();
+        REQUIRE(
+            read.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()
+                .size() == 1);
+        REQUIRE(
+            read.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()
+                .count("e") == 1);
+        auto e_pos_x_loaded =
+            read.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()["e"]["position"]["x"]
+                .loadChunk<int>();
+        read.flush();
+
+        for (size_t i = 0; i < 10; ++i)
+        {
+            REQUIRE(E_x_loaded.get()[i] == 3);
+            REQUIRE(e_pos_x_loaded.get()[i] == 3);
+        }
+    }
+}
+
+TEST_CASE("custom_hierarchies_no_rw", "[core]")
+{
+    std::string filePath = "../samples/custom_hierarchies_no_rw.json";
+    Series write(filePath, Access::CREATE);
+    write.setMeshesPath(std::vector<std::string>{"%%/meshes/"});
+    write.iterations[0]["custom"]["hierarchy"];
+    write.iterations[0]["custom"].setAttribute("string", "attribute");
+    write.iterations[0]["custom"]["hierarchy"].setAttribute("number", 3);
+    write.iterations[0]["no_attributes"];
+
+    {
+        write.iterations[0]["custom"]["hierarchy"];
+        write.iterations[0]["custom"]
+            .asContainerOf<RecordComponent>()["emptyDataset"]
+            .makeEmpty(Datatype::FLOAT, 3);
+        write.iterations[0]["custom"]["hierarchy"].setAttribute("number", 3);
+        write.iterations[0]["no_attributes"];
+        auto iteration_level_ds =
+            write.iterations[0]
+                .asContainerOf<RecordComponent>()["iteration_level_dataset"];
+        iteration_level_ds.resetDataset({Datatype::INT, {10}});
+        std::vector<int> data(10, 5);
+        iteration_level_ds.storeChunk(data);
+        write.flush();
+    }
+
+    {
+        std::vector<int> data(10, 3);
+
+        auto E_x = write.iterations[0]["custom_meshes"]["meshes"]
+                       .asContainerOf<Mesh>()["E"]["x"];
+        E_x.resetDataset({Datatype::INT, {10}});
+        E_x.storeChunk(data, {0}, {10});
+
+        auto e_pos_x =
+            write.iterations[0]["custom_particles"]["particles"]
+                .asContainerOf<ParticleSpecies>()["e"]["position"]["x"];
+        e_pos_x.resetDataset({Datatype::INT, {10}});
+        e_pos_x.storeChunk(data, {0}, {10});
+
+        auto gnihihi = write.iterations[0]["custom_particles"]["particles"]
+                           .asContainerOf<RecordComponent>();
+        auto dataset = gnihihi["custom_dataset"];
+        dataset.resetDataset({Datatype::INT, {10}});
+        dataset.storeChunk(std::unique_ptr<int[]>(new int[10]{}), {0}, {10});
+        write.close();
+    }
+
+    Series read(filePath, Access::READ_ONLY);
+}
+
 TEST_CASE("myPath", "[core]")
 {
 #if openPMD_USE_INVASIVE_TESTS
@@ -196,7 +443,9 @@ TEST_CASE("myPath", "[core]")
         recordComponent.template makeConstant<int>(5678);
     };
 
-    REQUIRE(pathOf(iteration.meshes) == vec_t{"iterations", "1234", "meshes"});
+    // iteration.meshes is only an alias without a path of its own
+    // REQUIRE(pathOf(iteration.meshes) == vec_t{"iterations", "1234",
+    // "meshes"});
 
     auto scalarMesh = iteration.meshes["e_chargeDensity"];
     REQUIRE(
@@ -215,9 +464,10 @@ TEST_CASE("myPath", "[core]")
         pathOf(vectorMeshComponent) ==
         vec_t{"iterations", "1234", "meshes", "E", "x"});
 
-    REQUIRE(
-        pathOf(iteration.particles) ==
-        vec_t{"iterations", "1234", "particles"});
+    // iteration.particles is only an alias without a path of its own
+    // REQUIRE(
+    //     pathOf(iteration.particles) ==
+    //     vec_t{"iterations", "1234", "particles"});
 
     auto speciesE = iteration.particles["e"];
     REQUIRE(pathOf(speciesE) == vec_t{"iterations", "1234", "particles", "e"});

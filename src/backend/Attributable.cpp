@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
@@ -38,7 +39,16 @@ namespace openPMD
 {
 namespace internal
 {
-    AttributableData::AttributableData() : m_writable{this}
+    SharedAttributableData::SharedAttributableData(AttributableData *attr)
+        : m_writable{attr}
+    {}
+
+    AttributableData::AttributableData()
+        : SharedData_t(std::make_shared<SharedAttributableData>(this))
+    {}
+
+    AttributableData::AttributableData(SharedAttributableData *raw_ptr)
+        : SharedData_t({raw_ptr, [](auto const *) {}})
     {}
 } // namespace internal
 
@@ -269,10 +279,10 @@ void Attributable::flushAttributes(internal::FlushParams const &flushParams)
         }
     }
     // Do this outside the if branch to also setDirty to dirtyRecursive
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-    {
-        setDirty(false);
-    }
+    assert(
+        flushParams.flushLevel != FlushLevel::SkeletonOnly &&
+        flushParams.flushLevel != FlushLevel::CreateOrOpenFiles);
+    setDirty(false);
 }
 
 void Attributable::readAttributes(ReadMode mode)

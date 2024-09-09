@@ -48,10 +48,11 @@ void PatchRecord::flush_impl(
                 path, flushParams); // warning (clang-tidy-10):
                                     // bugprone-parent-virtual-call
         for (auto &comp : *this)
-            comp.second.flush(comp.first, flushParams);
+            comp.second.flush(
+                comp.first, flushParams, /* set_defaults = */ true);
     }
     else
-        T_RecordComponent::flush(path, flushParams);
+        T_RecordComponent::flush(path, flushParams, /* set_defaults = */ true);
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
         setDirty(false);
@@ -95,7 +96,7 @@ void PatchRecord::read()
         prc.setWritten(true, Attributable::EnqueueAsynchronously::No);
         try
         {
-            prc.read(/* require_unit_si = */ false);
+            prc.read(/* read_defaults = */ false);
         }
         catch (error::ReadError const &err)
         {

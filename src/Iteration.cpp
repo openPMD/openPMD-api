@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Iteration.hpp"
+#include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
@@ -27,18 +28,22 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <exception>
 #include <iostream>
+#include <stdexcept>
 #include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace openPMD
 {
 using internal::CloseStatus;
 using internal::DeferredParseAccess;
 
-Iteration::Iteration() : Attributable(NoInit())
+Iteration::Iteration() : CustomHierarchy(NoInit())
 {
     setData(std::make_shared<Data_t>());
     setTime(static_cast<double>(0));
@@ -243,7 +248,7 @@ void Iteration::flushFileBased(
     case FlushLevel::SkeletonOnly:
     case FlushLevel::InternalFlush:
     case FlushLevel::UserFlush:
-        flush(flushParams);
+        flushIteration(flushParams);
         break;
     }
 }
@@ -266,7 +271,7 @@ void Iteration::flushGroupBased(
     case FlushLevel::SkeletonOnly:
     case FlushLevel::InternalFlush:
     case FlushLevel::UserFlush:
-        flush(flushParams);
+        flushIteration(flushParams);
         break;
     }
 }
@@ -289,7 +294,7 @@ void Iteration::flushVariableBased(
     case FlushLevel::SkeletonOnly:
     case FlushLevel::InternalFlush:
     case FlushLevel::UserFlush:
-        flush(flushParams);
+        flushIteration(flushParams);
         break;
     }
 
@@ -315,63 +320,130 @@ void Iteration::flushVariableBased(
     }
 }
 
-void Iteration::flush(internal::FlushParams const &flushParams)
+void Iteration::flushIteration(internal::FlushParams const &flushParams)
 {
     Parameter<Operation::TOUCH> touch;
     IOHandler()->enqueue(IOTask(&writable(), touch));
-    if (access::readOnly(IOHandler()->m_frontendAccess))
+    if (flushParams.flushLevel == FlushLevel::CreateOrOpenFiles)
     {
-        for (auto &m : meshes)
-            m.second.flush(m.first, flushParams);
-        for (auto &species : particles)
-            species.second.flush(species.first, flushParams);
+        return;
     }
-    else
+
+    /*
+     * Convention for CustomHierarchy::flush and CustomHierarchy::read:
+     * Path is created/opened already at entry point of method, method needs
+     * to create/open path for contained subpaths.
+     */
+
+    Series s = retrieveSeries();
+    std::vector<std::string> meshesPaths = s.meshesPaths(),
+                             particlesPaths = s.particlesPaths();
+    internal::MeshesParticlesPath mpp(meshesPaths, particlesPaths);
+
+    sync_meshes_and_particles_from_alias_to_subgroups(mpp);
+
+    std::vector<std::string> currentPath;
+    CustomHierarchy::flush_internal(flushParams, mpp, currentPath);
+
+    sync_meshes_and_particles_from_subgroups_to_alias(mpp);
+
+    if (!mpp.collectNewMeshesPaths.empty() ||
+        !mpp.collectNewParticlesPaths.empty())
     {
-        /* Find the root point [Series] of this file,
-         * meshesPath and particlesPath are stored there */
-        Series s = retrieveSeries();
-
-        if (!meshes.empty() || s.containsAttribute("meshesPath"))
+        for (auto [newly_added_paths, vec] :
+             {std::make_pair(&mpp.collectNewMeshesPaths, &meshesPaths),
+              std::make_pair(&mpp.collectNewParticlesPaths, &particlesPaths)})
         {
-            if (!s.containsAttribute("meshesPath"))
-            {
-                s.setMeshesPath("meshes/");
-                s.flushMeshesPath();
-            }
-            meshes.flush(s.meshesPath(), flushParams);
-            for (auto &m : meshes)
-                m.second.flush(m.first, flushParams);
+            std::transform(
+                newly_added_paths->begin(),
+                newly_added_paths->end(),
+                std::back_inserter(*vec),
+                [](auto const &pair) { return pair; });
         }
-        else
-        {
-            meshes.setDirty(false);
-        }
-
-        if (!particles.empty() || s.containsAttribute("particlesPath"))
-        {
-            if (!s.containsAttribute("particlesPath"))
-            {
-                s.setParticlesPath("particles/");
-                s.flushParticlesPath();
-            }
-            particles.flush(s.particlesPath(), flushParams);
-            for (auto &species : particles)
-                species.second.flush(species.first, flushParams);
-        }
-        else
-        {
-            particles.setDirty(false);
-        }
-
-        flushAttributes(flushParams);
+        s.setMeshesPath(meshesPaths);
+        s.setParticlesPath(particlesPaths);
     }
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly &&
+        flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
     {
+        if (access::write(IOHandler()->m_frontendAccess))
+        {
+            flushAttributes(flushParams);
+        }
         setDirty(false);
         meshes.setDirty(false);
         particles.setDirty(false);
     }
+}
+
+void Iteration::sync_meshes_and_particles_from_alias_to_subgroups(
+    internal::MeshesParticlesPath const &mpp)
+{
+    auto sync_meshes_and_particles =
+        [this](auto &m_or_p, std::string const &defaultPath) {
+            using type =
+                typename std::remove_reference_t<decltype(m_or_p)>::mapped_type;
+
+            if (m_or_p.empty())
+            {
+                return;
+            }
+            auto container = (*this)[defaultPath].asContainerOf<type>();
+
+            for (auto &[name, entry] : m_or_p)
+            {
+                if (auxiliary::contains(name, '/'))
+                {
+                    throw std::runtime_error(
+                        "Unimplemented: Multi-level paths in "
+                        "Iteration::meshes/Iteration::particles");
+                }
+                if (auto it = container.find(name); it != container.end())
+                {
+                    if (it->second.m_attri->asSharedPtrOfAttributable() ==
+                        entry.m_attri->asSharedPtrOfAttributable())
+                    {
+                        continue; // has been emplaced previously
+                    }
+                    else
+                    {
+                        throw std::runtime_error("asdfasdfasdfasd");
+                    }
+                }
+                else
+                {
+                    container.emplace(name, entry);
+                    entry.linkHierarchy(container.writable());
+                }
+            }
+        };
+
+    sync_meshes_and_particles(meshes, mpp.m_defaultMeshesPath);
+    sync_meshes_and_particles(particles, mpp.m_defaultParticlesPath);
+}
+
+void Iteration::sync_meshes_and_particles_from_subgroups_to_alias(
+    internal::MeshesParticlesPath const &mpp)
+{
+    auto sync_meshes_and_particles =
+        [this](auto &m_or_p, std::string const &defaultPath) {
+            using type =
+                typename std::remove_reference_t<decltype(m_or_p)>::mapped_type;
+            auto it = this->find(defaultPath);
+            if (it == this->end())
+            {
+                return;
+            }
+            auto container = it->second.asContainerOf<type>();
+            for (auto &[name, entry] : container)
+            {
+                m_or_p.emplace(name, entry);
+            }
+        };
+
+    sync_meshes_and_particles(meshes, mpp.m_defaultMeshesPath);
+    sync_meshes_and_particles(particles, mpp.m_defaultParticlesPath);
 }
 
 void Iteration::deferParseAccess(DeferredParseAccess dr)
@@ -488,68 +560,20 @@ void Iteration::read_impl(std::string const &groupPath)
             "found " +
                 datatypeToString(Attribute(*aRead.resource).dtype) + ")");
 
-    /* Find the root point [Series] of this file,
-     * meshesPath and particlesPath are stored there */
     Series s = retrieveSeries();
 
     Parameter<Operation::LIST_PATHS> pList;
+    IOHandler()->enqueue(IOTask(this, pList));
     std::string version = s.openPMD();
-    bool hasMeshes = false;
-    bool hasParticles = false;
-    if (version == "1.0.0" || version == "1.0.1")
-    {
-        IOHandler()->enqueue(IOTask(this, pList));
-        IOHandler()->flush(internal::defaultFlushParams);
-        hasMeshes = std::count(
-                        pList.paths->begin(),
-                        pList.paths->end(),
-                        auxiliary::replace_last(s.meshesPath(), "/", "")) == 1;
-        hasParticles =
-            std::count(
-                pList.paths->begin(),
-                pList.paths->end(),
-                auxiliary::replace_last(s.particlesPath(), "/", "")) == 1;
-        pList.paths->clear();
-    }
-    else
-    {
-        hasMeshes = s.containsAttribute("meshesPath");
-        hasParticles = s.containsAttribute("particlesPath");
-    }
 
-    if (hasMeshes)
-    {
-        try
-        {
-            readMeshes(s.meshesPath());
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr << "Cannot read meshes in iteration " << groupPath
-                      << " and will skip them due to read error:\n"
-                      << err.what() << std::endl;
-            meshes = {};
-        }
-    }
-    meshes.setDirty(false);
+    // @todo restore compatibility with openPMD 1.0.*:
+    //   hasMeshes <-> meshesPath is defined
 
-    if (hasParticles)
-    {
-        try
-        {
-            readParticles(s.particlesPath());
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr << "Cannot read particles in iteration " << groupPath
-                      << " and will skip them due to read error:\n"
-                      << err.what() << std::endl;
-            particles = {};
-        }
-    }
-    particles.setDirty(false);
+    internal::MeshesParticlesPath mpp(s.meshesPaths(), s.particlesPaths());
+    CustomHierarchy::read(mpp);
 
-    readAttributes(ReadMode::FullyReread);
+    sync_meshes_and_particles_from_subgroups_to_alias(mpp);
+
 #ifdef openPMD_USE_INVASIVE_TESTS
     if (containsAttribute("__openPMD_internal_fail"))
     {
@@ -564,125 +588,6 @@ void Iteration::read_impl(std::string const &groupPath)
         }
     }
 #endif
-}
-
-void Iteration::readMeshes(std::string const &meshesPath)
-{
-    Parameter<Operation::OPEN_PATH> pOpen;
-    Parameter<Operation::LIST_PATHS> pList;
-
-    pOpen.path = meshesPath;
-    IOHandler()->enqueue(IOTask(&meshes, pOpen));
-
-    meshes.readAttributes(ReadMode::FullyReread);
-
-    internal::EraseStaleEntries<decltype(meshes)> map{meshes};
-
-    /* obtain all non-scalar meshes */
-    IOHandler()->enqueue(IOTask(&meshes, pList));
-    IOHandler()->flush(internal::defaultFlushParams);
-
-    Parameter<Operation::LIST_ATTS> aList;
-    for (auto const &mesh_name : *pList.paths)
-    {
-        Mesh &m = map[mesh_name];
-        pOpen.path = mesh_name;
-        aList.attributes->clear();
-        IOHandler()->enqueue(IOTask(&m, pOpen));
-        IOHandler()->enqueue(IOTask(&m, aList));
-        IOHandler()->flush(internal::defaultFlushParams);
-
-        auto att_begin = aList.attributes->begin();
-        auto att_end = aList.attributes->end();
-        auto value = std::find(att_begin, att_end, "value");
-        auto shape = std::find(att_begin, att_end, "shape");
-        if (value != att_end && shape != att_end)
-        {
-            MeshRecordComponent &mrc = m;
-            IOHandler()->enqueue(IOTask(&mrc, pOpen));
-            IOHandler()->flush(internal::defaultFlushParams);
-            mrc.get().m_isConstant = true;
-        }
-        try
-        {
-            m.read();
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr << "Cannot read mesh with name '" << mesh_name
-                      << "' and will skip it due to read error:\n"
-                      << err.what() << std::endl;
-            map.forget(mesh_name);
-        }
-    }
-
-    /* obtain all scalar meshes */
-    Parameter<Operation::LIST_DATASETS> dList;
-    IOHandler()->enqueue(IOTask(&meshes, dList));
-    IOHandler()->flush(internal::defaultFlushParams);
-
-    Parameter<Operation::OPEN_DATASET> dOpen;
-    for (auto const &mesh_name : *dList.datasets)
-    {
-        Mesh &m = map[mesh_name];
-        dOpen.name = mesh_name;
-        IOHandler()->enqueue(IOTask(&m, dOpen));
-        IOHandler()->flush(internal::defaultFlushParams);
-        MeshRecordComponent &mrc = m;
-        IOHandler()->enqueue(IOTask(&mrc, dOpen));
-        IOHandler()->flush(internal::defaultFlushParams);
-        mrc.setWritten(false, Attributable::EnqueueAsynchronously::No);
-        mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        mrc.setWritten(true, Attributable::EnqueueAsynchronously::No);
-        try
-        {
-            m.read();
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr << "Cannot read mesh with name '" << mesh_name
-                      << "' and will skip it due to read error:\n"
-                      << err.what() << std::endl;
-            map.forget(mesh_name);
-        }
-    }
-}
-
-void Iteration::readParticles(std::string const &particlesPath)
-{
-    Parameter<Operation::OPEN_PATH> pOpen;
-    Parameter<Operation::LIST_PATHS> pList;
-
-    pOpen.path = particlesPath;
-    IOHandler()->enqueue(IOTask(&particles, pOpen));
-
-    particles.readAttributes(ReadMode::FullyReread);
-
-    /* obtain all particle species */
-    pList.paths->clear();
-    IOHandler()->enqueue(IOTask(&particles, pList));
-    IOHandler()->flush(internal::defaultFlushParams);
-
-    internal::EraseStaleEntries<decltype(particles)> map{particles};
-    for (auto const &species_name : *pList.paths)
-    {
-        ParticleSpecies &p = map[species_name];
-        pOpen.path = species_name;
-        IOHandler()->enqueue(IOTask(&p, pOpen));
-        IOHandler()->flush(internal::defaultFlushParams);
-        try
-        {
-            p.read();
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr << "Cannot read particle species with name '"
-                      << species_name
-                      << "' and will skip it due to read error:\n"
-                      << err.what() << std::endl;
-            map.forget(species_name);
-        }
-    }
 }
 
 auto Iteration::beginStep(bool reread) -> BeginStepStatus
@@ -708,7 +613,8 @@ auto Iteration::beginStep(
     case IE::fileBased:
         if (thisObject.has_value())
         {
-            file = &static_cast<Attributable &>(*thisObject).get();
+            file = static_cast<internal::AttributableData *>(
+                thisObject.value().m_attri.get());
         }
         else
         {
@@ -790,7 +696,7 @@ void Iteration::endStep()
     switch (series.iterationEncoding())
     {
     case IE::fileBased:
-        file = &Attributable::get();
+        file = m_attri.get();
         break;
     case IE::groupBased:
     case IE::variableBased:
@@ -834,6 +740,29 @@ void Iteration::setStepStatus(StepStatus status)
     default:
         throw std::runtime_error("[Iteration] unreachable");
     }
+}
+
+bool Iteration::dirtyRecursive() const
+{
+    if (dirty() || CustomHierarchy::dirtyRecursive())
+    {
+        return true;
+    }
+    for (auto const &pair : particles)
+    {
+        if (!pair.second.written())
+        {
+            return true;
+        }
+    }
+    for (auto const &pair : meshes)
+    {
+        if (!pair.second.written())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Iteration::linkHierarchy(Writable &w)
