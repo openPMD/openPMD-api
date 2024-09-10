@@ -664,8 +664,11 @@ void BasicParticlePattern::store(Series &series, int step)
     storeParticles(currSpecies, step);
 
     if (m_Input.m_CallPDW)
-      series.flush();
-
+    {
+         std::string pdwStr = "PDW-"+std::to_string(step);
+         Timer pdwTimer(pdwStr, m_Input.m_MPIRank, Timer::FULL);
+         series.flush();
+    }
     {
       Checkpoint remove2("Barrier_3", m_Input.m_MPIRank);
       MPI_Barrier(MPI_COMM_WORLD);
