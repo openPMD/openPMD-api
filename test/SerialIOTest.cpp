@@ -7,6 +7,8 @@
 #define OPENPMD_protected public:
 #endif
 
+#include "SerialIOTests.hpp"
+
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -36,6 +38,7 @@
 #ifdef __unix__
 #include <dirent.h>
 #include <fcntl.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -158,6 +161,13 @@ TEST_CASE("char_roundtrip", "[serial]")
 void write_and_read_many_iterations(
     std::string const &ext, bool intermittentFlushes)
 {
+#ifdef __unix__
+    struct rlimit rlim;
+    getrlimit(RLIMIT_NOFILE, &rlim);
+    auto old_soft_limit = rlim.rlim_cur;
+    rlim.rlim_cur = 512;
+    setrlimit(RLIMIT_NOFILE, &rlim);
+#endif
     // the idea here is to trigger the maximum allowed number of file handles,
     // e.g., the upper limit in "ulimit -n" (default: often 1024). Once this
     // is reached, files should be closed automatically for open iterations
@@ -170,6 +180,7 @@ void write_and_read_many_iterations(
         auxiliary::getEnvNum("OPENPMD_TEST_NFILES_MAX", 1030);
     std::string filename =
         "../samples/many_iterations/many_iterations_%T." + ext;
+    // std::cout << "WRITE " << filename << std::endl;
 
     std::vector<float> data(10);
     std::iota(data.begin(), data.end(), 0.);
@@ -192,6 +203,7 @@ void write_and_read_many_iterations(
         }
         // ~Series intentionally not yet called
 
+        // std::cout << "READ " << filename << std::endl;
         Series read(
             filename, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}");
         for (auto iteration : read.iterations)
@@ -217,6 +229,10 @@ void write_and_read_many_iterations(
 
     Series list(filename, Access::READ_ONLY);
     helper::listSeries(list);
+#ifdef __unix__
+    rlim.rlim_cur = old_soft_limit;
+    setrlimit(RLIMIT_NOFILE, &rlim);
+#endif
 }
 
 TEST_CASE("write_and_read_many_iterations", "[serial]")
@@ -456,10 +472,6 @@ void close_iteration_test(std::string const &file_ending)
         E_x.resetDataset({Datatype::INT, {2, 2}});
         E_x.storeChunk(data, {0, 0}, {2, 2});
         it1.close(/* flush = */ true);
-
-        // illegally access iteration after closing
-        E_x.storeChunk(data, {0, 0}, {2, 2});
-        REQUIRE_THROWS(write.flush());
     }
 
     {
@@ -472,8 +484,6 @@ void close_iteration_test(std::string const &file_ending)
         {
             REQUIRE(data[i] == chunk.get()[i]);
         }
-        auto read_again = E_x_read.loadChunk<int>({0, 0}, {2, 2});
-        REQUIRE_THROWS(read.flush());
     }
 
     {
@@ -742,52 +752,9 @@ TEST_CASE("close_and_copy_attributable_test", "[serial]")
 }
 
 #if openPMD_HAVE_ADIOS2
-TEST_CASE("close_iteration_throws_test", "[serial]")
+TEST_CASE("close_and_reopen_test", "[serial]")
 {
-    /*
-     * Iterations should not be accessed any more after closing.
-     * Test that the openPMD API detects that case and throws.
-     */
-    {
-        Series series("../samples/close_iteration_throws_1.bp", Access::CREATE);
-        auto it0 = series.iterations[0];
-        auto E_x = it0.meshes["E"]["x"];
-        E_x.resetDataset({Datatype::INT, {5}});
-        std::vector<int> data{0, 1, 2, 3, 4};
-        E_x.storeChunk(data, {0}, {5});
-        it0.close();
-
-        auto B_y = it0.meshes["B"]["y"];
-        B_y.resetDataset({Datatype::INT, {5}});
-        B_y.storeChunk(data, {0}, {5});
-        REQUIRE_THROWS(series.flush());
-    }
-    {
-        Series series("../samples/close_iteration_throws_2.bp", Access::CREATE);
-        auto it0 = series.iterations[0];
-        auto E_x = it0.meshes["E"]["x"];
-        E_x.resetDataset({Datatype::INT, {5}});
-        std::vector<int> data{0, 1, 2, 3, 4};
-        E_x.storeChunk(data, {0}, {5});
-        it0.close();
-
-        auto e_position_x = it0.particles["e"]["position"]["x"];
-        e_position_x.resetDataset({Datatype::INT, {5}});
-        e_position_x.storeChunk(data, {0}, {5});
-        REQUIRE_THROWS(series.flush());
-    }
-    {
-        Series series("../samples/close_iteration_throws_3.bp", Access::CREATE);
-        auto it0 = series.iterations[0];
-        auto E_x = it0.meshes["E"]["x"];
-        E_x.resetDataset({Datatype::INT, {5}});
-        std::vector<int> data{0, 1, 2, 3, 4};
-        E_x.storeChunk(data, {0}, {5});
-        it0.close();
-
-        it0.setTimeUnitSI(2.0);
-        REQUIRE_THROWS(series.flush());
-    }
+    close_and_reopen_test::close_and_reopen_test();
 }
 #endif
 
@@ -2221,6 +2188,9 @@ inline void fileBased_write_test(const std::string &backend)
         close(dirfd);
     }
 #endif // defined(__unix__)
+
+    filebased_write_test::close_and_reopen_iterations(
+        "../samples/subdir/serial_fileBased_write%T." + backend);
 }
 
 TEST_CASE("fileBased_write_test", "[serial]")
@@ -5658,18 +5628,24 @@ void adios2_group_table(
     write.writeIterations()[1].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
     write.close();
 
+    size_t counter = 0;
+    bool saw_iteration_0{false}, saw_iteration_1{false};
+
     Series read("../samples/group_table.bp", Access::READ_LINEAR, jsonRead);
     // NOLINTNEXTLINE(performance-for-range-copy)
     for (auto iteration : read.readIterations())
     {
+        ++counter;
         switch (iteration.iterationIndex)
         {
         case 0:
+            saw_iteration_0 = true;
             REQUIRE(iteration.meshes["E"].contains("x"));
             REQUIRE(iteration.meshes["E"].contains("y"));
             REQUIRE(iteration.meshes["E"].size() == 2);
             break;
         case 1:
+            saw_iteration_1 = true;
             if (canDeleteGroups)
             {
                 REQUIRE(iteration.meshes["E"].contains("x"));
@@ -5684,6 +5660,9 @@ void adios2_group_table(
             break;
         }
     }
+    REQUIRE(counter == 2);
+    REQUIRE(saw_iteration_0);
+    REQUIRE(saw_iteration_1);
 }
 
 TEST_CASE("adios2_group_table", "[serial]")
@@ -6613,6 +6592,28 @@ void deferred_parsing(std::string const &extension)
             REQUIRE(
                 std::abs(dataset.get()[i] - float(i)) <=
                 std::numeric_limits<float>::epsilon());
+        }
+    }
+    {
+        Series series(
+            basename + "%06T." + extension,
+            Access::READ_ONLY,
+            "{\"defer_iteration_parsing\": true}");
+        for (auto iteration : series.readIterations())
+        {
+            auto dataset =
+                iteration.meshes["E"]["x"].loadChunk<float>({0}, {20});
+            iteration.close();
+            for (size_t i = 0; i < 20; ++i)
+            {
+                REQUIRE(
+                    std::abs(dataset.get()[i] - float(i)) <=
+                    std::numeric_limits<float>::epsilon());
+            }
+            if (iteration.iterationIndex == 0)
+            {
+                break;
+            }
         }
     }
     {

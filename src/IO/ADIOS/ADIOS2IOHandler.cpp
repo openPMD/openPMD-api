@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <cctype> // std::tolower
+#include <cstddef>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -599,7 +600,8 @@ to drastic performance issues, no matter if I/O steps are used or not.
 * If using I/O steps: Each step will add new variables and attributes instead
   of reusing those from earlier steps. ADIOS2 is not optimized for this and
   especially the BP5 engine will show a quadratic increase in metadata size
-  as the number of steps increase.
+  as the number of steps increase. Consider moving to the BP4 engine if you want
+  to keep using group-based encoding.
 We advise you to pick either file-based encoding or variable-based encoding
 (variable-based encoding is not yet feature-complete in the openPMD-api).
 For more details, refer to
@@ -649,7 +651,7 @@ void ADIOS2IOHandlerImpl::createFile(
         // enforce opening the file
         // lazy opening is deathly in parallel situations
         auto &fileData =
-            getFileData(shared_name, IfFileNotOpen::OpenImplicitly);
+            getFileData(shared_name, IfFileNotOpen::CreateImplicitly);
 
         if (!printedWarningsAlready.noGroupBased &&
             m_writeAttributesFromThisRank &&
@@ -658,15 +660,20 @@ void ADIOS2IOHandlerImpl::createFile(
             // For a peaceful phase-out of group-based encoding in ADIOS2,
             // print this warning only in the new layout (with group table)
             if (m_useGroupTable.value_or(UseGroupTable::No) ==
-                UseGroupTable::Yes)
+                    UseGroupTable::Yes &&
+                (m_engineType == "bp5"
+#if openPMD_HAS_ADIOS_2_9
+                 || (m_engineType == "file" || m_engineType == "filestream" ||
+                     m_engineType == "bp")
+#endif
+                     ))
             {
                 std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
                 printedWarningsAlready.noGroupBased = true;
             }
             fileData.m_IO.DefineAttribute(
                 adios_defaults::str_groupBasedWarning,
-                std::string("Consider using file-based or variable-based "
-                            "encoding instead in ADIOS2."));
+                std::string(warningADIOS2NoGroupbasedEncoding));
         }
     }
 }
@@ -926,7 +933,10 @@ void ADIOS2IOHandlerImpl::openFile(
 
     // enforce opening the file
     // lazy opening is deathly in parallel situations
-    auto &fileData = getFileData(file, IfFileNotOpen::OpenImplicitly);
+    auto &fileData = getFileData(
+        file,
+        parameters.reopen ? IfFileNotOpen::ReopenImplicitly
+                          : IfFileNotOpen::OpenImplicitly);
     *parameters.out_parsePreference = fileData.parsePreference;
     m_dirty.emplace(std::move(file));
 }
@@ -1053,25 +1063,7 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     {
         return;
     }
-#if openPMD_HAS_ADIOS_2_9
-    switch (useGroupTable())
-    {
-    case UseGroupTable::No:
-        if (parameters.changesOverSteps ==
-            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
-        {
-            // cannot do this
-            return;
-        }
-
-        break;
-    case UseGroupTable::Yes: {
-        break;
-    }
-    default:
-        throw std::runtime_error("Unreachable!");
-    }
-#else
+#if !openPMD_HAS_ADIOS_2_9
     if (parameters.changesOverSteps ==
         Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
     {
@@ -1523,7 +1515,8 @@ void ADIOS2IOHandlerImpl::touch(
     m_dirty.emplace(std::move(file));
 }
 
-adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
+adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
+    std::string const &fullPath, adios_defs::OpenFileAs openFileAs)
 {
     if (m_config.json().contains("engine") &&
         m_config["engine"].json().contains("access_mode"))
@@ -1568,10 +1561,28 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
     switch (m_handler->m_backendAccess)
     {
     case Access::CREATE:
-        return adios2::Mode::Write;
+        switch (openFileAs)
+        {
+
+        case adios_defs::OpenFileAs::Create:
+            return adios2::Mode::Write;
+        case adios_defs::OpenFileAs::Open:
+        case adios_defs::OpenFileAs::Reopen:
+            return adios2::Mode::Append;
+        }
+        break;
 #if openPMD_HAS_ADIOS_2_8
     case Access::READ_LINEAR:
-        return adios2::Mode::Read;
+        switch (m_handler->m_encoding)
+        {
+
+        case IterationEncoding::fileBased:
+            return adios2::Mode::ReadRandomAccess;
+        case IterationEncoding::groupBased:
+        case IterationEncoding::variableBased:
+            return adios2::Mode::Read;
+        }
+        break;
     case Access::READ_ONLY:
         return adios2::Mode::ReadRandomAccess;
 #else
@@ -1583,11 +1594,36 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
         if (auxiliary::directory_exists(fullPath) ||
             auxiliary::file_exists(fullPath))
         {
+            switch (m_handler->m_encoding)
+            {
+
+            case IterationEncoding::fileBased:
+                switch (openFileAs)
+                {
+
+                case adios_defs::OpenFileAs::Create:
+                    return adios2::Mode::Write;
+                case adios_defs::OpenFileAs::Open:
 #if openPMD_HAS_ADIOS_2_8
-            return adios2::Mode::ReadRandomAccess;
+                    return adios2::Mode::ReadRandomAccess;
 #else
-            return adios2::Mode::Read;
+                    return adios2::Mode::Read;
 #endif
+                case adios_defs::OpenFileAs::Reopen:
+                    /* In order to write new data to an Iteration that was
+                     * created and closed previously, the only applicable access
+                     * mode is Append mode, ideally in conjunction with
+                     * `SetParameter("FlattenSteps", "ON")`.
+                     * See test/Files_SerialIO/close_iteration_test.cpp.
+                     */
+                    return adios2::Mode::Append;
+                }
+                break;
+            case IterationEncoding::groupBased:
+            case IterationEncoding::variableBased:
+                return adios2::Mode::Read;
+            }
+            break;
         }
         else
         {
@@ -1686,21 +1722,35 @@ detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
         file.valid(),
         "[ADIOS2] Cannot retrieve file data for a file that has "
         "been overwritten or deleted.")
+    auto openFileAs = [&]() {
+        using OF = adios_defs::OpenFileAs;
+        switch (flag)
+        {
+        case IfFileNotOpen::ReopenImplicitly:
+            return OF::Reopen;
+        case IfFileNotOpen::OpenImplicitly:
+            return OF::Open;
+        case IfFileNotOpen::CreateImplicitly:
+            return OF::Create;
+        case IfFileNotOpen::ThrowError:
+            break;
+        }
+        return OF{};
+    }();
     auto it = m_fileData.find(file);
     if (it == m_fileData.end())
     {
         switch (flag)
         {
-        case IfFileNotOpen::OpenImplicitly: {
-
-            auto res = m_fileData.emplace(
-                file, std::make_unique<detail::ADIOS2File>(*this, file));
-            return *res.first->second;
-        }
         case IfFileNotOpen::ThrowError:
             throw std::runtime_error(
                 "[ADIOS2] Requested file has not been opened yet: " +
                 (file.fileState ? file.fileState->name : "Unknown file name"));
+        default:
+            auto res = m_fileData.emplace(
+                file,
+                std::make_unique<detail::ADIOS2File>(*this, file, openFileAs));
+            return *res.first->second;
         }
     }
     else

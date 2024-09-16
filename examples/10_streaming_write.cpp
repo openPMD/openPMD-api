@@ -1,3 +1,5 @@
+#include "openPMD/Series.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 #include <openPMD/openPMD.hpp>
 
 #include <algorithm>
@@ -43,7 +45,7 @@ int main()
     // in streaming setups, e.g. an iteration cannot be opened again once
     // it has been closed.
     // `Series::iterations` can be directly accessed in random-access workflows.
-    WriteIterations iterations = series.writeIterations();
+    auto iterations = series.snapshots(SnapshotWorkflow::Synchronous);
     for (size_t i = 0; i < 100; ++i)
     {
         Iteration iteration = iterations[i];

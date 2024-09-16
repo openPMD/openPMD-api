@@ -113,10 +113,16 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
         if (longer)
             out << "  all iterations: ";
 
-        for (auto const &i : series.readIterations())
+        for (auto &[index, i] : series.snapshots())
         {
+            // Necessary only if Series was opened in READ_RANDOM_ACCESS mode
+            // with `defer_iteration_parsing = true`.
+            if (!i.parsed())
+            {
+                i.open();
+            }
             if (longer)
-                out << i.iterationIndex << " ";
+                out << index << " ";
 
             // find unique record names
             std::transform(
@@ -131,6 +137,7 @@ std::ostream &listSeries(Series &series, bool const longer, std::ostream &out)
                 [](std::pair<std::string, ParticleSpecies> const &p) {
                     return p.first;
                 });
+            i.close();
         }
 
         if (longer)

@@ -389,12 +389,11 @@ set(CORE_SOURCE
         src/Mesh.cpp
         src/ParticlePatches.cpp
         src/ParticleSpecies.cpp
-        src/ReadIterations.cpp
         src/Record.cpp
+        src/ReadIterations.cpp
         src/RecordComponent.cpp
         src/Series.cpp
         src/version.cpp
-        src/WriteIterations.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp
@@ -406,11 +405,19 @@ set(CORE_SOURCE
         src/backend/PatchRecordComponent.cpp
         src/backend/Writable.cpp
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
-        src/helper/list_series.cpp)
+        src/helper/list_series.cpp
+        src/snapshots/ContainerImpls.cpp
+        src/snapshots/ContainerTraits.cpp
+        src/snapshots/IteratorHelpers.cpp
+        src/snapshots/IteratorTraits.cpp
+        src/snapshots/RandomAccessIterator.cpp
+        src/snapshots/Snapshots.cpp
+        src/snapshots/StatefulIterator.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
         src/IO/AbstractIOHandlerHelper.cpp
+        src/IO/Access.cpp
         src/IO/DummyIOHandler.cpp
         src/IO/IOTask.cpp
         src/IO/FlushParams.cpp
@@ -770,8 +777,20 @@ if(openPMD_BUILD_TESTING)
         target_compile_definitions(CatchRunner PUBLIC openPMD_HAVE_MPI=1)
     endif()
 
+    macro(additional_testing_sources test_name out_list)
+        if(${test_name} STREQUAL "SerialIO")
+            list(APPEND ${out_list}
+                test/Files_SerialIO/close_iteration_test.cpp
+                test/Files_SerialIO/filebased_write_test.cpp
+            )
+        endif()
+    endmacro()
+
     foreach(testname ${openPMD_TEST_NAMES})
-        add_executable(${testname}Tests test/${testname}Test.cpp)
+        set(ADDITIONAL_SOURCE_FILES "")
+        additional_testing_sources(${testname} ADDITIONAL_SOURCE_FILES)
+        add_executable(${testname}Tests test/${testname}Test.cpp ${ADDITIONAL_SOURCE_FILES})
+        target_include_directories(${testname}Tests PRIVATE test/Files_${testname}/)
         openpmd_cxx_required(${testname}Tests)
         set_target_properties(${testname}Tests PROPERTIES
             COMPILE_PDB_NAME ${testname}Tests

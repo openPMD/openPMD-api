@@ -38,7 +38,16 @@ namespace openPMD
 {
 namespace internal
 {
-    AttributableData::AttributableData() : m_writable{this}
+    SharedAttributableData::SharedAttributableData(AttributableData *attr)
+        : m_writable{attr}
+    {}
+
+    AttributableData::AttributableData()
+        : SharedData_t(std::make_shared<SharedAttributableData>(this))
+    {}
+
+    AttributableData::AttributableData(SharedAttributableData *raw_ptr)
+        : SharedData_t({raw_ptr, [](auto const *) {}})
     {}
 } // namespace internal
 
@@ -52,7 +61,7 @@ Attributable::Attributable()
     }
 }
 
-Attributable::Attributable(NoInit)
+Attributable::Attributable(NoInit) noexcept
 {}
 
 Attribute Attributable::getAttribute(std::string const &key) const

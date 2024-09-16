@@ -66,6 +66,21 @@ namespace adios_defs
         Yes,
         No
     };
+
+    /*
+     * Necessary to implement the `reopen` flag of
+     * `Parameter<Operation::OPEN_FILE>`. The distinction between Open and
+     * Reopen is necessary for Write workflows in file-based encoding. In order
+     * to write new data to an Iteration that was created and closed previously,
+     * the only applicable access mode is Append mode, ideally in conjunction
+     * with `SetParameter("FlattenSteps", "ON")`.
+     */
+    enum class OpenFileAs
+    {
+        Create,
+        Open,
+        Reopen
+    };
 } // namespace adios_defs
 
 /*
