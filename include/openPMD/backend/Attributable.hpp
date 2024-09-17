@@ -273,6 +273,20 @@ public:
      */
     void seriesFlush(std::string backendConfig = "{}");
 
+    /** Flush the containing Iteration.
+     *
+     * Writable connects all objects of an openPMD series through a linked list
+     * of parents. This method will walk up the parent list to find
+     * the containing Iteration.
+     * The Iteration will be flushed regardless if it is dirty.
+     *
+     * @param backendConfig Further backend-specific instructions on how to
+     *                      implement this flush call.
+     *                      Must be provided in-line, configuration is not read
+     *                      from files.
+     */
+    void iterationFlush(std::string backendConfig = "{}");
+
     /** String serialization to describe an Attributable
      *
      * This object contains the Series data path as well as the openPMD object
@@ -308,6 +322,12 @@ public:
      */
     MyPath myPath() const;
 
+    /**
+     * @brief Sets the object dirty to make internal procedures think it has
+     *        been modified.
+     */
+    void touch();
+
     // clang-format off
 OPENPMD_protected
     // clang-format on
@@ -330,7 +350,8 @@ OPENPMD_protected
                                    internal::SeriesData *>;
     /** @} */
 
-    void seriesFlush(internal::FlushParams const &);
+    template <bool flush_entire_series>
+    void seriesFlush_impl(internal::FlushParams const &);
 
     void flushAttributes(internal::FlushParams const &);
 

@@ -120,12 +120,14 @@ public:
      * an object that has no parent, which is the Series object, and flush()-es
      * it.
      */
+    template <bool flush_entire_series>
     void seriesFlush(std::string backendConfig = "{}");
 
     // clang-format off
 OPENPMD_private
     // clang-format on
 
+    template <bool flush_entire_series>
     void seriesFlush(internal::FlushParams const &);
     /*
      * These members need to be shared pointers since distinct instances of

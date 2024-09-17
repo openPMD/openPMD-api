@@ -517,6 +517,10 @@ void init_Attributable(py::module &m)
             "series_flush",
             py::overload_cast<std::string>(&Attributable::seriesFlush),
             py::arg("backend_config") = "{}")
+        .def(
+            "iteration_flush",
+            py::overload_cast<std::string>(&Attributable::iterationFlush),
+            py::arg("backend_config") = "{}")
 
         .def_property_readonly(
             "attributes",

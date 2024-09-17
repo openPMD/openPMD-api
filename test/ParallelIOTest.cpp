@@ -1163,6 +1163,7 @@ TEST_CASE("independent_write_with_collective_flush", "[parallel]")
         Access::CREATE,
         MPI_COMM_WORLD,
         "adios2.engine.preferred_flush_target = \"buffer\"");
+    write.seriesFlush();
     int size, rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -1182,11 +1183,9 @@ TEST_CASE("independent_write_with_collective_flush", "[parallel]")
      * conflict with the default buffer target that will run in the destructor,
      * unless the flush in the next line really is collective.
      */
-    std::cout << "ENTER" << std::endl;
     MPI_Barrier(MPI_COMM_WORLD);
-    iteration.seriesFlush("adios2.engine.preferred_flush_target = \"disk\"");
+    iteration.iterationFlush("adios2.engine.preferred_flush_target = \"disk\"");
     MPI_Barrier(MPI_COMM_WORLD);
-    std::cout << "LEAVE" << std::endl;
 }
 #endif
 

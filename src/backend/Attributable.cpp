@@ -120,7 +120,14 @@ Attributable &Attributable::setComment(std::string const &c)
 
 void Attributable::seriesFlush(std::string backendConfig)
 {
-    writable().seriesFlush(std::move(backendConfig));
+    writable().seriesFlush</* flush_entire_series = */ true>(
+        std::move(backendConfig));
+}
+
+void Attributable::iterationFlush(std::string backendConfig)
+{
+    writable().seriesFlush</* flush_entire_series = */ false>(
+        std::move(backendConfig));
 }
 
 Series Attributable::retrieveSeries() const
@@ -240,10 +247,20 @@ auto Attributable::myPath() const -> MyPath
     return res;
 }
 
-void Attributable::seriesFlush(internal::FlushParams const &flushParams)
+void Attributable::touch()
 {
-    writable().seriesFlush(flushParams);
+    setDirtyRecursive(true);
 }
+
+template <bool flush_entire_series>
+void Attributable::seriesFlush_impl(internal::FlushParams const &flushParams)
+{
+    writable().seriesFlush<flush_entire_series>(flushParams);
+}
+template void
+Attributable::seriesFlush_impl<true>(internal::FlushParams const &flushParams);
+template void
+Attributable::seriesFlush_impl<false>(internal::FlushParams const &flushParams);
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)
 {

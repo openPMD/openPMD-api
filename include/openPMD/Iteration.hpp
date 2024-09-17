@@ -133,6 +133,7 @@ class Iteration : public Attributable
     friend class internal::AttributableData;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    friend class Writable;
 
 public:
     Iteration(Iteration const &) = default;
