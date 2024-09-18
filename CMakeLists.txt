@@ -12,7 +12,11 @@ include(${openPMD_SOURCE_DIR}/cmake/openPMDFunctions.cmake)
 
 # CMake policies ##############################################################
 #
-# not needed right now
+# CMake 3.24+ tarball download robustness
+#   https://cmake.org/cmake/help/latest/module/ExternalProject.html#url
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
 
 # No in-Source builds #########################################################
@@ -566,14 +570,8 @@ if(openPMD_HAVE_PYTHON)
         endif()
     endif()
     message(STATUS "Python LTO/IPO: ${_USE_PY_LTO}")
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
-        set_target_properties(openPMD.py PROPERTIES
-            INTERPROCEDURAL_OPTIMIZATION ${_USE_PY_LTO})
-    else()
-        if(_USE_PY_LTO)
-            target_link_libraries(openPMD.py PRIVATE pybind11::lto)
-        endif()
-    endif()
+    set_target_properties(openPMD.py PROPERTIES
+        INTERPROCEDURAL_OPTIMIZATION ${_USE_PY_LTO})
     unset(_USE_PY_LTO)
 
     if(EMSCRIPTEN)

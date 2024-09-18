@@ -7,22 +7,33 @@ function(find_json)
         if(NOT IS_DIRECTORY ${openPMD_json_src})
             message(FATAL_ERROR "Specified directory openPMD_json_src='${openPMD_json_src}' does not exist!")
         endif()
+    elseif(openPMD_json_tar)
+        message(STATUS "Downloading nlohmann_json ...")
+        message(STATUS "nlohmann_json source: ${openPMD_json_tar}")
     elseif(openPMD_USE_INTERNAL_JSON)
         message(STATUS "Downloading nlohmann_json ...")
         message(STATUS "nlohmann_json repository: ${openPMD_json_repo} (${openPMD_json_branch})")
-        include(FetchContent)
     endif()
     if(TARGET nlohmann_json::nlohmann_json)
         # nothing to do, target already exists in the superbuild
-    elseif(openPMD_USE_INTERNAL_JSON OR openPMD_json_src)
+    elseif(openPMD_USE_INTERNAL_JSON OR openPMD_json_src OR openPMD_json_tar)
         if(openPMD_json_src)
             add_subdirectory(${openPMD_json_src} _deps/localnlohmann_json-build/)
         else()
-            FetchContent_Declare(fetchednlohmann_json
-                GIT_REPOSITORY ${openPMD_json_repo}
-                GIT_TAG        ${openPMD_json_branch}
-                BUILD_IN_SOURCE 0
-            )
+            include(FetchContent)
+            if(openPMD_json_tar)
+                FetchContent_Declare(fetchednlohmann_json
+                    URL             ${openPMD_json_tar}
+                    URL_HASH        ${openPMD_json_tar_hash}
+                    BUILD_IN_SOURCE OFF
+                )
+            else()
+                FetchContent_Declare(fetchednlohmann_json
+                    GIT_REPOSITORY ${openPMD_json_repo}
+                    GIT_TAG        ${openPMD_json_branch}
+                    BUILD_IN_SOURCE OFF
+                )
+            endif()
             FetchContent_MakeAvailable(fetchednlohmann_json)
 
             # advanced fetch options
@@ -43,6 +54,14 @@ endfunction()
 set(openPMD_json_src ""
     CACHE PATH
     "Local path to nlohmann_json source directory (preferred if set)")
+
+# tarball fetcher
+set(openPMD_json_tar "https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz"
+    CACHE STRING
+    "Remote tarball link to pull and build nlohmann_json from if(openPMD_USE_INTERNAL_JSON)")
+set(openPMD_json_tar_hash "SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406"
+    CACHE STRING
+    "Hash checksum of the tarball of nlohmann_json if(openPMD_USE_INTERNAL_JSON)")
 
 # Git fetcher
 set(openPMD_json_repo "https://github.com/nlohmann/json.git"

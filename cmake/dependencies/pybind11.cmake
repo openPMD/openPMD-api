@@ -7,10 +7,12 @@ function(find_pybind11)
         if(NOT IS_DIRECTORY ${openPMD_pybind11_src})
             message(FATAL_ERROR "Specified directory openPMD_pybind11_src='${openPMD_pybind11_src}' does not exist!")
         endif()
+    elseif(openPMD_pybind11_tar)
+        message(STATUS "Downloading pybind11 ...")
+        message(STATUS "pybind11 source: ${openPMD_pybind11_tar}")
     elseif(openPMD_USE_INTERNAL_PYBIND11)
         message(STATUS "Downloading pybind11 ...")
         message(STATUS "pybind11 repository: ${openPMD_pybind11_repo} (${openPMD_pybind11_branch})")
-        include(FetchContent)
     endif()
     if(TARGET pybind11::module)
         # nothing to do, target already exists in the superbuild
@@ -18,11 +20,20 @@ function(find_pybind11)
         if(openPMD_pybind11_src)
             add_subdirectory(${openPMD_pybind11_src} _deps/localpybind11-build/)
         else()
-            FetchContent_Declare(fetchedpybind11
-                GIT_REPOSITORY ${openPMD_pybind11_repo}
-                GIT_TAG        ${openPMD_pybind11_branch}
-                BUILD_IN_SOURCE 0
-            )
+            include(FetchContent)
+            if(openPMD_pybind11_tar)
+                FetchContent_Declare(fetchedpybind11
+                        URL             ${openPMD_pybind11_tar}
+                        URL_HASH        ${openPMD_pybind11_tar_hash}
+                        BUILD_IN_SOURCE OFF
+                )
+            else()
+                FetchContent_Declare(fetchedpybind11
+                    GIT_REPOSITORY ${openPMD_pybind11_repo}
+                    GIT_TAG        ${openPMD_pybind11_branch}
+                    BUILD_IN_SOURCE OFF
+                )
+            endif()
             FetchContent_MakeAvailable(fetchedpybind11)
 
             # advanced fetch options
@@ -49,6 +60,14 @@ endfunction()
 set(openPMD_pybind11_src ""
     CACHE PATH
     "Local path to pybind11 source directory (preferred if set)")
+
+# tarball fetcher
+set(openPMD_pybind11_tar "https://github.com/pybind/pybind11/archive/refs/tags/v2.12.0.tar.gz"
+        CACHE STRING
+        "Remote tarball link to pull and build pybind11 from if(openPMD_USE_INTERNAL_PYBIND11)")
+set(openPMD_pybind11_tar_hash "SHA256=bf8f242abd1abcd375d516a7067490fb71abd79519a282d22b6e4d19282185a7"
+        CACHE STRING
+        "Hash checksum of the tarball of pybind11 if(openPMD_USE_INTERNAL_PYBIND11)")
 
 # Git fetcher
 set(openPMD_pybind11_repo "https://github.com/pybind/pybind11.git"

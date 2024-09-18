@@ -7,22 +7,33 @@ function(find_catch2)
         if(NOT IS_DIRECTORY ${openPMD_catch_src})
             message(FATAL_ERROR "Specified directory openPMD_catch_src='${openPMD_catch_src}' does not exist!")
         endif()
+    elseif(openPMD_catch_tar)
+        message(STATUS "Downloading Catch2 ...")
+        message(STATUS "Catch2 source: ${openPMD_catch_tar}")
     elseif(openPMD_USE_INTERNAL_CATCH)
         message(STATUS "Downloading Catch2 ...")
         message(STATUS "Catch2 repository: ${openPMD_catch_repo} (${openPMD_catch_branch})")
-        include(FetchContent)
     endif()
     if(TARGET Catch2::Catch2)
         # nothing to do, target already exists in the superbuild
-    elseif(openPMD_USE_INTERNAL_CATCH OR openPMD_catch_src)
+    elseif(openPMD_USE_INTERNAL_CATCH OR openPMD_catch_src OR openPMD_catch_tar)
         if(openPMD_catch_src)
             add_subdirectory(${openPMD_catch_src} _deps/localCatch2-build/)
         else()
-            FetchContent_Declare(fetchedCatch2
-                GIT_REPOSITORY ${openPMD_catch_repo}
-                GIT_TAG        ${openPMD_catch_branch}
-                BUILD_IN_SOURCE 0
-            )
+            include(FetchContent)
+            if(openPMD_catch_tar)
+                FetchContent_Declare(fetchedCatch2
+                    URL             ${openPMD_catch_tar}
+                    URL_HASH        ${openPMD_catch_tar_hash}
+                    BUILD_IN_SOURCE OFF
+                )
+            else()
+                FetchContent_Declare(fetchedCatch2
+                    GIT_REPOSITORY ${openPMD_catch_repo}
+                    GIT_TAG        ${openPMD_catch_branch}
+                    BUILD_IN_SOURCE OFF
+                )
+            endif()
             FetchContent_MakeAvailable(fetchedCatch2)
 
             # advanced fetch options
@@ -43,6 +54,14 @@ endfunction()
 set(openPMD_catch_src ""
     CACHE PATH
     "Local path to Catch2 source directory (preferred if set)")
+
+# tarball fetcher
+set(openPMD_catch_tar "https://github.com/catchorg/Catch2/archive/refs/tags/v2.13.10.tar.gz"
+    CACHE STRING
+    "Remote tarball link to pull and build Catch2 from if(openPMD_USE_INTERNAL_CATCH)")
+set(openPMD_catch_tar_hash "SHA256=d54a712b7b1d7708bc7a819a8e6e47b2fde9536f487b89ccbca295072a7d9943"
+    CACHE STRING
+    "Hash checksum of the tarball of Catch2 if(openPMD_USE_INTERNAL_CATCH)")
 
 # Git fetcher
 set(openPMD_catch_repo "https://github.com/catchorg/Catch2.git"
