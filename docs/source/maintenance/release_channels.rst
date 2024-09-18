@@ -1,7 +1,9 @@
-.. _maintenance-release:
+.. _maintenance-release-channels:
 
 Release Channels
 ================
+
+After tagging and releasing a new openPMD-api version on GitHub, we update package managers that ship openPMD-api.
 
 Spack
 -----
@@ -15,7 +17,7 @@ Example workflow for a new release:
 
 - https://github.com/spack/spack/pull/14018
 
-Please ping `@ax3l <github.com/ax3l>`_ in your pull-request.
+Please ping `@ax3l <github.com/ax3l>`__ in your pull-request.
 
 
 Conda-Forge

@@ -166,4 +166,5 @@ Maintenance
    :maxdepth: 1
    :hidden:
 
-   maintenance/release
+   maintenance/release_github
+   maintenance/release_channels
