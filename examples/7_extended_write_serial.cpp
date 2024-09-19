@@ -123,6 +123,15 @@ int main()
         }
       ]
     }
+  },
+  "hdf5": {
+    "dataset": {
+      "chunks": "auto",
+      "permanent_filters": {
+        "id": "fletcher32",
+        "flags": "optional"
+      }
+    }
   }
 })END";
         d.options = datasetConfig;
@@ -149,7 +158,27 @@ int main()
         d = io::Dataset(dtype, mpiDims);
         electrons["positionOffset"]["x"].resetDataset(d);
 
-        auto dset = io::Dataset(io::determineDatatype<uint64_t>(), {2});
+        auto dset = io::Dataset(
+            io::determineDatatype<uint64_t>(),
+            {2},
+            R"(
+            {
+              "hdf5": {
+                "dataset": {
+                  "chunks": "auto",
+                  "permanent_filters": [
+                    {
+                      "aggression": 5,
+                      "type": "zlib"
+                    },
+                    {
+                      "flags": "MANDATORY",
+                      "id": "shuffle"
+                    }
+                  ]
+                }
+              }
+            })");
         electrons.particlePatches["numParticles"].resetDataset(dset);
         electrons.particlePatches["numParticlesOffset"].resetDataset(dset);
 
