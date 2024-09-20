@@ -687,6 +687,7 @@ set(openPMD_EXAMPLE_NAMES
     8_benchmark_parallel
     8a_benchmark_write_parallel
     8b_benchmark_read_parallel
+    8c_benchmark_ptl_parallel
     10_streaming_write
     10_streaming_read
     12_span_write
