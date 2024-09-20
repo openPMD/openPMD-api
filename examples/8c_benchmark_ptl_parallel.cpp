@@ -498,7 +498,7 @@ int parseArgs(int argc, char *argv[], TestInput &input)
 {
     if (argc == 2)
     {
-      	std::string filename = argv[1];
+        std::string filename = argv[1];
         std::fstream infile;
         infile.open(filename, std::ios::in);
         if (!infile.is_open())
