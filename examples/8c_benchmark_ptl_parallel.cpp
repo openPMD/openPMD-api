@@ -212,7 +212,7 @@ static std::map<std::string, LocalProfiler>  m_GlobalProfilers;
 class Checkpoint
 {
 public:
-  Checkpoint(std::string name, int rank)
+  Checkpoint(std::string const& name, int rank)
     :m_name(name)
   {
     auto fp = m_GlobalProfilers.find(name);
