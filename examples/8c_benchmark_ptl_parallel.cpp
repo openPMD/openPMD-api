@@ -498,8 +498,9 @@ int parseArgs(int argc, char *argv[], TestInput &input)
 {
     if (argc == 2)
     {
+      	std::string filename = argv[1];
         std::fstream infile;
-        infile.open(argv[1], std::ios::in);
+        infile.open(filename, std::ios::in);
         if (!infile.is_open())
         {
             if (input.m_MPIRank == 0)
@@ -685,7 +686,6 @@ void BasicParticlePattern::store(Series &series, int step)
            std::cout<<" STEP: "<<step<<std::endl;
     */
     std::string stepStr = "STEP " + std::to_string(step);
-    // Timer timer(stepStr, m_Input.m_MPIRank, Timer::MIN);
     Timer timer(stepStr, m_Input.m_MPIRank, Timer::FULL);
 
     ParticleSpecies &currSpecies =
@@ -799,7 +799,6 @@ void BasicParticlePattern::getParticleLayout(
     Checkpoint x("  GetPTLOffset", m_Input.m_MPIRank);
 
     std::vector<unsigned long> result(m_Input.m_MPISize, 0);
-    // unsigned long  buffer[m_Input.m_MPISize];
     MPI_Allgather(
         &count,
         1,
