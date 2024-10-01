@@ -78,9 +78,9 @@ set(openPMD_pybind11_branch "v2.13.6"
     "Repository branch for openPMD_pybind11_repo if(openPMD_USE_INTERNAL_PYBIND11)")
 
 if(openPMD_USE_PYTHON STREQUAL AUTO)
-    find_package(Python 3.7.0 COMPONENTS Interpreter Development.Module)
+    find_package(Python 3.9.0 COMPONENTS Interpreter Development.Module)
 elseif(openPMD_USE_PYTHON)
-    find_package(Python 3.7.0 COMPONENTS Interpreter Development.Module REQUIRED)
+    find_package(Python 3.9.0 COMPONENTS Interpreter Development.Module REQUIRED)
 else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
