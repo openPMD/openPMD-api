@@ -16,7 +16,7 @@ jobs:
     runs-on: macos-latest
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install
       run: |
         rm -rf /usr/local/bin/2to3
@@ -49,7 +49,7 @@ jobs:
     runs-on: macos-12
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install
       env: {MACOSX_DEPLOYMENT_TARGET: 11.0}
       run: |

@@ -13,7 +13,7 @@ jobs:
     if: github.event.pull_request.draft == false
     env: {CXX: nvcc, CXXFLAGS: "--forward-unknown-to-host-compiler -Xcompiler -Werror"}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Dependencies
       run: .github/workflows/dependencies/install_nvcc11.sh
     - name: Build & Install
@@ -39,7 +39,7 @@ jobs:
     #   line 4314: error: variable "<unnamed>::autoRegistrar73" was declared but never referenced
     # env: {CXXFLAGS: "-Werror -Wno-deprecated-declarations"}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Dependencies
       run: .github/workflows/dependencies/install_nvhpc21-11.sh
     - name: Build & Install

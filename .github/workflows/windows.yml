@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build & Install
       run: |
         python3.exe -m pip install --upgrade pip
@@ -33,7 +33,7 @@ jobs:
     runs-on: windows-latest
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build & Install
       run: |
         python3.exe -m pip install --upgrade pip setuptools wheel
@@ -56,7 +56,7 @@ jobs:
     runs-on: windows-2019
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: seanmiddleditch/gha-setup-ninja@master
     - name: Build & Install
       shell: cmd
