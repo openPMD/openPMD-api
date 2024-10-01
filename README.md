@@ -101,7 +101,7 @@ Required:
 
 Shipped internally in `share/openPMD/thirdParty/`:
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.10+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.12.0+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [pybind11](https://github.com/pybind/pybind11) 2.13.0+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 * [toml11](https://github.com/ToruNiina/toml11) 3.7.1+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
 
@@ -116,7 +116,7 @@ while those can be built either with or without:
 Optional language bindings:
 * Python:
   * Python 3.8 - 3.12
-  * pybind11 2.12.0+
+  * pybind11 2.13.0+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)
@@ -265,7 +265,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 Additionally, the following libraries are downloaded via [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html)
 during the configuration of the project or, if the corresponding `<PACKAGENAME>_ROOT` variable is provided, can be provided externally:
 * [Catch2](https://github.com/catchorg/Catch2) (2.13.10+)
-* [PyBind11](https://github.com/pybind/pybind11) (2.12.0+)
+* [PyBind11](https://github.com/pybind/pybind11) (2.13.0+)
 * [NLohmann-JSON](https://github.com/nlohmann/json) (3.9.1+)
 * [toml11](https://github.com/ToruNiina/toml11) (3.7.1+)
 

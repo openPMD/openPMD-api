@@ -14,7 +14,7 @@ For reading legacy ADIOS1 BP3 files, either use an older version of openPMD-api 
 Note that ADIOS2 does not support compression in BP3 files.
 
 CMake 3.22.0 is now the minimally supported version for CMake.
-pybind11 2.12.0 is now the minimally supported version for Python support.
+pybind11 2.13.0 is now the minimally supported version for Python support.
 
 The ``len(...)`` of many classes has been reworked for consistency and returns now the number of entries (iterations, record components, etc.).
 Previously, this sporadically returned the number of attributes, which is better queried via ``len(<object>.attributes)``.
