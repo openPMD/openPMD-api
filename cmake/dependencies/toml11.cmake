@@ -64,10 +64,10 @@ set(openPMD_toml11_src ""
     "Local path to toml11 source directory (preferred if set)")
 
 # tarball fetcher
-set(openPMD_toml11_tar "https://github.com/ToruNiina/toml11/archive/refs/tags/v4.2.0.tar.gz"
+set(openPMD_toml11_tar "https://github.com/ToruNiina/toml11/archive/refs/tags/v3.7.1.tar.gz"
         CACHE STRING
         "Remote tarball link to pull and build toml11 from if(openPMD_USE_INTERNAL_TOML11)")
-set(openPMD_toml11_tar_hash "SHA256=9287971cd4a1a3992ef37e7b95a3972d1ae56410e7f8e3f300727ab1d6c79c2c"
+set(openPMD_toml11_tar_hash "SHA256=afeaa9aa0416d4b6b2cd3897ca55d9317084103077b32a852247d8efd4cf6068"
         CACHE STRING
         "Hash checksum of the tarball of toml11 if(openPMD_USE_INTERNAL_TOML11)")
 
