@@ -42,7 +42,7 @@ Supported frontends are C++11 and Python3.
         -DopenPMD_USE_PYTHON=ON  \
         -DopenPMD_BUILD_TESTING=OFF       \
         -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DCMAKE_INSTALL_PYTHONDIR=lib/python3.6/dist-packages
+        -DCMAKE_INSTALL_PYTHONDIR=lib/python3.12/dist-packages
     make
     # make test
     make install

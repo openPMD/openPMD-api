@@ -112,21 +112,6 @@ RUN         for whl in /opt/src/dist/*.whl; do \
             && du -hs /opt/src/dist/* \
             && du -hs /wheelhouse/*
 
-# test in fresh env: Debian:Sid + Python 3.8
-FROM       debian:sid
-ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp38-cp38-manylinux2010_x86_64.whl .
-RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3.8 python3-distutils ca-certificates curl \
-           && rm -rf /var/lib/apt/lists/*
-RUN        python3.8 --version \
-           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-           && python3.8 get-pip.py \
-           && python3.8 -m pip install openPMD_api-*-cp38-cp38-manylinux2010_x86_64.whl
-RUN        python3.8 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3.8 -m openpmd_api.ls --help
-RUN        openpmd-ls --help
-
 # test in fresh env: Debian:Bullseye + Python 3.9
 FROM       debian:bullseye
 ENV        DEBIAN_FRONTEND noninteractive
