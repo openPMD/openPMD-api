@@ -129,8 +129,6 @@ namespace
 
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    [[maybe_unused]] openPMD::json::TracingJSON config,
     FileFormat format,
     std::string originalExtension)
     : AbstractIOHandlerImpl(handler)
@@ -142,8 +140,6 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
 JSONIOHandlerImpl::JSONIOHandlerImpl(
     AbstractIOHandler *handler,
     MPI_Comm comm,
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    [[maybe_unused]] openPMD::json::TracingJSON config,
     FileFormat format,
     std::string originalExtension)
     : AbstractIOHandlerImpl(handler)

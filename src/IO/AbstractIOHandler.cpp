@@ -22,6 +22,8 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #include "openPMD/IO/FlushParametersInternal.hpp"
+#include "openPMD/auxiliary/JSONMatcher.hpp"
+#include <type_traits>
 
 namespace openPMD
 {
@@ -43,4 +45,32 @@ std::future<void> AbstractIOHandler::flush(internal::FlushParams const &params)
     json::warnGlobalUnusedOptions(parsedParams.backendConfig);
     return future;
 }
+
+#if openPMD_HAVE_MPI
+template <>
+AbstractIOHandler::AbstractIOHandler(
+    std::string path, Access at, json::TracingJSON &&jsonConfig, MPI_Comm)
+    : jsonMatcher(std::make_unique<json::JsonMatcher>(std::move(jsonConfig)))
+    , directory{std::move(path)}
+    , m_backendAccess{at}
+    , m_frontendAccess{at}
+{}
+#endif
+
+template <>
+AbstractIOHandler::AbstractIOHandler(
+    std::string path, Access at, json::TracingJSON &&jsonConfig)
+    : jsonMatcher(std::make_unique<json::JsonMatcher>(std::move(jsonConfig)))
+    , directory{std::move(path)}
+    , m_backendAccess{at}
+    , m_frontendAccess{at}
+{}
+
+AbstractIOHandler::~AbstractIOHandler() = default;
+// std::queue::queue(queue&&) is not noexcept
+// NOLINTNEXTLINE(performance-noexcept-move-constructor)
+AbstractIOHandler::AbstractIOHandler(AbstractIOHandler &&) = default;
+
+AbstractIOHandler &
+AbstractIOHandler::operator=(AbstractIOHandler &&) noexcept = default;
 } // namespace openPMD

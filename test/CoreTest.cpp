@@ -189,81 +189,73 @@ TEST_CASE("myPath", "[core]")
     Series series("../samples/myPath.json", Access::CREATE);
     REQUIRE(pathOf(series) == vec_t{});
     auto iteration = series.iterations[1234];
-    REQUIRE(pathOf(iteration) == vec_t{"iterations", "1234"});
+    REQUIRE(pathOf(iteration) == vec_t{"data", "1234"});
 
     auto writeSomething = [](auto &recordComponent) {
         recordComponent.resetDataset({Datatype::INT, {100}});
         recordComponent.template makeConstant<int>(5678);
     };
 
-    REQUIRE(pathOf(iteration.meshes) == vec_t{"iterations", "1234", "meshes"});
+    REQUIRE(pathOf(iteration.meshes) == vec_t{"data", "1234", "meshes"});
 
     auto scalarMesh = iteration.meshes["e_chargeDensity"];
     REQUIRE(
         pathOf(scalarMesh) ==
-        vec_t{"iterations", "1234", "meshes", "e_chargeDensity"});
+        vec_t{"data", "1234", "meshes", "e_chargeDensity"});
     auto scalarMeshComponent = scalarMesh[RecordComponent::SCALAR];
     REQUIRE(
         pathOf(scalarMeshComponent) ==
-        vec_t{"iterations", "1234", "meshes", "e_chargeDensity"});
+        vec_t{"data", "1234", "meshes", "e_chargeDensity"});
     writeSomething(scalarMeshComponent);
 
     auto vectorMesh = iteration.meshes["E"];
-    REQUIRE(pathOf(vectorMesh) == vec_t{"iterations", "1234", "meshes", "E"});
+    REQUIRE(pathOf(vectorMesh) == vec_t{"data", "1234", "meshes", "E"});
     auto vectorMeshComponent = vectorMesh["x"];
     REQUIRE(
         pathOf(vectorMeshComponent) ==
-        vec_t{"iterations", "1234", "meshes", "E", "x"});
+        vec_t{"data", "1234", "meshes", "E", "x"});
 
-    REQUIRE(
-        pathOf(iteration.particles) ==
-        vec_t{"iterations", "1234", "particles"});
+    REQUIRE(pathOf(iteration.particles) == vec_t{"data", "1234", "particles"});
 
     auto speciesE = iteration.particles["e"];
-    REQUIRE(pathOf(speciesE) == vec_t{"iterations", "1234", "particles", "e"});
+    REQUIRE(pathOf(speciesE) == vec_t{"data", "1234", "particles", "e"});
 
     auto speciesPosition = speciesE["position"];
     REQUIRE(
         pathOf(speciesPosition) ==
-        vec_t{"iterations", "1234", "particles", "e", "position"});
+        vec_t{"data", "1234", "particles", "e", "position"});
 
     auto speciesPositionX = speciesPosition["x"];
     REQUIRE(
         pathOf(speciesPositionX) ==
-        vec_t{"iterations", "1234", "particles", "e", "position", "x"});
+        vec_t{"data", "1234", "particles", "e", "position", "x"});
     writeSomething(speciesPositionX);
 
     auto speciesWeighting = speciesE["weighting"];
     REQUIRE(
         pathOf(speciesWeighting) ==
-        vec_t{"iterations", "1234", "particles", "e", "weighting"});
+        vec_t{"data", "1234", "particles", "e", "weighting"});
 
     auto speciesWeightingX = speciesWeighting[RecordComponent::SCALAR];
     REQUIRE(
         pathOf(speciesWeightingX) ==
-        vec_t{"iterations", "1234", "particles", "e", "weighting"});
+        vec_t{"data", "1234", "particles", "e", "weighting"});
     writeSomething(speciesWeightingX);
 
     REQUIRE(
         pathOf(speciesE.particlePatches) ==
-        vec_t{"iterations", "1234", "particles", "e", "particlePatches"});
+        vec_t{"data", "1234", "particles", "e", "particlePatches"});
 
     auto patchExtent = speciesE.particlePatches["extent"];
     REQUIRE(
         pathOf(patchExtent) ==
-        vec_t{
-            "iterations",
-            "1234",
-            "particles",
-            "e",
-            "particlePatches",
-            "extent"});
+        vec_t{"data", "1234", "particles", "e", "particlePatches", "extent"});
 
     auto patchExtentX = patchExtent["x"];
     REQUIRE(
         pathOf(patchExtentX) ==
         vec_t{
-            "iterations",
+            "data",
             "1234",
             "particles",
             "e",
@@ -275,7 +267,7 @@ TEST_CASE("myPath", "[core]")
     REQUIRE(
         pathOf(patchNumParticles) ==
         vec_t{
-            "iterations",
+            "data",
             "1234",
             "particles",
             "e",
@@ -287,7 +279,7 @@ TEST_CASE("myPath", "[core]")
     REQUIRE(
         pathOf(patchNumParticlesComponent) ==
         vec_t{
-            "iterations",
+            "data",
             "1234",
             "particles",
             "e",

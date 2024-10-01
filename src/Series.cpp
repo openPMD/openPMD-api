@@ -1074,7 +1074,7 @@ void Series::initSeries(
              * A temporary IOHandler has been used. In this case, copy the
              * values from that IOHandler over into the real one.
              */
-            ioHandler->operator=(***writable.IOHandler);
+            ioHandler->operator=(std::move(***writable.IOHandler));
             *writable.IOHandler = std::move(ioHandler);
         }
         else
@@ -1091,7 +1091,7 @@ void Series::initSeries(
     }
 
     series.iterations.linkHierarchy(writable);
-    series.iterations.writable().ownKeyWithinParent = "iterations";
+    series.iterations.writable().ownKeyWithinParent = "data";
     series.m_rankTable.m_attributable.linkHierarchy(writable);
 
     series.m_name = input->name;
