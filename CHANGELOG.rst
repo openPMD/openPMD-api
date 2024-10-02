@@ -17,7 +17,7 @@ Changes to "0.15.0"
 Features
 """"""""
 
-- pybind11: require version 2.12.0+ #1220 #1322 #1637
+- pybind11: require version 2.13.0+ #1220 #1322 #1637 #1671
 
 Bug Fixes
 """""""""

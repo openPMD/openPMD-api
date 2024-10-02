@@ -46,9 +46,9 @@ function(find_pybind11)
         endif()
     elseif(NOT openPMD_USE_INTERNAL_PYBIND11)
         if(openPMD_USE_PYTHON STREQUAL AUTO)
-            find_package(pybind11 2.12.0 CONFIG)
+            find_package(pybind11 2.13.0 CONFIG)
         elseif(openPMD_USE_PYTHON)
-            find_package(pybind11 2.12.0 CONFIG REQUIRED)
+            find_package(pybind11 2.13.0 CONFIG REQUIRED)
         endif()
         if(TARGET pybind11::module)
             message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
@@ -62,10 +62,10 @@ set(openPMD_pybind11_src ""
     "Local path to pybind11 source directory (preferred if set)")
 
 # tarball fetcher
-set(openPMD_pybind11_tar "https://github.com/pybind/pybind11/archive/refs/tags/v2.12.0.tar.gz"
+set(openPMD_pybind11_tar "https://github.com/pybind/pybind11/archive/refs/tags/v2.13.6.tar.gz"
         CACHE STRING
         "Remote tarball link to pull and build pybind11 from if(openPMD_USE_INTERNAL_PYBIND11)")
-set(openPMD_pybind11_tar_hash "SHA256=bf8f242abd1abcd375d516a7067490fb71abd79519a282d22b6e4d19282185a7"
+set(openPMD_pybind11_tar_hash "SHA256=e08cb87f4773da97fa7b5f035de8763abc656d87d5773e62f6da0587d1f0ec20"
         CACHE STRING
         "Hash checksum of the tarball of pybind11 if(openPMD_USE_INTERNAL_PYBIND11)")
 
@@ -73,7 +73,7 @@ set(openPMD_pybind11_tar_hash "SHA256=bf8f242abd1abcd375d516a7067490fb71abd79519
 set(openPMD_pybind11_repo "https://github.com/pybind/pybind11.git"
     CACHE STRING
     "Repository URI to pull and build pybind11 from if(openPMD_USE_INTERNAL_PYBIND11)")
-set(openPMD_pybind11_branch "v2.12.0"
+set(openPMD_pybind11_branch "v2.13.6"
     CACHE STRING
     "Repository branch for openPMD_pybind11_repo if(openPMD_USE_INTERNAL_PYBIND11)")
 

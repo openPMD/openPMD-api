@@ -69,7 +69,7 @@ CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
 ``openPMD_SUPERBUILD``            **ON**/OFF
 ``openPMD_USE_INTERNAL_CATCH``    ON/OFF      No       Catch2        2.13.10+
-``openPMD_USE_INTERNAL_PYBIND11`` ON/OFF      No       pybind11       2.12.0+
+``openPMD_USE_INTERNAL_PYBIND11`` ON/OFF      No       pybind11       2.13.0+
 ``openPMD_USE_INTERNAL_JSON``     ON/OFF      No       NLohmann-JSON   3.9.1+
 ``openPMD_USE_INTERNAL_TOML11``   ON/OFF      No       toml11          3.7.1+
 ================================= =========== ======== ============= ========
