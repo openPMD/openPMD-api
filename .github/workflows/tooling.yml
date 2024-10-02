@@ -47,9 +47,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-10 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev
-        python3 -m pip install -U pip
-        python3 -m pip install -U numpy
+        sudo apt-get install clang-10 libc++-dev libc++abi-dev python3.9 python3.9-dev python3.9-venv gfortran libopenmpi-dev
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-10, OMPI_CXX: clang++-10, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
@@ -58,6 +56,9 @@ jobs:
         spack install
         SOURCEPATH="$(pwd)"
         share/openPMD/download_samples.sh build
+        python3.9 -m venv env
+        source env/bin/activate
+        pip install numpy
         export LDFLAGS="${LDFLAGS} -fsanitize=address,undefined -shared-libsan"
         export CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan"
         cmake -S . -B build               \
@@ -66,6 +67,7 @@ jobs:
           -DopenPMD_USE_HDF5=ON           \
           -DopenPMD_USE_ADIOS2=ON         \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DPython_EXECUTABLE="$(which python)" \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 2
         export ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=1:check_initialization_order=true:strict_init_order=true:detect_stack_use_after_scope=1:fast_unwind_on_malloc=0
