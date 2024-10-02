@@ -1,6 +1,4 @@
 // expose private and protected members for invasive testing
-#include "openPMD/Datatype.hpp"
-#include "openPMD/Error.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -36,8 +34,11 @@ TEST_CASE("versions_test", "[core]")
     auto const is_dot = [](char const c) { return c == '.'; };
     REQUIRE(2u == std::count_if(apiVersion.begin(), apiVersion.end(), is_dot));
 
-    auto const standard = getStandard();
-    REQUIRE(standard == "1.1.0");
+    auto const standardDefault = getStandardDefault();
+    REQUIRE(standardDefault == "1.1.0");
+
+    auto const standard = getStandardMaximum();
+    REQUIRE(standard == "2.0.0");
 
     auto const standardMin = getStandardMinimum();
     REQUIRE(standardMin == "1.0.0");

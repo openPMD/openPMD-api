@@ -186,9 +186,11 @@ class AbstractIOHandler
 {
     friend class Series;
     friend class ADIOS2IOHandlerImpl;
+    friend class JSONIOHandlerImpl;
     friend class detail::ADIOS2File;
 
 private:
+    std::string m_openPMDVersion;
     IterationEncoding m_encoding = IterationEncoding::groupBased;
 
     void setIterationEncoding(IterationEncoding encoding)

@@ -104,6 +104,8 @@ The key ``rank_table`` allows specifying the creation of a **rank table**, used 
 Configuration Structure per Backend
 -----------------------------------
 
+Please refer to the respective backends' documentations for further information on their configuration.
+
 .. _backendconfig-adios2:
 
 ADIOS2
@@ -231,8 +233,21 @@ The parameters eligible for being passed to flush calls may be configured global
 
 .. _backendconfig-other:
 
-Other backends
-^^^^^^^^^^^^^^
+JSON/TOML
+^^^^^^^^^
 
-Do currently not read the configuration string.
-Please refer to the respective backends' documentations for further information on their configuration.
+A full configuration of the JSON backend:
+
+.. literalinclude:: json.json
+   :language: json
+
+The TOML backend is configured analogously, replacing the ``"json"`` key with ``"toml"``.
+
+All keys found under ``hdf5.dataset`` are applicable globally as well as per dataset.
+Explanation of the single keys:
+
+* ``json.dataset.mode`` / ``toml.dataset.mode``: One of ``"dataset"`` (default) or ``"template"``.
+  In "dataset" mode, the dataset will be written as an n-dimensional (recursive) array, padded with nulls (JSON) or zeroes (TOML) for missing values.
+  In "template" mode, only the dataset metadata (type, extent and attributes) are stored and no chunks can be written or read.
+* ``json.attribute.mode`` / ``toml.attribute.mode``: One of ``"long"`` (default in openPMD 1.*) or ``"short"`` (default in openPMD 2.*).
+  The long format explicitly encodes the attribute type in the dataset on disk, the short format only writes the actual attribute as a JSON/TOML value, requiring readers to recover the type.
