@@ -81,8 +81,9 @@ namespace json
         /**
          * @brief Access the underlying JSON value
          *
-         * @param arg  See args, first arg, used to distinguish this overload.
-         * @param args Index to some sub-expression. Shortcut for
+         * See args, first arg, used to distinguish this overload.
+         *
+         * @param path Index to some sub-expression. Shortcut for
          *        `tracingJSON[arg1][arg2][arg3].json()`.
          * @return nlohmann::json&
          */
