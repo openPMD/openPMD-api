@@ -1292,8 +1292,13 @@ void Series::flushFileBased(
     bool flushIOHandler)
 {
     auto &series = get();
-    if (end == begin)
-        throw std::runtime_error(
+    if (end == begin &&
+        /*
+         * At parsing time, this might happen since iterations might contain
+         * errors and be deleted.
+         */
+        IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
+        throw error::WrongAPIUsage(
             "fileBased output can not be written with no iterations.");
 
     switch (IOHandler()->m_frontendAccess)
@@ -1410,8 +1415,30 @@ void Series::flushGorVBased(
     internal::FlushParams const &flushParams,
     bool flushIOHandler)
 {
-    auto &series = get();
+    if (iterationEncoding() == IterationEncoding::variableBased &&
+        /*
+         * At parsing time, this might happen since iterations might contain
+         * errors and be deleted.
+         */
+        IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing &&
+        iterations.empty())
+    {
+        /*
+         * Note: Unlike flushFileBased, it's ok if `begin == end` since this
+         * method may be called without an explicit iteration.
+         * But since in variable-based encoding the base path is the same as the
+         * path to the (currently active) iteration, there must be at least one
+         * iteration present since the openPMD standard requires mandatory
+         * attributes.
+         * In group-based encoding, any number of iterations might be included
+         * in the base path, in variable-based encoding there must be exactly
+         * one iteration currently active.
+         */
+        throw error::WrongAPIUsage(
+            "variableBased output can not be written with no iterations.");
+    }
 
+    auto &series = get();
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         for (auto it = begin; it != end; ++it)

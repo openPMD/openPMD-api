@@ -257,7 +257,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas
+        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas python3-pip
 #       TODO ADIOS2
     - name: Build
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
@@ -271,6 +271,22 @@ jobs:
         cmake --build build --parallel 2
         cd build
         ctest --output-on-failure
+
+        python3 -m pip install jsonschema
+        cd ../share/openPMD/json_schema
+        PATH="../../../build/bin:$PATH" make -j 2
+        # We need to exclude the thetaMode example since that has a different
+        # meshesPath and the JSON schema needs to hardcode that.
+        find ../../../build/samples/      \
+            ! -path '*thetaMode*'         \
+            ! -path '/*many_iterations/*' \
+            ! -name 'profiling.json'      \
+            ! -name '*config.json'        \
+            -iname '*.json'               \
+          | while read i; do
+            echo "Checking $i"
+            ./check.py "$i"
+        done
 
   musllinux_py10:
     runs-on: ubuntu-20.04

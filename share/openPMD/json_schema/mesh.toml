@@ -1,0 +1,85 @@
+#########################################################
+# Requirement 1: Mesh-specific structure and attributes #
+#########################################################
+
+[[allOf]]
+
+type = "object"
+required = ["attributes"]
+title = "Mesh"
+description = "A mesh/grid of cells."
+
+[allOf.properties.attributes]
+title = "Attributes"
+
+####################################
+# Requirement 1.1: Mesh attributes #
+####################################
+
+[[allOf.properties.attributes.allOf]]
+
+title = "Mesh attributes"
+description = "Standard-defined attributes at the Mesh level."
+required = [
+    "axisLabels",
+    "geometry",
+    "gridGlobalOffset",
+    "gridSpacing",
+    "gridUnitSI",
+    "timeOffset",
+    "unitDimension",
+]
+
+[allOf.properties.attributes.allOf.properties]
+
+gridUnitSI."$ref" = "attribute_defs.json#/$defs/float_attribute"
+gridSpacing."$ref" = "attribute_defs.json#/$defs/vec_float_attribute"
+gridGlobalOffset."$ref" = "attribute_defs.json#/$defs/vec_float_attribute"
+timeOffset."$ref" = "attribute_defs.json#/$defs/float_attribute"
+geometryParameters."$ref" = "attribute_defs.json#/$defs/string_attribute"
+unitDimension."$ref" = "attribute_defs.json#/$defs/unitDimension"
+geometry."$ref" = "attribute_defs.json#/$defs/string_attribute"
+dataOrder."$ref" = "attribute_defs.json#/$defs/string_attribute"
+axisLabels."$ref" = "attribute_defs.json#/$defs/vec_string_attribute"
+
+################################################
+# Requirement 1.2: Generic attribute structure #
+################################################
+
+[[allOf.properties.attributes.allOf]]
+title = "Attribute layout"
+"$ref" = "attributes.json"
+
+######################################
+# Requirement 2: Contains components #
+######################################
+
+[[allOf]]
+
+title = "Contains components"
+
+####################################################
+# Requirement 2.1: Either this is a scalar mesh... #
+####################################################
+
+[[allOf.oneOf]]
+title = "Scalar mesh component"
+"$ref" = "mesh_record_component.json"
+
+#################################################
+# Requirement 2.2: ... or it's a vector mesh.   #
+# Note that exactly one of these two conditions #
+# must be true, not both at once (oneOf).       #
+#################################################
+
+[[allOf.oneOf]]
+title = "Vector component"
+description = "Additionally to the attributes, at least one component must be contained"
+# The attributes are contained in this dict, and at least one further
+# non-scalar component. Hence, we require at least two entries.
+minProperties = 2
+propertyNames.pattern = "^\\w*$"
+
+[allOf.oneOf.patternProperties."^(?!attributes).*"]
+title = "Vector mesh component"
+"$ref" = "mesh_record_component.json"

@@ -1,0 +1,89 @@
+title = "Attribute layout"
+
+[[oneOf]]
+type = "null"
+title = "No attributes"
+
+[[oneOf]]
+type = "object"
+title = "Dictionary of attributes"
+description = "Generic layout of an attributes object."
+
+[[oneOf.patternProperties.".*".oneOf]]
+title = "A generic attribute - short form"
+anyOf = [
+    # Any primitive value
+    { not = { anyOf = [
+        { type = "object", title = "An object" },
+        { type = "array", title = "An array" },
+    ] }, title = "No complex type" },
+    # Or an array of any primitive value
+    { type = "array", items = { not = { anyOf = [
+        { type = "object", title = "An object" },
+        { type = "array", title = "An array" },
+    ] } }, title = "An array of non-complex types" },
+]
+
+[[oneOf.patternProperties.".*".oneOf]]
+title = "A generic attribute - long form"
+type = "object"
+
+[oneOf.patternProperties.".*".oneOf.properties]
+
+value.anyOf = [
+    # Any primitive value
+    { not = { anyOf = [
+        { type = "object", title = "An object" },
+        { type = "array", title = "An array" },
+    ] }, title = "No complex type" },
+    # Or an array of any primitive value
+    { type = "array", items = { not = { anyOf = [
+        { type = "object", title = "An object" },
+        { type = "array", title = "An array" },
+    ] } }, title = "An array of non-complex types" },
+]
+
+datatype.type = "string"
+datatype.enum = [
+    "CHAR",
+    "UCHAR",
+    "SCHAR",
+    "SHORT",
+    "INT",
+    "LONG",
+    "LONGLONG",
+    "USHORT",
+    "UINT",
+    "ULONG",
+    "ULONGLONG",
+    "FLOAT",
+    "DOUBLE",
+    "LONG_DOUBLE",
+    "CFLOAT",
+    "CDOUBLE",
+    "CLONG_DOUBLE",
+    "STRING",
+    "VEC_CHAR",
+    "VEC_SHORT",
+    "VEC_INT",
+    "VEC_LONG",
+    "VEC_LONGLONG",
+    "VEC_UCHAR",
+    "VEC_USHORT",
+    "VEC_UINT",
+    "VEC_ULONG",
+    "VEC_ULONGLONG",
+    "VEC_FLOAT",
+    "VEC_DOUBLE",
+    "VEC_LONG_DOUBLE",
+    "VEC_CFLOAT",
+    "VEC_CDOUBLE",
+    "VEC_CLONG_DOUBLE",
+    "VEC_SCHAR",
+    "VEC_STRING",
+    "ARR_DBL_7",
+    "BOOL",
+]
+
+[oneOf.propertyNames]
+pattern = "^\\w*$"

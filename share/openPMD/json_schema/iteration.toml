@@ -1,0 +1,77 @@
+type = "object"
+required = ["attributes"]
+title = "Iteration"
+description = "One iteration/snapshot."
+
+[properties]
+
+#################
+# Particle data #
+#################
+
+[properties.particles]
+type = "object"
+title = "Particles"
+description = "Dict of particle species types."
+
+[properties.particles.properties.attributes]
+title = "Attribute layout"
+description = "Custom attributes allowed, no required attributes defined."
+"$ref" = "attributes.json"
+
+#####################################
+# Particle data -> Particle Species #
+#####################################
+
+[properties.particles.patternProperties."^(?!attributes).*"]
+title = "Particle Species"
+"$ref" = "particle_species.json"
+
+#############
+# Mesh data #
+#############
+
+[properties.meshes]
+type = "object"
+title = "Meshes"
+description = "Dict of meshes."
+
+[properties.meshes.properties.attributes]
+title = "Attribute layout"
+description = "Custom attributes allowed, no required attributes defined."
+"$ref" = "attributes.json"
+
+
+###########################
+# Mesh data -> Mesh types #
+###########################
+
+[properties.meshes.patternProperties."^(?!attributes).*"]
+title = "Mesh"
+"$ref" = "mesh.json"
+
+########################
+# Iteration attributes #
+########################
+
+
+[properties.attributes]
+title = "Attributes"
+
+# First requirement: standard-defined attributes
+
+[[properties.attributes.allOf]]
+required = ["dt", "time", "timeUnitSI"]
+title = "Iteration attributes"
+description = "Standard-defined attributes at the Iteration level."
+
+[properties.attributes.allOf.properties]
+timeUnitSI."$ref" = "attribute_defs.json#/$defs/float_attribute"
+time."$ref"       = "attribute_defs.json#/$defs/float_attribute"
+dt."$ref"         = "attribute_defs.json#/$defs/float_attribute"
+
+# Second condition: General layout of attributes
+
+[[properties.attributes.allOf]]
+title = "Attribute layout"
+"$ref" = "attributes.json"
