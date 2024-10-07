@@ -136,6 +136,7 @@ endfunction()
 openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
+openpmd_option(C              "Enable C bindings"                         ON)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
@@ -375,6 +376,12 @@ else()
 endif()
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
 
+if(openPMD_USE_C)
+    set(openPMD_HAVE_C TRUE)
+else()
+    set(openPMD_HAVE_C FALSE)
+endif()
+
 # external library: pybind11 (optional)
 include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 
@@ -534,6 +541,64 @@ else()
     target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=0)
 endif()
 
+# C bindings
+if(openPMD_HAVE_C)
+    add_library(openPMD.c ${_openpmd_lib_type}
+        src/binding/c/ChunkInfo.cpp
+        src/binding/c/Container_Iteration.cpp
+        src/binding/c/Container_Mesh.cpp
+        src/binding/c/Datatype.cpp
+        src/binding/c/IO/Access.cpp
+        src/binding/c/IO/Format.cpp
+        src/binding/c/Iteration.cpp
+        src/binding/c/Mesh.cpp
+        src/binding/c/ReadIterations.cpp
+        src/binding/c/RecordComponent.cpp
+        src/binding/c/Series.cpp
+        src/binding/c/UnitDimension.cpp
+        src/binding/c/WriteIterations.cpp
+        src/binding/c/backend/Attributable.c
+        src/binding/c/backend/Attributable.cpp
+        #TODO src/binding/c/backend/Attribute.cpp
+        src/binding/c/backend/BaseRecordComponent.cpp
+        src/binding/c/backend/Container_MeshRecordComponent.cpp
+        src/binding/c/backend/MeshRecordComponent.cpp
+        src/binding/c/version.cpp
+    )
+    target_compile_features(openPMD.c PUBLIC c_std_99)
+    target_compile_features(openPMD.c PRIVATE cxx_std_17)
+    target_compile_options(openPMD.c PUBLIC ${_msvc_options})
+    target_link_libraries(openPMD.c PRIVATE openPMD)
+    if(openPMD_HAVE_MPI)
+        target_link_libraries(openPMD.c PUBLIC ${openPMD_MPI_TARGETS})
+    endif()
+    set_target_properties(openPMD.c PROPERTIES
+        C_EXTENSIONS OFF
+        C_STANDARD_VERSION 99
+        C_STANDARD_REQUIRED ON
+        # # Allow C++ extensions since we read C header code into C++
+        # # code and C99 `_Complex` counts as C++ extension
+        # CXX_EXTENSIONS ON
+        CXX_EXTENSIONS OFF
+        CXX_STANDARD_REQUIRED ON
+
+        COMPILE_PDB_NAME openPMD
+        ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+        LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+        RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+        PDB_OUTPUT_DIRECTORY ${openPMD_PDB_OUTPUT_DIRECTORY}
+        COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}
+        POSITION_INDEPENDENT_CODE ON
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
+
+    target_include_directories(openPMD.c PUBLIC
+        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    )
+endif()
+
 # python bindings
 if(openPMD_HAVE_PYTHON)
     add_library(openPMD.py MODULE
@@ -664,6 +729,10 @@ set(openPMD_TEST_NAMES
     ParallelIO
     JSON
 )
+set(openPMD_C_TEST_NAMES
+    C
+)
+
 # command line tools
 set(openPMD_CLI_TOOL_NAMES
     ls
@@ -810,6 +879,25 @@ if(openPMD_BUILD_TESTING)
                 $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
         endif()
     endforeach()
+
+    if(openPMD_HAVE_C)
+        foreach(testname ${openPMD_C_TEST_NAMES})
+            add_executable(${testname}Tests test/c/${testname}Test.c)
+            target_compile_features(${testname}Tests PUBLIC c_std_99)
+            target_link_libraries(${testname}Tests PRIVATE openPMD.c)
+            set_target_properties(${testname}Tests PROPERTIES
+                C_EXTENSIONS OFF
+                C_STANDARD_REQUIRED ON
+
+                COMPILE_PDB_NAME ${testname}Tests
+                ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
+                LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
+                RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+                COMPILE_PDB_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
+            )
+        endforeach()
+    endif()
 endif()
 
 if(openPMD_BUILD_CLI_TOOLS)
@@ -1022,6 +1110,9 @@ if(openPMD_INSTALL)
         RUNTIME DESTINATION ${openPMD_INSTALL_BINDIR}
         INCLUDES DESTINATION ${openPMD_INSTALL_INCLUDEDIR}
     )
+    if(openPMD_HAVE_C)
+        install(TARGETS openPMD.c DESTINATION ${openPMD_INSTALL_LIBDIR})
+    endif()
     if(openPMD_HAVE_PYTHON)
         install(
             DIRECTORY   ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
@@ -1048,6 +1139,13 @@ if(openPMD_INSTALL)
             PATTERN "*.hpp"
             PATTERN "*.tpp"
     )
+    if(openPMD_HAVE_C)
+        install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
+            DESTINATION ${openPMD_INSTALL_INCLUDEDIR}
+            FILES_MATCHING
+                PATTERN "*.h"
+        )
+    endif()
     install(
         FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
         DESTINATION ${openPMD_INSTALL_INCLUDEDIR}/openPMD

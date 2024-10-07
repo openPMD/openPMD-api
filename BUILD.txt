@@ -1,0 +1,21 @@
+cd $HOME/src/ADIOS2
+rm -rf config $HOME/ADIOS2
+cmake -S . -B config -G Ninja -DCMAKE_C_COMPILER=mpicc-openmpi-mp -DCMAKE_CXX_COMPILER=mpicxx-openmpi-mp -DCMAKE_Fortran_COMPILER=mpif90-openmpi-mp -DADIOS2_USE_HDF5=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$HOME/ADIOS2
+cmake --build config --verbose && cmake --install config --verbose
+
+cd $HOME/src/libcxxwrap-julia
+rm -rf config $HOME/libcxxwrap-julia
+cmake -S . -B config -G Ninja -DCMAKE_C_COMPILER=mpicc-openmpi-mp -DCMAKE_CXX_COMPILER=mpicxx-openmpi-mp -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$HOME/libcxxwrap-julia
+cmake --build config --verbose && cmake --install config --verbose
+
+cd $HOME/src/openPMD-api
+rm -rf config $HOME/openPMD-api
+cmake -S . -B config -G Ninja -DCMAKE_C_COMPILER=mpicc-openmpi-mp -DCMAKE_CXX_COMPILER=mpicxx-openmpi-mp -DCMAKE_PREFIX_PATH="$HOME/ADIOS2;$HOME/libcxxwrap-julia" -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_JULIA=ON -DopenPMD_USE_HDF5=OFF -DopenPMD_USE_PYTHON=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-api
+cmake --build config --verbose && cmake --install config --verbose
+
+
+
+cd $HOME/src/openPMD-api
+rm -rf config $HOME/openPMD-api
+cmake -S . -B config -G Ninja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_PREFIX_PATH="$HOME/ADIOS2;$HOME/libcxxwrap-julia" -DopenPMD_USE_HDF5=OFF -DopenPMD_USE_JULIA=ON -DopenPMD_USE_PYTHON=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-api
+cmake --build config --verbose && cmake --install config --verbose
