@@ -62,6 +62,11 @@ void init_Mesh(py::module &m)
             python::doc_unit_dimension)
 
         .def_property(
+            "grid_unit_dimension",
+            &Mesh::gridUnitDimension,
+            &Mesh::setGridUnitDimension)
+
+        .def_property(
             "geometry",
             &Mesh::geometry,
             py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
@@ -95,7 +100,14 @@ void init_Mesh(py::module &m)
             "grid_global_offset",
             &Mesh::gridGlobalOffset,
             &Mesh::setGridGlobalOffset)
-        .def_property("grid_unit_SI", &Mesh::gridUnitSI, &Mesh::setGridUnitSI)
+        .def_property(
+            "grid_unit_SI",
+            &Mesh::gridUnitSI,
+            py::overload_cast<double>(&Mesh::setGridUnitSI))
+        .def_property(
+            "grid_unit_SI_per_dimension",
+            &Mesh::gridUnitSIPerDimension,
+            &Mesh::setGridUnitSIPerDimension)
         .def_property(
             "time_offset",
             &Mesh::timeOffset<double>,
@@ -113,7 +125,9 @@ void init_Mesh(py::module &m)
         .def("set_grid_spacing", &Mesh::setGridSpacing<double>)
         .def("set_grid_spacing", &Mesh::setGridSpacing<long double>)
         .def("set_grid_global_offset", &Mesh::setGridGlobalOffset)
-        .def("set_grid_unit_SI", &Mesh::setGridUnitSI);
+        .def(
+            "set_grid_unit_SI",
+            py::overload_cast<double>(&Mesh::setGridUnitSI));
     add_pickle(
         cl, [](openPMD::Series series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));

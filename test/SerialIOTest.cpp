@@ -2,6 +2,7 @@
 #include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/UnitDimension.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -912,6 +913,7 @@ inline void constant_scalar(std::string const &file_ending)
         // constant scalar
         Series s =
             Series("../samples/constant_scalar." + file_ending, Access::CREATE);
+        s.setOpenPMD("2.0.0");
         auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
         REQUIRE(s.iterations[1].meshes["rho"].scalar());
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
@@ -932,15 +934,28 @@ inline void constant_scalar(std::string const &file_ending)
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.iterations[1].meshes["E"];
+        // test that these can be defined successively
+        E_mesh.setGridUnitDimension({{{UnitDimension::L, 1}}, {}, {}});
+        E_mesh.setGridUnitDimension(
+            {{}, {{UnitDimension::L, 1}}, {{UnitDimension::L, 1}}});
+        // let's modify the last dimension for the test's purpose now
+        E_mesh.setGridUnitDimension({{}, {}, {{UnitDimension::M, 1}}});
+        // should now all be [1,0,0,0,0,0,0], except the last which should be
+        // [1,1,0,0,0,0,0]
         E_mesh.setGeometry(geometry);
         E_mesh.setGeometryParameters(geometryParameters);
         E_mesh.setDataOrder(dataOrder);
         E_mesh.setGridSpacing(gridSpacing);
         E_mesh.setGridGlobalOffset(gridGlobalOffset);
-        E_mesh.setGridUnitSI(gridUnitSI);
         E_mesh.setAxisLabels(axisLabels);
         E_mesh.setUnitDimension(unitDimensions);
         E_mesh.setTimeOffset(timeOffset);
+        REQUIRE(
+            E_mesh.gridUnitSIPerDimension() == std::vector<double>{1., 1., 1.});
+        E_mesh.setGridUnitSI(std::vector(3, gridUnitSI));
+        REQUIRE(
+            E_mesh.gridUnitSIPerDimension() ==
+            std::vector<double>{gridUnitSI, gridUnitSI, gridUnitSI});
 
         // constant scalar
         auto pos =
@@ -1101,12 +1116,18 @@ inline void constant_scalar(std::string const &file_ending)
             Extent{3, 2, 1});
 
         Mesh &E_mesh = s.iterations[1].meshes["E"];
+        REQUIRE(
+            E_mesh.gridUnitDimension() ==
+            std::vector{
+                std::array<double, 7>{1., 0., 0., 0., 0, .0, 0.},
+                std::array<double, 7>{1., 0., 0., 0., 0, .0, 0.},
+                std::array<double, 7>{1., 1., 0., 0., 0, .0, 0.}});
         REQUIRE(E_mesh.geometry() == geometry);
         REQUIRE(E_mesh.geometryParameters() == geometryParameters);
         REQUIRE(E_mesh.dataOrder() == dataOrder);
         REQUIRE(E_mesh.gridSpacing<double>() == gridSpacing);
         REQUIRE(E_mesh.gridGlobalOffset() == gridGlobalOffset);
-        REQUIRE(E_mesh.gridUnitSI() == gridUnitSI);
+        REQUIRE(E_mesh.gridUnitSIPerDimension() == std::vector(3, gridUnitSI));
         REQUIRE(E_mesh.axisLabels() == axisLabels);
         // REQUIRE( E_mesh.unitDimension() == unitDimensions );
         REQUIRE(E_mesh.timeOffset<double>() == timeOffset);

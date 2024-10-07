@@ -139,6 +139,11 @@ std::string Series::openPMD() const
 
 Series &Series::setOpenPMD(std::string const &o)
 {
+    if (o >= "2.0")
+    {
+        std::cerr << "[Warning] openPMD 2.0 is still under development."
+                  << std::endl;
+    }
     setAttribute("openPMD", o);
     return *this;
 }
@@ -162,9 +167,10 @@ std::string Series::basePath() const
 Series &Series::setBasePath(std::string const &bp)
 {
     std::string version = openPMD();
-    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
+    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0" ||
+        version == "2.0.0")
         throw std::runtime_error(
-            "Custom basePath not allowed in openPMD <=1.1.0");
+            "Custom basePath not allowed in openPMD <=2.0");
 
     setAttribute("basePath", bp);
     return *this;
@@ -1222,7 +1228,7 @@ void Series::initDefaults(IterationEncoding ie, bool initAll)
         }
     }
     if (!containsAttribute("openPMD"))
-        setOpenPMD(getStandard());
+        setOpenPMD(getStandardDefault());
     /*
      * In Append mode, only init the rest of the defaults after checking that
      * the file does not yet exist to avoid overriding more than needed.
@@ -1828,7 +1834,8 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 
     Parameter<Operation::OPEN_PATH> pOpen;
     std::string version = openPMD();
-    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
+    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0" ||
+        version == "2.0.0")
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
         throw error::ReadError(
@@ -1980,7 +1987,8 @@ creating new iterations.
 
     Parameter<Operation::OPEN_PATH> pOpen;
     std::string version = openPMD();
-    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0")
+    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0" ||
+        version == "2.0.0")
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
         throw error::ReadError(
