@@ -1528,7 +1528,7 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
     if (m_config.json().contains("engine") &&
         m_config["engine"].json().contains("access_mode"))
     {
-        auto const &access_mode_json = m_config["engine"]["access_mode"].json();
+        auto const &access_mode_json = m_config.json({"engine", "access_mode"});
         auto maybe_access_mode_string =
             json::asLowerCaseStringDynamic(access_mode_json);
         if (!maybe_access_mode_string.has_value())

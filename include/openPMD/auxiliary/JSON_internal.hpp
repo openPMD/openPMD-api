@@ -76,10 +76,18 @@ namespace json
          *
          * @return nlohmann::json&
          */
-        inline nlohmann::json &json()
-        {
-            return *m_positionInOriginal;
-        }
+        nlohmann::json &json();
+
+        /**
+         * @brief Access the underlying JSON value
+         *
+         * See args, first arg, used to distinguish this overload.
+         *
+         * @param path Index to some sub-expression. Shortcut for
+         *        `tracingJSON[arg1][arg2][arg3].json()`.
+         * @return nlohmann::json&
+         */
+        nlohmann::json &json(std::vector<std::string> path);
 
         template <typename Key>
         TracingJSON operator[](Key &&key);
