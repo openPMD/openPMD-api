@@ -140,10 +140,9 @@ Series Attributable::retrieveSeries() const
     return findSeries->attributable->asInternalCopyOf<Series>();
 }
 
-auto Attributable::containingIteration() const
-    -> std::pair<
-        std::optional<internal::IterationData const *>,
-        internal::SeriesData const *>
+auto Attributable::containingIteration() const -> std::pair<
+    std::optional<internal::IterationData const *>,
+    internal::SeriesData const *>
 {
     constexpr size_t search_queue_size = 3;
     Writable const *search_queue[search_queue_size]{nullptr};
@@ -182,9 +181,8 @@ auto Attributable::containingIteration() const
     }
 }
 
-auto Attributable::containingIteration()
-    -> std::
-        pair<std::optional<internal::IterationData *>, internal::SeriesData *>
+auto Attributable::containingIteration() -> std::
+    pair<std::optional<internal::IterationData *>, internal::SeriesData *>
 {
     auto const_res =
         static_cast<Attributable const *>(this)->containingIteration();

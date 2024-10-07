@@ -482,8 +482,7 @@ public:
      */
     template <typename Visitor, typename... Args>
     auto visit(Args &&...args) -> decltype(Visitor::template call<char>(
-                                   std::declval<RecordComponent &>(),
-                                   std::forward<Args>(args)...));
+        std::declval<RecordComponent &>(), std::forward<Args>(args)...));
 
     static constexpr char const *const SCALAR = "\vScalar";
 
