@@ -231,7 +231,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
                     {
                         return std::nullopt;
                     }
-                    auto const &val = vfd_json_config.json(key);
+                    auto const &val = vfd_json_config.json({key});
                     if (val.is_number_integer())
                     {
                         return val.get<long long>();
@@ -250,7 +250,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
                     {
                         return std::nullopt;
                     }
-                    auto const &val = vfd_json_config.json(key);
+                    auto const &val = vfd_json_config.json({key});
                     if (auto str_val = json::asLowerCaseStringDynamic(val);
                         str_val.has_value())
                     {

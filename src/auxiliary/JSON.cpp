@@ -60,6 +60,29 @@ TracingJSON::TracingJSON(ParsedConfig parsedConfig)
           std::move(parsedConfig.config), parsedConfig.originallySpecifiedAs}
 {}
 
+nlohmann::json &TracingJSON::json()
+{
+    return *m_positionInOriginal;
+}
+
+nlohmann::json &TracingJSON::json(std::vector<std::string> paths)
+{
+    if (paths.empty())
+    {
+        return json();
+    }
+    auto it = paths.begin();
+    auto end = paths.end();
+    nlohmann::json *res = &m_positionInOriginal->operator[](*it);
+    auto subhandle = this->operator[](*it);
+    for (++it; it != end; ++it)
+    {
+        subhandle = subhandle[*it];
+        res = &(*res)[*it];
+    }
+    return *res;
+}
+
 nlohmann::json const &TracingJSON::getShadow() const
 {
     return *m_positionInShadow;

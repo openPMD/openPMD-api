@@ -76,10 +76,7 @@ namespace json
          *
          * @return nlohmann::json&
          */
-        inline nlohmann::json &json()
-        {
-            return *m_positionInOriginal;
-        }
+        nlohmann::json &json();
 
         /**
          * @brief Access the underlying JSON value
@@ -89,21 +86,7 @@ namespace json
          *        `tracingJSON[arg1][arg2][arg3].json()`.
          * @return nlohmann::json&
          */
-        template <typename Arg, typename... Args>
-        inline nlohmann::json &json(Arg &&arg, Args &&...args)
-        {
-            [[maybe_unused]] auto do_trace =
-                [subhandle = this->operator[](arg)](auto const &key) mutable {
-                    subhandle = subhandle[key];
-                };
-            (do_trace(args), ...);
-            nlohmann::json *res = &m_positionInOriginal->operator[](arg);
-            [[maybe_unused]] auto get_res = [&res](auto const &key) {
-                res = &(*res)[key];
-            };
-            (get_res(args), ...);
-            return *res;
-        }
+        nlohmann::json &json(std::vector<std::string> path);
 
         template <typename Key>
         TracingJSON operator[](Key &&key);
