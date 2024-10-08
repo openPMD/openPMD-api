@@ -40,7 +40,7 @@ jobs:
               CMAKE_GENERATOR: "Visual Studio 16 2019"
               CMAKE_GENERATOR_PLATFORM: "Win32"
 
-          - os: macos-11
+          - os: macos-12
             arch: "x86_64"
             env:
               MACOSX_DEPLOYMENT_TARGET: 11.0
@@ -48,7 +48,7 @@ jobs:
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
           #   https://github.com/pypa/cibuildwheel/pull/704
-          - os: macos-11
+          - os: macos-12
             arch: "arm64"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
@@ -60,31 +60,31 @@ jobs:
           #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
           # ADIOS1 tricky to build and HDF5 even with CMake as well (as of 1.12)
           # We could build them twice and use `lipo` to combine the lib artifacts.
-          #- os: macos-11
+          #- os: macos-12
           #  arch: "universal2"
           #  env:
           #    CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
           #    MACOSX_DEPLOYMENT_TARGET: 11.0
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         path: 'src'
         ref: '0.15.2'
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         path: 'src/.github/'
 
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v5
       name: Install Python
       with:
-        python-version: '3.8'
+        python-version: '3.9'
 
     - name: Install cibuildwheel
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install cibuildwheel==2.16.2
+        python -m pip install cibuildwheel==2.21.2
 
     # Hack: cmake --trace-expand
     #- name: Download Patch 2/2
@@ -106,7 +106,7 @@ jobs:
         #     https://github.com/pypa/manylinux/issues/899
         CIBW_SKIP: "pp*-manylinux*"
         CIBW_ARCHS: "${{ matrix.arch }}"
-        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8"
+        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9"
         # Install dependencies
         CIBW_BEFORE_BUILD_LINUX: bash -x .github/library_builders.sh
         CIBW_BEFORE_BUILD_MACOS: bash -x .github/library_builders.sh
@@ -114,7 +114,7 @@ jobs:
         # for the openPMD-api build, CMake shall search for
         # static dependencies of HDF5 and ADIOS1 (see setup.py)
         CIBW_ENVIRONMENT: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
-        CIBW_ENVIRONMENT_WINDOWS: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON' CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
+        CIBW_ENVIRONMENT_WINDOWS: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON' CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
         # C++17 support in macOS 10.13+ (partial) and 10.14+ (std::visit) and 10.15+ (std::filesystem::path)
         #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
         # arm64/aarch64 (M1/M2) requires 11.0+
@@ -132,11 +132,12 @@ jobs:
         python setup.py sdist --dist-dir ../wheelhouse
         python -m cibuildwheel --output-dir ../wheelhouse
 
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v4
       name: Publish as GitHub artifact
       with:
-        name: wheels
+        name: wheels-${{ matrix.os }}-${{ matrix.arch }}
         path: ./wheelhouse
+        overwrite: true
 
     - name: Publish on pypi.org
       if: github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels'

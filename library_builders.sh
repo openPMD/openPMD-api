@@ -103,10 +103,8 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    #curl -sLo adios2-2.9.1.tar.gz \
-    #    https://github.com/ornladios/ADIOS2/archive/v2.9.1.tar.gz
-    curl -sLo adios2-2.9.1.tar.gz \
-        https://github.com/ax3l/ADIOS2/archive/refs/heads/release-2.9.1-bp-wheels.tar.gz
+    curl -sLo adios2-2.10.1.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.10.1.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
@@ -124,11 +122,13 @@ function build_adios2 {
         -DADIOS2_Blosc2_PREFER_SHARED=OFF         \
         -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Blosc2=ON                    \
+        -DADIOS2_USE_Campaign=OFF                 \
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_HDF5=OFF                     \
         -DADIOS2_USE_MHS=OFF                      \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
+        -DADIOS2_USE_Sodium=OFF                   \
         -DADIOS2_USE_SST=ON                       \
         -DADIOS2_USE_ZFP=ON                       \
         -DADIOS2_RUN_INSTALL_TEST=OFF             \
@@ -143,6 +143,7 @@ function build_adios2 {
     make install
 
     # CMake Config package of C-Blosc 2.10.1+ only
+    # https://github.com/ornladios/ADIOS2/issues/3903
     rm -rf ${BUILD_PREFIX}/lib*/cmake/adios2/FindBlosc2.cmake
 
     cd -
@@ -200,8 +201,8 @@ function build_blosc {
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
-    curl -sLo blosc2-v2.10.2.tar.gz \
-        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.10.2.tar.gz
+    curl -sLo blosc2-v2.11.1.tar.gz \
+        https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.tar.gz
     file blosc2*.tar.gz
     tar -xzf blosc2*.tar.gz
     rm blosc2*.tar.gz
