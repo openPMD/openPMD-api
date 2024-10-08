@@ -67,19 +67,19 @@ jobs:
           #    MACOSX_DEPLOYMENT_TARGET: 11.0
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         path: 'src'
         ref: '0.15.2'
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         path: 'src/.github/'
 
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v5
       name: Install Python
       with:
-        python-version: '3.8'
+        python-version: '3.9'
 
     - name: Install cibuildwheel
       run: |
@@ -132,7 +132,7 @@ jobs:
         python setup.py sdist --dist-dir ../wheelhouse
         python -m cibuildwheel --output-dir ../wheelhouse
 
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v4
       name: Publish as GitHub artifact
       with:
         name: wheels
