@@ -1,49 +1,49 @@
 function(find_toml11)
     if(TARGET toml11::toml11)
         message(STATUS "toml11::toml11 target already imported")
-    elseif(openPMD_toml11_src)
-        message(STATUS "Compiling local toml11 ...")
-        message(STATUS "toml11 source path: ${openPMD_toml11_src}")
-        if(NOT IS_DIRECTORY ${openPMD_toml11_src})
-            message(FATAL_ERROR "Specified directory openPMD_toml11_src='${openPMD_toml11_src}' does not exist!")
-        endif()
-    elseif(openPMD_toml11_tar)
-        message(STATUS "Downloading toml11 ...")
-        message(STATUS "toml11 source: ${openPMD_toml11_tar}")
     elseif(openPMD_USE_INTERNAL_TOML11)
-        message(STATUS "Downloading toml11 ...")
-        message(STATUS "toml11 repository: ${openPMD_toml11_repo} (${openPMD_toml11_branch})")
+        if(openPMD_toml11_src)
+            message(STATUS "Compiling local toml11 ...")
+            message(STATUS "toml11 source path: ${openPMD_toml11_src}")
+            if(NOT IS_DIRECTORY ${openPMD_toml11_src})
+                message(FATAL_ERROR "Specified directory openPMD_toml11_src='${openPMD_toml11_src}' does not exist!")
+            endif()
+        elseif(openPMD_toml11_tar)
+            message(STATUS "Downloading toml11 ...")
+            message(STATUS "toml11 source: ${openPMD_toml11_tar}")
+        elseif(openPMD_toml11_branch)
+            message(STATUS "Downloading toml11 ...")
+            message(STATUS "toml11 repository: ${openPMD_toml11_repo} (${openPMD_toml11_branch})")
+        endif()
     endif()
     if(TARGET toml11::toml11)
         # nothing to do, target already exists in the superbuild
-    elseif(openPMD_USE_INTERNAL_TOML11 OR openPMD_toml11_src)
-        if(openPMD_toml11_src)
-            add_subdirectory(${openPMD_toml11_src} _deps/localtoml11-build/)
-        else()
-            include(FetchContent)
-            if(openPMD_toml11_tar)
-                FetchContent_Declare(fetchedtoml11
-                        URL             ${openPMD_toml11_tar}
-                        URL_HASH        ${openPMD_toml11_tar_hash}
-                        BUILD_IN_SOURCE OFF
-                )
-            else()
-                FetchContent_Declare(fetchedtoml11
-                    GIT_REPOSITORY ${openPMD_toml11_repo}
-                    GIT_TAG        ${openPMD_toml11_branch}
+    elseif(openPMD_USE_INTERNAL_TOML11 AND openPMD_toml11_src)
+        add_subdirectory(${openPMD_toml11_src} _deps/localtoml11-build/)
+    elseif(openPMD_USE_INTERNAL_TOML11 AND (openPMD_toml11_tar OR openPMD_toml11_branch))
+        include(FetchContent)
+        if(openPMD_toml11_tar)
+            FetchContent_Declare(fetchedtoml11
+                    URL             ${openPMD_toml11_tar}
+                    URL_HASH        ${openPMD_toml11_tar_hash}
                     BUILD_IN_SOURCE OFF
-                )
-            endif()
-            FetchContent_MakeAvailable(fetchedtoml11)
-
-            # advanced fetch options
-            mark_as_advanced(FETCHCONTENT_BASE_DIR)
-            mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
-            mark_as_advanced(FETCHCONTENT_QUIET)
-            #mark_as_advanced(FETCHCONTENT_SOURCE_DIR_FETCHEDtoml11)
-            mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
-            #mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FETCHEDtoml11)
+            )
+        else()
+            FetchContent_Declare(fetchedtoml11
+                GIT_REPOSITORY ${openPMD_toml11_repo}
+                GIT_TAG        ${openPMD_toml11_branch}
+                BUILD_IN_SOURCE OFF
+            )
         endif()
+        FetchContent_MakeAvailable(fetchedtoml11)
+
+        # advanced fetch options
+        mark_as_advanced(FETCHCONTENT_BASE_DIR)
+        mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
+        mark_as_advanced(FETCHCONTENT_QUIET)
+        #mark_as_advanced(FETCHCONTENT_SOURCE_DIR_FETCHEDtoml11)
+        mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
+        #mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FETCHEDtoml11)
     elseif(NOT openPMD_USE_INTERNAL_TOML11)
         # toml11 4.0 was a breaking change. This is reflected in the library's CMake
         # logic: version 4.0 is not accepted by a call to find_package(toml11 3.7).
