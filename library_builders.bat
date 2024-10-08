@@ -18,7 +18,7 @@ exit /b 0
 :build_adios2
   if exist adios2-stamp exit /b 0
   curl -sLo adios2-2.10.1.zip ^
-    https://github.com/vicentebolea/ADIOS2/archive/refs/heads/fix-static-blosc2-build.zip
+    https://github.com/ornladios/ADIOS2/archive/v2.10.1.zip
   powershell Expand-Archive adios2-2.10.1.zip -DestinationPath dep-adios2
 
   cmake --version
