@@ -23,7 +23,7 @@ exit /b 0
 
   cmake --version
 
-  cmake -S dep-adios2/ADIOS2-fix-static-blosc2-build -B build-adios2 ^
+  cmake -S dep-adios2/ADIOS2-v2.10.1 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  ^
     -DBUILD_SHARED_LIBS=OFF     ^
@@ -33,6 +33,7 @@ exit /b 0
     -DADIOS2_Blosc2_PREFER_SHARED=OFF ^
     -DADIOS2_USE_Blosc2=ON      ^
     -DADIOS2_USE_BZip2=OFF      ^
+    -DADIOS2_USE_Campaign=OFF   ^
     -DADIOS2_USE_Fortran=OFF    ^
     -DADIOS2_USE_HDF5=OFF       ^
     -DADIOS2_USE_MHS=OFF        ^

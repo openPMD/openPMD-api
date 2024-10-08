@@ -122,6 +122,7 @@ function build_adios2 {
         -DADIOS2_Blosc2_PREFER_SHARED=OFF         \
         -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Blosc2=ON                    \
+        -DADIOS2_USE_Campaign=OFF                 \
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_HDF5=OFF                     \
         -DADIOS2_USE_MHS=OFF                      \
