@@ -40,7 +40,7 @@ jobs:
               CMAKE_GENERATOR: "Visual Studio 16 2019"
               CMAKE_GENERATOR_PLATFORM: "Win32"
 
-          - os: macos-11
+          - os: macos-12
             arch: "x86_64"
             env:
               MACOSX_DEPLOYMENT_TARGET: 11.0
@@ -48,7 +48,7 @@ jobs:
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
           #   https://github.com/pypa/cibuildwheel/pull/704
-          - os: macos-11
+          - os: macos-12
             arch: "arm64"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
@@ -60,7 +60,7 @@ jobs:
           #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
           # ADIOS1 tricky to build and HDF5 even with CMake as well (as of 1.12)
           # We could build them twice and use `lipo` to combine the lib artifacts.
-          #- os: macos-11
+          #- os: macos-12
           #  arch: "universal2"
           #  env:
           #    CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
