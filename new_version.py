@@ -70,9 +70,11 @@ with open(str(REPO_DIR.joinpath("include/openPMD/version.hpp")),
             break
 
 OLD_VERSION_SUFFIX = f"(-{OLD_VERSION_TAG})?" if OLD_VERSION_TAG else ""
+# The order of the alternatives is important, since the Regex parser
+# should greedily include the old version suffix
 OLD_VERSION_STR = \
-    f"({re.escape(OLD_VERSION_STR_README)})" + \
-    f"|({re.escape(OLD_VERSION_STR_CMAKE)}{OLD_VERSION_SUFFIX})"
+    f"({re.escape(OLD_VERSION_STR_CMAKE)}{OLD_VERSION_SUFFIX})" + \
+    f"|({re.escape(OLD_VERSION_STR_README)})"
 
 print(f"The old version is: {OLD_VERSION_STR}")
 print()
