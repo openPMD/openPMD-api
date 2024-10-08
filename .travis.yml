@@ -10,7 +10,7 @@ env:
   global:
     - OPENPMD_GIT_REF="0.15.2"
 
-    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.8"
+    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.9"
     # Install dependencies on Linux and OSX
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
     # for the openPMD-api build, CMake shall search for
@@ -28,7 +28,7 @@ jobs:
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp38-manylinux_aarch64 cp39-manylinux_aarch64"
+        - CIBW_BUILD="cp39-manylinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
@@ -38,7 +38,7 @@ jobs:
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp312-manylinux_aarch64"
+        - CIBW_BUILD="cp312-manylinux_aarch64 cp313-manylinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
@@ -48,13 +48,13 @@ jobs:
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="pp38-manylinux_aarch64 pp39-manylinux_aarch64"
+        - CIBW_BUILD="pp39-manylinux_aarch64"
     # +musllinux
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp38-musllinux_aarch64 cp39-musllinux_aarch64"
+        - CIBW_BUILD="cp39-musllinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
@@ -64,14 +64,9 @@ jobs:
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp312-musllinux_aarch64"
+        - CIBW_BUILD="cp312-musllinux_aarch64 cp313-musllinux_aarch64"
 
     # perform a linux PPC64LE build
-    - services: docker
-      arch: ppc64le
-      dist: focal
-      env:
-        - CIBW_BUILD="cp38-manylinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
@@ -96,7 +91,7 @@ jobs:
       arch: ppc64le
       dist: focal
       env:
-        - CIBW_BUILD="cp38-musllinux_ppc64le"
+        - CIBW_BUILD="cp313-manylinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
@@ -117,6 +112,11 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="cp312-musllinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp313-musllinux_ppc64le"
 
     # perform a linux S390X build
     # blocked by https://github.com/GTkorvo/dill/issues/15

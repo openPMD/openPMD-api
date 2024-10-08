@@ -106,7 +106,7 @@ jobs:
         #     https://github.com/pypa/manylinux/issues/899
         CIBW_SKIP: "pp*-manylinux*"
         CIBW_ARCHS: "${{ matrix.arch }}"
-        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8"
+        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9"
         # Install dependencies
         CIBW_BEFORE_BUILD_LINUX: bash -x .github/library_builders.sh
         CIBW_BEFORE_BUILD_MACOS: bash -x .github/library_builders.sh
