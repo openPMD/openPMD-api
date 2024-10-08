@@ -5,11 +5,20 @@ Changelog
 
 0.16.0
 ------
-**Date:** TBA
+**Date:** 2024-10-07
 
-[Title]
+ADIOS2 Joined arrays, API simplification, HDF5 subfiling, TOML backend, wildcard file extensions, Performance & Memory
 
-[Summary]
+This release adds support for additional I/O features in all backends, and additionally a completely new TOML backend, useful for openPMD-formatted configuration files in scientific workflows.
+The ADIOS2 backend now supports joined arrays for simplified storage of particle data in parallel, asynchronous I/O, group tables for enhanced support of ADIOS2 I/O steps, optimized attribute aggregation schemes for large-scale setups and more features.
+The HDF5 backend has added support for the "subfiling" virtual file driver intended for I/O performance in large-scale setups, explicit JSON/TOML-based configuration for chunking and independent flushing. The support of exotic datatypes is improved, such as float128 on ARM64/PPC64 and improved support for generically dealing with unknown datatypes.
+The JSON backend supports parallel MPI output into separate subfiles, mainly intended for debugging purposes.
+The ADIOS1 backend, previously deprecated, has been removed in favor of ADIOS2.
+Please consult the upgrade guide for hints on further interacting with old data.
+
+The openPMD-api has been simplified by no longer requiring explicit specification for scalar components via ``RecordComponent::SCALAR`` in its object model.
+The addition of wildcard filename extensions (e.g. ``simData.%E`` or ``simData_%T.%E``) simplifies the generic implementation of backend-independent logic, such as post-processing routines.
+Rank tables can now be used to pass detailed topology information from writer to reader in staging setups.
 
 Changes to "0.15.0"
 ^^^^^^^^^^^^^^^^^^^
@@ -18,12 +27,257 @@ Features
 """"""""
 
 - pybind11: require version 2.13.0+ #1220 #1322 #1637 #1671
+- Python: require version 3.8+ #1502
+- ADIOS2:
+
+  - Introduce group tables for more stable support of ADIOS2 steps #1310
+    Used in conjunction with modifiable attributes in ADIOS2 v2.9
+  - Support for "joined array" variable shape #1382
+  - Add ``new_step`` flush target for intermittent readable flushes in file-based encoding #1632
+  - Option for explicit specification of the ADIOS2 access mode #1638
+  - Support Async write flag #1460
+  - Performance optimization for extreme-scale parallelism:
+    Optionally write attributes only from specified ranks #1542
+  - Opt-in config to make use of ADIOS2 engines that openPMD does not know #1652
+  - Group-Based encoding will now print warnings due to #1498
+  - Remove ADIOS1 - Long Live ADIOS2 #1419 #1560
+- HDF5:
+
+  - Support for HDF5 subfiling #1580
+  - Explicit control over chunking #1591 #1600
+  - Explicit control over independent flushing #1634
+  - Support for float128 on ARM64/PPC64 #1364
+  - Better handling of unknown datatypes in datasets #1469
+- JSON/TOML:
+
+  - Parallel JSON (mostly for debugging purposes, separate output written per rank) #1475
+  - TOML Backend (by converting the in-/output of the JSON backend) #1436
+  - Compatibility with toruniina/toml11 v4.0 #1645
+- API simplification: ``RecordComponent::SCALAR`` no longer necessary #1154 #1627
+- Allow specifying wildcards for filename extensions: ``simData_%T.%E`` #1584
+- Streaming: Add rank table for locality-aware streaming #1505
+- Optional debugging output for ``AbstractIOHandlerImpl::flush()`` via ``export OPENPMD_VERBOSE=1`` #1495 #1574 #1643
+- Miscellaneous API additions:
+
+  - Add visit-like pattern for RecordComponent #1544 #1582
+  - Derive PatchRecordComponent from RecordComponent to give access to the full load/store API #1594
+  - More consistent handling for file extensions #1473
 
 Bug Fixes
 """""""""
 
+- ADIOS2
+
+  - Ensure that a step is always active at write time #1492
+    Necessary for the BP5 engine
+  - Warning for BP5+Blosc in ADIOS2 v2.9 up to patch level 1 #1497
+    Unreadable datasets might silently be created due to a bug in ADIOS2 v2.9.0 and v2.9.1
+    https://github.com/ornladios/ADIOS2/issues/3504
+  - Some adjustments for ADIOS2 v2.10 #1618
+    This adds the ``openPMD_HAVE_ADIOS2_BP5`` macro and introduces some datatype fixes in Python bindings
+- HDF5
+
+  - Fix Char Type Matching #1433
+- CMake
+
+  - Set correct install permissions for ``openpmd-pipe`` #1459
+  - HDF5 Libraries are ``PUBLIC`` #1520
+- Warnings
+
+  - Fix gcc9 warning #1429
+  - ADIOS2 v2.9: Avoid Unused Param Warning #1503
+- Python
+
+  - ODR Violation #1521
+  - Init Order #1547
+  - Strings with a single char #1585
+  - Fixes and documentation for Pybind v2.12.0 and Numpy 2.0 #1637
+- Tooling
+
+  - ``openpmd-pipe``: fix handling of constant components #1530
+- Performance
+
+  - Fix ``dirtyRecursive()`` performance for Series with many steps #1598 #1615
+  - Fix flushing performance for file-based Series with many steps #1642
+  - Parse lazily by default in linear access mode #1650
+- Workaround for independent writes to Iterations in parallel #1619 1660
+  This includes better detection of BP5 which in turn uncovers more instances of the first issue
+- Regexes: Sanitize user input to avoid Regex injection #1624
+- Fix particle patches flush api #1626 #1641
+- RecordComponent: Properly handle uninitialized datasets in ``RecordComponent`` #1316
+- Don't require unitSI when reading patch record component #1470 #1482
+- Linear read mode was not able to directly access specific file of file-based Series #1533
+- Fixes for variable-based encoding in backends without step support #1484
+- Fix availableChunks for ``READ_LINEAR`` in ADIOS2 #1586
+- Read JSON config in parallel #1605
+- Partially revert #1368 to re-enable a warning #1573
+- Fix ``unique_ptr<T, Del>`` constructor of ``UniquePtrWithLambda`` #1552
+- SerialIOTest: Clang-Tidy Fixes #1599
+- Replace ``openPMD_Datatypes`` global with function #1509
+- Fix ``Attribute`` copy/move constructors #1545
+- Fix duplicate ``mesh.read()`` call #1535
+- Disallow Container insertion in ``READ_LINEAR`` #1590
+- ParallelIOtests: Fix MPI ifdef guard #1649
+- SerialIOTest: Avoid use-after-free issue in test flag with shared pointer #1657
+
+
+Breaking Changes
+""""""""""""""""
+
+- Removed support for ADIOS1, fully replaced with ADIOS2 #1419 1560
+- Redesign of object model to not rely on ``RecordComponent::SCALAR`` hack any longer #1154
+
+  - ``Attributable::myPath()`` now returns the openPMD group path without including the ``SCALAR`` layer
+- Replace openPMD_Datatypes global with function of same name #1509
+- Removed auxiliary function template ``getCast<U>()`` #1278
+- Deprecations
+
+  - Group-Based encoding for ADIOS2 deprecated, will print warnings in combination with new features (group-table introduced with #1310) #1498
+
 Other
 """""
+
+- Tests & Examples
+
+  - Rewrite deprecated storeChunk APIs in first read/write examples #1435
+  - Streaming examples: Set WAN as default transport #1511
+  - Fix records length in ``9_particle_write_serial.py`` #1510
+- CI
+
+  - 55af0dbd2 Linux aarch64/arm64 #1517
+  - macOS 11.0+ #1446 #1486
+  - Upgrade macOS 11 to 12 #1653
+  - oneAPI 2023.2.0 #1478
+  - Update ``.readthedocs.yml`` #1438
+  - GitHub Actions: macOS has 3 Cores #1421
+  - Doxygen 1.9.7 Broken #1464
+  - Fix type comparison in Python #1490
+  - Adapt to removed CTest CLI #1519
+  - Fix ``chmod`` in ``download_samples.sh`` #1518
+  - Workaround for bugs in CLI of ``mpiexec`` #1565 #1628
+  - Fix CircleCI "six" #1596
+  - Fix false positive in Conda-based CI runs #1651
+  - Script for automatically updating the library version #1467
+- CMake
+
+  - Replace internal depencencies with FetchContent #1583 #1666
+  - Superbuild: Repo and local source #1667
+  - Superbuild: Tarball #1668
+  - Update cmake minimum required to 3.5 for third-party dependencies ``nlohmann::json`` and ``toruniina::toml11`` #1558
+  - Warnings on AppleClang #1496
+  - Warn and Continue on Empty HDF5_VERSION #1512
+- Docs
+
+  - Document typical Analysis workflows #1444
+  - Add documentation for typical use cases of openpmd-pipe #1578
+  - Authors
+
+    - Synchronizing library and standard authors #1434
+    - citing more authors #1539
+    - support by the HELPMI project #1555
+    - citing the research groups of maintainers #1566
+  - Document how to link to C++ Projects #1445
+  - More careful documentation of streaming API #1430
+  - Post 0.15.0 Changelog Template #1420
+  - Document OpenMPI-ROMIO/HDF5/Chunking issue #1441
+  - Document ``HDF5_DO_MPI_FILE_SYNC`` #1427
+  - Remove schema 2021 from documentation #1451
+  - Fix small documentation issues after 0.15 release #1440
+  - Add Sphinx Copybutton and Design #1461
+  - Sphinx: Limit <7.2 #1541
+  - Document that we support Python 3.12 #1549
+  - Fix docstring for MyPath #1587
+  - Release notes #1648
+- Python
+
+  - Python bindings: Release GIL during IO wait operations #1381
+  - Series to DataFram #1506
+  - Add Python binding for myPath #1463
+  - Update ``__repr__`` method of major objects in openPMD hierarchy #1476
+  - Update ``__len__`` to return the number of contained sub-objects instead of number of attributes #1659
+  - Python 3.12: Remove Distutils #1508
+  - Support for Pickle API without fragile static storage hacks #1633 1662
+  - setup.py: Transitive ZLIB static #1522
+  - Support for Numpy 2.0 #1669
+- Tooling
+
+  - Use lazy imports for dask and pandas #1442
+  - Pandas DataFrames: Add Row Column Name #1501
+  - Add API to manually set chunks when loading dask arrays #1477
+- Add all the ``performance-*`` clang-tidy checks #1532
+- Better error message when loading to a buffer with mismatched type #1452
+- Unknown openPMD version in data: Add upgrade hint #1528
+- Print a hint on what might be wrong when retrieveSeries fails #1610
+- Refactor: Extract ADIOS2 BufferedActions struct to own file, rename to ``ADIOS2File`` #1577
+
+
+0.15.2
+------
+**Date:** 2023-08-18
+
+Python, ADIOS2 and HDF5 Fixes
+
+This release fixed regressions in the Python frontend as well as the ADIOS2 and HDF5 backends.
+Supported macOS versions are now 11.0+ and Python versions are 3.8+.
+
+Changes to "0.15.1"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- Don't require unitSI when reading a patch record component #1470
+- Examples:
+
+  - Streaming examples: Set WAN as default transport #1511
+  - Fix types of particle constant records #1316 #1510
+- Python:
+
+  - DataFrame to ASCII: Header of First Column in CSV bug documentation third party #1480 #1501
+  - Update ``__repr__`` method of major objects in openPMD hierarchy #1476
+  - openpmd-pipe: set correct install permissions #1459
+  - Better error message when loading to a buffer with mismatched type #1452
+  - Use lazy imports for dask and pandas #1442
+- ADIOS2:
+
+  - Fixes for variable-based encoding in backends without step support #1484 #1481
+  - Warn on BP5+Blosc in ADIOS2 v2.9 up to patch level 1 #1497
+  - Ensure that a step is always active at write time #1492
+  - Fix gcc9 warning #1429
+- HDF5:
+
+  - Handle unknown datatypes in datasets #1469
+  - Support for float128 on ARM64/PPC64 #1364
+  - Fix Char Type Matching #1433 #1431
+  - Install: Warn and Continue on Empty ``HDF5_VERSION`` in CMake #1512
+- CI:
+
+  - type comparison in openpmd-pipe #1490
+
+Other
+"""""
+
+- Better handling for file extensions #1473 #1471
+- Optional debugging output for ``AbstractIOHandlerImpl::flush()`` #1495
+- Python: 3.8+ #1502
+- CI:
+
+  - macOS 11.0+ #1486 #1446
+  - oneAPI 2023.2.0 #1478
+  - Doxygen 1.9.7 Broken #1464
+- Docs:
+
+  - Analysis with third party data science frameworks #1444
+  - Sphinx Copybutton and Design #1461
+  - Fix small documentation issues after 0.15 release #1440
+  - ``HDF5_DO_MPI_FILE_SYNC`` #1427
+  - OpenMPI-ROMIO/HDF5/Chunking issue #1441
+  - Remove ADIOS2 schema 2021 #1451
+  - Linking to C++ Projects #1445
+  - Fix deprecated APIs in first read/write examples #1435
+  - Update ``.readthedocs.yml`` #1438
+  - Fix Bib Authors #1434
+  - More careful documentation of streaming API #1430
 
 
 0.15.1
