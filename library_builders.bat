@@ -47,7 +47,7 @@ exit /b 0
 :: TODO: Could NOT find HDF5 (missing: HDF5_LIBRARIES C)
 ::  -DADIOS2_USE_HDF5=ON
 
-  cmake --build build-adios2 --parallel %CPU_COUNT%
+  cmake --build build-adios2 --config Release --parallel %CPU_COUNT%
   if errorlevel 1 exit 1
 
   cmake --build build-adios2 --target install --config Release
@@ -92,7 +92,7 @@ exit /b 0
 ::    -DZLIB_USE_STATIC_LIBS=ON
   if errorlevel 1 exit 1
 
-  cmake --build build-blosc2 --parallel %CPU_COUNT%
+  cmake --build build-blosc2 --config Release --parallel %CPU_COUNT%
   if errorlevel 1 exit 1
 
   cmake --build build-blosc2 --target install --config Release
@@ -130,7 +130,7 @@ exit /b 0
     -DCMAKE_INSTALL_PREFIX=%BUILD_PREFIX%/HDF5
   if errorlevel 1 exit 1
 
-  cmake --build build-hdf5 --parallel %CPU_COUNT%
+  cmake --build build-hdf5 --config Release --parallel %CPU_COUNT%
   if errorlevel 1 exit 1
 
   cmake --build build-hdf5 --target install --config Release
@@ -160,7 +160,7 @@ exit /b 0
 
   if errorlevel 1 exit 1
 
-  cmake --build build-zfp --parallel %CPU_COUNT%
+  cmake --build build-zfp --config Release --parallel %CPU_COUNT%
   if errorlevel 1 exit 1
 
   cmake --build build-zfp --target install --config Release
@@ -187,7 +187,7 @@ exit /b 0
 :: Manually-specified variables were not used by the project:
 ::   CMAKE_BUILD_TYPE
 
-  cmake --build build-zlib --parallel %CPU_COUNT%
+  cmake --build build-zlib --config Release --parallel %CPU_COUNT%
   if errorlevel 1 exit 1
 
   cmake --build build-zlib --target install --config Release
