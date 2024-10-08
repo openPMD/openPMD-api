@@ -3,6 +3,15 @@
 Changelog
 =========
 
+0.16.1
+------
+**Date:** 2024-10-07
+
+New Backends, Extension, Perf. & Memory
+
+This is the 0.16.0 release but with internal version bumps where they were missing.
+
+
 0.16.0
 ------
 **Date:** 2024-10-07
