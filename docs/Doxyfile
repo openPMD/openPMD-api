@@ -1,7 +1,6 @@
 PROJECT_NAME      = "openPMD-api"
 XML_OUTPUT        = xml
 INPUT             = ../src ../include ../README.md
-#EXCLUDE_PATTERNS  = *CommonADIOS1IOHandler.cpp
 
 # TAGFILES += "cppreference-doxygen-web.tag.xml=http://en.cppreference.com/w/"
 BUILTIN_STL_SUPPORT = YES
