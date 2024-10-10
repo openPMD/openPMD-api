@@ -3,6 +3,28 @@
 Changelog
 =========
 
+0.16.1
+------
+**Date:** 2024-10-07
+
+New Backends, Extension, Perf. & Memory
+
+This is the 0.16.0 release but with internal version bumps where they were missing.
+
+Changes to "0.15.0"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- Fix CMake variables for controlling internal dependencies #1678
+- Bump toml11 dependency to v4.2.0 by default #1679
+
+Other
+"""""
+
+- Replace deprecated Python unittest API call #1681
+
 0.16.0
 ------
 **Date:** 2024-10-07
