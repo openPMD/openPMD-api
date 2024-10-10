@@ -39,7 +39,7 @@ Brew
 We maintain a `homebrew tap <https://docs.brew.sh/How-to-Create-and-Maintain-a-Tap>`_ for `openPMD <https://github.com/openPMD/homebrew-openPMD>`_.
 Provides the C++ and Python API for users.
 Supports OSX and Linux.
-Its source-only Formula for the latest release includes (Open)MPI support and lacks the ADIOS1 backend.
+Its source-only Formula for the latest release includes (Open)MPI support.
 
 Example workflow for a new release:
 

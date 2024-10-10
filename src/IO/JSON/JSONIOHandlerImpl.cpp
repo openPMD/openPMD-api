@@ -283,7 +283,7 @@ void JSONIOHandlerImpl::createDataset(
     if (parameter.joinedDimension.has_value())
     {
         error::throwOperationUnsupportedInBackend(
-            "ADIOS1", "Joined Arrays currently only supported in ADIOS2");
+            "JSON", "Joined Arrays currently only supported in ADIOS2");
     }
 
     if (!writable->written)
