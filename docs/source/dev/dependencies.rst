@@ -15,7 +15,7 @@ Required
 Shipped internally
 ------------------
 
-The following libraries are shipped internally in ``share/openPMD/thirdParty/`` for convenience:
+The following libraries are downloaded by CMake for convenience, unless ``openPMD_SUPERBUILD=OFF`` is set:
 
 * `Catch2 <https://github.com/catchorg/Catch2>`_ 2.13.10+ (`BSL-1.0 <https://github.com/catchorg/Catch2/blob/master/LICENSE.txt>`__)
 * `pybind11 <https://github.com/pybind/pybind11>`_ 2.13.0+ (`new BSD <https://github.com/pybind/pybind11/blob/master/LICENSE>`_)

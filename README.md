@@ -99,7 +99,7 @@ Required:
 * CMake 3.22.0+
 * C++17 capable compiler, e.g., g++ 7+, clang 7+, MSVC 19.15+, icpc 19+, icpx
 
-Shipped internally in `share/openPMD/thirdParty/`:
+Shipped internally (downloaded by CMake unless `openPMD_SUPERBUILD=OFF` is set):
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.10+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.13.0+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
