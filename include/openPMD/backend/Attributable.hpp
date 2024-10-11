@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
@@ -30,6 +31,7 @@
 #include <exception>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -111,6 +113,31 @@ namespace internal
             res.setData(
                 std::shared_ptr<typename T::Data_t>(self, [](auto const *) {}));
             return res;
+        }
+
+        inline auto attributes() -> A_MAP &
+        {
+            return m_attributes;
+        }
+        [[nodiscard]] inline auto attributes() const -> A_MAP const &
+        {
+            return m_attributes;
+        }
+        [[nodiscard]] inline auto readAttribute(std::string const &name) const
+            -> Attribute const &
+        {
+            if (auto it = m_attributes.find(name); it != m_attributes.end())
+            {
+                return it->second;
+            }
+            else
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::NotFound,
+                    std::nullopt,
+                    "Not found: '" + name + "'.");
+            }
         }
 
     private:

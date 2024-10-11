@@ -592,6 +592,9 @@ void Iteration::readMeshes(std::string const &meshesPath)
         IOHandler()->enqueue(IOTask(&m, aList));
         IOHandler()->flush(internal::defaultFlushParams);
 
+        // Find constant scalar meshes. shape generally required for meshes,
+        // shape also required for scalars.
+        // https://github.com/openPMD/openPMD-standard/pull/289
         auto att_begin = aList.attributes->begin();
         auto att_end = aList.attributes->end();
         auto value = std::find(att_begin, att_end, "value");

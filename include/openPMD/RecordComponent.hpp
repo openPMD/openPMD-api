@@ -487,7 +487,8 @@ public:
     static constexpr char const *const SCALAR = "\vScalar";
 
 protected:
-    void flush(std::string const &, internal::FlushParams const &);
+    void
+    flush(std::string const &, internal::FlushParams const &, bool is_scalar);
     void read(bool require_unit_si);
 
 private:

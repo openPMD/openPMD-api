@@ -222,12 +222,14 @@ void Mesh::flush_impl(
         auto &m = get();
         if (m.m_datasetDefined)
         {
-            T_RecordComponent::flush(SCALAR, flushParams);
+            T_RecordComponent::flush(
+                SCALAR, flushParams, /* is_scalar = */ true);
         }
         else
         {
             for (auto &comp : *this)
-                comp.second.flush(comp.first, flushParams);
+                comp.second.flush(
+                    comp.first, flushParams, /* is_scalar = */ false);
         }
     }
     else
@@ -237,7 +239,7 @@ void Mesh::flush_impl(
             if (scalar())
             {
                 MeshRecordComponent &mrc = *this;
-                mrc.flush(name, flushParams);
+                mrc.flush(name, flushParams, /* is_scalar = */ true);
             }
             else
             {
@@ -247,7 +249,8 @@ void Mesh::flush_impl(
                 for (auto &comp : *this)
                 {
                     comp.second.parent() = &this->writable();
-                    comp.second.flush(comp.first, flushParams);
+                    comp.second.flush(
+                        comp.first, flushParams, /* is_scalar = */ false);
                 }
             }
         }
@@ -255,12 +258,14 @@ void Mesh::flush_impl(
         {
             if (scalar())
             {
-                T_RecordComponent::flush(name, flushParams);
+                T_RecordComponent::flush(
+                    name, flushParams, /* is_scalar = */ true);
             }
             else
             {
                 for (auto &comp : *this)
-                    comp.second.flush(comp.first, flushParams);
+                    comp.second.flush(
+                        comp.first, flushParams, /* is_scalar = */ false);
             }
         }
         flushAttributes(flushParams);
