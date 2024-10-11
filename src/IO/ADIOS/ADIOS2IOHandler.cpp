@@ -772,7 +772,7 @@ void ADIOS2IOHandlerImpl::createDataset(
     if (parameters.joinedDimension.has_value())
     {
         error::throwOperationUnsupportedInBackend(
-            "ADIOS1", "Joined Arrays require ADIOS2 >= v2.9");
+            "ADIOS2", "Joined Arrays require ADIOS2 >= v2.9");
     }
 #endif
     if (!writable->written)

@@ -471,7 +471,7 @@ void HDF5IOHandlerImpl::createDataset(
     if (parameters.joinedDimension.has_value())
     {
         error::throwOperationUnsupportedInBackend(
-            "ADIOS1", "Joined Arrays currently only supported in ADIOS2");
+            "HDF5", "Joined Arrays currently only supported in ADIOS2");
     }
 
     if (!writable->written)
