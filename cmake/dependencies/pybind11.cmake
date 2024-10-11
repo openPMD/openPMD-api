@@ -16,6 +16,11 @@ function(find_pybind11)
             message(STATUS "pybind11 repository: ${openPMD_pybind11_repo} (${openPMD_pybind11_branch})")
         endif()
     endif()
+
+    # rely on our find_package(Python ...) call
+    # https://pybind11.readthedocs.io/en/stable/compiling.html#modules-with-cmake
+    set(PYBIND11_FINDPYTHON ON)
+
     if(TARGET pybind11::module)
         # nothing to do, target already exists in the superbuild
     elseif(openPMD_USE_INTERNAL_PYBIND11 AND openPMD_pybind11_src)
