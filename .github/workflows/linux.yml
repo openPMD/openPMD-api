@@ -213,7 +213,7 @@ jobs:
 #  gcc-4.8.5_py35_nompi_h5
 #  gcc-7.4.0_py_ompi_h5_ad2_coveralls
 
-  gcc7_py36_pd_dd_ompi_h5_ad2:
+  gcc7_py39_pd_dd_ompi_h5_ad2:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
@@ -224,19 +224,16 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install g++-7 gfortran libopenmpi-dev python3 python3-setuptools
+        sudo apt-get install g++-7 gfortran libopenmpi-dev python3.9 python3.9-dev python3.9-venv
         sudo .github/workflows/dependencies/install_spack
-        python3 -m pip install -U pip
-        python3 -m pip install -U numpy
-        python3 -m pip install -U mpi4py
-        python3 -m pip install -U pandas
-        python3 -m pip install -U dask
-        python3 -m pip install -U pyarrow
     - name: Build
       env: {CC: gcc-7, CXX: g++-7, CXXFLAGS: -Werror}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/gcc7_py36_ompi_h5_ad2/)
         spack install
+        python3.9 -m venv env
+        source env/bin/activate
+        pip install numpy mpi4py pandas dask pyarrow
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -249,7 +246,7 @@ jobs:
         cd build
         ctest --output-on-failure
 
-  gcc9_py38_pd_nompi_h5_ad2_libcpp:
+  gcc9_py39_pd_nompi_h5_ad2_libcpp:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
@@ -257,11 +254,14 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas
+        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3.9 python3.9-dev python3.9-venv
 #       TODO ADIOS2
     - name: Build
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
       run: |
+        python3.9 -m venv env
+        source env/bin/activate
+        pip install numpy mpi4py pandas dask pyarrow
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \

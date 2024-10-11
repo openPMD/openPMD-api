@@ -115,7 +115,7 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.8 - 3.13
+  * Python 3.9 - 3.13
   * pybind11 2.13.0+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)

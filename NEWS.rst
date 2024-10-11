@@ -19,7 +19,7 @@ Group-Based encoding is deprecated in ADIOS2 due to performance considerations. 
 
 CMake 3.22.0 is now the minimally supported version for CMake.
 pybind11 2.13.0 is now the minimally supported version for Python support.
-Python 3.12 & 3.13 are now supported, Python 3.7 is removed.
+Python 3.12 & 3.13 are now supported, Python 3.7 & 3.8 are removed.
 
 The ``len(...)`` of many classes has been reworked for consistency and returns now the number of entries (iterations, record components, etc.).
 Previously, this sporadically returned the number of attributes, which is better queried via ``len(<object>.attributes)``.
