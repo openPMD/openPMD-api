@@ -123,8 +123,8 @@ namespace internal
         {
             return m_attributes;
         }
-        [[nodiscard]] inline auto
-        readAttribute(std::string const &name) const -> Attribute const &
+        [[nodiscard]] inline auto readAttribute(std::string const &name) const
+            -> Attribute const &
         {
             if (auto it = m_attributes.find(name); it != m_attributes.end())
             {
