@@ -241,7 +241,9 @@ bool RecordComponent::empty() const
 }
 
 void RecordComponent::flush(
-    std::string const &name, internal::FlushParams const &flushParams)
+    std::string const &name,
+    internal::FlushParams const &flushParams,
+    bool is_scalar)
 {
     auto &rc = get();
     if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
@@ -285,6 +287,21 @@ void RecordComponent::flush(
             setUnitSI(1);
         }
         auto constant_component_write_shape = [&]() {
+            if (is_scalar)
+            {
+                // Must write shape in any case:
+                // 1. Non-scalar constant components can be distinguished from
+                //    normal components by checking if the backend reports a
+                //    group or a dataset. This does not work for scalar constant
+                //    components, so the parser needs to check if the attributes
+                //    value and shape are there. If they're not, the group is
+                //    not considered as a constant component.
+                // 2. Scalar constant components are required to write the shape
+                //    by standard anyway since the standard requires that at
+                //    least one component in a record have a shape. For scalars,
+                //    there is only one component, so it must have  a shape.
+                return true;
+            }
             auto extent = getExtent();
             return !extent.empty() &&
                 std::none_of(extent.begin(), extent.end(), [](auto val) {
