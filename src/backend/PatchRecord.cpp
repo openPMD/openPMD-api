@@ -45,17 +45,17 @@ void PatchRecord::flush_impl(
     {
         return;
     }
-    if (!this->datasetDefined())
+    if (!this->scalar())
     {
         if (IOHandler()->m_frontendAccess != Access::READ_ONLY)
             Container<PatchRecordComponent>::flush(
                 path, flushParams); // warning (clang-tidy-10):
                                     // bugprone-parent-virtual-call
         for (auto &comp : *this)
-            comp.second.flush(comp.first, flushParams);
+            comp.second.flush(comp.first, flushParams, /* is_scalar = */ false);
     }
     else
-        T_RecordComponent::flush(path, flushParams);
+        T_RecordComponent::flush(path, flushParams, /* is_scalar = */ true);
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
         setDirty(false);

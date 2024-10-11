@@ -47,7 +47,8 @@ private:
     MeshRecordComponent();
     MeshRecordComponent(NoInit);
     void read();
-    void flush(std::string const &, internal::FlushParams const &);
+    void
+    flush(std::string const &, internal::FlushParams const &, bool is_scalar);
 
 public:
     ~MeshRecordComponent() override = default;
