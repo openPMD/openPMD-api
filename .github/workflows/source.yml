@@ -41,7 +41,7 @@ jobs:
         update-conda: true
         conda-channels: conda-forge
     - name: Install
-      run: conda install -c conda-forge doxygen=1.9.6
+      run: conda install -c conda-forge doxygen
     - name: Doxygen
       run: .github/workflows/source/buildDoxygen
 
