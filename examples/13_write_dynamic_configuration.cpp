@@ -39,9 +39,6 @@ iteration_encoding = "group_based"
 # The following is only relevant in read mode
 defer_iteration_parsing = true
 
-[adios1.dataset]
-transform = "blosc:compressor=zlib,shuffle=bit,lvl=5;nometa"
-
 [adios2.engine]
 type = "bp4"
 
