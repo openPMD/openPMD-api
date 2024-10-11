@@ -164,9 +164,13 @@ before_script:
   - cd ..
 
 script:
+  # output something every <10 minutes
+  - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
   - cd src
-  - travis_wait 45 python -m cibuildwheel --output-dir ../wheelhouse
+  - python -m cibuildwheel --output-dir ../wheelhouse
   - cd ..
+  # terminate background sleep & print loop
+  - kill %1
 
 deploy:
   - provider: script
