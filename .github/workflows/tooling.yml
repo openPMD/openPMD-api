@@ -20,6 +20,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install clang clang-tidy gfortran libopenmpi-dev python
+
+        which cmake
+
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: clang, CXX: clang++}

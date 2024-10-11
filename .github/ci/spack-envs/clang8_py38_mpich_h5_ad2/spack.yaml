@@ -6,17 +6,17 @@
 #
 spack:
   specs:
-  - adios2@2.7.1
+  - adios2
   - hdf5
   - mpich
 
   packages:
     adios2:
-      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+      variants: ~mgard ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
     cmake:
       externals:
       - spec: cmake@3.23.0
-        prefix: /usr
+        prefix: /usr/local
       buildable: False
     mpich:
       externals:
