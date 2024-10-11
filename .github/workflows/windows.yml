@@ -22,8 +22,15 @@ jobs:
         cmake -S . -B build               `
               -DCMAKE_BUILD_TYPE=Debug    `
               -DopenPMD_USE_MPI=OFF
+
         cmake --build build --config Debug --parallel 2
+        if(!$?) { Exit $LASTEXITCODE }
+
+        ctest --test-dir build -C Debug --output-on-failure
+        if(!$?) { Exit $LASTEXITCODE }
+
         cmake --build build --config Debug --target install
+        if(!$?) { Exit $LASTEXITCODE }
 
 # add before install, and fix Python path:
 # ctest --test-dir build -C Debug --output-on-failure
@@ -70,10 +77,14 @@ jobs:
               -G "Ninja"      ^
               -DCMAKE_C_COMPILER=clang-cl   ^
               -DCMAKE_CXX_COMPILER=clang-cl ^
-              -DCMAKE_BUILD_TYPE=Release    ^
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo  ^
               -DopenPMD_USE_MPI=OFF
-        cmake --build build --config Release --parallel 2
-        cmake --build build --config Debug --target install
 
-# add before install, and fix Python path:
-# ctest --test-dir build -C Debug --output-on-failure
+        cmake --build build --config RelWithDebInfo --parallel 2
+        if errorlevel 1 exit 1
+
+        ctest --test-dir build -C RelWithDebInfo --output-on-failure
+        if errorlevel 1 exit 1
+
+        cmake --build build --config RelWithDebInfo --target install
+        if errorlevel 1 exit 1
