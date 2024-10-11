@@ -35,9 +35,15 @@ std::string openPMD::getVersion()
 
 std::string openPMD::getStandard()
 {
+    return getStandardMaximum();
+}
+
+std::string openPMD::getStandardDefault()
+{
     std::stringstream standard;
-    standard << OPENPMD_STANDARD_MAJOR << "." << OPENPMD_STANDARD_MINOR << "."
-             << OPENPMD_STANDARD_PATCH;
+    standard << OPENPMD_STANDARD_DEFAULT_MAJOR << "."
+             << OPENPMD_STANDARD_DEFAULT_MINOR << "."
+             << OPENPMD_STANDARD_DEFAULT_PATCH;
     return standard.str();
 }
 
@@ -48,4 +54,12 @@ std::string openPMD::getStandardMinimum()
                 << OPENPMD_STANDARD_MIN_MINOR << "."
                 << OPENPMD_STANDARD_MIN_PATCH;
     return standardMin.str();
+}
+
+std::string openPMD::getStandardMaximum()
+{
+    std::stringstream standard;
+    standard << OPENPMD_STANDARD_MAJOR << "." << OPENPMD_STANDARD_MINOR << "."
+             << OPENPMD_STANDARD_PATCH;
+    return standard.str();
 }
