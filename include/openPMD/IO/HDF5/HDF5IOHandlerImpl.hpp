@@ -42,10 +42,7 @@ class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
     friend class ParallelHDF5IOHandler;
 
 public:
-    HDF5IOHandlerImpl(
-        AbstractIOHandler *,
-        json::TracingJSON config,
-        bool do_warn_unused_params = true);
+    HDF5IOHandlerImpl(AbstractIOHandler *, bool do_warn_unused_params = true);
     ~HDF5IOHandlerImpl() override;
 
     void

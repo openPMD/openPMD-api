@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/auxiliary/JSONMatcher.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
@@ -50,7 +51,7 @@ void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
     auto shadow = config.invertShadow();
     // The backends are supposed to deal with this
     // Only global options here
-    for (auto const &backendKey : json::backendKeys())
+    for (auto const &backendKey : json::backendKeys)
     {
         if (backendKey != currentBackendName)
         {
@@ -72,6 +73,23 @@ void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
         }
         }
     }
+}
+
+template <>
+json::ParsedConfig Parameter<Operation::CREATE_DATASET>::compileJSONConfig(
+    Writable const *writable, json::JsonMatcher &jsonMatcher) const
+{
+    auto attri = writable->attributable->asInternalCopyOf<Attributable>();
+    auto path = attri.myPath().openPMDPath();
+    auto base_config = jsonMatcher.get(path);
+    auto manual_config =
+        json::parseOptions(options, /* considerFiles = */ false);
+    json::merge(base_config.config, manual_config.config);
+    return json::ParsedConfig{
+        std::move(base_config.config),
+        (options.empty() || options == "{}")
+            ? base_config.originallySpecifiedAs
+            : manual_config.originallySpecifiedAs};
 }
 
 namespace internal

@@ -504,6 +504,12 @@ nlohmann::json &lowerCase(nlohmann::json &json)
                   * We use "\vnum" to indicate "any array index".
                   */
                  "\vnum",
+                 "parameters"},
+                {"adios2",
+                 "dataset",
+                 "\vnum",
+                 "operators",
+                 "\vnum",
                  "parameters"}};
             for (auto const &ignored : ignoredPaths)
             {
@@ -547,17 +553,12 @@ std::optional<std::string> asLowerCaseStringDynamic(nlohmann::json const &value)
     return maybeString;
 }
 
-std::vector<std::string> backendKeys()
-{
-    return {"adios2", "json", "toml", "hdf5"};
-}
-
 void warnGlobalUnusedOptions(TracingJSON const &config)
 {
     auto shadow = config.invertShadow();
     // The backends are supposed to deal with this
     // Only global options here
-    for (auto const &backendKey : json::backendKeys())
+    for (auto const &backendKey : json::backendKeys)
     {
         shadow.erase(backendKey);
     }
@@ -619,11 +620,22 @@ merge(nlohmann::json &defaultVal, nlohmann::json const &overwrite)
     return defaultVal;
 }
 
-std::string merge(std::string const &defaultValue, std::string const &overwrite)
+template <typename... MPI_Comm_t>
+std::string merge_impl(
+    std::string const &defaultValue,
+    std::string const &overwrite,
+    MPI_Comm_t &&...comm)
 {
-    auto [res, returnFormat] =
-        parseOptions(defaultValue, /* considerFiles = */ false);
-    merge(res, parseOptions(overwrite, /* considerFiles = */ false).config);
+    auto res = parseOptions(
+                   defaultValue,
+                   std::forward<MPI_Comm_t>(comm)...,
+                   /* considerFiles = */ true)
+                   .config;
+    auto [second, returnFormat] = parseOptions(
+        overwrite,
+        std::forward<MPI_Comm_t>(comm)...,
+        /* considerFiles = */ true);
+    merge(res, second);
     switch (returnFormat)
     {
     case SupportedLanguages::JSON:
@@ -638,6 +650,21 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
     }
     throw std::runtime_error("Unreachable!");
 }
+
+std::string merge(std::string const &defaultValue, std::string const &overwrite)
+{
+    return merge_impl(defaultValue, overwrite);
+}
+
+#if openPMD_HAVE_MPI
+std::string merge(
+    std::string const &defaultValue,
+    std::string const &overwrite,
+    MPI_Comm comm)
+{
+    return merge_impl(defaultValue, overwrite, comm);
+}
+#endif
 
 nlohmann::json &
 filterByTemplate(nlohmann::json &defaultVal, nlohmann::json const &positiveMask)

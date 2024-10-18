@@ -37,6 +37,7 @@
 #include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSONMatcher.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
@@ -75,9 +76,7 @@ namespace openPMD
 #endif
 
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(
-    AbstractIOHandler *handler,
-    json::TracingJSON config,
-    bool do_warn_unused_params)
+    AbstractIOHandler *handler, bool do_warn_unused_params)
     : AbstractIOHandlerImpl(handler)
     , m_datasetTransferProperty{H5P_DEFAULT}
     , m_fileAccessProperty{H5P_DEFAULT}
@@ -142,6 +141,8 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     VERIFY(
         m_H5T_LONG_DOUBLE_80_LE >= 0,
         "[HDF5] Internal error: Failed to create 128-bit complex long double");
+
+    auto config = handler->jsonMatcher->getDefault();
 
     // JSON option can overwrite env option:
     if (config.json().contains("hdf5"))
@@ -502,8 +503,9 @@ void HDF5IOHandlerImpl::createDataset(
         }
 
         json::TracingJSON config = [&]() {
-            auto parsed_config = json::parseOptions(
-                parameters.options, /* considerFiles = */ false);
+            auto parsed_config =
+                parameters.compileJSONConfig<json::ParsedConfig>(
+                    writable, *m_handler->jsonMatcher);
             if (auto hdf5_config_it = parsed_config.config.find("hdf5");
                 hdf5_config_it != parsed_config.config.end())
             {
@@ -2976,8 +2978,8 @@ std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
 #if openPMD_HAVE_HDF5
 HDF5IOHandler::HDF5IOHandler(
     std::string path, Access at, json::TracingJSON config)
-    : AbstractIOHandler(std::move(path), at)
-    , m_impl{new HDF5IOHandlerImpl(this, std::move(config))}
+    : AbstractIOHandler(std::move(path), at, std::move(config))
+    , m_impl{new HDF5IOHandlerImpl(this)}
 {}
 
 HDF5IOHandler::~HDF5IOHandler() = default;
@@ -2989,11 +2991,8 @@ std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &params)
 #else
 
 HDF5IOHandler::HDF5IOHandler(
-    std::string path,
-    Access at,
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    [[maybe_unused]] json::TracingJSON config)
-    : AbstractIOHandler(std::move(path), at)
+    std::string path, Access at, json::TracingJSON config)
+    : AbstractIOHandler(std::move(path), at, std::move(config))
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }

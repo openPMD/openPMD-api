@@ -215,8 +215,8 @@ right = "val"
         }();
 
         REQUIRE(json::merge(leftJson, rightJson) == resJson);
-        REQUIRE(json::merge(leftJson, rightToml) == resJson);
-        REQUIRE(sort_lines(json::merge(leftToml, rightJson)) == resToml);
+        REQUIRE(sort_lines(json::merge(leftJson, rightToml)) == resToml);
+        REQUIRE(json::merge(leftToml, rightJson) == resJson);
         REQUIRE(sort_lines(json::merge(leftToml, rightToml)) == resToml);
     }
 }

@@ -47,7 +47,7 @@ namespace json
 
     struct ParsedConfig
     {
-        nlohmann::json config;
+        nlohmann::json config = nlohmann::json::object();
         SupportedLanguages originallySpecifiedAs{SupportedLanguages::JSON};
     };
 
@@ -240,7 +240,8 @@ namespace json
      * Vector containing the lower-case keys to the single backends'
      * configurations.
      */
-    extern std::vector<std::string> backendKeys();
+    constexpr std::array<char const *, 4> backendKeys{
+        "adios2", "json", "toml", "hdf5"};
 
     /**
      * Function that can be called after reading all global options from the
