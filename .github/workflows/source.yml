@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-    - uses: s-weigand/setup-conda@v1.2.2
+    - uses: s-weigand/setup-conda@v1.2.3
       with:
         update-conda: true
         conda-channels: conda-forge
