@@ -66,8 +66,6 @@ public:
 
     PatchRecordComponent &setUnitSI(double);
 
-    PatchRecordComponent &resetDataset(Dataset) override;
-
     uint8_t getDimensionality() const;
     Extent getExtent() const;
 

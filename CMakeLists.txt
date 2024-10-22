@@ -691,6 +691,7 @@ set(openPMD_EXAMPLE_NAMES
     10_streaming_read
     12_span_write
     13_write_dynamic_configuration
+    14_toml_template
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
@@ -1303,6 +1304,9 @@ if(openPMD_BUILD_TESTING)
                             ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe       \
                             --infile ../samples/git-sample/thetaMode/data_%T.bp    \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
+                            --outconfig '                                          \
+                                json.attribute.mode = \"short\"                  \n\
+                                json.dataset.mode = \"template_no_warn\"'          \
                         "
                     WORKING_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )
