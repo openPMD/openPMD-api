@@ -9,7 +9,6 @@
 #include "openPMD/Error.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
-#include <pybind11/pybind11.h>
 
 void init_Error(py::module &m)
 {
