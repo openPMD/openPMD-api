@@ -23,7 +23,7 @@ Use the following lines in your project's ``CMakeLists.txt``:
 .. code-block:: cmake
 
    # supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS2
-   find_package(openPMD 0.16.0 CONFIG)
+   find_package(openPMD 0.17.0 CONFIG)
 
    if(openPMD_FOUND)
        target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
@@ -53,7 +53,7 @@ Just replace the ``add_subdirectory`` call with:
    set(openPMD_USE_PYTHON OFF)
    FetchContent_Declare(openPMD
      GIT_REPOSITORY "https://github.com/openPMD/openPMD-api.git"
-     GIT_TAG        "0.16.0")
+     GIT_TAG        "0.17.0")
    FetchContent_MakeAvailable(openPMD)
 
 
