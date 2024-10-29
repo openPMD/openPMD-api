@@ -83,8 +83,8 @@ public:
     virtual ~AbstractSnapshotsContainer() = 0;
 
     virtual auto currentIteration() -> std::optional<value_type *>;
-    virtual auto
-    currentIteration() const -> std::optional<value_type const *> = 0;
+    virtual auto currentIteration() const
+        -> std::optional<value_type const *> = 0;
 
     virtual auto begin() -> iterator = 0;
     virtual auto begin() const -> const_iterator = 0;

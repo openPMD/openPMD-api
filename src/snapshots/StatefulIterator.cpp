@@ -66,8 +66,8 @@ namespace detail
     }
 
     template <typename V>
-    [[nodiscard]] auto
-    CurrentStep::get_variant() const -> std::optional<V const *>
+    [[nodiscard]] auto CurrentStep::get_variant() const
+        -> std::optional<V const *>
     {
         auto res = std::get_if<V>(*this);
         if (res)
@@ -298,8 +298,8 @@ namespace
 } // namespace
 
 auto StatefulIterator::resetCurrentIterationToBegin(
-    size_t num_skipped_iterations,
-    std::vector<iteration_index_t> indexes) -> void
+    size_t num_skipped_iterations, std::vector<iteration_index_t> indexes)
+    -> void
 {
     auto &data = get();
     data.currentStep.map_during_t(

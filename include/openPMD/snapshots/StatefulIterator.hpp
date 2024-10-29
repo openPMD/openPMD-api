@@ -259,8 +259,8 @@ class StatefulIterator
          * This returns the current value of `During_t::iteration_idx` if that
          * exists.
          */
-        auto
-        currentIteration() const -> std::optional<Iteration::IterationIndex_t>;
+        auto currentIteration() const
+            -> std::optional<Iteration::IterationIndex_t>;
     };
 
     /*
@@ -391,8 +391,8 @@ private:
     auto resetCurrentIterationToBegin(
         size_t num_skipped_iterations,
         std::vector<iteration_index_t> current_iterations) -> void;
-    auto
-    peekCurrentlyOpenIteration() const -> std::optional<value_type const *>;
+    auto peekCurrentlyOpenIteration() const
+        -> std::optional<value_type const *>;
     auto peekCurrentlyOpenIteration() -> std::optional<value_type *>;
 
     auto reparse_possibly_deleted_iteration(iteration_index_t) -> void;

@@ -20,9 +20,9 @@
  */
 #include "openPMD/backend/Writable.hpp"
 
-#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/backend/Attributable.hpp"
 
 #include <stdexcept>
 
