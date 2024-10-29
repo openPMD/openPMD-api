@@ -708,7 +708,8 @@ public:
      *
      * Conversely, the Access::CREATE and Access::APPEND access modes both
      * resolve to random-access by default, but can be specified to use
-     * Synchronous workflow if needed.
+     * Synchronous workflow if needed. A shorthand for Synchronous workflows can
+     * be found with Series::writeIterations().
      *
      * @param snapshot_workflow Specify the intended workflow
      *            in Access::CREATE and Access::APPEND. Leave unspecified in
@@ -736,17 +737,9 @@ public:
     /**
      * @brief Entry point to the writing end of the streaming API.
      *
-     * Creates and returns an instance of the WriteIterations class which is an
-     * intentionally restricted container of iterations that takes care of
-     * streaming semantics, e.g. ensuring that an iteration cannot be reopened
-     * once closed.
-     * For a less restrictive API in non-streaming situations,
-     * `Series::iterations` can be accessed directly.
-     * The created object is stored as member of the Series object, hence this
-     * method may be called as many times as a user wishes.
-     * There is only one shared iterator state per Series, even when calling
-     * this method twice.
-     * Look for the WriteIterations class for further documentation.
+     * Shorthand for `Series::snapshots()` for access types CREATE and APPEND
+     * called with parameter SnapshotWorkflow::Synchronous, i.e. for
+     * streaming-aware data producers.
      *
      * @return WriteIterations
      */

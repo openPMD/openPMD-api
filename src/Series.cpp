@@ -2705,9 +2705,27 @@ void Series::openIteration(IterationIndex_t index, Iteration &iteration)
 {
     auto oldStatus = iteration.get().m_closed;
     using CL = internal::CloseStatus;
+    /*
+     * Closed and ClosedInFrontend need to be treated different here.
+     * Closed means that the Iteration is actually closed, but we need it again,
+     * so it should be opened again.
+     * ClosedInFrontend means that the Iteration is about to be closed, but
+     * still open. Nothing needs to be done, the enqueued operations can be
+     * performed, and the Iteration will be closed afterwards.
+     */
     switch (oldStatus)
     {
     case CL::Closed:
+        if (access::writeOnly(IOHandler()->m_frontendAccess))
+        {
+            std::cerr << &R"(
+[Series::openIteration]
+  Warning: Reopening closed Iterations in write modes is currently experimental.
+  Note that an ADIOS2 step/file cannot be modified once closed, just appended
+  to with a new step. Support for this is not yet feature-complete (pre-alpha).
+)"[1];
+        }
+        [[fallthrough]];
     case CL::Open:
         iteration.get().m_closed = CL::Open;
         break;
@@ -3188,14 +3206,15 @@ void Series::parseBase()
 
 WriteIterations Series::writeIterations()
 {
-    auto &series = get();
-    if (series.m_deferred_initialization.has_value())
+    auto const access = IOHandler()->m_frontendAccess;
+    if (access != Access::CREATE && access != Access::APPEND)
     {
-        runDeferredInitialization();
+        throw error::WrongAPIUsage(
+            "[Series::writeIterations()] May only be applied for access modes "
+            "CREATE or APPEND. Use Series::snapshots() for random-access-type "
+            "or for read-type workflows.");
     }
-    auto begin = make_writing_stateful_iterator(*this, series);
-    return Snapshots(std::shared_ptr<StatefulSnapshotsContainer>(
-        new StatefulSnapshotsContainer(std::move(begin))));
+    return snapshots(SnapshotWorkflow::Synchronous);
 }
 
 void Series::close()

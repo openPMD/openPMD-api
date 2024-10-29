@@ -783,7 +783,7 @@ if(openPMD_BUILD_TESTING)
     macro(additional_testing_sources test_name out_list)
         if(${test_name} STREQUAL "SerialIO")
             list(APPEND ${out_list}
-                test/Files_SerialIO/close_iteration_test.cpp
+                test/Files_SerialIO/close_and_reopen_test.cpp
                 test/Files_SerialIO/filebased_write_test.cpp
             )
         endif()

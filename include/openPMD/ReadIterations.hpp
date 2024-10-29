@@ -38,7 +38,7 @@ public:
  * This is a feature-restricted subset for the functionality of
  * `Series::snapshots()`, prefer using that. The compatibility layer is needed
  * due to the different value_type for `Series::readIterations()`-based
- * iteration (`IterationIndex` instead of `std::pair<uint64_t, Iteration>`).
+ * iteration (`IndexedIteration` instead of `std::pair<uint64_t, Iteration>`).
  *
  * Create instance via Series::readIterations().
  * For use in a C++11-style foreach loop over iterations.

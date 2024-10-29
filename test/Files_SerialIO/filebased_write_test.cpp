@@ -5,6 +5,19 @@ namespace filebased_write_test
 {
 using namespace openPMD;
 
+#define OPENPMD_TEST_VERBOSE 0
+
+namespace
+{
+    template <typename... Args>
+    auto write_to_stdout([[maybe_unused]] Args &&...args) -> void
+    {
+#if OPENPMD_TEST_VERBOSE
+        (std::cout << ... << args);
+#endif
+    }
+} // namespace
+
 auto close_and_reopen_iterations(
     const std::string &filename,
     openPMD::Access access,
@@ -18,32 +31,32 @@ auto close_and_reopen_iterations(
         auto chunk = component.loadChunkVariant();
         iteration.seriesFlush();
         auto num_particles = component.getExtent()[0];
-        std::cout << "Particles: ";
+        write_to_stdout("Particles: ");
         if (num_particles > 0)
         {
             std::visit(
                 [&](auto const &shared_ptr) {
                     auto it = shared_ptr.get();
                     auto end = it + num_particles;
-                    std::cout << '[' << *it++;
+                    write_to_stdout('[', *it++);
                     for (; it != end; ++it)
                     {
-                        std::cout << ", " << *it;
+                        write_to_stdout(", ", *it);
                     }
                 },
                 chunk);
-            std::cout << "]";
+            write_to_stdout("]");
         }
         else
         {
-            std::cout << "[]";
+            write_to_stdout("[]");
         }
-        std::cout << std::endl;
+        write_to_stdout('\n');
     };
 
     for (auto &[idx, iteration] : list.snapshots())
     {
-        std::cout << "Seeing iteration " << idx << std::endl;
+        write_to_stdout("Seeing iteration ", idx, '\n');
         if (need_to_explitly_open_iterations)
         {
             iteration.open();
@@ -52,20 +65,20 @@ auto close_and_reopen_iterations(
         {
             test_read(iteration);
         }
-        std::cout << "Closing iteration " << idx << std::endl;
+        write_to_stdout("Closing iteration ", idx, '\n');
         iteration.close();
     }
-    std::cout << "Trying to read iteration 3 out of line" << std::endl;
+    write_to_stdout("Trying to read iteration 3 out of line", '\n');
     if (need_to_explitly_open_iterations || access == Access::READ_ONLY)
     {
         list.snapshots()[3].open();
     }
     test_read(list.snapshots()[3]);
 
-    std::cout << "----------\nGoing again\n----------" << std::endl;
+    write_to_stdout("----------\nGoing again\n----------", '\n');
     for (auto &[idx, iteration] : list.snapshots())
     {
-        std::cout << "Seeing iteration " << idx << std::endl;
+        write_to_stdout("Seeing iteration ", idx, '\n');
         if (need_to_explitly_open_iterations || access == Access::READ_ONLY)
         {
             iteration.open();
