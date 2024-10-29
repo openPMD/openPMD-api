@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
@@ -273,7 +274,7 @@ public:
      * @return A vector of arrays, each array representing the SI unit of one
      * mesh axis.
      */
-    std::vector<std::array<double, 7>> gridUnitDimension() const;
+    unit_representations::AsArrays gridUnitDimension() const;
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float,

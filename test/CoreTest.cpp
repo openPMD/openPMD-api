@@ -1,4 +1,5 @@
 // expose private and protected members for invasive testing
+#include "openPMD/UnitDimension.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -1280,6 +1281,16 @@ TEST_CASE("custom_geometries", "[core]")
         Series write("../samples/custom_geometry.json", Access::CREATE);
         auto E = write.iterations[0].meshes["E"];
         E.setAttribute("geometry", "other:customGeometry");
+        // gridUnitDimension is technically an openPMD 2.0 addition, but since
+        // it's a non-breaking addition, we can also use it in openPMD 1.*
+        // files. However, it only really makes sense to use along with per-axis
+        // gridUnitSI definitions, which are in fact breaking in comparison to
+        // openPMD 1.*.
+        E.setGridUnitDimension(
+            {{{UnitDimension::theta, 1}},
+             {{UnitDimension::M, 1},
+              {UnitDimension::L, 1},
+              {UnitDimension::T, 2}}});
         auto E_x = E["x"];
         E_x.resetDataset({Datatype::INT, {10}});
         E_x.storeChunk(sampleData, {0}, {10});
@@ -1306,6 +1317,12 @@ TEST_CASE("custom_geometries", "[core]")
     {
         Series read("../samples/custom_geometry.json", Access::READ_ONLY);
         auto E = read.iterations[0].meshes["E"];
+        auto compare = unit_representations::AsMaps{
+            {{UnitDimension::theta, 1}},
+            {{UnitDimension::M, 1},
+             {UnitDimension::L, 1},
+             {UnitDimension::T, 2}}};
+        REQUIRE(unit_representations::asMaps(E.gridUnitDimension()) == compare);
         REQUIRE(
             E.getAttribute("geometry").get<std::string>() ==
             "other:customGeometry");

@@ -22,6 +22,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/UnitDimension.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
@@ -271,25 +272,12 @@ Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
     return *this;
 }
 
-namespace
-{
-    template <typename RandomAccessIterator>
-    void fromMapOfUnitDimension(
-        RandomAccessIterator it, std::map<UnitDimension, double> const &udim)
-    {
-        for (auto [unit, exponent] : udim)
-        {
-            it[static_cast<uint8_t>(unit)] = exponent;
-        }
-    }
-} // namespace
-
 Mesh &Mesh::setUnitDimension(std::map<UnitDimension, double> const &udim)
 {
     if (!udim.empty())
     {
         std::array<double, 7> tmpUnitDimension = this->unitDimension();
-        fromMapOfUnitDimension(tmpUnitDimension.begin(), udim);
+        auxiliary::fromMapOfUnitDimension(tmpUnitDimension.begin(), udim);
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
@@ -313,14 +301,14 @@ Mesh &Mesh::setGridUnitDimension(
     auto cursor = rawGridUnitDimension.begin();
     for (auto const &udim : udims)
     {
-        fromMapOfUnitDimension(cursor, udim);
+        auxiliary::fromMapOfUnitDimension(&*cursor, udim);
         cursor += 7;
     }
     setAttribute("gridUnitDimension", rawGridUnitDimension);
     return *this;
 }
 
-std::vector<std::array<double, 7>> Mesh::gridUnitDimension() const
+unit_representations::AsArrays Mesh::gridUnitDimension() const
 {
     if (containsAttribute("gridUnitDimension"))
     {
@@ -335,7 +323,7 @@ std::vector<std::array<double, 7>> Mesh::gridUnitDimension() const
                 "[Mesh::gridUnitDimension()] `gridUnitDimension` attribute "
                 "must have a length equal to a multiple of 7.");
         }
-        std::vector<std::array<double, 7>> res(rawRes.size() / 7);
+        unit_representations::AsArrays res(rawRes.size() / 7);
         for (size_t dim = 0; dim < res.size(); ++dim)
         {
             std::copy_n(rawRes.begin() + dim * 7, 7, res.at(dim).begin());
@@ -347,9 +335,10 @@ std::vector<std::array<double, 7>> Mesh::gridUnitDimension() const
         // gridUnitDimension is an optional attribute
         // if it is missing, the mesh is interpreted as spatial
         std::array<double, 7> spatialMesh;
-        fromMapOfUnitDimension(spatialMesh.begin(), {{UnitDimension::L, 1}});
+        auxiliary::fromMapOfUnitDimension(
+            spatialMesh.begin(), {{UnitDimension::L, 1}});
         auto dim = retrieveMeshDimensionality(*this);
-        std::vector<std::array<double, 7>> res(dim, spatialMesh);
+        unit_representations::AsArrays res(dim, spatialMesh);
         return res;
     }
 }

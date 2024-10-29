@@ -474,7 +474,7 @@ public:
      *
      * @return powers of the 7 base measures in the order specified above
      */
-    std::array<double, 7> unitDimension() const;
+    unit_representations::AsArray unitDimension() const;
 
     void setDatasetDefined(BaseRecordComponent::Data_t &data) override
     {
@@ -928,7 +928,7 @@ auto BaseRecord<T_elem>::emplace(Args &&...args) -> std::pair<iterator, bool>
 }
 
 template <typename T_elem>
-inline std::array<double, 7> BaseRecord<T_elem>::unitDimension() const
+inline unit_representations::AsArray BaseRecord<T_elem>::unitDimension() const
 {
     return this->getAttribute("unitDimension")
         .template get<std::array<double, 7>>();

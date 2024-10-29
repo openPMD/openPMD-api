@@ -20,10 +20,16 @@
  */
 #pragma once
 
+#include <array>
 #include <cstdint>
+#include <map>
+#include <vector>
 
 namespace openPMD
 {
+
+using UnitDimensionExponent = double;
+
 /** Physical dimension of a record
  *
  * Dimensional base quantities of the international system of quantities
@@ -38,4 +44,25 @@ enum class UnitDimension : uint8_t
     N, //!< amount of substance
     J //!< luminous intensity
 };
+
+namespace unit_representations
+{
+    using AsMap = std::map<UnitDimension, UnitDimensionExponent>;
+    using AsArray = std::array<UnitDimensionExponent, 7>;
+
+    using AsMaps = std::vector<AsMap>;
+    using AsArrays = std::vector<AsArray>;
+
+    auto asArray(AsMap const &) -> AsArray;
+    auto asMap(AsArray const &) -> AsMap;
+
+    auto asArrays(AsMaps const &) -> AsArrays;
+    auto asMaps(AsArrays const &) -> AsMaps;
+} // namespace unit_representations
+
+namespace auxiliary
+{
+    void fromMapOfUnitDimension(
+        double *cursor, std::map<UnitDimension, double> const &udim);
+} // namespace auxiliary
 } // namespace openPMD
