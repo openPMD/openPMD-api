@@ -130,6 +130,9 @@ namespace internal
          * READ_WRITE mode when re-opening a closed file in file-based encoding:
          * A file that existed previously is re-opened in Read mode and will
          * not support updating its contents.
+         * (Note that this is NOT a restriction of re-opening, this is
+         * fundamentally a restriction of R/W in ADIOS2. Files can be
+         * written XOR read.)
          * A file that we created anew is re-opened in Append mode to continue
          * writing data to it. Using `adios2.engine.parameters.FlattenSteps =
          * "ON"` is recommended in this case.

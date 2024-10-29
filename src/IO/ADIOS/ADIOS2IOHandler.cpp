@@ -931,12 +931,22 @@ void ADIOS2IOHandlerImpl::openFile(
     writable->written = true;
     writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
 
+    auto how_to_open = [&]() {
+        switch (parameters.reopen)
+        {
+        case Parameter<Operation::OPEN_FILE>::Reopen::WasCreatedByUs:
+            return IfFileNotOpen::ReopenFileThatWeCreated;
+        case Parameter<Operation::OPEN_FILE>::Reopen::WasFoundOnDisk:
+            return IfFileNotOpen::ReopenFileFoundOnDisk;
+        case Parameter<Operation::OPEN_FILE>::Reopen::NoReopen:
+            return IfFileNotOpen::OpenImplicitly;
+        }
+        return IfFileNotOpen::ThrowError; // Unreachable
+    }();
+
     // enforce opening the file
     // lazy opening is deathly in parallel situations
-    auto &fileData = getFileData(
-        file,
-        parameters.reopen ? IfFileNotOpen::ReopenImplicitly
-                          : IfFileNotOpen::OpenImplicitly);
+    auto &fileData = getFileData(file, how_to_open);
     *parameters.out_parsePreference = fileData.parsePreference;
     m_dirty.emplace(std::move(file));
 }
@@ -1567,7 +1577,7 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
         case adios_defs::OpenFileAs::Create:
             return adios2::Mode::Write;
         case adios_defs::OpenFileAs::Open:
-        case adios_defs::OpenFileAs::Reopen:
+        case adios_defs::OpenFileAs::ReopenFileThatWeCreated:
             return adios2::Mode::Append;
         }
         break;
@@ -1609,7 +1619,7 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
 #else
                     return adios2::Mode::Read;
 #endif
-                case adios_defs::OpenFileAs::Reopen:
+                case adios_defs::OpenFileAs::ReopenFileThatWeCreated:
                     /* In order to write new data to an Iteration that was
                      * created and closed previously, the only applicable access
                      * mode is Append mode, ideally in conjunction with
@@ -1726,8 +1736,8 @@ detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
         using OF = adios_defs::OpenFileAs;
         switch (flag)
         {
-        case IfFileNotOpen::ReopenImplicitly:
-            return OF::Reopen;
+        case IfFileNotOpen::ReopenFileThatWeCreated:
+            return OF::ReopenFileThatWeCreated;
         case IfFileNotOpen::OpenImplicitly:
             return OF::Open;
         case IfFileNotOpen::CreateImplicitly:

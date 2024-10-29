@@ -406,10 +406,11 @@ private:
 
     enum class IfFileNotOpen : char
     {
-        ReopenImplicitly,
         OpenImplicitly,
         CreateImplicitly,
-        ThrowError
+        ThrowError,
+        ReopenFileThatWeCreated,
+        ReopenFileFoundOnDisk = OpenImplicitly,
     };
 
     detail::ADIOS2File &

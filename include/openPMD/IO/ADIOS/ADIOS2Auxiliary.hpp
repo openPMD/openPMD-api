@@ -79,7 +79,7 @@ namespace adios_defs
     {
         Create,
         Open,
-        Reopen
+        ReopenFileThatWeCreated
     };
 } // namespace adios_defs
 

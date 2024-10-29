@@ -187,9 +187,21 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
             new Parameter<Operation::OPEN_FILE>(std::move(*this)));
     }
 
+    // Needed for reopening files in file-based Iteration encoding when using
+    // R/W-mode in ADIOS2. Files can only be opened for reading XOR writing,
+    // so R/W mode in file-based encoding can only operate at the granularity
+    // of files in ADIOS2. The frontend needs to tell us if we should reopen
+    // a file for continued reading (WasFoundOnDisk) or for continued writing
+    // (WasCreatedByUs).
+    enum class Reopen
+    {
+        WasCreatedByUs,
+        WasFoundOnDisk,
+        NoReopen
+    };
+
     std::string name = "";
-    // true <-> file was previously created and is now opened again
-    bool reopen = false;
+    Reopen reopen = Reopen::NoReopen;
     using ParsePreference = internal::ParsePreference;
     std::shared_ptr<ParsePreference> out_parsePreference =
         std::make_shared<ParsePreference>(ParsePreference::UpFront);
