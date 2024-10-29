@@ -259,7 +259,7 @@ public:
 
     void swap(Container &other)
     {
-        container().swap(other.m_container);
+        container().swap(other.container());
     }
 
     mapped_type &at(key_type const &key)
