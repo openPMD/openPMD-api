@@ -1,6 +1,7 @@
 #include "SerialIOTests.hpp"
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 
 #include <catch2/catch.hpp>
@@ -80,15 +81,14 @@ auto run_test_filebased(
     series = Series(filename, Access::READ_WRITE, write_cfg);
 
     {
-        // @todo proper support for READ_WRITE in snapshots()
-        auto it = series.iterations[0].open();
+        auto it = series.snapshots()[0].open();
         std::vector<int> data(5);
         it.meshes["E"]["x"].loadChunkRaw(data.data(), {0}, {5});
         it.close();
         REQUIRE((data == std::vector<int>{0, 1, 2, 3, 4}));
     }
     {
-        auto it = series.iterations[2].open();
+        auto it = series.snapshots()[2].open();
         std::vector<int> data(5);
         it.meshes["E"]["x"].loadChunkRaw(data.data(), {0}, {5});
         it.close();
@@ -98,7 +98,7 @@ auto run_test_filebased(
     }
 
     {
-        auto it = series.iterations[3].open();
+        auto it = series.snapshots()[3].open();
         auto E_x = it.meshes["E"]["x"];
         E_x.resetDataset({Datatype::INT, {5}});
         std::vector<int> data{0, 1, 2, 3, 4};
@@ -274,6 +274,12 @@ auto close_and_reopen_test() -> void
     run_test_filebased([](Series &s) { return s.iterations; }, "bp");
     run_test_filebased([](Series &s) { return s.writeIterations(); }, "bp");
     run_test_filebased([](Series &s) { return s.snapshots(); }, "bp");
+    run_test_filebased(
+        [](Series &s) { return s.snapshots(SnapshotWorkflow::Synchronous); },
+        "bp");
+    run_test_filebased(
+        [](Series &s) { return s.snapshots(SnapshotWorkflow::RandomAccess); },
+        "bp");
     run_test_filebased([](Series &s) { return s.snapshots(); }, "json");
 #if openPMD_HAVE_HDF5
     run_test_filebased([](Series &s) { return s.snapshots(); }, "h5");
