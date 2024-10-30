@@ -15,8 +15,13 @@ from API.APITest import APITest
 
 # Define the test suite.
 def suite():
+    test_loader = unittest.TestLoader()
+    env_name = "OPENPMD_PYTHON_TEST_PREFIX"
+    from os import environ
+    if env_name in environ:
+        test_loader.testMethodPrefix = environ[env_name]
     suites = [
-        unittest.TestLoader().loadTestsFromTestCase(testCaseClass=APITest),
+        test_loader.loadTestsFromTestCase(testCaseClass=APITest),
     ]
 
     return unittest.TestSuite(suites)
