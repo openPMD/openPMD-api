@@ -98,10 +98,13 @@ class APITest(unittest.TestCase):
         self.assertEqual(len(i.meshes), 2)
         for m in i.meshes:
             self.assertTrue(m in ["E", "rho"])
-            self.assertEqual(i.meshes[m].unit_dimension, io.Unit_Dimension.as_array(
-                io.Unit_Dimension.as_map(i.meshes[m].unit_dimension)))
-            self.assertEqual(io.Unit_Dimension.as_maps(i.meshes[m].grid_unit_dimension), [
-                             {io.Unit_Dimension.L: 1}, {io.Unit_Dimension.L: 1}])
+            self.assertEqual(
+                i.meshes[m].unit_dimension,
+                io.Unit_Dimension.as_array(
+                    io.Unit_Dimension.as_map(i.meshes[m].unit_dimension)))
+            self.assertEqual(
+                io.Unit_Dimension.as_maps(i.meshes[m].grid_unit_dimension),
+                [{io.Unit_Dimension.L: 1}, {io.Unit_Dimension.L: 1}])
         self.assertEqual(io.Unit_Dimension.from_index(0), io.Unit_Dimension.L)
         self.assertEqual(io.Unit_Dimension.L.as_index(), 0)
         for idx in range(7):

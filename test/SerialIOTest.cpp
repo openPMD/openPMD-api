@@ -48,6 +48,21 @@
 #undef max
 #endif
 
+// On Windows, REQUIRE() might not be able to print more complex data structures
+// upon failure:
+// CoreTest.obj : error LNK2001: unresolved external symbol
+// "class std::string const Catch::Detail::unprintableString" (...)
+#ifdef _WIN32
+#define OPENPMD_REQUIRE_GUARD_WINDOWS(...)                                     \
+    do                                                                         \
+    {                                                                          \
+        bool guarded_require_boolean = __VA_ARGS__;                            \
+        REQUIRE(guarded_require_boolean);                                      \
+    } while (0);
+#else
+#define OPENPMD_REQUIRE_GUARD_WINDOWS(...) REQUIRE(__VA_ARGS__)
+#endif
+
 using namespace openPMD;
 
 struct BackendSelection
@@ -953,10 +968,10 @@ inline void constant_scalar(std::string const &file_ending)
         E_mesh.setAxisLabels(axisLabels);
         E_mesh.setUnitDimension(unitDimensions);
         E_mesh.setTimeOffset(timeOffset);
-        REQUIRE(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(
             E_mesh.gridUnitSIPerDimension() == std::vector<double>{1., 1., 1.});
         E_mesh.setGridUnitSI(std::vector(3, gridUnitSI));
-        REQUIRE(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(
             E_mesh.gridUnitSIPerDimension() ==
             std::vector<double>{gridUnitSI, gridUnitSI, gridUnitSI});
 
@@ -1119,7 +1134,7 @@ inline void constant_scalar(std::string const &file_ending)
             Extent{3, 2, 1});
 
         Mesh &E_mesh = s.iterations[1].meshes["E"];
-        REQUIRE(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(
             E_mesh.gridUnitDimension() ==
             std::vector{
                 std::array<double, 7>{1., 0., 0., 0., 0, .0, 0.},

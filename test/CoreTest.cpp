@@ -25,6 +25,21 @@
 #include <string>
 #include <vector>
 
+// On Windows, REQUIRE() might not be able to print more complex data structures
+// upon failure:
+// CoreTest.obj : error LNK2001: unresolved external symbol
+// "class std::string const Catch::Detail::unprintableString" (...)
+#ifdef _WIN32
+#define OPENPMD_REQUIRE_GUARD_WINDOWS(...)                                     \
+    do                                                                         \
+    {                                                                          \
+        bool guarded_require_boolean = __VA_ARGS__;                            \
+        REQUIRE(guarded_require_boolean);                                      \
+    } while (0);
+#else
+#define OPENPMD_REQUIRE_GUARD_WINDOWS(...) REQUIRE(__VA_ARGS__)
+#endif
+
 using namespace openPMD;
 
 Dataset globalDataset(Datatype::CHAR, {1});
@@ -1322,7 +1337,8 @@ TEST_CASE("custom_geometries", "[core]")
             {{UnitDimension::M, 1},
              {UnitDimension::L, 1},
              {UnitDimension::T, 2}}};
-        REQUIRE(unit_representations::asMaps(E.gridUnitDimension()) == compare);
+        OPENPMD_REQUIRE_GUARD_WINDOWS(
+            unit_representations::asMaps(E.gridUnitDimension()) == compare);
         REQUIRE(
             E.getAttribute("geometry").get<std::string>() ==
             "other:customGeometry");
