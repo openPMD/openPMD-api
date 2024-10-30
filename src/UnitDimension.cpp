@@ -20,7 +20,7 @@ namespace unit_representations
 {
     auto asArray(AsMap const &udim) -> AsArray
     {
-        AsArray res;
+        AsArray res{};
         auxiliary::fromMapOfUnitDimension(res.data(), udim);
         return res;
     }
@@ -40,6 +40,7 @@ namespace unit_representations
     auto asArrays(AsMaps const &vec) -> AsArrays
     {
         AsArrays res;
+        res.reserve(vec.size());
         std::transform(
             vec.begin(),
             vec.end(),
@@ -50,6 +51,7 @@ namespace unit_representations
     auto asMaps(AsArrays const &vec) -> AsMaps
     {
         AsMaps res;
+        res.reserve(vec.size());
         std::transform(
             vec.begin(),
             vec.end(),

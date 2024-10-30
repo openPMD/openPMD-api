@@ -334,9 +334,8 @@ unit_representations::AsArrays Mesh::gridUnitDimension() const
     {
         // gridUnitDimension is an optional attribute
         // if it is missing, the mesh is interpreted as spatial
-        std::array<double, 7> spatialMesh;
-        auxiliary::fromMapOfUnitDimension(
-            spatialMesh.data(), {{UnitDimension::L, 1}});
+        auto spatialMesh =
+            unit_representations::asArray({{UnitDimension::L, 1}});
         auto dim = retrieveMeshDimensionality(*this);
         unit_representations::AsArrays res(dim, spatialMesh);
         return res;

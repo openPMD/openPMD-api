@@ -31,5 +31,19 @@ void init_UnitDimension(py::module &m)
         .value("I", UnitDimension::I)
         .value("theta", UnitDimension::theta)
         .value("N", UnitDimension::N)
-        .value("J", UnitDimension::J);
+        .value("J", UnitDimension::J)
+        .def(
+            "as_index",
+            [](UnitDimension ud) -> uint8_t {
+                return static_cast<uint8_t>(ud);
+            })
+        .def(
+            "from_index",
+            [](uint8_t idx) -> UnitDimension {
+                return static_cast<UnitDimension>(idx);
+            })
+        .def("as_array", &unit_representations::asArray)
+        .def("as_map", &unit_representations::asMap)
+        .def("as_arrays", &unit_representations::asArrays)
+        .def("as_maps", &unit_representations::asMaps);
 }
