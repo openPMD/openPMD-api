@@ -21,7 +21,7 @@ namespace unit_representations
     auto asArray(AsMap const &udim) -> AsArray
     {
         AsArray res;
-        auxiliary::fromMapOfUnitDimension(res.begin(), udim);
+        auxiliary::fromMapOfUnitDimension(res.data(), udim);
         return res;
     }
     auto asMap(AsArray const &array) -> AsMap

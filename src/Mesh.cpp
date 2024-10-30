@@ -277,7 +277,7 @@ Mesh &Mesh::setUnitDimension(std::map<UnitDimension, double> const &udim)
     if (!udim.empty())
     {
         std::array<double, 7> tmpUnitDimension = this->unitDimension();
-        auxiliary::fromMapOfUnitDimension(tmpUnitDimension.begin(), udim);
+        auxiliary::fromMapOfUnitDimension(tmpUnitDimension.data(), udim);
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
@@ -336,7 +336,7 @@ unit_representations::AsArrays Mesh::gridUnitDimension() const
         // if it is missing, the mesh is interpreted as spatial
         std::array<double, 7> spatialMesh;
         auxiliary::fromMapOfUnitDimension(
-            spatialMesh.begin(), {{UnitDimension::L, 1}});
+            spatialMesh.data(), {{UnitDimension::L, 1}});
         auto dim = retrieveMeshDimensionality(*this);
         unit_representations::AsArrays res(dim, spatialMesh);
         return res;
