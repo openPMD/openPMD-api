@@ -828,10 +828,10 @@ TEST_CASE("wrapper_test", "[core]")
     REQUIRE(copy.openPMDextension() == 42);
     REQUIRE(copy.iterationEncoding() == IterationEncoding::fileBased);
     REQUIRE(copy.name() == "new_openpmd_output_%T");
-    copy.setOpenPMD("1.2.0");
+    copy.setOpenPMD("1.1.0");
     copy.setIterationEncoding(IterationEncoding::groupBased);
     copy.setName("other_name");
-    REQUIRE(o.openPMD() == "1.2.0");
+    REQUIRE(o.openPMD() == "1.1.0");
     REQUIRE(o.iterationEncoding() == IterationEncoding::groupBased);
     REQUIRE(o.name() == "other_name");
 

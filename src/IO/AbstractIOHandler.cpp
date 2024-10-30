@@ -21,10 +21,79 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
+#include <utility>
+
+namespace openPMD::auxiliary
+{
+using pair_t = std::pair<OpenpmdStandard, char const *>;
+constexpr pair_t STANDARD_VERSIONS[] = {
+    pair_t{OpenpmdStandard::v_1_0_0, "1.0.0"},
+    pair_t{OpenpmdStandard::v_1_0_1, "1.0.1"},
+    pair_t{OpenpmdStandard::v_1_1_0, "1.1.0"},
+    pair_t{OpenpmdStandard::v_2_0_0, "2.0.0"}};
+
+auto parseStandard(const std::string &str) -> OpenpmdStandard
+{
+    for (auto const &[res, compare] : STANDARD_VERSIONS)
+    {
+        if (str == compare)
+        {
+            return res;
+        }
+    }
+    throw error::IllegalInOpenPMDStandard(
+        "Standard version is not supported: '" + str + "'.");
+}
+
+auto formatStandard(OpenpmdStandard std) -> char const *
+{
+    for (auto const &[compare, res] : STANDARD_VERSIONS)
+    {
+        if (std == compare)
+        {
+            return res;
+        }
+    }
+    throw error::Internal(
+        "[auxiliary::formatStandard] Match should be exhaustive.");
+}
+} // namespace openPMD::auxiliary
 
 namespace openPMD
 {
+void AbstractIOHandler::setIterationEncoding(IterationEncoding encoding)
+{
+    /*
+     * In file-based iteration encoding, the APPEND mode is handled entirely
+     * by the frontend, the backend should just treat it as CREATE mode.
+     * Similar for READ_LINEAR which should be treated as READ_RANDOM_ACCESS
+     * in the backend.
+     */
+    if (encoding == IterationEncoding::fileBased)
+    {
+        switch (m_backendAccess)
+        {
+
+        case Access::READ_LINEAR:
+            // do we really want to have those as const members..?
+            *const_cast<Access *>(&m_backendAccess) =
+                Access::READ_RANDOM_ACCESS;
+            break;
+        case Access::APPEND:
+            *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
+            break;
+        case Access::READ_RANDOM_ACCESS:
+        case Access::READ_WRITE:
+        case Access::CREATE:
+            break;
+        }
+    }
+
+    m_encoding = encoding;
+}
+
 std::future<void> AbstractIOHandler::flush(internal::FlushParams const &params)
 {
     internal::ParsedFlushParams parsedParams{params};

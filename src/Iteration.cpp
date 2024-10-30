@@ -493,10 +493,10 @@ void Iteration::read_impl(std::string const &groupPath)
     Series s = retrieveSeries();
 
     Parameter<Operation::LIST_PATHS> pList;
-    std::string version = s.openPMD();
+    auto version = IOHandler()->m_standard;
     bool hasMeshes = false;
     bool hasParticles = false;
-    if (version == "1.0.0" || version == "1.0.1")
+    if (version <= OpenpmdStandard::v_1_0_1)
     {
         IOHandler()->enqueue(IOTask(this, pList));
         IOHandler()->flush(internal::defaultFlushParams);

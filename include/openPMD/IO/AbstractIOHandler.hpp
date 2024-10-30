@@ -25,6 +25,7 @@
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/version.hpp"
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -74,6 +75,20 @@ enum class FlushLevel
      */
     CreateOrOpenFiles
 };
+
+enum class OpenpmdStandard
+{
+    v_1_0_0,
+    v_1_0_1,
+    v_1_1_0,
+    v_2_0_0
+};
+
+namespace auxiliary
+{
+    auto parseStandard(std::string const &) -> OpenpmdStandard;
+    auto formatStandard(OpenpmdStandard) -> char const *;
+} // namespace auxiliary
 
 namespace internal
 {
@@ -189,38 +204,7 @@ class AbstractIOHandler
     friend class detail::ADIOS2File;
 
 private:
-    IterationEncoding m_encoding = IterationEncoding::groupBased;
-
-    void setIterationEncoding(IterationEncoding encoding)
-    {
-        /*
-         * In file-based iteration encoding, the APPEND mode is handled entirely
-         * by the frontend, the backend should just treat it as CREATE mode.
-         * Similar for READ_LINEAR which should be treated as READ_RANDOM_ACCESS
-         * in the backend.
-         */
-        if (encoding == IterationEncoding::fileBased)
-        {
-            switch (m_backendAccess)
-            {
-
-            case Access::READ_LINEAR:
-                // do we really want to have those as const members..?
-                *const_cast<Access *>(&m_backendAccess) =
-                    Access::READ_RANDOM_ACCESS;
-                break;
-            case Access::APPEND:
-                *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
-                break;
-            case Access::READ_RANDOM_ACCESS:
-            case Access::READ_WRITE:
-            case Access::CREATE:
-                break;
-            }
-        }
-
-        m_encoding = encoding;
-    }
+    void setIterationEncoding(IterationEncoding encoding);
 
 public:
 #if openPMD_HAVE_MPI
@@ -284,8 +268,14 @@ public:
      */
     Access m_backendAccess;
     Access m_frontendAccess;
-    internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
     std::queue<IOTask> m_work;
+
+    /**************************************************************************
+     * Since the AbstractIOHandler is linked to every object of the frontend, *
+     * it stores a number of members that are needed by methods traversing    *
+     * the object hierarchy. Those members are found below.                   *
+     **************************************************************************/
+
     /**
      * This is to avoid that the destructor tries flushing again if an error
      * happened. Otherwise, this would lead to confusing error messages.
@@ -294,6 +284,9 @@ public:
      * The destructor will only attempt flushing again if this is true.
      */
     bool m_lastFlushSuccessful = false;
+    internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
+    IterationEncoding m_encoding = IterationEncoding::groupBased;
+    OpenpmdStandard m_standard = auxiliary::parseStandard(getStandardDefault());
 }; // AbstractIOHandler
 
 } // namespace openPMD

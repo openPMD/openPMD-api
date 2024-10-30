@@ -139,12 +139,13 @@ std::string Series::openPMD() const
 
 Series &Series::setOpenPMD(std::string const &o)
 {
-    if (o >= "2.0")
-    {
-        std::cerr << "[Warning] openPMD 2.0 is still under development."
-                  << std::endl;
-    }
     setAttribute("openPMD", o);
+    auto standard = auxiliary::parseStandard(o);
+    IOHandler()->m_standard = standard;
+    if (standard >= OpenpmdStandard::v_2_0_0)
+    {
+        std::cerr << "[Warning] openPMD 2.0 is still under development.\n";
+    }
     return *this;
 }
 
@@ -166,11 +167,15 @@ std::string Series::basePath() const
 
 Series &Series::setBasePath(std::string const &bp)
 {
-    std::string version = openPMD();
-    if (version == "1.0.0" || version == "1.0.1" || version == "1.1.0" ||
-        version == "2.0.0")
+    switch (IOHandler()->m_standard)
+    {
+    case OpenpmdStandard::v_1_0_0:
+    case OpenpmdStandard::v_1_0_1:
+    case OpenpmdStandard::v_1_1_0:
+    case OpenpmdStandard::v_2_0_0:
         throw std::runtime_error(
             "Custom basePath not allowed in openPMD <=2.0");
+    }
 
     setAttribute("basePath", bp);
     return *this;
@@ -630,7 +635,8 @@ Series &Series::setIterationFormat(std::string const &i)
             setBasePath(i);
         }
         else if (
-            basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0"))
+            basePath() != i &&
+            IOHandler()->m_standard <= OpenpmdStandard::v_1_0_1)
             throw std::invalid_argument(
                 "iterationFormat must not differ from basePath " + basePath() +
                 " for group- or variableBased data");
