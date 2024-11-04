@@ -499,8 +499,6 @@ class APITest(unittest.TestCase):
                          {io.Unit_Dimension.L: 1} for _ in range(3)])
         read_1_1.close()
 
-
-
     def makeConstantRoundTrip(self, file_ending):
         # write
         series = io.Series(
