@@ -229,16 +229,13 @@ std::vector<double> Mesh::gridUnitSIPerDimension() const
 {
     if (containsAttribute("gridUnitSI"))
     {
-        if (auto series_opt = retrieveSeries_optional(); series_opt.has_value())
+        if (IOHandler()->m_standard < OpenpmdStandard::v_2_0_0)
         {
-            if (IOHandler()->m_standard < OpenpmdStandard::v_2_0_0)
-            {
-                // If the openPMD version is lower than 2.0, the gridUnitSI is a
-                // scalar interpreted for all axes. Copy it d times.
-                return std::vector<double>(
-                    retrieveMeshDimensionality(*this),
-                    getAttribute("gridUnitSI").get<double>());
-            }
+            // If the openPMD version is lower than 2.0, the gridUnitSI is a
+            // scalar interpreted for all axes. Copy it d times.
+            return std::vector<double>(
+                retrieveMeshDimensionality(*this),
+                getAttribute("gridUnitSI").get<double>());
         }
         return getAttribute("gridUnitSI").get<std::vector<double>>();
     }
@@ -253,19 +250,16 @@ std::vector<double> Mesh::gridUnitSIPerDimension() const
 Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
 {
     setAttribute("gridUnitSI", std::move(gridUnitSI));
-    if (auto series_opt = retrieveSeries_optional(); series_opt.has_value())
+    if (auto standard = IOHandler()->m_standard;
+        standard < OpenpmdStandard::v_2_0_0)
     {
-        if (auto standard = IOHandler()->m_standard;
-            standard < OpenpmdStandard::v_2_0_0)
-        {
-            throw error::IllegalInOpenPMDStandard(
-                "[Mesh::setGridUnitSI] Setting `gridUnitSI` as a vector in a "
-                "file with openPMD version '" +
-                std::string(auxiliary::formatStandard(standard)) +
-                "', but per-axis specification is only supported as of "
-                "openPMD 2.0. Either upgrade the file to openPMD >= 2.0 "
-                "or specify a scalar that applies to all axes.");
-        }
+        throw error::IllegalInOpenPMDStandard(
+            "[Mesh::setGridUnitSI] Setting `gridUnitSI` as a vector in a "
+            "file with openPMD version '" +
+            std::string(auxiliary::formatStandard(standard)) +
+            "', but per-axis specification is only supported as of "
+            "openPMD 2.0. Either upgrade the file to openPMD >= 2.0 "
+            "or specify a scalar that applies to all axes.");
     }
     return *this;
 }
