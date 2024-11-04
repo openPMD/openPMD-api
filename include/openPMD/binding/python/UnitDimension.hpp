@@ -24,7 +24,7 @@ namespace openPMD
 {
 namespace python
 {
-    constexpr auto doc_unit_dimension = R"docstr(
+    constexpr auto doc_unit_dimension = &R"docstr(
 Return the physical dimension (quantity) of a record
 
 Annotating the physical dimension of a record allows us to read data
@@ -40,7 +40,29 @@ See https://en.wikipedia.org/wiki/International_System_of_Quantities#Base_quanti
 See https://github.com/openPMD/openPMD-standard/blob/1.1.0/STANDARD.md#required-for-each-record
 
 Returns the powers of the 7 base measures in the order specified above.
-)docstr";
+)docstr"[1];
+
+    constexpr auto doc_mesh_unit_dimension = &R"docstr(
+Return the physical dimension (quantity) of the record axes
+
+Annotating the physical dimension of the record axes allows us to read data
+sets with arbitrary names and understand their purpose simply by
+dimensional analysis. The dimensional base quantities in openPMD are
+in order: length (L), mass (M), time (T), electric current (I),
+thermodynamic temperature (theta), amount of substance (N),
+luminous intensity (J) after the international system of quantities
+(ISQ).
+This attribute may be left out, the axes will then be interpreted as spatial.
+
+See https://en.wikipedia.org/wiki/Dimensional_analysis
+See https://en.wikipedia.org/wiki/International_System_of_Quantities#Base_quantities
+See https://github.com/openPMD/openPMD-standard/blob/1.1.0/STANDARD.md#required-for-each-record
+
+Returns the powers of the 7 base measures in the order specified above, listed
+for each axis in the order of the axisLabels.
+This attribute has been introduced as part of openPMD 2.0.0 in:
+Ref.: https://github.com/openPMD/openPMD-standard/pull/193
+)docstr"[1];
 
 } // namespace python
 } // namespace openPMD

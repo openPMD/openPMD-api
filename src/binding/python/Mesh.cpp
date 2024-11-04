@@ -67,7 +67,8 @@ void init_Mesh(py::module &m)
         .def_property(
             "grid_unit_dimension",
             &Mesh::gridUnitDimension,
-            &Mesh::setGridUnitDimension)
+            &Mesh::setGridUnitDimension,
+            python::doc_mesh_unit_dimension)
 
         .def_property(
             "geometry",
@@ -105,6 +106,13 @@ void init_Mesh(py::module &m)
             &Mesh::setGridGlobalOffset)
         .def_property(
             "grid_unit_SI",
+            /*
+             * Using pybind11's support for std::variant in order to implement a
+             * polymorphic type for this property. Will be a scalar double in
+             * openPMD 1.*, a list of double in openPMD 2.*.
+             * Unlike in the C++ API, this means that no new API calls
+             * such as gridUnitSIPerDimension() must be added.
+             */
             [](Mesh &self) {
                 using return_t = std::variant<double, std::vector<double>>;
                 if (self.openPMDStandard() < OpenpmdStandard::v_2_0_0)
@@ -123,7 +131,28 @@ void init_Mesh(py::module &m)
                             static_cast<decltype(arg_resolved)>(arg_resolved));
                     },
                     arg);
-            })
+            },
+            &R"(
+For openPMD versions 1.*:
+
+Set the unit-conversion factor to multiply each value in
+Mesh.grid_spacing and Mesh.grid_global_offset, in order to convert from
+simulation units to SI units.
+The type is a scalar floating point.
+
+For openPMD versions 2.*:
+
+Set the unit-conversion **factors per axis** in the order of the axisLabels
+to multiply each value in Mesh.grid_spacing and Mesh.grid_global_offset,
+in order to convert from simulation units to SI units.
+The type is a list of floating points.
+
+When writing a scalar value to an openPMD 2.* file, a warning will be printed
+(for enabling a more comfortable migration to openPMD 2.*).
+When writing a list value to an openPMD 1.* file, an error will be thrown,
+since most openPMD 1.*-based readers will not be able to interpret this
+properly.
+Ref.: https://github.com/openPMD/openPMD-standard/pull/193)"[1])
         .def_property(
             "time_offset",
             &Mesh::timeOffset<double>,

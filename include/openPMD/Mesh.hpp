@@ -197,7 +197,7 @@ public:
 
     /** Alias for `setGridUnitSIPerDimension(std::vector<double>)`.
      *
-     * Set the unit-conversion factor per dimension to multiply each value in
+     * Set the unit-conversion factors per axis to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
      * simulation units to SI units.
      *
@@ -214,14 +214,14 @@ public:
     Mesh &setGridUnitSI(std::vector<double> gridUnitSI);
 
     /**
-     * @return  A vector of the gridUnitSI per grid dimension as defined
-     * by the axisLabels. If the gridUnitSI is defined as a scalar
+     * @return  A vector of the gridUnitSI per grid axis in the order of
+     * the axisLabels. If the gridUnitSI is defined as a scalar
      * (legacy openPMD), the dimensionality is determined and a vector of
      * `dimensionality` times the scalar vector is returned.
      */
     std::vector<double> gridUnitSIPerDimension() const;
 
-    /* Set the unit-conversion factor per dimension to multiply each value in
+    /* Set the unit-conversion factors per axis to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
      * simulation units to SI units.
      *
