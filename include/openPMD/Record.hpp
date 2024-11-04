@@ -41,6 +41,7 @@ public:
     ~Record() override = default;
 
     Record &setUnitDimension(unit_representations::AsMap const &);
+    Record &setUnitDimension(unit_representations::AsArray const &);
 
     template <typename T>
     T timeOffset() const;

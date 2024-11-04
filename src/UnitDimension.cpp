@@ -10,12 +10,12 @@ auto asArray(AsMap const &udim) -> AsArray
     auxiliary::fromMapOfUnitDimension(res.data(), udim);
     return res;
 }
-auto asMap(AsArray const &array) -> AsMap
+auto asMap(AsArray const &array, bool skip_zeros) -> AsMap
 {
     AsMap udim;
     for (size_t i = 0; i < array.size(); ++i)
     {
-        if (array[i] != 0)
+        if (!skip_zeros || array[i] != 0)
         {
             udim[static_cast<UnitDimension>(i)] = array[i];
         }
@@ -33,14 +33,15 @@ auto asArrays(AsMaps const &vec) -> AsArrays
         });
     return res;
 }
-auto asMaps(AsArrays const &vec) -> AsMaps
+auto asMaps(AsArrays const &vec, bool skip_zeros) -> AsMaps
 {
     AsMaps res;
     res.reserve(vec.size());
     std::transform(
-        vec.begin(), vec.end(), std::back_inserter(res), [](auto const &array) {
-            return asMap(array);
-        });
+        vec.begin(),
+        vec.end(),
+        std::back_inserter(res),
+        [&](auto const &array) { return asMap(array, skip_zeros); });
     return res;
 }
 

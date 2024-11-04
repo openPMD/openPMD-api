@@ -43,7 +43,13 @@ void init_UnitDimension(py::module &m)
                 return static_cast<UnitDimension>(idx);
             })
         .def("as_array", &unit_representations::asArray)
-        .def("as_map", &unit_representations::asMap)
+        .def(
+            "as_map",
+            &unit_representations::asMap,
+            py::arg("skip_zeros") = true)
         .def("as_arrays", &unit_representations::asArrays)
-        .def("as_maps", &unit_representations::asMaps);
+        .def(
+            "as_maps",
+            &unit_representations::asMaps,
+            py::arg("skip_zeros") = true);
 }

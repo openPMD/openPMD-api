@@ -184,7 +184,6 @@ double Mesh::gridUnitSI() const
 
 Mesh &Mesh::setGridUnitSI(double gusi)
 {
-    setAttribute("gridUnitSI", gusi);
     if (auto standard = IOHandler()->m_standard;
         standard >= OpenpmdStandard::v_2_0_0)
     {
@@ -195,12 +194,13 @@ Mesh &Mesh::setGridUnitSI(double gusi)
                 "specify the gridUnitSI per axis (ref.: "
                 "https://github.com/openPMD/openPMD-standard/pull/193).\n";
     }
+    setAttribute("gridUnitSI", gusi);
     return *this;
 }
 
-Mesh &Mesh::setGridUnitSI(std::vector<double> gusi)
+Mesh &Mesh::setGridUnitSI(std::vector<double> const &gusi)
 {
-    return setGridUnitSIPerDimension(std::move(gusi));
+    return setGridUnitSIPerDimension(gusi);
 }
 
 namespace
@@ -247,7 +247,7 @@ std::vector<double> Mesh::gridUnitSIPerDimension() const
     }
 }
 
-Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
+Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> const &gridUnitSI)
 {
     if (auto standard = IOHandler()->m_standard;
         standard < OpenpmdStandard::v_2_0_0)
@@ -260,7 +260,7 @@ Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
             "openPMD 2.0. Either upgrade the file to openPMD >= 2.0 "
             "or specify a scalar that applies to all axes.");
     }
-    setAttribute("gridUnitSI", std::move(gridUnitSI));
+    setAttribute("gridUnitSI", gridUnitSI);
     return *this;
 }
 
@@ -274,6 +274,12 @@ Mesh &Mesh::setUnitDimension(unit_representations::AsMap const &udim)
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
+}
+
+Mesh &Mesh::setUnitDimension(unit_representations::AsArray const &udim)
+{
+    return setUnitDimension(
+        unit_representations::asMap(udim, /* skip_zeros = */ false));
 }
 
 Mesh &Mesh::setGridUnitDimension(unit_representations::AsMaps const &udims)
@@ -298,6 +304,12 @@ Mesh &Mesh::setGridUnitDimension(unit_representations::AsMaps const &udims)
     }
     setAttribute("gridUnitDimension", rawGridUnitDimension);
     return *this;
+}
+
+Mesh &Mesh::setGridUnitDimension(unit_representations::AsArrays const &udims)
+{
+    return setGridUnitDimension(
+        unit_representations::asMaps(udims, /* skip_zeros = */ false));
 }
 
 unit_representations::AsArrays Mesh::gridUnitDimension() const

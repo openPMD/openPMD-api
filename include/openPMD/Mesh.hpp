@@ -211,7 +211,7 @@ public:
      *
      * @return  Reference to modified mesh.
      */
-    Mesh &setGridUnitSI(std::vector<double> gridUnitSI);
+    Mesh &setGridUnitSI(std::vector<double> const &gridUnitSI);
 
     /**
      * @return  A vector of the gridUnitSI per grid axis in the order of
@@ -235,7 +235,7 @@ public:
      *
      * @return  Reference to modified mesh.
      */
-    Mesh &setGridUnitSIPerDimension(std::vector<double> gridUnitSI);
+    Mesh &setGridUnitSIPerDimension(std::vector<double> const &gridUnitSI);
 
     /** Set the powers of the 7 base measures characterizing the record's unit
      * in SI.
@@ -246,11 +246,20 @@ public:
      */
     Mesh &setUnitDimension(unit_representations::AsMap const &unitDimension);
 
+    /** Set the powers of the 7 base measures characterizing the record's unit
+     * in SI.
+     *
+     * @param   unitDimension   array containing seven doubles, each
+     * representing the power of the particular base in order.
+     * @return  Reference to modified mesh.
+     */
+    Mesh &setUnitDimension(unit_representations::AsArray const &unitDimension);
+
     /**
      * @brief Set the unitDimension for each axis of the current grid.
      *
      * @param gridUnitDimension A vector of the unitDimensions for each
-     * axis of the grid in the order of the axisLabels.
+     * axis of the grid in the order of the axisLabels, in dict representation.
 
      * Behavior note: This is an updating method, meaning that an SI unit that
      * has been defined before and is in the next call not explicitly set
@@ -260,6 +269,21 @@ public:
      */
     Mesh &
     setGridUnitDimension(unit_representations::AsMaps const &gridUnitDimension);
+
+    /**
+     * @brief Set the unitDimension for each axis of the current grid.
+     *
+     * @param gridUnitDimension A vector of the unitDimensions for each
+     * axis of the grid in the order of the axisLabels, in array representation.
+
+     * Behavior note: This is an updating method, meaning that an SI unit that
+     * has been defined before and is in the next call not explicitly set
+     * in the `std::map<UnitDimension, double>` will keep its previous value.
+     *
+     * @return Reference to modified mesh.
+     */
+    Mesh &setGridUnitDimension(
+        unit_representations::AsArrays const &gridUnitDimension);
 
     /**
      * @brief Return the physical dimensions of the mesh axes.

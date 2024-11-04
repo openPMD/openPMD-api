@@ -20,6 +20,7 @@
  */
 #include "openPMD/Record.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
@@ -50,7 +51,16 @@ void init_Record(py::module &m)
         .def_property(
             "unit_dimension",
             &Record::unitDimension,
-            &Record::setUnitDimension,
+            [](Record &self,
+               std::variant<
+                   unit_representations::AsMap,
+                   unit_representations::AsArray> const &arg) -> Record & {
+                return std::visit(
+                    [&](auto const &arg_resolved) -> Record & {
+                        return self.setUnitDimension(arg_resolved);
+                    },
+                    arg);
+            },
             python::doc_unit_dimension)
 
         .def_property(
@@ -67,7 +77,10 @@ void init_Record(py::module &m)
             &Record::setTimeOffset<long double>)
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_dimension", &Record::setUnitDimension)
+        .def(
+            "set_unit_dimension",
+            py::overload_cast<unit_representations::AsMap const &>(
+                &Record::setUnitDimension))
         .def("set_time_offset", &Record::setTimeOffset<float>)
         .def("set_time_offset", &Record::setTimeOffset<double>)
         .def("set_time_offset", &Record::setTimeOffset<long double>);

@@ -21,6 +21,7 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
@@ -61,13 +62,31 @@ void init_Mesh(py::module &m)
         .def_property(
             "unit_dimension",
             &Mesh::unitDimension,
-            &Mesh::setUnitDimension,
+            [](Mesh &self,
+               std::variant<
+                   unit_representations::AsMap,
+                   unit_representations::AsArray> const &arg) -> Mesh & {
+                return std::visit(
+                    [&](auto const &arg_resolved) -> Mesh & {
+                        return self.setUnitDimension(arg_resolved);
+                    },
+                    arg);
+            },
             python::doc_unit_dimension)
 
         .def_property(
             "grid_unit_dimension",
             &Mesh::gridUnitDimension,
-            &Mesh::setGridUnitDimension,
+            [](Mesh &self,
+               std::variant<
+                   unit_representations::AsMaps,
+                   unit_representations::AsArrays> const &arg) -> Mesh & {
+                return std::visit(
+                    [&](auto const &arg_resolved) -> Mesh & {
+                        return self.setGridUnitDimension(arg_resolved);
+                    },
+                    arg);
+            },
             python::doc_mesh_unit_dimension)
 
         .def_property(
@@ -124,11 +143,11 @@ void init_Mesh(py::module &m)
                     return return_t(self.gridUnitSIPerDimension());
                 }
             },
-            [](Mesh &self, std::variant<double, std::vector<double>> arg) {
+            [](Mesh &self,
+               std::variant<double, std::vector<double>> const &arg) -> Mesh & {
                 return std::visit(
-                    [&](auto &&arg_resolved) {
-                        return self.setGridUnitSI(
-                            static_cast<decltype(arg_resolved)>(arg_resolved));
+                    [&](auto const &arg_resolved) -> Mesh & {
+                        return self.setGridUnitSI(arg_resolved);
                     },
                     arg);
             },
@@ -159,7 +178,10 @@ Ref.: https://github.com/openPMD/openPMD-standard/pull/193)"[1])
             &Mesh::setTimeOffset<double>)
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_dimension", &Mesh::setUnitDimension)
+        .def(
+            "set_unit_dimension",
+            py::overload_cast<unit_representations::AsMap const &>(
+                &Mesh::setUnitDimension))
         .def(
             "set_geometry",
             py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))

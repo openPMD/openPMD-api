@@ -54,10 +54,10 @@ namespace unit_representations
     using AsArrays = std::vector<AsArray>;
 
     auto asArray(AsMap const &) -> AsArray;
-    auto asMap(AsArray const &) -> AsMap;
+    auto asMap(AsArray const &, bool skip_zeros = true) -> AsMap;
 
     auto asArrays(AsMaps const &) -> AsArrays;
-    auto asMaps(AsArrays const &) -> AsMaps;
+    auto asMaps(AsArrays const &, bool skip_zeros = true) -> AsMaps;
 
     namespace auxiliary
     {
