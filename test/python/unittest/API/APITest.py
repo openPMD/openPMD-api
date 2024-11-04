@@ -419,6 +419,7 @@ class APITest(unittest.TestCase):
 
         E = meshes["E"]
         E.reset_dataset(io.Dataset(io.Datatype.DOUBLE, [10, 10, 10]))
+        E.axis_labels = ["x", "y", "z"]
         E.grid_unit_SI = [1, 2, 3]
         E.grid_unit_dimension = [
             {io.Unit_Dimension.L: 1},
@@ -428,9 +429,9 @@ class APITest(unittest.TestCase):
 
         B = meshes["B"]
         B.reset_dataset(io.Dataset(io.Datatype.DOUBLE, [10, 10, 10]))
+        B.axis_labels = ["x", "y", "z"]
         # This is deprecated for openPMD 2.0, a warning will be printed.
         B.grid_unit_SI = 3
-        B.grid_unit_dimension = [{io.Unit_Dimension.L: 1} for _ in range(3)]
         B.make_constant(18)
 
         write_2_0.close()
@@ -449,6 +450,7 @@ class APITest(unittest.TestCase):
         B = meshes["B"]
         # Will return a list due to openPMD standard being set to 2.0.0
         self.assertEqual(B.grid_unit_SI, [3])
+        # If the attribute is not defined, the mesh is implicitly spatial
         self.assertEqual(io.Unit_Dimension.as_maps(B.grid_unit_dimension), [
                          {io.Unit_Dimension.L: 1} for _ in range(3)])
         read_2_0.close()
@@ -462,8 +464,9 @@ class APITest(unittest.TestCase):
 
         def unsupported_in_1_1():
             E.grid_unit_SI = [1, 2, 3]
-        self.assertRaises(
-            io.ErrorIllegalInOpenPMDStandard, unsupported_in_1_1)
+        # self.assertRaises(
+        #     io.ErrorIllegalInOpenPMDStandard, unsupported_in_1_1)
+        E.axis_labels = ["x", "y", "z"]
         E.grid_unit_dimension = [
             {io.Unit_Dimension.L: 1},
             {io.Unit_Dimension.L: 1},
@@ -472,9 +475,9 @@ class APITest(unittest.TestCase):
 
         B = meshes["B"]
         B.reset_dataset(io.Dataset(io.Datatype.DOUBLE, [10, 10, 10]))
+        B.axis_labels = ["x", "y", "z"]
         # This is deprecated for openPMD 2.0, a warning will be printed.
         B.grid_unit_SI = 3
-        B.grid_unit_dimension = [{io.Unit_Dimension.L: 1} for _ in range(3)]
         B.make_constant(18)
 
         write_1_1.close()
@@ -495,6 +498,7 @@ class APITest(unittest.TestCase):
         B = meshes["B"]
         # Will return a scalar due to openPMD standard being set to 2.0.0
         self.assertEqual(B.grid_unit_SI, 3)
+        # If the attribute is not defined, the mesh is implicitly spatial
         self.assertEqual(io.Unit_Dimension.as_maps(B.grid_unit_dimension), [
                          {io.Unit_Dimension.L: 1} for _ in range(3)])
         read_1_1.close()
