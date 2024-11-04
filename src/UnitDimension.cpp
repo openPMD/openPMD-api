@@ -2,8 +2,48 @@
 #include <algorithm>
 #include <iterator>
 
-namespace openPMD
+namespace openPMD::unit_representations
 {
+auto asArray(AsMap const &udim) -> AsArray
+{
+    AsArray res{};
+    auxiliary::fromMapOfUnitDimension(res.data(), udim);
+    return res;
+}
+auto asMap(AsArray const &array) -> AsMap
+{
+    AsMap udim;
+    for (size_t i = 0; i < array.size(); ++i)
+    {
+        if (array[i] != 0)
+        {
+            udim[static_cast<UnitDimension>(i)] = array[i];
+        }
+    }
+    return udim;
+}
+
+auto asArrays(AsMaps const &vec) -> AsArrays
+{
+    AsArrays res;
+    res.reserve(vec.size());
+    std::transform(
+        vec.begin(), vec.end(), std::back_inserter(res), [](auto const &map) {
+            return asArray(map);
+        });
+    return res;
+}
+auto asMaps(AsArrays const &vec) -> AsMaps
+{
+    AsMaps res;
+    res.reserve(vec.size());
+    std::transform(
+        vec.begin(), vec.end(), std::back_inserter(res), [](auto const &array) {
+            return asMap(array);
+        });
+    return res;
+}
+
 namespace auxiliary
 {
     void fromMapOfUnitDimension(
@@ -15,49 +55,4 @@ namespace auxiliary
         }
     }
 } // namespace auxiliary
-
-namespace unit_representations
-{
-    auto asArray(AsMap const &udim) -> AsArray
-    {
-        AsArray res{};
-        auxiliary::fromMapOfUnitDimension(res.data(), udim);
-        return res;
-    }
-    auto asMap(AsArray const &array) -> AsMap
-    {
-        AsMap udim;
-        for (size_t i = 0; i < array.size(); ++i)
-        {
-            if (array[i] != 0)
-            {
-                udim[static_cast<UnitDimension>(i)] = array[i];
-            }
-        }
-        return udim;
-    }
-
-    auto asArrays(AsMaps const &vec) -> AsArrays
-    {
-        AsArrays res;
-        res.reserve(vec.size());
-        std::transform(
-            vec.begin(),
-            vec.end(),
-            std::back_inserter(res),
-            [](auto const &map) { return asArray(map); });
-        return res;
-    }
-    auto asMaps(AsArrays const &vec) -> AsMaps
-    {
-        AsMaps res;
-        res.reserve(vec.size());
-        std::transform(
-            vec.begin(),
-            vec.end(),
-            std::back_inserter(res),
-            [](auto const &array) { return asMap(array); });
-        return res;
-    }
-} // namespace unit_representations
-} // namespace openPMD
+} // namespace openPMD::unit_representations

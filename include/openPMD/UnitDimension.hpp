@@ -58,11 +58,11 @@ namespace unit_representations
 
     auto asArrays(AsMaps const &) -> AsArrays;
     auto asMaps(AsArrays const &) -> AsMaps;
-} // namespace unit_representations
 
-namespace auxiliary
-{
-    void fromMapOfUnitDimension(
-        double *cursor, std::map<UnitDimension, double> const &udim);
-} // namespace auxiliary
+    namespace auxiliary
+    {
+        void fromMapOfUnitDimension(
+            double *cursor, std::map<UnitDimension, double> const &udim);
+    } // namespace auxiliary
+} // namespace unit_representations
 } // namespace openPMD

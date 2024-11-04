@@ -20,6 +20,7 @@
  */
 #include "openPMD/Mesh.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/UnitDimension.hpp"
@@ -274,7 +275,8 @@ Mesh &Mesh::setUnitDimension(std::map<UnitDimension, double> const &udim)
     if (!udim.empty())
     {
         std::array<double, 7> tmpUnitDimension = this->unitDimension();
-        auxiliary::fromMapOfUnitDimension(tmpUnitDimension.data(), udim);
+        unit_representations::auxiliary::fromMapOfUnitDimension(
+            tmpUnitDimension.data(), udim);
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
@@ -298,7 +300,7 @@ Mesh &Mesh::setGridUnitDimension(
     auto cursor = rawGridUnitDimension.begin();
     for (auto const &udim : udims)
     {
-        auxiliary::fromMapOfUnitDimension(&*cursor, udim);
+        unit_representations::auxiliary::fromMapOfUnitDimension(&*cursor, udim);
         cursor += 7;
     }
     setAttribute("gridUnitDimension", rawGridUnitDimension);
