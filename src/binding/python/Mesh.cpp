@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Mesh.hpp"
+#include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
@@ -29,6 +31,7 @@
 #include "openPMD/binding/python/UnitDimension.hpp"
 
 #include <string>
+#include <variant>
 #include <vector>
 
 void init_Mesh(py::module &m)
@@ -36,7 +39,7 @@ void init_Mesh(py::module &m)
     auto py_m_cont =
         declare_container<PyMeshContainer, Attributable>(m, "Mesh_Container");
 
-    py::class_<Mesh, BaseRecord<MeshRecordComponent> > cl(m, "Mesh");
+    py::class_<Mesh, BaseRecord<MeshRecordComponent>> cl(m, "Mesh");
 
     py::enum_<Mesh::Geometry>(m, "Geometry") // TODO: m -> cl
         .value("cartesian", Mesh::Geometry::cartesian)
@@ -102,12 +105,25 @@ void init_Mesh(py::module &m)
             &Mesh::setGridGlobalOffset)
         .def_property(
             "grid_unit_SI",
-            &Mesh::gridUnitSI,
-            py::overload_cast<double>(&Mesh::setGridUnitSI))
-        .def_property(
-            "grid_unit_SI_per_dimension",
-            &Mesh::gridUnitSIPerDimension,
-            &Mesh::setGridUnitSIPerDimension)
+            [](Mesh &self) {
+                using return_t = std::variant<double, std::vector<double>>;
+                if (self.openPMDStandard() < OpenpmdStandard::v_2_0_0)
+                {
+                    return return_t(self.gridUnitSI());
+                }
+                else
+                {
+                    return return_t(self.gridUnitSIPerDimension());
+                }
+            },
+            [](Mesh &self, std::variant<double, std::vector<double>> arg) {
+                return std::visit(
+                    [&](auto &&arg_resolved) {
+                        return self.setGridUnitSI(
+                            static_cast<decltype(arg_resolved)>(arg_resolved));
+                    },
+                    arg);
+            })
         .def_property(
             "time_offset",
             &Mesh::timeOffset<double>,

@@ -249,7 +249,6 @@ std::vector<double> Mesh::gridUnitSIPerDimension() const
 
 Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
 {
-    setAttribute("gridUnitSI", std::move(gridUnitSI));
     if (auto standard = IOHandler()->m_standard;
         standard < OpenpmdStandard::v_2_0_0)
     {
@@ -261,10 +260,11 @@ Mesh &Mesh::setGridUnitSIPerDimension(std::vector<double> gridUnitSI)
             "openPMD 2.0. Either upgrade the file to openPMD >= 2.0 "
             "or specify a scalar that applies to all axes.");
     }
+    setAttribute("gridUnitSI", std::move(gridUnitSI));
     return *this;
 }
 
-Mesh &Mesh::setUnitDimension(std::map<UnitDimension, double> const &udim)
+Mesh &Mesh::setUnitDimension(unit_representations::AsMap const &udim)
 {
     if (!udim.empty())
     {
@@ -276,8 +276,7 @@ Mesh &Mesh::setUnitDimension(std::map<UnitDimension, double> const &udim)
     return *this;
 }
 
-Mesh &Mesh::setGridUnitDimension(
-    std::vector<std::map<UnitDimension, double>> const &udims)
+Mesh &Mesh::setGridUnitDimension(unit_representations::AsMaps const &udims)
 {
     auto rawGridUnitDimension = [this]() {
         try

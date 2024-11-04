@@ -21,9 +21,9 @@
 #pragma once
 
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
-#include <map>
 #include <string>
 #include <type_traits>
 
@@ -40,7 +40,7 @@ public:
     Record &operator=(Record const &) = default;
     ~Record() override = default;
 
-    Record &setUnitDimension(std::map<UnitDimension, double> const &);
+    Record &setUnitDimension(unit_representations::AsMap const &);
 
     template <typename T>
     T timeOffset() const;

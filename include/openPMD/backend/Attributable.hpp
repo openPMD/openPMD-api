@@ -328,6 +328,8 @@ public:
      */
     void touch();
 
+    [[nodiscard]] OpenpmdStandard openPMDStandard() const;
+
     // clang-format off
 OPENPMD_protected
     // clang-format on

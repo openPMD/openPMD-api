@@ -25,7 +25,6 @@
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 
-#include <array>
 #include <ostream>
 #include <string>
 #include <type_traits>
@@ -196,7 +195,7 @@ public:
      */
     Mesh &setGridUnitSI(double gridUnitSI);
 
-    /** Alias for `setGridUnitSI(std::vector<double>)`.
+    /** Alias for `setGridUnitSIPerDimension(std::vector<double>)`.
      *
      * Set the unit-conversion factor per dimension to multiply each value in
      * Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from
@@ -245,8 +244,7 @@ public:
      * that represent the power of the particular base.
      * @return  Reference to modified mesh.
      */
-    Mesh &
-    setUnitDimension(std::map<UnitDimension, double> const &unitDimension);
+    Mesh &setUnitDimension(unit_representations::AsMap const &unitDimension);
 
     /**
      * @brief Set the unitDimension for each axis of the current grid.
@@ -260,8 +258,8 @@ public:
      *
      * @return Reference to modified mesh.
      */
-    Mesh &setGridUnitDimension(
-        std::vector<std::map<UnitDimension, double>> const &gridUnitDimension);
+    Mesh &
+    setGridUnitDimension(unit_representations::AsMaps const &gridUnitDimension);
 
     /**
      * @brief Return the physical dimensions of the mesh axes.

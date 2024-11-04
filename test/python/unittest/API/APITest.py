@@ -412,6 +412,95 @@ class APITest(unittest.TestCase):
         for ext in tested_file_extensions:
             self.attributeRoundTrip(ext)
 
+    def testOpenPMD_2_0(self):
+        write_2_0 = io.Series("../samples/openpmd_2_0.json", io.Access.create)
+        write_2_0.openPMD = "2.0.0"
+        meshes = write_2_0.write_iterations()[100].meshes
+
+        E = meshes["E"]
+        E.reset_dataset(io.Dataset(io.Datatype.DOUBLE, [10, 10, 10]))
+        E.grid_unit_SI = [1, 2, 3]
+        E.grid_unit_dimension = [
+            {io.Unit_Dimension.L: 1},
+            {io.Unit_Dimension.L: 1},
+            {io.Unit_Dimension.L: 1, io.Unit_Dimension.T: -1}]
+        E.make_constant(17)
+
+        B = meshes["B"]
+        B.reset_dataset(io.Dataset(io.Datatype.DOUBLE, [10, 10, 10]))
+        # This is deprecated for openPMD 2.0, a warning will be printed.
+        B.grid_unit_SI = 3
+        B.grid_unit_dimension = [{io.Unit_Dimension.L: 1} for _ in range(3)]
+        B.make_constant(18)
+
+        write_2_0.close()
+
+        read_2_0 = io.Series(
+            "../samples/openpmd_2_0.json", io.Access.read_only)
+        meshes = read_2_0.iterations[100].meshes
+
+        E = meshes["E"]
+        self.assertEqual(E.grid_unit_SI, [1, 2, 3])
+        self.assertEqual(E.grid_unit_dimension, io.Unit_Dimension.as_arrays([
+            {io.Unit_Dimension.L: 1},
+            {io.Unit_Dimension.L: 1},
+            {io.Unit_Dimension.L: 1, io.Unit_Dimension.T: -1}]))
+
+        B = meshes["B"]
+        # Will return a list due to openPMD standard being set to 2.0.0
+        self.assertEqual(B.grid_unit_SI, [3])
+        self.assertEqual(io.Unit_Dimension.as_maps(B.grid_unit_dimension), [
+                         {io.Unit_Dimension.L: 1} for _ in range(3)])
+        read_2_0.close()
+
+        write_1_1 = io.Series("../samples/openpmd_1_1.json", io.Access.create)
+        write_1_1.openPMD = "1.1.0"
+        meshes = write_1_1.write_iterations()[100].meshes
+
+        E = meshes["E"]
+        E.reset_dataset(io.Dataset(io.Datatype.DOUBLE, [10, 10, 10]))
+
+        def unsupported_in_1_1():
+            E.grid_unit_SI = [1, 2, 3]
+        self.assertRaises(
+            io.ErrorIllegalInOpenPMDStandard, unsupported_in_1_1)
+        E.grid_unit_dimension = [
+            {io.Unit_Dimension.L: 1},
+            {io.Unit_Dimension.L: 1},
+            {io.Unit_Dimension.L: 1, io.Unit_Dimension.T: -1}]
+        E.make_constant(17)
+
+        B = meshes["B"]
+        B.reset_dataset(io.Dataset(io.Datatype.DOUBLE, [10, 10, 10]))
+        # This is deprecated for openPMD 2.0, a warning will be printed.
+        B.grid_unit_SI = 3
+        B.grid_unit_dimension = [{io.Unit_Dimension.L: 1} for _ in range(3)]
+        B.make_constant(18)
+
+        write_1_1.close()
+
+        read_1_1 = io.Series(
+            "../samples/openpmd_1_1.json", io.Access.read_only)
+        meshes = read_1_1.iterations[100].meshes
+
+        E = meshes["E"]
+        # Will return a default value due to the failed attempt at setting
+        #  a list at write time
+        self.assertEqual(E.grid_unit_SI, 1)
+        self.assertEqual(E.grid_unit_dimension, io.Unit_Dimension.as_arrays([
+            {io.Unit_Dimension.L: 1},
+            {io.Unit_Dimension.L: 1},
+            {io.Unit_Dimension.L: 1, io.Unit_Dimension.T: -1}]))
+
+        B = meshes["B"]
+        # Will return a scalar due to openPMD standard being set to 2.0.0
+        self.assertEqual(B.grid_unit_SI, 3)
+        self.assertEqual(io.Unit_Dimension.as_maps(B.grid_unit_dimension), [
+                         {io.Unit_Dimension.L: 1} for _ in range(3)])
+        read_1_1.close()
+
+
+
     def makeConstantRoundTrip(self, file_ending):
         # write
         series = io.Series(

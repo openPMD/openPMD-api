@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
@@ -248,6 +249,11 @@ auto Attributable::myPath() const -> MyPath
 void Attributable::touch()
 {
     setDirtyRecursive(true);
+}
+
+OpenpmdStandard Attributable::openPMDStandard() const
+{
+    return IOHandler()->m_standard;
 }
 
 template <bool flush_entire_series>
