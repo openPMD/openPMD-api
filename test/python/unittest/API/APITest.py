@@ -25,8 +25,10 @@ except ImportError:
 from TestUtilities.TestUtilities import generateTestFilePath
 
 tested_file_extensions = [
-    ext for ext in io.file_extensions if ext != 'sst' and ext != 'ssc'
-]
+    ext for ext in io.file_extensions
+    # TOML is relatively slow and it's just an adaptor for the JSON backend,
+    # so it doesn't require full testing
+    if ext !='sst' and ext !='ssc' and ext !='toml']
 
 
 class APITest(unittest.TestCase):
