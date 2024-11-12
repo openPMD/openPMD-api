@@ -87,17 +87,26 @@ jobs:
         python -m pip install cibuildwheel==2.21.2
 
     # Patch: Fix versioning
-    - name: Download Patch 1/1
+    - name: Download Patch 1/2
       uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
       id: setupversion
       with:
         url: "https://github.com/openPMD/openPMD-api/pull/1680.patch"
         target: src/.patch/
 
+    # Patch: PYBIND11_FINDPYTHON=ON
+    - name: Download Patch 2/2
+      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
+      id: setupversion
+      with:
+        url: "https://github.com/openPMD/openPMD-api/pull/1684.patch"
+        target: src/.patch/
+
     - name: Apply Patches
       run: |
         cd src
         git apply --exclude=.github/workflows/windows.yml .patch/1680.patch
+        git apply .patch/1684.patch
 
     - name: Build wheel
       env:
