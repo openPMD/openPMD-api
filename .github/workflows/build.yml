@@ -97,7 +97,7 @@ jobs:
     # Patch: PYBIND11_FINDPYTHON=ON
     - name: Download Patch 2/2
       uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
-      id: setupversion
+      id: setupfindpython
       with:
         url: "https://github.com/openPMD/openPMD-api/pull/1684.patch"
         target: src/.patch/
