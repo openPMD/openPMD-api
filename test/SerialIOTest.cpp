@@ -1,8 +1,8 @@
 // expose private and protected members for invasive testing
-#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
