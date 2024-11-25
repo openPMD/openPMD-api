@@ -53,7 +53,9 @@ TracingJSON::TracingJSON(
     , m_shadow(std::make_shared<nlohmann::json>())
     , m_positionInOriginal(&*m_originalJSON)
     , m_positionInShadow(&*m_shadow)
-{}
+{
+    init();
+}
 
 TracingJSON::TracingJSON(ParsedConfig parsedConfig)
     : TracingJSON{
@@ -158,7 +160,31 @@ TracingJSON::TracingJSON(
     , m_positionInOriginal(positionInOriginal)
     , m_positionInShadow(positionInShadow)
     , m_trace(trace)
-{}
+{
+    init();
+}
+
+void TracingJSON::init()
+{
+    if (m_originalJSON)
+    {
+        init(*m_originalJSON, *m_shadow);
+    }
+}
+
+void TracingJSON::init(nlohmann::json &original, nlohmann::json &shadow)
+{
+    if (original.is_object() && original.contains("dont_warn_unused_keys"))
+    {
+        auto suppress_warnings_for_these = original.at("dont_warn_unused_keys")
+                                               .get<std::vector<std::string>>();
+        for (auto const &key : suppress_warnings_for_these)
+        {
+            init(original[key], shadow[key]);
+        }
+        shadow["dont_warn_unused_keys"] = nlohmann::json();
+    }
+}
 
 namespace
 {

@@ -162,6 +162,9 @@ namespace json
             nlohmann::json *positionInShadow,
             SupportedLanguages originallySpecifiedAs,
             bool trace);
+
+        void init();
+        static void init(nlohmann::json &original, nlohmann::json &shadow);
     };
 
     template <typename Key>
