@@ -1739,6 +1739,12 @@ void HDF5IOHandlerImpl::writeAttribute(
             "during attribute write");
         if (equal == 0) // unequal
         {
+            status = H5Aclose(attribute_id);
+            VERIFY(
+                status == 0,
+                "[HDF5] Internal error: Failed to close previous HDF5 "
+                "attribute "
+                "during attribute write");
             status = H5Adelete(node_id, name.c_str());
             VERIFY(
                 status == 0,

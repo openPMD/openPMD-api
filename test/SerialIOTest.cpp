@@ -7571,9 +7571,6 @@ void groupbased_read_write(std::string const &ext)
         read.close();
     }
 
-    return;
-    std::cout << "Now truncate " << filename << std::endl;
-
     // check that truncation works correctly
     {
         Series write(filename, Access::CREATE);
