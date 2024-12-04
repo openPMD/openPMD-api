@@ -23,7 +23,7 @@ dependencies:
   - dask
   - doxygen
   - git
-  - hdf5=1.14.1=mpi_openmpi_*
+  - hdf5=*=mpi_openmpi_*
   - mamba
   - make
   - mpi4py
