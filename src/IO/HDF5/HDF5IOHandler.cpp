@@ -1694,8 +1694,7 @@ void HDF5IOHandlerImpl::writeAttribute(
         "[HDF5] Internal error: Failed to get HDF5 datatype during attribute "
         "write");
     std::string name = parameters.name;
-    if (H5Aexists(node_id, name.c_str()) == 0)
-    {
+    auto create_attribute_anew = [&]() {
         hid_t dataspace = getH5DataSpace(att);
         VERIFY(
             dataspace >= 0,
@@ -1717,14 +1716,47 @@ void HDF5IOHandlerImpl::writeAttribute(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 dataspace during "
             "attribute write");
-    }
-    else
+    };
+    if (H5Aexists(node_id, name.c_str()) != 0)
     {
         attribute_id = H5Aopen(node_id, name.c_str(), H5P_DEFAULT);
         VERIFY(
-            node_id >= 0,
+            attribute_id >= 0,
             "[HDF5] Internal error: Failed to open HDF5 attribute during "
             "attribute write");
+        /*
+         * Only reuse the old attribute if it had the same type.
+         */
+        hid_t type_id = H5Aget_type(attribute_id);
+        VERIFY(
+            type_id >= 0,
+            "[HDF5] Internal error: Failed to inquire HDF5 attribute type "
+            "during attribute write");
+        auto equal = H5Tequal(type_id, dataType);
+        VERIFY(
+            equal >= 0,
+            "[HDF5] Internal error: Failed to compare HDF5 attribute types "
+            "during attribute write");
+        if (equal == 0) // unequal
+        {
+            status = H5Aclose(attribute_id);
+            VERIFY(
+                status == 0,
+                "[HDF5] Internal error: Failed to close previous HDF5 "
+                "attribute "
+                "during attribute write");
+            status = H5Adelete(node_id, name.c_str());
+            VERIFY(
+                status == 0,
+                "[HDF5] Internal error: Failed to delete previous HDF5 "
+                "attribute "
+                "during attribute write");
+            create_attribute_anew();
+        }
+    }
+    else
+    {
+        create_attribute_anew();
     }
 
     using DT = Datatype;
