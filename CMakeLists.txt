@@ -314,7 +314,7 @@ endif()
 string(CONCAT openPMD_HDF5_STATUS "")
 # version: lower limit
 if(openPMD_HAVE_HDF5)
-    if(HDF5_VERSION STREQUAL "")
+    if("${HDF5_VERSION}" STREQUAL "")
         message(WARNING "HDF5_VERSION is empty. Now assuming it is 1.8.13 or newer.")
     else()
         if(HDF5_VERSION VERSION_LESS 1.8.13)
