@@ -1898,8 +1898,12 @@ void append_mode(
 
 TEST_CASE("append_mode", "[serial]")
 {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     for (auto const &t : testedFileExtensions())
     {
+        std::cout << "RANK " << rank << " ABOUT TO TEST '" << t << "'"
+                  << std::endl;
         std::string jsonConfigOld = R"END(
 {
     "adios2":
