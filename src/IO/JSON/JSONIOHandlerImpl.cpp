@@ -650,7 +650,7 @@ void JSONIOHandlerImpl::createDataset(
         }
         case IOMode::Template:
             if (parameter.extent != Extent{0} &&
-                parameter.dtype != Datatype::UNDEFINED)
+                parameter.extent[0] != Dataset::UNDEFINED_EXTENT)
             {
                 dset["extent"] = parameter.extent;
             }
@@ -2012,7 +2012,7 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
             }
         }
 
-        if (m_IOModeSpecificationVia == SpecificationVia::DefaultValue &&
+        if (m_attributeModeSpecificationVia == SpecificationVia::DefaultValue &&
             openpmd_internal.contains(JSONDefaults::AttributeMode))
         {
             auto modeOption = openPMD::json::asLowerCaseStringDynamic(

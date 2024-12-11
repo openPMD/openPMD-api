@@ -50,7 +50,7 @@ void write()
      * Don't specify datatype and extent for this one to indicate that this
      * information is not yet known.
      */
-    E["z"].resetDataset({openPMD::Datatype::UNDEFINED});
+    E["z"].resetDataset({});
 
     ds.extent = {10};
 
@@ -100,7 +100,7 @@ void read()
     openPMD::Series read(
         "../samples/tomlTemplate." + backendEnding(),
         openPMD::Access::READ_LINEAR);
-    read.readIterations(); // @todo change to read.parseBase()
+    read.parseBase();
     openPMD::helper::listSeries(read);
 }
 

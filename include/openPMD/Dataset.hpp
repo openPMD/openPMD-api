@@ -41,18 +41,24 @@ class Dataset
 public:
     enum : std::uint64_t
     {
-        JOINED_DIMENSION = std::numeric_limits<std::uint64_t>::max()
+        JOINED_DIMENSION = std::numeric_limits<std::uint64_t>::max(),
+        UNDEFINED_EXTENT = std::numeric_limits<std::uint64_t>::max() - 1
     };
 
-    Dataset(Datatype, Extent = {1}, std::string options = "{}");
+    Dataset(Datatype, Extent, std::string options = "{}");
 
     /**
      * @brief Constructor that sets the datatype to undefined.
      *
-     * Helpful for resizing datasets, since datatypes need not be given twice.
+     * Helpful for:
+     *
+     * 1. Resizing datasets, since datatypes need not be given twice.
+     * 2. Initializing datasets as undefined, as used by template mode in the
+     *    JSON/TOML backend. In this case, the default (undefined) specification
+     *    for the Extent may be used.
      *
      */
-    Dataset(Extent);
+    Dataset(Extent = {UNDEFINED_EXTENT});
 
     Dataset &extend(Extent newExtent);
 
