@@ -19,7 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <openPMD/openPMD.hpp>
-#include <mpi.h>
 
 #include <algorithm>
 #include <iostream>
