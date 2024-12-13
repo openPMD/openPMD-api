@@ -41,7 +41,23 @@ class Dataset
 public:
     enum : std::uint64_t
     {
+        /**
+         * Setting one dimension of the extent as JOINED_DIMENSION means that
+         * the extent along that dimension will be defined by the sum of all
+         * parallel processes' contributions.
+         * Only one dimension can be joined. For store operations, the offset
+         * should be an empty array and the extent should give the actual
+         * extent of the chunk (i.e. the number of joined elements along the
+         * joined dimension, equal to the global extent in all other
+         * dimensions). For more details, refer to
+         * docs/source/usage/workflow.rst.
+         */
         JOINED_DIMENSION = std::numeric_limits<std::uint64_t>::max(),
+        /**
+         * Some backends (i.e. JSON and TOML in template mode) support the
+         * creation of dataset with undefined datatype and extent.
+         * The extent should be given as {UNDEFINED_EXTENT} for that.
+         */
         UNDEFINED_EXTENT = std::numeric_limits<std::uint64_t>::max() - 1
     };
 

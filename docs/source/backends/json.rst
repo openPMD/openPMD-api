@@ -54,9 +54,10 @@ Stored as an actual dataset, an **openPMD dataset** is a JSON object with three 
 
 Stored as a **dataset template**, an openPMD dataset is represented by three JSON keys:
 
-* ``datatype`` (required): As above.
-* ``extent`` (required): A list of integers, describing the extent of the dataset.
-* ``attributes``: As above.
+ * ``datatype`` (required): As above.
+ * ``extent`` (required): A list of integers, describing the extent of the dataset.
+   This replaces the ``data`` key from the non-template representation.
+ * ``attributes``: As above.
 
 This mode stores only the dataset metadata.
 Chunk load/store operations are ignored.
