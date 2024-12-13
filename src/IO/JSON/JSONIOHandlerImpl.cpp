@@ -1044,7 +1044,15 @@ void JSONIOHandlerImpl::touch(
     Writable *writable, Parameter<Operation::TOUCH> const &)
 {
     auto file = refreshFileFromParent(writable);
-    m_dirty.emplace(std::move(file));
+    if (access::write(m_handler->m_backendAccess))
+    {
+        m_dirty.emplace(std::move(file));
+    }
+    else if (m_jsonVals.find(file) == m_jsonVals.end())
+    {
+        throw error::Internal(
+            "ADIOS2: Tried activating a file that is not open.");
+    }
 }
 
 auto JSONIOHandlerImpl::getFilehandle(File const &fileName, Access access)

@@ -1522,7 +1522,15 @@ void ADIOS2IOHandlerImpl::touch(
     Writable *writable, Parameter<Operation::TOUCH> const &)
 {
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    m_dirty.emplace(std::move(file));
+    if (access::write(m_handler->m_backendAccess))
+    {
+        m_dirty.emplace(std::move(file));
+    }
+    else if (m_fileData.find(file) == m_fileData.end())
+    {
+        throw error::Internal(
+            "ADIOS2: Tried activating a file that is not open.");
+    }
 }
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
