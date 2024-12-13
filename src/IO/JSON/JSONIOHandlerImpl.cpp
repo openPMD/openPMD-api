@@ -25,6 +25,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -158,6 +159,11 @@ JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
 std::future<void> JSONIOHandlerImpl::flush()
 {
     AbstractIOHandlerImpl::flush();
+    if (access::readOnly(m_handler->m_backendAccess) && !m_dirty.empty())
+    {
+        throw error::Internal(
+            "JSON backend: Cannot have dirty files in read-only modes.");
+    }
     for (auto const &file : m_dirty)
     {
         putJsonContents(file, false);
@@ -1044,7 +1050,15 @@ void JSONIOHandlerImpl::touch(
     Writable *writable, Parameter<Operation::TOUCH> const &)
 {
     auto file = refreshFileFromParent(writable);
-    m_dirty.emplace(std::move(file));
+    if (access::write(m_handler->m_backendAccess))
+    {
+        m_dirty.emplace(std::move(file));
+    }
+    else if (m_jsonVals.find(file) == m_jsonVals.end())
+    {
+        throw error::Internal(
+            "ADIOS2: Tried activating a file that is not open.");
+    }
 }
 
 auto JSONIOHandlerImpl::getFilehandle(File const &fileName, Access access)
