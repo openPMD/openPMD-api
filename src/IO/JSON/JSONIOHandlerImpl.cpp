@@ -653,12 +653,8 @@ void JSONIOHandlerImpl::createDataset(
             default:
                 break;
             }
-            if (parameter.extent.size() == 1 &&
-                parameter.extent[0] == Dataset::UNDEFINED_EXTENT)
-            {
-                dset["data"] = std::vector<int>(0);
-            }
-            else
+            if (parameter.extent.size() != 1 ||
+                parameter.extent[0] != Dataset::UNDEFINED_EXTENT)
             {
                 // TOML does not support nulls, so initialize with zero
                 dset["data"] = initializeNDArray(
