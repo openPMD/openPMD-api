@@ -25,7 +25,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
-#include "openPMD/IO/Access.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -150,13 +150,13 @@ namespace
             case openPMD::json::SupportedLanguages::JSON:
                 std::cerr << "Warning: parts of the backend configuration for "
                              "JSON/TOML backend remain unused:\n"
-                          << shadow << std::endl;
+                          << shadow << '\n';
                 break;
             case openPMD::json::SupportedLanguages::TOML: {
                 auto asToml = openPMD::json::jsonToToml(shadow);
                 std::cerr << "Warning: parts of the backend configuration for "
                              "JSON/TOML backend remain unused:\n"
-                          << json::format_toml(asToml) << std::endl;
+                          << json::format_toml(asToml) << '\n';
                 break;
             }
             }
@@ -419,10 +419,11 @@ void JSONIOHandlerImpl::init(openPMD::json::TracingJSON config)
     switch (m_fileFormat)
     {
     case FileFormat::Json:
-        m_attributeMode.m_mode =
-            m_handler->m_standard >= OpenpmdStandard::v_2_0_0
-            ? AttributeMode::Short
-            : AttributeMode::Long;
+        // Set the attribute mode to Long for now, needs to be evaluated
+        // again when creating a new file, since the openPMD version might
+        // be specified via Series::setOpenPMD() after initialization of the
+        // JSON backend.
+        m_attributeMode.m_mode = AttributeMode::Long;
         m_datasetMode.m_mode = DatasetMode::Dataset;
         break;
     case FileFormat::Toml:
@@ -467,6 +468,25 @@ void JSONIOHandlerImpl::createFile(
     VERIFY_ALWAYS(
         access::write(m_handler->m_backendAccess),
         "[JSON] Creating a file in read-only mode is not possible.");
+
+    /*
+     * Need to resolve this later than init() since the openPMD version might be
+     * specified after the creation of the IOHandler.
+     */
+    if (m_attributeMode.m_specificationVia == SpecificationVia::DefaultValue)
+    {
+        switch (m_fileFormat)
+        {
+        case FileFormat::Json:
+            m_attributeMode.m_mode =
+                m_handler->m_standard >= OpenpmdStandard::v_2_0_0
+                ? AttributeMode::Short
+                : AttributeMode::Long;
+            break;
+        default:
+            break;
+        }
+    }
 
     if (!writable->written)
     {
@@ -658,7 +678,8 @@ void JSONIOHandlerImpl::createDataset(
             {
                 // no-op
                 // If extent is empty or no datatype is defined, don't bother
-                // writing it
+                // writing it.
+                // The datatype is written above anyway.
             }
             break;
         }
@@ -1243,7 +1264,7 @@ void JSONIOHandlerImpl::writeDataset(
             std::cerr
                 << "[JSON/TOML backend: Warning] Trying to write data to a "
                    "template dataset. Will skip."
-                << std::endl;
+                << '\n';
             m_datasetMode.m_skipWarnings = true;
         }
         return;
@@ -1333,7 +1354,7 @@ void JSONIOHandlerImpl::readDataset(
     case DatasetMode::Template:
         std::cerr << "[Warning] Cannot read chunks in Template mode of JSON "
                      "backend. Will fill with zeroes instead."
-                  << std::endl;
+                  << '\n';
         switchNonVectorType<FillWithZeroes>(
             parameters.dtype, parameters.data.get(), parameters.extent);
         return;
@@ -1344,8 +1365,11 @@ void JSONIOHandlerImpl::readDataset(
         }
         catch (json::basic_json::type_error &)
         {
-            throw std::runtime_error(
-                "[JSON] The given path does not contain a valid dataset.");
+            throw error::ReadError(
+                error::AffectedObject::Dataset,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                "The given path does not contain a valid dataset.");
         }
         break;
     }
@@ -1353,6 +1377,18 @@ void JSONIOHandlerImpl::readDataset(
 
 namespace
 {
+    /*
+     * While the short attribute representation is more easily human-readable
+     * (and ultimately also closer to the idea of JSON), this means that
+     * recovering the actual datatype of an attribute is now more difficult.
+     * The functions in this anonymous namespace take care of doing that.
+     */
+
+    /*
+     * Input: Element type `T` that has already been resolved and a JSON value
+     * `j` containing a flat array with elements of type `T`.
+     * Output: An openPMD Attribute containing that array.
+     */
     template <typename T>
     Attribute recoverVectorAttributeFromJson(nlohmann::json const &j)
     {
@@ -1369,7 +1405,10 @@ namespace
              std::is_same_v<T, nlohmann::json::number_unsigned_t>))
         {
             /*
-             * The frontend must deal with wrong type reports here.
+             * The JSON value does not contain enough information to distinguish
+             * ARRAY_DOUBLE_7 from other VECTOR types. Return the array type if
+             * it applies, the frontend must deal with correctly converting
+             * to vector types when needed.
              */
             std::array<double, 7> res;
             for (size_t i = 0; i < 7; ++i)
@@ -1390,6 +1429,17 @@ namespace
         }
     }
 
+    /*
+     * Input: A JSON array whose first element has been found to be some numeric
+     * type.
+     *
+     * We now need to decide, if the array has type unsigned, integer or
+     * float. All elements need to be inspected for this since the first element
+     * might be `1`, but the third might be `-3.14`, and we need a datatype
+     * generic enough to represent all elements.
+     *
+     * Output: That datatype as instance of the nlohmann::json::value_t enum.
+     */
     nlohmann::json::value_t unifyNumericType(nlohmann::json const &j)
     {
         if (!j.is_array() || j.empty())
@@ -1435,6 +1485,107 @@ namespace
         return res;
     }
 
+    /* Input: A JSON array `j`, additionally its name for use in error messages
+     * Output: The array as an openPMD Attribute with adequate recovered
+     *         datatype
+     */
+    Attribute recoverVectorAttributeFromJson(
+        nlohmann::json const &j, std::string const &nameForErrorMessages)
+    {
+        if (j.empty())
+        {
+#if 0 // probably no need to warn here
+                std::cerr << "Cannot recover datatype of empty vector without "
+                             "explicit type annotation for attribute '"
+                          << nameForErrorMessages
+                          << "'. Will continue with VEC_INT datatype."
+                          << '\n';
+#endif
+            /*
+             * Since an empty array's datatype cannot be recovered without
+             * type annotations, we need to use some type.
+             * In that case, use integers.
+             */
+            return std::vector<int>{};
+        }
+
+        auto valueType = j[0].type();
+        /*
+         * If the vector is of numeric type, it might happen that the
+         * first entry is an integer, but a later entry is a float.
+         * We need to pick the most generic datatype in that case.
+         */
+        if (valueType == nlohmann::json::value_t::number_float ||
+            valueType == nlohmann::json::value_t::number_unsigned ||
+            valueType == nlohmann::json::value_t::number_integer)
+        {
+            valueType = unifyNumericType(j);
+        }
+        switch (valueType)
+        {
+        case nlohmann::json::value_t::null:
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                " Attribute must not be null: '" + nameForErrorMessages + "'.");
+        case nlohmann::json::value_t::object:
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                " Invalid contained datatype (object) "
+                "inside vector-type attribute: '" +
+                    nameForErrorMessages + "'.");
+        case nlohmann::json::value_t::array:
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                " Invalid contained datatype (array) "
+                "inside vector-type attribute: '" +
+                    nameForErrorMessages + "'.");
+        case nlohmann::json::value_t::string:
+            return recoverVectorAttributeFromJson<std::string>(j);
+        case nlohmann::json::value_t::boolean:
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                " Attribute must not be vector of bool: "
+                "'" +
+                    nameForErrorMessages + "'.");
+        case nlohmann::json::value_t::number_integer:
+            return recoverVectorAttributeFromJson<
+                nlohmann::json::number_integer_t>(j);
+        case nlohmann::json::value_t::number_unsigned:
+            return recoverVectorAttributeFromJson<
+                nlohmann::json::number_unsigned_t>(j);
+        case nlohmann::json::value_t::number_float:
+            return recoverVectorAttributeFromJson<
+                nlohmann::json::number_float_t>(j);
+        case nlohmann::json::value_t::binary:
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                " Attribute must not have binary type: "
+                "'" +
+                    nameForErrorMessages + "'.");
+        case nlohmann::json::value_t::discarded:
+            throw std::runtime_error(
+                "Internal JSON parser datatype leaked into JSON "
+                "value.");
+        }
+        throw std::runtime_error("Unreachable!");
+    }
+
+    /*
+     * Read a shorthand-type JSON attribute into an openPMD attribute,
+     * recovering the datatype from the JSON value.
+     * Note that precise datatype-preserving roundtrips are not possible due to
+     * JSON not encoding byte-level type details.
+     */
     Attribute recoverAttributeFromJson(
         nlohmann::json const &j, std::string const &nameForErrorMessages)
     {
@@ -1442,82 +1593,21 @@ namespace
         switch (j.type())
         {
         case nlohmann::json::value_t::null:
-            throw std::runtime_error(
-                "[JSON backend] Attribute must not be null: '" +
-                nameForErrorMessages + "'.");
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                "Attribute must not be null: '" + nameForErrorMessages + "'.");
         case nlohmann::json::value_t::object:
-            throw std::runtime_error(
-                "[JSON backend] Shorthand-style attribute must not be an "
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                "Shorthand-style attribute must not be an "
                 "object: '" +
-                nameForErrorMessages + "'.");
+                    nameForErrorMessages + "'.");
         case nlohmann::json::value_t::array:
-            if (j.empty())
-            {
-                std::cerr << "Cannot recover datatype of empty vector without "
-                             "explicit type annotation for attribute '"
-                          << nameForErrorMessages
-                          << "'. Will continue with VEC_INT datatype."
-                          << std::endl;
-                return std::vector<int>{};
-            }
-            else
-            {
-                auto valueType = j[0].type();
-                /*
-                 * If the vector is of numeric type, it might happen that the
-                 * first entry is an integer, but a later entry is a float.
-                 * We need to pick the most generic datatype in that case.
-                 */
-                if (valueType == nlohmann::json::value_t::number_float ||
-                    valueType == nlohmann::json::value_t::number_unsigned ||
-                    valueType == nlohmann::json::value_t::number_integer)
-                {
-                    valueType = unifyNumericType(j);
-                }
-                switch (valueType)
-                {
-                case nlohmann::json::value_t::null:
-                    throw std::runtime_error(
-                        "[JSON backend] Attribute must not be null: '" +
-                        nameForErrorMessages + "'.");
-                case nlohmann::json::value_t::object:
-                    throw std::runtime_error(
-                        "[JSON backend] Invalid contained datatype (object) "
-                        "inside vector-type attribute: '" +
-                        nameForErrorMessages + "'.");
-                case nlohmann::json::value_t::array:
-                    throw std::runtime_error(
-                        "[JSON backend] Invalid contained datatype (array) "
-                        "inside vector-type attribute: '" +
-                        nameForErrorMessages + "'.");
-                case nlohmann::json::value_t::string:
-                    return recoverVectorAttributeFromJson<std::string>(j);
-                case nlohmann::json::value_t::boolean:
-                    throw std::runtime_error(
-                        "[JSON backend] Attribute must not be vector of bool: "
-                        "'" +
-                        nameForErrorMessages + "'.");
-                case nlohmann::json::value_t::number_integer:
-                    return recoverVectorAttributeFromJson<
-                        nlohmann::json::number_integer_t>(j);
-                case nlohmann::json::value_t::number_unsigned:
-                    return recoverVectorAttributeFromJson<
-                        nlohmann::json::number_unsigned_t>(j);
-                case nlohmann::json::value_t::number_float:
-                    return recoverVectorAttributeFromJson<
-                        nlohmann::json::number_float_t>(j);
-                case nlohmann::json::value_t::binary:
-                    throw std::runtime_error(
-                        "[JSON backend] Attribute must not have binary type: "
-                        "'" +
-                        nameForErrorMessages + "'.");
-                case nlohmann::json::value_t::discarded:
-                    throw std::runtime_error(
-                        "Internal JSON parser datatype leaked into JSON "
-                        "value.");
-                }
-                throw std::runtime_error("Unreachable!");
-            }
+            return recoverVectorAttributeFromJson(j, nameForErrorMessages);
         case nlohmann::json::value_t::string:
             return j.get<std::string>();
         case nlohmann::json::value_t::boolean:
@@ -1529,9 +1619,12 @@ namespace
         case nlohmann::json::value_t::number_float:
             return j.get<nlohmann::json::number_float_t>();
         case nlohmann::json::value_t::binary:
-            throw std::runtime_error(
-                "[JSON backend] Attribute must not have binary type: '" +
-                nameForErrorMessages + "'.");
+            throw error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                "JSON",
+                " Attribute must not have binary type: '" +
+                    nameForErrorMessages + "'.");
         case nlohmann::json::value_t::discarded:
             throw std::runtime_error(
                 "Internal JSON parser datatype leaked into JSON value.");
@@ -1837,7 +1930,7 @@ auto JSONIOHandlerImpl::getExtent(nlohmann::json &j)
     else
     {
         ioMode = DatasetMode::Template;
-        res = {0};
+        res = {Dataset::UNDEFINED_EXTENT};
     }
     return std::make_pair(std::move(res), ioMode);
 }
@@ -1980,7 +2073,10 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
     {
         auto const &openpmd_internal = res->at(JSONDefaults::openpmd_internal);
 
-        // Init dataset mode according to file's default
+        // Init dataset mode according to file's default.
+        // Note that dataset parsing will expect and properly deal with both
+        // representations. The mode to be detected here will determine the the
+        // layout of newly created datasets, e.g. in READ_WRITE or APPEND mode.
         if (m_datasetMode.m_specificationVia ==
                 SpecificationVia::DefaultValue &&
             openpmd_internal.contains(JSONDefaults::DatasetMode))
@@ -2013,6 +2109,7 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
             }
         }
 
+        // Same for attribute mode
         if (m_attributeMode.m_specificationVia ==
                 SpecificationVia::DefaultValue &&
             openpmd_internal.contains(JSONDefaults::AttributeMode))

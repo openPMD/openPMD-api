@@ -125,6 +125,10 @@ RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
     /*
      * For constant components, we implement type conversion, so there is
      * a separate check further below.
+     * This is especially useful for the short-attribute representation in the
+     * JSON/TOML backends as they might implicitly turn a LONG into an INT in a
+     * constant component. The frontend needs to catch such edge cases.
+     * Ref. `if (constant())` branch.
      */
     if (dtype != getDatatype() && !constant())
         if (!isSameInteger<T>(getDatatype()) &&
