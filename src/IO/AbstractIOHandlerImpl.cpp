@@ -22,7 +22,9 @@
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 
@@ -30,6 +32,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
+#include <variant>
 
 namespace openPMD
 {
@@ -399,15 +402,26 @@ std::future<void> AbstractIOHandlerImpl::flush()
                     i.writable,
                     "] ADVANCE ",
                     [&]() {
-                        switch (parameter.mode)
-                        {
+                        return std::visit(
+                            auxiliary::overloaded{
+                                [](AdvanceMode mode) -> std::string {
+                                    switch (mode)
+                                    {
 
-                        case AdvanceMode::BEGINSTEP:
-                            return "BEGINSTEP";
-                        case AdvanceMode::ENDSTEP:
-                            return "ENDSTEP";
-                        }
-                        throw std::runtime_error("Unreachable!");
+                                    case AdvanceMode::BEGINSTEP:
+                                        return "BEGINSTEP";
+                                    case AdvanceMode::ENDSTEP:
+                                        return "ENDSTEP";
+                                    }
+                                    throw std::runtime_error("Unreachable!");
+                                },
+                                [](Parameter<Operation::ADVANCE>::StepSelection
+                                       step) {
+                                    std::stringstream s;
+                                    s << "RANDOMACCESS '" << step.step << "'";
+                                    return s.str();
+                                }},
+                            parameter.mode);
                     }());
                 advance(i.writable, parameter);
                 break;

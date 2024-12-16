@@ -562,7 +562,8 @@ namespace detail
             ADIOS2IOHandlerImpl *impl,
             InvalidatableFile const &,
             std::string const &varName,
-            Parameter<Operation::OPEN_DATASET> &parameters);
+            Parameter<Operation::OPEN_DATASET> &parameters,
+            std::optional<size_t> stepSelection);
 
         static constexpr char const *errorMsg = "ADIOS2: openDataset()";
     };

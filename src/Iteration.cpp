@@ -29,6 +29,7 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Writable.hpp"
 
@@ -39,6 +40,7 @@
 #include <optional>
 #include <stdexcept>
 #include <tuple>
+#include <variant>
 
 namespace openPMD
 {
@@ -440,15 +442,27 @@ void Iteration::readFileBased(
     read_impl(groupPath);
 }
 
-void Iteration::readGorVBased(std::string const &groupPath, bool doBeginStep)
+void Iteration::readGorVBased(
+    std::string const &groupPath, internal::BeginStep const &doBeginStep)
 {
-    if (doBeginStep)
-    {
-        /*
-         * beginStep() must take care to open files
-         */
-        beginStep(/* reread = */ false);
-    }
+    std::visit(
+        auxiliary::overloaded{
+            [](internal::BeginStepTypes::DontBeginStep const &) {},
+            [&](internal::BeginStepTypes::BeginStepSynchronously const &) {
+                /*
+                 * beginStep() must take care to open files
+                 */
+                beginStep(/* reread = */ false);
+            },
+            [&](internal::BeginStepTypes::BeginStepRandomAccess const
+                    &randomAccess) {
+                Parameter<Operation::ADVANCE> param;
+                param.mode = Parameter<Operation::ADVANCE>::StepSelection{
+                    randomAccess.step};
+                IOHandler()->enqueue(IOTask(this, std::move(param)));
+            },
+        },
+        doBeginStep);
     read_impl(groupPath);
 }
 
@@ -920,7 +934,9 @@ void Iteration::runDeferredParseAccess()
                     deferred.iteration,
                     filename,
                     deferred.path,
-                    deferred.beginStep);
+                    std::holds_alternative<
+                        internal::BeginStepTypes::BeginStepSynchronously>(
+                        deferred.beginStep));
             }
             else
             {

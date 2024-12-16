@@ -1448,6 +1448,13 @@ void Series::flushGorVBased(
                 break;
             case IO::HasBeenOpened:
                 // continue below
+                if (randomAccessSteps() && !series.m_snapshotToStep.empty())
+                {
+                    Parameter<Operation::ADVANCE> param;
+                    param.mode = Parameter<Operation::ADVANCE>::StepSelection{
+                        series.m_snapshotToStep.at(it->first)};
+                    IOHandler()->enqueue(IOTask(&it->second, std::move(param)));
+                }
                 it->second.flush(flushParams);
                 break;
             }
@@ -2050,11 +2057,11 @@ creating new iterations.
     /*
      * Return error if one is caught.
      */
-    auto readSingleIteration =
-        [&series, &pOpen, this](
-            IterationIndex_t index,
-            std::string const &path,
-            bool beginStep) -> std::optional<error::ReadError> {
+    auto readSingleIteration = [&series, &pOpen, this](
+                                   IterationIndex_t index,
+                                   std::string const &path,
+                                   internal::BeginStep const &beginStep)
+        -> std::optional<error::ReadError> {
         if (series.iterations.contains(index))
         {
             // maybe re-read
@@ -2126,7 +2133,12 @@ creating new iterations.
             }
             if (auto err = internal::withRWAccess(
                     IOHandler()->m_seriesStatus,
-                    [&]() { return readSingleIteration(index, it, false); });
+                    [&]() {
+                        return readSingleIteration(
+                            index,
+                            it,
+                            internal::BeginStepTypes::DontBeginStep{});
+                    });
                 err)
             {
                 std::cerr << "Cannot read iteration " << index
@@ -2183,10 +2195,16 @@ creating new iterations.
              * Variable-based iteration encoding relies on steps, so parsing
              * must happen after opening the first step.
              */
+            internal::BeginStep beginStep = randomAccessSteps()
+                ? internal::
+                      BeginStep{internal::BeginStepTypes::BeginStepRandomAccess{
+                          series.m_snapshotToStep.at(it)}}
+                : internal::BeginStep{
+                      internal::BeginStepTypes::BeginStepSynchronously{}};
             if (auto err = internal::withRWAccess(
                     IOHandler()->m_seriesStatus,
-                    [&readSingleIteration, it]() {
-                        return readSingleIteration(it, "", true);
+                    [&readSingleIteration, it, &beginStep]() {
+                        return readSingleIteration(it, "", beginStep);
                     });
                 err)
             {
@@ -3249,6 +3267,11 @@ auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>
                 series.m_snapshotToStep[iteration] = step;
             }
         }
+        for (auto const &[iteration, step] : series.m_snapshotToStep)
+        {
+            std::cout << '\t' << iteration << "\t-> " << step << '\n';
+        }
+        std::cout.flush();
         return vec_t{res.begin(), res.end()};
     }
     else

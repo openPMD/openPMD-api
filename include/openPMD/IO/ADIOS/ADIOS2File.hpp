@@ -79,7 +79,8 @@ struct DatasetReader
         BufferedGet &bp,
         adios2::IO &IO,
         adios2::Engine &engine,
-        std::string const &fileName);
+        std::string const &fileName,
+        std::optional<size_t> stepSelection);
 
     static constexpr char const *errorMsg = "ADIOS2: readDataset()";
 };
@@ -412,6 +413,8 @@ public:
     StreamStatus streamStatus = StreamStatus::OutsideOfStep;
 
     size_t currentStep();
+    void setStepSelection(size_t);
+    [[nodiscard]] std::optional<size_t> stepSelection() const;
 
 private:
     ADIOS2IOHandlerImpl *m_impl;
@@ -422,6 +425,7 @@ private:
      * implement this manually.
      */
     size_t m_currentStep = 0;
+    bool useStepSelection = false;
 
     /*
      * ADIOS2 does not give direct access to its internal attribute and

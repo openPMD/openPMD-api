@@ -670,8 +670,13 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::ADVANCE>
             new Parameter<Operation::ADVANCE>(std::move(*this)));
     }
 
+    struct StepSelection
+    {
+        size_t step;
+    };
+
     //! input parameter
-    AdvanceMode mode;
+    std::variant<AdvanceMode, StepSelection> mode;
     bool isThisStepMandatory = false;
     //! output parameter
     std::shared_ptr<AdvanceStatus> status =

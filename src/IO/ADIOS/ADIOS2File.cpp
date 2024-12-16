@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <optional>
 #include <stdexcept>
 
 #if openPMD_USE_VERIFY
@@ -58,11 +59,15 @@ void DatasetReader::call(
     detail::BufferedGet &bp,
     adios2::IO &IO,
     adios2::Engine &engine,
-    std::string const &fileName)
+    std::string const &fileName,
+    std::optional<size_t> stepSelection)
 {
     adios2::Variable<T> var =
         impl->verifyDataset<T>(bp.param.offset, bp.param.extent, IO, bp.name);
-    // var.SetStepSelection({});
+    if (stepSelection.has_value())
+    {
+        var.SetStepSelection({*stepSelection, 1});
+    }
     if (!var)
     {
         throw std::runtime_error(
@@ -134,7 +139,13 @@ void WriteDataset::call(Params &&...)
 void BufferedGet::run(ADIOS2File &ba)
 {
     switchAdios2VariableType<detail::DatasetReader>(
-        param.dtype, ba.m_impl, *this, ba.m_IO, ba.getEngine(), ba.m_file);
+        param.dtype,
+        ba.m_impl,
+        *this,
+        ba.m_IO,
+        ba.getEngine(),
+        ba.m_file,
+        ba.stepSelection());
 }
 
 void BufferedPut::run(ADIOS2File &ba)
@@ -335,6 +346,30 @@ size_t ADIOS2File::currentStep()
     else
     {
         return getEngine().CurrentStep();
+    }
+}
+
+void ADIOS2File::setStepSelection(size_t step)
+{
+    if (streamStatus != StreamStatus::ReadWithoutStream)
+    {
+        throw error::Internal(
+            "ADIOS2 backend: Cannot only use random-access step selections "
+            "when reading without streaming mode.");
+    }
+    m_currentStep = step;
+    useStepSelection = true;
+}
+
+std::optional<size_t> ADIOS2File::stepSelection() const
+{
+    if (useStepSelection)
+    {
+        return {m_currentStep};
+    }
+    else
+    {
+        return std::nullopt;
     }
 }
 

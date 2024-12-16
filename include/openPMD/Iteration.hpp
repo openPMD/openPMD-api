@@ -52,6 +52,23 @@ namespace internal
                               propagated to the backend */
     };
 
+    namespace BeginStepTypes
+    {
+        struct DontBeginStep
+        {};
+        struct BeginStepSynchronously
+        {};
+        struct BeginStepRandomAccess
+        {
+            size_t step;
+        };
+    } // namespace BeginStepTypes
+
+    using BeginStep = std::variant<
+        BeginStepTypes::DontBeginStep,
+        BeginStepTypes::BeginStepSynchronously,
+        BeginStepTypes::BeginStepRandomAccess>;
+
     struct DeferredParseAccess
     {
         /**
@@ -69,7 +86,7 @@ namespace internal
          * (Group- and variable-based parsing shares the same code logic.)
          */
         bool fileBased = false;
-        bool beginStep = false;
+        BeginStep beginStep = BeginStepTypes::DontBeginStep{};
     };
 
     class IterationData : public AttributableData
@@ -305,7 +322,8 @@ private:
         std::string const &filePath,
         std::string const &groupPath,
         bool beginStep);
-    void readGorVBased(std::string const &groupPath, bool beginStep);
+    void readGorVBased(
+        std::string const &groupPath, internal::BeginStep const &beginStep);
     void read_impl(std::string const &groupPath);
     void readMeshes(std::string const &meshesPath);
     void readParticles(std::string const &particlesPath);

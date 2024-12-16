@@ -27,7 +27,9 @@
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/Streaming.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -35,6 +37,7 @@
 #include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 
 #include <adios2/common/ADIOSTypes.h>
 #include <adios2/cxx11/ADIOS.h>
@@ -998,7 +1001,12 @@ void ADIOS2IOHandlerImpl::openDataset(
     *parameters.dtype =
         detail::fromADIOS2Type(fileData.m_IO.VariableType(varName));
     switchAdios2VariableType<detail::DatasetOpener>(
-        *parameters.dtype, this, file, varName, parameters);
+        *parameters.dtype,
+        this,
+        file,
+        varName,
+        parameters,
+        fileData.stepSelection());
     writable->written = true;
 }
 
@@ -1609,7 +1617,14 @@ void ADIOS2IOHandlerImpl::advance(
 {
     auto file = m_files.at(writable);
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    *parameters.status = ba.advance(parameters.mode);
+    std::visit(
+        auxiliary::overloaded{
+            [&](AdvanceMode mode) { *parameters.status = ba.advance(mode); },
+            [&](Parameter<Operation::ADVANCE>::StepSelection step) {
+                ba.setStepSelection(step.step);
+                *parameters.status = AdvanceStatus::RANDOMACCESS;
+            }},
+        parameters.mode);
 }
 
 void ADIOS2IOHandlerImpl::closePath(
@@ -2097,13 +2112,17 @@ namespace detail
         ADIOS2IOHandlerImpl *impl,
         InvalidatableFile const &file,
         const std::string &varName,
-        Parameter<Operation::OPEN_DATASET> &parameters)
+        Parameter<Operation::OPEN_DATASET> &parameters,
+        std::optional<size_t> stepSelection)
     {
         auto &fileData = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
         auto &IO = fileData.m_IO;
         adios2::Variable<T> var = IO.InquireVariable<T>(varName);
-        // var.SetStepSelection();
+        if (stepSelection.has_value())
+        {
+            var.SetStepSelection({*stepSelection, 1});
+        }
         if (!var)
         {
             throw std::runtime_error(
