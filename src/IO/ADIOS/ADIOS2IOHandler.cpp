@@ -34,15 +34,11 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
-#include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 
-#include <adios2/common/ADIOSTypes.h>
-#include <adios2/cxx11/ADIOS.h>
 #include <algorithm>
-#include <cctype> // std::tolower
 #include <cstddef>
 #include <iostream>
 #include <iterator>
@@ -1091,7 +1087,7 @@ namespace detail
             auto &IO = ba.m_IO;
             auto &engine = ba.getEngine();
             adios2::Variable<T> variable = impl->verifyDataset<T>(
-                params.offset, params.extent, IO, varName);
+                params.offset, params.extent, IO, varName, std::nullopt);
             adios2::Dims offset(params.offset.begin(), params.offset.end());
             adios2::Dims extent(params.extent.begin(), params.extent.end());
             variable.SetSelection({std::move(offset), std::move(extent)});
@@ -1407,7 +1403,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
     auto status = engine.BeginStep();
     auto type = detail::attributeInfo(IO, name, /* verbose = */ true);
-    switchAdios2AttributeType<ReadAttributeAllsteps>(
+    switchType<ReadAttributeAllsteps>(
         type, IO, engine, name, status, *param.resource);
     engine.Close();
 }

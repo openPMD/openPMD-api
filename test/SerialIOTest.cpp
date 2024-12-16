@@ -5788,7 +5788,6 @@ void variableBasedSeries(std::string const &file)
         {
             if (i > 0 && is_not_adios2)
             {
-                return;
                 REQUIRE_THROWS_AS(
                     iterations[i], error::OperationUnsupportedInBackend);
                 return;

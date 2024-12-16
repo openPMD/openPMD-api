@@ -149,10 +149,23 @@ namespace internal
         case Operation::AVAILABLE_CHUNKS:
             return "AVAILABLE_CHUNKS";
             break;
-        default:
-            return "unknown";
+        case Operation::CHECK_FILE:
+            return "CHECK_FILE";
+            break;
+        case Operation::READ_ATT_ALLSTEPS:
+            return "READ_ATT_ALLSTEPS";
+            break;
+        case Operation::DEREGISTER:
+            return "DEREGISTER";
+            break;
+        case Operation::TOUCH:
+            return "TOUCH";
+            break;
+        case Operation::SET_WRITTEN:
+            return "SET_WRITTEN";
             break;
         }
+        return "unknown";
     }
 } // namespace internal
 

@@ -1453,7 +1453,7 @@ void Series::flushGorVBased(
                     Parameter<Operation::ADVANCE> param;
                     param.mode = Parameter<Operation::ADVANCE>::StepSelection{
                         series.m_snapshotToStep.at(it->first)};
-                    IOHandler()->enqueue(IOTask(&it->second, std::move(param)));
+                    IOHandler()->enqueue(IOTask(this, std::move(param)));
                 }
                 it->second.flush(flushParams);
                 break;
@@ -2196,9 +2196,13 @@ creating new iterations.
              * must happen after opening the first step.
              */
             internal::BeginStep beginStep = randomAccessSteps()
-                ? internal::
-                      BeginStep{internal::BeginStepTypes::BeginStepRandomAccess{
-                          series.m_snapshotToStep.at(it)}}
+                ? (series.m_snapshotToStep.empty()
+                       ? internal::BeginStep{internal::BeginStepTypes::
+                                                 DontBeginStep{}}
+                       : internal::BeginStep{internal::BeginStepTypes::
+                                                 BeginStepRandomAccess{
+                                                     series.m_snapshotToStep.at(
+                                                         it)}})
                 : internal::BeginStep{
                       internal::BeginStepTypes::BeginStepSynchronously{}};
             if (auto err = internal::withRWAccess(

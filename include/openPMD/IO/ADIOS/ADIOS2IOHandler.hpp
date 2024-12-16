@@ -434,7 +434,8 @@ private:
         Offset const &offset,
         Extent const &extent,
         adios2::IO &IO,
-        std::string const &varName)
+        std::string const &varName,
+        std::optional<size_t> stepSelection)
     {
         {
             auto requiredType = adios2::GetType<T>();
@@ -460,6 +461,10 @@ private:
 
             throw std::runtime_error(
                 "[ADIOS2] Internal error: Failed opening ADIOS2 variable.");
+        }
+        if (stepSelection.has_value())
+        {
+            var.SetStepSelection({*stepSelection, 1});
         }
         // TODO leave this check to ADIOS?
         adios2::Dims shape = var.Shape();

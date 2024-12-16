@@ -62,12 +62,8 @@ void DatasetReader::call(
     std::string const &fileName,
     std::optional<size_t> stepSelection)
 {
-    adios2::Variable<T> var =
-        impl->verifyDataset<T>(bp.param.offset, bp.param.extent, IO, bp.name);
-    if (stepSelection.has_value())
-    {
-        var.SetStepSelection({*stepSelection, 1});
-    }
+    adios2::Variable<T> var = impl->verifyDataset<T>(
+        bp.param.offset, bp.param.extent, IO, bp.name, stepSelection);
     if (!var)
     {
         throw std::runtime_error(
@@ -96,7 +92,11 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                 auto ptr = static_cast<T const *>(arg.get());
 
                 adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
-                    bp.param.offset, bp.param.extent, ba.m_IO, bp.name);
+                    bp.param.offset,
+                    bp.param.extent,
+                    ba.m_IO,
+                    bp.name,
+                    std::nullopt);
 
                 ba.getEngine().Put(var, ptr);
             }
@@ -160,7 +160,11 @@ struct RunUniquePtrPut
     {
         auto ptr = static_cast<T const *>(bufferedPut.data.get());
         adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
-            bufferedPut.offset, bufferedPut.extent, ba.m_IO, bufferedPut.name);
+            bufferedPut.offset,
+            bufferedPut.extent,
+            ba.m_IO,
+            bufferedPut.name,
+            std::nullopt);
         ba.getEngine().Put(var, ptr);
     }
 

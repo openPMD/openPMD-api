@@ -459,7 +459,8 @@ void Iteration::readGorVBased(
                 Parameter<Operation::ADVANCE> param;
                 param.mode = Parameter<Operation::ADVANCE>::StepSelection{
                     randomAccess.step};
-                IOHandler()->enqueue(IOTask(this, std::move(param)));
+                IOHandler()->enqueue(
+                    IOTask(&retrieveSeries().writable(), std::move(param)));
             },
         },
         doBeginStep);

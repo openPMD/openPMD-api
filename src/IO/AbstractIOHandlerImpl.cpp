@@ -319,7 +319,10 @@ std::future<void> AbstractIOHandlerImpl::flush()
                     i.writable->parent,
                     "->",
                     i.writable,
-                    "] READ_DATASET");
+                    "] READ_DATASET, offset=",
+                    [&parameter]() { return vec_as_string(parameter.offset); },
+                    ", extent=",
+                    [&parameter]() { return vec_as_string(parameter.extent); });
                 readDataset(i.writable, parameter);
                 break;
             }
