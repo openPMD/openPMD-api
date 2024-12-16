@@ -119,6 +119,10 @@ namespace internal
          */
         std::set<IterationIndex_t> m_currentlyActiveIterations;
         /**
+         * For reading: In which IO step do I need to look for an Iteration?
+         */
+        std::unordered_map<IterationIndex_t, size_t> m_snapshotToStep;
+        /**
          * This map contains the filenames of those Iterations which were found
          * on the file system upon opening the Series for reading in file-based
          * encoding. It is only written to by readFileBased().
@@ -969,12 +973,16 @@ OPENPMD_private
      * Returns the current content of the /data/snapshot attribute.
      * (We could also add this to the public API some time)
      */
-    std::optional<std::vector<IterationIndex_t>> currentSnapshot() const;
+    std::optional<std::vector<IterationIndex_t>> currentSnapshot();
 
     AbstractIOHandler *runDeferredInitialization();
 
     AbstractIOHandler *IOHandler();
     AbstractIOHandler const *IOHandler() const;
+
+    std::optional<std::vector<std::vector<IterationIndex_t>>>
+    preparseSnapshots();
+    [[nodiscard]] bool randomAccessSteps() const;
 }; // Series
 
 using SnapshotWorkflow = Series::SnapshotWorkflow;

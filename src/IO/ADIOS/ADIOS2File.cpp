@@ -62,6 +62,7 @@ void DatasetReader::call(
 {
     adios2::Variable<T> var =
         impl->verifyDataset<T>(bp.param.offset, bp.param.extent, IO, bp.name);
+    // var.SetStepSelection({});
     if (!var)
     {
         throw std::runtime_error(

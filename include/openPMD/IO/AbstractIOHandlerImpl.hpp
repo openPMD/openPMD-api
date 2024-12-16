@@ -360,6 +360,10 @@ public:
      */
     virtual void
     readAttribute(Writable *, Parameter<Operation::READ_ATT> &) = 0;
+    /** COLLECTIVE!
+     */
+    virtual void readAttributeAllsteps(
+        Writable *, Parameter<Operation::READ_ATT_ALLSTEPS> &);
     /** List all paths/sub-groups inside a group, non-recursively.
      *
      * The operation should fail if the Writable was not marked written.

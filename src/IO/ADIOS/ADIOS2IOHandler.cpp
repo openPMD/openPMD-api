@@ -2010,6 +2010,7 @@ namespace detail
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
         auto &IO = fileData.m_IO;
         adios2::Variable<T> var = IO.InquireVariable<T>(varName);
+        // var.SetStepSelection();
         if (!var)
         {
             throw std::runtime_error(

@@ -310,6 +310,25 @@ namespace detail
 #else
     }
 #endif
+
+    template <typename T, typename U>
+    auto doConvertOptional(T const *pv) -> std::optional<U>
+    {
+        auto eitherValueOrError = doConvert<T, U>(pv);
+        return std::visit(
+            [](auto &containedValue) -> std::optional<U> {
+                using Res = std::decay_t<decltype(containedValue)>;
+                if constexpr (std::is_same_v<Res, std::runtime_error>)
+                {
+                    return std::nullopt;
+                }
+                else
+                {
+                    return {std::move(containedValue)};
+                }
+            },
+            eitherValueOrError);
+    }
 } // namespace detail
 
 template <typename U>
@@ -339,25 +358,12 @@ U Attribute::get() const
 template <typename U>
 std::optional<U> Attribute::getOptional() const
 {
-    auto eitherValueOrError = std::visit(
-        [](auto &&containedValue) -> std::variant<U, std::runtime_error> {
-            using containedType = std::decay_t<decltype(containedValue)>;
-            return detail::doConvert<containedType, U>(&containedValue);
-        },
-        Variant::getResource());
     return std::visit(
         [](auto &&containedValue) -> std::optional<U> {
-            using T = std::decay_t<decltype(containedValue)>;
-            if constexpr (std::is_same_v<T, std::runtime_error>)
-            {
-                return std::nullopt;
-            }
-            else
-            {
-                return {std::move(containedValue)};
-            }
+            using containedType = std::decay_t<decltype(containedValue)>;
+            return detail::doConvertOptional<containedType, U>(&containedValue);
         },
-        std::move(eitherValueOrError));
+        Variant::getResource());
 }
 } // namespace openPMD
 

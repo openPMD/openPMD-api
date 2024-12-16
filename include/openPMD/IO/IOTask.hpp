@@ -26,6 +26,7 @@
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
@@ -72,6 +73,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
     DELETE_ATT,
     WRITE_ATT,
     READ_ATT,
+    READ_ATT_ALLSTEPS,
     LIST_ATTS,
 
     ADVANCE,
@@ -600,6 +602,36 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::READ_ATT>
     std::shared_ptr<Datatype> dtype = std::make_shared<Datatype>();
     std::shared_ptr<Attribute::resource> resource =
         std::make_shared<Attribute::resource>();
+};
+
+template <>
+struct OPENPMDAPI_EXPORT Parameter<Operation::READ_ATT_ALLSTEPS>
+    : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter(Parameter &&) = default;
+    Parameter(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+    Parameter &operator=(Parameter const &) = default;
+
+    std::unique_ptr<AbstractParameter> to_heap() && override
+    {
+        return std::unique_ptr<AbstractParameter>(
+            new Parameter<Operation::READ_ATT_ALLSTEPS>(std::move(*this)));
+    }
+
+    std::string name = "";
+    std::shared_ptr<Datatype> dtype = std::make_shared<Datatype>();
+
+    struct to_vector_type
+    {
+        template <typename T>
+        using type = std::vector<T>;
+    };
+    using result_type = typename auxiliary::detail::
+        map_variant<to_vector_type, Attribute::resource>::type;
+
+    std::shared_ptr<result_type> resource = std::make_shared<result_type>();
 };
 
 template <>

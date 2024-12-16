@@ -21,7 +21,9 @@
 
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
+#include "openPMD/IO/IOTask.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
@@ -344,6 +346,20 @@ std::future<void> AbstractIOHandlerImpl::flush()
                 readAttribute(i.writable, parameter);
                 break;
             }
+            case O::READ_ATT_ALLSTEPS: {
+                auto &parameter =
+                    deref_dynamic_cast<Parameter<O::READ_ATT_ALLSTEPS>>(
+                        i.parameter.get());
+                writeToStderr(
+                    "[",
+                    i.writable->parent,
+                    "->",
+                    i.writable,
+                    "] READ_ATT_ALLSTEPS: ",
+                    parameter.name);
+                readAttributeAllsteps(i.writable, parameter);
+                break;
+            }
             case O::LIST_PATHS: {
                 auto &parameter = deref_dynamic_cast<Parameter<O::LIST_PATHS>>(
                     i.parameter.get());
@@ -483,6 +499,21 @@ std::future<void> AbstractIOHandlerImpl::flush()
         (*m_handler).m_work.pop();
     }
     return std::future<void>();
+}
+
+void AbstractIOHandlerImpl::readAttributeAllsteps(
+    Writable *w, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
+{
+    using result_type = Parameter<Operation::READ_ATT_ALLSTEPS>::result_type;
+    Parameter<Operation::READ_ATT> param_internal;
+    param_internal.name = param.name;
+    param_internal.dtype = param.dtype;
+    readAttribute(w, param_internal);
+    *param.resource = std::visit(
+        [](auto &val) -> result_type {
+            return result_type{std::vector{std::move(val)}};
+        },
+        *param_internal.resource);
 }
 
 void AbstractIOHandlerImpl::setWritten(
