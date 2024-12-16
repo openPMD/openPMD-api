@@ -338,6 +338,8 @@ void test_matrix_impl(
 template <typename Callable, typename... Args>
 void test_matrix(Callable &&callable, std::vector<Args> const &...matrix)
 {
+    // no std::forward, callable is called multiple times, so the impl takes
+    // a simple reference
     test_matrix_impl(callable, std::tuple<>(), matrix...);
 }
 } // namespace auxiliary
@@ -378,13 +380,14 @@ void json_short_modes(
 
     auto explicitly_templated = iteration.meshes["explicitly_templated"];
     Dataset ds2 = ds1;
-    ds2.options = backend + R"(.dataset.mode = "template")";
+    ds2.options =
+        R"({")" + backend + R"(": {"dataset": {"mode": "template"}}})";
     explicitly_templated.resetDataset(ds2);
 
     auto explicitly_not_templated =
         iteration.meshes["explicitly_not_templated"];
     Dataset ds3 = ds1;
-    ds3.options = backend + R"(.dataset.mode = "dataset")";
+    ds3.options = R"({")" + backend + R"(": {"dataset": {"mode": "dataset"}}})";
     explicitly_not_templated.resetDataset(ds3);
 
     auto undefined_dataset = iteration.meshes["undefined_dataset"];
@@ -445,11 +448,13 @@ void json_short_modes(
         {
             REQUIRE(j["data"] == nlohmann::json::array_t{0, 0, 0, 0, 0});
         }
+        // `data` key, `datatype` key, and `attributes` key
         REQUIRE(j.size() == 3);
     };
     auto verify_template_dataset = [](nlohmann::json const &j) {
         REQUIRE(j["datatype"] == "INT");
         REQUIRE(j["extent"] == nlohmann::json::array_t{5});
+        // `extent` key, `datatype` key, and `attributes` key
         REQUIRE(j.size() == 3);
     };
 
@@ -494,6 +499,12 @@ TEST_CASE("json_short_modes")
         std::vector<std::optional<bool>>{std::nullopt, true, false},
         std::vector<std::optional<bool>>{std::nullopt, true, false},
         std::vector<std::string>{getStandardDefault(), getStandardMaximum()},
-        std::vector<std::string>{"json", "toml"},
+        std::vector<std::string>{
+            "json"
+#if !__NVCOMPILER // see https://github.com/ToruNiina/toml11/issues/205
+            ,
+            "toml"
+#endif
+        },
         std::vector<unsigned int *>{&name_counter});
 }
