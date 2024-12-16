@@ -190,6 +190,9 @@ public:
 
     void readAttribute(Writable *, Parameter<Operation::READ_ATT> &) override;
 
+    void readAttributeAllsteps(
+        Writable *, Parameter<Operation::READ_ATT_ALLSTEPS> &) override;
+
     void listPaths(Writable *, Parameter<Operation::LIST_PATHS> &) override;
 
     void
@@ -533,11 +536,8 @@ namespace detail
     struct AttributeReader
     {
         template <typename T>
-        static Datatype call(
-            ADIOS2IOHandlerImpl &,
-            adios2::IO &IO,
-            std::string name,
-            Attribute::resource &resource);
+        static Datatype
+        call(adios2::IO &IO, std::string name, Attribute::resource &resource);
 
         template <int n, typename... Params>
         static Datatype call(Params &&...);

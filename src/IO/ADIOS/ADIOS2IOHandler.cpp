@@ -28,6 +28,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -35,6 +36,8 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 
+#include <adios2/common/ADIOSTypes.h>
+#include <adios2/cxx11/ADIOS.h>
 #include <algorithm>
 #include <cctype> // std::tolower
 #include <cstddef>
@@ -1216,8 +1219,189 @@ void ADIOS2IOHandlerImpl::readAttribute(
     }
 
     Datatype ret = switchType<detail::AttributeReader>(
-        type, *this, ba.m_IO, name, *parameters.resource);
+        type, ba.m_IO, name, *parameters.resource);
     *parameters.dtype = ret;
+}
+
+namespace
+{
+    template <typename T, typename Functor>
+    Datatype
+    genericReadAttribute(Functor &&fun, adios2::IO &IO, std::string const &name)
+    {
+        /*
+         * If we store an attribute of boolean type, we store an additional
+         * attribute prefixed with '__is_boolean__' to indicate this information
+         * that would otherwise be lost. Check whether this has been done.
+         */
+        using rep = detail::AttributeTypes<bool>::rep;
+
+        if constexpr (std::is_same<T, rep>::value)
+        {
+            auto attr = IO.InquireAttribute<rep>(name);
+            if (!attr)
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" +
+                    name + "'.");
+            }
+
+            std::string metaAttr;
+            metaAttr = adios_defaults::str_isBoolean + name;
+            /*
+             * In verbose mode, attributeInfo will yield a warning if not
+             * finding the requested attribute. Since we expect the attribute
+             * not to be present in many cases (i.e. when it is actually not
+             * a boolean), let's tell attributeInfo to be quiet.
+             */
+            auto type = detail::attributeInfo(
+                IO,
+                metaAttr,
+                /* verbose = */ false);
+
+            if (type == determineDatatype<rep>())
+            {
+                auto meta = IO.InquireAttribute<rep>(metaAttr);
+                if (meta.Data().size() == 1 && meta.Data()[0] == 1)
+                {
+                    std::forward<Functor>(fun)(
+                        detail::bool_repr::fromRep(attr.Data()[0]));
+                    return determineDatatype<bool>();
+                }
+            }
+            std::forward<Functor>(fun)(attr.Data()[0]);
+        }
+        else if constexpr (detail::IsUnsupportedComplex_v<T>)
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex "
+                "attribute types");
+        }
+        else if constexpr (auxiliary::IsVector_v<T>)
+        {
+            auto attr = IO.InquireAttribute<typename T::value_type>(name);
+            if (!attr)
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" +
+                    name + "'.");
+            }
+            std::forward<Functor>(fun)(attr.Data());
+        }
+        else if constexpr (auxiliary::IsArray_v<T>)
+        {
+            auto attr = IO.InquireAttribute<typename T::value_type>(name);
+            if (!attr)
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" +
+                    name + "'.");
+            }
+            auto data = attr.Data();
+            T res;
+            for (size_t i = 0; i < data.size(); i++)
+            {
+                res[i] = data[i];
+            }
+            std::forward<Functor>(fun)(res);
+        }
+        else if constexpr (std::is_same_v<T, bool>)
+        {
+            throw std::runtime_error(
+                "Observed boolean attribute. ADIOS2 does not have these?");
+        }
+        else
+        {
+            auto attr = IO.InquireAttribute<T>(name);
+            if (!attr)
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" +
+                    name + "'.");
+            }
+            std::forward<Functor>(fun)(attr.Data()[0]);
+        }
+
+        return determineDatatype<T>();
+    }
+
+    struct ReadAttributeAllsteps
+    {
+        template <typename T>
+        static void call(
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            std::string const &name,
+            adios2::StepStatus status,
+            Parameter<Operation::READ_ATT_ALLSTEPS>::result_type
+                &put_result_here)
+        {
+            std::vector<T> res;
+            res.reserve(engine.Steps());
+            while (status == adios2::StepStatus::OK)
+            {
+                genericReadAttribute<T>(
+                    [&res](auto &&val) {
+                        using type = std::remove_reference_t<decltype(val)>;
+                        if constexpr (std::is_same_v<type, bool>)
+                        {
+                            throw error::ReadError(
+                                error::AffectedObject::Attribute,
+                                error::Reason::UnexpectedContent,
+                                "ADIOS2",
+                                "[ReadAttributeAllsteps] No support for "
+                                "Boolean attributes.");
+                        }
+                        else
+                        {
+                            res.emplace_back(static_cast<decltype(val)>(val));
+                        }
+                    },
+                    IO,
+                    name);
+                engine.EndStep();
+                status = engine.BeginStep();
+            }
+            switch (status)
+            {
+            case adios2::StepStatus::OK:
+                throw error::Internal("Control flow error.");
+            case adios2::StepStatus::NotReady:
+            case adios2::StepStatus::OtherError:
+                throw error::ReadError(
+                    error::AffectedObject::File,
+                    error::Reason::CannotRead,
+                    "ADIOS2",
+                    "Unexpected step status while preparsing snapshots.");
+            case adios2::StepStatus::EndOfStream:
+                break;
+            }
+            put_result_here = std::move(res);
+        }
+
+        static constexpr char const *errorMsg = "ReadAttributeAllsteps";
+    };
+} // namespace
+
+void ADIOS2IOHandlerImpl::readAttributeAllsteps(
+    Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
+{
+    std::cout << "ADIOS2: ReadAttributeAllSteps" << '\n';
+    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto pos = setAndGetFilePosition(writable);
+    auto name = nameOfAttribute(writable, param.name);
+
+    adios2::ADIOS adios;
+    auto IO = adios.DeclareIO("PreparseSnapshots");
+    // @todo check engine type
+    // @todo MPI implementation
+    IO.SetEngine(realEngineType());
+    auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
+    auto status = engine.BeginStep();
+    auto type = detail::attributeInfo(IO, name, /* verbose = */ true);
+    switchAdios2AttributeType<ReadAttributeAllsteps>(
+        type, IO, engine, name, status, *param.resource);
+    engine.Close();
 }
 
 void ADIOS2IOHandlerImpl::listPaths(
@@ -1745,105 +1929,14 @@ namespace detail
 {
     template <typename T>
     Datatype AttributeReader::call(
-        ADIOS2IOHandlerImpl &impl,
-        adios2::IO &IO,
-        std::string name,
-        Attribute::resource &resource)
+        adios2::IO &IO, std::string name, Attribute::resource &resource)
     {
-        (void)impl;
-        /*
-         * If we store an attribute of boolean type, we store an additional
-         * attribute prefixed with '__is_boolean__' to indicate this information
-         * that would otherwise be lost. Check whether this has been done.
-         */
-        using rep = AttributeTypes<bool>::rep;
-
-        if constexpr (std::is_same<T, rep>::value)
-        {
-            auto attr = IO.InquireAttribute<rep>(name);
-            if (!attr)
-            {
-                throw std::runtime_error(
-                    "[ADIOS2] Internal error: Failed reading attribute '" +
-                    name + "'.");
-            }
-
-            std::string metaAttr;
-            metaAttr = adios_defaults::str_isBoolean + name;
-            /*
-             * In verbose mode, attributeInfo will yield a warning if not
-             * finding the requested attribute. Since we expect the attribute
-             * not to be present in many cases (i.e. when it is actually not
-             * a boolean), let's tell attributeInfo to be quiet.
-             */
-            auto type = attributeInfo(
-                IO,
-                metaAttr,
-                /* verbose = */ false);
-
-            if (type == determineDatatype<rep>())
-            {
-                auto meta = IO.InquireAttribute<rep>(metaAttr);
-                if (meta.Data().size() == 1 && meta.Data()[0] == 1)
-                {
-                    resource = bool_repr::fromRep(attr.Data()[0]);
-                    return determineDatatype<bool>();
-                }
-            }
-            resource = attr.Data()[0];
-        }
-        else if constexpr (IsUnsupportedComplex_v<T>)
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex "
-                "attribute types");
-        }
-        else if constexpr (auxiliary::IsVector_v<T>)
-        {
-            auto attr = IO.InquireAttribute<typename T::value_type>(name);
-            if (!attr)
-            {
-                throw std::runtime_error(
-                    "[ADIOS2] Internal error: Failed reading attribute '" +
-                    name + "'.");
-            }
-            resource = attr.Data();
-        }
-        else if constexpr (auxiliary::IsArray_v<T>)
-        {
-            auto attr = IO.InquireAttribute<typename T::value_type>(name);
-            if (!attr)
-            {
-                throw std::runtime_error(
-                    "[ADIOS2] Internal error: Failed reading attribute '" +
-                    name + "'.");
-            }
-            auto data = attr.Data();
-            T res;
-            for (size_t i = 0; i < data.size(); i++)
-            {
-                res[i] = data[i];
-            }
-            resource = res;
-        }
-        else if constexpr (std::is_same_v<T, bool>)
-        {
-            throw std::runtime_error(
-                "Observed boolean attribute. ADIOS2 does not have these?");
-        }
-        else
-        {
-            auto attr = IO.InquireAttribute<T>(name);
-            if (!attr)
-            {
-                throw std::runtime_error(
-                    "[ADIOS2] Internal error: Failed reading attribute '" +
-                    name + "'.");
-            }
-            resource = attr.Data()[0];
-        }
-
-        return determineDatatype<T>();
+        return genericReadAttribute<T>(
+            [&resource](auto &&value) {
+                resource = static_cast<decltype(value)>(value);
+            },
+            IO,
+            name);
     }
 
     template <int n, typename... Params>
