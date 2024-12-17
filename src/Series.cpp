@@ -56,6 +56,7 @@
 #include <optional>
 #include <regex>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -1536,6 +1537,8 @@ void Series::flushGorVBased(
         series.iterations.flush(
             auxiliary::replace_first(basePath(), "%T/", ""), flushParams);
 
+        debug::printDirty(*this);
+
         for (auto it = begin; it != end; ++it)
         {
             // Phase 1
@@ -2142,6 +2145,16 @@ creating new iterations.
         {
             // parse for the first time, resp. delay the parsing process
             Iteration &i = series.iterations[index];
+            // if (iterationEncoding() == IterationEncoding::variableBased)
+            // {
+            //     static_cast<
+            //         std::shared_ptr<internal::SharedAttributableData> &>(
+            //         *i.m_attri) =
+            //         static_cast<
+            //             std::shared_ptr<internal::SharedAttributableData> &>(
+            //             *series.iterations.m_attri);
+            //     i.linkHierarchy(writable());
+            // }
             i.deferParseAccess({path, index, false, beginStep});
             if (!series.m_parseLazily)
             {
@@ -3675,7 +3688,9 @@ namespace debug
 {
     void printDirty(Series const &series)
     {
-        auto print = [](Attributable const &attr) {
+        std::stringstream graph;
+        graph << "digraph\n{node [shape=\"box\"];\n";
+        auto print = [&graph](Attributable const &attr) {
             size_t indent = 0;
             {
                 auto current = attr.parent();
@@ -3695,9 +3710,21 @@ namespace debug
             auto const &w = attr.writable();
             std::cout << w.ownKeyWithinParent << '\n';
             make_indent();
-            std::cout << "Self: " << w.dirtySelf
-                      << "\tRec: " << w.dirtyRecursive << '\n';
-            std::cout << std::endl;
+            std::cout << "Self: " << attr.m_attri->dirtySelf
+                      << "\tRec: " << attr.m_attri->dirtyRecursive << '\n';
+            std::cout << '\n';
+            graph << "{rank = same; ";
+            graph << "_" << attr.m_attri.get() << "[color=green, label = \"A "
+                  << attr.m_attri.get() << " '" << w.ownKeyWithinParent
+                  << "'\"]; ";
+            graph << "_" << &w << "[color=blue, label = \"W " << &w << " '"
+                  << w.ownKeyWithinParent << "'\"]; ";
+            graph << "}\n";
+            graph << "_" << &w << " -> _" << attr.m_attri.get()
+                  << "[dir=none];\n";
+            graph << "_" << w.parent << " -> _" << &w << ";\n";
+            graph << "_" << attr.m_attri->frontend_parent << " -> _"
+                  << attr.m_attri.get() << '\n';
         };
         print(series);
         print(series.iterations);
@@ -3753,6 +3780,9 @@ namespace debug
                 }
             }
         }
+        graph << "}";
+        std::cout << graph.str();
+        std::cout.flush();
     }
 } // namespace debug
 } // namespace openPMD
