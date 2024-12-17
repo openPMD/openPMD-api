@@ -131,7 +131,8 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
         return it->second;
     else
     {
-        if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing &&
+        if (IOHandler()->m_seriesStatus !=
+                internal::SeriesStatus::Parsing &&
             access::readOnly(IOHandler()->m_frontendAccess))
         {
             auxiliary::OutOfRangeMsg const out_of_range_msg;
@@ -139,7 +140,7 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
         }
 
         T t = T();
-        t.linkHierarchy(writable());
+        t.linkHierarchy(*this);
         auto &ret = container().insert({key, std::move(t)}).first->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
@@ -171,7 +172,7 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
         }
 
         T t = T();
-        t.linkHierarchy(writable());
+        t.linkHierarchy(*this);
         auto &ret = container().insert({key, std::move(t)}).first->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
@@ -179,7 +180,8 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
         }
         else
         {
-            ret.writable().ownKeyWithinParent = std::to_string(std::move(key));
+            ret.writable().ownKeyWithinParent =
+                std::to_string(std::move(key));
         }
         traits::GenerationPolicy<T> gen;
         gen(ret);

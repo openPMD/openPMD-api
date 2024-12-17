@@ -882,8 +882,8 @@ void Series::init(
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
                 std::make_unique<DummyIOHandler>(parsed_directory, at));
         auto &series = get();
-        series.iterations.linkHierarchy(writable());
-        series.m_rankTable.m_attributable.linkHierarchy(writable());
+        series.iterations.linkHierarchy(*this);
+        series.m_rankTable.m_attributable.linkHierarchy(*this);
         series.m_deferred_initialization =
             [called_this_already = false, filepath, options, at, comm...](
                 Series &s) mutable {
@@ -1101,9 +1101,9 @@ void Series::initSeries(
                 std::move(ioHandler));
     }
 
-    series.iterations.linkHierarchy(writable);
+    series.iterations.linkHierarchy(*this);
     series.iterations.writable().ownKeyWithinParent = "data";
-    series.m_rankTable.m_attributable.linkHierarchy(writable);
+    series.m_rankTable.m_attributable.linkHierarchy(*this);
 
     series.m_name = input->name;
 

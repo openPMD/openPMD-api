@@ -536,11 +536,18 @@ void Attributable::setWritten(bool val, EnqueueAsynchronously ea)
     writable().written = val;
 }
 
-void Attributable::linkHierarchy(Writable &w)
+void Attributable::linkHierarchy(Attributable &parent)
 {
+    this->linkHierarchy(*parent.m_attri);
+}
+
+void Attributable::linkHierarchy(internal::AttributableData &a)
+{
+    Writable &w = a->m_writable;
     auto handler = w.IOHandler;
     writable().IOHandler = handler;
     writable().parent = &w;
+    writable().frontend_parent = &a;
     setDirty(true);
 }
 

@@ -421,7 +421,8 @@ private:
      *
      * @param w The Writable representing the parent.
      */
-    virtual void linkHierarchy(Writable &w);
+    void linkHierarchy(internal::AttributableData &parent) override;
+    using Attributable::linkHierarchy;
 
     /**
      * @brief Access an iteration in read mode that has potentially not been

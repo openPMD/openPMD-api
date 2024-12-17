@@ -944,11 +944,11 @@ void Iteration::setStepStatus(StepStatus status)
     }
 }
 
-void Iteration::linkHierarchy(Writable &w)
+void Iteration::linkHierarchy(internal::AttributableData &parent)
 {
-    Attributable::linkHierarchy(w);
-    meshes.linkHierarchy(this->writable());
-    particles.linkHierarchy(this->writable());
+    Attributable::linkHierarchy(parent);
+    meshes.linkHierarchy(*this);
+    particles.linkHierarchy(*this);
 }
 
 void Iteration::runDeferredParseAccess()

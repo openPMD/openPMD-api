@@ -581,7 +581,8 @@ private:
      *
      * @param w The Writable representing the parent.
      */
-    virtual void linkHierarchy(Writable &w);
+    void linkHierarchy(Attributable &parent);
+    virtual void linkHierarchy(internal::AttributableData &parent);
 }; // Attributable
 
 // note: we explicitly instantiate Attributable::setAttributeImpl for all T in

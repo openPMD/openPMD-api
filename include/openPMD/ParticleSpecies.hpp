@@ -64,7 +64,7 @@ namespace traits
         template <typename T>
         void operator()(T &ret)
         {
-            ret.particlePatches.linkHierarchy(ret.writable());
+            ret.particlePatches.linkHierarchy(ret);
         }
     };
 } // namespace traits

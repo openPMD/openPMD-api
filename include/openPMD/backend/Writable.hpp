@@ -154,6 +154,7 @@ OPENPMD_private
      */
     internal::AttributableData *attributable = nullptr;
     Writable *parent = nullptr;
+    internal::AttributableData *frontend_parent = nullptr;
 
     /** Tracks if there are unwritten changes for this specific Writable.
      *
