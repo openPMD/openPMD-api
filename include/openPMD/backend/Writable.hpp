@@ -62,6 +62,16 @@ namespace debug
     void printDirty(Series const &);
 }
 
+class Iteration;
+
+namespace traits
+{
+    template <typename>
+    struct GenerationPolicy;
+    template <>
+    struct GenerationPolicy<Iteration>;
+} // namespace traits
+
 /** @brief Layer to mirror structure of logical data and persistent data in
  * file.
  *
@@ -106,6 +116,7 @@ class Writable final
     friend void debug::printDirty(Series const &);
     friend struct Parameter<Operation::CREATE_DATASET>;
     friend struct Parameter<Operation::OPEN_DATASET>;
+    friend struct traits::GenerationPolicy<Iteration>;
 
 private:
     Writable(internal::AttributableData *);

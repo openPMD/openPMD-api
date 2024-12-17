@@ -136,6 +136,13 @@ namespace internal
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
     };
 } // namespace internal
+
+namespace traits
+{
+    template <>
+    struct GenerationPolicy<Iteration>;
+}
+
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
  * simulation cycle).
  *
@@ -153,6 +160,7 @@ class Iteration : public Attributable
     friend class Writable;
     friend class StatefulIterator;
     friend class StatefulSnapshotsContainer;
+    friend struct traits::GenerationPolicy<Iteration>;
 
 public:
     Iteration(Iteration const &) = default;
@@ -479,4 +487,34 @@ private:
         : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
     {}
 };
+
+inline void breakpoint()
+{}
+
+namespace traits
+{
+    template <>
+    struct GenerationPolicy<Iteration>
+    {
+        constexpr static bool is_noop = false;
+        template <typename T, typename Container>
+        void operator()(T &ret, Container *c)
+        {
+            breakpoint();
+            if (ret.IOHandler()->m_encoding == IterationEncoding::variableBased)
+            {
+                static_cast<
+                    std::shared_ptr<internal::SharedAttributableData> &>(
+                    *ret.m_attri) =
+                    static_cast<
+                        std::shared_ptr<internal::SharedAttributableData> &>(
+                        *c->m_attri);
+                Writable *writable_of_container = &c->writable();
+                internal::AttributableData *attr_of_shared_parent =
+                    writable_of_container->frontend_parent;
+                ret.linkHierarchy(*attr_of_shared_parent);
+            }
+        }
+    };
+} // namespace traits
 } // namespace openPMD

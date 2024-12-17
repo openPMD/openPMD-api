@@ -1544,7 +1544,18 @@ void Series::flushGorVBased(
             case IO::HasBeenOpened:
                 if (!it->second.written())
                 {
-                    it->second.parent() = getWritable(&series.iterations);
+                    if (iterationEncoding() != IterationEncoding::variableBased)
+                    {
+                        it->second.parent() = getWritable(&series.iterations);
+                    }
+                    else if (
+                        &it->second.writable() != &series.iterations.writable())
+                    {
+                        throw error::Internal(
+                            "In variable-based encoding, the container of "
+                            "Iterations must be the same backend object as the "
+                            "Iterations themselves.");
+                    }
                     series.m_currentlyActiveIterations.emplace(it->first);
                 }
                 switch (iterationEncoding())
@@ -2961,11 +2972,13 @@ void Series::openIteration(IterationIndex_t index, Iteration &iteration)
         Parameter<Operation::OPEN_PATH> pOpen;
         pOpen.path = auxiliary::replace_first(basePath(), "%T/", "");
         IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
-        /* open iteration path */
-        pOpen.path = iterationEncoding() == IterationEncoding::variableBased
-            ? ""
-            : std::to_string(index);
-        IOHandler()->enqueue(IOTask(&iteration, pOpen));
+        if (iterationEncoding() != IterationEncoding::variableBased)
+        {
+            /* open iteration path */
+            pOpen.path = std::to_string(index);
+            IOHandler()->enqueue(IOTask(&iteration, pOpen));
+        }
+
         break;
     }
     case IE::groupBased:
