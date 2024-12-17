@@ -2510,7 +2510,7 @@ Series::iterations_iterator Series::indexOf(Iteration const &iteration)
     for (auto it = series.iterations.begin(); it != series.iterations.end();
          ++it)
     {
-        if (&it->second.Attributable::get() == &iteration.Attributable::get())
+        if (it->second.m_attri->get() == iteration.m_attri->get())
         {
             return it;
         }
