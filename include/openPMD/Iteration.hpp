@@ -509,9 +509,8 @@ namespace traits
                     static_cast<
                         std::shared_ptr<internal::SharedAttributableData> &>(
                         *c->m_attri);
-                Writable *writable_of_container = &c->writable();
                 internal::AttributableData *attr_of_shared_parent =
-                    writable_of_container->frontend_parent;
+                    c->m_attri->frontend_parent;
                 ret.linkHierarchy(*attr_of_shared_parent);
             }
         }

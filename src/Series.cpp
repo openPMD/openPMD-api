@@ -42,6 +42,7 @@
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
+#include "openPMD/backend/Writable.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include "openPMD/version.hpp"

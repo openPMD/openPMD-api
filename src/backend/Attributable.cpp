@@ -547,7 +547,7 @@ void Attributable::linkHierarchy(internal::AttributableData &a)
     auto handler = w.IOHandler;
     writable().IOHandler = handler;
     writable().parent = &w;
-    writable().frontend_parent = &a;
+    m_attri->frontend_parent = &a;
     setDirty(true);
 }
 
