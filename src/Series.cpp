@@ -3708,9 +3708,10 @@ namespace debug
             };
             make_indent();
             auto const &w = attr.writable();
-            std::cout << w.ownKeyWithinParent << '\n';
+            std::cout << w.ownKeyWithinParent << '\t' << attr.m_attri.get()
+                      << " -> " << &attr.writable() << '\n';
             make_indent();
-            std::cout << "Self: " << attr.m_attri->dirtySelf
+            std::cout << "Self:\t" << attr.m_attri->dirtySelf
                       << "\tRec: " << attr.m_attri->dirtyRecursive << '\n';
             std::cout << '\n';
             graph << "{rank = same; ";
