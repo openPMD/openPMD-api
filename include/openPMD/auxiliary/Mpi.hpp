@@ -61,8 +61,9 @@ namespace
         }
         else
         {
-            static_assert(
-                dependent_false_v<T>, "openPMD_MPI_type: Unsupported type.");
+            throw std::runtime_error("Unimplemented");
+            // static_assert(
+            //     dependent_false_v<T>, "openPMD_MPI_type: Unsupported type.");
         }
     }
 } // namespace
