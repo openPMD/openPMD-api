@@ -1537,8 +1537,6 @@ void Series::flushGorVBased(
         series.iterations.flush(
             auxiliary::replace_first(basePath(), "%T/", ""), flushParams);
 
-        debug::printDirty(*this);
-
         for (auto it = begin; it != end; ++it)
         {
             // Phase 1
@@ -2510,7 +2508,7 @@ Series::iterations_iterator Series::indexOf(Iteration const &iteration)
     for (auto it = series.iterations.begin(); it != series.iterations.end();
          ++it)
     {
-        if (it->second.m_attri->get() == iteration.m_attri->get())
+        if (it->second.m_attri.get() == iteration.m_attri.get())
         {
             return it;
         }

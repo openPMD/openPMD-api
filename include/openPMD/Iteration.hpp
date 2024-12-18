@@ -488,9 +488,6 @@ private:
     {}
 };
 
-inline void breakpoint()
-{}
-
 namespace traits
 {
     template <>
@@ -500,9 +497,14 @@ namespace traits
         template <typename T, typename Container>
         void operator()(T &ret, Container *c)
         {
-            breakpoint();
             if (ret.IOHandler()->m_encoding == IterationEncoding::variableBased)
             {
+                for (auto &pair :
+                     static_cast<Attributable &>(ret).get().m_attributes)
+                {
+                    static_cast<Attributable &>(*c).get().m_attributes.emplace(
+                        std::move(pair));
+                }
                 static_cast<
                     std::shared_ptr<internal::SharedAttributableData> &>(
                     *ret.m_attri) =

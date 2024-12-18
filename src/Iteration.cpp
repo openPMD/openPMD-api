@@ -306,13 +306,7 @@ void Iteration::flushGroupBased(
 void Iteration::flushVariableBased(
     IterationIndex_t i, internal::FlushParams const &flushParams)
 {
-    if (!written())
-    {
-        /* create iteration path */
-        Parameter<Operation::OPEN_PATH> pOpen;
-        pOpen.path = "";
-        IOHandler()->enqueue(IOTask(this, pOpen));
-    }
+    setDirty(true);
 
     switch (flushParams.flushLevel)
     {
@@ -325,12 +319,8 @@ void Iteration::flushVariableBased(
         break;
     }
 
-    if (!written())
+    // @todo maybe dont repeat this upon each invocation
     {
-        /* create iteration path */
-        Parameter<Operation::OPEN_PATH> pOpen;
-        pOpen.path = "";
-        IOHandler()->enqueue(IOTask(this, pOpen));
         /*
          * In v-based encoding, the snapshot attribute must always be written.
          * Reason: Even in backends that don't support changing attributes,
