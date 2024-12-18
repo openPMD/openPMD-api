@@ -21,7 +21,6 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/backend/Attribute.hpp"
@@ -404,11 +403,10 @@ OPENPMD_protected
      * Throws an error otherwise, e.g., for Series objects.
      * @{
      */
-    [[nodiscard]] auto containingIteration(IterationEncoding ie) const
-        -> std::pair<
-            std::optional<internal::IterationData const *>,
-            internal::SeriesData const *>;
-    auto containingIteration(IterationEncoding ie) -> std::
+    [[nodiscard]] auto containingIteration() const -> std::pair<
+        std::optional<internal::IterationData const *>,
+        internal::SeriesData const *>;
+    auto containingIteration() -> std::
         pair<std::optional<internal::IterationData *>, internal::SeriesData *>;
     /** @} */
 

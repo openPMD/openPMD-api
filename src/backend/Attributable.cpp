@@ -21,7 +21,6 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Iteration.hpp"
-#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
@@ -158,7 +157,7 @@ Series Attributable::retrieveSeries() const
     return findSeries->attributable->asInternalCopyOf<Series>();
 }
 
-auto Attributable::containingIteration(IterationEncoding ie) const -> std::pair<
+auto Attributable::containingIteration() const -> std::pair<
     std::optional<internal::IterationData const *>,
     internal::SeriesData const *>
 {
@@ -182,16 +181,10 @@ auto Attributable::containingIteration(IterationEncoding ie) const -> std::pair<
     }
     // End of the queue:
     // Iteration -> Series.iterations -> Series
-    // in variable-based encoding, Iteration and Series.iterations is the same
-    // thing, hence:
-    // Iteration -> Series
-    size_t distance_to_iteration =
-        ie == IterationEncoding::variableBased ? 1 : 2;
     auto *series = &auxiliary::deref_dynamic_cast<internal::SeriesData const>(
         search_queue[search_queue_idx]);
     auto maybe_iteration = search_queue
-        [(search_queue_idx + (search_queue_size - distance_to_iteration)) %
-         search_queue_size];
+        [(search_queue_idx + (search_queue_size - 2)) % search_queue_size];
     if (maybe_iteration)
     {
         auto *iteration =
@@ -205,11 +198,11 @@ auto Attributable::containingIteration(IterationEncoding ie) const -> std::pair<
     }
 }
 
-auto Attributable::containingIteration(IterationEncoding ie) -> std::
+auto Attributable::containingIteration() -> std::
     pair<std::optional<internal::IterationData *>, internal::SeriesData *>
 {
     auto const_res =
-        static_cast<Attributable const *>(this)->containingIteration(ie);
+        static_cast<Attributable const *>(this)->containingIteration();
     return std::make_pair(
         const_res.first.has_value()
             ? std::make_optional(
