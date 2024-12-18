@@ -514,6 +514,7 @@ namespace traits
                 internal::AttributableData *attr_of_shared_parent =
                     c->m_attri->frontend_parent;
                 ret.linkHierarchy(*attr_of_shared_parent);
+                ret.m_attri->frontend_parent = c->m_attri.get();
             }
         }
     };
