@@ -92,7 +92,8 @@ ChunkTable BaseRecordComponent::availableChunks()
         Offset offset(rc.m_dataset.value().extent.size(), 0);
         return ChunkTable{{std::move(offset), rc.m_dataset.value().extent}};
     }
-    if (auto iteration_data = containingIteration().first;
+    if (auto iteration_data =
+            containingIteration(IOHandler()->m_encoding).first;
         iteration_data.has_value())
     {
         (*iteration_data)->asInternalCopyOf<Iteration>().open();

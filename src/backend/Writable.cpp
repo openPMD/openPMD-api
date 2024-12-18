@@ -65,7 +65,8 @@ void Writable::seriesFlush(internal::FlushParams const &flushParams)
 {
     Attributable impl;
     impl.setData({attributable, [](auto const *) {}});
-    auto [iteration_internal, series_internal] = impl.containingIteration();
+    auto [iteration_internal, series_internal] =
+        impl.containingIteration(impl.IOHandler()->m_encoding);
     if (iteration_internal)
     {
         (*iteration_internal)->asInternalCopyOf<Iteration>().touch();

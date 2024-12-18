@@ -21,6 +21,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Iteration.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
@@ -157,19 +158,19 @@ Series Attributable::retrieveSeries() const
     return findSeries->attributable->asInternalCopyOf<Series>();
 }
 
-auto Attributable::containingIteration() const -> std::pair<
+auto Attributable::containingIteration(IterationEncoding ie) const -> std::pair<
     std::optional<internal::IterationData const *>,
     internal::SeriesData const *>
 {
     constexpr size_t search_queue_size = 3;
-    Writable const *search_queue[search_queue_size]{nullptr};
+    internal::AttributableData const *search_queue[search_queue_size]{nullptr};
     size_t search_queue_idx = 0;
-    Writable const *findSeries = &writable();
+    internal::AttributableData const *findSeries = m_attri.get();
     while (true)
     {
         search_queue[search_queue_idx] = findSeries;
         // we don't need to push the last Writable since it's the Series anyway
-        findSeries = findSeries->parent;
+        findSeries = findSeries->frontend_parent;
         if (!findSeries)
         {
             break;
@@ -181,15 +182,21 @@ auto Attributable::containingIteration() const -> std::pair<
     }
     // End of the queue:
     // Iteration -> Series.iterations -> Series
+    // in variable-based encoding, Iteration and Series.iterations is the same
+    // thing, hence:
+    // Iteration -> Series
+    size_t distance_to_iteration =
+        ie == IterationEncoding::variableBased ? 1 : 2;
     auto *series = &auxiliary::deref_dynamic_cast<internal::SeriesData const>(
-        search_queue[search_queue_idx]->attributable);
+        search_queue[search_queue_idx]);
     auto maybe_iteration = search_queue
-        [(search_queue_idx + (search_queue_size - 2)) % search_queue_size];
+        [(search_queue_idx + (search_queue_size - distance_to_iteration)) %
+         search_queue_size];
     if (maybe_iteration)
     {
         auto *iteration =
             &auxiliary::deref_dynamic_cast<internal::IterationData const>(
-                maybe_iteration->attributable);
+                maybe_iteration);
         return std::make_pair(std::make_optional(iteration), series);
     }
     else
@@ -198,11 +205,11 @@ auto Attributable::containingIteration() const -> std::pair<
     }
 }
 
-auto Attributable::containingIteration() -> std::
+auto Attributable::containingIteration(IterationEncoding ie) -> std::
     pair<std::optional<internal::IterationData *>, internal::SeriesData *>
 {
     auto const_res =
-        static_cast<Attributable const *>(this)->containingIteration();
+        static_cast<Attributable const *>(this)->containingIteration(ie);
     return std::make_pair(
         const_res.first.has_value()
             ? std::make_optional(
