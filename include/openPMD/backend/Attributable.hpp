@@ -176,6 +176,12 @@ namespace internal
          * Attributable::setDirtyRecursive().
          */
         bool dirtyRecursive = true;
+
+        /**
+         * If frontend_parent is not null, then this is a key such that:
+         * &(*frontend_parent)[key] == this
+         */
+        std::string ownKeyWithinParent;
     };
 
     template <typename, typename>

@@ -167,11 +167,6 @@ OPENPMD_private
     Writable *parent = nullptr;
 
     /**
-     * If parent is not null, then this is a key such that:
-     * &(*parent)[key] == this
-     */
-    std::string ownKeyWithinParent;
-    /**
      * @brief Whether a Writable has been written to the backend.
      *
      * The class Writable is used to link objects in our (frontend) object model

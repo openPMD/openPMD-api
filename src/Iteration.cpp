@@ -55,8 +55,8 @@ Iteration::Iteration() : Attributable(NoInit())
     setTime(static_cast<double>(0));
     setDt(static_cast<double>(1));
     setTimeUnitSI(1);
-    meshes.writable().ownKeyWithinParent = "meshes";
-    particles.writable().ownKeyWithinParent = "particles";
+    meshes.m_attri->ownKeyWithinParent = "meshes";
+    particles.m_attri->ownKeyWithinParent = "particles";
 }
 
 template <typename T>

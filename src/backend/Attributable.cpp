@@ -236,19 +236,19 @@ std::string Attributable::MyPath::openPMDPath() const
 auto Attributable::myPath() const -> MyPath
 {
     MyPath res;
-    Writable const *findSeries = &writable();
-    while (findSeries->parent)
+    internal::AttributableData *findSeries = m_attri.get();
+    while (findSeries->frontend_parent)
     {
         // we don't need to push_back the ownKeyWithinParent of the Series class
         // so it's alright that this loop doesn't ask the key of the last found
         // Writable
 
         res.group.push_back(findSeries->ownKeyWithinParent);
-        findSeries = findSeries->parent;
+        findSeries = findSeries->frontend_parent;
     }
     std::reverse(res.group.begin(), res.group.end());
-    auto &seriesData = auxiliary::deref_dynamic_cast<internal::SeriesData>(
-        findSeries->attributable);
+    auto &seriesData =
+        auxiliary::deref_dynamic_cast<internal::SeriesData>(findSeries);
     Series series;
     series.setData(
         std::shared_ptr<internal::SeriesData>{

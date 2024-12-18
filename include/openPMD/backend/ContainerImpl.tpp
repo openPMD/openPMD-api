@@ -144,11 +144,11 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
         auto &ret = container().insert({key, std::move(t)}).first->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
-            ret.writable().ownKeyWithinParent = key;
+            ret.m_attri->ownKeyWithinParent = key;
         }
         else
         {
-            ret.writable().ownKeyWithinParent = std::to_string(key);
+            ret.m_attri->ownKeyWithinParent = std::to_string(key);
         }
         traits::GenerationPolicy<T> gen;
         gen(ret, this);
@@ -176,12 +176,11 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
         auto &ret = container().insert({key, std::move(t)}).first->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
-            ret.writable().ownKeyWithinParent = std::move(key);
+            ret.m_attri->ownKeyWithinParent = std::move(key);
         }
         else
         {
-            ret.writable().ownKeyWithinParent =
-                std::to_string(std::move(key));
+            ret.m_attri->ownKeyWithinParent = std::to_string(std::move(key));
         }
         traits::GenerationPolicy<T> gen;
         gen(ret, this);

@@ -1104,7 +1104,7 @@ void Series::initSeries(
     }
 
     series.iterations.linkHierarchy(*this);
-    series.iterations.writable().ownKeyWithinParent = "data";
+    series.iterations.m_attri->ownKeyWithinParent = "data";
     series.m_rankTable.m_attributable.linkHierarchy(*this);
 
     series.m_name = input->name;
@@ -3714,18 +3714,19 @@ namespace debug
             };
             make_indent();
             auto const &w = attr.writable();
-            std::cout << w.ownKeyWithinParent << '\t' << attr.m_attri.get()
-                      << " -> " << &attr.writable() << '\n';
+            std::cout << attr.m_attri->ownKeyWithinParent << '\t'
+                      << attr.m_attri.get() << " -> " << &attr.writable()
+                      << '\n';
             make_indent();
             std::cout << "Self:\t" << attr.m_attri->dirtySelf
                       << "\tRec: " << attr.m_attri->dirtyRecursive << '\n';
             std::cout << '\n';
             graph << "{rank = same; ";
             graph << "_" << attr.m_attri.get() << "[color=green, label = \"A "
-                  << attr.m_attri.get() << " '" << w.ownKeyWithinParent
-                  << "'\"]; ";
+                  << attr.m_attri.get() << " '"
+                  << attr.m_attri->ownKeyWithinParent << "'\"]; ";
             graph << "_" << &w << "[color=blue, label = \"W " << &w << " '"
-                  << w.ownKeyWithinParent << "'\"]; ";
+                  << attr.m_attri->ownKeyWithinParent << "'\"]; ";
             graph << "}\n";
             graph << "_" << &w << " -> _" << attr.m_attri.get()
                   << "[dir=none];\n";
