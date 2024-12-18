@@ -311,7 +311,7 @@ private:
     void flushFileBased(
         std::string const &, IterationIndex_t, internal::FlushParams const &);
     void flushGroupBased(IterationIndex_t, internal::FlushParams const &);
-    void flushVariableBased(IterationIndex_t, internal::FlushParams const &);
+    void flushVariableBased(internal::FlushParams const &);
     void flush(internal::FlushParams const &);
     void deferParseAccess(internal::DeferredParseAccess);
     /*

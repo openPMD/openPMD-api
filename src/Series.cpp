@@ -1558,8 +1558,8 @@ void Series::flushGorVBased(
                             "Iterations must be the same backend object as the "
                             "Iterations themselves.");
                     }
-                    series.m_currentlyActiveIterations.emplace(it->first);
                 }
+                series.m_currentlyActiveIterations.emplace(it->first);
                 switch (iterationEncoding())
                 {
                     using IE = IterationEncoding;
@@ -1567,7 +1567,7 @@ void Series::flushGorVBased(
                     it->second.flushGroupBased(it->first, flushParams);
                     break;
                 case IE::variableBased:
-                    it->second.flushVariableBased(it->first, flushParams);
+                    it->second.flushVariableBased(flushParams);
                     break;
                 default:
                     throw std::runtime_error(
@@ -2729,8 +2729,16 @@ void Series::flushStep(bool doFlush)
          * one IO step.
          */
         Parameter<Operation::WRITE_ATT> wAttr;
+        /*
+         * In v-based encoding, the snapshot attribute must always be written.
+         * Reason: Even in backends that don't support changing attributes,
+         * variable-based iteration encoding can be used to write one single
+         * iteration. Then, this attribute determines which iteration it is.
+         */
         wAttr.changesOverSteps =
-            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
+            iterationEncoding() == IterationEncoding::variableBased
+            ? Parameter<Operation::WRITE_ATT>::ChangesOverSteps::IfPossible
+            : Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
         wAttr.name = "snapshot";
         wAttr.setResource(
             std::vector<unsigned long long>{

@@ -25,6 +25,7 @@
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
@@ -287,7 +288,28 @@ std::future<void> AbstractIOHandlerImpl::flush()
                     "] WRITE_ATT: (",
                     parameter.dtype,
                     ") ",
-                    parameter.name);
+                    parameter.name,
+                    "=",
+                    [&]() {
+                        return std::visit(
+                            [&](auto const &val) {
+                                using dtype = std::remove_cv_t<
+                                    std::remove_reference_t<decltype(val)>>;
+                                if constexpr (
+                                    auxiliary::IsArray_v<dtype> ||
+                                    auxiliary::IsVector_v<dtype>)
+                                {
+                                    return vec_as_string(val);
+                                }
+                                else
+                                {
+                                    std::stringstream res;
+                                    res << val;
+                                    return res.str();
+                                }
+                            },
+                            parameter.resource);
+                    });
                 writeAttribute(i.writable, parameter);
                 break;
             }
