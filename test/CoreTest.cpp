@@ -379,11 +379,12 @@ TEST_CASE("attribute_dtype_test", "[core]")
     }
 }
 
-TEST_CASE("myPath", "[core]")
+void myPath(std::string const &filename, IterationEncoding ie)
 {
+    auto filepath = "../samples/" + filename + ".json";
 #if openPMD_USE_INVASIVE_TESTS
     using vec_t = std::vector<std::string>;
-    auto pathOf = [](Attributable const &attr) {
+    auto pathOf = [&](Attributable const &attr) {
         auto res = attr.myPath();
 #if false
         std::cout << "Directory:\t" << res.directory << "\nSeries name:\t"
@@ -391,13 +392,14 @@ TEST_CASE("myPath", "[core]")
                   << std::endl;
 #endif
         REQUIRE(res.directory == "../samples/");
-        REQUIRE(res.seriesName == "myPath");
+        REQUIRE(res.seriesName == filename);
         REQUIRE(res.seriesExtension == ".json");
-        REQUIRE(res.filePath() == "../samples/myPath.json");
+        REQUIRE(res.filePath() == filepath);
         return res.group;
     };
 
-    Series series("../samples/myPath.json", Access::CREATE);
+    Series series(filepath, Access::CREATE);
+    series.setIterationEncoding(ie);
     REQUIRE(pathOf(series) == vec_t{});
     REQUIRE(pathOf(series.iterations) == vec_t{"data"});
     REQUIRE(pathOf(series.snapshots()) == vec_t{"data"});
@@ -509,6 +511,13 @@ TEST_CASE("myPath", "[core]")
     speciesE.particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
         .resetDataset({Datatype::INT, {10}});
 #endif
+}
+
+TEST_CASE("myPath", "[core]")
+{
+    myPath("myPath_g", IterationEncoding::groupBased);
+    myPath("myPath_%T", IterationEncoding::fileBased);
+    myPath("myPath_v", IterationEncoding::variableBased);
 }
 
 TEST_CASE("output_default_test", "[core]")
