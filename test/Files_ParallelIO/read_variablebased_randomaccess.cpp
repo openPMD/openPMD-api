@@ -6,7 +6,7 @@
 
 #include <catch2/catch.hpp>
 
-#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI && openPMD_HAS_ADIOS_2_9
 #include <adios2.h>
 #include <mpi.h>
 

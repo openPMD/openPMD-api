@@ -44,7 +44,6 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <mpi.h>
 #include <numeric>
 #include <set>
 #include <sstream>
@@ -1467,6 +1466,7 @@ namespace
                     auxiliary::openPMD_MPI_type<size_t>(),
                     0,
                     comm);
+                std::cout << "SIZES: " << vec_as_string(sizes) << '\n';
                 size_t total_flat_size =
                     std::accumulate(sizes.begin(), sizes.end(), size_t(0));
                 using flat_type = typename T::value_type;
@@ -1519,8 +1519,8 @@ namespace
                     comm);
                 if (rank != 0)
                 {
-                    put_result_here = std::move(receive);
                     std::cout << "RECEIVED: " << vec_as_string(receive) << '\n';
+                    put_result_here = std::move(receive);
                 }
             }
         }
