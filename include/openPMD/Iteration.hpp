@@ -427,7 +427,7 @@ private:
     /**
      * @brief Link with parent.
      *
-     * @param w The Writable representing the parent.
+     * @param parent The Writable representing the parent.
      */
     void linkHierarchy(internal::AttributableData &parent) override;
     using Attributable::linkHierarchy;

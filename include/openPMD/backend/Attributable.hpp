@@ -605,7 +605,7 @@ private:
     /**
      * @brief Link with parent.
      *
-     * @param w The Writable representing the parent.
+     * @param parent The Writable representing the parent.
      */
     void linkHierarchy(Attributable &parent);
     virtual void linkHierarchy(internal::AttributableData &parent);
