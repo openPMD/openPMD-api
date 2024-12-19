@@ -1,5 +1,6 @@
 #include "ParallelIOTests.hpp"
 
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/openPMD.hpp"
 
 #include <numeric>
@@ -18,8 +19,9 @@ static void create_file_in_serial()
         adios2::ADIOS adios;
         auto IO = adios.DeclareIO("IO");
         IO.SetEngine("bp5");
-        auto engine =
-            IO.Open("../samples/bp5_no_steps.bp", adios2::Mode::Write);
+        auto engine = IO.Open(
+            "../samples/read_variablebased_randomaccess.bp",
+            adios2::Mode::Write);
 
         auto variable =
             IO.DefineVariable<int>("/data/meshes/theta", {10}, {0}, {10});
