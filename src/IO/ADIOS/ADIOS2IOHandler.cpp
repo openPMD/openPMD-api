@@ -1437,12 +1437,14 @@ namespace
                 std::is_same_v<T, std::string> ||
                 std::is_same_v<T, std::vector<std::string>> ||
                 std::is_same_v<T, bool> ||
-                std::is_same_v<T, std::vector<bool>> || auxiliary::IsArray_v<T>)
+                std::is_same_v<T, std::vector<bool>> ||
+                auxiliary::IsArray_v<T> || isComplexFloatingPoint<T>())
             {
                 throw error::OperationUnsupportedInBackend(
                     "ADIOS2",
                     "[readAttributeAllsteps] No support for attributes of type "
-                    "string, bool or std::array in parallel.");
+                    "std::string, bool, std::complex or std::array in "
+                    "parallel.");
             }
             else if constexpr (
                 // auxiliary::IsArray_v<T> ||
@@ -1558,24 +1560,11 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     MPI_Comm_rank(*m_communicator, &rank);
     MPI_Comm_size(*m_communicator, &size);
     Datatype type;
-    constexpr size_t max_string_len = 30;
-    char distribute_string[max_string_len]{};
     if (rank == 0)
     {
         type = read_from_file_in_serial();
-        auto as_string = datatypeToString(type);
-        if (as_string.size() + 1 > max_string_len)
-        {
-            throw error::Internal(
-                "String size hardcoded too low for MPI_Bcast");
-        }
-        std::copy(as_string.begin(), as_string.end(), distribute_string);
     }
-    MPI_Bcast(distribute_string, max_string_len, MPI_CHAR, 0, *m_communicator);
-    if (rank != 0)
-    {
-        type = stringToDatatype(std::string(distribute_string));
-    }
+    MPI_Bcast(&type, 1, MPI_INT, 0, *m_communicator);
     switchType<DistributeToAllRanks>(
         type, *param.resource, *m_communicator, rank);
 #else

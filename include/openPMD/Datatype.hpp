@@ -513,7 +513,7 @@ inline bool isFloatingPoint(Datatype d)
  * @param d Datatype to test
  * @return true if complex floating point, otherwise false
  */
-inline bool isComplexFloatingPoint(Datatype d)
+constexpr inline bool isComplexFloatingPoint(Datatype d)
 {
     using DT = Datatype;
 
@@ -554,7 +554,7 @@ inline bool isFloatingPoint()
  * @return true if complex floating point, otherwise false
  */
 template <typename T>
-inline bool isComplexFloatingPoint()
+constexpr inline bool isComplexFloatingPoint()
 {
     Datatype dtype = determineDatatype<T>();
 

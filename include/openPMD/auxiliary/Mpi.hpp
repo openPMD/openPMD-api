@@ -47,9 +47,37 @@ namespace
         {
             return MPI_CHAR;
         }
+        else if constexpr (std::is_same_v<T_decay, signed char>)
+        {
+            return MPI_SIGNED_CHAR;
+        }
+        else if constexpr (std::is_same_v<T_decay, unsigned char>)
+        {
+            return MPI_UNSIGNED_CHAR;
+        }
+        else if constexpr (std::is_same_v<T_decay, short>)
+        {
+            return MPI_SHORT;
+        }
+        else if constexpr (std::is_same_v<T_decay, short unsigned>)
+        {
+            return MPI_UNSIGNED_SHORT;
+        }
         else if constexpr (std::is_same_v<T_decay, unsigned>)
         {
             return MPI_UNSIGNED;
+        }
+        else if constexpr (std::is_same_v<T_decay, int>)
+        {
+            return MPI_INT;
+        }
+        else if constexpr (std::is_same_v<T_decay, long>)
+        {
+            return MPI_LONG;
+        }
+        else if constexpr (std::is_same_v<T_decay, long long>)
+        {
+            return MPI_LONG_LONG;
         }
         else if constexpr (std::is_same_v<T_decay, unsigned long>)
         {
@@ -59,11 +87,22 @@ namespace
         {
             return MPI_UNSIGNED_LONG_LONG;
         }
+        else if constexpr (std::is_same_v<T_decay, float>)
+        {
+            return MPI_FLOAT;
+        }
+        else if constexpr (std::is_same_v<T_decay, double>)
+        {
+            return MPI_DOUBLE;
+        }
+        else if constexpr (std::is_same_v<T_decay, long double>)
+        {
+            return MPI_LONG_DOUBLE;
+        }
         else
         {
-            throw std::runtime_error("Unimplemented");
-            // static_assert(
-            //     dependent_false_v<T>, "openPMD_MPI_type: Unsupported type.");
+            static_assert(
+                dependent_false_v<T>, "openPMD_MPI_type: Unsupported type.");
         }
     }
 } // namespace
