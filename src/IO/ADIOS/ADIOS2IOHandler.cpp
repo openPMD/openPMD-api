@@ -89,6 +89,17 @@ std::optional<size_t> joinedDimension(adios2::Dims const &dims)
 
 #if openPMD_HAVE_MPI
 
+#define MPI_CHECK(cmd)                                                         \
+    do                                                                         \
+    {                                                                          \
+        int error = cmd;                                                       \
+        if (error != MPI_SUCCESS)                                              \
+        {                                                                      \
+            std::cerr << "<" << __FILE__ << ">:" << __LINE__;                  \
+            throw std::runtime_error(std::string("[MPI] Error"));              \
+        }                                                                      \
+    } while (false);
+
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler *handler,
     MPI_Comm communicator,
@@ -1429,8 +1440,8 @@ namespace
                 std::get<std::vector<T>>(put_result_here_in);
             std::cout << "INIT VECTOR SIZE: " << put_result_here.size() << '\n';
             size_t num_items = put_result_here.size();
-            MPI_Bcast(
-                &num_items, 1, auxiliary::openPMD_MPI_type<size_t>(), 0, comm);
+            MPI_CHECK(MPI_Bcast(
+                &num_items, 1, auxiliary::openPMD_MPI_type<size_t>(), 0, comm));
             std::cout << "WILL_COMMUNICATE: " << num_items << '\n';
             if constexpr (
                 std::is_same_v<T, std::string> ||
@@ -1460,12 +1471,12 @@ namespace
                         [](T const &arr) { return arr.size(); });
                 }
                 sizes.resize(num_items);
-                MPI_Bcast(
+                MPI_CHECK(MPI_Bcast(
                     sizes.data(),
                     num_items,
                     auxiliary::openPMD_MPI_type<size_t>(),
                     0,
-                    comm);
+                    comm));
                 std::cout << "SIZES: " << vec_as_string(sizes) << '\n';
                 size_t total_flat_size =
                     std::accumulate(sizes.begin(), sizes.end(), size_t(0));
@@ -1483,12 +1494,12 @@ namespace
                     }
                 }
                 flat_vector.resize(total_flat_size);
-                MPI_Bcast(
+                MPI_CHECK(MPI_Bcast(
                     flat_vector.data(),
                     total_flat_size,
                     auxiliary::openPMD_MPI_type<flat_type>(),
                     0,
-                    comm);
+                    comm));
                 if (rank != 0)
                 {
                     std::cout << "RECEIVED: " << vec_as_string(flat_vector)
@@ -1511,12 +1522,12 @@ namespace
                 {
                     receive.resize(num_items);
                 }
-                MPI_Bcast(
+                MPI_CHECK(MPI_Bcast(
                     rank == 0 ? put_result_here.data() : receive.data(),
                     num_items,
                     auxiliary::openPMD_MPI_type<T>(),
                     0,
-                    comm);
+                    comm));
                 if (rank != 0)
                 {
                     std::cout << "RECEIVED: " << vec_as_string(receive) << '\n';
@@ -1564,7 +1575,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     {
         type = read_from_file_in_serial();
     }
-    MPI_Bcast(&type, 1, MPI_INT, 0, *m_communicator);
+    MPI_CHECK(MPI_Bcast(&type, 1, MPI_INT, 0, *m_communicator));
     switchType<DistributeToAllRanks>(
         type, *param.resource, *m_communicator, rank);
 #else
