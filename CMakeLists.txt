@@ -787,6 +787,10 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/close_and_reopen_test.cpp
                 test/Files_SerialIO/filebased_write_test.cpp
             )
+        elseif(${test_name} STREQUAL "ParallelIO")
+            list(APPEND ${out_list}
+                test/Files_ParallelIO/read_variablebased_randomaccess.cpp
+            )
         endif()
     endmacro()
 

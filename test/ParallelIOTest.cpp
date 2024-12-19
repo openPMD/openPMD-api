@@ -1,6 +1,8 @@
 /* Running this test in parallel with MPI requires MPI::Init.
  * To guarantee a correct call to Init, launch the tests manually.
  */
+#include "Files_ParallelIO/ParallelIOTests.hpp"
+
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -2196,5 +2198,10 @@ TEST_CASE("adios2_flush_via_step")
 #endif
 }
 #endif
+
+TEST_CASE("read_variablebased_randomaccess")
+{
+    read_variablebased_randomaccess::read_variablebased_randomaccess();
+}
 
 #endif // openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
