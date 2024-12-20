@@ -11,19 +11,30 @@ New Backends, Extension, Perf. & Memory
 
 This is the 0.16.0 release but with internal version bumps where they were missing.
 
-Changes to "0.15.0"
+Changes to "0.16.0"
 ^^^^^^^^^^^^^^^^^^^
 
 Bug Fixes
 """""""""
 
+- HDF5: Delete and re-create attribute when overwriting with diff. type #1697
+- TOUCH IOTask: Avoid setting files as dirty in non-write modes #1704
 - Fix CMake variables for controlling internal dependencies #1678
 - Bump toml11 dependency to v4.2.0 by default #1679
+- Set ``PYBIND11_FINDPYTHON=ON`` #1684
+- Properly check for empty HDF5_VERSION in CMake #1702
+- Fix ICX build #1690
+- Explicitly specify ADIOS2 components in openPMDConfig.cmake #1693
 
 Other
 """""
 
 - Replace deprecated Python unittest API call #1681
+- Remove mpirun_workaround.sh #1698
+- Docs:
+
+  - Fix Shipped Internally #1682
+  - Fix leftover ADIOS2 mentions #1683
 
 0.16.0
 ------
