@@ -581,45 +581,7 @@ IterationEncoding Series::iterationEncoding() const
 
 Series &Series::setIterationEncoding(IterationEncoding ie)
 {
-    auto &series = get();
-    if (series.m_deferred_initialization)
-    {
-        runDeferredInitialization();
-    }
-    if (written())
-        throw std::runtime_error(
-            "A files iterationEncoding can not (yet) be changed after it has "
-            "been written.");
-
-    series.m_iterationEncoding = ie;
-    switch (ie)
-    {
-    case IterationEncoding::fileBased:
-        setIterationFormat(series.m_name);
-        setAttribute("iterationEncoding", std::string("fileBased"));
-        // This checks that the name contains the expansion pattern
-        // (e.g. %T) and parses it
-        if (series.m_filenamePadding < 0)
-        {
-            if (!reparseExpansionPattern(series.m_name))
-            {
-                throw error::WrongAPIUsage(
-                    "For fileBased formats the iteration expansion pattern "
-                    "%T must "
-                    "be included in the file name");
-            }
-        }
-        break;
-    case IterationEncoding::groupBased:
-        setIterationFormat(BASEPATH);
-        setAttribute("iterationEncoding", std::string("groupBased"));
-        break;
-    case IterationEncoding::variableBased:
-        setIterationFormat(auxiliary::replace_first(basePath(), "/%T/", ""));
-        setAttribute("iterationEncoding", std::string("variableBased"));
-        break;
-    }
-    IOHandler()->setIterationEncoding(ie);
+    setIterationEncoding_internal(ie, internal::default_or_explicit::default_);
     return *this;
 }
 
@@ -1170,7 +1132,9 @@ Given file pattern: ')END"
                 setWritten(false, Attributable::EnqueueAsynchronously::No);
 
                 initDefaults(input->iterationEncoding);
-                setIterationEncoding(input->iterationEncoding);
+                setIterationEncoding_internal(
+                    input->iterationEncoding,
+                    series.m_iterationEncodingSetExplicitly);
 
                 setWritten(true, Attributable::EnqueueAsynchronously::No);
             }
@@ -1186,12 +1150,14 @@ Given file pattern: ')END"
     }
     case Access::CREATE: {
         initDefaults(input->iterationEncoding);
-        setIterationEncoding(input->iterationEncoding);
+        setIterationEncoding_internal(
+            input->iterationEncoding, series.m_iterationEncodingSetExplicitly);
         break;
     }
     case Access::APPEND: {
         initDefaults(input->iterationEncoding);
-        setIterationEncoding(input->iterationEncoding);
+        setIterationEncoding_internal(
+            input->iterationEncoding, series.m_iterationEncodingSetExplicitly);
         if (input->iterationEncoding != IterationEncoding::fileBased)
         {
             break;
@@ -1857,7 +1823,8 @@ void Series::readOneIterationFileBased(std::string const &filePath)
                 "Unknown iterationEncoding: " + encoding);
         auto old_written = written();
         setWritten(false, Attributable::EnqueueAsynchronously::No);
-        setIterationEncoding(encoding_out);
+        setIterationEncoding_internal(
+            encoding_out, internal::default_or_explicit::explicit_);
         setWritten(old_written, Attributable::EnqueueAsynchronously::Yes);
     }
     else
@@ -2645,6 +2612,59 @@ void Series::flushStep(bool doFlush)
     series.m_wroteAtLeastOneIOStep = true;
 }
 
+Series &Series::setIterationEncoding_internal(
+    IterationEncoding ie, internal::default_or_explicit doe)
+{
+    auto &series = get();
+    switch (doe)
+    {
+    case internal::default_or_explicit::default_:
+    case internal::default_or_explicit::explicit_:
+        // mark this option as set explicitly by the user
+        series.m_iterationEncodingSetExplicitly = doe;
+        break;
+    }
+    if (series.m_deferred_initialization)
+    {
+        runDeferredInitialization();
+    }
+    if (written())
+        throw std::runtime_error(
+            "A files iterationEncoding can not (yet) be changed after it has "
+            "been written.");
+
+    series.m_iterationEncoding = ie;
+    switch (ie)
+    {
+    case IterationEncoding::fileBased:
+        setIterationFormat(series.m_name);
+        setAttribute("iterationEncoding", std::string("fileBased"));
+        // This checks that the name contains the expansion pattern
+        // (e.g. %T) and parses it
+        if (series.m_filenamePadding < 0)
+        {
+            if (!reparseExpansionPattern(series.m_name))
+            {
+                throw error::WrongAPIUsage(
+                    "For fileBased formats the iteration expansion pattern "
+                    "%T must "
+                    "be included in the file name");
+            }
+        }
+        break;
+    case IterationEncoding::groupBased:
+        setIterationFormat(BASEPATH);
+        setAttribute("iterationEncoding", std::string("groupBased"));
+        break;
+    case IterationEncoding::variableBased:
+        setIterationFormat(auxiliary::replace_first(basePath(), "/%T/", ""));
+        setAttribute("iterationEncoding", std::string("variableBased"));
+        break;
+    }
+    IOHandler()->setIterationEncoding(ie);
+    return *this;
+}
+
 auto Series::openIterationIfDirty(IterationIndex_t index, Iteration &iteration)
     -> IterationOpened
 {
@@ -2939,6 +2959,8 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
             options, "iteration_encoding", iterationEncoding);
         if (!iterationEncoding.empty())
         {
+            series.m_iterationEncodingSetExplicitly =
+                internal::default_or_explicit::explicit_;
             auto it = ieDescriptors.find(iterationEncoding);
             if (it != ieDescriptors.end())
             {
@@ -3188,6 +3210,35 @@ Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
                 SnapshotWorkflow::RandomAccess);
             break;
         }
+    }
+
+    /*
+     * ADIOS2 should use variable-based encoding as a default when applicable,
+     * since group-based encoding has severe limitations in ADIOS2.
+     * The below logic checks if variable-based encoding should be used.
+     */
+
+    if (
+        // 1. No encoding has been explicitly selected by the user.
+        //    Flag set by Series::setIterationEncoding().
+        series.m_iterationEncodingSetExplicitly ==
+            internal::default_or_explicit::default_ &&
+        // 2. Iteration encoding was recognized as groupBased by init()
+        //    procedures (and not file-based).
+        series.m_iterationEncoding == IterationEncoding::groupBased &&
+        // 3. The IO workflow will be synchronous, necessary for writing
+        //    variable-based data (but not for reading!).
+        usedSnapshotWorkflow == SnapshotWorkflow::Synchronous &&
+        // 4. The chosen access type is write-only, otherwise the encoding is
+        //    determined by the previous file content.
+        access::writeOnly(access) &&
+        // 5. The backend is ADIOS2 in a recent enough version to support
+        //    modifiable attributes (v2.9).
+        IOHandler()->fullSupportForVariableBasedEncoding())
+    {
+        setIterationEncoding_internal(
+            IterationEncoding::variableBased,
+            internal::default_or_explicit::default_);
     }
 
     switch (usedSnapshotWorkflow)

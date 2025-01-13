@@ -1549,6 +1549,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         auto IO = adios.DeclareIO("PreparseSnapshots");
         // @todo check engine type
         IO.SetEngine(realEngineType());
+        IO.SetParameter("StreamReader", "ON"); // this be for BP4
         auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
         auto status = engine.BeginStep();
         auto type = detail::attributeInfo(IO, name, /* verbose = */ true);

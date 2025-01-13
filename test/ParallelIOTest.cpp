@@ -1213,7 +1213,10 @@ void adios2_streaming(bool variableBasedLayout)
         Series writeSeries(
             "../samples/adios2_stream.sst",
             Access::CREATE,
-            "adios2.engine.type = \"sst\"");
+            variableBasedLayout
+                ? "adios2.engine.type = \"sst\""
+                : "adios2.engine.type = \"sst\"\niteration_encoding = "
+                  "\"group_based\"");
         if (variableBasedLayout)
         {
             writeSeries.setIterationEncoding(IterationEncoding::variableBased);

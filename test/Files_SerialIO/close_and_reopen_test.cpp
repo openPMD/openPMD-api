@@ -172,7 +172,10 @@ auto run_test_groupbased(
 {
     std::string filename =
         "../samples/close_iteration_reopen/groupbased." + ext;
-    Series series(filename, Access::CREATE, write_cfg);
+    Series series(
+        filename,
+        Access::CREATE,
+        json::merge(write_cfg, R"({"iteration_encoding": "group_based"})"));
     {
         auto it = writeIterations(series)[0];
         auto E_x = it.meshes["E"]["x"];

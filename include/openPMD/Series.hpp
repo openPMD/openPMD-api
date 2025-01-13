@@ -68,6 +68,11 @@ class Series;
 
 namespace internal
 {
+    enum class default_or_explicit : bool
+    {
+        default_,
+        explicit_
+    };
     /**
      * @brief Data members for Series. Pinned at one memory location.
      *
@@ -183,6 +188,8 @@ namespace internal
          * The iteration encoding used in this series.
          */
         IterationEncoding m_iterationEncoding{};
+        default_or_explicit m_iterationEncodingSetExplicitly =
+            default_or_explicit::default_;
         /**
          * Detected IO format (backend).
          */
@@ -968,6 +975,9 @@ OPENPMD_private
      * @param doFlush If true, flush the IO handler.
      */
     void flushStep(bool doFlush);
+
+    Series &setIterationEncoding_internal(
+        IterationEncoding iterationEncoding, internal::default_or_explicit);
 
     /*
      * Returns the current content of the /data/snapshot attribute.

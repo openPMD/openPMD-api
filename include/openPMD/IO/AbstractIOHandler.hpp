@@ -250,6 +250,7 @@ public:
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;
+    virtual bool fullSupportForVariableBasedEncoding() const;
 
     std::string directory;
     /*

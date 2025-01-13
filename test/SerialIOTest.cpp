@@ -6993,7 +6993,7 @@ TEST_CASE("unfinished_iteration_test", "[serial]")
     unfinished_iteration_test(
         "bp",
         IterationEncoding::groupBased,
-        R"({"backend": "adios2"})",
+        R"({"backend": "adios2", "iteration_encoding": "group_based"})",
         /* test_linear_access = */ false);
     unfinished_iteration_test(
         "bp5",

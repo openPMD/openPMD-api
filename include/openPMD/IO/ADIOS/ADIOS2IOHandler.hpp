@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
+#include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
@@ -858,6 +859,11 @@ public:
     std::string backendName() const override
     {
         return "ADIOS2";
+    }
+
+    bool fullSupportForVariableBasedEncoding() const override
+    {
+        return openPMD_HAS_ADIOS_2_9;
     }
 
     std::future<void> flush(internal::ParsedFlushParams &) override;

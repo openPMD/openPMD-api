@@ -116,4 +116,9 @@ std::future<void> AbstractIOHandler::flush(internal::FlushParams const &params)
     json::warnGlobalUnusedOptions(parsedParams.backendConfig);
     return future;
 }
+
+bool AbstractIOHandler::fullSupportForVariableBasedEncoding() const
+{
+    return false;
+}
 } // namespace openPMD
