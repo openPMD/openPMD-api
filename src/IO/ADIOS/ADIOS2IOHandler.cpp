@@ -657,13 +657,9 @@ void ADIOS2IOHandlerImpl::createFile(
             m_writeAttributesFromThisRank &&
             m_handler->m_encoding == IterationEncoding::groupBased)
         {
-            // For a peaceful phase-out of group-based encoding in ADIOS2,
-            // print this warning only in the new layout (with group table)
-            if (m_useGroupTable.value_or(UseGroupTable::No) ==
-                    UseGroupTable::Yes &&
-                (m_engineType == "bp5" ||
-                 (m_engineType == "file" || m_engineType == "filestream" ||
-                  m_engineType == "bp")))
+            if (m_engineType == "bp5" ||
+                (m_engineType == "file" || m_engineType == "filestream" ||
+                 m_engineType == "bp"))
             {
                 std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
                 printedWarningsAlready.noGroupBased = true;
