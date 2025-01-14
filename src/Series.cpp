@@ -3330,10 +3330,6 @@ auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>
                 series.m_snapshotToStep[iteration] = step;
             }
         }
-        for (auto const &[iteration, step] : series.m_snapshotToStep)
-        {
-            std::cout << '\t' << iteration << "\t-> " << step << '\n';
-        }
         std::cout.flush();
         return vec_t{res.begin(), res.end()};
     }

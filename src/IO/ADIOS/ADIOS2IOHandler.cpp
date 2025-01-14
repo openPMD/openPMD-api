@@ -1395,29 +1395,6 @@ namespace
         static constexpr char const *errorMsg = "ReadAttributeAllsteps";
     };
 
-    template <typename Vec>
-    auto vec_as_string(Vec const &vec) -> std::string
-    {
-        if (vec.empty())
-        {
-            return "[]";
-        }
-        else
-        {
-            std::stringstream res;
-            res << '[';
-            auto it = vec.begin();
-            res << *it++;
-            auto end = vec.end();
-            for (; it != end; ++it)
-            {
-                res << ", " << *it;
-            }
-            res << ']';
-            return res.str();
-        }
-    }
-
 #if openPMD_HAVE_MPI
     struct DistributeToAllRanks
     {
@@ -1434,11 +1411,9 @@ namespace
             }
             std::vector<T> &put_result_here =
                 std::get<std::vector<T>>(put_result_here_in);
-            std::cout << "INIT VECTOR SIZE: " << put_result_here.size() << '\n';
             size_t num_items = put_result_here.size();
             MPI_CHECK(MPI_Bcast(
                 &num_items, 1, auxiliary::openPMD_MPI_type<size_t>(), 0, comm));
-            std::cout << "WILL_COMMUNICATE: " << num_items << '\n';
             if constexpr (
                 std::is_same_v<T, std::string> ||
                 std::is_same_v<T, std::vector<std::string>> ||
@@ -1473,7 +1448,6 @@ namespace
                     auxiliary::openPMD_MPI_type<size_t>(),
                     0,
                     comm));
-                std::cout << "SIZES: " << vec_as_string(sizes) << '\n';
                 size_t total_flat_size =
                     std::accumulate(sizes.begin(), sizes.end(), size_t(0));
                 using flat_type = typename T::value_type;
@@ -1498,8 +1472,6 @@ namespace
                     comm));
                 if (rank != 0)
                 {
-                    std::cout << "RECEIVED: " << vec_as_string(flat_vector)
-                              << '\n';
                     size_t offset = 0;
                     put_result_here.reserve(num_items);
                     for (size_t current_extent : sizes)
@@ -1526,7 +1498,6 @@ namespace
                     comm));
                 if (rank != 0)
                 {
-                    std::cout << "RECEIVED: " << vec_as_string(receive) << '\n';
                     put_result_here = std::move(receive);
                 }
             }
@@ -1539,7 +1510,6 @@ namespace
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
 {
-    std::cout << "ADIOS2: ReadAttributeAllSteps" << '\n';
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
     auto name = nameOfAttribute(writable, param.name);
