@@ -2287,6 +2287,29 @@ namespace detail
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
         auto &IO = fileData.m_IO;
         adios2::Variable<T> var = IO.InquireVariable<T>(varName);
+
+        if (fileData.stepSelection().has_value())
+        {
+            auto file_steps = fileData.getEngine().Steps();
+            auto var_steps = var.Steps();
+            if (file_steps != var_steps)
+            {
+                throw error::OperationUnsupportedInBackend(
+                    "ADIOS2",
+                    &R"(
+The opened file contains different data per step.
+When using variable-based encoding, such files must be opened in linear read
+mode, since random-access mode cannot easily associate variable steps
+to iterations under these circumstances (yet).
+If random-access read mode is required, file-based iteration encoding is more
+useful for such data in ADIOS2. You may use the openpmd-pipe command line tool
+for converting from variable-based to file-based iteration encoding.
+ERROR: Variable ')"[1] + varName +
+                        "' has " + std::to_string(var_steps) +
+                        " step(s), but the file has " +
+                        std::to_string(file_steps) + " step(s).");
+            }
+        }
         if (stepSelection.has_value())
         {
             var.SetStepSelection({*stepSelection, 1});
