@@ -6377,12 +6377,12 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
     for (auto const &backend : testedBackends())
     {
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_filebased_%T." +
+            "../samples/iterate_nonstreaming_series/serial_filebased_%T." +
                 backend.extension,
             false,
             backend.jsonBaseConfig());
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_groupbased." +
+            "../samples/iterate_nonstreaming_series/serial_groupbased." +
                 backend.extension,
             false,
             backend.jsonBaseConfig());
@@ -6390,13 +6390,15 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
         if (backend.extension == "bp")
         {
             iterate_nonstreaming_series(
-                "../samples/iterate_nonstreaming_series_filebased_bp5_%T." +
+                "../samples/iterate_nonstreaming_series/"
+                "serial_filebased_bp5_%T." +
                     backend.extension,
                 false,
                 json::merge(
                     backend.jsonBaseConfig(), "adios2.engine.type = \"bp5\""));
             iterate_nonstreaming_series(
-                "../samples/iterate_nonstreaming_series_groupbased_bp5." +
+                "../samples/iterate_nonstreaming_series/"
+                "serial_groupbased_bp5." +
                     backend.extension,
                 false,
                 json::merge(
@@ -6406,7 +6408,7 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
     }
 #if openPMD_HAVE_ADIOS2
     iterate_nonstreaming_series(
-        "../samples/iterate_nonstreaming_series_variablebased.bp",
+        "../samples/iterate_nonstreaming_series/serial_variablebased.bp",
         true,
         R"({"backend": "adios2"})");
 #endif

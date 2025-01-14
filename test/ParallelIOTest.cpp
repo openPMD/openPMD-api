@@ -10,7 +10,12 @@
 #include "openPMD/openPMD.hpp"
 #include <catch2/catch.hpp>
 
-#if openPMD_HAVE_MPI
+#if !openPMD_HAVE_MPI
+TEST_CASE("none", "[parallel]")
+{}
+
+#else
+
 #include <mpi.h>
 
 #if openPMD_HAVE_ADIOS2
@@ -34,42 +39,6 @@
 
 using namespace openPMD;
 
-std::vector<std::string> getBackends()
-{
-    // first component: backend file ending
-    // second component: whether to test 128 bit values
-    std::vector<std::string> res;
-#if openPMD_HAVE_ADIOS2
-    res.emplace_back("bp");
-#endif
-#if openPMD_HAVE_HDF5
-    res.emplace_back("h5");
-#endif
-    return res;
-}
-
-auto const backends = getBackends();
-
-std::vector<std::string> testedFileExtensions()
-{
-    auto allExtensions = getFileExtensions();
-    auto newEnd = std::remove_if(
-        allExtensions.begin(), allExtensions.end(), [](std::string const &ext) {
-            // sst and ssc need a receiver for testing
-            // bp4 is already tested via bp
-            return ext == "sst" || ext == "ssc" || ext == "bp4" ||
-                ext == "toml" || ext == "json";
-        });
-    return {allExtensions.begin(), newEnd};
-}
-
-#else
-
-TEST_CASE("none", "[parallel]")
-{}
-#endif
-
-#if openPMD_HAVE_MPI
 TEST_CASE("parallel_multi_series_test", "[parallel]")
 {
     std::list<Series> allSeries;
@@ -2205,6 +2174,11 @@ TEST_CASE("adios2_flush_via_step")
 TEST_CASE("read_variablebased_randomaccess")
 {
     read_variablebased_randomaccess::read_variablebased_randomaccess();
+}
+
+TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
+{
+    iterate_nonstreaming_series::iterate_nonstreaming_series();
 }
 
 #endif // openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
