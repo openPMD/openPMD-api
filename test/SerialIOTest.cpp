@@ -122,7 +122,7 @@ namespace detail
 template <typename Char>
 void writeChar(Series &series, std::string const &component_name)
 {
-    auto component = series.iterations[0].meshes["E"][component_name];
+    auto component = series.writeIterations()[0].meshes["E"][component_name];
     std::vector<Char> data(10);
     component.resetDataset({determineDatatype<Char>(), {10}});
     component.storeChunk(data, {0}, {10});
@@ -279,7 +279,7 @@ TEST_CASE("multi_series_test", "[serial]")
                     .append(".")
                     .append(file_ending),
                 Access::CREATE);
-            allSeries.back().iterations[sn].setAttribute("wululu", sn);
+            allSeries.back().writeIterations()[sn].setAttribute("wululu", sn);
             allSeries.back().flush();
         }
     }
@@ -636,12 +636,13 @@ void close_and_copy_attributable_test(std::string const &file_ending)
     {
         if (iteration_ptr)
         {
-            *iteration_ptr = series.iterations[i];
+            *iteration_ptr = series.writeIterations()[i];
         }
         else
         {
             // use copy constructor
-            iteration_ptr = std::make_unique<Iteration>(series.iterations[i]);
+            iteration_ptr =
+                std::make_unique<Iteration>(series.writeIterations()[i]);
         }
         Record electronPositions = iteration_ptr->particles["e"]["position"];
         // TODO set this automatically to zero if not provided
@@ -773,17 +774,20 @@ inline void empty_dataset_test(std::string const &file_ending)
             "../samples/empty_datasets." + file_ending, Access::CREATE);
 
         auto makeEmpty_dim_7_int =
-            series.iterations[1].meshes["rho"]["makeEmpty_dim_7_int"];
+            series.writeIterations()[1].meshes["rho"]["makeEmpty_dim_7_int"];
         auto makeEmpty_dim_7_long =
-            series.iterations[1].meshes["rho"]["makeEmpty_dim_7_bool"];
+            series.writeIterations()[1].meshes["rho"]["makeEmpty_dim_7_bool"];
         auto makeEmpty_dim_7_int_alt =
-            series.iterations[1].meshes["rho"]["makeEmpty_dim_7_int_alt"];
+            series.writeIterations()[1]
+                .meshes["rho"]["makeEmpty_dim_7_int_alt"];
         auto makeEmpty_dim_7_long_alt =
-            series.iterations[1].meshes["rho"]["makeEmpty_dim_7_bool_alt"];
+            series.writeIterations()[1]
+                .meshes["rho"]["makeEmpty_dim_7_bool_alt"];
         auto makeEmpty_resetDataset_dim3 =
-            series.iterations[1].meshes["rho"]["makeEmpty_resetDataset_dim3"];
+            series.writeIterations()[1]
+                .meshes["rho"]["makeEmpty_resetDataset_dim3"];
         auto makeEmpty_resetDataset_dim3_notallzero =
-            series.iterations[1]
+            series.writeIterations()[1]
                 .meshes["rho"]["makeEmpty_resetDataset_dim3_notallzero"];
         makeEmpty_dim_7_int.makeEmpty<int>(7);
         makeEmpty_dim_7_long.makeEmpty<long>(7);
@@ -888,17 +892,18 @@ inline void constant_scalar(std::string const &file_ending)
         Series s =
             Series("../samples/constant_scalar." + file_ending, Access::CREATE);
         s.setOpenPMD("2.0.0");
-        auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
-        REQUIRE(s.iterations[1].meshes["rho"].scalar());
+        auto rho =
+            s.writeIterations()[1].meshes["rho"][MeshRecordComponent::SCALAR];
+        REQUIRE(s.writeIterations()[1].meshes["rho"].scalar());
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
         rho.makeConstant(static_cast<char>('a'));
         REQUIRE(rho.constant());
 
         // mixed constant/non-constant
-        auto E_x = s.iterations[1].meshes["E"]["x"];
+        auto E_x = s.writeIterations()[1].meshes["E"]["x"];
         E_x.resetDataset(Dataset(Datatype::FLOAT, {1, 2, 3}));
         E_x.makeConstant(static_cast<float>(13.37));
-        auto E_y = s.iterations[1].meshes["E"]["y"];
+        auto E_y = s.writeIterations()[1].meshes["E"]["y"];
         E_y.resetDataset(Dataset(Datatype::UINT, {1, 2, 3}));
         UniquePtrWithLambda<unsigned int> E(
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
@@ -907,7 +912,7 @@ inline void constant_scalar(std::string const &file_ending)
         E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
 
         // store a number of predefined attributes in E
-        Mesh &E_mesh = s.iterations[1].meshes["E"];
+        Mesh &E_mesh = s.writeIterations()[1].meshes["E"];
         // test that these can be defined successively
         E_mesh.setGridUnitDimension({{{UnitDimension::L, 1}}, {}, {}});
         E_mesh.setGridUnitDimension(
@@ -932,21 +937,21 @@ inline void constant_scalar(std::string const &file_ending)
             std::vector<double>{gridUnitSI, gridUnitSI, gridUnitSI});
 
         // constant scalar
-        auto pos =
-            s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR];
+        auto pos = s.writeIterations()[1]
+                       .particles["e"]["position"][RecordComponent::SCALAR];
         pos.resetDataset(Dataset(Datatype::DOUBLE, {3, 2, 1}));
         pos.makeConstant(static_cast<double>(42.));
         auto posOff =
-            s.iterations[1]
+            s.writeIterations()[1]
                 .particles["e"]["positionOffset"][RecordComponent::SCALAR];
         posOff.resetDataset(Dataset(Datatype::INT, {3, 2, 1}));
         posOff.makeConstant(static_cast<int>(-42));
 
         // mixed constant/non-constant
-        auto vel_x = s.iterations[1].particles["e"]["velocity"]["x"];
+        auto vel_x = s.writeIterations()[1].particles["e"]["velocity"]["x"];
         vel_x.resetDataset(Dataset(Datatype::SHORT, {3, 2, 1}));
         vel_x.makeConstant(static_cast<short>(-1));
-        auto vel_y = s.iterations[1].particles["e"]["velocity"]["y"];
+        auto vel_y = s.writeIterations()[1].particles["e"]["velocity"]["y"];
         vel_y.resetDataset(Dataset(Datatype::ULONGLONG, {3, 2, 1}));
         UniquePtrWithLambda<unsigned long long> vel(
             new unsigned long long[6],
@@ -1135,7 +1140,7 @@ TEST_CASE("flush_without_position_positionOffset", "[serial]")
         Series s = Series(
             "../samples/flush_without_position_positionOffset." + file_ending,
             Access::CREATE);
-        ParticleSpecies e = s.iterations[0].particles["e"];
+        ParticleSpecies e = s.writeIterations()[0].particles["e"];
         RecordComponent weighting = e["weighting"][RecordComponent::SCALAR];
         weighting.resetDataset(Dataset(Datatype::FLOAT, Extent{2, 2}));
         weighting.storeChunk(
@@ -1396,7 +1401,7 @@ inline void dtype_test(
         // should be possible to parse without error upon opening
         // the series for reading
         {
-            auto E = s.iterations[0].meshes["E"];
+            auto E = s.writeIterations()[0].meshes["E"];
             E.setGridSpacing(std::vector<long double>{1.0, 1.0});
             auto E_x = E["x"];
             E_x.makeEmpty<double>(1);
@@ -1611,7 +1616,7 @@ inline void write_test(
     Series o =
         Series("../samples/serial_write." + backend, Access::CREATE, jsonCfg);
 
-    ParticleSpecies &e_1 = o.iterations[1].particles["e"];
+    ParticleSpecies &e_1 = o.writeIterations()[1].particles["e"];
 
     std::vector<double> position_global(4);
     double pos{0.};
@@ -1646,7 +1651,7 @@ inline void write_test(
         e_1["positionOffset"]["x"].storeChunk(positionOffset_local_1, {i}, {1});
     }
 
-    ParticleSpecies &e_2 = o.iterations[2].particles["e"];
+    ParticleSpecies &e_2 = o.writeIterations()[2].particles["e"];
 
     std::generate(position_global.begin(), position_global.end(), [&pos] {
         return pos++;
@@ -1677,7 +1682,7 @@ inline void write_test(
 
     o.flush();
 
-    ParticleSpecies &e_3 = o.iterations[3].particles["e"];
+    ParticleSpecies &e_3 = o.writeIterations()[3].particles["e"];
 
     std::generate(position_global.begin(), position_global.end(), [&pos] {
         return pos++;
@@ -1786,7 +1791,8 @@ void test_complex(const std::string &backend)
             o.setAttribute(
                 "longDoublesYouSay", std::complex<long double>(5.5, -4.55));
 
-        auto Cflt = o.iterations[0].meshes["Cflt"][RecordComponent::SCALAR];
+        auto Cflt =
+            o.writeIterations()[0].meshes["Cflt"][RecordComponent::SCALAR];
         std::vector<std::complex<float>> cfloats(3);
         cfloats.at(0) = {1., 2.};
         cfloats.at(1) = {-3., 4.};
@@ -1794,7 +1800,8 @@ void test_complex(const std::string &backend)
         Cflt.resetDataset(Dataset(Datatype::CFLOAT, {cfloats.size()}));
         Cflt.storeChunk(cfloats, {0});
 
-        auto Cdbl = o.iterations[0].meshes["Cdbl"][RecordComponent::SCALAR];
+        auto Cdbl =
+            o.writeIterations()[0].meshes["Cdbl"][RecordComponent::SCALAR];
         std::vector<std::complex<double>> cdoubles(3);
         cdoubles.at(0) = {2., 1.};
         cdoubles.at(1) = {-4., 3.};
@@ -1806,7 +1813,7 @@ void test_complex(const std::string &backend)
         if (o.backend() != "ADIOS2")
         {
             auto Cldbl =
-                o.iterations[0].meshes["Cldbl"][RecordComponent::SCALAR];
+                o.writeIterations()[0].meshes["Cldbl"][RecordComponent::SCALAR];
             cldoubles.at(0) = {3., 2.};
             cldoubles.at(1) = {-5., 4.};
             cldoubles.at(2) = {7., -6.};
@@ -2416,7 +2423,10 @@ TEST_CASE("sample_write_thetaMode", "[serial][thetaMode]")
 inline void bool_test(const std::string &backend)
 {
     {
-        Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
+        Series o = Series(
+            "../samples/serial_bool." + backend,
+            Access::CREATE,
+            R"({"iteration_encoding": "variable_based"})");
 
         o.setAttribute("Bool attribute true", true);
         o.setAttribute("Bool attribute false", false);
@@ -2452,7 +2462,7 @@ inline void patch_test(const std::string &backend)
 {
     Series o = Series("../samples/serial_patch." + backend, Access::CREATE);
 
-    auto e = o.iterations[1].particles["e"];
+    auto e = o.writeIterations()[1].particles["e"];
 
     uint64_t const num_particles = 1u;
     auto dset_d = Dataset(Datatype::DOUBLE, {num_particles});
@@ -4636,7 +4646,12 @@ TEST_CASE("adios2_engines_and_file_endings")
                 Series write(
                     name,
                     Access::CREATE,
-                    json::merge("backend = \"adios2\"", jsonCfg));
+                    json::merge(
+                        R"(
+                        backend = "adios2"
+                        iteration_encoding = "variable_based"
+                        )",
+                        jsonCfg));
             }
             if (directory)
             {
@@ -4701,7 +4716,11 @@ TEST_CASE("adios2_engines_and_file_endings")
             auto filesystemname =
                 filesystemExt.empty() ? name : basename + filesystemExt;
             {
-                Series write(name, Access::CREATE, jsonCfg);
+                Series write(
+                    name,
+                    Access::CREATE,
+                    json::merge(
+                        R"(iteration_encoding = "variable_based")", jsonCfg));
                 write.close();
             }
             if (directory)
@@ -6087,8 +6106,8 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
     // automatically (de)activate span-based storeChunking
     {
         Series write("../samples/span_based.bp", Access::CREATE);
-        auto E_uncompressed = write.iterations[0].meshes["E"]["x"];
-        auto E_compressed = write.iterations[0].meshes["E"]["y"];
+        auto E_uncompressed = write.writeIterations()[0].meshes["E"]["x"];
+        auto E_compressed = write.writeIterations()[0].meshes["E"]["y"];
 
         Dataset ds{Datatype::INT, {10}};
 
@@ -6138,8 +6157,8 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
   }
 })END";
         Series write("../samples/span_based.bp", Access::CREATE, enable);
-        auto E_uncompressed = write.iterations[0].meshes["E"]["x"];
-        auto E_compressed = write.iterations[0].meshes["E"]["y"];
+        auto E_uncompressed = write.writeIterations()[0].meshes["E"]["x"];
+        auto E_compressed = write.writeIterations()[0].meshes["E"]["y"];
 
         Dataset ds{Datatype::INT, {10}};
 
@@ -6202,8 +6221,8 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
   }
 })END";
         Series write("../samples/span_based.bp", Access::CREATE, disable);
-        auto E_uncompressed = write.iterations[0].meshes["E"]["x"];
-        auto E_compressed = write.iterations[0].meshes["E"]["y"];
+        auto E_uncompressed = write.writeIterations()[0].meshes["E"]["x"];
+        auto E_compressed = write.writeIterations()[0].meshes["E"]["y"];
 
         Dataset ds{Datatype::INT, {10}};
 
@@ -6657,7 +6676,7 @@ void deferred_parsing(std::string const &extension)
         Series series(basename + "%06T." + extension, Access::CREATE);
         std::vector<float> buffer(20);
         std::iota(buffer.begin(), buffer.end(), 0.f);
-        auto dataset = series.iterations[0].meshes["E"]["x"];
+        auto dataset = series.writeIterations()[0].meshes["E"]["x"];
         dataset.resetDataset({Datatype::FLOAT, {20}});
         dataset.storeChunk(buffer, {0}, {20});
         series.flush();

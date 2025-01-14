@@ -2144,10 +2144,29 @@ creating new iterations.
     case IterationEncoding::variableBased: {
         if (!currentSteps.has_value() || currentSteps.value().empty())
         {
-            currentSteps = std::vector<IterationIndex_t>{
-                read_only_this_single_iteration.has_value()
-                    ? *read_only_this_single_iteration
-                    : 0};
+            if (!read_only_this_single_iteration.has_value())
+            {
+                Parameter<Operation::LIST_DATASETS> ld;
+                Parameter<Operation::LIST_PATHS> lp;
+                IOHandler()->enqueue(IOTask(&iterations, ld));
+                IOHandler()->enqueue(IOTask(&iterations, lp));
+                IOHandler()->flush(internal::defaultFlushParams);
+                if (ld.datasets->empty() && lp.paths->empty())
+                {
+                    return {}; // no iterations, just global attributes
+                }
+                else
+                {
+                    // there is data, defaulting to calling this Iteration idx 0
+                    // when no further info is available
+                    currentSteps = std::vector<IterationIndex_t>{0};
+                }
+            }
+            else
+            {
+                currentSteps = std::vector<IterationIndex_t>{
+                    *read_only_this_single_iteration};
+            }
         }
         else if (read_only_this_single_iteration.has_value())
         {
@@ -3242,7 +3261,10 @@ Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
         access::writeOnly(access) &&
         // 5. The backend is ADIOS2 in a recent enough version to support
         //    modifiable attributes (v2.9).
-        IOHandler()->fullSupportForVariableBasedEncoding())
+        IOHandler()->fullSupportForVariableBasedEncoding() &&
+        // 6. The Series must not yet be written, otherwise we're too late
+        //    for this
+        !this->written())
     {
         setIterationEncoding_internal(
             IterationEncoding::variableBased,
