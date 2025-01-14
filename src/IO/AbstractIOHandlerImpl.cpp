@@ -421,7 +421,11 @@ std::future<void> AbstractIOHandlerImpl::flush()
                                 [](Parameter<Operation::ADVANCE>::StepSelection
                                        step) {
                                     std::stringstream s;
-                                    s << "RANDOMACCESS '" << step.step << "'";
+                                    s << "RANDOMACCESS '"
+                                      << (step.step.has_value()
+                                              ? std::to_string(*step.step)
+                                              : std::string("RESET"))
+                                      << "'";
                                     return s.str();
                                 }},
                             parameter.mode);

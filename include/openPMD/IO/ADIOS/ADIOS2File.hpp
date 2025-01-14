@@ -413,7 +413,7 @@ public:
     StreamStatus streamStatus = StreamStatus::OutsideOfStep;
 
     size_t currentStep();
-    void setStepSelection(size_t);
+    void setStepSelection(std::optional<size_t>);
     [[nodiscard]] std::optional<size_t> stepSelection() const;
 
 private:

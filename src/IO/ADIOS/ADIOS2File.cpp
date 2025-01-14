@@ -353,7 +353,7 @@ size_t ADIOS2File::currentStep()
     }
 }
 
-void ADIOS2File::setStepSelection(size_t step)
+void ADIOS2File::setStepSelection(std::optional<size_t> step)
 {
     if (streamStatus != StreamStatus::ReadWithoutStream)
     {
@@ -361,8 +361,16 @@ void ADIOS2File::setStepSelection(size_t step)
             "ADIOS2 backend: Cannot only use random-access step selections "
             "when reading without streaming mode.");
     }
-    m_currentStep = step;
-    useStepSelection = true;
+    if (!step.has_value())
+    {
+        m_currentStep = 0;
+        useStepSelection = false;
+    }
+    else
+    {
+        m_currentStep = *step;
+        useStepSelection = true;
+    }
 }
 
 std::optional<size_t> ADIOS2File::stepSelection() const

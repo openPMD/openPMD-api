@@ -672,7 +672,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::ADVANCE>
 
     struct StepSelection
     {
-        size_t step;
+        std::optional<size_t> step;
     };
 
     //! input parameter
