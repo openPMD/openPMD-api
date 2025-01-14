@@ -325,12 +325,17 @@ MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::writeBenchmark(
         m_benchmark->communicator,
         jsonConfig);
 
+    typename Clock::duration ignore{};
+
     for (Series::IterationIndex_t i = 0; i < iterations; i++)
     {
+        auto ignore_start = Clock::now();
         auto writeData = datasetFiller->produceData();
+        auto ignore_end = Clock::now();
+        ignore += ignore_end - ignore_start;
 
-        MeshRecordComponent id =
-            series.iterations[i].meshes["id"][MeshRecordComponent::SCALAR];
+        MeshRecordComponent id = series.writeIterations()[i]
+                                     .meshes["id"][MeshRecordComponent::SCALAR];
 
         Datatype datatype = determineDatatype(writeData);
         Dataset dataset = Dataset(datatype, m_benchmark->totalExtent);
@@ -342,18 +347,11 @@ MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::writeBenchmark(
         id.storeChunk<T>(writeData, offset, extent);
         series.flush();
     }
-
+    series.close();
     MPI_Barrier(m_benchmark->communicator);
     auto end = Clock::now();
 
-    // deduct the time needed for data generation
-    for (Series::IterationIndex_t i = 0; i < iterations; i++)
-    {
-        datasetFiller->produceData();
-    }
-    auto deduct = Clock::now();
-
-    return end - start - (deduct - end);
+    return (end - start) - ignore;
 }
 
 template <typename DatasetFillerProvider>
@@ -378,7 +376,7 @@ MPIBenchmark<DatasetFillerProvider>::BenchmarkExecution<Clock>::readBenchmark(
     for (Series::IterationIndex_t i = 0; i < iterations; i++)
     {
         MeshRecordComponent id =
-            series.iterations[i].meshes["id"][MeshRecordComponent::SCALAR];
+            series.snapshots()[i].meshes["id"][MeshRecordComponent::SCALAR];
 
         auto chunk_data = id.loadChunk<T>(offset, extent);
         series.flush();
