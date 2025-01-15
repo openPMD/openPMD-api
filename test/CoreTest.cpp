@@ -1200,7 +1200,7 @@ TEST_CASE("backend_via_json", "[core]")
 TEST_CASE("wildcard_extension", "[core]")
 {
 #if openPMD_HAVE_ADIOS2
-#if openPMD_HAVE_ADIOS2_BP5 && openPMD_HAS_ADIOS_2_9
+#if openPMD_HAVE_ADIOS2_BP5
     constexpr char const *const default_file_ending = "bp5";
 #else
     constexpr char const *const default_file_ending = "bp4";

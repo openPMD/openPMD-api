@@ -293,21 +293,6 @@ void ADIOS2IOHandlerImpl::init(
             defaultOperators = std::move(operators.value());
         }
     }
-#if !openPMD_HAS_ADIOS_2_9
-    if (m_modifiableAttributes == ModifiableAttributes::Yes)
-    {
-        throw error::OperationUnsupportedInBackend(
-            m_handler->backendName(),
-            "Modifiable attributes require ADIOS2 >= v2.9.");
-    }
-    if (m_useGroupTable.has_value() &&
-        m_useGroupTable.value() == UseGroupTable::Yes)
-    {
-        throw error::OperationUnsupportedInBackend(
-            m_handler->backendName(),
-            "ADIOS2 group table feature requires ADIOS2 >= v2.9.");
-    }
-#endif
 }
 
 std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator>>
@@ -378,7 +363,7 @@ std::string ADIOS2IOHandlerImpl::fileSuffix(bool verbose) const
 {
     // SST engine adds its suffix unconditionally
     // so we don't add it
-#if openPMD_HAVE_ADIOS2_BP5 && openPMD_HAS_ADIOS_2_9
+#if openPMD_HAVE_ADIOS2_BP5
     constexpr char const *const default_file_ending = ".bp5";
 #else
     constexpr char const *const default_file_ending = ".bp4";
@@ -661,12 +646,9 @@ void ADIOS2IOHandlerImpl::createFile(
             // print this warning only in the new layout (with group table)
             if (m_useGroupTable.value_or(UseGroupTable::No) ==
                     UseGroupTable::Yes &&
-                (m_engineType == "bp5"
-#if openPMD_HAS_ADIOS_2_9
-                 || (m_engineType == "file" || m_engineType == "filestream" ||
-                     m_engineType == "bp")
-#endif
-                     ))
+                (m_engineType == "bp5" ||
+                 (m_engineType == "file" || m_engineType == "filestream" ||
+                  m_engineType == "bp")))
             {
                 std::cerr << warningADIOS2NoGroupbasedEncoding << std::endl;
                 printedWarningsAlready.noGroupBased = true;
@@ -775,13 +757,7 @@ void ADIOS2IOHandlerImpl::createDataset(
             "[ADIOS2] Creating a dataset in a file opened as read "
             "only is not possible.");
     }
-#if !openPMD_HAS_ADIOS_2_9
-    if (parameters.joinedDimension.has_value())
-    {
-        error::throwOperationUnsupportedInBackend(
-            "ADIOS2", "Joined Arrays require ADIOS2 >= v2.9");
-    }
-#endif
+
     if (!writable->written)
     {
         /* Sanitize name */
@@ -1073,14 +1049,6 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     {
         return;
     }
-#if !openPMD_HAS_ADIOS_2_9
-    if (parameters.changesOverSteps ==
-        Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes)
-    {
-        // cannot do this
-        return;
-    }
-#endif
     switchType<detail::AttributeWriter>(
         parameters.dtype, this, writable, parameters);
 }
@@ -1907,12 +1875,10 @@ namespace detail
         adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace(std::move(file));
 
-#if openPMD_HAS_ADIOS_2_9
         if (impl->m_modifiableAttributes ==
                 ADIOS2IOHandlerImpl::ModifiableAttributes::No &&
             parameters.changesOverSteps ==
                 Parameter<Operation::WRITE_ATT>::ChangesOverSteps::No)
-#endif // we only support modifiable attrs for ADIOS2 >= 2.9, so no `if`
         {
             std::string t = IO.AttributeType(fullName);
             if (!t.empty()) // an attribute is present <=> it has a type
@@ -1973,21 +1939,13 @@ namespace detail
         }
 
         auto &value = std::get<T>(parameters.resource);
-#if openPMD_HAS_ADIOS_2_9
         bool modifiable = impl->m_modifiableAttributes ==
                 ADIOS2IOHandlerImpl::ModifiableAttributes::Yes ||
             parameters.changesOverSteps !=
                 Parameter<Operation::WRITE_ATT>::ChangesOverSteps::No;
-#else
-        bool modifiable = impl->m_modifiableAttributes ==
-                ADIOS2IOHandlerImpl::ModifiableAttributes::Yes ||
-            parameters.changesOverSteps ==
-                Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
-#endif
 
         auto defineAttribute =
             [&IO, &fullName, &modifiable, &impl](auto const &...args) {
-#if openPMD_HAS_ADIOS_2_9
                 (void)impl;
                 auto attr = IO.DefineAttribute(
                     fullName,
@@ -1995,19 +1953,7 @@ namespace detail
                     /* variableName = */ "",
                     /* separator = */ "/",
                     /* allowModification = */ modifiable);
-#else
-                /*
-                 * Defensive coding, normally this condition should be checked
-                 * before getting this far.
-                 */
-                if (modifiable)
-                {
-                    throw error::OperationUnsupportedInBackend(
-                        impl->m_handler->backendName(),
-                        "Modifiable attributes require ADIOS2 >= v2.8.");
-                }
-                auto attr = IO.DefineAttribute(fullName, args...);
-#endif
+
                 if (!attr)
                 {
                     throw std::runtime_error(

@@ -428,8 +428,6 @@ void ADIOS2File::configure_IO()
     // these properties are inferred from the opened dataset in read mode
     if (writeOnly(m_mode))
     {
-
-#if openPMD_HAS_ADIOS_2_9
         if (!m_impl->m_useGroupTable.has_value())
         {
             switch (m_impl->m_handler->m_encoding)
@@ -456,15 +454,6 @@ void ADIOS2File::configure_IO()
                 ? ADIOS2IOHandlerImpl::ModifiableAttributes::Yes
                 : ADIOS2IOHandlerImpl::ModifiableAttributes::No;
         }
-#else
-        if (!m_impl->m_useGroupTable.has_value())
-        {
-            m_impl->m_useGroupTable = UseGroupTable::No;
-        }
-
-        m_impl->m_modifiableAttributes =
-            ADIOS2IOHandlerImpl::ModifiableAttributes::No;
-#endif
     }
 
     // set engine type
@@ -1318,9 +1307,7 @@ void ADIOS2File::markActive(Writable *writable)
     {
     case UseGroupTable::No:
         break;
-    case UseGroupTable::Yes:
-#if openPMD_HAS_ADIOS_2_9
-    {
+    case UseGroupTable::Yes: {
         if (writeOnly(m_mode) && m_impl->m_writeAttributesFromThisRank)
         {
             auto currentStepBuffered = currentStep();
@@ -1344,12 +1331,6 @@ void ADIOS2File::markActive(Writable *writable)
                          m_pathsMarkedAsActive.end());
         }
     }
-#else
-        (void)writable;
-        throw error::OperationUnsupportedInBackend(
-            m_impl->m_handler->backendName(),
-            "Group table feature requires ADIOS2 >= v2.9.");
-#endif
     break;
     }
 }

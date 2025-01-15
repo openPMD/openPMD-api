@@ -12,13 +12,8 @@ using namespace openPMD;
 #if openPMD_HAVE_ADIOS2
 
 constexpr char const *write_cfg =
-#if openPMD_HAS_ADIOS_2_9
     R"(adios2.use_group_table = true
            adios2.modifiable_attributes = true)";
-#else
-    R"(adios2.use_group_table = false
-           adios2.modifiable_attributes = false)";
-#endif
 
 template <typename WriteIterations>
 auto run_test_filebased(

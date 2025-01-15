@@ -1155,7 +1155,7 @@ TEST_CASE("hipace_like_write", "[parallel]")
 }
 #endif
 
-#if openPMD_HAVE_ADIOS2 && openPMD_HAS_ADIOS_2_9 && openPMD_HAVE_MPI
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 TEST_CASE("independent_write_with_collective_flush", "[parallel]")
 {
     Series write(
@@ -1328,11 +1328,7 @@ doshuffle = "BLOSC_BITSHUFFLE"
 [adios2]
 unused = "parameter"
 attribute_writing_ranks = 0
-)END"
-#if openPMD_HAS_ADIOS_2_9
-        "use_group_table = true"
-#endif
-        R"END(
+"use_group_table = true"
 [adios2.engine]
 type = "bp4"
 unused = "as well"
