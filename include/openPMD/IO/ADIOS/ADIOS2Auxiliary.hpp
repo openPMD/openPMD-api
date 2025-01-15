@@ -198,9 +198,7 @@ namespace detail
         case adios2::Mode::Write:
             return false;
         case adios2::Mode::Read:
-#if openPMD_HAS_ADIOS_2_8
         case adios2::Mode::ReadRandomAccess:
-#endif
             return true;
         case adios2::Mode::Undefined:
         case adios2::Mode::Sync:
@@ -217,9 +215,7 @@ namespace detail
         case adios2::Mode::Write:
             return true;
         case adios2::Mode::Read:
-#if openPMD_HAS_ADIOS_2_8
         case adios2::Mode::ReadRandomAccess:
-#endif
             return false;
         case adios2::Mode::Undefined:
         case adios2::Mode::Sync:

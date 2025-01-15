@@ -1552,12 +1552,8 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
         constexpr std::array<pair_t, 4> modeNames{
             pair_t{"write", adios2::Mode::Write},
             pair_t{"read", adios2::Mode::Read},
-            pair_t{"append", adios2::Mode::Append}
-#if openPMD_HAS_ADIOS_2_8
-            ,
-            pair_t{"readrandomaccess", adios2::Mode::ReadRandomAccess}
-#endif
-        };
+            pair_t{"append", adios2::Mode::Append},
+            pair_t{"readrandomaccess", adios2::Mode::ReadRandomAccess}};
         for (auto const &[name, mode] : modeNames)
         {
             if (name == access_mode_string)
@@ -1589,7 +1585,6 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
             return adios2::Mode::Append;
         }
         break;
-#if openPMD_HAS_ADIOS_2_8
     case Access::READ_LINEAR:
         switch (m_handler->m_encoding)
         {
@@ -1603,11 +1598,6 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
         break;
     case Access::READ_ONLY:
         return adios2::Mode::ReadRandomAccess;
-#else
-    case Access::READ_LINEAR:
-    case Access::READ_ONLY:
-        return adios2::Mode::Read;
-#endif
     case Access::READ_WRITE:
         if (auxiliary::directory_exists(fullPath) ||
             auxiliary::file_exists(fullPath))
@@ -1622,11 +1612,7 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
                 case adios_defs::OpenFileAs::Create:
                     return adios2::Mode::Write;
                 case adios_defs::OpenFileAs::Open:
-#if openPMD_HAS_ADIOS_2_8
                     return adios2::Mode::ReadRandomAccess;
-#else
-                    return adios2::Mode::Read;
-#endif
                 case adios_defs::OpenFileAs::ReopenFileThatWeCreated:
                     /* In order to write new data to an Iteration that was
                      * created and closed previously, the only applicable access

@@ -65,16 +65,12 @@ auto run_test_filebased(
         E_x.storeChunk(data, {0}, {5});
         it.close();
 
-#if !openPMD_HAS_ADIOS_2_8
         if (series.backend() != "ADIOS2")
         {
-#endif
             it.open();
             it.setTimeUnitSI(2.0);
             it.close();
-#if !openPMD_HAS_ADIOS_2_8
         }
-#endif
     }
     series.close();
 
@@ -289,7 +285,6 @@ auto close_and_reopen_test() -> void
      * This test writes the same attribute with different values over steps,
      * triggering a bug in ADIOS2 v2.7.
      */
-#if openPMD_HAS_ADIOS_2_8
     run_test_groupbased(
         [](Series &s) { return s.iterations; },
         "bp4",
@@ -309,7 +304,6 @@ auto close_and_reopen_test() -> void
         [](Series &s) { return s.snapshots(); },
         "json",
         {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
-#endif
 #if openPMD_HAVE_HDF5
     run_test_groupbased(
         [](Series &s) { return s.snapshots(); },

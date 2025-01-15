@@ -764,9 +764,7 @@ adios2::Engine &ADIOS2File::getEngine()
             streamStatus = StreamStatus::DuringStep;
             break;
         }
-#if openPMD_HAS_ADIOS_2_8
         case adios2::Mode::ReadRandomAccess:
-#endif
         case adios2::Mode::Read: {
             m_engine =
                 std::make_optional(adios2::Engine(m_IO.Open(m_file, m_mode)));
