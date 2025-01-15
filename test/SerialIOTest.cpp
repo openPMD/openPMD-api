@@ -5239,7 +5239,7 @@ void serial_iterator(std::string const &file)
     constexpr Extent::value_type extent = 1000;
     {
         Series writeSeries(
-            file, Access::CREATE, "rank_table = \"posix_hostname\"");
+            file, Access::CREATE, R"({"rank_table": "posix_hostname"})");
         auto iterations = writeSeries.writeIterations();
         for (size_t i = 0; i < 10; ++i)
         {
