@@ -5174,9 +5174,9 @@ TEST_CASE("bp4_steps", "[serial][adios2]")
     std::string bp4 = R"(
     {
         "ADIOS2": {
+            "use_group_table": true,
             "engine": {
-                "type": "bp4",
-                "use_group_table": true
+                "type": "bp4"
             }
         }
     }
