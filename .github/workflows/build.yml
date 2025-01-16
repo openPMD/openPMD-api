@@ -40,7 +40,7 @@ jobs:
               CMAKE_GENERATOR: "Visual Studio 16 2019"
               CMAKE_GENERATOR_PLATFORM: "Win32"
 
-          - os: macos-12
+          - os: macos-13
             arch: "x86_64"
             env:
               MACOSX_DEPLOYMENT_TARGET: 11.0
@@ -48,7 +48,7 @@ jobs:
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
           #   https://github.com/pypa/cibuildwheel/pull/704
-          - os: macos-12
+          - os: macos-13
             arch: "arm64"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
@@ -60,7 +60,7 @@ jobs:
           #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
           # ADIOS1 tricky to build and HDF5 even with CMake as well (as of 1.12)
           # We could build them twice and use `lipo` to combine the lib artifacts.
-          #- os: macos-12
+          #- os: macos-13
           #  arch: "universal2"
           #  env:
           #    CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
@@ -70,7 +70,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path: 'src'
-        ref: '0.16.0'
+        ref: '0.16.1'
 
     - uses: actions/checkout@v4
       with:
@@ -86,29 +86,29 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cibuildwheel==2.21.2
 
-    # Patch: Fix versioning
-    - name: Download Patch 1/2
-      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
-      id: setupversion
-      with:
-        url: "https://github.com/openPMD/openPMD-api/pull/1680.patch"
-        target: src/.patch/
+#    # Patch: Fix versioning
+#    - name: Download Patch 1/2
+#      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
+#      id: setupversion
+#      with:
+#        url: "https://github.com/openPMD/openPMD-api/pull/1680.patch"
+#        target: src/.patch/
 
-    # Patch: PYBIND11_FINDPYTHON=ON
-    - name: Download Patch 2/2
-      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
-      id: setupfindpython
-      with:
-        url: "https://github.com/openPMD/openPMD-api/pull/1684.patch"
-        target: src/.patch/
+#    # Patch: PYBIND11_FINDPYTHON=ON
+#    - name: Download Patch 2/2
+#      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
+#      id: setupfindpython
+#      with:
+#        url: "https://github.com/openPMD/openPMD-api/pull/1684.patch"
+#        target: src/.patch/
 
-    - name: Apply Patches
-      run: |
-        cd src
-        git apply --exclude=.github/workflows/windows.yml .patch/1680.patch
-        git apply --exclude=cmake/dependencies/pybind11.cmake .patch/1684.patch
-        git fetch
-        git apply --exclude=setup.py -3 .patch/1684.patch
+#    - name: Apply Patches
+#      run: |
+#        cd src
+#        git apply --exclude=.github/workflows/windows.yml .patch/1680.patch
+#        git apply --exclude=cmake/dependencies/pybind11.cmake .patch/1684.patch
+#        git fetch
+#        git apply --exclude=setup.py -3 .patch/1684.patch
 
     - name: Build wheel
       env:

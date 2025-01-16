@@ -8,7 +8,7 @@ branches:
 
 env:
   global:
-    - OPENPMD_GIT_REF="0.16.0"
+    - OPENPMD_GIT_REF="0.16.1"
 
     - CIBW_PROJECT_REQUIRES_PYTHON=">=3.9"
     # Install dependencies on Linux and OSX
@@ -154,14 +154,14 @@ install:
   - python -m pip install patch
 
 # Download & Apply Patches
-before_script:
-  - mkdir -p src/.patch
-  - cd src/.patch
-  - curl -sOL https://github.com/openPMD/openPMD-api/pull/1680.patch
-  - cd ..
-  - ls -hal .patch/
-  - git apply --exclude=.github/workflows/windows.yml .patch/1680.patch
-  - cd ..
+#before_script:
+#  - mkdir -p src/.patch
+#  - cd src/.patch
+#  - curl -sOL https://github.com/openPMD/openPMD-api/pull/1680.patch
+#  - cd ..
+#  - ls -hal .patch/
+#  - git apply --exclude=.github/workflows/windows.yml .patch/1680.patch
+#  - cd ..
 
 script:
   - cd src
