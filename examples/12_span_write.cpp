@@ -44,9 +44,11 @@ void span_write(std::string const &filename)
         }
         for (auto record : {"numParticlesOffset", "numParticles"})
         {
-            patches[record].resetDataset({Datatype::INT, {1}});
-            *patches[record].storeChunk<int>({0}, {1}).currentBuffer().data() =
-                42;
+            patches[record].resetDataset({Datatype::ULONG, {1}});
+            *patches[record]
+                 .storeChunk<unsigned long>({0}, {1})
+                 .currentBuffer()
+                 .data() = 42;
         }
 
         Record electronPositions = iteration.particles["e"]["position"];

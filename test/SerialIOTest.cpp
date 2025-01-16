@@ -6363,7 +6363,7 @@ void adios2_bp5_no_steps(bool usesteps)
         IO.DefineAttribute("/openPMD", std::string("1.1.0"));
         IO.DefineAttribute("/openPMDextension", uint32_t(0));
         IO.DefineAttribute("/software", std::string("openPMD-api"));
-        IO.DefineAttribute("/softwareVersion", std::string("0.16.0-dev"));
+        IO.DefineAttribute("/softwareVersion", std::string("0.16.1"));
 
         IO.DefineAttribute("/data/0/dt", double(1));
         IO.DefineAttribute(
@@ -7477,6 +7477,8 @@ void groupbased_read_write(std::string const &ext)
 
         E_x.setAttribute("updated_in_run", 0);
         E_y.setAttribute("updated_in_run", 0);
+        E_y.setAttribute("changed_datatype_in_run", 0);
+        write.close();
     }
 
     {
@@ -7495,6 +7497,8 @@ void groupbased_read_write(std::string const &ext)
 
         E_x.setAttribute("updated_in_run", 1);
         E_y.setAttribute("updated_in_run", 1);
+        E_y.setAttribute("changed_datatype_in_run", "one");
+        write.close();
     }
 
     {
@@ -7506,6 +7510,9 @@ void groupbased_read_write(std::string const &ext)
         REQUIRE(E_x_0_fromRun0.getAttribute("updated_in_run").get<int>() == 0);
         REQUIRE(E_x_1_fromRun1.getAttribute("updated_in_run").get<int>() == 1);
         REQUIRE(E_y_0_fromRun1.getAttribute("updated_in_run").get<int>() == 1);
+        REQUIRE(
+            E_y_0_fromRun1.getAttribute("changed_datatype_in_run")
+                .get<std::string>() == "one");
 
         auto chunk_E_x_0_fromRun0 = E_x_0_fromRun0.loadChunk<int>({0}, {1});
         auto chunk_E_x_1_fromRun1 = E_x_1_fromRun1.loadChunk<int>({0}, {1});
@@ -7516,6 +7523,7 @@ void groupbased_read_write(std::string const &ext)
         REQUIRE(*chunk_E_x_0_fromRun0 == 0);
         REQUIRE(*chunk_E_x_1_fromRun1 == 1);
         REQUIRE(*chunk_E_y_0_fromRun1 == 1);
+        read.close();
     }
 
     // check that truncation works correctly
@@ -7529,12 +7537,14 @@ void groupbased_read_write(std::string const &ext)
 
         E_x.storeChunkRaw(&data, {0}, {1});
         E_x.setAttribute("updated_in_run", 2);
+        write.close();
     }
 
     {
         Series read(filename, Access::READ_ONLY);
         REQUIRE(read.iterations.size() == 1);
         REQUIRE(read.iterations.count(2) == 1);
+        read.close();
     }
 }
 

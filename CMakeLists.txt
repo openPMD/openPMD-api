@@ -2,7 +2,7 @@
 #
 cmake_minimum_required(VERSION 3.22.0)
 
-project(openPMD VERSION 0.16.0) # LANGUAGES CXX
+project(openPMD VERSION 0.16.1) # LANGUAGES CXX
 
 # the openPMD "markup"/"schema" standard version
 set(openPMD_STANDARD_VERSION 1.1.0)
@@ -314,7 +314,7 @@ endif()
 string(CONCAT openPMD_HDF5_STATUS "")
 # version: lower limit
 if(openPMD_HAVE_HDF5)
-    if(HDF5_VERSION STREQUAL "")
+    if("${HDF5_VERSION}" STREQUAL "")
         message(WARNING "HDF5_VERSION is empty. Now assuming it is 1.8.13 or newer.")
     else()
         if(HDF5_VERSION VERSION_LESS 1.8.13)
@@ -360,20 +360,24 @@ if(openPMD_HDF5_STATUS)
 endif()
 
 # external library: ADIOS2 (optional)
+set(openPMD_REQUIRED_ADIOS2_COMPONENTS CXX)
+if(openPMD_HAVE_MPI)
+    list(APPEND openPMD_REQUIRED_ADIOS2_COMPONENTS MPI)
+endif()
 if(openPMD_USE_ADIOS2 STREQUAL AUTO)
-    find_package(ADIOS2 2.7.0 CONFIG)
+    find_package(ADIOS2 2.7.0 CONFIG COMPONENTS ${openPMD_REQUIRED_ADIOS2_COMPONENTS})
     if(ADIOS2_FOUND)
         set(openPMD_HAVE_ADIOS2 TRUE)
     else()
         set(openPMD_HAVE_ADIOS2 FALSE)
     endif()
 elseif(openPMD_USE_ADIOS2)
-    find_package(ADIOS2 2.7.0 REQUIRED CONFIG)
+    find_package(ADIOS2 2.7.0 REQUIRED CONFIG COMPONENTS ${openPMD_REQUIRED_ADIOS2_COMPONENTS})
     set(openPMD_HAVE_ADIOS2 TRUE)
 else()
     set(openPMD_HAVE_ADIOS2 FALSE)
 endif()
-# TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
+unset(openPMD_REQUIRED_ADIOS2_COMPONENTS)
 
 # external library: pybind11 (optional)
 include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)

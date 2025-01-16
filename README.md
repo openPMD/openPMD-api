@@ -99,7 +99,7 @@ Required:
 * CMake 3.22.0+
 * C++17 capable compiler, e.g., g++ 7+, clang 7+, MSVC 19.15+, icpc 19+, icpx
 
-Shipped internally in `share/openPMD/thirdParty/`:
+Shipped internally (downloaded by CMake unless `openPMD_SUPERBUILD=OFF` is set):
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.10+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.13.0+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
@@ -304,7 +304,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 Use the following lines in your project's `CMakeLists.txt`:
 ```cmake
 # supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS2
-find_package(openPMD 0.16.0 CONFIG)
+find_package(openPMD 0.16.1 CONFIG)
 
 if(openPMD_FOUND)
     target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
@@ -332,7 +332,7 @@ set(openPMD_INSTALL OFF)            # or instead use:
 set(openPMD_USE_PYTHON OFF)
 FetchContent_Declare(openPMD
   GIT_REPOSITORY "https://github.com/openPMD/openPMD-api.git"
-  GIT_TAG        "0.16.0")
+  GIT_TAG        "0.16.1")
 FetchContent_MakeAvailable(openPMD)
 ```
 

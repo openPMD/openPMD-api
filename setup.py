@@ -44,12 +44,19 @@ class CMakeBuild(build_ext):
         if not extdir.endswith(os.path.sep):
             extdir += os.path.sep
 
+        pyv = sys.version_info
         cmake_args = [
+            # Python: use the calling interpreter in CMake
+            # https://cmake.org/cmake/help/latest/module/FindPython.html#hints
+            # https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-version-selection
+            '-DPython_ROOT_DIR=' + sys.prefix,
+            f'-DPython_FIND_VERSION={pyv.major}.{pyv.minor}.{pyv.micro}',
+            '-DPython_FIND_VERSION_EXACT=TRUE',
+            '-DPython_FIND_STRATEGY=LOCATION',
             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' +
             os.path.join(extdir, "openpmd_api"),
             # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
             '-DopenPMD_PYTHON_OUTPUT_DIRECTORY=' + extdir,
-            '-DPython_EXECUTABLE=' + sys.executable,
             '-DopenPMD_USE_PYTHON:BOOL=ON',
             # variants
             '-DopenPMD_USE_MPI:BOOL=' + openPMD_USE_MPI,
@@ -174,7 +181,7 @@ with open('./requirements.txt') as f:
 setup(
     name='openPMD-api',
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
-    version='0.16.0.dev',
+    version='0.16.1',
     author='Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu',
     author_email='axelhuebl@lbl.gov, f.poeschel@hzdr.de',
     maintainer='Axel Huebl',

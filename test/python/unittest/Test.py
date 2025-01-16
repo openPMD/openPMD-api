@@ -16,8 +16,8 @@ from API.APITest import APITest
 # Define the test suite.
 def suite():
     suites = [
-               unittest.makeSuite(APITest),
-             ]
+        unittest.TestLoader().loadTestsFromTestCase(testCaseClass=APITest),
+    ]
 
     return unittest.TestSuite(suites)
 

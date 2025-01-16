@@ -107,11 +107,6 @@ int main()
         auto d = io::Dataset(dtype, io::Extent{2, 5});
         std::string datasetConfig = R"END(
 {
-  "adios1": {
-    "dataset": {
-      "transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
-    }
-  },
   "adios2": {
     "dataset": {
       "operators": [
