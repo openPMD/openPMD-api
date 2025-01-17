@@ -24,6 +24,7 @@ jobs:
     - name: Build
       env: {CC: clang, CXX: clang++}
       run: |
+        sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
 
@@ -54,6 +55,7 @@ jobs:
     - name: Build
       env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-10, OMPI_CXX: clang++-10, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
       run: |
+        sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
         SOURCEPATH="$(pwd)"
