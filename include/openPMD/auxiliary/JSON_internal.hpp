@@ -164,7 +164,8 @@ namespace json
             bool trace);
 
         void init();
-        static void init(nlohmann::json &original, nlohmann::json &shadow);
+        static void
+        init(nlohmann::json const &original, nlohmann::json &shadow);
     };
 
     template <typename Key>

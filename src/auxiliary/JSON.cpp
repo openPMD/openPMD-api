@@ -172,7 +172,7 @@ void TracingJSON::init()
     }
 }
 
-void TracingJSON::init(nlohmann::json &original, nlohmann::json &shadow)
+void TracingJSON::init(nlohmann::json const &original, nlohmann::json &shadow)
 {
     if (original.is_object() && original.contains("dont_warn_unused_keys"))
     {
@@ -180,7 +180,12 @@ void TracingJSON::init(nlohmann::json &original, nlohmann::json &shadow)
                                                .get<std::vector<std::string>>();
         for (auto const &key : suppress_warnings_for_these)
         {
-            init(original[key], shadow[key]);
+            auto it = original.find(key);
+            if (it == original.end())
+            {
+                continue;
+            }
+            init(*it, shadow[key]);
         }
         shadow["dont_warn_unused_keys"] = nlohmann::json();
     }
