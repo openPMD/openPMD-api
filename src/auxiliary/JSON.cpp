@@ -180,6 +180,9 @@ void TracingJSON::init(nlohmann::json const &original, nlohmann::json &shadow)
                                                .get<std::vector<std::string>>();
         for (auto const &key : suppress_warnings_for_these)
         {
+            // For each suppressed key, we now emulate an access to that key.
+            // This entails calling init() recursively since that function is
+            // called upon each access to a traced key.
             auto it = original.find(key);
             if (it == original.end())
             {

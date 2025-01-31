@@ -164,6 +164,11 @@ namespace json
             bool trace);
 
         void init();
+        /*
+         * Called upon each traced access of a location in the JSON value, along
+         * with the matching subtree of the shadow.
+         * This implements the `dont_warn_unused_keys` functionality.
+         */
         static void
         init(nlohmann::json const &original, nlohmann::json &shadow);
     };

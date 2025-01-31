@@ -101,6 +101,42 @@ For JSON and ADIOS2, all datasets are resizable, independent of this option.
 
 The key ``rank_table`` allows specifying the creation of a **rank table**, used for tracking :ref:`chunk provenance especially in streaming setups <rank_table>`, refer to the streaming documentation for details.
 
+A warning is printed if the JSON/TOML configuration contains keys that are not understood (and hence ignored) by the openPMD-api.
+Such warnings can be suppressed by listing key names under ``"dont_warn_unused_keys"``.
+
+Example:
+
+  .. code-block:: json
+
+    {
+      "adio2": {
+        "dataset": {
+          "put dataset options": "here"
+        }
+      },
+      "hdf5": {
+        "an unknown": "key",
+        "another unknown": "key",
+        "a third unknown": "key",
+        "dont_warn_unused_keys": ["an unknown", "another unknown"]
+      }
+    }
+
+The openPMD-api will warn about the unknown key ``"adio2"`` (in order to give feedback about the apparent misspelling of ``"adios2"`` to users); there will similarly be a warning for the unknown HDF5 key ``"a third unknown"``. Warnings about the other two unknown keys have been suppressed. The printed warning will hence be about these unknown parts of the JSON configuration:
+
+  .. code-block:: json
+
+    {
+      "adio2": {
+        "dataset": {
+          "put dataset options": "here"
+        }
+      },
+      "hdf5": {
+        "a third unknown": "key"
+      }
+    }
+
 Configuration Structure per Backend
 -----------------------------------
 
