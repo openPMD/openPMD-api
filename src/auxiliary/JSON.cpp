@@ -168,7 +168,7 @@ void TracingJSON::init()
 {
     if (m_originalJSON)
     {
-        init(*m_originalJSON, *m_shadow);
+        init(*m_positionInOriginal, *m_positionInShadow);
     }
 }
 
