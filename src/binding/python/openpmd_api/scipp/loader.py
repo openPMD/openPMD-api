@@ -61,7 +61,7 @@ class DataLoader:
 
     """
 
-    def __init__(self, path):
+    def __init__(self, series):
         """Initialize the DataLoader with an openPMD series from the specified file path.
 
         :param path: The file path to the openPMD data file.
@@ -71,13 +71,13 @@ class DataLoader:
         and the `iterations` attribute as a Scipp dataset containing iteration IDs
         and their corresponding times.
         """
-        self.series = pmd.Series(str(path), pmd.Access.read_only)
+        self.series = series
         self.iterations = get_iterations(self.series)
 
     def get_field(
         self,
         field,
-        component=pmd.Mesh_Record_Component.SCALAR,
+        component=None,
         time=None,
         iteration=None,
         relay=False,

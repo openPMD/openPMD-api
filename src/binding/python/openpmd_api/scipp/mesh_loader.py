@@ -8,7 +8,6 @@ GPL - 3.0 license. See LICENSE file for details.
 """
 
 import numpy as np
-import openpmd_api as pmd
 import scipp as sc
 
 from .utils import _unit_dimension_to_scipp
@@ -135,7 +134,7 @@ class DataRelay(sc.DataArray):
         return data_array
 
 
-def get_field_data_relay(series, iteration, field, component=pmd.Mesh_Record_Component.SCALAR):
+def get_field_data_relay(series, iteration, field, component=None):
     """Get openPMD mesh as a data relay.
 
     Create a DataRelay object for a specified field and component in an openPMD series.
@@ -152,7 +151,7 @@ def get_field_data_relay(series, iteration, field, component=pmd.Mesh_Record_Com
     :rtype: DataRelay
     """
     record = series.iterations[iteration].meshes[field]
-    rc = record[component]
+    rc = record[component] if component else record
     dims = record.axis_labels
     time = (series.iterations[iteration].time + record.time_offset) * series.iterations[
         iteration
@@ -184,7 +183,7 @@ def get_field_data_relay(series, iteration, field, component=pmd.Mesh_Record_Com
     )
 
 
-def get_field(series, iteration, field, component=pmd.Mesh_Record_Component.SCALAR):
+def get_field(series, iteration, field, component=None):
     """Retrieve and load openPMD mesh data without slicing.
 
     This function creates a DataRelay object for a specified field and component in an openPMD
