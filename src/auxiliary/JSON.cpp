@@ -152,6 +152,7 @@ TracingJSON::TracingJSON(
     std::shared_ptr<nlohmann::json> shadow,
     nlohmann::json *positionInOriginal,
     nlohmann::json *positionInShadow,
+    std::deque<std::string> positionForErrorMessages,
     SupportedLanguages originallySpecifiedAs_in,
     bool trace)
     : originallySpecifiedAs(originallySpecifiedAs_in)
@@ -159,6 +160,7 @@ TracingJSON::TracingJSON(
     , m_shadow(std::move(shadow))
     , m_positionInOriginal(positionInOriginal)
     , m_positionInShadow(positionInShadow)
+    , m_positionForErrorMessages(std::move(positionForErrorMessages))
     , m_trace(trace)
 {
     init();
@@ -168,27 +170,65 @@ void TracingJSON::init()
 {
     if (m_originalJSON)
     {
-        init(*m_positionInOriginal, *m_positionInShadow);
+        init(
+            *m_positionInOriginal,
+            *m_positionInShadow,
+            m_positionForErrorMessages);
     }
 }
 
-void TracingJSON::init(nlohmann::json const &original, nlohmann::json &shadow)
+void TracingJSON::init(
+    nlohmann::json const &original,
+    nlohmann::json &shadow,
+    std::deque<std::string> &positionForErrorMessages)
 {
     if (original.is_object() && original.contains("dont_warn_unused_keys"))
     {
-        auto suppress_warnings_for_these = original.at("dont_warn_unused_keys")
-                                               .get<std::vector<std::string>>();
+        auto suppress_warnings_for_these_json =
+            original.at("dont_warn_unused_keys");
+        auto suppress_warnings_for_these = [&]() {
+            try
+            {
+                return suppress_warnings_for_these_json
+                    .get<std::vector<std::string>>();
+            }
+            catch (nlohmann::json::type_error const &e)
+            {
+                std::vector<std::string> errorPath;
+                errorPath.reserve(positionForErrorMessages.size() + 1);
+                for (auto const &val : positionForErrorMessages)
+                {
+                    errorPath.push_back(val);
+                }
+                errorPath.emplace_back("dont_warn_unused_keys");
+                throw error::BackendConfigSchema(
+                    errorPath,
+                    "Key `dont_warn_unused_keys` must be a list of strings, "
+                    "original error was: " +
+                        std::string(e.what()));
+            }
+        }();
         for (auto const &key : suppress_warnings_for_these)
         {
-            // For each suppressed key, we now emulate an access to that key.
-            // This entails calling init() recursively since that function is
-            // called upon each access to a traced key.
+            // For each suppressed key, we now emulate an access to that
+            // key. This entails calling init() recursively since that
+            // function is called upon each access to a traced key.
             auto it = original.find(key);
             if (it == original.end())
             {
                 continue;
             }
-            init(*it, shadow[key]);
+            positionForErrorMessages.push_back(key);
+            try
+            {
+                init(*it, shadow[key], positionForErrorMessages);
+            }
+            catch (...)
+            {
+                positionForErrorMessages.pop_back();
+                throw;
+            }
+            positionForErrorMessages.pop_back();
         }
         shadow["dont_warn_unused_keys"] = nlohmann::json();
     }
