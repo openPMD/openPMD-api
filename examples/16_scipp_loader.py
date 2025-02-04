@@ -1,13 +1,19 @@
 import openpmd_api as pmd
-import openpmd_api.scipp as pmdsc
-import scipp as sc
 
 
 def main():
     series = pmd.Series("../samples/git-sample/data%T.h5", pmd.Access.read_only)
 
+    try:
+        scipp_loader = series.to_scipp()
+        import plopp
+    except ImportError:
+        print("Need to install scipp and plopp to run this example.")
+        return
+    import openpmd_api.scipp as pmdsc
+    import scipp as sc
     time = 65 * sc.Unit("fs")
-    scipp_loader = series.to_scipp()
+
     print(scipp_loader.iterations)
     Ex = scipp_loader.get_field("E", "x", time=time)
     print(Ex)
