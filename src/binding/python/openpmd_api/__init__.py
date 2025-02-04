@@ -3,8 +3,8 @@ from .DaskArray import record_component_to_daskarray
 from .DaskDataFrame import particles_to_daskdataframe
 from .DataFrame import (iterations_to_cudf, iterations_to_dataframe,
                         particles_to_dataframe)
-from .ScippLazyInit import series_to_scipp
 from .openpmd_api_cxx import *  # noqa
+from .scipp.lazy_init import series_to_scipp
 
 __version__ = cxx.__version__
 __doc__ = cxx.__doc__
