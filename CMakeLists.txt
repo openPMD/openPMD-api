@@ -690,7 +690,7 @@ if(openPMD_HAVE_PYTHON)
         ls/__init__.py   ls/__main__.py
         pipe/__init__.py pipe/__main__.py
         scipp/__init__.py scipp/loader.py scipp/mesh_loader.py scipp/utils.py
-        scipp/lazy_init.py
+        ScippLazyInit.py
     )
 endif()
 
