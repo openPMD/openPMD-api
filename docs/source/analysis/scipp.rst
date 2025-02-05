@@ -14,18 +14,18 @@ numpy arrays with axes description and units.
 
 * Automatically load axes and units with openPMD data.
 * Axes information is automatically updated when slicing, indexing, or filtering your data.
-* With ``scipp``\ ’s plotting library `plopp <https://github.com/scipp/plopp>`__ it becomes an alternative to ``openpmd-viewer``.
+* With ``scipp``'s plotting library `plopp <https://github.com/scipp/plopp>`__ it becomes an alternative to ``openpmd-viewer``.
 * Many numpy and some scipy functions including all the basic algebraic operations on arrays are supported by ``scipp``. When using these, the units and coordinates are automatically taken care of.
 
 Limitations
-~~~~~~~~~~~
+-----------
 
 -  ``scipp`` currently handles units with a library, that does not
    support non-integer exponents for units. This can become problematic
    in some calculations.
 
 Installation
-------------
+~~~~~~~~~~~~
 
 It can be easily installed with pip.
 
@@ -36,7 +36,7 @@ It can be easily installed with pip.
    pip install .
 
 Getting started
----------------
+~~~~~~~~~~~~~~~
 
 Get example data sets from the ``openPMD-example-datasets`` repository.
 
@@ -79,9 +79,9 @@ Opening series
      iteration_id                int64  [dimensionless]  (t)  [100, 200, ..., 400, 500]
 
 Working with meshes (fields)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
-Let us plot electric field’s x component at 65 fs.
+Let us plot electric field's x component at 65 fs.
 
 .. code:: python
 
@@ -166,12 +166,12 @@ iteration regardless of the difference. So that this will also work:
                                float64           [mC/L]  (x, y, z)  [-7169.01, -7526.4, ..., 3.16049e-11, 1.22782e-11]
 
 Plotting
-^^^^^^^^
+--------
 
-W can’t directly plot 3D data. But we can for example select a slice.
+We can't directly plot 3D data. But we can for example select a slice.
 For that we can use a helper function ``pmdsc.closest`` to get the
 closets index, since ``scipp`` requires exact match. You can read more
-about indexing ``scipp`` arrays in ``scipp``\ ’s documentation.
+about indexing ``scipp`` arrays in ``scipp``'s documentation.
 
 .. code:: python
 
@@ -221,12 +221,12 @@ about indexing ``scipp`` arrays in ``scipp``\ ’s documentation.
 
 .. figure:: README_17_0.svg
 
-Alternatively it is possible to work interactively with ``plopp``\ ’s
+Alternatively it is possible to work interactively with ``plopp``'s
 tools for visualizing multidimensional data, such as ``pp.slicer``\ or
 ``pp.inspector``.
 
 Doing math
-^^^^^^^^^^
+----------
 
 Just as an example we can easily plot the square of the field:
 
@@ -237,7 +237,7 @@ Just as an example we can easily plot the square of the field:
 .. figure:: README_19_0.svg
 
 Loading chunks
-~~~~~~~~~~~~~~
+--------------
 
 In the above example the whole 3D field is loaded into memory and sliced
 afterward. It is also possible to just load a sub-chunk into memory.
@@ -277,10 +277,10 @@ proper ``scipp`` data array.
                                float64            [V/m]  (x, y, z)  [-3.65733e+08, -5.01237e+08, ..., 0, 0]
 
 Time axis
-~~~~~~~~~
+---------
 
 It is also possible to combine arrays from different iterations into one
-using ``scipp``\ ’s ``concat`` function. Here is an example for creating
+using ``scipp``'s ``concat`` function. Here is an example for creating
 a 4D array from all iterations:
 
 .. code:: python
