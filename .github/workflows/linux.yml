@@ -128,10 +128,8 @@ jobs:
     - name: Install
       run: |
         sudo apt update
-        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget python3.11-venv
+        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
         sudo .github/workflows/dependencies/install_spack
-        python3.11 -m venv /opt/python_venv
-        . /opt/python_venv/bin/activate
         python -m pip install numpy pandas
         git clone -b v4.0.3 https://github.com/ToruNiina/toml11
         cmake -S toml11 -B build_toml11               \
@@ -142,12 +140,8 @@ jobs:
     - name: Build
       env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
-        # Build Spack packages against system Python
-        # and activate the virtual environment just for the openPMD build.
-        # Spack does not play nice with venv.
         eval $(spack env activate --sh .github/ci/spack-envs/clang14_py311_nompi_h5_ad2/)
         spack install
-        . /opt/python_venv/bin/activate
 
         share/openPMD/download_samples.sh build
         export CMAKE_PREFIX_PATH="$(realpath toml11_install):$CMAKE_PREFIX_PATH"
@@ -283,15 +277,10 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        # Use a virtual environment in order to avoid compatibility issues
-        # between the various Python installations in this image.
-        python3.10 -m venv /opt/python_env
-        . /opt/python_env/bin/activate
         python -m pip install numpy
     - name: Build
       env: {CXXFLAGS: -Werror}
       run: |
-        . /opt/python_env/bin/activate
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
