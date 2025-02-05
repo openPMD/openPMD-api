@@ -136,6 +136,7 @@ jobs:
         sudo apt install clang-15 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
         sudo .github/workflows/dependencies/install_spack
         python3.11 -m pip install numpy pandas
+        python -m pip install scipp plopp
         git clone -b v4.0.3 https://github.com/ToruNiina/toml11
         cmake -S toml11 -B build_toml11               \
           -DCMAKE_INSTALL_PREFIX=toml11_install \
@@ -246,6 +247,8 @@ jobs:
         python3 -m pip install -U pandas
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
+        python3 -m pip install -U plopp
+        python3 -m pip install -U scipp
     - name: Build
       env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
       run: |
@@ -319,7 +322,10 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        python3.10 -m pip install numpy h5py
+        python3.10 -m pip install numpy
+        python3.10 -m pip install h5py
+        python3.10 -m pip install scipp
+        python3.10 -m pip install plopp
     - name: Build
       env: {CXXFLAGS: "-Werror -Wno-error=maybe-uninitialized"}
       run: |
