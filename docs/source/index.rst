@@ -142,6 +142,7 @@ Data Analysis
    analysis/pandas
    analysis/dask
    analysis/rapids
+   analysis/scipp
    analysis/contrib
 
 Development
