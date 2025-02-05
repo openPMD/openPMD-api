@@ -5,6 +5,10 @@ Scipp
 
 Load openpmd datasets to ``scipp`` ``DataArrays``.
 
+.. note::
+
+   This documentation page is also available as an interactively executable Jupyter Notebook in ``examples/15_scipp_loader.ipynb``.
+
 What is this good for?
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -63,13 +67,12 @@ Opening series
 
 .. code:: python
 
-   path = "openPMD-example-datasets/example-3d/hdf5/data%T.h5"
-   path = "./data/" + path
+   path = "../samples/git-sample/data%T.h5"
 
 .. code:: python
 
    series = pmd.Series(path, pmd.Access.read_random_access)
-   data_loader = sereies.to_scipp()
+   data_loader = series.to_scipp()
    print(data_loader.iterations)
 
 ::
