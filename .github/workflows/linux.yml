@@ -130,7 +130,7 @@ jobs:
         sudo apt update
         sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
         sudo .github/workflows/dependencies/install_spack
-        python -m pip install numpy pandas
+        python3.11 -m pip install numpy pandas
         git clone -b v4.0.3 https://github.com/ToruNiina/toml11
         cmake -S toml11 -B build_toml11               \
           -DCMAKE_INSTALL_PREFIX=toml11_install \
@@ -153,7 +153,7 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON   \
           -DopenPMD_USE_INTERNAL_TOML11=OFF \
           -DCMAKE_VERBOSE_MAKEFILE=ON       \
-          -DPython_EXECUTABLE="$(which python)"
+          -DPython_EXECUTABLE="$(which python3.11)"
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
@@ -277,7 +277,7 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        python -m pip install numpy
+        python3.10 -m pip install numpy
     - name: Build
       env: {CXXFLAGS: -Werror}
       run: |
@@ -287,7 +287,7 @@ jobs:
           -DopenPMD_USE_MPI=OFF   \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DPython_EXECUTABLE=$(which python)
+          -DPython_EXECUTABLE=$(which python3.10)
         cmake --build build --parallel 2
         cd build
         ctest --output-on-failure
