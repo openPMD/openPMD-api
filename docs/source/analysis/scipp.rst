@@ -27,13 +27,13 @@ Limitations
 Installation
 ~~~~~~~~~~~~
 
-It can be easily installed with pip.
+The adaptor from openPMD to Scipp is part of the regular openPMD-api Python distribution.
+It is loaded lazily and available as soon as ``scipp`` is also installed.
+Plotting functionality requires the additional installation of ``plopp``.
 
 .. code:: bash
 
-   git clone https://github.com/pordyna/openpmd_scipp.git
-   cd openpmd-scipp
-   pip install .
+   pip install openpmd_api scipp plopp
 
 Getting started
 ~~~~~~~~~~~~~~~
@@ -47,26 +47,29 @@ Get example data sets from the ``openPMD-example-datasets`` repository.
    tar -zxvf example-2d.tar.gz
    tar -zxvf example-3d.tar.gz
 
+.. note::
+
+   You can find scripts to download and unpack this sample data under ``share/openPMD``.
+
 Opening series
-~~~~~~~~~~~~~~
+--------------
 
 .. code:: python
 
    import scipp as sc
 
-   import openpmd_scipp as pmdsc
+   import openpmd_api as pmd
+   import openpmd_api.scipp as pmdsc
 
 .. code:: python
 
    path = "openPMD-example-datasets/example-3d/hdf5/data%T.h5"
+   path = "./data/" + path
 
 .. code:: python
 
-   path = ".data/" + path
-
-.. code:: python
-
-   data_loader = pmdsc.DataLoader(path)
+   series = pmd.Series(path, pmd.Access.read_random_access)
+   data_loader = sereies.to_scipp()
    print(data_loader.iterations)
 
 ::
@@ -338,33 +341,3 @@ Working with particle data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Coming soon!
-
-Developer documentation
------------------------
-
-Generating this README
-~~~~~~~~~~~~~~~~~~~~~~
-
-README file is generated from the README.ipynb.
-
-::
-
-   # Download and extract example datasets if not present
-   # Will download data into ``.data``
-   make data
-
-   make docs
-
-Running tests
-~~~~~~~~~~~~~
-
-At the moment we only test we have is an integration test running this
-notebook. After downloading example datasets with ``make data``, if
-needed, run:
-
-::
-
-   make test
-
-You can also run tests with different python version with tox, but you
-need to have the python version installed, for example with pyenv.
