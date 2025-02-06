@@ -41,12 +41,17 @@ extensions = ['sphinx.ext.mathjax',
               'breathe',
               'sphinx_copybutton',
               'sphinx_design',
+              'sphinxcontrib.googleanalytics',
               'sphinxcontrib.programoutput',
               'sphinxcontrib.rsvgconverter',
               'matplotlib.sphinxext.plot_directive']
 
 if not on_rtd:
     extensions.append('sphinx.ext.githubpages')
+
+# Google Analytics
+googleanalytics_id = "G-3P1ZT3SQQ5"
+googleanalytics_enabled = True
 
 # breathe config
 breathe_projects = {'openPMD-api': '../xml'}
