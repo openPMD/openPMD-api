@@ -355,3 +355,6 @@ A full example:
 
 .. literalinclude:: openpmd_extended_config.json
    :language: json
+
+.. literalinclude:: openpmd_extended_config.toml
+   :language: toml

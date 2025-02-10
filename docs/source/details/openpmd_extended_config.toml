@@ -1,0 +1,44 @@
+
+# ADIOS2 config
+
+[adios2.engine.parameters]
+Profile = "On"
+
+# default configuration
+[[adios2.dataset]]
+# nested list as ADIOS2 can add multiple operators to a single dataset
+[[adios2.dataset.cfg.operators]]
+type = "blosc"
+parameters.doshuffle = "BLOSC_BITSHUFFLE"
+parameters.clevel = "1"
+
+# dataset-specific configuration to exclude some datasets
+# from applying operators.
+[[adios2.dataset]]
+select = [".*positionOffset.*", ".*particlePatches.*"]
+cfg.operators = []
+
+# Now HDF5
+
+[hdf5]
+independent_stores = false
+
+# default configuration
+# The position of the default configuration does not matter, but there must
+# be only one single default configuration.
+[[hdf5.dataset]]
+cfg.chunks = "auto"
+
+# Dataset-specific configuration that specifies full paths,
+# i.e. including the path to the Iteration.
+# The non-default configurations are matched in top-down order,
+# so the order is relevant.
+[[hdf5.dataset]]
+select = ["/data/1/particles/e/.*", "/data/2/particles/e/.*"]
+cfg.chunks = [5]
+
+# dataset-specific configuration that specifies only the path
+# within the Iteration
+[[hdf5.dataset]]
+select = "particles/e/.*"
+cfg.chunks = [10]
