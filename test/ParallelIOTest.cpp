@@ -280,6 +280,10 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
         [hdf5]
         independent_stores = false
 
+        # default config
+        [[hdf5.dataset]]
+        cfg = {chunks = "none"}
+
         [[hdf5.dataset]]
         select = "particles/.*/position/.*"
         cfg = {chunks = [1]}
@@ -882,6 +886,8 @@ void file_based_write_read(std::string const &file_ending)
             std::to_string(local_Nz) + "]";
         // clang-format off
         std::string out_config = R"(
+            [[hdf5.dataset]]
+            cfg = {chunks = "auto"}
             [[hdf5.dataset]]
             select = "meshes/E/.*"
             cfg = {chunks = )" + chunking_config + R"(}
