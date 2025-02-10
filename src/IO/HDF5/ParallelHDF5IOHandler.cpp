@@ -72,7 +72,8 @@ ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &params)
         hdf5_config_it != params.backendConfig.json().end())
     {
         auto copied_global_cfg = m_impl->m_global_flush_config;
-        json::merge(copied_global_cfg, hdf5_config_it.value());
+        json::merge(
+            copied_global_cfg, hdf5_config_it.value(), /* do_prune = */ true);
         hdf5_config_it.value() = std::move(copied_global_cfg);
     }
     else
