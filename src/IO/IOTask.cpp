@@ -77,11 +77,13 @@ void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
 
 template <>
 json::ParsedConfig Parameter<Operation::CREATE_DATASET>::compileJSONConfig(
-    Writable const *writable, json::JsonMatcher &jsonMatcher) const
+    Writable const *writable,
+    json::JsonMatcher &jsonMatcher,
+    std::string const &backendName) const
 {
     auto attri = writable->attributable->asInternalCopyOf<Attributable>();
     auto path = attri.myPath().openPMDPath();
-    auto base_config = jsonMatcher.get(path);
+    auto base_config = jsonMatcher.get(path, backendName);
     auto manual_config =
         json::parseOptions(options, /* considerFiles = */ false);
     json::merge_internal(

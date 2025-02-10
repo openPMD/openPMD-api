@@ -57,6 +57,7 @@ void MatcherPerBackend::init(TracingJSON tracing_config)
     }
     else if (config.is_array())
     {
+        m_patterns.reserve(config.size());
         std::optional<nlohmann::json> defaultConfig;
         // enhanced PIConGPU-defined layout
         for (size_t i = 0; i < config.size(); ++i)
@@ -107,33 +108,6 @@ auto JsonMatcher::init() -> void
         throw error::BackendConfigSchema(
             {}, "Expected an object for the JSON configuration.");
     }
-    m_perBackend.reserve(backendKeys.size());
-    for (auto it = m_entireConfig.json().begin();
-         it != m_entireConfig.json().end();
-         ++it)
-    {
-        std::string const &backendName = it.key();
-        if (std::find(backendKeys.begin(), backendKeys.end(), backendName) ==
-            backendKeys.end())
-        {
-            // The key does not point to the configuration of a backend
-            // recognized by PIConGPU Ignore it.
-            continue;
-        }
-        if (!it.value().is_object())
-        {
-            throw error::BackendConfigSchema(
-                {it.key()},
-                "Each backend's configuration must be a JSON object (config "
-                "for backend " +
-                    backendName + ").");
-        }
-        if (it.value().contains("dataset"))
-        {
-            m_perBackend.emplace_back(
-                backendName, m_entireConfig[it.key()]["dataset"]);
-        }
-    }
 }
 
 MatcherPerBackend::MatcherPerBackend() = default;
@@ -153,29 +127,58 @@ JsonMatcher::JsonMatcher(TracingJSON entireConfig)
     init();
 }
 
-auto JsonMatcher::get(std::string const &datasetPath) const -> ParsedConfig
+auto JsonMatcher::get(
+    std::string const &datasetPath, std::string const &backendName)
+    -> ParsedConfig
 {
+    initBackendLazily(backendName);
+
     nlohmann::json result = nlohmann::json::object();
-    for (auto const &backend : m_perBackend)
+    // might not have been initialized due to unspecified configuration
+    if (m_backendMatcher.backendName == backendName)
     {
-        auto const &datasetConfig = backend.get(datasetPath);
-        if (datasetConfig.empty())
+        auto const &datasetConfig = m_backendMatcher.get(datasetPath);
+        if (!datasetConfig.empty())
         {
-            // ensure that there actually is an object to erase this from
-            result[backend.backendName]["dataset"] = {};
-            result[backend.backendName].erase("dataset");
-        }
-        else
-        {
-            result[backend.backendName]["dataset"] = datasetConfig;
+            result[backendName]["dataset"] = datasetConfig;
         }
     }
+
     return {result, m_entireConfig.originallySpecifiedAs};
 }
 
-auto JsonMatcher::getDefault() -> TracingJSON
+auto JsonMatcher::getDefault(std::string const &backendName) -> TracingJSON
 {
+    initBackendLazily(backendName);
     return m_entireConfig;
+}
+
+auto JsonMatcher::initBackendLazily(std::string const &backendName) -> void
+{
+    if (m_backendMatcher.backendName == backendName)
+    {
+        // already initialized
+        return;
+    }
+    if (!m_entireConfig.json().contains(backendName))
+    {
+        return;
+    }
+    auto const &backendConfig = m_entireConfig.json({backendName});
+    if (!backendConfig.is_object())
+    {
+        throw error::BackendConfigSchema(
+            {backendName},
+            "Each backend's configuration must be a JSON object (config "
+            "for backend " +
+                backendName + ").");
+    }
+    else if (!backendConfig.contains("dataset"))
+    {
+        return;
+    }
+    m_backendMatcher =
+        MatcherPerBackend(backendName, m_entireConfig[backendName]["dataset"]);
 }
 
 namespace

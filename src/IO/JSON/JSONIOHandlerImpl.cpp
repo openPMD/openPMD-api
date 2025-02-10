@@ -393,7 +393,7 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
-    init(handler->jsonMatcher->getDefault());
+    init(handler->jsonMatcher->getDefault(backendConfigKey()));
 }
 
 #if openPMD_HAVE_MPI
@@ -407,7 +407,7 @@ JSONIOHandlerImpl::JSONIOHandlerImpl(
     , m_fileFormat{format}
     , m_originalExtension{std::move(originalExtension)}
 {
-    init(handler->jsonMatcher->getDefault());
+    init(handler->jsonMatcher->getDefault(backendConfigKey()));
 }
 #endif
 

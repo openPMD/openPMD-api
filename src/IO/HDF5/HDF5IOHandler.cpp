@@ -142,7 +142,7 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
         m_H5T_LONG_DOUBLE_80_LE >= 0,
         "[HDF5] Internal error: Failed to create 128-bit complex long double");
 
-    auto config = handler->jsonMatcher->getDefault();
+    auto config = handler->jsonMatcher->getDefault("hdf5");
 
     // JSON option can overwrite env option:
     if (config.json().contains("hdf5"))
@@ -506,7 +506,7 @@ void HDF5IOHandlerImpl::createDataset(
         json::TracingJSON config = [&]() {
             auto parsed_config =
                 parameters.compileJSONConfig<json::ParsedConfig>(
-                    writable, *m_handler->jsonMatcher);
+                    writable, *m_handler->jsonMatcher, "hdf5");
             if (auto hdf5_config_it = parsed_config.config.find("hdf5");
                 hdf5_config_it != parsed_config.config.end())
             {

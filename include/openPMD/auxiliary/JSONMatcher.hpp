@@ -88,7 +88,11 @@ public:
 class JsonMatcher
 {
 private:
-    std::vector<MatcherPerBackend> m_perBackend;
+    // Only one backend matcher is initialized lazily upon calling
+    // JsonMatcher::get()
+    // Usually only one backend is active, so initializing all of them
+    // is not necessary.
+    MatcherPerBackend m_backendMatcher;
     TracingJSON m_entireConfig;
 
     auto init() -> void;
@@ -119,13 +123,16 @@ public:
      * @param datasetPath The regex.
      * @return The matched JSON configuration, as a string.
      */
-    auto get(std::string const &datasetPath) const -> ParsedConfig;
+    auto get(std::string const &datasetPath, std::string const &backendName)
+        -> ParsedConfig;
 
     /**
      * @brief Get the default JSON config.
      *
      * @return The default JSON configuration.
      */
-    auto getDefault() -> TracingJSON;
+    auto getDefault(std::string const &backendName) -> TracingJSON;
+
+    auto initBackendLazily(std::string const &backendName) -> void;
 };
 } // namespace openPMD::json

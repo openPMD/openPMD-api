@@ -116,7 +116,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     , m_userSpecifiedExtension{std::move(specifiedExtension)}
 {
     init(
-        handler->jsonMatcher->getDefault(),
+        handler->jsonMatcher->getDefault("adios2"),
         /* callbackWriteAttributesFromRank = */
         [communicator, this](nlohmann::json const &attribute_writing_ranks) {
             int rank = 0;
@@ -165,7 +165,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     , m_engineType(std::move(engineType))
     , m_userSpecifiedExtension(std::move(specifiedExtension))
 {
-    init(handler->jsonMatcher->getDefault(), [](auto const &...) {});
+    init(handler->jsonMatcher->getDefault("adios2"), [](auto const &...) {});
 }
 
 ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
@@ -786,7 +786,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         std::vector<ParameterizedOperator> operators;
         json::TracingJSON options =
             parameters.compileJSONConfig<json::ParsedConfig>(
-                writable, *m_handler->jsonMatcher);
+                writable, *m_handler->jsonMatcher, "adios2");
         if (options.json().contains("adios2"))
         {
             json::TracingJSON datasetConfig(options["adios2"]);

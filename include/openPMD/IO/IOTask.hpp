@@ -378,8 +378,10 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_DATASET>
         std::string const &warningMessage);
 
     template <typename TracingJSON>
-    TracingJSON
-    compileJSONConfig(Writable const *writable, json::JsonMatcher &) const;
+    TracingJSON compileJSONConfig(
+        Writable const *writable,
+        json::JsonMatcher &,
+        std::string const &backendName) const;
 };
 
 template <>
