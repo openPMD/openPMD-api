@@ -657,7 +657,7 @@ void warnGlobalUnusedOptions(TracingJSON const &config)
     }
 }
 
-nlohmann::json &merge(
+nlohmann::json &merge_internal(
     nlohmann::json &defaultVal, nlohmann::json const &overwrite, bool do_prune)
 {
     if (defaultVal.is_object() && overwrite.is_object())
@@ -666,7 +666,7 @@ nlohmann::json &merge(
         for (auto it = overwrite.begin(); it != overwrite.end(); ++it)
         {
             auto &valueInDefault = defaultVal[it.key()];
-            merge(valueInDefault, it.value(), do_prune);
+            merge_internal(valueInDefault, it.value(), do_prune);
             if (do_prune && valueInDefault.is_null())
             {
                 prunedKeys.push(it.key());
@@ -712,7 +712,7 @@ std::string merge_impl(
         overwrite,
         std::forward<MPI_Comm_t>(comm)...,
         /* considerFiles = */ true);
-    merge(res, second, /* do_prune = */ true);
+    merge_internal(res, second, /* do_prune = */ true);
     switch (returnFormat)
     {
     case SupportedLanguages::JSON:

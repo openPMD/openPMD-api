@@ -276,7 +276,7 @@ namespace json
      * Like merge() as defined in JSON.hpp, but this overload works directly
      * on nlohmann::json values.
      */
-    nlohmann::json &merge(
+    nlohmann::json &merge_internal(
         nlohmann::json &defaultVal,
         nlohmann::json const &overwrite,
         bool do_prune);

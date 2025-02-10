@@ -175,7 +175,7 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             json::filterByTemplate(
                 m_global_flush_config, nlohmann::json::parse(flush_cfg_mask));
             auto init_json_shadow = nlohmann::json::parse(init_json_shadow_str);
-            json::merge(
+            json::merge_internal(
                 m_config.getShadow(), init_json_shadow, /* do_prune = */ false);
         }
 
@@ -511,7 +511,7 @@ void HDF5IOHandlerImpl::createDataset(
                 hdf5_config_it != parsed_config.config.end())
             {
                 auto copy = m_global_dataset_config;
-                json::merge(
+                json::merge_internal(
                     copy, hdf5_config_it.value(), /* do_prune = */ true);
                 hdf5_config_it.value() = std::move(copy);
             }

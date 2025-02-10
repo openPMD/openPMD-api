@@ -84,7 +84,7 @@ json::ParsedConfig Parameter<Operation::CREATE_DATASET>::compileJSONConfig(
     auto base_config = jsonMatcher.get(path);
     auto manual_config =
         json::parseOptions(options, /* considerFiles = */ false);
-    json::merge(
+    json::merge_internal(
         base_config.config, manual_config.config, /* do_prune = */ true);
     return json::ParsedConfig{
         std::move(base_config.config),
