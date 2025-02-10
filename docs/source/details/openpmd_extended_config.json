@@ -1,0 +1,62 @@
+{
+  "adios2": {
+    "engine": {
+      "parameters": {
+        "Profile": "On"
+      }
+    },
+    "dataset": [
+      {
+        "cfg": {
+          "operators": [
+            {
+              "type": "blosc",
+              "parameters": {
+                "clevel": "1",
+                "doshuffle": "BLOSC_BITSHUFFLE"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "select": [
+          ".*positionOffset.*",
+          ".*particlePatches.*"
+        ],
+        "cfg": {
+          "operators": []
+        }
+      }
+    ]
+  },
+  "hdf5": {
+    "independent_stores": false,
+    "dataset": [
+      {
+        "cfg": {
+          "chunks": "auto"
+        }
+      },
+      {
+        "select": [
+          "/data/1/particles/e/.*",
+          "/data/2/particles/e/.*"
+        ],
+        "cfg": {
+          "chunks": [
+            5
+          ]
+        }
+      },
+      {
+        "select": "particles/e/.*",
+        "cfg": {
+          "chunks": [
+            10
+          ]
+        }
+      }
+    ]
+  }
+}
