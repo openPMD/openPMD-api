@@ -274,11 +274,23 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     auto mpi_size = static_cast<uint64_t>(mpi_s);
     auto mpi_rank = static_cast<uint64_t>(mpi_r);
+    std::string chunking_config = "[" + std::to_string(mpi_size) + "]";
+    // clang-format off
+    std::string config = R"(
+        [hdf5]
+        independent_stores = false
+
+        [[hdf5.dataset]]
+        select = "particles/.*/position/.*"
+        cfg = {chunks = [1]}
+
+        [[hdf5.dataset]]
+        select = "particles/.*/positionOffset/x"
+        cfg = {chunks = )" + chunking_config + R"(}
+    )";
+    // clang-format on
     Series o = Series(
-        "../samples/parallel_write.h5",
-        Access::CREATE,
-        MPI_COMM_WORLD,
-        "hdf5.independent_stores = false");
+        "../samples/parallel_write.h5", Access::CREATE, MPI_COMM_WORLD, config);
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies &e = o.iterations[1].particles["e"];
@@ -291,10 +303,8 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     std::shared_ptr<double> position_local(new double);
     *position_local = position_global[mpi_rank];
 
-    e["position"]["x"].resetDataset(Dataset(
-        determineDatatype(position_local),
-        {mpi_size},
-        "hdf5.dataset.chunks = [1]"));
+    e["position"]["x"].resetDataset(
+        Dataset(determineDatatype(position_local), {mpi_size}));
     e["position"]["x"].storeChunk(position_local, {mpi_rank}, {1});
 
     o.flush("hdf5.independent_stores = true");
@@ -308,10 +318,8 @@ TEST_CASE("hdf5_write_test", "[parallel][hdf5]")
     std::shared_ptr<uint64_t> positionOffset_local(new uint64_t);
     *positionOffset_local = positionOffset_global[mpi_rank];
 
-    e["positionOffset"]["x"].resetDataset(Dataset(
-        determineDatatype(positionOffset_local),
-        {mpi_size},
-        "hdf5.dataset.chunks = [" + std::to_string(mpi_size) + "]"));
+    e["positionOffset"]["x"].resetDataset(
+        Dataset(determineDatatype(positionOffset_local), {mpi_size}));
     e["positionOffset"]["x"].storeChunk(positionOffset_local, {mpi_rank}, {1});
 
     // Test that chunking settings are not carried over to other datasets.
@@ -870,8 +878,18 @@ void file_based_write_read(std::string const &file_ending)
         });
 
     {
+        std::string chunking_config = "[" + std::to_string(global_Nx) + ", " +
+            std::to_string(local_Nz) + "]";
+        // clang-format off
+        std::string out_config = R"(
+            [[hdf5.dataset]]
+            select = "meshes/E/.*"
+            cfg = {chunks = )" + chunking_config + R"(}
+)";
+        // clang-format on
+
         // open a parallel series
-        Series series(name, Access::CREATE, MPI_COMM_WORLD);
+        Series series(name, Access::CREATE, MPI_COMM_WORLD, out_config);
         series.setIterationEncoding(IterationEncoding::fileBased);
 
         int const last_step = 100;
@@ -908,10 +926,7 @@ void file_based_write_read(std::string const &file_ending)
                 });
 
             auto dataset = io::Dataset(
-                io::determineDatatype<precision>(),
-                {global_Nx, global_Nz},
-                "hdf5.dataset.chunks = [" + std::to_string(global_Nx) + ", " +
-                    std::to_string(local_Nz) + "]");
+                io::determineDatatype<precision>(), {global_Nx, global_Nz});
             E_x.resetDataset(dataset);
 
             Offset chunk_offset = {0, size_t(local_Nz) * mpi_rank};
