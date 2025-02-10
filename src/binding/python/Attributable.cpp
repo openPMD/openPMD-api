@@ -502,7 +502,9 @@ void init_Attributable(py::module &m)
             "series_extension", &Attributable::MyPath::seriesExtension)
         .def_readonly("group", &Attributable::MyPath::group)
         .def_readonly("access", &Attributable::MyPath::access)
-        .def_property_readonly("file_path", &Attributable::MyPath::filePath);
+        .def_property_readonly("file_path", &Attributable::MyPath::filePath)
+        .def_property_readonly(
+            "openPMD_path", &Attributable::MyPath::openPMDPath);
 
     py::class_<Attributable>(m, "Attributable")
         .def(py::init<Attributable const &>())
