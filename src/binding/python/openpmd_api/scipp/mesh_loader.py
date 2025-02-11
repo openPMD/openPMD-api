@@ -40,8 +40,8 @@ class DataRelay(sc.DataArray):
     def _verify_init(self):
         """Verify that the data is contiguous.
 
-        Check if the chosen subset is contiguous in the openPMD storage by checking coordinate
-        differences against the expected grid spacing.
+        Check if the chosen subset is contiguous in the openPMD storage
+        by checking coordinate differences against the expected grid spacing.
 
         This is needed since openPMD does nto allow us to load strided chunks.
         """
@@ -64,11 +64,13 @@ class DataRelay(sc.DataArray):
         :type series: openpmd_api.Series
         :param record: The openPMD record object associated with the mesh.
         :type record: openpmd_api.Record
-        :param record_component: The openPMD record component associated with the mesh.
+        :param record_component: The openPMD record component
+            associated with the mesh.
         :type record_component: openpmd_api.Record_Component
-        :param dummy_array: A scipp array used for the dummy interface. It should use as little
-            memory as possible. Usually achieved by setting the stride of the values array to 0. Can
-            be read- only.
+        :param dummy_array: A scipp array used for the dummy interface.
+            It should use as little memory as possible.
+            Usually achieved by setting the stride of the values array to 0.
+            Can be read- only.
         :type dummy_array: sc.array
         :param coords: A dictionary of coordinates for the DataArray.
         """
@@ -81,8 +83,9 @@ class DataRelay(sc.DataArray):
     def __getitem__(self, *args, **kwargs):
         """Retrieve a subset of the data, returning a new DataRelay instance.
 
-        Override this method from the base class to use the DataRelay initializer and ensure that
-        DataRelay is returned and the _verify_init method is used.
+        Override this method from the base class to use the DataRelay
+        initializer and ensure that DataRelay is returned and
+        the _verify_init method is used.
 
         :param args: Forwarded to the base class.
         :type args: tuple
@@ -105,9 +108,9 @@ class DataRelay(sc.DataArray):
 
         Loads a chunk based on the current data array coordinates.
 
-        Calculates the offset and extent for each dimension using the data array coordinates. Loads
-        the data chunk from the record component, scales it by the unit SI, and returns a new data
-        array with loaded values.
+        Calculates the offset and extent for each dimension using the data array
+        coordinates. Loads the data chunk from the record component, scales it
+        by the unit SI, and returns a new data array with loaded values.
 
         :return: The DataArray instance with the loaded data.
         :rtype: DataRelay
@@ -137,7 +140,8 @@ class DataRelay(sc.DataArray):
 def get_field_data_relay(series, iteration, field, component=None):
     """Get openPMD mesh as a data relay.
 
-    Create a DataRelay object for a specified field and component in an openPMD series.
+    Create a DataRelay object for a specified field and component in
+    an openPMD series.
 
     :param series: The openPMD series containing the data.
     :type series: openpmd_api.Series
@@ -147,7 +151,8 @@ def get_field_data_relay(series, iteration, field, component=None):
     :type field: str
     :param component: The component of the field to retrieve, default is SCALAR.
     :type component: openpmd_api.Mesh_Record_Component, optional
-    :return: A DataRelay instance initialized with the specified field and component data.
+    :return: A DataRelay instance initialized with the specified field
+        and component data.
     :rtype: DataRelay
     """
     record = series.iterations[iteration].meshes[field]
@@ -175,7 +180,8 @@ def get_field_data_relay(series, iteration, field, component=None):
         small, shape=rc.shape, strides=[0] * rc.ndim, writeable=False
     )
     dummy_array = sc.array(
-        dims=dims, values=dummy_array, unit=_unit_dimension_to_scipp(record.unit_dimension)
+        dims=dims, values=dummy_array, unit=_unit_dimension_to_scipp(
+            record.unit_dimension)
     )
 
     return DataRelay(
@@ -186,8 +192,9 @@ def get_field_data_relay(series, iteration, field, component=None):
 def get_field(series, iteration, field, component=None):
     """Retrieve and load openPMD mesh data without slicing.
 
-    This function creates a DataRelay object for a specified field and component in an openPMD
-    series, loads the whole mesh, and returns the resulting DataArray.
+    This function creates a DataRelay object for a specified field
+    and component in an openPMD series, loads the whole mesh, and returns
+    the resulting DataArray.
 
     :param series: The openPMD series containing the data.
     :type series: openpmd_api.Series

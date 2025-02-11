@@ -35,7 +35,8 @@ def get_iterations(series):
 
     :param series: The openPMD series containing the data.
     :type series: openpmd_api.Series
-    :return: A Scipp dataset containing iteration IDs and their corresponding times.
+    :return: A Scipp dataset containing iteration IDs and their
+        corresponding times.
     :rtype: sc.Dataset
     """
     t = get_time_axis(series)
@@ -56,20 +57,23 @@ class DataLoader:
     The data can be retrieved as a DataRelay object or directly as a DataArray.
 
     Attributes:
-        series (openpmd_api.Series): The openPMD series initialized from the file path.
-        iterations (sc.Dataset): A dataset containing iteration IDs and their corresponding times.
+        series (openpmd_api.Series): The openPMD series initialized from
+            the file path.
+        iterations (sc.Dataset): A dataset containing iteration IDs
+            and their corresponding times.
 
     """
 
     def __init__(self, series):
-        """Initialize the DataLoader with an openPMD series from the specified file path.
+        """Initialize the DataLoader with an openPMD series from
+            the specified file path.
 
         :param path: The file path to the openPMD data file.
         :type path: str
 
-        Initializes the `series` attribute as an openPMD series in read-only mode
-        and the `iterations` attribute as a Scipp dataset containing iteration IDs
-        and their corresponding times.
+        Initializes the `series` attribute as an openPMD series in
+        read-only mode and the `iterations` attribute as a Scipp dataset
+        containing iteration IDs and their corresponding times.
         """
         self.series = series
         self.iterations = get_iterations(self.series)
@@ -122,9 +126,11 @@ class DataLoader:
             # handle integer  inputs
             time = time.astype("double")
             time_tolerance = time_tolerance.astype("double")
-            time = time.to(unit=self.iterations["iteration_id"].coords["t"].unit)
+            time = time.to(
+                unit=self.iterations["iteration_id"].coords["t"].unit)
             try:
-                iteration = int(self.iterations["iteration_id"]["t", time].value)
+                iteration = int(
+                    self.iterations["iteration_id"]["t", time].value)
             except IndexError:
                 idx = closest(self.iterations["iteration_id"], "t", time)
                 iteration = self.iterations["iteration_id"]["t", idx]

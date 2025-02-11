@@ -1,4 +1,5 @@
-"""openpmd_scipp: A Python package for loading openPMD datasets into scipp DataArrays.
+"""openpmd_scipp: A Python package for loading openPMD datasets
+    into scipp DataArrays.
 
 See README.md for documentation
 
