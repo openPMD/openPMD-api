@@ -22,7 +22,7 @@ def _unit_dimension_to_scipp(unit_dimension):
     :param tuple unit_dimension: A tuple containing seven integers, each representing
     the power of a base SI unit in the order: (length, mass, time, electric current,
     thermodynamic temperature, amount of substance, luminous intensity).
-     For example, (1, 0, -2, 0, 0, 0, 0) corresponds to meters per second squared (m/s²).
+     For example, (1, 0, -2, 0, 0, 0, 0) corresponds to meters per second squared (m/s^2).
 
     :returns: A Scipp unit object representing the combined unit as specified by the input
         unit dimensions.
