@@ -186,7 +186,8 @@ CFG.CHUNKS = [10]
 
         /*
          * We want different compression settings for this dataset, so we pass
-         * a dataset-specific configuration.
+         * a dataset-specific configuration. This will override any definition
+         * specified above.
          * Also showcase how to define an resizable dataset.
          * This time in JSON.
          */

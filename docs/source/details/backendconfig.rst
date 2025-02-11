@@ -292,8 +292,8 @@ Dataset-specific configuration
 ------------------------------
 
 Some configuration options should be applicable on a per-dataset basis.
-All dataset-specific configuration options supported by the openPMD-api are additionally backend-specific, being format-specific serialization instructions such as compression or chunking.
-Dataset-specific configuration is hence specified under the key path ``<backend>.dataset``, e.g.:
+Most dataset-specific configuration options supported by the openPMD-api are additionally backend-specific, being format-specific serialization instructions such as compression or chunking.
+Such dataset-specific and backend-specific configuration is hence specified under the key path ``<backend>.dataset``, e.g.:
 
 .. code-block:: json
 
@@ -322,22 +322,24 @@ As a separate JSON/TOML configuration during dataset initialization
 
 Similarly to the ``Series`` constructor, the ``Dataset`` constructor optionally receives a JSON/TOML configuration, used for setting options specifically only for those datasets initialized with this ``Dataset`` specification. The default given in the ``Series`` constructor will be overridden.
 
+This is the preferred way for configuring dataset-specific options that are *not* backend-specific (currently only ``{"resizable": true}``).
+
 By pattern-matching the dataset names
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The above approach has the disadvantage that it has to be supported explicitly at the level of the downstream application, e.g. a simulation or data reader. As an alternative, the the dataset configuration under ``<backend>.dataset`` can also be given as a list of alternatives that are matched against the dataset name in sequence, e.g. ``hdf5.dataset = [<pattern_1>, <pattern_2>, ...]``.
+The above approach has the disadvantage that it has to be supported explicitly at the level of the downstream application, e.g. a simulation or data reader. As an alternative, the the backend-specific dataset configuration under ``<backend>.dataset`` can also be given as a list of alternatives that are matched against the dataset name in sequence, e.g. ``hdf5.dataset = [<pattern_1>, <pattern_2>, ...]``.
 
-Each such pattern ``<pattern_i>`` is a JSON object with key ``cfg`` and optional key ``select``: ``{"select": <pattern>, "cfg": <cfg>}``.
+Each such pattern ``<pattern_i>`` is a JSON object with key ``cfg`` and optional key ``select``: ``{"select": <regex>, "cfg": <cfg>}``.
 
-In here, ``<pattern>`` is a regex or a list of regexes, as of type egrep as defined by the `C++ standard library <https://en.cppreference.com/w/cpp/regex/basic_regex/constants>`__.
-``<cfg>`` is a configuration that will be forwarded as-is to openPMD.
+In here, ``<regex>`` is a regex or a list of regexes, of type egrep as defined by the `C++ standard library <https://en.cppreference.com/w/cpp/regex/basic_regex/constants>`__.
+``<cfg>`` is a configuration that will be forwarded as a "regular" dataset configuration to the backend.
 
 .. note::
 
-  To match lists of regular expressions ``select = [PATTERN_1, PATTERN_2, ..., PATTERN_n]``, the list is internally transformed into a single regular expression ``($^)|(PATTERN_1)|(PATTERN_2)|...|(PATTERN_n)``.
+  To match lists of regular expressions ``select = [REGEX_1, REGEX_2, ..., REGEX_n]``, the list is internally transformed into a single regular expression ``($^)|(REGEX_1)|(REGEX_2)|...|(REGEX_n)``.
 
-The single patterns will be processed in top-down manner, selecting the first matching pattern found in the list.
-The regexes will be matched against the openPMD dataset path either within the Iteration (e.g. ``meshes/E/x`` or ``particles/.*/position/.*``) or within the Series (e.g. ``/data/1/meshes/E/x`` or ``/data/.*/particles/.*/position/.*``), considering full matches only.
+In a configuration such as ``hdf5.dataset = [<pattern_1>, <pattern_2>, ...]``, the single patterns will be processed in top-down manner, selecting the first matching pattern found in the list.
+The specified regexes will be matched against the openPMD dataset path either within the Iteration (e.g. ``meshes/E/x`` or ``particles/.*/position/.*``) or within the Series (e.g. ``/data/1/meshes/E/x`` or ``/data/.*/particles/.*/position/.*``), considering full matches only.
 
 .. note::
 
@@ -345,7 +347,7 @@ The regexes will be matched against the openPMD dataset path either within the I
 
 .. note::
 
-  To match against the path within the containing Iteration or within the containing Series, the specified regular expression is internally transformed into ``(/data/[0-9]+/)?(PATTERN)`` where ``PATTERN`` is the specified pattern, and then matched against the full dataset path.
+  To match against the path within the containing Iteration or within the containing Series, the specified regular expression is internally transformed into ``(/data/[0-9]+/)?(REGEX)`` where ``REGEX`` is the specified pattern, and then matched against the full dataset path.
 
 The **default configuration** is specified by omitting the ``select`` key.
 Specifying more than one default is an error.
@@ -353,8 +355,8 @@ If no pattern matches a dataset, the default configuration is chosen if specifie
 
 A full example:
 
-.. literalinclude:: openpmd_extended_config.json
-   :language: json
-
 .. literalinclude:: openpmd_extended_config.toml
    :language: toml
+
+.. literalinclude:: openpmd_extended_config.json
+   :language: json
