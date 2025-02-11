@@ -3,6 +3,11 @@
 Upgrade Guide
 =============
 
+0.17.0
+------
+
+ADIOS 2.9.0 is now the minimally supported version for ADIOS2 support.
+
 0.16.0
 ------
 

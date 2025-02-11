@@ -5,6 +5,17 @@ Changelog
 
 0.16.0
 ------
+
+Changes to "0.15.0"
+^^^^^^^^^^^^^^^^^^^
+
+Other
+"""""
+
+- ADIOS2: require version 2.9.0 #1711
+
+0.16.0
+------
 **Date:** 2024-10-07
 
 ADIOS2 Joined arrays, API simplification, HDF5 subfiling, TOML backend, wildcard file extensions, Performance & Memory

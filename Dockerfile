@@ -56,7 +56,7 @@ RUN        curl -sLo c-blosc-1.15.0.tar.gz https://github.com/Blosc/c-blosc/arch
            && make \
            && make install
 
-RUN        curl -sLo adios2-2.7.1.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.7.1.tar.gz \
+RUN        curl -sLo adios2-2.9.2.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.9.2.tar.gz \
            && file adios2*.tar.gz \
            && tar -xzf adios2*.tar.gz \
            && rm adios2*.tar.gz \
