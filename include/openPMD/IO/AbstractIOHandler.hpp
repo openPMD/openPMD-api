@@ -223,11 +223,22 @@ public:
 #if openPMD_HAVE_MPI
     template <typename TracingJSON>
     AbstractIOHandler(
-        std::string path, Access at, TracingJSON &&jsonConfig, MPI_Comm);
+        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
+        std::string path,
+        Access at,
+        TracingJSON &&jsonConfig,
+        MPI_Comm);
 #endif
 
     template <typename TracingJSON>
-    AbstractIOHandler(std::string path, Access at, TracingJSON &&jsonConfig);
+    AbstractIOHandler(
+        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
+        std::string path,
+        Access at,
+        TracingJSON &&jsonConfig);
+
+    AbstractIOHandler(std::optional<std::unique_ptr<AbstractIOHandler>>);
+
     virtual ~AbstractIOHandler();
 
     AbstractIOHandler(AbstractIOHandler const &) = delete;

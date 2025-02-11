@@ -34,7 +34,11 @@ class HDF5IOHandlerImpl;
 class HDF5IOHandler : public AbstractIOHandler
 {
 public:
-    HDF5IOHandler(std::string path, Access, json::TracingJSON config);
+    HDF5IOHandler(
+        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
+        std::string path,
+        Access,
+        json::TracingJSON config);
     ~HDF5IOHandler() override;
 
     std::string backendName() const override

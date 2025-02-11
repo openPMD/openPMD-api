@@ -3011,8 +3011,12 @@ std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
 
 #if openPMD_HAVE_HDF5
 HDF5IOHandler::HDF5IOHandler(
-    std::string path, Access at, json::TracingJSON config)
-    : AbstractIOHandler(std::move(path), at, std::move(config))
+    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
+    std::string path,
+    Access at,
+    json::TracingJSON config)
+    : AbstractIOHandler(
+          std::move(initialize_from), std::move(path), at, std::move(config))
     , m_impl{new HDF5IOHandlerImpl(this)}
 {}
 
@@ -3025,8 +3029,12 @@ std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &params)
 #else
 
 HDF5IOHandler::HDF5IOHandler(
-    std::string path, Access at, json::TracingJSON config)
-    : AbstractIOHandler(std::move(path), at, std::move(config))
+    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
+    std::string path,
+    Access at,
+    json::TracingJSON config)
+    : AbstractIOHandler(
+          std::move(initialize_from), std::move(path), at, std::move(config))
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }

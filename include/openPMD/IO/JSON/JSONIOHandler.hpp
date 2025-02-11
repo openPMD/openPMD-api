@@ -35,6 +35,7 @@ class JSONIOHandler : public AbstractIOHandler
 {
 public:
     JSONIOHandler(
+        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
         std::string path,
         Access at,
         openPMD::json::TracingJSON config,
@@ -42,6 +43,7 @@ public:
         std::string originalExtension);
 #if openPMD_HAVE_MPI
     JSONIOHandler(
+        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
         std::string path,
         Access at,
         MPI_Comm,

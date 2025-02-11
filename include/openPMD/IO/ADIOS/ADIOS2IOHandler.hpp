@@ -862,6 +862,7 @@ public:
 #if openPMD_HAVE_MPI
 
     ADIOS2IOHandler(
+        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
         std::string path,
         Access,
         MPI_Comm,
@@ -872,6 +873,7 @@ public:
 #endif
 
     ADIOS2IOHandler(
+        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
         std::string path,
         Access,
         json::TracingJSON options,

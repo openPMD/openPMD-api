@@ -2372,25 +2372,33 @@ ERROR: Variable ')"[1] + varName +
 #if openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
+    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
     std::string path,
     openPMD::Access at,
     MPI_Comm comm,
     json::TracingJSON options,
     std::string engineType,
     std::string specifiedExtension)
-    : AbstractIOHandler(std::move(path), at, std::move(options), comm)
+    : AbstractIOHandler(
+          std::move(initialize_from),
+          std::move(path),
+          at,
+          std::move(options),
+          comm)
     , m_impl{this, comm, std::move(engineType), std::move(specifiedExtension)}
 {}
 
 #endif
 
 ADIOS2IOHandler::ADIOS2IOHandler(
+    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
     std::string path,
     Access at,
     json::TracingJSON options,
     std::string engineType,
     std::string specifiedExtension)
-    : AbstractIOHandler(std::move(path), at, std::move(options))
+    : AbstractIOHandler(
+          std::move(initialize_from), std::move(path), at, std::move(options))
     , m_impl{this, std::move(engineType), std::move(specifiedExtension)}
 {}
 
@@ -2404,6 +2412,7 @@ ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 
 #if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
+    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
     std::string path,
     Access at,
     MPI_Comm comm,
@@ -2412,12 +2421,18 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string)
-    : AbstractIOHandler(std::move(path), at, std::move(config), comm)
+    : AbstractIOHandler(
+          std::move(initialize_from),
+          std::move(path),
+          at,
+          std::move(config),
+          comm)
 {}
 
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
+    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
     std::string path,
     Access at,
     json::TracingJSON config,
@@ -2425,7 +2440,8 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string)
-    : AbstractIOHandler(std::move(path), at, std::move(config))
+    : AbstractIOHandler(
+          std::move(initialize_from), std::move(path), at, std::move(config))
 {}
 
 std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)

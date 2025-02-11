@@ -841,6 +841,7 @@ void Series::init(
                              std::unique_ptr<ParsedInput> parsed_input,
                              json::TracingJSON tracing_json) {
         auto io_handler = createIOHandler(
+            std::nullopt,
             parsed_input->path,
             at,
             parsed_input->format,
@@ -882,7 +883,11 @@ void Series::init(
                         true,
                         std::forward<MPI_Communicator>(comm)...);
 
+                auto &writable = s.get()->m_writable;
+
                 auto io_handler = createIOHandler(
+                    writable.IOHandler ? std::move(*writable.IOHandler)
+                                       : std::nullopt,
                     parsed_input->path,
                     at,
                     parsed_input->format,
@@ -1053,25 +1058,18 @@ void Series::initSeries(
     auto &writable = series->m_writable;
 
     /*
-     * In Access modes READ_LINEAR and APPEND, the Series constructor might have
-     * emplaced a temporary IOHandler. Check if this is the case.
+     * In access modes APPEND and READ_LINEAR, a dummy IO Handler might have
+     * been emplaced. The real IO Handler (ioHandler) was created from this
+     * intermediate handler, moving from it.
+     * In that case, the pointer is still valid, it just points to an empty
+     * optional at the moment. Reuse the pointer, so that any objects that
+     * might have been initialized with the old pointer are still valid.
      */
     if (writable.IOHandler)
     {
-        if (writable.IOHandler->has_value())
-        {
-            /*
-             * A temporary IOHandler has been used. In this case, copy the
-             * values from that IOHandler over into the real one.
-             */
-            ioHandler->operator=(std::move(***writable.IOHandler));
-            *writable.IOHandler = std::move(ioHandler);
-        }
-        else
-        {
-            throw error::Internal(
-                "Control flow error. This should not happen.");
-        }
+        *writable.IOHandler =
+            std::make_optional<std::unique_ptr<AbstractIOHandler>>(
+                std::move(ioHandler));
     }
     else
     {

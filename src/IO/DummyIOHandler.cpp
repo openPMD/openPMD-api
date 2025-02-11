@@ -22,12 +22,14 @@
 #include "openPMD/auxiliary/JSON_internal.hpp"
 
 #include <iostream>
+#include <optional>
 #include <utility>
 
 namespace openPMD
 {
 DummyIOHandler::DummyIOHandler(std::string path, Access at)
     : AbstractIOHandler(
+          std::nullopt,
           std::move(path),
           at,
           json::TracingJSON(

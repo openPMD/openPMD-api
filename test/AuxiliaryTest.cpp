@@ -35,7 +35,8 @@ struct TestHelper : public Attributable
     {
         writable().IOHandler =
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-                createIOHandler(".", Access::CREATE, Format::JSON, ".json"));
+                createIOHandler(
+                    std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
     }
 };
 } // namespace openPMD::test
@@ -150,7 +151,8 @@ TEST_CASE("container_default_test", "[auxiliary]")
     Container<openPMD::test::S> c = Container<openPMD::test::S>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(
+                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
 
     REQUIRE(c.empty());
     REQUIRE(c.erase("nonExistentKey") == false);
@@ -189,7 +191,8 @@ TEST_CASE("container_retrieve_test", "[auxiliary]")
     Container<structure> c = Container<structure>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(
+                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
 
     structure s;
     std::string text =
@@ -263,7 +266,8 @@ TEST_CASE("container_access_test", "[auxiliary]")
     Container<Widget> c = Container<Widget>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(
+                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
 
     c["1firstWidget"] = Widget(0);
     REQUIRE(c.size() == 1);
