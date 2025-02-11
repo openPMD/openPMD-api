@@ -324,8 +324,6 @@ jobs:
         apk add hdf5-dev
         python3.10 -m pip install numpy
         python3.10 -m pip install h5py
-        python3.10 -m pip install scipp
-        python3.10 -m pip install plopp
     - name: Build
       env: {CXXFLAGS: "-Werror -Wno-error=maybe-uninitialized"}
       run: |
