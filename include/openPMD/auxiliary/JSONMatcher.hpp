@@ -121,6 +121,7 @@ public:
      * @brief Get the JSON config associated with a regex pattern.
      *
      * @param datasetPath The regex.
+     * @param backendName The backend name for which to resolve the pattern.
      * @return The matched JSON configuration, as a string.
      */
     auto get(std::string const &datasetPath, std::string const &backendName)
@@ -128,6 +129,7 @@ public:
 
     /**
      * @brief Get the default JSON config.
+     * @param backendName The backend name for which to resolve the pattern.
      *
      * @return The default JSON configuration.
      */
