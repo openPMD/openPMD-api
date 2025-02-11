@@ -158,9 +158,8 @@ def get_field_data_relay(series, iteration, field, component=None):
     record = series.iterations[iteration].meshes[field]
     rc = record[component] if component else record
     dims = record.axis_labels
-    time = (series.iterations[iteration].time + record.time_offset) * series.iterations[
-        iteration
-    ].time_unit_SI
+    time = (series.iterations[iteration].time + record.time_offset) \
+        * series.iterations[iteration].time_unit_SI
     time = sc.scalar(time, unit="s", dtype="double")
     coords = {"t": time}
     for dd, dim in enumerate(dims):
@@ -185,7 +184,11 @@ def get_field_data_relay(series, iteration, field, component=None):
     )
 
     return DataRelay(
-        series=series, record=record, record_component=rc, dummy_array=dummy_array, coords=coords
+        series=series,
+        record=record,
+        record_component=rc,
+        dummy_array=dummy_array,
+        coords=coords
     )
 
 

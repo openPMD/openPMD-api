@@ -25,7 +25,8 @@ def get_time_axis(series):
     :rtype: sc.DataArray
     """
     t = [
-        series.iterations[it].time * series.iterations[it].time_unit_SI for it in series.iterations
+        series.iterations[it].time * series.iterations[it].time_unit_SI \
+            for it in series.iterations
     ]
     return sc.array(dims=["t"], values=t, unit="s", dtype="double")
 
@@ -43,7 +44,9 @@ def get_iterations(series):
     return sc.Dataset(
         data={
             "iteration_id": sc.DataArray(
-                data=sc.array(dims=["t"], values=list(series.iterations)), coords={"t": t}
+                data=sc.array(dims=["t"],
+                values=list(series.iterations)),
+                coords={"t": t}
             )
         }
     )
@@ -137,7 +140,8 @@ class DataLoader:
                 assert time_tolerance is None or sc.abs(
                     iteration.coords["t"] - time
                 ) <= time_tolerance.to(unit=time.unit), (
-                    f"No iteration found within time_tolerance={time_tolerance}."
+                    f"No iteration found "
+                    f"within time_tolerance={time_tolerance}."
                 )
                 print(
                     "Series does not contain iteration at the exact time. "
@@ -148,9 +152,15 @@ class DataLoader:
 
         if relay:
             return get_field_data_relay(
-                series=self.series, field=field, component=component, iteration=iteration
+                series=self.series,
+                field=field,
+                component=component,
+                iteration=iteration
             )
         else:
             return get_field(
-                series=self.series, field=field, component=component, iteration=iteration
+                series=self.series,
+                field=field,
+                component=component,
+                iteration=iteration
             )
