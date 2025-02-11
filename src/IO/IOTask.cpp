@@ -24,6 +24,7 @@
 #include "openPMD/backend/Attributable.hpp"
 
 #include <iostream> // std::cerr
+#include <utility>
 
 namespace openPMD
 {
@@ -33,8 +34,7 @@ Writable *getWritable(Attributable *a)
 }
 
 template <>
-void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
-    json::TracingJSON>(
+void AbstractParameter::warnUnusedParameters<json::TracingJSON>(
     json::TracingJSON &config,
     std::string const &currentBackendName,
     std::string const &warningMessage)
@@ -75,6 +75,24 @@ void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
     }
 }
 
+namespace
+{
+    template <typename Functor>
+    json::ParsedConfig doCompileJSONConfig(
+        Attributable const &attri,
+        json::JsonMatcher &jsonMatcher,
+        std::string const &backendName,
+        Functor &&transformResult)
+    {
+        auto path = attri.myPath().openPMDPath();
+        auto base_config = jsonMatcher.get(path, backendName);
+        json::ParsedConfig res{
+            std::move(base_config.config), base_config.originallySpecifiedAs};
+        std::forward<Functor>(transformResult)(res);
+        return res;
+    }
+} // namespace
+
 template <>
 json::ParsedConfig Parameter<Operation::CREATE_DATASET>::compileJSONConfig(
     Writable const *writable,
@@ -82,17 +100,30 @@ json::ParsedConfig Parameter<Operation::CREATE_DATASET>::compileJSONConfig(
     std::string const &backendName) const
 {
     auto attri = writable->attributable->asInternalCopyOf<Attributable>();
-    auto path = attri.myPath().openPMDPath();
-    auto base_config = jsonMatcher.get(path, backendName);
-    auto manual_config =
-        json::parseOptions(options, /* considerFiles = */ false);
-    json::merge_internal(
-        base_config.config, manual_config.config, /* do_prune = */ true);
-    return json::ParsedConfig{
-        std::move(base_config.config),
-        (options.empty() || options == "{}")
-            ? base_config.originallySpecifiedAs
-            : manual_config.originallySpecifiedAs};
+    return doCompileJSONConfig(
+        attri, jsonMatcher, backendName, [&](json::ParsedConfig &base_config) {
+            auto manual_config =
+                json::parseOptions(options, /* considerFiles = */ false);
+            json::merge_internal(
+                base_config.config,
+                manual_config.config,
+                /* do_prune = */ true);
+            base_config.originallySpecifiedAs =
+                (options.empty() || options == "{}")
+                ? base_config.originallySpecifiedAs
+                : manual_config.originallySpecifiedAs;
+        });
+}
+
+template <>
+json::ParsedConfig Parameter<Operation::OPEN_DATASET>::compileJSONConfig(
+    Writable const *writable,
+    json::JsonMatcher &jsonMatcher,
+    std::string const &backendName)
+{
+    auto attri = writable->attributable->asInternalCopyOf<Attributable>();
+    return doCompileJSONConfig(
+        attri, jsonMatcher, backendName, [](auto const &) {});
 }
 
 namespace internal

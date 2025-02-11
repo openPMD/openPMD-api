@@ -343,6 +343,10 @@ private:
     // use m_config
     std::optional<std::vector<ParameterizedOperator>> getOperators();
 
+    template <typename Parameter>
+    std::vector<ParameterizedOperator> getDatasetOperators(
+        Parameter const &, Writable *, std::string const &varName);
+
     std::string fileSuffix(bool verbose = true) const;
 
     /*
@@ -585,7 +589,9 @@ namespace detail
             InvalidatableFile const &,
             std::string const &varName,
             Parameter<Operation::OPEN_DATASET> &parameters,
-            std::optional<size_t> stepSelection);
+            std::optional<size_t> stepSelection,
+            std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
+                &operators);
 
         static constexpr char const *errorMsg = "ADIOS2: openDataset()";
     };

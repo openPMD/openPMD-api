@@ -104,6 +104,7 @@ class Writable final
     friend class Span;
     friend void debug::printDirty(Series const &);
     friend struct Parameter<Operation::CREATE_DATASET>;
+    friend struct Parameter<Operation::OPEN_DATASET>;
 
 private:
     Writable(internal::AttributableData *);
