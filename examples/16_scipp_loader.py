@@ -8,6 +8,7 @@ def main():
     try:
         scipp_loader = series.to_scipp()
         import plopp  # noqa
+        print("Plopp version:", plopp.__version__)
     except ImportError:
         print("Need to install scipp and plopp to run this example.")
         return
