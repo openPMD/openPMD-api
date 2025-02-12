@@ -30,6 +30,9 @@ namespace openPMD
 /** Construct an appropriate specific IOHandler for the desired IO mode that may
  be MPI-aware.
  *
+ * @param   initialize_from Optionally initialize the IOHandler from a previous
+ *                      interim IOHandler which to replace with the handler now
+ *                      being initialized.
  * @param   path        Path to root folder for all operations associated with
  the desired handler.
  * @param   access      Access mode describing desired operations and
@@ -59,6 +62,9 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
 
 /** Construct an appropriate specific IOHandler for the desired IO mode.
  *
+ * @param   initialize_from Optionally initialize the IOHandler from a previous
+ *                      interim IOHandler which to replace with the handler now
+ *                      being initialized.
  * @param   path        Path to root folder for all operations associated with
  * the desired handler.
  * @param   access      Access describing desired operations and permissions
