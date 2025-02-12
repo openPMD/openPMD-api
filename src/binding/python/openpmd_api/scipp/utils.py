@@ -7,6 +7,8 @@ License:
 GPL - 3.0 license. See LICENSE file for details.
 """
 
+from sys import version_info
+
 import numpy as np
 import scipp as sc
 
@@ -53,7 +55,9 @@ def _unit_dimension_to_scipp(unit_dimension):
         1.0 * sc.Unit("cd"),
     )
     unit = 1.0 * sc.Unit("1")
-    for dim, base_unit in zip(unit_dimension, base_units, strict=False):
+    zipped = zip(unit_dimension, base_units) if version_info < (
+        3, 10) else zip(unit_dimension, base_units, strict=False)
+    for dim, base_unit in zipped:
         if dim != 0:
             unit *= base_unit**dim
     return unit.unit
