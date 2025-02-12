@@ -36,14 +36,18 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-    - uses: s-weigand/setup-conda@v1.2.2
+    - uses: conda-incubator/setup-miniconda@v3
+      name: Setup conda
       with:
-        update-conda: true
-        conda-channels: conda-forge
+        auto-update-conda: true
+        channels: conda-forge,defaults
+        channel-priority: true
     - name: Install
       run: conda install -c conda-forge doxygen=1.9.6
     - name: Doxygen
-      run: .github/workflows/source/buildDoxygen
+      run: |
+        source /usr/share/miniconda/bin/activate
+        .github/workflows/source/buildDoxygen
 
   urls:
     runs-on: ubuntu-latest
