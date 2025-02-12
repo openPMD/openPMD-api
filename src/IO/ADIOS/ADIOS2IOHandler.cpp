@@ -1049,6 +1049,13 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     {
         return;
     }
+    if (parameters.changesOverSteps ==
+            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes &&
+        m_modifiableAttributes == ModifiableAttributes::No)
+    {
+        // cannot do this
+        return;
+    }
     switchType<detail::AttributeWriter>(
         parameters.dtype, this, writable, parameters);
 }
