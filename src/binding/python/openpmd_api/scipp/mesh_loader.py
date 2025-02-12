@@ -108,9 +108,10 @@ class DataRelay(sc.DataArray):
 
         Loads a chunk based on the current data array coordinates.
 
-        Calculates the offset and extent for each dimension using the data array
-        coordinates. Loads the data chunk from the record component, scales it
-        by the unit SI, and returns a new data array with loaded values.
+        Calculates the offset and extent for each dimension using the data
+        array coordinates. Loads the data chunk from the record component,
+        scales it by the unit SI, and returns a new data array with loaded
+        values.
 
         :return: The DataArray instance with the loaded data.
         :rtype: DataRelay
@@ -149,7 +150,8 @@ def get_field_data_relay(series, iteration, field, component=None):
     :type iteration: int
     :param field: The name of the field to retrieve.
     :type field: str
-    :param component: The component of the field to retrieve, default is SCALAR.
+    :param component: The component of the field to retrieve,
+        default is SCALAR.
     :type component: openpmd_api.Mesh_Record_Component, optional
     :return: A DataRelay instance initialized with the specified field
         and component data.
@@ -205,7 +207,8 @@ def get_field(series, iteration, field, component=None):
     :type iteration: int
     :param field: The name of the field to retrieve.
     :type field: str
-    :param component: The component of the field to retrieve, default is SCALAR.
+    :param component: The component of the field to retrieve,
+        default is SCALAR.
     :type component: openpmd_api.Mesh_Record_Component, optional
     :return: A DataArray instance with the loaded data.
     :rtype: DataRelay

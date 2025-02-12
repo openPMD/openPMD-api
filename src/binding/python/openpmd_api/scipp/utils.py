@@ -43,8 +43,8 @@ def _unit_dimension_to_scipp(unit_dimension):
     """
     # unit dimension description from the openPMD standard:
     # powers of the 7 base measures characterizing the record's unit in SI
-    # (length L, mass M, time T, electric current I, thermodynamic temperature theta,
-    # amount of substance N, luminous intensity J)
+    # (length L, mass M, time T, electric current I, thermodynamic
+    # temperature theta, amount of substance N, luminous intensity J)
     base_units = (
         1.0 * sc.Unit("m"),
         1.0 * sc.Unit("kg"),
@@ -67,14 +67,15 @@ def closest(data, dim, val):
     """Find the index of the closest value in a dataset
         along a specified dimension.
 
-    This function calculates the index of the element in the specified dimension
-    of the dataset that is closest to the given value. It ensures that the value
-    is converted to the same unit as the dimension's coordinate before
-    performing the comparison.
+    This function calculates the index of the element in the specified
+    dimension of the dataset that is closest to the given value. It ensures
+    that the value is converted to the same unit as the dimension's coordinate
+    before performing the comparison.
 
     :param data: The data array containing the dimension to search.
     :type data: sc.DataArray
-    :param dim: The name of the dimension along which to find the closest value.
+    :param dim: The name of the dimension along which to find
+        the closest value.
     :type dim: str
     :param val: The value to compare against, which will be converted to the
                 unit of the dimension's coordinate.

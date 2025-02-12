@@ -55,9 +55,10 @@ def get_iterations(series):
 class DataLoader:
     """DataLoader class for loading and retrieving openPMD mesh data.
 
-    This class initializes an openPMD series from a given file path and provides
-    methods to retrieve mesh data fields either by iteration index or by time.
-    The data can be retrieved as a DataRelay object or directly as a DataArray.
+    This class initializes an openPMD series from a given file path and
+    provides methods to retrieve mesh data fields either by iteration index or
+    by time. The data can be retrieved as a DataRelay object or directly as a
+    DataArray.
 
     Attributes:
         series (openpmd_api.Series): The openPMD series initialized from
