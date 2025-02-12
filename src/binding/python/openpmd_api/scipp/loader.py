@@ -9,7 +9,6 @@ License:
 GPL - 3.0 license. See LICENSE file for details.
 """
 
-import openpmd_api as pmd
 import scipp as sc
 
 from .mesh_loader import get_field, get_field_data_relay

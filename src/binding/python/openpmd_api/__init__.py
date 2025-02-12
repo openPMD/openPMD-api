@@ -17,7 +17,7 @@ ParticleSpecies.to_dask = particles_to_daskdataframe  # noqa
 Record_Component.to_dask_array = record_component_to_daskarray  # noqa
 Series.to_df = iterations_to_dataframe  # noqa
 Series.to_cudf = iterations_to_cudf  # noqa
-Series.to_scipp = series_to_scipp
+Series.to_scipp = series_to_scipp # noqa
 
 # TODO remove in future versions (deprecated)
 Access_Type = Access  # noqa
