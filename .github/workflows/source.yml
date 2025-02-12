@@ -47,9 +47,6 @@ jobs:
     - name: Doxygen
       run: |
         source /usr/share/miniconda/bin/activate
-        echo "Doxygen location: $(which doxygen)"
-        doxygen_path="$(dirname "$(which doxygen)")"
-        export PATH="$doxygen_path:$PATH"
         .github/workflows/source/buildDoxygen
 
   urls:
