@@ -5239,7 +5239,13 @@ void serial_iterator(std::string const &file)
     constexpr Extent::value_type extent = 1000;
     {
         Series writeSeries(
-            file, Access::CREATE, R"({"rank_table": "posix_hostname"})");
+            file,
+            Access::CREATE
+#ifndef _WIN32
+            ,
+            R"({"rank_table": "posix_hostname"})"
+#endif
+        );
         auto iterations = writeSeries.writeIterations();
         for (size_t i = 0; i < 10; ++i)
         {
@@ -5270,12 +5276,18 @@ void serial_iterator(std::string const &file)
         }
         last_iteration_index = iteration.iterationIndex;
     }
-    if (readSeries.iterationEncoding() == IterationEncoding::variableBased)
-        for (auto const &[rank, host] : readSeries.rankTable(true))
+#ifndef _WIN32
+    if (readSeries.iterationEncoding() != IterationEncoding::fileBased)
+    {
+        auto rank_table = readSeries.rankTable(true);
+        for (auto const &[rank, host] : rank_table)
         {
             std::cout << "POST Rank '" << rank << "' written from host '"
                       << host << "'\n";
         }
+        REQUIRE(rank_table.size() == 1);
+    }
+#endif
     REQUIRE(last_iteration_index == 9);
     REQUIRE(numberOfIterations == 10);
 }
