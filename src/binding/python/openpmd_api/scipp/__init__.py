@@ -10,5 +10,5 @@ License:
 GPL - 3.0 license. See LICENSE file for details.
 """
 
-from .loader import DataLoader as DataLoader
-from .utils import closest as closest
+from .loader import DataLoader as DataLoader  # noqa
+from .utils import closest as closest  # noqa

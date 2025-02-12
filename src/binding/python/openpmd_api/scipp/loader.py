@@ -24,8 +24,8 @@ def get_time_axis(series):
     :rtype: sc.DataArray
     """
     t = [
-        series.iterations[it].time * series.iterations[it].time_unit_SI \
-            for it in series.iterations
+        series.iterations[it].time * series.iterations[it].time_unit_SI
+        for it in series.iterations
     ]
     return sc.array(dims=["t"], values=t, unit="s", dtype="double")
 
@@ -43,8 +43,7 @@ def get_iterations(series):
     return sc.Dataset(
         data={
             "iteration_id": sc.DataArray(
-                data=sc.array(dims=["t"],
-                values=list(series.iterations)),
+                data=sc.array(dims=["t"], values=list(series.iterations)),
                 coords={"t": t}
             )
         }

@@ -213,4 +213,5 @@ def get_field(series, iteration, field, component=None):
     :return: A DataArray instance with the loaded data.
     :rtype: DataRelay
     """
-    return get_field_data_relay(series, iteration, field, component).load_data()
+    return get_field_data_relay(
+        series, iteration, field, component).load_data()
