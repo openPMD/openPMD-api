@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <deque>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -1508,6 +1509,37 @@ namespace
         }
         static constexpr char const *errorMsg = "DistributeToAllRanks";
     };
+
+    void warn_ignored_modifiable_attributes(
+        adios2::IO &IO, std::string const &exempt_this_from_warnings)
+    {
+        auto all_attributes = IO.AvailableAttributes();
+        std::deque<std::string> modifiable_attributes;
+        for (auto const &[identifier, params] : all_attributes)
+        {
+            std::cout.flush();
+            if (params.at("Modifiable") == "1")
+            {
+                modifiable_attributes.emplace_back(identifier);
+            }
+        }
+        if (modifiable_attributes.size() > 1 ||
+            (modifiable_attributes.size() == 1 &&
+             *modifiable_attributes.begin() != exempt_this_from_warnings))
+        {
+            std::cerr << &R"(
+Warning: Random-access for variable-encoding in ADIOS2 is currently
+experimental. Support for modifiable attributes is currently not implemented
+yet, meaning that attributes such as /data/time will show useless values.
+Use Access::READ_LINEAR to retrieve those values if needed.
+The following modifiable attributes have been found:
+)"[1];
+            for (auto const &identifier : modifiable_attributes)
+            {
+                std::cerr << '\t' << identifier << '\n';
+            }
+        }
+    }
 #endif
 } // namespace
 
@@ -1526,6 +1558,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         IO.SetParameter("StreamReader", "ON"); // this be for BP4
         auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
         auto status = engine.BeginStep();
+        warn_ignored_modifiable_attributes(IO, name);
         auto type = detail::attributeInfo(IO, name, /* verbose = */ true);
         switchType<ReadAttributeAllsteps>(
             type, IO, engine, name, status, *param.resource);
