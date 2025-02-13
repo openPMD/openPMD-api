@@ -103,17 +103,9 @@ auto read_variablebased_randomaccess() -> void
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    std::string const config = R"END(
-{
-    "adios2":
-    {
-        "use_group_table": true
-    }
-})END";
-
     {
         openPMD::Series read(
-            "../samples/bp5_no_steps.bp",
+            "../samples/read_variablebased_randomaccess.bp",
             openPMD::Access::READ_ONLY,
             MPI_COMM_WORLD,
             "adios2.engine.type = \"bp5\"");
