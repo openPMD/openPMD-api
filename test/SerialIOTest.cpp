@@ -5883,32 +5883,39 @@ void variableBasedSeries(std::string const &file)
 
     auto testRead = [&file, &extent](
                         std::string const &parseMode,
-                        bool supportsModifiableAttributes) {
+                        bool supportsModifiableAttributes,
+                        Access access = Access::READ_LINEAR) {
         /*
          * Need linear read mode to access more than a single iteration in
          * variable-based iteration encoding.
          */
-        Series readSeries(file, Access::READ_LINEAR, parseMode);
+        Series readSeries(file, access, parseMode);
         bool is_adios2 = readSeries.backend() == "ADIOS2";
 
         size_t last_iteration_index = 0;
-        REQUIRE(!readSeries.containsAttribute("some_global"));
+        if (access == Access::READ_LINEAR)
+        {
+            REQUIRE(!readSeries.containsAttribute("some_global"));
+        }
         readSeries.parseBase();
         REQUIRE(
             readSeries.getAttribute("some_global").get<std::string>() ==
             "attribute");
         for (auto iteration : readSeries.readIterations())
         {
-            if (iteration.iterationIndex > 2)
+            if (access == Access::READ_LINEAR)
             {
-                REQUIRE(
-                    iteration.getAttribute("iteration_is_larger_than_two")
-                        .get<std::string>() == "it truly is");
-            }
-            else
-            {
-                REQUIRE_FALSE(iteration.containsAttribute(
-                    "iteration_is_larger_than_two"));
+                if (iteration.iterationIndex > 2)
+                {
+                    REQUIRE(
+                        iteration.getAttribute("iteration_is_larger_than_two")
+                            .get<std::string>() == "it truly is");
+                }
+                else
+                {
+                    REQUIRE_FALSE(iteration.containsAttribute(
+                        "iteration_is_larger_than_two"));
+                }
             }
 
             // If modifiable attributes are unsupported, the attribute is
@@ -5918,8 +5925,11 @@ void variableBasedSeries(std::string const &file)
             {
                 REQUIRE(
                     iteration.getAttribute("changing_value").get<unsigned>() ==
-                    (supportsModifiableAttributes ? iteration.iterationIndex
-                                                  : 0));
+                    (supportsModifiableAttributes
+                         ? (access == Access::READ_LINEAR
+                                ? iteration.iterationIndex
+                                : 9)
+                         : 0));
             }
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 1);
@@ -5936,6 +5946,13 @@ void variableBasedSeries(std::string const &file)
             unsigned len = iteration.iterationIndex + 1;
             Extent changingExtent(dimensionality, len);
             REQUIRE(E_y.getExtent() == changingExtent);
+
+            last_iteration_index = iteration.iterationIndex;
+
+            if (access == Access::READ_RANDOM_ACCESS)
+            {
+                continue;
+            }
 
             // this loop ensures that only the recordcomponent ["E"]["i"] is
             // present where i == iteration.iterationIndex
@@ -5980,8 +5997,6 @@ void variableBasedSeries(std::string const &file)
             REQUIRE(
                 constantParticles.getAttribute("value").get<unsigned>() ==
                 iteration.iterationIndex);
-
-            last_iteration_index = iteration.iterationIndex;
         }
         REQUIRE(last_iteration_index == (is_adios2 ? 9 : 0));
     };
@@ -6001,6 +6016,14 @@ void variableBasedSeries(std::string const &file)
     testRead(
         "{\"defer_iteration_parsing\": false}",
         /*supportsModifiableAttributes = */ true);
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ true,
+        Access::READ_RANDOM_ACCESS);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ true,
+        Access::READ_RANDOM_ACCESS);
 
     jsonConfig = "{}";
     testWrite(jsonConfig);
@@ -6010,6 +6033,14 @@ void variableBasedSeries(std::string const &file)
     testRead(
         "{\"defer_iteration_parsing\": false}",
         /*supportsModifiableAttributes = */ true);
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ true,
+        Access::READ_RANDOM_ACCESS);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ true,
+        Access::READ_RANDOM_ACCESS);
 
     jsonConfig = R"(
 {
@@ -6024,6 +6055,14 @@ void variableBasedSeries(std::string const &file)
     testRead(
         "{\"defer_iteration_parsing\": false}",
         /*supportsModifiableAttributes = */ false);
+    testRead(
+        "{\"defer_iteration_parsing\": true}",
+        /*supportsModifiableAttributes = */ false,
+        Access::READ_RANDOM_ACCESS);
+    testRead(
+        "{\"defer_iteration_parsing\": false}",
+        /*supportsModifiableAttributes = */ false,
+        Access::READ_RANDOM_ACCESS);
 }
 
 TEST_CASE("variableBasedSeries", "[serial][adios2]")
