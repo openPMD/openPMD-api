@@ -2189,16 +2189,14 @@ creating new iterations.
              * Variable-based iteration encoding relies on steps, so parsing
              * must happen after opening the first step.
              */
-            internal::BeginStep beginStep = randomAccessSteps()
+            using namespace internal;
+            BeginStep beginStep = randomAccessSteps()
                 ? (series.m_snapshotToStep.empty()
-                       ? internal::BeginStep{internal::BeginStepTypes::
-                                                 DontBeginStep{}}
-                       : internal::BeginStep{internal::BeginStepTypes::
-                                                 BeginStepRandomAccess{
-                                                     series.m_snapshotToStep.at(
-                                                         it)}})
-                : internal::BeginStep{
-                      internal::BeginStepTypes::BeginStepSynchronously{}};
+                       ? BeginStepTypes::make<BeginStepTypes::DontBeginStep>()
+                       : BeginStepTypes::make<
+                             BeginStepTypes::BeginStepRandomAccess>(
+                             series.m_snapshotToStep.at(it)))
+                : BeginStepTypes::make<BeginStepTypes::BeginStepSequentially>();
             if (auto err = internal::withRWAccess(
                     IOHandler()->m_seriesStatus,
                     [&readSingleIteration, it, &beginStep]() {

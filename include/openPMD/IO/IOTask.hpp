@@ -628,6 +628,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::READ_ATT_ALLSTEPS>
         template <typename T>
         using type = std::vector<T>;
     };
+    // std::variant<std::vector<T_1>, std::vector<T_2>, ...>
+    // for all T_i in openPMD::Datatype.
     using result_type = typename auxiliary::detail::
         map_variant<to_vector_type, Attribute::resource>::type;
 

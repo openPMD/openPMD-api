@@ -1238,6 +1238,10 @@ void ADIOS2IOHandlerImpl::readAttribute(
 
 namespace
 {
+    /* Used by both readAttribute() and readAttributeAllsteps() tasks.
+       Functor fun will be called with the value of the retrieved attribute;
+       both functions use different logic for processing the retrieved values.
+     */
     template <typename T, typename Functor>
     Datatype
     genericReadAttribute(Functor &&fun, adios2::IO &IO, std::string const &name)
@@ -1316,7 +1320,7 @@ namespace
             {
                 res[i] = data[i];
             }
-            std::forward<Functor>(fun)(res);
+            std::forward<Functor>(fun)(std::move(res));
         }
         else if constexpr (std::is_same_v<T, bool>)
         {

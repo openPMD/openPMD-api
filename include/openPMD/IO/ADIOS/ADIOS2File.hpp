@@ -423,6 +423,8 @@ private:
     /*
      * Not all engines support the CurrentStep() call, so we have to
      * implement this manually.
+     * Note: We don't use a std::optional<size_t> here since the currentStep
+     * is always being counted.
      */
     size_t m_currentStep = 0;
     bool useStepSelection = false;

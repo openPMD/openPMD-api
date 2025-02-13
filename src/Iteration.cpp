@@ -448,7 +448,7 @@ void Iteration::readGorVBased(
     std::visit(
         auxiliary::overloaded{
             [](internal::BeginStepTypes::DontBeginStep const &) {},
-            [&](internal::BeginStepTypes::BeginStepSynchronously const &) {
+            [&](internal::BeginStepTypes::BeginStepSequentially const &) {
                 /*
                  * beginStep() must take care to open files
                  */
@@ -936,7 +936,7 @@ void Iteration::runDeferredParseAccess()
                     filename,
                     deferred.path,
                     std::holds_alternative<
-                        internal::BeginStepTypes::BeginStepSynchronously>(
+                        internal::BeginStepTypes::BeginStepSequentially>(
                         deferred.beginStep));
             }
             else

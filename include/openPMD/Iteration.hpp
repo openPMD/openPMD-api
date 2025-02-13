@@ -56,7 +56,7 @@ namespace internal
     {
         struct DontBeginStep
         {};
-        struct BeginStepSynchronously
+        struct BeginStepSequentially
         {};
         struct BeginStepRandomAccess
         {
@@ -66,8 +66,17 @@ namespace internal
 
     using BeginStep = std::variant<
         BeginStepTypes::DontBeginStep,
-        BeginStepTypes::BeginStepSynchronously,
+        BeginStepTypes::BeginStepSequentially,
         BeginStepTypes::BeginStepRandomAccess>;
+
+    namespace BeginStepTypes
+    {
+        template <typename T, typename... Args>
+        constexpr auto make(Args &&...args) -> BeginStep
+        {
+            return BeginStep{T{std::forward<Args>(args)...}};
+        }
+    } // namespace BeginStepTypes
 
     struct DeferredParseAccess
     {

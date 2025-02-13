@@ -68,6 +68,8 @@ class Series;
 
 namespace internal
 {
+    /* Just a more self-documenting boolean used for
+     * m_iterationEncodingSetExplicitly */
     enum class default_or_explicit : bool
     {
         default_,
@@ -188,6 +190,15 @@ namespace internal
          * The iteration encoding used in this series.
          */
         IterationEncoding m_iterationEncoding{};
+        /*
+         * ADIOS2 should use variable-based encoding as default rather than
+         * group-based encoding as much as possible.
+         * Since this cannot be decided at construction time, groupBased
+         * encoding is selected first, and re-decided later.
+         * However, when group-based encoding is selected by the user explcitly,
+         * that selection should not be changed again.
+         * Hence, remember that here.
+         */
         default_or_explicit m_iterationEncodingSetExplicitly =
             default_or_explicit::default_;
         /**
@@ -976,6 +987,12 @@ OPENPMD_private
      */
     void flushStep(bool doFlush);
 
+    /*
+     * setIterationEncoding() should only be called by users of our public API,
+     * but never internally. We need to distinguish if the iteration encoding
+     * was selected explicitly or implicitly, see
+     * m_iterationEncodingSetExplicitly for further details.
+     */
     Series &setIterationEncoding_internal(
         IterationEncoding iterationEncoding, internal::default_or_explicit);
 
@@ -990,8 +1007,17 @@ OPENPMD_private
     AbstractIOHandler *IOHandler();
     AbstractIOHandler const *IOHandler() const;
 
+    /* adios2::Mode::ReadRandomAccess does not support reading modifiable
+     * attributes. However, we need the values of /data/snapshot as a modifiable
+     * attribute, so this function quickly opens the file in adios2::Mode::Read
+     * and retrieves the changings values over time.
+     * Return std::nullopt if /data/snapshot is not present.
+     */
     std::optional<std::vector<std::vector<IterationIndex_t>>>
     preparseSnapshots();
+    /* Should adios2::Variable<T>::SetStepSelection() be used for accessing
+     * steps?
+     */
     [[nodiscard]] bool randomAccessSteps() const;
 }; // Series
 

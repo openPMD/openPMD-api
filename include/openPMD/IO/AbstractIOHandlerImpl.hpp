@@ -72,6 +72,13 @@ public:
      * IO actions up to the point of closing a step must be performed now.
      *
      * The advance mode is determined by parameters.mode.
+     * parameters.mode has type std::variant<AdvanceMode, StepSelection>:
+     *
+     * 1. AdvanceMode is for processing steps sequentially. In this case, a step
+     *    is either begun or closed.
+     * 2. StepSelection is for random-accessing steps. A target step number is
+     *    specified.
+     *
      * The return status code shall be stored as parameters.status.
      */
     virtual void advance(Writable *, Parameter<Operation::ADVANCE> &parameters)
@@ -360,7 +367,21 @@ public:
      */
     virtual void
     readAttribute(Writable *, Parameter<Operation::READ_ATT> &) = 0;
-    /** COLLECTIVE!
+    /** Collective task to read modifiable attributes over steps.
+     *
+     * Has a default implementation for backends that do not support steps;
+     * here, the task is relayed to normal READ_ATT.
+     * This task is key for implementing the preparsing logic needed in
+     * random-access read mode for variable-encoded ADIOS2 files.
+     * adios2::Mode::ReadRandomAccess does not support modifiable attributes,
+     * so this task will instead quickly open the file's metadata in
+     * adios2::Mode::Read, go through all its steps and register the attribute
+     * values. Expensive and collective operation, run only once at startup.
+     * Absolutely necessary for reading /data/snapshot.
+     * Necessary (but not yet used) for having correct values in attributes
+     * such as /data/time.
+     * In future: Let this task preparse the entirety of all modifiable
+     * attributes.
      */
     virtual void readAttributeAllsteps(
         Writable *, Parameter<Operation::READ_ATT_ALLSTEPS> &);
