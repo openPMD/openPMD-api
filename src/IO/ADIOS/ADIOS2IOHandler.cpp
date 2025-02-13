@@ -1517,7 +1517,6 @@ namespace
         std::deque<std::string> modifiable_attributes;
         for (auto const &[identifier, params] : all_attributes)
         {
-            std::cout.flush();
             if (params.at("Modifiable") == "1")
             {
                 modifiable_attributes.emplace_back(identifier);
