@@ -792,6 +792,10 @@ if(openPMD_BUILD_TESTING)
                 test/Files_ParallelIO/read_variablebased_randomaccess.cpp
                 test/Files_ParallelIO/iterate_nonstreaming_series.cpp
             )
+        elseif(${test_name} STREQUAL "Core")
+            list(APPEND ${out_list}
+                test/Files_Core/automatic_variable_encoding.cpp
+            )
         endif()
     endmacro()
 
