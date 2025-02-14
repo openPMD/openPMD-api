@@ -589,7 +589,7 @@ IterationEncoding Series::iterationEncoding() const
 
 Series &Series::setIterationEncoding(IterationEncoding ie)
 {
-    setIterationEncoding_internal(ie, internal::default_or_explicit::default_);
+    setIterationEncoding_internal(ie, internal::default_or_explicit::explicit_);
     return *this;
 }
 
@@ -1139,9 +1139,9 @@ Given file pattern: ')END"
                  * allow setting attributes in that case */
                 setWritten(false, Attributable::EnqueueAsynchronously::No);
 
-                initDefaults(input->iterationEncoding);
+                initDefaults(series.m_iterationEncoding);
                 setIterationEncoding_internal(
-                    input->iterationEncoding,
+                    series.m_iterationEncoding,
                     series.m_iterationEncodingSetExplicitly);
 
                 setWritten(true, Attributable::EnqueueAsynchronously::No);
