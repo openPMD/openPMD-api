@@ -97,6 +97,8 @@ namespace adios_defaults
     constexpr const_str str_usesteps = "usesteps";
     constexpr const_str str_flushtarget = "preferred_flush_target";
     constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
+    constexpr const_str str_useModifiableAttributes =
+        "__openPMD_internal/useModifiableAttributes";
     constexpr const_str str_adios2Schema =
         "__openPMD_internal/openPMD2_adios2_schema";
     constexpr const_str str_isBoolean = "__is_boolean__";

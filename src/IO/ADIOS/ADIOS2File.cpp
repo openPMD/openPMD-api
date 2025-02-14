@@ -21,6 +21,7 @@
 
 #include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IterationEncoding.hpp"
@@ -498,6 +499,12 @@ void ADIOS2File::configure_IO()
                 ? ADIOS2IOHandlerImpl::ModifiableAttributes::Yes
                 : ADIOS2IOHandlerImpl::ModifiableAttributes::No;
         }
+        m_IO.DefineAttribute<bool_representation>(
+            adios_defaults::str_useModifiableAttributes,
+            m_impl->m_modifiableAttributes ==
+                    ADIOS2IOHandlerImpl::ModifiableAttributes::No
+                ? 0
+                : 1);
     }
 
     // set engine type

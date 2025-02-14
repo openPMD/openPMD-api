@@ -1509,37 +1509,30 @@ namespace
         }
         static constexpr char const *errorMsg = "DistributeToAllRanks";
     };
+#endif
 
-    void warn_ignored_modifiable_attributes(
-        adios2::IO &IO, std::string const &exempt_this_from_warnings)
+    void warn_ignored_modifiable_attributes(adios2::IO &IO)
     {
-        auto all_attributes = IO.AvailableAttributes();
-        std::deque<std::string> modifiable_attributes;
-        for (auto const &[identifier, params] : all_attributes)
-        {
-            if (params.at("Modifiable") == "1")
-            {
-                modifiable_attributes.emplace_back(identifier);
-            }
-        }
-        if (modifiable_attributes.size() > 1 ||
-            (modifiable_attributes.size() == 1 &&
-             *modifiable_attributes.begin() != exempt_this_from_warnings))
-        {
-            std::cerr << &R"(
-Warning: Random-access for variable-encoding in ADIOS2 is currently
+        auto modifiable_flag = IO.InquireAttribute<detail::bool_representation>(
+            adios_defaults::str_useModifiableAttributes);
+        auto print_warning = [](std::string const &note) {
+            std::cerr << "Warning: " << note << R"(
+Random-access for variable-encoding in ADIOS2 is currently
 experimental. Support for modifiable attributes is currently not implemented
 yet, meaning that attributes such as /data/time will show useless values.
 Use Access::READ_LINEAR to retrieve those values if needed.
 The following modifiable attributes have been found:
-)"[1];
-            for (auto const &identifier : modifiable_attributes)
-            {
-                std::cerr << '\t' << identifier << '\n';
-            }
+)";
+        };
+        if (!modifiable_flag)
+        {
+            print_warning("File might be using modifiable attributes.");
+        }
+        else if (modifiable_flag.Data().at(0) != 0)
+        {
+            print_warning("File uses modifiable attributes.");
         }
     }
-#endif
 } // namespace
 
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
@@ -1557,7 +1550,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         IO.SetParameter("StreamReader", "ON"); // this be for BP4
         auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
         auto status = engine.BeginStep();
-        warn_ignored_modifiable_attributes(IO, name);
+        warn_ignored_modifiable_attributes(IO);
         auto type = detail::attributeInfo(IO, name, /* verbose = */ true);
         switchType<ReadAttributeAllsteps>(
             type, IO, engine, name, status, *param.resource);
