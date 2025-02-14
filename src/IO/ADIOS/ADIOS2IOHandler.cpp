@@ -2293,7 +2293,9 @@ namespace detail
             auto var_steps = var.Steps();
             if (file_steps != var_steps)
             {
-                throw error::OperationUnsupportedInBackend(
+                throw error::ReadError(
+                    error::AffectedObject::Dataset,
+                    error::Reason::UnexpectedContent,
                     "ADIOS2",
                     &R"(
 The opened file contains different data per step.

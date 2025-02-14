@@ -82,6 +82,7 @@ The openPMD-api distinguishes between a number of different access modes:
      1. Modifiable attributes (except ``/data/snapshot``) can currently not be read. Attributes such as ``/data/time`` that naturally change their value across Iterations will hence not be really well-usable; the last Iteration's value will currently leak into all other Iterations.
      2. There is no support for datasets that do not exist in all Iterations. The internal Iteration layouts should be homogeneous.
         If you need this feature, please contact the openPMD-api developers; implementing this is currently not a priority.
+        Datasets that do not exist in all steps will be skipped at read time (with an error).
      3. Datasets with changing extents are supported.
 
 * **Read/Write mode**: Creates a new Series if not existing, otherwise opens an existing Series for reading and writing.
