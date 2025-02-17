@@ -68,6 +68,19 @@ allOf = [
     { "$ref" = "#/$defs/any_type_dataset_properties", title = "Property definitions" },
 ]
 
+#####################################################
+# ...or `datatype` is UNDEFINED, no extent required #
+#####################################################
+
+[["$defs".any_type_dataset.anyOf]]
+title = "An undefined template dataset"
+allOf = [
+    { required = [
+        "datatype",
+    ], title = "Required properties" },
+    { datatype.value = "UNDEFINED", extent = { type = "array", items.type = "integer" } },
+]
+
 ######################################
 # n-dimensional datasets of int type #
 ######################################

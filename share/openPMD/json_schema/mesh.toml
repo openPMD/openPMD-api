@@ -32,7 +32,9 @@ required = [
 
 [allOf.properties.attributes.allOf.properties]
 
-gridUnitSI."$ref" = "attribute_defs.json#/$defs/float_attribute"
+# in openPMD 1.0: float_attribute, openPMD 2.0: vec_float_attribute
+# TODO: decide how to better deal with the 1.0/2.0 dichotomy
+gridUnitSI."$ref" = "attribute_defs.json#/$defs/vec_float_attribute"
 gridSpacing."$ref" = "attribute_defs.json#/$defs/vec_float_attribute"
 gridGlobalOffset."$ref" = "attribute_defs.json#/$defs/vec_float_attribute"
 timeOffset."$ref" = "attribute_defs.json#/$defs/float_attribute"
