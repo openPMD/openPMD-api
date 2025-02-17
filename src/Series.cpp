@@ -1429,12 +1429,7 @@ void Series::flushGorVBased(
     bool flushIOHandler)
 {
     if (iterationEncoding() == IterationEncoding::variableBased &&
-        /*
-         * At parsing time, this might happen since iterations might contain
-         * errors and be deleted.
-         */
-        IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing &&
-        iterations.empty())
+        access::writeOnly(IOHandler()->m_frontendAccess) && iterations.empty())
     {
         /*
          * Note: Unlike flushFileBased, it's ok if `begin == end` since this
