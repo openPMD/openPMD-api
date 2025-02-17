@@ -863,7 +863,7 @@ public:
 
     bool fullSupportForVariableBasedEncoding() const override
     {
-        return openPMD_HAS_ADIOS_2_9;
+        return true;
     }
 
     std::future<void> flush(internal::ParsedFlushParams &) override;
