@@ -7,6 +7,8 @@ from pathlib import Path
 import sys
 
 import jsonschema.validators
+from referencing import Registry, Resource
+from referencing.jsonschema import DRAFT202012
 
 
 def parse_args(program_name):
@@ -39,9 +41,9 @@ Examples:
 
     parser.add_argument(
         '--schema_root',
-        default=script_path / 'series.json',
+        default=script_path,
         help="""\
-The .json file describing the root file of the schema to validate against.
+Directory where to resolve JSON schema files to validate against.
 """
     )
     parser.add_argument('openpmd_file',
@@ -55,16 +57,24 @@ The .json file describing the root file of the schema to validate against.
 args = parse_args(sys.argv[0])
 
 path = Path(os.path.dirname(os.path.realpath(args.schema_root)))
-resolver = jsonschema.validators.RefResolver(
-    base_uri=f"{path.as_uri()}/",
-    referrer=True,
-)
+
+
+def retrieve_from_filesystem(uri):
+    filepath = args.schema_root / uri
+    with open(filepath, "r") as referred:
+        loaded_json = json.load(referred)
+        return Resource.from_contents(
+            loaded_json, default_specification=DRAFT202012)
+
+
+registry = Registry(retrieve=retrieve_from_filesystem)
 
 with open(args.openpmd_file[0], "r") as instance:
+    loaded_instance = json.load(instance)
     jsonschema.validate(
-        instance=json.load(instance),
+        instance=loaded_instance,
         schema={"$ref": "./series.json"},
-        resolver=resolver,
+        registry=registry,
     )
     print("File {} was validated successfully against schema {}.".format(
         instance.name, args.schema_root))

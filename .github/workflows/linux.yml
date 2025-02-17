@@ -275,7 +275,7 @@ jobs:
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 
-        python3 -m pip install jsonschema
+        python3 -m pip install jsonschema referencing
         cd ../share/openPMD/json_schema
         PATH="../../../build/bin:$PATH" make -j 2
         # We need to exclude the thetaMode example since that has a different
