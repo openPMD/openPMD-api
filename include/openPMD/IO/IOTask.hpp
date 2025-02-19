@@ -32,8 +32,8 @@
 #include "openPMD/backend/ParsePreference.hpp"
 
 #include <cstddef>
-#include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -677,10 +677,18 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::ADVANCE>
         std::optional<size_t> step;
     };
 
-    //! input parameter
+    // input parameters
+    /**
+     * AdvanceMode: Is one of BeginStep/EndStep. Used during writing and in
+     *      linear read mode to step sequentially through steps.
+     * StepSelection: Used in random-access read mode, jump to the specified
+     *      step. Can be nullopt in order to reset the backend to read
+     *      step-agnostically, e.g. for reading global datasets such as
+     *      /rankTable.
+     */
     std::variant<AdvanceMode, StepSelection> mode;
     bool isThisStepMandatory = false;
-    //! output parameter
+    // output parameter
     std::shared_ptr<AdvanceStatus> status =
         std::make_shared<AdvanceStatus>(AdvanceStatus::OK);
 };

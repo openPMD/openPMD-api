@@ -48,7 +48,7 @@ openPMD-api implements various file-formats (backends) and encoding strategies f
 **Iteration encoding:** The openPMD-api can encode iterations in different ways.
 The method ``Series::setIterationEncoding()`` (C++) or ``Series.set_iteration_encoding()`` (Python) may be used in writing for selecting one of the following encodings explicitly:
 
-* **group-based iteration encoding:** This encoding is the default.
+* **group-based iteration encoding:** This encoding is the default for HDF5 and JSON. In ADIOS2, variable-based encoding is preferred when possible due to better performance characteristics, see below.
   It creates a separate group in the hierarchy of the openPMD standard for each iteration.
   As an example, all data pertaining to iteration 0 may be found in group ``/data/0``, for iteration 100 in ``/data/100``.
 * **file-based iteration encoding:** A unique file on the filesystem is created for each iteration.
@@ -57,6 +57,7 @@ The method ``Series::setIterationEncoding()`` (C++) or ``Series.set_iteration_en
   A padding may be specified by ``"series_%06T.json"`` to create files ``series_000000.json``, ``series_000100.json`` and ``series_000200.json``.
   The inner group layout of each file is identical to that of the group-based encoding.
 * **variable-based iteration encoding:** This experimental encoding uses a feature of some backends (i.e., ADIOS2) to maintain datasets and attributes in several versions (i.e., iterations are stored inside *variables*).
+  When creating an ADIOS2 Series with steps (e.g. via ``series.writeIterations()`` / ``series.write_iterations()``), this encoding will be picked as a default instead of group-based encoding due to bad performance characteristics of group-based encoding in ADIOS2.
   No iteration-specific groups are created and the corresponding layer is dropped from the openPMD hierarchy.
   In backends that do not support this feature, a series created with this encoding can only contain one iteration.
 
