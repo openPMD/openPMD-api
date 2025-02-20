@@ -77,3 +77,29 @@ jobs:
 
 # add before install, and fix Python path:
 # ctest --test-dir build -C Debug --output-on-failure
+
+  build_win_32bit:
+    name: MSVC 32bit
+    runs-on: windows-2019
+    if: github.event.pull_request.draft == false
+    env:
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: conda-incubator/setup-miniconda@v3
+      name: Setup conda
+      with:
+        architecture: "x86"
+        auto-update-conda: true
+        activate-environment: openpmd-api-win32-dev
+        environment-file: .github/workflows/dependencies/conda_win32.yml
+        channels: defaults
+        channel-priority: true
+    - name: Build & Install
+      run: |
+        cmake -S . -B build               `
+              -DCMAKE_BUILD_TYPE=Release  `
+              -DopenPMD_USE_MPI=OFF
+        cmake --build build --config Release --parallel 2
+        ctest --test-dir build --output-on-failure -C Release
+        cmake --build build --config Release --target install
