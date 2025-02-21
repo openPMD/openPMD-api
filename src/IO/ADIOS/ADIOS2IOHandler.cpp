@@ -2661,7 +2661,23 @@ namespace detail
         }
         else
         {
-            var.SetShape(shape);
+            auto const &old_shape = var.Shape();
+            bool shape_changed = old_shape.size() != shape.size();
+            if (!shape_changed)
+            {
+                for (size_t i = 0; i < old_shape.size(); ++i)
+                {
+                    if (old_shape[i] != shape[i])
+                    {
+                        shape_changed = true;
+                        break;
+                    }
+                }
+            }
+            if (shape_changed)
+            {
+                var.SetShape(shape);
+            }
             if (count.size() > 0)
             {
                 var.SetSelection({start, count});
