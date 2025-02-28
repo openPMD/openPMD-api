@@ -1,3 +1,11 @@
+"""
+This file is part of the openPMD-api.
+
+Copyright 2025 openPMD contributors
+Authors: Franz Poeschel, Pawel Ordyna
+License: LGPLv3+
+"""
+
 import openpmd_api as pmd
 
 

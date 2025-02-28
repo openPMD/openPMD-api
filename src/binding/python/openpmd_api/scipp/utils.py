@@ -3,8 +3,7 @@
 Author:
     Pawel Ordyna <p.ordyna@hzdr.de>
 
-License:
-GPL - 3.0 license. See LICENSE file for details.
+License: LGPLv3+
 """
 
 from sys import version_info

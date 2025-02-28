@@ -1,3 +1,12 @@
+"""
+This file is part of the openPMD-api.
+
+Copyright 2025 openPMD contributors
+Authors: Franz Poeschel
+License: LGPLv3+
+"""
+
+
 def series_to_scipp(series):
 
     # lazy import
