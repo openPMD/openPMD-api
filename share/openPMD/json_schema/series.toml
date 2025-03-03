@@ -78,21 +78,34 @@ title = "Contains iterations"
 # Requirement 2.1: Either a single iteration in variable-based encoding #
 #########################################################################
 
-[[allOf.oneOf]]
+[allOf.if]
+properties.attributes.properties.iterationEncoding.oneOf = [
+    { const = { value = "variableBased", datatype = "STRING" } },
+    { const = "variableBased" },
+]
+
+[allOf.then]
 title = "Variable-based encoding"
 properties.attributes.properties.iterationEncoding.properties.value = { const = "variableBased" }
 
-[allOf.oneOf.properties.data]
+[allOf.then.properties.data]
 type = "object"
 title = "An iteration"
 description = "A single iteration."
+
+# Only require iteration data if snapshot attribute is defined
+[allOf.then.properties.data.if]
+required = ["attributes"]
+properties.attributes.required = ["snapshot"]
+
+[allOf.then.properties.data.then]
 "$ref" = "iteration.json"
 
 ############################################################################
 # Requirement 2.2: Or multiple iterations in group- or file-based encoding #
 ############################################################################
 
-[[allOf.oneOf]]
+[allOf.else]
 title = "Group-based (or file-based) encoding"
 properties.attributes.properties.iterationEncoding.properties.value = { oneOf = [
     { const = "groupBased" },
@@ -101,22 +114,22 @@ properties.attributes.properties.iterationEncoding.properties.value = { oneOf = 
 
 # Base Path
 
-[allOf.oneOf.properties.data]
+[allOf.else.properties.data]
 type = "object"
 title = "Base path"
 description = "A map of all iterations/snapshots in the Series."
 
 propertyNames.pattern = "^(-?[0-9]*|attributes)$"
 
-[allOf.oneOf.properties.data.properties]
+[allOf.else.properties.data.properties]
 
-[allOf.oneOf.properties.data.properties.attributes]
+[allOf.else.properties.data.properties.attributes]
 title = "Attribute layout"
 description = "Custom attributes allowed, no required attributes defined."
 "$ref" = "attributes.json"
 
 # Base Path -> Iterations
 
-[allOf.oneOf.properties.data.patternProperties."^-?[0-9]*$"]
+[allOf.else.properties.data.patternProperties."^-?[0-9]*$"]
 title = "Iteration"
 "$ref" = "iteration.json"

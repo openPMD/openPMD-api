@@ -1428,24 +1428,6 @@ void Series::flushGorVBased(
     internal::FlushParams const &flushParams,
     bool flushIOHandler)
 {
-    if (iterationEncoding() == IterationEncoding::variableBased &&
-        access::writeOnly(IOHandler()->m_frontendAccess) && iterations.empty())
-    {
-        /*
-         * Note: Unlike flushFileBased, it's ok if `begin == end` since this
-         * method may be called without an explicit iteration.
-         * But since in variable-based encoding the base path is the same as the
-         * path to the (currently active) iteration, there must be at least one
-         * iteration present since the openPMD standard requires mandatory
-         * attributes.
-         * In group-based encoding, any number of iterations might be included
-         * in the base path, in variable-based encoding there must be exactly
-         * one iteration currently active.
-         */
-        throw error::WrongAPIUsage(
-            "variableBased output can not be written with no iterations.");
-    }
-
     auto &series = get();
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {

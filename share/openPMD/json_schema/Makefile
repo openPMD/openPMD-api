@@ -5,9 +5,11 @@ json_files = attribute_defs.json attributes.json dataset_defs.json iteration.jso
 .PHONY: all
 all: $(json_files)
 
+# The target file should only be created if the conversion succeeded
 $(json_files): %.json: %.toml
-	$(convert) @$^ > $@
+	$(convert) @$^ > $@.tmp
+	mv $@.tmp $@
 
 .PHONY: clean
 clean:
-	-rm $(json_files)
+	for file in $(json_files); do rm -f "$$file" "$$file.tmp"; done
