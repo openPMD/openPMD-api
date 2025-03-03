@@ -64,17 +64,31 @@ title = "Contains components"
 # Requirement 2.1: Either this is a scalar mesh... #
 ####################################################
 
-[[allOf.oneOf]]
+[allOf.if]
+anyOf = [
+    # vector mesh
+    { required = [
+        "datatype",
+    ] },
+    # constant mesh
+    { required = [
+        "attributes",
+    ], properties.attributes.required = [
+        "shape",
+        "value",
+    ] },
+]
+
+
+[allOf.then]
 title = "Scalar mesh component"
 "$ref" = "mesh_record_component.json"
 
-#################################################
-# Requirement 2.2: ... or it's a vector mesh.   #
-# Note that exactly one of these two conditions #
-# must be true, not both at once (oneOf).       #
-#################################################
+###############################################
+# Requirement 2.2: ... or it's a vector mesh. #
+###############################################
 
-[[allOf.oneOf]]
+[allOf.else]
 title = "Vector component"
 description = "Additionally to the attributes, at least one component must be contained"
 # The attributes are contained in this dict, and at least one further
@@ -82,6 +96,6 @@ description = "Additionally to the attributes, at least one component must be co
 minProperties = 2
 propertyNames.pattern = "^\\w*$"
 
-[allOf.oneOf.patternProperties."^(?!attributes).*"]
+[allOf.else.patternProperties."^(?!attributes).*"]
 title = "Vector mesh component"
 "$ref" = "mesh_record_component.json"

@@ -38,28 +38,28 @@ title = "Attribute layout"
 [[allOf]]
 title = "Either array or constant"
 
+########################
+# Option 2.1: Constant #
+########################
+
+[allOf.if]
+required = ["attributes"]
+properties.attributes.required = ["shape", "value"]
+
+[allOf.then]
+title = "Constant dataset"
+description = "A dataset represented by two attributes: The constant value and its shape."
+
+[allOf.properties.attributes.properties]
+value."$ref" = "attribute_defs.json#/$defs/float_attribute"
+shape."$ref" = "attribute_defs.json#/$defs/vec_int_attribute"
+
 #####################
-# Option 2.1: Array #
+# Option 2.2: Array #
 #####################
 
-[[allOf.oneOf]]
+[allOf.else]
 description = "An n-dimensional dataset containing the payload."
 title = "Array dataset"
 
 "$ref" = "dataset_defs.json#/$defs/any_type_dataset"
-
-########################
-# Option 2.2: Constant #
-########################
-
-[[allOf.oneOf]]
-title = "Constant dataset"
-description = "A dataset represented by two attributes: The constant value and its shape."
-required = ["attributes"]
-
-[allOf.oneOf.properties.attributes]
-required = ["shape", "value"]
-
-[allOf.oneOf.properties.attributes.properties]
-value."$ref" = "attribute_defs.json#/$defs/float_attribute"
-shape."$ref" = "attribute_defs.json#/$defs/vec_int_attribute"

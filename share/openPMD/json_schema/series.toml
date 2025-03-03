@@ -107,9 +107,11 @@ properties.attributes.required = ["snapshot"]
 
 [allOf.else]
 title = "Group-based (or file-based) encoding"
-properties.attributes.properties.iterationEncoding.properties.value = { oneOf = [
+properties.attributes.properties.iterationEncoding = { oneOf = [
     { const = "groupBased" },
     { const = "fileBased" },
+    { const = { value = "groupBased", datatype = "STRING" } },
+    { const = { value = "fileBased", datatype = "STRING" } },
 ] }
 
 # Base Path

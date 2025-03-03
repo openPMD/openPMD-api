@@ -5,19 +5,15 @@
 # Vectors of strings #
 ######################
 
-[["$defs".vec_string_attribute.oneOf]]
-title = "Shorthand notation"
-anyOf = [
-    { type = "string" },
-    { type = "array", items = { "type" = "string" } },
-]
+["$defs".vec_string_attribute.if]
+type = "object"
 
-[["$defs".vec_string_attribute.oneOf]]
+["$defs".vec_string_attribute.then]
 title = "Long notation"
 type = "object"
 required = ["value", "datatype"]
 
-["$defs".vec_string_attribute.oneOf.properties]
+["$defs".vec_string_attribute.then.properties]
 
 value.anyOf = [
     { type = "string" },
@@ -35,23 +31,24 @@ datatype.enum = [
     "VEC_UCHAR",
 ]
 
+["$defs".vec_string_attribute.else]
+title = "Shorthand notation"
+anyOf = [{ type = "string" }, { type = "array", items = { "type" = "string" } }]
+
+
 ##################
 # Vectors of int #
 ##################
 
-[["$defs".vec_int_attribute.oneOf]]
-title = "Shorthand notation"
-anyOf = [
-    { type = "integer" },
-    { type = "array", items = { "type" = "integer" } },
-]
+["$defs".vec_int_attribute.if]
+type = "object"
 
-[["$defs".vec_int_attribute.oneOf]]
+["$defs".vec_int_attribute.then]
 title = "Long notation"
 type = "object"
 required = ["value", "datatype"]
 
-["$defs".vec_int_attribute.oneOf.properties]
+["$defs".vec_int_attribute.then.properties]
 
 value.anyOf = [
     { type = "integer" },
@@ -77,23 +74,26 @@ datatype.enum = [
     "VEC_ULONGLONG",
 ]
 
+["$defs".vec_int_attribute.else]
+title = "Shorthand notation"
+anyOf = [
+    { type = "integer" },
+    { type = "array", items = { "type" = "integer" } },
+]
+
 ####################
 # Vectors of float #
 ####################
 
-[["$defs".vec_float_attribute.oneOf]]
-title = "Shorthand notation"
-anyOf = [
-    { type = "number" },
-    { type = "array", items = { "type" = "number" } },
-]
+["$defs".vec_float_attribute.if]
+type = "object"
 
-[["$defs".vec_float_attribute.oneOf]]
+["$defs".vec_float_attribute.then]
 title = "Long notation"
 type = "object"
 required = ["value", "datatype"]
 
-["$defs".vec_float_attribute.oneOf.properties]
+["$defs".vec_float_attribute.then.properties]
 
 value.anyOf = [
     { type = "number" },
@@ -134,58 +134,67 @@ datatype.enum = [
     "VEC_CLONG_DOUBLE",
 ]
 
+["$defs".vec_float_attribute.else]
+title = "Shorthand notation"
+anyOf = [{ type = "number" }, { type = "array", items = { "type" = "number" } }]
+
 ###########################
 # Special case:           #
 # unitDimension attribute #
 ###########################
 
-[["$defs".unitDimension.oneOf]]
-title = "Shorthand notation"
-type = "array"
-items.type = "number"
+["$defs".unitDimension.if]
+type = "object"
 
-[["$defs".unitDimension.oneOf]]
+["$defs".unitDimension.then]
 title = "Long notation"
 type = "object"
 required = ["value", "datatype"]
 
-["$defs".unitDimension.oneOf.properties]
+["$defs".unitDimension.then.properties]
 
 value = { type = "array", items = { type = "number" } }
 datatype.const = "ARR_DBL_7"
+
+["$defs".unitDimension.else]
+title = "Shorthand notation"
+type = "array"
+items.type = "number"
 
 #####################
 # string attributes #
 #####################
 
-[["$defs".string_attribute.oneOf]]
-title = "Shorthand notation"
-type = "string"
+["$defs".string_attribute.if]
+type = "object"
 
-[["$defs".string_attribute.oneOf]]
+["$defs".string_attribute.then]
 title = "Long notation"
 type = "object"
 required = ["value", "datatype"]
 
-["$defs".string_attribute.oneOf.properties]
+["$defs".string_attribute.then.properties]
 
 value.type = "string"
 datatype.enum = ["STRING", "CHAR", "SCHAR", "UCHAR"]
+
+["$defs".string_attribute.else]
+title = "Shorthand notation"
+type = "string"
 
 ##################
 # int attributes #
 ##################
 
-[["$defs".int_attribute.oneOf]]
-title = "Shorthand notation"
-type = "integer"
+["$defs".int_attribute.if]
+type = "object"
 
-[["$defs".int_attribute.oneOf]]
+["$defs".int_attribute.then]
 title = "Long notation"
 type = "object"
 required = ["value", "datatype"]
 
-["$defs".int_attribute.oneOf.properties]
+["$defs".int_attribute.then.properties]
 
 value.type = "integer"
 datatype.enum = [
@@ -199,20 +208,23 @@ datatype.enum = [
     "ULONGLONG",
 ]
 
+["$defs".int_attribute.else]
+title = "Shorthand notation"
+type = "integer"
+
 ####################
 # float attributes #
 ####################
 
-[["$defs".float_attribute.oneOf]]
-title = "Shorthand notation"
-type = "number"
+["$defs".float_attribute.if]
+type = "object"
 
-[["$defs".float_attribute.oneOf]]
+["$defs".float_attribute.then]
 title = "Long notation"
 type = "object"
 required = ["value", "datatype"]
 
-["$defs".float_attribute.oneOf.properties]
+["$defs".float_attribute.then.properties]
 
 value.type = "number"
 datatype.enum = [
@@ -234,3 +246,8 @@ datatype.enum = [
     "CDOUBLE",
     "CLONG_DOUBLE",
 ]
+
+
+["$defs".float_attribute.else]
+title = "Shorthand notation"
+type = "number"

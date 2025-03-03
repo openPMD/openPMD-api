@@ -9,28 +9,16 @@ type = "object"
 title = "Dictionary of attributes"
 description = "Generic layout of an attributes object."
 
-[[oneOf.patternProperties.".*".oneOf]]
-title = "A generic attribute - short form"
-anyOf = [
-    # Any primitive value
-    { not = { anyOf = [
-        { type = "object", title = "An object" },
-        { type = "array", title = "An array" },
-    ] }, title = "No complex type" },
-    # Or an array of any primitive value
-    { type = "array", items = { not = { anyOf = [
-        { type = "object", title = "An object" },
-        { type = "array", title = "An array" },
-    ] } }, title = "An array of non-complex types" },
-]
-
-[[oneOf.patternProperties.".*".oneOf]]
-title = "A generic attribute - long form"
+[oneOf.patternProperties.".*".if]
 type = "object"
 
-[oneOf.patternProperties.".*".oneOf.properties]
+[oneOf.patternProperties.".*".then]
+title = "A generic attribute - long form"
+type = "object"
+required = ["value", "datatype"]
+maxProperties = 2
 
-value.anyOf = [
+properties.value.anyOf = [
     # Any primitive value
     { not = { anyOf = [
         { type = "object", title = "An object" },
@@ -43,8 +31,8 @@ value.anyOf = [
     ] } }, title = "An array of non-complex types" },
 ]
 
-datatype.type = "string"
-datatype.enum = [
+properties.datatype.type = "string"
+properties.datatype.enum = [
     "CHAR",
     "UCHAR",
     "SCHAR",
@@ -83,6 +71,21 @@ datatype.enum = [
     "VEC_STRING",
     "ARR_DBL_7",
     "BOOL",
+]
+
+[oneOf.patternProperties.".*".else]
+title = "A generic attribute - short form"
+anyOf = [
+    # Any primitive value
+    { not = { anyOf = [
+        { type = "object", title = "An object" },
+        { type = "array", title = "An array" },
+    ] }, title = "No complex type" },
+    # Or an array of any primitive value
+    { type = "array", items = { not = { anyOf = [
+        { type = "object", title = "An object" },
+        { type = "array", title = "An array" },
+    ] } }, title = "An array of non-complex types" },
 ]
 
 [oneOf.propertyNames]
