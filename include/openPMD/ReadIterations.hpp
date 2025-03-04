@@ -33,6 +33,7 @@ namespace openPMD
 {
 class SeriesIterator
 {
+    friend class Series;
     using iteration_index_t = IndexedIteration::index_t;
 
     using maybe_series_t = std::optional<Series>;

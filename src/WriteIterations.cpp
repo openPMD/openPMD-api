@@ -104,21 +104,29 @@ WriteIterations::mapped_type &WriteIterations::operator[](key_type &&key)
 
 std::optional<IndexedIteration> WriteIterations::currentIteration()
 {
-    if (!shared || !shared->has_value())
+    auto current_index = currentIterationIndex();
+    if (!current_index.has_value())
     {
         return std::nullopt;
     }
     auto &s = shared->value();
-    if (!s.currentlyOpen.has_value())
-    {
-        return std::nullopt;
-    }
-    Iteration &currentIteration = s.iterations.at(s.currentlyOpen.value());
+    Iteration &currentIteration = s.iterations.at(current_index.value());
     if (currentIteration.closed())
     {
         return std::nullopt;
     }
     return std::make_optional<IndexedIteration>(
         IndexedIteration(currentIteration, s.currentlyOpen.value()));
+}
+
+std::optional<Iteration::IterationIndex_t>
+WriteIterations::currentIterationIndex() const
+{
+    if (!shared || !shared->has_value())
+    {
+        return std::nullopt;
+    }
+    auto &s = shared->value();
+    return s.currentlyOpen;
 }
 } // namespace openPMD

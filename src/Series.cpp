@@ -2568,7 +2568,8 @@ auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
     {
         return IterationOpened::RemainsClosed;
     }
-    bool const dirtyRecursive = iteration.dirtyRecursive();
+    bool dirtyRecursive = iteration.dirtyRecursive();
+
     if (iteration.get().m_closed == internal::CloseStatus::ClosedInBackend)
     {
         // file corresponding with the iteration has previously been
@@ -2588,6 +2589,33 @@ auto Series::openIterationIfDirty(IterationIndex_t index, Iteration iteration)
         }
         return IterationOpened::RemainsClosed;
     }
+
+    /*
+     * When using writeIterations(), the currently active Iteration should
+     * always be flushed (unless, as checked above, it is already closed).
+     * These two blocks checks if an Iteration is currently collectively opened.
+     */
+    auto &series = get();
+    [&]() {
+        if (!series.m_sharedStatefulIterator)
+        {
+            return;
+        }
+        auto const current_iteration =
+            series.m_sharedStatefulIterator->peekCurrentIteration();
+        dirtyRecursive |=
+            current_iteration.has_value() && *current_iteration == index;
+    }();
+    [&]() {
+        if (!series.m_writeIterations)
+        {
+            return;
+        }
+        auto const current_iteration =
+            series.m_writeIterations->currentIterationIndex();
+        dirtyRecursive |=
+            current_iteration.has_value() && *current_iteration == index;
+    }();
 
     switch (iterationEncoding())
     {
