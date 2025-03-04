@@ -435,9 +435,9 @@ void ADIOS2File::configure_IO()
              * new and requires >= v2.9 features anyway.
              */
             case IterationEncoding::variableBased:
+            case IterationEncoding::groupBased:
                 m_impl->m_useGroupTable = UseGroupTable::Yes;
                 break;
-            case IterationEncoding::groupBased:
             case IterationEncoding::fileBased:
                 m_impl->m_useGroupTable = UseGroupTable::No;
                 break;
