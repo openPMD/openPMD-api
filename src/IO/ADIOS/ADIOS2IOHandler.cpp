@@ -1521,7 +1521,6 @@ Random-access for variable-encoding in ADIOS2 is currently
 experimental. Support for modifiable attributes is currently not implemented
 yet, meaning that attributes such as /data/time will show useless values.
 Use Access::READ_LINEAR to retrieve those values if needed.
-The following modifiable attributes have been found:
 )";
         };
         if (!modifiable_flag)
