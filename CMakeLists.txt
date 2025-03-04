@@ -791,6 +791,7 @@ if(openPMD_BUILD_TESTING)
             list(APPEND ${out_list}
                 test/Files_ParallelIO/read_variablebased_randomaccess.cpp
                 test/Files_ParallelIO/iterate_nonstreaming_series.cpp
+                test/Files_ParallelIO/bug_1655_bp5_writer_hangup.cpp
             )
         elseif(${test_name} STREQUAL "Core")
             list(APPEND ${out_list}

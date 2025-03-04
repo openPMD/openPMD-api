@@ -2183,3 +2183,10 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
 }
 
 #endif // openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
+
+#if openPMD_HAVE_MPI
+TEST_CASE("bug_1655_bp5_writer_hangup", "[parallel]")
+{
+    bug_1655_bp5_writer_hangup::bug_1655_bp5_writer_hangup();
+}
+#endif

@@ -75,4 +75,9 @@ namespace iterate_nonstreaming_series
 auto iterate_nonstreaming_series() -> void;
 }
 
+namespace bug_1655_bp5_writer_hangup
+{
+auto bug_1655_bp5_writer_hangup() -> void;
+}
+
 #endif
