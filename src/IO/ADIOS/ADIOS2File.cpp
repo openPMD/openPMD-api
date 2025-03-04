@@ -146,7 +146,7 @@ void BufferedGet::run(ADIOS2File &ba)
         ba.m_IO,
         ba.getEngine(),
         ba.m_file,
-        ba.stepSelection());
+        this->stepSelection);
 }
 
 void BufferedPut::run(ADIOS2File &ba)

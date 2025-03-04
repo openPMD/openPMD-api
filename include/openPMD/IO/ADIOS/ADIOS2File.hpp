@@ -67,6 +67,7 @@ struct BufferedGet : BufferedAction
 {
     std::string name;
     Parameter<Operation::READ_DATASET> param;
+    std::optional<size_t> stepSelection;
 
     void run(ADIOS2File &) override;
 };

@@ -1079,6 +1079,9 @@ void ADIOS2IOHandlerImpl::readDataset(
     detail::BufferedGet bg;
     bg.name = nameOfVariable(writable);
     bg.param = parameters;
+    // need to store the current step selection for deferred reads as the step
+    // selection might change again before flushing
+    bg.stepSelection = ba.stepSelection();
     ba.enqueue(std::move(bg));
     m_dirty.emplace(std::move(file));
 }
