@@ -105,5 +105,6 @@ public:
      * Return the iteration that is currently being written to, if it exists.
      */
     std::optional<IndexedIteration> currentIteration();
+    std::optional<Iteration::IterationIndex_t> currentIterationIndex() const;
 };
 } // namespace openPMD
