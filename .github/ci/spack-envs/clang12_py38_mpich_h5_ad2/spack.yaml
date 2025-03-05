@@ -42,16 +42,16 @@ spack:
 
   compilers:
   - compiler:
-      environment: {}
+      environment: {MPICH_CC: /usr/lib/llvm-12/bin/clang, MPICH_CXX: /usr/lib/llvm-12/bin/clang++}
       extra_rpaths: []
       flags: {}
       modules: []
       operating_system: ubuntu22.04
       paths:
-        cc: /usr/lib/llvm-12/bin/clang
-        cxx: /usr/lib/llvm-12/bin/clang++
-        f77: /usr/bin/gfortran
-        fc: /usr/bin/gfortran
+        cc: /usr/bin/mpicc
+        cxx: /usr/bin/mpic++
+        f77: /usr/bin/mpif77
+        fc: /usr/bin/mpifort
       spec: clang@12.0.1
       target: x86_64
 
