@@ -48,12 +48,12 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-10 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev
+        sudo apt-get install clang-14 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev
         python3 -m pip install -U pip
         python3 -m pip install -U numpy
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-10, OMPI_CXX: clang++-10, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
+      env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-14, OMPI_CXX: clang++-14, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
       run: |
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
