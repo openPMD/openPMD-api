@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   clang7_nopy_nompi_h5_libcpp:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
         ctest --output-on-failure
 
   clang7_nopy_ompi_h5_ad2_libcpp:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -85,7 +85,7 @@ jobs:
         ctest --output-on-failure
 
   clang7_nopy_ompi_h5_ad2:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -161,7 +161,7 @@ jobs:
 
   # ADIOS2 v2.7.1
   clang8_py38_mpich_h5_ad2:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -211,7 +211,7 @@ jobs:
 #  gcc-7.4.0_py_ompi_h5_ad2_coveralls
 
   gcc7_py36_pd_dd_ompi_h5_ad2:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -248,7 +248,7 @@ jobs:
         ctest --output-on-failure
 
   gcc9_py38_pd_nompi_h5_ad2_libcpp:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -271,7 +271,7 @@ jobs:
         ctest --output-on-failure
 
   musllinux_py10:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     container:
       image: quay.io/pypa/musllinux_1_1_x86_64
