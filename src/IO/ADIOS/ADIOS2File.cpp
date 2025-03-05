@@ -1241,6 +1241,46 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
     case AdvanceMode::BEGINSTEP: {
         adios2::StepStatus adiosStatus{};
 
+        auto check_bp5 = [&]() -> bool {
+            std::string engineType = getEngine().Type();
+            std::transform(
+                engineType.begin(),
+                engineType.end(),
+                engineType.begin(),
+                [](unsigned char c) { return std::tolower(c); });
+            return engineType == "bp5writer";
+        };
+
+        // Check some conditions on which to now cancel operation due to
+        // unwieldy metadata sizes in BP5 with group encoding
+        if (this->m_impl->m_handler->m_encoding ==
+                IterationEncoding::groupBased &&
+            this->m_currentStep >= 1000 &&
+            (this->m_mode == adios2::Mode::Write ||
+             this->m_mode == adios2::Mode::Append) &&
+            check_bp5())
+        {
+            throw error::OperationUnsupportedInBackend("ADIOS2", R"(
+Trying to create group-based output with more than 1000 steps in BP5 engine.
+As this engine is not adequate for group encoding, this will create immense
+metadata sizes. For more context, check:
+
+* https://github.com/openPMD/openPMD-api/discussions/1724
+* https://github.com/openPMD/openPMD-api/issues/1457
+
+Since this is likely to create unreadable data due to the sheer amount of
+metadata, we will cancel the writer now.
+Please consider using either of the following instead:
+
+* file encoding (by including an expansion pattern %T in the filename)
+* another ADIOS2 engine (e.g. by selecting file extension .bp4)
+* another openPMD backend (e.g. by selecting file extension .h5)
+* (experimental) variable encoding (e.g. by `Series::setIterationEncoding()`
+  or by the JSON config {"iteration_encoding": "variable_based"}).
+  Note that there is at this point no complete read support for variable-encoded
+  outputs.)");
+        }
+
         if (streamStatus != StreamStatus::DuringStep)
         {
             adiosStatus = getEngine().BeginStep();
