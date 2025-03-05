@@ -42,7 +42,7 @@ spack:
 
   compilers:
   - compiler:
-      environment: {MPICH_CC: /usr/lib/llvm-12/bin/clang, MPICH_CXX: /usr/lib/llvm-12/bin/clang++}
+      environment: {}
       extra_rpaths: []
       flags: {}
       modules: []
