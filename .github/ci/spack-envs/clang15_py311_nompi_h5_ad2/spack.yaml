@@ -34,7 +34,7 @@ spack:
       variants: ~fortran
       providers:
         mpi: [openmpi]
-      compiler: [clang@14.0.0]
+      compiler: [clang@15.0.7]
 
   compilers:
   - compiler:
@@ -44,11 +44,11 @@ spack:
       modules: []
       operating_system: ubuntu22.04
       paths:
-        cc: /usr/lib/llvm-14/bin/clang
-        cxx: /usr/lib/llvm-14/bin/clang++
+        cc: /usr/lib/llvm-15/bin/clang
+        cxx: /usr/lib/llvm-15/bin/clang++
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
-      spec: clang@14.0.0
+      spec: clang@15.0.7
       target: x86_64
 
   config:
