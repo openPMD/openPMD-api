@@ -175,12 +175,12 @@ jobs:
         sudo .github/workflows/dependencies/install_spack
         cat << EOF | sudo tee /usr/bin/mpicc_clang
           #!/usr/bin/env sh
-          export MPICH_CC=/usr/lib/llvm-12/bin/clang
+          export MPICH_CC=/usr/bin/clang-12
           /usr/bin/mpicc "\$@"
         EOF
         cat << EOF | sudo tee /usr/bin/mpic++_clang
           #!/usr/bin/env sh
-          export MPICH_CXX=/usr/lib/llvm-12/bin/clang++
+          export MPICH_CXX=/usr/bin/clang++-12
           /usr/bin/mpic++ "\$@"
         EOF
         sudo chmod +x /usr/bin/mpicc_clang
