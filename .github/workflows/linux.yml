@@ -185,9 +185,6 @@ jobs:
         EOF
         sudo chmod +x /usr/bin/mpicc_clang
         sudo chmod +x /usr/bin/mpic++_clang
-        cat `which mpicc_clang`
-        cat `which mpicc_clang++`
-        mpicc_clang --version
     - name: Build
       env: {CC: mpicc_clang, CXX: mpic++_clang, CXXFLAGS: -Werror}
       run: |
