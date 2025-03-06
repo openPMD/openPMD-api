@@ -171,7 +171,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-12 gfortran libmpich-dev python3
+        sudo apt-get install clang-12 gfortran libmpich-dev python3 g++ gcc
         sudo .github/workflows/dependencies/install_spack
         cat << EOF | sudo tee /usr/bin/mpicc_clang
           #!/usr/bin/env sh
