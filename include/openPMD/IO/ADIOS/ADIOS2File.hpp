@@ -25,6 +25,7 @@
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/config.hpp"
+#include <optional>
 
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
@@ -428,6 +429,7 @@ private:
      */
     size_t m_currentStep = 0;
     bool useStepSelection = false;
+    std::optional<size_t> m_max_steps_bp5 = std::make_optional<size_t>(1000);
 
     /*
      * ADIOS2 does not give direct access to its internal attribute and
