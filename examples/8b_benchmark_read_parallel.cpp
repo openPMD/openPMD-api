@@ -754,7 +754,7 @@ public:
 
         Extent pExtent = idVal.getExtent();
 
-        auto blob = pExtent[0] / (10 * m_MPISize);
+        auto blob = pExtent[0] / (size_t(10) * m_MPISize);
         if (0 == blob)
             return;
 

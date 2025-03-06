@@ -680,7 +680,7 @@ void write_4D_test(std::string const &file_ending)
     // every rank out of mpi_size MPI ranks contributes two writes:
     // - sliced in first dimension (partioned by rank)
     // - last dimension: every rank has two chunks to contribute
-    std::vector<double> data(2 * 10 * 6 * 4, mpi_rank);
+    std::vector<double> data(2. * 10 * 6 * 4, mpi_rank);
 
     E_x.resetDataset({Datatype::DOUBLE, {mpi_size * 2, 10, 6, 8}});
     E_x.storeChunk(data, {mpi_rank * 2, 0, 0, 0}, {2, 10, 6, 4});
@@ -760,7 +760,7 @@ void close_iteration_test(std::string const &file_ending)
         auto chunk = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
         it0.close(/* flush = */ false);
         read.flush();
-        for (size_t i = 0; i < 4 * mpi_size; ++i)
+        for (size_t i = 0; i < size_t(4) * mpi_size; ++i)
         {
             REQUIRE(data[i % 4] == chunk.get()[i]);
         }
@@ -784,7 +784,7 @@ void close_iteration_test(std::string const &file_ending)
         auto E_x_read = it1.meshes["E"]["x"];
         auto chunk = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
         it1.close(/* flush = */ true);
-        for (size_t i = 0; i < 4 * mpi_size; ++i)
+        for (size_t i = 0; i < size_t(4) * mpi_size; ++i)
         {
             REQUIRE(data[i % 4] == chunk.get()[i]);
         }
@@ -858,7 +858,7 @@ void file_based_write_read(std::string const &file_ending)
     unsigned const global_Nz = local_Nz * mpi_size;
     unsigned const global_Nx = 300u;
     using precision = double;
-    std::vector<precision> E_x_data(global_Nx * local_Nz);
+    std::vector<precision> E_x_data(size_t(global_Nx) * local_Nz);
     // filling some values: 0, 1, ...
     std::iota(E_x_data.begin(), E_x_data.end(), local_Nz * mpi_rank);
     std::transform(
@@ -914,7 +914,7 @@ void file_based_write_read(std::string const &file_ending)
                     std::to_string(local_Nz) + "]");
             E_x.resetDataset(dataset);
 
-            Offset chunk_offset = {0, local_Nz * mpi_rank};
+            Offset chunk_offset = {0, size_t(local_Nz) * mpi_rank};
             Extent chunk_extent = {global_Nx, local_Nz};
             E_x.storeChunk(E_x_data, chunk_offset, chunk_extent);
             series.flush();
@@ -987,7 +987,7 @@ void hipace_like_write(std::string const &file_ending)
     unsigned const global_Nz = local_Nz * mpi_size;
     unsigned const global_Nx = 300u;
     using precision = double;
-    std::vector<precision> E_x_data(global_Nx * local_Nz);
+    std::vector<precision> E_x_data(size_t(global_Nx) * local_Nz);
     // filling some values: 0, 1, ...
     std::iota(E_x_data.begin(), E_x_data.end(), local_Nz * mpi_rank);
     std::transform(
@@ -1101,7 +1101,7 @@ void hipace_like_write(std::string const &file_ending)
             io::determineDatatype<precision>(), {global_Nx, global_Nz});
         E_x.resetDataset(dataset);
 
-        Offset chunk_offset = {0, local_Nz * mpi_rank};
+        Offset chunk_offset = {0, size_t(local_Nz) * mpi_rank};
         Extent chunk_extent = {global_Nx, local_Nz};
         auto const copyToShared = [](std::vector<precision> const &data) {
             auto d = std::shared_ptr<precision>(
@@ -1618,7 +1618,7 @@ void append_mode(
         auto chunk = it.meshes["E"]["x"].template loadChunk<int>(
             {0, 0}, {unsigned(mpi_size), 10});
         it.seriesFlush();
-        for (size_t i = 0; i < unsigned(mpi_size) * 10; ++i)
+        for (size_t i = 0; i < size_t(mpi_size) * 10; ++i)
         {
             REQUIRE(chunk.get()[i] == 999);
         }

@@ -2345,20 +2345,21 @@ inline void sample_write_thetaMode(std::string const &file_ending)
     unsigned int const N_z = 64;
 
     std::shared_ptr<float> E_r_data(
-        new float[num_fields * N_r * N_z], [](float const *p) { delete[] p; });
+        new float[size_t(num_fields) * N_r * N_z],
+        [](float const *p) { delete[] p; });
     std::shared_ptr<double> E_t_data(
-        new double[num_fields * N_r * N_z],
+        new double[size_t(num_fields) * N_r * N_z],
         [](double const *p) { delete[] p; });
     float e_r{0};
     std::generate(
-        E_r_data.get(), E_r_data.get() + num_fields * N_r * N_z, [&e_r] {
-            return e_r += 1.0f;
-        });
+        E_r_data.get(),
+        E_r_data.get() + size_t(num_fields * N_r * N_z),
+        [&e_r] { return e_r += 1.0f; });
     double e_t{100};
     std::generate(
-        E_t_data.get(), E_t_data.get() + num_fields * N_r * N_z, [&e_t] {
-            return e_t += 2.0;
-        });
+        E_t_data.get(),
+        E_t_data.get() + size_t(num_fields * N_r * N_z),
+        [&e_t] { return e_t += 2.0; });
 
     std::stringstream geos;
     geos << "m=" << num_modes << ";imag=+";
@@ -4251,7 +4252,7 @@ enum class FlushDuringStep
 
 void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
 {
-    constexpr size_t size = 1024 * 1024;
+    constexpr size_t size = size_t(1024) * 1024;
 
     auto getsize = []() {
         off_t res = 0;
