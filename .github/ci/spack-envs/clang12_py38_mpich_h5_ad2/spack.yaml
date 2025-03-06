@@ -50,8 +50,8 @@ spack:
       modules: []
       operating_system: ubuntu22.04
       paths:
-        cc: /usr/lib/llvm-12/bin/clang
-        cxx: /usr/lib/llvm-12/bin/clang++
+        cc: /usr/bin/mpicc_clang
+        cxx: /usr/bin/mpic++_clang
         f77: /usr/bin/mpif77
         fc: /usr/bin/mpifort
       spec: clang@12.0.1

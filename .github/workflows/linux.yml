@@ -174,12 +174,12 @@ jobs:
         sudo apt-get install clang-12 gfortran libmpich-dev python3
         sudo .github/workflows/dependencies/install_spack
         cat << EOF | sudo tee /usr/bin/mpicc_clang
-          #!/usr/bin/env bash
+          #!/usr/bin/env sh
           export MPICH_CC=/usr/lib/llvm-12/bin/clang
           /usr/bin/mpicc "\$@"
         EOF
         cat << EOF | sudo tee /usr/bin/mpic++_clang
-          #!/usr/bin/env bash
+          #!/usr/bin/env sh
           export MPICH_CXX=/usr/lib/llvm-12/bin/clang++
           /usr/bin/mpic++ "\$@"
         EOF
@@ -193,6 +193,8 @@ jobs:
         perl --version
         python --version
         sudo ln -s "$(which cmake)" /usr/bin/cmake
+        mpicc_clang --version
+        mpic++_clang --version
         eval $(spack env activate --sh .github/ci/spack-envs/clang12_py38_mpich_h5_ad2/)
         spack install
 
