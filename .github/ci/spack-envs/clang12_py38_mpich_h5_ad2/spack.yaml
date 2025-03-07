@@ -38,7 +38,7 @@ spack:
       variants: ~fortran
       providers:
         mpi: [mpich]
-      compiler: [gcc@11.4.0]
+      compiler: [clang@12.0.1]
 
   compilers:
   - compiler:
@@ -48,11 +48,11 @@ spack:
       modules: []
       operating_system: ubuntu22.04
       paths:
-        cc: /usr/bin/mpicc
-        cxx: /usr/bin/mpic++
+        cc: /usr/lib/llvm-12/bin/clang
+        cxx: /usr/lib/llvm-12/bin/clang++
         f77: /usr/bin/mpif77
         fc: /usr/bin/mpifort
-      spec: gcc@11.4.0
+      spec: clang@12.0.1
       target: x86_64
 
   config:
