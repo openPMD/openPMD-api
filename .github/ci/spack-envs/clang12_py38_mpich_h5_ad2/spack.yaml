@@ -12,9 +12,7 @@ spack:
 
   packages:
     adios2:
-      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~blosc2 ~mgard +mpi
-    hdf5:
-      variants: +mpi
+      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~blosc2 ~mgard
     cmake:
       externals:
       - spec: cmake@3.31.5
@@ -40,7 +38,7 @@ spack:
       variants: ~fortran
       providers:
         mpi: [mpich]
-      compiler: [clang@12.0.1]
+      compiler: [gcc@11.4.0]
 
   compilers:
   - compiler:
@@ -50,8 +48,8 @@ spack:
       modules: []
       operating_system: ubuntu22.04
       paths:
-        cc: /usr/bin/gcc
-        cxx: /usr/bin/g++
+        cc: /usr/bin/mpicc
+        cxx: /usr/bin/mpic++
         f77: /usr/bin/mpif77
         fc: /usr/bin/mpifort
       spec: gcc@11.4.0
