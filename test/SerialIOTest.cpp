@@ -5914,6 +5914,7 @@ void variableBasedSeries(std::string const &file)
                 load_E_x[idx] = iteration.meshes["E"]["x"].loadChunk<int>();
                 // TODO: Changing dimensionality seems to not work in ADIOS2
                 // with ReadRandomAccess
+                // https://github.com/ornladios/ADIOS2/issues/4474
                 // load_E_y[idx] = iteration.meshes["E"]["y"].loadChunk<int>();
             }
             readSeries.flush();
@@ -6040,6 +6041,7 @@ void variableBasedSeries(std::string const &file)
                 load_E_x[idx] = iteration.meshes["E"]["x"].loadChunk<int>();
                 // Changing dimensionality seems to not work in ADIOS2
                 // with ReadRandomAccess
+                // https://github.com/ornladios/ADIOS2/issues/4474
                 // load_E_y[idx] = iteration.meshes["E"]["y"].loadChunk<int>();
             }
             readSeries.flush();
