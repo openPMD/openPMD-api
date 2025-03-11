@@ -5901,6 +5901,30 @@ void variableBasedSeries(std::string const &file)
         REQUIRE(
             readSeries.getAttribute("some_global").get<std::string>() ==
             "attribute");
+        if (access == Access::READ_RANDOM_ACCESS)
+        {
+            std::vector<std::shared_ptr<int>> load_E_x(
+                readSeries.snapshots().size());
+            // std::vector<std::shared_ptr<int>> load_E_y(
+            //     readSeries.snapshots().size());
+
+            for (auto &[idx, iteration] : readSeries.snapshots())
+            {
+                iteration.open();
+                load_E_x[idx] = iteration.meshes["E"]["x"].loadChunk<int>();
+                // TODO: Changing dimensionality seems to not work in ADIOS2
+                // with ReadRandomAccess
+                // load_E_y[idx] = iteration.meshes["E"]["y"].loadChunk<int>();
+            }
+            readSeries.flush();
+            for (size_t i = 0; i < load_E_x.size(); ++i)
+            {
+                for (size_t j = 0; j < extent; ++j)
+                {
+                    REQUIRE(load_E_x[i].get()[j] == int(i));
+                }
+            }
+        }
         for (auto iteration : readSeries.readIterations())
         {
             if (access == Access::READ_LINEAR)
@@ -5999,6 +6023,34 @@ void variableBasedSeries(std::string const &file)
                 iteration.iterationIndex);
         }
         REQUIRE(last_iteration_index == (is_adios2 ? 9 : 0));
+        if (access == Access::READ_RANDOM_ACCESS)
+        {
+            // should be able to reopen Iterations closed previously
+            // should be able to read multiple Iterations at once
+
+            std::vector<std::shared_ptr<int>> load_E_x(
+                readSeries.snapshots().size());
+
+            // std::vector<std::shared_ptr<int>> load_E_y(
+            //     readSeries.snapshots().size());
+
+            for (auto &[idx, iteration] : readSeries.snapshots())
+            {
+                iteration.open();
+                load_E_x[idx] = iteration.meshes["E"]["x"].loadChunk<int>();
+                // Changing dimensionality seems to not work in ADIOS2
+                // with ReadRandomAccess
+                // load_E_y[idx] = iteration.meshes["E"]["y"].loadChunk<int>();
+            }
+            readSeries.flush();
+            for (size_t i = 0; i < load_E_x.size(); ++i)
+            {
+                for (size_t j = 0; j < extent; ++j)
+                {
+                    REQUIRE(load_E_x[i].get()[j] == int(i));
+                }
+            }
+        }
     };
 
     std::string jsonConfig = R"(
