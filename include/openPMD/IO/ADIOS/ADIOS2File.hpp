@@ -429,7 +429,7 @@ private:
      */
     size_t m_currentStep = 0;
     bool useStepSelection = false;
-    std::optional<size_t> m_max_steps_bp5 = std::make_optional<size_t>(1000);
+    std::optional<size_t> m_max_steps_bp5 = std::make_optional<size_t>(100);
 
     /*
      * ADIOS2 does not give direct access to its internal attribute and

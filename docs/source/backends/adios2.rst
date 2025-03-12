@@ -91,7 +91,7 @@ environment variable                    default    description
 ``OPENPMD_ADIOS2_BP5_NumSubFiles``      ``0``      ADIOS2 BP5 engine: num of subfiles
 ``OPENPMD_ADIOS2_BP5_NumAgg``           ``0``      ADIOS2 BP5 engine: num of aggregators
 ``OPENPMD_ADIOS2_BP5_TypeAgg``          *empty*    ADIOS2 BP5 engine: aggregation type. (EveryoneWrites, EveryoneWritesSerial, TwoLevelShm)
-``OPENPMD_BP5_GROUPENCODING_MAX_STEPS`` ``1000``   ADIOS2 BP5 engine: max number of allowed output steps in group encoding.
+``OPENPMD_BP5_GROUPENCODING_MAX_STEPS`` ``100``    ADIOS2 BP5 engine: max number of allowed output steps in group encoding.
 ======================================= ========== ================================================================================
 
 Please refer to the `ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for details on I/O tuning.
@@ -314,7 +314,8 @@ The default is to flush to disk (except when specifying ``OPENPMD_ADIOS2_ASYNC_W
 
 
 The BP5 engine is known to perform extremely bad for group-based encoding with many Iterations, since its design assumes that the metadata structure will be constant across output steps, while group-based encoding will add new variables and attributes for each Iteration.
-The openPMD-api will hence cancel operation after 1000 written Iterations in group-based encoding for BP5, where experiments show that the metadata size may grow to an already large, but still manageable 1GB (tested for PIConGPU).
+The openPMD-api will hence cancel operation after 100 written Iterations in group-based encoding for BP5.
+Experiments with PIConGPU show that the metadata (!) size grows from 10MB to 1GB when going from 100 to 1000 output steps in this setup.
 The environment variable ``OPENPMD_BP5_GROUPENCODING_MAX_STEPS`` may be used to change this limit (specifying the limit as ``0`` will disable the check).
 
 For workarounds you may follow these guidelines:
