@@ -759,19 +759,21 @@ void ADIOS2File::configure_IO()
 
 auto ADIOS2File::detectGroupTable() -> UseGroupTable
 {
-    auto const &attributes = availableAttributes();
-    auto lower_bound =
-        attributes.lower_bound(adios_defaults::str_activeTablePrefix);
-    if (lower_bound != attributes.end() &&
-        auxiliary::starts_with(
-            lower_bound->first, adios_defaults::str_activeTablePrefix))
-    {
-        return UseGroupTable::Yes;
-    }
-    else
-    {
-        return UseGroupTable::No;
-    }
+    return m_attributes.withAvailableAttributes(
+        currentStep(), m_IO, [&](auto const &attributes) {
+            auto lower_bound =
+                attributes.lower_bound(adios_defaults::str_activeTablePrefix);
+            if (lower_bound != attributes.end() &&
+                auxiliary::starts_with(
+                    lower_bound->first, adios_defaults::str_activeTablePrefix))
+            {
+                return UseGroupTable::Yes;
+            }
+            else
+            {
+                return UseGroupTable::No;
+            }
+        });
 }
 
 adios2::Engine &ADIOS2File::getEngine()
@@ -1264,7 +1266,6 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
         case adios2::StepStatus::OtherError:
             throw std::runtime_error("[ADIOS2] Unexpected step status.");
         }
-        invalidateAttributesMap();
         invalidateVariablesMap();
         m_pathsMarkedAsActive.clear();
         return res;
@@ -1280,13 +1281,11 @@ void ADIOS2File::drop()
     assert(m_buffer.empty());
 }
 
+template <typename AttributesMap>
 static std::vector<std::string> availableAttributesOrVariablesPrefixed(
-    std::string const &prefix,
-    ADIOS2File::AttributeMap_t const &(ADIOS2File::*getBasicMap)(),
-    ADIOS2File &ba)
+    std::string const &prefix, AttributesMap const &attributes)
 {
     std::string var = auxiliary::ends_with(prefix, '/') ? prefix : prefix + '/';
-    ADIOS2File::AttributeMap_t const &attributes = (ba.*getBasicMap)();
     std::vector<std::string> ret;
     for (auto it = attributes.lower_bound(prefix); it != attributes.end(); ++it)
     {
@@ -1305,33 +1304,17 @@ static std::vector<std::string> availableAttributesOrVariablesPrefixed(
 std::vector<std::string>
 ADIOS2File::availableAttributesPrefixed(std::string const &prefix)
 {
-    return availableAttributesOrVariablesPrefixed(
-        prefix, &ADIOS2File::availableAttributes, *this);
+    return m_attributes.withAvailableAttributes(
+        currentStep(), m_IO, [&](auto const &attributes) {
+            return availableAttributesOrVariablesPrefixed(prefix, attributes);
+        });
 }
 
 std::vector<std::string>
 ADIOS2File::availableVariablesPrefixed(std::string const &prefix)
 {
     return availableAttributesOrVariablesPrefixed(
-        prefix, &ADIOS2File::availableVariables, *this);
-}
-
-void ADIOS2File::invalidateAttributesMap()
-{
-    m_availableAttributes = std::optional<AttributeMap_t>();
-}
-
-ADIOS2File::AttributeMap_t const &ADIOS2File::availableAttributes()
-{
-    if (m_availableAttributes)
-    {
-        return m_availableAttributes.value();
-    }
-    else
-    {
-        m_availableAttributes = std::make_optional(m_IO.AvailableAttributes());
-        return m_availableAttributes.value();
-    }
+        prefix, ADIOS2File::availableVariables());
 }
 
 void ADIOS2File::invalidateVariablesMap()

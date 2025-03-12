@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
@@ -325,15 +326,8 @@ public:
      */
     void drop();
 
-    AttributeMap_t const &availableAttributes();
-
     std::vector<std::string>
     availableAttributesPrefixed(std::string const &prefix);
-
-    /*
-     * See description below.
-     */
-    void invalidateAttributesMap();
 
     AttributeMap_t const &availableVariables();
 
@@ -442,7 +436,7 @@ private:
      * the map that would be returned by a call to
      * IO::Available(Attributes|Variables).
      */
-    std::optional<AttributeMap_t> m_availableAttributes;
+    AdiosAttributes m_attributes;
     std::optional<AttributeMap_t> m_availableVariables;
 
     std::set<Writable *> m_pathsMarkedAsActive;

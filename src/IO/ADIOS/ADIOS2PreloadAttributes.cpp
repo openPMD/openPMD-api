@@ -27,13 +27,9 @@
 
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
-#include "openPMD/auxiliary/StringManip.hpp"
 
 #include <cstddef>
 #include <cstdlib>
-#include <iostream>
-#include <numeric>
-#include <type_traits>
 
 namespace openPMD::detail
 {

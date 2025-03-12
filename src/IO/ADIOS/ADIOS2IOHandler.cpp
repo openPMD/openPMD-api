@@ -2148,7 +2148,6 @@ namespace detail
 
         auto &filedata = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
-        filedata.invalidateAttributesMap();
         adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace(std::move(file));
 

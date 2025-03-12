@@ -20,7 +20,9 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/config.hpp"
+#include <variant>
 #if openPMD_HAVE_ADIOS2
 
 #include <adios2.h>
@@ -133,6 +135,12 @@ public:
     AttributeWithShape<T> getAttribute(std::string const &name) const;
 
     Datatype attributeType(std::string const &name) const;
+
+    std::map<std::string, AttributeLocation> const &
+    availableAttributes() const &
+    {
+        return m_offsets;
+    }
 };
 
 struct AdiosAttributes
@@ -144,7 +152,32 @@ struct AdiosAttributes
         std::optional<std::map<std::string, adios2::Params>> m_attributes;
     };
 
-    std::variant<RandomAccess_t, StreamAccess_t> m_data;
+    std::variant<RandomAccess_t, StreamAccess_t> m_data = StreamAccess_t{};
+
+    template <typename Functor>
+    auto withAvailableAttributes(size_t step, adios2::IO &IO, Functor &&f)
+        -> decltype(std::forward<Functor>(f)(
+            std::declval<std::map<std::string, adios2::Params> &>()))
+    {
+        using ret_t = decltype(std::forward<Functor>(f)(
+            std::declval<std::map<std::string, adios2::Params> &>()));
+        return std::visit(
+            auxiliary::overloaded{
+                [step, &f](RandomAccess_t &ra) -> ret_t {
+                    auto &attribute_data = ra.at(step);
+                    return std::forward<Functor>(f)(
+                        attribute_data.availableAttributes());
+                },
+                [step, &f, &IO](StreamAccess_t &sa) -> ret_t {
+                    if (!sa.m_attributes.has_value() ||
+                        sa.m_currentStep != step)
+                    {
+                        sa = StreamAccess_t{step, IO.AvailableAttributes()};
+                    }
+                    return std::forward<Functor>(f)(*sa.m_attributes);
+                }},
+            m_data);
+    }
 };
 } // namespace openPMD::detail
 
