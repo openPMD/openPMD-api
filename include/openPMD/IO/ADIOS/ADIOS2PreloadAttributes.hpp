@@ -22,18 +22,14 @@
 
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/config.hpp"
+#include <optional>
 #include <variant>
 #if openPMD_HAVE_ADIOS2
 
 #include <adios2.h>
-#include <functional>
 #include <map>
-#include <sstream>
-#include <stddef.h>
-#include <type_traits>
 
 #include "openPMD/Datatype.hpp"
-#include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 
 namespace openPMD::detail
 {

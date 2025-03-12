@@ -1291,7 +1291,7 @@ namespace
 
             if (type == determineDatatype<rep>())
             {
-                auto meta = IO.InquireAttribute<rep>(metaAttr);
+                auto meta = IO.template InquireAttribute<rep>(metaAttr);
                 if (meta.Data().size() == 1 && meta.Data()[0] == 1)
                 {
                     std::forward<Functor>(fun)(
@@ -1425,6 +1425,59 @@ namespace
         }
 
         static constexpr char const *errorMsg = "ReadAttributeAllsteps";
+    };
+
+    struct ReadAttributeAllstepsFullPreparsing
+    {
+        struct GetAttribute
+        {
+            detail::PreloadAdiosAttributes const &p;
+            template <typename AdiosType>
+            [[nodiscard]] auto call(std::string const &name) const
+                -> detail::AttributeWithShapeAndResource<AdiosType>
+            {
+                return p.getAttribute<AdiosType>(name);
+            }
+        };
+
+        template <typename T>
+        static void call(
+            std::vector<detail::PreloadAdiosAttributes> const &preload,
+            adios2::IO &IO,
+            std::string const &name,
+            Parameter<Operation::READ_ATT_ALLSTEPS>::result_type
+                &put_result_here)
+        {
+            std::vector<T> res;
+            res.reserve(preload.size());
+            for (auto const &p : preload)
+            {
+                genericReadAttribute<T>(
+                    [&res](auto &&val) {
+                        using type = std::remove_reference_t<decltype(val)>;
+                        if constexpr (std::is_same_v<type, bool>)
+                        {
+                            throw error::ReadError(
+                                error::AffectedObject::Attribute,
+                                error::Reason::UnexpectedContent,
+                                "ADIOS2",
+                                "[ReadAttributeAllsteps] No support for "
+                                "Boolean attributes.");
+                        }
+                        else
+                        {
+                            res.emplace_back(static_cast<decltype(val)>(val));
+                        }
+                    },
+                    IO,
+                    name,
+                    GetAttribute{p});
+            }
+            put_result_here = std::move(res);
+        }
+
+        static constexpr char const *errorMsg =
+            "ReadAttributeAllstepsFullPreparsing";
     };
 
 #if openPMD_HAVE_MPI
@@ -1561,6 +1614,8 @@ Use Access::READ_LINEAR to retrieve those values if needed.
     }
 } // namespace
 
+#define OPENPMD_PREPARSE_EVERYTHING 1
+
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
 {
@@ -1568,6 +1623,52 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto pos = setAndGetFilePosition(writable);
     auto name = nameOfAttribute(writable, param.name);
 
+#if OPENPMD_PREPARSE_EVERYTHING
+    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
+#if openPMD_HAVE_MPI
+    auto adios = [&]() {
+        if (m_communicator.has_value())
+        {
+            return adios2::ADIOS(*m_communicator);
+        }
+        else
+        {
+            return adios2::ADIOS{};
+        }
+    }();
+#else
+    adios2::ADIOS adios;
+#endif
+    auto IO = adios.DeclareIO("PreparseSnapshots");
+    // @todo check engine type
+    IO.SetEngine(realEngineType());
+    IO.SetParameter("StreamReader", "ON"); // this be for BP4
+    auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
+    std::vector<detail::PreloadAdiosAttributes> preload;
+    preload.reserve(engine.Steps());
+    adios2::StepStatus status;
+    while ((status = engine.BeginStep()) == adios2::StepStatus::OK)
+    {
+        auto &new_entry = preload.emplace_back();
+        new_entry.preloadAttributes(IO);
+        engine.EndStep();
+    }
+    if (status != adios2::StepStatus::EndOfStream)
+    {
+        throw std::runtime_error(
+            "[ADIOS2IOHandlerImpl::readAttributeAllsteps] Unexpected step "
+            "status while beginning a step.");
+    }
+    engine.Close();
+    auto &attributes = ba.attributes();
+    switchType<ReadAttributeAllstepsFullPreparsing>(
+        preload.at(0).attributeType(param.name),
+        preload,
+        IO,
+        param.name,
+        *param.resource);
+    attributes.m_data = std::move(preload);
+#else
     auto read_from_file_in_serial = [&]() {
         adios2::ADIOS adios;
         auto IO = adios.DeclareIO("PreparseSnapshots");
@@ -1602,6 +1703,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         type, *param.resource, *m_communicator, rank);
 #else
     read_from_file_in_serial();
+#endif
 #endif
 }
 

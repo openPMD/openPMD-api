@@ -415,6 +415,10 @@ public:
     {
         return m_attributes;
     }
+    [[nodiscard]] detail::AdiosAttributes &attributes()
+    {
+        return m_attributes;
+    }
 
 private:
     ADIOS2IOHandlerImpl *m_impl;
