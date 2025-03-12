@@ -43,7 +43,7 @@ namespace openPMD::detail
 template <typename T>
 struct AttributeWithShape
 {
-    adios2::Dims shape;
+    size_t len;
     T const *data;
 };
 
@@ -69,13 +69,13 @@ public:
      */
     struct AttributeLocation
     {
-        adios2::Dims shape;
+        size_t len;
         size_t offset;
         Datatype dt;
         char *destroy = nullptr;
 
         AttributeLocation() = delete;
-        AttributeLocation(adios2::Dims shape, size_t offset, Datatype dt);
+        AttributeLocation(size_t len, size_t offset, Datatype dt);
 
         AttributeLocation(AttributeLocation const &other) = delete;
         AttributeLocation &operator=(AttributeLocation const &other) = delete;
@@ -117,7 +117,7 @@ public:
      * @param IO
      * @param engine
      */
-    void preloadAttributes(adios2::IO &IO, adios2::Engine &engine);
+    void preloadAttributes(adios2::IO &IO);
 
     /**
      * @brief Get an attribute that has been buffered previously.
@@ -133,6 +133,18 @@ public:
     AttributeWithShape<T> getAttribute(std::string const &name) const;
 
     Datatype attributeType(std::string const &name) const;
+};
+
+struct AdiosAttributes
+{
+    using RandomAccess_t = std::vector<PreloadAdiosAttributes>;
+    struct StreamAccess_t
+    {
+        size_t m_currentStep = 0;
+        std::optional<std::map<std::string, adios2::Params>> m_attributes;
+    };
+
+    std::variant<RandomAccess_t, StreamAccess_t> m_data;
 };
 } // namespace openPMD::detail
 
