@@ -344,7 +344,11 @@ namespace
 
 size_t ADIOS2File::currentStep()
 {
-    if (nonpersistentEngine(m_impl->m_engineType))
+    if (auto step_selection = stepSelection(); step_selection.has_value())
+    {
+        return *step_selection;
+    }
+    else if (nonpersistentEngine(m_impl->m_engineType))
     {
         return m_currentStep;
     }

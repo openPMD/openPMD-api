@@ -5950,11 +5950,8 @@ void variableBasedSeries(std::string const &file)
             {
                 REQUIRE(
                     iteration.getAttribute("changing_value").get<unsigned>() ==
-                    (supportsModifiableAttributes
-                         ? (access == Access::READ_LINEAR
-                                ? iteration.iterationIndex
-                                : 9)
-                         : 0));
+                    (supportsModifiableAttributes ? iteration.iterationIndex
+                                                  : 0));
             }
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 1);

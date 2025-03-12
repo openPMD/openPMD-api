@@ -1625,6 +1625,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
 
 #if OPENPMD_PREPARSE_EVERYTHING
     detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
 #if openPMD_HAVE_MPI
     auto adios = [&]() {
         if (m_communicator.has_value())
@@ -1662,11 +1663,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     engine.Close();
     auto &attributes = ba.attributes();
     switchType<ReadAttributeAllstepsFullPreparsing>(
-        preload.at(0).attributeType(param.name),
-        preload,
-        IO,
-        param.name,
-        *param.resource);
+        type, preload, IO, name, *param.resource);
     attributes.m_data = std::move(preload);
 #else
     auto read_from_file_in_serial = [&]() {
