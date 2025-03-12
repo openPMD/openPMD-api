@@ -27,6 +27,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
@@ -1236,7 +1237,12 @@ void ADIOS2IOHandlerImpl::readAttribute(
     }
 
     Datatype ret = switchType<detail::AttributeReader>(
-        type, ba.m_IO, name, *parameters.resource);
+        type,
+        ba.currentStep(),
+        ba.m_IO,
+        name,
+        *parameters.resource,
+        ba.attributes());
     *parameters.dtype = ret;
 }
 
@@ -1246,9 +1252,12 @@ namespace
        Functor fun will be called with the value of the retrieved attribute;
        both functions use different logic for processing the retrieved values.
      */
-    template <typename T, typename Functor>
-    Datatype
-    genericReadAttribute(Functor &&fun, adios2::IO &IO, std::string const &name)
+    template <typename T, typename Functor, typename GetAttribute>
+    Datatype genericReadAttribute(
+        Functor &&fun,
+        adios2::IO &IO,
+        std::string const &name,
+        GetAttribute const &getAttribute)
     {
         /*
          * If we store an attribute of boolean type, we store an additional
@@ -1259,7 +1268,7 @@ namespace
 
         if constexpr (std::is_same<T, rep>::value)
         {
-            auto attr = IO.InquireAttribute<rep>(name);
+            auto attr = getAttribute.template call<rep>(name);
             if (!attr)
             {
                 throw std::runtime_error(
@@ -1286,11 +1295,11 @@ namespace
                 if (meta.Data().size() == 1 && meta.Data()[0] == 1)
                 {
                     std::forward<Functor>(fun)(
-                        detail::bool_repr::fromRep(attr.Data()[0]));
+                        detail::bool_repr::fromRep(attr.data[0]));
                     return determineDatatype<bool>();
                 }
             }
-            std::forward<Functor>(fun)(attr.Data()[0]);
+            std::forward<Functor>(fun)(attr.data[0]);
         }
         else if constexpr (detail::IsUnsupportedComplex_v<T>)
         {
@@ -1300,27 +1309,30 @@ namespace
         }
         else if constexpr (auxiliary::IsVector_v<T>)
         {
-            auto attr = IO.InquireAttribute<typename T::value_type>(name);
+            auto attr =
+                getAttribute.template call<typename T::value_type>(name);
             if (!attr)
             {
                 throw std::runtime_error(
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            std::forward<Functor>(fun)(attr.Data());
+            std::forward<Functor>(fun)(std::vector<typename T::value_type>(
+                attr.data, attr.data + attr.len));
         }
         else if constexpr (auxiliary::IsArray_v<T>)
         {
-            auto attr = IO.InquireAttribute<typename T::value_type>(name);
+            auto attr =
+                getAttribute.template call<typename T::value_type>(name);
             if (!attr)
             {
                 throw std::runtime_error(
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            auto data = attr.Data();
+            auto data = attr.data;
             T res;
-            for (size_t i = 0; i < data.size(); i++)
+            for (size_t i = 0; i < attr.len; i++)
             {
                 res[i] = data[i];
             }
@@ -1333,14 +1345,14 @@ namespace
         }
         else
         {
-            auto attr = IO.InquireAttribute<T>(name);
+            auto attr = getAttribute.template call<T>(name);
             if (!attr)
             {
                 throw std::runtime_error(
                     "[ADIOS2] Internal error: Failed reading attribute '" +
                     name + "'.");
             }
-            std::forward<Functor>(fun)(attr.Data()[0]);
+            std::forward<Functor>(fun)(attr.data[0]);
         }
 
         return determineDatatype<T>();
@@ -1348,6 +1360,17 @@ namespace
 
     struct ReadAttributeAllsteps
     {
+        struct GetAttribute
+        {
+            adios2::IO &IO;
+            template <typename AdiosType>
+            [[nodiscard]] auto call(std::string const &name) const
+                -> detail::AttributeWithShapeAndResource<AdiosType>
+            {
+                return {IO.InquireAttribute<AdiosType>(name)};
+            }
+        };
+
         template <typename T>
         static void call(
             adios2::IO &IO,
@@ -1379,7 +1402,8 @@ namespace
                         }
                     },
                     IO,
-                    name);
+                    name,
+                    GetAttribute{IO});
                 engine.EndStep();
                 status = engine.BeginStep();
             }
@@ -1657,11 +1681,12 @@ void ADIOS2IOHandlerImpl::listPaths(
                 detail::ADIOS2File::StreamStatus::DuringStep)
             {
                 auto currentStep = fileData.currentStep();
+                auto &IO = fileData.m_IO;
                 for (auto const &attrName : attrs)
                 {
                     using table_t = unsigned long long;
-                    auto attr = fileData.m_IO.InquireAttribute<table_t>(
-                        tablePrefix + attrName);
+                    auto attr = fileData.attributes().getAttribute<table_t>(
+                        currentStep, IO, tablePrefix + attrName);
                     if (!attr)
                     {
                         std::cerr << "[ADIOS2 backend] Unable to inquire group "
@@ -1671,7 +1696,7 @@ void ADIOS2IOHandlerImpl::listPaths(
                                   << std::endl;
                         continue;
                     }
-                    if (attr.Data()[0] != currentStep)
+                    if (attr.data[0] != currentStep)
                     {
                         // group wasn't defined in current step
                         continue;
@@ -2113,14 +2138,19 @@ namespace detail
 {
     template <typename T>
     Datatype AttributeReader::call(
-        adios2::IO &IO, std::string name, Attribute::resource &resource)
+        size_t step,
+        adios2::IO &IO,
+        std::string name,
+        Attribute::resource &resource,
+        detail::AdiosAttributes const &attributes)
     {
         return genericReadAttribute<T>(
             [&resource](auto &&value) {
                 resource = static_cast<decltype(value)>(value);
             },
             IO,
-            name);
+            name,
+            GetAttribute{step, IO, attributes});
     }
 
     template <int n, typename... Params>

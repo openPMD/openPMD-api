@@ -143,6 +143,41 @@ public:
     }
 };
 
+template <typename T>
+struct AttributeWithShapeAndResource : AttributeWithShape<T>
+{
+    AttributeWithShapeAndResource(AttributeWithShape<T> parent)
+        : AttributeWithShape<T>(std::move(parent))
+    {}
+    AttributeWithShapeAndResource(
+        size_t len_in,
+        T const *data_in,
+        std::optional<std::vector<T>> resource_in)
+        : AttributeWithShape<T>{len_in, data_in}
+        , resource{std::move(resource_in)}
+    {}
+    explicit AttributeWithShapeAndResource() : AttributeWithShape<T>(0, nullptr)
+    {}
+    AttributeWithShapeAndResource(adios2::Attribute<T> attr)
+    {
+        if (!attr)
+        {
+            this->data = nullptr;
+            this->len = 0;
+            return;
+        }
+        auto vec = attr.Data();
+        this->len = vec.size();
+        this->data = vec.data();
+        this->resource = std::move(vec);
+    }
+    operator bool() const
+    {
+        return this->data;
+    }
+    std::optional<std::vector<T>> resource;
+};
+
 struct AdiosAttributes
 {
     using RandomAccess_t = std::vector<PreloadAdiosAttributes>;
@@ -178,6 +213,10 @@ struct AdiosAttributes
                 }},
             m_data);
     }
+
+    template <typename T>
+    AttributeWithShapeAndResource<T>
+    getAttribute(size_t step, adios2::IO &IO, std::string const &name) const;
 };
 } // namespace openPMD::detail
 

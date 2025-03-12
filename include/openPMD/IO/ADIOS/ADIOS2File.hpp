@@ -411,6 +411,11 @@ public:
     void setStepSelection(std::optional<size_t>);
     [[nodiscard]] std::optional<size_t> stepSelection() const;
 
+    [[nodiscard]] detail::AdiosAttributes const &attributes() const
+    {
+        return m_attributes;
+    }
+
 private:
     ADIOS2IOHandlerImpl *m_impl;
     std::optional<adios2::Engine> m_engine; //! ADIOS engine

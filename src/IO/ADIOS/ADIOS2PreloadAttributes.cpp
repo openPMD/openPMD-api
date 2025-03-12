@@ -260,12 +260,6 @@ PreloadAdiosAttributes::getAttribute(std::string const &name) const
     return res;
 }
 
-#define OPENPMD_INSTANTIATE_GETATTRIBUTE(type)                                 \
-    template AttributeWithShape<type> PreloadAdiosAttributes::getAttribute(    \
-        std::string const &name) const;
-ADIOS2_FOREACH_ATTRIBUTE_STDTYPE_1ARG(OPENPMD_INSTANTIATE_GETATTRIBUTE)
-#undef OPENPMD_INSTANTIATE_GETATTRIBUTE
-
 Datatype PreloadAdiosAttributes::attributeType(std::string const &name) const
 {
     auto it = m_offsets.find(name);
@@ -275,6 +269,35 @@ Datatype PreloadAdiosAttributes::attributeType(std::string const &name) const
     }
     return it->second.dt;
 }
+
+template <typename T>
+auto AdiosAttributes::getAttribute(
+    size_t step, adios2::IO &IO, std::string const &name) const
+    -> AttributeWithShapeAndResource<T>
+{
+    return std::visit(
+        auxiliary::overloaded{
+            [step, &name](
+                RandomAccess_t const &ra) -> AttributeWithShapeAndResource<T> {
+                auto &attribute_data = ra.at(step);
+                return attribute_data.getAttribute<T>(name);
+            },
+            [&name,
+             &IO](StreamAccess_t const &) -> AttributeWithShapeAndResource<T> {
+                auto attr = IO.InquireAttribute<T>(name);
+                return {std::move(attr)};
+            }},
+        m_data);
+}
+
+#define OPENPMD_INSTANTIATE_GETATTRIBUTE(type)                                 \
+    template AttributeWithShape<type> PreloadAdiosAttributes::getAttribute(    \
+        std::string const &name) const;                                        \
+    template auto AdiosAttributes::getAttribute(                               \
+        size_t step, adios2::IO &IO, std::string const &name) const            \
+        -> AttributeWithShapeAndResource<type>;
+ADIOS2_FOREACH_TYPE_1ARG(OPENPMD_INSTANTIATE_GETATTRIBUTE)
+#undef OPENPMD_INSTANTIATE_GETATTRIBUTE
 } // namespace openPMD::detail
 
 #endif // openPMD_HAVE_ADIOS2

@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
@@ -541,9 +542,26 @@ namespace detail
 
     struct AttributeReader
     {
+        struct GetAttribute
+        {
+            size_t step;
+            adios2::IO &IO;
+            detail::AdiosAttributes const &attributes;
+            template <typename AdiosType>
+            auto call(std::string const &name) const
+                -> detail::AttributeWithShapeAndResource<AdiosType>
+            {
+                return attributes.getAttribute<AdiosType>(step, IO, name);
+            }
+        };
+
         template <typename T>
-        static Datatype
-        call(adios2::IO &IO, std::string name, Attribute::resource &resource);
+        static Datatype call(
+            size_t step,
+            adios2::IO &IO,
+            std::string name,
+            Attribute::resource &resource,
+            detail::AdiosAttributes const &);
 
         template <int n, typename... Params>
         static Datatype call(Params &&...);
