@@ -1,7 +1,7 @@
 set CURRENTDIR="%cd%"
 
 set BUILD_PREFIX="C:/Program Files (x86)"
-set CPU_COUNT="2"
+set CPU_COUNT="4"
 
 echo "CFLAGS: %CFLAGS%"
 echo "CXXFLAGS: %CXXFLAGS%"

@@ -10,28 +10,39 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04
             arch: "x86_64"
+            env:
+              CMAKE_BUILD_PARALLEL_LEVEL: 4
 
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04
             arch: "i686"
+            env:
+              CMAKE_BUILD_PARALLEL_LEVEL: 4
+
+          - os: ubuntu-24.04-arm
+            arch: "aarch64"
+            env:
+              CMAKE_BUILD_PARALLEL_LEVEL: 4
 
           # builds faster on Travis-CI:
-          #- os: ubuntu-20.04
-          #  arch: "aarch64"
-
-          # builds faster on Travis-CI:
-          #- os: ubuntu-20.04
-          #  arch: "ppc64le"
+          # - os: ubuntu-24.04
+          #   arch: "ppc64le"
+          #   env:
+          #     CMAKE_BUILD_PARALLEL_LEVEL: 4
 
           # builds faster on Travis-CI:
           # blocked by https://github.com/GTkorvo/dill/issues/15
-          #- os: ubuntu-20.04
+          #- os: ubuntu-24.04
           #  arch: "s390x"
+          #  env:
+          #    CMAKE_BUILD_PARALLEL_LEVEL: 4
 
           # x86-64 (64bit)
           - os: windows-2019
             arch: "AMD64"
+            env:
+              CMAKE_BUILD_PARALLEL_LEVEL: 4
 
           # x86 (32bit)
           - os: windows-2019
@@ -39,11 +50,13 @@ jobs:
             env:
               CMAKE_GENERATOR: "Visual Studio 16 2019"
               CMAKE_GENERATOR_PLATFORM: "Win32"
+              CMAKE_BUILD_PARALLEL_LEVEL: 4
 
           - os: macos-13
             arch: "x86_64"
             env:
               MACOSX_DEPLOYMENT_TARGET: 11.0
+              CMAKE_BUILD_PARALLEL_LEVEL: 4
 
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
@@ -53,6 +66,7 @@ jobs:
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
               MACOSX_DEPLOYMENT_TARGET: 11.0
+              CMAKE_BUILD_PARALLEL_LEVEL: 3
 
           # Apple universal builds that contain x86-64 and arm64 binary code
           #   Needs extra treatment of all librarys that are not CMake
@@ -65,6 +79,7 @@ jobs:
           #  env:
           #    CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
           #    MACOSX_DEPLOYMENT_TARGET: 11.0
+          #    CMAKE_BUILD_PARALLEL_LEVEL: 3
 
     steps:
     - uses: actions/checkout@v4
@@ -125,6 +140,7 @@ jobs:
         # static dependencies of HDF5 and ADIOS1 (see setup.py)
         CIBW_ENVIRONMENT: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
         CIBW_ENVIRONMENT_WINDOWS: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON' CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
+        CMAKE_BUILD_PARALLEL_LEVEL: "${{ matrix.env.CMAKE_BUILD_PARALLEL_LEVEL }}"
         # C++17 support in macOS 10.13+ (partial) and 10.14+ (std::visit) and 10.15+ (std::filesystem::path)
         #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
         # arm64/aarch64 (M1/M2) requires 11.0+

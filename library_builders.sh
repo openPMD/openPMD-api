@@ -10,7 +10,7 @@ if [ "$(uname -s)" = "Darwin" ]
 then
     CPU_COUNT="${CPU_COUNT:-3}"
 else
-    CPU_COUNT="${CPU_COUNT:-2}"
+    CPU_COUNT="${CPU_COUNT:-4}"
 fi
 
 function install_buildessentials {
