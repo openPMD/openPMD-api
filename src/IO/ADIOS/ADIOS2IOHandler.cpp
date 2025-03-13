@@ -1624,9 +1624,9 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
     auto name = nameOfAttribute(writable, param.name);
+    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
 
 #if OPENPMD_PREPARSE_EVERYTHING
-    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
 #if openPMD_HAVE_MPI
     auto adios = [&]() {
@@ -1643,10 +1643,11 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     adios2::ADIOS adios;
 #endif
     auto IO = adios.DeclareIO("PreparseSnapshots");
-    // @todo check engine type
-    IO.SetEngine(realEngineType());
+    IO.SetEngine(ba.m_IO.EngineType());
+    IO.SetParameters(ba.m_IO.Parameters());
     IO.SetParameter("StreamReader", "ON"); // this be for BP4
     auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
+
     std::vector<detail::PreloadAdiosAttributes> preload;
     preload.reserve(engine.Steps());
     adios2::StepStatus status;
@@ -1671,8 +1672,8 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto read_from_file_in_serial = [&]() {
         adios2::ADIOS adios;
         auto IO = adios.DeclareIO("PreparseSnapshots");
-        // @todo check engine type
-        IO.SetEngine(realEngineType());
+        IO.SetEngine(ba.m_IO.EngineType());
+        IO.SetParameters(ba.m_IO.Parameters());
         IO.SetParameter("StreamReader", "ON"); // this be for BP4
         auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
         auto status = engine.BeginStep();
