@@ -52,6 +52,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <variant>
 
 namespace openPMD
 {
@@ -1782,7 +1783,10 @@ void ADIOS2IOHandlerImpl::listPaths(
                 fileData.availableAttributesPrefixed(tablePrefix);
             if (fileData.streamStatus ==
                     detail::ADIOS2File::StreamStatus::DuringStep ||
-                fileData.stepSelection().has_value())
+                (fileData.stepSelection().has_value() &&
+                 std::holds_alternative<
+                     detail::AdiosAttributes::RandomAccess_t>(
+                     fileData.attributes().m_data)))
             {
                 auto currentStep = fileData.currentStep();
                 auto &IO = fileData.m_IO;
