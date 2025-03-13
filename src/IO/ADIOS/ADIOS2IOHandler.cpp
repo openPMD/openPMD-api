@@ -1246,6 +1246,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
     *parameters.dtype = ret;
 }
 
+#define openPMD_PREPARSE_EVERYTHING 1
 namespace
 {
     /* Used by both readAttribute() and readAttributeAllsteps() tasks.
@@ -1358,6 +1359,62 @@ namespace
         return determineDatatype<T>();
     }
 
+#if openPMD_PREPARSE_EVERYTHING
+
+    struct ReadAttributeAllstepsFullPreparsing
+    {
+        struct GetAttribute
+        {
+            detail::PreloadAdiosAttributes const &p;
+            template <typename AdiosType>
+            [[nodiscard]] auto call(std::string const &name) const
+                -> detail::AttributeWithShapeAndResource<AdiosType>
+            {
+                return p.getAttribute<AdiosType>(name);
+            }
+        };
+
+        template <typename T>
+        static void call(
+            std::vector<detail::PreloadAdiosAttributes> const &preload,
+            adios2::IO &IO,
+            std::string const &name,
+            Parameter<Operation::READ_ATT_ALLSTEPS>::result_type
+                &put_result_here)
+        {
+            std::vector<T> res;
+            res.reserve(preload.size());
+            for (auto const &p : preload)
+            {
+                genericReadAttribute<T>(
+                    [&res](auto &&val) {
+                        using type = std::remove_reference_t<decltype(val)>;
+                        if constexpr (std::is_same_v<type, bool>)
+                        {
+                            throw error::ReadError(
+                                error::AffectedObject::Attribute,
+                                error::Reason::UnexpectedContent,
+                                "ADIOS2",
+                                "[ReadAttributeAllsteps] No support for "
+                                "Boolean attributes.");
+                        }
+                        else
+                        {
+                            res.emplace_back(static_cast<decltype(val)>(val));
+                        }
+                    },
+                    IO,
+                    name,
+                    GetAttribute{p});
+            }
+            put_result_here = std::move(res);
+        }
+
+        static constexpr char const *errorMsg =
+            "ReadAttributeAllstepsFullPreparsing";
+    };
+
+#else
     struct ReadAttributeAllsteps
     {
         struct GetAttribute
@@ -1425,59 +1482,6 @@ namespace
         }
 
         static constexpr char const *errorMsg = "ReadAttributeAllsteps";
-    };
-
-    struct ReadAttributeAllstepsFullPreparsing
-    {
-        struct GetAttribute
-        {
-            detail::PreloadAdiosAttributes const &p;
-            template <typename AdiosType>
-            [[nodiscard]] auto call(std::string const &name) const
-                -> detail::AttributeWithShapeAndResource<AdiosType>
-            {
-                return p.getAttribute<AdiosType>(name);
-            }
-        };
-
-        template <typename T>
-        static void call(
-            std::vector<detail::PreloadAdiosAttributes> const &preload,
-            adios2::IO &IO,
-            std::string const &name,
-            Parameter<Operation::READ_ATT_ALLSTEPS>::result_type
-                &put_result_here)
-        {
-            std::vector<T> res;
-            res.reserve(preload.size());
-            for (auto const &p : preload)
-            {
-                genericReadAttribute<T>(
-                    [&res](auto &&val) {
-                        using type = std::remove_reference_t<decltype(val)>;
-                        if constexpr (std::is_same_v<type, bool>)
-                        {
-                            throw error::ReadError(
-                                error::AffectedObject::Attribute,
-                                error::Reason::UnexpectedContent,
-                                "ADIOS2",
-                                "[ReadAttributeAllsteps] No support for "
-                                "Boolean attributes.");
-                        }
-                        else
-                        {
-                            res.emplace_back(static_cast<decltype(val)>(val));
-                        }
-                    },
-                    IO,
-                    name,
-                    GetAttribute{p});
-            }
-            put_result_here = std::move(res);
-        }
-
-        static constexpr char const *errorMsg =
-            "ReadAttributeAllstepsFullPreparsing";
     };
 
 #if openPMD_HAVE_MPI
@@ -1589,11 +1593,7 @@ namespace
         }
         static constexpr char const *errorMsg = "DistributeToAllRanks";
     };
-#endif
 
-#define OPENPMD_PREPARSE_EVERYTHING 1
-
-#if !OPENPMD_PREPARSE_EVERYTHING
     void warn_ignored_modifiable_attributes(adios2::IO &IO)
     {
         auto modifiable_flag = IO.InquireAttribute<detail::bool_representation>(
@@ -1615,7 +1615,8 @@ Use Access::READ_LINEAR to retrieve those values if needed.
             print_warning("File uses modifiable attributes.");
         }
     }
-#endif
+#endif // openPMD_HAVE_MPI
+#endif // openPMD_PREPARSE_EVERYTHING
 } // namespace
 
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
@@ -1626,7 +1627,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto name = nameOfAttribute(writable, param.name);
     detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
 
-#if OPENPMD_PREPARSE_EVERYTHING
+#if openPMD_PREPARSE_EVERYTHING
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
 #if openPMD_HAVE_MPI
     auto adios = [&]() {
