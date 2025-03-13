@@ -144,13 +144,14 @@ AttributeLocation::AttributeLocation(
     : len(len_in), offset(offset_in), dt(dt_in)
 {}
 
-AttributeLocation::AttributeLocation(AttributeLocation &&other)
+AttributeLocation::AttributeLocation(AttributeLocation &&other) noexcept
     : len{other.len}, offset{other.offset}, dt{other.dt}, destroy{other.destroy}
 {
     other.destroy = nullptr;
 }
 
-AttributeLocation &AttributeLocation::operator=(AttributeLocation &&other)
+AttributeLocation &
+AttributeLocation::operator=(AttributeLocation &&other) noexcept
 {
     this->len = other.len;
     this->offset = other.offset;

@@ -78,8 +78,8 @@ public:
         AttributeLocation(AttributeLocation const &other) = delete;
         AttributeLocation &operator=(AttributeLocation const &other) = delete;
 
-        AttributeLocation(AttributeLocation &&other);
-        AttributeLocation &operator=(AttributeLocation &&other);
+        AttributeLocation(AttributeLocation &&other) noexcept;
+        AttributeLocation &operator=(AttributeLocation &&other) noexcept;
 
         ~AttributeLocation();
     };
