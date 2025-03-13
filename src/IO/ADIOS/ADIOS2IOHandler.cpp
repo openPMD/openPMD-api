@@ -1591,6 +1591,9 @@ namespace
     };
 #endif
 
+#define OPENPMD_PREPARSE_EVERYTHING 1
+
+#if !OPENPMD_PREPARSE_EVERYTHING
     void warn_ignored_modifiable_attributes(adios2::IO &IO)
     {
         auto modifiable_flag = IO.InquireAttribute<detail::bool_representation>(
@@ -1612,9 +1615,8 @@ Use Access::READ_LINEAR to retrieve those values if needed.
             print_warning("File uses modifiable attributes.");
         }
     }
+#endif
 } // namespace
-
-#define OPENPMD_PREPARSE_EVERYTHING 1
 
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
@@ -1777,7 +1779,8 @@ void ADIOS2IOHandlerImpl::listPaths(
             std::vector attrs =
                 fileData.availableAttributesPrefixed(tablePrefix);
             if (fileData.streamStatus ==
-                detail::ADIOS2File::StreamStatus::DuringStep)
+                    detail::ADIOS2File::StreamStatus::DuringStep ||
+                fileData.stepSelection().has_value())
             {
                 auto currentStep = fileData.currentStep();
                 auto &IO = fileData.m_IO;
