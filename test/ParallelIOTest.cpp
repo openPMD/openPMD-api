@@ -1370,10 +1370,12 @@ doshuffle = "BLOSC_BITSHUFFLE"
     MPI_Barrier(MPI_COMM_WORLD);
 
     // BP3 engine writes files, BP4 writes directories
-    REQUIRE(openPMD::auxiliary::file_exists(
-        "../samples/jsonConfiguredBP3Parallel.bp"));
-    REQUIRE(openPMD::auxiliary::directory_exists(
-        "../samples/jsonConfiguredBP4Parallel.bp"));
+    REQUIRE(
+        openPMD::auxiliary::file_exists(
+            "../samples/jsonConfiguredBP3Parallel.bp"));
+    REQUIRE(
+        openPMD::auxiliary::directory_exists(
+            "../samples/jsonConfiguredBP4Parallel.bp"));
 
     std::string readConfigBP3 = R"END(
 {
@@ -1465,8 +1467,9 @@ void adios2_ssc()
         {
             auto iteration = iterations[i];
             auto E_x = iteration.meshes["E"]["x"];
-            E_x.resetDataset(openPMD::Dataset(
-                openPMD::Datatype::INT, {unsigned(local_size), extent}));
+            E_x.resetDataset(
+                openPMD::Dataset(
+                    openPMD::Datatype::INT, {unsigned(local_size), extent}));
             std::vector<int> data(extent, i);
             E_x.storeChunk(data, {unsigned(local_rank), 0}, {1, extent});
 

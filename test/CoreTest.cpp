@@ -869,8 +869,9 @@ TEST_CASE("wrapper_test", "[core]")
     // it once? value = 43.; mrc2.makeConstant(value);
     REQUIRE_THROWS_WITH(
         mrc2.makeConstant(value),
-        Catch::Equals("A recordComponent can not (yet) be made constant after "
-                      "it has been written."));
+        Catch::Equals(
+            "A recordComponent can not (yet) be made constant after "
+            "it has been written."));
     std::array<double, 1> moreData = {{112233.}};
     o.iterations[4].meshes["E"]["y"].loadChunkRaw(moreData.data(), {0}, {1});
     o.flush();
@@ -889,8 +890,9 @@ TEST_CASE("wrapper_test", "[core]")
     int wrongData = 42;
     REQUIRE_THROWS_WITH(
         o.iterations[5].meshes["E"]["y"].storeChunkRaw(&wrongData, {0}, {1}),
-        Catch::Equals("Datatypes of chunk data (INT) and record component "
-                      "(DOUBLE) do not match."));
+        Catch::Equals(
+            "Datatypes of chunk data (INT) and record component "
+            "(DOUBLE) do not match."));
     std::shared_ptr<double> storeData = std::make_shared<double>(44);
     o.iterations[5].meshes["E"]["y"].storeChunk(storeData, {0}, {1});
 #if openPMD_USE_INVASIVE_TESTS
@@ -1052,8 +1054,9 @@ TEST_CASE("empty_record_test", "[core]")
         "No assumption about contained RecordComponents will be made");
     REQUIRE_THROWS_WITH(
         o.flush(),
-        Catch::Equals("A Record can not be written without any contained "
-                      "RecordComponents: E"));
+        Catch::Equals(
+            "A Record can not be written without any contained "
+            "RecordComponents: E"));
     o.iterations[1].meshes["E"][RecordComponent::SCALAR].resetDataset(
         Dataset(Datatype::DOUBLE, {1}));
     auto B = o.iterations[1].meshes["B"];
@@ -1079,16 +1082,19 @@ TEST_CASE("no_file_ending", "[core]")
 {
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output", Access::CREATE),
-        Catch::Equals("Unknown file format! Did you specify a file ending? "
-                      "Specified file name was './new_openpmd_output'."));
+        Catch::Equals(
+            "Unknown file format! Did you specify a file ending? "
+            "Specified file name was './new_openpmd_output'."));
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output_%T", Access::CREATE),
-        Catch::Equals("Unknown file format! Did you specify a file ending? "
-                      "Specified file name was './new_openpmd_output_%T'."));
+        Catch::Equals(
+            "Unknown file format! Did you specify a file ending? "
+            "Specified file name was './new_openpmd_output_%T'."));
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output_%05T", Access::CREATE),
-        Catch::Equals("Unknown file format! Did you specify a file ending? "
-                      "Specified file name was './new_openpmd_output_%05T'."));
+        Catch::Equals(
+            "Unknown file format! Did you specify a file ending? "
+            "Specified file name was './new_openpmd_output_%05T'."));
     {
         Series(
             "../samples/no_extension_specified",
@@ -1131,8 +1137,9 @@ TEST_CASE("backend_via_json", "[core]")
             Access::CREATE,
             R"({"adios2": {"engine": {"type": "file"}}})");
     }
-    REQUIRE(auxiliary::directory_exists(
-        "../samples/optionsViaJsonOverwritesAutomaticDetectionFile.sst"));
+    REQUIRE(
+        auxiliary::directory_exists(
+            "../samples/optionsViaJsonOverwritesAutomaticDetectionFile.sst"));
 
     {
         /*
@@ -1143,8 +1150,9 @@ TEST_CASE("backend_via_json", "[core]")
             Access::CREATE,
             R"({"adios2": {"engine": {"type": "bp4"}}})");
     }
-    REQUIRE(auxiliary::directory_exists(
-        "../samples/optionsViaJsonOverwritesAutomaticDetectionBp4.sst"));
+    REQUIRE(
+        auxiliary::directory_exists(
+            "../samples/optionsViaJsonOverwritesAutomaticDetectionBp4.sst"));
 
 #endif
     std::string encodingFileBased =
@@ -1186,8 +1194,9 @@ TEST_CASE("backend_via_json", "[core]")
             encodingGroupBased);
         REQUIRE(series.iterationEncoding() == IterationEncoding::groupBased);
     }
-    REQUIRE(auxiliary::file_exists(
-        "../samples/optionsViaJsonPseudoFilebased%T.json"));
+    REQUIRE(
+        auxiliary::file_exists(
+            "../samples/optionsViaJsonPseudoFilebased%T.json"));
 }
 
 TEST_CASE("wildcard_extension", "[core]")
@@ -1445,8 +1454,9 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
         REQUIRE(attr.get<std::array<int, 7>>() == arrayint);
         REQUIRE_THROWS_WITH(
             (attr.get<std::array<int, 8>>()),
-            Catch::Equals("getCast: no vector to array conversion possible "
-                          "(wrong requested array size)."));
+            Catch::Equals(
+                "getCast: no vector to array conversion possible "
+                "(wrong requested array size)."));
         REQUIRE(
             attr.get<std::vector<double>>() ==
             std::vector<double>{0, 1, 2, 3, 4, 5, 6});

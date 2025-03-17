@@ -29,8 +29,9 @@ private:
     std::unique_ptr<DynamicSeriesIterator<value_type_in>> m_internal_iterator;
 
 public:
-    OpaqueSeriesIterator(std::unique_ptr<DynamicSeriesIterator<value_type_in>>
-                             internal_iterator);
+    OpaqueSeriesIterator(
+        std::unique_ptr<DynamicSeriesIterator<value_type_in>>
+            internal_iterator);
 
     OpaqueSeriesIterator(OpaqueSeriesIterator const &other);
     OpaqueSeriesIterator(OpaqueSeriesIterator &&other) noexcept;

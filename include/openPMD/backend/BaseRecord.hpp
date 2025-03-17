@@ -107,14 +107,16 @@ namespace internal
 
         ScalarIterator(T_BaseRecord *baseRecord)
             : m_baseRecordData(&baseRecord->get())
-            , m_scalarTuple(std::make_pair(
-                  RecordComponent::SCALAR, T_RecordComponent(*baseRecord)))
+            , m_scalarTuple(
+                  std::make_pair(
+                      RecordComponent::SCALAR, T_RecordComponent(*baseRecord)))
             , m_iterator(Right())
         {}
         ScalarIterator(T_BaseRecord *baseRecord, Left iterator)
             : m_baseRecordData(&baseRecord->get())
-            , m_scalarTuple(std::make_pair(
-                  RecordComponent::SCALAR, T_RecordComponent(*baseRecord)))
+            , m_scalarTuple(
+                  std::make_pair(
+                      RecordComponent::SCALAR, T_RecordComponent(*baseRecord)))
             , m_iterator(std::move(iterator))
         {}
 
@@ -143,22 +145,24 @@ namespace internal
             : m_baseRecordData(other.m_baseRecordData)
             , m_scalarTuple(
                   other.m_scalarTuple.has_value()
-                      ? ScalarTuple(std::make_pair(
-                            RecordComponent::SCALAR,
-                            T_RecordComponent(
-                                other.m_scalarTuple.value().second)))
+                      ? ScalarTuple(
+                            std::make_pair(
+                                RecordComponent::SCALAR,
+                                T_RecordComponent(
+                                    other.m_scalarTuple.value().second)))
                       : ScalarTuple(std::nullopt))
-            , m_iterator(std::visit(
-                  auxiliary::overloaded{
-                      [](typename Other::Left const &left) {
-                          // This converts the STL iterator to an
-                          // STL const_iterator
-                          return std::variant<Left, Right>(left);
-                      },
-                      [](typename Other::Right const &) {
-                          return std::variant<Left, Right>(Right());
-                      }},
-                  other.m_iterator))
+            , m_iterator(
+                  std::visit(
+                      auxiliary::overloaded{
+                          [](typename Other::Left const &left) {
+                              // This converts the STL iterator to an
+                              // STL const_iterator
+                              return std::variant<Left, Right>(left);
+                          },
+                          [](typename Other::Right const &) {
+                              return std::variant<Left, Right>(Right());
+                          }},
+                      other.m_iterator))
         {}
 
         ScalarIterator &operator++()
@@ -564,7 +568,8 @@ auto BaseRecord<T_elem>::operator[](key_type const &key) -> mapped_type &
             T_RecordComponent::get();
         }
         mapped_type &ret = keyScalar ? static_cast<mapped_type &>(*this)
-                                     : T_Container::operator[](key);
+                                     : T_Container::
+                                       operator[](key);
         return ret;
     }
 }
@@ -606,7 +611,8 @@ auto BaseRecord<T_elem>::operator[](key_type &&key) -> mapped_type &
             T_RecordComponent::get();
         }
         mapped_type &ret = keyScalar ? static_cast<mapped_type &>(*this)
-                                     : T_Container::operator[](std::move(key));
+                                     : T_Container::
+                                       operator[](std::move(key));
         return ret;
     }
 }

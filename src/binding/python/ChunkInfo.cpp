@@ -55,25 +55,26 @@ void init_Chunk(py::module &m)
         .def_readwrite("extent", &WrittenChunkInfo::extent)
         .def_readwrite("source_id", &WrittenChunkInfo::sourceID)
 
-        .def(py::pickle(
-            // __getstate__
-            [](const WrittenChunkInfo &w) {
-                return py::make_tuple(w.offset, w.extent, w.sourceID);
-            },
+        .def(
+            py::pickle(
+                // __getstate__
+                [](const WrittenChunkInfo &w) {
+                    return py::make_tuple(w.offset, w.extent, w.sourceID);
+                },
 
-            // __setstate__
-            [](py::tuple const &t) {
-                // our state tuple has exactly three values
-                if (t.size() != 3)
-                    throw std::runtime_error("Invalid state!");
+                // __setstate__
+                [](py::tuple const &t) {
+                    // our state tuple has exactly three values
+                    if (t.size() != 3)
+                        throw std::runtime_error("Invalid state!");
 
-                auto const offset = t[0].cast<Offset>();
-                auto const extent = t[1].cast<Extent>();
-                auto const sourceID =
-                    t[2].cast<decltype(WrittenChunkInfo::sourceID)>();
+                    auto const offset = t[0].cast<Offset>();
+                    auto const extent = t[1].cast<Extent>();
+                    auto const sourceID =
+                        t[2].cast<decltype(WrittenChunkInfo::sourceID)>();
 
-                return WrittenChunkInfo(offset, extent, sourceID);
-            }));
+                    return WrittenChunkInfo(offset, extent, sourceID);
+                }));
 
     py::enum_<host_info::Method>(m, "HostInfo")
         .value("POSIX_HOSTNAME", host_info::Method::POSIX_HOSTNAME)

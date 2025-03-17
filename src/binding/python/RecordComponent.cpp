@@ -426,8 +426,9 @@ inline void store_chunk(
     if (size_t(a.ndim()) != r_shape.size())
         throw py::index_error(
             std::string("dimension of chunk (") + std::to_string(a.ndim()) +
-            std::string("D) does not fit dimension of selection "
-                        "in record component (") +
+            std::string(
+                "D) does not fit dimension of selection "
+                "in record component (") +
             std::to_string(r_shape.size()) + std::string("D)"));
 
     if (auto joined_dim = r.joinedDimension(); joined_dim.has_value())
@@ -522,8 +523,9 @@ struct PythonDynamicMemoryView
         DynamicMemoryView<T> dynamicView,
         ShapeContainer arrayShape,
         ShapeContainer strides)
-        : m_dynamicView(std::shared_ptr<void>(
-              new DynamicMemoryView<T>(std::move(dynamicView))))
+        : m_dynamicView(
+              std::shared_ptr<void>(
+                  new DynamicMemoryView<T>(std::move(dynamicView))))
         , m_arrayShape(std::move(arrayShape))
         , m_strides(std::move(strides))
         , m_datatype(determineDatatype<T>())
@@ -766,8 +768,9 @@ inline void load_chunk(
         throw py::index_error(
             std::string("size of array (") + std::to_string(s_array) +
             std::string("; shape:") + str_array_shape +
-            std::string(") is smaller than size of selection "
-                        "in record component (") +
+            std::string(
+                ") is smaller than size of selection "
+                "in record component (") +
             std::to_string(s_load) + std::string("; shape:") +
             str_extent_shape + std::string(")"));
     }

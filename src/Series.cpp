@@ -3294,8 +3294,9 @@ Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
     switch (usedSnapshotWorkflow)
     {
     case SnapshotWorkflow::RandomAccess: {
-        return Snapshots(std::shared_ptr<RandomAccessIteratorContainer>{
-            new RandomAccessIteratorContainer(series.iterations)});
+        return Snapshots(
+            std::shared_ptr<RandomAccessIteratorContainer>{
+                new RandomAccessIteratorContainer(series.iterations)});
     }
     case SnapshotWorkflow::Synchronous: {
         std::function<StatefulIterator *()> begin;
@@ -3308,8 +3309,9 @@ Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
         {
             begin = make_reading_stateful_iterator(*this, series);
         }
-        return Snapshots(std::shared_ptr<StatefulSnapshotsContainer>(
-            new StatefulSnapshotsContainer(std::move(begin))));
+        return Snapshots(
+            std::shared_ptr<StatefulSnapshotsContainer>(
+                new StatefulSnapshotsContainer(std::move(begin))));
     }
     }
     throw std::runtime_error("unreachable!");

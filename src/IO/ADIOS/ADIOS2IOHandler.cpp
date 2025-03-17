@@ -360,8 +360,9 @@ ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
             getCompressionOperator(type);
         if (adiosOperator)
         {
-            res.emplace_back(ParameterizedOperator{
-                adiosOperator.value(), std::move(adiosParams)});
+            res.emplace_back(
+                ParameterizedOperator{
+                    adiosOperator.value(), std::move(adiosParams)});
         }
     }
     _operators.declareFullyRead();
@@ -2402,13 +2403,14 @@ ERROR: Variable ')"[1] + varName +
         if (allSteps)
         {
             auto allBlocks = var.AllStepsBlocksInfo();
-            table.reserve(std::accumulate(
-                allBlocks.begin(),
-                allBlocks.end(),
-                size_t(0),
-                [](size_t acc, auto const &block) {
-                    return acc + block.size();
-                }));
+            table.reserve(
+                std::accumulate(
+                    allBlocks.begin(),
+                    allBlocks.end(),
+                    size_t(0),
+                    [](size_t acc, auto const &block) {
+                        return acc + block.size();
+                    }));
             for (auto const &blocksInfo : allBlocks)
             {
                 addBlocksInfo(blocksInfo);

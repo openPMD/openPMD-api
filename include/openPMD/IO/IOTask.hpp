@@ -151,8 +151,8 @@ struct OPENPMDAPI_EXPORT Parameter : public AbstractParameter
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_FILE>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::CREATE_FILE> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -170,8 +170,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_FILE>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::CHECK_FILE>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::CHECK_FILE> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -197,8 +197,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CHECK_FILE>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::OPEN_FILE> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -233,8 +233,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_FILE>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::CLOSE_FILE>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::CLOSE_FILE> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -250,8 +250,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CLOSE_FILE>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_FILE>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::DELETE_FILE> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -269,8 +269,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_FILE>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_PATH>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::CREATE_PATH> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -288,8 +288,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_PATH>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::CLOSE_PATH>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::CLOSE_PATH> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -305,8 +305,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CLOSE_PATH>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_PATH>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::OPEN_PATH> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -324,8 +324,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_PATH>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_PATH>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::DELETE_PATH> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -343,8 +343,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_PATH>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_PATHS>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::LIST_PATHS> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -363,8 +363,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_PATHS>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_DATASET>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::CREATE_DATASET> : public AbstractParameter
 {
     Parameter(Dataset const &ds)
         : extent(ds.extent)
@@ -402,8 +402,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_DATASET>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::EXTEND_DATASET>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::EXTEND_DATASET> : public AbstractParameter
 {
     Parameter(Extent e) : joinedDimension(Dataset::joinedDimension(e))
     {
@@ -430,8 +430,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::EXTEND_DATASET>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_DATASET>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::OPEN_DATASET> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -457,8 +457,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::OPEN_DATASET>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_DATASET>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::DELETE_DATASET> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -476,8 +476,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_DATASET>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_DATASET>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::WRITE_DATASET> : public AbstractParameter
 {
     Parameter() = default;
 
@@ -499,8 +499,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_DATASET>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::READ_DATASET>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::READ_DATASET> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -521,8 +521,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::READ_DATASET>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_DATASETS>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::LIST_DATASETS> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -541,8 +541,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_DATASETS>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::GET_BUFFER_VIEW>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::GET_BUFFER_VIEW> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -572,8 +572,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::GET_BUFFER_VIEW>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_ATT>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::DELETE_ATT> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -591,8 +591,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::DELETE_ATT>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::WRITE_ATT> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -625,8 +625,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::READ_ATT>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::READ_ATT> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -647,8 +647,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::READ_ATT>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::READ_ATT_ALLSTEPS>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::READ_ATT_ALLSTEPS> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -679,8 +679,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::READ_ATT_ALLSTEPS>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_ATTS>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::LIST_ATTS> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -699,8 +699,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::LIST_ATTS>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::ADVANCE>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::ADVANCE> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -736,8 +736,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::ADVANCE>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::AVAILABLE_CHUNKS>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::AVAILABLE_CHUNKS> : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter &&) = default;
@@ -756,8 +756,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::AVAILABLE_CHUNKS>
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::DEREGISTER>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::DEREGISTER> : public AbstractParameter
 {
     Parameter(void const *ptr_in) : former_parent(ptr_in)
     {}
@@ -796,8 +796,8 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::TOUCH> : public AbstractParameter
 };
 
 template <>
-struct OPENPMDAPI_EXPORT Parameter<Operation::SET_WRITTEN>
-    : public AbstractParameter
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::SET_WRITTEN> : public AbstractParameter
 {
     explicit Parameter() = default;
 

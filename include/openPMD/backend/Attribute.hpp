@@ -122,9 +122,9 @@ namespace detail
             }
             else
             {
-                return {
-                    std::runtime_error("getCast: cast from string to char only "
-                                       "possible if string has length 1.")};
+                return {std::runtime_error(
+                    "getCast: cast from string to char only "
+                    "possible if string has length 1.")};
             }
         }
         else if constexpr (
@@ -286,8 +286,9 @@ namespace detail
                 {
                     auto exception = std::get<std::runtime_error>(conv);
                     return {std::runtime_error(
-                        std::string("getCast: no scalar to vector conversion "
-                                    "possible, recursive error: ") +
+                        std::string(
+                            "getCast: no scalar to vector conversion "
+                            "possible, recursive error: ") +
                         exception.what())};
                 }
             }

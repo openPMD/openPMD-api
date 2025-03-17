@@ -259,8 +259,9 @@ std::pair<Duration, Duration> MPIBenchmarkReport<Duration>::getReport(
     Datatype dt,
     Series::IterationIndex_t iterations)
 {
-    auto it = this->durations.find(std::make_tuple(
-        rank, jsonConfig, extension, threadSize, dt, iterations));
+    auto it = this->durations.find(
+        std::make_tuple(
+            rank, jsonConfig, extension, threadSize, dt, iterations));
     if (it == this->durations.end())
     {
         throw std::runtime_error(

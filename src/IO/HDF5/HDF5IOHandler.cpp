@@ -2651,8 +2651,10 @@ void HDF5IOHandlerImpl::readAttribute(
                 std::vector<char> c(dims[0] * length);
                 status = H5Aread(attr_id, attr_type, c.data());
                 for (hsize_t i = 0; i < dims[0]; ++i)
-                    vs.push_back(auxiliary::strip(
-                        std::string(c.data() + i * length, length), {'\0'}));
+                    vs.push_back(
+                        auxiliary::strip(
+                            std::string(c.data() + i * length, length),
+                            {'\0'}));
             }
             a = Attribute(vs);
         }

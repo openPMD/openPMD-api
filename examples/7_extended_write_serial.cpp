@@ -21,8 +21,9 @@ int main()
         f.setComment("This is fine and actually encouraged by the standard");
         f.setAttribute(
             "custom_attribute_name",
-            std::string("This attribute is manually added and can contain "
-                        "about any datatype you would want"));
+            std::string(
+                "This attribute is manually added and can contain "
+                "about any datatype you would want"));
         // note that removing attributes required by the standard typically
         // makes the file unusable for post-processing
         f.deleteAttribute("custom_attribute_name");

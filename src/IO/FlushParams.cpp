@@ -25,7 +25,8 @@ namespace openPMD::internal
 {
 ParsedFlushParams::ParsedFlushParams(FlushParams const &flushParams)
     : flushLevel(flushParams.flushLevel)
-    , backendConfig(json::parseOptions(
-          flushParams.backendConfig, /* considerFiles = */ false))
+    , backendConfig(
+          json::parseOptions(
+              flushParams.backendConfig, /* considerFiles = */ false))
 {}
 } // namespace openPMD::internal

@@ -243,8 +243,9 @@ auto Attributable::myPath() const -> MyPath
     auto &seriesData = auxiliary::deref_dynamic_cast<internal::SeriesData>(
         findSeries->attributable);
     Series series;
-    series.setData(std::shared_ptr<internal::SeriesData>{
-        &seriesData, [](auto const *) {}});
+    series.setData(
+        std::shared_ptr<internal::SeriesData>{
+            &seriesData, [](auto const *) {}});
     res.seriesName = series.name();
     res.seriesExtension = suffix(seriesData.m_format);
     res.directory = IOHandler()->directory;
@@ -557,23 +558,24 @@ namespace internal
          * actual pointer and replace the old internal shared pointer by the new
          * one.
          */
-        self.setData(std::shared_ptr<typename T::Data_t>{
-            raw_ptr,
-            /*
-             * Here comes the main trick.
-             * The new shared pointer stores (and thus keeps alive) two items
-             * via lambda capture in its destructor:
-             * 1. The old shared pointer.
-             * 2. The Series.
-             * It's important to notice that these two items are only stored
-             * within the newly created handle, and not internally within the
-             * actual openPMD object model. This means that no reference cycles
-             * can occur.
-             */
-            [s_lambda = std::move(s),
-             data_ptr_lambda = std::move(data_ptr)](auto const *) {
-                /* no-op, the lambda captures simply go out of scope */
-            }});
+        self.setData(
+            std::shared_ptr<typename T::Data_t>{
+                raw_ptr,
+                /*
+                 * Here comes the main trick.
+                 * The new shared pointer stores (and thus keeps alive) two
+                 * items via lambda capture in its destructor:
+                 * 1. The old shared pointer.
+                 * 2. The Series.
+                 * It's important to notice that these two items are only stored
+                 * within the newly created handle, and not internally within
+                 * the actual openPMD object model. This means that no reference
+                 * cycles can occur.
+                 */
+                [s_lambda = std::move(s),
+                 data_ptr_lambda = std::move(data_ptr)](auto const *) {
+                    /* no-op, the lambda captures simply go out of scope */
+                }});
         return self;
     }
 
