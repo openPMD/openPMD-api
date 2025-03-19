@@ -48,8 +48,8 @@ spack:
       modules: []
       operating_system: ubuntu22.04
       paths:
-        cc: /usr/lib/llvm-14/bin/clang
-        cxx: /usr/lib/llvm-14/bin/clang++
+        cc: /usr/bin/clang-14
+        cxx: /usr/bin/clang++-14
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
       spec: clang@14.0.0
