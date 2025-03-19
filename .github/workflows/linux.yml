@@ -174,7 +174,7 @@ jobs:
         sudo apt-get install clang-12 gfortran libmpich-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang++, CXX: clang++, CXXFLAGS: -Werror}
+      env: {CC: clang++-12, CXX: clang++-12, CXXFLAGS: -Werror}
       run: |
         cmake --version
         mpiexec --version
