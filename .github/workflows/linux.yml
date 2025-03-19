@@ -186,7 +186,7 @@ jobs:
         sudo chmod +x /usr/bin/mpicc_clang
         sudo chmod +x /usr/bin/mpic++_clang
     - name: Build
-      env: {CC: mpicc_clang, CXX: mpic++_clang, CXXFLAGS: -Werror}
+      env: {CC: clang++-12, CXX: clang++-12, CXXFLAGS: -Werror}
       run: |
         cmake --version
         mpiexec --version
