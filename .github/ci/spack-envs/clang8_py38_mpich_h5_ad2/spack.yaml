@@ -12,11 +12,11 @@ spack:
 
   packages:
     adios2:
-      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~blosc2
+      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~mgard ~blosc2
     cmake:
       externals:
       - spec: cmake@3.23.0
-        prefix: /usr
+        prefix: /usr/local
       buildable: False
     mpich:
       externals:
