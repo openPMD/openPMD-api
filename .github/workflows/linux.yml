@@ -171,7 +171,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get remove openmpi* libopenmpi* || true
+        sudo apt-get remove openmpi* libopenmpi* *hdf5* || true
         sudo apt-get install clang-12 gfortran libmpich-dev mpich python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build

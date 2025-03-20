@@ -6,8 +6,8 @@
 #
 spack:
   specs:
-  - adios2@2.10
-  - hdf5
+  - adios2@2.10 +mpi
+  - hdf5 +mpi
   - mpich
 
   packages:
