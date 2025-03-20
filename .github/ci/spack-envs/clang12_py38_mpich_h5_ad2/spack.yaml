@@ -15,7 +15,7 @@ spack:
       variants: +mpi ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~blosc2 ~mgard
     cmake:
       externals:
-      - spec: cmake@3.31.5
+      - spec: cmake@3.31.6
         prefix: /usr
       buildable: False
     hdf5:
