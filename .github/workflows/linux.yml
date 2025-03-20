@@ -247,8 +247,7 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
-        cd build
-        ctest --output-on-failure
+        ctest --test-dir build --output-on-failure
 
   gcc9_py38_pd_nompi_h5_ad2_libcpp:
     runs-on: ubuntu-22.04
@@ -270,8 +269,7 @@ jobs:
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
-        cd build
-        ctest --output-on-failure
+        ctest --test-dir build --output-on-failure
 
   musllinux_py10:
     runs-on: ubuntu-22.04
@@ -296,8 +294,7 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DPython_EXECUTABLE=$(which python3.10)
         cmake --build build --parallel 2
-        cd build
-        ctest --output-on-failure
+        ctest --test-dir build --output-on-failure
 
   conda_ompi_all:
     runs-on: ubuntu-22.04
@@ -326,5 +323,4 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
-        cd build
-        ctest --output-on-failure
+        ctest --test-dir build --output-on-failure
