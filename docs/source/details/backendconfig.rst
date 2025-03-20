@@ -291,9 +291,11 @@ Explanation of the single keys:
 Dataset-specific configuration
 ------------------------------
 
-Some configuration options should be applicable on a per-dataset basis.
+Sometimes it is beneficial to set configuration options for specific datasets.
 Most dataset-specific configuration options supported by the openPMD-api are additionally backend-specific, being format-specific serialization instructions such as compression or chunking.
-Such dataset-specific and backend-specific configuration is hence specified under the key path ``<backend>.dataset``, e.g.:
+
+All dataset-specific and backend-specific configuration is specified under the key path ``<backend>.dataset``.
+Without filtering by dataset name (see the ``select``` key below) this looks like:
 
 .. code-block:: json
 
