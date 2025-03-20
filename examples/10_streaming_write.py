@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import json
 import sys
 
 import numpy as np
@@ -21,8 +20,7 @@ if __name__ == "__main__":
 
     # create a series and specify some global metadata
     # change the file extension to .json, .h5 or .bp for regular file writing
-    series = io.Series("simData.sst", io.Access_Type.create,
-                       json.dumps(config))
+    series = io.Series("simData.sst", io.Access_Type.create, options=config)
     series.set_author("Franz Poeschel <f.poeschel@hzdr.de>")
     series.set_software("openPMD-api-python-examples")
 

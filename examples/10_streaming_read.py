@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import json
 import sys
 
 import openpmd_api as io
@@ -19,7 +18,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     series = io.Series("simData.sst", io.Access_Type.read_linear,
-                       json.dumps(config))
+                       options=config)
 
     # Read all available iterations and print electron position data.
     # Direct access to iterations is possible via `series.iterations`.
