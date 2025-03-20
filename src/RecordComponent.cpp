@@ -826,7 +826,7 @@ void RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
 }
 
 template <typename T>
-void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
+void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 {
     storeChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
 }
@@ -864,15 +864,15 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     template void RecordComponent::verifyChunk<type>(                          \
         Offset const &o, Extent const &e) const;                               \
     template DynamicMemoryView<type> RecordComponent::storeChunk<type>(        \
-        Offset offset, Extent extent);
+        Offset offset, Extent extent);                                         \
+    template void RecordComponent::storeChunkRaw<type>(                        \
+        OPENPMD_PTR(type const) ptr, Offset offset, Extent extent);
 
 #define OPENPMD_INSTANTIATE_CONST_AND_NONCONST(type)                           \
     template void RecordComponent::storeChunk<type>(                           \
         std::shared_ptr<type> data, Offset o, Extent e);                       \
     template void RecordComponent::storeChunk<type>(                           \
-        std::shared_ptr<OPENPMD_ARRAY(type)> data, Offset o, Extent e);        \
-    template void RecordComponent::storeChunkRaw<type>(                        \
-        OPENPMD_PTR(type) ptr, Offset offset, Extent extent);
+        std::shared_ptr<OPENPMD_ARRAY(type)> data, Offset o, Extent e);
 
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
     template std::shared_ptr<type> RecordComponent::loadChunk<type>(           \

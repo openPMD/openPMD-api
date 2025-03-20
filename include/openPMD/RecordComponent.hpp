@@ -388,7 +388,7 @@ public:
      * @param extent Extent within the dataset, counted from the offset.
      */
     template <typename T>
-    void storeChunkRaw(T *data, Offset offset, Extent extent);
+    void storeChunkRaw(T const *data, Offset offset, Extent extent);
 
     /** Store a chunk of data from a contiguous container.
      *
