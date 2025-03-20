@@ -29,6 +29,7 @@
 #include "openPMD/snapshots/StatefulIterator.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
+#include <filesystem>
 #include <optional>
 
 #if openPMD_HAVE_MPI
@@ -40,6 +41,135 @@
 
 #include <sstream>
 #include <string>
+
+namespace auxiliary
+{
+template <typename Functor, typename... Types>
+struct ForEachType;
+
+template <typename Functor, typename FirstType, typename... OtherTypes>
+struct ForEachType<Functor, FirstType, OtherTypes...>
+{
+    template <typename... Args>
+    static void call(Args &&...args)
+    {
+        Functor::template call<FirstType>(args...);
+        ForEachType<Functor, OtherTypes...>::template call<Args...>(args...);
+    }
+};
+
+template <typename Functor>
+struct ForEachType<Functor>
+{
+    template <typename... Args>
+    static constexpr void call(Args &&...)
+    { /* no-op */
+    }
+};
+} // namespace auxiliary
+
+namespace internal
+{
+struct DefineSeriesConstructorPerPathType
+{
+    template <typename PathType>
+    static void call(py::class_<Series, Attributable> &py_class)
+    {
+        py_class
+            .def(
+                py::init([](PathType const &filepath,
+                            Access at,
+                            std::string const &options) {
+                    py::gil_scoped_release release;
+                    return new Series(filepath, at, options);
+                }),
+                py::arg("filepath"),
+                py::arg("access"),
+                py::arg("options") = "{}",
+                R"END(
+Construct a new Series. Parameters:
+
+* filepath: The file path.
+* at: Access mode.
+* options: Advanced backend configuration via JSON.
+    May be specified as a JSON-formatted string directly, or as a path
+    to a JSON textfile, prepended by an at sign '@'.
+
+For details on access modes, JSON/TOML configuration and iteration encoding,
+refer to:
+
+* https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#access-modes
+* https://openpmd-api.readthedocs.io/en/latest/details/backendconfig.html
+* https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html#iteration-and-series
+
+In case of file-based iteration encoding, the file names for each
+iteration are determined by an expansion pattern that must be specified.
+It takes one out of two possible forms:
+
+1. Simple form: %T is replaced with the iteration index, e.g.
+   `simData_%T.bp` becomes `simData_50.bp`.
+2. Padded form: e.g. %06T is replaced with the iteration index padded to
+   at least six digits. `simData_%06T.bp` becomes `simData_000050.bp`.
+
+The backend is determined:
+
+1. Explicitly via the JSON/TOML parameter `backend`, e.g. `{"backend":
+   "adios2"}`.
+2. Otherwise implicitly from the filename extension, e.g.
+   `simData_%T.h5`.
+
+The filename extension can be replaced with a globbing pattern %E.
+It will be replaced with an automatically determined file name extension:
+
+1. In CREATE mode: The extension is set to a backend-specific default
+   extension. This requires that the backend is specified via JSON/TOML.
+2. In READ_ONLY, READ_WRITE and READ_LINEAR modes: These modes require
+   that files already exist on disk. The disk will be scanned for files
+   that match the pattern and the resulting file extension will be used.
+   If the result is ambiguous or no such file is found, an error is
+   raised.
+3. In APPEND mode: Like (2.), except if no matching file is found. In
+   that case, the procedure of (1.) is used, owing to the fact that
+   APPEND mode can be used to create new datasets.
+            )END")
+#if openPMD_HAVE_MPI
+            .def(
+                py::init([](PathType const &filepath,
+                            Access at,
+                            py::object &comm,
+                            std::string const &options) {
+                    auto variant = pythonObjectAsMpiComm(comm);
+                    if (auto errorMsg = std::get_if<std::string>(&variant))
+                    {
+                        throw std::runtime_error("[Series] " + *errorMsg);
+                    }
+                    else
+                    {
+                        py::gil_scoped_release release;
+                        return new Series(
+                            filepath, at, std::get<MPI_Comm>(variant), options);
+                    }
+                }),
+                py::arg("filepath"),
+                py::arg("access"),
+                py::arg("mpi_communicator"),
+                py::arg("options") = "{}",
+                R"END(
+Construct a new Series. Parameters:
+
+* filepath: The file path.
+* at: Access mode.
+* options: Advanced backend configuration via JSON.
+    May be specified as a JSON-formatted string directly, or as a path
+    to a JSON textfile, prepended by an at sign '@'.
+* mpi_communicator: The MPI communicator
+
+For further details, refer to the non-MPI overload.
+            )END");
+#endif
+    }
+};
+} // namespace internal
 
 struct StatefulIteratorPythonAdaptor : LegacyIteratorAdaptor
 {
@@ -166,107 +296,13 @@ not possible once it has been closed.
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
 
-    // `clang-format on/off` doesn't help here.
-    // Writing this without a macro would lead to a huge diff due to
-    // clang-format.
-#define OPENPMD_AVOID_CLANG_FORMAT auto cl =
-    OPENPMD_AVOID_CLANG_FORMAT
-#undef OPENPMD_AVOID_CLANG_FORMAT
+    py::class_<Series, Attributable> cl(m, "Series");
+    ::auxiliary::ForEachType<
+        ::internal::DefineSeriesConstructorPerPathType,
+        std::string,
+        std::filesystem::path>::template call(cl);
 
-    py::class_<Series, Attributable>(m, "Series")
-
-        .def(
-            py::init([](std::string const &filepath,
-                        Access at,
-                        std::string const &options) {
-                py::gil_scoped_release release;
-                return new Series(filepath, at, options);
-            }),
-            py::arg("filepath"),
-            py::arg("access"),
-            py::arg("options") = "{}",
-            R"END(
-Construct a new Series. Parameters:
-
-* filepath: The file path.
-* at: Access mode.
-* options: Advanced backend configuration via JSON.
-    May be specified as a JSON-formatted string directly, or as a path
-    to a JSON textfile, prepended by an at sign '@'.
-
-For details on access modes, JSON/TOML configuration and iteration encoding,
-refer to:
-
-* https://openpmd-api.readthedocs.io/en/latest/usage/workflow.html#access-modes
-* https://openpmd-api.readthedocs.io/en/latest/details/backendconfig.html
-* https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html#iteration-and-series
-
-In case of file-based iteration encoding, the file names for each
-iteration are determined by an expansion pattern that must be specified.
-It takes one out of two possible forms:
-
-1. Simple form: %T is replaced with the iteration index, e.g.
-   `simData_%T.bp` becomes `simData_50.bp`.
-2. Padded form: e.g. %06T is replaced with the iteration index padded to
-   at least six digits. `simData_%06T.bp` becomes `simData_000050.bp`.
-
-The backend is determined:
-
-1. Explicitly via the JSON/TOML parameter `backend`, e.g. `{"backend":
-   "adios2"}`.
-2. Otherwise implicitly from the filename extension, e.g.
-   `simData_%T.h5`.
-
-The filename extension can be replaced with a globbing pattern %E.
-It will be replaced with an automatically determined file name extension:
-
-1. In CREATE mode: The extension is set to a backend-specific default
-   extension. This requires that the backend is specified via JSON/TOML.
-2. In READ_ONLY, READ_WRITE and READ_LINEAR modes: These modes require
-   that files already exist on disk. The disk will be scanned for files
-   that match the pattern and the resulting file extension will be used.
-   If the result is ambiguous or no such file is found, an error is
-   raised.
-3. In APPEND mode: Like (2.), except if no matching file is found. In
-   that case, the procedure of (1.) is used, owing to the fact that
-   APPEND mode can be used to create new datasets.
-            )END")
-#if openPMD_HAVE_MPI
-        .def(
-            py::init([](std::string const &filepath,
-                        Access at,
-                        py::object &comm,
-                        std::string const &options) {
-                auto variant = pythonObjectAsMpiComm(comm);
-                if (auto errorMsg = std::get_if<std::string>(&variant))
-                {
-                    throw std::runtime_error("[Series] " + *errorMsg);
-                }
-                else
-                {
-                    py::gil_scoped_release release;
-                    return new Series(
-                        filepath, at, std::get<MPI_Comm>(variant), options);
-                }
-            }),
-            py::arg("filepath"),
-            py::arg("access"),
-            py::arg("mpi_communicator"),
-            py::arg("options") = "{}",
-            R"END(
-Construct a new Series. Parameters:
-
-* filepath: The file path.
-* at: Access mode.
-* options: Advanced backend configuration via JSON.
-    May be specified as a JSON-formatted string directly, or as a path
-    to a JSON textfile, prepended by an at sign '@'.
-* mpi_communicator: The MPI communicator
-
-For further details, refer to the non-MPI overload.
-            )END")
-#endif
-        .def("__bool__", &Series::operator bool)
+    cl.def("__bool__", &Series::operator bool)
         .def("__len__", [](Series const &s) { return s.iterations.size(); })
         .def(
             "__repr__",
