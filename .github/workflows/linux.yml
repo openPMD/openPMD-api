@@ -175,7 +175,8 @@ jobs:
         sudo apt-get install clang-12 gfortran libmpich-dev mpich python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-12, CXX: clang++-12, MPICH_CC: clang-12, MPICH_CXX: clang++-12, CXXFLAGS: -Werror}
+      env: {CC: clang-12, CXX: clang++-12, MPICH_CC: clang-12, MPICH_CXX: clang++-12}
+      # TODO: CXXFLAGS: -Werror removed because it fails CMake's find_package(MPI)
       run: |
         cmake --version
         mpiexec --version
