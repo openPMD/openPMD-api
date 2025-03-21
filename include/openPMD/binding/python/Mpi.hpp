@@ -43,7 +43,25 @@ struct openPMD_PyMPICommObject
 };
 using openPMD_PyMPIIntracommObject = openPMD_PyMPICommObject;
 
-inline std::variant<MPI_Comm, std::string>
+struct py_object_to_mpi_comm_error
+{
+    enum class error_type
+    {
+        invalid_data,
+        is_not_an_mpi_communicator
+    };
+    using error_type = error_type;
+
+    std::string error_msg;
+    error_type type;
+
+    operator std::string() const
+    {
+        return error_msg;
+    }
+};
+
+inline std::variant<MPI_Comm, py_object_to_mpi_comm_error>
 pythonObjectAsMpiComm(pybind11::object &comm)
 {
     namespace py = pybind11;
@@ -55,10 +73,13 @@ pythonObjectAsMpiComm(pybind11::object &comm)
     //! - installed: include/mpi4py/mpi4py.MPI_api.h
     // if( import_mpi4py() < 0 ) { here be dragons }
 
+    using e = py_object_to_mpi_comm_error;
+    using e_t = e::error_type;
+
     if (comm.ptr() == Py_None)
-        return {"MPI communicator cannot be None."};
+        return e{"MPI communicator cannot be None.", e_t::invalid_data};
     if (comm.ptr() == nullptr)
-        return {"MPI communicator is a nullptr."};
+        return e{"MPI communicator is a nullptr.", e_t::invalid_data};
 
     // check type string to see if this is mpi4py
     //   __str__ (pretty)
@@ -68,15 +89,18 @@ pythonObjectAsMpiComm(pybind11::object &comm)
     py::str const comm_pystr = py::repr(comm);
     std::string const comm_str = comm_pystr.cast<std::string>();
     if (comm_str.substr(0, 12) != std::string("<mpi4py.MPI."))
-        return {"comm is not an mpi4py communicator: " + comm_str};
+        return e{
+            "comm is not an mpi4py communicator: " + comm_str,
+            e_t::is_not_an_mpi_communicator};
     // only checks same layout, e.g. an `int` in `PyObject` could pass this
     if (!py::isinstance<py::class_<openPMD_PyMPIIntracommObject> >(
             comm.get_type()))
         // TODO add mpi4py version from above import check to error message
-        return {
+        return e{
             "comm has unexpected type layout in " + comm_str +
-            " (Mismatched MPI at compile vs. runtime? "
-            "Breaking mpi4py release?)"};
+                " (Mismatched MPI at compile vs. runtime? "
+                "Breaking mpi4py release?)",
+            e_t::invalid_data};
 
     // todo other possible implementations:
     // - pyMPI (inactive since 2008?): import mpi; mpi.WORLD
@@ -87,12 +111,13 @@ pythonObjectAsMpiComm(pybind11::object &comm)
         &((openPMD_PyMPIIntracommObject *)(comm.ptr()))->ob_mpi;
 
     if (PyErr_Occurred())
-        return {"MPI communicator access error."};
+        return e{"MPI communicator access error.", e_t::invalid_data};
     if (mpiCommPtr == nullptr)
     {
-        return {
+        return e{
             "MPI communicator cast failed. "
-            "(Mismatched MPI at compile vs. runtime?)"};
+            "(Mismatched MPI at compile vs. runtime?)",
+            e_t::invalid_data};
     }
     return {*mpiCommPtr};
 }

@@ -159,9 +159,29 @@ It will be replaced with an automatically determined file name extension:
                             JsonCfgType const &options) {
                     auto options_ = json_cfg_as_string(options);
                     auto variant = pythonObjectAsMpiComm(comm);
-                    if (auto errorMsg = std::get_if<std::string>(&variant))
+                    if (auto errorMsg =
+                            std::get_if<py_object_to_mpi_comm_error>(&variant))
                     {
-                        throw std::runtime_error("[Series] " + *errorMsg);
+                        switch (errorMsg->type)
+                        {
+
+                        case py_object_to_mpi_comm_error::error_type::
+                            invalid_data:
+                            throw std::runtime_error(
+                                "[Series] " + errorMsg->error_msg);
+                        case py_object_to_mpi_comm_error::error_type::
+                            is_not_an_mpi_communicator:
+                            /*
+                             * Since this overload accepts py::object for an MPI
+                             * communicator, we need to test if this is actually
+                             * an MPI communicator. If not, this is not
+                             * immediately an error, we might have just tried to
+                             * call the wrong overload. Go back to trying the
+                             * other overloads by throwing to pybind.
+                             */
+                            throw py::reference_cast_error();
+                        }
+                        throw std::runtime_error("Unreachable!");
                     }
                     else
                     {

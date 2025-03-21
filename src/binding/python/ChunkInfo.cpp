@@ -83,9 +83,10 @@ void init_Chunk(py::module &m)
             "get_collective",
             [](host_info::Method const &self, py::object &comm) {
                 auto variant = pythonObjectAsMpiComm(comm);
-                if (auto errorMsg = std::get_if<std::string>(&variant))
+                if (auto errorMsg =
+                        std::get_if<py_object_to_mpi_comm_error>(&variant))
                 {
-                    throw std::runtime_error("[Series] " + *errorMsg);
+                    throw std::runtime_error("[Series] " + errorMsg->error_msg);
                 }
                 else
                 {
