@@ -58,7 +58,7 @@ spack:
       target: x86_64
 
   config:
-    build_jobs: 2
+    build_jobs: 4
 
   mirrors:
     E4S: https://cache.e4s.io
