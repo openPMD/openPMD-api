@@ -22,17 +22,17 @@ spack:
       variants: +mpi
     mpich:
       externals:
-      - spec: mpich@4.0.3
+      - spec: mpich@4.2.0
         prefix: /usr
       buildable: False
     perl:
       externals:
-      - spec: perl@5.34.0
+      - spec: perl@5.38.2
         prefix: /usr
       buildable: False
     python:
       externals:
-      - spec: python@3.10.12
+      - spec: python@3.12.3
         prefix: /usr
       buildable: False
     all:
@@ -40,7 +40,7 @@ spack:
       variants: ~fortran
       providers:
         mpi: [mpich]
-      compiler: [clang@12.0.1]
+      compiler: [clang@14.0.1]
 
   compilers:
   - compiler:
@@ -48,13 +48,13 @@ spack:
       extra_rpaths: []
       flags: {}
       modules: []
-      operating_system: ubuntu22.04
+      operating_system: ubuntu24.04
       paths:
-        cc: /usr/bin/clang-12
-        cxx: /usr/bin/clang++-12
+        cc: /usr/bin/clang-14
+        cxx: /usr/bin/clang++-14
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
-      spec: clang@12.0.1
+      spec: clang@14.0.6
       target: x86_64
 
   config:
