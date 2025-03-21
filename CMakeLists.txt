@@ -151,7 +151,7 @@ option(openPMD_USE_INTERNAL_TOML11   "Use internally shipped toml11"        ${op
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
-option(openPMD_USE_FILESYSTEM_HEADER "Enable filesystem header. May be disabled for old compiler versions." ON)
+option(openPMD_USE_FILESYSTEM_HEADER "Enable filesystem header. May be disabled for old compiler versions." OFF)
 mark_as_advanced(openPMD_USE_FILESYSTEM_HEADER)
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
