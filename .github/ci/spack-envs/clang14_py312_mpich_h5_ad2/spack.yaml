@@ -16,7 +16,7 @@ spack:
     cmake:
       externals:
       - spec: cmake@3.31.6
-        prefix: /usr
+        prefix: /usr/local
       buildable: False
     hdf5:
       variants: +mpi
@@ -40,7 +40,7 @@ spack:
       variants: ~fortran
       providers:
         mpi: [mpich]
-      compiler: [clang@14.0.1]
+      compiler: [clang@14.0.6]
 
   compilers:
   - compiler:
