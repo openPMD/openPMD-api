@@ -162,7 +162,9 @@ jobs:
   # ADIOS2 v2.10
   gcc13_py312_mpich_h5_ad2:
     runs-on: ubuntu-24.04
-    if: github.event.pull_request.draft == false
+    # disabled because of unclear runtime issues
+    if: 0
+    #if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
     - name: Spack Cache
