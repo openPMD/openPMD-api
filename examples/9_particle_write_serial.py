@@ -9,8 +9,7 @@ License: LGPLv3+
 from pathlib import Path
 
 import numpy as np
-from openpmd_api import (Access, Dataset, Mesh_Record_Component, Series,
-                         Unit_Dimension)
+from openpmd_api import Access, Dataset, Series, Unit_Dimension
 
 if __name__ == "__main__":
     # open file for writing
