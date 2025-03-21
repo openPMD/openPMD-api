@@ -160,30 +160,29 @@ jobs:
         ctest --test-dir build --output-on-failure
 
   # ADIOS2 v2.10
-  clang14_py312_mpich_h5_ad2:
+  gcc13_py312_mpich_h5_ad2:
     runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang14_py312_mpich_h5_ad2_newLayout_v2 }
+      with: {path: /opt/spack, key: gcc13_py312_mpich_h5_ad2 }
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get remove openmpi* libopenmpi* *hdf5* || true
-        sudo apt-get install clang-14 gfortran libmpich-dev mpich python3
+        sudo apt-get install g++ gfortran libmpich-dev mpich python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-14, CXX: clang++-14, MPICH_CC: clang-14, MPICH_CXX: clang++-14}
-      # TODO: CXXFLAGS: -Werror removed because it fails CMake's find_package(MPI)
+      env: {CC: gcc, CXX: g++, MPICH_CC: gcc, MPICH_CXX: g++, CXXFLAGS: -Werror}
       run: |
         cmake --version
         mpiexec --version
         mpicxx --version
         perl --version
         python --version
-        eval $(spack env activate --sh .github/ci/spack-envs/clang14_py312_mpich_h5_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/gcc13_py312_mpich_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build

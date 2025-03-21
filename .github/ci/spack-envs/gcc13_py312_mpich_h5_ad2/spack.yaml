@@ -40,7 +40,7 @@ spack:
       variants: ~fortran
       providers:
         mpi: [mpich]
-      compiler: [clang@14.0.6]
+      compiler: [gcc@13.3.0]
 
   compilers:
   - compiler:
@@ -50,11 +50,11 @@ spack:
       modules: []
       operating_system: ubuntu24.04
       paths:
-        cc: /usr/bin/clang-14
-        cxx: /usr/bin/clang++-14
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
-      spec: clang@14.0.6
+      spec: gcc@13.3.0
       target: x86_64
 
   config:
