@@ -151,6 +151,8 @@ option(openPMD_USE_INTERNAL_TOML11   "Use internally shipped toml11"        ${op
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
+option(openPMD_USE_FILESYSTEM_HEADER "Enable filesystem header. May be disabled for old compiler versions." ON)
+mark_as_advanced(openPMD_USE_FILESYSTEM_HEADER)
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
@@ -732,6 +734,14 @@ if(openPMD_USE_INVASIVE_TESTS)
     endif()
     target_compile_definitions(openPMD PRIVATE openPMD_USE_INVASIVE_TESTS=1)
 endif()
+
+foreach(target openPMD openPMD.py)
+    if(openPMD_USE_FILESYSTEM_HEADER)
+        target_compile_definitions(${target} PRIVATE openPMD_USE_FILESYSTEM_HEADER=1)
+    else()
+        target_compile_definitions(${target} PRIVATE openPMD_USE_FILESYSTEM_HEADER=0)
+    endif()
+endforeach()
 
 if(openPMD_BUILD_TESTING)
     # compile Catch2 implementation part separately

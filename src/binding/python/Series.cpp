@@ -29,9 +29,12 @@
 #include "openPMD/snapshots/StatefulIterator.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
-#include <filesystem>
 #include <optional>
 #include <tuple>
+
+#if openPMD_USE_FILESYSTEM_HEADER
+#include <filesystem>
+#endif
 
 #if openPMD_HAVE_MPI
 //  re-implemented signatures:
@@ -85,6 +88,26 @@ struct DefineSeriesConstructorPerPathType
         return ::auxiliary::json_dumps(obj);
     }
 
+    static constexpr auto filepath_as_string(std::string const &str)
+        -> std::string const &
+    {
+        return str;
+    }
+
+#if openPMD_USE_FILESYSTEM_HEADER
+    static auto filepath_as_string(std::filesystem::path const &path)
+        -> std::string
+    {
+        return path;
+    }
+#else
+    static auto filepath_as_string(py::object const &path) -> std::string
+    {
+        auto casted = path.attr("__str__")();
+        return py::cast<std::string>(casted);
+    }
+#endif
+
     template <typename TupleType>
     static void call(py::class_<Series, Attributable> &py_class)
     {
@@ -96,9 +119,10 @@ struct DefineSeriesConstructorPerPathType
                 py::init([](PathType const &filepath,
                             Access at,
                             JsonCfgType const &options) {
-                    auto options_ = json_cfg_as_string(options);
+                    decltype(auto) filepath_ = filepath_as_string(filepath);
+                    decltype(auto) options_ = json_cfg_as_string(options);
                     py::gil_scoped_release release;
-                    return new Series(filepath, at, options_);
+                    return new Series(filepath_, at, options_);
                 }),
                 py::arg("filepath"),
                 py::arg("access"),
@@ -155,7 +179,8 @@ It will be replaced with an automatically determined file name extension:
                             Access at,
                             py::object &comm,
                             JsonCfgType const &options) {
-                    auto options_ = json_cfg_as_string(options);
+                    decltype(auto) filepath_ = filepath_as_string(filepath);
+                    decltype(auto) options_ = json_cfg_as_string(options);
                     auto variant = pythonObjectAsMpiComm(comm);
                     if (auto errorMsg =
                             std::get_if<py_object_to_mpi_comm_error>(&variant))
@@ -185,7 +210,7 @@ It will be replaced with an automatically determined file name extension:
                     {
                         py::gil_scoped_release release;
                         return new Series(
-                            filepath,
+                            filepath_,
                             at,
                             std::get<MPI_Comm>(variant),
                             options_);
@@ -343,8 +368,14 @@ not possible once it has been closed.
         ::internal::DefineSeriesConstructorPerPathType,
         std::tuple<std::string, std::string>,
         std::tuple<std::string, py::object>,
+#if openPMD_USE_FILESYSTEM_HEADER
         std::tuple<std::filesystem::path, std::string>,
-        std::tuple<std::filesystem::path, py::object> >::template call(cl);
+        std::tuple<std::filesystem::path, py::object>
+#else
+        std::tuple<py::object, std::string>,
+        std::tuple<py::object, py::object>
+#endif
+        >::template call(cl);
 
     cl.def("__bool__", &Series::operator bool)
         .def("__len__", [](Series const &s) { return s.iterations.size(); })
