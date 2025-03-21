@@ -552,6 +552,7 @@ endif()
 if(openPMD_HAVE_PYTHON)
     add_library(openPMD.py MODULE
         src/binding/python/openPMD.cpp
+        src/binding/python/auxiliary.cpp
         src/binding/python/Access.cpp
         src/binding/python/Attributable.cpp
         src/binding/python/BaseRecordComponent.cpp

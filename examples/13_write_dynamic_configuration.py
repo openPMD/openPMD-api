@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import json
-
 import numpy as np
 import openpmd_api as io
 
@@ -20,7 +18,8 @@ defaults = """
 # be passed by adding an at-sign `@` in front of the path
 # The format will then be recognized by filename extension, i.e. .json or .toml
 # In Python, normal Python dictionaries can also be used which will then be
-# converted via `json.dumps()` in the Series constructor.
+# converted via `json.dumps()` in the Series constructor
+# (see below for an example in terms of the Dataset constructor)
 
 backend = "adios2"
 iteration_encoding = "group_based"
@@ -107,9 +106,6 @@ def main():
                 'dataset': {
                     'operators': []
                 }
-            },
-            'adios1': {
-                'dataset': {}
             }
         }
         config['adios2']['dataset'] = {
@@ -120,9 +116,6 @@ def main():
                 }
             }]
         }
-        config['adios1']['dataset'] = {
-            'transform': 'blosc:compressor=zlib,shuffle=bit,lvl=1;nometa'
-        }
 
         temperature = iteration.meshes["temperature"]
         temperature.unit_dimension = {io.Unit_Dimension.theta: 1.0}
@@ -131,8 +124,7 @@ def main():
         # temperature has no x,y,z components, so skip the last layer:
         temperature_dataset = temperature
         # let's say we are in a 3x3 mesh
-        dataset = io.Dataset(np.dtype("double"), [3, 3])
-        dataset.options = json.dumps(config)
+        dataset = io.Dataset(np.dtype("double"), [3, 3], config)
         temperature_dataset.reset_dataset(dataset)
         # temperature is constant
         local_data = np.arange(i * 9, (i + 1) * 9, dtype=np.dtype("double"))

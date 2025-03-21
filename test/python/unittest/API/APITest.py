@@ -2129,8 +2129,7 @@ class APITest(unittest.TestCase):
         E_x.store_chunk(data, [0], [1000])
 
         E_y = series.iterations[0].meshes["E"]["y"]
-        import json
-        E_y.reset_dataset(DS(np.dtype("double"), [1000], json.dumps(local_config)))
+        E_y.reset_dataset(DS(np.dtype("double"), [1000], local_config))
         E_y.store_chunk(data, [0], [1000])
 
         self.assertTrue(series)

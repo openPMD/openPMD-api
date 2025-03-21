@@ -22,6 +22,7 @@
 
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
+#include "openPMD/binding/python/auxiliary.hpp"
 
 #include <string>
 
@@ -29,27 +30,35 @@ void init_Dataset(py::module &m)
 {
     auto pyDataset =
         py::class_<Dataset>(m, "Dataset")
-            .def(
-                py::init<Datatype, Extent>(),
-                py::arg("dtype"),
-                py::arg("extent"))
             .def(py::init<Extent>(), py::arg("extent"))
-            .def(
-                py::init([](py::dtype dt, Extent const &e) {
-                    auto const d = dtype_from_numpy(std::move(dt));
-                    return new Dataset{d, e};
-                }),
-                py::arg("dtype"),
-                py::arg("extent"))
             .def(
                 py::init<Datatype, Extent, std::string>(),
                 py::arg("dtype"),
                 py::arg("extent"),
-                py::arg("options"))
+                py::arg("options") = "{}")
             .def(
                 py::init([](py::dtype dt, Extent e, std::string options) {
                     auto const d = dtype_from_numpy(std::move(dt));
                     return new Dataset{d, std::move(e), std::move(options)};
+                }),
+                py::arg("dtype"),
+                py::arg("extent"),
+                py::arg("options") = "{}")
+            .def(
+                py::init([](Datatype dt, Extent e, py::object const &options) {
+                    auto resolved_options = ::auxiliary::json_dumps(options);
+                    return new Dataset{
+                        dt, std::move(e), std::move(resolved_options)};
+                }),
+                py::arg("dtype"),
+                py::arg("extent"),
+                py::arg("options"))
+            .def(
+                py::init([](py::dtype dt, Extent e, py::object const &options) {
+                    auto const d = dtype_from_numpy(std::move(dt));
+                    auto resolved_options = ::auxiliary::json_dumps(options);
+                    return new Dataset{
+                        d, std::move(e), std::move(resolved_options)};
                 }),
                 py::arg("dtype"),
                 py::arg("extent"),

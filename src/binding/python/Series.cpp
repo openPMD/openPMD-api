@@ -37,6 +37,7 @@
 //  re-implemented signatures:
 //  include <mpi4py/mpi4py.h>
 #include "openPMD/binding/python/Mpi.hpp"
+#include "openPMD/binding/python/auxiliary.hpp"
 #include <mpi.h>
 #endif
 
@@ -81,10 +82,7 @@ struct DefineSeriesConstructorPerPathType
 
     static auto json_cfg_as_string(py::object const &obj) -> std::string
     {
-        py::module_ json = py::module_::import("json");
-        auto dumps = json.attr("dumps");
-        auto dumped = dumps(obj);
-        return py::cast<std::string>(dumped);
+        return ::auxiliary::json_dumps(obj);
     }
 
     template <typename TupleType>

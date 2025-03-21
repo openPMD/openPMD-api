@@ -6,8 +6,6 @@ Copyright 2018-2021 openPMD contributors
 Authors: Axel Huebl, Fabian Koller
 License: LGPLv3+
 """
-import json
-
 import numpy as np
 from openpmd_api import (Access, Dataset, Mesh_Record_Component, Series,
                          Unit_Dimension)
@@ -104,7 +102,6 @@ if __name__ == "__main__":
     # before storing record data, you must specify the dataset once per
     # component this describes the datatype and shape of data as it should be
     # written to disk
-    d = Dataset(partial_mesh.dtype, extent=[2, 5])
     dataset_config = {
         "adios2": {
             "dataset": {
@@ -117,7 +114,7 @@ if __name__ == "__main__":
             }
         }
     }
-    d.options = json.dumps(dataset_config)
+    d = Dataset(partial_mesh.dtype, extent=[2, 5], options=dataset_config)
     mesh["x"].reset_dataset(d)
 
     electrons = cur_it.particles["electrons"]
