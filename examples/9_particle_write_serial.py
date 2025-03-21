@@ -6,19 +6,17 @@ Copyright 2019-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
+from pathlib import Path
+
 import numpy as np
 from openpmd_api import (Access, Dataset, Mesh_Record_Component, Series,
                          Unit_Dimension)
 
-SCALAR = Mesh_Record_Component.SCALAR
-
-
 if __name__ == "__main__":
     # open file for writing
-    f = Series(
-        "../samples/9_particle_write_serial_py.h5",
-        Access.create
-    )
+    samples = Path("../samples")
+    filename = "9_particle_write_serial_py.h5"
+    f = Series(samples / filename, Access.create)
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)

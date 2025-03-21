@@ -1881,17 +1881,15 @@ class APITest(unittest.TestCase):
 
     def makeIteratorRoundTrip(self, backend, file_ending):
         # write
-        jsonConfig = """
-{
-  "defer_iteration_parsing": true,
-  "adios2": {
-    "engine": {
-      "type": "bp4",
-      "usesteps": true
-    }
-  }
-}
-"""
+        jsonConfig = {
+            "defer_iteration_parsing": True,
+            "adios2": {
+                "engine": {
+                    "type": "bp4",
+                    "usesteps": True
+                }
+            }
+        }
         series = io.Series(
             "../samples/unittest_serialIterator." + file_ending,
             io.Access_Type.create,
@@ -1985,7 +1983,7 @@ class APITest(unittest.TestCase):
         read = io.Series(
             name,
             io.Access_Type.read_only,
-            options='{"defer_iteration_parsing": true}'
+            options={"defer_iteration_parsing": True}
         )
 
         read.iterations[0].open()
@@ -2073,51 +2071,49 @@ class APITest(unittest.TestCase):
             self.writeFromTemporary(ext)
 
     def testJsonConfigADIOS2(self):
-        global_config = """
-{
-  "adios2": {
-    "engine": {
-      "type": "bp3",
-      "unused": "parameter",
-      "parameters": {
-        "BufferGrowthFactor": "2.0",
-        "Profile": "On"
-      }
-    },
-    "unused": "as well",
-    "dataset": {
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-              "clevel": "1",
-              "doshuffle": "BLOSC_BITSHUFFLE"
-          }
+        global_config = {
+            "adios2": {
+                "engine": {
+                    "type": "bp3",
+                    "unused": "parameter",
+                    "parameters": {
+                        "BufferGrowthFactor": "2.0",
+                        "Profile": "On"
+                    }
+                },
+                "unused": "as well",
+                "dataset": {
+                    "operators": [
+                        {
+                            "type": "blosc",
+                            "parameters": {
+                                "clevel": "1",
+                                "doshuffle": "BLOSC_BITSHUFFLE"
+                            }
+                        }
+                    ]
+                }
+            }
         }
-      ]
-    }
-  }
-}
-"""
-        local_config = """
-{
-  "adios2": {
-    "unused": "dataset parameter",
-    "dataset": {
-      "unused": "too",
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-              "clevel": "3",
-              "doshuffle": "BLOSC_BITSHUFFLE"
-          }
+
+        local_config = {
+            "adios2": {
+                "unused": "dataset parameter",
+                "dataset": {
+                    "unused": "too",
+                    "operators": [
+                        {
+                            "type": "blosc",
+                            "parameters": {
+                                "clevel": "3",
+                                "doshuffle": "BLOSC_BITSHUFFLE"
+                            }
+                        }
+                    ]
+                }
+            }
         }
-      ]
-    }
-  }
-}
-"""
+
         if not io.variants['adios2']:
             return
         series = io.Series(
@@ -2133,7 +2129,8 @@ class APITest(unittest.TestCase):
         E_x.store_chunk(data, [0], [1000])
 
         E_y = series.iterations[0].meshes["E"]["y"]
-        E_y.reset_dataset(DS(np.dtype("double"), [1000], local_config))
+        import json
+        E_y.reset_dataset(DS(np.dtype("double"), [1000], json.dumps(local_config)))
         E_y.store_chunk(data, [0], [1000])
 
         self.assertTrue(series)

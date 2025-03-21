@@ -19,6 +19,8 @@ defaults = """
 # Alternatively, the location of a JSON/TOML-file on the filesystem can
 # be passed by adding an at-sign `@` in front of the path
 # The format will then be recognized by filename extension, i.e. .json or .toml
+# In Python, normal Python dictionaries can also be used which will then be
+# converted via `json.dumps()` in the Series constructor.
 
 backend = "adios2"
 iteration_encoding = "group_based"
