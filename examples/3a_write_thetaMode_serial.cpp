@@ -42,8 +42,8 @@ int main()
     unsigned int const N_z = 200;
 
     // write values 0...size-1
-    std::vector<double> E_r_data(num_fields * N_r * N_z);
-    std::vector<float> E_t_data(num_fields * N_r * N_z);
+    std::vector<double> E_r_data(size_t(num_fields) * N_r * N_z);
+    std::vector<float> E_t_data(size_t(num_fields) * N_r * N_z);
     std::iota(E_r_data.begin(), E_r_data.end(), 0.0);
     std::iota(E_t_data.begin(), E_t_data.end(), 0.f);
 
