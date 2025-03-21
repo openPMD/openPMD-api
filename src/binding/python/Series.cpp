@@ -188,8 +188,9 @@ Construct a new Series. Parameters:
 * mpi_communicator: The MPI communicator
 
 For further details, refer to the non-MPI overload.
-            )END");
+            )END")
 #endif
+            ;
     }
 };
 } // namespace internal
