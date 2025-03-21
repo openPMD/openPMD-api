@@ -23,12 +23,13 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Pickle.hpp"
+#include "openPMD/binding/python/auxiliary.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 
-#include "openPMD/binding/python/Common.hpp"
 #include <optional>
 #include <tuple>
 
@@ -40,7 +41,6 @@
 //  re-implemented signatures:
 //  include <mpi4py/mpi4py.h>
 #include "openPMD/binding/python/Mpi.hpp"
-#include "openPMD/binding/python/auxiliary.hpp"
 #include <mpi.h>
 #endif
 

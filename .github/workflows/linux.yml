@@ -35,6 +35,7 @@ jobs:
           -DopenPMD_USE_MPI=OFF    \
           -DopenPMD_USE_HDF5=ON    \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DopenPMD_USE_FILESYSTEM_HEADER=OFF \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 4
         cd build
