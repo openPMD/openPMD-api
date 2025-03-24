@@ -172,8 +172,20 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get remove openmpi* libopenmpi* *hdf5* || true
-        sudo apt-get install g++ gfortran libmpich-dev mpich python3
+        sudo apt-get install g++ gfortran python3
         sudo .github/workflows/dependencies/install_spack
+
+        pushd /opt
+        sudo wget https://www.mpich.org/static/downloads/4.3.0/mpich-4.3.0.tar.gz
+        sudo tar -xzf mpich-4.3.0.tar.gz
+        cd mpich-4.3.0
+        sudo ./configure --prefix=/usr/local
+        sudo make -j 4
+        sudo make -j 4 install
+        cd ..
+        sudo rm -rf mpich-4.3.0 mpich-4.3.0.tar.gz
+        popd
+
     - name: Build
       env: {CC: gcc, CXX: g++, MPICH_CC: gcc, MPICH_CXX: g++, CXXFLAGS: -Werror}
       run: |
