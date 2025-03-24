@@ -1247,7 +1247,6 @@ void ADIOS2IOHandlerImpl::readAttribute(
     *parameters.dtype = ret;
 }
 
-#define openPMD_PREPARSE_EVERYTHING 1
 namespace
 {
     /* Used by both readAttribute() and readAttributeAllsteps() tasks.
@@ -1360,9 +1359,7 @@ namespace
         return determineDatatype<T>();
     }
 
-#if openPMD_PREPARSE_EVERYTHING
-
-    struct ReadAttributeAllstepsFullPreparsing
+    struct ReadAttributeAllsteps
     {
         struct GetAttribute
         {
@@ -1383,7 +1380,7 @@ namespace
             Parameter<Operation::READ_ATT_ALLSTEPS>::result_type
                 &put_result_here)
         {
-            std::vector<T> res;
+            auto &res = put_result_here.emplace<std::vector<T>>();
             res.reserve(preload.size());
             for (auto const &p : preload)
             {
@@ -1408,216 +1405,10 @@ namespace
                     name,
                     GetAttribute{p});
             }
-            put_result_here = std::move(res);
-        }
-
-        static constexpr char const *errorMsg =
-            "ReadAttributeAllstepsFullPreparsing";
-    };
-
-#else
-    struct ReadAttributeAllsteps
-    {
-        struct GetAttribute
-        {
-            adios2::IO &IO;
-            template <typename AdiosType>
-            [[nodiscard]] auto call(std::string const &name) const
-                -> detail::AttributeWithShapeAndResource<AdiosType>
-            {
-                return {IO.InquireAttribute<AdiosType>(name)};
-            }
-        };
-
-        template <typename T>
-        static void call(
-            adios2::IO &IO,
-            adios2::Engine &engine,
-            std::string const &name,
-            adios2::StepStatus status,
-            Parameter<Operation::READ_ATT_ALLSTEPS>::result_type
-                &put_result_here)
-        {
-            std::vector<T> res;
-            res.reserve(engine.Steps());
-            while (status == adios2::StepStatus::OK)
-            {
-                genericReadAttribute<T>(
-                    [&res](auto &&val) {
-                        using type = std::remove_reference_t<decltype(val)>;
-                        if constexpr (std::is_same_v<type, bool>)
-                        {
-                            throw error::ReadError(
-                                error::AffectedObject::Attribute,
-                                error::Reason::UnexpectedContent,
-                                "ADIOS2",
-                                "[ReadAttributeAllsteps] No support for "
-                                "Boolean attributes.");
-                        }
-                        else
-                        {
-                            res.emplace_back(static_cast<decltype(val)>(val));
-                        }
-                    },
-                    IO,
-                    name,
-                    GetAttribute{IO});
-                engine.EndStep();
-                status = engine.BeginStep();
-            }
-            switch (status)
-            {
-            case adios2::StepStatus::OK:
-                throw error::Internal("Control flow error.");
-            case adios2::StepStatus::NotReady:
-            case adios2::StepStatus::OtherError:
-                throw error::ReadError(
-                    error::AffectedObject::File,
-                    error::Reason::CannotRead,
-                    "ADIOS2",
-                    "Unexpected step status while preparsing snapshots.");
-            case adios2::StepStatus::EndOfStream:
-                break;
-            }
-            put_result_here = std::move(res);
         }
 
         static constexpr char const *errorMsg = "ReadAttributeAllsteps";
     };
-
-#if openPMD_HAVE_MPI
-    struct DistributeToAllRanks
-    {
-        template <typename T>
-        static void call(
-            Parameter<Operation::READ_ATT_ALLSTEPS>::result_type
-                &put_result_here_in,
-            MPI_Comm comm,
-            int rank)
-        {
-            if (rank != 0)
-            {
-                put_result_here_in = std::vector<T>{};
-            }
-            std::vector<T> &put_result_here =
-                std::get<std::vector<T>>(put_result_here_in);
-            size_t num_items = put_result_here.size();
-            MPI_CHECK(MPI_Bcast(
-                &num_items, 1, auxiliary::openPMD_MPI_type<size_t>(), 0, comm));
-            if constexpr (
-                std::is_same_v<T, std::string> ||
-                std::is_same_v<T, std::vector<std::string>> ||
-                std::is_same_v<T, bool> ||
-                std::is_same_v<T, std::vector<bool>> ||
-                auxiliary::IsArray_v<T> || isComplexFloatingPoint<T>())
-            {
-                throw error::OperationUnsupportedInBackend(
-                    "ADIOS2",
-                    "[readAttributeAllsteps] No support for attributes of type "
-                    "std::string, bool, std::complex or std::array in "
-                    "parallel.");
-            }
-            else if constexpr (
-                // auxiliary::IsArray_v<T> ||
-                auxiliary::IsVector_v<T>)
-            {
-                std::vector<size_t> sizes;
-                sizes.reserve(num_items);
-                if (rank == 0)
-                {
-                    std::transform(
-                        put_result_here.begin(),
-                        put_result_here.end(),
-                        std::back_inserter(sizes),
-                        [](T const &arr) { return arr.size(); });
-                }
-                sizes.resize(num_items);
-                MPI_CHECK(MPI_Bcast(
-                    sizes.data(),
-                    num_items,
-                    auxiliary::openPMD_MPI_type<size_t>(),
-                    0,
-                    comm));
-                size_t total_flat_size =
-                    std::accumulate(sizes.begin(), sizes.end(), size_t(0));
-                using flat_type = typename T::value_type;
-                std::vector<flat_type> flat_vector;
-                flat_vector.reserve(total_flat_size);
-                if (rank == 0)
-                {
-                    for (auto const &arr : put_result_here)
-                    {
-                        for (auto val : arr)
-                        {
-                            flat_vector.push_back(val);
-                        }
-                    }
-                }
-                flat_vector.resize(total_flat_size);
-                MPI_CHECK(MPI_Bcast(
-                    flat_vector.data(),
-                    total_flat_size,
-                    auxiliary::openPMD_MPI_type<flat_type>(),
-                    0,
-                    comm));
-                if (rank != 0)
-                {
-                    size_t offset = 0;
-                    put_result_here.reserve(num_items);
-                    for (size_t current_extent : sizes)
-                    {
-                        put_result_here.emplace_back(
-                            flat_vector.begin() + offset,
-                            flat_vector.begin() + offset + current_extent);
-                        offset += current_extent;
-                    }
-                }
-            }
-            else
-            {
-                std::vector<T> receive;
-                if (rank != 0)
-                {
-                    receive.resize(num_items);
-                }
-                MPI_CHECK(MPI_Bcast(
-                    rank == 0 ? put_result_here.data() : receive.data(),
-                    num_items,
-                    auxiliary::openPMD_MPI_type<T>(),
-                    0,
-                    comm));
-                if (rank != 0)
-                {
-                    put_result_here = std::move(receive);
-                }
-            }
-        }
-        static constexpr char const *errorMsg = "DistributeToAllRanks";
-    };
-
-    void warn_ignored_modifiable_attributes(adios2::IO &IO)
-    {
-        auto modifiable_flag = IO.InquireAttribute<detail::bool_representation>(
-            adios_defaults::str_useModifiableAttributes);
-        auto print_warning = [](std::string const &note) {
-            std::cerr << "Warning: " << note << R"(
-Random-access for variable-encoding in ADIOS2 is currently
-experimental. Support for modifiable attributes is currently not implemented
-yet, meaning that attributes such as /data/time will show useless values.
-Use Access::READ_LINEAR to retrieve those values if needed.
-)";
-        };
-        if (!modifiable_flag)
-        {
-            print_warning("File might be using modifiable attributes.");
-        }
-        else if (modifiable_flag.Data().at(0) != 0)
-        {
-            print_warning("File uses modifiable attributes.");
-        }
-    }
-#endif // openPMD_HAVE_MPI
-#endif // openPMD_PREPARSE_EVERYTHING
 } // namespace
 
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
@@ -1628,7 +1419,6 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto name = nameOfAttribute(writable, param.name);
     detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
 
-#if openPMD_PREPARSE_EVERYTHING
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
 #if openPMD_HAVE_MPI
     auto adios = [&]() {
@@ -1667,46 +1457,8 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     }
     engine.Close();
     auto &attributes = ba.attributes();
-    switchType<ReadAttributeAllstepsFullPreparsing>(
-        type, preload, IO, name, *param.resource);
+    switchType<ReadAttributeAllsteps>(type, preload, IO, name, *param.resource);
     attributes.m_data = std::move(preload);
-#else
-    auto read_from_file_in_serial = [&]() {
-        adios2::ADIOS adios;
-        auto IO = adios.DeclareIO("PreparseSnapshots");
-        IO.SetEngine(ba.m_IO.EngineType());
-        IO.SetParameters(ba.m_IO.Parameters());
-        IO.SetParameter("StreamReader", "ON"); // this be for BP4
-        auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
-        auto status = engine.BeginStep();
-        warn_ignored_modifiable_attributes(IO);
-        auto type = detail::attributeInfo(IO, name, /* verbose = */ true);
-        switchType<ReadAttributeAllsteps>(
-            type, IO, engine, name, status, *param.resource);
-        engine.Close();
-        return type;
-    };
-#if openPMD_HAVE_MPI
-    if (!m_communicator.has_value())
-    {
-        read_from_file_in_serial();
-        return;
-    }
-    int rank, size;
-    MPI_Comm_rank(*m_communicator, &rank);
-    MPI_Comm_size(*m_communicator, &size);
-    Datatype type;
-    if (rank == 0)
-    {
-        type = read_from_file_in_serial();
-    }
-    MPI_CHECK(MPI_Bcast(&type, 1, MPI_INT, 0, *m_communicator));
-    switchType<DistributeToAllRanks>(
-        type, *param.resource, *m_communicator, rank);
-#else
-    read_from_file_in_serial();
-#endif
-#endif
 }
 
 void ADIOS2IOHandlerImpl::listPaths(
