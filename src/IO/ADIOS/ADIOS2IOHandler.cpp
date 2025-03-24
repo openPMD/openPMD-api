@@ -1252,6 +1252,9 @@ namespace
     /* Used by both readAttribute() and readAttributeAllsteps() tasks.
        Functor fun will be called with the value of the retrieved attribute;
        both functions use different logic for processing the retrieved values.
+       Functor getAttribute is called for retrieving an attribute (Different
+       wrappers around IO::InquireAttribute<>()::Data(), together with
+       buffering).
      */
     template <typename T, typename Functor, typename GetAttribute>
     Datatype genericReadAttribute(
@@ -1364,6 +1367,7 @@ namespace
         struct GetAttribute
         {
             detail::PreloadAdiosAttributes const &p;
+
             template <typename AdiosType>
             [[nodiscard]] auto call(std::string const &name) const
                 -> detail::AttributeWithShapeAndResource<AdiosType>
@@ -1533,9 +1537,15 @@ void ADIOS2IOHandlerImpl::listPaths(
             auto tablePrefix = adios_defaults::str_activeTablePrefix + myName;
             std::vector attrs =
                 fileData.availableAttributesPrefixed(tablePrefix);
-            if (fileData.streamStatus ==
+            if (
+                // either a step is currently active...
+                fileData.streamStatus ==
                     detail::ADIOS2File::StreamStatus::DuringStep ||
+                // ...or a step selection is currently active
                 (fileData.stepSelection().has_value() &&
+                 // This check is currently redundant, but may be relevant if we
+                 // (re-)introduce a RandomAccessMode lite that does no
+                 // preparsing of attributes.
                  std::holds_alternative<
                      detail::AdiosAttributes::RandomAccess_t>(
                      fileData.attributes().m_data)))

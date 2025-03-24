@@ -1,4 +1,4 @@
-/* Copyright 2020-2021 Franz Poeschel
+/* Copyright 2020-2025 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -20,16 +20,16 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/config.hpp"
-#include <optional>
-#include <variant>
 #if openPMD_HAVE_ADIOS2
 
 #include <adios2.h>
 #include <map>
+#include <optional>
+#include <variant>
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 
 namespace openPMD::detail
 {
@@ -46,24 +46,21 @@ struct AttributeWithShape
 };
 
 /**
- * Class that is responsible for scheduling and buffering openPMD attribute
- * loads from ADIOS2, if using ADIOS variables to store openPMD attributes.
+ * Class that is responsible for buffering loaded openPMD attributes from
+ * ADIOS2.
  *
- * Reasoning: ADIOS variables can be of any shape and size, and ADIOS cannot
- * know which variables to buffer. While it will preload and buffer scalar
- * variables, openPMD also stores vector-type attributes which are not
- * preloaded. Since in Streaming setups, every variable load requires full
- * communication back to the writer, this can quickly become very expensive.
- * Hence, do this manually.
+ * This is used for reading variable-encoded files in random-access mode.
+ * Random-access mode in ADIOS2 has the restriction that modifiable attributes
+ * can only be recovered in normal non-random-access read mode, so we open the
+ * file first in that mode, store all attribute metadata in this class and only
+ * then continue in random-access mode.
  *
  */
 class PreloadAdiosAttributes
 {
 public:
     /**
-     * Internally used struct to store meta information on a buffered
-     * attribute. Public for simplicity (helper struct in the
-     * implementation uses it).
+     * Meta information on a buffered attribute.
      */
     struct AttributeLocation
     {
@@ -106,11 +103,7 @@ public:
     PreloadAdiosAttributes &operator=(PreloadAdiosAttributes &&other) = default;
 
     /**
-     * @brief Schedule attributes for preloading.
-     *
-     * This will invalidate all previously buffered attributes.
-     * This will *not* flush the scheduled loads. This way, attributes can
-     * be loaded along with the next adios2::Engine flush.
+     * @brief Load attributes from the current step into the buffer.
      *
      * @param IO
      */
@@ -131,45 +124,27 @@ public:
 
     Datatype attributeType(std::string const &name) const;
 
-    std::map<std::string, AttributeLocation> const &
-    availableAttributes() const &
-    {
-        return m_offsets;
-    }
+    std::map<std::string, AttributeLocation> const &availableAttributes() const;
 };
 
 template <typename T>
 struct AttributeWithShapeAndResource : AttributeWithShape<T>
 {
-    AttributeWithShapeAndResource(AttributeWithShape<T> parent)
-        : AttributeWithShape<T>(std::move(parent))
-    {}
+    AttributeWithShapeAndResource(AttributeWithShape<T> parent);
     AttributeWithShapeAndResource(
         size_t len_in,
         T const *data_in,
-        std::optional<std::vector<T>> resource_in)
-        : AttributeWithShape<T>{len_in, data_in}
-        , resource{std::move(resource_in)}
-    {}
-    explicit AttributeWithShapeAndResource() : AttributeWithShape<T>(0, nullptr)
-    {}
-    AttributeWithShapeAndResource(adios2::Attribute<T> attr)
-    {
-        if (!attr)
-        {
-            this->data = nullptr;
-            this->len = 0;
-            return;
-        }
-        auto vec = attr.Data();
-        this->len = vec.size();
-        this->data = vec.data();
-        this->resource = std::move(vec);
-    }
-    operator bool() const
-    {
-        return this->data;
-    }
+        std::optional<std::vector<T>> resource_in);
+    AttributeWithShapeAndResource(adios2::Attribute<T> attr);
+    operator bool() const;
+
+private:
+    /*
+     * Users should still use the API of AttributeWithShape (parent type), we
+     * just need somewhere to store the std::vector<T> returned by
+     * Attribute<T>::Data(). This field will not be used when using preparsing,
+     * because the data pointer will go right into the preparse buffer.
+     */
     std::optional<std::vector<T>> resource;
 };
 
@@ -178,12 +153,34 @@ struct AdiosAttributes
     using RandomAccess_t = std::vector<PreloadAdiosAttributes>;
     struct StreamAccess_t
     {
+        /*
+         * These are only buffered for performance reasons.
+         * IO::AvailableAttributes() returns by value, so we should avoid
+         * calling it too often. Instead, store the returned value along with
+         * the step, so we know when we need to update again (i.e. when the
+         * current step changes).
+         */
         size_t m_currentStep = 0;
         std::optional<std::map<std::string, adios2::Params>> m_attributes;
     };
 
+    /*
+     * Variant RandomAcces_t has to be initialized explicitly by
+     * ADIOS2IOHandlerImpl::readAttributeAllsteps(), so we use StreamAccess_t by
+     * default.
+     */
     std::variant<RandomAccess_t, StreamAccess_t> m_data = StreamAccess_t{};
 
+    /*
+     * Needs to be this somewhat ugly API since the AvailableAttributes map has
+     * a different type depending if we use preparsing or not. If we don't use
+     * preparsing, we just use the returned std::map<std::string,
+     * adios2::Params> from IO::AvailableAttributes(). Otherwise, we use the
+     * std::map<std::string, AttributeLocation> map from the
+     * PreloadAdiosAttributes class. The functor f will be called either with
+     * the one or the other, so needs to be written such that the mapped-to type
+     * does not matter.
+     */
     template <typename Functor>
     auto withAvailableAttributes(size_t step, adios2::IO &IO, Functor &&f)
         -> decltype(std::forward<Functor>(f)(

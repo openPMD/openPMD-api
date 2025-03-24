@@ -1,4 +1,4 @@
-/* Copyright 2020-2021 Franz Poeschel
+/* Copyright 2020-2025 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -20,7 +20,6 @@
  */
 
 #include "openPMD/config.hpp"
-#include <algorithm>
 #if openPMD_HAVE_ADIOS2
 
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
@@ -28,8 +27,10 @@
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include <optional>
 
 namespace openPMD::detail
 {
@@ -176,7 +177,7 @@ PreloadAdiosAttributes::AttributeLocation::~AttributeLocation()
 void PreloadAdiosAttributes::preloadAttributes(adios2::IO &IO)
 {
     m_offsets.clear();
-    std::map<Datatype, std::vector<std::string> > attributesByType;
+    std::map<Datatype, std::vector<std::string>> attributesByType;
     auto addAttribute = [&attributesByType](Datatype dt, std::string name) {
         constexpr size_t reserve = 10;
         auto it = attributesByType.find(dt);
@@ -271,6 +272,12 @@ Datatype PreloadAdiosAttributes::attributeType(std::string const &name) const
     return it->second.dt;
 }
 
+std::map<std::string, AttributeLocation> const &
+PreloadAdiosAttributes::availableAttributes() const
+{
+    return m_offsets;
+}
+
 template <typename T>
 auto AdiosAttributes::getAttribute(
     size_t step, adios2::IO &IO, std::string const &name) const
@@ -291,12 +298,54 @@ auto AdiosAttributes::getAttribute(
         m_data);
 }
 
+template <typename T>
+AttributeWithShapeAndResource<T>::AttributeWithShapeAndResource(
+    AttributeWithShape<T> parent)
+    : AttributeWithShape<T>(std::move(parent))
+{}
+template <typename T>
+AttributeWithShapeAndResource<T>::AttributeWithShapeAndResource(
+    size_t len_in, T const *data_in, std::optional<std::vector<T>> resource_in)
+    : AttributeWithShape<T>{len_in, data_in}, resource{std::move(resource_in)}
+{}
+template <typename T>
+AttributeWithShapeAndResource<T>::AttributeWithShapeAndResource(
+    adios2::Attribute<T> attr)
+{
+    if (!attr)
+    {
+        this->data = nullptr;
+        this->len = 0;
+        return;
+    }
+    auto vec = attr.Data();
+    this->len = vec.size();
+    this->data = vec.data();
+    this->resource = std::move(vec);
+}
+template <typename T>
+AttributeWithShapeAndResource<T>::operator bool() const
+{
+    return this->data;
+}
+
 #define OPENPMD_INSTANTIATE_GETATTRIBUTE(type)                                 \
     template AttributeWithShape<type> PreloadAdiosAttributes::getAttribute(    \
         std::string const &name) const;                                        \
     template auto AdiosAttributes::getAttribute(                               \
         size_t step, adios2::IO &IO, std::string const &name) const            \
-        -> AttributeWithShapeAndResource<type>;
+        -> AttributeWithShapeAndResource<type>;                                \
+    template AttributeWithShapeAndResource<                                    \
+        type>::AttributeWithShapeAndResource(AttributeWithShape<type> parent); \
+    template AttributeWithShapeAndResource<type>::                             \
+        AttributeWithShapeAndResource(                                         \
+            size_t len_in,                                                     \
+            type const                                                         \
+                *data_in, /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */    \
+            std::optional<std::vector<type>> resource_in);                     \
+    template AttributeWithShapeAndResource<                                    \
+        type>::AttributeWithShapeAndResource(adios2::Attribute<type> attr);    \
+    template AttributeWithShapeAndResource<type>::operator bool() const;
 ADIOS2_FOREACH_TYPE_1ARG(OPENPMD_INSTANTIATE_GETATTRIBUTE)
 #undef OPENPMD_INSTANTIATE_GETATTRIBUTE
 } // namespace openPMD::detail
