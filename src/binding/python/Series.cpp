@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Series.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
@@ -104,6 +105,14 @@ struct DefineSeriesConstructorPerPathType
     static auto filepath_as_string(py::object const &path) -> std::string
     {
         auto casted = path.attr("__str__")();
+        auto type_repr = py::repr(path).cast<std::string>();
+        if (type_repr.substr(0, 9) != "PosixPath" &&
+            type_repr.substr(0, 11) != "WindowsPath")
+        {
+            throw error::WrongAPIUsage(
+                "openpmd.Series constructor: 'filepath' argument may either be "
+                "a String or pathlib.Path.");
+        }
         return py::cast<std::string>(casted);
     }
 #endif
