@@ -20,11 +20,6 @@ spack:
       buildable: False
     hdf5:
       variants: +mpi
-    mpich:
-      externals:
-      - spec: mpich@4.2.0
-        prefix: /usr
-      buildable: False
     perl:
       externals:
       - spec: perl@5.38.2
