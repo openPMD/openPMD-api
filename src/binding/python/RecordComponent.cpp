@@ -529,7 +529,7 @@ struct PythonDynamicMemoryView
         , m_datatype(determineDatatype<T>())
     {}
 
-    [[nodiscard]] pybind11::memoryview currentView() const;
+    [[nodiscard]] pybind11::object currentView() const;
 
     std::shared_ptr<void> m_dynamicView;
     ShapeContainer m_arrayShape;
@@ -542,30 +542,48 @@ namespace
 struct GetCurrentView
 {
     template <typename T>
-    static pybind11::memoryview call(PythonDynamicMemoryView const &dynamicView)
+    static pybind11::object call(PythonDynamicMemoryView const &dynamicView)
     {
         auto span =
             static_cast<DynamicMemoryView<T> *>(dynamicView.m_dynamicView.get())
                 ->currentBuffer();
-        return py::memoryview::from_buffer(
-            span.data(),
-            dynamicView.m_arrayShape,
-            dynamicView.m_strides,
-            /* readonly = */ false);
+        if (!span.data())
+        {
+            /*
+             * Fallback for zero-sized store_chunk calls.
+             * py::memoryview cannot be used since it checks for nullpointers,
+             * even when the extent is zero.
+             * This may sound like an esoteric use case at first, but may happen
+             * in parallel usage when the chunk distribution ends up assigning
+             * zero-sized chunks to some rank.
+             */
+            return py::array(
+                dtype_to_numpy(dynamicView.m_datatype),
+                dynamicView.m_arrayShape,
+                dynamicView.m_strides);
+        }
+        else
+        {
+            return py::memoryview::from_buffer(
+                span.data(),
+                dynamicView.m_arrayShape,
+                dynamicView.m_strides,
+                /* readonly = */ false);
+        }
     }
 
     static constexpr char const *errorMsg = "DynamicMemoryView";
 };
 
 template <>
-pybind11::memoryview
+pybind11::object
 GetCurrentView::call<std::string>(PythonDynamicMemoryView const &)
 {
     throw std::runtime_error("[DynamicMemoryView] Only PODs allowed.");
 }
 } // namespace
 
-pybind11::memoryview PythonDynamicMemoryView::currentView() const
+pybind11::object PythonDynamicMemoryView::currentView() const
 {
     return switchNonVectorType<GetCurrentView>(m_datatype, *this);
 }
