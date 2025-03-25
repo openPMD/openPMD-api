@@ -22,8 +22,8 @@ spack:
       variants: +mpi
     mpich:
       externals:
-      - spec: mpich@4.2.0
-        prefix: /usr
+      - spec: mpich@4.2.1
+        prefix: /usr/local
       buildable: False
     perl:
       externals:
