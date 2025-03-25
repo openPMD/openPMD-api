@@ -18,7 +18,8 @@ int main()
 
     using position_t = double;
 
-#if !__NVCOMPILER // see https://github.com/ToruNiina/toml11/issues/205
+// see https://github.com/ToruNiina/toml11/issues/205
+#if !defined(__NVCOMPILER_MAJOR__) || __NVCOMPILER_MAJOR__ >= 23
     /*
      * This example demonstrates how to use JSON/TOML-based dynamic
      * configuration for openPMD.
