@@ -246,7 +246,11 @@ void ADIOS2IOHandlerImpl::init(
           }
         })";
         auto init_json_shadow = nlohmann::json::parse(init_json_shadow_str);
-        json::merge(cfg.getShadow(), init_json_shadow);
+        std::cout << "Will merge:\n"
+                  << init_json_shadow << "\ninto:\n"
+                  << cfg.getShadow() << std::endl;
+        json::merge_internal(
+            cfg.getShadow(), init_json_shadow, /* do_prune = */ false);
     }
 
     if (cfg.json().contains("adios2"))
@@ -455,7 +459,8 @@ auto ADIOS2IOHandlerImpl::parseDatasetConfig(
             adios2_config_it != parsed_config.config.end())
         {
             auto copy = buffered_config;
-            json::merge(copy, adios2_config_it.value());
+            json::merge_internal(
+                copy, adios2_config_it.value(), /* do_prune = */ false);
             copy = nlohmann::json{{"adios2", std::move(copy)}};
             parsed_config.config = std::move(copy);
         }
