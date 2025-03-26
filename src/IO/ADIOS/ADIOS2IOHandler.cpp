@@ -1282,7 +1282,7 @@ void ADIOS2IOHandlerImpl::openDataset(
      * here.
      */
     [[maybe_unused]] auto [operators, _] =
-        parseDatasetConfig(parameters, writable, varName);
+        parseDatasetConfig(parameters, writable, varName, readOperators);
     switchAdios2VariableType<detail::DatasetOpener>(
         *parameters.dtype,
         this,
