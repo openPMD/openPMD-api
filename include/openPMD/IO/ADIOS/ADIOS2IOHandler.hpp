@@ -509,6 +509,22 @@ private:
         }
         else
         {
+           if (var.ShapeID() ==  adios2::ShapeID::JoinedArray)
+           {
+               // When you reach here due to a mysterious inconsistency observed from time to time
+               // e.g. adios2::JoinedDim=(~(size_t)0) which for 64 bits = 18446744073709551615
+               // but the particle shape,  when printed out,  turns out to be
+               // [18446744073709551614]
+               //
+               if (!offset.empty())
+               {
+                 throw std::runtime_error(
+                     "[ADIOS2] Offset must be an empty vector in case of joined "
+                     "array.");
+               }
+           }
+           else
+           {
             for (unsigned int i = 0; i < actualDim; i++)
             {
                 if (!(joinedDim.has_value() && *joinedDim == i) &&
@@ -518,6 +534,7 @@ private:
                         "[ADIOS2] Dataset access out of bounds.");
                 }
             }
+	   }// else
         }
 
         var.SetSelection(
