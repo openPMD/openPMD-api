@@ -364,7 +364,12 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             }
             meshes.flush(s.meshesPath(), flushParams);
             for (auto &m : meshes)
-                m.second.flush(m.first, flushParams);
+            {
+                if (m.second.dirtyRecursive())
+                {
+                    m.second.flush(m.first, flushParams);
+                }
+            }
         }
         else
         {
@@ -380,7 +385,12 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             }
             particles.flush(s.particlesPath(), flushParams);
             for (auto &species : particles)
-                species.second.flush(species.first, flushParams);
+            {
+                if (species.second.dirtyRecursive())
+                {
+                    species.second.flush(species.first, flushParams);
+                }
+            }
         }
         else
         {
