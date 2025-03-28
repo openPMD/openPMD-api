@@ -168,12 +168,15 @@ void ParticleSpecies::flush(
     }
     else
     {
-        auto it = find("position");
-        if (it != end())
-            it->second.setUnitDimension({{UnitDimension::L, 1}});
-        it = find("positionOffset");
-        if (it != end())
-            it->second.setUnitDimension({{UnitDimension::L, 1}});
+        if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+        {
+            auto it = find("position");
+            if (it != end())
+                it->second.setUnitDimension({{UnitDimension::L, 1}});
+            it = find("positionOffset");
+            if (it != end())
+                it->second.setUnitDimension({{UnitDimension::L, 1}});
+        }
 
         Container<Record>::flush(path, flushParams);
 

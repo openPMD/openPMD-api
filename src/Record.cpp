@@ -45,8 +45,8 @@ Record &Record::setUnitDimension(unit_representations::AsMap const &udim)
 }
 Record &Record::setUnitDimension(unit_representations::AsArray const &udim)
 {
-    return setUnitDimension(
-        unit_representations::asMap(udim, /* skip_zeros = */ false));
+    setAttribute("unitDimension", udim);
+    return *this;
 }
 
 void Record::flush_impl(
