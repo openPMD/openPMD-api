@@ -114,6 +114,15 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         dCreate.name = rc.m_name;
         IOHandler()->enqueue(IOTask(this, dCreate));
     }
+
+    if (size == 0)
+    {
+        // Don't forward this operation to the backend as it might create ugly
+        // zero-blocks in ADIOS2
+        setDirtyRecursive(true);
+        return DynamicMemoryView<T>();
+    }
+
     Parameter<Operation::GET_BUFFER_VIEW> getBufferView;
     getBufferView.offset = o;
     getBufferView.extent = e;

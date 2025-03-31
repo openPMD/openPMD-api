@@ -113,7 +113,10 @@ private:
     }
 
 public:
-    explicit DynamicMemoryView() = default;
+    explicit DynamicMemoryView()
+    {
+        m_param.out->backendManagedBuffer = false;
+    }
 
     /**
      * @brief Acquire the underlying buffer at its current position in memory.
