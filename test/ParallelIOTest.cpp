@@ -1995,7 +1995,29 @@ void joined_dim(std::string const &ext)
             patchExtent.store<type>(10);
         }
         writeFrom.clear();
+        // There seems to be a bug making this flush call necessary, need to fix
+        it.seriesFlush();
         it.close();
+
+        it = s.writeIterations()[200];
+
+        // Test issue fixed with
+        // https://github.com/openPMD/openPMD-api/pull/1740
+
+        auto bug_dataset = it.particles["flush_multiple_times"]["position"];
+
+        std::vector<int> buffer(length_of_patch * 2);
+        std::iota(buffer.begin(), buffer.end(), length_of_patch * 2 * rank);
+
+        bug_dataset.resetDataset({Datatype::INT, {Dataset::JOINED_DIMENSION}});
+        bug_dataset.storeChunkRaw(buffer.data(), {}, {length_of_patch});
+        it.seriesFlush();
+
+        bug_dataset.resetDataset({Datatype::INT, {Dataset::JOINED_DIMENSION}});
+        bug_dataset.storeChunkRaw(
+            buffer.data() + length_of_patch, {}, {length_of_patch});
+        it.seriesFlush();
+
         s.close();
     }
 
