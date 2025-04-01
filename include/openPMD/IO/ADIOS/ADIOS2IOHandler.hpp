@@ -489,12 +489,20 @@ private:
             }
         }
         auto joinedDim = joinedDimension(shape);
-        if (joinedDim.has_value())
+        if (joinedDim.has_value() ||
+            var.ShapeID() == adios2::ShapeID::JoinedArray)
         {
             if (!offset.empty())
             {
                 throw std::runtime_error(
                     "[ADIOS2] Offset must be an empty vector in case of joined "
+                    "array.");
+            }
+            if (!joinedDim.has_value())
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Trying to access a dataset as a non-joined "
+                    "array, but it has previously been configured as a joined "
                     "array.");
             }
             for (unsigned int i = 0; i < actualDim; i++)
@@ -509,35 +517,16 @@ private:
         }
         else
         {
-            if (var.ShapeID() == adios2::ShapeID::JoinedArray)
+            for (unsigned int i = 0; i < actualDim; i++)
             {
-                // When you reach here due to a mysterious inconsistency
-                // observed from time to time e.g.
-                // adios2::JoinedDim=(~(size_t)0) which for 64 bits =
-                // 18446744073709551615 but the particle shape,  when printed
-                // out,  turns out to be [18446744073709551614]
-                //
-                if (!offset.empty())
+                if (!(joinedDim.has_value() && *joinedDim == i) &&
+                    offset[i] + extent[i] > shape[i])
                 {
                     throw std::runtime_error(
-                        "[ADIOS2] Offset must be an empty vector in case of "
-                        "joined "
-                        "array.");
+                        "[ADIOS2] Dataset access out of bounds.");
                 }
             }
-            else
-            {
-                for (unsigned int i = 0; i < actualDim; i++)
-                {
-                    if (!(joinedDim.has_value() && *joinedDim == i) &&
-                        offset[i] + extent[i] > shape[i])
-                    {
-                        throw std::runtime_error(
-                            "[ADIOS2] Dataset access out of bounds.");
-                    }
-                }
-            } // else
-        }
+        } // else
 
         var.SetSelection(
             {adios2::Dims(offset.begin(), offset.end()),
