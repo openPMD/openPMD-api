@@ -242,5 +242,40 @@ namespace auxiliary
         });
         return std::forward<S>(s);
     }
+
+    template <typename Stream, typename Vec>
+    auto write_vec_to_stream(Stream &&s, Vec const &vec) -> Stream &&
+    {
+        if (vec.empty())
+        {
+            s << "[]";
+        }
+        else
+        {
+            s << '[';
+            auto it = vec.begin();
+            s << *it++;
+            auto end = vec.end();
+            for (; it != end; ++it)
+            {
+                s << ", " << *it;
+            }
+            s << ']';
+        }
+        return std::forward<Stream>(s);
+    }
+
+    template <typename Vec>
+    auto vec_as_string(Vec const &vec) -> std::string
+    {
+        if (vec.empty())
+        {
+            return "[]";
+        }
+        else
+        {
+            return write_vec_to_stream(std::stringstream(), vec).str();
+        }
+    }
 } // namespace auxiliary
 } // namespace openPMD

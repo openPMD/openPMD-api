@@ -34,6 +34,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 #include <stdexcept>
@@ -489,28 +490,44 @@ private:
             }
         }
         auto joinedDim = joinedDimension(shape);
+        auto make_runtime_error = [&](char const *message) {
+            std::stringstream s;
+            s << "[ADIOS2IOHandlerImpl::verifyDataset()] " << message;
+            s << "\nNote: Variable '" << varName << "' has shape ";
+            auxiliary::write_vec_to_stream(s, shape)
+                << ", is accessed from offset ";
+            auxiliary::write_vec_to_stream(s, offset) << " with extent ";
+            auxiliary::write_vec_to_stream(s, extent);
+            if (joinedDim.has_value())
+            {
+                s << " (joined dimension on index " << *joinedDim << ").";
+            }
+            else
+            {
+                s << " (no joined dimension).";
+            }
+            return std::runtime_error(s.str());
+        };
         if (joinedDim.has_value() ||
             var.ShapeID() == adios2::ShapeID::JoinedArray)
         {
             if (!offset.empty())
             {
-                throw std::runtime_error(
-                    "[ADIOS2] Offset must be an empty vector in case of joined "
-                    "array.");
+                throw make_runtime_error(
+                    "Offset must be an empty vector in case of joined array.");
             }
             if (!joinedDim.has_value())
             {
-                throw std::runtime_error(
-                    "[ADIOS2] Trying to access a dataset as a non-joined "
-                    "array, but it has previously been configured as a joined "
-                    "array.");
+                throw make_runtime_error(
+                    "Trying to access a dataset as a non-joined array, but it "
+                    "has previously been array.");
             }
             for (unsigned int i = 0; i < actualDim; i++)
             {
                 if (*joinedDim != i && extent[i] != shape[i])
                 {
-                    throw std::runtime_error(
-                        "[ADIOS2] store_chunk extent of non-joined dimensions "
+                    throw make_runtime_error(
+                        "store_chunk extent of non-joined dimensions "
                         "must be equivalent to the total extent.");
                 }
             }
@@ -522,8 +539,7 @@ private:
                 if (!(joinedDim.has_value() && *joinedDim == i) &&
                     offset[i] + extent[i] > shape[i])
                 {
-                    throw std::runtime_error(
-                        "[ADIOS2] Dataset access out of bounds.");
+                    throw make_runtime_error("Dataset access out of bounds.");
                 }
             }
         } // else
