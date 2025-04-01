@@ -356,18 +356,14 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     if (!written())
     {
         auto &rc = get();
-        Parameter<Operation::CREATE_DATASET> dCreate;
-        dCreate.name = rc.m_name;
-        dCreate.extent = getExtent();
-        dCreate.dtype = getDatatype();
-        dCreate.joinedDimension = joinedDimension();
         if (!rc.m_dataset.has_value())
         {
             throw error::WrongAPIUsage(
                 "[RecordComponent] Must specify dataset type and extent before "
                 "using storeChunk() (see RecordComponent::resetDataset()).");
         }
-        dCreate.options = rc.m_dataset.value().options;
+        Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
+        dCreate.name = rc.m_name;
         IOHandler()->enqueue(IOTask(this, dCreate));
     }
     Parameter<Operation::GET_BUFFER_VIEW> getBufferView;

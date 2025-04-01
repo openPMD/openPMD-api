@@ -312,12 +312,9 @@ void RecordComponent::flush(
             }
             else
             {
-                Parameter<Operation::CREATE_DATASET> dCreate;
+                Parameter<Operation::CREATE_DATASET> dCreate(
+                    rc.m_dataset.value());
                 dCreate.name = name;
-                dCreate.extent = getExtent();
-                dCreate.dtype = getDatatype();
-                dCreate.options = rc.m_dataset.value().options;
-                dCreate.joinedDimension = joinedDimension();
                 IOHandler()->enqueue(IOTask(this, dCreate));
             }
         }

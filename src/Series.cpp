@@ -415,7 +415,8 @@ void Series::flushRankTable()
         {
             return;
         }
-        Parameter<Operation::CREATE_DATASET> param;
+        Parameter<Operation::CREATE_DATASET> param(
+            AbstractParameter::I_dont_want_to_use_joined_dimensions);
         param.name = "rankTable";
         param.dtype = Datatype::CHAR;
         param.extent = {uint64_t(size), uint64_t(maxSize)};

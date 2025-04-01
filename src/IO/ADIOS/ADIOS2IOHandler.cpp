@@ -888,6 +888,57 @@ namespace detail
             {
                 dims.push_back(ext);
             }
+            auto joinedDim = joinedDimension(var.Shape());
+            auto make_runtime_error = [&](char const *message) {
+                std::stringstream s;
+                s << "[ADIOS2IOHandlerImpl::extendDataset()] " << message
+                  << "\nNote: Variable '" << variable << "' has old shape ";
+                auxiliary::write_vec_to_stream(s, var.Shape());
+                if (joinedDim.has_value())
+                {
+                    s << " (joined dimension on index " << *joinedDim << ").";
+                }
+                else
+                {
+                    s << " (no joined dimension)";
+                }
+                s << " and is extended to new shape ";
+                auxiliary::write_vec_to_stream(s, newShape) << ".";
+                return std::runtime_error(s.str());
+            };
+            if (joinedDim.has_value() ||
+                var.ShapeID() == adios2::ShapeID::JoinedArray)
+            {
+                if (!joinedDim.has_value())
+                {
+                    throw make_runtime_error(
+                        "Inconsistent state of variable: Has shape ID "
+                        "JoinedArray, but its shape contains no value "
+                        "adios2::JoinedDim.");
+                }
+                if (newShape.at(*joinedDim) != Dataset::JOINED_DIMENSION)
+                {
+                    throw make_runtime_error(
+                        "Variable was previously configured with a joined "
+                        "dimension, so the new dataset extent must keep the "
+                        "joined dimension on that index.");
+                }
+                dims[*joinedDim] = adios2::JoinedDim;
+            }
+            else
+            {
+                for (auto s : newShape)
+                {
+                    if (s == Dataset::JOINED_DIMENSION)
+                    {
+                        throw make_runtime_error(
+                            "Variable was not previously configured with a "
+                            "joined dimension, but is now requested to change "
+                            "extent to a joined array.");
+                    }
+                }
+            }
+
             var.SetShape(dims);
         }
 
