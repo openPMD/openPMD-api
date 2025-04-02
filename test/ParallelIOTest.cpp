@@ -1937,7 +1937,7 @@ void joined_dim(std::string const &ext)
 
     {
         Series s(
-            "../samples/joinedDimParallel." + ext,
+            "../samples/joinedDimParallel_%T." + ext,
             Access::CREATE,
             MPI_COMM_WORLD);
         std::vector<UniquePtrWithLambda<type>> writeFrom(patches_per_rank);
@@ -2001,7 +2001,7 @@ void joined_dim(std::string const &ext)
 
     {
         Series s(
-            "../samples/joinedDimParallel." + ext,
+            "../samples/joinedDimParallel_%T." + ext,
             Access::READ_ONLY,
             MPI_COMM_WORLD);
         auto it = s.iterations[100];
