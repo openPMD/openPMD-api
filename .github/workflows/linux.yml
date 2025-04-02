@@ -35,7 +35,6 @@ jobs:
           -DopenPMD_USE_MPI=OFF    \
           -DopenPMD_USE_HDF5=ON    \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DopenPMD_USE_FILESYSTEM_HEADER=OFF \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 4
         cd build
@@ -267,10 +266,11 @@ jobs:
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
       run: |
         share/openPMD/download_samples.sh build
-        cmake -S . -B build \
-          -DopenPMD_USE_PYTHON=ON \
-          -DopenPMD_USE_MPI=ON    \
-          -DopenPMD_USE_HDF5=ON   \
+        cmake -S . -B build                  \
+          -DopenPMD_USE_PYTHON=ON            \
+          -DopenPMD_USE_MPI=ON               \
+          -DopenPMD_USE_HDF5=ON              \
+          -DopenPMD_USE_FILESYSTEM_HEADER=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
@@ -291,11 +291,12 @@ jobs:
       env: {CXXFLAGS: -Werror}
       run: |
         share/openPMD/download_samples.sh build
-        cmake -S . -B build \
-          -DopenPMD_USE_PYTHON=ON \
-          -DopenPMD_USE_MPI=OFF   \
-          -DopenPMD_USE_HDF5=ON   \
-          -DopenPMD_USE_INVASIVE_TESTS=ON \
+        cmake -S . -B build                  \
+          -DopenPMD_USE_PYTHON=ON            \
+          -DopenPMD_USE_MPI=OFF              \
+          -DopenPMD_USE_HDF5=ON              \
+          -DopenPMD_USE_INVASIVE_TESTS=ON    \
+          -DopenPMD_USE_FILESYSTEM_HEADER=ON \
           -DPython_EXECUTABLE=$(which python3.10)
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
@@ -318,13 +319,14 @@ jobs:
       env: {CXXFLAGS: -Werror}
       run: |
         share/openPMD/download_samples.sh build
-        cmake -S . -B build \
+        cmake -S . -B build                                \
           -DCMAKE_CXX_FLAGS="-Wno-error=stringop-overread" \
-          -DCMAKE_C_FLAGS="-Wno-error=stringop-overread" \
-          -DopenPMD_USE_PYTHON=ON \
-          -DopenPMD_USE_MPI=ON    \
-          -DopenPMD_USE_HDF5=ON   \
-          -DopenPMD_USE_ADIOS2=ON \
+          -DCMAKE_C_FLAGS="-Wno-error=stringop-overread"   \
+          -DopenPMD_USE_PYTHON=ON                          \
+          -DopenPMD_USE_MPI=ON                             \
+          -DopenPMD_USE_HDF5=ON                            \
+          -DopenPMD_USE_ADIOS2=ON                          \
+          -DopenPMD_USE_FILESYSTEM_HEADER=ON               \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
