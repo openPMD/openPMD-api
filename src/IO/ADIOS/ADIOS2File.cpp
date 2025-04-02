@@ -1034,10 +1034,7 @@ void ADIOS2File::flush_impl(
         }
         // Move the operations out of the queue so that no one has ideas to run
         // them for a second time
-        drainedUniquePtrPuts = std::move(m_uniquePtrPuts);
-        // m_uniquePtrPuts is in a valid, but unspecified state after moving
-        // --> clear it
-        m_uniquePtrPuts.clear();
+        drainedUniquePtrPuts.swap(m_uniquePtrPuts);
     }
 
     if (readOnly(m_mode))
