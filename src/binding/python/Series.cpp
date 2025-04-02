@@ -86,8 +86,25 @@ struct DefineSeriesConstructorPerPathType
 
     static auto json_cfg_as_string(py::object const &obj) -> std::string
     {
+#if !openPMD_USE_FILESYSTEM_HEADER
+        auto type_repr = py::repr(obj).cast<std::string>();
+        if (type_repr.substr(0, 9) == "PosixPath" ||
+            type_repr.substr(0, 11) == "WindowsPath")
+        {
+            auto casted = obj.attr("__str__")();
+            return "@" + py::cast<std::string>(casted);
+        }
+#endif
         return ::auxiliary::json_dumps(obj);
     }
+
+#if openPMD_USE_FILESYSTEM_HEADER
+    static auto json_cfg_as_string(std::filesystem::path const &cfg_path)
+        -> std::string
+    {
+        return "@" + std::string(cfg_path);
+    }
+#endif
 
     static constexpr auto filepath_as_string(std::string const &str)
         -> std::string const &
@@ -104,7 +121,6 @@ struct DefineSeriesConstructorPerPathType
 #else
     static auto filepath_as_string(py::object const &path) -> std::string
     {
-        auto casted = path.attr("__str__")();
         auto type_repr = py::repr(path).cast<std::string>();
         if (type_repr.substr(0, 9) != "PosixPath" &&
             type_repr.substr(0, 11) != "WindowsPath")
@@ -113,6 +129,7 @@ struct DefineSeriesConstructorPerPathType
                 "openpmd.Series constructor: 'filepath' argument may either be "
                 "a String or pathlib.Path.");
         }
+        auto casted = path.attr("__str__")();
         return py::cast<std::string>(casted);
     }
 #endif
@@ -139,11 +156,15 @@ struct DefineSeriesConstructorPerPathType
                 R"END(
 Construct a new Series. Parameters:
 
-* filepath: The file path.
+* filepath: The file path, either as a String or as pathlib.Path.
 * at: Access mode.
 * options: Advanced backend configuration via JSON.
-    May be specified as a JSON-formatted string directly, or as a path
-    to a JSON textfile, prepended by an at sign '@'.
+    May be specified as:
+
+    1. a Python object representing the JSON structure,
+    2. a JSON-formatted string directly,
+    3. a pathlib.Path to a JSON textfile,
+    3. as a String-type path to a JSON textfile, prepended by an at sign '@'.
 
 For details on access modes, JSON/TOML configuration and iteration encoding,
 refer to:
@@ -375,12 +396,19 @@ not possible once it has been closed.
     py::class_<Series, Attributable> cl(m, "Series");
     ::auxiliary::ForEachType<
         ::internal::DefineSeriesConstructorPerPathType,
-        std::tuple<std::string, std::string>,
-        std::tuple<std::string, py::object>,
+    // First tuple components are eligible types for the path argument
+    // second component for the config argument
+    // py::object needs to always come last, as a catch-all pattern
 #if openPMD_USE_FILESYSTEM_HEADER
+        std::tuple<std::string, std::string>,
+        std::tuple<std::string, std::filesystem::path>,
+        std::tuple<std::string, py::object>,
         std::tuple<std::filesystem::path, std::string>,
+        std::tuple<std::filesystem::path, std::filesystem::path>,
         std::tuple<std::filesystem::path, py::object>
 #else
+        std::tuple<std::string, std::string>,
+        std::tuple<std::string, py::object>,
         std::tuple<py::object, std::string>,
         std::tuple<py::object, py::object>
 #endif

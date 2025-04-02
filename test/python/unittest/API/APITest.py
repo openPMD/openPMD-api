@@ -2219,6 +2219,26 @@ class APITest(unittest.TestCase):
         self.assertEqual(e_chargeDensity.geometry, io.Geometry.other)
         self.assertEqual(e_chargeDensity.geometry_string, "other")
 
+    def testSeriesConstructors(self):
+        import json
+        from pathlib import Path
+
+        cfg = {"iteration_encoding": "variable_based"}
+        cfg_as_string = json.dumps(cfg)
+        cfg_as_file = "../samples/cfg.json"
+        with open(cfg_as_file, 'w') as f:
+            json.dump(cfg, f)
+        cfg_as_filepath = Path(cfg_as_file)
+
+        series_path = "../samples/series_constructors.json"
+        series_filepath = Path(series_path)
+
+        for f in [series_path, series_filepath]:
+            for c in [cfg, cfg_as_string, f"@{cfg_as_file}", cfg_as_filepath]:
+                # print(f"Creating Series with '{f}'\t'{c}'")
+                s = io.Series(f, io.Access.create, c)
+                s.close()
+
 
 if __name__ == '__main__':
     unittest.main()
