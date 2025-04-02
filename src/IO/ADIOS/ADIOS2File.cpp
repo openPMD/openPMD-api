@@ -225,18 +225,16 @@ void ADIOS2File::finalize()
     {
         return;
     }
+    if (!m_uniquePtrPuts.empty())
+    {
+        throw error::Internal(
+            "[ADIOS2 backend] Orphaned unique-ptr put operations found "
+            "when closing file.");
+    }
     // if write accessing, ensure that the engine is opened
-    // and that all datasets are written
-    // (attributes and unique_ptr datasets are written upon closing a step
-    // or a file which users might never do)
-    bool needToWrite = !m_uniquePtrPuts.empty();
-    if ((needToWrite || !m_engine) && writeOnly(m_mode))
+    if (!m_engine && writeOnly(m_mode))
     {
         getEngine();
-        for (auto &entry : m_uniquePtrPuts)
-        {
-            entry.run(*this);
-        }
     }
     if (m_engine)
     {
@@ -1027,12 +1025,19 @@ void ADIOS2File::flush_impl(
         initializedDefaults = true;
     }
 
+    std::vector<BufferedUniquePtrPut> drainedUniquePtrPuts;
     if (writeLatePuts)
     {
         for (auto &entry : m_uniquePtrPuts)
         {
             entry.run(*this);
         }
+        // Move the operations out of the queue so that no one has ideas to run
+        // them for a second time
+        drainedUniquePtrPuts = std::move(m_uniquePtrPuts);
+        // m_uniquePtrPuts is in a valid, but unspecified state after moving
+        // --> clear it
+        m_uniquePtrPuts.clear();
     }
 
     if (readOnly(m_mode))
@@ -1047,10 +1052,7 @@ void ADIOS2File::flush_impl(
         m_updateSpans.clear();
         m_buffer.clear();
         m_alreadyEnqueued.clear();
-        if (writeLatePuts)
-        {
-            m_uniquePtrPuts.clear();
-        }
+        drainedUniquePtrPuts.clear();
 
         break;
 
