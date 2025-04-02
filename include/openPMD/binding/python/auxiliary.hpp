@@ -26,4 +26,27 @@
 namespace auxiliary
 {
 auto json_dumps(py::object const &obj) -> std::string;
-}
+
+template <typename Functor, typename... Types>
+struct ForEachType;
+
+template <typename Functor, typename FirstType, typename... OtherTypes>
+struct ForEachType<Functor, FirstType, OtherTypes...>
+{
+    template <typename... Args>
+    static void call(Args &&...args)
+    {
+        Functor::template call<FirstType>(args...);
+        ForEachType<Functor, OtherTypes...>::template call<Args...>(args...);
+    }
+};
+
+template <typename Functor>
+struct ForEachType<Functor>
+{
+    template <typename... Args>
+    static constexpr void call(Args &&...)
+    { /* no-op */
+    }
+};
+} // namespace auxiliary
