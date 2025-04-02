@@ -13,6 +13,10 @@ spack:
   packages:
     adios2:
       variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~mgard
+    c-blosc2:
+      # snappy broken on CMake 4.0
+      # fixed snappy not yet deployed to a Spack release
+      variants: ~snappy
     cmake:
       externals:
       - spec: cmake@3.31.5
