@@ -599,9 +599,11 @@ Parameters:
                std::string const &overwrite,
                py::object &comm) {
                 auto variant = pythonObjectAsMpiComm(comm);
-                if (auto errorMsg = std::get_if<std::string>(&variant))
+                if (auto errorMsg =
+                        std::get_if<py_object_to_mpi_comm_error>(&variant))
                 {
-                    throw std::runtime_error("[merge_json] " + *errorMsg);
+                    throw std::runtime_error(
+                        "[merge_json] " + std::string(*errorMsg));
                 }
                 else
                 {
