@@ -9,23 +9,26 @@ Variants
 The following options can be added to the ``cmake`` call to control features.
 CMake controls options with prefixed ``-D``, e.g. ``-DopenPMD_USE_MPI=OFF``:
 
-============================== =============== ========================================================================
-CMake Option                   Values          Description
-============================== =============== ========================================================================
-``openPMD_USE_MPI``            **AUTO**/ON/OFF Parallel, Multi-Node I/O for clusters
-``openPMD_USE_HDF5``           **AUTO**/ON/OFF HDF5 backend (``.h5`` files)
-``openPMD_USE_ADIOS2``         **AUTO**/ON/OFF ADIOS2 backend (``.bp`` files in BP3, BP4 or higher)
-``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Enable Python bindings
-``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`1`
-``openPMD_USE_VERIFY``         **ON**/OFF      Enable internal VERIFY (assert) macro independent of build type :sup:`2`
-``openPMD_INSTALL``            **ON**/OFF      Add installation targets
-``openPMD_INSTALL_RPATH``      **ON**/OFF      Add RPATHs to installed binaries
-``Python_EXECUTABLE``          (newest found)  Path to Python executable
-============================== =============== ========================================================================
+================================= =============== ===============================================================================
+CMake Option                      Values          Description
+================================= =============== ===============================================================================
+``openPMD_USE_MPI``               **AUTO**/ON/OFF Parallel, Multi-Node I/O for clusters
+``openPMD_USE_HDF5``              **AUTO**/ON/OFF HDF5 backend (``.h5`` files)
+``openPMD_USE_ADIOS2``            **AUTO**/ON/OFF ADIOS2 backend (``.bp`` files in BP3, BP4 or higher)
+``openPMD_USE_PYTHON``            **AUTO**/ON/OFF Enable Python bindings
+``openPMD_USE_INVASIVE_TESTS``    ON/**OFF**      Enable unit tests that modify source code :sup:`1`
+``openPMD_USE_VERIFY``            **ON**/OFF      Enable internal VERIFY (assert) macro independent of build type :sup:`2`
+``openPMD_INSTALL``               **ON**/OFF      Add installation targets
+``openPMD_INSTALL_RPATH``         **ON**/OFF      Add RPATHs to installed binaries
+``Python_EXECUTABLE``             (newest found)  Path to Python executable
+``openPMD_USE_FILESYSTEM_HEADER`` ON/**OFF**      In-/Exclude optional features implemented with ``<filesystem>`` header :sup:`3`
+================================= =============== ===============================================================================
 
 :sup:`1` e.g. changes C++ visibility keywords, breaks MSVC
 
 :sup:`2` this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged
+
+:sup:`3` currently only used for supporting ``pathlib.Path``-type arguments in the Python API; a manual fallback implementation is used otherwise
 
 
 Shared or Static
