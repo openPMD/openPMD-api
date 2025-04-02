@@ -711,6 +711,13 @@ void JSONIOHandlerImpl::extendDataset(
     VERIFY_ALWAYS(
         access::write(m_handler->m_backendAccess),
         "[JSON] Cannot extend a dataset in read-only mode.")
+
+    if (parameters.joinedDimension.has_value())
+    {
+        error::throwOperationUnsupportedInBackend(
+            "JSON", "Joined Arrays currently only supported in ADIOS2");
+    }
+
     setAndGetFilePosition(writable);
     refreshFileFromParent(writable);
     auto &j = obtainJsonContents(writable);

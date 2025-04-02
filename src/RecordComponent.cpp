@@ -339,8 +339,8 @@ void RecordComponent::flush(
             }
             else
             {
-                Parameter<Operation::EXTEND_DATASET> pExtend;
-                pExtend.extent = rc.m_dataset.value().extent;
+                Parameter<Operation::EXTEND_DATASET> pExtend(
+                    rc.m_dataset.value().extent);
                 IOHandler()->enqueue(IOTask(this, std::move(pExtend)));
                 rc.m_hasBeenExtended = false;
             }

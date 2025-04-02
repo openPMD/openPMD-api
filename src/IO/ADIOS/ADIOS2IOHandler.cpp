@@ -873,7 +873,10 @@ namespace detail
     {
         template <typename T, typename... Args>
         static void call(
-            adios2::IO &IO, std::string const &variable, Extent const &newShape)
+            adios2::IO &IO,
+            std::string const &variable,
+            Extent const &newShape,
+            std::optional<size_t> const &newJoinedDim)
         {
             auto var = IO.InquireVariable<T>(variable);
             if (!var)
@@ -888,54 +891,60 @@ namespace detail
             {
                 dims.push_back(ext);
             }
-            auto joinedDim = joinedDimension(var.Shape());
+            auto oldJoinedDim = joinedDimension(var.Shape());
             auto make_runtime_error = [&](char const *message) {
                 std::stringstream s;
                 s << "[ADIOS2IOHandlerImpl::extendDataset()] " << message
                   << "\nNote: Variable '" << variable << "' has old shape ";
                 auxiliary::write_vec_to_stream(s, var.Shape());
-                if (joinedDim.has_value())
+                if (oldJoinedDim.has_value())
                 {
-                    s << " (joined dimension on index " << *joinedDim << ").";
+                    s << " (joined dimension on index " << *oldJoinedDim << ")";
                 }
                 else
                 {
                     s << " (no joined dimension)";
                 }
                 s << " and is extended to new shape ";
-                auxiliary::write_vec_to_stream(s, newShape) << ".";
+                auxiliary::write_vec_to_stream(s, newShape);
+                if (newJoinedDim.has_value())
+                {
+                    s << " (joined dimension on index " << *newJoinedDim
+                      << ").";
+                }
+                else
+                {
+                    s << " (no joined dimension).";
+                }
                 return std::runtime_error(s.str());
             };
-            if (joinedDim.has_value() ||
+            if (oldJoinedDim.has_value() ||
                 var.ShapeID() == adios2::ShapeID::JoinedArray)
             {
-                if (!joinedDim.has_value())
+                if (!oldJoinedDim.has_value())
                 {
                     throw make_runtime_error(
                         "Inconsistent state of variable: Has shape ID "
                         "JoinedArray, but its shape contains no value "
                         "adios2::JoinedDim.");
                 }
-                if (newShape.at(*joinedDim) != Dataset::JOINED_DIMENSION)
+                if (newJoinedDim != oldJoinedDim)
                 {
                     throw make_runtime_error(
                         "Variable was previously configured with a joined "
                         "dimension, so the new dataset extent must keep the "
                         "joined dimension on that index.");
                 }
-                dims[*joinedDim] = adios2::JoinedDim;
+                dims[*newJoinedDim] = adios2::JoinedDim;
             }
             else
             {
-                for (auto s : newShape)
+                if (newJoinedDim.has_value())
                 {
-                    if (s == Dataset::JOINED_DIMENSION)
-                    {
-                        throw make_runtime_error(
-                            "Variable was not previously configured with a "
-                            "joined dimension, but is now requested to change "
-                            "extent to a joined array.");
-                    }
+                    throw make_runtime_error(
+                        "Variable was not previously configured with a "
+                        "joined dimension, but is now requested to change "
+                        "extent to a joined array.");
                 }
             }
 
@@ -958,7 +967,7 @@ void ADIOS2IOHandlerImpl::extendDataset(
     auto &filedata = getFileData(file, IfFileNotOpen::ThrowError);
     Datatype dt = detail::fromADIOS2Type(filedata.m_IO.VariableType(name));
     switchAdios2VariableType<detail::DatasetExtender>(
-        dt, filedata.m_IO, name, parameters.extent);
+        dt, filedata.m_IO, name, parameters.extent, parameters.joinedDimension);
 }
 
 void ADIOS2IOHandlerImpl::openFile(

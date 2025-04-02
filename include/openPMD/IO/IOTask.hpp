@@ -405,7 +405,15 @@ template <>
 struct OPENPMDAPI_EXPORT Parameter<Operation::EXTEND_DATASET>
     : public AbstractParameter
 {
-    Parameter() = default;
+    Parameter(Extent e) : joinedDimension(Dataset::joinedDimension(e))
+    {
+        this->extent = std::move(e);
+    }
+
+    // default constructor, but callsites need to explicitly acknowledge that
+    // joined dimensions will not be automatically configured when using it
+    Parameter(I_dont_want_to_use_joined_dimensions_t)
+    {}
     Parameter(Parameter &&) = default;
     Parameter(Parameter const &) = default;
     Parameter &operator=(Parameter &&) = default;
@@ -418,6 +426,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::EXTEND_DATASET>
     }
 
     Extent extent = {};
+    std::optional<size_t> joinedDimension;
 };
 
 template <>

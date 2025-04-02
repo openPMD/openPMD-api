@@ -840,6 +840,12 @@ void HDF5IOHandlerImpl::extendDataset(
         throw std::runtime_error(
             "[HDF5] Extending an unwritten Dataset is not possible.");
 
+    if (parameters.joinedDimension.has_value())
+    {
+        error::throwOperationUnsupportedInBackend(
+            "HDF5", "Joined Arrays currently only supported in ADIOS2");
+    }
+
     auto res = getFile(writable);
     if (!res)
         res = getFile(writable->parent);
