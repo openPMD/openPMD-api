@@ -741,6 +741,22 @@ TEST_CASE("close_and_copy_attributable_test", "[serial]")
     }
 }
 
+TEST_CASE("issue_1744_unique_ptrs_at_close_time", "[serial]")
+{
+#if openPMD_HAVE_ADIOS2
+    openPMD::Series write(
+        "../samples/issue_1744_unique_ptrs_at_close_time.bp4",
+        openPMD::Access::CREATE,
+        R"({"iteration_encoding": "group_based"})");
+    std::unique_ptr<int[]> data_unique(new int[10]);
+    std::iota(data_unique.get(), data_unique.get() + 10, 0);
+    auto E_x = write.writeIterations()[0].meshes["E"]["x"];
+    E_x.resetDataset({openPMD::Datatype::INT, {10}});
+    E_x.storeChunk(std::move(data_unique), {0}, {10});
+    write.close();
+#endif
+}
+
 #if openPMD_HAVE_ADIOS2
 TEST_CASE("close_iteration_throws_test", "[serial]")
 {

@@ -231,6 +231,7 @@ void ADIOS2File::finalize()
             m_ADIOS.RemoveIO(m_IOName);
         }
     }
+    m_uniquePtrPuts.clear();
     finalized = true;
 }
 
