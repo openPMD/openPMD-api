@@ -542,7 +542,7 @@ private:
                     throw make_runtime_error("Dataset access out of bounds.");
                 }
             }
-        } // else
+        }
 
         var.SetSelection(
             {adios2::Dims(offset.begin(), offset.end()),
