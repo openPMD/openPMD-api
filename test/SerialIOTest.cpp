@@ -7757,11 +7757,12 @@ void groupbased_read_write(std::string const &ext)
             R"({"toml":{"dataset":{"mode":"dataset"}}})");
         // create a new iteration
         auto E_x = write.iterations[2].meshes["E"]["x"];
-        E_x.resetDataset(ds);
+        E_x.resetDataset({Datatype::INT, {10}});
 
-        data = 2;
+        std::unique_ptr<int[]> data_unique(new int[10]);
+        std::iota(data_unique.get(), data_unique.get() + 10, 0);
 
-        E_x.storeChunkRaw(&data, {0}, {1});
+        E_x.storeChunk(std::move(data_unique), {0}, {10});
         E_x.setAttribute("updated_in_run", 2);
         write.close();
     }
