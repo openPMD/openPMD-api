@@ -27,6 +27,21 @@ namespace auxiliary
 {
 auto json_dumps(py::object const &obj) -> std::string;
 
+/*
+ * Functor is a struct of the form:
+ *
+ * struct Functor
+ * {
+ *     template<typename T>
+ *     static void call(... any kind of argument ...);
+ * };
+ *
+ * The variadic parameter pack (Types) specifies types which to supply for T.
+ *
+ * ForEachTypeNested<Functor, T1, T2, ...>::call(...args...) will then
+ * call Functor::template call<T>() for each type T in T1, T2, ...
+ * one after another.
+ */
 template <typename Functor, typename... Types>
 struct ForEachType;
 
@@ -37,7 +52,8 @@ struct ForEachType<Functor, FirstType, OtherTypes...>
     static void call(Args &&...args)
     {
         Functor::template call<FirstType>(args...);
-        ForEachType<Functor, OtherTypes...>::template call<Args...>(args...);
+        ForEachType<Functor, OtherTypes...>::template call<Args...>(
+            std::forward<Args>(args)...);
     }
 };
 
