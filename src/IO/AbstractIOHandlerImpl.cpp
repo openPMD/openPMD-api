@@ -22,6 +22,7 @@
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
@@ -42,29 +43,6 @@ AbstractIOHandlerImpl::AbstractIOHandlerImpl(AbstractIOHandler *handler)
 
 namespace
 {
-    template <typename Vec>
-    auto vec_as_string(Vec const &vec) -> std::string
-    {
-        if (vec.empty())
-        {
-            return "[]";
-        }
-        else
-        {
-            std::stringstream res;
-            res << '[';
-            auto it = vec.begin();
-            res << *it++;
-            auto end = vec.end();
-            for (; it != end; ++it)
-            {
-                res << ", " << *it;
-            }
-            res << ']';
-            return res.str();
-        }
-    }
-
     template <typename T, typename SFINAE = void>
     struct self_or_invoked
     {

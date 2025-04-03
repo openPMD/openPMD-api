@@ -79,7 +79,8 @@ void init_Dataset(py::module &m)
                 })
 
             .def_property_readonly(
-                "joined_dimension", &Dataset::joinedDimension)
+                "joined_dimension",
+                py::overload_cast<>(&Dataset::joinedDimension, py::const_))
             .def_readonly("extent", &Dataset::extent)
             .def("extend", &Dataset::extend)
             .def_readonly("rank", &Dataset::rank)

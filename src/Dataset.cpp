@@ -69,6 +69,11 @@ bool Dataset::empty() const
 
 std::optional<size_t> Dataset::joinedDimension() const
 {
+    return joinedDimension(extent);
+}
+
+std::optional<size_t> Dataset::joinedDimension(Extent const &extent)
+{
     std::optional<size_t> res;
     for (size_t i = 0; i < extent.size(); ++i)
     {
