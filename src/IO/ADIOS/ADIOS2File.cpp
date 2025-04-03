@@ -225,16 +225,18 @@ void ADIOS2File::finalize()
     {
         return;
     }
-    if (!m_uniquePtrPuts.empty())
-    {
-        throw error::Internal(
-            "[ADIOS2 backend] Orphaned unique-ptr put operations found "
-            "when closing file.");
-    }
     // if write accessing, ensure that the engine is opened
-    if (!m_engine && writeOnly(m_mode))
+    // and that all datasets are written
+    // (attributes and unique_ptr datasets are written upon closing a step
+    // or a file which users might never do)
+    bool needToWrite = !m_uniquePtrPuts.empty();
+    if ((needToWrite || !m_engine) && writeOnly(m_mode))
     {
         getEngine();
+        for (auto &entry : m_uniquePtrPuts)
+        {
+            entry.run(*this);
+        }
     }
     if (m_engine)
     {
@@ -250,6 +252,7 @@ void ADIOS2File::finalize()
             m_ADIOS.RemoveIO(m_IOName);
         }
     }
+    m_uniquePtrPuts.clear();
     finalized = true;
 }
 
