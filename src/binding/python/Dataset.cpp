@@ -26,46 +26,58 @@
 
 #include <string>
 
+namespace internal
+{
+struct DefineDatasetConstructor
+{
+    static constexpr auto resolve_datatype(Datatype dt) -> Datatype
+    {
+        return dt;
+    }
+
+    static auto resolve_datatype(py::dtype dt) -> Datatype
+    {
+        return dtype_from_numpy(std::move(dt));
+    }
+
+    static auto resolve_datatype(py::object const& dt) -> Datatype
+    {
+        return dtype_from_numpy(dt);
+    }
+
+    static constexpr auto resolve_options(std::string const &str)
+        -> std::string const &
+    {
+        return str;
+    }
+
+    static auto resolve_options(py::object const &obj) -> std::string
+    {
+        return ::auxiliary::json_dumps(obj);
+    }
+
+    template <typename Datatype_t, typename Options_t>
+    static auto call(py::class_<Dataset> &ds) -> py::class_<Dataset> &
+    {
+        return ds.def(
+            py::init([](Datatype_t dt, Extent e, Options_t const &options) {
+                auto resolved_dtype = resolve_datatype(dt);
+                decltype(auto) resolved_options = resolve_options(options);
+                return new Dataset{
+                    resolved_dtype, std::move(e), resolved_options};
+            }),
+            py::arg("dtype"),
+            py::arg("extent"),
+            py::arg("options") = "{}");
+    }
+};
+} // namespace internal
+
 void init_Dataset(py::module &m)
 {
     auto pyDataset =
         py::class_<Dataset>(m, "Dataset")
             .def(py::init<Extent>(), py::arg("extent"))
-            .def(
-                py::init<Datatype, Extent, std::string>(),
-                py::arg("dtype"),
-                py::arg("extent"),
-                py::arg("options") = "{}")
-            .def(
-                py::init([](py::object dt, Extent e, std::string options) {
-                    auto const d = dtype_from_numpy(std::move(dt));
-                    return new Dataset{d, std::move(e), std::move(options)};
-                }),
-                py::arg("dtype"),
-                py::arg("extent"),
-                py::arg("options") = "{}")
-            .def(
-                py::init([](Datatype dt, Extent e, py::object const &options) {
-                    auto resolved_options = ::auxiliary::json_dumps(options);
-                    return new Dataset{
-                        dt, std::move(e), std::move(resolved_options)};
-                }),
-                py::arg("dtype"),
-                py::arg("extent"),
-                py::arg("options"))
-            .def(
-                py::init([](py::object const &dt,
-                            Extent e,
-                            py::object const &options) {
-                    auto const d = dtype_from_numpy(dt);
-                    auto resolved_options = ::auxiliary::json_dumps(options);
-                    return new Dataset{
-                        d, std::move(e), std::move(resolved_options)};
-                }),
-                py::arg("dtype"),
-                py::arg("extent"),
-                py::arg("options"))
-
             .def(
                 "__repr__",
                 [](const Dataset &d) {
@@ -99,6 +111,12 @@ void init_Dataset(py::module &m)
                 "dtype",
                 [](const Dataset &d) { return dtype_to_numpy(d.dtype); })
             .def_readwrite("options", &Dataset::options);
+    ::auxiliary::ForEachTypeNested<
+        ::internal::DefineDatasetConstructor,
+        // types for Datatype param
+        std::tuple<Datatype, py::dtype, py::object const&>,
+        // types for options param
+        std::tuple<std::string, py::object>>::call(pyDataset);
     pyDataset.attr("JOINED_DIMENSION") =
         py::int_(uint64_t(Dataset::JOINED_DIMENSION));
 }
