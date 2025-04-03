@@ -760,6 +760,14 @@ TEST_CASE("close_and_copy_attributable_test", "[serial]")
     }
 }
 
+TEST_CASE("issue_1744_unique_ptrs_at_close_time", "[serial]")
+{
+#if openPMD_HAVE_ADIOS2
+    issue_1744_unique_ptrs_at_close_time::
+        issue_1744_unique_ptrs_at_close_time();
+#endif
+}
+
 #if openPMD_HAVE_ADIOS2
 TEST_CASE("close_and_reopen_test", "[serial]")
 {
