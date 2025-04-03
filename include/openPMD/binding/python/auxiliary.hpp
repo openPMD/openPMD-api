@@ -68,6 +68,32 @@ struct ForEachType<Functor>
 
 namespace internal
 {
+    /*
+     * Apply types contained in Tuple to the template Templ.
+     */
+    template <template <typename...> typename Templ, typename Tuple>
+    struct apply_tuple_types;
+    template <template <typename...> typename Templ, typename... Args>
+    struct apply_tuple_types<Templ, std::tuple<Args...>>
+    {
+        using type = Templ<Args...>;
+    };
+    template <template <typename...> typename Templ, typename Tuple>
+    using apply_tuple_types_t = typename apply_tuple_types<Templ, Tuple>::type;
+
+    /*
+     * Add a first type before the others in Tuple.
+     */
+    template <typename FirstType, typename Tuple>
+    struct prepend_to_tuple;
+    template <typename FirstType, typename... Othertypes>
+    struct prepend_to_tuple<FirstType, std::tuple<Othertypes...>>
+    {
+        using type = std::tuple<FirstType, Othertypes...>;
+    };
+    template <typename FirstType, typename Tuple>
+    using prepend_to_tuple_t =
+        typename prepend_to_tuple<FirstType, Tuple>::type;
 
     template <typename Functor, typename... Tuples>
     struct ForEachTypeNestedImpl;
@@ -77,30 +103,10 @@ namespace internal
     struct ForEachTypeNestedImpl<Functor, FirstTuple, Tuples...>
     {
 
-        template <typename InnerFunctor, typename Tuple>
-        struct ForEachType_Tuple;
-
-        template <typename InnerFunctor, typename... Types>
-        struct ForEachType_Tuple<InnerFunctor, std::tuple<Types...>>
-        {
-            template <typename... Args>
-            static void call(Args &&...args)
-            {
-                ForEachType<InnerFunctor, Types...>::template call<Args...>(
-                    std::forward<Args>(args)...);
-            }
-        };
-
-        template <typename FirstType, typename Tuple>
-        struct PrependToTuple;
-        template <typename FirstType, typename... Othertypes>
-        struct PrependToTuple<FirstType, std::tuple<Othertypes...>>
-        {
-            using type = std::tuple<FirstType, Othertypes...>;
-        };
-
-        // transform the outer Functor such that the first type argument
-        // FirstType is already specified
+        /*
+         * Transform the outer Functor such that the first type argument
+         * FirstType is already specified
+         */
         template <typename FirstType>
         struct PartialApply
         {
@@ -110,12 +116,16 @@ namespace internal
             static void call(Args &&...args)
             {
                 using concatenated_tuple_t =
-                    typename PrependToTuple<FirstType, RestTypes>::type;
+                    prepend_to_tuple_t<FirstType, RestTypes>;
                 Functor::template call<concatenated_tuple_t, Args...>(
                     std::forward<Args>(args)...);
             }
         };
 
+        /*
+         * Internal Functor to be passed to ForEachType, for iterating every
+         * type contained in FirstTuple.
+         */
         struct Runner
         {
             template <typename Type1, typename... Args>
@@ -131,8 +141,10 @@ namespace internal
         template <typename... Args>
         static void call(Args &&...args)
         {
-            // outer loop
-            using foreach_t = ForEachType_Tuple<Runner, FirstTuple>;
+            // outer loop --> iterate over each type contained in FirstTuple
+            using foreach_t = apply_tuple_types_t<
+                ForEachType,
+                prepend_to_tuple_t<Runner, FirstTuple>>;
             foreach_t::template call<Args...>(std::forward<Args>(args)...);
         }
     };
@@ -149,6 +161,23 @@ namespace internal
     };
 } // namespace internal
 
+/*
+ * Functor is a struct of the form:
+ *
+ * struct Functor
+ * {
+ *     template<typename T1, typename T2, ...>
+ *     static void call(... any kind of argument ...);
+ * };
+ *
+ * The variadic parameter pack (Tuples) specifies for each template parameter
+ * (T1, T2, ...) of the call<>() function template a tuple of types that should
+ * be applied.
+ *
+ * ForEachTypeNested<Functor, Tuple1, Tuple2, ...>::call(...args...) will then
+ * call Functor::template call<T1, T2, ...>() for each possible combination of
+ * T1 <- Tuple1, T2 <- Tuple2, ...
+ */
 template <typename Functor, typename... Tuples>
 struct ForEachTypeNested
 {
@@ -165,6 +194,15 @@ struct ForEachTypeNested
         }
     };
 
+    /*
+     * For easier internal handling, transform the Functor into one that
+     * accepts its template parameters as a single Tuple argument of the form
+     * std::tuple<T1, T2, ...>.
+     * This is necessary since we need variadic arguments already
+     * to generically specify that the call function template accepts any kinds
+     * of arguments; and we cannot have more than one range of variadic type
+     * args.
+     */
     struct TupledFunctor
     {
         template <typename Tuple, typename... Args>
