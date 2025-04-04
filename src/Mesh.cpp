@@ -375,14 +375,12 @@ void Mesh::flush_impl(
         auto &m = get();
         if (m.m_datasetDefined)
         {
-            T_RecordComponent::flush(
-                SCALAR, flushParams, /* is_scalar = */ true);
+            T_RecordComponent::flush(SCALAR, flushParams);
         }
         else
         {
             for (auto &comp : *this)
-                comp.second.flush(
-                    comp.first, flushParams, /* is_scalar = */ false);
+                comp.second.flush(comp.first, flushParams);
         }
     }
     else
@@ -392,7 +390,7 @@ void Mesh::flush_impl(
             if (scalar())
             {
                 MeshRecordComponent &mrc = *this;
-                mrc.flush(name, flushParams, /* is_scalar = */ true);
+                mrc.flush(name, flushParams);
             }
             else
             {
@@ -402,8 +400,7 @@ void Mesh::flush_impl(
                 for (auto &comp : *this)
                 {
                     comp.second.parent() = &this->writable();
-                    comp.second.flush(
-                        comp.first, flushParams, /* is_scalar = */ false);
+                    comp.second.flush(comp.first, flushParams);
                 }
             }
         }
@@ -411,14 +408,12 @@ void Mesh::flush_impl(
         {
             if (scalar())
             {
-                T_RecordComponent::flush(
-                    name, flushParams, /* is_scalar = */ true);
+                T_RecordComponent::flush(name, flushParams);
             }
             else
             {
                 for (auto &comp : *this)
-                    comp.second.flush(
-                        comp.first, flushParams, /* is_scalar = */ false);
+                    comp.second.flush(comp.first, flushParams);
             }
         }
         if (!containsAttribute("gridUnitSI"))

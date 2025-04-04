@@ -70,9 +70,7 @@ void MeshRecordComponent::read()
 }
 
 void MeshRecordComponent::flush(
-    std::string const &name,
-    internal::FlushParams const &params,
-    bool is_scalar)
+    std::string const &name, internal::FlushParams const &params)
 {
     if (!dirtyRecursive())
     {
@@ -83,7 +81,7 @@ void MeshRecordComponent::flush(
     {
         setPosition(std::vector<double>{0});
     }
-    RecordComponent::flush(name, params, is_scalar);
+    RecordComponent::flush(name, params);
 }
 
 template <typename T>

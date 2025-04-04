@@ -52,10 +52,10 @@ void PatchRecord::flush_impl(
                 path, flushParams); // warning (clang-tidy-10):
                                     // bugprone-parent-virtual-call
         for (auto &comp : *this)
-            comp.second.flush(comp.first, flushParams, /* is_scalar = */ false);
+            comp.second.flush(comp.first, flushParams);
     }
     else
-        T_RecordComponent::flush(path, flushParams, /* is_scalar = */ true);
+        T_RecordComponent::flush(path, flushParams);
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
         setDirty(false);

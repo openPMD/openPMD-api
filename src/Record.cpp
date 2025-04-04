@@ -60,14 +60,12 @@ void Record::flush_impl(
     {
         if (scalar())
         {
-            T_RecordComponent::flush(
-                SCALAR, flushParams, /* is_scalar = */ true);
+            T_RecordComponent::flush(SCALAR, flushParams);
         }
         else
         {
             for (auto &comp : *this)
-                comp.second.flush(
-                    comp.first, flushParams, /* is_scalar = */ false);
+                comp.second.flush(comp.first, flushParams);
         }
     }
     else
@@ -77,7 +75,7 @@ void Record::flush_impl(
             if (scalar())
             {
                 RecordComponent &rc = *this;
-                rc.flush(name, flushParams, /* is_scalar = */ true);
+                rc.flush(name, flushParams);
             }
             else
             {
@@ -87,8 +85,7 @@ void Record::flush_impl(
                 for (auto &comp : *this)
                 {
                     comp.second.parent() = getWritable(this);
-                    comp.second.flush(
-                        comp.first, flushParams, /* is_scalar = */ false);
+                    comp.second.flush(comp.first, flushParams);
                 }
             }
         }
@@ -97,14 +94,12 @@ void Record::flush_impl(
 
             if (scalar())
             {
-                T_RecordComponent::flush(
-                    name, flushParams, /* is_scalar = */ true);
+                T_RecordComponent::flush(name, flushParams);
             }
             else
             {
                 for (auto &comp : *this)
-                    comp.second.flush(
-                        comp.first, flushParams, /* is_scalar = */ false);
+                    comp.second.flush(comp.first, flushParams);
             }
         }
 
