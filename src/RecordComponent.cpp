@@ -122,7 +122,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         {
             throw error::Internal(
                 "A zero-dimensional dataset is not to be considered empty, but "
-                "undefined. This is an internal safeguard against future "
+                "undefined. This error is an internal safeguard against future "
                 "changes that might not consider this.");
         }
         else if (d.dtype != Datatype::UNDEFINED)
@@ -431,9 +431,6 @@ namespace
     };
 } // namespace
 
-inline void breakpoint()
-{}
-
 void RecordComponent::readBase(bool require_unit_si)
 {
     using DT = Datatype;
@@ -441,9 +438,7 @@ void RecordComponent::readBase(bool require_unit_si)
 
     readAttributes(ReadMode::FullyReread);
 
-    auto read_constant =
-        [&]() // comment for forcing clang-format into putting a newline here
-    {
+    auto read_constant = [&]() {
         Attribute a = rc.readAttribute("value");
         DT dtype = a.dtype;
         setWritten(false, Attributable::EnqueueAsynchronously::No);
@@ -486,7 +481,6 @@ void RecordComponent::readBase(bool require_unit_si)
 
     if (constant() && !empty())
     {
-        breakpoint();
         read_constant();
     }
 

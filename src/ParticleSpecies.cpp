@@ -76,8 +76,6 @@ void ParticleSpecies::read()
             auto att_begin = aList.attributes->begin();
             auto att_end = aList.attributes->end();
             auto value = std::find(att_begin, att_end, "value");
-            // @todo see this comment:
-            // https://github.com/openPMD/openPMD-standard/pull/289#issuecomment-2407263974
             if (value != att_end)
             {
                 RecordComponent &rc = r;
