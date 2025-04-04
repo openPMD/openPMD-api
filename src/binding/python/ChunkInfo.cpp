@@ -294,10 +294,12 @@ void init_Chunk(py::module &m)
             py::arg("rank_meta_out") = RankMeta());
 
     py::class_<FromPartialStrategy, Strategy>(m, "FromPartialStrategy")
-        .def(py::init([](PartialStrategy const &firstPass,
-                         Strategy const &secondPass) {
-            return FromPartialStrategy(firstPass.clone(), secondPass.clone());
-        }));
+        .def(
+            py::init([](PartialStrategy const &firstPass,
+                        Strategy const &secondPass) {
+                return FromPartialStrategy(
+                    firstPass.clone(), secondPass.clone());
+            }));
 
     py::class_<RoundRobin, Strategy>(m, "RoundRobin").def(py::init<>());
     py::class_<RoundRobinOfSourceRanks, Strategy>(m, "RoundRobinOfSourceRanks")
