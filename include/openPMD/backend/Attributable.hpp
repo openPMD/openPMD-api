@@ -56,6 +56,7 @@ namespace internal
 {
     class IterationData;
     class SeriesData;
+    struct HomogenizeExtents;
 
     class SharedAttributableData
     {
@@ -242,6 +243,7 @@ class Attributable
     friend class StatefulSnapshotsContainer;
     friend class internal::AttributableData;
     friend class Snapshots;
+    friend struct internal::HomogenizeExtents;
 
 protected:
     // tag for internal constructor

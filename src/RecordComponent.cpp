@@ -59,6 +59,82 @@ namespace internal
         a.setDirtyRecursive(true);
         m_chunks.push(std::move(task));
     }
+
+    void HomogenizeExtents::check_extent(
+        Attributable const &callsite, RecordComponent &rc)
+    {
+        auto extent = rc.getExtent();
+        if (extent.empty())
+        {
+            without_extent.emplace_back(rc);
+        }
+        else if (retrieved_extent.has_value())
+        {
+            if (extent != *retrieved_extent)
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Group,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    "Inconsistent extents found for Record '" +
+                        callsite.myPath().openPMDPath() + "'.");
+            }
+        }
+        else
+        {
+            retrieved_extent = std::move(extent);
+        }
+    }
+
+    auto HomogenizeExtents::merge(
+        Attributable const &callsite, HomogenizeExtents other)
+        -> HomogenizeExtents &
+    {
+        if (retrieved_extent.has_value() && other.retrieved_extent.has_value())
+        {
+            if (*retrieved_extent != *other.retrieved_extent)
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Group,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    "Inconsistent extents found for Record '" +
+                        callsite.myPath().openPMDPath() + "'.");
+            }
+        }
+        else if (!retrieved_extent.has_value())
+        {
+            retrieved_extent = std::move(other.retrieved_extent);
+        }
+
+        for (auto &rc : other.without_extent)
+        {
+            this->without_extent.emplace_back(std::move(rc));
+        }
+        return *this;
+    }
+
+    void HomogenizeExtents::homogenize(Attributable const &callsite) &&
+    {
+        if (!retrieved_extent.has_value())
+        {
+            throw error::ReadError(
+                error::AffectedObject::Group,
+                error::Reason::UnexpectedContent,
+                std::nullopt,
+                "No extent found for any component contained in '" +
+                    callsite.myPath().openPMDPath() + "'.");
+        }
+        auto &ext = *retrieved_extent;
+        for (auto &rc : without_extent)
+        {
+            rc.setWritten(false, Attributable::EnqueueAsynchronously::No);
+            rc.resetDataset(Dataset(Datatype::UNDEFINED, ext));
+            rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
+        }
+        without_extent.clear();
+    }
+
 } // namespace internal
 
 template <typename T>
@@ -178,7 +254,7 @@ Extent RecordComponent::getExtent() const
     }
     else
     {
-        return {1};
+        return {};
     }
 }
 

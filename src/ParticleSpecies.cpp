@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/backend/Writable.hpp"
@@ -35,6 +36,7 @@ ParticleSpecies::ParticleSpecies()
 
 void ParticleSpecies::read()
 {
+    internal::HomogenizeExtents homogenizeExtents;
     /* obtain all non-scalar records */
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(this, pList));
@@ -83,9 +85,10 @@ void ParticleSpecies::read()
                 IOHandler()->flush(internal::defaultFlushParams);
                 rc.get().m_isConstant = true;
             }
+            internal::HomogenizeExtents recordExtents;
             try
             {
-                r.read();
+                recordExtents = r.read();
             }
             catch (error::ReadError const &err)
             {
@@ -95,6 +98,7 @@ void ParticleSpecies::read()
 
                 map.forget(record_name);
             }
+            homogenizeExtents.merge(*this, std::move(recordExtents));
         }
     }
 
@@ -114,6 +118,7 @@ void ParticleSpecies::read()
     Parameter<Operation::OPEN_DATASET> dOpen;
     for (auto const &record_name : *dList.datasets)
     {
+        internal::HomogenizeExtents recordExtents;
         try
         {
             Record &r = map[record_name];
@@ -126,7 +131,7 @@ void ParticleSpecies::read()
             rc.setWritten(false, Attributable::EnqueueAsynchronously::No);
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
-            r.read();
+            recordExtents = r.read();
         }
         catch (error::ReadError const &err)
         {
@@ -138,7 +143,10 @@ void ParticleSpecies::read()
             //(*this)[record_name].erase(RecordComponent::SCALAR);
             // this->erase(record_name);
         }
+        homogenizeExtents.merge(*this, std::move(recordExtents));
     }
+
+    std::move(homogenizeExtents).homogenize(*this);
 
     readAttributes(ReadMode::FullyReread);
 }
