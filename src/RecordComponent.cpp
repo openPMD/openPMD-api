@@ -226,8 +226,9 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         rc.m_hasBeenExtended = true;
     }
 
-    if (d.extent.empty())
-        throw std::runtime_error("Dataset extent must be at least 1D.");
+    // @todo check this while flushing
+    // if (d.extent.empty())
+    //     throw std::runtime_error("Dataset extent must be at least 1D.");
     if (d.empty())
     {
         if (d.extent.empty())

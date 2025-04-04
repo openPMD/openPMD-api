@@ -768,6 +768,11 @@ TEST_CASE("issue_1744_unique_ptrs_at_close_time", "[serial]")
 #endif
 }
 
+TEST_CASE("components_without_extent", "[serial]")
+{
+    components_without_extent::components_without_extent();
+}
+
 #if openPMD_HAVE_ADIOS2
 TEST_CASE("close_and_reopen_test", "[serial]")
 {
