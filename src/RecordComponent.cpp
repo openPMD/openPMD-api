@@ -62,6 +62,12 @@ namespace internal
         m_chunks.push(std::move(task));
     }
 
+    static constexpr char const *note_on_deactivating_this_check = R"(
+Note: In order to ignore inconsistent / incomplete extent definitions,
+set the environment variable OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS=0
+or alternatively the JSON option {"verify_homogeneous_extents": false}.
+    )";
+
     HomogenizeExtents::HomogenizeExtents() = default;
     HomogenizeExtents::HomogenizeExtents(bool verify_homogeneous_extents_in)
         : verify_homogeneous_extents(verify_homogeneous_extents_in)
@@ -85,7 +91,8 @@ namespace internal
                           << rc.myPath().openPMDPath() << "' has extent";
                 auxiliary::write_vec_to_stream(error_msg, extent) << ", but ";
                 auxiliary::write_vec_to_stream(error_msg, *retrieved_extent)
-                    << " was found previously.";
+                    << " was found previously."
+                    << note_on_deactivating_this_check;
                 throw error::ReadError(
                     error::AffectedObject::Group,
                     error::Reason::UnexpectedContent,
@@ -115,7 +122,7 @@ namespace internal
                     << " vs. ";
                 auxiliary::write_vec_to_stream(
                     error_msg, *other.retrieved_extent)
-                    << ".";
+                    << "." << note_on_deactivating_this_check;
                 throw error::ReadError(
                     error::AffectedObject::Group,
                     error::Reason::UnexpectedContent,
@@ -146,7 +153,8 @@ namespace internal
                     error::Reason::UnexpectedContent,
                     std::nullopt,
                     "No extent found for any component contained in '" +
-                        callsite.myPath().openPMDPath() + "'.");
+                        callsite.myPath().openPMDPath() + "'." +
+                        note_on_deactivating_this_check);
             }
             else
             {
