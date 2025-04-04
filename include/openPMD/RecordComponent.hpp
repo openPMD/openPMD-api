@@ -111,6 +111,9 @@ namespace internal
         std::deque<RecordComponent> without_extent;
         std::optional<Extent> retrieved_extent;
 
+        static constexpr char const *env_var_check_dataset_consistency =
+            "OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS";
+
         void check_extent(Attributable const &callsite, RecordComponent &);
         auto merge(Attributable const &callsite, HomogenizeExtents)
             -> HomogenizeExtents &;

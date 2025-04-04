@@ -24,7 +24,9 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
@@ -70,14 +72,21 @@ namespace internal
         }
         else if (retrieved_extent.has_value())
         {
-            if (extent != *retrieved_extent)
+            if (extent != *retrieved_extent &&
+                auxiliary::getEnvNum(env_var_check_dataset_consistency, 1) != 0)
             {
+                std::stringstream error_msg;
+                error_msg << "Inconsistent extents found for Record '"
+                          << callsite.myPath().openPMDPath() << "': Component '"
+                          << rc.myPath().openPMDPath() << "' has extent";
+                auxiliary::write_vec_to_stream(error_msg, extent) << ", but ";
+                auxiliary::write_vec_to_stream(error_msg, *retrieved_extent)
+                    << " was found previously.";
                 throw error::ReadError(
                     error::AffectedObject::Group,
                     error::Reason::UnexpectedContent,
                     std::nullopt,
-                    "Inconsistent extents found for Record '" +
-                        callsite.myPath().openPMDPath() + "'.");
+                    error_msg.str());
             }
         }
         else
@@ -92,14 +101,22 @@ namespace internal
     {
         if (retrieved_extent.has_value() && other.retrieved_extent.has_value())
         {
-            if (*retrieved_extent != *other.retrieved_extent)
+            if (*retrieved_extent != *other.retrieved_extent &&
+                auxiliary::getEnvNum(env_var_check_dataset_consistency, 1) != 0)
             {
+                std::stringstream error_msg;
+                error_msg << "Inconsistent extents found for Record '"
+                          << callsite.myPath().openPMDPath() << "': ";
+                auxiliary::write_vec_to_stream(error_msg, *retrieved_extent)
+                    << " vs. ";
+                auxiliary::write_vec_to_stream(
+                    error_msg, *other.retrieved_extent)
+                    << ".";
                 throw error::ReadError(
                     error::AffectedObject::Group,
                     error::Reason::UnexpectedContent,
                     std::nullopt,
-                    "Inconsistent extents found for Record '" +
-                        callsite.myPath().openPMDPath() + "'.");
+                    error_msg.str());
             }
         }
         else if (!retrieved_extent.has_value())
@@ -118,12 +135,19 @@ namespace internal
     {
         if (!retrieved_extent.has_value())
         {
-            throw error::ReadError(
-                error::AffectedObject::Group,
-                error::Reason::UnexpectedContent,
-                std::nullopt,
-                "No extent found for any component contained in '" +
-                    callsite.myPath().openPMDPath() + "'.");
+            if (auxiliary::getEnvNum(env_var_check_dataset_consistency, 1) != 0)
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Group,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    "No extent found for any component contained in '" +
+                        callsite.myPath().openPMDPath() + "'.");
+            }
+            else
+            {
+                return;
+            }
         }
         auto &ext = *retrieved_extent;
         for (auto &rc : without_extent)
