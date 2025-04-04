@@ -36,7 +36,8 @@ ParticleSpecies::ParticleSpecies()
 
 void ParticleSpecies::read()
 {
-    internal::HomogenizeExtents homogenizeExtents;
+    internal::HomogenizeExtents homogenizeExtents(
+        IOHandler()->m_verify_homogeneous_extents);
     /* obtain all non-scalar records */
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(this, pList));

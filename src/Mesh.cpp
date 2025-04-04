@@ -435,7 +435,8 @@ void Mesh::flush_impl(
 
 void Mesh::read()
 {
-    internal::HomogenizeExtents homogenizeExtents;
+    internal::HomogenizeExtents homogenizeExtents(
+        IOHandler()->m_verify_homogeneous_extents);
     internal::EraseStaleEntries<Mesh> map{*this};
 
     using DT = Datatype;

@@ -62,6 +62,11 @@ namespace internal
         m_chunks.push(std::move(task));
     }
 
+    HomogenizeExtents::HomogenizeExtents() = default;
+    HomogenizeExtents::HomogenizeExtents(bool verify_homogeneous_extents_in)
+        : verify_homogeneous_extents(verify_homogeneous_extents_in)
+    {}
+
     void HomogenizeExtents::check_extent(
         Attributable const &callsite, RecordComponent &rc)
     {
@@ -72,8 +77,7 @@ namespace internal
         }
         else if (retrieved_extent.has_value())
         {
-            if (extent != *retrieved_extent &&
-                auxiliary::getEnvNum(env_var_check_dataset_consistency, 1) != 0)
+            if (verify_homogeneous_extents && extent != *retrieved_extent)
             {
                 std::stringstream error_msg;
                 error_msg << "Inconsistent extents found for Record '"
@@ -101,8 +105,8 @@ namespace internal
     {
         if (retrieved_extent.has_value() && other.retrieved_extent.has_value())
         {
-            if (*retrieved_extent != *other.retrieved_extent &&
-                auxiliary::getEnvNum(env_var_check_dataset_consistency, 1) != 0)
+            if (verify_homogeneous_extents &&
+                *retrieved_extent != *other.retrieved_extent)
             {
                 std::stringstream error_msg;
                 error_msg << "Inconsistent extents found for Record '"
@@ -135,7 +139,7 @@ namespace internal
     {
         if (!retrieved_extent.has_value())
         {
-            if (auxiliary::getEnvNum(env_var_check_dataset_consistency, 1) != 0)
+            if (verify_homogeneous_extents)
             {
                 throw error::ReadError(
                     error::AffectedObject::Group,

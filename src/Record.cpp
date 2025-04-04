@@ -111,7 +111,7 @@ void Record::flush_impl(
 
 auto Record::read() -> internal::HomogenizeExtents
 {
-    internal::HomogenizeExtents res;
+    internal::HomogenizeExtents res(IOHandler()->m_verify_homogeneous_extents);
     auto check_extent = [&](RecordComponent &rc) {
         res.check_extent(*this, rc);
     };

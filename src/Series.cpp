@@ -213,6 +213,8 @@ struct Series::ParsedInput
     std::string filenamePostfix;
     std::optional<std::string> filenameExtension;
     int filenamePadding = -1;
+    // optional fields
+    bool verify_homogeneous_extents = true;
 }; // ParsedInput
 
 std::string Series::openPMD() const
@@ -933,7 +935,17 @@ void Series::init(
     // Either an MPI_Comm or none, the template works for both options
     MPI_Communicator &&...comm)
 {
-    auto init_directly = [this, &comm..., at, &filepath](
+    auto emplace_parse_config_options_into_iohandler =
+        [](AbstractIOHandler &ioHandler, ParsedInput &input) {
+            ioHandler.m_verify_homogeneous_extents =
+                input.verify_homogeneous_extents;
+        };
+
+    auto init_directly = [this,
+                          &comm...,
+                          at,
+                          &filepath,
+                          &emplace_parse_config_options_into_iohandler](
                              std::unique_ptr<ParsedInput> parsed_input,
                              json::TracingJSON tracing_json) {
         auto io_handler = createIOHandler(
@@ -945,12 +957,17 @@ void Series::init(
             comm...,
             tracing_json,
             filepath);
+        emplace_parse_config_options_into_iohandler(*io_handler, *parsed_input);
         initSeries(std::move(io_handler), std::move(parsed_input));
         json::warnGlobalUnusedOptions(tracing_json);
     };
 
-    auto init_deferred = [this, at, &filepath, &options, &comm...](
-                             std::string const &parsed_directory) {
+    auto init_deferred = [this,
+                          at,
+                          &filepath,
+                          &options,
+                          &emplace_parse_config_options_into_iohandler,
+                          &comm...](std::string const &parsed_directory) {
         // Set a temporary IOHandler so that API calls which require a present
         // IOHandler don't fail
         writable().IOHandler =
@@ -960,8 +977,12 @@ void Series::init(
         series.iterations.linkHierarchy(writable());
         series.m_rankTable.m_attributable.linkHierarchy(writable());
         series.m_deferred_initialization =
-            [called_this_already = false, filepath, options, at, comm...](
-                Series &s) mutable {
+            [called_this_already = false,
+             filepath,
+             options,
+             at,
+             emplace_parse_config_options_into_iohandler,
+             comm...](Series &s) mutable {
                 if (called_this_already)
                 {
                     throw std::runtime_error("Must be called one time only");
@@ -991,6 +1012,8 @@ void Series::init(
                     comm...,
                     tracing_json,
                     filepath);
+                emplace_parse_config_options_into_iohandler(
+                    *io_handler, *parsed_input);
                 auto res = io_handler.get();
                 s.initSeries(std::move(io_handler), std::move(parsed_input));
                 json::warnGlobalUnusedOptions(tracing_json);
@@ -3143,6 +3166,11 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
         "hint_lazy_parsing_timeout",
         series.m_hintLazyParsingAfterTimeout,
         "OPENPMD_HINT_LAZY_PARSING_TIMEOUT");
+    getJsonOption<bool>(
+        options,
+        "verify_homogeneous_extents",
+        input.verify_homogeneous_extents,
+        "OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS");
     internal::SeriesData::SourceSpecifiedViaJSON rankTableSource;
     if (getJsonOptionLowerCase(options, "rank_table", rankTableSource.value))
     {
