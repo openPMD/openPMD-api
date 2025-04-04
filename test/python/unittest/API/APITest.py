@@ -1953,9 +1953,9 @@ class APITest(unittest.TestCase):
             E_x.reset_dataset(DS(np.dtype("int"), extent))
             E_x.store_chunk(data, [0], extent)
 
-            E_y = it.meshes["E"]["y"]
-            E_y.reset_dataset(DS(np.dtype("int"), [2, 2]))
-            span = E_y.store_chunk().current_buffer()
+            B_y = it.meshes["B"]["y"]
+            B_y.reset_dataset(DS(np.dtype("int"), [2, 2]))
+            span = B_y.store_chunk().current_buffer()
             span[0, 0] = 0
             span[0, 1] = 1
             span[1, 0] = 2
@@ -1978,8 +1978,8 @@ class APITest(unittest.TestCase):
             lastIterationIndex = it.iteration_index
             E_x = it.meshes["E"]["x"]
             chunk = E_x.load_chunk([0], extent)
-            E_y = it.meshes["E"]["y"]
-            chunk2 = E_y.load_chunk([0, 0], [2, 2])
+            B_y = it.meshes["B"]["y"]
+            chunk2 = B_y.load_chunk([0, 0], [2, 2])
             it.close()
 
             for i in range(len(data)):
