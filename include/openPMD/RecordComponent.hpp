@@ -105,21 +105,6 @@ namespace internal
     };
     template <typename, typename>
     class BaseRecordData;
-
-    struct HomogenizeExtents
-    {
-        std::deque<RecordComponent> without_extent;
-        std::optional<Extent> retrieved_extent;
-        bool verify_homogeneous_extents = true;
-
-        explicit HomogenizeExtents();
-        HomogenizeExtents(bool verify_homogeneous_extents);
-
-        void check_extent(Attributable const &callsite, RecordComponent &);
-        auto merge(Attributable const &callsite, HomogenizeExtents)
-            -> HomogenizeExtents &;
-        void homogenize(Attributable const &callsite) &&;
-    };
 } // namespace internal
 
 template <typename>
@@ -554,6 +539,26 @@ OPENPMD_protected
 
     void verifyChunk(Datatype, Offset const &, Extent const &) const;
 }; // RecordComponent
+
+namespace internal
+{
+    // Must put this after the definition of RecordComponent due to the
+    // deque<RecordComponent>
+    struct HomogenizeExtents
+    {
+        std::deque<RecordComponent> without_extent;
+        std::optional<Extent> retrieved_extent;
+        bool verify_homogeneous_extents = true;
+
+        explicit HomogenizeExtents();
+        HomogenizeExtents(bool verify_homogeneous_extents);
+
+        void check_extent(Attributable const &callsite, RecordComponent &);
+        auto merge(Attributable const &callsite, HomogenizeExtents)
+            -> HomogenizeExtents &;
+        void homogenize(Attributable const &callsite) &&;
+    };
+} // namespace internal
 
 } // namespace openPMD
 
