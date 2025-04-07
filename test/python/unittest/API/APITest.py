@@ -2239,6 +2239,8 @@ class APITest(unittest.TestCase):
                 s = io.Series(f, io.Access.create, c)
                 s.close()
 
+        os.remove(cfg_as_file)
+
     def testScalarHdf5Fields(self):
         if "hdf5" not in io.variants:
             return
