@@ -151,7 +151,9 @@ std::future<void> AbstractIOHandlerImpl::flush()
                     "] CREATE_DATASET: ",
                     parameter.name,
                     ", extent=",
-                    [&parameter]() { return vec_as_string(parameter.extent); });
+                    [&parameter]() {
+                        return auxiliary::vec_as_string(parameter.extent);
+                    });
                 createDataset(i.writable, parameter);
                 break;
             }
@@ -299,7 +301,7 @@ std::future<void> AbstractIOHandlerImpl::flush()
                                     auxiliary::IsArray_v<dtype> ||
                                     auxiliary::IsVector_v<dtype>)
                                 {
-                                    return vec_as_string(val);
+                                    return auxiliary::vec_as_string(val);
                                 }
                                 else
                                 {
@@ -323,9 +325,13 @@ std::future<void> AbstractIOHandlerImpl::flush()
                     "->",
                     i.writable,
                     "] READ_DATASET, offset=",
-                    [&parameter]() { return vec_as_string(parameter.offset); },
+                    [&parameter]() {
+                        return auxiliary::vec_as_string(parameter.offset);
+                    },
                     ", extent=",
-                    [&parameter]() { return vec_as_string(parameter.extent); });
+                    [&parameter]() {
+                        return auxiliary::vec_as_string(parameter.extent);
+                    });
                 readDataset(i.writable, parameter);
                 break;
             }
