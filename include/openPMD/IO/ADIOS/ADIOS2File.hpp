@@ -22,6 +22,7 @@
 
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2PreloadVariables.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
@@ -335,11 +336,6 @@ public:
     std::vector<std::string>
     availableVariablesPrefixed(std::string const &prefix);
 
-    /*
-     * See description below.
-     */
-    void invalidateVariablesMap();
-
     void markActive(Writable *);
 
     // bool isActive(std::string const & path);
@@ -448,7 +444,7 @@ private:
      * IO::Available(Attributes|Variables).
      */
     AdiosAttributes m_attributes;
-    std::optional<AttributeMap_t> m_availableVariables;
+    AdiosVariables m_variables;
 
     std::set<Writable *> m_pathsMarkedAsActive;
 

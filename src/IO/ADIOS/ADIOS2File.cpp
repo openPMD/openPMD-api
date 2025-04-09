@@ -1336,7 +1336,6 @@ Be aware of the performance implications described above.)");
         case adios2::StepStatus::OtherError:
             throw std::runtime_error("[ADIOS2] Unexpected step status.");
         }
-        invalidateVariablesMap();
         m_pathsMarkedAsActive.clear();
         return res;
     }
@@ -1387,22 +1386,9 @@ ADIOS2File::availableVariablesPrefixed(std::string const &prefix)
         prefix, ADIOS2File::availableVariables());
 }
 
-void ADIOS2File::invalidateVariablesMap()
-{
-    m_availableVariables = std::optional<AttributeMap_t>();
-}
-
 ADIOS2File::AttributeMap_t const &ADIOS2File::availableVariables()
 {
-    if (m_availableVariables)
-    {
-        return m_availableVariables.value();
-    }
-    else
-    {
-        m_availableVariables = std::make_optional(m_IO.AvailableVariables());
-        return m_availableVariables.value();
-    }
+    return m_variables.availableAttributes(currentStep(), m_IO);
 }
 
 void ADIOS2File::markActive(Writable *writable)

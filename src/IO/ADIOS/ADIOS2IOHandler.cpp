@@ -862,7 +862,6 @@ https://github.com/ornladios/ADIOS2/issues/3504.
 
         switchAdios2VariableType<detail::VariableDefiner>(
             parameters.dtype, fileData.m_IO, varName, operators, shape);
-        fileData.invalidateVariablesMap();
         writable->written = true;
         m_dirty.emplace(file);
     }
