@@ -9,7 +9,7 @@
 
 namespace components_without_extent
 {
-constexpr char const *filepath = "../samples/components_without_extent.bp5";
+constexpr char const *filepath = "../samples/components_without_extent.json";
 
 void particle_offset_without_extent()
 {
