@@ -98,6 +98,7 @@ void ParticleSpecies::read()
                           << err.what() << std::endl;
 
                 map.forget(record_name);
+                continue;
             }
             homogenizeExtents.merge(*this, std::move(recordExtents));
         }
@@ -143,6 +144,7 @@ void ParticleSpecies::read()
             map.forget(record_name);
             //(*this)[record_name].erase(RecordComponent::SCALAR);
             // this->erase(record_name);
+            continue;
         }
         homogenizeExtents.merge(*this, std::move(recordExtents));
     }

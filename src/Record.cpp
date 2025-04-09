@@ -117,18 +117,22 @@ auto Record::read() -> internal::HomogenizeExtents
     };
     if (scalar())
     {
-        /* using operator[] will incorrectly update parent */
-        try
-        {
-            T_RecordComponent::read(/* require_unit_si = */ true);
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr << "Cannot read scalar record component and will skip it "
-                         "due to read error:\n"
-                      << err.what() << std::endl;
-        }
-        check_extent(*this);
+        [&]() {
+            /* using operator[] will incorrectly update parent */
+            try
+            {
+                T_RecordComponent::read(/* require_unit_si = */ true);
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr
+                    << "Cannot read scalar record component and will skip it "
+                       "due to read error:\n"
+                    << err.what() << std::endl;
+                return; // from lambda
+            }
+            check_extent(*this);
+        }();
     }
     else
     {
@@ -153,6 +157,7 @@ auto Record::read() -> internal::HomogenizeExtents
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 this->container().erase(component);
+                continue;
             }
             check_extent(rc);
         }
@@ -181,6 +186,7 @@ auto Record::read() -> internal::HomogenizeExtents
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 this->container().erase(component);
+                continue;
             }
             check_extent(rc);
         }

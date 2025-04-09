@@ -632,6 +632,7 @@ void Mesh::read()
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 map.forget(component);
+                continue;
             }
             homogenizeExtents.check_extent(*this, rc);
         }
@@ -660,6 +661,7 @@ void Mesh::read()
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 map.forget(component);
+                continue;
             }
             homogenizeExtents.check_extent(*this, rc);
         }
