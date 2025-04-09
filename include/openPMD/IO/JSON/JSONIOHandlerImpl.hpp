@@ -307,8 +307,8 @@ private:
     {
         // Initialized in init()
         DatasetMode m_mode{};
-        SpecificationVia m_specificationVia;
-        bool m_skipWarnings;
+        SpecificationVia m_specificationVia = SpecificationVia::DefaultValue;
+        bool m_skipWarnings = false;
 
         template <typename A, typename B, typename C>
         operator std::tuple<A, B, C>()
