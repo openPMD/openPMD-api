@@ -7074,8 +7074,11 @@ void unfinished_iteration_test(
     auto tryReading = [&config, file, encoding](
                           Access access,
                           std::string const &additionalConfig = "{}") {
+        auto merged_config = json::merge(
+            json::merge(config, additionalConfig),
+            R"({"verify_homogeneous_extents": false})");
         {
-            Series read(file, access, json::merge(config, additionalConfig));
+            Series read(file, access, merged_config);
 
             std::vector<decltype(Series::iterations)::key_type> iterations;
             std::cout << "\n\n\nGoing to list iterations in " << file
@@ -7126,7 +7129,7 @@ void unfinished_iteration_test(
         if (encoding == IterationEncoding::fileBased &&
             access == Access::READ_ONLY)
         {
-            Series read(file, access, json::merge(config, additionalConfig));
+            Series read(file, access, merged_config);
             if (additionalConfig == "{}")
             {
                 // Eager parsing, defective iteration has already been removed
