@@ -77,7 +77,7 @@ or alternatively the JSON option {"verify_homogeneous_extents": false}.
         Attributable const &callsite, RecordComponent &rc)
     {
         auto extent = rc.getExtent();
-        if (extent.empty())
+        if (Dataset::undefinedExtent(extent))
         {
             without_extent.emplace_back(rc);
         }
@@ -226,9 +226,8 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         rc.m_hasBeenExtended = true;
     }
 
-    // @todo check this while flushing
-    // if (d.extent.empty())
-    //     throw std::runtime_error("Dataset extent must be at least 1D.");
+    if (d.extent.empty())
+        throw std::runtime_error("Dataset extent must be at least 1D.");
     if (d.empty())
     {
         if (d.extent.empty())
@@ -291,7 +290,7 @@ Extent RecordComponent::getExtent() const
     }
     else
     {
-        return {};
+        return {Dataset::UNDEFINED_EXTENT};
     }
 }
 
@@ -422,7 +421,7 @@ void RecordComponent::flush(
         }
         auto constant_component_write_shape = [&]() {
             auto extent = getExtent();
-            return !extent.empty() &&
+            return !Dataset::undefinedExtent(extent) &&
                 std::none_of(extent.begin(), extent.end(), [](auto val) {
                     return val == Dataset::JOINED_DIMENSION;
                 });
@@ -561,7 +560,7 @@ void RecordComponent::readBase(bool require_unit_si)
         if (!containsAttribute("shape"))
         {
             setWritten(false, Attributable::EnqueueAsynchronously::No);
-            resetDataset(Dataset(dtype, {}));
+            resetDataset(Dataset(dtype, {Dataset::UNDEFINED_EXTENT}));
             setWritten(true, Attributable::EnqueueAsynchronously::No);
 
             return;

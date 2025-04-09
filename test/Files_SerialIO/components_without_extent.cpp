@@ -27,7 +27,8 @@ void particle_offset_without_extent()
             position_comp.storeChunk(std::move(data), {0}, {5});
 
             auto offset_comp = e["positionOffset"][comp_id];
-            offset_comp.resetDataset({openPMD::Datatype::INT, {}});
+            offset_comp.resetDataset(
+                {openPMD::Datatype::INT, {openPMD::Dataset::UNDEFINED_EXTENT}});
             offset_comp.makeConstant(0);
         }
         write.close();
@@ -57,11 +58,13 @@ void particles_without_any_extent()
         for (auto comp_id : {"x", "y", "z"})
         {
             auto position_comp = e["position"][comp_id];
-            position_comp.resetDataset({openPMD::Datatype::INT, {}});
+            position_comp.resetDataset(
+                {openPMD::Datatype::INT, {openPMD::Dataset::UNDEFINED_EXTENT}});
             position_comp.makeConstant(0);
 
             auto offset_comp = e["positionOffset"][comp_id];
-            offset_comp.resetDataset({openPMD::Datatype::INT, {}});
+            offset_comp.resetDataset(
+                {openPMD::Datatype::INT, {openPMD::Dataset::UNDEFINED_EXTENT}});
             offset_comp.makeConstant(0);
         }
         write.close();
@@ -84,7 +87,9 @@ void particles_without_any_extent()
         {
             for (auto const &component : record.second)
             {
-                REQUIRE(component.second.getExtent() == openPMD::Extent{});
+                REQUIRE(
+                    component.second.getExtent() ==
+                    openPMD::Extent{openPMD::Dataset::UNDEFINED_EXTENT});
             }
         }
     }
@@ -152,7 +157,8 @@ void meshes_with_incomplete_extent()
         for (auto comp_id : {"y", "z"})
         {
             auto comp = E[comp_id];
-            comp.resetDataset({openPMD::Datatype::INT, {}});
+            comp.resetDataset(
+                {openPMD::Datatype::INT, {openPMD::Dataset::UNDEFINED_EXTENT}});
             comp.makeConstant(0);
         }
         write.close();
@@ -220,7 +226,9 @@ void meshes_without_any_extent()
         for (auto comp_id : {"x", "y", "z"})
         {
             auto comp = E[comp_id];
-            comp.resetDataset({openPMD::Datatype::FLOAT, {}});
+            comp.resetDataset(
+                {openPMD::Datatype::FLOAT,
+                 {openPMD::Dataset::UNDEFINED_EXTENT}});
             comp.makeConstant<float>(0);
         }
         write.close();
@@ -241,7 +249,9 @@ void meshes_without_any_extent()
         auto E = read.snapshots()[0].meshes["E"];
         for (auto const &component : E)
         {
-            REQUIRE(component.second.getExtent() == openPMD::Extent{});
+            REQUIRE(
+                component.second.getExtent() ==
+                openPMD::Extent{openPMD::Dataset::UNDEFINED_EXTENT});
         }
     }
 }

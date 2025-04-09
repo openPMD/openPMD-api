@@ -158,6 +158,8 @@ public:
      * * Shrinking any dimension's extent.
      * * Changing the number of dimensions.
      *
+     * The dataset extent may be empty to indicate undefined extents.
+     *
      * Backend support for resizing datasets:
      * * JSON: Supported
      * * ADIOS2: Supported as of ADIOS2 2.7.0
