@@ -245,6 +245,14 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
         IOHandler()->enqueue(IOTask(this, openFile));
 #endif
     }
+    if (iterationEncoding() == IterationEncoding::variableBased &&
+        IOHandler()->m_backendAccess == Access::READ_RANDOM_ACCESS)
+    {
+        Parameter<Operation::ADVANCE> advance;
+        advance.mode =
+            Parameter<Operation::ADVANCE>::StepSelection{std::nullopt};
+        IOHandler()->enqueue(IOTask(this, std::move(advance)));
+    }
     Parameter<Operation::LIST_DATASETS> listDatasets;
     IOHandler()->enqueue(IOTask(this, listDatasets));
     IOHandler()->flush(internal::defaultFlushParams);
@@ -255,14 +263,6 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
     {
         rankTable.m_bufferedRead = chunk_assignment::RankMeta{};
         return {};
-    }
-    if (iterationEncoding() == IterationEncoding::variableBased &&
-        IOHandler()->m_backendAccess == Access::READ_RANDOM_ACCESS)
-    {
-        Parameter<Operation::ADVANCE> advance;
-        advance.mode =
-            Parameter<Operation::ADVANCE>::StepSelection{std::nullopt};
-        IOHandler()->enqueue(IOTask(this, std::move(advance)));
     }
     Parameter<Operation::OPEN_DATASET> openDataset;
     openDataset.name = "rankTable";
