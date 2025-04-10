@@ -5886,6 +5886,11 @@ void variableBasedSeries(std::string const &file)
             constantParticles.resetDataset({Datatype::INT, {i}});
             constantParticles.makeConstant(i);
 
+            auto partialMesh =
+                iteration.meshes["partial"][std::to_string(i / 3)];
+            partialMesh.resetDataset({openPMD::Datatype::INT, {10}});
+            partialMesh.storeChunk(data, {0}, {10});
+
             iteration.close();
         }
         REQUIRE(auxiliary::directory_exists(file));
@@ -5967,10 +5972,18 @@ void variableBasedSeries(std::string const &file)
             REQUIRE(E_x.getDimensionality() == 1);
             REQUIRE(E_x.getExtent()[0] == extent);
             auto chunk = E_x.loadChunk<int>({0}, {extent});
+            auto partialMesh =
+                iteration.meshes["partial"]
+                                [std::to_string(iteration.iterationIndex / 3)];
+            auto chunk2 = partialMesh.loadChunk<int>({0}, {10});
             iteration.close();
             for (size_t i = 0; i < extent; ++i)
             {
                 REQUIRE(chunk.get()[i] == int(iteration.iterationIndex));
+            }
+            for (size_t i = 0; i < 10; ++i)
+            {
+                REQUIRE(chunk2.get()[i] == int(iteration.iterationIndex));
             }
 
             auto E_y = iteration.meshes["E"]["y"];
@@ -5983,10 +5996,6 @@ void variableBasedSeries(std::string const &file)
 
             // this loop ensures that only the recordcomponent ["E"]["i"] is
             // present where i == iteration.iterationIndex
-            // Note that this works for ReadRandomAccess as well since constant
-            // components contain no datasets. The ADIOS2 backend is however not
-            // (yet) able to deal with array datasets that are present only in a
-            // subselection of steps.
             for (uint64_t otherIteration = 0; otherIteration < 10;
                  ++otherIteration)
             {
