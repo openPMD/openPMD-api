@@ -416,6 +416,14 @@ public:
     {
         return m_attributes;
     }
+    [[nodiscard]] detail::AdiosVariables const &variables() const
+    {
+        return m_variables;
+    }
+    [[nodiscard]] detail::AdiosVariables &variables()
+    {
+        return m_variables;
+    }
 
 private:
     ADIOS2IOHandlerImpl *m_impl;

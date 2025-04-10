@@ -24,6 +24,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2PreloadVariables.hpp"
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
@@ -615,7 +616,8 @@ namespace detail
             Parameter<Operation::OPEN_DATASET> &parameters,
             std::optional<size_t> stepSelection,
             std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
-                &operators);
+                &operators,
+            detail::AdiosVariables const &);
 
         static constexpr char const *errorMsg = "ADIOS2: openDataset()";
     };

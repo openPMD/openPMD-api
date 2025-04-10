@@ -43,8 +43,7 @@ struct AdiosVariables
     struct RandomAccessPreparsed_t
     {
         // Variable only defined in these steps
-        using PartialVariable = std::optional<std::deque<size_t>>;
-        std::map<std::string, std::deque<size_t>> m_partialVariables;
+        std::map<std::string, std::vector<size_t>> m_partialVariables;
 
         AttributeMap_t m_allVariables;
     };

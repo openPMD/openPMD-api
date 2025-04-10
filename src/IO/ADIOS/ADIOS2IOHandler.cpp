@@ -28,6 +28,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2PreloadVariables.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
@@ -1095,7 +1096,8 @@ void ADIOS2IOHandlerImpl::openDataset(
         varName,
         parameters,
         fileData.stepSelection(),
-        operators);
+        operators,
+        fileData.variables());
     writable->written = true;
 }
 
@@ -1492,8 +1494,57 @@ namespace
             }
         }
 
-        static constexpr char const *errorMsg = "ReadAttributeAllsteps";
+        static constexpr char const *errorMsg =
+            "ReadAttributeAllsteps: preload attributes";
     };
+
+    struct PreparseVariablesForStep
+    {
+        template <typename T>
+        static void call(
+            std::string const &varName,
+            size_t step,
+            size_t totalNumSteps,
+            adios2::IO &IO,
+            detail::AdiosVariables::RandomAccessPreparsed_t &out)
+        {
+            auto var = IO.InquireVariable<T>(varName);
+            if (!var)
+            {
+                throw std::runtime_error(
+                    "Error in ADIOS2 backend: Cannot inquire variable '" +
+                    varName + "' for step " + std::to_string(step) + ".");
+            }
+            if (var.Steps() == totalNumSteps)
+            {
+                return; // variable is not partial
+            }
+            else
+            {
+                auto &step_list = out.m_partialVariables[varName];
+                step_list.reserve(totalNumSteps);
+                step_list.emplace_back(step);
+            }
+        }
+
+        static constexpr char const *errorMsg =
+            "ReadAttributeAllsteps: preparse variables";
+    };
+
+    void preparseVariablesForStep(
+        size_t step,
+        size_t totalNumSteps,
+        adios2::IO &IO,
+        detail::AdiosVariables::RandomAccessPreparsed_t &out)
+    {
+        auto current_variables = IO.AvailableVariables(/* namesOnly = */ true);
+        for ([[maybe_unused]] auto const &[var, _] : current_variables)
+        {
+            auto dtype = detail::fromADIOS2Type(IO.VariableType(var));
+            switchAdios2VariableType<PreparseVariablesForStep>(
+                dtype, var, step, totalNumSteps, IO, out);
+        }
+    }
 } // namespace
 
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
@@ -1505,6 +1556,10 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
 
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
+
+    auto &preparsedVariableData = ba.variables().m_preparsed.emplace();
+    preparsedVariableData.m_allVariables = ba.m_IO.AvailableVariables();
+
 #if openPMD_HAVE_MPI
     auto adios = [&]() {
         if (m_communicator.has_value())
@@ -1526,13 +1581,18 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
 
     std::vector<detail::PreloadAdiosAttributes> preload;
-    preload.reserve(engine.Steps());
+    size_t totalNumSteps = engine.Steps();
+    preload.reserve(totalNumSteps);
     adios2::StepStatus status;
+    size_t step = 0;
     while ((status = engine.BeginStep()) == adios2::StepStatus::OK)
     {
         auto &new_entry = preload.emplace_back();
         new_entry.preloadAttributes(IO);
+        preparseVariablesForStep(
+            step, totalNumSteps, IO, preparsedVariableData);
         engine.EndStep();
+        ++step;
     }
     if (status != adios2::StepStatus::EndOfStream)
     {
@@ -2264,35 +2324,68 @@ namespace detail
         Parameter<Operation::OPEN_DATASET> &parameters,
         std::optional<size_t> stepSelection,
         std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
-            &operators)
+            &operators,
+        detail::AdiosVariables const &av)
     {
         auto &fileData = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
         auto &IO = fileData.m_IO;
         adios2::Variable<T> var = IO.InquireVariable<T>(varName);
 
-        if (fileData.stepSelection().has_value())
+        if (stepSelection.has_value())
         {
             auto file_steps = fileData.getEngine().Steps();
             auto var_steps = var.Steps();
             if (file_steps != var_steps)
             {
-                throw error::ReadError(
-                    error::AffectedObject::Dataset,
-                    error::Reason::UnexpectedContent,
-                    "ADIOS2",
-                    &R"(
-The opened file contains different data per step.
-When using variable-based encoding, such files must be opened in linear read
-mode, since random-access mode cannot easily associate variable steps
-to iterations under these circumstances (yet).
-If random-access read mode is required, file-based iteration encoding is more
-useful for such data in ADIOS2. You may use the openpmd-pipe command line tool
-for converting from variable-based to file-based iteration encoding.
-ERROR: Variable ')"[1] + varName +
-                        "' has " + std::to_string(var_steps) +
-                        " step(s), but the file has " +
-                        std::to_string(file_steps) + " step(s).");
+                if (!av.m_preparsed.has_value())
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::Dataset,
+                        error::Reason::UnexpectedContent,
+                        "ADIOS2",
+                        "The opened file contains different data per step, but "
+                        "variable data was not preparsed. ERROR: Variable " +
+                            varName + "' has " + std::to_string(var_steps) +
+                            " step(s), but the file has " +
+                            std::to_string(file_steps) + " step(s).");
+                }
+                auto preparsed =
+                    av.m_preparsed->m_partialVariables.find(varName);
+                if (preparsed == av.m_preparsed->m_partialVariables.end())
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::Dataset,
+                        error::Reason::UnexpectedContent,
+                        "ADIOS2",
+                        "The opened file contains different data per step, but "
+                        "variable data contains no preparsing info on '" +
+                            varName + "'. Has " + std::to_string(var_steps) +
+                            " step(s), but the file has " +
+                            std::to_string(file_steps) + " step(s).");
+                }
+                auto step_index = std::find(
+                    preparsed->second.begin(),
+                    preparsed->second.end(),
+                    *stepSelection);
+                if (step_index == preparsed->second.end())
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::Dataset,
+                        error::Reason::UnexpectedContent,
+                        "ADIOS2",
+                        "Tried selecting global step " +
+                            std::to_string(*stepSelection) + " for variable '" +
+                            varName +
+                            "', but variable is not defined for that step. "
+                            "Has " +
+                            std::to_string(var_steps) +
+                            " step(s), but the file has " +
+                            std::to_string(file_steps) + " step(s).");
+                }
+                // We need to replace the (global) step selection with the
+                // (local) step index
+                *stepSelection = step_index - preparsed->second.begin();
             }
         }
         if (stepSelection.has_value())
