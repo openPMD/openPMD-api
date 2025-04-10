@@ -603,7 +603,6 @@ void JSONIOHandlerImpl::createDataset(
         parameter.options, /* considerFiles = */ false);
     // Retrieves mode from dataset-specific configuration, falls back to global
     // value if not defined
-    DatasetMode_s dm;
     auto [localMode, _, skipWarnings] = retrieveDatasetMode(config);
     (void)_;
     // No use in introducing logic to skip warnings only for one particular
