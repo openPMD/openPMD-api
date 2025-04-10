@@ -1504,51 +1504,19 @@ namespace
             "ReadAttributeAllsteps: preload attributes";
     };
 
-    struct PreparseVariablesForStep
-    {
-        template <typename T>
-        static void call(
-            std::string const &varName,
-            size_t step,
-            size_t totalNumSteps,
-            adios2::IO &IO,
-            detail::AdiosVariables::RandomAccessPreparsed_t &out)
-        {
-            auto var = IO.InquireVariable<T>(varName);
-            if (!var)
-            {
-                throw std::runtime_error(
-                    "Error in ADIOS2 backend: Cannot inquire variable '" +
-                    varName + "' for step " + std::to_string(step) + ".");
-            }
-            if (var.Steps() == totalNumSteps)
-            {
-                return; // variable is not partial
-            }
-            else
-            {
-                auto &step_list = out.m_partialVariables[varName];
-                step_list.reserve(totalNumSteps);
-                step_list.emplace_back(step);
-            }
-        }
-
-        static constexpr char const *errorMsg =
-            "ReadAttributeAllsteps: preparse variables";
-    };
-
     void preparseVariablesForStep(
         size_t step,
-        size_t totalNumSteps,
         adios2::IO &IO,
         detail::AdiosVariables::RandomAccessPreparsed_t &out)
     {
         auto current_variables = IO.AvailableVariables(/* namesOnly = */ true);
         for ([[maybe_unused]] auto const &[var, _] : current_variables)
         {
-            auto dtype = detail::fromADIOS2Type(IO.VariableType(var));
-            switchAdios2VariableType<PreparseVariablesForStep>(
-                dtype, var, step, totalNumSteps, IO, out);
+            auto it = out.m_partialVariables.find(var);
+            if (it != out.m_partialVariables.end())
+            {
+                it->second.emplace_back(step);
+            }
         }
     }
 
@@ -1582,6 +1550,27 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto &preparsedVariableData = ba.variables().m_preparsed.emplace();
     preparsedVariableData.m_allVariables = ba.m_IO.AvailableVariables();
 
+    bool requires_variable_preparsing = false;
+    size_t totalNumSteps = ba.getEngine().Steps();
+    for ([[maybe_unused]] auto const &[varName, _] :
+         preparsedVariableData.m_allVariables)
+    {
+        auto dtype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
+        size_t variable_num_steps =
+            switchAdios2VariableType<VariableNumSteps>(dtype, varName, ba.m_IO);
+        if (variable_num_steps != totalNumSteps)
+        {
+            preparsedVariableData.m_partialVariables[varName].reserve(
+                variable_num_steps);
+            requires_variable_preparsing = true;
+        }
+    }
+
+    if (!requires_variable_preparsing)
+    {
+        ba.variables().m_preparsed.reset();
+    }
+
 #if openPMD_HAVE_MPI
     auto adios = [&]() {
         if (m_communicator.has_value())
@@ -1603,25 +1592,6 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     auto engine = IO.Open(fullPath(*file), adios2::Mode::Read);
 
     std::vector<detail::PreloadAdiosAttributes> preload;
-    size_t totalNumSteps = engine.Steps();
-
-    bool requires_variable_preparsing = false;
-    for ([[maybe_unused]] auto const &[varName, _] :
-         preparsedVariableData.m_allVariables)
-    {
-        auto dtype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
-        size_t variable_num_steps =
-            switchAdios2VariableType<VariableNumSteps>(dtype, varName, ba.m_IO);
-        if (variable_num_steps != totalNumSteps)
-        {
-            requires_variable_preparsing = true;
-        }
-    }
-
-    if (!requires_variable_preparsing)
-    {
-        ba.variables().m_preparsed.reset();
-    }
 
     preload.reserve(totalNumSteps);
     adios2::StepStatus status;
@@ -1632,8 +1602,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         new_entry.preloadAttributes(IO);
         if (requires_variable_preparsing)
         {
-            preparseVariablesForStep(
-                step, totalNumSteps, IO, preparsedVariableData);
+            preparseVariablesForStep(step, IO, preparsedVariableData);
         }
         engine.EndStep();
         ++step;
@@ -1645,6 +1614,26 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
             "status while beginning a step.");
     }
     engine.Close();
+    // some debugging output below
+#if 0
+    if (requires_variable_preparsing)
+    {
+        for (auto const &[varName, _] : preparsedVariableData.m_allVariables)
+        {
+            auto it = preparsedVariableData.m_partialVariables.find(varName);
+            std::cout << "\t" << varName << ":\t";
+            if (it == preparsedVariableData.m_partialVariables.end())
+            {
+                std::cout << "TOTAL\n";
+            }
+            else
+            {
+                auxiliary::write_vec_to_stream(std::cout, it->second) << "\n";
+            }
+        }
+        std::cout << "\n" << std::endl;
+    }
+#endif
     auto &attributes = ba.attributes();
     switchType<ReadAttributeAllsteps>(type, preload, IO, name, *param.resource);
     attributes.m_data = std::move(preload);
