@@ -1185,7 +1185,13 @@ namespace detail
             auto &IO = ba.m_IO;
             auto &engine = ba.getEngine();
             adios2::Variable<T> variable = impl->verifyDataset<T>(
-                params.offset, params.extent, IO, varName, std::nullopt);
+                params.offset,
+                params.extent,
+                IO,
+                engine,
+                varName,
+                std::nullopt,
+                ba.variables());
             adios2::Dims offset(params.offset.begin(), params.offset.end());
             adios2::Dims extent(params.extent.begin(), params.extent.end());
             variable.SetSelection({std::move(offset), std::move(extent)});
@@ -2331,72 +2337,18 @@ namespace detail
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
         auto &IO = fileData.m_IO;
         adios2::Variable<T> var = IO.InquireVariable<T>(varName);
-
-        if (stepSelection.has_value())
-        {
-            auto file_steps = fileData.getEngine().Steps();
-            auto var_steps = var.Steps();
-            if (file_steps != var_steps)
-            {
-                if (!av.m_preparsed.has_value())
-                {
-                    throw error::ReadError(
-                        error::AffectedObject::Dataset,
-                        error::Reason::UnexpectedContent,
-                        "ADIOS2",
-                        "The opened file contains different data per step, but "
-                        "variable data was not preparsed. ERROR: Variable " +
-                            varName + "' has " + std::to_string(var_steps) +
-                            " step(s), but the file has " +
-                            std::to_string(file_steps) + " step(s).");
-                }
-                auto preparsed =
-                    av.m_preparsed->m_partialVariables.find(varName);
-                if (preparsed == av.m_preparsed->m_partialVariables.end())
-                {
-                    throw error::ReadError(
-                        error::AffectedObject::Dataset,
-                        error::Reason::UnexpectedContent,
-                        "ADIOS2",
-                        "The opened file contains different data per step, but "
-                        "variable data contains no preparsing info on '" +
-                            varName + "'. Has " + std::to_string(var_steps) +
-                            " step(s), but the file has " +
-                            std::to_string(file_steps) + " step(s).");
-                }
-                auto step_index = std::find(
-                    preparsed->second.begin(),
-                    preparsed->second.end(),
-                    *stepSelection);
-                if (step_index == preparsed->second.end())
-                {
-                    throw error::ReadError(
-                        error::AffectedObject::Dataset,
-                        error::Reason::UnexpectedContent,
-                        "ADIOS2",
-                        "Tried selecting global step " +
-                            std::to_string(*stepSelection) + " for variable '" +
-                            varName +
-                            "', but variable is not defined for that step. "
-                            "Has " +
-                            std::to_string(var_steps) +
-                            " step(s), but the file has " +
-                            std::to_string(file_steps) + " step(s).");
-                }
-                // We need to replace the (global) step selection with the
-                // (local) step index
-                *stepSelection = step_index - preparsed->second.begin();
-            }
-        }
-        if (stepSelection.has_value())
-        {
-            var.SetStepSelection({*stepSelection, 1});
-        }
         if (!var)
         {
             throw std::runtime_error(
                 "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" +
                 varName + "' from file " + *file + ".");
+        }
+
+        if (stepSelection.has_value())
+        {
+            auto file_steps = fileData.getEngine().Steps();
+            ADIOS2IOHandlerImpl::setStepSelectionForVariable(
+                var, varName, *stepSelection, file_steps, av);
         }
 
         // Operators in reading needed e.g. for setting decompression threads

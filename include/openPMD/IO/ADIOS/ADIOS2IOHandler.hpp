@@ -427,6 +427,68 @@ private:
 
     void dropFileData(InvalidatableFile const &file);
 
+    template <typename T>
+    static void setStepSelectionForVariable(
+        adios2::Variable<T> var,
+        std::string const &varName,
+        size_t step_selection,
+        size_t file_steps,
+        detail::AdiosVariables const &av)
+    {
+        auto var_steps = var.Steps();
+        if (file_steps != var_steps)
+        {
+            if (!av.m_preparsed.has_value())
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Dataset,
+                    error::Reason::UnexpectedContent,
+                    "ADIOS2",
+                    "The opened file contains different data per step, but "
+                    "variable data was not preparsed. ERROR: Variable " +
+                        varName + "' has " + std::to_string(var_steps) +
+                        " step(s), but the file has " +
+                        std::to_string(file_steps) + " step(s).");
+            }
+            auto preparsed = av.m_preparsed->m_partialVariables.find(varName);
+            if (preparsed == av.m_preparsed->m_partialVariables.end())
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Dataset,
+                    error::Reason::UnexpectedContent,
+                    "ADIOS2",
+                    "The opened file contains different data per step, but "
+                    "variable data contains no preparsing info on '" +
+                        varName + "'. Has " + std::to_string(var_steps) +
+                        " step(s), but the file has " +
+                        std::to_string(file_steps) + " step(s).");
+            }
+            auto step_index = std::find(
+                preparsed->second.begin(),
+                preparsed->second.end(),
+                step_selection);
+            if (step_index == preparsed->second.end())
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Dataset,
+                    error::Reason::UnexpectedContent,
+                    "ADIOS2",
+                    "Tried selecting global step " +
+                        std::to_string(step_selection) + " for variable '" +
+                        varName +
+                        "', but variable is not defined for that step. "
+                        "Has " +
+                        std::to_string(var_steps) +
+                        " step(s), but the file has " +
+                        std::to_string(file_steps) + " step(s).");
+            }
+            // We need to replace the (global) step selection with the
+            // (local) step index
+            step_selection = step_index - preparsed->second.begin();
+        }
+        var.SetStepSelection({step_selection, 1});
+    }
+
     /*
      * Prepare a variable that already exists for an IO
      * operation, including:
@@ -440,8 +502,10 @@ private:
         Offset const &offset,
         Extent const &extent,
         adios2::IO &IO,
+        adios2::Engine &engine,
         std::string const &varName,
-        std::optional<size_t> stepSelection)
+        std::optional<size_t> stepSelection,
+        detail::AdiosVariables const &av)
     {
         {
             auto requiredType = adios2::GetType<T>();
@@ -470,7 +534,9 @@ private:
         }
         if (stepSelection.has_value())
         {
-            var.SetStepSelection({*stepSelection, 1});
+            auto file_steps = engine.Steps();
+            setStepSelectionForVariable(
+                var, varName, *stepSelection, file_steps, av);
         }
         // TODO leave this check to ADIOS?
         adios2::Dims shape = var.Shape();

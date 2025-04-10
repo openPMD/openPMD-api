@@ -84,7 +84,8 @@ struct DatasetReader
         adios2::IO &IO,
         adios2::Engine &engine,
         std::string const &fileName,
-        std::optional<size_t> stepSelection);
+        std::optional<size_t> stepSelection,
+        detail::AdiosVariables const &av);
 
     static constexpr char const *errorMsg = "ADIOS2: readDataset()";
 };

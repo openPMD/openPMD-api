@@ -61,10 +61,17 @@ void DatasetReader::call(
     adios2::IO &IO,
     adios2::Engine &engine,
     std::string const &fileName,
-    std::optional<size_t> stepSelection)
+    std::optional<size_t> stepSelection,
+    detail::AdiosVariables const &av)
 {
     adios2::Variable<T> var = impl->verifyDataset<T>(
-        bp.param.offset, bp.param.extent, IO, bp.name, stepSelection);
+        bp.param.offset,
+        bp.param.extent,
+        IO,
+        engine,
+        bp.name,
+        stepSelection,
+        av);
     if (!var)
     {
         throw std::runtime_error(
@@ -91,15 +98,18 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
             if constexpr (std::is_same_v<ptr_type, std::shared_ptr<void const>>)
             {
                 auto ptr = static_cast<T const *>(arg.get());
+                auto &engine = ba.getEngine();
 
                 adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
                     bp.param.offset,
                     bp.param.extent,
                     ba.m_IO,
+                    engine,
                     bp.name,
-                    std::nullopt);
+                    std::nullopt,
+                    ba.variables());
 
-                ba.getEngine().Put(var, ptr);
+                engine.Put(var, ptr);
             }
             else if constexpr (std::is_same_v<
                                    ptr_type,
@@ -146,7 +156,8 @@ void BufferedGet::run(ADIOS2File &ba)
         ba.m_IO,
         ba.getEngine(),
         ba.m_file,
-        this->stepSelection);
+        this->stepSelection,
+        ba.variables());
 }
 
 void BufferedPut::run(ADIOS2File &ba)
@@ -160,13 +171,16 @@ struct RunUniquePtrPut
     static void call(BufferedUniquePtrPut &bufferedPut, ADIOS2File &ba)
     {
         auto ptr = static_cast<T const *>(bufferedPut.data.get());
+        auto &engine = ba.getEngine();
         adios2::Variable<T> var = ba.m_impl->verifyDataset<T>(
             bufferedPut.offset,
             bufferedPut.extent,
             ba.m_IO,
+            engine,
             bufferedPut.name,
-            std::nullopt);
-        ba.getEngine().Put(var, ptr);
+            std::nullopt,
+            ba.variables());
+        engine.Put(var, ptr);
     }
 
     static constexpr char const *errorMsg = "RunUniquePtrPut";
