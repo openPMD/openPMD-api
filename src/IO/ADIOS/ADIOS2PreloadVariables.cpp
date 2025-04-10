@@ -1,3 +1,6 @@
+#include "openPMD/config.hpp"
+#if openPMD_HAVE_ADIOS2
+
 #include "openPMD/IO/ADIOS/ADIOS2PreloadVariables.hpp"
 
 #include <algorithm>
@@ -74,3 +77,5 @@ auto AdiosVariables::availableAttributes(size_t step, adios2::IO &IO)
     return *m_availableVariables;
 }
 } // namespace openPMD::detail
+
+#endif
