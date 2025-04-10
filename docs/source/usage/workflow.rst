@@ -77,15 +77,7 @@ The openPMD-api distinguishes between a number of different access modes:
      When using such a backend, the access mode will be coerced automatically to *linear read mode*.
      Use of Series::readIterations() is mandatory for access.
   4. *Random-access read mode* for a variable-based Series is currently experimental.
-     Support for metadata definitions that change across steps is (currently) restricted:
-
-     1. There is no support for datasets that do not exist in all Iterations. The internal Iteration layouts should be homogeneous.
-        If you need this feature, please contact the openPMD-api developers; implementing this is currently not a priority.
-        Datasets that do not exist in all steps will be skipped at read time (with an error).
-
-        This restriction affects only datasets that contain array data.
-        Datasets defined exlusively in terms of attributes (especially: constant components) may be defined and read in a subselection of Iterations.
-     2. Datasets with changing extents are supported under the condition that they do not change their dimensionality.
+     In this mode, datasets with changing extents are supported under the condition that they do not change their dimensionality.
 
 * **Read/Write mode**: Creates a new Series if not existing, otherwise opens an existing Series for reading and writing.
   New datasets and iterations will be inserted as needed.
