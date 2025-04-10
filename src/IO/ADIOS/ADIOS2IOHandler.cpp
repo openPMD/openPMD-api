@@ -1551,6 +1551,22 @@ namespace
                 dtype, var, step, totalNumSteps, IO, out);
         }
     }
+
+    struct VariableNumSteps
+    {
+        template <typename T>
+        static size_t call(std::string const &varName, adios2::IO &IO)
+        {
+            auto var = IO.InquireVariable<T>(varName);
+            if (!var)
+            {
+                throw std::runtime_error(
+                    "Failed inquiring variable '" + varName + "'.");
+            }
+            return var.Steps();
+        }
+        static constexpr char const *errorMsg = "VariableNumSteps";
+    };
 } // namespace
 
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
@@ -1588,6 +1604,25 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
 
     std::vector<detail::PreloadAdiosAttributes> preload;
     size_t totalNumSteps = engine.Steps();
+
+    bool requires_variable_preparsing = false;
+    for ([[maybe_unused]] auto const &[varName, _] :
+         preparsedVariableData.m_allVariables)
+    {
+        auto dtype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
+        size_t variable_num_steps =
+            switchAdios2VariableType<VariableNumSteps>(dtype, varName, ba.m_IO);
+        if (variable_num_steps != totalNumSteps)
+        {
+            requires_variable_preparsing = true;
+        }
+    }
+
+    if (!requires_variable_preparsing)
+    {
+        ba.variables().m_preparsed.reset();
+    }
+
     preload.reserve(totalNumSteps);
     adios2::StepStatus status;
     size_t step = 0;
@@ -1595,8 +1630,11 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     {
         auto &new_entry = preload.emplace_back();
         new_entry.preloadAttributes(IO);
-        preparseVariablesForStep(
-            step, totalNumSteps, IO, preparsedVariableData);
+        if (requires_variable_preparsing)
+        {
+            preparseVariablesForStep(
+                step, totalNumSteps, IO, preparsedVariableData);
+        }
         engine.EndStep();
         ++step;
     }

@@ -436,6 +436,11 @@ private:
         detail::AdiosVariables const &av)
     {
         auto var_steps = var.Steps();
+        if (var_steps == 1 && step_selection == 0)
+        {
+            // variable has no steps
+            return;
+        }
         if (file_steps != var_steps)
         {
             if (!av.m_preparsed.has_value())
