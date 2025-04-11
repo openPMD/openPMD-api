@@ -1547,6 +1547,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
 
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
 
+    ba.variables().m_availableVariables.reset();
     auto &preparsedVariableData = ba.variables().m_preparsed.emplace();
     preparsedVariableData.m_allVariables = ba.m_IO.AvailableVariables();
 
@@ -1569,6 +1570,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     if (!requires_variable_preparsing)
     {
         ba.variables().m_preparsed.reset();
+        ba.variables().variables_are_static = true;
     }
 
 #if openPMD_HAVE_MPI
@@ -1632,6 +1634,10 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
             }
         }
         std::cout << "\n" << std::endl;
+    }
+    else
+    {
+        std::cout << "NO PREPARSING NEEDED" << std::endl;
     }
 #endif
     auto &attributes = ba.attributes();

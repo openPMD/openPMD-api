@@ -37,7 +37,11 @@ struct AdiosVariables
     // Buffered map for current step
     using AttributeMap_t = std::map<std::string, adios2::Params>;
     std::optional<AttributeMap_t> m_availableVariables;
+    // For which step were the above variables buffered?
     size_t currentStep;
+    // Optimization: If variable definitions do not vary across steps, no need
+    // to recompute them
+    bool variables_are_static = false;
 
     // Preparsed step data
     struct RandomAccessPreparsed_t
@@ -49,7 +53,13 @@ struct AdiosVariables
     };
     std::optional<RandomAccessPreparsed_t> m_preparsed;
 
-    auto availableAttributes(size_t step, adios2::IO &IO)
+    /*
+     * If use_step_selection is false, but preparsed step data is available,
+     * this means that Advance(stepSelection = null) was executed previously.
+     * So, we can return m_preparsed->m_allVariables.
+     */
+    auto
+    availableVariables(size_t step, bool use_step_selection, adios2::IO &IO)
         -> AttributeMap_t const &;
 };
 } // namespace openPMD::detail

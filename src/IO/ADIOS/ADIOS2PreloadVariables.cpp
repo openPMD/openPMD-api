@@ -18,7 +18,12 @@ namespace
             : Iterator(std::move(it))
             , m_end(std::move(end))
             , m_filter(std::move(filter))
-        {}
+        {
+            if (it != end && !m_filter(*it))
+            {
+                operator++();
+            }
+        }
         auto operator++() -> FilteredInputIterator &
         {
             do
@@ -41,9 +46,21 @@ namespace
     };
 } // namespace
 
-auto AdiosVariables::availableAttributes(size_t step, adios2::IO &IO)
+auto AdiosVariables::availableVariables(
+    size_t step, bool use_step_selection, adios2::IO &IO)
     -> AttributeMap_t const &
 {
+    if (!use_step_selection && m_preparsed.has_value())
+    {
+        // Currently stepped out of step selection, but using ReadRandomAccess
+        return m_preparsed->m_allVariables;
+    }
+    // Shortcut: No need to recompute variables if we find they are static
+    if (variables_are_static && m_availableVariables.has_value())
+    {
+        return *m_availableVariables;
+    }
+    // Check if variables need to be (re)computed
     if (!m_availableVariables || step != this->currentStep)
     {
         if (m_preparsed.has_value())

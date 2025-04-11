@@ -481,9 +481,10 @@ private:
                     "Tried selecting global step " +
                         std::to_string(step_selection) + " for variable '" +
                         varName +
-                        "', but variable is not defined for that step. "
-                        "Has " +
-                        std::to_string(var_steps) +
+                        "', but variable is not defined for that step (only "
+                        "for steps " +
+                        auxiliary::vec_as_string(preparsed->second) +
+                        "). Has " + std::to_string(var_steps) +
                         " step(s), but the file has " +
                         std::to_string(file_steps) + " step(s).");
             }

@@ -13,7 +13,8 @@ using namespace openPMD;
 
 constexpr char const *write_cfg =
     R"(adios2.use_group_table = true
-           adios2.modifiable_attributes = true)";
+       adios2.modifiable_attributes = true
+       adios2.engine.parameters.FlattenSteps = "ON")";
 
 template <typename WriteIterations>
 auto run_test_filebased(
@@ -172,6 +173,15 @@ auto run_test_groupbased(
 {
     std::string filename =
         "../samples/close_iteration_reopen/groupbased." + ext;
+    /*
+     * Need to enforce group-based encoding for this test. Since this closes and
+     * reopens the same Iteration for writing, the output will go to multiple
+     * ADIOS2 steps. Opening this in group-based encoding with
+     * READ_RANDOM_ACCESS will show all data from all steps. However, in
+     * variable-based encoding, Iterations are selected by specifying an ADIOS2
+     * step selection, hence only a single step's data will be shown for each
+     * Iteration.
+     */
     Series series(
         filename,
         Access::CREATE,

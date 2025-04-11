@@ -1402,7 +1402,8 @@ ADIOS2File::availableVariablesPrefixed(std::string const &prefix)
 
 ADIOS2File::AttributeMap_t const &ADIOS2File::availableVariables()
 {
-    return m_variables.availableAttributes(currentStep(), m_IO);
+    return m_variables.availableVariables(
+        currentStep(), useStepSelection, m_IO);
 }
 
 void ADIOS2File::markActive(Writable *writable)

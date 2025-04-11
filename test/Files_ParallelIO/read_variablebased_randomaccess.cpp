@@ -7,7 +7,7 @@
 
 #include <catch2/catch.hpp>
 
-#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI && openPMD_HAS_ADIOS_2_9
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 #include <adios2.h>
 #include <mpi.h>
 
@@ -25,6 +25,8 @@ static void create_file_in_serial()
 
         auto variable =
             IO.DefineVariable<int>("/data/meshes/theta", {10}, {0}, {10});
+        auto variable2 = IO.DefineVariable<int>(
+            "/data/meshes/e_chargeDensity", {10}, {0}, {10});
 
         for (size_t step = 0; step < 5; ++step)
         {
@@ -76,6 +78,33 @@ static void create_file_in_serial()
                 std::vector<double>(7, 0).data(),
                 7);
             IO.DefineAttribute("/data/meshes/theta/unitSI", double(1));
+
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/axisLabels",
+                std::vector<std::string>{"x"}.data(),
+                1);
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/dataOrder", std::string("C"));
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/geometry",
+                std::string("cartesian"));
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/gridGlobalOffset", double(0));
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/gridSpacing", double(1));
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/gridUnitSI", double(1));
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/position", double(0));
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/timeOffset", double(0));
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/unitDimension",
+                std::vector<double>(7, 0).data(),
+                7);
+            IO.DefineAttribute(
+                "/data/meshes/e_chargeDensity/unitSI", double(1));
+
             IO.DefineAttribute("/data/time", double(0));
             IO.DefineAttribute("/data/timeUnitSI", double(1));
 
@@ -85,6 +114,10 @@ static void create_file_in_serial()
 
             std::vector<int> data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
             engine.Put(variable, data.data());
+            if (step % 2 == 1)
+            {
+                engine.Put(variable2, data.data());
+            }
 
             engine.EndStep();
         }
@@ -109,12 +142,45 @@ auto read_variablebased_randomaccess() -> void
             openPMD::Access::READ_ONLY,
             MPI_COMM_WORLD,
             "adios2.engine.type = \"bp5\"");
-        auto data =
-            read.iterations[0].meshes["theta"].loadChunk<int>({0}, {10});
-        read.flush();
-        for (size_t i = 0; i < 10; ++i)
+        for (auto &[index, iteration] : read.snapshots())
         {
-            REQUIRE(data.get()[i] == int(i));
+            auto data = iteration.meshes["theta"].loadChunk<int>({0}, {10});
+            read.flush();
+            for (size_t i = 0; i < 10; ++i)
+            {
+                REQUIRE(data.get()[i] == int(i));
+            }
+            // clang-format off
+            /*
+             * Step 0:
+             *   uint64_t  /data/snapshot  attr   = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+             * Step 1:
+             *   int32_t   /data/meshes/e_chargeDensity  {10}
+             *   uint64_t  /data/snapshot  attr   = {10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
+             * Step 2:
+             *   uint64_t  /data/snapshot  attr   = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29}
+             * Step 3:
+             *   int32_t   /data/meshes/e_chargeDensity  {10}
+             *   uint64_t  /data/snapshot  attr   = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39}
+             * Step 4:
+             *   uint64_t  /data/snapshot  attr   = {40, 41, 42, 43, 44, 45, 46, 47, 48, 49}
+             */
+            // clang-format on
+            size_t adios_step = index / 10; // 10 iterations per step
+            bool step_has_charge_density = adios_step % 2 == 1;
+            // REQUIRE(
+            //     iteration.meshes.contains("e_chargeDensity") ==
+            //     step_has_charge_density);
+            if (step_has_charge_density)
+            {
+                data = iteration.meshes["e_chargeDensity"].loadChunk<int>(
+                    {0}, {10});
+                read.flush();
+                for (size_t i = 0; i < 10; ++i)
+                {
+                    REQUIRE(data.get()[i] == int(i));
+                }
+            }
         }
     }
 }
