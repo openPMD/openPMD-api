@@ -13,7 +13,7 @@
 
 namespace read_variablebased_randomaccess
 {
-static void create_file_in_serial()
+static void create_file_in_serial(bool use_group_table)
 {
     {
         adios2::ADIOS adios;
@@ -112,11 +112,32 @@ static void create_file_in_serial()
                 "__openPMD_internal/openPMD2_adios2_schema", 0);
             IO.DefineAttribute<unsigned char>("__openPMD_internal/useSteps", 0);
 
+            if (use_group_table)
+            {
+                IO.DefineAttribute<size_t>(
+                    "__openPMD_groups/", step, "", "/", true);
+                IO.DefineAttribute<size_t>(
+                    "__openPMD_groups/data", step, "", "/", true);
+                IO.DefineAttribute<size_t>(
+                    "__openPMD_groups/data/meshes", step, "", "/", true);
+                IO.DefineAttribute<size_t>(
+                    "__openPMD_groups/data/meshes/theta", step, "", "/", true);
+            }
+
             std::vector<int> data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
             engine.Put(variable, data.data());
             if (step % 2 == 1)
             {
                 engine.Put(variable2, data.data());
+                if (use_group_table)
+                {
+                    IO.DefineAttribute<size_t>(
+                        "__openPMD_groups/data/meshes/e_chargeDensity",
+                        step,
+                        "",
+                        "/",
+                        true);
+                }
             }
 
             engine.EndStep();
@@ -126,31 +147,22 @@ static void create_file_in_serial()
     }
 }
 
-auto read_variablebased_randomaccess() -> void
+auto read_file_in_parallel(bool use_group_table) -> void
 {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank == 0)
+    openPMD::Series read(
+        "../samples/read_variablebased_randomaccess.bp",
+        openPMD::Access::READ_ONLY,
+        MPI_COMM_WORLD,
+        "adios2.engine.type = \"bp5\"");
+    for (auto &[index, iteration] : read.snapshots())
     {
-        create_file_in_serial();
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    {
-        openPMD::Series read(
-            "../samples/read_variablebased_randomaccess.bp",
-            openPMD::Access::READ_ONLY,
-            MPI_COMM_WORLD,
-            "adios2.engine.type = \"bp5\"");
-        for (auto &[index, iteration] : read.snapshots())
+        auto data = iteration.meshes["theta"].loadChunk<int>({0}, {10});
+        read.flush();
+        for (size_t i = 0; i < 10; ++i)
         {
-            auto data = iteration.meshes["theta"].loadChunk<int>({0}, {10});
-            read.flush();
-            for (size_t i = 0; i < 10; ++i)
-            {
-                REQUIRE(data.get()[i] == int(i));
-            }
-            // clang-format off
+            REQUIRE(data.get()[i] == int(i));
+        }
+        // clang-format off
             /*
              * Step 0:
              *   uint64_t  /data/snapshot  attr   = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -165,24 +177,58 @@ auto read_variablebased_randomaccess() -> void
              * Step 4:
              *   uint64_t  /data/snapshot  attr   = {40, 41, 42, 43, 44, 45, 46, 47, 48, 49}
              */
-            // clang-format on
-            size_t adios_step = index / 10; // 10 iterations per step
-            bool step_has_charge_density = adios_step % 2 == 1;
-            // REQUIRE(
-            //     iteration.meshes.contains("e_chargeDensity") ==
-            //     step_has_charge_density);
-            if (step_has_charge_density)
+        // clang-format on
+        size_t adios_step = index / 10; // 10 iterations per step
+        bool step_has_charge_density = adios_step % 2 == 1;
+        if (use_group_table)
+        {
+            REQUIRE(
+                iteration.meshes.contains("e_chargeDensity") ==
+                step_has_charge_density);
+        }
+        else
+        {
+            // Without a group table, the groups need to be recovered from
+            // attributes and variables found in the ADIOS2 file. But since the
+            // e_chargeDensity mesh exists only in a subselection of steps, its
+            // attributes will leak into the other steps, making the API think
+            // that there is data where there is none.
+            REQUIRE(iteration.meshes.contains("e_chargeDensity"));
+            // Only when the variable is also found, the reading routines will
+            // correctly determine that this is a scalar mesh.
+            REQUIRE(
+                iteration.meshes["e_chargeDensity"].scalar() ==
+                step_has_charge_density);
+        }
+        if (step_has_charge_density)
+        {
+            data =
+                iteration.meshes["e_chargeDensity"].loadChunk<int>({0}, {10});
+            read.flush();
+            for (size_t i = 0; i < 10; ++i)
             {
-                data = iteration.meshes["e_chargeDensity"].loadChunk<int>(
-                    {0}, {10});
-                read.flush();
-                for (size_t i = 0; i < 10; ++i)
-                {
-                    REQUIRE(data.get()[i] == int(i));
-                }
+                REQUIRE(data.get()[i] == int(i));
             }
         }
     }
+}
+
+auto read_variablebased_randomaccess() -> void
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0)
+    {
+        create_file_in_serial(true);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    read_file_in_parallel(true);
+    if (rank == 0)
+    {
+        create_file_in_serial(false);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    read_file_in_parallel(false);
 }
 } // namespace read_variablebased_randomaccess
 #else
