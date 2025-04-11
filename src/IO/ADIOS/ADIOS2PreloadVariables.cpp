@@ -34,7 +34,7 @@ namespace
         using Iterator::operator*;
         using Iterator::operator->;
 
-        auto end() const -> FilteredInputIterator
+        [[nodiscard]] auto end() const -> FilteredInputIterator
         {
             return {m_end, m_end, m_filter};
         }
