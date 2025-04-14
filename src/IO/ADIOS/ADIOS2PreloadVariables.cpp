@@ -19,7 +19,8 @@ namespace
             , m_end(std::move(end))
             , m_filter(std::move(filter))
         {
-            if (it != end && !m_filter(*it))
+            // use `*this` instead of `it`, since `it` has been moved
+            if (*this != m_end && !m_filter(**this))
             {
                 operator++();
             }
