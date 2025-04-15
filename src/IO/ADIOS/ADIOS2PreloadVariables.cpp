@@ -18,7 +18,7 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_ADIOS2
 
