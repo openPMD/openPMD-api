@@ -1288,9 +1288,16 @@ void Series::flushFileBased(
     bool flushIOHandler)
 {
     auto &series = get();
-    if (end == begin)
+    /*
+     * Iterations might have been present, but have been closed and deleted from
+     * internal structures. In this case, previous flushes were successful and
+     * the Series is now in written() state.
+     */
+    if (end == begin && !written())
+    {
         throw std::runtime_error(
             "fileBased output can not be written with no iterations.");
+    }
 
     switch (IOHandler()->m_frontendAccess)
     {
