@@ -648,8 +648,6 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
             else if (
                 series.IOHandler()->m_frontendAccess == Access::READ_LINEAR)
             {
-                std::cout << "Closing Iteration " << *maybe_current_iteration
-                          << std::endl;
                 data.series.iterations.container().erase(
                     *maybe_current_iteration);
             }
