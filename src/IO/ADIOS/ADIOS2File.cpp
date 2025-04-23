@@ -1319,8 +1319,6 @@ Please consider using either of the following instead:
 * another openPMD backend (e.g. by selecting file extension .h5)
 * (experimental) variable encoding (e.g. by `Series::setIterationEncoding()`
   or by the JSON config {"iteration_encoding": "variable_based"}).
-  Note that there is at this point no complete read support for variable-encoded
-  outputs.
 
 Use the environment variable OPENPMD_BP5_GROUPENCODING_MAX_STEPS to adjust the
 number of allowed steps. Set the value as 0 to disable this check.
