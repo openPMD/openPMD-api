@@ -363,9 +363,9 @@ size_t ADIOS2File::currentStep()
     {
         return *step_selection;
     }
-    else if (nonpersistentEngine(m_impl->m_engineType))
+    else if (m_mode == adios2::Mode::ReadRandomAccess)
     {
-        return m_currentStep;
+        return 0;
     }
     else
     {
