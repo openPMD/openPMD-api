@@ -22,12 +22,16 @@ int main()
     }
 
     // open file for writing
+    // use QueueFullPolicy = Discard in order to create a situation where from
+    // the reader's perspective steps are skipped. This tests the bug reported
+    // in https://github.com/openPMD/openPMD-api/issues/1747.
     Series series = Series("electrons.sst", Access::CREATE, R"(
 {
   "adios2": {
     "engine": {
       "parameters": {
-        "DataTransport": "WAN"
+        "DataTransport": "WAN",
+        "QueueFullPolicy": "Discard"
       }
     }
   }
