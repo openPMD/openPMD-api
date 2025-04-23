@@ -407,7 +407,7 @@ public:
 
     size_t currentStep();
     void setStepSelection(std::optional<size_t>);
-    [[nodiscard]] std::optional<size_t> stepSelection() const;
+    [[nodiscard]] std::optional<size_t> const &stepSelection() const;
 
     [[nodiscard]] detail::AdiosAttributes const &attributes() const
     {
@@ -431,13 +431,9 @@ private:
     std::optional<adios2::Engine> m_engine; //! ADIOS engine
 
     /*
-     * Not all engines support the CurrentStep() call, so we have to
-     * implement this manually.
-     * Note: We don't use a std::optional<size_t> here since the currentStep
-     * is always being counted.
+     * Used for selecting steps in adios2::Mode::ReadRandomAccesss.
      */
-    size_t m_currentStep = 0;
-    bool useStepSelection = false;
+    std::optional<size_t> m_stepSelection;
     std::optional<size_t> m_max_steps_bp5 = std::make_optional<size_t>(100);
 
     /*

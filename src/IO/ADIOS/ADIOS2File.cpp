@@ -381,28 +381,12 @@ void ADIOS2File::setStepSelection(std::optional<size_t> step)
             "ADIOS2 backend: Cannot only use random-access step selections "
             "when reading without streaming mode.");
     }
-    if (!step.has_value())
-    {
-        m_currentStep = 0;
-        useStepSelection = false;
-    }
-    else
-    {
-        m_currentStep = *step;
-        useStepSelection = true;
-    }
+    m_stepSelection = step;
 }
 
-std::optional<size_t> ADIOS2File::stepSelection() const
+std::optional<size_t> const &ADIOS2File::stepSelection() const
 {
-    if (useStepSelection)
-    {
-        return {m_currentStep};
-    }
-    else
-    {
-        return std::nullopt;
-    }
+    return m_stepSelection;
 }
 
 void ADIOS2File::configure_IO_Read()
@@ -1402,7 +1386,7 @@ ADIOS2File::availableVariablesPrefixed(std::string const &prefix)
 ADIOS2File::AttributeMap_t const &ADIOS2File::availableVariables()
 {
     return m_variables.availableVariables(
-        currentStep(), useStepSelection, m_IO);
+        currentStep(), stepSelection().has_value(), m_IO);
 }
 
 void ADIOS2File::markActive(Writable *writable)
