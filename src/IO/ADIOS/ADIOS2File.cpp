@@ -324,9 +324,10 @@ namespace
 
 size_t ADIOS2File::currentStep()
 {
-    if (nonpersistentEngine(m_impl->m_engineType))
+    // if (nonpersistentEngine(m_impl->m_engineType))
+    if (m_mode == adios2::Mode::ReadRandomAccess)
     {
-        return m_currentStep;
+        return 0;
     }
     else
     {
@@ -1109,7 +1110,6 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
             }
             engine.EndStep();
             engine.BeginStep();
-            // ++m_currentStep; // think we should keep this as the logical step
             m_uniquePtrPuts.clear();
             uncommittedAttributes.clear();
             m_updateSpans.clear();
@@ -1194,14 +1194,14 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
         uncommittedAttributes.clear();
         m_updateSpans.clear();
         streamStatus = StreamStatus::OutsideOfStep;
-        ++m_currentStep;
         return AdvanceStatus::OK;
     }
     case AdvanceMode::BEGINSTEP: {
         adios2::StepStatus adiosStatus{};
+        auto &engine = getEngine();
 
         auto check_bp5 = [&]() -> bool {
-            std::string engineType = getEngine().Type();
+            std::string engineType = engine.Type();
             std::transform(
                 engineType.begin(),
                 engineType.end(),
@@ -1210,7 +1210,7 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
             return engineType == "bp5writer";
         };
 
-        if (this->m_currentStep == 0)
+        if (engine.CurrentStep() == 0)
         {
             int max_steps_from_env =
                 auxiliary::getEnvNum("OPENPMD_BP5_GROUPENCODING_MAX_STEPS", -1);
@@ -1230,7 +1230,7 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
         if (this->m_impl->m_handler->m_encoding ==
                 IterationEncoding::groupBased &&
             this->m_max_steps_bp5.has_value() &&
-            this->m_currentStep >= *this->m_max_steps_bp5 &&
+            engine.CurrentStep() >= *this->m_max_steps_bp5 &&
             (this->m_mode == adios2::Mode::Write ||
              this->m_mode == adios2::Mode::Append) &&
             check_bp5())
@@ -1266,7 +1266,7 @@ Be aware of the performance implications described above.)");
 
         if (streamStatus != StreamStatus::DuringStep)
         {
-            adiosStatus = getEngine().BeginStep();
+            adiosStatus = engine.BeginStep();
         }
         else
         {
