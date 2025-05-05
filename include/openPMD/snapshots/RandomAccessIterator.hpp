@@ -66,10 +66,11 @@ public:
     RandomAccessIterator(RandomAccessIterator &&other) noexcept(
         noexcept(iterator_t(std::declval<iterator_t &&>())));
 
-    RandomAccessIterator &operator=(RandomAccessIterator const &other);
     RandomAccessIterator &
-    operator=(RandomAccessIterator &&other) noexcept(noexcept(
-        std::declval<iterator_t>().operator=(std::declval<iterator_t &&>())));
+    operator=(RandomAccessIterator const &other) = default;
+    RandomAccessIterator &operator=(RandomAccessIterator &&other) noexcept(
+        noexcept(std::declval<iterator_t>().operator=(
+            std::declval<iterator_t &&>()))) = default;
 
     auto operator*() -> value_type &;
     auto operator*() const -> value_type const &;
