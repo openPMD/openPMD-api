@@ -3525,7 +3525,10 @@ bool Series::randomAccessSteps() const
         }
         return false;
     };
-    return iterationEncoding() == IterationEncoding::variableBased &&
+    return get().m_parsePreference.value_or(
+               internal::ParsePreference::UpFront) ==
+        internal::ParsePreference::UpFront &&
+        iterationEncoding() == IterationEncoding::variableBased &&
         randomAccess(IOHandler()->m_backendAccess);
 }
 
