@@ -62,9 +62,9 @@ public:
 
     ~RandomAccessIterator() override;
 
-    RandomAccessIterator(RandomAccessIterator const &other);
+    RandomAccessIterator(RandomAccessIterator const &other) = default;
     RandomAccessIterator(RandomAccessIterator &&other) noexcept(
-        noexcept(iterator_t(std::declval<iterator_t &&>())));
+        noexcept(iterator_t(std::declval<iterator_t &&>()))) = default;
 
     RandomAccessIterator &
     operator=(RandomAccessIterator const &other) = default;
