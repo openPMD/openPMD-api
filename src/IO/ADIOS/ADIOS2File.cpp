@@ -109,7 +109,12 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     std::nullopt,
                     ba.variables());
 
-                engine.Put(var, ptr);
+                // @todo cache this
+                auto is_bp5 = ba.m_impl->realEngineType() == "bp5" ||
+                    auxiliary::lowerCase(engine.Type()) == "bp5writer";
+                auto do_defer =
+                    is_bp5 ? adios2::Mode::Sync : adios2::Mode::Deferred;
+                engine.Put(var, ptr, do_defer);
             }
             else if constexpr (std::is_same_v<
                                    ptr_type,
@@ -180,7 +185,11 @@ struct RunUniquePtrPut
             bufferedPut.name,
             std::nullopt,
             ba.variables());
-        engine.Put(var, ptr);
+        // @todo cache this
+        auto is_bp5 = ba.m_impl->realEngineType() == "bp5" ||
+            auxiliary::lowerCase(engine.Type()) == "bp5writer";
+        auto do_defer = is_bp5 ? adios2::Mode::Sync : adios2::Mode::Deferred;
+        engine.Put(var, ptr, do_defer);
     }
 
     static constexpr char const *errorMsg = "RunUniquePtrPut";
@@ -1138,9 +1147,15 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
             m_uniquePtrPuts.clear();
             m_updateSpans.clear();
             break;
-        case CleanedFlushTarget::Buffer:
-            engine.PerformPuts();
-            break;
+        case CleanedFlushTarget::Buffer: { // @todo cache this
+            auto is_bp5 = m_impl->realEngineType() == "bp5" ||
+                auxiliary::lowerCase(engine.Type()) == "bp5writer";
+            if (!is_bp5)
+            {
+                engine.PerformPuts();
+            }
+        }
+        break;
         case CleanedFlushTarget::Step:
             if (streamStatus != StreamStatus::DuringStep)
             {
