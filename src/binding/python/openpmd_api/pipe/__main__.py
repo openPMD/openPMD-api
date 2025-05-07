@@ -291,6 +291,8 @@ def distribution_strategy(dataset_extent,
         return io.FailingStrategy()
     elif strategy_identifier == 'discard':
         return io.DiscardingStrategy()
+    elif strategy_identifier == 'blocksofsourceranks':
+        return io.BlocksOfSourceRanks()
     else:
         raise RuntimeError("Unknown distribution strategy: " +
                            strategy_identifier)
