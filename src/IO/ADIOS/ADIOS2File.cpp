@@ -109,11 +109,8 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     std::nullopt,
                     ba.variables());
 
-                // @todo cache this
-                auto is_bp5 = ba.m_impl->realEngineType() == "bp5" ||
-                    auxiliary::lowerCase(engine.Type()) == "bp5writer";
                 auto do_defer =
-                    is_bp5 ? adios2::Mode::Sync : adios2::Mode::Deferred;
+                    ba.m_is_bp5 ? adios2::Mode::Sync : adios2::Mode::Deferred;
                 engine.Put(var, ptr, do_defer);
             }
             else if constexpr (std::is_same_v<
@@ -185,10 +182,8 @@ struct RunUniquePtrPut
             bufferedPut.name,
             std::nullopt,
             ba.variables());
-        // @todo cache this
-        auto is_bp5 = ba.m_impl->realEngineType() == "bp5" ||
-            auxiliary::lowerCase(engine.Type()) == "bp5writer";
-        auto do_defer = is_bp5 ? adios2::Mode::Sync : adios2::Mode::Deferred;
+        auto do_defer =
+            ba.m_is_bp5 ? adios2::Mode::Sync : adios2::Mode::Deferred;
         engine.Put(var, ptr, do_defer);
     }
 
@@ -987,6 +982,14 @@ adios2::Engine &ADIOS2File::getEngine()
         {
             throw std::runtime_error("[ADIOS2] Failed opening Engine.");
         }
+
+        m_is_bp5 = m_impl->realEngineType() == "bp5" ||
+            /* this second check should be sufficient, but we leave the
+               first check in as a safeguard against renamings in
+               ADIOS2. Also do a lowerCase transform since the docstring
+               of `Engine::Type()` claims that the return value is in
+               lowercase, but for BP5 this does not seem true. */
+            auxiliary::lowerCase(m_engine->Type()) == "bp5writer";
     }
     return m_engine.value();
 }
@@ -1107,13 +1110,7 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
         {
         case FlushTarget::Disk:
         case FlushTarget::Disk_Override:
-            if (m_impl->realEngineType() == "bp5" ||
-                /* this second check should be sufficient, but we leave the
-                   first check in as a safeguard against renamings in
-                   ADIOS2. Also do a lowerCase transform since the docstring
-                   of `Engine::Type()` claims that the return value is in
-                   lowercase, but for BP5 this does not seem true. */
-                auxiliary::lowerCase(engine.Type()) == "bp5writer")
+            if (m_is_bp5)
             {
                 target = CleanedFlushTarget::Disk;
             }
@@ -1147,10 +1144,8 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
             m_uniquePtrPuts.clear();
             m_updateSpans.clear();
             break;
-        case CleanedFlushTarget::Buffer: { // @todo cache this
-            auto is_bp5 = m_impl->realEngineType() == "bp5" ||
-                auxiliary::lowerCase(engine.Type()) == "bp5writer";
-            if (!is_bp5)
+        case CleanedFlushTarget::Buffer: {
+            if (!m_is_bp5)
             {
                 engine.PerformPuts();
             }
@@ -1263,16 +1258,6 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
         adios2::StepStatus adiosStatus{};
         auto &engine = getEngine();
 
-        auto check_bp5 = [&]() -> bool {
-            std::string engineType = engine.Type();
-            std::transform(
-                engineType.begin(),
-                engineType.end(),
-                engineType.begin(),
-                [](unsigned char c) { return std::tolower(c); });
-            return engineType == "bp5writer";
-        };
-
         if (engine.CurrentStep() == 0)
         {
             int max_steps_from_env =
@@ -1290,13 +1275,13 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
 
         // Check some conditions on which to now cancel operation due to
         // unwieldy metadata sizes in BP5 with group encoding
-        if (this->m_impl->m_handler->m_encoding ==
+        if (m_is_bp5 &&
+            this->m_impl->m_handler->m_encoding ==
                 IterationEncoding::groupBased &&
             this->m_max_steps_bp5.has_value() &&
             engine.CurrentStep() >= *this->m_max_steps_bp5 &&
             (this->m_mode == adios2::Mode::Write ||
-             this->m_mode == adios2::Mode::Append) &&
-            check_bp5())
+             this->m_mode == adios2::Mode::Append))
         {
             throw error::OperationUnsupportedInBackend(
                 "ADIOS2",
