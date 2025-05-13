@@ -116,38 +116,34 @@ class deferred_load:
 
 # Example how to implement a simple partial strategy in Python
 class LoadOne(io.PartialStrategy):
-    def __init__(self, rank):
+    def __init__(self):
         super().__init__()
-        self.rank = rank
 
-    def assign(self, assignment, *_):
+    def assign(self, assignment, ranks_in, ranks_out, my_rank, num_ranks):
         element = assignment.not_assigned.pop()
-        if self.rank not in assignment.assigned:
-            assignment.assigned[self.rank] = [element]
+        if my_rank not in assignment.assigned:
+            assignment.assigned[my_rank] = [element]
         else:
-            assignment.assigned[self.rank].append(element)
+            assignment.assigned[my_rank].append(element)
         return assignment
 
 
 # Example how to implement a simple strategy in Python
 class LoadAll(io.Strategy):
 
-    def __init__(self, rank):
+    def __init__(self):
         super().__init__()
-        self.rank = rank
 
-    def assign(self, assignment, *_):
+    def assign(self, assignment, ranks_in, ranks_out, my_rank, num_ranks):
         res = assignment.assigned
-        if self.rank not in res:
-            res[self.rank] = assignment.not_assigned
+        if my_rank not in res:
+            res[my_rank] = assignment.not_assigned
         else:
-            res[self.rank].extend(assignment.not_assigned)
+            res[my_rank].extend(assignment.not_assigned)
         return res
 
 
 def distribution_strategy(dataset_extent,
-                          mpi_rank,
-                          mpi_size,
                           strategy_identifier=None):
     if strategy_identifier is None or not strategy_identifier:
         if 'OPENPMD_CHUNK_DISTRIBUTION' in os.environ:
@@ -158,24 +154,19 @@ def distribution_strategy(dataset_extent,
     match = re.search('hostname_(.*)_(.*)', strategy_identifier)
     if match is not None:
         inside_node = distribution_strategy(dataset_extent,
-                                            mpi_rank,
-                                            mpi_size,
                                             strategy_identifier=match.group(1))
         second_phase = distribution_strategy(
             dataset_extent,
-            mpi_rank,
-            mpi_size,
             strategy_identifier=match.group(2))
         return io.FromPartialStrategy(io.ByHostname(inside_node), second_phase)
     elif strategy_identifier == 'all':
-        return io.FromPartialStrategy(LoadOne(mpi_rank), LoadAll(mpi_rank))
+        return io.FromPartialStrategy(LoadOne(), LoadAll())
     elif strategy_identifier == 'roundrobin':
         return io.RoundRobin()
     elif strategy_identifier == 'binpacking':
         return io.BinPacking()
     elif strategy_identifier == 'slicedataset':
-        return io.ByCuboidSlice(io.OneDimensionalBlockSlicer(), dataset_extent,
-                                mpi_rank, mpi_size)
+        return io.ByCuboidSlice(io.OneDimensionalBlockSlicer(), dataset_extent)
     elif strategy_identifier == 'fail':
         return io.FailingStrategy()
     else:
@@ -319,10 +310,10 @@ class pipe:
                 dest.make_constant(src.get_attribute("value"))
             else:
                 chunk_table = src.available_chunks()
-                strategy = distribution_strategy(shape, self.comm.rank,
-                                                 self.comm.size)
+                strategy = distribution_strategy(shape)
                 my_chunks = strategy.assign(chunk_table, self.inranks,
-                                            self.outranks)
+                                            self.outranks,
+                                            self.comm.rank, self.comm.size)
                 for chunk in my_chunks[
                         self.comm.rank] if self.comm.rank in my_chunks else []:
                     if debug:

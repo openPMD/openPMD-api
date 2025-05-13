@@ -2389,7 +2389,7 @@ void adios2_chunk_distribution()
          */
         RoundRobin roundRobinStrategy;
         auto roundRobinAssignment = roundRobinStrategy.assign(
-            chunkTable, rankMetaIn, readingRanksHostnames);
+            chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment(
             "ROUND ROBIN", roundRobinAssignment, readingRanksHostnames);
 
@@ -2405,8 +2405,8 @@ void adios2_chunk_distribution()
          */
         ByHostname byHostname(
             std::make_unique<BinPacking>(/* splitAlongDimension = */ 1));
-        auto byHostnamePartialAssignment =
-            byHostname.assign(chunkTable, rankMetaIn, readingRanksHostnames);
+        auto byHostnamePartialAssignment = byHostname.assign(
+            chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment(
             "HOSTNAME, ASSIGNED",
             byHostnamePartialAssignment.assigned,
@@ -2422,8 +2422,8 @@ void adios2_chunk_distribution()
          * sink rank. Needed in some domains.
          */
         ByHostname byHostname2(std::make_unique<RoundRobinOfSourceRanks>());
-        auto byHostnamePartialAssignment2 =
-            byHostname2.assign(chunkTable, rankMetaIn, readingRanksHostnames);
+        auto byHostnamePartialAssignment2 = byHostname2.assign(
+            chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment(
             "HOSTNAME2, ASSIGNED",
             byHostnamePartialAssignment2.assigned,
@@ -2446,7 +2446,7 @@ void adios2_chunk_distribution()
             std::make_unique<ByHostname>(std::move(byHostname)),
             std::make_unique<BinPacking>(/* splitAlongDimension = */ 1));
         auto fromPartialAssignment = fromPartialStrategy.assign(
-            chunkTable, rankMetaIn, readingRanksHostnames);
+            chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment(
             "HOSTNAME WITH SECOND PASS",
             fromPartialAssignment,
@@ -2465,23 +2465,20 @@ void adios2_chunk_distribution()
          * in others such as this one, it's an unneeded overhead.)
          */
         ByCuboidSlice cuboidSliceStrategy(
-            std::make_unique<OneDimensionalBlockSlicer>(1),
-            E_x.getExtent(),
-            mpi_rank,
-            mpi_size);
+            std::make_unique<OneDimensionalBlockSlicer>(1), E_x.getExtent());
         auto cuboidSliceAssignment = cuboidSliceStrategy.assign(
-            chunkTable, rankMetaIn, readingRanksHostnames);
+            chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment(
             "CUBOID SLICE", cuboidSliceAssignment, readingRanksHostnames);
 
-        Blocks blocksStrategy(mpi_rank, mpi_size);
+        Blocks blocksStrategy;
         auto blocksAssignment = blocksStrategy.assign(
-            chunkTable, rankMetaIn, readingRanksHostnames);
+            chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment("BLOCKS", blocksAssignment, readingRanksHostnames);
 
-        BlocksOfSourceRanks blocksOfSourceRanksStrategy(mpi_rank, mpi_size);
+        BlocksOfSourceRanks blocksOfSourceRanksStrategy;
         auto blocksOfSourceRanksAssignment = blocksOfSourceRanksStrategy.assign(
-            chunkTable, rankMetaIn, readingRanksHostnames);
+            chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment(
             "BLOCKS OF SOURCE RANKS",
             blocksOfSourceRanksAssignment,

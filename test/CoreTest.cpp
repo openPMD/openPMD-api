@@ -101,7 +101,7 @@ void print(RankMeta const &meta, Assignment const &table)
                   << std::endl;
         for (auto const &chunk : chunkList)
         {
-            std::cout << "\t[Offset: ";
+            std::cout << "\t[From " << chunk.sourceID << "\tOffset: ";
             for (auto offset : chunk.offset)
             {
                 std::cout << offset << ", ";
@@ -127,8 +127,8 @@ TEST_CASE("chunk_assignment", "[core]")
     FromPartialStrategy fullStrategy(
         std::make_unique<ByHostname>(std::move(byHostname)),
         std::make_unique<BinPacking>());
-    Assignment res =
-        fullStrategy.assign(params.table, params.metaSource, params.metaSink);
+    Assignment res = fullStrategy.assign(
+        params.table, params.metaSource, params.metaSink, 0, 2);
     std::cout << "\nRESULTS:" << std::endl;
     test_chunk_assignment::print(params.metaSink, res);
 }

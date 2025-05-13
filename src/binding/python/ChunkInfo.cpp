@@ -127,10 +127,12 @@ struct PyStrategy
     chunk_assignment::Assignment assign(
         chunk_assignment::PartialAssignment assignment,
         chunk_assignment::RankMeta const &in,
-        chunk_assignment::RankMeta const &out) override
+        chunk_assignment::RankMeta const &out,
+        size_t my_rank,
+        size_t num_ranks) override
     {
         return call_virtual<chunk_assignment::Assignment>(
-            "assign", std::move(assignment), in, out);
+            "assign", std::move(assignment), in, out, my_rank, num_ranks);
     }
 
     [[nodiscard]] std::unique_ptr<Strategy> clone() const override
@@ -146,10 +148,12 @@ struct PyPartialStrategy
     chunk_assignment::PartialAssignment assign(
         chunk_assignment::PartialAssignment assignment,
         chunk_assignment::RankMeta const &in,
-        chunk_assignment::RankMeta const &out) override
+        chunk_assignment::RankMeta const &out,
+        size_t my_rank,
+        size_t num_ranks) override
     {
         return call_virtual<chunk_assignment::PartialAssignment>(
-            "assign", std::move(assignment), in, out);
+            "assign", std::move(assignment), in, out, my_rank, num_ranks);
     }
 
     [[nodiscard]] std::unique_ptr<PartialStrategy> clone() const override
@@ -259,39 +263,59 @@ void init_Chunk(py::module &m)
         .def(py::init<>())
         .def(
             "assign",
-            py::overload_cast<ChunkTable, RankMeta const &, RankMeta const &>(
-                &PartialStrategy::assign),
+            py::overload_cast<
+                ChunkTable,
+                RankMeta const &,
+                RankMeta const &,
+                size_t,
+                size_t>(&PartialStrategy::assign),
             py::arg("chunk_table"),
             py::arg("rank_meta_in") = RankMeta(),
-            py::arg("rank_meta_out") = RankMeta())
+            py::arg("rank_meta_out") = RankMeta(),
+            py::arg("my_rank") = 0,
+            py::arg("num_ranks") = 1)
         .def(
             "assign",
             py::overload_cast<
                 PartialAssignment,
                 RankMeta const &,
-                RankMeta const &>(&PartialStrategy::assign),
+                RankMeta const &,
+                size_t,
+                size_t>(&PartialStrategy::assign),
             py::arg("partial_assignment"),
             py::arg("rank_meta_in") = RankMeta(),
-            py::arg("rank_meta_out") = RankMeta());
+            py::arg("rank_meta_out") = RankMeta(),
+            py::arg("my_rank") = 0,
+            py::arg("num_ranks") = 1);
 
     py::class_<Strategy, PyStrategy>(m, "Strategy")
         .def(py::init<>())
         .def(
             "assign",
-            py::overload_cast<ChunkTable, RankMeta const &, RankMeta const &>(
-                &Strategy::assign),
+            py::overload_cast<
+                ChunkTable,
+                RankMeta const &,
+                RankMeta const &,
+                size_t,
+                size_t>(&Strategy::assign),
             py::arg("chunk_table"),
             py::arg("rank_meta_in") = RankMeta(),
-            py::arg("rank_meta_out") = RankMeta())
+            py::arg("rank_meta_out") = RankMeta(),
+            py::arg("my_rank") = 0,
+            py::arg("num_ranks") = 1)
         .def(
             "assign",
             py::overload_cast<
                 PartialAssignment,
                 RankMeta const &,
-                RankMeta const &>(&Strategy::assign),
+                RankMeta const &,
+                size_t,
+                size_t>(&Strategy::assign),
             py::arg("partial_assignment"),
             py::arg("rank_meta_in") = RankMeta(),
-            py::arg("rank_meta_out") = RankMeta());
+            py::arg("rank_meta_out") = RankMeta(),
+            py::arg("my_rank") = 0,
+            py::arg("num_ranks") = 1);
 
     py::class_<FromPartialStrategy, Strategy>(m, "FromPartialStrategy")
         .def(
@@ -304,16 +328,9 @@ void init_Chunk(py::module &m)
     py::class_<RoundRobin, Strategy>(m, "RoundRobin").def(py::init<>());
     py::class_<RoundRobinOfSourceRanks, Strategy>(m, "RoundRobinOfSourceRanks")
         .def(py::init<>());
-    py::class_<Blocks, Strategy>(m, "Blocks")
-        .def(
-            py::init<unsigned int, unsigned int>(),
-            py::arg("mpi_rank"),
-            py::arg("mpi_size"));
+    py::class_<Blocks, Strategy>(m, "Blocks").def(py::init<>());
     py::class_<BlocksOfSourceRanks, Strategy>(m, "BlocksOfSourceRanks")
-        .def(
-            py::init<unsigned int, unsigned int>(),
-            py::arg("mpi_rank"),
-            py::arg("mpi_size"));
+        .def(py::init<>());
 
     py::class_<ByHostname, PartialStrategy>(m, "ByHostname")
         .def(
@@ -331,20 +348,12 @@ void init_Chunk(py::module &m)
 
     py::class_<ByCuboidSlice, Strategy>(m, "ByCuboidSlice")
         .def(
-            py::init([](BlockSlicer const &blockSlicer,
-                        Extent totalExtent,
-                        unsigned int mpi_rank,
-                        unsigned int mpi_size) {
+            py::init([](BlockSlicer const &blockSlicer, Extent totalExtent) {
                 return ByCuboidSlice(
-                    blockSlicer.clone(),
-                    std::move(totalExtent),
-                    mpi_rank,
-                    mpi_size);
+                    blockSlicer.clone(), std::move(totalExtent));
             }),
             py::arg("block_slicer"),
-            py::arg("total_extent"),
-            py::arg("mpi_rank"),
-            py::arg("mpi_size"));
+            py::arg("total_extent"));
 
     py::class_<BinPacking, Strategy>(m, "BinPacking")
         .def(py::init<>())

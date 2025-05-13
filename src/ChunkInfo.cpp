@@ -33,6 +33,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <stdexcept>
 #include <utility>
 
 #ifdef _WIN32
@@ -214,14 +215,22 @@ namespace chunk_assignment
     } // namespace
 
     Assignment Strategy::assign(
-        ChunkTable table, RankMeta const &rankIn, RankMeta const &rankOut)
+        ChunkTable table,
+        RankMeta const &rankIn,
+        RankMeta const &rankOut,
+        size_t my_rank,
+        size_t num_ranks)
     {
         if (rankOut.size() == 0)
         {
             throw std::runtime_error("[assignChunks] No output ranks defined");
         }
         return this->assign(
-            PartialAssignment(std::move(table)), rankIn, rankOut);
+            PartialAssignment(std::move(table)),
+            rankIn,
+            rankOut,
+            my_rank,
+            num_ranks);
     }
 
     PartialAssignment::PartialAssignment(
@@ -235,10 +244,18 @@ namespace chunk_assignment
     {}
 
     PartialAssignment PartialStrategy::assign(
-        ChunkTable table, RankMeta const &rankIn, RankMeta const &rankOut)
+        ChunkTable table,
+        RankMeta const &rankIn,
+        RankMeta const &rankOut,
+        size_t my_rank,
+        size_t num_ranks)
     {
         return this->assign(
-            PartialAssignment(std::move(table)), rankIn, rankOut);
+            PartialAssignment(std::move(table)),
+            rankIn,
+            rankOut,
+            my_rank,
+            num_ranks);
     }
 
     FromPartialStrategy::FromPartialStrategy(
@@ -250,12 +267,17 @@ namespace chunk_assignment
     Assignment FromPartialStrategy::assign(
         PartialAssignment partialAssignment,
         RankMeta const &in,
-        RankMeta const &out)
+        RankMeta const &out,
+        size_t my_rank,
+        size_t num_ranks)
     {
         return m_secondPass->assign(
-            m_firstPass->assign(std::move(partialAssignment), in, out),
+            m_firstPass->assign(
+                std::move(partialAssignment), in, out, my_rank, num_ranks),
             in,
-            out);
+            out,
+            my_rank,
+            num_ranks);
     }
 
     std::unique_ptr<Strategy> FromPartialStrategy::clone() const
@@ -267,7 +289,9 @@ namespace chunk_assignment
     Assignment RoundRobin::assign(
         PartialAssignment partialAssignment,
         RankMeta const &, // ignored parameter
-        RankMeta const &out)
+        RankMeta const &out,
+        size_t /* my_rank */,
+        size_t /* num_ranks */)
     {
         if (out.size() == 0)
         {
@@ -288,8 +312,8 @@ namespace chunk_assignment
         Assignment &sinkChunks = partialAssignment.assigned;
         for (auto &chunk : sourceChunks)
         {
-            chunk.sourceID = nextRank();
-            sinkChunks[chunk.sourceID].push_back(std::move(chunk));
+            auto rank = nextRank();
+            sinkChunks[rank].push_back(std::move(chunk));
         }
         return sinkChunks;
     }
@@ -302,7 +326,9 @@ namespace chunk_assignment
     Assignment RoundRobinOfSourceRanks::assign(
         PartialAssignment partialAssignment,
         RankMeta const &, // ignored parameter
-        RankMeta const &out)
+        RankMeta const &out,
+        size_t /* my_rank */,
+        size_t /* num_ranks */)
     {
         std::map<unsigned int, std::deque<WrittenChunkInfo>>
             sortSourceChunksBySourceRank;
@@ -337,21 +363,21 @@ namespace chunk_assignment
         return std::unique_ptr<Strategy>(new RoundRobinOfSourceRanks);
     }
 
-    Blocks::Blocks(unsigned int mpi_rank_in, unsigned int mpi_size_in)
-        : mpi_size(mpi_size_in), mpi_rank(mpi_rank_in)
-    {}
-
-    Assignment
-    Blocks::assign(PartialAssignment pa, RankMeta const &, RankMeta const &)
+    Assignment Blocks::assign(
+        PartialAssignment pa,
+        RankMeta const &,
+        RankMeta const &,
+        size_t my_rank,
+        size_t num_ranks)
     {
         auto [notAssigned, res] = std::move(pa);
         auto [myChunksFrom, myChunksTo] =
             OneDimensionalBlockSlicer::n_th_block_inside(
-                notAssigned.size(), mpi_rank, mpi_size);
+                notAssigned.size(), my_rank, num_ranks);
         std::transform(
             notAssigned.begin() + myChunksFrom,
             notAssigned.begin() + (myChunksFrom + myChunksTo),
-            std::back_inserter(res[mpi_rank]),
+            std::back_inserter(res[my_rank]),
             [](WrittenChunkInfo &chunk) { return std::move(chunk); });
         return res;
     }
@@ -361,13 +387,12 @@ namespace chunk_assignment
         return std::unique_ptr<Strategy>(new Blocks(*this));
     }
 
-    BlocksOfSourceRanks::BlocksOfSourceRanks(
-        unsigned int mpi_rank_in, unsigned int mpi_size_in)
-        : mpi_size(mpi_size_in), mpi_rank(mpi_rank_in)
-    {}
-
     Assignment BlocksOfSourceRanks::assign(
-        PartialAssignment pa, RankMeta const &, RankMeta const &)
+        PartialAssignment pa,
+        RankMeta const &,
+        RankMeta const &,
+        size_t my_rank,
+        size_t num_ranks)
     {
         auto [notAssigned, res] = std::move(pa);
         std::map<unsigned int, std::deque<WrittenChunkInfo>>
@@ -380,7 +405,7 @@ namespace chunk_assignment
         notAssigned.clear();
         auto [myChunksFrom, myChunksTo] =
             OneDimensionalBlockSlicer::n_th_block_inside(
-                sortSourceChunksBySourceRank.size(), mpi_rank, mpi_size);
+                sortSourceChunksBySourceRank.size(), my_rank, num_ranks);
         auto it = sortSourceChunksBySourceRank.begin();
         for (size_t i = 0; i < myChunksFrom; ++i)
         {
@@ -391,7 +416,7 @@ namespace chunk_assignment
             std::transform(
                 it->second.begin(),
                 it->second.end(),
-                std::back_inserter(res[mpi_rank]),
+                std::back_inserter(res[my_rank]),
                 [](WrittenChunkInfo &chunk) { return std::move(chunk); });
         }
         return res;
@@ -407,7 +432,11 @@ namespace chunk_assignment
     {}
 
     PartialAssignment ByHostname::assign(
-        PartialAssignment res, RankMeta const &in, RankMeta const &out)
+        PartialAssignment res,
+        RankMeta const &in,
+        RankMeta const &out,
+        size_t my_rank,
+        size_t /* num_ranks */)
     {
         // collect chunks by hostname
         std::map<std::string, ChunkTable> chunkGroups;
@@ -460,16 +489,25 @@ namespace chunk_assignment
             else
             {
                 RankMeta ranksOnTargetNode;
-                for (unsigned int rank : it->second)
+                size_t local_rank = 0;
+                size_t counter = 0;
+                for (auto rank : it->second)
                 {
                     ranksOnTargetNode[rank] = hostname;
+                    if (rank == my_rank)
+                    {
+                        local_rank = counter;
+                    }
+                    ++counter;
                 }
                 Assignment swapped;
                 swapped.swap(sinkChunks);
                 sinkChunks = m_withinNode->assign(
                     PartialAssignment(chunkGroup.second, std::move(swapped)),
                     in,
-                    ranksOnTargetNode);
+                    ranksOnTargetNode,
+                    local_rank,
+                    it->second.size());
             }
         }
         return res;
@@ -482,14 +520,9 @@ namespace chunk_assignment
     }
 
     ByCuboidSlice::ByCuboidSlice(
-        std::unique_ptr<BlockSlicer> blockSlicer_in,
-        Extent totalExtent_in,
-        unsigned int mpi_rank_in,
-        unsigned int mpi_size_in)
+        std::unique_ptr<BlockSlicer> blockSlicer_in, Extent totalExtent_in)
         : blockSlicer(std::move(blockSlicer_in))
         , totalExtent(std::move(totalExtent_in))
-        , mpi_rank(mpi_rank_in)
-        , mpi_size(mpi_size_in)
     {}
 
     namespace
@@ -628,14 +661,18 @@ namespace chunk_assignment
     } // namespace
 
     Assignment ByCuboidSlice::assign(
-        PartialAssignment res, RankMeta const &, RankMeta const &)
+        PartialAssignment res,
+        RankMeta const &,
+        RankMeta const &,
+        size_t my_rank,
+        size_t num_ranks)
     {
         ChunkTable &sourceSide = res.notAssigned;
         Assignment &sinkSide = res.assigned;
         Offset myOffset;
         Extent myExtent;
         std::tie(myOffset, myExtent) =
-            blockSlicer->sliceBlock(totalExtent, mpi_size, mpi_rank);
+            blockSlicer->sliceBlock(totalExtent, num_ranks, my_rank);
 
         for (auto &chunk : sourceSide)
         {
@@ -647,7 +684,7 @@ namespace chunk_assignment
                     goto outer_loop;
                 }
             }
-            sinkSide[mpi_rank].push_back(std::move(chunk));
+            sinkSide[my_rank].push_back(std::move(chunk));
         outer_loop:;
         }
 
@@ -656,8 +693,8 @@ namespace chunk_assignment
 
     std::unique_ptr<Strategy> ByCuboidSlice::clone() const
     {
-        return std::unique_ptr<Strategy>(new ByCuboidSlice(
-            blockSlicer->clone(), totalExtent, mpi_rank, mpi_size));
+        return std::unique_ptr<Strategy>(
+            new ByCuboidSlice(blockSlicer->clone(), totalExtent));
     }
 
     BinPacking::BinPacking(size_t splitAlongDimension_in)
@@ -665,7 +702,11 @@ namespace chunk_assignment
     {}
 
     Assignment BinPacking::assign(
-        PartialAssignment res, RankMeta const &, RankMeta const &sinkRanks)
+        PartialAssignment res,
+        RankMeta const &,
+        RankMeta const &sinkRanks,
+        size_t /* my_rank */,
+        size_t /* num_ranks */)
     {
         ChunkTable &sourceChunks = res.notAssigned;
         Assignment &sinkChunks = res.assigned;
@@ -768,7 +809,11 @@ namespace chunk_assignment
     FailingStrategy::FailingStrategy() = default;
 
     Assignment FailingStrategy::assign(
-        PartialAssignment assignment, RankMeta const &, RankMeta const &)
+        PartialAssignment assignment,
+        RankMeta const &,
+        RankMeta const &,
+        size_t /* my_rank */,
+        size_t /* num_ranks */)
     {
         if (assignment.notAssigned.empty())
         {
@@ -789,7 +834,11 @@ namespace chunk_assignment
     DiscardingStrategy::DiscardingStrategy() = default;
 
     Assignment DiscardingStrategy::assign(
-        PartialAssignment assignment, RankMeta const &, RankMeta const &)
+        PartialAssignment assignment,
+        RankMeta const &,
+        RankMeta const &,
+        size_t /* my_rank */,
+        size_t /* num_ranks */)
     {
         return assignment.assigned;
     }

@@ -121,7 +121,9 @@ namespace chunk_assignment
         Assignment assign(
             ChunkTable,
             RankMeta const &rankMetaIn,
-            RankMeta const &rankMetaOut);
+            RankMeta const &rankMetaOut,
+            size_t my_rank,
+            size_t num_ranks);
         /**
          * @brief Assign chunks to be loaded to reading processes.
          *
@@ -136,7 +138,9 @@ namespace chunk_assignment
         virtual Assignment assign(
             PartialAssignment partialAssignment,
             RankMeta const &in,
-            RankMeta const &out) = 0;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) = 0;
 
         virtual std::unique_ptr<Strategy> clone() const = 0;
 
@@ -155,8 +159,12 @@ namespace chunk_assignment
      */
     struct PartialStrategy
     {
-        PartialAssignment
-        assign(ChunkTable table, RankMeta const &in, RankMeta const &out);
+        PartialAssignment assign(
+            ChunkTable table,
+            RankMeta const &in,
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks);
         /**
          * @brief Assign chunks to be loaded to reading processes.
          *
@@ -173,7 +181,9 @@ namespace chunk_assignment
         virtual PartialAssignment assign(
             PartialAssignment partialAssignment,
             RankMeta const &in,
-            RankMeta const &out) = 0;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) = 0;
 
         virtual std::unique_ptr<PartialStrategy> clone() const = 0;
 
@@ -201,7 +211,9 @@ namespace chunk_assignment
         virtual Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         virtual std::unique_ptr<Strategy> clone() const override;
 
@@ -220,7 +232,9 @@ namespace chunk_assignment
         Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         virtual std::unique_ptr<Strategy> clone() const override;
     };
@@ -230,39 +244,33 @@ namespace chunk_assignment
         Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         virtual std::unique_ptr<Strategy> clone() const override;
     };
 
     struct Blocks : Strategy
     {
-    private:
-        unsigned int mpi_size, mpi_rank;
-
-    public:
-        Blocks(unsigned int mpi_rank, unsigned int mpi_size);
-
         Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         [[nodiscard]] std::unique_ptr<Strategy> clone() const override;
     };
 
     struct BlocksOfSourceRanks : Strategy
     {
-    private:
-        unsigned int mpi_size, mpi_rank;
-
-    public:
-        BlocksOfSourceRanks(unsigned int mpi_rank, unsigned int mpi_size);
-
         Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         [[nodiscard]] std::unique_ptr<Strategy> clone() const override;
     };
@@ -282,7 +290,9 @@ namespace chunk_assignment
         PartialAssignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         virtual std::unique_ptr<PartialStrategy> clone() const override;
 
@@ -303,22 +313,20 @@ namespace chunk_assignment
     struct ByCuboidSlice : Strategy
     {
         ByCuboidSlice(
-            std::unique_ptr<BlockSlicer> blockSlicer,
-            Extent totalExtent,
-            unsigned int mpi_rank,
-            unsigned int mpi_size);
+            std::unique_ptr<BlockSlicer> blockSlicer, Extent totalExtent);
 
         Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         virtual std::unique_ptr<Strategy> clone() const override;
 
     private:
         std::unique_ptr<BlockSlicer> blockSlicer;
         Extent totalExtent;
-        unsigned int mpi_rank, mpi_size;
     };
 
     /**
@@ -346,7 +354,9 @@ namespace chunk_assignment
         Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         virtual std::unique_ptr<Strategy> clone() const override;
     };
@@ -367,7 +377,9 @@ namespace chunk_assignment
         Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         virtual std::unique_ptr<Strategy> clone() const override;
     };
@@ -388,7 +400,9 @@ namespace chunk_assignment
         Assignment assign(
             PartialAssignment,
             RankMeta const &in,
-            RankMeta const &out) override;
+            RankMeta const &out,
+            size_t my_rank,
+            size_t num_ranks) override;
 
         virtual std::unique_ptr<Strategy> clone() const override;
     };
