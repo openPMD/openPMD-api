@@ -1,5 +1,4 @@
 function(find_toml11)
-    variable_watch(fetchedtoml11)
     if(TARGET toml11::toml11)
         message(STATUS "toml11::toml11 target already imported")
     elseif(openPMD_USE_INTERNAL_TOML11)
@@ -37,17 +36,6 @@ function(find_toml11)
             )
         endif()
         FetchContent_MakeAvailable(fetchedtoml11)
-        # install(TARGETS toml11 EXPORT toml11Targets)
-        # add_subdirectory(
-        #     "${openPMD_toml11_src}"
-        #     _deps/localtoml11-build/
-        #     # EXCLUDE_FROM_ALL ensures that toml11 is not part of
-        #     # make install.
-        #     # The library is header-only and linking it against
-        #     # PIConGPU targets is sufficient.
-        #     # It needs not be part of any build or install targets
-        #     # explicitly.
-        #     )
 
         # advanced fetch options
         mark_as_advanced(FETCHCONTENT_BASE_DIR)

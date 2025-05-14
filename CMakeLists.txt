@@ -524,9 +524,8 @@ endif()
 # JSON Backend and User-Facing Runtime Options
 #target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
 target_include_directories(openPMD SYSTEM PRIVATE
-    $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
-    #$<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
-target_link_libraries(openPMD PRIVATE openPMD::thirdparty::toml11)
+    $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # HDF5 Backend
 #   TODO: Once we require CMake 3.20+, simply link hdf5::hdf5 C lib target
@@ -1070,30 +1069,12 @@ if(openPMD_INSTALL)
         endif()
     endif()
 
-    # if(openPMD_USE_INTERNAL_TOML11)
-    #     install(EXPORT toml11Targets
-    #         NAMESPACE toml11::
-    #         DESTINATION ${openPMD_INSTALL_CMAKEDIR}
-    #     )
-    # endif()
     install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
         EXPORT openPMDTargets
         LIBRARY DESTINATION ${openPMD_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${openPMD_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${openPMD_INSTALL_BINDIR}
         INCLUDES DESTINATION ${openPMD_INSTALL_INCLUDEDIR}
-    )
-    install(TARGETS toml11 EXPORT toml11Targets)
-
-    install(EXPORT toml11Targets
-            FILE toml11Targets.cmake
-            NAMESPACE toml11::
-            DESTINATION lib/cmake/toml11)
-    # add_dependencies(openPMD toml11)
-    message(STATUS "INSTALLING TOML FROM ${toml11_SOURCE_DIR}/toml11")
-    install(DIRECTORY ${toml11_SOURCE_DIR}
-        DESTINATION ${openPMD_INSTALL_INCLUDEDIR}
-        FILES_MATCHING PATTERN "*.hpp"
     )
     if(openPMD_HAVE_PYTHON)
         install(
