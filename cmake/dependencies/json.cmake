@@ -21,29 +21,24 @@ function(find_json)
     elseif(openPMD_USE_INTERNAL_JSON AND openPMD_json_src)
         add_subdirectory(${openPMD_json_src} _deps/localnlohmann_json-build/)
     elseif(openPMD_USE_INTERNAL_JSON AND (openPMD_json_tar OR openPMD_json_branch))
-        include(FetchContent)
+        include(ExternalProject)
         if(openPMD_json_tar)
-            FetchContent_Declare(fetchednlohmann_json
+            ExternalProject_Add(fetchednlohmann_json
                 URL             ${openPMD_json_tar}
                 URL_HASH        ${openPMD_json_tar_hash}
                 BUILD_IN_SOURCE OFF
+                CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+                INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         else()
-            FetchContent_Declare(fetchednlohmann_json
+            ExternalProject_Add(fetchednlohmann_json
                 GIT_REPOSITORY ${openPMD_json_repo}
                 GIT_TAG        ${openPMD_json_branch}
                 BUILD_IN_SOURCE OFF
+                CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DJSON_BuildTests=OFF
+                INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         endif()
-        FetchContent_MakeAvailable(fetchednlohmann_json)
-
-        # advanced fetch options
-        mark_as_advanced(FETCHCONTENT_BASE_DIR)
-        mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
-        mark_as_advanced(FETCHCONTENT_QUIET)
-        #mark_as_advanced(FETCHCONTENT_SOURCE_DIR_FETCHEDnlohmann_json)
-        mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
-        #mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FETCHEDnlohmann_json)
     elseif(NOT openPMD_USE_INTERNAL_JSON)
         find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
         message(STATUS "nlohmann_json: Found version '${nlohmann_json_VERSION}'")
