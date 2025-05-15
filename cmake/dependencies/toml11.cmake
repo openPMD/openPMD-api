@@ -8,12 +8,15 @@ function(find_toml11)
             if(NOT IS_DIRECTORY ${openPMD_toml11_src})
                 message(FATAL_ERROR "Specified directory openPMD_toml11_src='${openPMD_toml11_src}' does not exist!")
             endif()
+            set(openPMD_used_toml11_src "${openPMD_toml11_src}")
         elseif(openPMD_toml11_tar)
             message(STATUS "Downloading toml11 ...")
             message(STATUS "toml11 source: ${openPMD_toml11_tar}")
+            set(openPMD_used_toml11_src "_deps/fetchedtoml11-src/")
         elseif(openPMD_toml11_branch)
             message(STATUS "Downloading toml11 ...")
             message(STATUS "toml11 repository: ${openPMD_toml11_repo} (${openPMD_toml11_branch})")
+            set(openPMD_used_toml11_src "_deps/fetchedtoml11-src/")
         endif()
     endif()
     if(TARGET toml11::toml11)
@@ -21,7 +24,6 @@ function(find_toml11)
     elseif(openPMD_USE_INTERNAL_TOML11 AND openPMD_toml11_src)
         add_subdirectory(${openPMD_toml11_src} _deps/localtoml11-build/)
     elseif(openPMD_USE_INTERNAL_TOML11 AND (openPMD_toml11_tar OR openPMD_toml11_branch))
-        include(ExternalProject)
         include(FetchContent)
         if(openPMD_toml11_tar)
             FetchContent_Declare(fetchedtoml11
@@ -37,17 +39,6 @@ function(find_toml11)
             )
         endif()
         FetchContent_MakeAvailable(fetchedtoml11)
-        set(cmake_args "")
-        if(NOT DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
-            list(APPEND cmake_args -DCMAKE_INSTALL_PREFIX=${openPMD_INSTALL_PREFIX})
-        endif()
-        ExternalProject_Add(fetchedtoml11
-            SOURCE_DIR _deps/fetchedtoml11-src
-            BUILD_IN_SOURCE OFF
-            EXCLUDE_FROM_ALL TRUE
-            CMAKE_ARGS ${cmake_args}
-            STEP_TARGETS install
-        )
     elseif(NOT openPMD_USE_INTERNAL_TOML11)
         # toml11 4.0 was a breaking change. This is reflected in the library's CMake
         # logic: version 4.0 is not accepted by a call to find_package(toml11 3.7).
@@ -59,6 +50,21 @@ function(find_toml11)
             find_package(toml11 3.7.1 CONFIG REQUIRED)
         endif()
         message(STATUS "toml11: Found version '${toml11_VERSION}'")
+    endif()
+
+    if(DEFINED openPMD_used_toml11_src)
+        include(ExternalProject)
+        set(cmake_args "")
+        if(NOT DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+            list(APPEND cmake_args -DCMAKE_INSTALL_PREFIX=${openPMD_INSTALL_PREFIX})
+        endif()
+        ExternalProject_Add(fetchedtoml11
+            SOURCE_DIR _deps/fetchedtoml11-src
+            BUILD_IN_SOURCE OFF
+            EXCLUDE_FROM_ALL TRUE
+            CMAKE_ARGS ${cmake_args}
+            STEP_TARGETS install
+        )
     endif()
 endfunction()
 

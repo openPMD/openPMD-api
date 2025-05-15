@@ -1,4 +1,4 @@
-function(find_json)
+    function(find_json)
     if(TARGET nlohmann_json::nlohmann_json)
         message(STATUS "nlohmann_json::nlohmann_json target already imported")
     elseif(openPMD_USE_INTERNAL_JSON)
@@ -8,12 +8,15 @@ function(find_json)
             if(NOT IS_DIRECTORY ${openPMD_json_src})
                 message(FATAL_ERROR "Specified directory openPMD_json_src='${openPMD_json_src}' does not exist!")
             endif()
+            set(openPMD_used_json_src "${openPMD_json_src}")
         elseif(openPMD_json_tar)
             message(STATUS "Downloading nlohmann_json ...")
             message(STATUS "nlohmann_json source: ${openPMD_json_tar}")
+            set(openPMD_used_json_src "_deps/fetchednlohmann_json-src/")
         elseif(openPMD_json_branch)
             message(STATUS "Downloading nlohmann_json ...")
             message(STATUS "nlohmann_json repository: ${openPMD_json_repo} (${openPMD_json_branch})")
+            set(openPMD_used_json_src "_deps/fetchednlohmann_json-src/")
         endif()
     endif()
     if(TARGET nlohmann_json::nlohmann_json)
@@ -21,7 +24,6 @@ function(find_json)
     elseif(openPMD_USE_INTERNAL_JSON AND openPMD_json_src)
         add_subdirectory(${openPMD_json_src} _deps/localnlohmann_json-build/)
     elseif(openPMD_USE_INTERNAL_JSON AND (openPMD_json_tar OR openPMD_json_branch))
-        include(ExternalProject)
         include(FetchContent)
         if(openPMD_json_tar)
             FetchContent_Declare(fetchednlohmann_json
@@ -37,20 +39,26 @@ function(find_json)
             )
         endif()
         FetchContent_MakeAvailable(fetchednlohmann_json)
+
+    elseif(NOT openPMD_USE_INTERNAL_JSON)
+        find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
+        message(STATUS "nlohmann_json: Found version '${nlohmann_json_VERSION}'")
+    endif()
+
+    if(DEFINED openPMD_used_json_src)
+        include(ExternalProject)
         set(cmake_args -DJSON_BuildTests=OFF)
-        if(NOT DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+        if(NOT DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT
+            OR NOT ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
             list(APPEND cmake_args -DCMAKE_INSTALL_PREFIX=${openPMD_INSTALL_PREFIX})
         endif()
         ExternalProject_Add(fetchednlohmann_json
-            SOURCE_DIR _deps/fetchednlohmann_json-src/
+            SOURCE_DIR ${openPMD_used_json_src}
             BUILD_IN_SOURCE OFF
             EXCLUDE_FROM_ALL TRUE
             CMAKE_ARGS ${cmake_args}
             STEP_TARGETS install
         )
-    elseif(NOT openPMD_USE_INTERNAL_JSON)
-        find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
-        message(STATUS "nlohmann_json: Found version '${nlohmann_json_VERSION}'")
     endif()
 endfunction()
 
