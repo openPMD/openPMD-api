@@ -22,26 +22,30 @@ function(find_json)
         add_subdirectory(${openPMD_json_src} _deps/localnlohmann_json-build/)
     elseif(openPMD_USE_INTERNAL_JSON AND (openPMD_json_tar OR openPMD_json_branch))
         include(ExternalProject)
+        include(FetchContent)
         if(openPMD_json_tar)
-            ExternalProject_Add(fetchednlohmann_json
+            FetchContent_Declare(fetchednlohmann_json
                 URL             ${openPMD_json_tar}
                 URL_HASH        ${openPMD_json_tar_hash}
                 BUILD_IN_SOURCE OFF
-                CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DJSON_BuildTests=OFF
-                INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         else()
-            ExternalProject_Add(fetchednlohmann_json
+            FetchContent_Declare(fetchednlohmann_json
                 GIT_REPOSITORY ${openPMD_json_repo}
                 GIT_TAG        ${openPMD_json_branch}
                 BUILD_IN_SOURCE OFF
-                CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DJSON_BuildTests=OFF
-                INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         endif()
-        # Need this call to have nlohmann_json available at build time
-        # ExternalProject_Add will later separately install it at install time
-        add_subdirectory("${openPMD_BINARY_DIR}/fetchednlohmann_json-prefix/src/fetchednlohmann_json" _deps/localfetchednlohmann_json-build/)
+        FetchContent_MakeAvailable(fetchednlohmann_json)
+        set(cmake_args -DJSON_BuildTests=OFF)
+        if(NOT DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+            list(APPEND cmake_args -DCMAKE_INSTALL_PREFIX=${openPMD_INSTALL_PREFIX})
+        endif()
+        ExternalProject_Add(fetchednlohmann_json
+            SOURCE_DIR _deps/fetchednlohmann_json-src/
+            BUILD_IN_SOURCE OFF
+            CMAKE_ARGS ${cmake_args}
+        )
     elseif(NOT openPMD_USE_INTERNAL_JSON)
         find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
         message(STATUS "nlohmann_json: Found version '${nlohmann_json_VERSION}'")

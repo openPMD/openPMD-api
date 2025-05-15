@@ -22,27 +22,30 @@ function(find_toml11)
         add_subdirectory(${openPMD_toml11_src} _deps/localtoml11-build/)
     elseif(openPMD_USE_INTERNAL_TOML11 AND (openPMD_toml11_tar OR openPMD_toml11_branch))
         include(ExternalProject)
+        include(FetchContent)
         if(openPMD_toml11_tar)
-            ExternalProject_Add(fetchedtoml11
+            FetchContent_Declare(fetchedtoml11
                     URL             ${openPMD_toml11_tar}
                     URL_HASH        ${openPMD_toml11_tar_hash}
                     BUILD_IN_SOURCE OFF
-                    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-                    INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         else()
-        ExternalProject_Add(fetchedtoml11
+            FetchContent_Declare(fetchedtoml11
                 GIT_REPOSITORY ${openPMD_toml11_repo}
                 GIT_TAG        ${openPMD_toml11_branch}
                 BUILD_IN_SOURCE OFF
-                CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-                INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         endif()
-        # Need this call to have toml11 available at build time
-        # ExternalProject_Add will later separately install it at install time
-        add_subdirectory("${openPMD_BINARY_DIR}/fetchedtoml11-prefix/src/fetchedtoml11" _deps/localtoml11-build/)
-        # message(STATUS "toml11: Found version '${toml11_VERSION}'")
+        FetchContent_MakeAvailable(fetchedtoml11)
+        set(cmake_args "")
+        if(NOT DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR NOT ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+            list(APPEND cmake_args -DCMAKE_INSTALL_PREFIX=${openPMD_INSTALL_PREFIX})
+        endif()
+        ExternalProject_Add(fetchedtoml11
+                SOURCE_DIR _deps/fetchedtoml11-src
+                BUILD_IN_SOURCE OFF
+                CMAKE_ARGS ${cmake_args}
+        )
     elseif(NOT openPMD_USE_INTERNAL_TOML11)
         # toml11 4.0 was a breaking change. This is reflected in the library's CMake
         # logic: version 4.0 is not accepted by a call to find_package(toml11 3.7).
