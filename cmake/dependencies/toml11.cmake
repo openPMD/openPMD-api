@@ -42,9 +42,11 @@ function(find_toml11)
             list(APPEND cmake_args -DCMAKE_INSTALL_PREFIX=${openPMD_INSTALL_PREFIX})
         endif()
         ExternalProject_Add(fetchedtoml11
-                SOURCE_DIR _deps/fetchedtoml11-src
-                BUILD_IN_SOURCE OFF
-                CMAKE_ARGS ${cmake_args}
+            SOURCE_DIR _deps/fetchedtoml11-src
+            BUILD_IN_SOURCE OFF
+            EXCLUDE_FROM_ALL TRUE
+            CMAKE_ARGS ${cmake_args}
+            STEP_TARGETS install
         )
     elseif(NOT openPMD_USE_INTERNAL_TOML11)
         # toml11 4.0 was a breaking change. This is reflected in the library's CMake

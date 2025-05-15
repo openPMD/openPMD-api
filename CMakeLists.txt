@@ -1076,6 +1076,16 @@ if(openPMD_INSTALL)
         RUNTIME DESTINATION ${openPMD_INSTALL_BINDIR}
         INCLUDES DESTINATION ${openPMD_INSTALL_INCLUDEDIR}
     )
+    install(CODE "
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} \
+                --build \"${CMAKE_BINARY_DIR}\" \
+                --target fetchedtoml11-install \
+                --target fetchednlohmann_json-install
+        )
+    ")
+    # install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} --build \"${CMAKE_BINARY_DIR}\" --target toml11_install)")
+    # install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} --build \"${CMAKE_BINARY_DIR}\" --target json_install)")
     if(openPMD_HAVE_PYTHON)
         install(
             DIRECTORY   ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api

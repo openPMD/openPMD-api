@@ -44,7 +44,9 @@ function(find_json)
         ExternalProject_Add(fetchednlohmann_json
             SOURCE_DIR _deps/fetchednlohmann_json-src/
             BUILD_IN_SOURCE OFF
+            EXCLUDE_FROM_ALL TRUE
             CMAKE_ARGS ${cmake_args}
+            STEP_TARGETS install
         )
     elseif(NOT openPMD_USE_INTERNAL_JSON)
         find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
