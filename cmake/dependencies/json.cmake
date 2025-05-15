@@ -27,7 +27,7 @@ function(find_json)
                 URL             ${openPMD_json_tar}
                 URL_HASH        ${openPMD_json_tar_hash}
                 BUILD_IN_SOURCE OFF
-                CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+                CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DJSON_BuildTests=OFF
                 INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         else()
@@ -39,6 +39,9 @@ function(find_json)
                 INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         endif()
+        # Need this call to have nlohmann_json available at build time
+        # ExternalProject_Add will later separately install it at install time
+        add_subdirectory("${openPMD_BINARY_DIR}/fetchednlohmann_json-prefix/src/fetchednlohmann_json" _deps/localfetchednlohmann_json-build/)
     elseif(NOT openPMD_USE_INTERNAL_JSON)
         find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
         message(STATUS "nlohmann_json: Found version '${nlohmann_json_VERSION}'")

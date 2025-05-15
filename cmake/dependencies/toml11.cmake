@@ -39,6 +39,10 @@ function(find_toml11)
                 INSTALL_DIR ${openPMD_INSTALL_PREFIX}
             )
         endif()
+        # Need this call to have toml11 available at build time
+        # ExternalProject_Add will later separately install it at install time
+        add_subdirectory("${openPMD_BINARY_DIR}/fetchedtoml11-prefix/src/fetchedtoml11" _deps/localtoml11-build/)
+        # message(STATUS "toml11: Found version '${toml11_VERSION}'")
     elseif(NOT openPMD_USE_INTERNAL_TOML11)
         # toml11 4.0 was a breaking change. This is reflected in the library's CMake
         # logic: version 4.0 is not accepted by a call to find_package(toml11 3.7).
