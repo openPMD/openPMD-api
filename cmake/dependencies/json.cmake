@@ -50,7 +50,11 @@
         set(cmake_args -DJSON_BuildTests=OFF)
         if(NOT DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT
             OR NOT ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
-            list(APPEND cmake_args -DCMAKE_INSTALL_PREFIX=${openPMD_INSTALL_PREFIX})
+            cmake_path(
+                ABSOLUTE_PATH openPMD_INSTALL_PREFIX
+                BASE_DIRECTORY "${openPMD_BINARY_DIR}"
+                OUTPUT_VARIABLE openPMD_resolved_install_prefix)
+            list(APPEND cmake_args -DCMAKE_INSTALL_PREFIX=${openPMD_resolved_install_prefix})
         endif()
         ExternalProject_Add(fetchednlohmann_json
             SOURCE_DIR ${openPMD_used_json_src}
