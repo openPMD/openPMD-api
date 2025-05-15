@@ -1094,8 +1094,6 @@ if(openPMD_INSTALL)
             )
         ")
     endif()
-    # install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} --build \"${CMAKE_BINARY_DIR}\" --target toml11_install)")
-    # install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} --build \"${CMAKE_BINARY_DIR}\" --target json_install)")
     if(openPMD_HAVE_PYTHON)
         install(
             DIRECTORY   ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api

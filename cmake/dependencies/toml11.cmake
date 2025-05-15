@@ -39,6 +39,15 @@ function(find_toml11)
             )
         endif()
         FetchContent_MakeAvailable(fetchedtoml11)
+
+        # advanced fetch options
+        mark_as_advanced(FETCHCONTENT_BASE_DIR)
+        mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
+        mark_as_advanced(FETCHCONTENT_QUIET)
+        #mark_as_advanced(FETCHCONTENT_SOURCE_DIR_FETCHEDtoml11)
+        mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
+        #mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FETCHEDtoml11)
+
     elseif(NOT openPMD_USE_INTERNAL_TOML11)
         # toml11 4.0 was a breaking change. This is reflected in the library's CMake
         # logic: version 4.0 is not accepted by a call to find_package(toml11 3.7).

@@ -1,4 +1,4 @@
-    function(find_json)
+function(find_json)
     if(TARGET nlohmann_json::nlohmann_json)
         message(STATUS "nlohmann_json::nlohmann_json target already imported")
     elseif(openPMD_USE_INTERNAL_JSON)
@@ -40,6 +40,13 @@
         endif()
         FetchContent_MakeAvailable(fetchednlohmann_json)
 
+        # advanced fetch options
+        mark_as_advanced(FETCHCONTENT_BASE_DIR)
+        mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
+        mark_as_advanced(FETCHCONTENT_QUIET)
+        #mark_as_advanced(FETCHCONTENT_SOURCE_DIR_FETCHEDnlohmann_json)
+        mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
+        #mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FETCHEDnlohmann_json)
     elseif(NOT openPMD_USE_INTERNAL_JSON)
         find_package(nlohmann_json 3.9.1 CONFIG REQUIRED)
         message(STATUS "nlohmann_json: Found version '${nlohmann_json_VERSION}'")
