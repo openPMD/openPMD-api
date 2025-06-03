@@ -132,9 +132,7 @@ jobs:
         sudo apt update
         sudo apt install clang-15 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
         sudo .github/workflows/dependencies/install_spack
-        python3.11 -m venv /opt/python_venv
-        . /opt/python_venv/bin/activate
-        python -m pip install numpy pandas
+        python3.11 -m pip install numpy pandas
         git clone -b v4.0.3 https://github.com/ToruNiina/toml11
         cmake -S toml11 -B build_toml11               \
           -DCMAKE_INSTALL_PREFIX=toml11_install \
@@ -146,7 +144,6 @@ jobs:
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang15_py311_nompi_h5_ad2/)
         spack install
-        . /opt/python_venv/bin/activate
 
         share/openPMD/download_samples.sh build
         export CMAKE_PREFIX_PATH="$(realpath toml11_install):$CMAKE_PREFIX_PATH"
@@ -288,15 +285,10 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        # Use a virtual environment in order to avoid compatibility issues
-        # between the various Python installations in this image.
-        python3.10 -m venv /opt/python_env
-        . /opt/python_env/bin/activate
-        python -m pip install numpy
+        python3.10 -m pip install numpy
     - name: Build
       env: {CXXFLAGS: -Werror}
       run: |
-        . /opt/python_env/bin/activate
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
