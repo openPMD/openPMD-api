@@ -7,26 +7,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  clang7_nopy_nompi_h5_libcpp:
-    runs-on: ubuntu-20.04
+  clang11_nopy_nompi_h5_libcpp:
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang7_nopy_nompi_h5_libcpp_v2}
+      with: {path: /opt/spack, key: clang11_nopy_nompi_h5_libcpp_v2}
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-7 libc++-7-dev libc++abi-7-dev
+        sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_nompi_h5_libcpp/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_nompi_h5_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -36,25 +36,25 @@ jobs:
           -DopenPMD_USE_HDF5=ON    \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
-        cmake --build build --parallel 2
+        cmake --build build --parallel 4
         cd build
         ctest --output-on-failure
 
-  clang7_nopy_ompi_h5_ad2_libcpp:
-    runs-on: ubuntu-20.04
+  clang11_nopy_ompi_h5_ad2_libcpp:
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad2_libcpp_v2}
+      with: {path: /opt/spack, key: clang11_nopy_ompi_h5_ad2_libcpp_v2}
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-7 libc++-7-dev libc++abi-7-dev gfortran libopenmpi-dev python3
+        sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
@@ -63,7 +63,8 @@ jobs:
         mpiexec --version
         perl --version
         python --version
-        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad2_libcpp/)
+        sudo ln -s "$(which cmake)" /usr/bin/cmake
+        eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_ompi_h5_ad2_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -74,7 +75,7 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON  \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
-        cmake --build build --parallel 2
+        cmake --build build --parallel 4
 
         cd build
         ctest --output-on-failure
@@ -83,23 +84,24 @@ jobs:
         find . -name *.bp.dir | xargs -n1 -P1 -I {} rm -rf {}
         ctest --output-on-failure
 
-  clang7_nopy_ompi_h5_ad2:
-    runs-on: ubuntu-20.04
+  clang11_nopy_ompi_h5_ad2:
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad2_v2 }
+      with: {path: /opt/spack, key: clang11_nopy_ompi_h5_ad2_v2 }
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-7 gfortran libopenmpi-dev python3
+        sudo apt-get install clang-11 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror}
+      env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -Werror}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad2/)
+        sudo ln -s "$(which cmake)" /usr/bin/cmake
+        eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_ompi_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -110,44 +112,38 @@ jobs:
           -DopenPMD_USE_ADIOS2=ON  \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
-        cmake --build build --parallel 2
+        cmake --build build --parallel 4
         cd build
         ctest --output-on-failure
 
 # TODO
 #  clang7_py36_nompi_h5_ad2_libstdc++
 
-  clang14_py311_nompi_h5_ad2:
+  clang15_py311_nompi_h5_ad2:
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang14_py311_nompi_h5_ad2_v2 }
+      with: {path: /opt/spack, key: clang15_py311_nompi_h5_ad2_v2 }
     - name: Install
       run: |
         sudo apt update
-        sudo apt install clang-14 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget python3.11-venv
+        sudo apt install clang-15 cmake gfortran libhdf5-dev python3.11 python3.11-dev wget
         sudo .github/workflows/dependencies/install_spack
-        python3.11 -m venv /opt/python_venv
-        . /opt/python_venv/bin/activate
-        python -m pip install numpy pandas
+        python3.11 -m pip install numpy pandas
         git clone -b v4.0.3 https://github.com/ToruNiina/toml11
         cmake -S toml11 -B build_toml11               \
           -DCMAKE_INSTALL_PREFIX=toml11_install \
           -DCMAKE_CXX_STANDARD_REQUIRED=OFF           \
           -DCMAKE_CXX_STANDARD=11
-        cmake --build build_toml11 -j 2 --target install
+        cmake --build build_toml11 -j 4 --target install
     - name: Build
-      env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
+      env: {CC: clang-15, CXX: clang++-15, CXXFLAGS: -Werror}
       run: |
-        # Build Spack packages against system Python
-        # and activate the virtual environment just for the openPMD build.
-        # Spack does not play nice with venv.
-        eval $(spack env activate --sh .github/ci/spack-envs/clang14_py311_nompi_h5_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang15_py311_nompi_h5_ad2/)
         spack install
-        . /opt/python_venv/bin/activate
 
         share/openPMD/download_samples.sh build
         export CMAKE_PREFIX_PATH="$(realpath toml11_install):$CMAKE_PREFIX_PATH"
@@ -159,32 +155,39 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON   \
           -DopenPMD_USE_INTERNAL_TOML11=OFF \
           -DCMAKE_VERBOSE_MAKEFILE=ON       \
-          -DPython_EXECUTABLE="$(which python)"
-        cmake --build build --parallel 2
+          -DPython_EXECUTABLE="$(which python3.11)"
+        cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 
-  # ADIOS2 v2.7.1
-  clang8_py38_mpich_h5_ad2:
-    runs-on: ubuntu-20.04
+  # ADIOS2 v2.10
+  gcc13_py312_mpich_h5_ad2:
+    runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: clang8_py38_mpich_h5_ad2_newLayout_v2 }
+      with: {path: /opt/spack, key: gcc13_py312_mpich_h5_ad2 }
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-8 gfortran libmpich-dev python3
+        sudo apt-get remove openmpi* libopenmpi* *hdf5* || true
+        sudo apt-get install g++ gfortran python3
         sudo .github/workflows/dependencies/install_spack
+
+        # Need to build this manually due to broken MPICH package in Ubuntu 24.04
+        # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
+        sudo .github/workflows/dependencies/install_mpich
+
     - name: Build
-      env: {CC: clang-8, CXX: clang++-8, CXXFLAGS: -Werror}
+      env: {CC: gcc, CXX: g++, MPICH_CC: gcc, MPICH_CXX: g++, CXXFLAGS: -Werror}
       run: |
         cmake --version
         mpiexec --version
+        mpicxx --version
         perl --version
         python --version
-        eval $(spack env activate --sh .github/ci/spack-envs/clang8_py38_mpich_h5_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/gcc13_py312_mpich_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -194,7 +197,7 @@ jobs:
           -DopenPMD_USE_HDF5=ON    \
           -DopenPMD_USE_ADIOS2=ON  \
           -DopenPMD_USE_INVASIVE_TESTS=ON
-        cmake --build build --parallel 2
+        cmake --build build --parallel 4
         cd build
         ctest --output-on-failure
 
@@ -213,18 +216,18 @@ jobs:
 #  gcc-4.8.5_py35_nompi_h5
 #  gcc-7.4.0_py_ompi_h5_ad2_coveralls
 
-  gcc7_py36_pd_dd_ompi_h5_ad2:
-    runs-on: ubuntu-20.04
+  gcc12_py36_pd_dd_ompi_h5_ad2:
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
     - name: Spack Cache
       uses: actions/cache@v3
-      with: {path: /opt/spack, key: gcc7_py36_ompi_h5_ad2_v2 }
+      with: {path: /opt/spack, key: gcc12_py36_ompi_h5_ad2_v2 }
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install g++-7 gfortran libopenmpi-dev python3 python3-setuptools
+        sudo apt-get install g++-12 gfortran libopenmpi-dev python3 python3-setuptools
         sudo .github/workflows/dependencies/install_spack
         python3 -m pip install -U pip
         python3 -m pip install -U numpy
@@ -233,9 +236,10 @@ jobs:
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
     - name: Build
-      env: {CC: gcc-7, CXX: g++-7, CXXFLAGS: -Werror}
+      env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/gcc7_py36_ompi_h5_ad2/)
+        sudo ln -s "$(which cmake)" /usr/bin/cmake
+        eval $(spack env activate --sh .github/ci/spack-envs/gcc12_py36_ompi_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -245,12 +249,11 @@ jobs:
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
-        cmake --build build --parallel 2
-        cd build
-        ctest --output-on-failure
+        cmake --build build --parallel 4
+        ctest --test-dir build --output-on-failure
 
   gcc9_py38_pd_nompi_h5_ad2_libcpp:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -268,12 +271,11 @@ jobs:
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_INVASIVE_TESTS=ON
-        cmake --build build --parallel 2
-        cd build
-        ctest --output-on-failure
+        cmake --build build --parallel 4
+        ctest --test-dir build --output-on-failure
 
   musllinux_py10:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     container:
       image: quay.io/pypa/musllinux_1_1_x86_64
@@ -283,25 +285,19 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        # Use a virtual environment in order to avoid compatibility issues
-        # between the various Python installations in this image.
-        python3.10 -m venv /opt/python_env
-        . /opt/python_env/bin/activate
-        python -m pip install numpy
+        python3.10 -m pip install numpy
     - name: Build
       env: {CXXFLAGS: -Werror}
       run: |
-        . /opt/python_env/bin/activate
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DPython_EXECUTABLE=$(which python)
-        cmake --build build --parallel 2
-        cd build
-        ctest --output-on-failure
+          -DPython_EXECUTABLE=$(which python3.10)
+        cmake --build build --parallel 4
+        ctest --test-dir build --output-on-failure
 
   conda_ompi_all:
     runs-on: ubuntu-22.04
@@ -329,6 +325,5 @@ jobs:
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
-        cmake --build build --parallel 2
-        cd build
-        ctest --output-on-failure
+        cmake --build build --parallel 4
+        ctest --test-dir build --output-on-failure

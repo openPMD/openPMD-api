@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
     // Total (in this case 3D) dataset across all MPI ranks.
     // Will be the same for all configured benchmarks.
-    openPMD::Extent total{100 * scale_up, 100, 1000};
+    openPMD::Extent total{size_t(100) * scale_up, 100, 1000};
 
     // The blockslicer assigns to each rank its part of the dataset. The rank
     // will write to and read from that part. OneDimensionalBlockSlicer is a

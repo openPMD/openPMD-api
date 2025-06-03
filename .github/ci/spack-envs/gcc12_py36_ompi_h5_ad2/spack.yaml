@@ -6,39 +6,44 @@
 #
 spack:
   specs:
-  - adios2@2.7.1
+  - adios2
   - hdf5
-  - mpich
+  - openmpi
 
   packages:
     adios2:
-      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+      # mgard not supported on CMake 4.0 due to unresolved compatibility
+      # issue in dependency yaml-cpp
+      # https://github.com/jbeder/yaml-cpp/issues/1352
+      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~mgard
+    c-blosc2:
+      # snappy broken on CMake 4.0
+      # fixed snappy not yet deployed to a Spack release
+      variants: ~snappy
     cmake:
       externals:
-      - spec: cmake@3.23.0
+      - spec: cmake@3.31.5
         prefix: /usr
       buildable: False
-    mpich:
+    openmpi:
       externals:
-      - spec: mpich@3.3
+      - spec: openmpi@4.1.2
         prefix: /usr
       buildable: False
     perl:
       externals:
-      - spec: perl@5.26.1
+      - spec: perl@5.34.0
         prefix: /usr
       buildable: False
     python:
       externals:
-      - spec: python@3.8.0
+      - spec: python@3.10.12
         prefix: /usr
       buildable: False
     all:
       target: [x86_64]
       variants: ~fortran
-      providers:
-        mpi: [mpich]
-      compiler: [clang@8.0.0]
+      compiler: [gcc@12.3.0]
 
   compilers:
   - compiler:
@@ -46,13 +51,13 @@ spack:
       extra_rpaths: []
       flags: {}
       modules: []
-      operating_system: ubuntu20.04
+      operating_system: ubuntu22.04
       paths:
-        cc: /usr/lib/llvm-8/bin/clang
-        cxx: /usr/lib/llvm-8/bin/clang++
+        cc: /usr/bin/gcc-12
+        cxx: /usr/bin/g++-12
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
-      spec: clang@8.0.0
+      spec: gcc@12.3.0
       target: x86_64
 
   config:

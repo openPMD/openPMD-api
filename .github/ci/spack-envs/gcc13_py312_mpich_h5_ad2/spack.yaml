@@ -6,59 +6,59 @@
 #
 spack:
   specs:
-  - adios2
-  - hdf5
-  - openmpi
+  - adios2@2.10 +mpi
+  - hdf5 +mpi
+  - mpich
 
   packages:
     adios2:
-      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+      variants: +mpi ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~blosc2 ~mgard
     cmake:
       externals:
-      - spec: cmake@3.23.0
-        prefix: /usr
+      - spec: cmake@3.31.6
+        prefix: /usr/local
       buildable: False
-    openmpi:
+    hdf5:
+      variants: +mpi
+    mpich:
       externals:
-      - spec: openmpi@2.1.1
-        prefix: /usr
+      - spec: mpich@4.2.1
+        prefix: /usr/local
       buildable: False
     perl:
       externals:
-      - spec: perl@5.26.1
+      - spec: perl@5.38.2
         prefix: /usr
       buildable: False
     python:
       externals:
-      - spec: python@3.8.0
+      - spec: python@3.12.3
         prefix: /usr
       buildable: False
     all:
       target: [x86_64]
       variants: ~fortran
       providers:
-        mpi: [openmpi]
-      compiler: [clang@7.0.1]
+        mpi: [mpich]
+      compiler: [gcc@13.3.0]
 
   compilers:
   - compiler:
       environment: {}
       extra_rpaths: []
-      flags:
-        cxxflags: -stdlib=libc++
-        ldflags: -stdlib=libc++
+      flags: {}
       modules: []
-      operating_system: ubuntu20.04
+      operating_system: ubuntu24.04
       paths:
-        cc: /usr/bin/clang-7
-        cxx: /usr/bin/clang++-7
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
-      spec: clang@7.0.1
+      spec: gcc@13.3.0
       target: x86_64
 
   config:
-    build_jobs: 2
+    build_jobs: 4
 
   mirrors:
     E4S: https://cache.e4s.io

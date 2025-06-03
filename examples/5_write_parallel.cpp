@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     // global data set to write: [MPI_Size * 10, 300]
     // each rank writes a 10x300 slice with its MPI rank as values
     auto const value = float(mpi_size);
-    std::vector<float> local_data(10 * 300, value);
+    std::vector<float> local_data(size_t(10) * 300, value);
     if (0 == mpi_rank)
         cout << "Set up a 2D array with 10x300 elements per MPI rank ("
              << mpi_size << "x) that will be written to disk\n";

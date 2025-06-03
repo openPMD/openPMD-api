@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#
+
+set -eu -o pipefail
+
+mpich_ver="4.3.0"
+
+cd /opt
+wget https://www.mpich.org/static/downloads/${mpich_ver}/mpich-${mpich_ver}.tar.gz
+tar -xzf mpich-${mpich_ver}.tar.gz
+cd mpich-${mpich_ver}
+./configure --prefix=/usr/local
+make -j 4
+make -j 4 install
+cd ..
+rm -rf mpich-${mpich_ver} mpich-${mpich_ver}.tar.gz

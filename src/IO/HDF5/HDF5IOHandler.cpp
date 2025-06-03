@@ -86,7 +86,7 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     , m_H5T_CDOUBLE{H5Tcreate(H5T_COMPOUND, sizeof(double) * 2)}
     , m_H5T_CLONG_DOUBLE{H5Tcreate(H5T_COMPOUND, sizeof(long double) * 2)}
     , m_H5T_LONG_DOUBLE_80_LE{H5Tcopy(H5T_IEEE_F64BE)}
-    , m_H5T_CLONG_DOUBLE_80_LE{H5Tcreate(H5T_COMPOUND, 16 * 2)}
+    , m_H5T_CLONG_DOUBLE_80_LE{H5Tcreate(H5T_COMPOUND, size_t(16) * 2)}
 {
     // create a h5py compatible bool type
     VERIFY(
