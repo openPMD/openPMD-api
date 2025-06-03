@@ -2213,7 +2213,7 @@ auto bug_1655_bp5_writer_hangup(std::string const &ext) -> void
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     auto const value = float(mpi_size * 100 + mpi_rank);
-    std::vector<float> local_data(10 * 300, value);
+    std::vector<float> local_data(size_t(10) * 300, value);
 
     std::string filename = "../samples/ptl_%T." + ext;
 
