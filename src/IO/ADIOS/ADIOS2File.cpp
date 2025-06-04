@@ -231,6 +231,7 @@ void ADIOS2File::finalize()
             m_ADIOS.RemoveIO(m_IOName);
         }
     }
+    m_uniquePtrPuts.clear();
     finalized = true;
 }
 
@@ -323,9 +324,10 @@ namespace
 
 size_t ADIOS2File::currentStep()
 {
-    if (nonpersistentEngine(m_impl->m_engineType))
+    // if (nonpersistentEngine(m_impl->m_engineType))
+    if (m_mode == adios2::Mode::ReadRandomAccess)
     {
-        return m_currentStep;
+        return 0;
     }
     else
     {
@@ -1108,7 +1110,6 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
             }
             engine.EndStep();
             engine.BeginStep();
-            // ++m_currentStep; // think we should keep this as the logical step
             m_uniquePtrPuts.clear();
             uncommittedAttributes.clear();
             m_updateSpans.clear();
@@ -1193,15 +1194,79 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
         uncommittedAttributes.clear();
         m_updateSpans.clear();
         streamStatus = StreamStatus::OutsideOfStep;
-        ++m_currentStep;
         return AdvanceStatus::OK;
     }
     case AdvanceMode::BEGINSTEP: {
         adios2::StepStatus adiosStatus{};
+        auto &engine = getEngine();
+
+        auto check_bp5 = [&]() -> bool {
+            std::string engineType = engine.Type();
+            std::transform(
+                engineType.begin(),
+                engineType.end(),
+                engineType.begin(),
+                [](unsigned char c) { return std::tolower(c); });
+            return engineType == "bp5writer";
+        };
+
+        if (engine.CurrentStep() == 0)
+        {
+            int max_steps_from_env =
+                auxiliary::getEnvNum("OPENPMD_BP5_GROUPENCODING_MAX_STEPS", -1);
+            if (max_steps_from_env == 0)
+            {
+                m_max_steps_bp5 = std::nullopt;
+            }
+            else if (max_steps_from_env != -1)
+            {
+                m_max_steps_bp5 =
+                    std::make_optional<size_t>(size_t(max_steps_from_env));
+            }
+        }
+
+        // Check some conditions on which to now cancel operation due to
+        // unwieldy metadata sizes in BP5 with group encoding
+        if (this->m_impl->m_handler->m_encoding ==
+                IterationEncoding::groupBased &&
+            this->m_max_steps_bp5.has_value() &&
+            engine.CurrentStep() >= *this->m_max_steps_bp5 &&
+            (this->m_mode == adios2::Mode::Write ||
+             this->m_mode == adios2::Mode::Append) &&
+            check_bp5())
+        {
+            throw error::OperationUnsupportedInBackend(
+                "ADIOS2",
+                R"(
+Trying to create group-based output with more than )" +
+                    std::to_string(*this->m_max_steps_bp5) +
+                    R"( steps in BP5 engine.
+As this engine is not adequate for group encoding, this will create immense
+metadata sizes. For more context, check:
+
+* https://github.com/openPMD/openPMD-api/discussions/1724
+* https://github.com/openPMD/openPMD-api/issues/1457
+
+Since this is likely to create unreadable data due to the sheer amount of
+metadata, we will cancel the writer now.
+Please consider using either of the following instead:
+
+* file encoding (by including an expansion pattern %T in the filename)
+* another ADIOS2 engine (e.g. by selecting file extension .bp4)
+* another openPMD backend (e.g. by selecting file extension .h5)
+* (experimental) variable encoding (e.g. by `Series::setIterationEncoding()`
+  or by the JSON config {"iteration_encoding": "variable_based"}).
+  Note that there is at this point no complete read support for variable-encoded
+  outputs.
+
+Use the environment variable OPENPMD_BP5_GROUPENCODING_MAX_STEPS to adjust the
+number of allowed steps. Set the value as 0 to disable this check.
+Be aware of the performance implications described above.)");
+        }
 
         if (streamStatus != StreamStatus::DuringStep)
         {
-            adiosStatus = getEngine().BeginStep();
+            adiosStatus = engine.BeginStep();
         }
         else
         {

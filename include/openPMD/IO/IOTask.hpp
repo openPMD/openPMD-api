@@ -98,6 +98,13 @@ struct OPENPMDAPI_EXPORT AbstractParameter
 
     virtual std::unique_ptr<AbstractParameter> to_heap() && = 0;
 
+    // Used as a tag in some constructors to make callsites explicitly
+    // acknowledge that joined dimensions will not be automatically resolved
+    struct I_dont_want_to_use_joined_dimensions_t
+    {};
+    constexpr static I_dont_want_to_use_joined_dimensions_t
+        I_dont_want_to_use_joined_dimensions{};
+
 protected:
     // avoid object slicing
     // by allow only child classes to use these things for defining their own
@@ -327,7 +334,17 @@ template <>
 struct OPENPMDAPI_EXPORT Parameter<Operation::CREATE_DATASET>
     : public AbstractParameter
 {
-    Parameter() = default;
+    Parameter(Dataset const &ds)
+        : extent(ds.extent)
+        , dtype(ds.dtype)
+        , options(ds.options)
+        , joinedDimension(ds.joinedDimension())
+    {}
+
+    // default constructor, but callsites need to explicitly acknowledge that
+    // joined dimensions will not be automatically configured when using it
+    Parameter(I_dont_want_to_use_joined_dimensions_t)
+    {}
     Parameter(Parameter &&) = default;
     Parameter(Parameter const &) = default;
     Parameter &operator=(Parameter &&) = default;
@@ -362,7 +379,15 @@ template <>
 struct OPENPMDAPI_EXPORT Parameter<Operation::EXTEND_DATASET>
     : public AbstractParameter
 {
-    Parameter() = default;
+    Parameter(Extent e) : joinedDimension(Dataset::joinedDimension(e))
+    {
+        this->extent = std::move(e);
+    }
+
+    // default constructor, but callsites need to explicitly acknowledge that
+    // joined dimensions will not be automatically configured when using it
+    Parameter(I_dont_want_to_use_joined_dimensions_t)
+    {}
     Parameter(Parameter &&) = default;
     Parameter(Parameter const &) = default;
     Parameter &operator=(Parameter &&) = default;
@@ -375,6 +400,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::EXTEND_DATASET>
     }
 
     Extent extent = {};
+    std::optional<size_t> joinedDimension;
 };
 
 template <>

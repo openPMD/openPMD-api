@@ -44,7 +44,7 @@ The file contains the same string as one would put in an openPMD ``Series("...."
 .. warning::
 
    As of ParaView 5.11 and older, the axisLabel is not yet read for fields.
-   See, e.g., `WarpX issue 21162 <https://github.com/ECP-WarpX/WarpX/issues/1803>`__.
+   See, e.g., `WarpX issue 21162 <https://github.com/BLAST-WarpX/warpx/issues/1803>`__.
    Please apply rotation of, e.g., ``0 -90 0`` to mesh data where needed.
 
 .. warning::

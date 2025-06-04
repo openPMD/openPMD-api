@@ -25,6 +25,7 @@
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/config.hpp"
+#include <optional>
 
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
@@ -414,11 +415,7 @@ private:
     ADIOS2IOHandlerImpl *m_impl;
     std::optional<adios2::Engine> m_engine; //! ADIOS engine
 
-    /*
-     * Not all engines support the CurrentStep() call, so we have to
-     * implement this manually.
-     */
-    size_t m_currentStep = 0;
+    std::optional<size_t> m_max_steps_bp5 = std::make_optional<size_t>(100);
 
     /*
      * ADIOS2 does not give direct access to its internal attribute and

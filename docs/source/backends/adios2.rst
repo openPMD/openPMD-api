@@ -78,23 +78,24 @@ The ADIOS2 SST engine for streaming can be picked by specifying the ending ``.ss
 The following environment variables control ADIOS2 I/O behavior at runtime.
 Fine-tuning these is especially useful when running at large scale.
 
-===================================== ========== ================================================================================
-environment variable                  default    description
-===================================== ========== ================================================================================
-``OPENPMD_ADIOS2_HAVE_PROFILING``     ``1``      Turns on/off profiling information right after a run.
-``OPENPMD_ADIOS2_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
-``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``      Number of files to be created, 0 indicates maximum number possible.
-``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
-``OPENPMD_ADIOS2_PRETEND_ENGINE``     *empty*    Pretend that an (unknown) ADIOS2 engine is in fact another one (also see the ``adios2.pretend_engine`` :ref:`parameter <backendconfig-adios2>`).
-``OPENPMD2_ADIOS2_USE_GROUP_TABLE``   ``0``      Use group table (see below)
-``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
-``OPENPMD_ADIOS2_ASYNC_WRITE``        ``0``      ADIOS2 BP5 engine: 1 means setting "AsyncWrite" in ADIOS2 to "on". Flushes will go to the buffer by default (see ``preferred_flush_target``).
-``OPENPMD_ADIOS2_BP5_BufferChunkMB``  ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
-``OPENPMD_ADIOS2_BP5_MaxShmMB``       ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
-``OPENPMD_ADIOS2_BP5_NumSubFiles``    ``0``      ADIOS2 BP5 engine: num of subfiles
-``OPENPMD_ADIOS2_BP5_NumAgg``         ``0``      ADIOS2 BP5 engine: num of aggregators
-``OPENPMD_ADIOS2_BP5_TypeAgg``        *empty*    ADIOS2 BP5 engine: aggregation type. (EveryoneWrites, EveryoneWritesSerial, TwoLevelShm)
-===================================== ========== ================================================================================
+======================================= ========== ================================================================================
+environment variable                    default    description
+======================================= ========== ================================================================================
+``OPENPMD_ADIOS2_HAVE_PROFILING``       ``1``      Turns on/off profiling information right after a run.
+``OPENPMD_ADIOS2_HAVE_METADATA_FILE``   ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
+``OPENPMD_ADIOS2_NUM_SUBSTREAMS``       ``0``      Number of files to be created, 0 indicates maximum number possible.
+``OPENPMD_ADIOS2_ENGINE``               ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
+``OPENPMD_ADIOS2_PRETEND_ENGINE``       *empty*    Pretend that an (unknown) ADIOS2 engine is in fact another one (also see the ``adios2.pretend_engine`` :ref:`parameter <backendconfig-adios2>`).
+``OPENPMD2_ADIOS2_USE_GROUP_TABLE``     ``0``      Use group table (see below)
+``OPENPMD_ADIOS2_STATS_LEVEL``          ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
+``OPENPMD_ADIOS2_ASYNC_WRITE``          ``0``      ADIOS2 BP5 engine: 1 means setting "AsyncWrite" in ADIOS2 to "on". Flushes will go to the buffer by default (see ``preferred_flush_target``).
+``OPENPMD_ADIOS2_BP5_BufferChunkMB``    ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
+``OPENPMD_ADIOS2_BP5_MaxShmMB``         ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
+``OPENPMD_ADIOS2_BP5_NumSubFiles``      ``0``      ADIOS2 BP5 engine: num of subfiles
+``OPENPMD_ADIOS2_BP5_NumAgg``           ``0``      ADIOS2 BP5 engine: num of aggregators
+``OPENPMD_ADIOS2_BP5_TypeAgg``          *empty*    ADIOS2 BP5 engine: aggregation type. (EveryoneWrites, EveryoneWritesSerial, TwoLevelShm)
+``OPENPMD_BP5_GROUPENCODING_MAX_STEPS`` ``100``    ADIOS2 BP5 engine: max number of allowed output steps in group encoding.
+======================================= ========== ================================================================================
 
 Please refer to the `ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for details on I/O tuning.
 
@@ -314,6 +315,21 @@ Rather than by reallocation as in BP4, this is done by appending a new chunk, le
 
 The default is to flush to disk (except when specifying ``OPENPMD_ADIOS2_ASYNC_WRITE=1``), but the default ``preferred_flush_target`` can also be specified via JSON/TOML at the ``Series`` level.
 
+
+The BP5 engine is known to perform extremely bad for group-based encoding with many Iterations, since its design assumes that the metadata structure will be constant across output steps, while group-based encoding will add new variables and attributes for each Iteration.
+The openPMD-api will hence cancel operation after 100 written Iterations in group-based encoding for BP5.
+Experiments with PIConGPU show that the metadata (!) size grows from 10MB to 1GB when going from 100 to 1000 output steps in this setup.
+The environment variable ``OPENPMD_BP5_GROUPENCODING_MAX_STEPS`` may be used to change this limit (specifying the limit as ``0`` will disable the check).
+
+For workarounds you may follow these guidelines:
+
+* Use file encoding by including an expansion pattern ``%T`` in the filename.
+* If output to a single file is required, then:
+
+  * Use another ADIOS2 engine, recommended is the BP4 engine by selecting file ending ``.bp4``.
+  * Use another openPMD backend, recommended is HDF5 by selecting file ending ``.h5``.
+  * (experimental) use variable encoding with BP5, either by using the API call ``Series::setIterationEncoding(IterationEncoding::variableBased)`` / ``Series.iteration_encoding = Iteration_Encoding.variable_based`` or by using the JSON/TOML configuration ``{"iteration_encoding": "variable_based"}`` / ``iteration_encoding = "variable_based"``.
+    Note that there is at this point no complete read support for variable-encoded outputs.
 
 
 

@@ -64,5 +64,6 @@ public:
     bool empty() const;
 
     std::optional<size_t> joinedDimension() const;
+    static std::optional<size_t> joinedDimension(Extent const &);
 };
 } // namespace openPMD

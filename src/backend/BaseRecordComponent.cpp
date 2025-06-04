@@ -21,6 +21,7 @@
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/Iteration.hpp"
+#include <optional>
 
 namespace openPMD
 {
@@ -75,7 +76,7 @@ std::optional<size_t> BaseRecordComponent::joinedDimension() const
     }
     else
     {
-        return false;
+        return std::nullopt;
     }
 }
 
