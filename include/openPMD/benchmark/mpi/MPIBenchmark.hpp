@@ -300,7 +300,7 @@ void MPIBenchmark<DatasetFillerProvider>::addConfiguration(
 template <typename DatasetFillerProvider>
 void MPIBenchmark<DatasetFillerProvider>::resetConfigurations()
 {
-    this->m_compressions.clear();
+    this->m_configurations.clear();
 }
 
 template <typename DatasetFillerProvider>
