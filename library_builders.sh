@@ -136,6 +136,15 @@ function build_blosc2 {
 
     mkdir build-blosc2
     cd build-blosc2
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
+        # SSE2 support
+        #   https://github.com/Blosc/c-blosc/issues/334
+        # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
+        local architecture_specific_flags=("-DDEACTIVATE_SSE2=ON")
+    else
+        # AVX512 not supported on AMD CPUs
+        local architecture_specific_flags=("-DDEACTIVATE_SSE2=OFF" "-DDEACTIVATE_AVX512=ON")
+    fi
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake          \
@@ -151,6 +160,7 @@ function build_blosc2 {
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       -DPREFER_EXTERNAL_ZLIB=ON              \
       -DZLIB_USE_STATIC_LIBS=ON              \
+      "${architecture_specific_flags[@]}"    \
       ../c-blosc2-*
     make -j${CPU_COUNT}
     make install
