@@ -10,10 +10,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             arch: "x86_64"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             arch: "i686"
 
           # builds faster on Travis-CI:
@@ -30,14 +30,14 @@ jobs:
           #  arch: "s390x"
 
           # x86-64 (64bit)
-          - os: windows-2019
+          - os: windows-2022
             arch: "AMD64"
 
           # x86 (32bit)
-          - os: windows-2019
+          - os: windows-2022
             arch: "x86"
             env:
-              CMAKE_GENERATOR: "Visual Studio 16 2019"
+              CMAKE_GENERATOR: "Visual Studio 17 2022"
               CMAKE_GENERATOR_PLATFORM: "Win32"
 
           - os: macos-13
