@@ -21,8 +21,16 @@ exit /b 0
     https://github.com/ornladios/ADIOS2/archive/v2.10.2.zip
   powershell Expand-Archive adios2-2.10.2.zip -DestinationPath dep-adios2
 
-  curl -sLo dep-adios2/ADIOS2-2.10.2/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/d4fb8e0c7054e32b8cfd4379191da5cddf82acc3.patch
-  patch dep-adios2/ADIOS2-2.10.2/source/adios2/toolkit/format/bp5/BP5Serializer.cpp dep-adios2/ADIOS2-2.10.2/patch.diff
+  curl -sLo dep-adios2/ADIOS2-2.10.2/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/9f3bea5d3974578bb40fc629506666633a4b6743.patch
+  cd dep-adios2/ADIOS2-2.10.2
+  git init
+  git config user.email "tooling@tools.com"
+  git config user.name "Tooling"
+  git add .
+  git commit --message="Initial commit so we can use git-am"
+  git am patch.diff
+  cd ..
+  cd ..
 
   cmake --version
 
