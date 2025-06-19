@@ -21,7 +21,7 @@ exit /b 0
     https://github.com/ornladios/ADIOS2/archive/v2.10.2.zip
   powershell Expand-Archive adios2-2.10.2.zip -DestinationPath dep-adios2
 
-  curl -sLo dep-adios2/ADIOS2-2.10.2/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/9f3bea5d3974578bb40fc629506666633a4b6743.patch
+  curl -sLo dep-adios2/ADIOS2-2.10.2/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/patches-fix-32-bit-builds.patch
 
   :: Use git-am for applying the patch,
   :: for some reason, python -m patch just silently does nothing.
