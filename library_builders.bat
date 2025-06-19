@@ -21,7 +21,21 @@ exit /b 0
     https://github.com/ornladios/ADIOS2/archive/v2.10.2.zip
   powershell Expand-Archive adios2-2.10.2.zip -DestinationPath dep-adios2
 
-  python -m patch --directory=dep-adios2/ADIOS2-2.10.2/ https://github.com/franzpoeschel/ADIOS2/commit/9f3bea5d3974578bb40fc629506666633a4b6743.patch
+  curl -sLo dep-adios2/ADIOS2-2.10.2/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/9f3bea5d3974578bb40fc629506666633a4b6743.patch
+
+  :: Use git-am for applying the patch,
+  :: for some reason, python -m patch just silently does nothing.
+  :: git-am requires a Git repository to apply a patch, but the release zip
+  :: strips away any Git info, so we just quickly initialize a repository.
+  cd dep-adios2/ADIOS2-2.10.2
+  git init
+  git config user.email "tooling@tools.com"
+  git config user.name "Tooling"
+  git add .
+  git commit --message="Initial commit so we can use git-am"
+  git am patch.diff
+  cd ..
+  cd ..
 
   cmake --version
 
