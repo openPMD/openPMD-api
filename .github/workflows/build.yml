@@ -86,6 +86,14 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cibuildwheel==2.21.2
 
+    # 0.16.1.post1 bump
+    - name: Download Patch 1/1
+      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
+      id: setupversion
+      with:
+        url: "https://github.com/openPMD/openPMD-api/commit/f94a1d48eefbc81784a9c25f61c913cf30fe2ece.patch"
+        target: src/.patch/
+
 #    # Patch: Fix versioning
 #    - name: Download Patch 1/2
 #      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
@@ -102,13 +110,10 @@ jobs:
 #        url: "https://github.com/openPMD/openPMD-api/pull/1684.patch"
 #        target: src/.patch/
 
-#    - name: Apply Patches
-#      run: |
-#        cd src
-#        git apply --exclude=.github/workflows/windows.yml .patch/1680.patch
-#        git apply --exclude=cmake/dependencies/pybind11.cmake .patch/1684.patch
-#        git fetch
-#        git apply --exclude=setup.py -3 .patch/1684.patch
+    - name: Apply Patches
+      run: |
+        cd src
+        git apply .patch/f94a1d48eefbc81784a9c25f61c913cf30fe2ece.patch
 
     - name: Build wheel
       env:
