@@ -72,34 +72,6 @@ function install_buildessentials {
     touch buildessentials-stamp
 }
 
-function build_adios1 {
-    if [ -e adios1-stamp ]; then return; fi
-
-    curl -k -sLo adios-1.13.1.tar.gz \
-        https://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
-    file adios*.tar.gz
-    tar -xzf adios*.tar.gz
-    rm adios*.tar.gz
-    cd adios-*
-
-    # Cross-Compile hints for autotools based builds
-    HOST_ARG=""
-    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
-        HOST_ARG="--host=aarch64-apple-darwin"
-    fi
-
-    ./configure --enable-static --disable-shared --disable-fortran --without-mpi ${HOST_ARG} --prefix=${BUILD_PREFIX} --with-blosc=/usr
-    make -j${CPU_COUNT}
-    make install
-    cd -
-
-    # note: for universal binaries on macOS
-    #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
-    #lipo -create -output universal_app x86_app arm_app
-
-    touch adios1-stamp
-}
-
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
@@ -153,51 +125,6 @@ function build_adios2 {
     touch adios2-stamp
 }
 
-function build_blosc {
-    if [ -e blosc-stamp ]; then return; fi
-
-    curl -sLo c-blosc-1.21.0.tar.gz \
-        https://github.com/Blosc/c-blosc/archive/v1.21.0.tar.gz
-    file c-blosc*.tar.gz
-    tar -xzf c-blosc*.tar.gz
-    rm c-blosc*.tar.gz
-
-    # Patch PThread Propagation
-    curl -sLo blosc-pthread.patch \
-        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
-    python3 -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
-
-    # SSE2 support
-    #   https://github.com/Blosc/c-blosc/issues/334
-    DEACTIVATE_SSE2=OFF
-    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
-      # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
-      DEACTIVATE_SSE2=ON
-    fi
-
-    mkdir build-blosc
-    cd build-blosc
-    PY_BIN=$(which python3)
-    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake          \
-      -DDEACTIVATE_SNAPPY=ON                 \
-      -DDEACTIVATE_SSE2=${DEACTIVATE_SSE2}   \
-      -DBUILD_SHARED=OFF                     \
-      -DBUILD_TESTS=OFF                      \
-      -DBUILD_BENCHMARKS=OFF                 \
-      -DCMAKE_VERBOSE_MAKEFILE=ON            \
-      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
-      -DZLIB_USE_STATIC_LIBS=ON              \
-      ../c-blosc-*
-    make -j${CPU_COUNT}
-    make install
-    cd -
-
-    rm -rf build-blosc
-
-    touch blosc-stamp
-}
-
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
@@ -209,6 +136,15 @@ function build_blosc2 {
 
     mkdir build-blosc2
     cd build-blosc2
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
+        # SSE2 support
+        #   https://github.com/Blosc/c-blosc/issues/334
+        # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
+        local architecture_specific_flags=("-DDEACTIVATE_SSE2=ON")
+    else
+        # AVX512 not supported on AMD CPUs
+        local architecture_specific_flags=("-DDEACTIVATE_SSE2=OFF" "-DDEACTIVATE_AVX512=ON")
+    fi
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake          \
@@ -224,6 +160,7 @@ function build_blosc2 {
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       -DPREFER_EXTERNAL_ZLIB=ON              \
       -DZLIB_USE_STATIC_LIBS=ON              \
+      "${architecture_specific_flags[@]}"    \
       ../c-blosc2-*
     make -j${CPU_COUNT}
     make install
@@ -237,8 +174,9 @@ function build_blosc2 {
 function build_zfp {
     if [ -e zfp-stamp ]; then return; fi
 
-    curl -sLo zfp-0.5.5.tar.gz \
-        https://github.com/LLNL/zfp/releases/download/0.5.5/zfp-0.5.5.tar.gz
+    local version="1.0.1"
+    curl -sLo zfp-$version.tar.gz \
+        https://github.com/LLNL/zfp/releases/download/$version/zfp-$version.tar.gz
     file zfp*.tar.gz
     tar -xzf zfp*.tar.gz
     rm zfp*.tar.gz
@@ -265,7 +203,7 @@ function build_zfp {
 function build_zlib {
     if [ -e zlib-stamp ]; then return; fi
 
-    ZLIB_VERSION="1.2.13"
+    ZLIB_VERSION="1.3.1"
 
     curl -sLO https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
     file zlib*.tar.gz
@@ -377,15 +315,6 @@ fi
 install_buildessentials
 build_zlib
 build_zfp
-if [[ "$(uname -m)" != "ppc64le" ]]; then
-    # builds too long for Travis-CI
-    build_blosc
-fi
 build_blosc2
 build_hdf5
-if [[ "${CMAKE_OSX_ARCHITECTURES-}" != "arm64" && "$(uname -m)" != "ppc64le" ]]; then
-    # macOS: skip ADIOS1 build for M1
-    # Linux: with ADIOS2 also enabled, this builds too long for Travis-CI
-    build_adios1
-fi
 build_adios2
