@@ -1294,15 +1294,24 @@ void HDF5IOHandlerImpl::openDataset(
     *dtype = d;
 
     int ndims = H5Sget_simple_extent_ndims(dataset_space);
-    std::vector<hsize_t> dims(ndims, 0);
-    std::vector<hsize_t> maxdims(ndims, 0);
+    if (ndims == 0)
+    {
+        // Is a scalar. Since the openPMD-api frontend supports no scalar
+        // datasets, return the extent as {1}
+        *parameters.extent = {1};
+    }
+    else
+    {
+        std::vector<hsize_t> dims(ndims, 0);
+        std::vector<hsize_t> maxdims(ndims, 0);
 
-    H5Sget_simple_extent_dims(dataset_space, dims.data(), maxdims.data());
-    Extent e;
-    for (auto const &val : dims)
-        e.push_back(val);
-    auto extent = parameters.extent;
-    *extent = e;
+        H5Sget_simple_extent_dims(dataset_space, dims.data(), maxdims.data());
+        Extent e;
+        for (auto const &val : dims)
+            e.push_back(val);
+        auto &extent = parameters.extent;
+        *extent = e;
+    }
 
     herr_t status;
     status = H5Sclose(dataset_space);
