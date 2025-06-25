@@ -50,6 +50,13 @@ namespace internal
     AttributableData::AttributableData(SharedAttributableData *raw_ptr)
         : SharedData_t({raw_ptr, [](auto const *) {}})
     {}
+
+    void AttributableData::cloneFrom(AttributableData const &other)
+    {
+        using parent_t = std::shared_ptr<SharedAttributableData>;
+        static_cast<parent_t &>(*this) = static_cast<parent_t const &>(other);
+    }
+
 } // namespace internal
 
 Attributable::Attributable()

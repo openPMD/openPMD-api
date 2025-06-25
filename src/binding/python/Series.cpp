@@ -24,6 +24,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/binding/python/auxiliary.hpp"
@@ -261,7 +262,7 @@ void init_Series(py::module &m)
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
 
-    py::class_<WriteIterations>(m, "WriteIterations", R"END(
+    py::class_<WriteIterations, Attributable>(m, "WriteIterations", R"END(
 Writing side of the streaming API.
 
 Create instance via Series.writeIterations().

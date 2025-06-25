@@ -1,9 +1,20 @@
 #include "openPMD/snapshots/Snapshots.hpp"
+#include "openPMD/backend/Attributable.hpp"
 namespace openPMD
 {
-Snapshots::Snapshots(std::shared_ptr<AbstractSnapshotsContainer> snapshots)
-    : m_snapshots(std::move(snapshots))
-{}
+Snapshots::Snapshots(
+    std::shared_ptr<AbstractSnapshotsContainer> snapshots,
+    Attributable &iterations)
+    : Attributable(Attributable::NoInit()), m_snapshots(std::move(snapshots))
+{
+    // Check the documentation of internal::AttributableData, we don't copy
+    // the first-level pointer, only the second level
+    // This avoids introducing depencencies between series.iterations and
+    // series.snapshots()
+    auto attributable_data = std::make_shared<internal::AttributableData>();
+    attributable_data->cloneFrom(*iterations.m_attri);
+    Attributable::setData(std::move(attributable_data));
+}
 inline auto Snapshots::get() const -> AbstractSnapshotsContainer const &
 {
     return *m_snapshots;

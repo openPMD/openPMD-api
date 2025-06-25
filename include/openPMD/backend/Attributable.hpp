@@ -117,6 +117,10 @@ namespace internal
         AttributableData &operator=(AttributableData const &) = delete;
         AttributableData &operator=(AttributableData &&) = delete;
 
+        // Make copies explicit, only to be used under the conditions described
+        // above
+        void cloneFrom(AttributableData const &other);
+
         template <typename T>
         T asInternalCopyOf()
         {
@@ -209,6 +213,7 @@ class Attributable
     friend T &internal::makeOwning(T &self, Series);
     friend class StatefulSnapshotsContainer;
     friend class internal::AttributableData;
+    friend class Snapshots;
 
 protected:
     // tag for internal constructor

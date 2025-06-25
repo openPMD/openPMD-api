@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Iteration.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include <functional>
 #include <memory>
@@ -46,14 +47,16 @@ namespace openPMD
  * an Iteration handle goes invalid after closing it, a new Iteration handle is
  * acquired by Snapshots::operator[]().
  */
-class Snapshots
+class Snapshots : public Attributable
 {
 private:
     friend class Series;
 
     std::shared_ptr<AbstractSnapshotsContainer> m_snapshots;
 
-    Snapshots(std::shared_ptr<AbstractSnapshotsContainer> snapshots);
+    Snapshots(
+        std::shared_ptr<AbstractSnapshotsContainer> snapshots,
+        Attributable &iterations);
 
     inline auto get() const -> AbstractSnapshotsContainer const &;
     inline auto get() -> AbstractSnapshotsContainer &;
