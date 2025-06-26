@@ -1566,7 +1566,6 @@ void HDF5IOHandlerImpl::writeDataset(
 
     filespace = H5Dget_space(dataset_id);
     int ndims = H5Sget_simple_extent_ndims(filespace);
-    std::cout << "DATASET DIMENSIONS: " << ndims << std::endl;
 
     if (ndims == 0)
     {
@@ -2051,7 +2050,6 @@ void HDF5IOHandlerImpl::readDataset(
 
     filespace = H5Dget_space(dataset_id);
     int ndims = H5Sget_simple_extent_ndims(filespace);
-    std::cout << "DATASET DIMENSIONS: " << ndims << std::endl;
 
     if (ndims == 0)
     {

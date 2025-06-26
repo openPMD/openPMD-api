@@ -2255,7 +2255,6 @@ class APITest(unittest.TestCase):
             E = f["data"]["0"]["meshes"]["E"]
             reapply_attributes = \
                 {key: val for key, val in E["x"].attrs.items()}
-            print("ATTRIBUTES:", reapply_attributes)
             del E["x"]
             E["x"] = 44
             for key, val in reapply_attributes.items():
