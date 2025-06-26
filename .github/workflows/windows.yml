@@ -60,6 +60,16 @@ jobs:
     - uses: seanmiddleditch/gha-setup-ninja@master
     - name: Build & Install
       shell: cmd
+      # In the below script, the -DCMAKE_CXX_FLAGS are a workaround, since the
+      # windows-2022 runner currently ships with Clang-18, but the STL
+      # implementation wants to have Clang-19.
+      # We define -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH, this way telling
+      # the STL not to be picky.
+      # The other flags just bring back the default options since there is no
+      # simple way to append to the compiler flags instead of overriding them.
+      #
+      # This workaround should hopefully be temporary until the Runner upgrades
+      # to Clang-19.
       run: |
         python3.exe -m pip install --upgrade pip
         python3.exe -m pip install --upgrade numpy
