@@ -25,7 +25,7 @@ jobs:
         brew install adios2 || true
         brew install hdf5-mpi || true
         brew install python || true
-        python3 -m pip install -U mpi4py numpy pandas h5py
+        python3 -m pip install -U mpi4py numpy pandas
         set -e
     - name: Build
       env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 11.0}
@@ -40,9 +40,7 @@ jobs:
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DPython_EXECUTABLE=python3 \
-          -DPYTHON_EXECUTABLE=python3
+          -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
