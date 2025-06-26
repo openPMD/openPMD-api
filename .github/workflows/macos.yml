@@ -40,7 +40,9 @@ jobs:
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DPython_EXECUTABLE=python3 \
+          -DPYTHON_EXECUTABLE=python3
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
