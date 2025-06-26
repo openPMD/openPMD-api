@@ -2242,6 +2242,11 @@ class APITest(unittest.TestCase):
     def testScalarHdf5Fields(self):
         if "hdf5" not in io.variants:
             return
+        try:
+            import h5py
+        except ImportError:
+            return
+
         file = "../samples/scalar_hdf5.h5"
         series_write = io.Series(file, io.Access.create)
         E_x = series_write.write_iterations()[0].meshes["E"]["x"]
@@ -2250,7 +2255,6 @@ class APITest(unittest.TestCase):
         series_write.close()
 
         # Now turn E_x into a scalar
-        import h5py
         with h5py.File(file, "r+") as f:
             E = f["data"]["0"]["meshes"]["E"]
             reapply_attributes = \
