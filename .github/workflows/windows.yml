@@ -72,7 +72,7 @@ jobs:
               -DCMAKE_CXX_COMPILER=clang-cl ^
               -DCMAKE_BUILD_TYPE=Release    ^
               -DopenPMD_USE_MPI=OFF ^
-              -DCMAKE_CXX_FLAGS="-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
+              -DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /EHsc -fexceptions -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
         cmake --build build --config Release --parallel 2
         cmake --build build --config Debug --target install
 
