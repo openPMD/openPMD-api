@@ -71,7 +71,8 @@ jobs:
               -DCMAKE_C_COMPILER=clang-cl   ^
               -DCMAKE_CXX_COMPILER=clang-cl ^
               -DCMAKE_BUILD_TYPE=Release    ^
-              -DopenPMD_USE_MPI=OFF
+              -DopenPMD_USE_MPI=OFF ^
+              -DCMAKE_CXX_FLAGS="-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
         cmake --build build --config Release --parallel 2
         cmake --build build --config Debug --target install
 
