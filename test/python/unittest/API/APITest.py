@@ -2264,6 +2264,17 @@ class APITest(unittest.TestCase):
         self.assertEqual(loaded_from_scalar, np.array([44]))
         series_read.close()
 
+        series_read_write = io.Series(file, io.Access.read_write)
+        E_x = series_read_write.iterations[0].meshes["E"]["x"]
+        E_x[:] = np.array([45])
+        series_read_write.close()
+
+        series_read_again = io.Series(file, io.Access.read_only)
+        loaded_from_scalar = series_read_again.iterations[0].meshes["E"]["x"][:]
+        series_read_again.flush()
+        self.assertEqual(loaded_from_scalar, np.array([45]))
+        series_read_again.close()
+
 
 if __name__ == '__main__':
     unittest.main()
