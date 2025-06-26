@@ -8,6 +8,7 @@ spack:
   specs:
   - adios2
   - hdf5
+  - py-h5py
 
   packages:
     hdf5:

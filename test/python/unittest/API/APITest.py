@@ -2240,6 +2240,8 @@ class APITest(unittest.TestCase):
                 s.close()
 
     def testScalarHdf5Fields(self):
+        if "hdf5" not in io.variants:
+            return
         file = "../samples/scalar_hdf5.h5"
         series_write = io.Series(file, io.Access.create)
         E_x = series_write.write_iterations()[0].meshes["E"]["x"]
@@ -2251,7 +2253,8 @@ class APITest(unittest.TestCase):
         import h5py
         with h5py.File(file, "r+") as f:
             E = f["data"]["0"]["meshes"]["E"]
-            reapply_attributes = {key: val for key, val in E["x"].attrs.items()}
+            reapply_attributes = \
+                {key: val for key, val in E["x"].attrs.items()}
             print("ATTRIBUTES:", reapply_attributes)
             del E["x"]
             E["x"] = 44
@@ -2270,7 +2273,8 @@ class APITest(unittest.TestCase):
         series_read_write.close()
 
         series_read_again = io.Series(file, io.Access.read_only)
-        loaded_from_scalar = series_read_again.iterations[0].meshes["E"]["x"][:]
+        loaded_from_scalar = \
+            series_read_again.iterations[0].meshes["E"]["x"][:]
         series_read_again.flush()
         self.assertEqual(loaded_from_scalar, np.array([45]))
         series_read_again.close()

@@ -25,7 +25,7 @@ jobs:
         brew install adios2 || true
         brew install hdf5-mpi || true
         brew install python || true
-        python3 -m pip install -U mpi4py numpy pandas
+        python3 -m pip install -U mpi4py numpy pandas h5py
         set -e
     - name: Build
       env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 11.0}

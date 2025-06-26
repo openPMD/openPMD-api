@@ -9,6 +9,7 @@ spack:
   - adios2@2.10
   - hdf5
   - openmpi
+  - py-h5py
 
   packages:
     adios2:

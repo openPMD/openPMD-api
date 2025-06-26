@@ -260,7 +260,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas
+        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas python3-h5py-mpi
 #       TODO ADIOS2
     - name: Build
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
@@ -286,7 +286,7 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        python3.10 -m pip install numpy
+        python3.10 -m pip install numpy h5py
     - name: Build
       env: {CXXFLAGS: -Werror}
       run: |

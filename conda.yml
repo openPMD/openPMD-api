@@ -24,6 +24,7 @@ dependencies:
   - doxygen
   - git
   - hdf5=*=mpi_openmpi_*
+  - h5py
   - mamba
   - make
   - mpi4py
