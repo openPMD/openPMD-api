@@ -2247,6 +2247,15 @@ class APITest(unittest.TestCase):
         except ImportError:
             return
 
+        # While the openPMD-api (currently) does not create scalar HDF5
+        # datasets, we should at least try reading and modifying them in files
+        # that were created elsewhere. Scalar here refers to a dataset without
+        # dimension. Interacting with them in the openPMD-api is possible by
+        # specifying a single element, i.e. offset=[0], extent=[1].
+        # For testing this, create a dataset, then use h5py to create a scalar
+        # dataset in the file. Then, open first for reading, then for
+        # modifying.
+
         file = "../samples/scalar_hdf5.h5"
         series_write = io.Series(file, io.Access.create)
         E_x = series_write.write_iterations()[0].meshes["E"]["x"]
