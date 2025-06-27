@@ -1,5 +1,4 @@
 #include "CoreTests.hpp"
-#include <openPMD/IO/ADIOS/macros.hpp>
 
 #include <catch2/catch.hpp>
 
@@ -7,7 +6,7 @@ namespace automatic_variable_encoding
 {
 auto automatic_variable_encoding() -> void
 {
-#if openPMD_HAVE_ADIOS2 && openPMD_HAS_ADIOS_2_9
+#if openPMD_HAVE_ADIOS2
     using namespace openPMD;
 
     size_t filename_counter = 0;
