@@ -190,7 +190,7 @@ TEST_CASE("myPath", "[core]")
 {
 #if openPMD_USE_INVASIVE_TESTS
     using vec_t = std::vector<std::string>;
-    auto pathOf = [](Attributable &attr) {
+    auto pathOf = [](Attributable const &attr) {
         auto res = attr.myPath();
 #if false
         std::cout << "Directory:\t" << res.directory << "\nSeries name:\t"
@@ -206,6 +206,8 @@ TEST_CASE("myPath", "[core]")
 
     Series series("../samples/myPath.json", Access::CREATE);
     REQUIRE(pathOf(series) == vec_t{});
+    REQUIRE(pathOf(series.iterations) == vec_t{"data"});
+    REQUIRE(pathOf(series.snapshots()) == vec_t{"data"});
     auto iteration = series.iterations[1234];
     REQUIRE(pathOf(iteration) == vec_t{"data", "1234"});
 
@@ -377,6 +379,12 @@ TEST_CASE("output_modification_test", "[core]")
 
     o.setName("MyOutput");
     REQUIRE(o.name() == "MyOutput");
+
+    o.snapshots().setAttribute("test", "value");
+    REQUIRE(o.iterations.getAttribute("test").get<std::string>() == "value");
+
+    o.iterations.setAttribute<int>("test2", 2);
+    REQUIRE(o.snapshots().getAttribute("test2").get<int>() == 2);
 
     o.iterations[0];
 }
