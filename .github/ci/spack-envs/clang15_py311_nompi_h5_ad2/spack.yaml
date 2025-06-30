@@ -11,6 +11,8 @@ spack:
   - py-h5py
 
   packages:
+    py-h5py:
+      variants: ~mpi
     hdf5:
       variants: ~mpi
     adios2:
