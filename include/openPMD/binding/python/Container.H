@@ -34,10 +34,10 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <pybind11/attr.h>
 #include <sstream>
 #include <string>
-#include <utility>
 
 namespace openPMD
 {
@@ -48,8 +48,10 @@ namespace openPMD
  * BSD-style license, see pybind11 LICENSE file.
  */
 template <typename Map, typename... Args>
-py::class_<Map, std::unique_ptr<Map>, Args...>
-declare_container(py::handle scope, std::string const &name)
+py::class_<Map, std::unique_ptr<Map>, Args...> declare_container(
+    py::handle scope,
+    std::string const &name,
+    std::optional<std::string> docstring = std::nullopt)
 {
     using holder_type = std::unique_ptr<Map>;
     using KeyType = typename Map::key_type;
@@ -67,7 +69,11 @@ declare_container(py::handle scope, std::string const &name)
         local = !tinfo || tinfo->module_local;
     }
 
-    Class_ cl(scope, name.c_str(), py::module_local(local));
+    Class_ cl = docstring.has_value()
+        ? Class_(
+              scope, name.c_str(), docstring->c_str(),
+              py::module_local(local))
+        : Class_(scope, name.c_str(), py::module_local(local));
 
     // cl.def(py::init<Map const &>());
 
@@ -110,8 +116,42 @@ declare_container(py::handle scope, std::string const &name)
     return cl;
 }
 
+template <typename Class, typename SFINAE = void>
+struct has_erase
+{
+    constexpr static bool value = false;
+};
+template <typename Class>
+struct has_erase<
+    Class,
+    std::void_t<decltype(std::declval<Class>().erase(
+        std::declval<typename Class::iterator>()))>>
+{
+    constexpr static bool value = true;
+};
+template <typename Class>
+constexpr bool has_erase_v = has_erase<Class, void>::value;
+
+template <typename Class, typename SFINAE = void>
+struct has_emplace
+{
+    constexpr static bool value = false;
+    // using type = std::void_t<decltype(std::declval<Class>().emplace(
+    //     std::declval<typename Class::value_type>()))>;
+};
+template <typename Class>
+struct has_emplace<
+    Class,
+    std::void_t<decltype(std::declval<Class>().emplace(
+        std::declval<typename Class::value_type>()))>>
+{
+    constexpr static bool value = true;
+};
+template <typename Class>
+constexpr bool has_emplace_v = has_emplace<Class, void>::value;
+
 template <typename Map, typename Class_>
-Class_ finalize_container(Class_ cl)
+Class_ finalize_container(Class_ cl, bool skip_getitem = false)
 {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
@@ -122,25 +162,34 @@ Class_ finalize_container(Class_ cl)
         // keep container alive while iterator exists
         py::keep_alive<0, 1>());
 
-    // keep same policy as Container class: missing keys are created
-    cl.def(
-        "__getitem__",
-        [](Map &m, KeyType const &k) -> MappedType { return m[k]; },
-        // copy + keepalive
-        // All objects in the openPMD object model are handles, so using a copy
-        // is safer and still performant.
-        py::return_value_policy::move,
-        py::keep_alive<0, 1>());
+    if (!skip_getitem)
+    {
+        // keep same policy as Container class: missing keys are created
+        cl.def(
+            "__getitem__",
+            [](Map &m, KeyType const &k) -> MappedType { return m[k]; },
+            // copy + keepalive
+            // All objects in the openPMD object model are handles, so using a
+            // copy is safer and still performant.
+            py::return_value_policy::move,
+            py::keep_alive<0, 1>());
+    }
 
-    // Assignment provided only if the type is copyable
-    py::detail::map_assignment<Map, Class_>(cl);
+    if constexpr (has_emplace_v<Map>)
+    {
+        // Assignment provided only if the type is copyable
+        py::detail::map_assignment<Map, Class_>(cl);
+    }
 
-    cl.def("__delitem__", [](Map &m, KeyType const &k) {
-        auto it = m.find(k);
-        if (it == m.end())
-            throw py::key_error();
-        m.erase(it);
-    });
+    if constexpr (has_erase_v<Map>)
+    {
+        cl.def("__delitem__", [](Map &m, KeyType const &k) {
+            auto it = m.find(k);
+            if (it == m.end())
+                throw py::key_error();
+            m.erase(it);
+        });
+    }
 
     cl.def("__len__", &Map::size);
 

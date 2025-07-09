@@ -26,6 +26,7 @@
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/binding/python/auxiliary.hpp"
 #include "openPMD/config.hpp"
@@ -262,7 +263,9 @@ void init_Series(py::module &m)
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
 
-    py::class_<WriteIterations, Attributable>(m, "WriteIterations", R"END(
+    auto snapshots =
+        declare_container<Snapshots, Attributable>(m, "Snapshots", R"END(
+TODO UPDATE ME
 Writing side of the streaming API.
 
 Create instance via Series.writeIterations().
@@ -275,37 +278,38 @@ opening the next iteration or upon destruction.
 Since this is designed for streaming mode, reopening an iteration is
 not possible once it has been closed.
     )END")
-        .def(
-            "__getitem__",
-            [](WriteIterations &writeIterations, Series::IterationIndex_t key) {
-                auto lastIteration = writeIterations.currentIteration();
-                if (lastIteration.has_value() &&
-                    lastIteration.value()->first != key)
-                {
-                    // this must happen under the GIL
-                    lastIteration.value()->second.close();
-                }
-                py::gil_scoped_release release;
-                return writeIterations[key];
-            },
-            // copy + keepalive
-            py::return_value_policy::copy)
-        .def(
-            "current_iteration",
-            [](WriteIterations &writeIterations)
-                -> std::optional<IndexedIteration> {
-                if (auto currentIteration = writeIterations.currentIteration();
-                    currentIteration.has_value())
-                {
-                    return IndexedIteration(**currentIteration);
-                }
-                else
-                {
-                    return std::nullopt;
-                }
-            },
-            "Return the iteration that is currently being written to, if it "
-            "exists.");
+            .def(
+                "__getitem__",
+                [](Snapshots &s, Series::IterationIndex_t key) {
+                    auto lastIteration = s.currentIteration();
+                    if (lastIteration.has_value() &&
+                        lastIteration.value()->first != key)
+                    {
+                        // this must happen under the GIL
+                        lastIteration.value()->second.close();
+                    }
+                    py::gil_scoped_release release;
+                    return s[key];
+                },
+                // copy + keepalive
+                py::return_value_policy::copy)
+            .def(
+                "current_iteration",
+                [](Snapshots &s) -> std::optional<IndexedIteration> {
+                    if (auto currentIteration = s.currentIteration();
+                        currentIteration.has_value())
+                    {
+                        return IndexedIteration(**currentIteration);
+                    }
+                    else
+                    {
+                        return std::nullopt;
+                    }
+                },
+                "Return the iteration that is currently being written to, if "
+                "it "
+                "exists.");
+    finalize_container<Snapshots>(snapshots, /* skip_getitem = */ true);
 
     py::class_<StatefulIteratorPythonAdaptor>(m, "StatefulIterator")
         .def(
@@ -542,7 +546,12 @@ method may be called as many times as a user wishes.
 There is only one shared iterator state per Series, even when calling
 this method twice.
 Look for the WriteIterations class for further documentation.
-            )END");
+            )END")
+        .def(
+            "snapshots",
+            &Series::snapshots,
+            py::keep_alive<0, 1>(),
+            "TODO FILL IN DOCUMENTATION");
 
     add_pickle(
         cl, [](openPMD::Series series, std::vector<std::string> const &) {
