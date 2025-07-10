@@ -123,4 +123,9 @@ auto Snapshots::erase(iterator it) -> iterator
     return get().erase(std::move(it));
 }
 
+auto Snapshots::snapshotWorkflow() const -> SnapshotWorkflow
+{
+    return get().snapshotWorkflow();
+}
+
 } // namespace openPMD

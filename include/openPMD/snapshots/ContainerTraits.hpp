@@ -90,6 +90,15 @@ public:
     bool operator==(OpaqueSeriesIterator const &other) const;
 };
 
+/** Enum used as a label for distinguishing the different Snapshots
+ * implementations.
+ */
+enum class SnapshotWorkflow
+{
+    RandomAccess,
+    Synchronous
+};
+
 // Internal interface used by Snapshots class for interacting with containers.
 // This needs to be in a public header since the type definition is used in
 // private members of the Snapshots class which itself is a public class.
@@ -141,5 +150,7 @@ public:
     virtual auto erase(iterator) -> iterator = 0;
 
     virtual auto emplace(value_type &&) -> std::pair<iterator, bool> = 0;
+
+    virtual auto snapshotWorkflow() const -> SnapshotWorkflow = 0;
 };
 } // namespace openPMD

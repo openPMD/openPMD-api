@@ -682,14 +682,6 @@ public:
      */
     ReadIterations readIterations();
 
-    /** Parameter for Series::snapshots(), see there.
-     */
-    enum class SnapshotWorkflow
-    {
-        RandomAccess,
-        Synchronous
-    };
-
     /** @brief Preferred way to access Iterations/Snapshots. Single API for all
      *         workflows and access modi.
      *
@@ -1020,8 +1012,6 @@ OPENPMD_private
      */
     [[nodiscard]] bool randomAccessSteps() const;
 }; // Series
-
-using SnapshotWorkflow = Series::SnapshotWorkflow;
 
 namespace debug
 {

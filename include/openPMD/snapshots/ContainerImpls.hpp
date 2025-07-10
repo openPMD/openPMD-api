@@ -93,6 +93,8 @@ public:
     auto erase(iterator) -> iterator override;
 
     auto emplace(value_type &&) -> std::pair<iterator, bool> override;
+
+    auto snapshotWorkflow() const -> SnapshotWorkflow override;
 };
 
 class RandomAccessIteratorContainer : public AbstractSnapshotsContainer
@@ -153,5 +155,7 @@ public:
     auto erase(iterator) -> iterator override;
 
     auto emplace(value_type &&) -> std::pair<iterator, bool> override;
+
+    auto snapshotWorkflow() const -> SnapshotWorkflow override;
 };
 } // namespace openPMD

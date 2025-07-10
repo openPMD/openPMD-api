@@ -282,15 +282,22 @@ not possible once it has been closed.
             .def(
                 "__getitem__",
                 [](Snapshots &s, Series::IterationIndex_t key) {
-                    auto lastIteration = s.currentIteration();
-                    if (lastIteration.has_value() &&
-                        lastIteration.value()->first != key)
+                    switch (s.snapshotWorkflow())
                     {
-                        // this must happen under the GIL
-                        lastIteration.value()->second.close();
+                    case openPMD::SnapshotWorkflow::RandomAccess:
+                        return s[key];
+                    case openPMD::SnapshotWorkflow::Synchronous:
+                        auto lastIteration = s.currentIteration();
+                        if (lastIteration.has_value() &&
+                            lastIteration.value()->first != key)
+                        {
+                            // this must happen under the GIL
+                            lastIteration.value()->second.close();
+                        }
+                        py::gil_scoped_release release;
+                        return s[key];
                     }
-                    py::gil_scoped_release release;
-                    return s[key];
+                    throw std::runtime_error("Unreachable");
                 },
                 // copy + keepalive
                 py::return_value_policy::copy)
@@ -373,9 +380,9 @@ not possible once it has been closed.
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
 
-    py::enum_<Series::SnapshotWorkflow>(m, "SnapshotWorkflow")
-        .value("random_access", Series::SnapshotWorkflow::RandomAccess)
-        .value("synchronous", Series::SnapshotWorkflow::Synchronous);
+    py::enum_<SnapshotWorkflow>(m, "SnapshotWorkflow")
+        .value("random_access", SnapshotWorkflow::RandomAccess)
+        .value("synchronous", SnapshotWorkflow::Synchronous);
 
     py::class_<Series, Attributable> cl(m, "Series");
     ::auxiliary::ForEachType<

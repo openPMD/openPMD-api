@@ -167,6 +167,8 @@ public:
     {
         return m_snapshots->emplace({args...});
     }
+
+    auto snapshotWorkflow() const -> SnapshotWorkflow;
 };
 
 // backwards compatibility
