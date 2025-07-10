@@ -517,7 +517,7 @@ void JSONIOHandlerImpl::createFile(
         associateWithFile(writable, shared_name);
         this->m_dirty.emplace(shared_name);
 
-        if (m_handler->m_backendAccess != Access::APPEND ||
+        if (!access::append(m_handler->m_backendAccess) ||
             !auxiliary::file_exists(fullPathToFile))
         {
             // if in create mode: make sure to overwrite
@@ -2194,7 +2194,7 @@ auto JSONIOHandlerImpl::putJsonContents(
 
     auto writeSingleFile = [this, &it](std::string const &writeThisFile) {
         auto [fh, _, fh_with_precision] =
-            getFilehandle(File(writeThisFile), Access::CREATE);
+            getFilehandle(File(writeThisFile), Access::CREATE_RANDOM_ACCESS);
         (void)_;
 
         switch (m_fileFormat)

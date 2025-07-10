@@ -905,7 +905,7 @@ void Series::init(
 
     switch (at)
     {
-    case Access::CREATE:
+    case Access::CREATE_RANDOM_ACCESS:
     case Access::READ_WRITE:
     case Access::READ_ONLY: {
         auto [parsed_input, tracing_json] = initIOHandler<json::TracingJSON>(
@@ -917,8 +917,10 @@ void Series::init(
         init_directly(std::move(parsed_input), std::move(tracing_json));
     }
     break;
+    case Access::CREATE_LINEAR:
     case Access::READ_LINEAR:
-    case Access::APPEND: {
+    case Access::APPEND_RANDOM_ACCESS:
+    case Access::APPEND_LINEAR: {
         auto [first_parsed_input, first_tracing_json] =
             initIOHandler<json::TracingJSON>(
                 filepath,
@@ -963,7 +965,7 @@ auto Series::initIOHandler(
         /* considerFiles = */ true);
     auto input = parseInput(filepath);
     if (resolve_generic_extension && input->format == Format::GENERIC &&
-        at != Access::CREATE)
+        !access::create(at))
     {
         auto isPartOfSeries =
             input->iterationEncoding == IterationEncoding::fileBased
@@ -1155,13 +1157,15 @@ Given file pattern: ')END"
         IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
         break;
     }
-    case Access::CREATE: {
+    case Access::CREATE_RANDOM_ACCESS:
+    case Access::CREATE_LINEAR: {
         initDefaults(input->iterationEncoding);
         setIterationEncoding_internal(
             input->iterationEncoding, series.m_iterationEncodingSetExplicitly);
         break;
     }
-    case Access::APPEND: {
+    case Access::APPEND_RANDOM_ACCESS:
+    case Access::APPEND_LINEAR: {
         initDefaults(input->iterationEncoding);
         setIterationEncoding_internal(
             input->iterationEncoding, series.m_iterationEncodingSetExplicitly);
@@ -1225,7 +1229,7 @@ void Series::initDefaults(IterationEncoding ie, bool initAll)
      * In file-based iteration encoding, files are always truncated in Append
      * mode (Append mode works on a per-iteration basis).
      */
-    if (!initAll && IOHandler()->m_frontendAccess == Access::APPEND &&
+    if (!initAll && access::append(IOHandler()->m_frontendAccess) &&
         ie != IterationEncoding::fileBased)
     {
         return;
@@ -1349,8 +1353,10 @@ void Series::flushFileBased(
         }
         break;
     case Access::READ_WRITE:
-    case Access::CREATE:
-    case Access::APPEND: {
+    case Access::CREATE_RANDOM_ACCESS:
+    case Access::CREATE_LINEAR:
+    case Access::APPEND_RANDOM_ACCESS:
+    case Access::APPEND_LINEAR: {
         bool allDirty = dirty();
         for (auto it = begin; it != end; ++it)
         {
@@ -1471,7 +1477,7 @@ void Series::flushGorVBased(
     {
         if (!written())
         {
-            if (IOHandler()->m_frontendAccess == Access::APPEND)
+            if (access::append(IOHandler()->m_frontendAccess))
             {
                 Parameter<Operation::CHECK_FILE> param;
                 param.name = series.m_name;
@@ -2855,7 +2861,7 @@ void Series::openIteration(IterationIndex_t index, Iteration &iteration)
          * before it is possible to open it.
          */
         if (!iteration.written() &&
-            (IOHandler()->m_frontendAccess == Access::CREATE ||
+            (access::create(IOHandler()->m_frontendAccess) ||
              oldStatus != internal::CloseStatus::ParseAccessDeferred))
         {
             // nothing to do, file will be opened by writing routines
@@ -3267,12 +3273,20 @@ Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
                 SnapshotWorkflow::RandomAccess);
             break;
 
-        case Access::CREATE:
-        case Access::APPEND:
+        // TODO: Remove parameter
+        case Access::CREATE_RANDOM_ACCESS:
+        case Access::APPEND_RANDOM_ACCESS:
             // Users can select.
             usedSnapshotWorkflow = snapshot_workflow.value_or(
                 /* random-access logic by default */
                 SnapshotWorkflow::RandomAccess);
+            break;
+        case Access::CREATE_LINEAR:
+        case Access::APPEND_LINEAR:
+            // Users can select.
+            usedSnapshotWorkflow = snapshot_workflow.value_or(
+                /* random-access logic by default */
+                SnapshotWorkflow::Synchronous);
             break;
         }
     }
@@ -3342,10 +3356,12 @@ void Series::parseBase()
     readIterations();
 }
 
+// TODO: ensure backwards compatibility
 WriteIterations Series::writeIterations()
 {
     auto const access = IOHandler()->m_frontendAccess;
-    if (access != Access::CREATE && access != Access::APPEND)
+    if (access != Access::CREATE_RANDOM_ACCESS &&
+        access != Access::APPEND_RANDOM_ACCESS)
     {
         throw error::WrongAPIUsage(
             "[Series::writeIterations()] May only be applied for access modes "
@@ -3514,24 +3530,11 @@ auto Series::preparseSnapshots()
 
 bool Series::randomAccessSteps() const
 {
-    auto randomAccess = [](Access access) {
-        switch (access)
-        {
-        case Access::READ_RANDOM_ACCESS:
-        case Access::READ_WRITE:
-            return true;
-        case Access::READ_LINEAR:
-        case Access::CREATE:
-        case Access::APPEND:
-            return false;
-        }
-        return false;
-    };
     return get().m_parsePreference.value_or(
                internal::ParsePreference::UpFront) ==
         internal::ParsePreference::UpFront &&
         iterationEncoding() == IterationEncoding::variableBased &&
-        randomAccess(IOHandler()->m_backendAccess);
+        access::random_access(IOHandler()->m_backendAccess);
 }
 
 namespace

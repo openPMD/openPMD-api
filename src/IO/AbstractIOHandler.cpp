@@ -83,12 +83,15 @@ void AbstractIOHandler::setIterationEncoding(IterationEncoding encoding)
             *const_cast<Access *>(&m_backendAccess) =
                 Access::READ_RANDOM_ACCESS;
             break;
-        case Access::APPEND:
-            *const_cast<Access *>(&m_backendAccess) = Access::CREATE;
+        case Access::APPEND_LINEAR:
+        case Access::APPEND_RANDOM_ACCESS:
+            *const_cast<Access *>(&m_backendAccess) =
+                Access::CREATE_RANDOM_ACCESS;
             break;
         case Access::READ_RANDOM_ACCESS:
         case Access::READ_WRITE:
-        case Access::CREATE:
+        case Access::CREATE_RANDOM_ACCESS:
+        case Access::CREATE_LINEAR:
             break;
         }
     }

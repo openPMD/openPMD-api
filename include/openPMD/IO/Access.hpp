@@ -78,8 +78,11 @@ enum class Access
      * Read mode corresponds with Access::READ_RANDOM_ACCESS.
      */
     READ_WRITE,
-    CREATE, //!< create new series and truncate existing (files)
-    APPEND //!< write new iterations to an existing series without reading
+    CREATE_RANDOM_ACCESS, //!< create new series and truncate existing (files)
+    CREATE_LINEAR,
+    APPEND_RANDOM_ACCESS, //!< write new iterations to an existing series
+                          //!< without reading
+    APPEND_LINEAR
 }; // Access
 
 std::ostream &operator<<(std::ostream &o, Access const &a);
@@ -94,8 +97,10 @@ namespace access
         case Access::READ_ONLY:
             return true;
         case Access::READ_WRITE:
-        case Access::CREATE:
-        case Access::APPEND:
+        case Access::CREATE_RANDOM_ACCESS:
+        case Access::CREATE_LINEAR:
+        case Access::APPEND_RANDOM_ACCESS:
+        case Access::APPEND_LINEAR:
             return false;
         }
         throw std::runtime_error("Unreachable!");
@@ -114,8 +119,10 @@ namespace access
         case Access::READ_ONLY:
         case Access::READ_WRITE:
             return false;
-        case Access::CREATE:
-        case Access::APPEND:
+        case Access::CREATE_RANDOM_ACCESS:
+        case Access::CREATE_LINEAR:
+        case Access::APPEND_RANDOM_ACCESS:
+        case Access::APPEND_LINEAR:
             return true;
         }
         throw std::runtime_error("Unreachable!");
@@ -124,6 +131,65 @@ namespace access
     inline bool read(Access access)
     {
         return !writeOnly(access);
+    }
+
+    inline bool random_access(Access access)
+    {
+        switch (access)
+        {
+
+        case Access::READ_ONLY:
+        case Access::READ_WRITE:
+        case Access::CREATE_RANDOM_ACCESS:
+        case Access::APPEND_RANDOM_ACCESS:
+            return true;
+        case Access::READ_LINEAR:
+        case Access::CREATE_LINEAR:
+        case Access::APPEND_LINEAR:
+            return false;
+        }
+        throw std::runtime_error("Unreachable");
+    }
+
+    inline bool linear(Access access)
+    {
+        return !random_access(access);
+    }
+
+    inline bool append(Access access)
+    {
+        switch (access)
+        {
+
+        case Access::READ_ONLY:
+        case Access::READ_LINEAR:
+        case Access::READ_WRITE:
+        case Access::CREATE_RANDOM_ACCESS:
+        case Access::CREATE_LINEAR:
+            return false;
+        case Access::APPEND_RANDOM_ACCESS:
+        case Access::APPEND_LINEAR:
+            return true;
+        }
+        throw std::runtime_error("Unreachable");
+    }
+
+    inline bool create(Access access)
+    {
+        switch (access)
+        {
+
+        case Access::READ_ONLY:
+        case Access::READ_LINEAR:
+        case Access::READ_WRITE:
+        case Access::APPEND_RANDOM_ACCESS:
+        case Access::APPEND_LINEAR:
+            return false;
+        case Access::CREATE_RANDOM_ACCESS:
+        case Access::CREATE_LINEAR:
+            return true;
+        }
+        throw std::runtime_error("Unreachable");
     }
 } // namespace access
 

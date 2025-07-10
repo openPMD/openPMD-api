@@ -71,13 +71,25 @@ as expected. Otherwise, it is undefined which step's data is returned.)")
             "Open existing Series as writable. Read mode corresponds with "
             "Access::READ_RANDOM_ACCESS.")
         .value(
-            "create",
-            Access::CREATE,
-            "create new series and truncate existing (files)")
+            "create_random_access",
+            Access::CREATE_RANDOM_ACCESS,
+            "create new series and truncate existing (files), use "
+            "random-access for interacting with snapshots")
         .value(
-            "append",
-            Access::APPEND,
-            "write new iterations to an existing series without reading")
+            "append_random_access",
+            Access::APPEND_RANDOM_ACCESS,
+            "write new iterations to an existing series without reading, use "
+            "random-access for interacting with snapshots")
+        .value(
+            "create_linear",
+            Access::CREATE_LINEAR,
+            "create new series and truncate existing (files), use "
+            "synchronous/linear snapshots workflow")
+        .value(
+            "append_linear",
+            Access::APPEND_LINEAR,
+            "write new iterations to an existing series without reading, use "
+            "synchronous/linear snapshots workflow")
         .value(
             "read_linear",
             Access::READ_LINEAR,

@@ -21,6 +21,7 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -292,10 +293,12 @@ void HDF5IOHandlerImpl::createFile(
         unsigned flags{};
         switch (m_handler->m_backendAccess)
         {
-        case Access::CREATE:
+        case Access::CREATE_RANDOM_ACCESS:
+        case Access::CREATE_LINEAR:
             flags = H5F_ACC_TRUNC;
             break;
-        case Access::APPEND:
+        case Access::APPEND_RANDOM_ACCESS:
+        case Access::APPEND_LINEAR:
             if (auxiliary::file_exists(name))
             {
                 flags = H5F_ACC_RDWR;
@@ -647,7 +650,7 @@ void HDF5IOHandlerImpl::createDataset(
             "[HDF5] Internal error: Failed to open HDF5 group during dataset "
             "creation");
 
-        if (m_handler->m_backendAccess == Access::APPEND)
+        if (access::append(m_handler->m_backendAccess))
         {
             // The dataset might already exist in the file from a previous run
             // We delete it, otherwise we could not create it again with

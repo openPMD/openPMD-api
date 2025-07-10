@@ -2001,7 +2001,8 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
     }
     switch (m_handler->m_backendAccess)
     {
-    case Access::CREATE:
+    case Access::CREATE_RANDOM_ACCESS:
+    case Access::CREATE_LINEAR:
         switch (openFileAs)
         {
 
@@ -2060,7 +2061,8 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
         {
             return adios2::Mode::Write;
         }
-    case Access::APPEND:
+    case Access::APPEND_RANDOM_ACCESS:
+    case Access::APPEND_LINEAR:
         return adios2::Mode::Append;
     }
     throw std::runtime_error("Unreachable!");

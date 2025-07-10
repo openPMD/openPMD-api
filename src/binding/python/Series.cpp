@@ -35,6 +35,7 @@
 
 #include <optional>
 #include <pybind11/attr.h>
+#include <stdexcept>
 #include <tuple>
 
 #if openPMD_USE_FILESYSTEM_HEADER

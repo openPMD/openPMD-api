@@ -633,8 +633,10 @@ void ADIOS2File::configure_IO()
             configure_IO_Write();
         }
         break;
-    case Access::APPEND:
-    case Access::CREATE:
+    case Access::APPEND_RANDOM_ACCESS:
+    case Access::APPEND_LINEAR:
+    case Access::CREATE_RANDOM_ACCESS:
+    case Access::CREATE_LINEAR:
         configure_IO_Write();
         break;
     }
