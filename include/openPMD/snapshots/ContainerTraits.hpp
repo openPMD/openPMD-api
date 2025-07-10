@@ -3,6 +3,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
 #include <optional>
+#include <utility>
 
 /* Public header due to use of AbstractSnapshotsContainer and its iterator type
  * OpaqueSeriesIterator in Snapshots class header. No direct user interaction
@@ -138,5 +139,7 @@ public:
 
     virtual auto erase(key_type const &key) -> size_type = 0;
     virtual auto erase(iterator) -> iterator = 0;
+
+    virtual auto emplace(value_type &&) -> std::pair<iterator, bool> = 0;
 };
 } // namespace openPMD

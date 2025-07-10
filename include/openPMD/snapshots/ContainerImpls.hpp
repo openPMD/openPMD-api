@@ -91,6 +91,8 @@ public:
 
     auto erase(key_type const &key) -> size_type override;
     auto erase(iterator) -> iterator override;
+
+    auto emplace(value_type &&) -> std::pair<iterator, bool> override;
 };
 
 class RandomAccessIteratorContainer : public AbstractSnapshotsContainer
@@ -149,5 +151,7 @@ public:
 
     auto erase(key_type const &key) -> size_type override;
     auto erase(iterator) -> iterator override;
+
+    auto emplace(value_type &&) -> std::pair<iterator, bool> override;
 };
 } // namespace openPMD

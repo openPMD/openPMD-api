@@ -20,12 +20,11 @@
  */
 #pragma once
 
-#include "openPMD/Iteration.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
-#include <functional>
 #include <memory>
 #include <optional>
+#include <utility>
 
 namespace openPMD
 {
@@ -160,7 +159,14 @@ public:
 
     auto erase(key_type const &key) -> size_type;
     auto erase(iterator) -> iterator;
-    // emplace
+
+    /* Does not really emplace since we need to forward to abstract
+     * implementations and can hence not work with templates. */
+    template <typename... Args>
+    auto emplace(Args &&...args) -> std::pair<iterator, bool>
+    {
+        return m_snapshots->emplace({args...});
+    }
 };
 
 // backwards compatibility

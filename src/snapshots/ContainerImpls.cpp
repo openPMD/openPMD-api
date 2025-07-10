@@ -286,6 +286,13 @@ auto StatefulSnapshotsContainer::erase(iterator) -> iterator
         "[StatefulSnapshotsContainer::erase()] Unimplemented");
 }
 
+auto StatefulSnapshotsContainer::emplace(value_type &&)
+    -> std::pair<iterator, bool>
+{
+    throw std::runtime_error(
+        "[StatefulSnapshotsContainer::emplace()] Unimplemented");
+}
+
 RandomAccessIteratorContainer::RandomAccessIteratorContainer(
     Container<Iteration, key_type> cont)
     : m_cont(std::move(cont))
@@ -413,5 +420,14 @@ auto RandomAccessIteratorContainer::erase(iterator it) -> iterator
     }
     return iterator::from_concrete_iterator<concrete_iterator_type>(
         m_cont.erase(bare_iterator->m_it));
+}
+
+auto RandomAccessIteratorContainer::emplace(value_type &&value)
+    -> std::pair<iterator, bool>
+{
+    auto [tmp_iterator, newly_emplaced] = m_cont.emplace(std::move(value));
+    return std::make_pair(
+        iterator::from_concrete_iterator<concrete_iterator_type>(tmp_iterator),
+        newly_emplaced);
 }
 } // namespace openPMD

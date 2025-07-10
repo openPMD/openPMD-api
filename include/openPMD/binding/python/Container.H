@@ -175,21 +175,15 @@ Class_ finalize_container(Class_ cl, bool skip_getitem = false)
             py::keep_alive<0, 1>());
     }
 
-    if constexpr (has_emplace_v<Map>)
-    {
-        // Assignment provided only if the type is copyable
-        py::detail::map_assignment<Map, Class_>(cl);
-    }
+    // Assignment provided only if the type is copyable
+    py::detail::map_assignment<Map, Class_>(cl);
 
-    if constexpr (has_erase_v<Map>)
-    {
-        cl.def("__delitem__", [](Map &m, KeyType const &k) {
-            auto it = m.find(k);
-            if (it == m.end())
-                throw py::key_error();
-            m.erase(it);
-        });
-    }
+    cl.def("__delitem__", [](Map &m, KeyType const &k) {
+        auto it = m.find(k);
+        if (it == m.end())
+            throw py::key_error();
+        m.erase(it);
+    });
 
     cl.def("__len__", &Map::size);
 
