@@ -44,6 +44,11 @@ private:
     auto get() -> StatefulIterator *;
     auto get() const -> StatefulIterator const *;
 
+    using value_type =
+        Container<Iteration, Iteration::IterationIndex_t>::value_type;
+    static auto stateful_to_opaque(StatefulIterator const &it)
+        -> OpaqueSeriesIterator<value_type>;
+
 public:
     ~StatefulSnapshotsContainer() override;
 
@@ -83,14 +88,26 @@ public:
     auto find(key_type const &key) const -> const_iterator override;
 
     auto contains(key_type const &key) const -> bool override;
+
+    auto erase(key_type const &key) -> size_type override;
+    auto erase(iterator) -> iterator override;
 };
 
 class RandomAccessIteratorContainer : public AbstractSnapshotsContainer
 {
 private:
     friend class Series;
-    Container<Iteration, key_type> m_cont;
+    using Container_t = Container<Iteration, key_type>;
+    Container_t m_cont;
     RandomAccessIteratorContainer(Container<Iteration, key_type> cont);
+
+    using concrete_iterator_type = RandomAccessIterator<Container_t::iterator>;
+    using concrete_reverse_iterator_type =
+        RandomAccessIterator<Container_t::reverse_iterator>;
+    using concrete_const_iterator_type =
+        RandomAccessIterator<Container_t::const_iterator>;
+    using concrete_const_reverse_iterator_type =
+        RandomAccessIterator<Container_t::const_reverse_iterator>;
 
 public:
     ~RandomAccessIteratorContainer() override;
@@ -129,5 +146,8 @@ public:
     auto find(key_type const &key) const -> const_iterator override;
 
     auto contains(key_type const &key) const -> bool override;
+
+    auto erase(key_type const &key) -> size_type override;
+    auto erase(iterator) -> iterator override;
 };
 } // namespace openPMD

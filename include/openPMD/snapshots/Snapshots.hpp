@@ -72,6 +72,7 @@ public:
     using reverse_iterator = AbstractSnapshotsContainer::reverse_iterator;
     using const_reverse_iterator =
         AbstractSnapshotsContainer::const_reverse_iterator;
+    using size_type = AbstractSnapshotsContainer::size_type;
 
     /** @brief The currently active Iteration.
      *
@@ -157,7 +158,8 @@ public:
      */
     auto contains(key_type const &key) const -> bool;
 
-    // erase
+    auto erase(key_type const &key) -> size_type;
+    auto erase(iterator) -> iterator;
     // emplace
 };
 

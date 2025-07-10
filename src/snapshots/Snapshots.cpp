@@ -1,5 +1,7 @@
-#include "openPMD/snapshots/Snapshots.hpp"
+#include <utility>
+
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/snapshots/Snapshots.hpp"
 namespace openPMD
 {
 Snapshots::Snapshots(
@@ -110,6 +112,15 @@ auto Snapshots::count(key_type const &key) const -> size_t
 auto Snapshots::contains(key_type const &key) const -> bool
 {
     return get().contains(key);
+}
+
+auto Snapshots::erase(key_type const &key) -> size_type
+{
+    return get().erase(key);
+}
+auto Snapshots::erase(iterator it) -> iterator
+{
+    return get().erase(std::move(it));
 }
 
 } // namespace openPMD

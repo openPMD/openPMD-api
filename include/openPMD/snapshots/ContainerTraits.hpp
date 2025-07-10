@@ -2,6 +2,7 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
+#include <optional>
 
 /* Public header due to use of AbstractSnapshotsContainer and its iterator type
  * OpaqueSeriesIterator in Snapshots class header. No direct user interaction
@@ -27,6 +28,29 @@ private:
         AbstractSeriesIterator<OpaqueSeriesIterator, value_type_in>;
     // no shared_ptr since copied iterators should not share state
     std::unique_ptr<DynamicSeriesIterator<value_type_in>> m_internal_iterator;
+
+protected:
+    using Self_t = OpaqueSeriesIterator<value_type_in>;
+
+    template <typename ChildClass, typename... ConstructorArgs>
+    static auto from_concrete_iterator(ConstructorArgs &&...args) -> Self_t
+    {
+        return OpaqueSeriesIterator<value_type_in>(
+            std::unique_ptr<DynamicSeriesIterator<value_type_in>>{
+                new ChildClass(std::forward<ConstructorArgs>(args)...)});
+    }
+
+    template <typename ChildClass>
+    auto to_concrete_iterator() -> std::optional<ChildClass>
+    {
+        auto bare_iterator =
+            dynamic_cast<ChildClass *>(this->m_internal_iterator.get());
+        if (!bare_iterator)
+        {
+            return std::nullopt;
+        }
+        return *bare_iterator;
+    }
 
 public:
     OpaqueSeriesIterator(
@@ -80,6 +104,7 @@ public:
     // iteration, these are the same type
     using reverse_iterator = OpaqueSeriesIterator<value_type>;
     using const_reverse_iterator = OpaqueSeriesIterator<value_type const>;
+    using size_type = size_t;
 
     virtual ~AbstractSnapshotsContainer() = 0;
 
@@ -110,5 +135,8 @@ public:
     virtual auto find(key_type const &key) const -> const_iterator = 0;
 
     virtual auto contains(key_type const &key) const -> bool = 0;
+
+    virtual auto erase(key_type const &key) -> size_type = 0;
+    virtual auto erase(iterator) -> iterator = 0;
 };
 } // namespace openPMD
