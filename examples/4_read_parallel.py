@@ -26,7 +26,7 @@ if __name__ == "__main__":
         print("Read a series in parallel with {} MPI ranks".format(
               comm.size))
 
-    E_x = series.iterations[100].meshes["E"]["x"]
+    E_x = series.snapshots()[100].meshes["E"]["x"]
 
     chunk_offset = [comm.rank + 1, 1, 1]
     chunk_extent = [2, 2, 1]
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # The iteration can be closed in order to help free up resources.
     # The iteration's content will be flushed automatically.
     # An iteration once closed cannot (yet) be reopened.
-    series.iterations[100].close()
+    series.snapshots()[100].close()
 
     if 0 == comm.rank:
         print("Chunks have been read from disk")

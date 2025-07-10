@@ -24,7 +24,7 @@ if __name__ == "__main__":
     f.particles_path = "particles"
 
     # new iteration
-    cur_it = f.iterations[0]
+    cur_it = f.snapshots()[0]
 
     # particles
     electrons = cur_it.particles["electrons"]

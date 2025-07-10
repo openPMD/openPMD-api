@@ -27,8 +27,8 @@ if __name__ == "__main__":
     # intentionally restricted APIs that ensure a workflow which also works
     # in streaming setups, e.g. an iteration cannot be opened again once
     # it has been closed.
-    for iteration in series.read_iterations():
-        print("Current iteration {}".format(iteration.iteration_index))
+    for index, iteration in series.snapshots().items():
+        print("Current iteration {}".format(index))
         electronPositions = iteration.particles["e"]["position"]
         loadedChunks = []
         shapes = []

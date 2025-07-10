@@ -38,32 +38,32 @@ if __name__ == "__main__":
     f.delete_attribute("custom_attribute_name")
 
     # attributes are read-write properties
-    tmpItObj = f.iterations[1]
+    tmpItObj = f.snapshots()[1]
     tmpItObj.time = 42.0
     tmpItObj.dt = 1.0
     tmpItObj.time_unit_SI = 1.39e-16
     # everything that is accessed with [] should be interpreted as permanent
     # storage the objects sunk into these locations are deep copies
-    f.iterations[2].comment = "This iteration will not appear in any output"
-    del f.iterations[2]
+    f.snapshots()[2].comment = "This iteration will not appear in any output"
+    del f.snapshots()[2]
 
     # this is a reference to an iteration
-    reference = f.iterations[1]
+    reference = f.snapshots()[1]
     reference.comment = "Modifications to a reference will always be visible" \
                         " in the output"
     del reference
 
     # alternatively, a copy may be created and later re-assigned to
-    # f.iterations[1]
-    copy = f.iterations[1]  # TODO .copy()
+    # f.snapshots()[1]
+    copy = f.snapshots()[1]  # TODO .copy()
     copy.comment = "Modifications to copies will only take effect after you " \
                    "reassign the copy"
-    f.iterations[1] = copy
+    f.snapshots()[1] = copy
     del copy
 
-    f.iterations[1].delete_attribute("comment")
+    f.snapshots()[1].delete_attribute("comment")
 
-    cur_it = f.iterations[1]
+    cur_it = f.snapshots()[1]
 
     # the underlying concept for numeric data is the openPMD Record
     # https://github.com/openPMD/openPMD-standard/blob/upcoming-1.0.1/STANDARD.md#scalar-vector-and-tensor-records

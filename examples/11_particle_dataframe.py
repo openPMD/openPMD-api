@@ -36,7 +36,7 @@ except ImportError:
 # This "if" is important for distributed dask runs
 if __name__ == "__main__":
     s = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
-    electrons = s.iterations[400].particles["electrons"]
+    electrons = s.snapshots()[400].particles["electrons"]
 
     # all particles
     df = electrons.to_df()
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     # Meshes
     if found_dask:
-        E = s.iterations[400].meshes["E"]
+        E = s.snapshots()[400].meshes["E"]
         E_x = E["x"]
         E_y = E["y"]
         E_z = E["z"]

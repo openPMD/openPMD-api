@@ -34,6 +34,7 @@
 #include "openPMD/snapshots/StatefulIterator.hpp"
 
 #include <optional>
+#include <pybind11/attr.h>
 #include <tuple>
 
 #if openPMD_USE_FILESYSTEM_HEADER
@@ -372,6 +373,10 @@ not possible once it has been closed.
             // keep handle alive while iterator exists
             py::keep_alive<0, 1>());
 
+    py::enum_<Series::SnapshotWorkflow>(m, "SnapshotWorkflow")
+        .value("random_access", Series::SnapshotWorkflow::RandomAccess)
+        .value("synchronous", Series::SnapshotWorkflow::Synchronous);
+
     py::class_<Series, Attributable> cl(m, "Series");
     ::auxiliary::ForEachType<
         ::internal::DefineSeriesConstructorPerPathType,
@@ -551,6 +556,7 @@ Look for the WriteIterations class for further documentation.
             "snapshots",
             &Series::snapshots,
             py::keep_alive<0, 1>(),
+            py::arg("snapshot_workflow") = std::nullopt,
             "TODO FILL IN DOCUMENTATION");
 
     add_pickle(

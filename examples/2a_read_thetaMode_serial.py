@@ -14,7 +14,7 @@ if __name__ == "__main__":
     series = io.Series("../samples/git-sample/thetaMode/data%T.h5",
                        io.Access.read_only)
 
-    i = series.iterations[500]
+    i = series.snapshots()[500]
     E_z_modes = i.meshes["E"]["z"]
     shape = E_z_modes.shape  # (modal components, r, z)
 

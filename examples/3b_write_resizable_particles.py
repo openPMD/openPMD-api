@@ -16,7 +16,7 @@ if __name__ == "__main__":
         io.Access.create
     )
 
-    electrons = series.iterations[0].particles["electrons"]
+    electrons = series.write_iterations()[0].particles["electrons"]
 
     # our initial data to write
     x = np.array([0., 1., 2., 3., 4.], dtype=np.double)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # The iteration's content will be flushed automatically.
     # An iteration once closed cannot (yet) be reopened.
     # after this call, the provided data buffers can be used again or deleted
-    series.iterations[0].close()
+    series.write_iterations()[0].close()
 
     # rinse and repeat as needed :)
 
