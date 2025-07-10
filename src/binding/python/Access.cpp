@@ -76,8 +76,18 @@ as expected. Otherwise, it is undefined which step's data is returned.)")
             "create new series and truncate existing (files), use "
             "random-access for interacting with snapshots")
         .value(
+            "create",
+            Access::CREATE,
+            "create new series and truncate existing (files), use "
+            "random-access for interacting with snapshots")
+        .value(
             "append_random_access",
             Access::APPEND_RANDOM_ACCESS,
+            "write new iterations to an existing series without reading, use "
+            "random-access for interacting with snapshots")
+        .value(
+            "append",
+            Access::APPEND,
             "write new iterations to an existing series without reading, use "
             "random-access for interacting with snapshots")
         .value(

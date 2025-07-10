@@ -62,8 +62,7 @@ enum class Access
      *    If the dataset only has one single step, this is guaranteed to work
      *    as expected. Otherwise, it is undefined which step's data is returned.
      */
-    READ_ONLY,
-    READ_RANDOM_ACCESS = READ_ONLY, //!< more explicit alias for READ_ONLY
+    READ_ONLY = 0,
     /*
      * Open Series as read-only, fails if Series is not found.
      * This access mode requires use of Series::readIterations().
@@ -72,17 +71,21 @@ enum class Access
      * become available by use of the returned Iterator, e.g. in a foreach loop.
      * See Access::READ_ONLY for when to use this.
      */
-    READ_LINEAR,
+    READ_LINEAR = 1,
     /**
      * Open existing Series as writable.
      * Read mode corresponds with Access::READ_RANDOM_ACCESS.
      */
-    READ_WRITE,
-    CREATE_RANDOM_ACCESS, //!< create new series and truncate existing (files)
-    CREATE_LINEAR,
-    APPEND_RANDOM_ACCESS, //!< write new iterations to an existing series
-                          //!< without reading
-    APPEND_LINEAR
+    READ_WRITE = 2,
+    CREATE_RANDOM_ACCESS =
+        3, //!< create new series and truncate existing (files)
+    CREATE_LINEAR = 4,
+    APPEND_RANDOM_ACCESS = 5, //!< write new iterations to an existing series
+                              //!< without reading
+    APPEND_LINEAR = 6,
+    READ_RANDOM_ACCESS = READ_ONLY, //!< more explicit alias for READ_ONLY
+    CREATE = CREATE_RANDOM_ACCESS,
+    APPEND = APPEND_RANDOM_ACCESS
 }; // Access
 
 std::ostream &operator<<(std::ostream &o, Access const &a);
