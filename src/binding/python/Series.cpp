@@ -387,7 +387,10 @@ not possible once it has been closed.
         std::tuple<py::object, std::string>,
         std::tuple<py::object, py::object>
 #endif
-        >::template call(cl);
+        >::template call<py::class_<Series, Attributable> &>(cl);
+    //                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // need to explicitly state template parameters, otherwise Clang on
+    // Windows does not understand that it really is a template
 
     cl.def("__bool__", &Series::operator bool)
         .def("__len__", [](Series const &s) { return s.iterations.size(); })
