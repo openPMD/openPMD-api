@@ -8,8 +8,9 @@ int main()
     namespace io = openPMD;
 
     {
-        auto f =
-            io::Series("working/directory/2D_simData.h5", io::Access::CREATE);
+        auto f = io::Series(
+            "working/directory/2D_simData.h5",
+            io::Access::CREATE_RANDOM_ACCESS);
 
         // all required openPMD attributes will be set to reasonable default
         // values (all ones, all zeros, empty strings,...) manually setting them
@@ -34,22 +35,22 @@ int main()
         {
             // setting attributes can be chained in JS-like syntax for compact
             // code
-            f.iterations[1].setTime(42.0).setDt(1.0).setTimeUnitSI(1.39e-16);
-            f.iterations[2].setComment(
+            f.snapshots()[1].setTime(42.0).setDt(1.0).setTimeUnitSI(1.39e-16);
+            f.snapshots()[2].setComment(
                 "This iteration will not appear in any output");
-            f.iterations.erase(2);
+            f.snapshots().erase(2);
         }
 
         {
             // everything is a reference
-            io::Iteration reference = f.iterations[1];
+            io::Iteration reference = f.snapshots()[1];
             reference.setComment(
                 "Modifications to a copied iteration refer to the same "
                 "iteration");
         }
-        f.iterations[1].deleteAttribute("comment");
+        f.snapshots()[1].deleteAttribute("comment");
 
-        io::Iteration cur_it = f.iterations[1];
+        io::Iteration cur_it = f.snapshots()[1];
 
         // the underlying concept for numeric data is the openPMD Record
         // https://github.com/openPMD/openPMD-standard/blob/1.0.1/STANDARD.md#scalar-vector-and-tensor-records

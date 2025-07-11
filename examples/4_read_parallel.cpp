@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     if (0 == mpi_rank)
         cout << "Read a series in parallel with " << mpi_size << " MPI ranks\n";
 
-    MeshRecordComponent E_x = series.iterations[100].meshes["E"]["x"];
+    MeshRecordComponent E_x = series.snapshots()[100].meshes["E"]["x"];
 
     Offset chunk_offset = {static_cast<long unsigned int>(mpi_rank) + 1, 1, 1};
     Extent chunk_extent = {2, 2, 1};
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
     // An iteration once closed cannot (yet) be reopened.
-    series.iterations[100].close();
+    series.snapshots()[100].close();
 
     if (0 == mpi_rank)
         cout << "Chunks have been read from disk\n";

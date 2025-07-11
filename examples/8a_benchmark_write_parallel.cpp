@@ -694,7 +694,7 @@ void AbstractPattern::run()
             {
                 setLayOut(step);
                 Series series =
-                    Series(filename, Access::CREATE, MPI_COMM_WORLD);
+                    Series(filename, Access::CREATE_LINEAR, MPI_COMM_WORLD);
                 series.setIterationEncoding(m_Input.m_Encoding);
                 series.setMeshesPath("fields");
                 store(series, step);
@@ -713,7 +713,8 @@ void AbstractPattern::run()
             std::string tag = "Writing a single file:" + filename;
             Timer kk(tag.c_str(), m_Input.m_MPIRank);
 
-            Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+            Series series =
+                Series(filename, Access::CREATE_LINEAR, MPI_COMM_WORLD);
             series.setIterationEncoding(m_Input.m_Encoding);
             series.setMeshesPath("fields");
             for (int step = 1; step <= m_Input.m_Steps; step++)
@@ -752,11 +753,10 @@ void AbstractPattern::store(Series &series, int step)
     // in streaming setups, e.g. an iteration cannot be opened again once
     // it has been closed.
     // `Series::iterations` can be directly accessed in random-access workflows.
-    ParticleSpecies &currSpecies =
-        series.writeIterations()[step].particles["ion"];
+    ParticleSpecies &currSpecies = series.snapshots()[step].particles["ion"];
     storeParticles(currSpecies, step);
 
-    series.writeIterations()[step].close();
+    series.snapshots()[step].close();
 }
 
 /*
@@ -780,7 +780,7 @@ void AbstractPattern::storeMesh(
     // it has been closed.
     // `Series::iterations` can be directly accessed in random-access workflows.
     MeshRecordComponent compA =
-        series.writeIterations()[step].meshes[fieldName][compName];
+        series.snapshots()[step].meshes[fieldName][compName];
     Datatype datatype = determineDatatype<double>();
     Dataset dataset = Dataset(datatype, m_GlobalMesh);
 

@@ -280,10 +280,10 @@ public:
             // directly accessed in random-access workflows.
             {
                 int counter = 1;
-                for (auto i : series.readIterations())
+                for (auto &i : series.snapshots())
                 {
                     if (counter % 5 == 1)
-                        readStep(series, i, counter - 1);
+                        readStep(series, i.second, counter - 1);
                     counter++;
                 }
                 if (0 == m_MPIRank)
@@ -633,7 +633,7 @@ public:
      * Handles 3D mesh read of magnetic field
      * @param series     openPMD series
      */
-    void sliceField(Series &series, IndexedIteration &iter)
+    void sliceField(Series &series, Iteration &iter)
     {
         if (m_Pattern >= 100)
             return;
@@ -690,7 +690,7 @@ public:
      * @param ts            timestep
      *
      */
-    void readStep(Series &series, IndexedIteration &iter, int ts)
+    void readStep(Series &series, Iteration &iter, int ts)
     {
         std::string comp_name = openPMD::MeshRecordComponent::SCALAR;
 
@@ -735,7 +735,7 @@ public:
      * @param iter        current iteration
      *
      */
-    void sliceParticles(Series &series, IndexedIteration &iter)
+    void sliceParticles(Series &series, Iteration &iter)
     {
         // read id of the first particle found
         if (m_Pattern != 7)

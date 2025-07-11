@@ -29,16 +29,15 @@ using namespace openPMD;
 int main()
 {
     // open file for writing
-    Series series =
-        Series("../samples/3b_write_resizable_particles.h5", Access::CREATE);
+    Series series = Series(
+        "../samples/3b_write_resizable_particles.h5", Access::CREATE_LINEAR);
 
     // `Series::writeIterations()` and `Series::readIterations()` are
     // intentionally restricted APIs that ensure a workflow which also works
     // in streaming setups, e.g. an iteration cannot be opened again once
     // it has been closed.
     // `Series::iterations` can be directly accessed in random-access workflows.
-    ParticleSpecies electrons =
-        series.writeIterations()[0].particles["electrons"];
+    ParticleSpecies electrons = series.snapshots()[0].particles["electrons"];
 
     // our initial data to write
     std::vector<double> x{0., 1., 2., 3., 4.};
@@ -91,7 +90,7 @@ int main()
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
     // An iteration once closed cannot (yet) be reopened.
-    series.writeIterations()[0].close();
+    series.snapshots()[0].close();
 
     // rinse and repeat as needed :)
 

@@ -27,7 +27,7 @@ int main()
     /* The root of any openPMD output spans across all data for all iterations
      * is a 'Series'.
      * Data is either in a single file or spread across multiple files. */
-    Series series = Series("../samples/1_structure.h5", Access::CREATE);
+    Series series = Series("../samples/1_structure.h5", Access::CREATE_LINEAR);
 
     /* Every element that structures your file (groups and datasets for example)
      * can be annotated with attributes. */
@@ -45,8 +45,7 @@ int main()
      * it has been closed.
      * `Series::iterations` can be directly accessed in random-access workflows.
      */
-    ParticleSpecies electrons =
-        series.writeIterations()[1].particles["electrons"];
+    ParticleSpecies electrons = series.snapshots()[1].particles["electrons"];
 
     /* Data to be moved from memory to persistent storage is structured into
      * Records, each holding an unbounded number of RecordComponents. If a
@@ -68,7 +67,7 @@ int main()
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
     // An iteration once closed cannot (yet) be reopened.
-    series.writeIterations()[1].close();
+    series.snapshots()[1].close();
 
     /* The files in 'series' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.

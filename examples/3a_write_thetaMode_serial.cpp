@@ -32,7 +32,7 @@ int main()
 {
     // open file for writing
     Series series =
-        Series("../samples/3_write_thetaMode_serial.h5", Access::CREATE);
+        Series("../samples/3_write_thetaMode_serial.h5", Access::CREATE_LINEAR);
 
     // configure and setup geometry
     unsigned int const num_modes = 5u;
@@ -56,7 +56,7 @@ int main()
     // in streaming setups, e.g. an iteration cannot be opened again once
     // it has been closed.
     // `Series::iterations` can be directly accessed in random-access workflows.
-    Mesh E = series.writeIterations()[0].meshes["E"];
+    Mesh E = series.snapshots()[0].meshes["E"];
     E.setGeometry(Mesh::Geometry::thetaMode);
     E.setGeometryParameters(geometryParameters);
     E.setDataOrder(Mesh::DataOrder::C);
@@ -92,7 +92,7 @@ int main()
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
     // An iteration once closed cannot (yet) be reopened.
-    series.writeIterations()[0].close();
+    series.snapshots()[0].close();
 
     /* The files in 'series' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.

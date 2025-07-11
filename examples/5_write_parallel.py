@@ -40,7 +40,7 @@ if __name__ == "__main__":
         "../samples/5_parallel_write_py.bp"
         if USE_JOINED_DIMENSION
         else "../samples/5_parallel_write_py.h5",
-        io.Access.create,
+        io.Access.create_linear,
         comm
     )
     if 0 == comm.rank:
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # in streaming setups, e.g. an iteration cannot be opened again once
     # it has been closed.
     # `Series.iterations` can be directly accessed in random-access workflows.
-    mymesh = series.write_iterations()[1]. \
+    mymesh = series.snapshots()[1]. \
         meshes["mymesh"]
 
     # example 1D domain decomposition in first index
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     # The iteration can be closed in order to help free up resources.
     # The iteration's content will be flushed automatically.
     # An iteration once closed cannot (yet) be reopened.
-    series.write_iterations()[1].close()
+    series.snapshots()[1].close()
 
     if 0 == comm.rank:
         print("Dataset content has been fully written to disk")

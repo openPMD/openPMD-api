@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # open file for writing
     series = io.Series(
         "../samples/3_write_serial_py.h5",
-        io.Access.create
+        io.Access.create_linear
     )
 
     print("Created an empty {0} Series".format(series.iteration_encoding))
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # in streaming setups, e.g. an iteration cannot be opened again once
     # it has been closed.
     # `Series.iterations` can be directly accessed in random-access workflows.
-    rho = series.write_iterations()[1]. \
+    rho = series.snapshots()[1]. \
         meshes["rho"]
 
     dataset = io.Dataset(data.dtype, data.shape)
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # The iteration can be closed in order to help free up resources.
     # The iteration's content will be flushed automatically.
     # An iteration once closed cannot (yet) be reopened.
-    series.write_iterations()[1].close()
+    series.snapshots()[1].close()
     print("Dataset content has been fully written")
 
     # The files in 'series' are still open until the series is closed, at which

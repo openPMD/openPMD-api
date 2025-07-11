@@ -7,10 +7,11 @@ using namespace openPMD;
 
 int main()
 {
-    Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
+    Series o =
+        Series("../samples/git-sample/data%T.h5", Access::READ_RANDOM_ACCESS);
 
     std::cout << "Read iterations ";
-    for (auto const &val : o.iterations)
+    for (auto const &val : o.snapshots())
         std::cout << '\t' << val.first;
     std::cout << "Read attributes in the root:\n";
     for (auto const &val : o.attributes())
@@ -27,7 +28,7 @@ int main()
               << '\n';
 
     std::cout << "Read attributes in basePath:\n";
-    for (auto const &a : o.iterations.attributes())
+    for (auto const &a : o.snapshots().attributes())
         std::cout << '\t' << a << '\n';
     std::cout << '\n';
 
@@ -36,7 +37,7 @@ int main()
      * A classical loop over the C++-style container
      * Direct access to o.iterations allows random-access into all data.
      */
-    for (auto const &i : o.iterations)
+    for (auto const &i : o.snapshots())
         std::cout << '\t' << i.first << '\n';
     std::cout << '\n';
 
@@ -47,27 +48,25 @@ int main()
      * operations in order to release data as soon as possible).
      * An iteration once closed can not (yet) be re-opened.
      */
-    for (auto i : o.readIterations())
+    for (auto &[index, i] : o.snapshots())
     {
-        std::cout << "Read attributes in iteration " << i.iterationIndex
-                  << ":\n";
+        std::cout << "Read attributes in iteration " << index << ":\n";
         for (auto const &val : i.attributes())
             std::cout << '\t' << val << '\n';
         std::cout << '\n';
 
-        std::cout << i.iterationIndex << ".time - " << i.time<float>() << '\n'
-                  << i.iterationIndex << ".dt - " << i.dt<float>() << '\n'
-                  << i.iterationIndex << ".timeUnitSI - " << i.timeUnitSI()
-                  << '\n'
+        std::cout << index << ".time - " << i.time<float>() << '\n'
+                  << index << ".dt - " << i.dt<float>() << '\n'
+                  << index << ".timeUnitSI - " << i.timeUnitSI() << '\n'
                   << '\n';
 
-        std::cout << "Read attributes in meshesPath in iteration "
-                  << i.iterationIndex << ":\n";
+        std::cout << "Read attributes in meshesPath in iteration " << index
+                  << ":\n";
         for (auto const &a : i.meshes.attributes())
             std::cout << '\t' << a << '\n';
         std::cout << '\n';
 
-        std::cout << "Read meshes in iteration " << i.iterationIndex << ":\n";
+        std::cout << "Read meshes in iteration " << index << ":\n";
         for (auto const &m : i.meshes)
             std::cout << '\t' << m.first << '\n';
         std::cout << '\n';
@@ -75,13 +74,12 @@ int main()
         for (auto const &m : i.meshes)
         {
             std::cout << "Read attributes for mesh " << m.first
-                      << " in iteration " << i.iterationIndex << ":\n";
+                      << " in iteration " << index << ":\n";
             for (auto const &val : m.second.attributes())
                 std::cout << '\t' << val << '\n';
             std::cout << '\n';
 
-            std::string meshPrefix =
-                std::to_string(i.iterationIndex) + '.' + m.first;
+            std::string meshPrefix = std::to_string(index) + '.' + m.first;
             std::string axisLabels = "";
             for (auto const &val : m.second.axisLabels())
                 axisLabels += val + ", ";
@@ -123,8 +121,8 @@ int main()
                     std::cout << '\t' << val << '\n';
                 std::cout << '\n';
 
-                std::string componentPrefix = std::to_string(i.iterationIndex) +
-                    '.' + m.first + '.' + rc.first;
+                std::string componentPrefix =
+                    std::to_string(index) + '.' + m.first + '.' + rc.first;
                 std::string position = "";
                 for (auto const &val : rc.second.position<double>())
                     position += std::to_string(val) + ", ";
@@ -136,14 +134,13 @@ int main()
             }
         }
 
-        std::cout << "Read attributes in particlesPath in iteration "
-                  << i.iterationIndex << ":\n";
+        std::cout << "Read attributes in particlesPath in iteration " << index
+                  << ":\n";
         for (auto const &a : i.particles.attributes())
             std::cout << '\t' << a << '\n';
         std::cout << '\n';
 
-        std::cout << "Read particleSpecies in iteration " << i.iterationIndex
-                  << ":\n";
+        std::cout << "Read particleSpecies in iteration " << index << ":\n";
         for (auto const &val : i.particles)
             std::cout << '\t' << val.first << '\n';
         std::cout << '\n';
@@ -151,14 +148,13 @@ int main()
         for (auto const &p : i.particles)
         {
             std::cout << "Read attributes for particle species " << p.first
-                      << " in iteration " << i.iterationIndex << ":\n";
+                      << " in iteration " << index << ":\n";
             for (auto const &val : p.second.attributes())
                 std::cout << '\t' << val << '\n';
             std::cout << '\n';
 
             std::cout << "Read particle records for particle species "
-                      << p.first << " in iteration " << i.iterationIndex
-                      << ":\n";
+                      << p.first << " in iteration " << index << ":\n";
             for (auto const &r : p.second)
                 std::cout << '\t' << r.first << '\n';
             std::cout << '\n';

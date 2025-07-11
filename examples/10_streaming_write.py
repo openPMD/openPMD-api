@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # create a series and specify some global metadata
     # change the file extension to .json, .h5 or .bp for regular file writing
-    series = io.Series("simData.sst", io.Access_Type.create, config)
+    series = io.Series("simData.sst", io.Access_Type.create_linear, config)
     series.set_author("Franz Poeschel <f.poeschel@hzdr.de>")
     series.set_software("openPMD-api-python-examples")
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         # intentionally restricted APIs that ensure a workflow which also works
         # in streaming setups, e.g. an iteration cannot be opened again once
         # it has been closed.
-        iteration = series.write_iterations()[i]
+        iteration = series.snapshots()[i]
 
         #######################
         # write electron data #

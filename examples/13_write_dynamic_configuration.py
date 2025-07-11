@@ -68,7 +68,7 @@ def main():
         # intentionally restricted APIs that ensure a workflow which also works
         # in streaming setups, e.g. an iteration cannot be opened again once
         # it has been closed.
-        iteration = series.write_iterations()[i]
+        iteration = series.snapshots()[i]
 
         #######################
         # write electron data #

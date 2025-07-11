@@ -34,7 +34,7 @@ int main()
     Series series =
         Series("../samples/git-sample/thetaMode/data%T.h5", Access::READ_ONLY);
 
-    Iteration i = series.iterations[500];
+    Iteration i = series.snapshots()[500];
     MeshRecordComponent E_z_modes = i.meshes["E"]["z"];
     Extent extent = E_z_modes.getExtent(); // (modal components, r, z)
 

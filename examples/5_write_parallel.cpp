@@ -62,7 +62,7 @@ chunks = "auto"
     // open file for writing
     Series series = Series(
         "../samples/5_parallel_write.h5",
-        Access::CREATE,
+        Access::CREATE_LINEAR,
         MPI_COMM_WORLD,
         subfiling_config);
     if (0 == mpi_rank)
@@ -78,8 +78,8 @@ chunks = "auto"
     // intentionally restricted APIs that ensure a workflow which also works
     // in streaming setups, e.g. an iteration cannot be opened again once
     // it has been closed.
-    series.iterations[1].open();
-    Mesh mymesh = series.iterations[1].meshes["mymesh"];
+    series.snapshots()[1].open();
+    Mesh mymesh = series.snapshots()[1].meshes["mymesh"];
 
     // example 1D domain decomposition in first index
     Datatype datatype = determineDatatype<float>();
@@ -110,7 +110,7 @@ chunks = [10, 100]
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
     // An iteration once closed cannot (yet) be reopened.
-    series.iterations[100].close();
+    series.snapshots()[100].close();
 
     if (0 == mpi_rank)
         cout << "Dataset content has been fully written to disk\n";

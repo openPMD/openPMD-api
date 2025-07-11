@@ -33,9 +33,9 @@ void write()
 
     openPMD::Series writeTemplate(
         "../samples/tomlTemplate." + backendEnding(),
-        openPMD::Access::CREATE,
+        openPMD::Access::CREATE_LINEAR,
         config);
-    auto iteration = writeTemplate.writeIterations()[0];
+    auto iteration = writeTemplate.snapshots()[0];
 
     openPMD::Dataset ds{openPMD::Datatype::FLOAT, {5, 5}};
 
