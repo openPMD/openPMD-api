@@ -729,8 +729,7 @@ public:
      *            in Access::CREATE and Access::APPEND. Leave unspecified in
      *            other access modes as those support only one workflow each.
      */
-    Snapshots
-    snapshots(std::optional<SnapshotWorkflow> snapshot_workflow = std::nullopt);
+    Snapshots snapshots();
 
     /**
      * @brief Parse the Series.
@@ -1007,6 +1006,9 @@ OPENPMD_private
      */
     std::optional<std::vector<std::vector<IterationIndex_t>>>
     preparseSnapshots();
+
+    Snapshots makeRandomAccessSnapshots();
+    Snapshots makeSynchronousSnapshots();
     /* Should adios2::Variable<T>::SetStepSelection() be used for accessing
      * steps?
      */

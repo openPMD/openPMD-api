@@ -564,7 +564,6 @@ Look for the WriteIterations class for further documentation.
             "snapshots",
             &Series::snapshots,
             py::keep_alive<0, 1>(),
-            py::arg("snapshot_workflow") = std::nullopt,
             "TODO FILL IN DOCUMENTATION");
 
     add_pickle(

@@ -34,31 +34,31 @@ auto automatic_variable_encoding() -> void
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        Series write(next_filename(), Access::CREATE_LINEAR);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
         write.flush();
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_LINEAR);
         write.flush();
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
@@ -77,9 +77,9 @@ auto automatic_variable_encoding() -> void
     {
         Series write(
             next_filename(),
-            Access::CREATE,
+            Access::CREATE_RANDOM_ACCESS,
             R"(iteration_encoding = "variable_based")");
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
@@ -87,9 +87,9 @@ auto automatic_variable_encoding() -> void
     {
         Series write(
             next_filename(),
-            Access::CREATE,
+            Access::CREATE_LINEAR,
             R"(iteration_encoding = "variable_based")");
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
@@ -97,10 +97,10 @@ auto automatic_variable_encoding() -> void
     {
         Series write(
             next_filename(),
-            Access::CREATE,
+            Access::CREATE_RANDOM_ACCESS,
             R"(iteration_encoding = "variable_based")");
         write.flush();
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
@@ -108,10 +108,10 @@ auto automatic_variable_encoding() -> void
     {
         Series write(
             next_filename(),
-            Access::CREATE,
+            Access::CREATE_LINEAR,
             R"(iteration_encoding = "variable_based")");
         write.flush();
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
@@ -130,9 +130,9 @@ auto automatic_variable_encoding() -> void
     {
         Series write(
             next_filename(),
-            Access::CREATE,
+            Access::CREATE_RANDOM_ACCESS,
             R"(iteration_encoding = "group_based")");
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
@@ -140,9 +140,9 @@ auto automatic_variable_encoding() -> void
     {
         Series write(
             next_filename(),
-            Access::CREATE,
+            Access::CREATE_LINEAR,
             R"(iteration_encoding = "group_based")");
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
@@ -150,10 +150,10 @@ auto automatic_variable_encoding() -> void
     {
         Series write(
             next_filename(),
-            Access::CREATE,
+            Access::CREATE_RANDOM_ACCESS,
             R"(iteration_encoding = "group_based")");
         write.flush();
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
@@ -161,10 +161,10 @@ auto automatic_variable_encoding() -> void
     {
         Series write(
             next_filename(),
-            Access::CREATE,
+            Access::CREATE_LINEAR,
             R"(iteration_encoding = "group_based")");
         write.flush();
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
@@ -179,35 +179,35 @@ auto automatic_variable_encoding() -> void
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
         write.setIterationEncoding(IterationEncoding::variableBased);
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_LINEAR);
         write.setIterationEncoding(IterationEncoding::variableBased);
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
         write.setIterationEncoding(IterationEncoding::variableBased);
         write.flush();
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_LINEAR);
         write.setIterationEncoding(IterationEncoding::variableBased);
         write.flush();
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
@@ -222,35 +222,35 @@ auto automatic_variable_encoding() -> void
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
         write.setIterationEncoding(IterationEncoding::groupBased);
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_LINEAR);
         write.setIterationEncoding(IterationEncoding::groupBased);
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
         write.setIterationEncoding(IterationEncoding::groupBased);
         write.flush();
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_LINEAR);
         write.setIterationEncoding(IterationEncoding::groupBased);
         write.flush();
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
@@ -265,35 +265,35 @@ auto automatic_variable_encoding() -> void
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
         write.setIterationEncoding(IterationEncoding::variableBased);
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_LINEAR);
         write.setIterationEncoding(IterationEncoding::variableBased);
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
         write.setIterationEncoding(IterationEncoding::variableBased);
         write.flush();
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
+        Series write(next_filename(), Access::CREATE_LINEAR);
         write.setIterationEncoding(IterationEncoding::variableBased);
         write.flush();
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        write.snapshots();
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
@@ -301,16 +301,16 @@ auto automatic_variable_encoding() -> void
     // explicitly use API call to set group encoding a bit late
 
     {
-        Series write(next_filename(), Access::CREATE);
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
+        write.snapshots();
         write.setIterationEncoding(IterationEncoding::groupBased);
         write.close();
         require_encoding(IterationEncoding::groupBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        Series write(next_filename(), Access::CREATE_LINEAR);
+        write.snapshots();
         write.setIterationEncoding(IterationEncoding::groupBased);
         write.close();
         require_encoding(IterationEncoding::groupBased);
@@ -319,16 +319,16 @@ auto automatic_variable_encoding() -> void
     // explicitly use API call to set variable encoding a bit late
 
     {
-        Series write(next_filename(), Access::CREATE);
-        write.snapshots(SnapshotWorkflow::RandomAccess);
+        Series write(next_filename(), Access::CREATE_RANDOM_ACCESS);
+        write.snapshots();
         write.setIterationEncoding(IterationEncoding::variableBased);
         write.close();
         require_encoding(IterationEncoding::variableBased);
     }
 
     {
-        Series write(next_filename(), Access::CREATE);
-        write.snapshots(SnapshotWorkflow::Synchronous);
+        Series write(next_filename(), Access::CREATE_LINEAR);
+        write.snapshots();
         write.setIterationEncoding(IterationEncoding::variableBased);
         write.close();
         require_encoding(IterationEncoding::variableBased);

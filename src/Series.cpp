@@ -40,8 +40,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/snapshots/ContainerImpls.hpp"
-#include "openPMD/snapshots/IteratorTraits.hpp"
-#include "openPMD/snapshots/RandomAccessIterator.hpp"
+#include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include "openPMD/version.hpp"
@@ -3186,8 +3185,7 @@ namespace
     }
 } // namespace
 
-Snapshots
-Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
+Snapshots Series::snapshots()
 {
     auto &series = get();
     if (series.m_deferred_initialization.has_value())
@@ -3195,106 +3193,63 @@ Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
         runDeferredInitialization();
     }
     auto access = IOHandler()->m_frontendAccess;
-    auto guard_wrong_access_specification =
-        [&](SnapshotWorkflow required_access) {
-            if (!snapshot_workflow.has_value())
-            {
-                return required_access;
-            }
-            if (required_access != *snapshot_workflow)
-            {
-                std::stringstream error;
-                error << "[Series::snapshots()] Specified "
-                      << (*snapshot_workflow == SnapshotWorkflow::Synchronous
-                              ? "linear"
-                              : "random-access")
-                      << " iteration in method parameter "
-                         "`snapshot_workflow`, but access type "
-                      << access << " requires "
-                      << (required_access == SnapshotWorkflow::Synchronous
-                              ? "linear"
-                              : "random-access")
-                      << " iteration. Please remove the parameter, there is no "
-                         "need to specify it under "
-                      << access << " mode." << std::endl;
-                throw error::WrongAPIUsage(error.str());
-            }
-            else
-            {
-                std::cerr
-                    << "[Series::snapshots()] No need to explicitly specify "
-                       "synchronous or non-synchronous access via method "
-                       "parameter `snapshot_workflow` in mode '"
-                    << access << ". Will ignore." << std::endl;
-            }
-            return required_access;
-        };
-    SnapshotWorkflow usedSnapshotWorkflow{};
+    SnapshotWorkflow usedSnapshotWorkflow = access::random_access(access)
+        ? SnapshotWorkflow::RandomAccess
+        : SnapshotWorkflow::Synchronous;
+    if (access == Access::READ_RANDOM_ACCESS)
     {
-        switch (access)
+        // Some error checks
+        if (series.m_parsePreference.has_value())
         {
-        case Access::READ_LINEAR:
-            usedSnapshotWorkflow =
-                guard_wrong_access_specification(SnapshotWorkflow::Synchronous);
-            break;
-        case Access::READ_ONLY:
-            usedSnapshotWorkflow = guard_wrong_access_specification(
-                SnapshotWorkflow::RandomAccess);
-
-            // Some error checks
-            if (series.m_parsePreference.has_value())
+            switch (series.m_parsePreference.value())
             {
-                switch (series.m_parsePreference.value())
-                {
-                case internal::ParsePreference::UpFront:
-                    break;
-                case internal::ParsePreference::PerStep:
-                    throw error::ReadError(
-                        error::AffectedObject::File,
-                        error::Reason::UnexpectedContent,
-                        std::nullopt,
-                        "[Series::snapshots()] Series requires collective "
-                        "processing with READ_LINEAR access mode.");
-                }
+            case internal::ParsePreference::UpFront:
+                break;
+            case internal::ParsePreference::PerStep:
+                throw error::ReadError(
+                    error::AffectedObject::File,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    "[Series::snapshots()] Series requires collective "
+                    "processing with READ_LINEAR access mode.");
             }
-            else if (iterationEncoding() != IterationEncoding::fileBased)
-            {
-                throw error::Internal(
-                    "READ_ONLY mode and non-fileBased iteration encoding, but "
-                    "the backend did not set a parse preference.");
-            }
-            break;
-        case Access::READ_WRITE:
-            // Our Read-Write workflows are entirely random-access based (so
-            // far).
-            // (Might be possible to allow stateful access actually, but there's
-            // no real use, so keep it simple.)
-            usedSnapshotWorkflow = guard_wrong_access_specification(
-                SnapshotWorkflow::RandomAccess);
-            break;
-
-        // TODO: Remove parameter
-        case Access::CREATE_RANDOM_ACCESS:
-        case Access::APPEND_RANDOM_ACCESS:
-            // Users can select.
-            usedSnapshotWorkflow = snapshot_workflow.value_or(
-                /* random-access logic by default */
-                SnapshotWorkflow::RandomAccess);
-            break;
-        case Access::CREATE_LINEAR:
-        case Access::APPEND_LINEAR:
-            // Users can select.
-            usedSnapshotWorkflow = snapshot_workflow.value_or(
-                /* random-access logic by default */
-                SnapshotWorkflow::Synchronous);
-            break;
+        }
+        else if (iterationEncoding() != IterationEncoding::fileBased)
+        {
+            throw error::Internal(
+                "READ_ONLY mode and non-fileBased iteration encoding, but "
+                "the backend did not set a parse preference.");
         }
     }
 
+    switch (usedSnapshotWorkflow)
+    {
+    case SnapshotWorkflow::RandomAccess: {
+        return makeRandomAccessSnapshots();
+    }
+    case SnapshotWorkflow::Synchronous: {
+        return makeSynchronousSnapshots();
+    }
+    }
+    throw std::runtime_error("unreachable!");
+}
+
+Snapshots Series::makeRandomAccessSnapshots()
+{
+    auto &series = get();
+    return Snapshots(
+        std::shared_ptr<RandomAccessIteratorContainer>{
+            new RandomAccessIteratorContainer(series.iterations)},
+        series.iterations);
+}
+Snapshots Series::makeSynchronousSnapshots()
+{
+    auto &series = get();
     /*
-     * ADIOS2 should use variable-based encoding as a default when applicable,
-     * since group-based encoding has severe limitations in ADIOS2.
-     * The below logic checks if variable-based encoding should be used.
+     * ADIOS2 should use variable-based encoding as a default when
+     * applicable, since group-based encoding has severe limitations
+     * in ADIOS2. The below logic checks if variable-based encoding
+     * should be used.
      */
 
     if (
@@ -3302,19 +3257,20 @@ Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
         //    Flag set by Series::setIterationEncoding().
         series.m_iterationEncodingSetExplicitly ==
             internal::default_or_explicit::default_ &&
-        // 2. Iteration encoding was recognized as groupBased by init()
+        // 2. Iteration encoding was recognized as groupBased by
+        // init()
         //    procedures (and not file-based).
         series.m_iterationEncoding == IterationEncoding::groupBased &&
-        // 3. The IO workflow will be synchronous, necessary for writing
-        //    variable-based data (but not for reading!).
-        usedSnapshotWorkflow == SnapshotWorkflow::Synchronous &&
-        // 4. The chosen access type is write-only, otherwise the encoding is
+        // 3. The chosen access type is write-only, otherwise the
+        // encoding is
         //    determined by the previous file content.
-        access::writeOnly(access) &&
-        // 5. The backend is ADIOS2 in a recent enough version to support
+        access::writeOnly(IOHandler()->m_frontendAccess) &&
+        // 4. The backend is ADIOS2 in a recent enough version to
+        // support
         //    modifiable attributes (v2.9).
         IOHandler()->fullSupportForVariableBasedEncoding() &&
-        // 6. The Series must not yet be written, otherwise we're too late
+        // 5. The Series must not yet be written, otherwise we're
+        // too late
         //    for this
         !this->written())
     {
@@ -3323,32 +3279,20 @@ Series::snapshots(std::optional<SnapshotWorkflow> const snapshot_workflow)
             internal::default_or_explicit::default_);
     }
 
-    switch (usedSnapshotWorkflow)
-    {
-    case SnapshotWorkflow::RandomAccess: {
-        return Snapshots(
-            std::shared_ptr<RandomAccessIteratorContainer>{
-                new RandomAccessIteratorContainer(series.iterations)},
-            series.iterations);
-    }
-    case SnapshotWorkflow::Synchronous: {
-        std::function<StatefulIterator *()> begin;
+    std::function<StatefulIterator *()> begin;
 
-        if (access::write(IOHandler()->m_frontendAccess))
-        {
-            begin = make_writing_stateful_iterator(*this, series);
-        }
-        else
-        {
-            begin = make_reading_stateful_iterator(*this, series);
-        }
-        return Snapshots(
-            std::shared_ptr<StatefulSnapshotsContainer>(
-                new StatefulSnapshotsContainer(std::move(begin))),
-            series.iterations);
+    if (access::write(IOHandler()->m_frontendAccess))
+    {
+        begin = make_writing_stateful_iterator(*this, series);
     }
+    else
+    {
+        begin = make_reading_stateful_iterator(*this, series);
     }
-    throw std::runtime_error("unreachable!");
+    return Snapshots(
+        std::shared_ptr<StatefulSnapshotsContainer>(
+            new StatefulSnapshotsContainer(std::move(begin))),
+        series.iterations);
 }
 
 void Series::parseBase()
@@ -3361,14 +3305,16 @@ WriteIterations Series::writeIterations()
 {
     auto const access = IOHandler()->m_frontendAccess;
     if (access != Access::CREATE_RANDOM_ACCESS &&
-        access != Access::APPEND_RANDOM_ACCESS)
+        access != Access::APPEND_RANDOM_ACCESS &&
+        access != Access::CREATE_LINEAR &&
+        access != Access::CREATE_RANDOM_ACCESS)
     {
         throw error::WrongAPIUsage(
             "[Series::writeIterations()] May only be applied for access modes "
             "CREATE or APPEND. Use Series::snapshots() for random-access-type "
             "or for read-type workflows.");
     }
-    return snapshots(SnapshotWorkflow::Synchronous);
+    return makeSynchronousSnapshots();
 }
 
 void Series::close()

@@ -18,12 +18,14 @@ constexpr char const *write_cfg =
 
 template <typename WriteIterations>
 auto run_test_filebased(
-    WriteIterations &&writeIterations, std::string const &ext)
+    Access writeAccess,
+    WriteIterations &&writeIterations,
+    std::string const &ext)
 {
     std::string filename =
         "../samples/close_iteration_reopen/filebased_%T." + ext;
     auxiliary::remove_directory("../samples/close_iteration_reopen");
-    Series series(filename, Access::CREATE, write_cfg);
+    Series series(filename, writeAccess, write_cfg);
     {
         auto it = writeIterations(series)[0];
         auto E_x = it.meshes["E"]["x"];
@@ -167,6 +169,7 @@ auto run_test_filebased(
 
 template <typename WriteIterations>
 auto run_test_groupbased(
+    Access writeAccess,
     WriteIterations &&writeIterations,
     std::string const &ext,
     std::vector<Access> const &readModes)
@@ -184,7 +187,7 @@ auto run_test_groupbased(
      */
     Series series(
         filename,
-        Access::CREATE,
+        writeAccess,
         json::merge(write_cfg, R"({"iteration_encoding": "group_based"})"));
     {
         auto it = writeIterations(series)[0];
@@ -275,53 +278,64 @@ auto run_test_groupbased(
 
 auto close_and_reopen_test() -> void
 {
-    run_test_filebased([](Series &s) { return s.iterations; }, "bp");
-    run_test_filebased([](Series &s) { return s.writeIterations(); }, "bp");
-    run_test_filebased([](Series &s) { return s.snapshots(); }, "bp");
-    run_test_filebased(
-        [](Series &s) { return s.snapshots(SnapshotWorkflow::Synchronous); },
-        "bp");
-    run_test_filebased(
-        [](Series &s) { return s.snapshots(SnapshotWorkflow::RandomAccess); },
-        "bp");
-    run_test_filebased([](Series &s) { return s.snapshots(); }, "json");
+    for (auto writeAccess :
+         {Access::CREATE_RANDOM_ACCESS, Access::CREATE_LINEAR})
+    {
+        run_test_filebased(
+            writeAccess, [](Series &s) { return s.iterations; }, "bp");
+        run_test_filebased(
+            writeAccess, [](Series &s) { return s.writeIterations(); }, "bp");
+        run_test_filebased(
+            writeAccess, [](Series &s) { return s.snapshots(); }, "bp");
+        run_test_filebased(
+            writeAccess, [](Series &s) { return s.snapshots(); }, "bp");
+        run_test_filebased(
+            writeAccess, [](Series &s) { return s.snapshots(); }, "json");
 #if openPMD_HAVE_HDF5
-    run_test_filebased([](Series &s) { return s.snapshots(); }, "h5");
+        run_test_filebased(
+            writeAccess, [](Series &s) { return s.snapshots(); }, "h5");
 #endif
 
-    /*
-     * This test writes the same attribute with different values over steps,
-     * triggering a bug in ADIOS2 v2.7.
-     */
-    run_test_groupbased(
-        [](Series &s) { return s.iterations; },
-        "bp4",
-        {Access::READ_ONLY, Access::READ_LINEAR});
-    // since these write data in a way that distributes one iteration's data
-    // over multiple steps, only random access read mode makes sense
-    run_test_groupbased(
-        [](Series &s) { return s.writeIterations(); },
-        "bp4",
-        {Access::READ_RANDOM_ACCESS});
-    run_test_groupbased(
-        [](Series &s) { return s.snapshots(); },
-        "bp4",
-        {Access::READ_RANDOM_ACCESS});
-    // that doesnt matter for json tho
-    run_test_groupbased(
-        [](Series &s) { return s.snapshots(); },
-        "json",
-        {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+        /*
+         * This test writes the same attribute with different values over steps,
+         * triggering a bug in ADIOS2 v2.7.
+         */
+        run_test_groupbased(
+            writeAccess,
+            [](Series &s) { return s.iterations; },
+            "bp4",
+            {Access::READ_ONLY, Access::READ_LINEAR});
+        // since these write data in a way that distributes one iteration's data
+        // over multiple steps, only random access read mode makes sense
+        run_test_groupbased(
+            writeAccess,
+            [](Series &s) { return s.writeIterations(); },
+            "bp4",
+            {Access::READ_RANDOM_ACCESS});
+        run_test_groupbased(
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "bp4",
+            {Access::READ_RANDOM_ACCESS});
+        // that doesnt matter for json tho
+        run_test_groupbased(
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "json",
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
 #if openPMD_HAVE_HDF5
-    run_test_groupbased(
-        [](Series &s) { return s.snapshots(); },
-        "h5",
-        {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+        run_test_groupbased(
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "h5",
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
 #endif
-    run_test_groupbased(
-        [](Series &s) { return s.snapshots(); },
-        "json",
-        {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+        run_test_groupbased(
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "json",
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+    }
 }
 #else
 auto close_and_reopen_test() -> void
