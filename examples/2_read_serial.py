@@ -14,7 +14,8 @@ if __name__ == "__main__":
     print("Read a Series with openPMD standard version %s" %
           series.openPMD)
 
-    print("The Series contains {0} iterations:".format(len(series.snapshots())))
+    print("The Series contains {0} iterations:".format(
+        len(series.snapshots())))
     for i in series.snapshots():
         print("\t {0}".format(i))
     print("")
