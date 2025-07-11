@@ -33,14 +33,6 @@ private:
 protected:
     using Self_t = OpaqueSeriesIterator<value_type_in>;
 
-    template <typename ChildClass, typename... ConstructorArgs>
-    static auto from_concrete_iterator(ConstructorArgs &&...args) -> Self_t
-    {
-        return OpaqueSeriesIterator<value_type_in>(
-            std::unique_ptr<DynamicSeriesIterator<value_type_in>>{
-                new ChildClass(std::forward<ConstructorArgs>(args)...)});
-    }
-
     template <typename ChildClass>
     auto to_concrete_iterator() -> std::optional<ChildClass>
     {

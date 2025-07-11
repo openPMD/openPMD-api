@@ -2,6 +2,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
+#include "openPMD/snapshots/IteratorHelpers.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include <memory>
@@ -43,8 +44,7 @@ auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 auto StatefulSnapshotsContainer::stateful_to_opaque(StatefulIterator const &it)
     -> OpaqueSeriesIterator<value_type>
 {
-    return OpaqueSeriesIterator<value_type>::from_concrete_iterator<
-        StatefulIterator>(it);
+    return from_concrete_iterator<StatefulIterator, value_type>(it);
 }
 
 auto StatefulSnapshotsContainer::currentIteration() const
@@ -329,43 +329,49 @@ auto RandomAccessIteratorContainer::currentIteration() const
 
 auto RandomAccessIteratorContainer::begin() -> iterator
 {
-    return iterator::from_concrete_iterator<concrete_iterator_type>(
+    return from_concrete_iterator<concrete_iterator_type, iterator::value_type>(
         m_cont.begin());
 }
 auto RandomAccessIteratorContainer::end() -> iterator
 {
-    return iterator::from_concrete_iterator<concrete_iterator_type>(
+    return from_concrete_iterator<concrete_iterator_type, iterator::value_type>(
         m_cont.end());
 }
 auto RandomAccessIteratorContainer::begin() const -> const_iterator
 {
-    return const_iterator::from_concrete_iterator<concrete_const_iterator_type>(
-        m_cont.begin());
+    return from_concrete_iterator<
+        concrete_const_iterator_type,
+        const_iterator::value_type>(m_cont.begin());
 }
 auto RandomAccessIteratorContainer::end() const -> const_iterator
 {
-    return const_iterator::from_concrete_iterator<concrete_const_iterator_type>(
-        m_cont.end());
+    return from_concrete_iterator<
+        concrete_const_iterator_type,
+        const_iterator::value_type>(m_cont.end());
 }
 auto RandomAccessIteratorContainer::rbegin() -> reverse_iterator
 {
-    return reverse_iterator::from_concrete_iterator<
-        concrete_reverse_iterator_type>(m_cont.rbegin());
+    return from_concrete_iterator<
+        concrete_reverse_iterator_type,
+        reverse_iterator::value_type>(m_cont.rbegin());
 }
 auto RandomAccessIteratorContainer::rend() -> reverse_iterator
 {
-    return reverse_iterator::from_concrete_iterator<
-        concrete_reverse_iterator_type>(m_cont.rend());
+    return from_concrete_iterator<
+        concrete_reverse_iterator_type,
+        reverse_iterator::value_type>(m_cont.rend());
 }
 auto RandomAccessIteratorContainer::rbegin() const -> const_reverse_iterator
 {
-    return const_reverse_iterator::from_concrete_iterator<
-        concrete_const_reverse_iterator_type>(m_cont.rbegin());
+    return from_concrete_iterator<
+        concrete_const_reverse_iterator_type,
+        const_reverse_iterator::value_type>(m_cont.rbegin());
 }
 auto RandomAccessIteratorContainer::rend() const -> const_reverse_iterator
 {
-    return const_reverse_iterator::from_concrete_iterator<
-        concrete_const_reverse_iterator_type>(m_cont.rend());
+    return from_concrete_iterator<
+        concrete_const_reverse_iterator_type,
+        const_reverse_iterator::value_type>(m_cont.rend());
 }
 
 auto RandomAccessIteratorContainer::empty() const -> bool
@@ -396,14 +402,15 @@ auto RandomAccessIteratorContainer::clear() -> void
 
 auto RandomAccessIteratorContainer::find(key_type const &key) -> iterator
 {
-    return iterator::from_concrete_iterator<concrete_iterator_type>(
+    return from_concrete_iterator<concrete_iterator_type, iterator::value_type>(
         m_cont.find(key));
 }
 auto RandomAccessIteratorContainer::find(key_type const &key) const
     -> const_iterator
 {
-    return const_iterator::from_concrete_iterator<concrete_const_iterator_type>(
-        m_cont.find(key));
+    return from_concrete_iterator<
+        concrete_const_iterator_type,
+        const_iterator::value_type>(m_cont.find(key));
 }
 
 auto RandomAccessIteratorContainer::contains(key_type const &key) const -> bool
@@ -423,17 +430,17 @@ auto RandomAccessIteratorContainer::erase(iterator it) -> iterator
         throw std::runtime_error(
             "[RandomAccessIteratorContainer] Illegal dynamic iterator type.");
     }
-    return iterator::from_concrete_iterator<concrete_iterator_type>(
+    return from_concrete_iterator<concrete_iterator_type, iterator::value_type>(
         m_cont.erase(bare_iterator->m_it));
 }
 
 auto RandomAccessIteratorContainer::emplace(value_type &&value)
     -> std::pair<iterator, bool>
 {
-    throw std::runtime_error("EMPLACCIINNGGGG");
     auto [tmp_iterator, newly_emplaced] = m_cont.emplace(std::move(value));
     return std::make_pair(
-        iterator::from_concrete_iterator<concrete_iterator_type>(tmp_iterator),
+        from_concrete_iterator<concrete_iterator_type, iterator::value_type>(
+            tmp_iterator),
         newly_emplaced);
 }
 
