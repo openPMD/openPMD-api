@@ -9,11 +9,11 @@
 # - mamba install -y -c conda-forge jupyter jupyterlab dask-labextension
 #
 
-name: openpmd-api-dev
+name: openpmd-api-nompi-dev
 channels:
   - conda-forge
 dependencies:
-  - adios2=*=mpi_openmpi_*
+  - adios2=*=nompi*
 #  - catch2  # shipped internally
   - ccache
   - curl
@@ -22,14 +22,11 @@ dependencies:
   - dask
   - doxygen
   - git
-  - hdf5=*=mpi_openmpi_*
-  - h5py
+  - hdf5=*=nompi*
   - mamba
   - make
-  - mpi4py
   - ninja
   - numpy
-  - openmpi
   - pandas
   - pkg-config
   - pip
