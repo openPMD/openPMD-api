@@ -275,7 +275,7 @@ template <typename RequestedType>
 bool setAttributeFromObject_default(
     Attributable &attr, std::string const &key, py::object &obj)
 {
-    if (std::string(py::str(obj.get_type())) == "<class 'list'>")
+    if (std::string(py::str(py::type::of(obj))) == "<class 'list'>")
     {
         using ListType = std::vector<RequestedType>;
         return attr.setAttribute<ListType>(key, obj.cast<ListType>());
@@ -289,7 +289,7 @@ bool setAttributeFromObject_default(
 bool setAttributeFromObject_double(
     Attributable &attr, std::string const &key, py::object &obj)
 {
-    if (std::string(py::str(obj.get_type())) == "<class 'list'>")
+    if (std::string(py::str(py::type::of(obj))) == "<class 'list'>")
     {
         using ListType = std::vector<double>;
         using ArrayType = std::array<double, 7>;
@@ -342,7 +342,7 @@ std::optional<TargetType> tryCast(py::object const &obj)
     {
         TargetType val{};
         auto python_val = py::cast(std::move(val));
-        if (!py::isinstance(obj, python_val.get_type()))
+        if (!py::isinstance(obj, py::type::of(python_val)))
         {
             return std::nullopt;
         }

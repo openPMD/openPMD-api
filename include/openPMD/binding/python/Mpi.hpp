@@ -94,7 +94,7 @@ pythonObjectAsMpiComm(pybind11::object &comm)
             e_t::is_not_an_mpi_communicator};
     // only checks same layout, e.g. an `int` in `PyObject` could pass this
     if (!py::isinstance<py::class_<openPMD_PyMPIIntracommObject> >(
-            comm.get_type()))
+            py::type::of(comm)))
         // TODO add mpi4py version from above import check to error message
         return e{
             "comm has unexpected type layout in " + comm_str +
