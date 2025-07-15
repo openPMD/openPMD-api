@@ -59,7 +59,7 @@ public:
          * Use cases:
          *
          * 1. Some backends (i.e. JSON and TOML in template mode) support the
-         *    creation of dataset with undefined datatype and extent.
+         *    creation of datasets with undefined datatype and extent.
          *    The extent should be given as {UNDEFINED_EXTENT} for that.
          * 2. With openPMD 2.0, the shape of constant components may be omitted
          *    in writing if it is defined somewhere else as part
