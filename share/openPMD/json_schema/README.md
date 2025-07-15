@@ -43,3 +43,5 @@ The layout of attributes is assumed to be that which is created by the JSON back
 },
 "particlesPath": "particles/"
 ```
+
+For a custom-written verification of openPMD datasets, also consider using the [openPMD-validator](https://github.com/openPMD/openPMD-validator).
