@@ -86,18 +86,53 @@ using ChunkTable = std::vector<WrittenChunkInfo>;
 
 namespace chunk_assignment
 {
-    constexpr char const *HOSTFILE_VARNAME = "MPI_WRITTEN_HOSTFILE";
-
+    /** @brief Meta information on processes by ID (MPI rank).
+     *         Typically a hostname.
+     */
     using RankMeta = std::map<unsigned int, std::string>;
 
+    /** @brief Result type for chunk assignment strategies.
+     *
+     * Chunks sorted by the destination process ID (MPI rank). Distribution
+     * strategies will in general only need to fill the chunks for the current
+     * (calling) process ID, but some (such as RoundRobin) will fill the
+     * information for other processes as well.
+     *
+     * The chunks have type WrittenChunkInfo, hence carrying information on the
+     * sourceID.
+     */
     using Assignment = std::map<unsigned int, std::vector<WrittenChunkInfo>>;
 
+    /**
+     * @brief Pairwise merge all chunks if they can be merged into a larger.
+     *
+     * Note that this function is in no way optimized, but follows a naive
+     * O(n^2) implementation. Use a more sophisticated method for large numbers
+     * of chunks.
+     *
+     * @param chunks A list of chunks. Merging will occur in-place.
+     */
     template <typename Chunk_t>
-    void mergeChunks(std::vector<Chunk_t> &);
+    void mergeChunks(std::vector<Chunk_t> &chunks);
 
-    auto mergeChunksFromSameSourceID(std::vector<WrittenChunkInfo> const &)
+    /**
+     * @brief Pairwise merge all chunks from the same source ID if they can be
+     *        merged into a larger.
+     *
+     * @param chunks A list of chunks.
+     * @return Ordered by source ID, lists of merged chunks for each source ID.
+     */
+    auto
+    mergeChunksFromSameSourceID(std::vector<WrittenChunkInfo> const &chunks)
         -> std::map<unsigned int, std::vector<ChunkInfo>>;
 
+    /**
+     * @brief Return type for partial chunk assignment strategies.
+     *
+     * A typical partial assignment strategy is ByHostname, which can assign
+     * chunks only within one compute node and will fail if there is no consumer
+     * in that same compute node.
+     */
     struct PartialAssignment
     {
         ChunkTable notAssigned;
@@ -118,14 +153,39 @@ namespace chunk_assignment
      */
     struct Strategy
     {
+        /**
+         * @brief Assign chunks to be loaded to reading processes.
+         *
+         * @param chunkTable Chunk table obtained by
+         *        BaseRecordComponent::availableChunks().
+         * @param in Meta information on writing processes, e.g. hostnames.
+         * @param out Meta information on reading processes, e.g. hostnames.
+         * @param my_rank Rank identifier for the current process. Will be
+         *        considered by some distribution strategies that may be called
+         *        for only a subselection of the data space (e.g. for
+         *        distributing data within processes on the same compute node
+         *        in a cluster).
+         * @param num_ranks Number of processes among which chunks are to be
+         *        distributed. Will be considered by some distribution
+         *        strategies that may be called for only a subselection of the
+         *        data space (e.g. for distributing data within processes on the
+         *        same compute node in a cluster).
+         * @return A table that assigns chunks to reading processes. Chunks are
+         *        sorted by the destination process ID (MPI rank). Distribution
+         *        strategies will in general only need to fill the chunks for
+         *        the current (calling) process ID, but some (such as
+         *        RoundRobin) will fill the information for other processes
+         *        as well.
+         */
         Assignment assign(
-            ChunkTable,
-            RankMeta const &rankMetaIn,
-            RankMeta const &rankMetaOut,
+            ChunkTable chunkTable,
+            RankMeta const &in,
+            RankMeta const &out,
             size_t my_rank,
             size_t num_ranks);
         /**
-         * @brief Assign chunks to be loaded to reading processes.
+         * @brief Assign chunks to be loaded to reading processes. To be defined
+         *        by implementors.
          *
          * @param partialAssignment Two chunktables, one of unassigned chunks
          *        and one of chunks that might have already been assigned
@@ -143,7 +203,12 @@ namespace chunk_assignment
          *        strategies that may be called for only a subselection of the
          *        data space (e.g. for distributing data within processes on the
          *        same compute node in a cluster).
-         * @return ChunkTable A table that assigns chunks to reading processes.
+         * @return A table that assigns chunks to reading processes. Chunks are
+         *        sorted by the destination process ID (MPI rank). Distribution
+         *        strategies will in general only need to fill the chunks for
+         *        the current (calling) process ID, but some (such as
+         *        RoundRobin) will fill the information for other processes
+         *        as well.
          */
         virtual Assignment assign(
             PartialAssignment partialAssignment,
@@ -166,9 +231,38 @@ namespace chunk_assignment
      * 1. Apply the partial strategy.
      * 2. Apply the full strategy to assign unassigned leftovers.
      *
+     * A typical partial assignment strategy is ByHostname, which can assign
+     * chunks only within one compute node and will fail if there is no consumer
+     * in that same compute node.
      */
     struct PartialStrategy
     {
+        /**
+         * @brief Assign chunks to be loaded to reading processes.
+         *
+         * @param table Chunk table obtained by
+         *        BaseRecordComponent::availableChunks().
+         *        Merge the unassigned chunks into the partially assigned table.
+         * @param in Meta information on writing processes, e.g. hostnames.
+         * @param out Meta information on reading processes, e.g. hostnames.
+         * @param my_rank Rank identifier for the current process. Will be
+         *        considered by some distribution strategies that may be called
+         *        for only a subselection of the data space (e.g. for
+         *        distributing data within processes on the same compute node
+         *        in a cluster).
+         * @param num_ranks Number of processes among which chunks are to be
+         *        distributed. Will be considered by some distribution
+         *        strategies that may be called for only a subselection of the
+         *        data space (e.g. for distributing data within processes on the
+         *        same compute node in a cluster).
+         * @return Two chunktables, one of leftover chunks that were not
+         *        assigned and one that assigns chunks to reading processes.
+         *        Assigned chunks are sorted by the destination process ID
+         *        (MPI rank). Distribution strategies will in general only need
+         *        to fill the chunks for the current (calling) process ID.
+         *        Chunks assigned to another destination processes may be
+         *        silently dropped.
+         */
         PartialAssignment assign(
             ChunkTable table,
             RankMeta const &in,
@@ -176,7 +270,8 @@ namespace chunk_assignment
             size_t my_rank,
             size_t num_ranks);
         /**
-         * @brief Assign chunks to be loaded to reading processes.
+         * @brief Assign chunks to be loaded to reading processes. To be defined
+         *        by implementors.
          *
          * @param partialAssignment Two chunktables, one of unassigned chunks
          *        and one of chunks that might have already been assigned
@@ -194,9 +289,13 @@ namespace chunk_assignment
          *        strategies that may be called for only a subselection of the
          *        data space (e.g. for distributing data within processes on the
          *        same compute node in a cluster).
-         * @return PartialAssignment Two chunktables, one of leftover chunks
-         *         that were not assigned and one that assigns chunks to
-         *         reading processes.
+         * @return Two chunktables, one of leftover chunks that were not
+         *        assigned and one that assigns chunks to reading processes.
+         *        Assigned chunks are sorted by the destination process ID
+         *        (MPI rank). Distribution strategies will in general only need
+         *        to fill the chunks for the current (calling) process ID.
+         *        Chunks assigned to another destination processes may be
+         *        silently dropped.
          */
         virtual PartialAssignment assign(
             PartialAssignment partialAssignment,
@@ -259,6 +358,12 @@ namespace chunk_assignment
         virtual std::unique_ptr<Strategy> clone() const override;
     };
 
+    /**
+     * @brief Round-Robin at process level.
+     *
+     * Assign all chunks from the first source rank to the first reader rank,
+     * all from the second source rank to the second reader, and so on.
+     */
     struct RoundRobinOfSourceRanks : Strategy
     {
         Assignment assign(
@@ -271,6 +376,16 @@ namespace chunk_assignment
         virtual std::unique_ptr<Strategy> clone() const override;
     };
 
+    /**
+     * @brief Alternative to RoundRobin, but instead gives every reader a
+     *        sequential range of blocks.
+     *
+     * Sequential in here means the order as returned by
+     * BaseRecordComponent::availableChunks().
+     * E.g. 6 blocks distributed to 2 processes will result in:
+     * The first three blocks go to the first process, the last three blocks to
+     * the second.
+     */
     struct Blocks : Strategy
     {
         Assignment assign(
@@ -283,6 +398,12 @@ namespace chunk_assignment
         [[nodiscard]] std::unique_ptr<Strategy> clone() const override;
     };
 
+    /**
+     * @brief Blocks at processs level.
+     *
+     * Assign writer processes to reader processes, instead of assigning blocks
+     * to processes.
+     */
     struct BlocksOfSourceRanks : Strategy
     {
         Assignment assign(
