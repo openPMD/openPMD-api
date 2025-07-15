@@ -19,12 +19,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ChunkInfo.hpp"
-#include "openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp"
+#include "openPMD/auxiliary/OneDimensionalBlockSlicer.hpp"
 #include "openPMD/binding/python/Mpi.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
 
-#include <exception>
 #include <pybind11/pytypes.h>
 #include <string>
 #include <utility> // std::move
@@ -324,16 +323,17 @@ void init_Chunk(py::module &m)
             }),
             py::arg("strategy_within_node"));
 
-    (void)py::class_<BlockSlicer>(m, "BlockSlicer");
+    (void)py::class_<auxiliary::BlockSlicer>(m, "BlockSlicer");
 
-    py::class_<OneDimensionalBlockSlicer, BlockSlicer>(
+    py::class_<auxiliary::OneDimensionalBlockSlicer, auxiliary::BlockSlicer>(
         m, "OneDimensionalBlockSlicer")
         .def(py::init<>())
         .def(py::init<Extent::value_type>(), py::arg("dim"));
 
     py::class_<ByCuboidSlice, Strategy>(m, "ByCuboidSlice")
         .def(
-            py::init([](BlockSlicer const &blockSlicer, Extent totalExtent) {
+            py::init([](auxiliary::BlockSlicer const &blockSlicer,
+                        Extent totalExtent) {
                 return ByCuboidSlice(
                     blockSlicer.clone(), std::move(totalExtent));
             }),

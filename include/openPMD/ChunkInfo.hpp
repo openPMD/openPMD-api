@@ -23,14 +23,14 @@
 #include "openPMD/config.hpp"
 
 #include "openPMD/Dataset.hpp" // Offset, Extent
-#include "openPMD/benchmark/mpi/BlockSlicer.hpp"
-#include <memory>
+#include "openPMD/auxiliary/BlockSlicer.hpp"
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
 #endif
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -333,7 +333,8 @@ namespace chunk_assignment
     struct ByCuboidSlice : Strategy
     {
         ByCuboidSlice(
-            std::unique_ptr<BlockSlicer> blockSlicer, Extent totalExtent);
+            std::unique_ptr<auxiliary::BlockSlicer> blockSlicer,
+            Extent totalExtent);
 
         Assignment assign(
             PartialAssignment,
@@ -345,7 +346,7 @@ namespace chunk_assignment
         virtual std::unique_ptr<Strategy> clone() const override;
 
     private:
-        std::unique_ptr<BlockSlicer> blockSlicer;
+        std::unique_ptr<auxiliary::BlockSlicer> blockSlicer;
         Extent totalExtent;
     };
 

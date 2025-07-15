@@ -422,7 +422,7 @@ set(CORE_SOURCE
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
         src/backend/Writable.cpp
-        src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
+        src/auxiliary/OneDimensionalBlockSlicer.cpp
         src/helper/list_series.cpp
         src/snapshots/ContainerImpls.cpp
         src/snapshots/ContainerTraits.cpp

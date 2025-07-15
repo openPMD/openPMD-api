@@ -19,11 +19,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp"
+#include "openPMD/auxiliary/OneDimensionalBlockSlicer.hpp"
 
-#include <algorithm>
-
-namespace openPMD
+namespace openPMD::auxiliary
 {
 OneDimensionalBlockSlicer::OneDimensionalBlockSlicer(Extent::value_type dim)
     : m_dim{dim}
@@ -85,4 +83,4 @@ std::unique_ptr<BlockSlicer> OneDimensionalBlockSlicer::clone() const
 {
     return std::unique_ptr<BlockSlicer>(new OneDimensionalBlockSlicer(m_dim));
 }
-} // namespace openPMD
+} // namespace openPMD::auxiliary

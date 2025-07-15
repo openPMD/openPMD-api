@@ -9,7 +9,7 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/openPMD.hpp"
 // @todo change includes
-#include "openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp"
+#include "openPMD/auxiliary/OneDimensionalBlockSlicer.hpp"
 #include <catch2/catch.hpp>
 
 #if !openPMD_HAVE_MPI
@@ -2465,7 +2465,8 @@ void adios2_chunk_distribution()
          * in others such as this one, it's an unneeded overhead.)
          */
         ByCuboidSlice cuboidSliceStrategy(
-            std::make_unique<OneDimensionalBlockSlicer>(1), E_x.getExtent());
+            std::make_unique<auxiliary::OneDimensionalBlockSlicer>(1),
+            E_x.getExtent());
         auto cuboidSliceAssignment = cuboidSliceStrategy.assign(
             chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment(

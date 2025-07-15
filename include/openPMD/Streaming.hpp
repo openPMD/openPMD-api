@@ -1,14 +1,5 @@
 #pragma once
 
-#include <list>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "openPMD/Dataset.hpp"
-#include "openPMD/benchmark/mpi/BlockSlicer.hpp"
-#include <unordered_map>
-
 namespace openPMD
 {
 /**

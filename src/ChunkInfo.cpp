@@ -22,7 +22,7 @@
 #include "openPMD/ChunkInfo_internal.hpp"
 
 #include "openPMD/auxiliary/Mpi.hpp"
-#include "openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp"
+#include "openPMD/auxiliary/OneDimensionalBlockSlicer.hpp"
 
 #include <algorithm> // std::sort
 #include <deque>
@@ -372,7 +372,7 @@ namespace chunk_assignment
     {
         auto [notAssigned, res] = std::move(pa);
         auto [myChunksFrom, myChunksTo] =
-            OneDimensionalBlockSlicer::n_th_block_inside(
+            auxiliary::OneDimensionalBlockSlicer::n_th_block_inside(
                 notAssigned.size(), my_rank, num_ranks);
         std::transform(
             notAssigned.begin() + myChunksFrom,
@@ -404,7 +404,7 @@ namespace chunk_assignment
         }
         notAssigned.clear();
         auto [myChunksFrom, myChunksTo] =
-            OneDimensionalBlockSlicer::n_th_block_inside(
+            auxiliary::OneDimensionalBlockSlicer::n_th_block_inside(
                 sortSourceChunksBySourceRank.size(), my_rank, num_ranks);
         auto it = sortSourceChunksBySourceRank.begin();
         for (size_t i = 0; i < myChunksFrom; ++i)
@@ -520,7 +520,8 @@ namespace chunk_assignment
     }
 
     ByCuboidSlice::ByCuboidSlice(
-        std::unique_ptr<BlockSlicer> blockSlicer_in, Extent totalExtent_in)
+        std::unique_ptr<auxiliary::BlockSlicer> blockSlicer_in,
+        Extent totalExtent_in)
         : blockSlicer(std::move(blockSlicer_in))
         , totalExtent(std::move(totalExtent_in))
     {}

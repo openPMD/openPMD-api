@@ -1,4 +1,4 @@
-/* Copyright 2025 Franz Poeschel
+/* Copyright 2018-2021 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -19,13 +19,26 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* Legacy header for backward compatibility */
-
 #pragma once
 
+#include "openPMD/Dataset.hpp"
 #include "openPMD/auxiliary/BlockSlicer.hpp"
 
-namespace openPMD
+namespace openPMD::auxiliary
 {
-using auxiliary::BlockSlicer;
-}
+class OneDimensionalBlockSlicer : public BlockSlicer
+{
+public:
+    Extent::value_type m_dim;
+
+    explicit OneDimensionalBlockSlicer(Extent::value_type dim = 0);
+
+    static std::pair<size_t, size_t>
+    n_th_block_inside(size_t length, size_t rank, size_t size);
+
+    std::pair<Offset, Extent>
+    sliceBlock(Extent &totalExtent, int size, int rank) override;
+
+    virtual std::unique_ptr<BlockSlicer> clone() const override;
+};
+} // namespace openPMD::auxiliary
