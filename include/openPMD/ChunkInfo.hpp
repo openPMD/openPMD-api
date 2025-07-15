@@ -133,6 +133,16 @@ namespace chunk_assignment
          *        Merge the unassigned chunks into the partially assigned table.
          * @param in Meta information on writing processes, e.g. hostnames.
          * @param out Meta information on reading processes, e.g. hostnames.
+         * @param my_rank Rank identifier for the current process. Will be
+         *        considered by some distribution strategies that may be called
+         *        for only a subselection of the data space (e.g. for
+         *        distributing data within processes on the same compute node
+         *        in a cluster).
+         * @param num_ranks Number of processes among which chunks are to be
+         *        distributed. Will be considered by some distribution
+         *        strategies that may be called for only a subselection of the
+         *        data space (e.g. for distributing data within processes on the
+         *        same compute node in a cluster).
          * @return ChunkTable A table that assigns chunks to reading processes.
          */
         virtual Assignment assign(
@@ -174,6 +184,16 @@ namespace chunk_assignment
          *        Merge the unassigned chunks into the partially assigned table.
          * @param in Meta information on writing processes, e.g. hostnames.
          * @param out Meta information on reading processes, e.g. hostnames.
+         * @param my_rank Rank identifier for the current process. Will be
+         *        considered by some distribution strategies that may be called
+         *        for only a subselection of the data space (e.g. for
+         *        distributing data within processes on the same compute node
+         *        in a cluster).
+         * @param num_ranks Number of processes among which chunks are to be
+         *        distributed. Will be considered by some distribution
+         *        strategies that may be called for only a subselection of the
+         *        data space (e.g. for distributing data within processes on the
+         *        same compute node in a cluster).
          * @return PartialAssignment Two chunktables, one of leftover chunks
          *         that were not assigned and one that assigns chunks to
          *         reading processes.

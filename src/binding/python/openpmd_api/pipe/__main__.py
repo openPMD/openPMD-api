@@ -127,6 +127,7 @@ class LoadOne(io.PartialStrategy):
             assignment.assigned[my_rank].append(element)
         return assignment
 
+
 class IncreaseGranularity(io.PartialStrategy):
     def __init__(
         self,
@@ -180,13 +181,15 @@ class IncreaseGranularity(io.PartialStrategy):
 
         # Creates `in_ranks` and `out_ranks` for the inner call, based on the
         # meta hosts created above
-        def inner_rank_assignment(outer_rank_assignment, hostname_to_hostgroup):
+        def inner_rank_assignment(
+                outer_rank_assignment, hostname_to_hostgroup):
             res = {}
             for (rank, hostname) in outer_rank_assignment.items():
                 res[rank] = hostname_to_hostgroup[hostname]
             return res
 
-        self.in_ranks_inner = inner_rank_assignment(in_ranks, in_hostname_to_hostgroup)
+        self.in_ranks_inner = \
+            inner_rank_assignment(in_ranks, in_hostname_to_hostgroup)
         self.out_ranks_inner = inner_rank_assignment(
             out_ranks, out_hostname_to_hostgroup
         )
@@ -202,8 +205,11 @@ class IncreaseGranularity(io.PartialStrategy):
         # }
 
         return self.inner_distribution.assign(
-            assignment, self.in_ranks_inner, self.out_ranks_inner, my_rank, num_ranks
+            assignment,
+            self.in_ranks_inner, self.out_ranks_inner,
+            my_rank, num_ranks
         )
+
 
 class MergingStrategy(io.Strategy):
     def __init__(self, inner_strategy):
@@ -218,7 +224,8 @@ class MergingStrategy(io.Strategy):
             for in_rank, chunks in merged.items():
                 for chunk in chunks:
                     assignment.append(
-                        io.WrittenChunkInfo(chunk.offset, chunk.extent, in_rank)
+                        io.WrittenChunkInfo(
+                            chunk.offset, chunk.extent, in_rank)
                     )
         return res
 
@@ -241,7 +248,7 @@ class MergingStrategy(io.Strategy):
 #         print(f" [{chunk.offset}-{chunk.extent}]", end='')
 #     print()
 
-#Example how to implement a simple strategy in Python
+# Example how to implement a simple strategy in Python
 class LoadAll(io.Strategy):
 
     def __init__(self):
@@ -266,8 +273,8 @@ def distribution_strategy(dataset_extent,
             strategy_identifier = 'hostname_binpacking_slicedataset'  # default
     match = re.search('hostname_(.*)_(.*)', strategy_identifier)
     if match is not None:
-        inside_node = distribution_strategy(dataset_extent,
-                                            strategy_identifier=match.group(1))
+        inside_node = distribution_strategy(
+            dataset_extent, strategy_identifier=match.group(1))
         second_phase = distribution_strategy(
             dataset_extent,
             strategy_identifier=match.group(2))
