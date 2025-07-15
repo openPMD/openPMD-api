@@ -25,6 +25,7 @@
 #include "openPMD/binding/python/Common.hpp"
 
 #include <exception>
+#include <pybind11/pytypes.h>
 #include <string>
 #include <utility> // std::move
 
@@ -46,15 +47,6 @@
 template <typename ChildCpp, typename ChildPy>
 struct ClonableTrampoline
 {
-    struct OriginalInstance
-    {
-        py::handle pythonObject;
-
-        ~OriginalInstance()
-        {
-            pythonObject.dec_ref();
-        }
-    };
     /*
      * If the shared pointer is empty, this object is the original object owned
      * by Python and the Python handle can be acquired by:
@@ -64,16 +56,13 @@ struct ClonableTrampoline
      * By only storing this member in copied instances, but not in the original
      * instance, we avoid a memory cycle and ensure clean destruction.
      */
-    std::shared_ptr<OriginalInstance> m_originalInstance;
+    std::shared_ptr<py::object> m_originalInstance;
 
-    [[nodiscard]] py::handle get_python_handle() const
+    [[nodiscard]] py::object get_python_handle() const
     {
         if (m_originalInstance)
         {
-            // std::cout << "Refcount "
-            //           << m_originalInstance->pythonObject.ref_count()
-            //           << std::endl;
-            return m_originalInstance->pythonObject;
+            return *m_originalInstance;
         }
         else
         {
@@ -86,7 +75,7 @@ struct ClonableTrampoline
     Res call_virtual(std::string const &nameOfPythonMethod, Args &&...args)
     {
         py::gil_scoped_acquire gil;
-        auto ptr = get_python_handle().template cast<ChildCpp *>();
+        auto ptr = get_python_handle().template cast<ChildPy *>();
         auto fun = py::get_override(ptr, nameOfPythonMethod.c_str());
         if (!fun)
         {
@@ -107,14 +96,9 @@ struct ClonableTrampoline
         }
         else
         {
-            OriginalInstance oi;
-            oi.pythonObject = py::cast(self);
-            // no idea why we would need this twice, but we do
-            oi.pythonObject.inc_ref();
-            oi.pythonObject.inc_ref();
             auto res = std::make_unique<ChildPy>(*self);
             res->m_originalInstance =
-                std::make_shared<OriginalInstance>(std::move(oi));
+                std::make_shared<py::object>(py::cast(self));
             return res;
         }
     }
@@ -259,8 +243,7 @@ void init_Chunk(py::module &m)
 
     py::bind_map<RankMeta>(m, "RankMeta");
 
-    py::class_<PartialStrategy, PyPartialStrategy>(m, "PartialStrategy")
-        .def(py::init<>())
+    py::class_<PartialStrategy>(m, "PartialStrategyCpp")
         .def(
             "assign",
             py::overload_cast<
@@ -287,9 +270,10 @@ void init_Chunk(py::module &m)
             py::arg("rank_meta_out") = RankMeta(),
             py::arg("my_rank") = 0,
             py::arg("num_ranks") = 1);
+    py::class_<PyPartialStrategy, PartialStrategy>(m, "PartialStrategy")
+        .def(py::init<>());
 
-    py::class_<Strategy, PyStrategy>(m, "Strategy")
-        .def(py::init<>())
+    py::class_<Strategy>(m, "StrategyCpp")
         .def(
             "assign",
             py::overload_cast<
@@ -316,6 +300,7 @@ void init_Chunk(py::module &m)
             py::arg("rank_meta_out") = RankMeta(),
             py::arg("my_rank") = 0,
             py::arg("num_ranks") = 1);
+    py::class_<PyStrategy, Strategy>(m, "Strategy").def(py::init<>());
 
     py::class_<FromPartialStrategy, Strategy>(m, "FromPartialStrategy")
         .def(
