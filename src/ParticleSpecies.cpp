@@ -155,6 +155,10 @@ namespace
 void ParticleSpecies::flush(
     std::string const &path, internal::FlushParams const &flushParams)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         for (auto &record : *this)

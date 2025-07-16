@@ -366,6 +366,10 @@ template Mesh &Mesh::setTimeOffset(float);
 void Mesh::flush_impl(
     std::string const &name, internal::FlushParams const &flushParams)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         auto &m = get();

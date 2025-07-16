@@ -255,6 +255,10 @@ bool RecordComponent::empty() const
 void RecordComponent::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     auto &rc = get();
     if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
     {

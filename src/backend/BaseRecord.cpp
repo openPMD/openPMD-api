@@ -819,6 +819,11 @@ template <typename T_elem>
 inline void BaseRecord<T_elem>::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {
+    if (!this->dirtyRecursive())
+    {
+        return;
+    }
+
     if (!this->written() && this->empty() && !this->datasetDefined())
         throw std::runtime_error(
             "A Record can not be written without any contained "

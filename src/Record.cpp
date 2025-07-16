@@ -52,6 +52,10 @@ Record &Record::setUnitDimension(unit_representations::AsArray const &udim)
 void Record::flush_impl(
     std::string const &name, internal::FlushParams const &flushParams)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         if (scalar())

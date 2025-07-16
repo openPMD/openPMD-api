@@ -72,6 +72,10 @@ void MeshRecordComponent::read()
 void MeshRecordComponent::flush(
     std::string const &name, internal::FlushParams const &params)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (access::write(IOHandler()->m_frontendAccess) &&
         !containsAttribute("position"))
     {
