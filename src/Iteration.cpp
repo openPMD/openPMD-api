@@ -480,6 +480,11 @@ void Iteration::readGorVBased(
 
 void Iteration::read_impl(std::string const &groupPath)
 {
+    if (!get().m_deferredParseAccess.has_value())
+    {
+        throw error::Internal(
+            "Attempted reparsing an Iteration that is already parsed.");
+    }
     Parameter<Operation::OPEN_PATH> pOpen;
     pOpen.path = groupPath;
     IOHandler()->enqueue(IOTask(this, pOpen));
