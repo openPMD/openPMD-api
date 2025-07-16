@@ -1247,6 +1247,11 @@ void ADIOS2IOHandlerImpl::getBufferView(
     Writable *writable, Parameter<Operation::GET_BUFFER_VIEW> &parameters)
 {
     // @todo check access mode
+    /*
+     * We will check BP5 again below. BP5 fundamentally supports the Span API,
+     * but runs into this bug https://github.com/ornladios/ADIOS2/issues/4586,
+     * so we treat the Span API as opt-in there.
+     */
     std::string optInEngines[] = {"bp4", "bp5", "file", "filestream"};
     if (std::none_of(
             begin(optInEngines),
@@ -1270,7 +1275,16 @@ void ADIOS2IOHandlerImpl::getBufferView(
         return;
     case UseSpan::Auto:
         if (switchAdios2VariableType<detail::HasOperators>(
-                parameters.dtype, name, ba.m_IO))
+                parameters.dtype, name, ba.m_IO)
+#if (                                                                          \
+    ADIOS2_VERSION_MAJOR * 1000 + ADIOS2_VERSION_MINOR * 10 +                  \
+    ADIOS2_VERSION_PATCH) <= 2102
+            ||
+            // Deactivate the Span API in BP5 by default due to this bug
+            // https://github.com/ornladios/ADIOS2/issues/4586,
+            this->realEngineType() == "bp5"
+#endif
+        )
         {
             parameters.out->backendManagedBuffer = false;
             return;

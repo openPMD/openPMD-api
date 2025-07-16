@@ -6394,7 +6394,16 @@ void iterate_nonstreaming_series(
 {
     constexpr size_t extent = 100;
     {
-        Series writeSeries(file, Access::CREATE, jsonConfig);
+        Series writeSeries(
+            file,
+            Access::CREATE,
+            /*
+             * The ADIOS2 backend deactivates the Span API by default due to
+             * this bug: https://github.com/ornladios/ADIOS2/issues/4586.
+             * For this test, we enable it.
+             */
+            json::merge(
+                jsonConfig, R"({"adios2":{"use_span_based_put": true}})"));
         if (variableBasedLayout)
         {
             writeSeries.setIterationEncoding(IterationEncoding::variableBased);

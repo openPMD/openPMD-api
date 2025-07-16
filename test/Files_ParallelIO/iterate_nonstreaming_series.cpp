@@ -21,7 +21,17 @@ static auto run_test(
     size_t const extent = base_extent * size_t(mpi_size);
 
     {
-        Series writeSeries(file, Access::CREATE, MPI_COMM_WORLD, jsonConfig);
+        Series writeSeries(
+            file,
+            Access::CREATE,
+            MPI_COMM_WORLD,
+            /*
+             * The ADIOS2 backend deactivates the Span API by default due to
+             * this bug: https://github.com/ornladios/ADIOS2/issues/4586.
+             * For this test, we enable it.
+             */
+            json::merge(
+                jsonConfig, R"({"adios2":{"use_span_based_put": true}})"));
         if (variableBasedLayout)
         {
             writeSeries.setIterationEncoding(IterationEncoding::variableBased);
