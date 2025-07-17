@@ -2340,6 +2340,33 @@ auto equalDisjointByVolume(
     return targetVolume == summarizedVolume;
 }
 
+void verifyHostnameAssignment(
+    chunk_assignment::PartialAssignment const &assignment,
+    chunk_assignment::RankMeta const &in,
+    chunk_assignment::RankMeta const &out)
+{
+    REQUIRE(!assignment.assigned.empty());
+    for (auto const &[out_rank, chunks] : assignment.assigned)
+    {
+        for (auto const &chunk : chunks)
+        {
+            REQUIRE(in.at(chunk.sourceID) == out.at(out_rank));
+        }
+    }
+    for (auto const &chunk : assignment.notAssigned)
+    {
+        auto const &hostname = in.at(chunk.sourceID);
+        REQUIRE(
+            std::none_of(
+                out.begin(),
+                out.end(),
+                [&hostname](
+                    chunk_assignment::RankMeta::value_type const &pair) {
+                    return pair.second == hostname;
+                }));
+    }
+}
+
 void run_test()
 {
     /*
@@ -2544,6 +2571,8 @@ void run_test()
             byHostnamePartialAssignment.assigned[mpi_rank],
             byHostnamePartialAssignment.notAssigned,
             MPI_COMM_WORLD));
+        verifyHostnameAssignment(
+            byHostnamePartialAssignment, rankMetaIn, readingRanksHostnames);
 
         /*
          * Same as above, but use RoundRobinOfSourceRanks this time, a strategy
@@ -2572,6 +2601,8 @@ void run_test()
             byHostnamePartialAssignment2.assigned[mpi_rank],
             byHostnamePartialAssignment2.notAssigned,
             MPI_COMM_WORLD));
+        verifyHostnameAssignment(
+            byHostnamePartialAssignment2, rankMetaIn, readingRanksHostnames);
 
         /*
          * Assign chunks by hostnames, once more.

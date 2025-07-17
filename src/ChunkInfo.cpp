@@ -19,8 +19,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ChunkInfo.hpp"
-#include "openPMD/ChunkInfo_internal.hpp"
 
+#include "openPMD/ChunkInfo_internal.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/OneDimensionalBlockSlicer.hpp"
 
@@ -32,8 +33,8 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #ifdef _WIN32
@@ -496,18 +497,21 @@ namespace chunk_assignment
             else
             {
                 RankMeta ranksOnTargetNode;
-                std::optional<size_t> local_rank = 0;
+                std::vector<size_t> mapLocalRanksBackToGlobal;
+                mapLocalRanksBackToGlobal.reserve(it->second.size());
+                std::optional<size_t> my_rank_local = 0;
                 size_t counter = 0;
                 for (auto rank : it->second)
                 {
+                    mapLocalRanksBackToGlobal.emplace_back(rank);
                     ranksOnTargetNode[counter] = hostname;
                     if (rank == my_rank)
                     {
-                        local_rank = counter;
+                        my_rank_local = counter;
                     }
                     ++counter;
                 }
-                if (!local_rank.has_value())
+                if (!my_rank_local.has_value())
                 {
                     /*
                      * We are running on another compute node. This is fine, we
@@ -516,14 +520,25 @@ namespace chunk_assignment
                      */
                     continue;
                 }
-                Assignment swapped;
-                swapped.swap(sinkChunks);
-                sinkChunks = m_withinNode->assign(
-                    PartialAssignment(chunkGroup.second, std::move(swapped)),
+                auto newlyAssigned = m_withinNode->assign(
+                    PartialAssignment(chunkGroup.second, {}),
                     in,
                     ranksOnTargetNode,
-                    *local_rank,
+                    *my_rank_local,
                     it->second.size());
+                for (auto &[local_rank, chunks] : newlyAssigned)
+                {
+                    size_t global_rank = mapLocalRanksBackToGlobal[local_rank];
+                    auto it_sinkChunks = sinkChunks.find(global_rank);
+                    if (it_sinkChunks != sinkChunks.end())
+                    {
+                        throw error::Internal(
+                            "Target rank " + std::to_string(global_rank) +
+                            " assigned multiple times?");
+                    }
+                    sinkChunks.emplace_hint(
+                        it_sinkChunks, global_rank, std::move(chunks));
+                }
             }
         }
         return res;
