@@ -134,7 +134,13 @@ namespace chunk_assignment
                 Offset offset(c1->offset);
                 Extent extent(c1->extent);
                 extent[dim] += c2->extent[dim];
-                return std::make_optional(Chunk_t(offset, extent));
+                // Copy from chunk1 in order to initialize with meta information
+                // from instantiations of Chunk_t that we cannot generically
+                // state here (such as the source ID)
+                Chunk_t res = chunk1;
+                res.offset = offset;
+                res.extent = extent;
+                return std::make_optional<Chunk_t>(std::move(res));
             }
             return std::optional<Chunk_t>();
         }
@@ -289,23 +295,19 @@ namespace chunk_assignment
     Assignment RoundRobin::assign(
         PartialAssignment partialAssignment,
         RankMeta const &, // ignored parameter
-        RankMeta const &out,
+        RankMeta const &,
         size_t /* my_rank */,
-        size_t /* num_ranks */)
+        size_t num_ranks)
     {
-        if (out.size() == 0)
+        if (num_ranks == 0)
         {
             throw std::runtime_error(
                 "[RoundRobin] Cannot round-robin to zero ranks.");
         }
-        auto it = out.begin();
-        auto nextRank = [&it, &out]() {
-            if (it == out.end())
-            {
-                it = out.begin();
-            }
-            auto res = it->first;
-            it++;
+        size_t it = 0;
+        auto nextRank = [&it, num_ranks]() {
+            auto res = it;
+            it = (it + 1) % num_ranks;
             return res;
         };
         ChunkTable &sourceChunks = partialAssignment.notAssigned;
@@ -326,9 +328,9 @@ namespace chunk_assignment
     Assignment RoundRobinOfSourceRanks::assign(
         PartialAssignment partialAssignment,
         RankMeta const &, // ignored parameter
-        RankMeta const &out,
+        RankMeta const &,
         size_t /* my_rank */,
-        size_t /* num_ranks */)
+        size_t num_ranks)
     {
         std::map<unsigned int, std::deque<WrittenChunkInfo>>
             sortSourceChunksBySourceRank;
@@ -339,15 +341,12 @@ namespace chunk_assignment
         }
         partialAssignment.notAssigned.clear();
         auto source_it = sortSourceChunksBySourceRank.begin();
-        auto sink_it = out.begin();
+        size_t sink_it = 0;
         for (; source_it != sortSourceChunksBySourceRank.end();
              ++source_it, ++sink_it)
         {
-            if (sink_it == out.end())
-            {
-                sink_it = out.begin();
-            }
-            auto &chunks_go_here = partialAssignment.assigned[sink_it->first];
+            sink_it %= num_ranks;
+            auto &chunks_go_here = partialAssignment.assigned[sink_it];
             chunks_go_here.reserve(
                 partialAssignment.assigned.size() + source_it->second.size());
             for (auto &chunk : source_it->second)
@@ -436,8 +435,14 @@ namespace chunk_assignment
         RankMeta const &in,
         RankMeta const &out,
         size_t my_rank,
-        size_t /* num_ranks */)
+        size_t num_ranks)
     {
+        if (out.size() != num_ranks)
+        {
+            throw std::runtime_error(
+                "[ByHostname] Invalid call: Rank meta information (hostnames) "
+                "incomplete.");
+        }
         // collect chunks by hostname
         std::map<std::string, ChunkTable> chunkGroups;
         ChunkTable &sourceChunks = res.notAssigned;
@@ -447,6 +452,8 @@ namespace chunk_assignment
             for (auto &chunk : sourceChunks)
             {
                 auto it = in.find(chunk.sourceID);
+                // If the writer rank has no meta information, move its chunk
+                // back to the leftover
                 if (it == in.end())
                 {
                     leftover.push_back(std::move(chunk));
@@ -489,16 +496,25 @@ namespace chunk_assignment
             else
             {
                 RankMeta ranksOnTargetNode;
-                size_t local_rank = 0;
+                std::optional<size_t> local_rank = 0;
                 size_t counter = 0;
                 for (auto rank : it->second)
                 {
-                    ranksOnTargetNode[rank] = hostname;
+                    ranksOnTargetNode[counter] = hostname;
                     if (rank == my_rank)
                     {
                         local_rank = counter;
                     }
                     ++counter;
+                }
+                if (!local_rank.has_value())
+                {
+                    /*
+                     * We are running on another compute node. This is fine, we
+                     * have ensured above that some other process will take care
+                     * of these chunks, they need not go back to the leftover.
+                     */
+                    continue;
                 }
                 Assignment swapped;
                 swapped.swap(sinkChunks);
@@ -506,7 +522,7 @@ namespace chunk_assignment
                     PartialAssignment(chunkGroup.second, std::move(swapped)),
                     in,
                     ranksOnTargetNode,
-                    local_rank,
+                    *local_rank,
                     it->second.size());
             }
         }
@@ -678,15 +694,13 @@ namespace chunk_assignment
         for (auto &chunk : sourceSide)
         {
             restrictToSelection(chunk.offset, chunk.extent, myOffset, myExtent);
-            for (auto ext : chunk.extent)
+            if (std::all_of(
+                    chunk.extent.begin(), chunk.extent.end(), [](auto const e) {
+                        return e > 0;
+                    }))
             {
-                if (ext == 0)
-                {
-                    goto outer_loop;
-                }
+                sinkSide[my_rank].push_back(std::move(chunk));
             }
-            sinkSide[my_rank].push_back(std::move(chunk));
-        outer_loop:;
         }
 
         return res.assigned;
@@ -705,9 +719,9 @@ namespace chunk_assignment
     Assignment BinPacking::assign(
         PartialAssignment res,
         RankMeta const &,
-        RankMeta const &sinkRanks,
+        RankMeta const &,
         size_t /* my_rank */,
-        size_t /* num_ranks */)
+        size_t num_ranks)
     {
         ChunkTable &sourceChunks = res.notAssigned;
         Assignment &sinkChunks = res.assigned;
@@ -721,7 +735,7 @@ namespace chunk_assignment
             }
             totalExtent += chunkExtent;
         }
-        size_t const idealSize = totalExtent / sinkRanks.size();
+        size_t const idealSize = totalExtent / num_ranks;
         /*
          * Split chunks into subchunks of size at most idealSize.
          * The resulting list of chunks is sorted by chunk size in decreasing
@@ -740,8 +754,8 @@ namespace chunk_assignment
          * data per process.
          */
         auto worker =
-            [&sinkRanks, &digestibleChunks, &sinkChunks, idealSize]() {
-                for (auto const &destRank : sinkRanks)
+            [&num_ranks, &digestibleChunks, &sinkChunks, idealSize]() {
+                for (size_t destRank = 0; destRank < num_ranks; ++destRank)
                 {
                     /*
                      * Within the second call of the worker lambda, this will
@@ -763,7 +777,7 @@ namespace chunk_assignment
                                  * process within this call of the worker
                                  * lambda, so the loop can be broken out of.
                                  */
-                                sinkChunks[destRank.first].push_back(
+                                sinkChunks[destRank].push_back(
                                     std::move(it->chunk));
                                 digestibleChunks.erase(it);
                                 break;
@@ -771,7 +785,7 @@ namespace chunk_assignment
                             else if (it->dataSize <= leftoverSize)
                             {
                                 // assign smaller chunks as long as they fit
-                                sinkChunks[destRank.first].push_back(
+                                sinkChunks[destRank].push_back(
                                     std::move(it->chunk));
                                 leftoverSize -= it->dataSize;
                                 it = digestibleChunks.erase(it);

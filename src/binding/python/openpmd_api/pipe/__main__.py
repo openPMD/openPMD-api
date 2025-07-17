@@ -113,6 +113,11 @@ class deferred_load:
         self.offset = offset
         self.extent = extent
 
+# Find below a couple of examples on how to define chunk distribution
+# strategies in Python by extending classes PartialStrategy or Strategy.
+# These strategies may then be used inside composing strategies
+# such as ByHostname. They may also call other strategies, as in
+# IncreaseGranularity defined below.
 
 # Example how to implement a simple partial strategy in Python
 class LoadOne(io.PartialStrategy):
@@ -127,7 +132,26 @@ class LoadOne(io.PartialStrategy):
             assignment.assigned[my_rank].append(element)
         return assignment
 
+# Example how to implement a simple strategy in Python
+class LoadAll(io.Strategy):
 
+    def __init__(self):
+        super().__init__()
+
+    def assign(self, assignment, ranks_in, ranks_out, my_rank, num_ranks):
+        res = assignment.assigned
+        if my_rank not in res:
+            res[my_rank] = assignment.not_assigned
+        else:
+            res[my_rank].extend(assignment.not_assigned)
+        return res
+
+# A more complex distribution strategy. This creates supergroups of hostnames,
+# separately for the writer and reader ranks.
+# Every `granularity_in` writer hostnames are merged into one new hostname
+# each, same for every `granularity_out` reader hostnames.
+# An example usage is defining granularity_in=32, granularity_out=1 for a
+# 32-to-1 fan-in pattern.
 class IncreaseGranularity(io.PartialStrategy):
     def __init__(
         self,
@@ -194,16 +218,6 @@ class IncreaseGranularity(io.PartialStrategy):
             out_ranks, out_hostname_to_hostgroup
         )
 
-        # # we only care about the local host (why tho?)
-        # local_host = self.out_ranks_inner[my_rank]
-        # # restrict out_ranks_inner to those ranks
-        # # that run on the current meta host
-        # self.out_ranks_inner = {
-        #     rank: host
-        #     for rank, host in self.out_ranks_inner.items()
-        #     if host == local_host
-        # }
-
         return self.inner_distribution.assign(
             assignment,
             self.in_ranks_inner, self.out_ranks_inner,
@@ -211,13 +225,16 @@ class IncreaseGranularity(io.PartialStrategy):
         )
 
 
+# Merge chunks into larger chunks as much as possible within
+# each source process for reducing the number of load requests.
 class MergingStrategy(io.Strategy):
     def __init__(self, inner_strategy):
         super().__init__()
         self.inner_strategy = inner_strategy
 
-    def assign(self, assignment, in_ranks, out_ranks):
-        res = self.inner_strategy.assign(assignment, in_ranks, out_ranks)
+    def assign(self, assignment, in_ranks, out_ranks, my_rank, num_ranks):
+        res = self.inner_strategy.assign(
+            assignment, in_ranks, out_ranks, my_rank, num_ranks)
         for out_rank, assignment in res.items():
             merged = assignment.merge_chunks_from_same_sourceID()
             assignment.clear()
@@ -227,39 +244,6 @@ class MergingStrategy(io.Strategy):
                         io.WrittenChunkInfo(
                             chunk.offset, chunk.extent, in_rank)
                     )
-        return res
-
-
-# strategy = IncreaseGranularity(2, 1)
-# assignment = [
-#     io.WrittenChunkInfo([0], [1], 0),
-#     io.WrittenChunkInfo([1], [1], 1),
-#     io.WrittenChunkInfo([2], [1], 2),
-#     io.WrittenChunkInfo([3], [1], 3),
-# ]
-# in_ranks = {0: "host0", 1: "host1", 2: "host3", 3: "host4"}
-# out_ranks = {0: "host2", 1: "host5"}
-# res = strategy.assign(assignment, in_ranks, out_ranks)
-# print(f"NOT ASSIGNED: {len(res.not_assigned)} chunks")
-# print("ASSIGNED:")
-# for rank, chunks in res.assigned.items():
-#     print(f"\tRANK {rank}:", end='')
-#     for chunk in chunks:
-#         print(f" [{chunk.offset}-{chunk.extent}]", end='')
-#     print()
-
-# Example how to implement a simple strategy in Python
-class LoadAll(io.Strategy):
-
-    def __init__(self):
-        super().__init__()
-
-    def assign(self, assignment, ranks_in, ranks_out, my_rank, num_ranks):
-        res = assignment.assigned
-        if my_rank not in res:
-            res[my_rank] = assignment.not_assigned
-        else:
-            res[my_rank].extend(assignment.not_assigned)
         return res
 
 
