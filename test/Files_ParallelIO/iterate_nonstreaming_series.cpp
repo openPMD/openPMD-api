@@ -27,7 +27,8 @@ static auto run_test(
             MPI_COMM_WORLD,
             /*
              * The ADIOS2 backend deactivates the Span API by default due to
-             * this bug: https://github.com/ornladios/ADIOS2/issues/4586.
+             * this bug: https://github.com/ornladios/ADIOS2/issues/4586,
+             * fixed by https://github.com/ornladios/ADIOS2/pull/4587.
              * For this test, we enable it.
              */
             json::merge(

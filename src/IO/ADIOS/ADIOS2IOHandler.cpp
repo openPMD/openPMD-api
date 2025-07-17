@@ -1250,6 +1250,7 @@ void ADIOS2IOHandlerImpl::getBufferView(
     /*
      * We will check BP5 again below. BP5 fundamentally supports the Span API,
      * but runs into this bug https://github.com/ornladios/ADIOS2/issues/4586,
+     * fixed by https://github.com/ornladios/ADIOS2/pull/4587,
      * so we treat the Span API as opt-in there.
      */
     std::string optInEngines[] = {"bp4", "bp5", "file", "filestream"};
@@ -1282,6 +1283,7 @@ void ADIOS2IOHandlerImpl::getBufferView(
             ||
             // Deactivate the Span API in BP5 by default due to this bug
             // https://github.com/ornladios/ADIOS2/issues/4586,
+            // fixed by https://github.com/ornladios/ADIOS2/pull/4587
             this->realEngineType() == "bp5"
 #endif
         )
