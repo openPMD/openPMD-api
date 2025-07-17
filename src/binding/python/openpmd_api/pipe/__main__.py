@@ -119,6 +119,7 @@ class deferred_load:
 # such as ByHostname. They may also call other strategies, as in
 # IncreaseGranularity defined below.
 
+
 # Example how to implement a simple partial strategy in Python
 class LoadOne(io.PartialStrategy):
     def __init__(self):
@@ -131,6 +132,7 @@ class LoadOne(io.PartialStrategy):
         else:
             assignment.assigned[my_rank].append(element)
         return assignment
+
 
 # Example how to implement a simple strategy in Python
 class LoadAll(io.Strategy):
@@ -145,6 +147,7 @@ class LoadAll(io.Strategy):
         else:
             res[my_rank].extend(assignment.not_assigned)
         return res
+
 
 # A more complex distribution strategy. This creates supergroups of hostnames,
 # separately for the writer and reader ranks.
