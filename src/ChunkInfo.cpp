@@ -444,6 +444,12 @@ namespace chunk_assignment
                 "[ByHostname] Invalid call: Rank meta information (hostnames) "
                 "incomplete.");
         }
+        if (!res.assigned.empty())
+        {
+            throw std::runtime_error(
+                "[ByHostname] No support for merging into partial "
+                "assignments.");
+        }
         // collect chunks by hostname
         std::map<std::string, ChunkTable> chunkGroups;
         ChunkTable &sourceChunks = res.notAssigned;
