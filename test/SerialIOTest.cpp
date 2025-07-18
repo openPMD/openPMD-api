@@ -4565,9 +4565,9 @@ TEST_CASE("adios2_flush_via_step")
         Series read("../samples/adios2_flush_via_step/simData_%T.%E", access);
         std::vector<float> load_data(100);
         data.resize(100);
-        for (auto iteration : read.readIterations())
+        for (auto &[index, iteration] : read.snapshots())
         {
-            std::iota(data.begin(), data.end(), iteration.iterationIndex * 100);
+            std::iota(data.begin(), data.end(), index * 100);
             iteration.meshes["E"]["x"].loadChunkRaw(
                 load_data.data(), {0, 0}, {10, 10});
             iteration.close();
@@ -4614,9 +4614,9 @@ TEST_CASE("adios2_flush_via_step")
         Series read("../samples/adios2_flush_via_step/simData_%T.%E", access);
         std::vector<float> load_data(100);
         data.resize(100);
-        for (auto iteration : read.readIterations())
+        for (auto &[index, iteration] : read.snapshots())
         {
-            std::iota(data.begin(), data.end(), iteration.iterationIndex * 100);
+            std::iota(data.begin(), data.end(), index * 100);
             iteration.meshes["E"]["x"].loadChunkRaw(
                 load_data.data(), {0, 0}, {10, 10});
             iteration.meshes["E"]["y"].loadChunkRaw(
@@ -5173,7 +5173,7 @@ void bp4_steps(
     Series readSeries(file, *access);
 
     size_t last_iteration_index = 0;
-    for (auto iteration : readSeries.readIterations())
+    for (auto [index, iteration] : readSeries.snapshots())
     {
         auto E = iteration.meshes["E"];
         auto E_x = E["x"];
@@ -5187,9 +5187,9 @@ void bp4_steps(
         iteration.close(); // @todo replace with ::close()
         for (size_t i = 0; i < 10; ++i)
         {
-            REQUIRE(chunk.get()[i] == int(iteration.iterationIndex));
+            REQUIRE(chunk.get()[i] == int(index));
         }
-        last_iteration_index = iteration.iterationIndex;
+        last_iteration_index = index;
     }
     REQUIRE(last_iteration_index == 9);
 }
@@ -5268,7 +5268,7 @@ void serial_iterator(std::string const &file)
 
     size_t last_iteration_index = 0;
     size_t numberOfIterations = 0;
-    for (auto iteration : readSeries.readIterations())
+    for (auto &[index, iteration] : readSeries.snapshots())
     {
         ++numberOfIterations;
         auto E_x = iteration.meshes["E"]["x"];
@@ -5278,9 +5278,9 @@ void serial_iterator(std::string const &file)
         iteration.close();
         for (size_t i = 0; i < extent; ++i)
         {
-            REQUIRE(chunk.get()[i] == int(iteration.iterationIndex));
+            REQUIRE(chunk.get()[i] == int(index));
         }
-        last_iteration_index = iteration.iterationIndex;
+        last_iteration_index = index;
     }
 #ifndef _WIN32
     if (readSeries.iterationEncoding() != IterationEncoding::fileBased)
@@ -5463,7 +5463,7 @@ TEST_CASE("git_adios2_sample_test", "[serial][adios2]")
 
         // false positive by clang-tidy?
         // NOLINTNEXTLINE(performance-for-range-copy)
-        for (auto iteration : read.readIterations())
+        for (auto &[index, iteration] : read.snapshots())
         {
             for (auto &mesh : iteration.meshes)
             {
@@ -5774,10 +5774,10 @@ void adios2_group_table(
 
     Series read("../samples/group_table.bp", Access::READ_LINEAR, jsonRead);
     // NOLINTNEXTLINE(performance-for-range-copy)
-    for (auto iteration : read.readIterations())
+    for (auto &[index, iteration] : read.snapshots())
     {
         ++counter;
-        switch (iteration.iterationIndex)
+        switch (index)
         {
         case 0:
             saw_iteration_0 = true;
@@ -5937,11 +5937,11 @@ void variableBasedSeries(std::string const &file)
                 }
             }
         }
-        for (auto iteration : readSeries.readIterations())
+        for (auto &[index, iteration] : readSeries.snapshots())
         {
             if (access == Access::READ_LINEAR)
             {
-                if (iteration.iterationIndex > 2)
+                if (index > 2)
                 {
                     REQUIRE(
                         iteration.getAttribute("iteration_is_larger_than_two")
@@ -5961,37 +5961,35 @@ void variableBasedSeries(std::string const &file)
             {
                 REQUIRE(
                     iteration.getAttribute("changing_value").get<unsigned>() ==
-                    (supportsModifiableAttributes ? iteration.iterationIndex
-                                                  : 0));
+                    (supportsModifiableAttributes ? index : 0));
             }
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 1);
             REQUIRE(E_x.getExtent()[0] == extent);
             auto chunk = E_x.loadChunk<int>({0}, {extent});
             auto partialMesh =
-                iteration.meshes["partial"]
-                                [std::to_string(iteration.iterationIndex / 3)];
+                iteration.meshes["partial"][std::to_string(index / 3)];
             auto chunk2 = partialMesh.loadChunk<int>({0}, {10});
             iteration.close();
             for (size_t i = 0; i < extent; ++i)
             {
-                REQUIRE(chunk.get()[i] == int(iteration.iterationIndex));
+                REQUIRE(chunk.get()[i] == int(index));
             }
             for (size_t i = 0; i < 10; ++i)
             {
-                REQUIRE(chunk2.get()[i] == int(iteration.iterationIndex));
+                REQUIRE(chunk2.get()[i] == int(index));
             }
 
             auto E_y = iteration.meshes["E"]["y"];
-            unsigned dimensionality = iteration.iterationIndex % 3 + 1;
-            unsigned len = iteration.iterationIndex + 1;
+            unsigned dimensionality = index % 3 + 1;
+            unsigned len = index + 1;
             Extent changingExtent(dimensionality, len);
             REQUIRE(E_y.getExtent() == changingExtent);
 
-            last_iteration_index = iteration.iterationIndex;
+            last_iteration_index = index;
 
             // this loop ensures that only the recordcomponent ["E"]["i"] is
-            // present where i == iteration.iterationIndex
+            // present where i == index
             for (uint64_t otherIteration = 0; otherIteration < 10;
                  ++otherIteration)
             {
@@ -5999,40 +5997,34 @@ void variableBasedSeries(std::string const &file)
                 REQUIRE(
                     iteration.meshes["E"].contains(
                         std::to_string(otherIteration)) ==
-                    (otherIteration == iteration.iterationIndex));
+                    (otherIteration == index));
                 REQUIRE(
                     iteration.meshes["E"].containsAttribute(
                         "attr_" + std::to_string(otherIteration)) ==
-                    (otherIteration <= iteration.iterationIndex));
+                    (otherIteration <= index));
             }
             REQUIRE(
-                iteration.meshes["E"][std::to_string(iteration.iterationIndex)]
+                iteration.meshes["E"][std::to_string(index)]
                     .getAttribute("value")
-                    .get<int>() == int(iteration.iterationIndex));
+                    .get<int>() == int(index));
             REQUIRE(
                 iteration.meshes["E"]
-                    .getAttribute(
-                        "attr_" + std::to_string(iteration.iterationIndex))
-                    .get<int>() == int(iteration.iterationIndex));
+                    .getAttribute("attr_" + std::to_string(index))
+                    .get<int>() == int(index));
 
             auto constantMesh =
                 iteration.meshes["changing_constant"][RecordComponent::SCALAR];
+            REQUIRE(constantMesh.getExtent() == std::vector{index});
             REQUIRE(
-                constantMesh.getExtent() ==
-                std::vector{iteration.iterationIndex});
-            REQUIRE(
-                constantMesh.getAttribute("value").get<unsigned>() ==
-                iteration.iterationIndex);
+                constantMesh.getAttribute("value").get<unsigned>() == index);
 
             auto constantParticles =
                 iteration.particles["changing_constant"]["position"]
                                    [RecordComponent::SCALAR];
-            REQUIRE(
-                constantParticles.getExtent() ==
-                std::vector{iteration.iterationIndex});
+            REQUIRE(constantParticles.getExtent() == std::vector{index});
             REQUIRE(
                 constantParticles.getAttribute("value").get<unsigned>() ==
-                iteration.iterationIndex);
+                index);
         }
         REQUIRE(last_iteration_index == (is_adios2 ? 9 : 0));
         if (access == Access::READ_RANDOM_ACCESS)
@@ -6178,7 +6170,7 @@ void variableBasedParticleData()
         Series series =
             Series("../samples/variableBasedParticles.bp", Access::READ_LINEAR);
 
-        for (IndexedIteration iteration : series.readIterations())
+        for (auto &[index, iteration] : series.snapshots())
         {
             Record electronPositions = iteration.particles["e"]["position"];
             std::array<std::shared_ptr<position_t>, 3> loadedChunks;
@@ -6202,9 +6194,7 @@ void variableBasedParticleData()
                 auto chunk = loadedChunks[i];
                 for (size_t j = 0; j < extent[0]; ++j)
                 {
-                    REQUIRE(
-                        chunk.get()[j] ==
-                        iteration.iterationIndex * length + j);
+                    REQUIRE(chunk.get()[j] == index * length + j);
                 }
             }
         }
@@ -6486,7 +6476,7 @@ void iterate_nonstreaming_series(
         size_t last_iteration_index = 0;
         // conventionally written Series must be readable with streaming-aware
         // API!
-        for (auto iteration : readSeries.readIterations())
+        for (auto &[index, iteration] : readSeries.snapshots())
         {
             // ReadIterations takes care of Iteration::open()ing iterations
             auto E_x = iteration.meshes["E"]["x"];
@@ -6506,13 +6496,13 @@ void iterate_nonstreaming_series(
                 iteration.close();
             }
 
-            int value = variableBasedLayout ? 0 : iteration.iterationIndex;
+            int value = variableBasedLayout ? 0 : index;
             for (size_t i = 0; i < extent; ++i)
             {
                 REQUIRE(chunk.get()[i] == value);
                 REQUIRE(chunk2.get()[i] == int(i));
             }
-            last_iteration_index = iteration.iterationIndex;
+            last_iteration_index = index;
         }
         REQUIRE(last_iteration_index == 9);
     }
@@ -6848,7 +6838,7 @@ void deferred_parsing(std::string const &extension)
             basename + "%06T." + extension,
             Access::READ_ONLY,
             "{\"defer_iteration_parsing\": true}");
-        for (auto iteration : series.readIterations())
+        for (auto &[index, iteration] : series.snapshots())
         {
             auto dataset =
                 iteration.meshes["E"]["x"].loadChunk<float>({0}, {20});
@@ -6859,7 +6849,7 @@ void deferred_parsing(std::string const &extension)
                     std::abs(dataset.get()[i] - float(i)) <=
                     std::numeric_limits<float>::epsilon());
             }
-            if (iteration.iterationIndex == 0)
+            if (index == 0)
             {
                 break;
             }
@@ -6927,7 +6917,7 @@ void deferred_parsing(std::string const &extension)
             basename + "." + extension,
             Access::READ_ONLY,
             "{\"defer_iteration_parsing\": true}");
-        for (auto iteration : series.readIterations())
+        for (auto &[index, iteration] : series.snapshots())
         {
             auto dataset =
                 iteration.meshes["E"]["x"].loadChunk<float>({0}, {20});
@@ -6938,7 +6928,7 @@ void deferred_parsing(std::string const &extension)
                     std::abs(dataset.get()[i] - float(i)) <=
                     std::numeric_limits<float>::epsilon());
             }
-            if (iteration.iterationIndex == 8)
+            if (index == 8)
             {
                 // reading up until iteration 8 should work
                 break;
@@ -7005,15 +6995,15 @@ void chaotic_stream(std::string const &filename, bool variableBased)
      */
     Series read(filename, Access::READ_LINEAR);
     size_t index = 0;
-    for (const auto &iteration : read.readIterations())
+    for (const auto &[iterationIndex, iteration] : read.snapshots())
     {
         if (weirdOrderWhenReading)
         {
-            REQUIRE(iteration.iterationIndex == iterations[index]);
+            REQUIRE(iterationIndex == iterations[index]);
         }
         else
         {
-            REQUIRE(iteration.iterationIndex == index);
+            REQUIRE(index == iterationIndex);
         }
         ++index;
     }
@@ -7081,11 +7071,10 @@ void unfinished_iteration_test(
             std::vector<decltype(Series::iterations)::key_type> iterations;
             std::cout << "Going to list iterations in " << file << ":"
                       << std::endl;
-            for (auto iteration : read.readIterations())
+            for (auto &[index, iteration] : read.snapshots())
             {
-                std::cout << "Seeing iteration " << iteration.iterationIndex
-                          << std::endl;
-                iterations.push_back(iteration.iterationIndex);
+                std::cout << "Seeing iteration " << index << std::endl;
+                iterations.push_back(index);
 
                 Parameter<Operation::READ_ATT> readAttribute;
                 readAttribute.name = "this_does_definitely_not_exist";
@@ -7397,9 +7386,9 @@ void append_mode(
             Series read(filename, Access::READ_LINEAR);
             unsigned counter = 0;
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
-            for (auto iteration : read.readIterations())
+            for (auto &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 verifyIteration(iteration);
                 ++counter;
             }
@@ -7410,9 +7399,9 @@ void append_mode(
             Series read(filename, Access::READ_LINEAR);
             unsigned counter = 0;
             uint64_t iterationOrder[] = {0, 1, 3, 4, 10, 11};
-            for (auto iteration : read.readIterations())
+            for (auto &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 verifyIteration(iteration);
                 ++counter;
             }
@@ -7425,9 +7414,9 @@ void append_mode(
             Series read(filename, Access::READ_LINEAR);
             unsigned counter = 0;
             uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 11};
-            for (auto iteration : read.readIterations())
+            for (auto &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 verifyIteration(iteration);
                 ++counter;
             }
@@ -7446,7 +7435,7 @@ void append_mode(
              * The BP4 engine has no way of parsing a Series step-by-step in
              * ADIOS2 without group tables, since attributes are not
              * associated with the step in which they were created.
-             * As a result, when readIterations() is called, the whole thing
+             * As a result, when snapshots() is called, the whole thing
              * is parsed immediately ahead-of-time.
              * We can then iterate through the iterations and access metadata,
              * but since the IO steps don't correspond with the order of
@@ -7456,9 +7445,9 @@ void append_mode(
              * following: 1) A Series in which the iterations are present in
              * ascending order. 2) Or accessing the Series in READ_ONLY mode.
              */
-            for (auto const &iteration : read.readIterations())
+            for (auto const &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 ++counter;
             }
             REQUIRE(counter == 8);
@@ -7482,9 +7471,9 @@ void append_mode(
         REQUIRE(read.iterations.size() == 8);
         unsigned counter = 0;
         uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
-        for (auto iteration : read.readIterations())
+        for (auto &[index, iteration] : read.snapshots())
         {
-            REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+            REQUIRE(index == iterationOrder[counter]);
             verifyIteration(iteration);
             ++counter;
         }
@@ -7519,10 +7508,9 @@ void append_mode(
             case ParseMode::LinearWithoutSnapshot: {
                 uint64_t iterationOrder[] = {0, 1, 3, 4, 10};
                 unsigned counter = 0;
-                for (auto iteration : read.readIterations())
+                for (auto &[index, iteration] : read.snapshots())
                 {
-                    REQUIRE(
-                        iteration.iterationIndex == iterationOrder[counter]);
+                    REQUIRE(index == iterationOrder[counter]);
                     verifyIteration(iteration);
                     ++counter;
                 }
@@ -7534,10 +7522,9 @@ void append_mode(
                 // of time but as they go
                 unsigned counter = 0;
                 uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 5};
-                for (auto iteration : read.readIterations())
+                for (auto &[index, iteration] : read.snapshots())
                 {
-                    REQUIRE(
-                        iteration.iterationIndex == iterationOrder[counter]);
+                    REQUIRE(index == iterationOrder[counter]);
                     verifyIteration(iteration);
                     ++counter;
                 }
@@ -7554,9 +7541,9 @@ void append_mode(
             Series read(filename, Access::READ_ONLY);
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 5, 7, 10};
             unsigned counter = 0;
-            for (auto const &iteration : read.readIterations())
+            for (auto const &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 ++counter;
             }
             REQUIRE(counter == 8);
