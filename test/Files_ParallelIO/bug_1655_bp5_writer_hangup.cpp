@@ -18,11 +18,11 @@ auto worker(std::string const &ext) -> void
 
     std::string filename = "../samples/ptl_%T." + ext;
 
-    Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+    Series series = Series(filename, Access::CREATE_LINEAR, MPI_COMM_WORLD);
 
     Datatype datatype = determineDatatype<float>();
 
-    auto myptl = series.writeIterations()[1].particles["ion"];
+    auto myptl = series.snapshots()[1].particles["ion"];
     Extent global_ptl = {10ul * mpi_size * 300};
     Dataset dataset_ptl = Dataset(datatype, global_ptl, "{}");
     myptl["charge"].resetDataset(dataset_ptl);
