@@ -1484,7 +1484,7 @@ void adios2_ssc()
             "../samples/adios2_stream.ssc", Access::READ_ONLY, local_comm);
 
         size_t last_iteration_index = 0;
-        for (auto iteration : readSeries.readIterations())
+        for (auto &[index, iteration] : readSeries.snapshots())
         {
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 2);
@@ -1496,9 +1496,9 @@ void adios2_ssc()
 
             for (size_t i = 0; i < extent; ++i)
             {
-                REQUIRE(chunk.get()[i] == int(iteration.iterationIndex));
+                REQUIRE(chunk.get()[i] == int(index));
             }
-            last_iteration_index = iteration.iterationIndex;
+            last_iteration_index = index;
         }
         REQUIRE(last_iteration_index == 9);
     }
@@ -1657,9 +1657,9 @@ void append_mode(
             Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
             unsigned counter = 0;
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
-            for (auto iteration : read.readIterations())
+            for (auto &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 verifyIteration(iteration);
                 ++counter;
             }
@@ -1670,9 +1670,9 @@ void append_mode(
             Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
             unsigned counter = 0;
             uint64_t iterationOrder[] = {0, 1, 3, 4, 10, 11};
-            for (auto iteration : read.readIterations())
+            for (auto &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 verifyIteration(iteration);
                 ++counter;
             }
@@ -1685,9 +1685,9 @@ void append_mode(
             Series read(filename, Access::READ_LINEAR, MPI_COMM_WORLD);
             unsigned counter = 0;
             uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 11};
-            for (auto iteration : read.readIterations())
+            for (auto &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 verifyIteration(iteration);
                 ++counter;
             }
@@ -1716,9 +1716,9 @@ void append_mode(
              * following: 1) A Series in which the iterations are present in
              * ascending order. 2) Or accessing the Series in READ_ONLY mode.
              */
-            for (auto const &iteration : read.readIterations())
+            for (auto const &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 ++counter;
             }
             REQUIRE(counter == 8);
@@ -1741,9 +1741,9 @@ void append_mode(
         REQUIRE(read.iterations.size() == 8);
         unsigned counter = 0;
         uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 7, 10, 11};
-        for (auto iteration : read.readIterations())
+        for (auto &[index, iteration] : read.snapshots())
         {
-            REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+            REQUIRE(index == iterationOrder[counter]);
             verifyIteration(iteration);
             ++counter;
         }
@@ -1782,10 +1782,9 @@ void append_mode(
             case ParseMode::LinearWithoutSnapshot: {
                 uint64_t iterationOrder[] = {0, 1, 3, 4, 10};
                 unsigned counter = 0;
-                for (auto iteration : read.readIterations())
+                for (auto &[index, iteration] : read.snapshots())
                 {
-                    REQUIRE(
-                        iteration.iterationIndex == iterationOrder[counter]);
+                    REQUIRE(index == iterationOrder[counter]);
                     verifyIteration(iteration);
                     ++counter;
                 }
@@ -1797,10 +1796,9 @@ void append_mode(
                 // of time but as they go
                 unsigned counter = 0;
                 uint64_t iterationOrder[] = {0, 1, 3, 2, 4, 10, 7, 5};
-                for (auto iteration : read.readIterations())
+                for (auto &[index, iteration] : read.snapshots())
                 {
-                    REQUIRE(
-                        iteration.iterationIndex == iterationOrder[counter]);
+                    REQUIRE(index == iterationOrder[counter]);
                     verifyIteration(iteration);
                     ++counter;
                 }
@@ -1818,9 +1816,9 @@ void append_mode(
             Series read(filename, Access::READ_ONLY, MPI_COMM_WORLD);
             uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 5, 7, 10};
             unsigned counter = 0;
-            for (auto const &iteration : read.readIterations())
+            for (auto const &[index, iteration] : read.snapshots())
             {
-                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
+                REQUIRE(index == iterationOrder[counter]);
                 ++counter;
             }
             REQUIRE(counter == 8);
@@ -2142,12 +2140,9 @@ TEST_CASE("adios2_flush_via_step")
             MPI_COMM_WORLD);
         std::vector<float> load_data(100 * size);
         data.resize(100 * size);
-        for (auto iteration : read.readIterations())
+        for (auto &[index, iteration] : read.snapshots())
         {
-            std::iota(
-                data.begin(),
-                data.end(),
-                iteration.iterationIndex * size * 100);
+            std::iota(data.begin(), data.end(), index * size * 100);
             iteration.meshes["E"]["x"].loadChunkRaw(
                 load_data.data(), {0, 0, 0}, {size, 10, 10});
             iteration.close();
@@ -2199,12 +2194,9 @@ TEST_CASE("adios2_flush_via_step")
             MPI_COMM_WORLD);
         std::vector<float> load_data(100 * size);
         data.resize(100 * size);
-        for (auto iteration : read.readIterations())
+        for (auto &[index, iteration] : read.snapshots())
         {
-            std::iota(
-                data.begin(),
-                data.end(),
-                iteration.iterationIndex * size * 100);
+            std::iota(data.begin(), data.end(), index * size * 100);
             iteration.meshes["E"]["x"].loadChunkRaw(
                 load_data.data(), {0, 0, 0}, {size, 10, 10});
             iteration.meshes["E"]["y"].loadChunkRaw(
