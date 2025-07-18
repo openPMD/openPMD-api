@@ -57,7 +57,7 @@ def main():
     # create a series and specify some global metadata
     # change the file extension to .json, .h5 or .bp for regular file writing
     series = io.Series("../samples/dynamicConfig.bp",
-        io.Access_Type.create_linear, defaults)
+                       io.Access_Type.create_linear, defaults)
 
     # now, write a number of iterations (or: snapshots, time steps)
     for i in range(10):
