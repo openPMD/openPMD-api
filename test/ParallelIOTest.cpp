@@ -41,6 +41,21 @@ TEST_CASE("none", "[parallel]")
 #include <tuple>
 #include <vector>
 
+// On Windows, REQUIRE() might not be able to print more complex data structures
+// upon failure:
+// CoreTest.obj : error LNK2001: unresolved external symbol
+// "class std::string const Catch::Detail::unprintableString" (...)
+#ifdef _WIN32
+#define OPENPMD_REQUIRE_GUARD_WINDOWS(...)                                     \
+    do                                                                         \
+    {                                                                          \
+        bool guarded_require_boolean = __VA_ARGS__;                            \
+        REQUIRE(guarded_require_boolean);                                      \
+    } while (0);
+#else
+#define OPENPMD_REQUIRE_GUARD_WINDOWS(...) REQUIRE(__VA_ARGS__)
+#endif
+
 using namespace openPMD;
 
 TEST_CASE("parallel_multi_series_test", "[parallel]")
@@ -2350,13 +2365,14 @@ void verifyHostnameAssignment(
     {
         for (auto const &chunk : chunks)
         {
-            REQUIRE(in.at(chunk.sourceID) == out.at(out_rank));
+            OPENPMD_REQUIRE_GUARD_WINDOWS(
+                in.at(chunk.sourceID) == out.at(out_rank));
         }
     }
     for (auto const &chunk : assignment.notAssigned)
     {
         auto const &hostname = in.at(chunk.sourceID);
-        REQUIRE(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(
             std::none_of(
                 out.begin(),
                 out.end(),
@@ -2515,7 +2531,7 @@ void run_test()
          * are running on the same nodes.
          */
         auto rankMetaIn = series.rankTable(/* collective = */ true);
-        REQUIRE(rankMetaIn == writingRanksHostnames);
+        OPENPMD_REQUIRE_GUARD_WINDOWS(rankMetaIn == writingRanksHostnames);
 
         auto E_x = series.iterations[0].meshes["E"]["x"];
         /*
@@ -2536,7 +2552,8 @@ void run_test()
             chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment(
             "ROUND ROBIN", roundRobinAssignment, readingRanksHostnames);
-        REQUIRE(equalTables(chunkTable, roundRobinAssignment));
+        OPENPMD_REQUIRE_GUARD_WINDOWS(
+            equalTables(chunkTable, roundRobinAssignment));
 
         /*
          * Assign chunks by hostname.
@@ -2560,7 +2577,7 @@ void run_test()
             "HOSTNAME, LEFTOVER",
             byHostnamePartialAssignment.notAssigned,
             rankMetaIn);
-        REQUIRE(equalDisjointByVolume(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(equalDisjointByVolume(
             chunkTable,
             // Must restrict assignment to current rank, since
             // ByHostname strategy output *may* also contain chunks from
@@ -2590,7 +2607,7 @@ void run_test()
             "HOSTNAME2, LEFTOVER",
             byHostnamePartialAssignment2.notAssigned,
             rankMetaIn);
-        REQUIRE(equalDisjointByVolume(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(equalDisjointByVolume(
             chunkTable,
             // Must restrict assignment to current rank, since
             // ByHostname strategy output *may* also contain chunks from
@@ -2622,7 +2639,7 @@ void run_test()
             "HOSTNAME WITH SECOND PASS",
             fromPartialAssignment,
             readingRanksHostnames);
-        REQUIRE(equalDisjointByVolume(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(equalDisjointByVolume(
             chunkTable,
             // Must restrict assignment to current rank, since
             // ByHostname strategy output *may* also contain chunks from
@@ -2661,7 +2678,7 @@ void run_test()
         auto blocksAssignment = blocksStrategy.assign(
             chunkTable, rankMetaIn, readingRanksHostnames, mpi_rank, mpi_size);
         printAssignment("BLOCKS", blocksAssignment, readingRanksHostnames);
-        REQUIRE(equalDisjointByVolume(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(equalDisjointByVolume(
             chunkTable, blocksAssignment, std::nullopt, MPI_COMM_WORLD));
 
         BlocksOfSourceRanks blocksOfSourceRanksStrategy;
@@ -2671,7 +2688,7 @@ void run_test()
             "BLOCKS OF SOURCE RANKS",
             blocksOfSourceRanksAssignment,
             readingRanksHostnames);
-        REQUIRE(equalDisjointByVolume(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(equalDisjointByVolume(
             chunkTable,
             blocksOfSourceRanksAssignment,
             std::nullopt,

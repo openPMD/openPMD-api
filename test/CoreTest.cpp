@@ -190,7 +190,7 @@ void verifyHostnameAssignment(
     for (auto const &chunk : assignment.notAssigned)
     {
         auto const &hostname = in.at(chunk.sourceID);
-        REQUIRE(
+        OPENPMD_REQUIRE_GUARD_WINDOWS(
             std::none_of(
                 out.begin(),
                 out.end(),
@@ -215,7 +215,8 @@ TEST_CASE("chunk_assignment", "[core]")
     PartialAssignment partial_res1 = byHostname.assign(
         params.table, params.metaSource, params.metaSink, 0, 2);
 
-    REQUIRE(partial_res0.notAssigned == partial_res1.notAssigned);
+    OPENPMD_REQUIRE_GUARD_WINDOWS(
+        partial_res0.notAssigned == partial_res1.notAssigned);
     PartialAssignment partial_res{
         partial_res0.notAssigned,
         {{0, partial_res0.assigned[0]}, {1, partial_res1.assigned[1]}}};
@@ -231,7 +232,8 @@ TEST_CASE("chunk_assignment", "[core]")
         params.table, params.metaSource, params.metaSink, 1, 2);
     Assignment res = {{0, res0[0]}, {1, res1[1]}};
 
-    REQUIRE(test_chunk_assignment::equalTables(params.table, res));
+    OPENPMD_REQUIRE_GUARD_WINDOWS(
+        test_chunk_assignment::equalTables(params.table, res));
 
     test_chunk_assignment::print(params.metaSink, res1);
 }
