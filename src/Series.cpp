@@ -3300,7 +3300,6 @@ void Series::parseBase()
     readIterations();
 }
 
-// TODO: ensure backwards compatibility
 WriteIterations Series::writeIterations()
 {
     auto const access = IOHandler()->m_frontendAccess;

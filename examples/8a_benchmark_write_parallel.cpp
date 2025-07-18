@@ -693,6 +693,11 @@ void AbstractPattern::run()
             for (int step = 1; step <= m_Input.m_Steps; step++)
             {
                 setLayOut(step);
+                // Specify CREATE_LINEAR (instead of CREATE_RANDOM_ACCESS) to
+                // create one Iteration/Snapshot after another, synchronously.
+                // This means that the Series will have exactly one output
+                // Iteration open at a time, a necessity for creating steps in
+                // ADIOS2, as well as for further optimizations.
                 Series series =
                     Series(filename, Access::CREATE_LINEAR, MPI_COMM_WORLD);
                 series.setIterationEncoding(m_Input.m_Encoding);
@@ -713,6 +718,11 @@ void AbstractPattern::run()
             std::string tag = "Writing a single file:" + filename;
             Timer kk(tag.c_str(), m_Input.m_MPIRank);
 
+            // Specify CREATE_LINEAR (instead of CREATE_RANDOM_ACCESS) to
+            // create one Iteration/Snapshot after another, synchronously.
+            // This means that the Series will have exactly one output
+            // Iteration open at a time, a necessity for creating steps in
+            // ADIOS2, as well as for further optimizations.
             Series series =
                 Series(filename, Access::CREATE_LINEAR, MPI_COMM_WORLD);
             series.setIterationEncoding(m_Input.m_Encoding);
@@ -748,11 +758,6 @@ void AbstractPattern::store(Series &series, int step)
     std::string scalar = openPMD::MeshRecordComponent::SCALAR;
     storeMesh(series, step, field_rho, scalar);
 
-    // `Series::writeIterations()` and `Series::readIterations()` are
-    // intentionally restricted APIs that ensure a workflow which also works
-    // in streaming setups, e.g. an iteration cannot be opened again once
-    // it has been closed.
-    // `Series::iterations` can be directly accessed in random-access workflows.
     ParticleSpecies &currSpecies = series.snapshots()[step].particles["ion"];
     storeParticles(currSpecies, step);
 
@@ -774,11 +779,6 @@ void AbstractPattern::storeMesh(
     const std::string &fieldName,
     const std::string &compName)
 {
-    // `Series::writeIterations()` and `Series::readIterations()` are
-    // intentionally restricted APIs that ensure a workflow which also works
-    // in streaming setups, e.g. an iteration cannot be opened again once
-    // it has been closed.
-    // `Series::iterations` can be directly accessed in random-access workflows.
     MeshRecordComponent compA =
         series.snapshots()[step].meshes[fieldName][compName];
     Datatype datatype = determineDatatype<double>();

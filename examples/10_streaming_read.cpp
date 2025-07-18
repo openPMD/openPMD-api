@@ -57,7 +57,6 @@ int main()
 
         // The iteration can be closed in order to help free up resources.
         // The iteration's content will be flushed automatically.
-        // An iteration once closed cannot (yet) be reopened.
         iteration.close();
 
         for (size_t i = 0; i < 3; ++i)

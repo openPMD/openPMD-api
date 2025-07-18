@@ -20,13 +20,6 @@ if __name__ == "__main__":
     series = io.Series("simData.sst", io.Access_Type.read_linear, config)
 
     # Read all available iterations and print electron position data.
-    # Direct access to iterations is possible via `series.iterations`.
-    # For streaming support, `series.read_iterations()` needs to be used
-    # instead of `series.iterations`.
-    # `Series.write_iterations()` and `Series.read_iterations()` are
-    # intentionally restricted APIs that ensure a workflow which also works
-    # in streaming setups, e.g. an iteration cannot be opened again once
-    # it has been closed.
     for index, iteration in series.snapshots().items():
         print("Current iteration {}".format(index))
         electronPositions = iteration.particles["e"]["position"]

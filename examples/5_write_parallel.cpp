@@ -70,14 +70,9 @@ chunks = "auto"
              << " MPI ranks\n";
 
     // In parallel contexts, it's important to explicitly open iterations.
-    // You can either explicitly access Series::iterations and use
-    // Iteration::open() afterwards, or use `Series::writeIterations()`,
-    // or in read mode `Series::readIterations()` where iterations are opened
-    // automatically.
-    // `Series::writeIterations()` and `Series::readIterations()` are
-    // intentionally restricted APIs that ensure a workflow which also works
-    // in streaming setups, e.g. an iteration cannot be opened again once
-    // it has been closed.
+    // However, we use Access mode CREATE_LINEAR, so the Series creates
+    // Iterations collectively and always has at most one Iteration active
+    // at a time.
     series.snapshots()[1].open();
     Mesh mymesh = series.snapshots()[1].meshes["mymesh"];
 
@@ -109,7 +104,8 @@ chunks = [10, 100]
 
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
-    // An iteration once closed cannot (yet) be reopened.
+    // In writing, (restricted) support for reopening Iterations once closed
+    // depends on the Iteration encoding and the backend.
     series.snapshots()[100].close();
 
     if (0 == mpi_rank)

@@ -19,11 +19,6 @@ void span_write(std::string const &filename)
 
     std::vector<position_t> fallbackBuffer;
 
-    // `Series::writeIterations()` and `Series::readIterations()` are
-    // intentionally restricted APIs that ensure a workflow which also works
-    // in streaming setups, e.g. an iteration cannot be opened again once
-    // it has been closed.
-    // `Series::iterations` can be directly accessed in random-access workflows.
     Snapshots iterations = series.snapshots();
     for (size_t i = 0; i < 10; ++i)
     {

@@ -33,21 +33,10 @@ int main()
     std::cout << '\n';
 
     std::cout << "Read iterations in basePath:\n";
-    /*
-     * A classical loop over the C++-style container
-     * Direct access to o.iterations allows random-access into all data.
-     */
     for (auto const &i : o.snapshots())
         std::cout << '\t' << i.first << '\n';
     std::cout << '\n';
 
-    /*
-     * A loop that uses o.readIterations().
-     * This loop is MPI collective and will open and close iterations
-     * automatically (closing manually is still recommended before long compute
-     * operations in order to release data as soon as possible).
-     * An iteration once closed can not (yet) be re-opened.
-     */
     for (auto &[index, i] : o.snapshots())
     {
         std::cout << "Read attributes in iteration " << index << ":\n";
@@ -181,9 +170,6 @@ int main()
 
         // The iteration can be closed in order to help free up resources.
         // The iteration's content will be flushed automatically.
-        // An iteration once closed cannot (yet) be reopened.
-        // Since we're using `Series::readIterations()`, this would also happen
-        // automatically upon the next iteration.
         i.close();
     }
 

@@ -56,18 +56,15 @@ def main():
 
     # create a series and specify some global metadata
     # change the file extension to .json, .h5 or .bp for regular file writing
-    series = io.Series("../samples/dynamicConfig.bp", io.Access_Type.create,
-                       defaults)
+    series = io.Series("../samples/dynamicConfig.bp",
+        io.Access_Type.create_linear, defaults)
 
     # now, write a number of iterations (or: snapshots, time steps)
     for i in range(10):
-        # Direct access to iterations is possible via `series.iterations`.
-        # For streaming support, `series.write_iterations()` needs to be used
-        # instead of `series.iterations`.
-        # `Series.write_iterations()` and `Series.read_iterations()` are
-        # intentionally restricted APIs that ensure a workflow which also works
-        # in streaming setups, e.g. an iteration cannot be opened again once
-        # it has been closed.
+        # Direct access to iterations is possible via `series.snapshots()`.
+        # Access.create_linear ensures that at most one
+        # Iteration/Snapshot is active at any given time, which is necessary
+        # supporting ADIOS2 steps, and also enables further optimizations.
         iteration = series.snapshots()[i]
 
         #######################
@@ -134,7 +131,7 @@ def main():
         # After closing the iteration, the readers can see the iteration.
         # It can no longer be modified.
         # If not closing an iteration explicitly, it will be implicitly closed
-        # upon creating the next iteration.
+        # upon creating the next iteration due to the use of create_linear.
         iteration.close()
 
     # The files in 'series' are still open until the object is destroyed, on

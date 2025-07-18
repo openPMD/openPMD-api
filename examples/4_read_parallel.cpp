@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
 
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
-    // An iteration once closed cannot (yet) be reopened.
     series.snapshots()[100].close();
 
     if (0 == mpi_rank)

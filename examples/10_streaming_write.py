@@ -26,13 +26,6 @@ if __name__ == "__main__":
 
     # now, write a number of iterations (or: snapshots, time steps)
     for i in range(10):
-        # Direct access to iterations is possible via `series.iterations`.
-        # For streaming support, `series.write_iterations()` needs to be used
-        # instead of `series.iterations`.
-        # `Series.write_iterations()` and `Series.read_iterations()` are
-        # intentionally restricted APIs that ensure a workflow which also works
-        # in streaming setups, e.g. an iteration cannot be opened again once
-        # it has been closed.
         iteration = series.snapshots()[i]
 
         #######################

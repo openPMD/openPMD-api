@@ -28,13 +28,7 @@ if __name__ == "__main__":
     print("Created an empty {0} Series".format(series.iteration_encoding))
 
     print(len(series.iterations))
-    # `Series.write_iterations()` and `Series.read_iterations()` are
-    # intentionally restricted APIs that ensure a workflow which also works
-    # in streaming setups, e.g. an iteration cannot be opened again once
-    # it has been closed.
-    # `Series.iterations` can be directly accessed in random-access workflows.
-    rho = series.snapshots()[1]. \
-        meshes["rho"]
+    rho = series.snapshots()[1].meshes["rho"]
 
     dataset = io.Dataset(data.dtype, data.shape)
 
@@ -54,7 +48,11 @@ if __name__ == "__main__":
 
     # The iteration can be closed in order to help free up resources.
     # The iteration's content will be flushed automatically.
-    # An iteration once closed cannot (yet) be reopened.
+    # Since we are using access mode CREATE_LINEAR which has at most one
+    # Iteration open at a time, this would happen automatically upon
+    # creating the next Iteration.
+    # In writing, restricted support for reopening Iterations once closed
+    # depends on the Iteration encoding and the backend.
     series.snapshots()[1].close()
     print("Dataset content has been fully written")
 

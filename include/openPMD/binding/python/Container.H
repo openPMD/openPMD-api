@@ -116,40 +116,6 @@ py::class_<Map, std::unique_ptr<Map>, Args...> declare_container(
     return cl;
 }
 
-template <typename Class, typename SFINAE = void>
-struct has_erase
-{
-    constexpr static bool value = false;
-};
-template <typename Class>
-struct has_erase<
-    Class,
-    std::void_t<decltype(std::declval<Class>().erase(
-        std::declval<typename Class::iterator>()))>>
-{
-    constexpr static bool value = true;
-};
-template <typename Class>
-constexpr bool has_erase_v = has_erase<Class, void>::value;
-
-template <typename Class, typename SFINAE = void>
-struct has_emplace
-{
-    constexpr static bool value = false;
-    // using type = std::void_t<decltype(std::declval<Class>().emplace(
-    //     std::declval<typename Class::value_type>()))>;
-};
-template <typename Class>
-struct has_emplace<
-    Class,
-    std::void_t<decltype(std::declval<Class>().emplace(
-        std::declval<typename Class::value_type>()))>>
-{
-    constexpr static bool value = true;
-};
-template <typename Class>
-constexpr bool has_emplace_v = has_emplace<Class, void>::value;
-
 template <typename Map, typename Class_>
 Class_ finalize_container(Class_ cl, bool skip_getitem = false)
 {

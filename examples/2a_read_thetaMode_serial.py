@@ -55,7 +55,6 @@ if __name__ == "__main__":
 
     # The iteration can be closed in order to help free up resources.
     # The iteration's content will be flushed automatically.
-    # An iteration once closed cannot (yet) be reopened.
     # Alternatively, one can call `series.close()` to the same effect as
     # calling the destructor, including the release of file handles.
     i.close()
