@@ -122,7 +122,7 @@ namespace detail
 template <typename Char>
 void writeChar(Series &series, std::string const &component_name)
 {
-    auto component = series.writeIterations()[0].meshes["E"][component_name];
+    auto component = series.snapshots()[0].meshes["E"][component_name];
     std::vector<Char> data(10);
     component.resetDataset({determineDatatype<Char>(), {10}});
     component.storeChunk(data, {0}, {10});
@@ -144,7 +144,8 @@ void readChar(Series &series, std::string const &component_name)
 
 void char_roundtrip(std::string const &extension)
 {
-    Series write("../samples/char_rountrip." + extension, Access::CREATE);
+    Series write(
+        "../samples/char_rountrip." + extension, Access::CREATE_LINEAR);
     ::detail::writeChar<char>(write, "char");
     ::detail::writeChar<unsigned char>(write, "uchar");
     ::detail::writeChar<signed char>(write, "schar");
@@ -278,8 +279,8 @@ TEST_CASE("multi_series_test", "[serial]")
                     .append(std::to_string(sn))
                     .append(".")
                     .append(file_ending),
-                Access::CREATE);
-            allSeries.back().writeIterations()[sn].setAttribute("wululu", sn);
+                Access::CREATE_LINEAR);
+            allSeries.back().snapshots()[sn].setAttribute("wululu", sn);
             allSeries.back().flush();
         }
     }
@@ -622,7 +623,7 @@ void close_and_copy_attributable_test(std::string const &file_ending)
     using position_t = int;
 
     // open file for writing
-    Series series("electrons." + file_ending, Access::CREATE);
+    Series series("electrons." + file_ending, Access::CREATE_LINEAR);
 
     Datatype datatype = determineDatatype<position_t>();
     constexpr unsigned long length = 10ul;
@@ -636,13 +637,12 @@ void close_and_copy_attributable_test(std::string const &file_ending)
     {
         if (iteration_ptr)
         {
-            *iteration_ptr = series.writeIterations()[i];
+            *iteration_ptr = series.snapshots()[i];
         }
         else
         {
             // use copy constructor
-            iteration_ptr =
-                std::make_unique<Iteration>(series.writeIterations()[i]);
+            iteration_ptr = std::make_unique<Iteration>(series.snapshots()[i]);
         }
         Record electronPositions = iteration_ptr->particles["e"]["position"];
         // TODO set this automatically to zero if not provided
@@ -779,23 +779,20 @@ inline void empty_dataset_test(std::string const &file_ending)
 {
     {
         Series series(
-            "../samples/empty_datasets." + file_ending, Access::CREATE);
+            "../samples/empty_datasets." + file_ending, Access::CREATE_LINEAR);
 
         auto makeEmpty_dim_7_int =
-            series.writeIterations()[1].meshes["rho"]["makeEmpty_dim_7_int"];
+            series.snapshots()[1].meshes["rho"]["makeEmpty_dim_7_int"];
         auto makeEmpty_dim_7_long =
-            series.writeIterations()[1].meshes["rho"]["makeEmpty_dim_7_bool"];
+            series.snapshots()[1].meshes["rho"]["makeEmpty_dim_7_bool"];
         auto makeEmpty_dim_7_int_alt =
-            series.writeIterations()[1]
-                .meshes["rho"]["makeEmpty_dim_7_int_alt"];
+            series.snapshots()[1].meshes["rho"]["makeEmpty_dim_7_int_alt"];
         auto makeEmpty_dim_7_long_alt =
-            series.writeIterations()[1]
-                .meshes["rho"]["makeEmpty_dim_7_bool_alt"];
+            series.snapshots()[1].meshes["rho"]["makeEmpty_dim_7_bool_alt"];
         auto makeEmpty_resetDataset_dim3 =
-            series.writeIterations()[1]
-                .meshes["rho"]["makeEmpty_resetDataset_dim3"];
+            series.snapshots()[1].meshes["rho"]["makeEmpty_resetDataset_dim3"];
         auto makeEmpty_resetDataset_dim3_notallzero =
-            series.writeIterations()[1]
+            series.snapshots()[1]
                 .meshes["rho"]["makeEmpty_resetDataset_dim3_notallzero"];
         makeEmpty_dim_7_int.makeEmpty<int>(7);
         makeEmpty_dim_7_long.makeEmpty<long>(7);
@@ -897,21 +894,20 @@ inline void constant_scalar(std::string const &file_ending)
 
     {
         // constant scalar
-        Series s =
-            Series("../samples/constant_scalar." + file_ending, Access::CREATE);
+        Series s = Series(
+            "../samples/constant_scalar." + file_ending, Access::CREATE_LINEAR);
         s.setOpenPMD("2.0.0");
-        auto rho =
-            s.writeIterations()[1].meshes["rho"][MeshRecordComponent::SCALAR];
-        REQUIRE(s.writeIterations()[1].meshes["rho"].scalar());
+        auto rho = s.snapshots()[1].meshes["rho"][MeshRecordComponent::SCALAR];
+        REQUIRE(s.snapshots()[1].meshes["rho"].scalar());
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
         rho.makeConstant(static_cast<char>('a'));
         REQUIRE(rho.constant());
 
         // mixed constant/non-constant
-        auto E_x = s.writeIterations()[1].meshes["E"]["x"];
+        auto E_x = s.snapshots()[1].meshes["E"]["x"];
         E_x.resetDataset(Dataset(Datatype::FLOAT, {1, 2, 3}));
         E_x.makeConstant(static_cast<float>(13.37));
-        auto E_y = s.writeIterations()[1].meshes["E"]["y"];
+        auto E_y = s.snapshots()[1].meshes["E"]["y"];
         E_y.resetDataset(Dataset(Datatype::UINT, {1, 2, 3}));
         UniquePtrWithLambda<unsigned int> E(
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
@@ -920,7 +916,7 @@ inline void constant_scalar(std::string const &file_ending)
         E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
 
         // store a number of predefined attributes in E
-        Mesh &E_mesh = s.writeIterations()[1].meshes["E"];
+        Mesh &E_mesh = s.snapshots()[1].meshes["E"];
         // test that these can be defined successively
         E_mesh.setGridUnitDimension({{{UnitDimension::L, 1}}, {}, {}});
         E_mesh.setGridUnitDimension(
@@ -945,21 +941,21 @@ inline void constant_scalar(std::string const &file_ending)
             std::vector<double>{gridUnitSI, gridUnitSI, gridUnitSI});
 
         // constant scalar
-        auto pos = s.writeIterations()[1]
+        auto pos = s.snapshots()[1]
                        .particles["e"]["position"][RecordComponent::SCALAR];
         pos.resetDataset(Dataset(Datatype::DOUBLE, {3, 2, 1}));
         pos.makeConstant(static_cast<double>(42.));
         auto posOff =
-            s.writeIterations()[1]
+            s.snapshots()[1]
                 .particles["e"]["positionOffset"][RecordComponent::SCALAR];
         posOff.resetDataset(Dataset(Datatype::INT, {3, 2, 1}));
         posOff.makeConstant(static_cast<int>(-42));
 
         // mixed constant/non-constant
-        auto vel_x = s.writeIterations()[1].particles["e"]["velocity"]["x"];
+        auto vel_x = s.snapshots()[1].particles["e"]["velocity"]["x"];
         vel_x.resetDataset(Dataset(Datatype::SHORT, {3, 2, 1}));
         vel_x.makeConstant(static_cast<short>(-1));
-        auto vel_y = s.writeIterations()[1].particles["e"]["velocity"]["y"];
+        auto vel_y = s.snapshots()[1].particles["e"]["velocity"]["y"];
         vel_y.resetDataset(Dataset(Datatype::ULONGLONG, {3, 2, 1}));
         UniquePtrWithLambda<unsigned long long> vel(
             new unsigned long long[6],
@@ -1147,8 +1143,8 @@ TEST_CASE("flush_without_position_positionOffset", "[serial]")
         const std::string &file_ending = t;
         Series s = Series(
             "../samples/flush_without_position_positionOffset." + file_ending,
-            Access::CREATE);
-        ParticleSpecies e = s.writeIterations()[0].particles["e"];
+            Access::CREATE_LINEAR);
+        ParticleSpecies e = s.snapshots()[0].particles["e"];
         RecordComponent weighting = e["weighting"][RecordComponent::SCALAR];
         weighting.resetDataset(Dataset(Datatype::FLOAT, Extent{2, 2}));
         weighting.storeChunk(
@@ -1288,13 +1284,13 @@ inline void dtype_test(
         Series s = activateTemplateMode.has_value()
             ? Series(
                   "../samples/dtype_test." + backend,
-                  Access::CREATE,
+                  Access::CREATE_LINEAR,
                   activateTemplateMode.value())
             :
             // test TOML long attribute mode by default
             Series(
                 "../samples/dtype_test." + backend,
-                Access::CREATE,
+                Access::CREATE_LINEAR,
                 R"({"toml":{"attribute":{"mode":"long"}}})");
         char c = 'c';
         s.setAttribute("char", c);
@@ -1409,7 +1405,7 @@ inline void dtype_test(
         // should be possible to parse without error upon opening
         // the series for reading
         {
-            auto E = s.writeIterations()[0].meshes["E"];
+            auto E = s.snapshots()[0].meshes["E"];
             E.setGridSpacing(std::vector<long double>{1.0, 1.0});
             auto E_x = E["x"];
             E_x.makeEmpty<double>(1);
@@ -1621,10 +1617,10 @@ inline void write_test(
          host_info::byMethod(
              host_info::methodFromStringDescription("posix_hostname", false))}};
 #endif
-    Series o =
-        Series("../samples/serial_write." + backend, Access::CREATE, jsonCfg);
+    Series o = Series(
+        "../samples/serial_write." + backend, Access::CREATE_LINEAR, jsonCfg);
 
-    ParticleSpecies &e_1 = o.writeIterations()[1].particles["e"];
+    ParticleSpecies &e_1 = o.snapshots()[1].particles["e"];
 
     std::vector<double> position_global(4);
     double pos{0.};
@@ -1659,7 +1655,7 @@ inline void write_test(
         e_1["positionOffset"]["x"].storeChunk(positionOffset_local_1, {i}, {1});
     }
 
-    ParticleSpecies &e_2 = o.writeIterations()[2].particles["e"];
+    ParticleSpecies &e_2 = o.snapshots()[2].particles["e"];
 
     std::generate(position_global.begin(), position_global.end(), [&pos] {
         return pos++;
@@ -1690,7 +1686,7 @@ inline void write_test(
 
     o.flush();
 
-    ParticleSpecies &e_3 = o.writeIterations()[3].particles["e"];
+    ParticleSpecies &e_3 = o.snapshots()[3].particles["e"];
 
     std::generate(position_global.begin(), position_global.end(), [&pos] {
         return pos++;
@@ -1792,15 +1788,15 @@ void test_complex(const std::string &backend)
 {
     {
         Series o = Series(
-            "../samples/serial_write_complex." + backend, Access::CREATE);
+            "../samples/serial_write_complex." + backend,
+            Access::CREATE_LINEAR);
         o.setAttribute("lifeIsComplex", std::complex<double>(4.56, 7.89));
         o.setAttribute("butComplexFloats", std::complex<float>(42.3, -99.3));
         if (o.backend() != "ADIOS2")
             o.setAttribute(
                 "longDoublesYouSay", std::complex<long double>(5.5, -4.55));
 
-        auto Cflt =
-            o.writeIterations()[0].meshes["Cflt"][RecordComponent::SCALAR];
+        auto Cflt = o.snapshots()[0].meshes["Cflt"][RecordComponent::SCALAR];
         std::vector<std::complex<float>> cfloats(3);
         cfloats.at(0) = {1., 2.};
         cfloats.at(1) = {-3., 4.};
@@ -1808,8 +1804,7 @@ void test_complex(const std::string &backend)
         Cflt.resetDataset(Dataset(Datatype::CFLOAT, {cfloats.size()}));
         Cflt.storeChunk(cfloats, {0});
 
-        auto Cdbl =
-            o.writeIterations()[0].meshes["Cdbl"][RecordComponent::SCALAR];
+        auto Cdbl = o.snapshots()[0].meshes["Cdbl"][RecordComponent::SCALAR];
         std::vector<std::complex<double>> cdoubles(3);
         cdoubles.at(0) = {2., 1.};
         cdoubles.at(1) = {-4., 3.};
@@ -1821,7 +1816,7 @@ void test_complex(const std::string &backend)
         if (o.backend() != "ADIOS2")
         {
             auto Cldbl =
-                o.writeIterations()[0].meshes["Cldbl"][RecordComponent::SCALAR];
+                o.snapshots()[0].meshes["Cldbl"][RecordComponent::SCALAR];
             cldoubles.at(0) = {3., 2.};
             cldoubles.at(1) = {-5., 4.};
             cldoubles.at(2) = {7., -6.};
@@ -2469,9 +2464,10 @@ TEST_CASE("bool_test", "[serial]")
 
 inline void patch_test(const std::string &backend)
 {
-    Series o = Series("../samples/serial_patch." + backend, Access::CREATE);
+    Series o =
+        Series("../samples/serial_patch." + backend, Access::CREATE_LINEAR);
 
-    auto e = o.writeIterations()[1].particles["e"];
+    auto e = o.snapshots()[1].particles["e"];
 
     uint64_t const num_particles = 1u;
     auto dset_d = Dataset(Datatype::DOUBLE, {num_particles});
@@ -4303,11 +4299,11 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
     std::vector<int32_t> data(size, 10);
     Datatype dtype = determineDatatype<int32_t>();
     {
-        Series write("../samples/bp5_flush.bp", Access::CREATE, cfg);
+        Series write("../samples/bp5_flush.bp", Access::CREATE_LINEAR, cfg);
 
         {
             auto component =
-                write.writeIterations()[0]
+                write.snapshots()[0]
                     .meshes["e_chargeDensity"][RecordComponent::SCALAR];
             component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
@@ -4330,7 +4326,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
 
         {
             auto component =
-                write.writeIterations()[0]
+                write.snapshots()[0]
                     .meshes["i_chargeDensity"][RecordComponent::SCALAR];
             component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
@@ -4365,7 +4361,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
 
         {
             auto component =
-                write.writeIterations()[0]
+                write.snapshots()[0]
                     .meshes["temperature"][RecordComponent::SCALAR];
             component.resetDataset({dtype, {size}});
             component.storeChunk(data, {0}, {size});
@@ -4399,7 +4395,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         std::copy_n(data.data(), size, copied_as_unique.get());
         {
             auto component =
-                write.writeIterations()[0]
+                write.snapshots()[0]
                     .meshes["temperature"][RecordComponent::SCALAR];
             component.resetDataset({dtype, {size}});
             component.storeChunk(std::move(copied_as_unique), {0}, {size});
@@ -4546,12 +4542,12 @@ TEST_CASE("adios2_flush_via_step")
 {
     Series write(
         "../samples/adios2_flush_via_step/simData_%T.bp5",
-        Access::CREATE,
+        Access::CREATE_LINEAR,
         R"(adios2.engine.parameters.FlattenSteps = "on")");
     std::vector<float> data(10);
     for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
     {
-        Iteration it = write.writeIterations()[i];
+        Iteration it = write.snapshots()[i];
         auto E_x = it.meshes["E"]["x"];
         E_x.resetDataset({Datatype::FLOAT, {10, 10}});
         for (Extent::value_type j = 0; j < 10; ++j)
@@ -4592,7 +4588,7 @@ TEST_CASE("adios2_flush_via_step")
 
     write = Series(
         "../samples/adios2_flush_via_step/simData_%T.bp5",
-        Access::APPEND,
+        Access::APPEND_LINEAR,
         R"(
             [adios2.engine]
             access_mode = "append"
@@ -4600,7 +4596,7 @@ TEST_CASE("adios2_flush_via_step")
         )");
     for (Iteration::IterationIndex_t i = 0; i < 5; ++i)
     {
-        Iteration it = write.writeIterations()[i];
+        Iteration it = write.snapshots()[i];
         auto E_x = it.meshes["E"]["y"];
         E_x.resetDataset({Datatype::FLOAT, {10, 10}});
         for (Extent::value_type j = 0; j < 10; ++j)
@@ -4797,9 +4793,9 @@ TEST_CASE("adios2_engines_and_file_endings")
             {
                 Series write(
                     name,
-                    Access::CREATE,
+                    Access::CREATE_LINEAR,
                     json::merge("backend = \"adios2\"", jsonCfg));
-                write.writeIterations()[0];
+                write.snapshots()[0];
             }
             if (directory)
             {
@@ -4874,8 +4870,8 @@ TEST_CASE("adios2_engines_and_file_endings")
             auto filesystemname =
                 basename + "_0" + (filesystemExt.empty() ? ext : filesystemExt);
             {
-                Series write(name, Access::CREATE, jsonCfg);
-                write.writeIterations()[0];
+                Series write(name, Access::CREATE_LINEAR, jsonCfg);
+                write.snapshots()[0];
             }
             if (directory)
             {
@@ -5152,8 +5148,8 @@ void bp4_steps(
     std::optional<Access> access = Access::READ_ONLY)
 {
     {
-        Series writeSeries(file, Access::CREATE, options_write);
-        auto iterations = writeSeries.writeIterations();
+        Series writeSeries(file, Access::CREATE_LINEAR, options_write);
+        auto iterations = writeSeries.snapshots();
         for (size_t i = 0; i < 10; ++i)
         {
             auto iteration = iterations[i];
@@ -5250,13 +5246,13 @@ void serial_iterator(std::string const &file)
     {
         Series writeSeries(
             file,
-            Access::CREATE
+            Access::CREATE_LINEAR
 #ifndef _WIN32
             ,
             R"({"rank_table": "posix_hostname"})"
 #endif
         );
-        auto iterations = writeSeries.writeIterations();
+        auto iterations = writeSeries.snapshots();
         for (size_t i = 0; i < 10; ++i)
         {
             auto iteration = iterations[i];
@@ -5325,9 +5321,9 @@ void variableBasedSingleIteration(std::string const &file)
     {
         Series writeSeries(
             file,
-            Access::CREATE,
+            Access::CREATE_LINEAR,
             R"({"iteration_encoding": "variable_based"})");
-        auto iterations = writeSeries.writeIterations();
+        auto iterations = writeSeries.snapshots();
         auto iteration = iterations[0];
         auto E_x = iteration.meshes["E"]["x"];
         E_x.resetDataset(openPMD::Dataset(openPMD::Datatype::INT, {1000}));
@@ -5765,12 +5761,12 @@ void adios2_group_table(
 {
     Series write(
         "../samples/group_table.bp",
-        Access::CREATE,
+        Access::CREATE_LINEAR,
         json::merge(R"(iteration_encoding = "variable_based")", jsonWrite));
     // write E_x and E_y in iteration 0, only E_x in iteration 1
-    write.writeIterations()[0].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
-    write.writeIterations()[0].meshes["E"]["y"].makeEmpty(Datatype::FLOAT, 1);
-    write.writeIterations()[1].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
+    write.snapshots()[0].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
+    write.snapshots()[0].meshes["E"]["y"].makeEmpty(Datatype::FLOAT, 1);
+    write.snapshots()[1].meshes["E"]["x"].makeEmpty(Datatype::FLOAT, 1);
     write.close();
 
     size_t counter = 0;
@@ -5824,13 +5820,13 @@ void variableBasedSeries(std::string const &file)
 {
     constexpr Extent::value_type extent = 1000;
     auto testWrite = [&file](std::string const &jsonConfig) {
-        Series writeSeries(file, Access::CREATE, jsonConfig);
+        Series writeSeries(file, Access::CREATE_LINEAR, jsonConfig);
         writeSeries.setAttribute("some_global", "attribute");
         writeSeries.setIterationEncoding(IterationEncoding::variableBased);
         REQUIRE(
             writeSeries.iterationEncoding() ==
             IterationEncoding::variableBased);
-        auto iterations = writeSeries.writeIterations();
+        auto iterations = writeSeries.snapshots();
         bool is_not_adios2 = writeSeries.backend() != "ADIOS2";
         for (size_t i = 0; i < 10; ++i)
         {
@@ -6149,8 +6145,8 @@ void variableBasedParticleData()
 
     {
         // open file for writing
-        Series series =
-            Series("../samples/variableBasedParticles.bp", Access::CREATE);
+        Series series = Series(
+            "../samples/variableBasedParticles.bp", Access::CREATE_LINEAR);
         series.setIterationEncoding(IterationEncoding::variableBased);
 
         Datatype datatype = determineDatatype<position_t>();
@@ -6160,7 +6156,7 @@ void variableBasedParticleData()
             new position_t[length],
             [](position_t const *ptr) { delete[] ptr; });
 
-        WriteIterations iterations = series.writeIterations();
+        Snapshots iterations = series.snapshots();
         for (size_t i = 0; i < 10; ++i)
         {
             Iteration iteration = iterations[i];
@@ -6225,9 +6221,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 {
     // automatically (de)activate span-based storeChunking
     {
-        Series write("../samples/span_based.bp", Access::CREATE);
-        auto E_uncompressed = write.writeIterations()[0].meshes["E"]["x"];
-        auto E_compressed = write.writeIterations()[0].meshes["E"]["y"];
+        Series write("../samples/span_based.bp", Access::CREATE_LINEAR);
+        auto E_uncompressed = write.snapshots()[0].meshes["E"]["x"];
+        auto E_compressed = write.snapshots()[0].meshes["E"]["y"];
 
         Dataset ds{Datatype::INT, {10}};
 
@@ -6276,9 +6272,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
     "use_span_based_put": true
   }
 })END";
-        Series write("../samples/span_based.bp", Access::CREATE, enable);
-        auto E_uncompressed = write.writeIterations()[0].meshes["E"]["x"];
-        auto E_compressed = write.writeIterations()[0].meshes["E"]["y"];
+        Series write("../samples/span_based.bp", Access::CREATE_LINEAR, enable);
+        auto E_uncompressed = write.snapshots()[0].meshes["E"]["x"];
+        auto E_compressed = write.snapshots()[0].meshes["E"]["y"];
 
         Dataset ds{Datatype::INT, {10}};
 
@@ -6340,9 +6336,10 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
     "use_span_based_put": false
   }
 })END";
-        Series write("../samples/span_based.bp", Access::CREATE, disable);
-        auto E_uncompressed = write.writeIterations()[0].meshes["E"]["x"];
-        auto E_compressed = write.writeIterations()[0].meshes["E"]["y"];
+        Series write(
+            "../samples/span_based.bp", Access::CREATE_LINEAR, disable);
+        auto E_uncompressed = write.snapshots()[0].meshes["E"]["x"];
+        auto E_compressed = write.snapshots()[0].meshes["E"]["y"];
 
         Dataset ds{Datatype::INT, {10}};
 
@@ -6396,7 +6393,7 @@ void iterate_nonstreaming_series(
     {
         Series writeSeries(
             file,
-            Access::CREATE,
+            Access::CREATE_LINEAR,
             /*
              * The ADIOS2 backend deactivates the Span API by default due to
              * this bug: https://github.com/ornladios/ADIOS2/issues/4586,
@@ -6409,8 +6406,8 @@ void iterate_nonstreaming_series(
         {
             writeSeries.setIterationEncoding(IterationEncoding::variableBased);
         }
-        // use conventional API to write iterations
-        auto iterations = writeSeries.iterations;
+        // use random-access API to write iterations
+        auto iterations = writeSeries.snapshots();
         for (size_t i = 0; i < 10; ++i)
         {
             auto iteration = iterations[i];
@@ -6803,10 +6800,10 @@ void deferred_parsing(std::string const &extension)
     std::string basename = "../samples/lazy_parsing/lazy_parsing_";
     // create a single iteration
     {
-        Series series(basename + "%06T." + extension, Access::CREATE);
+        Series series(basename + "%06T." + extension, Access::CREATE_LINEAR);
         std::vector<float> buffer(20);
         std::iota(buffer.begin(), buffer.end(), 0.f);
-        auto dataset = series.writeIterations()[0].meshes["E"]["x"];
+        auto dataset = series.snapshots()[0].meshes["E"]["x"];
         dataset.resetDataset({Datatype::FLOAT, {20}});
         dataset.storeChunk(buffer, {0}, {20});
         series.flush();
@@ -6973,7 +6970,7 @@ void chaotic_stream(std::string const &filename, bool variableBased)
 
     bool weirdOrderWhenReading{};
 
-    Series series(filename, Access::CREATE, jsonConfig);
+    Series series(filename, Access::CREATE_LINEAR, jsonConfig);
     /*
      * When using ADIOS2 steps, iterations are read not by logical order
      * (iteration index), but by order of writing.
@@ -6991,11 +6988,11 @@ void chaotic_stream(std::string const &filename, bool variableBased)
     for (auto currentIteration : iterations)
     {
         auto dataset =
-            series.writeIterations()[currentIteration]
+            series.snapshots()[currentIteration]
                 .meshes["iterationOrder"][MeshRecordComponent::SCALAR];
         dataset.resetDataset({determineDatatype<uint64_t>(), {10}});
         dataset.storeChunk(iterations, {0}, {10});
-        // series.writeIterations()[ currentIteration ].close();
+        // series.snapshots()[ currentIteration ].close();
     }
     REQUIRE(series.operator bool());
     series.close();
@@ -7045,11 +7042,11 @@ void unfinished_iteration_test(
         (encoding == IterationEncoding::fileBased ? "_%T." : ".") + ext;
     {
         std::vector<int> data{0, 1, 2, 3, 4};
-        Series write(file, Access::CREATE, config);
-        auto it0 = write.writeIterations()[0];
+        Series write(file, Access::CREATE_LINEAR, config);
+        auto it0 = write.snapshots()[0];
         it0.meshes["E"]["x"].resetDataset({Datatype::INT, {5}});
         it0.meshes["E"]["x"].storeChunk(data, {0}, {5});
-        auto it5 = write.writeIterations()[5];
+        auto it5 = write.snapshots()[5];
         it5.meshes["E"]["x"].resetDataset({Datatype::INT, {5}});
         it5.meshes["E"]["x"].storeChunk(data, {0}, {5});
         ;
@@ -7058,7 +7055,7 @@ void unfinished_iteration_test(
          * fail parsing.
          */
         it5.setAttribute("__openPMD_internal_fail", "asking for trouble");
-        auto it10 = write.writeIterations()[10];
+        auto it10 = write.snapshots()[10];
         Dataset ds(Datatype::INT, {10});
         it10.meshes["E"]["x"].resetDataset({Datatype::INT, {5}});
         it10.meshes["E"]["x"].storeChunk(data, {0}, {5});
@@ -7321,21 +7318,20 @@ void append_mode(
         auxiliary::remove_directory("../samples/append");
     }
     std::vector<int> data(10, 999);
-    auto writeSomeIterations = [&data](
-                                   WriteIterations &&writeIterations,
-                                   std::vector<uint64_t> const &indices) {
-        for (auto index : indices)
-        {
-            auto it = writeIterations[index];
-            auto dataset = it.meshes["E"]["x"];
-            dataset.resetDataset({Datatype::INT, {10}});
-            dataset.storeChunk(data, {0}, {10});
-            // test that it works without closing too
-            it.close();
-        }
-    };
+    auto writeSomeIterations =
+        [&data](Snapshots &&snapshots, std::vector<uint64_t> const &indices) {
+            for (auto index : indices)
+            {
+                auto it = snapshots[index];
+                auto dataset = it.meshes["E"]["x"];
+                dataset.resetDataset({Datatype::INT, {10}});
+                dataset.storeChunk(data, {0}, {10});
+                // test that it works without closing too
+                it.close();
+            }
+        };
     {
-        Series write(filename, Access::APPEND, jsonConfig);
+        Series write(filename, Access::APPEND_LINEAR, jsonConfig);
         if (variableBased)
         {
             if (write.backend() != "ADIOS2")
@@ -7344,18 +7340,16 @@ void append_mode(
             }
             write.setIterationEncoding(IterationEncoding::variableBased);
         }
-        writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{0, 1});
+        writeSomeIterations(write.snapshots(), std::vector<uint64_t>{0, 1});
     }
     {
-        Series write(filename, Access::APPEND, jsonConfig);
+        Series write(filename, Access::APPEND_LINEAR, jsonConfig);
         if (variableBased)
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
         }
 
-        writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{3, 2});
+        writeSomeIterations(write.snapshots(), std::vector<uint64_t>{3, 2});
         write.flush();
     }
     {
@@ -7366,25 +7360,23 @@ void append_mode(
          * we deal with it.
          */
         std::this_thread::sleep_for(1s);
-        Series write(filename, Access::APPEND, jsonConfig);
+        Series write(filename, Access::APPEND_LINEAR, jsonConfig);
         if (variableBased)
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
         }
 
-        writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{4, 3, 10});
+        writeSomeIterations(write.snapshots(), std::vector<uint64_t>{4, 3, 10});
         write.flush();
     }
     {
-        Series write(filename, Access::APPEND, jsonConfig);
+        Series write(filename, Access::APPEND_LINEAR, jsonConfig);
         if (variableBased)
         {
             write.setIterationEncoding(IterationEncoding::variableBased);
         }
 
-        writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{7, 1, 11});
+        writeSomeIterations(write.snapshots(), std::vector<uint64_t>{7, 1, 11});
         write.flush();
     }
 
@@ -7507,7 +7499,7 @@ void append_mode(
         {
             Series write(
                 filename,
-                Access::APPEND,
+                Access::APPEND_LINEAR,
                 json::merge(
                     jsonConfig,
                     R"({"adios2":{"engine":{"parameters":{"AppendAfterSteps":-3}}}})"));
@@ -7516,8 +7508,7 @@ void append_mode(
                 write.setIterationEncoding(IterationEncoding::variableBased);
             }
 
-            writeSomeIterations(
-                write.writeIterations(), std::vector<uint64_t>{4, 5});
+            writeSomeIterations(write.snapshots(), std::vector<uint64_t>{4, 5});
             write.flush();
         }
         if (test_read_linear)
@@ -7639,11 +7630,11 @@ void append_mode_filebased(std::string const &extension)
         "use_group_table": true
     }
 })END";
-    auto writeSomeIterations = [](WriteIterations &&writeIterations,
+    auto writeSomeIterations = [](Snapshots &&snapshots,
                                   std::vector<uint64_t> const &indices) {
         for (auto index : indices)
         {
-            auto it = writeIterations[index];
+            auto it = snapshots[index];
             auto dataset = it.meshes["E"]["x"];
             dataset.resetDataset({Datatype::INT, {1}});
             dataset.makeConstant<int>(0);
@@ -7658,37 +7649,33 @@ void append_mode_filebased(std::string const &extension)
     {
         Series write(
             "../samples/append/append_%06T." + extension,
-            Access::APPEND,
+            Access::APPEND_LINEAR,
             jsonConfig);
-        writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{0, 1});
+        writeSomeIterations(write.snapshots(), std::vector<uint64_t>{0, 1});
     }
     {
         Series write(
             "../samples/append/append_%T." + extension,
-            Access::APPEND,
+            Access::APPEND_LINEAR,
             jsonConfig);
-        writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{4, 5});
+        writeSomeIterations(write.snapshots(), std::vector<uint64_t>{4, 5});
         write.flush();
     }
     {
         Series write(
             "../samples/append/append_%T." + extension,
-            Access::APPEND,
+            Access::APPEND_LINEAR,
             jsonConfig);
-        writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{2, 3});
+        writeSomeIterations(write.snapshots(), std::vector<uint64_t>{2, 3});
         write.flush();
     }
     {
         Series write(
             "../samples/append/append_%T." + extension,
-            Access::APPEND,
+            Access::APPEND_LINEAR,
             jsonConfig);
         // overwrite a previous iteration
-        writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{4, 123});
+        writeSomeIterations(write.snapshots(), std::vector<uint64_t>{4, 123});
         write.flush();
     }
     {
@@ -7837,10 +7824,10 @@ void joined_dim(std::string const &ext)
     constexpr size_t length_of_patch = 10;
 
     {
-        Series s("../samples/joinedDimParallel." + ext, Access::CREATE);
+        Series s("../samples/joinedDimParallel." + ext, Access::CREATE_LINEAR);
         std::vector<UniquePtrWithLambda<type>> writeFrom(patches_per_rank);
 
-        auto it = s.writeIterations()[100];
+        auto it = s.snapshots()[100];
 
         Dataset numParticlesDS(
             determineDatatype<patchType>(), {Dataset::JOINED_DIMENSION});
