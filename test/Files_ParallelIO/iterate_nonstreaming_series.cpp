@@ -123,6 +123,10 @@ static auto run_test(
         // API!
         for (auto &[index, iteration] : readSeries.snapshots())
         {
+            if (access == Access::READ_RANDOM_ACCESS)
+            {
+                iteration.open();
+            }
             // ReadIterations takes care of Iteration::open()ing iterations
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 2);

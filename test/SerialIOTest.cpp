@@ -6478,6 +6478,10 @@ void iterate_nonstreaming_series(
         // API!
         for (auto &[index, iteration] : readSeries.snapshots())
         {
+            if (access == Access::READ_RANDOM_ACCESS)
+            {
+                iteration.open();
+            }
             // ReadIterations takes care of Iteration::open()ing iterations
             auto E_x = iteration.meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 2);
@@ -6840,6 +6844,7 @@ void deferred_parsing(std::string const &extension)
             "{\"defer_iteration_parsing\": true}");
         for (auto &[index, iteration] : series.snapshots())
         {
+            iteration.open();
             auto dataset =
                 iteration.meshes["E"]["x"].loadChunk<float>({0}, {20});
             iteration.close();
@@ -6919,6 +6924,7 @@ void deferred_parsing(std::string const &extension)
             "{\"defer_iteration_parsing\": true}");
         for (auto &[index, iteration] : series.snapshots())
         {
+            iteration.open();
             auto dataset =
                 iteration.meshes["E"]["x"].loadChunk<float>({0}, {20});
             iteration.close();
@@ -7069,10 +7075,31 @@ void unfinished_iteration_test(
             Series read(file, access, json::merge(config, additionalConfig));
 
             std::vector<decltype(Series::iterations)::key_type> iterations;
-            std::cout << "Going to list iterations in " << file << ":"
+            std::cout << "\n\n\nGoing to list iterations in " << file
+                      << ":\n\n\n"
                       << std::endl;
             for (auto &[index, iteration] : read.snapshots())
             {
+                if (access == Access::READ_RANDOM_ACCESS &&
+                    (
+                        // Need to manually open the Iteration in this case
+                        additionalConfig ==
+                            R"({"defer_iteration_parsing": true})" ||
+                        // Need to reopen the closed file in this case,
+                        // otherwise we cannot enqueue further flushes
+                        read.iterationEncoding() ==
+                            IterationEncoding::fileBased))
+                {
+                    if (index == 5)
+                    {
+                        REQUIRE_THROWS_AS(iteration.open(), error::ReadError);
+                        continue;
+                    }
+                    else
+                    {
+                        iteration.open();
+                    }
+                }
                 std::cout << "Seeing iteration " << index << std::endl;
                 iterations.push_back(index);
 
