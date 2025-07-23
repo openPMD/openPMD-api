@@ -3,14 +3,12 @@
 Streaming
 =========
 
-.. note::
-   Data streaming is a novel backend and under active development.
-   At the moment, the internal data format is still changing rapidly and is likely not compatible between releases of the openPMD-api.
-
 The openPMD API includes a streaming-aware API as well as streaming-enabled backends (currently: ADIOS2).
 
 Unlike in file-based backends, the order in which data is put out becomes relevant in streaming-based backends.
 Each iteration will be published as one atomical step by the streaming API (compare the concept of `steps in ADIOS2 <https://adios2.readthedocs.io/en/latest/components/components.html#engine>`_).
+
+In order to process Iterations synchronously, and one after another, the openPMD-api has *linear* access modes twinned with each regular, i.e. *random-access* mode (except ``READ_WRITE``, which only supports random-access).
 
 Reading
 -------
@@ -21,18 +19,14 @@ It can be used to read any kind of openPMD-compatible dataset, stream-based and 
 C++
 ^^^
 
-The reading end of the streaming API is activated through use of ``Series::readIterations()`` instead of accessing the field ``Series::iterations`` directly.
-Use of ``Access::READ_LINEAR`` mode is recommended.
-The returned object of type ``ReadIterations`` can be used in a C++11 range-based for loop to iterate over objects of type ``IndexedIteration``.
-This class extends the ``Iteration`` class with a field ``IndexedIteration::iterationIndex``, denoting this iteration's index.
+The reading end of the streaming API is activated through use of ``Access::READ_LINEAR`` instead of ``Access::READ_RANDOM_ACCESS`` (or ``Access::READ_ONLY``). Iterations must be accessed with ``Series::snapshots()`` instead of directly using the field ``Series::iterations``.
 
-Iterations are implicitly opened by the Streaming API and ``Iteration::open()`` needs not be called explicitly.
+In ``READ_LINEAR`` mode, Iterations are implicitly opened and ``Iteration::open()`` needs not be called explicitly.
 Users are encouraged to explicitly ``.close()`` the iteration after reading from it.
 Closing the iteration will flush all pending operations on that iteration.
 If an iteration is not closed until the beginning of the next iteration, it will be closed automatically.
 
-Note that a closed iteration cannot be reopened.
-This pays tribute to the fact that in streaming mode, an iteration may be dropped by the data source once the data sink has finished reading from it.
+Note that a closed iteration can in general not be reopened. Limited support for reopening closed Iterations in ``READ_LINEAR`` is available under the condition that the Series is neither a stream nor that it uses ADIOS2 steps. In a stream, Iterations may be dropped by the writer once the reader has finished reading from it.
 
 .. literalinclude:: 10_streaming_read.cpp
    :language: cpp
@@ -40,18 +34,14 @@ This pays tribute to the fact that in streaming mode, an iteration may be droppe
 Python
 ^^^^^^
 
-The reading end of the streaming API is activated through use of ``Series.read_iterations()`` instead of accessing the field ``Series.iterations`` directly.
-Use of ``Access.read_linear`` mode is recommended.
-The returned object of type ``ReadIterations`` can be used in a Python range-based for loop to iterate over objects of type ``IndexedIteration``.
-This class extends the ``Iteration`` class with a field ``IndexedIteration.iteration_index``, denoting this iteration's index.
+The reading end of the streaming API is activated through use of ``Access.read_linear`` instead of ``Access.read_random_access`` (or ``Access.read_only``). Iterations must be accessed with ``Series.snapshots()`` instead of directly using the field ``Series.iterations``.
 
-Iterations are implicitly opened by the Streaming API and ``Iteration.open()`` needs not be called explicitly.
+In ``read_linear`` mode, Iterations are implicitly opened and ``Iteration.open()`` needs not be called explicitly.
 Users are encouraged to explicitly ``.close()`` the iteration after reading from it.
 Closing the iteration will flush all pending operations on that iteration.
 If an iteration is not closed until the beginning of the next iteration, it will be closed automatically.
 
-Note that a closed iteration cannot be reopened.
-This pays tribute to the fact that in streaming mode, an iteration may be dropped by the data source once the data sink has finished reading from it.
+Note that a closed iteration can in general not be reopened. Limited support for reopening closed Iterations in ``read_linear`` is available under the condition that the Series is neither a stream nor that it uses ADIOS2 steps. In a stream, Iterations may be dropped by the writer once the reader has finished reading from it.
 
 .. literalinclude:: 10_streaming_read.py
    :language: python3
@@ -65,16 +55,14 @@ It can be used to write any kind of openPMD-compatible dataset, stream-based and
 C++
 ^^^
 
-The writing end of the streaming API is activated through use of ``Series::writeIterations()`` instead of accessing the field ``Series::iterations`` directly.
-The returned object of type ``WriteIterations`` wraps the field ``Series::iterations``, but exposes only a restricted subset of functionality.
-Using ``WriteIterations::operator[]( uint64_t )`` will automatically open a streaming step for the corresponding iteration.
+The writing end of the streaming API is activated through use of ``Access::CREATE_LINEAR`` instead of ``ACCESS::CREATE_RANDOM_ACCESS`` (or ``Access::CREATE``). Iterations must be accessed with ``Series::snapshots()`` instead of using the field ``Series::iterations`` directly.
+With linear create mode, ``Snapshots::operator[](uint64_t)`` will automatically open a streaming step for each new corresponding iteration.
 
 Users are encouraged to explicitly ``.close()`` the iteration after writing to it.
 Closing the iteration will flush all pending operations on that iteration.
 If an iteration is not closed until the next iteration is accessed via ``WriteIterations::operator[]( uint64_t )``, it will be closed automatically.
 
-Note that a closed iteration cannot be reopened.
-This pays tribute to the fact that in streaming mode, an iteration is sent to the sink upon closing it and the data source can no longer modify it.
+Note that a closed iteration can in general not be reopened. Limited support for reopening closed Iterations in ``CREATE_LINEAR`` is available for non-streaming backends other than ADIOS2 (and in ADIOS2, if using file-based encoding with engine BP5 and engine option ``FlattenSteps=ON``). In a stream, Iterations may not be modified after they have been sent to readers.
 
 .. literalinclude:: 10_streaming_write.cpp
    :language: cpp
@@ -82,16 +70,14 @@ This pays tribute to the fact that in streaming mode, an iteration is sent to th
 Python
 ^^^^^^
 
-The writing end of the streaming API is activated through use of ``Series.write_iterations()`` instead of accessing the field ``Series.iterations`` directly.
-The returned object of type ``WriteIterations`` wraps the field ``Series.iterations``, but exposes only a restricted subset of functionality.
-Using ``WriteIterations.__getitem__(index)`` (i.e. the index operator ``series.writeIterations()[index]``) will automatically open a streaming step for the corresponding iteration.
+The writing end of the streaming API is activated through use of ``Access.create_linear`` instead of ``ACCESS.create_random_access`` (or ``Access.create``). Iterations must be accessed with ``Series.snapshots()`` instead of using the field ``Series.iterations`` directly.
+With linear create mode, ``Snapshots.__getitem__(index)`` will automatically open a streaming step for each new corresponding iteration.
 
 Users are encouraged to explicitly ``.close()`` the iteration after writing to it.
 Closing the iteration will flush all pending operations on that iteration.
 If an iteration is not closed until the next iteration is accessed via ``WriteIterations.__getitem__(index)``, it will be closed automatically.
 
-Note that a closed iteration cannot be reopened.
-This pays tribute to the fact that in streaming mode, an iteration is sent to the sink upon closing it and the data source can no longer modify it.
+Note that a closed iteration can in general not be reopened. Limited support for reopening closed Iterations in ``create_linear`` is available for non-streaming backends other than ADIOS2 (and in ADIOS2, if using file-based encoding with engine BP5 and engine option ``FlattenSteps=ON``). In a stream, Iterations may not be modified after they have been sent to readers.
 
 .. literalinclude:: 10_streaming_write.py
    :language: python3
