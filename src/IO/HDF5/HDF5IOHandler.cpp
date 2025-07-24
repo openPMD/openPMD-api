@@ -79,7 +79,8 @@ namespace openPMD
 constexpr char const *const init_json_shadow_str = &R"(
 {
     "dataset": {
-    "chunks": null
+        "chunks": null,
+        "permanent_filters": null
     },
     "independent_stores": null
 })"[1];
@@ -181,6 +182,7 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             auto init_json_shadow = nlohmann::json::parse(init_json_shadow_str);
             json::merge_internal(
                 m_config.getShadow(), init_json_shadow, /* do_prune = */ false);
+            m_config["dataset"]["permanent_filters"].declareFullyRead();
         }
 
         // unused params
@@ -478,7 +480,7 @@ namespace
         {
             H5Z_filter_t id = 0;
             unsigned int flags = 0;
-            std::vector<unsigned int> c_values;
+            std::vector<unsigned int> cd_values;
         };
         struct Zlib
         {
@@ -586,20 +588,20 @@ namespace
             }
             throw flag_error();
         }();
-        if (json_accessor(filter_config).contains("c_values"))
+        if (json_accessor(filter_config).contains("cd_values"))
         {
-            auto const &c_values_config =
-                json_accessor(filter_config["c_values"]);
+            auto const &cd_values_config =
+                json_accessor(filter_config["cd_values"]);
             try
             {
 
-                byID.c_values =
-                    c_values_config.template get<std::vector<unsigned int>>();
+                byID.cd_values =
+                    cd_values_config.template get<std::vector<unsigned int>>();
             }
             catch (nlohmann::json::type_error const &)
             {
                 throw error::BackendConfigSchema(
-                    {"hdf5", "dataset", "permanent_filters", "c_values"},
+                    {"hdf5", "dataset", "permanent_filters", "cd_values"},
                     "Must be an array of unsigned integers.");
             }
         }
@@ -1015,8 +1017,8 @@ void HDF5IOHandlerImpl::createDataset(
                             datasetCreationProperty,
                             by_id.id,
                             by_id.flags,
-                            by_id.c_values.size(),
-                            by_id.c_values.data());
+                            by_id.cd_values.size(),
+                            by_id.cd_values.data());
                     },
                     [&](DatasetParams::Zlib const &zlib) {
                         return H5Pset_deflate(
@@ -1028,28 +1030,6 @@ void HDF5IOHandlerImpl::createDataset(
                 "[HDF5] Internal error: Failed to set filter during dataset "
                 "creation");
         }
-
-        /*
-        {
-            std::vector< std::string > args = auxiliary::split(compression,
-        ":"); std::string const& format = args[0]; if( (format == "zlib" ||
-        format == "gzip" || format == "deflate")
-                && args.size() == 2 )
-            {
-                status = H5Pset_deflate(datasetCreationProperty,
-        std::stoi(args[1])); VERIFY(status == 0, "[HDF5] Internal error: Failed
-        to set deflate compression during dataset creation"); } else if( format
-        == "szip" || format == "nbit" || format == "scaleoffset" ) std::cerr <<
-        "[HDF5] Compression format " << format
-                          << " not yet implemented. Data will not be
-        compressed!"
-                          << std::endl;
-            else
-                std::cerr << "[HDF5] Compression format " << format
-                          << " unknown. Data will not be compressed!"
-                          << std::endl;
-        }
-         */
 
         GetH5DataType getH5DataType({
             {typeid(bool).name(), m_H5T_BOOL_ENUM},

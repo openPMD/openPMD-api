@@ -165,11 +165,11 @@ int main()
 #if OPENPMD_USE_BLOSC2_FILTER
         /*
          * FILTER_BLOSC2 resolves to 32026, the permanent plugin ID registered
-         * with the HDF Group. Plugin-specific options are given via c_values,
+         * with the HDF Group. Plugin-specific options are given via cd_values,
          * refer to the specific plugin's documentation. For the Blosc2 plugin,
-         * parameters 0, 1, 2 and 3 are reserved. Parameter 4 is the compression
-         * level, parameter 5 is a boolean for activating shuffling and
-         * parameter 6 denotes the compression method.
+         * indexes 0, 1, 2 and 3 are reserved. Index 4 is the compression
+         * level, index 5 is a boolean for activating shuffling and
+         * index 6 denotes the compression method.
          */
         d.options = R"END(
 {
@@ -192,7 +192,7 @@ int main()
         "id": )END" +
             std::to_string(FILTER_BLOSC2) + R"END(,
         "flags": "mandatory",
-        "c_values": [0, 0, 0, 0, 4, 1, )END" +
+        "cd_values": [0, 0, 0, 0, 4, 1, )END" +
             std::to_string(BLOSC_ZSTD) + R"END(]
       }
     }
