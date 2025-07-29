@@ -241,6 +241,10 @@ jobs:
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/gcc12_py36_ompi_h5_ad2/)
         spack install
+        ./.github/workflows/dependencies/install_hdf5_blosc2
+        # the HDF5 Blosc2 plugin exports no configuration files
+        # for build systems, so we will need to link it manually
+        export LDFLAGS="-lblosc2_filter $LDFLAGS"
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
