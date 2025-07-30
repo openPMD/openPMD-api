@@ -48,7 +48,8 @@ def write(filename, config):
             component = E[dim]
             component.reset_dataset(opmd.Dataset(np.dtype("float"), [10, 10]))
             component[:, :] = np.reshape(
-                np.arange(i * 100, (i + 1) * 100), [10, 10]
+                np.arange(i * 100, (i + 1) * 100, dtype=np.dtype("float")),
+                [10, 10],
             )
 
         # Now, write some e particles.
@@ -60,7 +61,9 @@ def write(filename, config):
 
             position = e["position"][dim]
             position.reset_dataset(opmd.Dataset(np.dtype("float"), [100]))
-            position[:] = np.arange(i * 100, (i + 1) * 100)
+            position[:] = np.arange(
+                i * 100, (i + 1) * 100, dtype=np.dtype("float")
+            )
 
 
 def main():
