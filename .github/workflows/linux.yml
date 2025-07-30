@@ -235,6 +235,7 @@ jobs:
         python3 -m pip install -U pandas
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
+        python3 -m pip install hdf5plugin
     - name: Build
       env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
       run: |
@@ -244,7 +245,6 @@ jobs:
         ./.github/workflows/dependencies/install_hdf5_blosc2
         # the HDF5 Blosc2 plugin exports no configuration files
         # for build systems, so we will need to link it manually
-        export LDFLAGS="-lblosc2_filter $LDFLAGS"
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -252,7 +252,9 @@ jobs:
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DCMAKE_EXE_LINKER_FLAGS="-lblosc2_filter" \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 
