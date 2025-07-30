@@ -60,7 +60,6 @@ def write(filename, config):
 
             position = e["position"][dim]
             position.reset_dataset(opmd.Dataset(np.dtype("float"), [100]))
-            buffer_view = position.store_chunk([0], [100]).current_buffer()
             position[:] = np.arange(i * 100, (i + 1) * 100)
 
 
