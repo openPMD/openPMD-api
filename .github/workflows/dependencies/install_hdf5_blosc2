@@ -6,8 +6,8 @@ set -x
 cd /opt
 
 version="v2.0.0"
-patch_url="https://github.com/franzpoeschel/HDF5-Blosc2/commit/55b1feea7bf18a539dfbe4413a920bc9570aa0c6.diff"
-patch_path="$(pwd)/hdf5_blosc2_cmake_fixes.diff"
+patch_url="https://github.com/franzpoeschel/HDF5-Blosc2/commit/55b1feea7bf18a539dfbe4413a920bc9570aa0c6.patch"
+patch_path="$(pwd)/hdf5_blosc2_cmake_fixes.patch"
 
 
 curl -sLo "$patch_path" "$patch_url"
