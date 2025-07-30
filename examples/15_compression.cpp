@@ -150,7 +150,7 @@ int main()
         # Inside the cfg key, specify the actual config to be forwarded to the
         # ADIOS2 dataset.
         # So, specify the operators list again. Let's use Blosc for this.
-        [[adios2.dataset.cfg.operators]]
+        [adios2.dataset.cfg.operators]
         type = "blosc"
         parameters.doshuffle = "BLOSC_BITSHUFFLE"
         parameters.clevel = 1

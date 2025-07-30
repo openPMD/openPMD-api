@@ -121,15 +121,13 @@ def main():
                         # So, specify the operators list again.
                         # Let's use Blosc for this.
                         "cfg": {
-                            "operators": [
-                                {
-                                    "parameters": {
-                                        "clevel": 1,
-                                        "doshuffle": "BLOSC_BITSHUFFLE",
-                                    },
-                                    "type": "blosc",
-                                }
-                            ]
+                            "operators": {
+                                "parameters": {
+                                    "clevel": 1,
+                                    "doshuffle": "BLOSC_BITSHUFFLE",
+                                },
+                                "type": "blosc",
+                            }
                         },
                     },
                     # Now, configure the particles.
