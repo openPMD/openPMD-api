@@ -125,9 +125,9 @@ int main()
         type = "bzip2"
         parameters.clevel = 9  # The available parameters depend
                                # on the operator.
-                               # Here, we specify zlib's compression level.
+                               # Here, we specify bzip2's compression level.
     )";
-    write("adios2_with_zlib.%E", simple_adios2_config);
+    write("adios2_with_bzip2.%E", simple_adios2_config);
 
     // The compression can also be specified per-dataset.
     // For more details, also check:
@@ -143,7 +143,9 @@ int main()
         [[adios2.dataset]]
         # This uses egrep-type regular expressions.
         select = "meshes/.*"
-        # Now, specify the operators list again. Let's use Blosc for this.
+        # Inside the cfg key, specify the actual config to be forwarded to the
+        # ADIOS2 dataset.
+        # So, specify the operators list again. Let's use Blosc for this.
         [[adios2.dataset.cfg.operators]]
         type = "blosc"
         parameters.doshuffle = "BLOSC_BITSHUFFLE"
