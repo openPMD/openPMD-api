@@ -136,7 +136,9 @@ int main()
     // This example will demonstrate the use of pattern matching.
     // adios2.dataset is now a list of dataset configurations. The specific
     // configuration to be used for a dataset will be determined by matching
-    // the dataset name against the patterns specified by the 'select' keys.
+    // the dataset name against the patterns specified by the 'select' key.
+    // The actual configuration to be forwarded to the backend is stored under
+    // the 'cfg' key.
     std::string const extended_adios2_config = R"(
         backend = "adios2"
 
@@ -247,6 +249,27 @@ int main()
         flags = "mandatory"
     )";
     write("hdf5_filter_pipeline.%E", hdf5_filter_pipeline);
+
+    // Dataset-specific backend configuration works independently from the
+    // chosen backend and can hence also be used in HDF5. We will apply both a
+    // zlib and a fletcher32 filter, one to the meshes and one to the particles.
+    std::string const extended_hdf5_config = R"(
+        backend = "hdf5"
+
+        [[hdf5.dataset]]
+        select = "meshes/.*"
+        [hdf5.dataset.cfg.permanent_filters]
+        type = "zlib"
+        aggression = 5
+
+        # Now, configure the particles.
+        [[hdf5.dataset]]
+        select = "particles/.*"
+        [hdf5.dataset.cfg.permanent_filters]
+        id = "fletcher32"
+        flags = "mandatory"
+    )";
+    write("hdf5_with_dataset_specific_configurations.%E", extended_hdf5_config);
 
     // For non-predefined IDs, the ID must be given as a number. This example
     // uses the Blosc2 filter available from

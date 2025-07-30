@@ -96,6 +96,16 @@ def main():
         }
         write("adios2_with_bzip2.%E", simple_adios2_config)
 
+        # The compression can also be specified per-dataset.
+        # For more details, also check:
+        # https://openpmd-api.readthedocs.io/en/latest/details/backendconfig.html#dataset-specific-configuration
+
+        # This example will demonstrate the use of pattern matching.
+        # adios2.dataset is now a list of dataset configurations. The specific
+        # configuration to be used for a dataset will be determined by matching
+        # the dataset name against the patterns specified by the 'select' key.
+        # The actual configuration to be forwarded to the backend is stored
+        # under the 'cfg' key.
         extended_adios2_config = {
             "backend": "adios2",
             "adios2": {
@@ -213,6 +223,53 @@ def main():
             },
         }
         write("hdf5_predefined_filter_id.%E", hdf5_predefined_filter_ids)
+
+        # Just like ADIOS2 with their operations, also HDF5 supports adding
+        # multiple filters into a filter pipeline. The permanent_filters key
+        # can hence also be given as a list.
+        hdf5_filter_pipeline = {
+            "backend": "hdf5",
+            "hdf5": {
+                "dataset": {
+                    "permanent_filters": [
+                        {"aggression": 5, "type": "zlib"},
+                        {"flags": "mandatory", "id": "shuffle"},
+                    ]
+                }
+            },
+        }
+        write("hdf5_filter_pipeline.%E", hdf5_filter_pipeline)
+
+        # Dataset-specific backend configuration works independently from the
+        # chosen backend and can hence also be used in HDF5. We will apply both
+        # zlib and a fletcher32 filter, one to the meshes and one
+        # to the particles.
+        extended_hdf5_config = {
+            "backend": "hdf5",
+            "hdf5": {
+                "dataset": [
+                    {
+                        "select": "meshes/.*",
+                        "cfg": {
+                            "permanent_filters": {
+                                "type": "zlib",
+                                "aggression": 5,
+                            }
+                        },
+                    },
+                    {
+                        "select": "particles/.*",
+                        "cfg": {
+                            "permanent_filters": {
+                                "id": "fletcher32",
+                                "flags": "mandatory",
+                            }
+                        },
+                    },
+                ]
+            },
+        }
+    write("hdf5_with_dataset_specific_configurations.%E", extended_hdf5_config)
 
     # For non-predefined IDs, the ID must be given as a number. This example
     # uses the Blosc2 filter with the permanent plugin ID 32026,
