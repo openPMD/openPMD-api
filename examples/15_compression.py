@@ -80,6 +80,9 @@ def main():
                     # hence we specify a list of operators here.
                     # How much sense this makes depends on the specific
                     # operators in use.
+                    # If specifying only one operator, you can also replace the
+                    # list by its only element as a shorthand
+                    # (see next config example).
                     "operators": [
                         {
                             "type": "bzip2",
@@ -164,9 +167,10 @@ def main():
                     # to each dataset that matches a catch-all pattern.
                     {
                         "cfg": {
-                            "operators": [
-                                {"parameters": {"clevel": 2}, "type": "bzip2"}
-                            ]
+                            "operators": {
+                                "parameters": {"clevel": 2},
+                                "type": "bzip2",
+                            }
                         }
                     },
                 ]

@@ -120,6 +120,8 @@ int main()
         # ADIOS2 supports adding multiple operators to a variable, hence we
         # specify a list of operators here (using TOML's double bracket syntax).
         # How much sense this makes depends on the specific operators in use.
+        # If specifying only one operator, you can also replace the list by its
+        # only element as a shorthand (see next config example).
 
         [[adios2.dataset.operators]]
         type = "bzip2"
@@ -182,7 +184,7 @@ int main()
         # configuration globally, instead of applying it selectively to each
         # dataset that matches a catch-all pattern.
         [[adios2.dataset]]
-        [[adios2.dataset.cfg.operators]]
+        [adios2.dataset.cfg.operators]
         type = "bzip2"
         parameters.clevel = 2
     )";

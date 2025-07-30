@@ -314,6 +314,9 @@ void ADIOS2IOHandlerImpl::init(
     }
 }
 
+namespace
+{}
+
 std::optional<std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator>>
 ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
 {
@@ -328,18 +331,14 @@ ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
     {
         return ret_t();
     }
-    auto _operators = datasetConfig["operators"];
-    nlohmann::json const &operators = _operators.json();
-    for (auto operatorIterator = operators.begin();
-         operatorIterator != operators.end();
-         ++operatorIterator)
-    {
-        nlohmann::json const &op = operatorIterator.value();
-        std::string const &type = op["type"];
+
+    auto parse_single_operator = [this](auto &op, auto &&json_accessor)
+        -> std::optional<ParameterizedOperator> {
+        std::string const &type = *json_accessor(op["type"]);
         adios2::Params adiosParams;
-        if (op.contains("parameters"))
+        if (json_accessor(op)->contains("parameters"))
         {
-            nlohmann::json const &params = op["parameters"];
+            nlohmann::json const &params = *json_accessor(op["parameters"]);
             for (auto paramIterator = params.begin();
                  paramIterator != params.end();
                  ++paramIterator)
@@ -360,14 +359,45 @@ ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
         }
         std::optional<adios2::Operator> adiosOperator =
             getCompressionOperator(type);
-        if (adiosOperator)
+        if (!adiosOperator.has_value())
         {
-            res.emplace_back(
-                ParameterizedOperator{
-                    adiosOperator.value(), std::move(adiosParams)});
+            return std::nullopt;
+        }
+        else
+        {
+            return ParameterizedOperator{
+                std::move(*adiosOperator), std::move(adiosParams)};
+        }
+    };
+
+    auto _operators = datasetConfig["operators"];
+    nlohmann::json const &operators = _operators.json();
+    if (operators.is_array())
+    {
+        for (auto const &op : operators)
+        {
+            auto parsed_operator =
+                parse_single_operator(op, [](auto &j) { return &j; });
+            if (parsed_operator)
+            {
+                res.emplace_back(std::move(*parsed_operator));
+            }
+        }
+        _operators.declareFullyRead();
+    }
+    else
+    {
+        auto parsed_operator = parse_single_operator(
+            _operators, [](auto &&j) { return &j.json(); });
+        if (parsed_operator)
+        {
+            res.emplace_back(std::move(*parsed_operator));
+        }
+        if (operators.contains("parameters"))
+        {
+            _operators["parameters"].declareFullyRead();
         }
     }
-    _operators.declareFullyRead();
     return std::make_optional(std::move(res));
 }
 
