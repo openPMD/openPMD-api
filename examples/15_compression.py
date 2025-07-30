@@ -273,7 +273,10 @@ def main():
                 ]
             },
         }
-    write("hdf5_with_dataset_specific_configurations.%E", extended_hdf5_config)
+        write(
+            "hdf5_with_dataset_specific_configurations.%E",
+            extended_hdf5_config,
+        )
 
     # For non-predefined IDs, the ID must be given as a number. This example
     # uses the Blosc2 filter with the permanent plugin ID 32026,
