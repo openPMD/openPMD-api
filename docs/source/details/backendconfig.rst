@@ -185,8 +185,8 @@ Explanation of the single keys:
   Additionally, specifying ``"disk_override"``, ``"buffer_override"`` or ``"new_step_override"`` will take precedence over options specified without the ``_override`` suffix, allowing to invert the normal precedence order.
   This way, a data producing code can hardcode the preferred flush target per ``flush()`` call, but users can e.g. still entirely deactivate flushing to disk in the ``Series`` constructor by specifying ``preferred_flush_target = buffer_override``.
   This is useful when applying the asynchronous IO capabilities of the BP5 engine.
-* ``adios2.dataset.operators``: This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
-  Each object in the list has two keys:
+* ``adios2.dataset.operators``: This key contains either a single ADIOS2 `operator <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_ or a list of operators, used to enable compression or dataset transformations.
+  Each operator is an object with two keys:
 
   * ``type`` supported ADIOS operator type, e.g. zfp, sz
   * ``parameters`` is an associative map of string parameters for the operator (e.g. compression levels)

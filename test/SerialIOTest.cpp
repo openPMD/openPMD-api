@@ -4991,7 +4991,8 @@ unused = "as well"
 BufferGrowthFactor = "2.0"
 Profile = "On"
 
-[[adios2.dataset.operators]]
+# single brackets, because an operator may also be given as a single object
+[adios2.dataset.operators]
 type = "blosc"
 parameters.clevel = "1"
 parameters.doshuffle = "BLOSC_BITSHUFFLE"
@@ -5022,7 +5023,7 @@ unused = "dataset parameter"
 [adios2.dataset]
 unused = "too"
 
-[[adios2.dataset.operators]]
+[adios2.dataset.operators]
 type = "blosc"
 [adios2.dataset.operators.parameters]
 clevel = 3
@@ -6225,11 +6226,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 {
   "adios2": {
     "dataset": {
-      "operators": [
-        {
-          "type": "bzip2"
-        }
-      ]
+      "operators": {
+        "type": "bzip2"
+      }
     }
   }
 })END";
@@ -6276,11 +6275,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 {
   "adios2": {
     "dataset": {
-      "operators": [
-        {
-          "type": "bzip2"
-        }
-      ]
+      "operators": {
+        "type": "bzip2"
+      }
     }
   }
 })END";
@@ -6341,11 +6338,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 {
   "adios2": {
     "dataset": {
-      "operators": [
-        {
-          "type": "bzip2"
-        }
-      ]
+      "operators": {
+        "type": "bzip2"
+      }
     }
   }
 })END";

@@ -47,6 +47,7 @@ type = "bp4"
 
 # ADIOS2 allows adding several operators
 # Lists are given in TOML by using double brackets
+# For specifying a single operator only, the list may be skipped.
 [[adios2.dataset.operators]]
 type = "zlib"
 
@@ -192,14 +193,12 @@ CFG.CHUNKS = [10]
   "resizable": true,
   "adios2": {
     "dataset": {
-      "operators": [
-        {
-          "type": "zlib",
-          "parameters": {
-            "clevel": 9
-          }
+      "operators": {
+        "type": "zlib",
+        "parameters": {
+          "clevel": 9
         }
-      ]
+      }
     }
   }
 })END";
