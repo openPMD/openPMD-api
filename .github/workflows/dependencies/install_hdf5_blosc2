@@ -18,4 +18,5 @@ git config user.name "Tooling"
 git am "$patch_path"
 
 cmake . -B build -DCMAKE_INSTALL_PREFIX="/usr/local" -DBUILD_TESTS=OFF
-cmake --build build --parallel 4 --target install
+cmake --build build --parallel 4
+sudo cmake --build build --parallel 4 --target install
