@@ -247,6 +247,24 @@ Explanation of the single keys:
   An explicit chunk size can be specified as a list of positive integers, e.g. ``hdf5.dataset.chunks = [10, 100]``. Note that this specification should only be used per-dataset, e.g. in ``resetDataset()``/``reset_dataset()``.
 
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
+* ``hdf5.datasets.permanent_filters``: Either a single HDF5 permanent filter specification or a list of HDF5 permanent filter specifications.
+  Each filter specification is a JSON/TOML object, but there are multiple options:
+
+  * Zlib: The Zlib filter has a distinct API in HDF5 and the configuration for Zlib in openPMD is hence also different. It is activated by the mandatory key ``type = "zlib"`` and configured by the optional integer key ``aggression``.
+    Example: ``{"type": "zlib", "aggression": 5}``.
+  * Filters identified by their global ID `registered with the HDF group <https://github.com/HDFGroup/hdf5_plugins/blob/master/docs/RegisteredFilterPlugins.md>`_.
+    They are activated by the mandatory integer key ``id`` containing this global ID.
+    All other keys are optional:
+
+    * ``type = "by_id"`` may optionally be specified for clarity and consistency.
+    * The string key ``flags`` can take the values ``"mandatory"`` or ``"optional"``, indicating if HDF5 should abort execution if the filter cannot be applied for some reason.
+    * The key ``cd_values`` points to a list of nonnegative integers.
+      These are filter-specific configuration options.
+      Refer to the specific filter's documentation.
+
+    Alternatively to an integer ID, the key ``id`` may also be of string type, identifying one of the six builtin filters of HDF5: ``"deflate", "shuffle", "fletcher32", "szip", "nbit", "scaleoffset"``.
+
+
 * ``hdf5.vfd.type`` selects the HDF5 virtual file driver.
   Currently available are:
 
