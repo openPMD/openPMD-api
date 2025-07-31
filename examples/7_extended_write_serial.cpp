@@ -1,39 +1,11 @@
 #include <openPMD/openPMD.hpp>
 
-#if __has_include(<blosc2_filter.h>)
-#include <blosc2_filter.h>
-#define OPENPMD_USE_BLOSC2_FILTER 1
-#else
-#define OPENPMD_USE_BLOSC2_FILTER 0
-#endif
-
+#include <algorithm>
 #include <iostream>
-#include <numeric>
-#include <stdexcept>
 
 int main()
 {
     namespace io = openPMD;
-
-#if OPENPMD_USE_BLOSC2_FILTER
-    /*
-     * This registers the Blosc2 plugin from
-     * https://github.com/Blosc/HDF5-Blosc2 as a demonstration on how to
-     * activate and configure dynamic HDF5 filter plugins through openPMD.
-     */
-
-    char *version, *date;
-    int r = register_blosc2(&version, &date);
-    if (r < 1)
-    {
-        throw std::runtime_error("Unable to register Blosc2 plugin with HDF5.");
-    }
-    else
-    {
-        std::cout << "Blosc2 plugin registered in version " << version
-                  << " and date " << date << "." << std::endl;
-    }
-#endif
 
     {
         auto f = io::Series(
@@ -119,7 +91,7 @@ int main()
         }
 
         io::Mesh mesh = cur_it.meshes["lowRez_2D_field"];
-        mesh.setAxisLabels({"x", "y", "z"});
+        mesh.setAxisLabels({"x", "y"});
 
         // data is assumed to reside behind a pointer as a contiguous
         // column-major array shared data ownership during IO is indicated with
@@ -148,62 +120,10 @@ int main()
         }
       ]
     }
-  },
-  "hdf5": {
-    "dataset": {
-      "chunks": "auto",
-      "permanent_filters": {
-        "id": "fletcher32",
-        "flags": "optional"
-      }
-    }
   }
 })END";
         d.options = datasetConfig;
         mesh["x"].resetDataset(d);
-
-#if OPENPMD_USE_BLOSC2_FILTER
-        /*
-         * FILTER_BLOSC2 resolves to 32026, the permanent plugin ID registered
-         * with the HDF Group. Plugin-specific options are given via cd_values,
-         * refer to the specific plugin's documentation. For the Blosc2 plugin,
-         * indexes 0, 1, 2 and 3 are reserved. Index 4 is the compression
-         * level, index 5 is a boolean for activating shuffling and
-         * index 6 denotes the compression method.
-         */
-        d.options = R"END(
-{
-  "adios2": {
-    "dataset": {
-      "operators": [
-        {
-          "type": "zlib",
-          "parameters": {
-            "clevel": 9
-          }
-        }
-      ]
-    }
-  },
-  "hdf5": {
-    "dataset": {
-      "chunks": "auto",
-      "permanent_filters": {
-        "id": )END" +
-            std::to_string(FILTER_BLOSC2) + R"END(,
-        "flags": "mandatory",
-        "cd_values": [0, 0, 0, 0, 4, 1, )END" +
-            std::to_string(BLOSC_ZSTD) + R"END(]
-      }
-    }
-  }
-})END";
-#endif
-        d.extent = {500, 500};
-        mesh["z"].resetDataset(d);
-        auto span = mesh["z"].storeChunk<double>({0, 0}, {500, 500});
-        auto span_data = span.currentBuffer();
-        std::iota(span_data.begin(), span_data.end(), 41.);
 
         io::ParticleSpecies electrons = cur_it.particles["electrons"];
 
@@ -226,27 +146,7 @@ int main()
         d = io::Dataset(dtype, mpiDims);
         electrons["positionOffset"]["x"].resetDataset(d);
 
-        auto dset = io::Dataset(
-            io::determineDatatype<uint64_t>(),
-            {2},
-            R"(
-            {
-              "hdf5": {
-                "dataset": {
-                  "chunks": "auto",
-                  "permanent_filters": [
-                    {
-                      "aggression": 5,
-                      "type": "zlib"
-                    },
-                    {
-                      "flags": "MANDATORY",
-                      "id": "shuffle"
-                    }
-                  ]
-                }
-              }
-            })");
+        auto dset = io::Dataset(io::determineDatatype<uint64_t>(), {2});
         electrons.particlePatches["numParticles"].resetDataset(dset);
         electrons.particlePatches["numParticlesOffset"].resetDataset(dset);
 
