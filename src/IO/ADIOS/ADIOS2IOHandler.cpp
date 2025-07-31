@@ -366,7 +366,7 @@ ADIOS2IOHandlerImpl::getOperators(json::TracingJSON cfg)
         else
         {
             return ParameterizedOperator{
-                std::move(*adiosOperator), std::move(adiosParams)};
+                *adiosOperator, std::move(adiosParams)};
         }
     };
 
