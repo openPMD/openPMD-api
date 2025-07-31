@@ -21,17 +21,6 @@
 
 #include <openPMD/openPMD.hpp>
 
-#if openPMD_HAVE_HDF5 && __has_include(<blosc2_filter.h>)
-#include <blosc2_filter.h>
-#define OPENPMD_USE_BLOSC2_FILTER 1
-#else
-#define OPENPMD_USE_BLOSC2_FILTER 0
-#endif
-
-#include <iostream>
-#include <numeric>
-#include <sstream>
-
 /*
  * If installed into a folder known to HDF5, then HDF5 will find the filter on
  * its own. In other contexts, it might become necessary to manually register
@@ -39,6 +28,19 @@
  * libblosc2_filter.so and set the below define to true.
  */
 #define OPENPMD_INIT_BLOSC2_FILTER_MANUALLY true
+
+#if openPMD_HAVE_HDF5 && __has_include(<blosc2_filter.h>)
+#define OPENPMD_USE_BLOSC2_FILTER 1
+#if OPENPMD_INIT_BLOSC2_FILTER_MANUALLY
+#include <blosc2_filter.h>
+#endif
+#else
+#define OPENPMD_USE_BLOSC2_FILTER 0
+#endif
+
+#include <iostream>
+#include <numeric>
+#include <sstream>
 
 void init_blosc_for_hdf5()
 {
