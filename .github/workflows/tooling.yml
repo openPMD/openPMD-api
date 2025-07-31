@@ -29,6 +29,8 @@ jobs:
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
 
+        ./.github/workflows/dependencies/install_hdf5_blosc2
+
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
           -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy);-system-headers=0" \
@@ -58,6 +60,9 @@ jobs:
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
+
+        ./.github/workflows/dependencies/install_hdf5_blosc2
+
         SOURCEPATH="$(pwd)"
         share/openPMD/download_samples.sh build
         export LDFLAGS="${LDFLAGS} -fsanitize=address,undefined -shared-libsan"
