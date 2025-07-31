@@ -195,6 +195,7 @@ def main():
             "backend": "hdf5",
             "hdf5": {
                 "dataset": {
+                    "chunks": "auto",
                     "permanent_filters": {
                         "type": "zlib",  # mandatory parameter
                         "aggression": 5,  # optional, defaults to 1
@@ -214,6 +215,7 @@ def main():
             "backend": "hdf5",
             "hdf5": {
                 "dataset": {
+                    "chunks": "auto",
                     "permanent_filters": {
                         # mandatory parameter
                         "id": "fletcher32",
@@ -235,6 +237,7 @@ def main():
             "backend": "hdf5",
             "hdf5": {
                 "dataset": {
+                    "chunks": "auto",
                     "permanent_filters": [
                         {"aggression": 5, "type": "zlib"},
                         {"flags": "mandatory", "id": "shuffle"},
@@ -255,6 +258,7 @@ def main():
                     {
                         "select": "meshes/.*",
                         "cfg": {
+                            "chunks": "auto",
                             "permanent_filters": {
                                 "type": "zlib",
                                 "aggression": 5,
@@ -264,6 +268,7 @@ def main():
                     {
                         "select": "particles/.*",
                         "cfg": {
+                            "chunks": "auto",
                             "permanent_filters": {
                                 "id": "fletcher32",
                                 "flags": "mandatory",

@@ -38,7 +38,7 @@
  * the filter into HDF5. For this, link the application against
  * libblosc2_filter.so and set the below define to true.
  */
-#define OPENPMD_INIT_BLOSC2_FILTER_MANUALLY false
+#define OPENPMD_INIT_BLOSC2_FILTER_MANUALLY true
 
 void init_blosc_for_hdf5()
 {
@@ -215,6 +215,9 @@ int main()
     std::string const hdf5_zlib_config = R"(
         backend = "hdf5"
 
+        [hdf5.dataset]
+        chunks = "auto"
+
         [hdf5.dataset.permanent_filters]
         type = "zlib"   # mandatory parameter
         aggression = 5  # optional, defaults to 1
@@ -229,6 +232,9 @@ int main()
 
     std::string const hdf5_predefined_filter_ids = R"(
         backend = "hdf5"
+
+        [hdf5.dataset]
+        chunks = "auto"
 
         [hdf5.dataset.permanent_filters]
         id = "fletcher32"  # mandatory parameter
@@ -247,6 +253,9 @@ int main()
 
     std::string const hdf5_filter_pipeline = R"(
         backend = "hdf5"
+
+        [hdf5.dataset]
+        chunks = "auto"
 
         # pipeline consisting of two filters
 
@@ -268,6 +277,9 @@ int main()
 
         [[hdf5.dataset]]
         select = "meshes/.*"
+
+        [hdf5.dataset.cfg]
+        chunks = "auto"
         [hdf5.dataset.cfg.permanent_filters]
         type = "zlib"
         aggression = 5
@@ -275,6 +287,9 @@ int main()
         # Now, configure the particles.
         [[hdf5.dataset]]
         select = "particles/.*"
+
+        [hdf5.dataset.cfg]
+        chunks = "auto"
         [hdf5.dataset.cfg.permanent_filters]
         id = "fletcher32"
         flags = "mandatory"
