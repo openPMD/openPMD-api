@@ -32,29 +32,6 @@
 #include <numeric>
 #include <sstream>
 
-void init_blosc_for_hdf5()
-{
-#if OPENPMD_USE_BLOSC2_FILTER
-    /*
-     * This registers the Blosc2 plugin from
-     * https://github.com/Blosc/HDF5-Blosc2 as a demonstration on how to
-     * activate and configure dynamic HDF5 filter plugins through openPMD.
-     */
-
-    char *version, *date;
-    int r = register_blosc2(&version, &date);
-    if (r < 1)
-    {
-        throw std::runtime_error("Unable to register Blosc2 plugin with HDF5.");
-    }
-    else
-    {
-        std::cout << "Blosc2 plugin registered in version '" << version
-                  << "' and date '" << date << "'." << std::endl;
-    }
-#endif
-}
-
 void write(std::string const &filename, std::string const &config)
 {
     using namespace openPMD;
@@ -100,8 +77,6 @@ void write(std::string const &filename, std::string const &config)
 
 int main()
 {
-    init_blosc_for_hdf5();
-
     // Backend specific configuration can be given in either JSON or TOML.
     // We will stick with TOML in this example, since it allows inline comments
     // and remains more legible for larger configurations.

@@ -253,7 +253,6 @@ jobs:
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DCMAKE_EXE_LINKER_FLAGS="-lblosc2_filter -L/usr/local/lib" \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
