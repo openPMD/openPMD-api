@@ -67,7 +67,7 @@ jobs:
         eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_ompi_h5_ad2_libcpp/)
         spack install
 
-        ./.github/workflows/dependencies/install_hdf5_blosc2
+        SKIP_HDF5_BLOSC2_PATCH=1 ./.github/workflows/dependencies/install_hdf5_blosc2
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -107,7 +107,7 @@ jobs:
         eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_ompi_h5_ad2/)
         spack install
 
-        ./.github/workflows/dependencies/install_hdf5_blosc2
+        SKIP_HDF5_BLOSC2_PATCH=1 ./.github/workflows/dependencies/install_hdf5_blosc2
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
