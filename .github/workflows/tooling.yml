@@ -51,7 +51,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-19 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev python3-numpy
+        sudo apt-get install clang-19 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev python3-numpy python3-hdf5plugin
         SPACK_VER=1.0.1 sudo -E .github/workflows/dependencies/install_spack
         echo "SPACK VERSION: $(spack --version)"
     - name: Build

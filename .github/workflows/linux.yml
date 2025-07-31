@@ -97,7 +97,8 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-11 gfortran libopenmpi-dev python3
+        sudo apt-get install clang-11 gfortran libopenmpi-dev python3 python3-pip
+        python3 -m pip install -U hdf5plugin
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -Werror}
@@ -176,7 +177,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get remove openmpi* libopenmpi* *hdf5* || true
-        sudo apt-get install g++ gfortran python3
+        sudo apt-get install g++ gfortran python3 python3-pip
+
+        python3 -m pip install hdf5plugin
         sudo .github/workflows/dependencies/install_spack
 
         # Need to build this manually due to broken MPICH package in Ubuntu 24.04
@@ -241,7 +244,7 @@ jobs:
         python3 -m pip install -U pandas
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
-        python3 -m pip install hdf5plugin
+        python3 -m pip install -U hdf5plugin
     - name: Build
       env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
       run: |
