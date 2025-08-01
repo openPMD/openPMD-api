@@ -301,28 +301,27 @@ int main()
     // For non-predefined IDs, the ID must be given as a number. This example
     // uses the Blosc2 filter available from
     // https://github.com/Blosc/HDF5-Blosc2, with the permanent plugin ID 32026
-    // (defined in blosc2_filter.h as FILTER_BLOSC2). Generic filters referenced
-    // by ID can be configured via the cd_values field. This field is an array
-    // of unsigned integers and plugin-specific interpretation. For the Blosc2
-    // plugin, indexes 0, 1, 2 and 3 are reserved. index 4 is the compression
-    // level, index 5 is a boolean for activating shuffling and index 6 denotes
-    // the compression method.
+    // (alternatively defined in blosc2_filter.h as FILTER_BLOSC2). Generic
+    // filters referenced by ID can be configured via the cd_values field. This
+    // field is an array of unsigned integers and plugin-specific
+    // interpretation. For the Blosc2 plugin, indexes 0, 1, 2 and 3 are
+    // reserved. index 4 is the compression level, index 5 is a boolean for
+    // activating shuffling and index 6 denotes the compression method.
+    // Compression method 5 is BLOSC_ZSTD, alternatively also defined in
+    // blosc2_filter.h.
 #if OPENPMD_USE_BLOSC2_FILTER
-    std::stringstream hdf5_blosc_filter;
-    hdf5_blosc_filter << R"(
+    std::string hdf5_blosc_filter = R"(
         backend = "hdf5"
 
         [hdf5.dataset]
         chunks = "auto"
 
         [hdf5.dataset.permanent_filters]
-        id = )" << FILTER_BLOSC2
-                      << R"(
+        id = 32026
         flags = "mandatory"
-        cd_values = [0, 0, 0, 0, 4, 1, )"
-                      << BLOSC_ZSTD << R"(]
+        cd_values = [0, 0, 0, 0, 4, 1, 5]
     )";
-    write("hdf5_blosc_filter.%E", hdf5_blosc_filter.str());
+    write("hdf5_blosc_filter.%E", hdf5_blosc_filter);
 #endif // OPENPMD_USE_BLOSC2_FILTER
 #endif // openPMD_HAVE_HDF5
 }
