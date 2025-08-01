@@ -22,6 +22,7 @@
 #include "openPMD/auxiliary/JSONMatcher.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 
 #include <iostream> // std::cerr
 #include <utility>
@@ -226,4 +227,36 @@ IOTask::IOTask(IOTask &&) noexcept = default;
 
 IOTask &IOTask::operator=(IOTask const &) = default;
 IOTask &IOTask::operator=(IOTask &&) noexcept = default;
+
+template <typename variant_t>
+variant_t &Parameter<Operation::READ_ATT>::resource()
+{
+    return *std::any_cast<variant_t>(&*m_resource);
+}
+template attribute_types &
+Parameter<Operation::READ_ATT>::resource<attribute_types>();
+
+template <typename variant_t>
+variant_t &Parameter<Operation::WRITE_ATT>::resource()
+{
+    return *std::any_cast<variant_t>(&m_resource);
+}
+template attribute_types &
+Parameter<Operation::WRITE_ATT>::resource<attribute_types>();
+
+template <typename variant_t>
+variant_t const &Parameter<Operation::WRITE_ATT>::resource() const
+{
+    return *std::any_cast<variant_t>(&m_resource);
+}
+template attribute_types const &
+Parameter<Operation::WRITE_ATT>::resource<attribute_types>() const;
+
+template <typename variant_t>
+variant_t &Parameter<Operation::READ_ATT_ALLSTEPS>::resource()
+{
+    return *std::any_cast<variant_t>(&*m_resource);
+}
+template vector_of_attributes_type &
+Parameter<Operation::READ_ATT_ALLSTEPS>::resource<vector_of_attributes_type>();
 } // namespace openPMD

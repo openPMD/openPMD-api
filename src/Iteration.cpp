@@ -31,6 +31,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <algorithm>
@@ -330,7 +331,7 @@ void Iteration::flushVariableBased(
         wAttr.changesOverSteps =
             Parameter<Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
         wAttr.name = "snapshot";
-        wAttr.resource = (unsigned long long)i;
+        wAttr.resource<attribute_types>() = (unsigned long long)i;
         wAttr.dtype = Datatype::ULONGLONG;
         IOHandler()->enqueue(IOTask(this, wAttr));
     }
@@ -480,13 +481,13 @@ void Iteration::read_impl(std::string const &groupPath)
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::FLOAT)
-        setDt(Attribute(*aRead.resource).get<float>());
+        setDt(Attribute(*aRead.m_resource).get<float>());
     else if (*aRead.dtype == DT::DOUBLE)
-        setDt(Attribute(*aRead.resource).get<double>());
+        setDt(Attribute(*aRead.m_resource).get<double>());
     else if (*aRead.dtype == DT::LONG_DOUBLE)
-        setDt(Attribute(*aRead.resource).get<long double>());
+        setDt(Attribute(*aRead.m_resource).get<long double>());
     // conversion cast if a backend reports an integer type
-    else if (auto val = Attribute(*aRead.resource).getOptional<double>();
+    else if (auto val = Attribute(*aRead.m_resource).getOptional<double>();
              val.has_value())
         setDt(val.value());
     else
@@ -495,19 +496,19 @@ void Iteration::read_impl(std::string const &groupPath)
             error::Reason::UnexpectedContent,
             {},
             "Unexpected Attribute datatype for 'dt' (expected double, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "time";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::FLOAT)
-        setTime(Attribute(*aRead.resource).get<float>());
+        setTime(Attribute(*aRead.m_resource).get<float>());
     else if (*aRead.dtype == DT::DOUBLE)
-        setTime(Attribute(*aRead.resource).get<double>());
+        setTime(Attribute(*aRead.m_resource).get<double>());
     else if (*aRead.dtype == DT::LONG_DOUBLE)
-        setTime(Attribute(*aRead.resource).get<long double>());
+        setTime(Attribute(*aRead.m_resource).get<long double>());
     // conversion cast if a backend reports an integer type
-    else if (auto val = Attribute(*aRead.resource).getOptional<double>();
+    else if (auto val = Attribute(*aRead.m_resource).getOptional<double>();
              val.has_value())
         setTime(val.value());
     else
@@ -517,12 +518,12 @@ void Iteration::read_impl(std::string const &groupPath)
             {},
             "Unexpected Attribute datatype for 'time' (expected double, "
             "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "timeUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(*aRead.resource).getOptional<double>();
+    if (auto val = Attribute(*aRead.m_resource).getOptional<double>();
         val.has_value())
         setTimeUnitSI(val.value());
     else
@@ -532,7 +533,7 @@ void Iteration::read_impl(std::string const &groupPath)
             {},
             "Unexpected Attribute datatype for 'timeUnitSI' (expected double, "
             "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */

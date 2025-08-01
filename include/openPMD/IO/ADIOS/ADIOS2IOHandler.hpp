@@ -36,6 +36,7 @@
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 #include <stdexcept>
@@ -659,7 +660,7 @@ namespace detail
             size_t step,
             adios2::IO &IO,
             std::string name,
-            Attribute::resource &resource,
+            attribute_types &resource,
             detail::AdiosAttributes const &);
 
         template <int n, typename... Params>

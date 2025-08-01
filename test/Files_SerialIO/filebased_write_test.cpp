@@ -26,7 +26,8 @@ auto close_and_reopen_iterations(
 {
     Series list(filename, access, json_config);
 
-    auto test_read = [](Iteration &iteration) {
+    auto test_read = []([[maybe_unused]] Iteration &iteration) {
+#ifdef OPENPMD_USE_VARIANT_PUBLICALLY
         auto component = iteration.particles["e"]["position"]["x"];
         auto chunk = component.loadChunkVariant();
         iteration.seriesFlush();
@@ -52,6 +53,7 @@ auto close_and_reopen_iterations(
             write_to_stdout("[]");
         }
         write_to_stdout('\n');
+#endif
     };
 
     for (auto &[idx, iteration] : list.snapshots())

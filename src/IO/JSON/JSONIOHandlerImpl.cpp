@@ -1303,7 +1303,8 @@ void JSONIOHandlerImpl::writeAttribute(
         (*jsonVal)[filePosition->id]["attributes"] = nlohmann::json::object();
     }
     nlohmann::json value;
-    switchType<AttributeWriter>(parameter.dtype, value, parameter.resource);
+    switchType<AttributeWriter>(
+        parameter.dtype, value, parameter.resource<attribute_types>());
     switch (m_attributeMode.m_mode)
     {
     case AttributeMode::Long:
@@ -1668,7 +1669,7 @@ void JSONIOHandlerImpl::readAttribute(
         {
             Attribute attr = recoverAttributeFromJson(j, name);
             *parameters.dtype = attr.dtype;
-            *parameters.resource = attr.getResource();
+            *parameters.m_resource = attr.getAny();
         }
     }
     catch (json::type_error &)
@@ -2506,7 +2507,7 @@ void JSONIOHandlerImpl::DatasetReader::call(
 
 template <typename T>
 void JSONIOHandlerImpl::AttributeWriter::call(
-    nlohmann::json &value, Attribute::resource const &resource)
+    nlohmann::json &value, attribute_types const &resource)
 {
     CppToJSON<T> ctj;
     value = ctj(std::get<T>(resource));
@@ -2517,7 +2518,7 @@ void JSONIOHandlerImpl::AttributeReader::call(
     nlohmann::json const &json, Parameter<Operation::READ_ATT> &parameters)
 {
     JsonToCpp<T> jtc;
-    *parameters.resource = jtc(json);
+    parameters.resource<attribute_types>() = jtc(json);
 }
 
 template <typename T>

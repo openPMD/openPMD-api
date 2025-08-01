@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include <any>
 #include <cstddef>
 #include <type_traits>
 #include <variant> // IWYU pragma: export
@@ -35,7 +36,7 @@ namespace auxiliary
      * @tparam T        Varaidic template argument list of datatypes to be
      * stored.
      */
-    template <class T_DTYPES, typename std_variant>
+    template <class T_DTYPES, typename... variant_types>
     class Variant
     {
         static_assert(
@@ -43,7 +44,11 @@ namespace auxiliary
             "Datatypes to Variant must be supplied as enum.");
 
     public:
-        using resource = std_variant;
+        struct from_basic_type_tag
+        {};
+        static constexpr from_basic_type_tag from_basic_type =
+            from_basic_type_tag{};
+
         /** Construct a lightweight wrapper around a generic object that
          * indicates the concrete datatype of the specific object stored.
          *
@@ -51,8 +56,10 @@ namespace auxiliary
          * datatype is contained in T_DTYPES.
          * @param   r   Generic object to be stored.
          */
-        Variant(resource r) : dtype{static_cast<T_DTYPES>(r.index())}, m_data{r}
-        {}
+        template <typename U>
+        Variant(from_basic_type_tag, U);
+
+        Variant(std::any);
 
         /** Retrieve a stored specific object of known datatype with ensured
          * type-safety.
@@ -62,33 +69,36 @@ namespace auxiliary
          * @return  Copy of the retrieved object of type U.
          */
         template <typename U>
-        U get() const
-        {
-            return std::get<U>(m_data);
-        }
+        U const &get() const;
 
         /** Retrieve the stored generic object.
          *
          * @return  Copy of the stored generic object.
          */
-        resource getResource() const
+        template <typename variant_t = void>
+        variant_t const &getVariant() const
+        {
+            return *std::any_cast<variant_t>(&m_data);
+        }
+
+        std::any const &getAny()
         {
             return m_data;
         }
 
-        /** Retrieve the index of the alternative that is currently been held
-         *
-         * @return  zero-based index
-         */
-        constexpr size_t index() const noexcept
-        {
-            return m_data.index();
-        }
+        // /** Retrieve the index of the alternative that is currently been held
+        //  *
+        //  * @return  zero-based index
+        //  */
+        // constexpr size_t index() const noexcept
+        // {
+        //     return m_data.index();
+        // }
 
         T_DTYPES dtype;
 
     private:
-        resource m_data;
+        std::any m_data;
     };
 
     /*

@@ -440,7 +440,8 @@ void Mesh::read()
     IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
-        std::string tmpGeometry = Attribute(*aRead.resource).get<std::string>();
+        std::string tmpGeometry =
+            Attribute(*aRead.m_resource).get<std::string>();
         if ("cartesian" == tmpGeometry)
             setGeometry(Geometry::cartesian);
         else if ("thetaMode" == tmpGeometry)
@@ -459,18 +460,18 @@ void Mesh::read()
             {},
             "Unexpected Attribute datatype for 'geometry' (expected a string, "
             "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "dataOrder";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::CHAR)
         setDataOrder(
-            static_cast<DataOrder>(Attribute(*aRead.resource).get<char>()));
+            static_cast<DataOrder>(Attribute(*aRead.m_resource).get<char>()));
     else if (*aRead.dtype == DT::STRING)
     {
         std::string tmpDataOrder =
-            Attribute(*aRead.resource).get<std::string>();
+            Attribute(*aRead.m_resource).get<std::string>();
         if (tmpDataOrder.size() == 1)
             setDataOrder(static_cast<DataOrder>(tmpDataOrder[0]));
         else
@@ -487,12 +488,12 @@ void Mesh::read()
             {},
             "Unexpected Attribute datatype for 'dataOrder' (expected char or "
             "string, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "axisLabels";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    Attribute a = Attribute(*aRead.resource);
+    Attribute a = Attribute(*aRead.m_resource);
     if (auto val = a.getOptional<std::vector<std::string>>(); val.has_value())
         setAxisLabels(*val);
     else
@@ -502,12 +503,12 @@ void Mesh::read()
             {},
             "Unexpected Attribute datatype for 'axisLabels' (expected a vector "
             "of string, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "gridSpacing";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    a = Attribute(*aRead.resource);
+    a = Attribute(*aRead.m_resource);
     if (*aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT)
         setGridSpacing(a.get<std::vector<float>>());
     else if (*aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE)
@@ -525,13 +526,13 @@ void Mesh::read()
             {},
             "Unexpected Attribute datatype for 'gridSpacing' (expected a "
             "vector of double, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "gridGlobalOffset";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
     if (auto val =
-            Attribute(*aRead.resource).getOptional<std::vector<double>>();
+            Attribute(*aRead.m_resource).getOptional<std::vector<double>>();
         val.has_value())
         setGridGlobalOffset(val.value());
     else
@@ -541,7 +542,7 @@ void Mesh::read()
             {},
             "Unexpected Attribute datatype for 'gridGlobalOffset' (expected a "
             "vector of double, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -549,7 +550,7 @@ void Mesh::read()
     if (IOHandler()->m_standard >= OpenpmdStandard::v_2_0_0)
     {
         if (auto val =
-                Attribute(*aRead.resource).getOptional<std::vector<double>>();
+                Attribute(*aRead.m_resource).getOptional<std::vector<double>>();
             val.has_value())
             setGridUnitSIPerDimension(val.value());
         else
@@ -559,11 +560,11 @@ void Mesh::read()
                 {},
                 "Unexpected Attribute datatype for 'gridUnitSI' "
                 "(expected vector of double, found " +
-                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                    datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
     }
     else
     {
-        if (auto val = Attribute(*aRead.resource).getOptional<double>();
+        if (auto val = Attribute(*aRead.m_resource).getOptional<double>();
             val.has_value())
             setGridUnitSI(val.value());
         else
@@ -573,7 +574,7 @@ void Mesh::read()
                 {},
                 "Unexpected Attribute datatype for 'gridUnitSI' "
                 "(expected double, found " +
-                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                    datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
     }
 
     if (scalar())

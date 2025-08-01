@@ -298,7 +298,7 @@ void Attributable::flushAttributes(internal::FlushParams const &flushParams)
         for (std::string const &att_name : attributes())
         {
             aWrite.name = att_name;
-            aWrite.resource = getAttribute(att_name).getResource();
+            aWrite.m_resource = getAttribute(att_name).getAny();
             aWrite.dtype = getAttribute(att_name).dtype;
             IOHandler()->enqueue(IOTask(this, aWrite));
         }
@@ -363,7 +363,7 @@ void Attributable::readAttributes(ReadMode mode)
                       << e.what() << ")\n";
             continue;
         }
-        Attribute a(*aRead.resource);
+        Attribute a(*aRead.m_resource);
 
         auto guardUnitDimension = [this](std::string const &key, auto vector) {
             if (key == "unitDimension")

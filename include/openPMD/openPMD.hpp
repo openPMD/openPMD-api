@@ -80,4 +80,8 @@ If you think that this assertion is shown wrongly, please apply
 
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
+
+#ifdef OPENPMD_GUARD_HEADER_AGAINST_PUBLIC_INCLUSION
+static_assert(false, "Some header was publically included that should not be.");
+#endif
 // IWYU pragma: end_exports

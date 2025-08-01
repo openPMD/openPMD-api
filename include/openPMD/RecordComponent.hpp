@@ -229,6 +229,8 @@ public:
     template <typename T>
     std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
 
+#ifdef OPENPMD_USE_VARIANT_PUBLICALLY
+
     using shared_ptr_dataset_types = auxiliary::detail::
         map_variant<auxiliary::detail::as_shared_pointer, dataset_types>::type;
 
@@ -243,6 +245,7 @@ public:
      *     ..., std::shared_ptr<std::complex<long double>>>
      */
     shared_ptr_dataset_types loadChunkVariant(Offset = {0u}, Extent = {-1u});
+#endif
 
     /** Load a chunk of data into pre-allocated memory.
      *

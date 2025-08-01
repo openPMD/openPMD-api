@@ -39,6 +39,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
@@ -1557,7 +1558,7 @@ void Series::flushMeshesPath()
     Parameter<Operation::WRITE_ATT> aWrite;
     aWrite.name = "meshesPath";
     Attribute a = getAttribute("meshesPath");
-    aWrite.resource = a.getResource();
+    aWrite.m_resource = a.getAny();
     aWrite.dtype = a.dtype;
     IOHandler()->enqueue(IOTask(this, aWrite));
 }
@@ -1567,7 +1568,7 @@ void Series::flushParticlesPath()
     Parameter<Operation::WRITE_ATT> aWrite;
     aWrite.name = "particlesPath";
     Attribute a = getAttribute("particlesPath");
-    aWrite.resource = a.getResource();
+    aWrite.m_resource = a.getAny();
     aWrite.dtype = a.dtype;
     IOHandler()->enqueue(IOTask(this, aWrite));
 }
@@ -1816,7 +1817,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     IterationEncoding encoding_out;
     if (*aRead.dtype == DT::STRING)
     {
-        std::string encoding = Attribute(*aRead.resource).get<std::string>();
+        std::string encoding = Attribute(*aRead.m_resource).get<std::string>();
         if (encoding == "fileBased")
             encoding_out = IterationEncoding::fileBased;
         else if (encoding == "groupBased")
@@ -1861,7 +1862,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
         throw std::runtime_error(
             "Unexpected Attribute datatype for 'iterationEncoding' (expected "
             "string, found " +
-            datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+            datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "iterationFormat";
     IOHandler()->enqueue(IOTask(this, aRead));
@@ -1869,7 +1870,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     if (*aRead.dtype == DT::STRING)
     {
         setWritten(false, Attributable::EnqueueAsynchronously::No);
-        setIterationFormat(Attribute(*aRead.resource).get<std::string>());
+        setIterationFormat(Attribute(*aRead.m_resource).get<std::string>());
         setWritten(true, Attributable::EnqueueAsynchronously::No);
     }
     else
@@ -1879,7 +1880,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
             {},
             "Unexpected Attribute datatype for 'iterationFormat' (expected "
             "string, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     Parameter<Operation::OPEN_PATH> pOpen;
     std::string version = openPMD();
@@ -1949,7 +1950,7 @@ auto Series::readGorVBased(
         if (*aRead.dtype == DT::STRING)
         {
             std::string encoding =
-                Attribute(*aRead.resource).get<std::string>();
+                Attribute(*aRead.m_resource).get<std::string>();
             if (encoding == "groupBased")
                 series.m_iterationEncoding = IterationEncoding::groupBased;
             else if (encoding == "variableBased")
@@ -2003,7 +2004,7 @@ creating new iterations.
                 {},
                 "Unexpected Attribute datatype for 'iterationEncoding' "
                 "(expected string, found " +
-                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                    datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
         aRead.name = "iterationFormat";
         IOHandler()->enqueue(IOTask(this, aRead));
@@ -2011,7 +2012,7 @@ creating new iterations.
         if (*aRead.dtype == DT::STRING)
         {
             setWritten(false, Attributable::EnqueueAsynchronously::No);
-            setIterationFormat(Attribute(*aRead.resource).get<std::string>());
+            setIterationFormat(Attribute(*aRead.m_resource).get<std::string>());
             setWritten(true, Attributable::EnqueueAsynchronously::No);
         }
         else
@@ -2021,7 +2022,7 @@ creating new iterations.
                 {},
                 "Unexpected Attribute datatype for 'iterationFormat' (expected "
                 "string, found " +
-                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                    datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
     }
 
     Parameter<Operation::OPEN_PATH> pOpen;
@@ -2249,7 +2250,7 @@ void Series::readBase()
     aRead.name = "openPMD";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+    if (auto val = Attribute(*aRead.m_resource).getOptional<std::string>();
         val.has_value())
         setOpenPMD(val.value());
     else
@@ -2259,12 +2260,12 @@ void Series::readBase()
             {},
             "Unexpected Attribute datatype for 'openPMD' (expected string, "
             "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "openPMDextension";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(*aRead.resource).getOptional<uint32_t>();
+    if (auto val = Attribute(*aRead.m_resource).getOptional<uint32_t>();
         val.has_value())
         setOpenPMDextension(val.value());
     else
@@ -2274,12 +2275,12 @@ void Series::readBase()
             {},
             "Unexpected Attribute datatype for 'openPMDextension' (expected "
             "uint32, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     aRead.name = "basePath";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+    if (auto val = Attribute(*aRead.m_resource).getOptional<std::string>();
         val.has_value())
     {
         if ( // might have been previously initialized in READ_LINEAR access
@@ -2304,7 +2305,7 @@ void Series::readBase()
             {},
             "Unexpected Attribute datatype for 'basePath' (expected string, "
             "found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     Parameter<Operation::LIST_ATTS> aList;
     IOHandler()->enqueue(IOTask(this, aList));
@@ -2316,7 +2317,7 @@ void Series::readBase()
         aRead.name = "meshesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
-        if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+        if (auto val = Attribute(*aRead.m_resource).getOptional<std::string>();
             val.has_value())
         {
             /* allow setting the meshes path after completed IO */
@@ -2337,7 +2338,7 @@ void Series::readBase()
                 {},
                 "Unexpected Attribute datatype for 'meshesPath' (expected "
                 "string, found " +
-                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                    datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
     }
     else
     {
@@ -2354,7 +2355,7 @@ void Series::readBase()
         aRead.name = "particlesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
-        if (auto val = Attribute(*aRead.resource).getOptional<std::string>();
+        if (auto val = Attribute(*aRead.m_resource).getOptional<std::string>();
             val.has_value())
         {
             /* allow setting the meshes path after completed IO */
@@ -2375,7 +2376,7 @@ void Series::readBase()
                 {},
                 "Unexpected Attribute datatype for 'particlesPath' (expected "
                 "string, found " +
-                    datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                    datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
     }
     {
         // Make sure that the particlesPath does not leak from one iteration
@@ -2645,7 +2646,7 @@ void Series::flushStep(bool doFlush)
         wAttr.changesOverSteps =
             Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
         wAttr.name = "snapshot";
-        wAttr.resource = std::vector<unsigned long long>{
+        wAttr.resource<attribute_types>() = std::vector<unsigned long long>{
             series.m_currentlyActiveIterations.begin(),
             series.m_currentlyActiveIterations.end()};
         series.m_currentlyActiveIterations.clear();
@@ -3470,7 +3471,7 @@ auto Series::preparseSnapshots()
                 return res;
             }
         },
-        *readAttr.resource);
+        readAttr.resource<vector_of_attributes_type>());
 }
 
 bool Series::randomAccessSteps() const

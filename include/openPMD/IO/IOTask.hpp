@@ -26,11 +26,11 @@
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
-#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 
+#include <any>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -621,7 +621,12 @@ struct OPENPMDAPI_EXPORT
         IfPossible
     };
     ChangesOverSteps changesOverSteps = ChangesOverSteps::No;
-    Attribute::resource resource;
+    // attribute_types
+    std::any m_resource;
+    template <typename variant_t>
+    variant_t &resource();
+    template <typename variant_t>
+    variant_t const &resource() const;
 };
 
 template <>
@@ -642,8 +647,11 @@ struct OPENPMDAPI_EXPORT
 
     std::string name = "";
     std::shared_ptr<Datatype> dtype = std::make_shared<Datatype>();
-    std::shared_ptr<Attribute::resource> resource =
-        std::make_shared<Attribute::resource>();
+
+    // attribute_types
+    std::shared_ptr<std::any> m_resource = std::make_shared<std::any>();
+    template <typename variant_t>
+    variant_t &resource();
 };
 
 template <>
@@ -665,17 +673,10 @@ struct OPENPMDAPI_EXPORT
     std::string name = "";
     std::shared_ptr<Datatype> dtype = std::make_shared<Datatype>();
 
-    struct to_vector_type
-    {
-        template <typename T>
-        using type = std::vector<T>;
-    };
-    // std::variant<std::vector<T_1>, std::vector<T_2>, ...>
-    // for all T_i in openPMD::Datatype.
-    using result_type = typename auxiliary::detail::
-        map_variant<to_vector_type, Attribute::resource>::type;
-
-    std::shared_ptr<result_type> resource = std::make_shared<result_type>();
+    // vector_of_attributes_type
+    std::shared_ptr<std::any> m_resource = std::make_shared<std::any>();
+    template <typename variant_t>
+    variant_t &resource();
 };
 
 template <>

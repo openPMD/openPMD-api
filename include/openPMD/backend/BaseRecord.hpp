@@ -956,7 +956,7 @@ inline void BaseRecord<T_elem>::readBase()
     this->IOHandler()->enqueue(IOTask(this, aRead));
     this->IOHandler()->flush(internal::defaultFlushParams);
     if (auto val =
-            Attribute(*aRead.resource).getOptional<std::array<double, 7>>();
+            Attribute(*aRead.m_resource).getOptional<std::array<double, 7>>();
         val.has_value())
         this->setAttribute("unitDimension", val.value());
     else
@@ -968,12 +968,12 @@ inline void BaseRecord<T_elem>::readBase()
     this->IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::FLOAT)
         this->setAttribute(
-            "timeOffset", Attribute(*aRead.resource).get<float>());
+            "timeOffset", Attribute(*aRead.m_resource).get<float>());
     else if (*aRead.dtype == DT::DOUBLE)
         this->setAttribute(
-            "timeOffset", Attribute(*aRead.resource).get<double>());
+            "timeOffset", Attribute(*aRead.m_resource).get<double>());
     // conversion cast if a backend reports an integer type
-    else if (auto val = Attribute(*aRead.resource).getOptional<double>();
+    else if (auto val = Attribute(*aRead.m_resource).getOptional<double>();
              val.has_value())
         this->setAttribute("timeOffset", val.value());
     else

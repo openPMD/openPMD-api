@@ -22,6 +22,7 @@
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
@@ -617,7 +618,7 @@ void init_Attributable(py::module &m)
             "get_attribute",
             [](Attributable &attr, std::string const &key) {
                 auto v = attr.getAttribute(key);
-                return v.getResource();
+                return v.getVariant<attribute_types>();
                 // TODO instead of returning lists, return all arrays (ndim > 0)
                 // as numpy arrays?
             })

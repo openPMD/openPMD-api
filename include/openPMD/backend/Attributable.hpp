@@ -27,7 +27,6 @@
 #include "openPMD/backend/Writable.hpp"
 
 #include <cstddef>
-#include <exception>
 #include <map>
 #include <memory>
 #include <string>

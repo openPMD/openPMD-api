@@ -27,6 +27,7 @@
 #include "openPMD/IO/JSON/JSONFilePosition.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/config.hpp"
 
 #include <istream>
@@ -473,7 +474,7 @@ private:
     struct AttributeWriter
     {
         template <typename T>
-        static void call(nlohmann::json &, Attribute::resource const &);
+        static void call(nlohmann::json &, attribute_types const &);
 
         static constexpr char const *errorMsg = "JSON: writeAttribute";
     };

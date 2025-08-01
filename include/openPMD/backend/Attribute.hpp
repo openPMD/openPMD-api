@@ -52,12 +52,17 @@ namespace openPMD
 /** Variant datatype supporting at least all formats for attributes specified in
  * the openPMD standard.
  */
-class Attribute : public auxiliary::Variant<Datatype, attribute_types>
+
+#define OPENPMD_ENUMERATE_TYPES(type) , type
+
+class Attribute
+    : public auxiliary::Variant<Datatype OPENPMD_FOREACH_DATATYPE(
+          OPENPMD_ENUMERATE_TYPES)>
+
+#undef OPENPMD_ENUMERATE_TYPES
+
 {
 public:
-    Attribute(resource r) : Variant(std::move(r))
-    {}
-
     /**
      * Compiler bug: CUDA (nvcc) releases 11.0.3 (v11.0.221), 11.1 (v11.1.105):
      * > no instance of constructor "openPMD::Attribute::Attribute"
@@ -69,12 +74,15 @@ public:
      */
 
 #define OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT(TYPE)                       \
-    Attribute(TYPE val) : Variant(resource(std::move(val)))                    \
+    Attribute(TYPE val) : Variant(std::move(val))                              \
     {}
 
     OPENPMD_FOREACH_DATATYPE(OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT)
 
 #undef OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT
+
+    Attribute(std::any val) : Variant(std::move(val))
+    {}
 
     /** Retrieve a stored specific Attribute and cast if convertible.
      *
@@ -331,41 +339,6 @@ namespace detail
             eitherValueOrError);
     }
 } // namespace detail
-
-template <typename U>
-U Attribute::get() const
-{
-    auto eitherValueOrError = std::visit(
-        [](auto &&containedValue) -> std::variant<U, std::runtime_error> {
-            using containedType = std::decay_t<decltype(containedValue)>;
-            return detail::doConvert<containedType, U>(&containedValue);
-        },
-        Variant::getResource());
-    return std::visit(
-        [](auto &&containedValue) -> U {
-            using T = std::decay_t<decltype(containedValue)>;
-            if constexpr (std::is_same_v<T, std::runtime_error>)
-            {
-                throw std::move(containedValue);
-            }
-            else
-            {
-                return std::move(containedValue);
-            }
-        },
-        std::move(eitherValueOrError));
-}
-
-template <typename U>
-std::optional<U> Attribute::getOptional() const
-{
-    return std::visit(
-        [](auto &&containedValue) -> std::optional<U> {
-            using containedType = std::decay_t<decltype(containedValue)>;
-            return detail::doConvertOptional<containedType, U>(&containedValue);
-        },
-        Variant::getResource());
-}
 } // namespace openPMD
 
 #include "openPMD/UndefDatatypeMacros.hpp"

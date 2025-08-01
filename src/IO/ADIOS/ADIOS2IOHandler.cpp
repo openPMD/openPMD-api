@@ -41,6 +41,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -1347,7 +1348,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
         ba.currentStep(),
         ba.m_IO,
         name,
-        *parameters.resource,
+        parameters.resource<attribute_types>(),
         ba.attributes());
     *parameters.dtype = ret;
 }
@@ -1486,8 +1487,7 @@ namespace
             std::vector<detail::PreloadAdiosAttributes> const &preload,
             adios2::IO &IO,
             std::string const &name,
-            Parameter<Operation::READ_ATT_ALLSTEPS>::result_type
-                &put_result_here)
+            vector_of_attributes_type &put_result_here)
         {
             auto &res = put_result_here.emplace<std::vector<T>>();
             res.reserve(preload.size());
@@ -1657,7 +1657,8 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     }
 #endif
     auto &attributes = ba.attributes();
-    switchType<ReadAttributeAllsteps>(type, preload, IO, name, *param.resource);
+    switchType<ReadAttributeAllsteps>(
+        type, preload, IO, name, param.resource<vector_of_attributes_type>());
     attributes.m_data = std::move(preload);
 }
 
@@ -2209,7 +2210,7 @@ namespace detail
         size_t step,
         adios2::IO &IO,
         std::string name,
-        Attribute::resource &resource,
+        attribute_types &resource,
         detail::AdiosAttributes const &attributes)
     {
         return genericReadAttribute<T>(
@@ -2265,7 +2266,9 @@ namespace detail
                     return it != filedata.uncommittedAttributes.end();
                 };
                 if (AttributeTypes<T>::attributeUnchanged(
-                        IO, fullName, std::get<T>(parameters.resource)))
+                        IO,
+                        fullName,
+                        std::get<T>(parameters.resource<attribute_types>())))
                 {
                     return;
                 }
@@ -2312,7 +2315,7 @@ namespace detail
             }
         }
 
-        auto &value = std::get<T>(parameters.resource);
+        auto &value = std::get<T>(parameters.resource<attribute_types>());
         bool modifiable = impl->m_modifiableAttributes ==
                 ADIOS2IOHandlerImpl::ModifiableAttributes::Yes ||
             parameters.changesOverSteps !=

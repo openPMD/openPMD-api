@@ -66,7 +66,7 @@ void PatchRecord::read()
     IOHandler()->flush(internal::defaultFlushParams);
 
     if (auto val =
-            Attribute(*aRead.resource).getOptional<std::array<double, 7> >();
+            Attribute(*aRead.m_resource).getOptional<std::array<double, 7> >();
         val.has_value())
         this->setAttribute("unitDimension", val.value());
     else
@@ -76,7 +76,7 @@ void PatchRecord::read()
             {},
             "Unexpected Attribute datatype for 'unitDimension' (expected an "
             "array of seven floating point numbers, found " +
-                datatypeToString(Attribute(*aRead.resource).dtype) + ")");
+                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
 
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));

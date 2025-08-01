@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 
 #include <algorithm>
 #include <climits>
@@ -56,6 +57,12 @@ namespace internal
         m_chunks.push(std::move(task));
     }
 } // namespace internal
+
+template <typename T>
+auto resource(T &t) -> attribute_types &
+{
+    return t.template resource<attribute_types>();
+}
 
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 {
@@ -292,7 +299,7 @@ void RecordComponent::flush(
                 Parameter<Operation::WRITE_ATT> aWrite;
                 aWrite.name = "value";
                 aWrite.dtype = rc.m_constantValue.dtype;
-                aWrite.resource = rc.m_constantValue.getResource();
+                aWrite.m_resource = rc.m_constantValue.getAny();
                 if (isVBased)
                 {
                     aWrite.changesOverSteps = Parameter<
@@ -302,7 +309,7 @@ void RecordComponent::flush(
                 aWrite.name = "shape";
                 Attribute a(getExtent());
                 aWrite.dtype = a.dtype;
-                aWrite.resource = a.getResource();
+                aWrite.m_resource = a.getAny();
                 if (isVBased)
                 {
                     aWrite.changesOverSteps = Parameter<
@@ -329,7 +336,7 @@ void RecordComponent::flush(
                 aWrite.name = "shape";
                 Attribute a(getExtent());
                 aWrite.dtype = a.dtype;
-                aWrite.resource = a.getResource();
+                aWrite.m_resource = a.getAny();
                 if (isVBased)
                 {
                     aWrite.changesOverSteps = Parameter<
@@ -399,7 +406,7 @@ void RecordComponent::readBase(bool require_unit_si)
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
 
-        Attribute a(*aRead.resource);
+        Attribute a(*aRead.m_resource);
         DT dtype = *aRead.dtype;
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         switchNonVectorType<MakeConstant>(dtype, *this, a);
@@ -408,7 +415,7 @@ void RecordComponent::readBase(bool require_unit_si)
         aRead.name = "shape";
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
-        a = Attribute(*aRead.resource);
+        a = Attribute(*aRead.m_resource);
         Extent e;
 
         // uint64_t check
@@ -455,7 +462,7 @@ void RecordComponent::readBase(bool require_unit_si)
                 {},
                 "Unexpected Attribute datatype for 'unitSI' (expected double, "
                 "found " +
-                    datatypeToString(Attribute(*aRead.resource).dtype) +
+                    datatypeToString(Attribute(*aRead.m_resource).dtype) +
                     ") in '" + myPath().openPMDPath() + "'.");
         }
     }
@@ -548,6 +555,7 @@ void RecordComponent::verifyChunk(
     }
 }
 
+#ifdef OPENPMD_USE_VARIANT_PUBLICALLY
 namespace
 {
     struct LoadChunkVariant
@@ -566,4 +574,5 @@ auto RecordComponent::loadChunkVariant(Offset o, Extent e)
 {
     return visit<LoadChunkVariant>(std::move(o), std::move(e));
 }
+#endif
 } // namespace openPMD
