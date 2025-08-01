@@ -13,7 +13,7 @@ patch_path="$(pwd)/hdf5_blosc2_cmake_fixes.patch"
 git clone -b "$version" https://github.com/Blosc/HDF5-Blosc2
 cd HDF5-Blosc2
 
-if [[ -z "$SKIP_HDF5_BLOSC2_PATCH" ]]; then
+if [[ -z "${SKIP_HDF5_BLOSC2_PATCH:-}" ]]; then
     curl -sLo "$patch_path" "$patch_url"
     git config user.email "tooling@tools.com"
     git config user.name "Tooling"

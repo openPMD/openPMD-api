@@ -27,7 +27,7 @@
  * the filter into HDF5. For this, link the application against
  * libblosc2_filter.so and set the below define to true.
  */
-#define OPENPMD_INIT_BLOSC2_FILTER_MANUALLY true
+#define OPENPMD_INIT_BLOSC2_FILTER_MANUALLY false
 
 #if openPMD_HAVE_HDF5 && __has_include(<blosc2_filter.h>)
 #define OPENPMD_USE_BLOSC2_FILTER 1
