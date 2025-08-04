@@ -95,6 +95,27 @@ using openpmd_array_double_7 = std::array<double, 7>;
     MACRO(std::string)                                                         \
     MACRO(bool)
 
+#define OPENPMD_FOREACH_VECTOR_DATATYPE(MACRO)                                 \
+    MACRO(std::vector<char>)                                                   \
+    MACRO(std::vector<short>)                                                  \
+    MACRO(std::vector<int>)                                                    \
+    MACRO(std::vector<long>)                                                   \
+    MACRO(std::vector<long long>)                                              \
+    MACRO(std::vector<unsigned char>)                                          \
+    MACRO(std::vector<unsigned short>)                                         \
+    MACRO(std::vector<unsigned int>)                                           \
+    MACRO(std::vector<unsigned long>)                                          \
+    MACRO(std::vector<unsigned long long>)                                     \
+    MACRO(std::vector<float>)                                                  \
+    MACRO(std::vector<double>)                                                 \
+    MACRO(std::vector<long double>)                                            \
+    MACRO(std::vector<std::complex<float>>)                                    \
+    MACRO(std::vector<std::complex<double>>)                                   \
+    MACRO(std::vector<std::complex<long double>>)                              \
+    MACRO(std::vector<signed char>)                                            \
+    MACRO(std::vector<std::string>)                                            \
+    MACRO(openpmd_array_double_7)
+
 #define OPENPMD_FOREACH_DATASET_DATATYPE(MACRO)                                \
     MACRO(char)                                                                \
     MACRO(unsigned char)                                                       \

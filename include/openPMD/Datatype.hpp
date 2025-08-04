@@ -424,7 +424,7 @@ inline size_t toBits(Datatype d)
  * @param d Datatype to test
  * @return true if vector type, else false
  */
-inline bool isVector(Datatype d)
+constexpr inline bool isVector(Datatype d)
 {
     using DT = Datatype;
 

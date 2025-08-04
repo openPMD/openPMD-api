@@ -109,6 +109,10 @@ public:
      */
     template <typename U>
     std::optional<U> getOptional() const;
+
+private:
+    template <typename U>
+    std::variant<U, std::runtime_error> get_impl() const;
 };
 
 namespace detail
