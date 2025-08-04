@@ -12,6 +12,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 
@@ -174,7 +175,8 @@ struct structure : public TestHelper
 
     [[nodiscard]] std::string text() const
     {
-        return std::get<std::string>(getAttribute("text").getResource());
+        return std::get<std::string>(
+            getAttribute("text").getVariant<attribute_types>());
     }
     structure &setText(std::string newText)
     {
@@ -313,9 +315,9 @@ struct AttributedWidget : public TestHelper
     AttributedWidget() : TestHelper()
     {}
 
-    Attribute::resource get(std::string const &key)
+    attribute_types get(std::string const &key)
     {
-        return getAttribute(key).getResource();
+        return getAttribute(key).getVariant<attribute_types>();
     }
 };
 } // namespace openPMD::test
@@ -363,15 +365,18 @@ struct Dotty : public TestHelper
 
     [[nodiscard]] int att1() const
     {
-        return std::get<int>(getAttribute("att1").getResource());
+        return std::get<int>(
+            getAttribute("att1").getVariant<attribute_types>());
     }
     [[nodiscard]] double att2() const
     {
-        return std::get<double>(getAttribute("att2").getResource());
+        return std::get<double>(
+            getAttribute("att2").getVariant<attribute_types>());
     }
     [[nodiscard]] std::string att3() const
     {
-        return std::get<std::string>(getAttribute("att3").getResource());
+        return std::get<std::string>(
+            getAttribute("att3").getVariant<attribute_types>());
     }
     Dotty &setAtt1(int i)
     {

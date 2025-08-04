@@ -75,7 +75,7 @@ namespace auxiliary
          *
          * @return  Copy of the stored generic object.
          */
-        template <typename variant_t = void>
+        template <typename variant_t>
         variant_t const &getVariant() const
         {
             return *std::any_cast<variant_t>(&m_data);
