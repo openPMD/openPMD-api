@@ -15,7 +15,7 @@ Variant<T_DTYPES, variant_types...>::Variant(from_basic_type_tag, U u)
 {}
 
 template <typename T_DTYPES, typename... variant_types>
-Variant<T_DTYPES, variant_types...>::Variant(std::any any)
+Variant<T_DTYPES, variant_types...>::Variant(from_any_tag, std::any any)
     : m_data{std::move(any)}
 {
     std::visit(

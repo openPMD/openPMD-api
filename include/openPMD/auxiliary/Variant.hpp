@@ -48,6 +48,9 @@ namespace auxiliary
         {};
         static constexpr from_basic_type_tag from_basic_type =
             from_basic_type_tag{};
+        struct from_any_tag
+        {};
+        static constexpr from_any_tag from_any = from_any_tag{};
 
         /** Construct a lightweight wrapper around a generic object that
          * indicates the concrete datatype of the specific object stored.
@@ -59,7 +62,7 @@ namespace auxiliary
         template <typename U>
         Variant(from_basic_type_tag, U);
 
-        Variant(std::any);
+        Variant(from_any_tag, std::any);
 
         /** Retrieve a stored specific object of known datatype with ensured
          * type-safety.

@@ -44,7 +44,7 @@ void MeshRecordComponent::read()
     aRead.name = "position";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    Attribute a = Attribute(*aRead.m_resource);
+    Attribute a = Attribute(Attribute::from_any, *aRead.m_resource);
     if (*aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT)
         setPosition(a.get<std::vector<float> >());
     else if (*aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE)
@@ -62,7 +62,9 @@ void MeshRecordComponent::read()
             {},
             "Unexpected Attribute datatype for 'position' (expected a vector "
             "of any floating point type, found " +
-                datatypeToString(Attribute(*aRead.m_resource).dtype) + ")");
+                datatypeToString(
+                    Attribute(Attribute::from_any, *aRead.m_resource).dtype) +
+                ")");
 
     readBase(/* require_unit_si = */ true);
 }

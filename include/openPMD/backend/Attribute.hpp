@@ -63,6 +63,10 @@ class Attribute
 
 {
 public:
+    struct from_any_tag
+    {};
+    static constexpr from_any_tag from_any = from_any_tag{};
+
     /**
      * Compiler bug: CUDA (nvcc) releases 11.0.3 (v11.0.221), 11.1 (v11.1.105):
      * > no instance of constructor "openPMD::Attribute::Attribute"
@@ -81,7 +85,8 @@ public:
 
 #undef OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT
 
-    Attribute(std::any val) : Variant(std::move(val))
+    Attribute(from_any_tag, std::any val)
+        : Variant(Variant::from_any, std::move(val))
     {}
 
     /** Retrieve a stored specific Attribute and cast if convertible.

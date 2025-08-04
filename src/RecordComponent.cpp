@@ -409,7 +409,7 @@ void RecordComponent::readBase(bool require_unit_si)
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
 
-        Attribute a(*aRead.m_resource);
+        Attribute a(Attribute::from_any, *aRead.m_resource);
         DT dtype = *aRead.dtype;
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         switchNonVectorType<MakeConstant>(dtype, *this, a);
@@ -418,7 +418,7 @@ void RecordComponent::readBase(bool require_unit_si)
         aRead.name = "shape";
         IOHandler()->enqueue(IOTask(this, aRead));
         IOHandler()->flush(internal::defaultFlushParams);
-        a = Attribute(*aRead.m_resource);
+        a = Attribute(Attribute::from_any, *aRead.m_resource);
         Extent e;
 
         // uint64_t check
@@ -465,7 +465,9 @@ void RecordComponent::readBase(bool require_unit_si)
                 {},
                 "Unexpected Attribute datatype for 'unitSI' (expected double, "
                 "found " +
-                    datatypeToString(Attribute(*aRead.m_resource).dtype) +
+                    datatypeToString(
+                        Attribute(Attribute::from_any, *aRead.m_resource)
+                            .dtype) +
                     ") in '" + myPath().openPMDPath() + "'.");
         }
     }

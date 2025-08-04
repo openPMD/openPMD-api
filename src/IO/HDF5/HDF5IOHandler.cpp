@@ -1727,7 +1727,7 @@ void HDF5IOHandlerImpl::writeAttribute(
         node_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 object during attribute "
         "write");
-    Attribute const att(parameters.m_resource);
+    Attribute const att(Attribute::from_any, parameters.m_resource);
     Datatype dtype = parameters.dtype;
     herr_t status;
     GetH5DataType getH5DataType({

@@ -363,7 +363,7 @@ void Attributable::readAttributes(ReadMode mode)
                       << e.what() << ")\n";
             continue;
         }
-        Attribute a(*aRead.m_resource);
+        Attribute a(Attribute::from_any, *aRead.m_resource);
 
         auto guardUnitDimension = [this](std::string const &key, auto vector) {
             if (key == "unitDimension")
