@@ -195,6 +195,14 @@ namespace detail
     {
         using type = std::variant<>;
     };
+
+    struct bottom
+    {};
+
+    // std::variant, but ignore first template parameter
+    // little trick to avoid trailing commas in the macro expansions below
+    template <typename Arg, typename... Args>
+    using variant_tail_t = std::variant<Args...>;
 } // namespace detail
 
 } // namespace openPMD::auxiliary

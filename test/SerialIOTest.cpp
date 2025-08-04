@@ -1723,7 +1723,6 @@ inline void write_test(
     auto rc = read.iterations[1].particles["e"]["position"]["x"];
     auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
 
-#ifdef OPENPMD_USE_VARIANT_PUBLICALLY
     auto variantTypeDataset = rc.loadChunkVariant();
     rc.seriesFlush();
     std::visit(
@@ -1732,7 +1731,6 @@ inline void write_test(
                       << '\'' << std::endl;
         },
         variantTypeDataset);
-#endif
 
 #ifndef _WIN32
     if (test_rank_table)

@@ -28,6 +28,9 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
+// comment to prevent this include from being moved by clang-format
+#include "openPMD/DatatypeMacros.hpp"
+
 #include <array>
 #include <cmath>
 #include <limits>
@@ -38,6 +41,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 // expose private and protected members for invasive testing
@@ -229,10 +233,11 @@ public:
     template <typename T>
     std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
 
-#ifdef OPENPMD_USE_VARIANT_PUBLICALLY
-
-    using shared_ptr_dataset_types = auxiliary::detail::
-        map_variant<auxiliary::detail::as_shared_pointer, dataset_types>::type;
+#define OPENPMD_ENUMERATE_TYPES(type) , std::shared_ptr<type>
+    using shared_ptr_dataset_types = auxiliary::detail::variant_tail_t<
+        auxiliary::detail::bottom OPENPMD_FOREACH_DATASET_DATATYPE(
+            OPENPMD_ENUMERATE_TYPES)>;
+#undef OPENPMD_ENUMERATE_TYPES
 
     /** std::variant-based version of allocating loadChunk<T>(Offset, Extent)
      *
@@ -245,7 +250,6 @@ public:
      *     ..., std::shared_ptr<std::complex<long double>>>
      */
     shared_ptr_dataset_types loadChunkVariant(Offset = {0u}, Extent = {-1u});
-#endif
 
     /** Load a chunk of data into pre-allocated memory.
      *
@@ -549,4 +553,6 @@ OPENPMD_protected
 
 } // namespace openPMD
 
+#include "openPMD/UndefDatatypeMacros.hpp"
+// comment to prevent these includes from being moved by clang-format
 #include "RecordComponent.tpp"

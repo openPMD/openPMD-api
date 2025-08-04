@@ -11,14 +11,6 @@ namespace openPMD
 {
 namespace detail
 {
-    struct bottom
-    {};
-
-    // std::variant, but ignore first template parameter
-    // little trick to avoid trailing commas in the macro expansions below
-    template <typename Arg, typename... Args>
-    using variant_tail_t = std::variant<Args...>;
-
     struct to_vector_type
     {
         template <typename T>
@@ -28,16 +20,16 @@ namespace detail
 
 #define OPENPMD_ENUMERATE_TYPES(type) , type
 
-using dataset_types =
-    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_DATASET_DATATYPE(
+using dataset_types = auxiliary::detail::variant_tail_t<
+    auxiliary::detail::bottom OPENPMD_FOREACH_DATASET_DATATYPE(
         OPENPMD_ENUMERATE_TYPES)>;
 
-using non_vector_types =
-    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_NONVECTOR_DATATYPE(
+using non_vector_types = auxiliary::detail::variant_tail_t<
+    auxiliary::detail::bottom OPENPMD_FOREACH_NONVECTOR_DATATYPE(
         OPENPMD_ENUMERATE_TYPES)>;
 
-using attribute_types =
-    detail::variant_tail_t<detail::bottom OPENPMD_FOREACH_DATATYPE(
+using attribute_types = auxiliary::detail::variant_tail_t<
+    auxiliary::detail::bottom OPENPMD_FOREACH_DATATYPE(
         OPENPMD_ENUMERATE_TYPES)>;
 
 // std::variant<std::vector<T_1>, std::vector<T_2>, ...>

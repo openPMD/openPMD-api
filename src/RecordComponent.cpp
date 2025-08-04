@@ -555,7 +555,6 @@ void RecordComponent::verifyChunk(
     }
 }
 
-#ifdef OPENPMD_USE_VARIANT_PUBLICALLY
 namespace
 {
     struct LoadChunkVariant
@@ -574,5 +573,4 @@ auto RecordComponent::loadChunkVariant(Offset o, Extent e)
 {
     return visit<LoadChunkVariant>(std::move(o), std::move(e));
 }
-#endif
 } // namespace openPMD
