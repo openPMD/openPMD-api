@@ -1454,17 +1454,25 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
     {
         std::vector<double> vector{0, 1, 2, 3, 4, 5, 6};
         std::array<double, 7> arraydouble{{0, 1, 2, 3, 4, 5, 6}};
-        std::array<int, 7> arrayint{{0, 1, 2, 3, 4, 5, 6}};
         Attribute attr{vector};
-
-        // the following conversions should be possible
         REQUIRE(attr.get<std::array<double, 7>>() == arraydouble);
-        // REQUIRE(attr.get<std::array<int, 7>>() == arrayint);
-        // REQUIRE_THROWS_WITH(
-        //     (attr.get<std::array<int, 8>>()),
-        //     Catch::Equals(
-        //         "getCast: no vector to array conversion possible "
-        //         "(wrong requested array size)."));
+
+        /*
+         * The following test no longer works since we pulled the definition for
+         * Attribute::get<T>() from public headers into object files. These are
+         * instantiated for a selected subset of datatypes (those used in the
+         * Datatype enum), hence this test will now result in a link-time error.
+         */
+#if 0
+        std::array<int, 7> arrayint{{0, 1, 2, 3, 4, 5, 6}};
+        the following conversions should be possible
+        REQUIRE(attr.get<std::array<int, 7>>() == arrayint);
+        REQUIRE_THROWS_WITH(
+            (attr.get<std::array<int, 8>>()),
+            Catch::Equals(
+                "getCast: no vector to array conversion possible "
+                "(wrong requested array size)."));
+#endif
         REQUIRE(
             attr.get<std::vector<double>>() ==
             std::vector<double>{0, 1, 2, 3, 4, 5, 6});
