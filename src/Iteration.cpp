@@ -331,7 +331,7 @@ void Iteration::flushVariableBased(
         wAttr.changesOverSteps =
             Parameter<Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
         wAttr.name = "snapshot";
-        wAttr.resource<attribute_types>() = (unsigned long long)i;
+        wAttr.setResource<unsigned long long>(i);
         wAttr.dtype = Datatype::ULONGLONG;
         IOHandler()->enqueue(IOTask(this, wAttr));
     }

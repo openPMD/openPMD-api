@@ -44,11 +44,11 @@ constexpr auto eligible_conversions() -> std::array<bool, num_datatypes>
     res[variant_index<type>()] = std::is_convertible_v<type, TargetType>;
         OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_ENUMERATE_TYPES)
 #undef OPENPMD_ENUMERATE_TYPES
-        return res;
 #define OPENPMD_ENUMERATE_TYPES(type)                                          \
     res[variant_index<type>()] = res[variant_index<type::value_type>()];
         OPENPMD_FOREACH_VECTOR_DATATYPE(OPENPMD_ENUMERATE_TYPES)
 #undef OPENPMD_ENUMERATE_TYPES
+        return res;
     }
 }
 

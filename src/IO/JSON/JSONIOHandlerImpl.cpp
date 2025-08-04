@@ -2518,7 +2518,7 @@ void JSONIOHandlerImpl::AttributeReader::call(
     nlohmann::json const &json, Parameter<Operation::READ_ATT> &parameters)
 {
     JsonToCpp<T> jtc;
-    parameters.resource<attribute_types>() = jtc(json);
+    parameters.setResource(jtc(json));
 }
 
 template <typename T>

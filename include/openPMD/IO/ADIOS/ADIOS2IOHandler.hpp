@@ -660,7 +660,7 @@ namespace detail
             size_t step,
             adios2::IO &IO,
             std::string name,
-            attribute_types &resource,
+            Parameter<Operation::READ_ATT> &,
             detail::AdiosAttributes const &);
 
         template <int n, typename... Params>

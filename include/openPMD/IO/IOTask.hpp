@@ -623,8 +623,8 @@ struct OPENPMDAPI_EXPORT
     ChangesOverSteps changesOverSteps = ChangesOverSteps::No;
     // attribute_types
     std::any m_resource;
-    template <typename variant_t>
-    variant_t &resource();
+    template <typename T>
+    void setResource(T val);
     template <typename variant_t>
     variant_t const &resource() const;
 };
@@ -651,7 +651,9 @@ struct OPENPMDAPI_EXPORT
     // attribute_types
     std::shared_ptr<std::any> m_resource = std::make_shared<std::any>();
     template <typename variant_t>
-    variant_t &resource();
+    variant_t const &resource() const;
+    template <typename T>
+    void setResource(T val);
 };
 
 template <>
@@ -676,7 +678,11 @@ struct OPENPMDAPI_EXPORT
     // vector_of_attributes_type
     std::shared_ptr<std::any> m_resource = std::make_shared<std::any>();
     template <typename variant_t>
+    variant_t const &resource() const;
+    template <typename variant_t>
     variant_t &resource();
+    template <typename T>
+    void setResource(std::vector<T> val);
 };
 
 template <>

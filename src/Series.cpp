@@ -2646,9 +2646,10 @@ void Series::flushStep(bool doFlush)
         wAttr.changesOverSteps =
             Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
         wAttr.name = "snapshot";
-        wAttr.resource<attribute_types>() = std::vector<unsigned long long>{
-            series.m_currentlyActiveIterations.begin(),
-            series.m_currentlyActiveIterations.end()};
+        wAttr.setResource(
+            std::vector<unsigned long long>{
+                series.m_currentlyActiveIterations.begin(),
+                series.m_currentlyActiveIterations.end()});
         series.m_currentlyActiveIterations.clear();
         wAttr.dtype = Datatype::VEC_ULONGLONG;
         IOHandler()->enqueue(IOTask(&series.iterations, wAttr));

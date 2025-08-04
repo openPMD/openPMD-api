@@ -1344,12 +1344,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
     }
 
     Datatype ret = switchType<detail::AttributeReader>(
-        type,
-        ba.currentStep(),
-        ba.m_IO,
-        name,
-        parameters.resource<attribute_types>(),
-        ba.attributes());
+        type, ba.currentStep(), ba.m_IO, name, parameters, ba.attributes());
     *parameters.dtype = ret;
 }
 
@@ -1487,9 +1482,11 @@ namespace
             std::vector<detail::PreloadAdiosAttributes> const &preload,
             adios2::IO &IO,
             std::string const &name,
-            vector_of_attributes_type &put_result_here)
+            Parameter<Operation::READ_ATT_ALLSTEPS> &put_result_here)
         {
-            auto &res = put_result_here.emplace<std::vector<T>>();
+            put_result_here.setResource(std::vector<T>{});
+            auto &res = std::get<std::vector<T>>(
+                put_result_here.resource<vector_of_attributes_type>());
             res.reserve(preload.size());
             for (auto const &p : preload)
             {
@@ -1657,8 +1654,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     }
 #endif
     auto &attributes = ba.attributes();
-    switchType<ReadAttributeAllsteps>(
-        type, preload, IO, name, param.resource<vector_of_attributes_type>());
+    switchType<ReadAttributeAllsteps>(type, preload, IO, name, param);
     attributes.m_data = std::move(preload);
 }
 
@@ -2210,12 +2206,12 @@ namespace detail
         size_t step,
         adios2::IO &IO,
         std::string name,
-        attribute_types &resource,
+        Parameter<Operation::READ_ATT> &param,
         detail::AdiosAttributes const &attributes)
     {
         return genericReadAttribute<T>(
-            [&resource](auto &&value) {
-                resource = static_cast<decltype(value)>(value);
+            [&param](auto &&value) {
+                param.setResource(static_cast<decltype(value)>(value));
             },
             IO,
             name,

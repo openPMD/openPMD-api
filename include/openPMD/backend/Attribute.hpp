@@ -74,7 +74,7 @@ public:
      */
 
 #define OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT(TYPE)                       \
-    Attribute(TYPE val) : Variant(std::move(val))                              \
+    Attribute(TYPE val) : Variant(Variant::from_basic_type, std::move(val))    \
     {}
 
     OPENPMD_FOREACH_DATATYPE(OPENPMD_ATTRIBUTE_CONSTRUCTOR_FROM_VARIANT)
