@@ -411,6 +411,7 @@ set(CORE_SOURCE
         src/auxiliary/JSONMatcher.cpp
         src/auxiliary/Memory.cpp
         src/auxiliary/Mpi.cpp
+        src/auxiliary/UniquePtr.cpp
         src/auxiliary/Variant.cpp
         src/backend/Attributable.cpp
         src/backend/Attribute.cpp
