@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller and Franz Poeschel
+/* Copyright 2017-2025 Fabian Koller and Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -262,14 +262,8 @@ public:
         container().swap(other.container());
     }
 
-    mapped_type &at(key_type const &key)
-    {
-        return container().at(key);
-    }
-    mapped_type const &at(key_type const &key) const
-    {
-        return container().at(key);
-    }
+    mapped_type &at(key_type const &key);
+    mapped_type const &at(key_type const &key) const;
 
     /** Access the value that is mapped to a key equivalent to key, creating it
      * if such key does not exist already.
@@ -281,37 +275,7 @@ public:
      * @throws  std::out_of_range error if in READ_ONLY mode and key does not
      * exist, otherwise key will be created
      */
-    mapped_type &operator[](key_type const &key)
-    {
-        auto it = container().find(key);
-        if (it != container().end())
-            return it->second;
-        else
-        {
-            if (IOHandler()->m_seriesStatus !=
-                    internal::SeriesStatus::Parsing &&
-                access::readOnly(IOHandler()->m_frontendAccess))
-            {
-                auxiliary::OutOfRangeMsg const out_of_range_msg;
-                throw std::out_of_range(out_of_range_msg(key));
-            }
-
-            T t = T();
-            t.linkHierarchy(writable());
-            auto &ret = container().insert({key, std::move(t)}).first->second;
-            if constexpr (std::is_same_v<T_key, std::string>)
-            {
-                ret.writable().ownKeyWithinParent = key;
-            }
-            else
-            {
-                ret.writable().ownKeyWithinParent = std::to_string(key);
-            }
-            traits::GenerationPolicy<T> gen;
-            gen(ret);
-            return ret;
-        }
-    }
+    mapped_type &operator[](key_type const &key);
     /** Access the value that is mapped to a key equivalent to key, creating it
      * if such key does not exist already.
      *
@@ -322,38 +286,7 @@ public:
      * @throws  std::out_of_range error if in READ_ONLY mode and key does not
      * exist, otherwise key will be created
      */
-    mapped_type &operator[](key_type &&key)
-    {
-        auto it = container().find(key);
-        if (it != container().end())
-            return it->second;
-        else
-        {
-            if (IOHandler()->m_seriesStatus !=
-                    internal::SeriesStatus::Parsing &&
-                access::readOnly(IOHandler()->m_frontendAccess))
-            {
-                auxiliary::OutOfRangeMsg out_of_range_msg;
-                throw std::out_of_range(out_of_range_msg(key));
-            }
-
-            T t = T();
-            t.linkHierarchy(writable());
-            auto &ret = container().insert({key, std::move(t)}).first->second;
-            if constexpr (std::is_same_v<T_key, std::string>)
-            {
-                ret.writable().ownKeyWithinParent = std::move(key);
-            }
-            else
-            {
-                ret.writable().ownKeyWithinParent =
-                    std::to_string(std::move(key));
-            }
-            traits::GenerationPolicy<T> gen;
-            gen(ret);
-            return ret;
-        }
-    }
+    mapped_type &operator[](key_type &&key);
 
     iterator find(key_type const &key)
     {

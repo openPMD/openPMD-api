@@ -417,6 +417,7 @@ set(CORE_SOURCE
         src/backend/Attribute.cpp
         src/backend/BaseRecord.cpp
         src/backend/BaseRecordComponent.cpp
+        src/backend/Container.cpp
         src/backend/MeshRecordComponent.cpp
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
