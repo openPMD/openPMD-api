@@ -29,6 +29,87 @@
 
 namespace openPMD
 {
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::begin() noexcept -> iterator
+{
+    return container().begin();
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::begin() const noexcept -> const_iterator
+{
+    return container().begin();
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::cbegin() const noexcept -> const_iterator
+{
+    return container().cbegin();
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::end() noexcept -> iterator
+{
+    return container().end();
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::end() const noexcept -> const_iterator
+{
+    return container().end();
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::cend() const noexcept -> const_iterator
+{
+    return container().cend();
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::rbegin() noexcept -> reverse_iterator
+{
+    return container().rbegin();
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::rbegin() const noexcept
+    -> const_reverse_iterator
+{
+    return container().rbegin();
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::crbegin() const noexcept
+    -> const_reverse_iterator
+{
+    return container().crbegin();
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::rend() noexcept -> reverse_iterator
+{
+    return container().rend();
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::rend() const noexcept
+    -> const_reverse_iterator
+{
+    return container().rend();
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::crend() const noexcept
+    -> const_reverse_iterator
+{
+    return container().crend();
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::empty() const noexcept -> bool
+{
+    return container().empty();
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::size() const noexcept -> size_type
+{
+    return container().size();
+}
+
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::at(key_type const &key) -> mapped_type &
 {
@@ -104,5 +185,198 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
         gen(ret);
         return ret;
     }
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::clear() -> void
+{
+    if (Access::READ_ONLY == IOHandler()->m_frontendAccess)
+        throw std::runtime_error(
+            "Can not clear a container in a read-only Series.");
+
+    clear_unchecked();
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::insert(value_type const &value)
+    -> std::pair<iterator, bool>
+{
+    return container().insert(value);
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::insert(value_type &&value)
+    -> std::pair<iterator, bool>
+{
+    return container().insert(value);
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::insert(
+    const_iterator hint, value_type const &value) -> iterator
+{
+    return container().insert(hint, value);
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::insert(
+    const_iterator hint, value_type &&value) -> iterator
+{
+    return container().insert(hint, value);
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::insert(
+    std::initializer_list<value_type> ilist) -> void
+{
+    container().insert(ilist);
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::swap(Container &other) -> void
+{
+    container().swap(other.container());
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::find(key_type const &key) -> iterator
+{
+    return container().find(key);
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::find(key_type const &key) const
+    -> const_iterator
+{
+    return container().find(key);
+}
+
+/** This returns either 1 if the key is found in the container of 0 if not.
+ *
+ * @param key key value of the element to count
+ * @return since keys are unique in this container, returns 0 or 1
+ */
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::count(key_type const &key) const
+    -> size_type
+{
+    return container().count(key);
+}
+
+/** Checks if there is an element with a key equivalent to an exiting key in
+ * the container.
+ *
+ * @param key key value of the element to search for
+ * @return true of key is found, else false
+ */
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::contains(key_type const &key) const
+    -> bool
+{
+    return container().find(key) != container().end();
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::erase(key_type const &key) -> size_type
+{
+    if (Access::READ_ONLY == IOHandler()->m_frontendAccess)
+        throw std::runtime_error(
+            "Can not erase from a container in a read-only Series.");
+
+    auto res = container().find(key);
+    if (res != container().end() && res->second.written())
+    {
+        Parameter<Operation::DELETE_PATH> pDelete;
+        pDelete.path = ".";
+        IOHandler()->enqueue(IOTask(&res->second, pDelete));
+        IOHandler()->flush(internal::defaultFlushParams);
+    }
+    return container().erase(key);
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::erase(iterator res) -> iterator
+{
+    if (Access::READ_ONLY == IOHandler()->m_frontendAccess)
+        throw std::runtime_error(
+            "Can not erase from a container in a read-only Series.");
+
+    if (res != container().end() && res->second.written())
+    {
+        Parameter<Operation::DELETE_PATH> pDelete;
+        pDelete.path = ".";
+        IOHandler()->enqueue(IOTask(&res->second, pDelete));
+        IOHandler()->flush(internal::defaultFlushParams);
+    }
+    return container().erase(res);
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::clear_unchecked() -> void
+{
+    if (written())
+        throw std::runtime_error(
+            "Clearing a written container not (yet) implemented.");
+
+    container().clear();
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::flush(
+    std::string const &path, internal::FlushParams const &flushParams) -> void
+{
+    if (!written())
+    {
+        Parameter<Operation::CREATE_PATH> pCreate;
+        pCreate.path = path;
+        IOHandler()->enqueue(IOTask(this, pCreate));
+    }
+
+    flushAttributes(flushParams);
+}
+
+template <typename T, typename T_key, typename T_container>
+Container<T, T_key, T_container>::Container() : Attributable(NoInit())
+{
+    setData(std::make_shared<ContainerData>());
+}
+
+template <typename T, typename T_key, typename T_container>
+Container<T, T_key, T_container>::Container(NoInit) : Attributable(NoInit())
+{}
+
+template <typename T, typename T_key, typename T_container>
+Container<T, T_key, T_container>::Container(Container const &other)
+    : Attributable(NoInit())
+{
+    m_attri = other.m_attri;
+    m_containerData = other.m_containerData;
+}
+
+template <typename T, typename T_key, typename T_container>
+Container<T, T_key, T_container>::Container(Container &&other) noexcept
+    : Attributable(NoInit())
+{
+    if (other.m_attri)
+    {
+        m_attri = std::move(other.m_attri);
+    }
+    m_containerData = std::move(other.m_containerData);
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::operator=(Container const &other)
+    -> Container &
+{
+    m_attri = other.m_attri;
+    m_containerData = other.m_containerData;
+    return *this;
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::operator=(Container &&other) noexcept
+    -> Container &
+{
+    if (other.m_attri)
+    {
+        m_attri = std::move(other.m_attri);
+    }
+    m_containerData = std::move(other.m_containerData);
+    return *this;
 }
 } // namespace openPMD

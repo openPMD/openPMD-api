@@ -154,67 +154,25 @@ public:
     using const_reverse_iterator =
         typename InternalContainer::const_reverse_iterator;
 
-    iterator begin() noexcept
-    {
-        return container().begin();
-    }
-    const_iterator begin() const noexcept
-    {
-        return container().begin();
-    }
-    const_iterator cbegin() const noexcept
-    {
-        return container().cbegin();
-    }
+    iterator begin() noexcept;
+    const_iterator begin() const noexcept;
+    const_iterator cbegin() const noexcept;
 
-    iterator end() noexcept
-    {
-        return container().end();
-    }
-    const_iterator end() const noexcept
-    {
-        return container().end();
-    }
-    const_iterator cend() const noexcept
-    {
-        return container().cend();
-    }
+    iterator end() noexcept;
+    const_iterator end() const noexcept;
+    const_iterator cend() const noexcept;
 
-    reverse_iterator rbegin() noexcept
-    {
-        return container().rbegin();
-    }
-    const_reverse_iterator rbegin() const noexcept
-    {
-        return container().rbegin();
-    }
-    const_reverse_iterator crbegin() const noexcept
-    {
-        return container().crbegin();
-    }
+    reverse_iterator rbegin() noexcept;
+    const_reverse_iterator rbegin() const noexcept;
+    const_reverse_iterator crbegin() const noexcept;
 
-    reverse_iterator rend() noexcept
-    {
-        return container().rend();
-    }
-    const_reverse_iterator rend() const noexcept
-    {
-        return container().rend();
-    }
-    const_reverse_iterator crend() const noexcept
-    {
-        return container().crend();
-    }
+    reverse_iterator rend() noexcept;
+    const_reverse_iterator rend() const noexcept;
+    const_reverse_iterator crend() const noexcept;
 
-    bool empty() const noexcept
-    {
-        return container().empty();
-    }
+    bool empty() const noexcept;
 
-    size_type size() const noexcept
-    {
-        return container().size();
-    }
+    size_type size() const noexcept;
 
     /** Remove all objects from the container and (if written) from disk.
      *
@@ -222,45 +180,20 @@ public:
      * <code>Access::READ_ONLY</code> will throw an exception.
      * @throws  std::runtime_error
      */
-    void clear()
-    {
-        if (Access::READ_ONLY == IOHandler()->m_frontendAccess)
-            throw std::runtime_error(
-                "Can not clear a container in a read-only Series.");
+    void clear();
 
-        clear_unchecked();
-    }
-
-    std::pair<iterator, bool> insert(value_type const &value)
-    {
-        return container().insert(value);
-    }
-    std::pair<iterator, bool> insert(value_type &&value)
-    {
-        return container().insert(value);
-    }
-    iterator insert(const_iterator hint, value_type const &value)
-    {
-        return container().insert(hint, value);
-    }
-    iterator insert(const_iterator hint, value_type &&value)
-    {
-        return container().insert(hint, value);
-    }
+    std::pair<iterator, bool> insert(value_type const &value);
+    std::pair<iterator, bool> insert(value_type &&value);
+    iterator insert(const_iterator hint, value_type const &value);
+    iterator insert(const_iterator hint, value_type &&value);
     template <class InputIt>
     void insert(InputIt first, InputIt last)
     {
         container().insert(first, last);
     }
-    void insert(std::initializer_list<value_type> ilist)
-    {
-        container().insert(ilist);
-    }
+    void insert(std::initializer_list<value_type> ilist);
 
-    void swap(Container &other)
-    {
-        container().swap(other.container());
-    }
+    void swap(Container &other);
 
     mapped_type &at(key_type const &key);
     mapped_type const &at(key_type const &key) const;
@@ -288,24 +221,15 @@ public:
      */
     mapped_type &operator[](key_type &&key);
 
-    iterator find(key_type const &key)
-    {
-        return container().find(key);
-    }
-    const_iterator find(key_type const &key) const
-    {
-        return container().find(key);
-    }
+    iterator find(key_type const &key);
+    const_iterator find(key_type const &key) const;
 
     /** This returns either 1 if the key is found in the container of 0 if not.
      *
      * @param key key value of the element to count
      * @return since keys are unique in this container, returns 0 or 1
      */
-    size_type count(key_type const &key) const
-    {
-        return container().count(key);
-    }
+    size_type count(key_type const &key) const;
 
     /** Checks if there is an element with a key equivalent to an exiting key in
      * the container.
@@ -313,10 +237,7 @@ public:
      * @param key key value of the element to search for
      * @return true of key is found, else false
      */
-    bool contains(key_type const &key) const
-    {
-        return container().find(key) != container().end();
-    }
+    bool contains(key_type const &key) const;
 
     /** Remove a single element from the container and (if written) from disk.
      *
@@ -326,39 +247,10 @@ public:
      * @param   key Key of the element to remove.
      * @return  Number of elements removed (either 0 or 1).
      */
-    size_type erase(key_type const &key)
-    {
-        if (Access::READ_ONLY == IOHandler()->m_frontendAccess)
-            throw std::runtime_error(
-                "Can not erase from a container in a read-only Series.");
-
-        auto res = container().find(key);
-        if (res != container().end() && res->second.written())
-        {
-            Parameter<Operation::DELETE_PATH> pDelete;
-            pDelete.path = ".";
-            IOHandler()->enqueue(IOTask(&res->second, pDelete));
-            IOHandler()->flush(internal::defaultFlushParams);
-        }
-        return container().erase(key);
-    }
+    size_type erase(key_type const &key);
 
     //! @todo why does const_iterator not work compile with pybind11?
-    iterator erase(iterator res)
-    {
-        if (Access::READ_ONLY == IOHandler()->m_frontendAccess)
-            throw std::runtime_error(
-                "Can not erase from a container in a read-only Series.");
-
-        if (res != container().end() && res->second.written())
-        {
-            Parameter<Operation::DELETE_PATH> pDelete;
-            pDelete.path = ".";
-            IOHandler()->enqueue(IOTask(&res->second, pDelete));
-            IOHandler()->flush(internal::defaultFlushParams);
-        }
-        return container().erase(res);
-    }
+    iterator erase(iterator res);
     //! @todo add also:
     // virtual iterator erase(const_iterator first, const_iterator last)
 
@@ -373,35 +265,14 @@ public:
 OPENPMD_protected
     // clang-format on
 
-    void clear_unchecked()
-    {
-        if (written())
-            throw std::runtime_error(
-                "Clearing a written container not (yet) implemented.");
-
-        container().clear();
-    }
+    void clear_unchecked();
 
     virtual void
-    flush(std::string const &path, internal::FlushParams const &flushParams)
-    {
-        if (!written())
-        {
-            Parameter<Operation::CREATE_PATH> pCreate;
-            pCreate.path = path;
-            IOHandler()->enqueue(IOTask(this, pCreate));
-        }
+    flush(std::string const &path, internal::FlushParams const &flushParams);
 
-        flushAttributes(flushParams);
-    }
+    Container();
 
-    Container() : Attributable(NoInit())
-    {
-        setData(std::make_shared<ContainerData>());
-    }
-
-    Container(NoInit) : Attributable(NoInit())
-    {}
+    Container(NoInit);
 
 public:
     /*
@@ -416,37 +287,13 @@ public:
      * multiple times (which could happen in diamond inheritance situations).
      */
 
-    Container(Container const &other) : Attributable(NoInit())
-    {
-        m_attri = other.m_attri;
-        m_containerData = other.m_containerData;
-    }
+    Container(Container const &other);
 
-    Container(Container &&other) noexcept : Attributable(NoInit())
-    {
-        if (other.m_attri)
-        {
-            m_attri = std::move(other.m_attri);
-        }
-        m_containerData = std::move(other.m_containerData);
-    }
+    Container(Container &&other) noexcept;
 
-    Container &operator=(Container const &other)
-    {
-        m_attri = other.m_attri;
-        m_containerData = other.m_containerData;
-        return *this;
-    }
+    Container &operator=(Container const &other);
 
-    Container &operator=(Container &&other) noexcept
-    {
-        if (other.m_attri)
-        {
-            m_attri = std::move(other.m_attri);
-        }
-        m_containerData = std::move(other.m_containerData);
-        return *this;
-    }
+    Container &operator=(Container &&other) noexcept;
 };
 
 namespace internal
