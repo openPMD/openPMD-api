@@ -409,6 +409,7 @@ set(CORE_SOURCE
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp
         src/auxiliary/JSONMatcher.cpp
+        src/auxiliary/Memory.cpp
         src/auxiliary/Mpi.cpp
         src/auxiliary/Variant.cpp
         src/backend/Attributable.cpp

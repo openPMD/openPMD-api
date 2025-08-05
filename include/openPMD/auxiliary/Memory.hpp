@@ -36,136 +36,11 @@ namespace openPMD
 {
 namespace auxiliary
 {
-    inline std::unique_ptr<void, std::function<void(void *)>>
-    allocatePtr(Datatype dtype, uint64_t numPoints)
-    {
-        void *data = nullptr;
-        std::function<void(void *)> del = [](void *) {};
-        switch (dtype)
-        {
-            using DT = Datatype;
-        case DT::VEC_STRING:
-            data = new char *[numPoints];
-            del = [](void *p) { delete[] static_cast<char **>(p); };
-            break;
-        case DT::VEC_LONG_DOUBLE:
-        case DT::LONG_DOUBLE:
-            data = new long double[numPoints];
-            del = [](void *p) { delete[] static_cast<long double *>(p); };
-            break;
-        case DT::ARR_DBL_7:
-        case DT::VEC_DOUBLE:
-        case DT::DOUBLE:
-            data = new double[numPoints];
-            del = [](void *p) { delete[] static_cast<double *>(p); };
-            break;
-        case DT::VEC_FLOAT:
-        case DT::FLOAT:
-            data = new float[numPoints];
-            del = [](void *p) { delete[] static_cast<float *>(p); };
-            break;
-        case DT::VEC_CLONG_DOUBLE:
-        case DT::CLONG_DOUBLE:
-            data = new std::complex<long double>[numPoints];
-            del = [](void *p) {
-                delete[] static_cast<std::complex<long double> *>(p);
-            };
-            break;
-        case DT::VEC_CDOUBLE:
-        case DT::CDOUBLE:
-            data = new std::complex<double>[numPoints];
-            del = [](void *p) {
-                delete[] static_cast<std::complex<double> *>(p);
-            };
-            break;
-        case DT::VEC_CFLOAT:
-        case DT::CFLOAT:
-            data = new std::complex<float>[numPoints];
-            del = [](void *p) {
-                delete[] static_cast<std::complex<float> *>(p);
-            };
-            break;
-        case DT::VEC_SHORT:
-        case DT::SHORT:
-            data = new short[numPoints];
-            del = [](void *p) { delete[] static_cast<short *>(p); };
-            break;
-        case DT::VEC_INT:
-        case DT::INT:
-            data = new int[numPoints];
-            del = [](void *p) { delete[] static_cast<int *>(p); };
-            break;
-        case DT::VEC_LONG:
-        case DT::LONG:
-            data = new long[numPoints];
-            del = [](void *p) { delete[] static_cast<long *>(p); };
-            break;
-        case DT::VEC_LONGLONG:
-        case DT::LONGLONG:
-            data = new long long[numPoints];
-            del = [](void *p) { delete[] static_cast<long long *>(p); };
-            break;
-        case DT::VEC_USHORT:
-        case DT::USHORT:
-            data = new unsigned short[numPoints];
-            del = [](void *p) { delete[] static_cast<unsigned short *>(p); };
-            break;
-        case DT::VEC_UINT:
-        case DT::UINT:
-            data = new unsigned int[numPoints];
-            del = [](void *p) { delete[] static_cast<unsigned int *>(p); };
-            break;
-        case DT::VEC_ULONG:
-        case DT::ULONG:
-            data = new unsigned long[numPoints];
-            del = [](void *p) { delete[] static_cast<unsigned long *>(p); };
-            break;
-        case DT::VEC_ULONGLONG:
-        case DT::ULONGLONG:
-            data = new unsigned long long[numPoints];
-            del = [](void *p) {
-                delete[] static_cast<unsigned long long *>(p);
-            };
-            break;
-        case DT::VEC_CHAR:
-        case DT::CHAR:
-            data = new char[numPoints];
-            del = [](void *p) { delete[] static_cast<char *>(p); };
-            break;
-        case DT::VEC_UCHAR:
-        case DT::UCHAR:
-            data = new unsigned char[numPoints];
-            del = [](void *p) { delete[] static_cast<unsigned char *>(p); };
-            break;
-        case DT::VEC_SCHAR:
-        case DT::SCHAR:
-            data = new signed char[numPoints];
-            del = [](void *p) { delete[] static_cast<signed char *>(p); };
-            break;
-        case DT::BOOL:
-            data = new bool[numPoints];
-            del = [](void *p) { delete[] static_cast<bool *>(p); };
-            break;
-        case DT::STRING:
-            /* user assigns c_str pointer */
-            break;
-        case DT::UNDEFINED:
-        default:
-            throw std::runtime_error(
-                "Unknown Attribute datatype (Pointer allocation)");
-        }
+    std::unique_ptr<void, std::function<void(void *)>>
+    allocatePtr(Datatype dtype, uint64_t numPoints);
 
-        return std::unique_ptr<void, std::function<void(void *)>>(data, del);
-    }
-
-    inline std::unique_ptr<void, std::function<void(void *)>>
-    allocatePtr(Datatype dtype, Extent const &e)
-    {
-        uint64_t numPoints = 1u;
-        for (auto const &dimensionSize : e)
-            numPoints *= dimensionSize;
-        return allocatePtr(dtype, numPoints);
-    }
+    std::unique_ptr<void, std::function<void(void *)>>
+    allocatePtr(Datatype dtype, Extent const &e);
 
     /*
      * A buffer for the WRITE_DATASET task that can either be a std::shared_ptr
@@ -177,41 +52,23 @@ namespace auxiliary
             variant<std::shared_ptr<void const>, UniquePtrWithLambda<void>>;
         EligibleTypes m_buffer;
 
-        WriteBuffer() : m_buffer(UniquePtrWithLambda<void>())
-        {}
+        WriteBuffer();
 
         template <typename... Args>
         explicit WriteBuffer(Args &&...args)
             : m_buffer(std::forward<Args>(args)...)
         {}
 
-        WriteBuffer(WriteBuffer &&) = default;
+        WriteBuffer(WriteBuffer &&);
         WriteBuffer(WriteBuffer const &) = delete;
-        WriteBuffer &operator=(WriteBuffer &&) = default;
+        WriteBuffer &operator=(WriteBuffer &&);
         WriteBuffer &operator=(WriteBuffer const &) = delete;
 
-        WriteBuffer const &operator=(std::shared_ptr<void const> ptr)
-        {
-            m_buffer = std::move(ptr);
-            return *this;
-        }
+        WriteBuffer const &operator=(std::shared_ptr<void const> ptr);
 
-        WriteBuffer const &operator=(UniquePtrWithLambda<void const> ptr)
-        {
-            m_buffer = std::move(ptr);
-            return *this;
-        }
+        WriteBuffer const &operator=(UniquePtrWithLambda<void const> ptr);
 
-        inline void const *get() const
-        {
-            return std::visit(
-                [](auto const &arg) {
-                    // unique_ptr and shared_ptr both have the get() member, so
-                    // we're being sneaky and don't distinguish the types here
-                    return static_cast<void const *>(arg.get());
-                },
-                m_buffer);
-        }
+        void const *get() const;
     };
 } // namespace auxiliary
 } // namespace openPMD
