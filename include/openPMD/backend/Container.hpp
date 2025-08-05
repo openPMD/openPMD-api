@@ -66,7 +66,7 @@ namespace internal
     template <
         typename T,
         typename T_key = std::string,
-        typename T_container = std::map<T_key, T> >
+        typename T_container = std::map<T_key, T>>
     class ContainerData : virtual public AttributableData
     {
     public:
@@ -99,7 +99,7 @@ namespace internal
 template <
     typename T,
     typename T_key = std::string,
-    typename T_container = std::map<T_key, T> >
+    typename T_container = std::map<T_key, T>>
 class Container : virtual public Attributable
 {
     static_assert(
@@ -310,10 +310,10 @@ namespace internal
     template <typename Container_t>
     class EraseStaleEntries
     {
-        using BareContainer_t =
-            typename std::remove_reference<Container_t>::type;
-        using key_type = typename BareContainer_t::key_type;
-        using mapped_type = typename BareContainer_t::mapped_type;
+        static_assert(
+            std::is_same_v<Container_t, std::remove_reference_t<Container_t>>);
+        using key_type = typename Container_t::key_type;
+        using mapped_type = typename Container_t::mapped_type;
         std::set<key_type> m_accessedKeys;
         /*
          * Note: Putting a copy here leads to weird bugs due to destructors
@@ -322,65 +322,26 @@ namespace internal
          * Container class template
          * (https://github.com/openPMD/openPMD-api/pull/886)
          */
-        Container_t m_originalContainer;
+        Container_t &m_originalContainer;
 
     public:
-        explicit EraseStaleEntries(Container_t &container_in)
-            : m_originalContainer(container_in)
-        {}
+        explicit EraseStaleEntries(Container_t &container_in);
 
-        explicit EraseStaleEntries(BareContainer_t &&container_in)
-            : m_originalContainer(std::move(container_in))
-        {}
+        EraseStaleEntries(EraseStaleEntries &&) = delete;
+        EraseStaleEntries &operator=(EraseStaleEntries &&) = delete;
 
-        EraseStaleEntries(EraseStaleEntries &&) = default;
-        EraseStaleEntries &operator=(EraseStaleEntries &&) = default;
+        mapped_type &operator[](typename Container_t::key_type const &k);
 
-        template <typename K>
-        mapped_type &operator[](K &&k)
-        {
-            m_accessedKeys.insert(k); // copy
-            return m_originalContainer[std::forward<K>(k)];
-        }
-
-        template <typename K>
-        mapped_type &at(K &&k)
-        {
-            m_accessedKeys.insert(k); // copy
-            return m_originalContainer.at(std::forward<K>(k));
-        }
+        mapped_type &at(typename Container_t::key_type const &k);
 
         /**
          * Remove key from the list of accessed keys.
          * If the key is not accessed after this again, it will be deleted along
          * with all other unaccessed keys upon destruction.
          */
-        template <typename K>
-        void forget(K &&k)
-        {
-            m_accessedKeys.erase(std::forward<K>(k));
-        }
+        void forget(typename Container_t::key_type const &k);
 
-        ~EraseStaleEntries()
-        {
-            auto &map = m_originalContainer.container();
-            using iterator_t =
-                typename BareContainer_t::InternalContainer::const_iterator;
-            std::vector<iterator_t> deleteMe;
-            deleteMe.reserve(map.size() - m_accessedKeys.size());
-            for (iterator_t it = map.begin(); it != map.end(); ++it)
-            {
-                auto lookup = m_accessedKeys.find(it->first);
-                if (lookup == m_accessedKeys.end())
-                {
-                    deleteMe.push_back(it);
-                }
-            }
-            for (auto &it : deleteMe)
-            {
-                map.erase(it);
-            }
-        }
+        ~EraseStaleEntries();
     };
 } // namespace internal
 } // namespace openPMD

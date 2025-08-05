@@ -430,7 +430,7 @@ void Mesh::flush_impl(
 
 void Mesh::read()
 {
-    internal::EraseStaleEntries<Mesh &> map{*this};
+    internal::EraseStaleEntries<Mesh> map{*this};
 
     using DT = Datatype;
     Parameter<Operation::READ_ATT> aRead;

@@ -379,4 +379,63 @@ auto Container<T, T_key, T_container>::operator=(Container &&other) noexcept
     m_containerData = std::move(other.m_containerData);
     return *this;
 }
+
+namespace internal
+{
+    template <typename Container_t>
+    EraseStaleEntries<Container_t>::EraseStaleEntries(Container_t &container_in)
+        : m_originalContainer(container_in)
+    {}
+
+    template <typename Container_t>
+    auto EraseStaleEntries<Container_t>::operator[](
+        typename Container_t::key_type const &k) -> mapped_type &
+    {
+        m_accessedKeys.insert(k);
+        return m_originalContainer[k];
+    }
+
+    template <typename Container_t>
+    auto
+    EraseStaleEntries<Container_t>::at(typename Container_t::key_type const &k)
+        -> mapped_type &
+    {
+        m_accessedKeys.insert(k);
+        return m_originalContainer.at(k);
+    }
+
+    /**
+     * Remove key from the list of accessed keys.
+     * If the key is not accessed after this again, it will be deleted along
+     * with all other unaccessed keys upon destruction.
+     */
+    template <typename Container_t>
+    auto EraseStaleEntries<Container_t>::forget(
+        typename Container_t::key_type const &k) -> void
+    {
+        m_accessedKeys.erase(k);
+    }
+
+    template <typename Container_t>
+    EraseStaleEntries<Container_t>::~EraseStaleEntries()
+    {
+        auto &map = m_originalContainer.container();
+        using iterator_t =
+            typename Container_t::InternalContainer::const_iterator;
+        std::vector<iterator_t> deleteMe;
+        deleteMe.reserve(map.size() - m_accessedKeys.size());
+        for (iterator_t it = map.begin(); it != map.end(); ++it)
+        {
+            auto lookup = m_accessedKeys.find(it->first);
+            if (lookup == m_accessedKeys.end())
+            {
+                deleteMe.push_back(it);
+            }
+        }
+        for (auto &it : deleteMe)
+        {
+            map.erase(it);
+        }
+    }
+} // namespace internal
 } // namespace openPMD

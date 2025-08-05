@@ -40,7 +40,7 @@ void ParticleSpecies::read()
     IOHandler()->enqueue(IOTask(this, pList));
     IOHandler()->flush(internal::defaultFlushParams);
 
-    internal::EraseStaleEntries<ParticleSpecies &> map{*this};
+    internal::EraseStaleEntries<ParticleSpecies> map{*this};
 
     Parameter<Operation::OPEN_PATH> pOpen;
     Parameter<Operation::LIST_ATTS> aList;

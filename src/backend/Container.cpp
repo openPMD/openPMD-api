@@ -23,19 +23,34 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
+#include "openPMD/ParticlePatches.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
 namespace openPMD
 {
-template class Container<Iteration>;
-template class Container<Iteration, Iteration::IterationIndex_t>;
-template class Container<Mesh>;
-template class Container<MeshRecordComponent>;
-template class Container<ParticleSpecies>;
-template class Container<PatchRecord>;
-template class Container<PatchRecordComponent>;
-template class Container<Record>;
-template class Container<RecordComponent>;
+#define OPENPMD_COMMA ,
+#define OPENPMD_INSTANTIATE(type) template class Container<type>;
+
+OPENPMD_INSTANTIATE(Mesh)
+OPENPMD_INSTANTIATE(MeshRecordComponent)
+OPENPMD_INSTANTIATE(ParticlePatches)
+OPENPMD_INSTANTIATE(ParticleSpecies)
+OPENPMD_INSTANTIATE(PatchRecord)
+OPENPMD_INSTANTIATE(PatchRecordComponent)
+OPENPMD_INSTANTIATE(Record)
+OPENPMD_INSTANTIATE(RecordComponent)
+OPENPMD_INSTANTIATE(Iteration OPENPMD_COMMA Iteration::IterationIndex_t)
+#undef OPENPMD_INSTANTIATE
+#undef OPENPMD_COMMA
+
+namespace internal
+{
+    template class EraseStaleEntries<Mesh>;
+    template class EraseStaleEntries<ParticleSpecies>;
+    template class EraseStaleEntries<Container<Mesh>>;
+    template class EraseStaleEntries<Container<ParticleSpecies>>;
+} // namespace internal
 
 } // namespace openPMD
