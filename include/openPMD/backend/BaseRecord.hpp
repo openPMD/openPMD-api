@@ -673,9 +673,9 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::find(key_type const &key) -> iterator
 {
     auto &r = get();
-    if (key == RecordComponent::SCALAR && get().m_datasetDefined)
+    if (r.m_datasetDefined)
     {
-        if (r.m_datasetDefined)
+        if (key == RecordComponent::SCALAR)
         {
             return begin();
         }
@@ -683,6 +683,10 @@ auto BaseRecord<T_elem>::find(key_type const &key) -> iterator
         {
             return end();
         }
+    }
+    else if (key == RecordComponent::SCALAR)
+    {
+        return end();
     }
     else
     {
@@ -694,9 +698,9 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::find(key_type const &key) const -> const_iterator
 {
     auto &r = get();
-    if (key == RecordComponent::SCALAR && get().m_datasetDefined)
+    if (r.m_datasetDefined)
     {
-        if (r.m_datasetDefined)
+        if (key == RecordComponent::SCALAR)
         {
             return begin();
         }
@@ -704,6 +708,10 @@ auto BaseRecord<T_elem>::find(key_type const &key) const -> const_iterator
         {
             return end();
         }
+    }
+    else if (key == RecordComponent::SCALAR)
+    {
+        return end();
     }
     else
     {
