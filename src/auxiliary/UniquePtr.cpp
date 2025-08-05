@@ -73,7 +73,8 @@ UniquePtrWithLambda<T> &
 UniquePtrWithLambda<T>::operator=(UniquePtrWithLambda &&) = default;
 
 template <typename T>
-UniquePtrWithLambda<T>::UniquePtrWithLambda(std::unique_ptr<T> stdPtr)
+template <typename bare_unique_ptr, typename SFINAE>
+UniquePtrWithLambda<T>::UniquePtrWithLambda(bare_unique_ptr stdPtr)
     : BasePtr{stdPtr.release()}
 {}
 
@@ -87,13 +88,18 @@ UniquePtrWithLambda<T>::UniquePtrWithLambda(
     : BasePtr{ptr, std::move(deleter)}
 {}
 
-#define OPENPMD_INSTANTIATE(type) template class UniquePtrWithLambda<type>;
+#define OPENPMD_INSTANTIATE(type)                                              \
+    template class UniquePtrWithLambda<type>;                                  \
+    template UniquePtrWithLambda<type>::UniquePtrWithLambda(                   \
+        std::unique_ptr<type>);
 
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
     OPENPMD_INSTANTIATE(type) OPENPMD_INSTANTIATE(type[])
 
 OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
-OPENPMD_INSTANTIATE(void)
+// Instantiate this directly, do not instantiate the
+// `std::unique_ptr<void>`-based constructor.
+template class UniquePtrWithLambda<void>;
 #undef OPENPMD_INSTANTIATE
 #undef OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT
 

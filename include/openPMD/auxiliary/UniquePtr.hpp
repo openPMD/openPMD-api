@@ -100,15 +100,30 @@ public:
 
     /**
      * Conversion constructor from std::unique_ptr<T> with default deleter.
+     *
+     * @tparam bare_unique_ptr Equal to std::unique_ptr<T>. Needs to be a
+     *         template parameter since we cannot instantiate
+     *         std::unique_ptr<void>.
+     * @tparam SFINAE Used to ensure that bare_unique_ptr actually is
+     *         std::unique_ptr<T>.
      */
-    UniquePtrWithLambda(std::unique_ptr<T>);
+    template <
+        typename bare_unique_ptr,
+        typename SFINAE = std::enable_if_t<
+            std::is_same_v<bare_unique_ptr, std::unique_ptr<T>>>>
+    UniquePtrWithLambda(bare_unique_ptr);
 
     /**
      * Conversion constructor from std::unique_ptr<T> with custom deleter.
      *
      * @tparam Del Custom deleter type.
+     * @tparam SFINAE Used to not compete with the std::unique_ptr<T>
+     *         constructor (without custom deleter).
      */
-    template <typename Del>
+    template <
+        typename Del,
+        typename SFINAE = std::enable_if_t<
+            !std::is_same_v<std::unique_ptr<T, Del>, std::unique_ptr<T>>>>
     UniquePtrWithLambda(std::unique_ptr<T, Del>);
 
     /**
@@ -133,7 +148,7 @@ public:
 };
 
 template <typename T>
-template <typename Del>
+template <typename Del, typename>
 UniquePtrWithLambda<T>::UniquePtrWithLambda(std::unique_ptr<T, Del> ptr)
     : BasePtr{ptr.release(), auxiliary::CustomDelete<T>{[&]() {
                   if constexpr (std::is_copy_constructible_v<Del>)
