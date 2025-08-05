@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -103,22 +103,10 @@ namespace internal
         ScalarTuple m_scalarTuple;
         std::variant<Left, Right> m_iterator;
 
-        explicit ScalarIterator() = default;
+        explicit ScalarIterator();
 
-        ScalarIterator(T_BaseRecord *baseRecord)
-            : m_baseRecordData(&baseRecord->get())
-            , m_scalarTuple(
-                  std::make_pair(
-                      RecordComponent::SCALAR, T_RecordComponent(*baseRecord)))
-            , m_iterator(Right())
-        {}
-        ScalarIterator(T_BaseRecord *baseRecord, Left iterator)
-            : m_baseRecordData(&baseRecord->get())
-            , m_scalarTuple(
-                  std::make_pair(
-                      RecordComponent::SCALAR, T_RecordComponent(*baseRecord)))
-            , m_iterator(std::move(iterator))
-        {}
+        ScalarIterator(T_BaseRecord *baseRecord, bool is_end);
+        ScalarIterator(T_BaseRecord *baseRecord, Left iterator);
 
     public:
         /**
@@ -165,49 +153,15 @@ namespace internal
                       other.m_iterator))
         {}
 
-        ScalarIterator &operator++()
-        {
-            std::visit(
-                auxiliary::overloaded{
-                    [](Left &left) { ++left; },
-                    [this](Right &) {
-                        m_iterator = m_baseRecordData->m_container.end();
-                    }},
-                m_iterator);
-            return *this;
-        }
+        ScalarIterator &operator++();
 
-        T_Value *operator->()
-        {
-            return std::visit(
-                auxiliary::overloaded{
-                    [](Left &left) -> T_Value * { return left.operator->(); },
-                    [this](Right &) -> T_Value * {
-                        /*
-                         * We cannot create this value on the fly since we only
-                         * give out a pointer, so that would be use-after-free.
-                         * Instead, we just keep one value around inside
-                         * BaseRecordData and give it out when needed.
-                         */
-                        return &m_scalarTuple.value();
-                    }},
-                m_iterator);
-        }
+        T_Value *operator->();
 
-        T_Value &operator*()
-        {
-            return *operator->();
-        }
+        T_Value &operator*();
 
-        bool operator==(ScalarIterator const &other) const
-        {
-            return this->m_iterator == other.m_iterator;
-        }
+        bool operator==(ScalarIterator const &other) const;
 
-        bool operator!=(ScalarIterator const &other) const
-        {
-            return !operator==(other);
-        }
+        bool operator!=(ScalarIterator const &other) const;
     };
 } // namespace internal
 
@@ -333,7 +287,7 @@ public:
     {
         if (get().m_datasetDefined)
         {
-            return makeIterator();
+            return makeIterator(/* is_end = */ false);
         }
         else
         {
@@ -345,7 +299,7 @@ public:
     {
         if (get().m_datasetDefined)
         {
-            return makeIterator();
+            return makeIterator(/* is_end = */ false);
         }
         else
         {
@@ -357,7 +311,7 @@ public:
     {
         if (get().m_datasetDefined)
         {
-            return makeIterator();
+            return makeIterator(/* is_end = */ false);
         }
         else
         {
@@ -367,24 +321,45 @@ public:
 
     iterator end()
     {
-        return makeIterator(T_Container::end());
+        if (get().m_datasetDefined)
+        {
+            return makeIterator(/* is_end = */ true);
+        }
+        else
+        {
+            return makeIterator(T_Container::end());
+        }
     }
 
     const_iterator end() const
     {
-        return makeIterator(T_Container::end());
+        if (get().m_datasetDefined)
+        {
+            return makeIterator(/* is_end = */ true);
+        }
+        else
+        {
+            return makeIterator(T_Container::end());
+        }
     }
 
     const_iterator cend() const
     {
-        return makeIterator(T_Container::cend());
+        if (get().m_datasetDefined)
+        {
+            return makeIterator(/* is_end = */ true);
+        }
+        else
+        {
+            return makeIterator(T_Container::cend());
+        }
     }
 
     reverse_iterator rbegin()
     {
         if (get().m_datasetDefined)
         {
-            return makeReverseIterator();
+            return makeReverseIterator(/* is_end = */ false);
         }
         else
         {
@@ -396,7 +371,7 @@ public:
     {
         if (get().m_datasetDefined)
         {
-            return makeReverseIterator();
+            return makeReverseIterator(/* is_end = */ false);
         }
         else
         {
@@ -408,7 +383,7 @@ public:
     {
         if (get().m_datasetDefined)
         {
-            return makeReverseIterator();
+            return makeReverseIterator(/* is_end = */ false);
         }
         else
         {
@@ -418,17 +393,38 @@ public:
 
     reverse_iterator rend()
     {
-        return makeReverseIterator(this->container().rend());
+        if (get().m_datasetDefined)
+        {
+            return makeReverseIterator(/* is_end = */ true);
+        }
+        else
+        {
+            return makeReverseIterator(this->container().rend());
+        }
     }
 
     const_reverse_iterator rend() const
     {
-        return makeReverseIterator(this->container().rend());
+        if (get().m_datasetDefined)
+        {
+            return makeReverseIterator(/* is_end = */ true);
+        }
+        else
+        {
+            return makeReverseIterator(this->container().rend());
+        }
     }
 
     const_reverse_iterator crend() const
     {
-        return makeReverseIterator(this->container().crend());
+        if (get().m_datasetDefined)
+        {
+            return makeReverseIterator(/* is_end = */ true);
+        }
+        else
+        {
+            return makeReverseIterator(this->container().crend());
+        }
     }
 
     virtual ~BaseRecord() = default;
@@ -509,19 +505,6 @@ private:
 }; // BaseRecord
 
 // implementation
-
-namespace internal
-{
-    template <typename T_elem, typename T_RecordComponentData>
-    BaseRecordData<T_elem, T_RecordComponentData>::BaseRecordData()
-    {
-        Attributable impl;
-        impl.setData({this, [](auto const *) {}});
-        impl.setAttribute(
-            "unitDimension",
-            std::array<double, 7>{{0., 0., 0., 0., 0., 0., 0.}});
-    }
-} // namespace internal
 
 template <typename T_elem>
 BaseRecord<T_elem>::BaseRecord()

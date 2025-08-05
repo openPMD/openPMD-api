@@ -62,6 +62,7 @@ int main()
             pos.resetDataset(dataset);
             pos.storeChunk(local_data, Offset{0}, global_extent);
         }
+
         iteration.close();
     }
 
