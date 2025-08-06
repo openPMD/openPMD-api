@@ -22,6 +22,7 @@
 #include <pybind11/detail/common.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 
 #include "openPMD/Dataset.hpp"
@@ -322,13 +323,16 @@ struct StoreChunkFromPythonArray
         Offset const &offset,
         Extent const &extent)
     {
-        // here, we increase a reference on the user-passed data so that
+        a.inc_ref();
+        void *data = a.mutable_data();
+        // here, we store an owning handle in the lambda capture so that
         // temporary and lost-scope variables stay alive until we flush
         // note: this does not yet prevent the user, as in C++, to build
         // a race condition by manipulating the data that was passed
-        a.inc_ref();
-        void *data = a.mutable_data();
-        std::shared_ptr<T> shared((T *)data, [a](T *) { a.dec_ref(); });
+        std::shared_ptr<T> shared(
+            (T *)data, [owning_handle = a.cast<py::object>()](T *) {
+                // no-op
+            });
         r.storeChunk(std::move(shared), offset, extent);
     }
 
@@ -343,13 +347,15 @@ struct LoadChunkIntoPythonArray
         Offset const &offset,
         Extent const &extent)
     {
-        // here, we increase a reference on the user-passed data so that
+        void *data = a.mutable_data();
+        // here, we store an owning handle in the lambda capture so that
         // temporary and lost-scope variables stay alive until we flush
         // note: this does not yet prevent the user, as in C++, to build
         // a race condition by manipulating the data that was passed
-        a.inc_ref();
-        void *data = a.mutable_data();
-        std::shared_ptr<T> shared((T *)data, [a](T *) { a.dec_ref(); });
+        std::shared_ptr<T> shared(
+            (T *)data, [owning_handle = a.cast<py::object>()](T *) {
+                // no-op
+            });
         r.loadChunk(std::move(shared), offset, extent);
     }
 
@@ -365,14 +371,15 @@ struct LoadChunkIntoPythonBuffer
         Offset const &offset,
         Extent const &extent)
     {
-        // here, we increase a reference on the user-passed data so that
+        void *data = buffer_info.ptr;
+        // here, we store an owning handle in the lambda capture so that
         // temporary and lost-scope variables stay alive until we flush
         // note: this does not yet prevent the user, as in C++, to build
         // a race condition by manipulating the data that was passed
-        buffer.inc_ref();
-        void *data = buffer_info.ptr;
         std::shared_ptr<T> shared(
-            (T *)data, [buffer](T *) { buffer.dec_ref(); });
+            (T *)data, [owning_handle = buffer.cast<py::object>()](T *) {
+                // no-op
+            });
         r.loadChunk(std::move(shared), offset, extent);
     }
 
