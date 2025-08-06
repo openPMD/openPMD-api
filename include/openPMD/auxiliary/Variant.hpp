@@ -89,14 +89,11 @@ namespace auxiliary
             return m_data;
         }
 
-        // /** Retrieve the index of the alternative that is currently been held
-        //  *
-        //  * @return  zero-based index
-        //  */
-        // constexpr size_t index() const noexcept
-        // {
-        //     return m_data.index();
-        // }
+        /** Retrieve the index of the alternative that is currently been held
+         *
+         * @return  zero-based index
+         */
+        size_t index() const;
 
         T_DTYPES dtype;
 

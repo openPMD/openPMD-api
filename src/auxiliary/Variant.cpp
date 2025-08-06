@@ -32,8 +32,14 @@ template <typename U>
 U const &Variant<T_DTYPES, variant_types...>::get() const
 {
     using variant_t = std::variant<variant_types...>;
-    variant_t const *v = std::any_cast<variant_t>(&m_data);
-    return std::get<U>(*v);
+    variant_t const &v = getVariant<variant_t>();
+    return std::get<U>(v);
+}
+
+template <typename T_DTYPES, typename... variant_types>
+size_t Variant<T_DTYPES, variant_types...>::index() const
+{
+    return getVariant<std::variant<variant_types...>>().index();
 }
 
 #define OPENPMD_ENUMERATE_TYPES(type) , type
@@ -44,7 +50,8 @@ template class Variant<Datatype OPENPMD_FOREACH_DATATYPE(
 #undef OPENPMD_ENUMERATE_TYPES
 
 #define OPENPMD_ENUMERATE_INSTANTIATIONS(type)                                 \
-    template VariantInstantiated::Variant(from_basic_type_tag, type);
+    template VariantInstantiated::Variant(from_basic_type_tag, type);          \
+    template type const &VariantInstantiated::get() const;
 OPENPMD_FOREACH_DATATYPE(OPENPMD_ENUMERATE_INSTANTIATIONS)
 #undef OPENPMD_ENUMERATE_INSTANTIATIONS
 
