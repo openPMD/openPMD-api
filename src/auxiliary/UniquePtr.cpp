@@ -67,10 +67,11 @@ template <typename T>
 UniquePtrWithLambda<T>::UniquePtrWithLambda() = default;
 
 template <typename T>
-UniquePtrWithLambda<T>::UniquePtrWithLambda(UniquePtrWithLambda &&) = default;
+UniquePtrWithLambda<T>::UniquePtrWithLambda(UniquePtrWithLambda &&) noexcept =
+    default;
 template <typename T>
 UniquePtrWithLambda<T> &
-UniquePtrWithLambda<T>::operator=(UniquePtrWithLambda &&) = default;
+UniquePtrWithLambda<T>::operator=(UniquePtrWithLambda &&) noexcept = default;
 
 template <typename T>
 template <typename bare_unique_ptr, typename SFINAE>

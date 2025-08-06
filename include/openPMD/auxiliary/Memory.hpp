@@ -59,9 +59,12 @@ namespace auxiliary
             : m_buffer(std::forward<Args>(args)...)
         {}
 
-        WriteBuffer(WriteBuffer &&);
+        WriteBuffer(WriteBuffer &&) noexcept(
+            noexcept(EligibleTypes(std::declval<EligibleTypes &&>())));
         WriteBuffer(WriteBuffer const &) = delete;
-        WriteBuffer &operator=(WriteBuffer &&);
+        WriteBuffer &operator=(WriteBuffer &&) noexcept(noexcept(
+            std::declval<EligibleTypes &>() =
+                std::declval<EligibleTypes &&>()));
         WriteBuffer &operator=(WriteBuffer const &) = delete;
 
         WriteBuffer const &operator=(std::shared_ptr<void const> ptr);

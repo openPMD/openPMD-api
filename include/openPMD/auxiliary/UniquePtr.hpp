@@ -92,8 +92,8 @@ public:
 
     UniquePtrWithLambda();
 
-    UniquePtrWithLambda(UniquePtrWithLambda &&);
-    UniquePtrWithLambda &operator=(UniquePtrWithLambda &&);
+    UniquePtrWithLambda(UniquePtrWithLambda &&) noexcept;
+    UniquePtrWithLambda &operator=(UniquePtrWithLambda &&) noexcept;
 
     UniquePtrWithLambda(UniquePtrWithLambda const &) = delete;
     UniquePtrWithLambda &operator=(UniquePtrWithLambda const &) = delete;

@@ -26,7 +26,7 @@ auto close_and_reopen_iterations(
 {
     Series list(filename, access, json_config);
 
-    auto test_read = []([[maybe_unused]] Iteration &iteration) {
+    auto test_read = [](Iteration &iteration) {
         auto component = iteration.particles["e"]["position"]["x"];
         auto chunk = component.loadChunkVariant();
         iteration.seriesFlush();

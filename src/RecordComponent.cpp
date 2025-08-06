@@ -849,13 +849,17 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     verifyChunk(determineDatatype<T>(), o, e);
 }
 
+// Needed for clang-tidy's peace of mind.
+#define OPENPMD_PTR(type) type *
+#define OPENPMD_ARRAY(type) type[]
+
 #define OPENPMD_INSTANTIATE_BASIC(type)                                        \
     template void RecordComponent::loadChunk<type>(                            \
         std::shared_ptr<type> data, Offset o, Extent e);                       \
     template void RecordComponent::loadChunk<type>(                            \
-        std::shared_ptr<type[]> data, Offset o, Extent e);                     \
+        std::shared_ptr<OPENPMD_ARRAY(type)> data, Offset o, Extent e);        \
     template void RecordComponent::loadChunkRaw<type>(                         \
-        type * ptr, Offset offset, Extent extent);                             \
+        OPENPMD_PTR(type) ptr, Offset offset, Extent extent);                  \
     template void RecordComponent::verifyChunk<type>(                          \
         Offset const &o, Extent const &e) const;                               \
     template DynamicMemoryView<type> RecordComponent::storeChunk<type>(        \
@@ -865,9 +869,9 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     template void RecordComponent::storeChunk<type>(                           \
         std::shared_ptr<type> data, Offset o, Extent e);                       \
     template void RecordComponent::storeChunk<type>(                           \
-        std::shared_ptr<type[]> data, Offset o, Extent e);                     \
+        std::shared_ptr<OPENPMD_ARRAY(type)> data, Offset o, Extent e);        \
     template void RecordComponent::storeChunkRaw<type>(                        \
-        type * ptr, Offset offset, Extent extent);
+        OPENPMD_PTR(type) ptr, Offset offset, Extent extent);
 
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
     template std::shared_ptr<type> RecordComponent::loadChunk<type>(           \
@@ -885,10 +889,10 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     OPENPMD_INSTANTIATE_CONST_AND_NONCONST(type)                               \
     OPENPMD_INSTANTIATE_CONST_AND_NONCONST(type const)                         \
     OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                          \
-    OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type[])                        \
+    OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(OPENPMD_ARRAY(type))           \
     OPENPMD_INSTANTIATE_FULLMATRIX(type)                                       \
     OPENPMD_INSTANTIATE_FULLMATRIX(type const)                                 \
-    OPENPMD_INSTANTIATE_FULLMATRIX(type[])                                     \
+    OPENPMD_INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type))                        \
     OPENPMD_INSTANTIATE_FULLMATRIX(type const[])
 
 OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE)
@@ -897,5 +901,7 @@ OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE)
 #undef OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT
 #undef OPENPMD_INSTANTIATE_CONST_AND_NONCONST
 #undef OPENPMD_INSTANTIATE_BASIC
+#undef OPENPMD_PTR
+#undef OPENPMD_ARRAY
 
 } // namespace openPMD

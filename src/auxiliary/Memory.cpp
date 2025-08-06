@@ -159,8 +159,11 @@ allocatePtr(Datatype dtype, Extent const &e)
 WriteBuffer::WriteBuffer() : m_buffer(UniquePtrWithLambda<void>())
 {}
 
-WriteBuffer::WriteBuffer(WriteBuffer &&) = default;
-WriteBuffer &WriteBuffer::operator=(WriteBuffer &&) = default;
+WriteBuffer::WriteBuffer(WriteBuffer &&) noexcept(
+    noexcept(EligibleTypes(std::declval<EligibleTypes &&>()))) = default;
+WriteBuffer &WriteBuffer::operator=(WriteBuffer &&) noexcept(noexcept(
+    std::declval<EligibleTypes &>() = std::declval<EligibleTypes &&>())) =
+    default;
 
 WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<void const> ptr)
 {

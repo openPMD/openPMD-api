@@ -18,6 +18,7 @@ namespace openPMD
  * Only then instantiate.
  */
 
+// NOLINTNEXTLINE(bugprone-macro-parentheses)
 #define OPENPMD_ENUMERATE_TYPES(type) +1
 constexpr static size_t num_datatypes =
     0 OPENPMD_FOREACH_DATATYPE(OPENPMD_ENUMERATE_TYPES);
@@ -94,11 +95,11 @@ U Attribute::get() const
             using T = std::decay_t<decltype(containedValue)>;
             if constexpr (std::is_same_v<T, std::runtime_error>)
             {
-                throw std::move(containedValue);
+                throw static_cast<decltype(containedValue)>(containedValue);
             }
             else
             {
-                return std::move(containedValue);
+                return static_cast<decltype(containedValue)>(containedValue);
             }
         },
         std::move(res));
@@ -118,7 +119,7 @@ std::optional<U> Attribute::getOptional() const
             }
             else
             {
-                return std::move(containedValue);
+                return static_cast<decltype(containedValue)>(containedValue);
             }
         },
         std::move(res));

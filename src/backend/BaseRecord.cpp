@@ -619,11 +619,16 @@ namespace detail
         }
     }
 
+// Needed for clang-tidy
+#define OPENPMD_APPLY_TEMPLATE(template_, type) template_<type>
+
 #define OPENPMD_INSTANTIATE(recordcomponenttype)                               \
-    template void verifyNonscalar<BaseRecord<recordcomponenttype>>(            \
+    template void                                                              \
+    verifyNonscalar<OPENPMD_APPLY_TEMPLATE(BaseRecord, recordcomponenttype)>(  \
         BaseRecord<recordcomponenttype> *);
     OPENPMD_FORALL_RECORDCOMPONENT_TYPES(OPENPMD_INSTANTIATE)
 #undef OPENPMD_INSTANTIATE
+#undef OPENPMD_APPLY_TEMPLATE
 } // namespace detail
 
 template <typename T_elem>
