@@ -51,23 +51,26 @@ namespace auxiliary
         struct from_any_tag
         {};
         static constexpr from_any_tag from_any = from_any_tag{};
+        template <typename U>
+        Variant(from_basic_type_tag, U);
+
+        Variant(from_any_tag, std::any);
 
         /** Construct a lightweight wrapper around a generic object that
          * indicates the concrete datatype of the specific object stored.
          *
          * @note    Gerneric objects can only generated implicitly if their
          * datatype is contained in T_DTYPES.
-         * @param   r   Generic object to be stored.
+         * @param   u   Generic object to be stored.
          */
         template <typename U>
-        Variant(from_basic_type_tag, U);
-
-        Variant(from_any_tag, std::any);
+        Variant(U u);
 
         /** Retrieve a stored specific object of known datatype with ensured
          * type-safety.
          *
-         * @throw   std::bad_variant_access if stored object is not of type U.
+         * @throw   std::bad_variant_access if stored object is not of type
+         * U.
          * @tparam  U   Type of the object to be retrieved.
          * @return  Copy of the retrieved object of type U.
          */
