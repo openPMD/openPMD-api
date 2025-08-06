@@ -268,7 +268,10 @@ std::future<void> AbstractIOHandlerImpl::flush()
                     i.writable->parent,
                     "->",
                     i.writable,
-                    "] WRITE_DATASET");
+                    "] WRITE_DATASET, offset=",
+                    [&parameter]() { return vec_as_string(parameter.offset); },
+                    ", extent=",
+                    [&parameter]() { return vec_as_string(parameter.extent); });
                 writeDataset(i.writable, parameter);
                 break;
             }

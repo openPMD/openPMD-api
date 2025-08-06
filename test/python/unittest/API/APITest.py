@@ -82,6 +82,23 @@ class APITest(unittest.TestCase):
         del self.__particle_series
         del self.__series
 
+    def testRefCounting(self):
+        write = io.Series(
+            "../samples/refcounting.json", io.Access.create_linear)
+        iteration = write.snapshots()[0]
+        pos_x = iteration.particles["e"]["position"]["x"]
+        pos_x.reset_dataset(io.Dataset(np.dtype("float"), [100]))
+        pos_x[:] = np.arange(0, 100, dtype = np.dtype("float"))
+        write.close()
+
+        read = io.Series("../samples/refcounting.json", io.Access.read_linear)
+        iteration = read.snapshots()[0]
+        pos_x = iteration.particles["e"]["position"]["x"]
+        loaded = pos_x[:]
+        read.flush()
+        self.assertTrue(np.allclose(
+            loaded, np.arange(0, 100, dtype = np.dtype("float"))))
+
     def testFieldData(self):
         """ Testing serial IO on a pure field dataset. """
 
