@@ -51,9 +51,10 @@ namespace auxiliary
     {}
 
 #define OPENPMD_INSTANTIATE(type) template class CustomDelete<type>;
-
+// need this for clang-tidy
+#define OPENPMD_ARRAY(type) type[]
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
-    OPENPMD_INSTANTIATE(type) OPENPMD_INSTANTIATE(type[])
+    OPENPMD_INSTANTIATE(type) OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type))
 
     OPENPMD_FOREACH_DATASET_DATATYPE(
         OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
@@ -95,7 +96,7 @@ UniquePtrWithLambda<T>::UniquePtrWithLambda(
         std::unique_ptr<type>);
 
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
-    OPENPMD_INSTANTIATE(type) OPENPMD_INSTANTIATE(type[])
+    OPENPMD_INSTANTIATE(type) OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type))
 
 OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
 // Instantiate this directly, do not instantiate the
@@ -103,5 +104,6 @@ OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
 template class UniquePtrWithLambda<void>;
 #undef OPENPMD_INSTANTIATE
 #undef OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT
+#undef OPENPMD_ARRAY
 
 } // namespace openPMD

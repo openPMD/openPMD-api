@@ -75,19 +75,19 @@ namespace auxiliary
          * @return  Copy of the retrieved object of type U.
          */
         template <typename U>
-        U const &get() const;
+        [[nodiscard]] U const &get() const;
 
         /** Retrieve the stored generic object.
          *
          * @return  Copy of the stored generic object.
          */
         template <typename variant_t>
-        variant_t const &getVariant() const
+        [[nodiscard]] variant_t const &getVariant() const
         {
             return *std::any_cast<variant_t>(&m_data);
         }
 
-        std::any const &getAny()
+        [[nodiscard]] std::any const &getAny() const
         {
             return m_data;
         }
@@ -96,7 +96,7 @@ namespace auxiliary
          *
          * @return  zero-based index
          */
-        size_t index() const;
+        [[nodiscard]] size_t index() const;
 
         T_DTYPES dtype;
 
