@@ -285,8 +285,12 @@ variant_t &Parameter<Operation::READ_ATT_ALLSTEPS>::resource()
     }
     return *std::any_cast<variant_t>(&*m_resource);
 }
+
+// ?????
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 template vector_of_attributes_type &
 Parameter<Operation::READ_ATT_ALLSTEPS>::resource<vector_of_attributes_type>();
+#endif
 
 template <typename T>
 void Parameter<Operation::READ_ATT_ALLSTEPS>::setResource(std::vector<T> val)
