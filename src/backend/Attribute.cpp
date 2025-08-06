@@ -10,6 +10,12 @@
 
 namespace openPMD
 {
+// NOLINTNEXTLINE(bugprone-macro-parentheses)
+#define OPENPMD_ENUMERATE_TYPES(type) +1
+constexpr static size_t num_datatypes =
+    0 OPENPMD_FOREACH_DATATYPE(OPENPMD_ENUMERATE_TYPES);
+#undef OPENPMD_ENUMERATE_TYPES
+
 /*
  * These instantiations are somewhat complicated because we want to avoid
  * instantiating all possible combinations of (1) requested type and (2) actual
@@ -17,18 +23,6 @@ namespace openPMD
  * on which types in the Datatype enum are actually convertible to TargetType.
  * Only then instantiate.
  */
-
-// NOLINTNEXTLINE(bugprone-macro-parentheses)
-#define OPENPMD_ENUMERATE_TYPES(type) +1
-constexpr static size_t num_datatypes =
-    0 OPENPMD_FOREACH_DATATYPE(OPENPMD_ENUMERATE_TYPES);
-#undef OPENPMD_ENUMERATE_TYPES
-
-template <typename T>
-constexpr auto variant_index() -> size_t
-{
-    return static_cast<size_t>(static_cast<int>(determineDatatype<T>()));
-}
 
 template <typename TargetType>
 constexpr auto eligible_conversions() -> std::array<bool, num_datatypes>
@@ -42,11 +36,11 @@ constexpr auto eligible_conversions() -> std::array<bool, num_datatypes>
     {
         std::array<bool, num_datatypes> res = {};
 #define OPENPMD_ENUMERATE_TYPES(type)                                          \
-    res[variant_index<type>()] = std::is_convertible_v<type, TargetType>;
+    res[datatypeIndex<type>()] = std::is_convertible_v<type, TargetType>;
         OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_ENUMERATE_TYPES)
 #undef OPENPMD_ENUMERATE_TYPES
 #define OPENPMD_ENUMERATE_TYPES(type)                                          \
-    res[variant_index<type>()] = res[variant_index<type::value_type>()];
+    res[datatypeIndex<type>()] = res[datatypeIndex<type::value_type>()];
         OPENPMD_FOREACH_VECTOR_DATATYPE(OPENPMD_ENUMERATE_TYPES)
 #undef OPENPMD_ENUMERATE_TYPES
         return res;
@@ -62,8 +56,8 @@ auto Attribute::get_impl() const -> std::variant<U, std::runtime_error>
     size_t index = variant.index();
 
 #define OPENPMD_ENUMERATE_TYPES(type)                                          \
-    case variant_index<type>(): {                                              \
-        if constexpr (!conversions[variant_index<type>()])                     \
+    case datatypeIndex<type>(): {                                              \
+        if constexpr (!conversions[datatypeIndex<type>()])                     \
         {                                                                      \
             std::stringstream error;                                           \
             error << "Cannot convert from " << determineDatatype<type>()       \

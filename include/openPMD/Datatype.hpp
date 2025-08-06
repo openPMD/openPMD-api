@@ -750,6 +750,12 @@ void warnWrongDtype(std::string const &key, Datatype store, Datatype request);
 
 std::ostream &operator<<(std::ostream &, openPMD::Datatype const &);
 
+template <typename T>
+constexpr auto datatypeIndex() -> size_t
+{
+    return static_cast<size_t>(static_cast<int>(determineDatatype<T>()));
+}
+
 /**
  * Generalizes switching over an openPMD datatype.
  *
