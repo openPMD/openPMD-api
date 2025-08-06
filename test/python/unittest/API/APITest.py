@@ -82,14 +82,42 @@ class APITest(unittest.TestCase):
         del self.__particle_series
         del self.__series
 
+    # This function exhibits a bug in the old use of refcounting.
+    def refcountingCreateData(self):
+        series = io.Series(
+            "../samples/refcounting.json",
+            io.Access.create_linear,
+        )
+
+        for i in range(10):
+            current_iteration = series.snapshots()[i]
+
+            # First, write an E mesh.
+            E = current_iteration.meshes["E"]
+            E.axis_labels = ["x", "y"]
+            for dim in ["x", "y"]:
+                component = E[dim]
+                component.reset_dataset(io.Dataset(np.dtype("float"), [10, 10]))
+                component[:, :] = np.reshape(
+                    np.arange(i * 100, (i + 1) * 100, dtype=np.dtype("float")),
+                    [10, 10],
+                )
+
+            # Now, write some e particles.
+            e = current_iteration.particles["e"]
+            for dim in ["x", "y"]:
+                # Do not bother with a positionOffset
+                position_offset = e["positionOffset"][dim]
+                position_offset.make_constant(0)
+
+                position = e["position"][dim]
+                position.reset_dataset(io.Dataset(np.dtype("float"), [100]))
+                position[:] = np.arange(
+                    i * 100, (i + 1) * 100, dtype=np.dtype("float")
+                )
+
     def testRefCounting(self):
-        write = io.Series(
-            "../samples/refcounting.json", io.Access.create_linear)
-        iteration = write.snapshots()[0]
-        pos_x = iteration.particles["e"]["position"]["x"]
-        pos_x.reset_dataset(io.Dataset(np.dtype("float"), [100]))
-        pos_x[:] = np.arange(0, 100, dtype = np.dtype("float"))
-        write.close()
+        self.refcountingCreateData()
 
         read = io.Series("../samples/refcounting.json", io.Access.read_linear)
         iteration = read.snapshots()[0]
