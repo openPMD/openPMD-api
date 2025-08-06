@@ -97,7 +97,8 @@ class APITest(unittest.TestCase):
             E.axis_labels = ["x", "y"]
             for dim in ["x", "y"]:
                 component = E[dim]
-                component.reset_dataset(io.Dataset(np.dtype("float"), [10, 10]))
+                component.reset_dataset(
+                    io.Dataset(np.dtype("float"), [10, 10]))
                 component[:, :] = np.reshape(
                     np.arange(i * 100, (i + 1) * 100, dtype=np.dtype("float")),
                     [10, 10],
@@ -125,7 +126,7 @@ class APITest(unittest.TestCase):
         loaded = pos_x[:]
         read.flush()
         self.assertTrue(np.allclose(
-            loaded, np.arange(0, 100, dtype = np.dtype("float"))))
+            loaded, np.arange(0, 100, dtype=np.dtype("float"))))
 
     def testFieldData(self):
         """ Testing serial IO on a pure field dataset. """
