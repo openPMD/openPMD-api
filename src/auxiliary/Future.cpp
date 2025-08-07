@@ -45,8 +45,10 @@ template class DeferredComputation<RecordComponent::shared_ptr_dataset_types>;
 #define INSTANTIATE_FUTURE(dtype)                                              \
     /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
     template class DeferredComputation<std::shared_ptr<dtype>>;
-OPENPMD_FOREACH_NONVECTOR_DATATYPE(INSTANTIATE_FUTURE)
+#define INSTANTIATE_FUTURE_WITH_AND_WITHOUT_EXTENT(type) INSTANTIATE_FUTURE(type) INSTANTIATE_FUTURE(type[])
+OPENPMD_FOREACH_NONVECTOR_DATATYPE(INSTANTIATE_FUTURE_WITH_AND_WITHOUT_EXTENT)
 #undef INSTANTIATE_FUTURE
+#undef INSTANTIATE_FUTURE_WITH_AND_WITHOUT_EXTENT
 // clang-format on
 } // namespace openPMD::auxiliary
 

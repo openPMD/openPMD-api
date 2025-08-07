@@ -21,10 +21,10 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
-#include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -36,6 +36,9 @@
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 // comment so clang-format does not move this
+#include "openPMD/DatatypeMacros.hpp"
+
+// comment
 #include "openPMD/DatatypeMacros.hpp"
 
 #include <algorithm>
@@ -696,21 +699,6 @@ void RecordComponent::readBase()
     }
 }
 
-void RecordComponent::storeChunk(
-    auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
-{
-    verifyChunk(dtype, o, e);
-
-    Parameter<Operation::WRITE_DATASET> dWrite;
-    dWrite.offset = std::move(o);
-    dWrite.extent = std::move(e);
-    dWrite.dtype = dtype;
-    /* std::static_pointer_cast correctly reference-counts the pointer */
-    dWrite.data = std::move(buffer);
-    auto &rc = get();
-    rc.push_chunk(IOTask(this, std::move(dWrite)));
-}
-
 void RecordComponent::storeChunk_impl(
     auxiliary::WriteBuffer buffer,
     Datatype dtype,
@@ -856,40 +844,22 @@ template <typename T>
 std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
+    auto operation = prepareLoadStore();
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
+    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    {
+        operation.offset(std::move(o));
+    }
 
     //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if (e.size() == 1u && e.at(0) == -1u)
+    if (e.size() != 1u || e.at(0) != -1u)
     {
-        extent = getExtent();
-        for (uint8_t i = 0u; i < dim; ++i)
-            extent[i] -= offset[i];
+        operation.extent(std::move(e));
     }
-    else
-        extent = e;
 
-    uint64_t numPoints = 1u;
-    for (auto const &dimensionSize : extent)
-        numPoints *= dimensionSize;
-
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
-    (defined(__apple_build_version__) && __clang_major__ < 14)
-    auto newData =
-        std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
-    loadChunk(newData, offset, extent);
-    return newData;
-#else
-    auto newData = std::shared_ptr<std::remove_extent_t<T>[]>(
-        new std::remove_extent_t<T>[numPoints]);
-    loadChunk(newData, offset, extent);
-    return std::static_pointer_cast<T>(std::move(newData));
-#endif
+    return operation.load<T>(EnqueuePolicy::Defer);
 }
 
 namespace detail
@@ -933,12 +903,10 @@ void RecordComponent::loadChunk_impl(
      * JSON/TOML backends as they might implicitly turn a LONG into an INT in a
      * constant component. The frontend needs to catch such edge cases.
      * Ref. `if (constant())` branch.
+     *
+     * Attention: Do NOT use operator==(), doesnt work properly on Windows!
      */
-    if (dtype != getDatatype() && !constant())
-        if (!isSameInteger<T>(getDatatype()) &&
-            !isSameFloatingPoint<T>(getDatatype()) &&
-            !isSameComplexFloatingPoint<T>(getDatatype()) &&
-            !isSameChar<T>(getDatatype()))
+    if (!isSame(dtype, getDatatype()) && !constant())
         {
             std::string const data_type_str = datatypeToString(getDatatype());
             std::string const requ_type_str =
@@ -1011,181 +979,74 @@ void RecordComponent::loadChunk_impl(
 template <typename T>
 void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    Datatype dtype = determineDatatype(data);
-    /*
-     * For constant components, we implement type conversion, so there is
-     * a separate check further below.
-     * This is especially useful for the short-attribute representation in the
-     * JSON/TOML backends as they might implicitly turn a LONG into an INT in a
-     * constant component. The frontend needs to catch such edge cases.
-     * Ref. `if (constant())` branch.
-     *
-     * Attention: Do NOT use operator==(), doesnt work properly on Windows!
-     */
-    if (!isSame(dtype, getDatatype()) && !constant())
-    {
-        std::string const data_type_str = datatypeToString(getDatatype());
-        std::string const requ_type_str =
-            datatypeToString(determineDatatype<T>());
-        std::string err_msg =
-            "Type conversion during chunk loading not yet implemented! ";
-        err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
-        throw std::runtime_error(err_msg);
-    }
-
+    // static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
     uint8_t dim = getDimensionality();
+    auto operation = prepareLoadStore();
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
+    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    {
+        operation.offset(std::move(o));
+    }
 
     //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if (e.size() == 1u && e.at(0) == -1u)
+    if (e.size() != 1u || e.at(0) != -1u)
     {
-        extent = getExtent();
-        for (uint8_t i = 0u; i < dim; ++i)
-            extent[i] -= offset[i];
+        operation.extent(std::move(e));
     }
-    else
-        extent = e;
 
-    if (extent.size() != dim || offset.size() != dim)
-    {
-        std::ostringstream oss;
-        oss << "Dimensionality of chunk ("
-            << "offset=" << offset.size() << "D, "
-            << "extent=" << extent.size() << "D) "
-            << "and record component (" << int(dim) << "D) "
-            << "do not match.";
-        throw std::runtime_error(oss.str());
-    }
-    Extent dse = getExtent();
-    for (uint8_t i = 0; i < dim; ++i)
-        if (dse[i] < offset[i] + extent[i])
-            throw std::runtime_error(
-                "Chunk does not reside inside dataset (Dimension on index " +
-                std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
-                " - Chunk: " + std::to_string(offset[i] + extent[i]) + ")");
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk loading.");
-
-    auto &rc = get();
-    if (constant())
-    {
-        uint64_t numPoints = 1u;
-        for (auto const &dimensionSize : extent)
-            numPoints *= dimensionSize;
-
-        std::optional<T> val =
-            switchNonVectorType<detail::do_convert</* To = */ T>>(
-                /* dt = */ getDatatype(), rc.m_constantValue);
-
-        if (val.has_value())
-        {
-            T *raw_ptr = data.get();
-            std::fill(raw_ptr, raw_ptr + numPoints, *val);
-        }
-        else
-        {
-            std::string const data_type_str = datatypeToString(getDatatype());
-            std::string const requ_type_str =
-                datatypeToString(determineDatatype<T>());
-            std::string err_msg =
-                "Type conversion during chunk loading not possible! ";
-            err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
-            throw error::WrongAPIUsage(err_msg);
-        }
-    }
-    else
-    {
-        Parameter<Operation::READ_DATASET> dRead;
-        dRead.offset = offset;
-        dRead.extent = extent;
-        dRead.dtype = getDatatype();
-        dRead.data = std::static_pointer_cast<void>(data);
-        rc.push_chunk(IOTask(this, dRead));
-    }
-}
-
-template <typename T>
-void RecordComponent::loadChunk(
-    std::shared_ptr<T[]> ptr, Offset offset, Extent extent)
-{
-    loadChunk(
-        std::static_pointer_cast<T>(std::move(ptr)),
-        std::move(offset),
-        std::move(extent));
+    operation.withSharedPtr(std::move(data)).load(EnqueuePolicy::Defer);
 }
 
 template <typename T>
 void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    loadChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
+    prepareLoadStore()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .withRawPtr(ptr)
+        .load(EnqueuePolicy::Defer);
 }
 
 template <typename T>
 void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype(data);
-
-    /* std::static_pointer_cast correctly reference-counts the pointer */
-    storeChunk(
-        auxiliary::WriteBuffer(std::static_pointer_cast<void const>(data)),
-        dtype,
-        std::move(o),
-        std::move(e));
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withSharedPtr(std::move(data))
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T>
 void RecordComponent::storeChunk(
     UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype<>(data);
-
-    storeChunk(
-        auxiliary::WriteBuffer{std::move(data).template static_cast_<void>()},
-        dtype,
-        std::move(o),
-        std::move(e));
-}
-
-template <typename T>
-void RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
-{
-    storeChunk(
-        std::static_pointer_cast<T const>(std::move(data)),
-        std::move(o),
-        std::move(e));
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withUniquePtr(std::move(data))
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T>
 void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 {
-    storeChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
+    prepareLoadStore()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .withRawPtr(ptr)
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T>
 DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
 {
-    return storeChunk<T>(std::move(offset), std::move(extent), [](size_t size) {
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
-    (defined(__apple_build_version__) && __clang_major__ < 14)
-        return UniquePtrWithLambda<T>{
-            new T[size], [](auto *ptr) { delete[] ptr; }};
-#else
-        return std::unique_ptr<T[]>{new T[size]};
-#endif
-    });
+    return prepareLoadStore()
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .enqueueStore<T>();
 }
 
 template <typename T>
@@ -1199,10 +1060,6 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
 #define OPENPMD_ARRAY(type) type[]
 
 #define OPENPMD_INSTANTIATE_BASIC(type)                                        \
-    template void RecordComponent::loadChunk<type>(                            \
-        std::shared_ptr<type> data, Offset o, Extent e);                       \
-    template void RecordComponent::loadChunk<type>(                            \
-        std::shared_ptr<OPENPMD_ARRAY(type)> data, Offset o, Extent e);        \
     template void RecordComponent::loadChunkRaw<type>(                         \
         OPENPMD_PTR(type) ptr, Offset offset, Extent extent);                  \
     template void RecordComponent::verifyChunk<type>(                          \
@@ -1214,13 +1071,11 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     template DynamicMemoryView<type> RecordComponent::storeChunkSpan_impl(     \
         internal::LoadStoreConfig cfg);
 
-#define OPENPMD_INSTANTIATE_CONST_AND_NONCONST(type)                           \
-    template void RecordComponent::storeChunk<type>(                           \
-        std::shared_ptr<type> data, Offset o, Extent e);                       \
-    template void RecordComponent::storeChunk<type>(                           \
-        std::shared_ptr<OPENPMD_ARRAY(type)> data, Offset o, Extent e);
+#define OPENPMD_INSTANTIATE_CONST_AND_NONCONST(type)
 
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
+    template void RecordComponent::loadChunk<type>(                            \
+        std::shared_ptr<type> data, Offset o, Extent e);                       \
     template std::shared_ptr<type> RecordComponent::loadChunk<type>(           \
         Offset o, Extent e);                                                   \
     template void RecordComponent::storeChunk<type>(                           \
@@ -1231,6 +1086,8 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
         internal::LoadStoreConfig cfg);
 
 #define OPENPMD_INSTANTIATE_FULLMATRIX(type)                                   \
+    template void RecordComponent::storeChunk<type>(                           \
+        std::shared_ptr<type> data, Offset o, Extent e);                       \
     template RecordComponent &RecordComponent::makeConstant<type>(type);       \
     template RecordComponent &RecordComponent::makeEmpty<type>(                \
         uint8_t dimensions);
