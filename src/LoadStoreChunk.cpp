@@ -303,18 +303,19 @@ namespace compose
 
 template class compose::ConfigureLoadStore<ConfigureLoadStore>;
 
-/* clang-format would destroy the NOLINT comments */
-// clang-format off
+// need this for clang-tidy
+#define OPENPMD_ARRAY(type) type[]
+#define OPENPMD_APPLY_TEMPLATE(template_, type) template_<type>
+
 #define INSTANTIATE_METHOD_TEMPLATES(dtype)                                    \
     template auto core::ConfigureLoadStore::enqueueLoad()                      \
-    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
-        -> auxiliary::DeferredComputation<std::shared_ptr<dtype>>;                  \
+        -> auxiliary::DeferredComputation<OPENPMD_APPLY_TEMPLATE(              \
+            std::shared_ptr, dtype)>;                                          \
     template auto core::ConfigureLoadStore::load(EnqueuePolicy)                \
         ->std::shared_ptr<dtype>;
-// clang-format on
 #define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
     INSTANTIATE_METHOD_TEMPLATES(type)                                         \
-    INSTANTIATE_METHOD_TEMPLATES(type[])                                       \
+    INSTANTIATE_METHOD_TEMPLATES(OPENPMD_ARRAY(type))                          \
     template auto core::ConfigureLoadStore::enqueueStore()                     \
         -> DynamicMemoryView<type>;
 
@@ -324,39 +325,32 @@ OPENPMD_FOREACH_NONVECTOR_DATATYPE(
 #undef INSTANTIATE_METHOD_TEMPLATES
 #undef INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT
 
-/* clang-format would destroy the NOLINT comments */
-// clang-format off
 #define INSTANTIATE_HALF(pointer_type)                                         \
-    template class ConfigureStoreChunkFromBuffer<pointer_type>;                \
-    template class core::ConfigureStoreChunkFromBuffer<pointer_type>;          \
-    template class compose::ConfigureLoadStore<                                \
-    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
-        ConfigureStoreChunkFromBuffer<pointer_type>>;                          \
+    template class OPENPMD_APPLY_TEMPLATE(                                     \
+        ConfigureStoreChunkFromBuffer, pointer_type);                          \
+    template class core::OPENPMD_APPLY_TEMPLATE(                               \
+        ConfigureStoreChunkFromBuffer, pointer_type);                          \
+    template class compose::ConfigureLoadStore<OPENPMD_APPLY_TEMPLATE(         \
+        ConfigureStoreChunkFromBuffer, pointer_type)>;                         \
     template class compose::ConfigureStoreChunkFromBuffer<                     \
-    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
-        ConfigureStoreChunkFromBuffer<pointer_type>>;
-// clang-format on
+        OPENPMD_APPLY_TEMPLATE(ConfigureStoreChunkFromBuffer, pointer_type)>;
 
-/* clang-format would destroy the NOLINT comments */
-// clang-format off
 #define INSTANTIATE_FULL(pointer_type)                                         \
     INSTANTIATE_HALF(pointer_type)                                             \
-    template class ConfigureLoadStoreFromBuffer<pointer_type>;                 \
-    template class core::ConfigureLoadStoreFromBuffer<pointer_type>;           \
-    template class compose::ConfigureLoadStore<                                \
-    /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
-  ConfigureLoadStoreFromBuffer<pointer_type>>;                                 \
+    template class OPENPMD_APPLY_TEMPLATE(                                     \
+        ConfigureLoadStoreFromBuffer, pointer_type);                           \
+    template class core::OPENPMD_APPLY_TEMPLATE(                               \
+        ConfigureLoadStoreFromBuffer, pointer_type);                           \
+    template class compose::ConfigureLoadStore<OPENPMD_APPLY_TEMPLATE(         \
+        ConfigureLoadStoreFromBuffer, pointer_type)>;                          \
     template class compose::ConfigureStoreChunkFromBuffer<                     \
-   /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                           \
-       ConfigureLoadStoreFromBuffer<pointer_type>>;
-// clang-format on
+        OPENPMD_APPLY_TEMPLATE(ConfigureLoadStoreFromBuffer, pointer_type)>;
 
 #define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
     INSTANTIATE_FULL(std::shared_ptr<dtype>)                                   \
     INSTANTIATE_HALF(std::shared_ptr<dtype const>)                             \
     INSTANTIATE_HALF(UniquePtrWithLambda<dtype>)                               \
     INSTANTIATE_HALF(UniquePtrWithLambda<dtype const>)
-//  /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */
 
 OPENPMD_FOREACH_NONVECTOR_DATATYPE(INSTANTIATE_STORE_CHUNK_FROM_BUFFER)
 
@@ -364,6 +358,8 @@ OPENPMD_FOREACH_NONVECTOR_DATATYPE(INSTANTIATE_STORE_CHUNK_FROM_BUFFER)
 #undef INSTANTIATE_METHOD_TEMPLATES
 #undef INSTANTIATE_FULL
 #undef INSTANTIATE_HALF
+#undef OPENPMD_ARRAY
+#undef OPENPMD_APPLY_TEMPLATE
 
 ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc)
     : core::ConfigureLoadStore{rc}
