@@ -22,6 +22,7 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
@@ -29,9 +30,6 @@
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
-
-// comment to prevent this include from being moved by clang-format
-#include "openPMD/DatatypeMacros.hpp"
 
 #include <array>
 #include <cmath>
@@ -109,6 +107,17 @@ namespace internal
     class BaseRecordData;
 } // namespace internal
 
+namespace core
+{
+    class ConfigureLoadStore;
+    template <typename>
+    class ConfigureLoadStoreFromBuffer;
+    template <typename>
+    class ConfigureStoreChunkFromBuffer;
+    struct VisitorEnqueueLoadVariant;
+    struct VisitorLoadVariant;
+} // namespace core
+
 template <typename>
 class BaseRecord;
 
@@ -134,6 +143,13 @@ class RecordComponent
     friend T &internal::makeOwning(T &self, Series_type);
     friend class internal::ScientificDefaults;
     friend class Attributable;
+    friend class core::ConfigureLoadStore;
+    template <typename>
+    friend class core::ConfigureLoadStoreFromBuffer;
+    template <typename>
+    friend class core::ConfigureStoreChunkFromBuffer;
+    friend struct core::VisitorEnqueueLoadVariant;
+    friend struct core::VisitorLoadVariant;
 
 public:
     enum class Allocation
@@ -220,6 +236,8 @@ public:
      */
     bool empty() const;
 
+    ConfigureLoadStore prepareLoadStore();
+
     /** Load and allocate a chunk of data
      *
      * Set offset to {0u} and extent to {-1u} for full selection.
@@ -230,11 +248,8 @@ public:
     template <typename T>
     std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
 
-#define OPENPMD_ENUMERATE_TYPES(type) , std::shared_ptr<type>
-    using shared_ptr_dataset_types = auxiliary::detail::variant_tail_t<
-        auxiliary::detail::bottom OPENPMD_FOREACH_DATASET_DATATYPE(
-            OPENPMD_ENUMERATE_TYPES)>;
-#undef OPENPMD_ENUMERATE_TYPES
+    using shared_ptr_dataset_types =
+        auxiliary::detail::shared_ptr_dataset_types;
 
     /** std::variant-based version of allocating loadChunk<T>(Offset, Extent)
      *
@@ -508,6 +523,23 @@ private:
     void storeChunk(
         auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
 
+    void storeChunk_impl(
+        auxiliary::WriteBuffer buffer,
+        Datatype datatype,
+        internal::LoadStoreConfigWithBuffer);
+
+    template <typename T>
+    DynamicMemoryView<T> storeChunkSpan_impl(internal::LoadStoreConfig);
+    template <typename T, typename F>
+    DynamicMemoryView<T> storeChunkSpanCreateBuffer_impl(
+        internal::LoadStoreConfig, F &&createBuffer);
+
+    template <typename T>
+    void
+        loadChunk_impl(std::shared_ptr<T>, internal::LoadStoreConfigWithBuffer);
+    template <typename T>
+    std::shared_ptr<T> loadChunkAllocate_impl(internal::LoadStoreConfig);
+
     // clang-format off
 OPENPMD_protected
     // clang-format on
@@ -576,6 +608,4 @@ namespace internal
 
 } // namespace openPMD
 
-#include "openPMD/UndefDatatypeMacros.hpp"
-// comment to prevent these includes from being moved by clang-format
 #include "RecordComponent.tpp"
