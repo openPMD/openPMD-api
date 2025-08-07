@@ -306,18 +306,22 @@ template class compose::ConfigureLoadStore<ConfigureLoadStore>;
 /* clang-format would destroy the NOLINT comments */
 // clang-format off
 #define INSTANTIATE_METHOD_TEMPLATES(dtype)                                    \
-    template auto core::ConfigureLoadStore::enqueueStore()                     \
-        -> DynamicMemoryView<dtype>;                                           \
     template auto core::ConfigureLoadStore::enqueueLoad()                      \
     /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */                          \
         -> auxiliary::DeferredComputation<std::shared_ptr<dtype>>;                  \
     template auto core::ConfigureLoadStore::load(EnqueuePolicy)                \
         ->std::shared_ptr<dtype>;
 // clang-format on
+#define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
+    INSTANTIATE_METHOD_TEMPLATES(type)                                         \
+    INSTANTIATE_METHOD_TEMPLATES(type[]) template auto                         \
+    core::ConfigureLoadStore::enqueueStore() -> DynamicMemoryView<type>;
 
-OPENPMD_FOREACH_NONVECTOR_DATATYPE(INSTANTIATE_METHOD_TEMPLATES)
+OPENPMD_FOREACH_NONVECTOR_DATATYPE(
+    INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT)
 
 #undef INSTANTIATE_METHOD_TEMPLATES
+#undef INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT
 
 /* clang-format would destroy the NOLINT comments */
 // clang-format off

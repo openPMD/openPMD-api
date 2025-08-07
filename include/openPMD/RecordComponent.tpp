@@ -23,6 +23,7 @@
 
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -32,6 +33,7 @@
 #include "openPMD/backend/Attributable.hpp"
 
 #include <memory>
+#include <optional>
 #include <type_traits>
 
 namespace openPMD
@@ -41,8 +43,11 @@ template <typename T, typename Del>
 inline void
 RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
 {
-    storeChunk(
-        UniquePtrWithLambda<T>(std::move(data)), std::move(o), std::move(e));
+    prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withUniquePtr(std::move(data))
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T_ContiguousContainer>
@@ -50,39 +55,38 @@ inline typename std::enable_if_t<
     auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>
 RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
-    uint8_t dim = getDimensionality();
+    auto storeChunkConfig = prepareLoadStore();
 
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u)
+    auto joined_dim = joinedDimension();
+    if (!joined_dim.has_value() && (o.size() != 1 || o.at(0) != 0u))
     {
-        if (joinedDimension().has_value())
-        {
-            offset.clear();
-        }
-        else if (dim > 1u)
-        {
-            offset = Offset(dim, 0u);
-        }
+        storeChunkConfig.offset(std::move(o));
+    }
+    if (e.size() != 1 || e.at(0) != -1u)
+    {
+        storeChunkConfig.extent(std::move(e));
     }
 
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    //   avoid outsmarting the user:
-    //   - stdlib data container implement 1D -> 1D chunk to write
-    if (e.size() == 1u && e.at(0) == -1u && dim == 1u)
-        extent.at(0) = data.size();
-    else
-        extent = e;
-
-    storeChunk(auxiliary::shareRaw(data.data()), offset, extent);
+    std::move(storeChunkConfig)
+        .withContiguousContainer(data)
+        .store(EnqueuePolicy::Defer);
 }
 
 template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
+    return prepareLoadStore()
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .enqueueStore<T>(std::forward<F>(createBuffer));
+}
+
+template <typename T, typename F>
+inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
+    internal::LoadStoreConfig cfg, F &&createBuffer)
+{
+    auto [o, e] = std::move(cfg);
     verifyChunk<T>(o, e);
 
     size_t size = 1;
@@ -162,62 +166,6 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
 }
 
-template <typename T, typename F>
-inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
-    internal::LoadStoreConfig cfg, F &&createBuffer)
-{
-    auto [o, e] = std::move(cfg);
-    verifyChunk<T>(o, e);
-
-    /*
-     * The openPMD backend might not yet know about this dataset.
-     * Flush the openPMD hierarchy to the backend without flushing any actual
-     * data yet.
-     */
-    seriesFlush_impl</* flush_entire_series = */ false>(
-        {FlushLevel::SkeletonOnly});
-
-    size_t size = 1;
-    for (auto ext : e)
-    {
-        size *= ext;
-    }
-    /*
-     * Flushing the skeleton does not create datasets,
-     * so we might need to do it now.
-     */
-    if (!written())
-    {
-        auto &rc = get();
-        if (!rc.m_dataset.has_value())
-        {
-            throw error::WrongAPIUsage(
-                "[RecordComponent] Must specify dataset type and extent before "
-                "using storeChunk() (see RecordComponent::resetDataset()).");
-        }
-        Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
-        dCreate.name = rc->m_writable.ownKeyWithinParent;
-        IOHandler()->enqueue(IOTask(this, dCreate));
-    }
-    Parameter<Operation::GET_BUFFER_VIEW> getBufferView;
-    getBufferView.offset = o;
-    getBufferView.extent = e;
-    getBufferView.dtype = getDatatype();
-    IOHandler()->enqueue(IOTask(this, getBufferView));
-    IOHandler()->flush(internal::defaultFlushParams);
-    auto &out = *getBufferView.out;
-    if (!out.backendManagedBuffer)
-    {
-        // note that data might have either
-        // type shared_ptr<T> or shared_ptr<T[]>
-        auto data = std::forward<F>(createBuffer)(size);
-        out.ptr = static_cast<void *>(data.get());
-        storeChunk(std::move(data), std::move(o), std::move(e));
-    }
-    setDirtyRecursive(true);
-    return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
-}
-
 namespace detail
 {
     template <typename Functor, typename Res>
@@ -248,5 +196,14 @@ inline auto RecordComponent::visit(Args &&...args)
         std::declval<RecordComponent &>(), std::forward<Args>(args)...));
     return switchDatasetType<detail::VisitRecordComponent<Visitor, Res>>(
         getDatatype(), *this, std::forward<Args>(args)...);
+}
+
+// definitions for LoadStoreChunk.hpp
+template <typename T, typename F>
+auto core::ConfigureLoadStore::enqueueStore(F &&createBuffer)
+    -> DynamicMemoryView<T>
+{
+    return m_rc.storeChunkSpanCreateBuffer_impl<T>(
+        storeChunkConfig(), std::forward<F>(createBuffer));
 }
 } // namespace openPMD

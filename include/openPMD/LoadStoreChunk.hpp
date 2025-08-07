@@ -97,7 +97,8 @@ namespace core
         template <typename T>
         struct shared_ptr_return_type_impl
         {
-            using type = ConfigureLoadStoreFromBuffer<std::shared_ptr<T>>;
+            using type = ConfigureLoadStoreFromBuffer<
+                std::shared_ptr<std::remove_extent_t<T>>>;
         };
         /*
          * ..., but if it is a const type, Load operations make no sense, so the
@@ -106,8 +107,8 @@ namespace core
         template <typename T>
         struct shared_ptr_return_type_impl<T const>
         {
-            using type =
-                ConfigureStoreChunkFromBuffer<std::shared_ptr<T const>>;
+            using type = ConfigureStoreChunkFromBuffer<
+                std::shared_ptr<std::remove_extent_t<T> const>>;
         };
 
         template <typename T>
