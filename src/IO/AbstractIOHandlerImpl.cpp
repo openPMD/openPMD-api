@@ -340,10 +340,26 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
                     i.writable->parent,
                     "->",
                     i.writable,
-                    "] WRITE_DATASET, offset=",
-                    [&parameter]() { return vec_as_string(parameter.offset); },
-                    ", extent=",
-                    [&parameter]() { return vec_as_string(parameter.extent); });
+                    "] WRITE_DATASET: ",
+                    [&]() {
+                        std::stringstream stream;
+                        stream << "offset: " << vec_as_string(parameter.offset)
+                               << " extent: " << vec_as_string(parameter.extent)
+                               << " mem-selection: ";
+                        if (parameter.memorySelection.has_value())
+                        {
+                            stream << vec_as_string(
+                                          parameter.memorySelection->offset)
+                                   << "--"
+                                   << vec_as_string(
+                                          parameter.memorySelection->extent);
+                        }
+                        else
+                        {
+                            stream << "NONE";
+                        }
+                        return stream.str();
+                    });
                 writeDataset(i.writable, parameter);
                 break;
             }

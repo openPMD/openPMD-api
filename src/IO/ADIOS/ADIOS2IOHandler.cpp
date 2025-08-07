@@ -1330,6 +1330,7 @@ namespace detail
             adios2::Variable<T> variable = impl->verifyDataset<T>(
                 params.offset,
                 params.extent,
+                std::nullopt,
                 IO,
                 engine,
                 varName,
