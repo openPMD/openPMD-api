@@ -162,6 +162,62 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
 }
 
+template <typename T, typename F>
+inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
+    internal::LoadStoreConfig cfg, F &&createBuffer)
+{
+    auto [o, e] = std::move(cfg);
+    verifyChunk<T>(o, e);
+
+    /*
+     * The openPMD backend might not yet know about this dataset.
+     * Flush the openPMD hierarchy to the backend without flushing any actual
+     * data yet.
+     */
+    seriesFlush_impl</* flush_entire_series = */ false>(
+        {FlushLevel::SkeletonOnly});
+
+    size_t size = 1;
+    for (auto ext : e)
+    {
+        size *= ext;
+    }
+    /*
+     * Flushing the skeleton does not create datasets,
+     * so we might need to do it now.
+     */
+    if (!written())
+    {
+        auto &rc = get();
+        if (!rc.m_dataset.has_value())
+        {
+            throw error::WrongAPIUsage(
+                "[RecordComponent] Must specify dataset type and extent before "
+                "using storeChunk() (see RecordComponent::resetDataset()).");
+        }
+        Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
+        dCreate.name = rc->m_writable.ownKeyWithinParent;
+        IOHandler()->enqueue(IOTask(this, dCreate));
+    }
+    Parameter<Operation::GET_BUFFER_VIEW> getBufferView;
+    getBufferView.offset = o;
+    getBufferView.extent = e;
+    getBufferView.dtype = getDatatype();
+    IOHandler()->enqueue(IOTask(this, getBufferView));
+    IOHandler()->flush(internal::defaultFlushParams);
+    auto &out = *getBufferView.out;
+    if (!out.backendManagedBuffer)
+    {
+        // note that data might have either
+        // type shared_ptr<T> or shared_ptr<T[]>
+        auto data = std::forward<F>(createBuffer)(size);
+        out.ptr = static_cast<void *>(data.get());
+        storeChunk(std::move(data), std::move(o), std::move(e));
+    }
+    setDirtyRecursive(true);
+    return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
+}
+
 namespace detail
 {
     template <typename Functor, typename Res>
