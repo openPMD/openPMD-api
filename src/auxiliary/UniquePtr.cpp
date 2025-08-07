@@ -101,7 +101,7 @@ UniquePtrWithLambda<T>::UniquePtrWithLambda(
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
     OPENPMD_INSTANTIATE(type) OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type))
 
-OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
+OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
 // Instantiate this directly, do not instantiate the
 // `std::unique_ptr<void>`-based constructor.
 template class UniquePtrWithLambda<void>;
