@@ -272,7 +272,7 @@ void RecordComponent::flush(
         {
             // The check for !written() is technically not needed, just
             // defensive programming against internal bugs that go on us.
-            if (!written() && rc.m_chunks.empty())
+            if (!written() && rc.m_chunks.empty() && !rc.m_isConstant)
             {
                 // No data written yet, just accessed the object so far without
                 // doing anything
@@ -283,7 +283,8 @@ void RecordComponent::flush(
             {
                 throw error::WrongAPIUsage(
                     "[RecordComponent] Must specify dataset type and extent "
-                    "before flushing (see RecordComponent::resetDataset()).");
+                    "before flushing or setting a constant value (see "
+                    "RecordComponent::resetDataset()).");
             }
         }
         if (!containsAttribute("unitSI"))
