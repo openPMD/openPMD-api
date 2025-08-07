@@ -314,8 +314,9 @@ template class compose::ConfigureLoadStore<ConfigureLoadStore>;
 // clang-format on
 #define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
     INSTANTIATE_METHOD_TEMPLATES(type)                                         \
-    INSTANTIATE_METHOD_TEMPLATES(type[]) template auto                         \
-    core::ConfigureLoadStore::enqueueStore() -> DynamicMemoryView<type>;
+    INSTANTIATE_METHOD_TEMPLATES(type[])                                       \
+    template auto core::ConfigureLoadStore::enqueueStore()                     \
+        -> DynamicMemoryView<type>;
 
 OPENPMD_FOREACH_NONVECTOR_DATATYPE(
     INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT)
@@ -353,7 +354,8 @@ OPENPMD_FOREACH_NONVECTOR_DATATYPE(
 #define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
     INSTANTIATE_FULL(std::shared_ptr<dtype>)                                   \
     INSTANTIATE_HALF(std::shared_ptr<dtype const>)                             \
-    INSTANTIATE_HALF(UniquePtrWithLambda<dtype>)
+    INSTANTIATE_HALF(UniquePtrWithLambda<dtype>)                               \
+    INSTANTIATE_HALF(UniquePtrWithLambda<dtype const>)
 //  /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */
 
 OPENPMD_FOREACH_NONVECTOR_DATATYPE(INSTANTIATE_STORE_CHUNK_FROM_BUFFER)

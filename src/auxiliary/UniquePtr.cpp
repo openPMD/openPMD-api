@@ -99,7 +99,10 @@ UniquePtrWithLambda<T>::UniquePtrWithLambda(
         std::unique_ptr<type>);
 
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
-    OPENPMD_INSTANTIATE(type) OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type))
+    OPENPMD_INSTANTIATE(type)                                                  \
+    OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type))                                   \
+    OPENPMD_INSTANTIATE(type const)                                            \
+    OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type const))
 
 OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
 // Instantiate this directly, do not instantiate the
