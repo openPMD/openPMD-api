@@ -419,6 +419,7 @@ set(CORE_SOURCE
         src/version.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
+        src/auxiliary/Future.cpp
         src/auxiliary/JSON.cpp
         src/auxiliary/JSONMatcher.cpp
         src/auxiliary/Memory.cpp
