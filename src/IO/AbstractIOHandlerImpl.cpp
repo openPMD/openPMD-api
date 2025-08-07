@@ -21,6 +21,7 @@
 
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
+#include "openPMD/Datatype_internal.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -310,7 +311,7 @@ std::future<void> AbstractIOHandlerImpl::flush()
                                     return res.str();
                                 }
                             },
-                            parameter.resource);
+                            parameter.resource<attribute_types>());
                     });
                 writeAttribute(i.writable, parameter);
                 break;
