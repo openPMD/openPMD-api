@@ -109,6 +109,8 @@ class APITest(unittest.TestCase):
             for dim in ["x", "y"]:
                 # Do not bother with a positionOffset
                 position_offset = e["positionOffset"][dim]
+                position_offset.reset_dataset(
+                    io.Dataset(np.dtype("int"), [100]))
                 position_offset.make_constant(0)
 
                 position = e["position"][dim]
