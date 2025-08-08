@@ -96,6 +96,7 @@ void write(std::string const &filename, std::string const &config)
         {
             // Do not bother with a positionOffset
             auto &position_offset = e["positionOffset"][dim];
+            position_offset.resetDataset({Datatype::INT, {100}});
             position_offset.makeConstant(0);
 
             auto &position = e["position"][dim];
