@@ -34,12 +34,14 @@ private:
          * make_reading_stateful_iterator.
          * The iterator is resolved upon calling get() below.
          */
-        std::function<StatefulIterator *()> m_begin;
-        std::optional<StatefulIterator *> m_bufferedIterator = std::nullopt;
+        std::variant<std::function<StatefulIterator *()>, StatefulIterator *>
+            m_bufferedIterator;
     };
     Members members;
 
-    StatefulSnapshotsContainer(std::function<StatefulIterator *()> begin);
+    StatefulSnapshotsContainer(
+        std::variant<std::function<StatefulIterator *()>, StatefulIterator *>
+            begin);
 
     auto get() -> StatefulIterator *;
     auto get() const -> StatefulIterator const *;
@@ -64,6 +66,7 @@ public:
 
     using AbstractSnapshotsContainer::currentIteration;
     auto currentIteration() const -> std::optional<value_type const *> override;
+    auto currentIteration() -> std::optional<value_type *> override;
 
     auto begin() -> iterator override;
     auto end() -> iterator override;

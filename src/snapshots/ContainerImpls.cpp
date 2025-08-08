@@ -1,6 +1,7 @@
 #include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/IteratorHelpers.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
@@ -12,7 +13,7 @@
 namespace openPMD
 {
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
-    std::function<StatefulIterator *()> begin)
+    std::variant<std::function<StatefulIterator *()>, StatefulIterator *> begin)
     : members{std::move(begin)}
 {}
 
@@ -30,15 +31,34 @@ operator=(StatefulSnapshotsContainer &&other) noexcept(noexcept(
 
 auto StatefulSnapshotsContainer::get() -> StatefulIterator *
 {
-    if (!members.m_bufferedIterator.has_value())
-    {
-        members.m_bufferedIterator = members.m_begin();
-    }
-    return *members.m_bufferedIterator;
+    return std::visit(
+        auxiliary::overloaded{
+            [this](
+                std::function<StatefulIterator *()> &deferred_initialization) {
+                auto it = deferred_initialization();
+                this->members.m_bufferedIterator = it;
+                return it;
+            },
+            [](StatefulIterator *it) { return it; }},
+        members.m_bufferedIterator);
 }
+
+void breakpoint()
+{}
 auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
-    return members.m_bufferedIterator.value_or(nullptr);
+    return std::visit(
+        auxiliary::overloaded{
+            [](std::function<StatefulIterator *()> const &)
+                -> StatefulIterator const * {
+                breakpoint();
+                throw std::runtime_error(
+                    "[StatefulSnapshotscontainer] Initialization has been "
+                    "deferred, but container is accessed as const, so cannot "
+                    "initialize.");
+            },
+            [](StatefulIterator const *it) { return it; }},
+        members.m_bufferedIterator);
 }
 
 auto StatefulSnapshotsContainer::stateful_to_opaque(StatefulIterator const &it)
@@ -49,6 +69,19 @@ auto StatefulSnapshotsContainer::stateful_to_opaque(StatefulIterator const &it)
 
 auto StatefulSnapshotsContainer::currentIteration() const
     -> std::optional<value_type const *>
+{
+    if (auto it = get(); it)
+    {
+        return it->peekCurrentlyOpenIteration();
+    }
+    else
+    {
+        return std::nullopt;
+    }
+}
+
+auto StatefulSnapshotsContainer::currentIteration()
+    -> std::optional<value_type *>
 {
     if (auto it = get(); it)
     {

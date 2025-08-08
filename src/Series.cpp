@@ -3194,7 +3194,7 @@ namespace
 {
     auto make_writing_stateful_iterator(
         Series const &copied_series, internal::SeriesData &series)
-        -> std::function<StatefulIterator *()>
+        -> StatefulIterator *
     {
         if (!series.m_sharedStatefulIterator)
         {
@@ -3202,12 +3202,16 @@ namespace
                 std::make_unique<StatefulIterator>(
                     StatefulIterator::tag_write, copied_series);
         }
-        return [ptr = series.m_sharedStatefulIterator.get()]() { return ptr; };
+        return series.m_sharedStatefulIterator.get();
     }
     auto make_reading_stateful_iterator(
         Series copied_series, internal::SeriesData &series)
-        -> std::function<StatefulIterator *()>
+        -> std::variant<std::function<StatefulIterator *()>, StatefulIterator *>
     {
+        if (series.m_sharedStatefulIterator)
+        {
+            return series.m_sharedStatefulIterator.get();
+        }
         return [s = std::move(copied_series), &series]() mutable {
             if (!series.m_sharedStatefulIterator)
             {
@@ -3317,7 +3321,7 @@ Snapshots Series::makeSynchronousSnapshots()
             internal::default_or_explicit::default_);
     }
 
-    std::function<StatefulIterator *()> begin;
+    std::variant<std::function<StatefulIterator *()>, StatefulIterator *> begin;
 
     if (access::write(IOHandler()->m_frontendAccess))
     {
