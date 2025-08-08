@@ -3373,20 +3373,23 @@ std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
     if (params.backendConfig.json().contains("hdf5"))
     {
         auto hdf5_config = params.backendConfig["hdf5"];
+        auto init_json_shadow = nlohmann::json::parse(flush_cfg_mask);
+        json::merge_internal(
+            hdf5_config.getShadow(), init_json_shadow, /* do_prune = */ false);
 
         if (auto shadow = hdf5_config.invertShadow(); shadow.size() > 0)
         {
             switch (hdf5_config.originallySpecifiedAs)
             {
             case json::SupportedLanguages::JSON:
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
+                std::cerr << "Warning: parts of the backend flush "
+                             "configuration for HDF5 remain unused:\n"
                           << shadow << std::endl;
                 break;
             case json::SupportedLanguages::TOML: {
                 auto asToml = json::jsonToToml(shadow);
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
+                std::cerr << "Warning: parts of the backend flush "
+                             "configuration for HDF5 remain unused:\n"
                           << json::format_toml(asToml) << std::endl;
                 break;
             }
