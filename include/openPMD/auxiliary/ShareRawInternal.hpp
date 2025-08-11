@@ -61,16 +61,14 @@ std::shared_ptr<T const> shareRaw(T const *x)
 }
 
 template <typename T>
-auto shareRaw(T &c)
-    -> std::shared_ptr<typename std::remove_pointer<decltype(c.data())>::type>
+auto shareRaw(T &c) -> std::shared_ptr<typename T::value_type>
 {
     using value_type = typename std::remove_pointer<decltype(c.data())>::type;
     return std::shared_ptr<value_type>(c.data(), [](value_type *) {});
 }
 
 template <typename T>
-auto shareRaw(T const &c)
-    -> std::shared_ptr<typename std::remove_pointer<decltype(c.data())>::type>
+auto shareRaw(T const &c) -> std::shared_ptr<typename T::value_type>
 {
     using value_type = typename std::remove_pointer<decltype(c.data())>::type;
     return std::shared_ptr<value_type>(c.data(), [](value_type *) {});

@@ -820,7 +820,7 @@ template <typename T>
 void RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
 {
     storeChunk(
-        std::static_pointer_cast<T>(std::move(data)),
+        std::static_pointer_cast<T const>(std::move(data)),
         std::move(o),
         std::move(e));
 }
