@@ -180,7 +180,7 @@ Python
 
    x_data = np.arange(
        150 * 300,
-       dtype=np.float
+       dtype=np.float64
    ).reshape(150, 300)
 
 
