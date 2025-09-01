@@ -1078,7 +1078,6 @@ void JSONIOHandlerImpl::deletePath(
         lastPointer->erase(splitPath[splitPath.size() - 1]);
     }
 
-    putJsonContents(file);
     writable->abstractFilePosition.reset();
     writable->written = false;
 }
@@ -1120,7 +1119,6 @@ void JSONIOHandlerImpl::deleteDataset(
         parent = &obtainJsonContents(writable);
     }
     parent->erase(dataset);
-    putJsonContents(file);
     writable->written = false;
     writable->abstractFilePosition.reset();
 }
@@ -1139,7 +1137,6 @@ void JSONIOHandlerImpl::deleteAttribute(
     auto file = refreshFileFromParent(writable);
     auto &j = obtainJsonContents(writable);
     j.erase(parameters.name);
-    putJsonContents(file);
 }
 
 void JSONIOHandlerImpl::writeDataset(
@@ -1172,7 +1169,6 @@ void JSONIOHandlerImpl::writeDataset(
     switchType<DatasetWriter>(parameters.dtype, j, parameters);
 
     writable->written = true;
-    putJsonContents(file);
 }
 
 void JSONIOHandlerImpl::writeAttribute(
