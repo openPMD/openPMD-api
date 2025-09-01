@@ -45,8 +45,7 @@ template <typename T>
 [[deprecated(
     "For storing/loading data via raw pointers use "
     "storeChunkRaw<>()/loadChunkRaw<>()")]] //
-std::shared_ptr<T>
-shareRaw(T *x)
+std::shared_ptr<T> shareRaw(T *x)
 {
     return std::shared_ptr<T>(x, [](T *) {});
 }
@@ -55,8 +54,7 @@ template <typename T>
 [[deprecated(
     "For storing/loading data via raw pointers use "
     "storeChunkRaw<>()/loadChunkRaw<>()")]] //
-std::shared_ptr<T const>
-shareRaw(T const *x)
+std::shared_ptr<T const> shareRaw(T const *x)
 {
     return std::shared_ptr<T const>(x, [](T const *) {});
 }
