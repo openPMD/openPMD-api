@@ -21,49 +21,10 @@
 
 #include <openPMD/openPMD.hpp>
 
-/*
- * If installed into a folder known to HDF5, then HDF5 will find the filter on
- * its own. In other contexts, it might become necessary to manually register
- * the filter into HDF5. For this, link the application against
- * libblosc2_filter.so and set the below define to true.
- */
-#define OPENPMD_INIT_BLOSC2_FILTER_MANUALLY false
-
-#if openPMD_HAVE_HDF5 && __has_include(<blosc2_filter.h>)
-#define OPENPMD_USE_BLOSC2_FILTER 1
-#if OPENPMD_INIT_BLOSC2_FILTER_MANUALLY
-#include <blosc2_filter.h>
-#endif
-#else
-#define OPENPMD_USE_BLOSC2_FILTER 0
-#endif
-
 #include <iostream>
 #include <numeric>
-#include <sstream>
 
-void init_blosc_for_hdf5()
-{
-#if OPENPMD_USE_BLOSC2_FILTER && OPENPMD_INIT_BLOSC2_FILTER_MANUALLY
-    /*
-     * This registers the Blosc2 plugin from
-     * https://github.com/Blosc/HDF5-Blosc2 as a demonstration on how to
-     * activate and configure dynamic HDF5 filter plugins through openPMD.
-     */
-
-    char *version, *date;
-    int r = register_blosc2(&version, &date);
-    if (r < 1)
-    {
-        throw std::runtime_error("Unable to register Blosc2 plugin with HDF5.");
-    }
-    else
-    {
-        std::cout << "Blosc2 plugin registered in version '" << version
-                  << "' and date '" << date << "'." << std::endl;
-    }
-#endif
-}
+void run_blosc2_filter_for_hdf5_example();
 
 void write(std::string const &filename, std::string const &config)
 {
@@ -111,8 +72,6 @@ void write(std::string const &filename, std::string const &config)
 
 int main()
 {
-    init_blosc_for_hdf5();
-
     // Backend specific configuration can be given in either JSON or TOML.
     // We will stick with TOML in this example, since it allows inline comments
     // and remains more legible for larger configurations.
@@ -299,6 +258,55 @@ int main()
     )";
     write("hdf5_with_dataset_specific_configurations.%E", extended_hdf5_config);
 
+    run_blosc2_filter_for_hdf5_example();
+#endif // openPMD_HAVE_HDF5
+}
+
+/* This example runs the Blosc2 filter for HDF5 if it can find the filter's
+ * header somewhere in the system. This is a convention for this example, but
+ * the header is not needed in general for running the filter, as it contains
+ * only helpers and some defines.
+ */
+#define openPMD_USE_BLOSC2_FILTER (openPMD_HAVE_HDF5 && __has_include(<blosc2_filter.h>))
+
+/* This below block is only necessary if the Blosc2 filter was installed to a
+ * nonstandard directory that the HDF5 library cannot find on its own. In this
+ * case, link the application against libblosc2_filter.so and set the below
+ * define to true. The blosc2_filter.h header provides a helper function to
+ * manually register the filter to the HDF5 library.
+ */
+#define OPENPMD_INIT_BLOSC2_FILTER_MANUALLY false
+#if OPENPMD_INIT_BLOSC2_FILTER_MANUALLY
+#include <blosc2_filter.h>
+void init_blosc_for_hdf5()
+{
+    /*
+     * This registers the Blosc2 plugin from
+     * https://github.com/Blosc/HDF5-Blosc2 as a demonstration on how to
+     * activate and configure dynamic HDF5 filter plugins through openPMD.
+     */
+
+    char *version, *date;
+    int r = register_blosc2(&version, &date);
+    if (r < 1)
+    {
+        throw std::runtime_error("Unable to register Blosc2 plugin with HDF5.");
+    }
+    else
+    {
+        std::cout << "Blosc2 plugin registered in version '" << version
+                  << "' and date '" << date << "'." << std::endl;
+    }
+}
+#endif
+
+void run_blosc2_filter_for_hdf5_example()
+{
+#if openPMD_HAVE_HDF5 && openPMD_USE_BLOSC2_FILTER
+#if OPENPMD_INIT_BLOSC2_FILTER_MANUALLY
+    init_blosc_for_hdf5();
+#endif
+
     // For non-predefined IDs, the ID must be given as a number. This example
     // uses the Blosc2 filter available from
     // https://github.com/Blosc/HDF5-Blosc2, with the permanent plugin ID 32026
@@ -310,7 +318,6 @@ int main()
     // activating shuffling and index 6 denotes the compression method.
     // Compression method 5 is BLOSC_ZSTD, alternatively also defined in
     // blosc2_filter.h.
-#if OPENPMD_USE_BLOSC2_FILTER
     std::string hdf5_blosc_filter = R"(
         backend = "hdf5"
 
@@ -323,6 +330,5 @@ int main()
         cd_values = [0, 0, 0, 0, 4, 1, 5]
     )";
     write("hdf5_blosc_filter.%E", hdf5_blosc_filter);
-#endif // OPENPMD_USE_BLOSC2_FILTER
-#endif // openPMD_HAVE_HDF5
+#endif
 }
