@@ -43,6 +43,8 @@ spack:
       variants: ~fortran
       providers:
         mpi: [openmpi]
+        c: [clang@19.1.1]
+        cxx: [clang@19.1.1]
       compiler: [clang@19.1.1]
 
   compilers:
