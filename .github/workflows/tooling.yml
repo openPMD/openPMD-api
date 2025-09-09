@@ -20,7 +20,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install clang clang-tidy gfortran libopenmpi-dev python-is-python3
-        SPACK_VER=1.0.1 sudo .github/workflows/dependencies/install_spack
+        SPACK_VER=1.0.1 sudo -E .github/workflows/dependencies/install_spack
         echo "SPACK VERSION: $(spack --version)"
     - name: Build
       env: {CC: clang, CXX: clang++}
@@ -50,7 +50,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install clang-14 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev python3-numpy
-        SPACK_VER=1.0.1 sudo .github/workflows/dependencies/install_spack
+        SPACK_VER=1.0.1 sudo -E .github/workflows/dependencies/install_spack
         echo "SPACK VERSION: $(spack --version)"
     - name: Build
       env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-14, OMPI_CXX: clang++-14, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
