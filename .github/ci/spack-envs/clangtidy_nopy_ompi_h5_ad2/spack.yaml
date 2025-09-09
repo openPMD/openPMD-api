@@ -49,14 +49,16 @@ spack:
       variants: ~fortran
       providers:
         mpi: [openmpi]
-        c: [clang]
-        cxx: [clang]
+        c: [llvm]
+        cxx: [llvm]
         fortran: [gcc]
         gcc-runtime: [gcc-runtime@13.3.0]
+      prefer:
+      - "%llvm"
 
-    clang:
+    llvm:
       externals:
-      - spec: clang@19.1.1 target=x86_64
+      - spec: llvm@19.1.1 target=x86_64
         prefix: /
         paths:
           cc: /usr/bin/clang-19
