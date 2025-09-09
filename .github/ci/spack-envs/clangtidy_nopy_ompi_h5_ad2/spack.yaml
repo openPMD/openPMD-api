@@ -49,10 +49,9 @@ spack:
       variants: ~fortran
       providers:
         mpi: [openmpi]
-        c: [llvm]
+        cc: [llvm]
         cxx: [llvm]
         fortran: [gcc]
-        gcc-runtime: [gcc-runtime@13.3.0]
       prefer:
       - "%llvm"
 
@@ -79,40 +78,6 @@ spack:
         environment: {}
         extra_rpaths: []
       buildable: False
-
-    gcc-runtime:
-      externals:
-      - spec: gcc-runtime@13.3.0
-        prefix: /usr
-      buildable: False
-
-  compilers:
-  - compiler:
-      spec: gcc@13.3.0
-      environment: {}
-      extra_rpaths: []
-      flags: {}
-      modules: []
-      paths:
-        cc: /usr/bin/gcc-13
-        cxx: /usr/bin/g++-13
-        f77: /usr/bin/gfortran-13
-        fc: /usr/bin/gfortran-13
-      operating_system: ubuntu24.04
-      target: x86_64
-  - compiler:
-      spec: clang@19.1.1
-      environment: {}
-      extra_rpaths: []
-      flags: {}
-      modules: []
-      paths:
-        cc: /usr/bin/clang-19
-        cxx: /usr/bin/clang++-19
-        f77: /usr/bin/gfortran-13
-        fc: /usr/bin/gfortran-13
-      operating_system: ubuntu24.04
-      target: x86_64
 
   config:
     build_jobs: 2
