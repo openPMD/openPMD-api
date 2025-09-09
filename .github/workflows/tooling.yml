@@ -9,7 +9,7 @@ concurrency:
 jobs:
   clangtidy14_nopy_ompi_h5_ad2:
     name: clang-tidy w/o py
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -21,6 +21,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install clang clang-tidy gfortran libopenmpi-dev python-is-python3
         SPACK_VER=1.0.1 sudo .github/workflows/dependencies/install_spack
+        echo "SPACK VERSION: $(spack --version)"
     - name: Build
       env: {CC: clang, CXX: clang++}
       run: |
@@ -48,10 +49,9 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-14 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev
-        python3 -m pip install -U pip
-        python3 -m pip install -U numpy
+        sudo apt-get install clang-14 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev python3-numpy
         SPACK_VER=1.0.1 sudo .github/workflows/dependencies/install_spack
+        echo "SPACK VERSION: $(spack --version)"
     - name: Build
       env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-14, OMPI_CXX: clang++-14, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
       run: |
