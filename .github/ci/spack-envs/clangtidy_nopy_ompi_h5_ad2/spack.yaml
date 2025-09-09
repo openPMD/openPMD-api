@@ -20,8 +20,8 @@ spack:
       variants: ~snappy
     cmake:
       externals:
-      - spec: cmake@3.31.5
-        prefix: /usr
+      - spec: cmake@3.31.8
+        prefix: /usr/local
       buildable: False
     openmpi:
       externals:
@@ -43,24 +43,39 @@ spack:
       variants: ~fortran
       providers:
         mpi: [openmpi]
-        c: [clang@19.1.1]
-        cxx: [clang@19.1.1]
-      compiler: [clang@19.1.1]
-
-  compilers:
-  - compiler:
-      environment: {}
-      extra_rpaths: []
-      flags: {}
-      modules: []
-      operating_system: ubuntu22.04
-      paths:
-        cc: /usr/bin/clang-19
-        cxx: /usr/bin/clang++-19
-        f77: /usr/bin/gfortran
-        fc: /usr/bin/gfortran
-      spec: clang@19.1.1
-      target: x86_64
+        c: [clang]
+        cxx: [clang]
+    clang:
+      externals:
+      - spec: clang@19.1.1 target=x86_64
+        prefix: /
+        paths:
+          cc: /usr/bin/clang-19
+          cxx: /usr/bin/clang++-19
+        extra_rpaths: []
+        modules: []
+        environment: {}
+        dependencies:
+          gcc-runtime: gcc-runtime@13.3.0
+      buildable: False
+    gcc:
+      externals:
+      - spec: gcc@13.3.0
+        prefix: /
+        paths:
+          f77: /usr/bin/gfortran
+          fc: /usr/bin/gfortran
+        extra_rpaths: []
+        modules: []
+        environment: {}
+        dependencies:
+          gcc-runtime: gcc-runtime@13.3.0
+      buildable: False
+    gcc-runtime:
+      externals:
+        - spec: gcc-runtime@13.3.0
+          prefix: /usr
+      buildable: False
 
   config:
     build_jobs: 2
