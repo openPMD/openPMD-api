@@ -14,30 +14,36 @@ spack:
   packages:
     adios2:
       variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2 ~mgard
+
     c-blosc2:
       # snappy broken on CMake 4.0
       # fixed snappy not yet deployed to a Spack release
       variants: ~snappy
+
     cmake:
       externals:
       - spec: cmake@3.31.8
         prefix: /usr/local
       buildable: False
+
     openmpi:
       externals:
-      - spec: openmpi@4.1.2
+      - spec: openmpi@4.1.6
         prefix: /usr
       buildable: False
+
     perl:
       externals:
-      - spec: perl@5.34.0
+      - spec: perl@5.38.2
         prefix: /usr
       buildable: False
+
     python:
       externals:
-      - spec: python@3.10.12
+      - spec: python@3.12.3
         prefix: /usr
       buildable: False
+
     all:
       target: [x86_64]
       variants: ~fortran
@@ -45,6 +51,9 @@ spack:
         mpi: [openmpi]
         c: [clang]
         cxx: [clang]
+        fortran: [gcc]
+        gcc-runtime: [gcc-runtime@13.3.0]
+
     clang:
       externals:
       - spec: clang@19.1.1 target=x86_64
@@ -52,12 +61,11 @@ spack:
         paths:
           cc: /usr/bin/clang-19
           cxx: /usr/bin/clang++-19
-        extra_rpaths: []
         modules: []
         environment: {}
-        dependencies:
-          gcc-runtime: gcc-runtime@13.3.0
+        extra_rpaths: []
       buildable: False
+
     gcc:
       externals:
       - spec: gcc@13.3.0
@@ -65,17 +73,44 @@ spack:
         paths:
           f77: /usr/bin/gfortran
           fc: /usr/bin/gfortran
-        extra_rpaths: []
         modules: []
         environment: {}
-        dependencies:
-          gcc-runtime: gcc-runtime@13.3.0
+        extra_rpaths: []
       buildable: False
+
     gcc-runtime:
       externals:
-        - spec: gcc-runtime@13.3.0
-          prefix: /usr
+      - spec: gcc-runtime@13.3.0
+        prefix: /usr
       buildable: False
+
+  compilers:
+  - compiler:
+      spec: gcc@13.3.0
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      paths:
+        cc: /usr/bin/gcc-13
+        cxx: /usr/bin/g++-13
+        f77: /usr/bin/gfortran-13
+        fc: /usr/bin/gfortran-13
+      operating_system: ubuntu24.04
+      target: x86_64
+  - compiler:
+      spec: clang@19.1.1
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      paths:
+        cc: /usr/bin/clang-19
+        cxx: /usr/bin/clang++-19
+        f77: /usr/bin/gfortran-13
+        fc: /usr/bin/gfortran-13
+      operating_system: ubuntu24.04
+      target: x86_64
 
   config:
     build_jobs: 2
