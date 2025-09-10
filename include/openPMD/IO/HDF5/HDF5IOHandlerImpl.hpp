@@ -132,6 +132,8 @@ private:
         hid_t id;
     };
     std::optional<File> getFile(Writable *);
+    File
+    requireFile(std::string const &functionName, Writable *, bool checkParent);
 }; // HDF5IOHandlerImpl
 #else
 class HDF5IOHandlerImpl

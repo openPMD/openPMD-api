@@ -28,6 +28,7 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <stdexcept>
 
@@ -317,7 +318,7 @@ namespace
         return false;
     }
 
-    enum class PerstepParsing
+    enum class PerstepParsing : std::uint8_t
     {
         Supported,
         Unsupported,
@@ -1086,7 +1087,7 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
 #if ADIOS2_VERSION_MAJOR * 1000000000 + ADIOS2_VERSION_MINOR * 100000000 +     \
         ADIOS2_VERSION_PATCH * 1000000 + ADIOS2_VERSION_TWEAK >=               \
     2701001223
-        enum class CleanedFlushTarget
+        enum class CleanedFlushTarget : std::uint8_t
         {
             Buffer,
             Disk,

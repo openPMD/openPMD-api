@@ -1575,7 +1575,7 @@ TEST_CASE("adios2_ssc", "[parallel][adios2]")
     adios2_ssc();
 }
 
-enum class ParseMode
+enum class ParseMode : std::uint8_t
 {
     /*
      * Conventional workflow. Just parse the whole thing and yield iterations

@@ -4246,7 +4246,7 @@ TEST_CASE("git_adios2_early_chunk_query", "[serial][adios2]")
  */
 #if defined(__unix__) && openPMD_HAVE_ADIOS2_BP5
 
-enum class FlushDuringStep
+enum class FlushDuringStep : std::uint8_t
 {
     Never,
     Default_No,
@@ -5799,6 +5799,8 @@ void adios2_group_table(
                 REQUIRE(iteration.meshes["E"].size() == 2);
             }
             break;
+        default:
+            break;
         }
     }
     REQUIRE(counter == 2);
@@ -6557,13 +6559,6 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_ADIOS2_BP5
 void adios2_bp5_no_steps(bool usesteps)
 {
-    std::string const config = R"END(
-{
-    "adios2":
-    {
-        "use_group_table": true
-    }
-})END";
     {
         adios2::ADIOS adios;
         auto IO = adios.DeclareIO("IO");
@@ -7282,7 +7277,7 @@ TEST_CASE("varying_zero_pattern", "[serial]")
     }
 }
 
-enum class ParseMode
+enum class ParseMode : std::uint8_t
 {
     /*
      * Conventional workflow. Just parse the whole thing and yield iterations

@@ -1371,7 +1371,7 @@ namespace
          */
         using rep = detail::AttributeTypes<bool>::rep;
 
-        if constexpr (std::is_same<T, rep>::value)
+        if constexpr (std::is_same_v<T, rep>)
         {
             auto attr = getAttribute.template call<rep>(name);
             if (!attr)
@@ -2239,7 +2239,6 @@ namespace detail
         auto file = impl->refreshFileFromParent(
             writable, /* preferParentFile = */ false);
         auto fullName = impl->nameOfAttribute(writable, parameters.name);
-        auto prefix = impl->filePositionToString(pos);
 
         auto &filedata = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
