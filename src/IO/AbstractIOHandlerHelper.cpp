@@ -81,7 +81,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
         return constructIOHandler<ParallelHDF5IOHandler, openPMD_HAVE_HDF5>(
             "HDF5",
             std::move(initialize_from),
-            path,
+            std::move(path),
             access,
             comm,
             std::move(options));
@@ -139,7 +139,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
         return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
             "JSON",
             std::move(initialize_from),
-            path,
+            std::move(path),
             access,
             comm,
             std::move(options),
@@ -149,7 +149,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
         return constructIOHandler<JSONIOHandler, openPMD_HAVE_JSON>(
             "JSON",
             std::move(initialize_from),
-            path,
+            std::move(path),
             access,
             comm,
             std::move(options),
@@ -181,7 +181,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
         return constructIOHandler<HDF5IOHandler, openPMD_HAVE_HDF5>(
             "HDF5",
             std::move(initialize_from),
-            path,
+            std::move(path),
             access,
             std::move(options));
     case Format::ADIOS2_BP:

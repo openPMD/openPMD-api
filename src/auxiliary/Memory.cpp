@@ -40,7 +40,8 @@ allocatePtr(Datatype dtype, uint64_t numPoints)
     {
         using DT = Datatype;
     case DT::VEC_STRING:
-        data = new char *[numPoints];
+        // NOLINTNEXTLINE(bugprone-multi-level-implicit-pointer-conversion)
+        data = static_cast<void *>(new char *[numPoints]);
         del = [](void *p) { delete[] static_cast<char **>(p); };
         break;
     case DT::VEC_LONG_DOUBLE:

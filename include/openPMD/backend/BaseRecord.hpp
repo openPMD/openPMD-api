@@ -317,7 +317,7 @@ public:
     template <class InputIt>
     void insert(InputIt first, InputIt last);
     void insert(std::initializer_list<value_type> ilist);
-    void swap(BaseRecord &other);
+    void swap(BaseRecord &other) noexcept;
     bool contains(key_type const &key) const;
     template <class... Args>
     auto emplace(Args &&...args) -> std::pair<iterator, bool>;

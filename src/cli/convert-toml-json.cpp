@@ -13,6 +13,7 @@ void parsed_main(std::string jsonOrToml)
     auto [config, originallySpecifiedAs] = json::parseOptions(
         jsonOrToml, /* considerFiles = */ true, /* convertLowercase = */ false);
     {
+        // NOLINTNEXTLINE(bugprone-unused-local-non-trivial-variable)
         [[maybe_unused]] auto _ = std::move(jsonOrToml);
     }
     switch (originallySpecifiedAs)

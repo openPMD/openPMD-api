@@ -202,6 +202,7 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
 
             continue;
         }
+        // NOLINTNEXTLINE(bugprone-empty-catch)
         catch (const py::cast_error &e)
         {
             // not an index

@@ -1092,6 +1092,12 @@ void Series::initSeries(
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
+    if (!input->filenameExtension)
+    {
+        throw error::Internal(
+            "Control flow error: filename extension has not been resolved.");
+    }
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     series.m_filenameExtension = input->filenameExtension.value();
 
     if (series.m_iterationEncoding == IterationEncoding::fileBased &&
@@ -1704,7 +1710,8 @@ void Series::readFileBased(
         {
             if (forwardFirstError.has_value())
             {
-                auto &firstError = forwardFirstError.value();
+                // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+                auto &firstError = *forwardFirstError;
                 firstError.description.append(
                     "\n[Note] Not a single iteration can be successfully "
                     "parsed (see above errors). Returning the first observed "
@@ -3406,7 +3413,7 @@ auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>
         auto res = attribute.getOptional<vec_t>();
         if (res.has_value())
         {
-            return res.value();
+            return res;
         }
         else
         {
@@ -3429,6 +3436,7 @@ AbstractIOHandler *Series::runDeferredInitialization()
     auto &series = get();
     if (series.m_deferred_initialization.has_value())
     {
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         auto functor = std::move(*m_series->m_deferred_initialization);
         m_series->m_deferred_initialization = std::nullopt;
         return functor(*this);

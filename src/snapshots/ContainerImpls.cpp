@@ -195,12 +195,18 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
 {
     auto base_iterator = get();
     auto &shared = base_iterator->m_data;
-    if (!shared || !shared->has_value())
+    if (!shared)
     {
         throw error::WrongAPIUsage(
             "[WriteIterations] Trying to access after closing Series.");
     }
-    auto &s = shared->value();
+    auto &optional = *shared;
+    if (!optional.has_value())
+    {
+        throw error::WrongAPIUsage(
+            "[WriteIterations] Trying to access after closing Series.");
+    }
+    auto &s = optional.value();
     auto access = s.series.IOHandler()->m_frontendAccess;
 
     if (access == Access::READ_WRITE)

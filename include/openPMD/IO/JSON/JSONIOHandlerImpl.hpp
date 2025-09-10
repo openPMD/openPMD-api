@@ -525,9 +525,7 @@ private:
     };
 
     template <typename T>
-    struct JsonToCpp<
-        T,
-        typename std::enable_if<std::is_floating_point<T>::value>::type>
+    struct JsonToCpp<T, typename std::enable_if_t<std::is_floating_point_v<T>>>
     {
         T operator()(nlohmann::json const &);
     };

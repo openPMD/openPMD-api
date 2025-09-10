@@ -132,6 +132,12 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
     rc.m_isEmpty = false;
     if (written())
     {
+        if (!rc.m_dataset.has_value())
+        {
+            throw error::Internal(
+                "Internal control flow error: Written record component must "
+                "have defined datatype and extent.");
+        }
         rc.m_dataset.value().extend(std::move(d.extent));
     }
     else

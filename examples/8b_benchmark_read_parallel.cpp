@@ -135,7 +135,6 @@ public:
     ~Timer()
     {
         MPI_Barrier(MPI_COMM_WORLD);
-        std::string tt = "~" + m_Tag;
         // MemoryProfiler (m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
 

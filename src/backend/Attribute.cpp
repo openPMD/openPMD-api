@@ -73,6 +73,8 @@ auto Attribute::get_impl() const -> std::variant<U, std::runtime_error>
     switch (index)
     {
         OPENPMD_FOREACH_DATATYPE(OPENPMD_ENUMERATE_TYPES)
+    default:
+        return {std::runtime_error("Unreachable!")};
     }
 #undef OPENPMD_ENUMERATE_TYPES
 

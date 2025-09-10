@@ -744,7 +744,7 @@ auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
 }
 
 template <typename T_elem>
-auto BaseRecord<T_elem>::swap(BaseRecord &other) -> void
+auto BaseRecord<T_elem>::swap(BaseRecord &other) noexcept -> void
 {
     detail::verifyNonscalar(this);
     detail::verifyNonscalar(&other);
