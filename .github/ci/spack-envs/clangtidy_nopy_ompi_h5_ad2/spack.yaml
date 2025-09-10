@@ -65,18 +65,6 @@ spack:
         extra_rpaths: []
       buildable: False
 
-    gcc:
-      externals:
-      - spec: gcc@13.3.0
-        prefix: /
-        paths:
-          f77: /usr/bin/gfortran
-          fc: /usr/bin/gfortran
-        modules: []
-        environment: {}
-        extra_rpaths: []
-      buildable: False
-
   config:
     build_jobs: 2
 
