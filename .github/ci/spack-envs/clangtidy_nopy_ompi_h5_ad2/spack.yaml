@@ -56,7 +56,7 @@ spack:
     llvm:
       externals:
       - spec: llvm@19.1.1
-        prefix: /
+        prefix: /usr
         paths:
           cc: /usr/bin/clang-19
           cxx: /usr/bin/clang++-19
@@ -64,6 +64,25 @@ spack:
         environment: {}
         extra_rpaths: []
       buildable: False
+
+    gcc:
+      externals:
+      - spec: gcc@13.3.0
+        prefix: /usr
+        paths:
+          cc: /usr/bin/gcc
+          cxx: /usr/bin/g++
+          fortran: /usr/bin/gfortran
+        modules: []
+        environment: {}
+        extra_rpaths: []
+      buildable: False
+
+    gcc-runtime:
+      buildable: false
+      externals:
+        - spec: gcc-runtime@13.3.0
+          prefix: /usr
 
   config:
     build_jobs: 2
