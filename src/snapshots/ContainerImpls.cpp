@@ -42,16 +42,12 @@ auto StatefulSnapshotsContainer::get() -> StatefulIterator *
             [](StatefulIterator *it) { return it; }},
         members.m_bufferedIterator);
 }
-
-void breakpoint()
-{}
 auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
     return std::visit(
         auxiliary::overloaded{
             [](std::function<StatefulIterator *()> const &)
                 -> StatefulIterator const * {
-                breakpoint();
                 throw std::runtime_error(
                     "[StatefulSnapshotscontainer] Initialization has been "
                     "deferred, but container is accessed as const, so cannot "
