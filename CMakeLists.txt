@@ -233,6 +233,7 @@ message(STATUS "openPMD-api superbuild: ${openPMD_SUPERBUILD}")
 #     Clang+MPI: Potentially needed MPI::MPI_C targets in the past
 #                (exact MPI flavor & Clang version lost)
 #     BullMPI: PUBLIC dependency to MPI::MPI_CXX is missing in MPI::MPI_C target
+set(MPI_CXX_SKIP_MPICXX ON)  # We do not use MPI-2 only MPI C++ bindings
 set(openPMD_MPI_LINK_C_DEFAULT OFF)
 option(openPMD_MPI_LINK_C  "Also link the MPI C targets" ${openPMD_MPI_LINK_C_DEFAULT})
 mark_as_advanced(openPMD_MPI_LINK_C)

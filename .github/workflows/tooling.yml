@@ -61,7 +61,7 @@ jobs:
         SOURCEPATH="$(pwd)"
         share/openPMD/download_samples.sh build
         export LDFLAGS="${LDFLAGS} -fsanitize=address,undefined -shared-libsan"
-        export CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan -DOMPI_SKIP_MPICXX"
+        export CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan"
         cmake -S . -B build               \
           -DopenPMD_USE_MPI=ON            \
           -DopenPMD_USE_PYTHON=ON         \
