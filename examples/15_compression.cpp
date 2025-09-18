@@ -258,77 +258,35 @@ int main()
     )";
     write("hdf5_with_dataset_specific_configurations.%E", extended_hdf5_config);
 
-    run_blosc2_filter_for_hdf5_example();
+    // The following example runs the Blosc2 plugin which must be separately
+    // installed. One simple way is to install the Python package hdf5plugin
+    // which contains precompiled filters and then point HDF5_PLUGIN_PATH toward
+    // the plugins directory therein (containing libh5blosc2.so). This example
+    // assumes such a setup.
+    if (getenv("HDF5_PLUGIN_PATH"))
+    {
+        // For non-predefined IDs, the ID must be given as a number. This
+        // example uses the Blosc2 filter available from
+        // https://pypi.org/project/hdf5plugin/,
+        // with the permanent plugin ID 32026.
+        // Generic filters referenced by ID can be configured via the cd_values
+        // field. This field is an array of unsigned integers and
+        // plugin-specific interpretation. For the Blosc2 plugin, indexes 0, 1,
+        // 2 and 3 are reserved. index 4 is the compression level, index 5 is a
+        // boolean for activating shuffling and index 6 denotes the compression
+        // method. Compression method 5 is BLOSC_ZSTD.
+        std::string hdf5_blosc_filter = R"(
+            backend = "hdf5"
+
+            [hdf5.dataset]
+            chunks = "auto"
+
+            [hdf5.dataset.permanent_filters]
+            id = 32026
+            flags = "mandatory"
+            cd_values = [0, 0, 0, 0, 4, 1, 5]
+        )";
+        write("hdf5_blosc_filter.%E", hdf5_blosc_filter);
+    }
 #endif // openPMD_HAVE_HDF5
-}
-
-/* This example runs the Blosc2 filter for HDF5 if it can find the filter's
- * header somewhere in the system. This is a convention for this example, but
- * the header is not needed in general for running the filter, as it contains
- * only helpers and some defines.
- */
-#define openPMD_USE_BLOSC2_FILTER (openPMD_HAVE_HDF5 && __has_include(<blosc2_filter.h>))
-
-/* This below block is only necessary if the Blosc2 filter was installed to a
- * nonstandard directory that the HDF5 library cannot find on its own. In this
- * case, link the application against libblosc2_filter.so and set the below
- * define to true. The blosc2_filter.h header provides a helper function to
- * manually register the filter to the HDF5 library.
- */
-#define OPENPMD_INIT_BLOSC2_FILTER_MANUALLY false
-#if OPENPMD_INIT_BLOSC2_FILTER_MANUALLY
-#include <blosc2_filter.h>
-void init_blosc_for_hdf5()
-{
-    /*
-     * This registers the Blosc2 plugin from
-     * https://github.com/Blosc/HDF5-Blosc2 as a demonstration on how to
-     * activate and configure dynamic HDF5 filter plugins through openPMD.
-     */
-
-    char *version, *date;
-    int r = register_blosc2(&version, &date);
-    if (r < 1)
-    {
-        throw std::runtime_error("Unable to register Blosc2 plugin with HDF5.");
-    }
-    else
-    {
-        std::cout << "Blosc2 plugin registered in version '" << version
-                  << "' and date '" << date << "'." << std::endl;
-    }
-}
-#endif
-
-void run_blosc2_filter_for_hdf5_example()
-{
-#if openPMD_HAVE_HDF5 && openPMD_USE_BLOSC2_FILTER
-#if OPENPMD_INIT_BLOSC2_FILTER_MANUALLY
-    init_blosc_for_hdf5();
-#endif
-
-    // For non-predefined IDs, the ID must be given as a number. This example
-    // uses the Blosc2 filter available from
-    // https://github.com/Blosc/HDF5-Blosc2, with the permanent plugin ID 32026
-    // (alternatively defined in blosc2_filter.h as FILTER_BLOSC2). Generic
-    // filters referenced by ID can be configured via the cd_values field. This
-    // field is an array of unsigned integers and plugin-specific
-    // interpretation. For the Blosc2 plugin, indexes 0, 1, 2 and 3 are
-    // reserved. index 4 is the compression level, index 5 is a boolean for
-    // activating shuffling and index 6 denotes the compression method.
-    // Compression method 5 is BLOSC_ZSTD, alternatively also defined in
-    // blosc2_filter.h.
-    std::string hdf5_blosc_filter = R"(
-        backend = "hdf5"
-
-        [hdf5.dataset]
-        chunks = "auto"
-
-        [hdf5.dataset.permanent_filters]
-        id = 32026
-        flags = "mandatory"
-        cd_values = [0, 0, 0, 0, 4, 1, 5]
-    )";
-    write("hdf5_blosc_filter.%E", hdf5_blosc_filter);
-#endif
 }

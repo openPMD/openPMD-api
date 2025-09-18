@@ -245,7 +245,9 @@ jobs:
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/gcc12_py36_ompi_h5_ad2/)
         spack install
-        ./.github/workflows/dependencies/install_hdf5_blosc2
+
+        # Use this to make the plugins available also from the C/C++ API
+        export HDF5_PLUGIN_PATH="$(python -c 'import hdf5plugin; print(hdf5plugin.__path__[0]);')/plugins"
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
