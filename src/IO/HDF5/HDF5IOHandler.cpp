@@ -642,7 +642,7 @@ namespace
             throw filter_error();
         }
 
-        enum class filter_type
+        enum class filter_type : uint8_t
         {
             ByID,
             Zlib
