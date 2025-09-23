@@ -22,17 +22,17 @@ jobs:
         sudo apt-get install clang clang-tidy gfortran libopenmpi-dev python-is-python3
         SPACK_VER=1.0.1 sudo -E .github/workflows/dependencies/install_spack
         echo "SPACK VERSION: $(spack --version)"
+
+        # Use this to make the HDF5 plugins available from the C/C++ API.
+        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
+        echo "$HDF5_PLUGIN_PATH"
+        ls "$HDF5_PLUGIN_PATH"
     - name: Build
       env: {CC: clang, CXX: clang++}
       run: |
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
-
-        # Use this to make the plugins available also from the C/C++ API
-        export HDF5_PLUGIN_PATH="$(python -c 'import hdf5plugin; print(hdf5plugin.__path__[0]);')/plugins"
-        echo "$HDF5_PLUGIN_PATH"
-        ls "$HDF5_PLUGIN_PATH"
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
@@ -54,20 +54,20 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-19 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev python3-numpy python3-hdf5plugin
+        sudo apt-get install clang-19 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev python3-numpy
         SPACK_VER=1.0.1 sudo -E .github/workflows/dependencies/install_spack
         echo "SPACK VERSION: $(spack --version)"
+
+        # Use this to make the HDF5 plugins available from the C/C++ API.
+        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
+        echo "$HDF5_PLUGIN_PATH"
+        ls "$HDF5_PLUGIN_PATH"
     - name: Build
       env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-19, OMPI_CXX: clang++-19, CXXFLAGS: -Werror, OPENPMD_HDF5_CHUNKS: none, OPENPMD_TEST_NFILES_MAX: 100}
       run: |
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
-
-        # Use this to make the plugins available also from the C/C++ API
-        export HDF5_PLUGIN_PATH="$(python -c 'import hdf5plugin; print(hdf5plugin.__path__[0]);')/plugins"
-        echo "$HDF5_PLUGIN_PATH"
-        ls "$HDF5_PLUGIN_PATH"
 
         SOURCEPATH="$(pwd)"
         share/openPMD/download_samples.sh build
