@@ -295,6 +295,7 @@ def main():
     # the compression method.
 
     if "hdf5" in opmd.variants and opmd.variants["hdf5"] and HAS_HDF5_PLUGIN:
+        raise RuntimeError("hiii")
         hdf5_blosc2_filter = {
             "backend": "hdf5",
             "hdf5": {
