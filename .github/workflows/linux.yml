@@ -96,7 +96,6 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install clang-11 gfortran libopenmpi-dev python3 python3-pip
-        python3 -m pip install -U hdf5plugin
         sudo .github/workflows/dependencies/install_spack
 
         # Use this to make the HDF5 plugins available from the C/C++ API.
@@ -253,7 +252,6 @@ jobs:
         python3 -m pip install -U pandas
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
-        python3 -m pip install -U hdf5plugin
     - name: Build
       env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
       run: |
@@ -281,6 +279,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas python3-h5py-mpi python3-pip
+        python3 -m pip install jsonschema==4.* referencing hdf5plugin
 #       TODO ADIOS2
     - name: Build
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
@@ -298,7 +297,6 @@ jobs:
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 
-        python3 -m pip install jsonschema==4.* referencing
         cd share/openPMD/json_schema
         PATH="../../../build/bin:$PATH" make -j 2
         # We need to exclude the thetaMode example since that has a different
@@ -325,7 +323,7 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        python3.10 -m pip install numpy h5py
+        python3.10 -m pip install numpy h5py hdf5plugin
     - name: Build
       env: {CXXFLAGS: -Werror}
       run: |
