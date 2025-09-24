@@ -310,6 +310,7 @@ def main():
         }
 
         write("hdf5_blosc_filter.%E", hdf5_blosc2_filter)
+        raise RuntimeError("Selected Blosc2 filter")
 
 
 main()
