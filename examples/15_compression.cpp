@@ -23,7 +23,6 @@
 
 #include <iostream>
 #include <numeric>
-#include <stdexcept>
 
 void run_blosc2_filter_for_hdf5_example();
 
@@ -288,7 +287,6 @@ int main()
             cd_values = [0, 0, 0, 0, 4, 1, 5]
         )";
         write("hdf5_blosc_filter.%E", hdf5_blosc_filter);
-        throw std::runtime_error("ACTIVATED BLOSC2 FILTER");
     }
 #endif // openPMD_HAVE_HDF5
 }
