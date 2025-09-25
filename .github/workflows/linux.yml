@@ -98,11 +98,11 @@ jobs:
         sudo apt-get install clang-11 gfortran libopenmpi-dev python3 python3-pip
         sudo .github/workflows/dependencies/install_spack
 
-        # Use this to make the HDF5 plugins available from the C/C++ API.
-        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
     - name: Build
       env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -Werror}
       run: |
+        # Use this to make the HDF5 plugins available from the C/C++ API.
+        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_ompi_h5_ad2/)
         spack install
@@ -179,8 +179,6 @@ jobs:
 
         sudo .github/workflows/dependencies/install_spack
 
-        # Use this to make the HDF5 plugins available from the C/C++ API.
-        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
 
         # Need to build this manually due to broken MPICH package in Ubuntu 24.04
         # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
@@ -189,6 +187,8 @@ jobs:
     - name: Build
       env: {CC: gcc, CXX: g++, MPICH_CC: gcc, MPICH_CXX: g++, CXXFLAGS: -Werror}
       run: |
+        # Use this to make the HDF5 plugins available from the C/C++ API.
+        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
         cmake --version
         mpiexec --version
         mpicxx --version
@@ -203,7 +203,7 @@ jobs:
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
-          -DopenPMD_USE_PYTHON=OFF \
+          -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON     \
           -DopenPMD_USE_HDF5=ON    \
           -DopenPMD_USE_ADIOS2=ON  \
@@ -241,8 +241,7 @@ jobs:
         sudo apt-get install g++-12 gfortran libopenmpi-dev python3 python3-setuptools
         sudo .github/workflows/dependencies/install_spack
 
-        # Use this to make the HDF5 plugins available from the C/C++ API.
-        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
+
 
         python3 -m pip install -U pip
         python3 -m pip install -U numpy
@@ -250,17 +249,14 @@ jobs:
         python3 -m pip install -U pandas
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
-        python3 -m pip install -U hdf5plugin
     - name: Build
       env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
       run: |
+        # Use this to make the HDF5 plugins available from the C/C++ API.
+        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
         sudo ln -s "$(which cmake)" /usr/bin/cmake
-        echo "BEFORE ACTIVATING SPACK:"
-        python -c 'import hdf5plugin; print(hdf5plugin.__path__[0]);'
         eval $(spack env activate --sh .github/ci/spack-envs/gcc12_py36_ompi_h5_ad2/)
         spack install
-        echo "AFTER ACTIVATING SPACK:"
-        python -c 'import hdf5plugin; print(hdf5plugin.__path__[0]);'
 
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
