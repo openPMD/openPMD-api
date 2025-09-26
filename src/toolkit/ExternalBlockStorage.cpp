@@ -67,19 +67,14 @@ ExternalBlockStorageStdio::ExternalBlockStorageStdio(
 
 ExternalBlockStorageStdio::~ExternalBlockStorageStdio() = default;
 
-void ExternalBlockStorageStdio::put(
-    std::string const &identifier, void const *data, size_t len)
+auto ExternalBlockStorageStdio::put(
+    std::string const &identifier, void const *data, size_t len) -> std::string
 {
+    std::string filepath = concat_filepath(m_directory, identifier);
     if (len == 0)
     {
-        return;
+        return filepath;
     }
-
-    // Generate a unique filename using a simple counter approach (can be
-    // extended)
-    static size_t counter = 0;
-    std::string filename = m_directory + "/block_" + std::to_string(counter++);
-    std::string filepath = concat_filepath(m_directory, identifier);
 
     FILE *file = std::fopen(filepath.c_str(), "wb");
     if (!file)
@@ -103,33 +98,39 @@ void ExternalBlockStorageStdio::put(
             "ExternalBlockStorageStdio: failed to close file after writing: " +
             filepath);
     }
+
+    return filepath;
+}
+
+auto StdioBuilder::setDirectory(std::string directory) -> StdioBuilder &
+{
+    m_directory = std::move(directory);
+    return *this;
+}
+auto StdioBuilder::setOpenMode(std::string openMode) -> StdioBuilder &
+{
+    m_openMode = std::move(openMode);
+    return *this;
+}
+
+StdioBuilder::operator ExternalBlockStorage()
+{
+    return ExternalBlockStorage{std::make_unique<ExternalBlockStorageStdio>(
+        std::move(m_directory), std::move(m_openMode).value_or("wb"))};
+}
+
+auto StdioBuilder::build() -> ExternalBlockStorage
+{
+    return *this;
 }
 } // namespace openPMD::internal
+
 namespace openPMD
 {
 auto ExternalBlockStorage::makeStdioSession(std::string directory)
     -> internal::StdioBuilder
 {
     return internal::StdioBuilder{std::move(directory)};
-}
-
-auto internal::StdioBuilder::setDirectory(std::string directory)
-    -> StdioBuilder &
-{
-    m_directory = std::move(directory);
-    return *this;
-}
-auto internal::StdioBuilder::setOpenMode(std::string openMode) -> StdioBuilder &
-{
-    m_openMode = std::move(openMode);
-    return *this;
-}
-
-internal::StdioBuilder::operator ExternalBlockStorage()
-{
-    return ExternalBlockStorage{
-        std::make_unique<internal::ExternalBlockStorageStdio>(
-            std::move(m_directory), std::move(m_openMode).value_or("wb"))};
 }
 
 ExternalBlockStorage::ExternalBlockStorage(

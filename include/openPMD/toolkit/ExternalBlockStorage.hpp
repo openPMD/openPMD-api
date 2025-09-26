@@ -14,8 +14,9 @@ namespace openPMD::internal
 {
 struct ExternalBlockStorageBackend
 {
-    virtual void
-    put(std::string const &identifier, void const *data, size_t len) = 0;
+    virtual auto
+    put(std::string const &identifier, void const *data, size_t len)
+        -> std::string = 0;
     virtual ~ExternalBlockStorageBackend();
 };
 
@@ -28,6 +29,7 @@ struct StdioBuilder
     auto setOpenMode(std::string openMode) -> StdioBuilder &;
 
     operator ExternalBlockStorage();
+    auto build() -> ExternalBlockStorage;
 };
 } // namespace openPMD::internal
 

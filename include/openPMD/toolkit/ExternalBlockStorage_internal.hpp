@@ -12,8 +12,8 @@ private:
 
 public:
     ExternalBlockStorageStdio(std::string directory, std::string openMode);
-    void
-    put(std::string const &identifier, void const *data, size_t len) override;
+    auto put(std::string const &identifier, void const *data, size_t len)
+        -> std::string override;
     ~ExternalBlockStorageStdio() override;
 };
 } // namespace openPMD::internal
