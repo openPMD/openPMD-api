@@ -1,5 +1,9 @@
 #pragma once
 
+#include "openPMD/Dataset.hpp"
+
+#include <nlohmann/json.hpp>
+
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -45,7 +49,21 @@ private:
     friend struct internal::StdioBuilder;
 
 public:
+    explicit ExternalBlockStorage();
+
     static auto makeStdioSession(std::string directory)
         -> internal::StdioBuilder;
+
+    // returns created JSON key
+    template <typename T>
+    auto store(
+        Extent globalExtent,
+        Offset blockOffset,
+        Extent blockExtent,
+        nlohmann::json &fullJsonDataset,
+        nlohmann::json::json_pointer const &path,
+        T const *data) -> std::string;
+
+    static void sanitizeString(std::string &s);
 };
 } // namespace openPMD
