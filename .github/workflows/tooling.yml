@@ -68,7 +68,6 @@ jobs:
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad2/)
         spack install
-
         SOURCEPATH="$(pwd)"
         share/openPMD/download_samples.sh build
         export LDFLAGS="${LDFLAGS} -fsanitize=address,undefined -shared-libsan"

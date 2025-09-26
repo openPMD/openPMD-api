@@ -95,7 +95,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-11 gfortran libopenmpi-dev python3 python3-pip
+        sudo apt-get install clang-11 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
 
     - name: Build
@@ -240,9 +240,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install g++-12 gfortran libopenmpi-dev python3 python3-setuptools
         sudo .github/workflows/dependencies/install_spack
-
-
-
         python3 -m pip install -U pip
         python3 -m pip install -U numpy
         python3 -m pip install -U mpi4py
