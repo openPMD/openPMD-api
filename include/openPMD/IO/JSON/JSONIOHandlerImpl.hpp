@@ -29,6 +29,7 @@
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
 #include <istream>
 #include <nlohmann/json.hpp>
@@ -176,6 +177,8 @@ public:
         FileFormat,
         std::string originalExtension);
 #endif
+
+    ExternalBlockStorage externalBlockStorage;
 
     void init(openPMD::json::TracingJSON config);
 

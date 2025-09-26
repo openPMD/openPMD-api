@@ -35,6 +35,7 @@
 #include "openPMD/auxiliary/toml11_wrapper.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
 #include <iomanip>
 #include <sstream>
@@ -441,6 +442,9 @@ void JSONIOHandlerImpl::init(openPMD::json::TracingJSON config)
         (void)_;
         warnUnusedJson(backendConfig.value());
     }
+
+    externalBlockStorage =
+        ExternalBlockStorage::makeStdioSession("./external_blocks/");
 }
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
@@ -1140,6 +1144,22 @@ void JSONIOHandlerImpl::deleteAttribute(
     j.erase(parameters.name);
 }
 
+namespace
+{
+    struct StoreExternally
+    {
+        template <typename T, typename... Args>
+        static void call(
+            ExternalBlockStorage &blockStorage, void const *ptr, Args &&...args)
+        {
+            blockStorage.store<T>(
+                std::forward<Args>(args)..., static_cast<T const *>(ptr));
+        }
+
+        static constexpr char const *errorMsg = "StoreExternally";
+    };
+} // namespace
+
 void JSONIOHandlerImpl::writeDataset(
     Writable *writable, Parameter<Operation::WRITE_DATASET> &parameters)
 {
@@ -1149,21 +1169,32 @@ void JSONIOHandlerImpl::writeDataset(
 
     auto pos = setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable);
-    auto &j = obtainJsonContents(writable);
+    auto filePosition = setAndGetFilePosition(writable, false);
+    auto &jsonRoot = *obtainJsonContents(file);
+    auto &j = jsonRoot[filePosition->id];
 
     switch (verifyDataset(parameters, j))
     {
     case DatasetMode::Dataset:
         break;
     case DatasetMode::Template:
-        if (!m_datasetMode.m_skipWarnings)
-        {
-            std::cerr
-                << "[JSON/TOML backend: Warning] Trying to write data to a "
-                   "template dataset. Will skip."
-                << '\n';
-            m_datasetMode.m_skipWarnings = true;
-        }
+        switchDatasetType<StoreExternally>(
+            parameters.dtype,
+            externalBlockStorage,
+            parameters.data.get(),
+            j.at("extent").get<Extent>(),
+            parameters.offset,
+            parameters.extent,
+            jsonRoot,
+            filePosition->id);
+        // if (!m_datasetMode.m_skipWarnings)
+        // {
+        //     std::cerr
+        //         << "[JSON/TOML backend: Warning] Trying to write data to a "
+        //            "template dataset. Will skip."
+        //         << '\n';
+        //     m_datasetMode.m_skipWarnings = true;
+        // }
         return;
     }
 
