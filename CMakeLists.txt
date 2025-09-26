@@ -447,7 +447,8 @@ set(CORE_SOURCE
         src/snapshots/IteratorTraits.cpp
         src/snapshots/RandomAccessIterator.cpp
         src/snapshots/Snapshots.cpp
-        src/snapshots/StatefulIterator.cpp)
+        src/snapshots/StatefulIterator.cpp
+        src/toolkit/ExternalBlockStorage.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
