@@ -39,6 +39,7 @@ Python
 - `3_write_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/3_write_serial.py>`_: writing a mesh
 - `3a_write_thetaMode_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/3a_write_thetaMode_serial.py>`_: write an azimuthally decomposed mesh
 - `3b_write_resizable_particles.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/3b_write_resizable_particles.py>`_: write particles in a resizeable dataset
+- `3c_write_particle_beam.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/3c_write_particle_beam.py>`_: generate and store a particle beam, e.g., as an input to `WarpX <https://ecp-warpx.github.io>`__
 - `4_read_parallel.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/4_read_parallel.py>`_: MPI-parallel mesh read
 - `5_write_parallel.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/5_write_parallel.py>`_: MPI-parallel mesh write
 - `7_extended_write_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/7_extended_write_serial.py>`_: particle writing with patches and constant records
