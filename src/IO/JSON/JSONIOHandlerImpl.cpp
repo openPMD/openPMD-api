@@ -1149,6 +1149,30 @@ void JSONIOHandlerImpl::deleteAttribute(
 
 namespace
 {
+    template <typename Stream>
+    auto
+    write_rank_to_stream_with_sufficient_padding(Stream &s, int rank, int size)
+        -> Stream &
+    {
+        auto num_digits = [](unsigned n) -> unsigned {
+            constexpr auto max = std::numeric_limits<unsigned>::max();
+            unsigned base_10 = 1;
+            unsigned res = 1;
+            while (base_10 < max)
+            {
+                base_10 *= 10;
+                if (n / base_10 == 0)
+                {
+                    return res;
+                }
+                ++res;
+            }
+            return res;
+        };
+        s << std::setw(num_digits(size - 1)) << std::setfill('0') << rank;
+        return s;
+    }
+
     struct StoreExternally
     {
         template <typename T, typename... Args>
@@ -1180,7 +1204,22 @@ void JSONIOHandlerImpl::writeDataset(
     {
     case DatasetMode::Dataset:
         break;
-    case DatasetMode::Template:
+    case DatasetMode::Template: {
+        std::optional<std::string> rankInfix;
+#if openPMD_HAVE_MPI
+        if (m_communicator.has_value())
+        {
+            auto &comm = *m_communicator;
+            // TODO maybe cache the result for this computation
+            int rank, size;
+            MPI_Comm_rank(comm, &rank);
+            MPI_Comm_size(comm, &size);
+            std::stringstream s;
+            s << "r";
+            write_rank_to_stream_with_sufficient_padding(s, rank, size);
+            rankInfix = s.str();
+        }
+#endif
         switchDatasetType<StoreExternally>(
             parameters.dtype,
             externalBlockStorage,
@@ -1189,7 +1228,8 @@ void JSONIOHandlerImpl::writeDataset(
             parameters.offset,
             parameters.extent,
             jsonRoot,
-            filePosition->id);
+            filePosition->id,
+            std::move(rankInfix));
         // if (!m_datasetMode.m_skipWarnings)
         // {
         //     std::cerr
@@ -1199,6 +1239,7 @@ void JSONIOHandlerImpl::writeDataset(
         //     m_datasetMode.m_skipWarnings = true;
         // }
         return;
+    }
     }
 
     switchType<DatasetWriter>(parameters.dtype, j, parameters);
@@ -2156,53 +2197,37 @@ auto JSONIOHandlerImpl::putJsonContents(
     };
 
 #if openPMD_HAVE_MPI
-    auto num_digits = [](unsigned n) -> unsigned {
-        constexpr auto max = std::numeric_limits<unsigned>::max();
-        unsigned base_10 = 1;
-        unsigned res = 1;
-        while (base_10 < max)
+    auto parallelImplementation = [this, &filename, &writeSingleFile](
+                                      MPI_Comm comm) {
+        auto path = fullPath(*filename);
+        auto dirpath = path + ".parallel";
+        if (!auxiliary::create_directories(dirpath))
         {
-            base_10 *= 10;
-            if (n / base_10 == 0)
-            {
-                return res;
-            }
-            ++res;
+            throw std::runtime_error(
+                "Failed creating directory '" + dirpath +
+                "' for parallel JSON output");
         }
-        return res;
-    };
-
-    auto parallelImplementation =
-        [this, &filename, &writeSingleFile, &num_digits](MPI_Comm comm) {
-            auto path = fullPath(*filename);
-            auto dirpath = path + ".parallel";
-            if (!auxiliary::create_directories(dirpath))
-            {
-                throw std::runtime_error(
-                    "Failed creating directory '" + dirpath +
-                    "' for parallel JSON output");
-            }
-            int rank = 0, size = 0;
-            MPI_Comm_rank(comm, &rank);
-            MPI_Comm_size(comm, &size);
-            std::stringstream subfilePath;
-            // writeSingleFile will prepend the base dir
-            subfilePath << *filename << ".parallel/mpi_rank_"
-                        << std::setw(num_digits(size - 1)) << std::setfill('0')
-                        << rank << [&]() {
-                               switch (m_fileFormat)
-                               {
-                               case FileFormat::Json:
-                                   return ".json";
-                               case FileFormat::Toml:
-                                   return ".toml";
-                               }
-                               throw std::runtime_error("Unreachable!");
-                           }();
-            writeSingleFile(subfilePath.str());
-            if (rank == 0)
-            {
-                constexpr char const *readme_msg = R"(
+        int rank = 0, size = 0;
+        MPI_Comm_rank(comm, &rank);
+        MPI_Comm_size(comm, &size);
+        std::stringstream subfilePath;
+        // writeSingleFile will prepend the base dir
+        subfilePath << *filename << ".parallel/mpi_rank_";
+        write_rank_to_stream_with_sufficient_padding(subfilePath, rank, size)
+            << [&]() {
+                   switch (m_fileFormat)
+                   {
+                   case FileFormat::Json:
+                       return ".json";
+                   case FileFormat::Toml:
+                       return ".toml";
+                   }
+                   throw std::runtime_error("Unreachable!");
+               }();
+        writeSingleFile(subfilePath.str());
+        if (rank == 0)
+        {
+            constexpr char const *readme_msg = R"(
 This folder has been created by a parallel instance of the JSON backend in
 openPMD. There is one JSON file for each parallel writer MPI rank.
 The parallel JSON backend performs no metadata or data aggregation at all.
@@ -2212,26 +2237,26 @@ There is no support in the openPMD-api for reading this folder as a single
 dataset. For reading purposes, either pick a single .json file and read that, or
 merge the .json files somehow (no tooling provided for this (yet)).
 )";
-                std::fstream readme_file;
-                readme_file.open(
-                    dirpath + "/README.txt",
-                    std::ios_base::out | std::ios_base::trunc);
-                readme_file << readme_msg + 1;
-                readme_file.close();
-                if (!readme_file.good() &&
-                    !filename.fileState->printedReadmeWarningAlready)
-                {
-                    std::cerr
-                        << "[Warning] Something went wrong in trying to create "
-                           "README file at '"
-                        << dirpath
-                        << "/README.txt'. Will ignore and continue. The README "
-                           "message would have been:\n----------\n"
-                        << readme_msg + 1 << "----------" << std::endl;
-                    filename.fileState->printedReadmeWarningAlready = true;
-                }
+            std::fstream readme_file;
+            readme_file.open(
+                dirpath + "/README.txt",
+                std::ios_base::out | std::ios_base::trunc);
+            readme_file << readme_msg + 1;
+            readme_file.close();
+            if (!readme_file.good() &&
+                !filename.fileState->printedReadmeWarningAlready)
+            {
+                std::cerr
+                    << "[Warning] Something went wrong in trying to create "
+                       "README file at '"
+                    << dirpath
+                    << "/README.txt'. Will ignore and continue. The README "
+                       "message would have been:\n----------\n"
+                    << readme_msg + 1 << "----------" << std::endl;
+                filename.fileState->printedReadmeWarningAlready = true;
             }
-        };
+        }
+    };
 
     std::shared_ptr<nlohmann::json> res;
     if (m_communicator.has_value())

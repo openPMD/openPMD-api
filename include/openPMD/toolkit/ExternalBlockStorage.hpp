@@ -68,6 +68,7 @@ public:
         Extent blockExtent,
         nlohmann::json &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
+        std::optional<std::string> infix, // e.g. for distinguishing MPI ranks
         T const *data) -> std::string;
 
     static void sanitizeString(std::string &s);

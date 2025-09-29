@@ -43,6 +43,7 @@ auto ExternalBlockStorage::store(
     Extent blockExtent,
     nlohmann::json &fullJsonDataset,
     nlohmann::json::json_pointer const &path,
+    std::optional<std::string> infix,
     T const *data) -> std::string
 {
     auto &dataset = fullJsonDataset[path];
@@ -115,7 +116,12 @@ auto ExternalBlockStorage::store(
     block["offset"] = blockOffset;
     block["extent"] = blockExtent;
     std::stringstream filesystem_identifier;
-    filesystem_identifier << path.to_string() << "--" << index_as_str;
+    filesystem_identifier << path.to_string();
+    if (infix.has_value())
+    {
+        filesystem_identifier << "--" << *infix;
+    }
+    filesystem_identifier << "--" << index_as_str;
     auto escaped_filesystem_identifier = m_worker->put(
         filesystem_identifier.str(),
         data,
@@ -148,6 +154,7 @@ void ExternalBlockStorage::sanitizeString(std::string &s)
         Extent blockExtent,                                                    \
         nlohmann::json & fullJsonDataset,                                      \
         nlohmann::json::json_pointer const &path,                              \
+        std::optional<std::string> infix,                                      \
         type const *data) -> std::string;
 #define OPENPMD_INSTANTIATE(type)                                              \
     OPENPMD_INSTANTIATE_DATATYPEHANDLING(internal::JsonDatatypeHandling, type)
