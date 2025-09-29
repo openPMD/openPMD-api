@@ -164,7 +164,10 @@ namespace
             }
         }
     }
+} // namespace
 
+namespace internal
+{
     // Does the same as datatypeToString(), but this makes sure that we don't
     // accidentally change the JSON schema by modifying datatypeToString()
     std::string jsonDatatypeToString(Datatype dt)
@@ -253,7 +256,7 @@ namespace
         }
         return "Unreachable!";
     }
-} // namespace
+} // namespace internal
 
 auto JSONIOHandlerImpl::retrieveDatasetMode(
     openPMD::json::TracingJSON &config) const -> DatasetMode_s
@@ -638,7 +641,7 @@ void JSONIOHandlerImpl::createDataset(
         }
         setAndGetFilePosition(writable, name);
         auto &dset = jsonVal[name];
-        dset["datatype"] = jsonDatatypeToString(parameter.dtype);
+        dset["datatype"] = internal::jsonDatatypeToString(parameter.dtype);
 
         switch (localMode)
         {
@@ -1152,7 +1155,7 @@ namespace
         static void call(
             ExternalBlockStorage &blockStorage, void const *ptr, Args &&...args)
         {
-            blockStorage.store<T>(
+            blockStorage.store<internal::JsonDatatypeHandling, T>(
                 std::forward<Args>(args)..., static_cast<T const *>(ptr));
         }
 
@@ -1236,7 +1239,7 @@ void JSONIOHandlerImpl::writeAttribute(
     {
     case AttributeMode::Long:
         (*jsonVal)[filePosition->id]["attributes"][name] = {
-            {"datatype", jsonDatatypeToString(parameter.dtype)},
+            {"datatype", internal::jsonDatatypeToString(parameter.dtype)},
             {"value", value}};
         break;
     case AttributeMode::Short:
@@ -2407,7 +2410,7 @@ nlohmann::json JSONIOHandlerImpl::platformSpecifics()
         Datatype::BOOL};
     for (auto &datatype : datatypes)
     {
-        res[jsonDatatypeToString(datatype)] = toBytes(datatype);
+        res[internal::jsonDatatypeToString(datatype)] = toBytes(datatype);
     }
     return res;
 }

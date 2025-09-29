@@ -2,6 +2,7 @@
 #include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
 #include "openPMD/DatatypeMacros.hpp"
+#include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/toolkit/ExternalBlockStorage_internal.hpp"
 
@@ -147,7 +148,7 @@ auto ExternalBlockStorage::makeStdioSession(std::string directory)
     return internal::StdioBuilder{std::move(directory)};
 }
 
-template <typename T>
+template <typename DatatypeHandling, typename T>
 auto ExternalBlockStorage::store(
     Extent globalExtent,
     Offset blockOffset,
@@ -224,8 +225,10 @@ auto ExternalBlockStorage::store(
             dataset[key] = value;
         }
     };
-    std::string type = typeid(T).name(); // TODO use sth more portable
-    check_metadata("_type", type);
+    if (!DatatypeHandling::template encodeDatatype<T>(dataset))
+    {
+        throw std::runtime_error("Inconsistent chunk storage in datatype.");
+    }
     check_metadata("_byte_width", sizeof(T));
     check_metadata("_extent", globalExtent);
 
@@ -260,14 +263,16 @@ void ExternalBlockStorage::sanitizeString(std::string &s)
     }
 }
 
-#define OPENPMD_INSTANTIATE(type)                                              \
-    template auto ExternalBlockStorage::store<type>(                           \
+#define OPENPMD_INSTANTIATE_DATATYPEHANDLING(datatypehandling, type)           \
+    template auto ExternalBlockStorage::store<datatypehandling, type>(         \
         Extent globalExtent,                                                   \
         Offset blockOffset,                                                    \
         Extent blockExtent,                                                    \
         nlohmann::json & fullJsonDataset,                                      \
         nlohmann::json::json_pointer const &path,                              \
         type const *data) -> std::string;
+#define OPENPMD_INSTANTIATE(type)                                              \
+    OPENPMD_INSTANTIATE_DATATYPEHANDLING(internal::JsonDatatypeHandling, type)
 OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
 #undef OPENPMD_INSTANTIATE
 } // namespace openPMD

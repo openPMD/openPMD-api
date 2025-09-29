@@ -39,6 +39,17 @@ struct StdioBuilder
 
 namespace openPMD
 {
+// used nowhere, just shows the signatures
+// TODO: replace this with a concept upon switching to C++20
+struct DatatypeHandling_Interface
+{
+    template <typename T>
+    static auto encodeDatatype(nlohmann::json &) -> bool;
+
+    template <typename Functor, typename... Args>
+    static auto decodeDatatype(nlohmann::json const &j, Args &&...args) -> bool;
+};
+
 class ExternalBlockStorage
 {
 private:
@@ -55,7 +66,7 @@ public:
         -> internal::StdioBuilder;
 
     // returns created JSON key
-    template <typename T>
+    template <typename DatatypeHandling, typename T>
     auto store(
         Extent globalExtent,
         Offset blockOffset,

@@ -154,6 +154,46 @@ void from_json(const nlohmann::json &j, std::complex<T> &p)
 }
 } // namespace std
 
+namespace openPMD::internal
+{
+auto jsonDatatypeToString(Datatype dt) -> std::string;
+
+struct JsonDatatypeHandling
+{
+    template <typename T>
+    static auto encodeDatatype(nlohmann::json &j) -> bool
+    {
+        auto const &needed_datatype =
+            jsonDatatypeToString(determineDatatype<T>());
+        if (auto it = j.find("datatype"); it != j.end())
+        {
+            return it.value().get<std::string>() == needed_datatype;
+        }
+        else
+        {
+            j["datatype"] = needed_datatype;
+            return true;
+        }
+    }
+
+    template <typename Functor, typename... Args>
+    static auto decodeDatatype(nlohmann::json const &j, Args &&...args) -> bool
+    {
+        if (auto it = j.find("datatype"); it != j.end())
+        {
+            switchDatasetType<Functor>(
+                stringToDatatype(it.value().get<std::string>()),
+                std::forward<Args>(args)...);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+};
+} // namespace openPMD::internal
+
 namespace openPMD
 {
 class JSONIOHandlerImpl : public AbstractIOHandlerImpl
