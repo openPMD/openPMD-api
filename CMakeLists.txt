@@ -450,7 +450,11 @@ set(CORE_SOURCE
         src/snapshots/RandomAccessIterator.cpp
         src/snapshots/Snapshots.cpp
         src/snapshots/StatefulIterator.cpp
-        src/toolkit/ExternalBlockStorage.cpp)
+        src/toolkit/ExternalBlockStorage.cpp
+        src/toolkit/AwsBuilder.cpp
+        src/toolkit/Aws.cpp
+        src/toolkit/StdioBuilder.cpp
+        src/toolkit/Stdio.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
