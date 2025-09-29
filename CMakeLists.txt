@@ -393,6 +393,8 @@ else()
 endif()
 unset(openPMD_REQUIRED_ADIOS2_COMPONENTS)
 
+find_package(AWSSDK REQUIRED COMPONENTS s3)
+
 # external library: pybind11 (optional)
 include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 
@@ -578,6 +580,8 @@ if(openPMD_HAVE_ADIOS2)
         endif()
     endif()
 endif()
+
+target_link_libraries(openPMD PUBLIC ${AWSSDK_LIBRARIES})
 
 # Runtime parameter and API status checks ("asserts")
 if(openPMD_USE_VERIFY)

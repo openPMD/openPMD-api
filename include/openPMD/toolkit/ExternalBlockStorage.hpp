@@ -2,9 +2,11 @@
 
 #include "openPMD/Dataset.hpp"
 
+#include <initializer_list>
 #include <nlohmann/json.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -35,6 +37,41 @@ struct StdioBuilder
     operator ExternalBlockStorage();
     auto build() -> ExternalBlockStorage;
 };
+
+struct AwsBuilder
+{
+    struct init_credentials_tag_t
+    {};
+    static constexpr init_credentials_tag_t init_credentials_tag = {};
+
+    AwsBuilder(
+        std::string bucketName, std::string accessKeyId, std::string secretKey);
+
+    enum class Scheme : uint8_t
+    {
+        HTTP,
+        HTTPS
+    };
+    std::string m_bucketName;
+    std::string m_accessKeyId;
+    std::string m_secretKey;
+    std::optional<std::string> m_sessionToken;
+    std::initializer_list<std::string> m_credentials;
+    std::optional<std::string> m_endpointOverride;
+    std::optional<std::string> m_region;
+    std::optional<Scheme> m_scheme;
+
+    auto setBucketName(std::string bucketName) -> AwsBuilder &;
+    auto setCredentials(std::string accessKeyId, std::string secretKey)
+        -> AwsBuilder &;
+    auto setSessionToken(std::string sessionToken) -> AwsBuilder &;
+    auto setEndpointOverride(std::string endpoint) -> AwsBuilder &;
+    auto setRegion(std::string regionName) -> AwsBuilder &;
+    auto setScheme(Scheme s) -> AwsBuilder &;
+
+    operator ExternalBlockStorage();
+    auto build() -> ExternalBlockStorage;
+};
 } // namespace openPMD::internal
 
 namespace openPMD
@@ -58,12 +95,17 @@ private:
         std::unique_ptr<internal::ExternalBlockStorageBackend>);
 
     friend struct internal::StdioBuilder;
+    friend struct internal::AwsBuilder;
 
 public:
     explicit ExternalBlockStorage();
 
     static auto makeStdioSession(std::string directory)
         -> internal::StdioBuilder;
+    template <typename... Args>
+    static auto makeAwsSession(
+        std::string bucketName, std::string accessKeyId, std::string secretKey)
+        -> internal::AwsBuilder;
 
     // returns created JSON key
     template <typename DatatypeHandling, typename T>
@@ -77,4 +119,7 @@ public:
 
     static void sanitizeString(std::string &s);
 };
+
+// Implementations
+
 } // namespace openPMD

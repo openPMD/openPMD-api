@@ -1,10 +1,15 @@
 
 #include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
+#include "openPMD/toolkit/ExternalBlockStorage_internal.hpp"
+
 #include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/toolkit/ExternalBlockStorage_internal.hpp"
+
+#include <aws/core/auth/AWSCredentials.h>
+#include <aws/core/auth/signer/AWSAuthV4Signer.h>
+#include <aws/core/http/Scheme.h>
 
 #include <cstdio>
 #include <memory>
@@ -12,7 +17,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <typeinfo>
+#include <utility>
+#include <vector>
 
 namespace
 {
@@ -122,6 +128,58 @@ auto StdioBuilder::setOpenMode(std::string openMode) -> StdioBuilder &
     return *this;
 }
 
+ExternalBlockStorageAws::ExternalBlockStorageAws(
+    Aws::S3::S3Client client, std::string bucketName)
+    : m_client{std::move(client)}, m_bucketName(std::move(bucketName))
+{}
+ExternalBlockStorageAws::~ExternalBlockStorageAws() = default;
+
+AwsBuilder::AwsBuilder(
+    std::string bucketName, std::string accessKeyId, std::string secretKey)
+    : m_bucketName(std::move(bucketName))
+    , m_accessKeyId(std::move(accessKeyId))
+    , m_secretKey(std::move(secretKey))
+{}
+
+auto AwsBuilder::setBucketName(std::string bucketName) -> AwsBuilder &
+{
+    m_bucketName = std::move(bucketName);
+    return *this;
+}
+
+auto internal::AwsBuilder::setCredentials(
+    std::string accessKeyId, std::string secretKey) -> AwsBuilder &
+{
+    m_accessKeyId = std::move(accessKeyId);
+    m_secretKey = std::move(secretKey);
+    return *this;
+}
+
+auto AwsBuilder::setEndpointOverride(std::string endpoint) -> AwsBuilder &
+{
+    m_endpointOverride = std::move(endpoint);
+    return *this;
+}
+
+auto AwsBuilder::setRegion(std::string regionName) -> AwsBuilder &
+{
+    m_region = std::move(regionName);
+    return *this;
+}
+
+auto AwsBuilder::setScheme(Scheme s) -> AwsBuilder &
+{
+    m_scheme = s;
+    return *this;
+}
+
+auto internal::AwsBuilder::setSessionToken(std::string sessionToken)
+    -> AwsBuilder &
+{
+    m_sessionToken = std::move(sessionToken);
+    return *this;
+}
+
 StdioBuilder::operator ExternalBlockStorage()
 {
     return ExternalBlockStorage{std::make_unique<ExternalBlockStorageStdio>(
@@ -131,6 +189,63 @@ StdioBuilder::operator ExternalBlockStorage()
 auto StdioBuilder::build() -> ExternalBlockStorage
 {
     return *this;
+}
+
+AwsBuilder::operator ExternalBlockStorage()
+{
+    Aws::Client::ClientConfiguration config;
+
+    if (m_endpointOverride.has_value())
+    {
+        config.endpointOverride = *m_endpointOverride;
+    }
+    if (m_region.has_value())
+    {
+        config.region = *m_region;
+    }
+    else
+    {
+        config.region = "us-east-1";
+    }
+    if (m_scheme.has_value())
+    {
+        switch (*m_scheme)
+        {
+        case Scheme::HTTP:
+            config.scheme = Aws::Http::Scheme::HTTP;
+            break;
+        case Scheme::HTTPS:
+            config.scheme = Aws::Http::Scheme::HTTPS;
+            break;
+            break;
+        }
+    }
+
+    // default timeout
+    config.connectTimeoutMs = 5000;
+    config.requestTimeoutMs = 15000;
+
+    auto aws_credentials = [&]() -> Aws::Auth::AWSCredentials {
+        if (m_sessionToken.has_value())
+        {
+            return {m_accessKeyId, m_secretKey, *m_sessionToken};
+        }
+        else
+        {
+            return {m_accessKeyId, m_secretKey};
+        }
+    }();
+
+    // Create the S3 client
+    Aws::S3::S3Client s3_client(
+        aws_credentials,
+        config,
+        Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never,
+        false);
+
+    // Create the AWS storage backend
+    return ExternalBlockStorage{std::make_unique<ExternalBlockStorageAws>(
+        std::move(s3_client), std::move(m_bucketName))};
 }
 } // namespace openPMD::internal
 
@@ -146,6 +261,15 @@ auto ExternalBlockStorage::makeStdioSession(std::string directory)
     -> internal::StdioBuilder
 {
     return internal::StdioBuilder{std::move(directory)};
+}
+
+template <typename... Args>
+auto ExternalBlockStorage::makeAwsSession(
+    std::string bucketName, std::string accessKeyId, std::string secretKey)
+    -> internal::AwsBuilder
+{
+    return internal::AwsBuilder(
+        std::move(bucketName), std::move(accessKeyId), std::move(secretKey));
 }
 
 template <typename DatatypeHandling, typename T>
