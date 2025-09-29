@@ -1,6 +1,8 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/toolkit/AwsBuilder.hpp"
+#include "openPMD/toolkit/StdioBuilder.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -23,49 +25,6 @@ struct ExternalBlockStorageBackend
     put(std::string const &identifier, void const *data, size_t len)
         -> std::string = 0;
     virtual ~ExternalBlockStorageBackend();
-};
-
-struct StdioBuilder
-{
-    std::string m_directory;
-    std::optional<std::string> m_openMode = std::nullopt;
-
-    auto setDirectory(std::string directory) -> StdioBuilder &;
-    auto setOpenMode(std::string openMode) -> StdioBuilder &;
-
-    operator ExternalBlockStorage();
-    auto build() -> ExternalBlockStorage;
-};
-
-struct AwsBuilder
-{
-    AwsBuilder(
-        std::string bucketName, std::string accessKeyId, std::string secretKey);
-
-    enum class Scheme : uint8_t
-    {
-        HTTP,
-        HTTPS
-    };
-    std::string m_bucketName;
-    std::string m_accessKeyId;
-    std::string m_secretKey;
-    std::optional<std::string> m_sessionToken;
-    std::initializer_list<std::string> m_credentials;
-    std::optional<std::string> m_endpointOverride;
-    std::optional<std::string> m_region;
-    std::optional<Scheme> m_scheme;
-
-    auto setBucketName(std::string bucketName) -> AwsBuilder &;
-    auto setCredentials(std::string accessKeyId, std::string secretKey)
-        -> AwsBuilder &;
-    auto setSessionToken(std::string sessionToken) -> AwsBuilder &;
-    auto setEndpointOverride(std::string endpoint) -> AwsBuilder &;
-    auto setRegion(std::string regionName) -> AwsBuilder &;
-    auto setScheme(Scheme s) -> AwsBuilder &;
-
-    operator ExternalBlockStorage();
-    auto build() -> ExternalBlockStorage;
 };
 } // namespace openPMD::internal
 

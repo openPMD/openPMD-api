@@ -1,11 +1,11 @@
 
 #include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
-#include "openPMD/toolkit/ExternalBlockStorage_internal.hpp"
-
 #include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/toolkit/Aws.hpp"
+#include "openPMD/toolkit/Stdio.hpp"
 
 #include <aws/core/auth/AWSCredentials.h>
 #include <aws/core/auth/signer/AWSAuthV4Signer.h>
