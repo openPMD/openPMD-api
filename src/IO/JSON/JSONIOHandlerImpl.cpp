@@ -33,6 +33,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/toml11_wrapper.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/toolkit/ExternalBlockStorage.hpp"
@@ -44,6 +45,7 @@
 #include <exception>
 #include <iostream>
 #include <optional>
+#include <variant>
 
 namespace openPMD
 {
@@ -258,15 +260,74 @@ namespace internal
     }
 } // namespace internal
 
+namespace
+{
+    void parse_internal_mode(
+        nlohmann::json const &mode_j,
+        std::string const &configLocation,
+        JSONIOHandlerImpl::DatasetMode_s &res)
+    {
+        using DatasetMode = JSONIOHandlerImpl::DatasetMode;
+        using SpecificationVia = JSONIOHandlerImpl::SpecificationVia;
+
+        DatasetMode &ioMode = res.m_mode;
+        SpecificationVia &specificationVia = res.m_specificationVia;
+        bool &skipWarnings = res.m_skipWarnings;
+
+        auto modeOption = openPMD::json::asLowerCaseStringDynamic(mode_j);
+        if (!modeOption.has_value())
+        {
+            throw error::BackendConfigSchema(
+                {configLocation, "mode"},
+                "Invalid value of non-string type (accepted values are "
+                "'dataset' and 'template'.");
+        }
+        auto mode = modeOption.value();
+        if (mode == "dataset")
+        {
+            ioMode = DatasetMode::Dataset;
+            specificationVia = SpecificationVia::Manually;
+        }
+        else if (mode == "template")
+        {
+            ioMode = DatasetMode::Template;
+            specificationVia = SpecificationVia::Manually;
+        }
+        else if (mode == "template_no_warn")
+        {
+            ioMode = DatasetMode::Template;
+            specificationVia = SpecificationVia::Manually;
+            skipWarnings = true;
+        }
+        else
+        {
+            throw error::BackendConfigSchema(
+                {configLocation, "dataset", "mode"},
+                "Invalid value: '" + mode +
+                    "' (accepted values are 'dataset' and 'template'.");
+        }
+    }
+    void parse_external_mode(
+        [[maybe_unused]] json::TracingJSON mode,
+        [[maybe_unused]] std::string const &configLocation,
+        JSONIOHandlerImpl::DatasetMode_s &res)
+    {
+        using SpecificationVia = JSONIOHandlerImpl::SpecificationVia;
+
+        res.m_mode = std::make_shared<ExternalBlockStorage>(
+            ExternalBlockStorage::makeStdioSession("./external_blocks"));
+        res.m_specificationVia = SpecificationVia::Manually;
+    }
+} // namespace
+
 auto JSONIOHandlerImpl::retrieveDatasetMode(
     openPMD::json::TracingJSON &config) const -> DatasetMode_s
 {
     // start with / copy from current config
     auto res = m_datasetMode;
-    DatasetMode &ioMode = res.m_mode;
-    SpecificationVia &specificationVia = res.m_specificationVia;
-    bool &skipWarnings = res.m_skipWarnings;
-    if (auto [configLocation, maybeConfig] = getBackendConfig(config);
+
+    if (auto [configLocation, maybeConfig] =
+            getBackendConfig(config, backendConfigKey());
         maybeConfig.has_value())
     {
         auto jsonConfig = maybeConfig.value();
@@ -275,38 +336,14 @@ auto JSONIOHandlerImpl::retrieveDatasetMode(
             auto datasetConfig = jsonConfig["dataset"];
             if (datasetConfig.json().contains("mode"))
             {
-                auto modeOption = openPMD::json::asLowerCaseStringDynamic(
-                    datasetConfig["mode"].json());
-                if (!modeOption.has_value())
+                auto mode = datasetConfig["mode"];
+                if (mode.json().is_object())
                 {
-                    throw error::BackendConfigSchema(
-                        {configLocation, "mode"},
-                        "Invalid value of non-string type (accepted values are "
-                        "'dataset' and 'template'.");
-                }
-                auto mode = modeOption.value();
-                if (mode == "dataset")
-                {
-                    ioMode = DatasetMode::Dataset;
-                    specificationVia = SpecificationVia::Manually;
-                }
-                else if (mode == "template")
-                {
-                    ioMode = DatasetMode::Template;
-                    specificationVia = SpecificationVia::Manually;
-                }
-                else if (mode == "template_no_warn")
-                {
-                    ioMode = DatasetMode::Template;
-                    specificationVia = SpecificationVia::Manually;
-                    skipWarnings = true;
+                    parse_external_mode(std::move(mode), configLocation, res);
                 }
                 else
                 {
-                    throw error::BackendConfigSchema(
-                        {configLocation, "dataset", "mode"},
-                        "Invalid value: '" + mode +
-                            "' (accepted values are 'dataset' and 'template'.");
+                    parse_internal_mode(mode.json(), configLocation, res);
                 }
             }
         }
@@ -378,7 +415,13 @@ std::string JSONIOHandlerImpl::backendConfigKey() const
 std::pair<std::string, std::optional<openPMD::json::TracingJSON>>
 JSONIOHandlerImpl::getBackendConfig(openPMD::json::TracingJSON &config) const
 {
-    std::string configLocation = backendConfigKey();
+    return getBackendConfig(config, backendConfigKey());
+}
+
+std::pair<std::string, std::optional<openPMD::json::TracingJSON>>
+JSONIOHandlerImpl::getBackendConfig(
+    openPMD::json::TracingJSON &config, std::string const &configLocation)
+{
     if (config.json().contains(configLocation))
     {
         return std::make_pair(
@@ -445,9 +488,6 @@ void JSONIOHandlerImpl::init(openPMD::json::TracingJSON config)
         (void)_;
         warnUnusedJson(backendConfig.value());
     }
-
-    externalBlockStorage =
-        ExternalBlockStorage::makeStdioSession("./external_blocks/");
 }
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
@@ -643,47 +683,51 @@ void JSONIOHandlerImpl::createDataset(
         auto &dset = jsonVal[name];
         dset["datatype"] = internal::jsonDatatypeToString(parameter.dtype);
 
-        switch (localMode)
-        {
-        case DatasetMode::Dataset: {
-            auto extent = parameter.extent;
-            switch (parameter.dtype)
-            {
-            case Datatype::CFLOAT:
-            case Datatype::CDOUBLE:
-            case Datatype::CLONG_DOUBLE: {
-                extent.push_back(2);
-                break;
-            }
-            default:
-                break;
-            }
-            if (parameter.extent.size() != 1 ||
-                parameter.extent[0] != Dataset::UNDEFINED_EXTENT)
-            {
-                // TOML does not support nulls, so initialize with zero
-                dset["data"] = initializeNDArray(
-                    extent,
-                    m_fileFormat == FileFormat::Json ? std::optional<Datatype>{}
-                                                     : parameter.dtype);
-            }
-            break;
-        }
-        case DatasetMode::Template:
-            if (parameter.extent != Extent{0} &&
-                parameter.extent[0] != Dataset::UNDEFINED_EXTENT)
-            {
-                dset["extent"] = parameter.extent;
-            }
-            else
-            {
-                // no-op
-                // If extent is empty or no datatype is defined, don't bother
-                // writing it.
-                // The datatype is written above anyway.
-            }
-            break;
-        }
+        std::visit(
+            auxiliary::overloaded{
+                [&](DatasetMode::Dataset_t const &) {
+                    auto extent = parameter.extent;
+                    switch (parameter.dtype)
+                    {
+                    case Datatype::CFLOAT:
+                    case Datatype::CDOUBLE:
+                    case Datatype::CLONG_DOUBLE: {
+                        extent.push_back(2);
+                        break;
+                    }
+                    default:
+                        break;
+                    }
+                    if (parameter.extent.size() != 1 ||
+                        parameter.extent[0] != Dataset::UNDEFINED_EXTENT)
+                    {
+                        // TOML does not support nulls, so initialize with zero
+                        dset["data"] = initializeNDArray(
+                            extent,
+                            m_fileFormat == FileFormat::Json
+                                ? std::optional<Datatype>{}
+                                : parameter.dtype);
+                    }
+                },
+                [&](DatasetMode::Template_t const &) {
+                    if (parameter.extent != Extent{0} &&
+                        parameter.extent[0] != Dataset::UNDEFINED_EXTENT)
+                    {
+                        dset["extent"] = parameter.extent;
+                    }
+                    else
+                    {
+                        // no-op
+                        // If extent is empty or no datatype is defined, don't
+                        // bother writing it. The datatype is written above
+                        // anyway.
+                    }
+                },
+                [&](DatasetMode::External_t const &) {
+                    dset["extent"] = parameter.extent;
+                }},
+            localMode.as_base());
+
         writable->written = true;
         m_dirty.emplace(file);
     }
@@ -733,7 +777,8 @@ void JSONIOHandlerImpl::extendDataset(
     try
     {
         Extent datasetExtent;
-        std::tie(datasetExtent, localIOMode) = getExtent(j);
+        std::tie(datasetExtent, localIOMode) =
+            getExtent(j, m_datasetMode.m_mode);
         VERIFY_ALWAYS(
             datasetExtent.size() == parameters.extent.size(),
             "[JSON] Cannot change dimensionality of a dataset")
@@ -751,38 +796,40 @@ void JSONIOHandlerImpl::extendDataset(
             "[JSON] The specified location contains no valid dataset");
     }
 
-    switch (localIOMode)
-    {
-    case DatasetMode::Dataset: {
-        auto extent = parameters.extent;
-        auto datatype = stringToDatatype(j["datatype"].get<std::string>());
-        switch (datatype)
-        {
-        case Datatype::CFLOAT:
-        case Datatype::CDOUBLE:
-        case Datatype::CLONG_DOUBLE: {
-            extent.push_back(2);
-            break;
-        }
-        default:
-            // nothing to do
-            break;
-        }
-        // TOML does not support nulls, so initialize with zero
-        nlohmann::json newData = initializeNDArray(
-            extent,
-            m_fileFormat == FileFormat::Json ? std::optional<Datatype>{}
-                                             : datatype);
-        nlohmann::json &oldData = j["data"];
-        mergeInto(newData, oldData);
-        j["data"] = newData;
-    }
-    break;
-    case DatasetMode::Template: {
-        j["extent"] = parameters.extent;
-    }
-    break;
-    }
+    std::visit(
+        auxiliary::overloaded{
+            [&](DatasetMode::Dataset_t const &) {
+                auto extent = parameters.extent;
+                auto datatype =
+                    stringToDatatype(j["datatype"].get<std::string>());
+                switch (datatype)
+                {
+                case Datatype::CFLOAT:
+                case Datatype::CDOUBLE:
+                case Datatype::CLONG_DOUBLE: {
+                    extent.push_back(2);
+                    break;
+                }
+                default:
+                    // nothing to do
+                    break;
+                }
+                // TOML does not support nulls, so initialize with zero
+                nlohmann::json newData = initializeNDArray(
+                    extent,
+                    m_fileFormat == FileFormat::Json ? std::optional<Datatype>{}
+                                                     : datatype);
+                nlohmann::json &oldData = j["data"];
+                mergeInto(newData, oldData);
+                j["data"] = newData;
+            },
+            [&](DatasetMode::Template_t const &) {
+                j["extent"] = parameters.extent;
+            },
+            [&](DatasetMode::External_t const &) {
+                j["extent"] = parameters.extent;
+            }},
+        localIOMode.as_base());
 
     writable->written = true;
 }
@@ -978,7 +1025,7 @@ void JSONIOHandlerImpl::openDataset(
 
     *parameters.dtype =
         Datatype(stringToDatatype(datasetJson["datatype"].get<std::string>()));
-    *parameters.extent = getExtent(datasetJson).first;
+    *parameters.extent = getExtent(datasetJson, m_datasetMode.m_mode).first;
     writable->written = true;
 }
 
@@ -1200,49 +1247,49 @@ void JSONIOHandlerImpl::writeDataset(
     auto &jsonRoot = *obtainJsonContents(file);
     auto &j = jsonRoot[filePosition->id];
 
-    switch (verifyDataset(parameters, j))
-    {
-    case DatasetMode::Dataset:
-        break;
-    case DatasetMode::Template: {
-        std::optional<std::string> rankInfix;
+    std::visit(
+        auxiliary::overloaded{
+            [&](DatasetMode::Dataset_t const &) {
+                switchType<DatasetWriter>(parameters.dtype, j, parameters);
+            },
+            [&](DatasetMode::Template_t const &) {
+                if (!m_datasetMode.m_skipWarnings)
+                {
+                    std::cerr << "[JSON/TOML backend: Warning] Trying to write "
+                                 "data to a "
+                                 "template dataset. Will skip."
+                              << '\n';
+                    m_datasetMode.m_skipWarnings = true;
+                }
+            },
+            [&](DatasetMode::External_t const &external) {
+                std::optional<std::string> rankInfix;
 #if openPMD_HAVE_MPI
-        if (m_communicator.has_value())
-        {
-            auto &comm = *m_communicator;
-            // TODO maybe cache the result for this computation
-            int rank, size;
-            MPI_Comm_rank(comm, &rank);
-            MPI_Comm_size(comm, &size);
-            std::stringstream s;
-            s << "r";
-            write_rank_to_stream_with_sufficient_padding(s, rank, size);
-            rankInfix = s.str();
-        }
+                if (m_communicator.has_value())
+                {
+                    auto &comm = *m_communicator;
+                    // TODO maybe cache the result for this computation
+                    int rank, size;
+                    MPI_Comm_rank(comm, &rank);
+                    MPI_Comm_size(comm, &size);
+                    std::stringstream s;
+                    s << "r";
+                    write_rank_to_stream_with_sufficient_padding(s, rank, size);
+                    rankInfix = s.str();
+                }
 #endif
-        switchDatasetType<StoreExternally>(
-            parameters.dtype,
-            externalBlockStorage,
-            parameters.data.get(),
-            j.at("extent").get<Extent>(),
-            parameters.offset,
-            parameters.extent,
-            jsonRoot,
-            filePosition->id,
-            std::move(rankInfix));
-        // if (!m_datasetMode.m_skipWarnings)
-        // {
-        //     std::cerr
-        //         << "[JSON/TOML backend: Warning] Trying to write data to a "
-        //            "template dataset. Will skip."
-        //         << '\n';
-        //     m_datasetMode.m_skipWarnings = true;
-        // }
-        return;
-    }
-    }
-
-    switchType<DatasetWriter>(parameters.dtype, j, parameters);
+                switchDatasetType<StoreExternally>(
+                    parameters.dtype,
+                    *external,
+                    parameters.data.get(),
+                    j.at("extent").get<Extent>(),
+                    parameters.offset,
+                    parameters.extent,
+                    jsonRoot,
+                    filePosition->id,
+                    std::move(rankInfix));
+            }},
+        verifyDataset(parameters, j).as_base());
 
     writable->written = true;
 }
@@ -1321,30 +1368,35 @@ void JSONIOHandlerImpl::readDataset(
     auto &j = obtainJsonContents(writable);
     DatasetMode localMode = verifyDataset(parameters, j);
 
-    switch (localMode)
-    {
-    case DatasetMode::Template:
-        std::cerr << "[Warning] Cannot read chunks in Template mode of JSON "
-                     "backend. Will fill with zeroes instead."
-                  << '\n';
-        switchNonVectorType<FillWithZeroes>(
-            parameters.dtype, parameters.data.get(), parameters.extent);
-        return;
-    case DatasetMode::Dataset:
-        try
-        {
-            switchType<DatasetReader>(parameters.dtype, j["data"], parameters);
-        }
-        catch (json::basic_json::type_error &)
-        {
-            throw error::ReadError(
-                error::AffectedObject::Dataset,
-                error::Reason::UnexpectedContent,
-                "JSON",
-                "The given path does not contain a valid dataset.");
-        }
-        break;
-    }
+    std::visit(
+        auxiliary::overloaded{
+            [&](DatasetMode::Dataset_t const &) {
+                try
+                {
+                    switchType<DatasetReader>(
+                        parameters.dtype, j["data"], parameters);
+                }
+                catch (json::basic_json::type_error &)
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::Dataset,
+                        error::Reason::UnexpectedContent,
+                        "JSON",
+                        "The given path does not contain a valid dataset.");
+                }
+            },
+            [&](DatasetMode::Template_t const &) {
+                std::cerr
+                    << "[Warning] Cannot read chunks in Template mode of JSON "
+                       "backend. Will fill with zeroes instead."
+                    << '\n';
+                switchNonVectorType<FillWithZeroes>(
+                    parameters.dtype, parameters.data.get(), parameters.extent);
+            },
+            [&](DatasetMode::External_t const &) {
+                throw std::runtime_error("Unimplemented");
+            }},
+        localMode.as_base());
 }
 
 namespace
@@ -1875,7 +1927,8 @@ Extent JSONIOHandlerImpl::getMultiplicators(Extent const &extent)
     return res;
 }
 
-auto JSONIOHandlerImpl::getExtent(nlohmann::json &j)
+auto JSONIOHandlerImpl::getExtent(
+    nlohmann::json &j, DatasetMode const &baseMode)
     -> std::pair<Extent, DatasetMode>
 {
     Extent res;
@@ -1904,7 +1957,10 @@ auto JSONIOHandlerImpl::getExtent(nlohmann::json &j)
     }
     else if (j.contains("extent"))
     {
-        ioMode = DatasetMode::Template;
+        ioMode =
+            std::holds_alternative<DatasetMode::External_t>(baseMode.as_base())
+            ? baseMode
+            : DatasetMode{DatasetMode::Template};
         res = j["extent"].get<Extent>();
     }
     else
@@ -2147,18 +2203,25 @@ auto JSONIOHandlerImpl::putJsonContents(
         return it;
     }
 
-    switch (m_datasetMode.m_mode)
-    {
-    case DatasetMode::Dataset:
-        (*it->second)["platform_byte_widths"] = platformSpecifics();
-        (*it->second)[JSONDefaults::openpmd_internal]
-                     [JSONDefaults::DatasetMode] = "dataset";
-        break;
-    case DatasetMode::Template:
-        (*it->second)[JSONDefaults::openpmd_internal]
-                     [JSONDefaults::DatasetMode] = "template";
-        break;
-    }
+    std::visit(
+        auxiliary::overloaded{
+            [&](DatasetMode::Dataset_t const &) {
+                (*it->second)["platform_byte_widths"] = platformSpecifics();
+                (*it->second)[JSONDefaults::openpmd_internal]
+                             [JSONDefaults::DatasetMode] = "dataset";
+            },
+            [&](DatasetMode::Template_t const &) {
+                (*it->second)[JSONDefaults::openpmd_internal]
+                             [JSONDefaults::DatasetMode] = "template";
+            },
+            [&](DatasetMode::External_t const &external) {
+                (*it->second)["platform_byte_widths"] = platformSpecifics();
+                (*it->second)["external_storage"] =
+                    external->externalStorageLocation();
+                (*it->second)[JSONDefaults::openpmd_internal]
+                             [JSONDefaults::DatasetMode] = "external";
+            }},
+        m_datasetMode.m_mode.as_base());
 
     switch (m_attributeMode.m_mode)
     {
@@ -2387,7 +2450,7 @@ auto JSONIOHandlerImpl::verifyDataset(
     try
     {
         Extent datasetExtent;
-        std::tie(datasetExtent, res) = getExtent(j);
+        std::tie(datasetExtent, res) = getExtent(j, m_datasetMode.m_mode);
         VERIFY_ALWAYS(
             datasetExtent.size() == parameters.extent.size(),
             "[JSON] Read/Write request does not fit the dataset's dimension");

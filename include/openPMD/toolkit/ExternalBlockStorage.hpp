@@ -71,6 +71,11 @@ public:
         std::optional<std::string> infix, // e.g. for distinguishing MPI ranks
         T const *data) -> std::string;
 
+    auto externalStorageLocation() const -> nlohmann::json
+    {
+        return "implement me";
+    }
+
     static void sanitizeString(std::string &s);
 };
 
