@@ -10,15 +10,19 @@
 #include <aws/core/auth/AWSCredentials.h>
 #include <aws/core/auth/signer/AWSAuthV4Signer.h>
 #include <aws/core/http/Scheme.h>
+#include <aws/core/utils/memory/stl/AWSStreamFwd.h>
+#include <aws/s3/model/CreateBucketRequest.h>
+#include <aws/s3/model/PutObjectRequest.h>
 
 #include <cstdio>
+#include <istream>
 #include <memory>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
+#include <streambuf>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace
 {
@@ -82,7 +86,7 @@ ExternalBlockStorageStdio::~ExternalBlockStorageStdio() = default;
 auto ExternalBlockStorageStdio::put(
     std::string const &identifier, void const *data, size_t len) -> std::string
 {
-    auto sanitized = identifier;
+    auto sanitized = identifier + ".dat";
     ExternalBlockStorage::sanitizeString(sanitized);
     std::string filepath = concat_filepath(m_directory, sanitized);
 
@@ -131,8 +135,73 @@ auto StdioBuilder::setOpenMode(std::string openMode) -> StdioBuilder &
 ExternalBlockStorageAws::ExternalBlockStorageAws(
     Aws::S3::S3Client client, std::string bucketName)
     : m_client{std::move(client)}, m_bucketName(std::move(bucketName))
-{}
+{
+    Aws::S3::Model::CreateBucketRequest create_request;
+    create_request.SetBucket(m_bucketName);
+    auto create_outcome = m_client.CreateBucket(create_request);
+    if (!create_outcome.IsSuccess())
+    {
+        std::cerr << "[ExternalBlockStorageAws::ExternalBlockStorageAws] "
+                     "Warning: Failed to create bucket (may already exist): "
+                  << create_outcome.GetError().GetMessage() << std::endl;
+    }
+    else
+    {
+        std::cout << "Bucket created: " << m_bucketName << std::endl;
+    }
+}
 ExternalBlockStorageAws::~ExternalBlockStorageAws() = default;
+
+namespace
+{
+    struct membuf : std::streambuf
+    {
+        membuf(char const *base, std::size_t size)
+        {
+            // hm hm
+            auto p = const_cast<char *>(base);
+            this->setg(p, p, p + size); // setup get area
+        }
+    };
+
+    struct imemstream : std::iostream
+    {
+        imemstream(char const *base, std::size_t size)
+            : std::iostream(&m_buf), m_buf(base, size)
+        {}
+
+    private:
+        membuf m_buf;
+    };
+} // namespace
+
+auto ExternalBlockStorageAws::put(
+    std::string const &identifier, void const *data, size_t len) -> std::string
+{
+    auto sanitized = identifier;
+    ExternalBlockStorage::sanitizeString(sanitized);
+
+    Aws::S3::Model::PutObjectRequest put_request;
+    put_request.SetBucket(m_bucketName);
+    put_request.SetKey(sanitized);
+
+    auto input_data = Aws::MakeShared<imemstream>(
+        "PutObjectInputStream", reinterpret_cast<char const *>(data), len);
+    std::static_pointer_cast<Aws::IOStream>(input_data);
+
+    auto put_outcome = m_client.PutObject(put_request);
+
+    if (put_outcome.IsSuccess())
+    {
+        std::cout << "File uploaded successfully to S3!" << std::endl;
+    }
+    else
+    {
+        std::cerr << "Upload failed: " << put_outcome.GetError().GetMessage()
+                  << std::endl;
+    }
+    return sanitized;
+}
 
 AwsBuilder::AwsBuilder(
     std::string bucketName, std::string accessKeyId, std::string secretKey)
@@ -263,7 +332,6 @@ auto ExternalBlockStorage::makeStdioSession(std::string directory)
     return internal::StdioBuilder{std::move(directory)};
 }
 
-template <typename... Args>
 auto ExternalBlockStorage::makeAwsSession(
     std::string bucketName, std::string accessKeyId, std::string secretKey)
     -> internal::AwsBuilder
@@ -360,7 +428,7 @@ auto ExternalBlockStorage::store(
     block["offset"] = blockOffset;
     block["extent"] = blockExtent;
     std::stringstream filesystem_identifier;
-    filesystem_identifier << path.to_string() << "--" << index_as_str << ".dat";
+    filesystem_identifier << path.to_string() << "--" << index_as_str;
     auto escaped_filesystem_identifier = m_worker->put(
         filesystem_identifier.str(),
         data,

@@ -2,7 +2,6 @@
 
 #include "openPMD/Dataset.hpp"
 
-#include <initializer_list>
 #include <nlohmann/json.hpp>
 
 #include <cstddef>
@@ -40,10 +39,6 @@ struct StdioBuilder
 
 struct AwsBuilder
 {
-    struct init_credentials_tag_t
-    {};
-    static constexpr init_credentials_tag_t init_credentials_tag = {};
-
     AwsBuilder(
         std::string bucketName, std::string accessKeyId, std::string secretKey);
 
@@ -102,7 +97,6 @@ public:
 
     static auto makeStdioSession(std::string directory)
         -> internal::StdioBuilder;
-    template <typename... Args>
     static auto makeAwsSession(
         std::string bucketName, std::string accessKeyId, std::string secretKey)
         -> internal::AwsBuilder;
