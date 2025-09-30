@@ -28,7 +28,6 @@
 #include "openPMD/backend/Container.hpp"
 
 #include <array>
-#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits> // std::remove_reference_t
