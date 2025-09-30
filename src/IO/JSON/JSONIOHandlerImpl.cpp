@@ -307,15 +307,123 @@ namespace
                     "' (accepted values are 'dataset' and 'template'.");
         }
     }
+
+    template <typename T, typename OrElse>
+    auto optionalOrElse(std::optional<T> o, OrElse &&orElse) -> T
+    {
+        if (o.has_value())
+        {
+            return *std::move(o);
+        }
+        else
+        {
+            return std::forward<OrElse>(orElse)();
+        }
+    }
+
     void parse_external_mode(
-        [[maybe_unused]] json::TracingJSON mode,
-        [[maybe_unused]] std::string const &configLocation,
+        json::TracingJSON mode,
+        std::string const &configLocation,
         JSONIOHandlerImpl::DatasetMode_s &res)
     {
         using SpecificationVia = JSONIOHandlerImpl::SpecificationVia;
+        using ExternalBlockStorage = openPMD::ExternalBlockStorage;
 
-        res.m_mode = std::make_shared<ExternalBlockStorage>(
-            ExternalBlockStorage::makeStdioSession("./external_blocks"));
+        auto get_mandatory = [&](char const *key,
+                                 bool lowercase) -> std::string {
+            if (!mode.json().contains(key))
+            {
+                throw error::BackendConfigSchema(
+                    {configLocation, "mode", key}, "Mandatory key.");
+            }
+            auto const &val = mode.json({key});
+            return optionalOrElse(
+                lowercase ? openPMD::json::asLowerCaseStringDynamic(val)
+                          : openPMD::json::asStringDynamic(val),
+                [&]() -> std::string {
+                    throw error::BackendConfigSchema(
+                        {configLocation, "mode", key},
+                        "Must be of string type.");
+                });
+        };
+        auto if_contains_optional =
+            [&](char const *key, bool lowercase, auto &&then) {
+                if (!mode.json().contains(key))
+                {
+                    return;
+                }
+                auto const &val = mode.json({key});
+                static_cast<decltype(then)>(then)(optionalOrElse(
+                    lowercase ? openPMD::json::asLowerCaseStringDynamic(val)
+                              : openPMD::json::asStringDynamic(val),
+                    [&]() -> std::string {
+                        throw error::BackendConfigSchema(
+                            {configLocation, "mode", key},
+                            "Must be of string type.");
+                    }));
+            };
+        auto modeString = get_mandatory("type", true);
+
+        if (modeString == "stdio")
+        {
+            auto builder = ExternalBlockStorage::makeStdioSession(
+                get_mandatory("directory", false));
+
+            if_contains_optional("open_mode", false, [&](std::string openMode) {
+                builder.setOpenMode(std::move(openMode));
+            });
+
+            res.m_mode =
+                std::make_shared<ExternalBlockStorage>(builder.build());
+        }
+        else if (modeString == "aws")
+        {
+            openPMD::internal::AwsBuilder builder(
+                get_mandatory("bucket_name", false),
+                get_mandatory("access_key_id", false),
+                get_mandatory("secret_access_key", false));
+
+            if_contains_optional(
+                "session_token", false, [&](std::string sessionToken) {
+                    builder.setSessionToken(std::move(sessionToken));
+                });
+            if_contains_optional(
+                "endpoint", false, [&](std::string endpointOverride) {
+                    builder.setEndpointOverride(std::move(endpointOverride));
+                });
+            if_contains_optional("region", false, [&](std::string region) {
+                builder.setRegion(std::move(region));
+            });
+            if_contains_optional(
+                "scheme", true, [&](std::string const &scheme) {
+                    if (scheme == "http")
+                    {
+                        builder.setScheme(
+                            openPMD::internal::AwsBuilder::Scheme::HTTP);
+                    }
+                    else if (scheme == "https")
+                    {
+                        builder.setScheme(
+                            openPMD::internal::AwsBuilder::Scheme::HTTPS);
+                    }
+                    else
+                    {
+                        throw error::BackendConfigSchema(
+                            {configLocation, "mode", "scheme"},
+                            "Must be either 'http' or 'https'.");
+                    }
+                });
+
+            res.m_mode =
+                std::make_shared<ExternalBlockStorage>(builder.build());
+        }
+        else
+        {
+            throw error::BackendConfigSchema(
+                {configLocation, "mode", "type"},
+                "Must be either 'stdio' or 'aws'.");
+        }
+
         res.m_specificationVia = SpecificationVia::Manually;
     }
 } // namespace
