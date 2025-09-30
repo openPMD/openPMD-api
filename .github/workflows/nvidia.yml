@@ -33,7 +33,7 @@ jobs:
 
   tests-nvhpc25-1-nvcc:
     name: NVHPC@25.1
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     # Catch warnings:
     #   line 4314: error: variable "<unnamed>::autoRegistrar73" was declared but never referenced
