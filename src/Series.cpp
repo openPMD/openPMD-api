@@ -48,6 +48,8 @@
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include "openPMD/version.hpp"
 
+#include <aws/core/Aws.h>
+
 #include <algorithm>
 #include <cctype>
 #include <chrono>
@@ -1087,38 +1089,25 @@ void Series::init(
     }
 }
 
-template <typename TracingJSON, typename... MPI_Communicator>
-auto Series::initIOHandler(
-    std::string const &filepath,
-    std::string const &options,
-    Access at,
-    bool resolve_generic_extension,
-    MPI_Communicator &&...comm)
-    -> std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
+namespace
 {
-    auto &series = get();
-
-    json::TracingJSON optionsJson = json::parseOptions(
-        options,
-        std::forward<MPI_Communicator>(comm)...,
-        /* considerFiles = */ true);
-    auto input = parseInput(filepath);
-    if (resolve_generic_extension && input->format == Format::GENERIC &&
-        !access::create(at))
+    template <typename ParsedInput_t>
+    void do_resolve_generic_extension_read(
+        ParsedInput_t &input, std::string const &filepath, Access at)
     {
         auto isPartOfSeries =
-            input->iterationEncoding == IterationEncoding::fileBased
+            input.iterationEncoding == IterationEncoding::fileBased
             ? matcher(
-                  input->filenamePrefix,
-                  input->filenamePadding,
-                  input->filenamePostfix,
+                  input.filenamePrefix,
+                  input.filenamePadding,
+                  input.filenamePostfix,
                   std::nullopt)
-            : matcher(input->name, -1, "", std::nullopt);
+            : matcher(input.name, -1, "", std::nullopt);
         std::optional<std::string> extension;
         std::set<std::string> additional_extensions;
         autoDetectPadding(
             isPartOfSeries,
-            input->path,
+            input.path,
             [&extension,
              &additional_extensions](std::string const &, Match const &match) {
                 auto const &ext = match.extension.value();
@@ -1151,8 +1140,8 @@ auto Series::initIOHandler(
                     std::nullopt,
                     error.str());
             }
-            input->filenameExtension = *extension;
-            input->format = determineFormat(*extension);
+            input.filenameExtension = *extension;
+            input.format = determineFormat(*extension);
         }
         else if (access::read(at))
         {
@@ -1164,30 +1153,68 @@ auto Series::initIOHandler(
         }
     }
 
+    template <typename ParsedInput_t>
+    void do_resolve_generic_extension_write(ParsedInput_t &input)
+    {
+        {
+            if (input.format == /* still */ Format::GENERIC)
+            {
+                throw error::WrongAPIUsage(
+                    "Unable to automatically determine filename extension. "
+                    "Please "
+                    "specify in some way.");
+            }
+            else if (input.format == Format::ADIOS2_BP)
+            {
+                // Since ADIOS2 has multiple extensions depending on the engine,
+                // we need to pass this job on to the backend
+                input.filenameExtension = ".%E";
+            }
+            else
+            {
+                input.filenameExtension = suffix(input.format);
+            }
+        }
+    }
+} // namespace
+
+template <typename TracingJSON, typename... MPI_Communicator>
+auto Series::initIOHandler(
+    std::string const &filepath,
+    std::string const &options,
+    Access at,
+    bool resolve_generic_extension,
+    MPI_Communicator &&...comm)
+    -> std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
+{
+    auto &series = get();
+
+    json::TracingJSON optionsJson = json::parseOptions(
+        options,
+        std::forward<MPI_Communicator>(comm)...,
+        /* considerFiles = */ true);
+    auto input = parseInput(filepath);
+
+    if (resolve_generic_extension && input->format == Format::GENERIC &&
+        !access::create(at))
+    {
+        do_resolve_generic_extension_read(*input, filepath, at);
+    }
+
     // default options
     series.m_parseLazily = at == Access::READ_LINEAR;
 
     // now check for user-specified options
     parseJsonOptions(optionsJson, *input);
 
+    if (series.m_manageAwsAPI.has_value())
+    {
+        Aws::InitAPI(*series.m_manageAwsAPI);
+    }
+
     if (resolve_generic_extension && !input->filenameExtension.has_value())
     {
-        if (input->format == /* still */ Format::GENERIC)
-        {
-            throw error::WrongAPIUsage(
-                "Unable to automatically determine filename extension. Please "
-                "specify in some way.");
-        }
-        else if (input->format == Format::ADIOS2_BP)
-        {
-            // Since ADIOS2 has multiple extensions depending on the engine,
-            // we need to pass this job on to the backend
-            input->filenameExtension = ".%E";
-        }
-        else
-        {
-            input->filenameExtension = suffix(input->format);
-        }
+        do_resolve_generic_extension_write(*input);
     }
     return std::make_tuple(std::move(input), std::move(optionsJson));
 }
@@ -3216,6 +3243,14 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
     {
         series.m_rankTable.m_rankTableSource = std::move(rankTableSource);
     }
+    {
+        bool doManageAwsAPI = false;
+        getJsonOption<bool>(options, "init_aws_api", doManageAwsAPI);
+        if (doManageAwsAPI)
+        {
+            series.m_manageAwsAPI = std::make_optional<Aws::SDKOptions>();
+        }
+    }
     // backend key
     {
         std::map<std::string, Format> const backendDescriptors{
@@ -3302,6 +3337,10 @@ namespace internal
         // we must not throw in a destructor
         try
         {
+            if (m_manageAwsAPI.has_value())
+            {
+                Aws::ShutdownAPI(*m_manageAwsAPI);
+            }
             close();
         }
         catch (std::exception const &ex)

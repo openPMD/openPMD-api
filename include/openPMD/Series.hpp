@@ -37,6 +37,7 @@
 #include "openPMD/config.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/version.hpp"
+#include <aws/core/Aws.h>
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -243,6 +244,8 @@ namespace internal
 
         std::optional<std::function<AbstractIOHandler *(Series &)>>
             m_deferred_initialization = std::nullopt;
+
+        std::optional<Aws::SDKOptions> m_manageAwsAPI = std::nullopt;
 
         void close();
 
