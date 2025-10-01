@@ -392,6 +392,8 @@ namespace
         else if (modeString == "aws")
         {
             openPMD::internal::AwsBuilder builder(
+                // TODO: bucket_name: introduce expansion pattern for openPMD
+                // file name
                 get_mandatory("bucket_name", false),
                 get_mandatory("access_key_id", false),
                 get_mandatory("secret_access_key", false));
