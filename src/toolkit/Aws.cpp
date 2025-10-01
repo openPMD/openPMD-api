@@ -30,8 +30,12 @@ private:
 namespace openPMD::internal
 {
 ExternalBlockStorageAws::ExternalBlockStorageAws(
-    Aws::S3::S3Client client, std::string bucketName)
-    : m_client{std::move(client)}, m_bucketName(std::move(bucketName))
+    Aws::S3::S3Client client,
+    std::string bucketName,
+    std::optional<std::string> endpoint)
+    : m_client{std::move(client)}
+    , m_bucketName(std::move(bucketName))
+    , m_endpoint(std::move(endpoint))
 {
     Aws::S3::Model::CreateBucketRequest create_request;
     create_request.SetBucket(m_bucketName);
@@ -75,6 +79,19 @@ auto ExternalBlockStorageAws::put(
                   << std::endl;
     }
     return sanitized;
+}
+
+[[nodiscard]] auto ExternalBlockStorageAws::externalStorageLocation() const
+    -> nlohmann::json
+{
+    nlohmann::json j;
+    j["provider"] = "s3";
+    if (m_endpoint.has_value())
+    {
+        j["endpoint"] = *m_endpoint;
+    }
+    j["bucket"] = m_bucketName;
+    return j;
 }
 
 } // namespace openPMD::internal

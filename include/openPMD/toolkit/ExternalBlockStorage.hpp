@@ -24,6 +24,9 @@ struct ExternalBlockStorageBackend
     virtual auto
     put(std::string const &identifier, void const *data, size_t len)
         -> std::string = 0;
+    [[nodiscard]] virtual auto externalStorageLocation() const
+        -> nlohmann::json = 0;
+
     virtual ~ExternalBlockStorageBackend();
 };
 } // namespace openPMD::internal
@@ -71,10 +74,7 @@ public:
         std::optional<std::string> infix, // e.g. for distinguishing MPI ranks
         T const *data) -> std::string;
 
-    auto externalStorageLocation() const -> nlohmann::json
-    {
-        return "implement me";
-    }
+    [[nodiscard]] auto externalStorageLocation() const -> nlohmann::json;
 
     static void sanitizeString(std::string &s);
 };

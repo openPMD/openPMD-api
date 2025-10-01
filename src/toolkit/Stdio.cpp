@@ -5,6 +5,39 @@
 #include <cstdio>
 #include <stdexcept>
 
+namespace
+{
+auto concat_filepath(std::string const &s1, std::string const &s2)
+    -> std::string
+{
+    if (s1.empty())
+    {
+        return s2;
+    }
+    if (s2.empty())
+    {
+        return s1;
+    }
+    bool ends_with_slash =
+        *s1.crbegin() == openPMD::auxiliary::directory_separator;
+    bool starts_with_slash =
+        *s2.cbegin() == openPMD::auxiliary::directory_separator;
+
+    if (ends_with_slash ^ starts_with_slash)
+    {
+        return s1 + s2;
+    }
+    else if (ends_with_slash && starts_with_slash)
+    {
+        return s1 + (s2.c_str() + 1);
+    }
+    else
+    {
+        return s1 + openPMD::auxiliary::directory_separator + s2;
+    }
+}
+} // namespace
+
 namespace openPMD::internal
 {
 ExternalBlockStorageStdio::ExternalBlockStorageStdio(
@@ -33,7 +66,7 @@ auto ExternalBlockStorageStdio::put(
 {
     auto sanitized = identifier + ".dat";
     ExternalBlockStorage::sanitizeString(sanitized);
-    std::string filepath = m_directory + "/" + sanitized;
+    std::string filepath = concat_filepath(m_directory, sanitized);
 
     if (len == 0)
     {
@@ -63,6 +96,16 @@ auto ExternalBlockStorageStdio::put(
             filepath);
     }
 
-    return filepath;
+    return sanitized;
+}
+
+[[nodiscard]] auto ExternalBlockStorageStdio::externalStorageLocation() const
+    -> nlohmann::json
+{
+    nlohmann::json j;
+    j["provider"] = "stdio";
+    j["directory"] = m_directory;
+    j["open_mode"] = m_openMode;
+    return j;
 }
 } // namespace openPMD::internal

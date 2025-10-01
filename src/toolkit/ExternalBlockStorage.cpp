@@ -134,6 +134,12 @@ auto ExternalBlockStorage::store(
     return index_as_str;
 }
 
+[[nodiscard]] auto ExternalBlockStorage::externalStorageLocation() const
+    -> nlohmann::json
+{
+    return m_worker->externalStorageLocation();
+}
+
 void ExternalBlockStorage::sanitizeString(std::string &s)
 {
     for (char &c : s)
