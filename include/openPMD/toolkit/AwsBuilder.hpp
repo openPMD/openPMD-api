@@ -30,6 +30,7 @@ struct AwsBuilder
     std::optional<std::string> m_endpointOverride;
     std::optional<std::string> m_region;
     std::optional<Scheme> m_scheme;
+    std::optional<bool> m_verifySSL;
 
     auto setBucketName(std::string bucketName) -> AwsBuilder &;
     auto setCredentials(std::string accessKeyId, std::string secretKey)
@@ -38,6 +39,7 @@ struct AwsBuilder
     auto setEndpointOverride(std::string endpoint) -> AwsBuilder &;
     auto setRegion(std::string regionName) -> AwsBuilder &;
     auto setScheme(Scheme s) -> AwsBuilder &;
+    auto setVerifySSL(bool verify) -> AwsBuilder &;
 
     operator ::openPMD::ExternalBlockStorage();
     auto build() -> ::openPMD::ExternalBlockStorage;

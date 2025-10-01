@@ -362,6 +362,19 @@ namespace
                             "Must be of string type.");
                     }));
             };
+        auto if_contains_optional_bool = [&](char const *key, auto &&then) {
+            if (!mode.json().contains(key))
+            {
+                return;
+            }
+            auto const &val = mode.json({key});
+            if (!val.is_boolean())
+            {
+                throw error::BackendConfigSchema(
+                    {configLocation, "mode", key}, "Must be of boolean type.");
+            }
+            static_cast<decltype(then)>(then)(val.get<bool>());
+        };
         auto modeString = get_mandatory("type", true);
 
         if (modeString == "stdio")
@@ -393,6 +406,9 @@ namespace
                 });
             if_contains_optional("region", false, [&](std::string region) {
                 builder.setRegion(std::move(region));
+            });
+            if_contains_optional_bool("verify_ssl", [&](bool verifySSL) {
+                builder.setVerifySSL(verifySSL);
             });
             if_contains_optional(
                 "scheme", true, [&](std::string const &scheme) {

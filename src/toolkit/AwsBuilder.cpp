@@ -48,6 +48,12 @@ auto AwsBuilder::setScheme(Scheme s) -> AwsBuilder &
     return *this;
 }
 
+auto AwsBuilder::setVerifySSL(bool verify) -> AwsBuilder &
+{
+    m_verifySSL = verify;
+    return *this;
+}
+
 auto internal::AwsBuilder::setSessionToken(std::string sessionToken)
     -> AwsBuilder &
 {
@@ -87,6 +93,11 @@ AwsBuilder::operator ExternalBlockStorage()
 
     config.connectTimeoutMs = 5000;
     config.requestTimeoutMs = 15000;
+
+    if (m_verifySSL.has_value())
+    {
+        config.verifySSL = *m_verifySSL;
+    }
 
     auto aws_credentials = [&]() -> Aws::Auth::AWSCredentials {
         if (m_sessionToken.has_value())
