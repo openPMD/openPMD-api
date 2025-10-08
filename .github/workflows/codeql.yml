@@ -48,13 +48,13 @@ jobs:
         run: $CMAKE -S . -B build
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
 
       - name: Build (Py)
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
         if: ${{ matrix.language == 'python' }}
 
       - name: Build (C++)
@@ -62,6 +62,6 @@ jobs:
         run: $CMAKE --build build -j 2
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
