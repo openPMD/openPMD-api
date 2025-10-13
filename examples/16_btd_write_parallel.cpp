@@ -180,12 +180,19 @@ void doWork(
         // prepare data block value
         auto value = double(
             seed + currRank + 0.1 * w.whichSnapshot + 100 * w.whichBuffer);
-        std::vector<double> local_data(
-            size_t(m_blockX) * m_blockY * m_blockZ, value);
+
+        auto numElements = size_t(m_blockX) * m_blockY * m_blockZ;
+        auto input = std::shared_ptr<double>{
+            new double[numElements], [](double *d) { delete[] d; }};
+
+        for (unsigned long i = 0ul; i < numElements; i++)
+        {
+            input.get()[i] = value;
+        }
 
         if (!m_span)
         {
-            mymesh.storeChunkRaw(local_data.data(), chunk_offset, chunk_extent);
+            mymesh.storeChunk(input, chunk_offset, chunk_extent);
         }
         else
         {
@@ -194,8 +201,8 @@ void doWork(
             std::cout << " span allocation snap:" << w.whichSnapshot << " "
                       << w.whichBuffer << std::endl;
             auto spanBuffer = dynamicMemoryView.currentBuffer();
-
-            std::copy(local_data.begin(), local_data.end(), spanBuffer.data());
+            std::copy(
+                input.get(), input.get() + numElements, spanBuffer.data());
         }
     }
 }
