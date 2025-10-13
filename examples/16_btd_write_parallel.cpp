@@ -195,7 +195,7 @@ void doWork(
                       << w.whichBuffer << std::endl;
             auto spanBuffer = dynamicMemoryView.currentBuffer();
 
-	    std::copy(local_data.begin(), local_data.end(), spanBuffer.data());
+            std::copy(local_data.begin(), local_data.end(), spanBuffer.data());
         }
     }
 }
