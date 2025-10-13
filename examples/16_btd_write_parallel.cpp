@@ -189,17 +189,13 @@ void doWork(
         }
         else
         {
-            auto numElements = m_blockX * m_blockY * m_blockZ;
             auto dynamicMemoryView =
                 mymesh.storeChunk<double>(chunk_offset, chunk_extent);
             std::cout << " span allocation snap:" << w.whichSnapshot << " "
                       << w.whichBuffer << std::endl;
             auto spanBuffer = dynamicMemoryView.currentBuffer();
 
-            std::memcpy(
-                spanBuffer.data(),
-                local_data.data(),
-                numElements * sizeof(double));
+	    std::copy(local_data.begin(), local_data.end(), spanBuffer.data());
         }
     }
 }
