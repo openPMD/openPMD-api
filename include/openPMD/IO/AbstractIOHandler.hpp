@@ -24,6 +24,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
 
@@ -202,7 +203,7 @@ namespace detail
  * scenarios it is therefore necessary to manually execute all operations
  * by calling AbstractIOHandler::flush().
  */
-class AbstractIOHandler
+class OPENPMD_PUBLIC AbstractIOHandler
 {
     friend class Series;
     friend class ADIOS2IOHandlerImpl;

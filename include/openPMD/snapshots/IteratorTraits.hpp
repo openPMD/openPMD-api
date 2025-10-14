@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Iteration.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <memory>
@@ -52,7 +53,7 @@ namespace openPMD
 template <
     typename value_type =
         Container<Iteration, Iteration::IterationIndex_t>::value_type>
-class DynamicSeriesIterator
+class OPENPMD_PUBLIC DynamicSeriesIterator
 {
 public:
     using difference_type = Iteration::IterationIndex_t;
@@ -89,7 +90,8 @@ protected:
 template <
     typename ChildClass,
     typename value_type_in = typename ChildClass::value_type>
-class AbstractSeriesIterator : public DynamicSeriesIterator<value_type_in>
+class OPENPMD_PUBLIC AbstractSeriesIterator
+    : public DynamicSeriesIterator<value_type_in>
 {
 public:
     using difference_type = Iteration::IterationIndex_t;

@@ -137,6 +137,7 @@ openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
+openpmd_option(SYMBOLHIDING   "Enable symbol hiding in libraries" AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
@@ -217,6 +218,34 @@ function(openpmd_cuda_required target)
        CUDA_EXTENSIONS OFF
        CUDA_STANDARD_REQUIRED ON)
 endfunction()
+
+
+# Compiler Features ###########################################################
+#
+include(CheckCXXSourceCompiles)
+
+check_cxx_source_compiles(
+    "
+        #include <cstdlib>
+        __attribute__((visibility(\"default\"))) static void f(void);
+        int main(void){ return 0; }
+    "
+    HAVE_ATTRIBUTE_VISIBILITY_DEFAULT
+)
+if(HAVE_ATTRIBUTE_VISIBILITY_DEFAULT OR
+   "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    if(openPMD_USE_SYMBOLHIDING STREQUAL "AUTO" OR
+       openPMD_USE_SYMBOLHIDING)
+        set(openPMD_HAVE_SYMBOLHIDING ON)
+    else()
+        set(openPMD_HAVE_SYMBOLHIDING OFF)
+    endif()
+else()
+    set(openPMD_HAVE_SYMBOLHIDING OFF)
+    if(openPMD_USE_SYMBOLHIDING)
+        message(FATAL_ERROR "Compiler does not support symbol hiding.")
+    endif()
+endif()
 
 
 # Dependencies ################################################################
@@ -508,6 +537,18 @@ list(APPEND _msvc_options
     $<${_cxx_msvc}:$<${_msvc_1914}:/Zc:__cplusplus>>
 )
 target_compile_options(openPMD PUBLIC ${_msvc_options})
+
+target_compile_definitions(openPMD PUBLIC
+    $<BUILD_INTERFACE:OPENPMD_BUILDPHASE=1>)
+
+# symbol hiding
+if(openPMD_HAVE_SYMBOLHIDING)
+    set_target_properties(openPMD PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN ON
+    )
+    target_compile_definitions(openPMD PUBLIC openPMD_HAVE_SYMBOLHIDING=1)
+endif()
 
 # own headers
 target_include_directories(openPMD PUBLIC

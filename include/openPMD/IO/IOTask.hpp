@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 
@@ -48,7 +49,7 @@ namespace json
     class JsonMatcher;
 }
 
-Writable *getWritable(Attributable *);
+OPENPMD_PUBLIC Writable *getWritable(Attributable *);
 
 /** Type of IO operation between logical and persistent data.
  */

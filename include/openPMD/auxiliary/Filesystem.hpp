@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/config.hpp"
 
 #if openPMD_HAVE_MPI
@@ -45,7 +46,7 @@ namespace auxiliary
      * @return  true if the given path or file status corresponds to an existing
      * directory, false otherwise.
      */
-    bool directory_exists(std::string const &path);
+    OPENPMD_PUBLIC bool directory_exists(std::string const &path);
 
     /** Check if a file exists at a given absolute or relative path.
      *
@@ -53,7 +54,7 @@ namespace auxiliary
      * @return  true if the given path or file status corresponds to an existing
      * file, false otherwise.
      */
-    bool file_exists(std::string const &path);
+    OPENPMD_PUBLIC bool file_exists(std::string const &path);
 
     /** List all contents of a directory at a given absolute or relative path.
      *
@@ -64,7 +65,8 @@ namespace auxiliary
      * @param   path    Absolute or relative path of directory to examine.
      * @return  Vector of all contained files and directories.
      */
-    std::vector<std::string> list_directory(std::string const &path);
+    OPENPMD_PUBLIC std::vector<std::string>
+    list_directory(std::string const &path);
 
     /** Create all required directories to have a reachable given absolute or
      * relative path.
@@ -75,7 +77,7 @@ namespace auxiliary
      * @return  true if a directory was created for the directory p resolves to,
      * false otherwise.
      */
-    bool create_directories(std::string const &path);
+    OPENPMD_PUBLIC bool create_directories(std::string const &path);
 
     /** Remove the directory identified by the given path.
      *
@@ -84,7 +86,7 @@ namespace auxiliary
      * @return  true if the directory was deleted, false otherwise and if it did
      * not exist.
      */
-    bool remove_directory(std::string const &path);
+    OPENPMD_PUBLIC bool remove_directory(std::string const &path);
 
     /** Remove the file identified by the given path.
      *
@@ -93,11 +95,12 @@ namespace auxiliary
      * @return  true if the file was deleted, false otherwise and if it did not
      * exist.
      */
-    bool remove_file(std::string const &path);
+    OPENPMD_PUBLIC bool remove_file(std::string const &path);
 
 #if openPMD_HAVE_MPI
 
-    std::string collective_file_read(std::string const &path, MPI_Comm);
+    OPENPMD_PUBLIC std::string
+    collective_file_read(std::string const &path, MPI_Comm);
 
 #endif
 } // namespace auxiliary

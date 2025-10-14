@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/config.hpp"
 
 #if openPMD_HAVE_MPI
@@ -69,7 +70,7 @@ namespace json
      *        `overwrite` was a JSON dataset, then as a JSON string, otherwise
      *        as a TOML string.
      */
-    std::string
+    OPENPMD_PUBLIC std::string
     merge(std::string const &defaultValue, std::string const &overwrite);
 
 #if openPMD_HAVE_MPI
@@ -111,7 +112,7 @@ namespace json
      *        `overwrite` was a JSON dataset, then as a JSON string, otherwise
      *        as a TOML string.
      */
-    std::string merge(
+    OPENPMD_PUBLIC std::string merge(
         std::string const &defaultValue,
         std::string const &overwrite,
         MPI_Comm);

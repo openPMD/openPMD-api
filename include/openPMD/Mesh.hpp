@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/UnitDimension.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
@@ -37,7 +38,7 @@ namespace openPMD
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records
  */
-class Mesh : public BaseRecord<MeshRecordComponent>
+class OPENPMD_PUBLIC Mesh : public BaseRecord<MeshRecordComponent>
 {
     friend class Container<Mesh>;
     friend class Iteration;
@@ -342,8 +343,10 @@ inline T Mesh::timeOffset() const
     return readFloatingpoint<T>("timeOffset");
 }
 
-std::ostream &operator<<(std::ostream &, openPMD::Mesh::Geometry const &);
+OPENPMD_PUBLIC std::ostream &
+operator<<(std::ostream &, openPMD::Mesh::Geometry const &);
 
-std::ostream &operator<<(std::ostream &, openPMD::Mesh::DataOrder const &);
+OPENPMD_PUBLIC std::ostream &
+operator<<(std::ostream &, openPMD::Mesh::DataOrder const &);
 
 } // namespace openPMD

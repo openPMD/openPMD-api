@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <iostream>
 #include <ostream>
@@ -37,7 +38,7 @@ namespace helper
      * @return reference to out as output stream, e.g. to pass the stream on via
      * `operator<<`
      */
-    std::ostream &listSeries(
+    OPENPMD_PUBLIC std::ostream &listSeries(
         Series &series,
         bool const longer = false,
         std::ostream &out = std::cout);

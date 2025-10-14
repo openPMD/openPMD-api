@@ -22,6 +22,7 @@
 
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/UnitDimension.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
 #include <string>
@@ -29,7 +30,7 @@
 
 namespace openPMD
 {
-class Record : public BaseRecord<RecordComponent>
+class OPENPMD_PUBLIC Record : public BaseRecord<RecordComponent>
 {
     friend class Container<Record>;
     friend class Iteration;

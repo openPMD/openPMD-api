@@ -22,6 +22,7 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <memory>
 
@@ -31,7 +32,7 @@ namespace openPMD::auxiliary
  * Abstract class to associate a thread with its local cuboid in the total
  * cuboid.
  */
-class BlockSlicer
+class OPENPMD_PUBLIC BlockSlicer
 {
 public:
     /**

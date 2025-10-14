@@ -46,7 +46,7 @@ namespace auxiliary
      * A buffer for the WRITE_DATASET task that can either be a std::shared_ptr
      * or a std::unique_ptr.
      */
-    struct WriteBuffer
+    struct OPENPMD_PUBLIC WriteBuffer
     {
         using EligibleTypes = std::
             variant<std::shared_ptr<void const>, UniquePtrWithLambda<void>>;

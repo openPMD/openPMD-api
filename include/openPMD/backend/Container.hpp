@@ -22,6 +22,7 @@
 
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
 #include <initializer_list>
@@ -100,7 +101,7 @@ template <
     typename T,
     typename T_key = std::string,
     typename T_container = std::map<T_key, T>>
-class Container : virtual public Attributable
+class OPENPMD_PUBLIC Container : virtual public Attributable
 {
     static_assert(
         std::is_base_of<Attributable, T>::value,

@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 

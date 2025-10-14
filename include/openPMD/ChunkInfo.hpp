@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
+#include "openPMD/backend/Attribute.hpp"
 #include "openPMD/config.hpp"
 
 #include "openPMD/Dataset.hpp" // Offset, Extent
@@ -41,7 +43,7 @@ namespace openPMD
  *
  * A chunk consists of its offset and its extent
  */
-struct ChunkInfo
+struct OPENPMD_PUBLIC ChunkInfo
 {
     Offset offset; //!< origin of the chunk
     Extent extent; //!< size of the chunk
@@ -68,7 +70,7 @@ struct ChunkInfo
  * This information will vary between different backends and should be used
  * for optimization purposes only.
  */
-struct WrittenChunkInfo : ChunkInfo
+struct OPENPMD_PUBLIC WrittenChunkInfo : ChunkInfo
 {
     unsigned int sourceID = 0; //!< ID of the data source containing the chunk
 
@@ -113,7 +115,7 @@ namespace chunk_assignment
      * @param chunks A list of chunks. Merging will occur in-place.
      */
     template <typename Chunk_t>
-    void mergeChunks(std::vector<Chunk_t> &chunks);
+    OPENPMD_PUBLIC void mergeChunks(std::vector<Chunk_t> &chunks);
 
     /**
      * @brief Pairwise merge all chunks from the same source ID if they can be
@@ -122,7 +124,7 @@ namespace chunk_assignment
      * @param chunks A list of chunks.
      * @return Ordered by source ID, lists of merged chunks for each source ID.
      */
-    auto
+    OPENPMD_PUBLIC auto
     mergeChunksFromSameSourceID(std::vector<WrittenChunkInfo> const &chunks)
         -> std::map<unsigned int, std::vector<ChunkInfo>>;
 
@@ -133,7 +135,7 @@ namespace chunk_assignment
      * chunks only within one compute node and will fail if there is no consumer
      * in that same compute node.
      */
-    struct PartialAssignment
+    struct OPENPMD_PUBLIC PartialAssignment
     {
         ChunkTable notAssigned;
         Assignment assigned;
@@ -151,7 +153,7 @@ namespace chunk_assignment
      * ChunkTable that guides data sinks on how to load data into reading
      * processes.
      */
-    struct Strategy
+    struct OPENPMD_PUBLIC Strategy
     {
         /**
          * @brief Assign chunks to be loaded to reading processes.
@@ -235,7 +237,7 @@ namespace chunk_assignment
      * chunks only within one compute node and will fail if there is no consumer
      * in that same compute node.
      */
-    struct PartialStrategy
+    struct OPENPMD_PUBLIC PartialStrategy
     {
         /**
          * @brief Assign chunks to be loaded to reading processes.
@@ -321,7 +323,7 @@ namespace chunk_assignment
      *    were not applicable e.g. due to a suboptimal setup.
      *
      */
-    struct FromPartialStrategy : Strategy
+    struct OPENPMD_PUBLIC FromPartialStrategy : Strategy
     {
         FromPartialStrategy(
             std::unique_ptr<PartialStrategy> firstPass,
@@ -346,7 +348,7 @@ namespace chunk_assignment
      *        in a round-Robin manner.
      *
      */
-    struct RoundRobin : Strategy
+    struct OPENPMD_PUBLIC RoundRobin : Strategy
     {
         Assignment assign(
             PartialAssignment,
@@ -364,7 +366,7 @@ namespace chunk_assignment
      * Assign all chunks from the first source rank to the first reader rank,
      * all from the second source rank to the second reader, and so on.
      */
-    struct RoundRobinOfSourceRanks : Strategy
+    struct OPENPMD_PUBLIC RoundRobinOfSourceRanks : Strategy
     {
         Assignment assign(
             PartialAssignment,
@@ -386,7 +388,7 @@ namespace chunk_assignment
      * The first three blocks go to the first process, the last three blocks to
      * the second.
      */
-    struct Blocks : Strategy
+    struct OPENPMD_PUBLIC Blocks : Strategy
     {
         Assignment assign(
             PartialAssignment,
@@ -404,7 +406,7 @@ namespace chunk_assignment
      * Assign writer processes to reader processes, instead of assigning blocks
      * to processes.
      */
-    struct BlocksOfSourceRanks : Strategy
+    struct OPENPMD_PUBLIC BlocksOfSourceRanks : Strategy
     {
         Assignment assign(
             PartialAssignment,
@@ -424,7 +426,7 @@ namespace chunk_assignment
      * chosen.
      *
      */
-    struct ByHostname : PartialStrategy
+    struct OPENPMD_PUBLIC ByHostname : PartialStrategy
     {
         ByHostname(std::unique_ptr<Strategy> withinNode);
 
@@ -451,7 +453,7 @@ namespace chunk_assignment
      * current parallel process in case this intersection is non-empty.
      *
      */
-    struct ByCuboidSlice : Strategy
+    struct OPENPMD_PUBLIC ByCuboidSlice : Strategy
     {
         ByCuboidSlice(
             std::unique_ptr<auxiliary::BlockSlicer> blockSlicer,
@@ -483,7 +485,7 @@ namespace chunk_assignment
      * will be assigned at worst twice the ideal amount of data.
      *
      */
-    struct BinPacking : Strategy
+    struct OPENPMD_PUBLIC BinPacking : Strategy
     {
         size_t splitAlongDimension = 0;
 
@@ -512,7 +514,7 @@ namespace chunk_assignment
      * can be assigned within the same compute node.
      *
      */
-    struct FailingStrategy : Strategy
+    struct OPENPMD_PUBLIC FailingStrategy : Strategy
     {
         explicit FailingStrategy();
 
@@ -535,7 +537,7 @@ namespace chunk_assignment
      * the same node.
      *
      */
-    struct DiscardingStrategy : Strategy
+    struct OPENPMD_PUBLIC DiscardingStrategy : Strategy
     {
         explicit DiscardingStrategy();
 
@@ -569,7 +571,7 @@ namespace host_info
      * @return true If it is available.
      * @return false Otherwise.
      */
-    bool methodAvailable(Method);
+    OPENPMD_PUBLIC bool methodAvailable(Method);
 
     /**
      * @brief Wrapper for the native hostname retrieval functions such as
@@ -578,7 +580,7 @@ namespace host_info
      * @return std::string The hostname / processor name returned by the native
      *                     function.
      */
-    std::string byMethod(Method);
+    OPENPMD_PUBLIC std::string byMethod(Method);
 
 #if openPMD_HAVE_MPI
     /**
@@ -591,7 +593,8 @@ namespace host_info
      *         for all MPI ranks known to the communicator.
      *         The result is returned on all ranks.
      */
-    chunk_assignment::RankMeta byMethodCollective(MPI_Comm, Method);
+    OPENPMD_PUBLIC chunk_assignment::RankMeta
+        byMethodCollective(MPI_Comm, Method);
 #endif
 } // namespace host_info
 } // namespace openPMD

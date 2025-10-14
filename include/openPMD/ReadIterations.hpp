@@ -6,6 +6,7 @@
 
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
 
 namespace openPMD
@@ -15,7 +16,7 @@ namespace openPMD
  * Wraps the Iterator type of `Series::snapshots()`, but has `IndexedIteration`
  * as value_type instead of `std::pair<uint64_t, Iteration>`.
  */
-class LegacyIteratorAdaptor
+class OPENPMD_PUBLIC LegacyIteratorAdaptor
 {
     using value_type = IndexedIteration;
     using parent_t = Snapshots::iterator;
@@ -51,7 +52,7 @@ public:
  * the foreach loop.
  *
  */
-class ReadIterations
+class OPENPMD_PUBLIC ReadIterations
 {
     friend class Series;
 

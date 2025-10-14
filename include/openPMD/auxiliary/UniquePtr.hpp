@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -43,7 +44,8 @@ namespace auxiliary
      * @tparam T The to-be-deleted type, possibly an array.
      */
     template <typename T>
-    class CustomDelete : public std::function<void(std::remove_extent_t<T> *)>
+    class OPENPMD_PUBLIC CustomDelete
+        : public std::function<void(std::remove_extent_t<T> *)>
     {
     private:
         using T_decayed = std::remove_extent_t<T>;
@@ -79,7 +81,7 @@ namespace auxiliary
  * @tparam T The pointer type, as in std::unique_ptr.
  */
 template <typename T>
-class UniquePtrWithLambda
+class OPENPMD_PUBLIC UniquePtrWithLambda
     : public std::unique_ptr<
           T,
           /* Deleter = */ auxiliary::CustomDelete<T>>

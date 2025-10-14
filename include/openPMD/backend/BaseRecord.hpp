@@ -24,6 +24,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
 
@@ -46,7 +47,7 @@ namespace internal
          * declarations at this place, so we specify the data class explicitly
          */
         typename T_RecordComponentData = typename T_elem::Data_t>
-    class BaseRecordData final
+    class OPENPMD_PUBLIC BaseRecordData final
         : public ContainerData<T_elem>
         , public T_RecordComponentData
     {
@@ -67,7 +68,7 @@ namespace internal
         typename T_BaseRecord_,
         typename T_BaseRecordData_,
         typename T_BaseIterator>
-    class ScalarIterator
+    class OPENPMD_PUBLIC ScalarIterator
     {
         /*
          * Allow other template instantiations of ScalarIterators member access.
@@ -176,7 +177,7 @@ namespace internal
  * @tparam T_elem
  */
 template <typename T_elem>
-class BaseRecord
+class OPENPMD_PUBLIC BaseRecord
     : public Container<T_elem>
     , public T_elem // T_RecordComponent
 {

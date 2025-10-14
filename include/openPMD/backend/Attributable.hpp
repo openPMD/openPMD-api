@@ -23,6 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 
@@ -100,7 +101,8 @@ namespace internal
      * implement them.
      */
 
-    class AttributableData : public std::shared_ptr<SharedAttributableData>
+    class OPENPMD_PUBLIC AttributableData
+        : public std::shared_ptr<SharedAttributableData>
     {
         friend class openPMD::Attributable;
 
@@ -188,7 +190,7 @@ namespace debug
  * Mandatory and user-defined Attributes and their data for every object in the
  * openPMD hierarchy are stored and managed through this class.
  */
-class Attributable
+class OPENPMD_PUBLIC Attributable
 {
     // @todo remove unnecessary friend (wew that sounds bitter)
     using A_MAP = std::map<std::string, Attribute>;

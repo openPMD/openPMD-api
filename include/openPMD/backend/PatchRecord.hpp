@@ -20,15 +20,15 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
 #include <string>
-#include <unordered_map>
 
 namespace openPMD
 {
-class PatchRecord : public BaseRecord<PatchRecordComponent>
+class OPENPMD_PUBLIC PatchRecord : public BaseRecord<PatchRecordComponent>
 {
     friend class Container<PatchRecord>;
     friend class ParticleSpecies;

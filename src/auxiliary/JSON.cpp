@@ -839,6 +839,6 @@ std::string format_toml(toml_t &&val)
 
 #endif
 
-template std::string format_toml(toml::value &&);
-template std::string format_toml(toml::value &);
+template OPENPMD_PUBLIC std::string format_toml(toml::value &&);
+template OPENPMD_PUBLIC std::string format_toml(toml::value &);
 } // namespace openPMD::json

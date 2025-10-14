@@ -1,6 +1,7 @@
 #pragma once
 
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <exception>
 #include <optional>
@@ -17,13 +18,13 @@ namespace openPMD
  * in the openPMD::error namespace.
  *
  */
-class Error : public std::exception
+class OPENPMD_PUBLIC Error : public std::exception
 {
 private:
     std::string m_what;
 
 protected:
-    Error(std::string what) : m_what(what)
+    Error(std::string what) : m_what(std::move(what))
     {}
 
 public:
@@ -46,7 +47,7 @@ namespace error
      *
      * Example: Append mode is not available in JSON.
      */
-    class OperationUnsupportedInBackend : public Error
+    class OPENPMD_PUBLIC OperationUnsupportedInBackend : public Error
     {
     public:
         std::string backend;
@@ -60,13 +61,13 @@ namespace error
      * Example: File-based iteration encoding is selected without specifying an
      *     expansion pattern.
      */
-    class WrongAPIUsage : public Error
+    class OPENPMD_PUBLIC WrongAPIUsage : public Error
     {
     public:
         WrongAPIUsage(std::string const &what);
     };
 
-    class BackendConfigSchema : public Error
+    class OPENPMD_PUBLIC BackendConfigSchema : public Error
     {
     public:
         std::vector<std::string> errorLocation;
@@ -79,7 +80,7 @@ namespace error
      *
      * Example: A nullpointer is observed somewhere.
      */
-    class Internal : public Error
+    class OPENPMD_PUBLIC Internal : public Error
     {
     public:
         Internal(std::string const &what);
@@ -88,7 +89,7 @@ namespace error
     /*
      * Read error concerning a specific object.
      */
-    class ReadError : public Error
+    class OPENPMD_PUBLIC ReadError : public Error
     {
     public:
         AffectedObject affectedObject;

@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include <any>
 #include <cstddef>
 #include <type_traits>
@@ -37,7 +38,7 @@ namespace auxiliary
      * stored.
      */
     template <class T_DTYPES, typename... variant_types>
-    class Variant
+    class OPENPMD_PUBLIC Variant
     {
         static_assert(
             std::is_enum<T_DTYPES>::value,

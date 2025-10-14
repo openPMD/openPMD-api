@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <limits>
 #include <memory>
@@ -34,7 +35,7 @@ namespace openPMD
 using Extent = std::vector<std::uint64_t>;
 using Offset = std::vector<std::uint64_t>;
 
-class Dataset
+class OPENPMD_PUBLIC Dataset
 {
     friend class RecordComponent;
 

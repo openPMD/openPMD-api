@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
+
 #include <map>
 #include <string>
 #include <vector>
@@ -79,7 +81,7 @@ namespace openPMD
  *
  * @return std::string API version (dot separated)
  */
-std::string getVersion();
+std::string OPENPMD_PUBLIC getVersion();
 
 /** Return the maximum supported version of the openPMD standard (read & write,
  * run-time)
@@ -89,40 +91,41 @@ std::string getVersion();
 [[deprecated(
     "Deprecated due to unclear semantics. Use one of getStandardMinimum, "
     "getStandardMaximum() or getStandardDefault instead.")]] std::string
-getStandard();
+    OPENPMD_PUBLIC
+    getStandard();
 
 /** Return the default used version of the openPMD standard (read & write,
  * run-time)
  *
  * @return std::string openPMD standard version (dot separated)
  */
-std::string getStandardDefault();
+std::string OPENPMD_PUBLIC getStandardDefault();
 
 /** Return the minimum supported version of the openPMD standard (read,
  * run-time)
  *
  * @return std::string minimum openPMD standard version (dot separated)
  */
-std::string getStandardMinimum();
+std::string OPENPMD_PUBLIC getStandardMinimum();
 
 /** Return the minimum supported version of the openPMD standard (read,
  * run-time)
  *
  * @return std::string minimum openPMD standard version (dot separated)
  */
-std::string getStandardMaximum();
+std::string OPENPMD_PUBLIC getStandardMaximum();
 
 /** Return the feature variants of the openPMD-api library (run-time)
  *
  * @return std::map< std::string, bool > with variants such as backends
  */
-std::map<std::string, bool> getVariants();
+std::map<std::string, bool> OPENPMD_PUBLIC getVariants();
 
 /** Return the file extensions supported in this variant of the openPMD-api
  * library (run-time)
  *
  * @return std::vector< std::string > with file extensions
  */
-std::vector<std::string> getFileExtensions();
+std::vector<std::string> OPENPMD_PUBLIC getFileExtensions();
 
 } // namespace openPMD

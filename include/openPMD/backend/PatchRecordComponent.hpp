@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <memory>
@@ -42,7 +43,7 @@ namespace openPMD
 /**
  * @todo add support for constant patch record components
  */
-class PatchRecordComponent : public RecordComponent
+class OPENPMD_PUBLIC PatchRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;

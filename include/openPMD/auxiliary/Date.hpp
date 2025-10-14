@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include <string>
 
 namespace openPMD
@@ -32,7 +33,7 @@ namespace auxiliary
      * http://www.cplusplus.com/reference/ctime/strftime/
      * @return std::string with formatted date
      */
-    std::string
+    OPENPMD_PUBLIC std::string
     getDateString(std::string const &format = std::string("%F %T %z"));
 } // namespace auxiliary
 } // namespace openPMD

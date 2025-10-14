@@ -23,10 +23,11 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/auxiliary/BlockSlicer.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 namespace openPMD::auxiliary
 {
-class OneDimensionalBlockSlicer : public BlockSlicer
+class OPENPMD_PUBLIC OneDimensionalBlockSlicer : public BlockSlicer
 {
 public:
     Extent::value_type m_dim;

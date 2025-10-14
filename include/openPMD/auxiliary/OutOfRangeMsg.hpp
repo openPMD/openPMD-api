@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include <string>
 #include <type_traits>
 
@@ -33,7 +34,7 @@ namespace auxiliary
      * Build an error string for write-access of keys into containers that
      * are read-only.
      */
-    class OutOfRangeMsg
+    class OPENPMD_PUBLIC OutOfRangeMsg
     {
         std::string m_name;
         std::string m_description;

@@ -25,6 +25,7 @@
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 
@@ -142,7 +143,7 @@ namespace internal
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
-class Iteration : public Attributable
+class OPENPMD_PUBLIC Iteration : public Attributable
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;

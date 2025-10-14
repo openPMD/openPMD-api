@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/config.hpp"
 
 namespace openPMD
@@ -49,7 +50,7 @@ namespace openPMD
  * @return  Smart pointer to created IOHandler.
  */
 template <typename JSON>
-std::unique_ptr<AbstractIOHandler> createIOHandler(
+OPENPMD_PUBLIC std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
     std::string path,
     Access access,
@@ -80,7 +81,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
  * @return  Smart pointer to created IOHandler.
  */
 template <typename JSON>
-std::unique_ptr<AbstractIOHandler> createIOHandler(
+OPENPMD_PUBLIC std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
     std::string path,
     Access access,
@@ -90,7 +91,7 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::string const &pathAsItWasSpecifiedInTheConstructor);
 
 // version without configuration to use in AuxiliaryTest
-std::unique_ptr<AbstractIOHandler> createIOHandler(
+OPENPMD_PUBLIC std::unique_ptr<AbstractIOHandler> createIOHandler(
     std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
     std::string path,
     Access access,

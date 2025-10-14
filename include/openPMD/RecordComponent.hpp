@@ -25,6 +25,7 @@
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
@@ -59,7 +60,7 @@ class RecordComponent;
 
 namespace internal
 {
-    class RecordComponentData : public BaseRecordComponentData
+    class OPENPMD_PUBLIC RecordComponentData : public BaseRecordComponentData
     {
     public:
         RecordComponentData();
@@ -121,7 +122,7 @@ namespace internal
 template <typename>
 class BaseRecord;
 
-class RecordComponent : public BaseRecordComponent
+class OPENPMD_PUBLIC RecordComponent : public BaseRecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;

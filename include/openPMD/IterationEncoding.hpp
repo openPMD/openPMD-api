@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include <ostream>
 
 namespace openPMD
@@ -29,13 +30,14 @@ namespace openPMD
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
-enum class IterationEncoding
+enum class OPENPMD_PUBLIC IterationEncoding
 {
     fileBased,
     groupBased,
     variableBased
 };
 
-std::ostream &operator<<(std::ostream &, openPMD::IterationEncoding const &);
+OPENPMD_PUBLIC std::ostream &
+operator<<(std::ostream &, openPMD::IterationEncoding const &);
 
 } // namespace openPMD

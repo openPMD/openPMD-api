@@ -29,6 +29,7 @@
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
@@ -283,7 +284,7 @@ namespace internal
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
-class Series : public Attributable
+class OPENPMD_PUBLIC Series : public Attributable
 {
     friend class Attributable;
     friend class Iteration;

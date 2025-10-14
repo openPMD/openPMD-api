@@ -27,6 +27,7 @@
 // comment to prevent clang-format from moving this #include up
 // datatype macros may be included and un-included in other headers
 #include "openPMD/DatatypeMacros.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <algorithm>
 #include <array>
@@ -55,7 +56,7 @@ namespace openPMD
 
 #define OPENPMD_ENUMERATE_TYPES(type) , type
 
-class Attribute
+class OPENPMD_PUBLIC Attribute
     : public auxiliary::Variant<Datatype OPENPMD_FOREACH_DATATYPE(
           OPENPMD_ENUMERATE_TYPES)>
 

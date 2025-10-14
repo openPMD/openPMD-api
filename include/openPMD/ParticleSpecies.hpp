@@ -22,6 +22,7 @@
 
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/Record.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 
@@ -30,7 +31,7 @@
 namespace openPMD
 {
 
-class ParticleSpecies : public Container<Record>
+class OPENPMD_PUBLIC ParticleSpecies : public Container<Record>
 {
     friend class Container<ParticleSpecies>;
     friend class Container<Record>;

@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include <array>
 #include <cstdint>
 #include <map>
@@ -34,7 +35,7 @@ using UnitDimensionExponent = double;
  *
  * Dimensional base quantities of the international system of quantities
  */
-enum class UnitDimension : uint8_t
+enum class OPENPMD_PUBLIC UnitDimension : uint8_t
 {
     L = 0, //!< length
     M, //!< mass
@@ -53,15 +54,16 @@ namespace unit_representations
     using AsMaps = std::vector<AsMap>;
     using AsArrays = std::vector<AsArray>;
 
-    auto asArray(AsMap const &) -> AsArray;
-    auto asMap(AsArray const &, bool skip_zeros = true) -> AsMap;
+    OPENPMD_PUBLIC auto asArray(AsMap const &) -> AsArray;
+    OPENPMD_PUBLIC auto asMap(AsArray const &, bool skip_zeros = true) -> AsMap;
 
-    auto asArrays(AsMaps const &) -> AsArrays;
-    auto asMaps(AsArrays const &, bool skip_zeros = true) -> AsMaps;
+    OPENPMD_PUBLIC auto asArrays(AsMaps const &) -> AsArrays;
+    OPENPMD_PUBLIC auto asMaps(AsArrays const &, bool skip_zeros = true)
+        -> AsMaps;
 
     namespace auxiliary
     {
-        void fromMapOfUnitDimension(
+        OPENPMD_PUBLIC void fromMapOfUnitDimension(
             double *cursor, std::map<UnitDimension, double> const &udim);
     } // namespace auxiliary
 } // namespace unit_representations

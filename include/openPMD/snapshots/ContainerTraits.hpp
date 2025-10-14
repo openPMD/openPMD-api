@@ -1,6 +1,7 @@
 #pragma once
 
 #include "openPMD/Iteration.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/snapshots/IteratorTraits.hpp"
 #include <optional>
 #include <utility>
@@ -16,7 +17,7 @@ namespace openPMD
  *  Iterator type that can wrap different implementations internally.
  */
 template <typename value_type_in>
-class OpaqueSeriesIterator
+class OPENPMD_PUBLIC OpaqueSeriesIterator
     : public AbstractSeriesIterator<
           OpaqueSeriesIterator<value_type_in>,
           value_type_in>

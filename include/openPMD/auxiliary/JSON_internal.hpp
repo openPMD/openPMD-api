@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/config.hpp"
 
 #include <deque>
@@ -40,13 +41,13 @@ namespace openPMD
 {
 namespace json
 {
-    enum class SupportedLanguages
+    enum class OPENPMD_PUBLIC SupportedLanguages
     {
         JSON,
         TOML
     };
 
-    struct ParsedConfig
+    struct OPENPMD_PUBLIC ParsedConfig
     {
         nlohmann::json config = nlohmann::json::object();
         SupportedLanguages originallySpecifiedAs{SupportedLanguages::JSON};
@@ -65,7 +66,7 @@ namespace json
      * declare keys read manually.
      *
      */
-    class TracingJSON
+    class OPENPMD_PUBLIC TracingJSON
     {
     public:
         TracingJSON();
@@ -208,8 +209,8 @@ namespace json
             traceFurther);
     }
 
-    nlohmann::json tomlToJson(toml::value const &val);
-    toml::value jsonToToml(nlohmann::json const &val);
+    OPENPMD_PUBLIC nlohmann::json tomlToJson(toml::value const &val);
+    OPENPMD_PUBLIC toml::value jsonToToml(nlohmann::json const &val);
 
     /**
      * Check if options points to a file (indicated by an '@' for the first
@@ -223,7 +224,7 @@ namespace json
      *        recursively to keys and values, except for some hardcoded places
      *        that should be left untouched.
      */
-    ParsedConfig parseOptions(
+    OPENPMD_PUBLIC ParsedConfig parseOptions(
         std::string const &options,
         bool considerFiles,
         bool convertLowercase = true);
@@ -233,7 +234,7 @@ namespace json
     /**
      * Parallel version of parseOptions(). MPI-collective.
      */
-    ParsedConfig parseOptions(
+    OPENPMD_PUBLIC ParsedConfig parseOptions(
         std::string const &options,
         MPI_Comm comm,
         bool considerFiles,
@@ -250,7 +251,7 @@ namespace json
      * This helps us forward configurations from these locations to ADIOS2
      * "as-is".
      */
-    nlohmann::json &lowerCase(nlohmann::json &);
+    OPENPMD_PUBLIC nlohmann::json &lowerCase(nlohmann::json &);
 
     /**
      * Read a JSON literal as a string.
@@ -259,12 +260,14 @@ namespace json
      * If it is a bool, convert it to either "0" or "1".
      * If it is not a literal, return an empty option.
      */
-    std::optional<std::string> asStringDynamic(nlohmann::json const &);
+    OPENPMD_PUBLIC std::optional<std::string>
+    asStringDynamic(nlohmann::json const &);
 
     /**
      * Like asStringDynamic(), but convert the string to lowercase afterwards.
      */
-    std::optional<std::string> asLowerCaseStringDynamic(nlohmann::json const &);
+    OPENPMD_PUBLIC std::optional<std::string>
+    asLowerCaseStringDynamic(nlohmann::json const &);
 
     /**
      * Vector containing the lower-case keys to the single backends'
@@ -279,21 +282,21 @@ namespace json
      * single backends).
      * If any unread value persists, a warning is printed to stderr.
      */
-    void warnGlobalUnusedOptions(TracingJSON const &config);
+    OPENPMD_PUBLIC void warnGlobalUnusedOptions(TracingJSON const &config);
 
     /**
      * Like merge() as defined in JSON.hpp, but this overload works directly
      * on nlohmann::json values.
      */
-    nlohmann::json &merge_internal(
+    OPENPMD_PUBLIC nlohmann::json &merge_internal(
         nlohmann::json &defaultVal,
         nlohmann::json const &overwrite,
         bool do_prune);
 
-    nlohmann::json &filterByTemplate(
+    OPENPMD_PUBLIC nlohmann::json &filterByTemplate(
         nlohmann::json &defaultVal, nlohmann::json const &positiveMask);
 
     template <typename toml_t>
-    std::string format_toml(toml_t &&);
+    OPENPMD_PUBLIC std::string format_toml(toml_t &&);
 } // namespace json
 } // namespace openPMD

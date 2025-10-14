@@ -23,6 +23,7 @@
 #include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
 #include <optional>
@@ -78,7 +79,7 @@ namespace internal
 template <typename>
 class BaseRecord;
 
-class BaseRecordComponent : virtual public Attributable
+class OPENPMD_PUBLIC BaseRecordComponent : virtual public Attributable
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;

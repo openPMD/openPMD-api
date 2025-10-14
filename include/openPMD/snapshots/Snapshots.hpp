@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include <memory>
@@ -46,7 +47,7 @@ namespace openPMD
  * an Iteration handle goes invalid after closing it, a new Iteration handle is
  * acquired by Snapshots::operator[]().
  */
-class Snapshots : public Attributable
+class OPENPMD_PUBLIC Snapshots : public Attributable
 {
 private:
     friend class Series;

@@ -22,6 +22,7 @@
 #pragma once
 
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <iterator>
 
@@ -34,7 +35,7 @@ namespace openPMD
  * https://en.cppreference.com/w/cpp/container/span
  */
 template <typename T>
-class Span
+class OPENPMD_PUBLIC Span
 {
     template <typename>
     friend class DynamicMemoryView;
@@ -93,7 +94,7 @@ public:
  *      to it. Otherwise, a use after free might occur.
  */
 template <typename T>
-class DynamicMemoryView
+class OPENPMD_PUBLIC DynamicMemoryView
 {
     friend class RecordComponent;
 

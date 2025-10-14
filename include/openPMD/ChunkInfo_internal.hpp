@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/ChunkInfo.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 #include <string>
 
 namespace openPMD::host_info
@@ -43,7 +44,8 @@ namespace openPMD::host_info
  *         via methodAvailable().
  * @throws std::out_of_range If an unknown string identifier is passed.
  */
-Method methodFromStringDescription(std::string const &descr, bool consider_mpi);
+OPENPMD_PUBLIC Method
+methodFromStringDescription(std::string const &descr, bool consider_mpi);
 
 /*
  * The following block contains one wrapper for each native hostname
@@ -58,10 +60,10 @@ Method methodFromStringDescription(std::string const &descr, bool consider_mpi);
 #endif
 
 #if openPMD_POSIX_AVAILABLE
-std::string posix_hostname();
+OPENPMD_PUBLIC std::string posix_hostname();
 #endif
 
 #if openPMD_HAVE_MPI
-std::string mpi_processor_name();
+OPENPMD_PUBLIC std::string mpi_processor_name();
 #endif
 } // namespace openPMD::host_info

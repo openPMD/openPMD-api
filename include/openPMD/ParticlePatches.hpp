@@ -20,15 +20,15 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 
 #include <cstddef>
-#include <vector>
 
 namespace openPMD
 {
-class ParticlePatches : public Container<PatchRecord>
+class OPENPMD_PUBLIC ParticlePatches : public Container<PatchRecord>
 {
     friend class ParticleSpecies;
     friend class Container<ParticlePatches>;

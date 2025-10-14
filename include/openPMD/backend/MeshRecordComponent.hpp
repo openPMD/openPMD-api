@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <vector>
 
@@ -32,7 +33,7 @@ namespace internal
     class BaseRecordData;
 }
 
-class MeshRecordComponent : public RecordComponent
+class OPENPMD_PUBLIC MeshRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;

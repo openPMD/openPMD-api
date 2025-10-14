@@ -26,6 +26,7 @@
 // comment to prevent clang-format from moving this #include up
 // datatype macros may be included and un-included in other headers
 #include "openPMD/DatatypeMacros.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <array>
 #include <climits>
@@ -47,7 +48,7 @@ namespace openPMD
 
 /** Concrete datatype of an object available at runtime.
  */
-enum class Datatype : int
+enum class OPENPMD_PUBLIC Datatype : int
 {
     CHAR,
     UCHAR,
@@ -97,7 +98,7 @@ enum class Datatype : int
  *        listed in order in a vector.
  *
  */
-std::vector<Datatype> openPMD_Datatypes();
+OPENPMD_PUBLIC std::vector<Datatype> openPMD_Datatypes();
 
 /** @brief Fundamental equivalence check for two given types T and U.
  *
@@ -738,17 +739,19 @@ inline bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
  * @param dt The "full" Datatype.
  * @return The "inner" Datatype.
  */
-Datatype basicDatatype(Datatype dt);
+OPENPMD_PUBLIC Datatype basicDatatype(Datatype dt);
 
-Datatype toVectorType(Datatype dt);
+OPENPMD_PUBLIC Datatype toVectorType(Datatype dt);
 
-std::string datatypeToString(Datatype dt);
+OPENPMD_PUBLIC std::string datatypeToString(Datatype dt);
 
-Datatype stringToDatatype(const std::string &s);
+OPENPMD_PUBLIC Datatype stringToDatatype(const std::string &s);
 
-void warnWrongDtype(std::string const &key, Datatype store, Datatype request);
+OPENPMD_PUBLIC void
+warnWrongDtype(std::string const &key, Datatype store, Datatype request);
 
-std::ostream &operator<<(std::ostream &, openPMD::Datatype const &);
+OPENPMD_PUBLIC std::ostream &
+operator<<(std::ostream &, openPMD::Datatype const &);
 
 template <typename T>
 constexpr auto datatypeIndex() -> size_t
