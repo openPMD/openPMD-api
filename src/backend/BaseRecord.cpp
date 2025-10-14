@@ -171,20 +171,23 @@ namespace internal
         return !operator==(other);
     }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wattributes"
+
 #define INSTANTIATE_ITERATORS_FOR_BASERECORD(baserecordtype)                   \
-    template class internal::ScalarIterator<                                   \
+    template class OPENPMD_PUBLIC internal::ScalarIterator<                    \
         baserecordtype,                                                        \
         baserecordtype::Data_t,                                                \
         baserecordtype::T_Container::InternalContainer::iterator>;             \
-    template class internal::ScalarIterator<                                   \
+    template class OPENPMD_PUBLIC internal::ScalarIterator<                    \
         baserecordtype const,                                                  \
         baserecordtype::Data_t const,                                          \
         baserecordtype::T_Container::InternalContainer::const_iterator>;       \
-    template class internal::ScalarIterator<                                   \
+    template class OPENPMD_PUBLIC internal::ScalarIterator<                    \
         baserecordtype,                                                        \
         baserecordtype::Data_t,                                                \
         baserecordtype::T_Container::InternalContainer::reverse_iterator>;     \
-    template class internal::ScalarIterator<                                   \
+    template class OPENPMD_PUBLIC internal::ScalarIterator<                    \
         baserecordtype const,                                                  \
         baserecordtype::Data_t const,                                          \
         baserecordtype::T_Container::InternalContainer::                       \
@@ -196,6 +199,8 @@ namespace internal
     OPENPMD_FORALL_RECORDCOMPONENT_TYPES(OPENPMD_INSTANTIATE)
 
 #undef OPENPMD_INSTANTIATE
+
+#pragma clang diagnostic pop
 } // namespace internal
 
 template <typename T_elem>
@@ -869,8 +874,13 @@ void BaseRecord<T_elem>::eraseScalar()
 template <typename T_elem>
 BaseRecord<T_elem>::~BaseRecord() = default;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wattributes"
+
 #define OPENPMD_INSTANTIATE(recordcomponenttype)                               \
-    template class BaseRecord<recordcomponenttype>;
+    template class OPENPMD_PUBLIC BaseRecord<recordcomponenttype>;
+
+#pragma clang diagnostic pop
 
 OPENPMD_FORALL_RECORDCOMPONENT_TYPES(OPENPMD_INSTANTIATE)
 
