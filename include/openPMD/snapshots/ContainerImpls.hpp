@@ -35,7 +35,7 @@ private:
          * The iterator is resolved upon calling get() below.
          */
         std::variant<std::function<StatefulIterator *()>, StatefulIterator *>
-            m_bufferedIterator;
+            m_bufferedIterator = static_cast<StatefulIterator *>(nullptr);
     };
     Members members;
 
