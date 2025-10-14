@@ -186,7 +186,7 @@ void doWork(
 
         for (unsigned long i = 0ul; i < numElements; i++)
         {
-            input.get()[i] = value;
+            input[i] = value;
         }
 
         if (!m_span)
