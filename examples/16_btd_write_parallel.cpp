@@ -90,9 +90,9 @@ std::vector<std::string> getBackends()
 void setupMeshComp(
     openPMD::Container<openPMD::Mesh> &meshes, int currRank, const Workload &w)
 {
-    for (auto ff : m_common_fields)
+    for (const auto &ff : m_common_fields)
     {
-        for (auto cc : m_common_comps)
+        for (const auto &cc : m_common_comps)
         {
             auto mesh_field = meshes[ff];
             auto curr_mesh_comp = meshes[ff][cc];
@@ -182,8 +182,7 @@ void doWork(
             seed + currRank + 0.1 * w.whichSnapshot + 100 * w.whichBuffer);
 
         auto numElements = size_t(m_blockX) * m_blockY * m_blockZ;
-        auto input = std::shared_ptr<double>{
-            new double[numElements], [](double *d) { delete[] d; }};
+        auto input = std::shared_ptr<double[]>(new double[numElements]);
 
         for (unsigned long i = 0ul; i < numElements; i++)
         {
@@ -285,9 +284,9 @@ int main(int argc, char *argv[])
             double seed = 0.001;
             for (Workload w : workOrders)
             {
-                for (auto ff : m_common_fields)
+                for (const auto &ff : m_common_fields)
                 {
-                    for (auto cc : m_common_comps)
+                    for (const auto &cc : m_common_comps)
                     {
                         doWork(w, series, mpi_rank, ff, cc, seed);
                         doFlush(w, series, mpi_rank);
