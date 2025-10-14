@@ -115,14 +115,6 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         IOHandler()->enqueue(IOTask(this, dCreate));
     }
 
-    if (size == 0)
-    {
-        // Don't forward this operation to the backend as it might create ugly
-        // zero-blocks in ADIOS2
-        setDirtyRecursive(true);
-        return DynamicMemoryView<T>();
-    }
-
     Parameter<Operation::GET_BUFFER_VIEW> getBufferView;
     getBufferView.offset = o;
     getBufferView.extent = e;
@@ -136,7 +128,10 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         // type shared_ptr<T> or shared_ptr<T[]>
         auto data = std::forward<F>(createBuffer)(size);
         out.ptr = static_cast<void *>(data.get());
-        storeChunk(std::move(data), std::move(o), std::move(e));
+        if (size > 0)
+        {
+            storeChunk(std::move(data), std::move(o), std::move(e));
+        }
     }
     setDirtyRecursive(true);
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
