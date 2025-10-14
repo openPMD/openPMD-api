@@ -65,7 +65,7 @@
 // std::string
 OPENPMD_EXTERN template class OPENPMD_PUBLIC std::allocator<char>;
 OPENPMD_EXTERN template struct OPENPMD_PUBLIC std::char_traits<char>;
-OPENPMD_EXTERN template class OPENPMD_PUBLICstd::basic_string<char>;
+OPENPMD_EXTERN template class OPENPMD_PUBLIC std::basic_string<char>;
 
 // std::vector< T >
 OPENPMD_EXTERN template class OPENPMD_PUBLIC std::allocator<std::uint64_t>;
