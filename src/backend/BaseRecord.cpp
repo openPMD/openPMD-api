@@ -628,13 +628,17 @@ namespace detail
 // Needed for clang-tidy
 #define OPENPMD_APPLY_TEMPLATE(template_, type) template_<type>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wattributes"
+
 #define OPENPMD_INSTANTIATE(recordcomponenttype)                               \
-    template void                                                              \
+    template OPENPMD_PUBLIC void                                               \
     verifyNonscalar<OPENPMD_APPLY_TEMPLATE(BaseRecord, recordcomponenttype)>(  \
         BaseRecord<recordcomponenttype> *);
     OPENPMD_FORALL_RECORDCOMPONENT_TYPES(OPENPMD_INSTANTIATE)
 #undef OPENPMD_INSTANTIATE
 #undef OPENPMD_APPLY_TEMPLATE
+#pragma clang diagnostic pop
 } // namespace detail
 
 template <typename T_elem>
