@@ -57,26 +57,3 @@
 #define OPENPMD_EXTERN extern
 #endif
 //! @}
-
-// C++ std-lib used in public APIs
-//   note: this means one needs to run with the same stdlib
-//         as one compiled with
-#if defined(_MSC_VER)
-// std::string
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::allocator<char>;
-OPENPMD_EXTERN template struct OPENPMD_PUBLIC std::char_traits<char>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::basic_string<char>;
-
-// std::vector< T >
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::allocator<std::uint64_t>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::allocator<float>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::allocator<double>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::allocator<long double>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::allocator<std::string>;
-
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::vector<std::uint64_t>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::vector<float>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::vector<double>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::vector<long double>;
-OPENPMD_EXTERN template class OPENPMD_PUBLIC std::vector<std::string>;
-#endif
