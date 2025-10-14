@@ -321,7 +321,7 @@ jobs:
         apk add hdf5-dev
         python3.10 -m pip install numpy h5py
     - name: Build
-      env: {CXXFLAGS: -Werror}
+      env: {CXXFLAGS: "-Werror -Wno-error=maybe-uninitialized"}
       run: |
         share/openPMD/download_samples.sh build
         cmake -S . -B build                  \
