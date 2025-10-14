@@ -309,10 +309,10 @@ jobs:
         done
 
   musllinux_py10:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     container:
-      image: quay.io/pypa/musllinux_1_1_x86_64
+      image: quay.io/pypa/musllinux_1_2_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Install
