@@ -177,7 +177,7 @@ namespace internal
      * MeshRecordComponent, Mesh, Record, ParticleSpecies, Iteration.
      */
     template <typename T>
-    T &makeOwning(T &self, Series);
+    OPENPMD_PUBLIC T &makeOwning(T &self, Series);
 } // namespace internal
 
 namespace debug

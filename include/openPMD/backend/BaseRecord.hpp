@@ -381,7 +381,7 @@ namespace detail
         "records. Use the Record directly as a RecordComponent.";
 
     template <typename BaseRecord>
-    void verifyNonscalar(BaseRecord *self);
+    OPENPMD_PUBLIC void verifyNonscalar(BaseRecord *self);
 } // namespace detail
 
 template <typename T_elem>
