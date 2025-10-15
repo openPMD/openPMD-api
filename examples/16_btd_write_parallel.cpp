@@ -40,7 +40,10 @@ bool m_barrier_at_flush = false;
 auto m_blockX = 32ul;
 auto m_blockY = 64ul;
 auto m_blockZ = 64ul;
-auto m_blockTotal = 4;
+auto m_workerTotal = 4;
+
+auto m_diskFlushFrequency = 4;
+auto m_adiosFlattenSteps = false;
 
 /*
  * assign a rank to work  on a buffer from a snapshot
@@ -57,7 +60,7 @@ struct Workload
 };
 
 std::vector<int> m_snapshots = {0, 1, 2, 3};
-std::vector<int> m_buffers = {1, 2, 3, 4};
+std::vector<int> m_buffers = {1, 2, 3, 4, 5, 6};
 
 // supposed to be
 // std::vector<std::string> m_common_fields={"B","j", "E"};
@@ -98,7 +101,7 @@ void setupMeshComp(
             auto curr_mesh_comp = meshes[ff][cc];
             Datatype datatype = determineDatatype<double>();
             Extent global_extent = {
-                m_blockX * m_blockTotal, m_blockY, m_blockZ};
+                m_blockX * m_buffers.size(), m_blockY, m_blockZ};
             Dataset dataset = Dataset(datatype, global_extent);
 
             curr_mesh_comp.resetDataset(dataset);
@@ -136,6 +139,20 @@ void doFlush(
 
     series->iterations[w.whichSnapshot].seriesFlush(
         "adios2.engine.preferred_flush_target = \"buffer\"");
+
+    if ((w.whichBuffer % m_diskFlushFrequency) == 0)
+    {
+        if (m_adiosFlattenSteps)
+        {
+            series->iterations[w.whichSnapshot].seriesFlush(
+                R"(adios2.engine.preferred_flush_target = "new_step")");
+        }
+        else
+        {
+            series->iterations[w.whichSnapshot].seriesFlush(
+                R"(adios2.engine.preferred_flush_target = "disk")");
+        }
+    }
 }
 
 void doWork(
@@ -167,7 +184,8 @@ void doWork(
     if (currRank == w.whichWorkRank)
     {
         // example shows a 1D domain decomposition in first index
-        Offset chunk_offset = {m_blockX * (m_blockTotal - w.whichBuffer), 0, 0};
+        Offset chunk_offset = {
+            m_blockX * (m_buffers.size() - w.whichBuffer), 0, 0};
         Extent chunk_extent = {m_blockX, m_blockY, m_blockZ};
         if (m_verbose)
         {
@@ -197,12 +215,98 @@ void doWork(
         {
             auto dynamicMemoryView =
                 mymesh.storeChunk<double>(chunk_offset, chunk_extent);
-            std::cout << " span allocation snap:" << w.whichSnapshot << " "
-                      << w.whichBuffer << std::endl;
+
             auto spanBuffer = dynamicMemoryView.currentBuffer();
             std::copy(
                 input.get(), input.get() + numElements, spanBuffer.data());
         }
+    }
+    // span version is collective
+    else
+    {
+        if (m_span)
+        {
+            mymesh.storeChunk<double>({0, 0, 0}, {0, 0, 0}).currentBuffer();
+        }
+    }
+}
+
+void doInit(std::vector<Workload> &workOrders, int maxWorkers)
+{
+    workOrders.resize(m_snapshots.size() * m_buffers.size());
+
+    int counter = 0;
+    for (auto snapID : m_snapshots)
+    {
+        for (auto bufferID : m_buffers)
+        {
+            {
+                auto workRank = (counter % maxWorkers);
+                // workOrders.push_back(Workload{snapID, bufferID, workRank});
+                auto pos = (bufferID - 1) * m_snapshots.size() + snapID;
+                workOrders[pos] = Workload{snapID, bufferID, workRank};
+                counter++;
+            }
+        }
+    }
+}
+
+void doConfig(int argc, char *argv[], int currRank)
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+        if (arg == "-v")
+        {
+            m_verbose = true;
+        }
+        else if (arg == "-s")
+        {
+            m_span = true;
+        }
+        else if (arg == "-b")
+        {
+            m_barrier_at_flush = true;
+        }
+        else if (arg == "-f")
+        {
+            m_adiosFlattenSteps = true;
+        }
+        else if (arg == "-d")
+        {
+            if (i + 1 < argc)
+            {
+                int value = std::atoi(argv[++i]);
+                if (value > 0)
+                    m_diskFlushFrequency = value;
+                else if (0 == currRank)
+                    std::cerr << "Error: -d value must be a positive integer. "
+                                 "Using default."
+                              << std::endl;
+                ;
+            }
+            else if (0 == currRank)
+                std::cerr
+                    << "[Error]: Missing value for -d option. Using default."
+                    << std::endl;
+        }
+        else
+        {
+            if (0 == currRank)
+                std::cerr << "[Warning]: Ignoring Unknown option '" << arg
+                          << "'" << std::endl;
+        }
+    }
+
+    if (0 == currRank)
+    {
+        std::cout << " Configuration: \n\t[-v verbose] =" << m_verbose
+                  << "\n\t[-s span] =" << m_span
+                  << "\n\t[-b barrier_at_flush] =" << m_barrier_at_flush
+                  << " \n\t[-d diskFlushAfterNumbuffer] = "
+                  << m_diskFlushFrequency
+                  << " \n\t[-f adiosFlattenSteps] = " << m_adiosFlattenSteps
+                  << std::endl;
     }
 }
 
@@ -216,52 +320,18 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
-    for (int i = 1; i < argc; ++i)
-    {
-        if (std::string(argv[i]) == "-v")
-        {
-            m_verbose = true;
-        }
-        if (std::string(argv[i]) == "-s")
-        {
-            m_span = true;
-        }
-        if (std::string(argv[i]) == "-b")
-        {
-            m_barrier_at_flush = true;
-        }
-    }
-
-    if (0 == mpi_rank)
-    {
-        std::cout << " Configuration: \n\t[verbose] =" << m_verbose
-                  << "\n\t[span] =" << m_span
-                  << "\n\t[barrier_at_flush] =" << m_barrier_at_flush
-                  << std::endl;
-        std::cout << " change with -v -s -b respectively " << std::endl;
-    }
+    doConfig(argc, argv, mpi_rank);
 
     std::vector<Workload> workOrders;
-    auto maxWorkers = std::min(mpi_size, 4);
+    auto maxWorkers = std::min(mpi_size, m_workerTotal);
 
-    int counter = 0;
-    for (auto snapID : m_snapshots)
-    {
-        for (auto bufferID : m_buffers)
-        {
-            {
-                auto workRank = (counter % maxWorkers);
-                workOrders.push_back(Workload{snapID, bufferID, workRank});
-                counter++;
-            }
-        }
-    }
+    doInit(workOrders, maxWorkers);
 
-    if (m_blockTotal < mpi_size)
+    if (m_workerTotal < mpi_size)
         if (0 == mpi_rank)
             std::cout << " === WARNING: not all buffers in all snapshots will "
                          "be touched, expecting "
-                      << m_blockTotal
+                      << m_workerTotal
                       << " ranks to do all work  ==== " << std::endl;
 
     // std::vector<std::string> exts = {"bp", "h5"};
@@ -273,10 +343,14 @@ int main(int argc, char *argv[])
                       << " ========== " << std::endl;
         try
         {
+            std::string options = "";
+            if (m_adiosFlattenSteps)
+                options = R"(adios2.engine.parameters.FlattenSteps = "on")";
             std::unique_ptr<Series> series = std::make_unique<openPMD::Series>(
                 "../samples/16_btd_%07T." + ext,
                 Access::CREATE,
-                MPI_COMM_WORLD);
+                MPI_COMM_WORLD,
+                options);
 
             series->setIterationEncoding(openPMD::IterationEncoding::fileBased);
             series->setMeshesPath("fields");
@@ -289,14 +363,13 @@ int main(int argc, char *argv[])
                     for (const auto &cc : m_common_comps)
                     {
                         doWork(w, series, mpi_rank, ff, cc, seed);
-                        doFlush(w, series, mpi_rank);
                         seed += 0.001;
                         std::this_thread::sleep_for(
                             std::chrono::milliseconds(1000));
                     }
                 }
-                // later
-                // doFlush(w, series, mpi_rank);
+
+                doFlush(w, series, mpi_rank);
             }
 
             series->close();
