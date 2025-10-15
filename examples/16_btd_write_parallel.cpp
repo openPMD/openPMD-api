@@ -221,14 +221,6 @@ void doWork(
                 input.get(), input.get() + numElements, spanBuffer.data());
         }
     }
-    // span version is collective
-    else
-    {
-        if (m_span)
-        {
-            mymesh.storeChunk<double>({0, 0, 0}, {0, 0, 0}).currentBuffer();
-        }
-    }
 }
 
 void doInit(std::vector<Workload> &workOrders, int maxWorkers)
@@ -242,7 +234,6 @@ void doInit(std::vector<Workload> &workOrders, int maxWorkers)
         {
             {
                 auto workRank = (counter % maxWorkers);
-                // workOrders.push_back(Workload{snapID, bufferID, workRank});
                 auto pos = (bufferID - 1) * m_snapshots.size() + snapID;
                 workOrders[pos] = Workload{snapID, bufferID, workRank};
                 counter++;
