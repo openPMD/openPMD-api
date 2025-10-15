@@ -30,7 +30,6 @@ Functionality                Behavior           Description
 ``::resetDataset`` [1]_ [2]_ *backend-specific* declare, write
 ``::makeConstant`` [3]_      *backend-specific* declare, write
 ``::storeChunk`` [1]_        independent        write
-``::storeChunk`` [5]_        collective         Span-based overloads
 ``::loadChunk``              independent        read
 ``::availableChunks`` [4]_   collective         read, immediate result
 ============================ ================== ================================
@@ -49,8 +48,6 @@ Functionality                Behavior           Description
 
 .. [4] We usually open iterations delayed on first access. This first access is usually the ``flush()`` call after a ``storeChunk``/``loadChunk`` operation. If the first access is non-collective, an explicit, collective ``Iteration::open()`` can be used to have the files already open.
        Alternatively, iterations might be accessed for the first time by immediate operations such as ``::availableChunks()``.
-
-.. [5] The Span-based ``storeChunk`` API calls return a backend-allocated pointer, requiring flush operations. These API calls hence inherit the collective properties of flushing. Use store calls with zero-size extent if a rank does not contribute anything.
 
 .. warning::
 

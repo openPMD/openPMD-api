@@ -406,11 +406,6 @@ public:
      * @brief Overload of storeChunk() that lets the openPMD API allocate
      *        a buffer.
      *
-     * Collective call: Unlike most other storeChunk() calls, this call returns
-     * pointers allocated by the IO backends and hence inherits the collective
-     * properties of flushing. Apply zero-extent storeChunk() calls from ranks
-     * that do not contribute anything.
-     *
      * This may save memory if the openPMD backend in use is able to provide
      * users a view into its own buffers, avoiding the need to allocate
      * a new buffer.
@@ -447,11 +442,6 @@ public:
     /**
      * Overload of span-based storeChunk() that uses operator new() to create
      * a buffer.
-     *
-     * Collective call: Unlike most other storeChunk() calls, this call returns
-     * pointers allocated by the IO backends and hence inherits the collective
-     * properties of flushing. Apply zero-extent storeChunk() calls from ranks
-     * that do not contribute anything.
      */
     template <typename T>
     DynamicMemoryView<T> storeChunk(Offset, Extent);
