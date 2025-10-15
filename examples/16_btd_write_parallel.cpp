@@ -62,8 +62,8 @@ struct Workload
 std::vector<int> m_snapshots = {0, 1, 2, 3};
 std::vector<int> m_buffers = {1, 2, 3, 4, 5, 6};
 
-std::vector<std::string> m_common_fields={"B","j", "E"};
-std::vector<std::string> m_common_comps={"x", "y", "z"};
+std::vector<std::string> m_common_fields = {"B", "j", "E"};
+std::vector<std::string> m_common_comps = {"x", "y", "z"};
 
 std::vector<std::string> getBackends()
 {
