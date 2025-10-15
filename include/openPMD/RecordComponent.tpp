@@ -29,6 +29,7 @@
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
+#include "openPMD/backend/Attributable.hpp"
 
 #include <memory>
 #include <type_traits>
@@ -111,7 +112,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
                 "using storeChunk() (see RecordComponent::resetDataset()).");
         }
         Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
-        dCreate.name = rc.m_name;
+        dCreate.name = Attributable::get().m_writable.ownKeyWithinParent;
         IOHandler()->enqueue(IOTask(this, dCreate));
     }
 
