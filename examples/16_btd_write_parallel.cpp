@@ -62,12 +62,8 @@ struct Workload
 std::vector<int> m_snapshots = {0, 1, 2, 3};
 std::vector<int> m_buffers = {1, 2, 3, 4, 5, 6};
 
-// supposed to be
-// std::vector<std::string> m_common_fields={"B","j", "E"};
-// std::vector<std::string> m_common_comps={"x", "y", "z"};
-// for simplicity
-std::vector<std::string> m_common_fields = {"B"};
-std::vector<std::string> m_common_comps = {"x"};
+std::vector<std::string> m_common_fields={"B","j", "E"};
+std::vector<std::string> m_common_comps={"x", "y", "z"};
 
 std::vector<std::string> getBackends()
 {
@@ -325,7 +321,6 @@ int main(int argc, char *argv[])
                       << m_workerTotal
                       << " ranks to do all work  ==== " << std::endl;
 
-    // std::vector<std::string> exts = {"bp", "h5"};
     std::vector<std::string> exts = getBackends();
     for (auto const &ext : exts)
     {
