@@ -309,10 +309,10 @@ jobs:
         done
 
   musllinux_py10:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     container:
-      image: quay.io/pypa/musllinux_1_1_x86_64
+      image: quay.io/pypa/musllinux_1_2_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Install
@@ -321,7 +321,7 @@ jobs:
         apk add hdf5-dev
         python3.10 -m pip install numpy h5py
     - name: Build
-      env: {CXXFLAGS: -Werror}
+      env: {CXXFLAGS: "-Werror -Wno-error=maybe-uninitialized"}
       run: |
         share/openPMD/download_samples.sh build
         cmake -S . -B build                  \

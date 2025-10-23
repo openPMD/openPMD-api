@@ -56,7 +56,8 @@ namespace
         }
         auto operator==(FilteredInputIterator const &other) const -> bool
         {
-            return static_cast<Iterator const *>(this)->operator==(other);
+            return static_cast<Iterator const &>(*this) ==
+                static_cast<Iterator const &>(other);
         }
         using Iterator::operator*;
         using Iterator::operator->;

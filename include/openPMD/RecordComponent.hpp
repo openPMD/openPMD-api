@@ -82,16 +82,6 @@ namespace internal
          */
         Attribute m_constantValue{-1};
         /**
-         * The same std::string that the parent class would pass as parameter to
-         * RecordComponent::flush().
-         * This is stored only upon RecordComponent::flush() if
-         * AbstractIOHandler::flushLevel is set to FlushLevel::SkeletonOnly
-         * (for use by the Span<T>-based overload of
-         * RecordComponent::storeChunk()).
-         * @todo Merge functionality with ownKeyInParent?
-         */
-        std::string m_name;
-        /**
          * True if this component is an empty dataset, i.e. its extent is zero
          * in at least one dimension.
          * Treated by the openPMD-api as a special case of constant record
@@ -109,7 +99,6 @@ namespace internal
             BaseRecordComponentData::reset();
             m_chunks = std::queue<IOTask>();
             m_constantValue = -1;
-            m_name = std::string();
             m_isEmpty = false;
             m_hasBeenExtended = false;
         }

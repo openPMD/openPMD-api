@@ -161,12 +161,21 @@ Iteration &Iteration::open()
         it.m_closed = CloseStatus::Open;
         runDeferredParseAccess();
     }
-    if (getStepStatus() == StepStatus::OutOfStep)
+    switch (getStepStatus())
     {
+    case StepStatus::OutOfStep:
         beginStep(/* reread = */ false);
         setStepStatus(StepStatus::DuringStep);
+        break;
+    case StepStatus::DuringStep:
+    case StepStatus::NoStep: {
+        auto end = begin;
+        ++end;
+        s.flush_impl(begin, end, {FlushLevel::CreateOrOpenFiles});
     }
-    IOHandler()->flush(internal::defaultFlushParams);
+    break;
+    }
+    // IOHandler()->flush(internal::defaultFlushParams);
     return *this;
 }
 

@@ -262,7 +262,6 @@ void RecordComponent::flush(
     auto &rc = get();
     if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
     {
-        rc.m_name = name;
         return;
     }
     if (access::readOnly(IOHandler()->m_frontendAccess))

@@ -1299,6 +1299,17 @@ void ADIOS2IOHandlerImpl::getBufferView(
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
 
+    if (std::any_of(
+            parameters.extent.begin(), parameters.extent.end(), [](auto val) {
+                return val == 0;
+            }))
+    {
+        // Refuse empty operations, ADIOS2 creates ugly zero blocks for them,
+        // tell the frontend to do sth about it instead
+        parameters.out->backendManagedBuffer = false;
+        return;
+    }
+
     std::string name = nameOfVariable(writable);
     switch (m_useSpanBasedPutByDefault)
     {

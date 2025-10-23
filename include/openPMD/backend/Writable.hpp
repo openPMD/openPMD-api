@@ -89,6 +89,7 @@ class Writable final
     friend class ParticleSpecies;
     friend class Series;
     friend class Record;
+    friend class RecordComponent;
     friend class AbstractIOHandlerImpl;
     friend class ADIOS2IOHandlerImpl;
     friend class detail::ADIOS2File;

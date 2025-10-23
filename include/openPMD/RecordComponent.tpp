@@ -29,6 +29,7 @@
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
+#include "openPMD/backend/Attributable.hpp"
 
 #include <memory>
 #include <type_traits>
@@ -111,16 +112,8 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
                 "using storeChunk() (see RecordComponent::resetDataset()).");
         }
         Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
-        dCreate.name = rc.m_name;
+        dCreate.name = Attributable::get().m_writable.ownKeyWithinParent;
         IOHandler()->enqueue(IOTask(this, dCreate));
-    }
-
-    if (size == 0)
-    {
-        // Don't forward this operation to the backend as it might create ugly
-        // zero-blocks in ADIOS2
-        setDirtyRecursive(true);
-        return DynamicMemoryView<T>();
     }
 
     Parameter<Operation::GET_BUFFER_VIEW> getBufferView;
@@ -136,7 +129,10 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         // type shared_ptr<T> or shared_ptr<T[]>
         auto data = std::forward<F>(createBuffer)(size);
         out.ptr = static_cast<void *>(data.get());
-        storeChunk(std::move(data), std::move(o), std::move(e));
+        if (size > 0)
+        {
+            storeChunk(std::move(data), std::move(o), std::move(e));
+        }
     }
     setDirtyRecursive(true);
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};
