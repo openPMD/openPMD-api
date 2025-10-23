@@ -101,10 +101,10 @@ void setupMeshComp(
             Dataset dataset = Dataset(datatype, global_extent);
 
             curr_mesh_comp.resetDataset(dataset);
-            if (m_verbose)
+            if (m_verbose and !currRank)
             {
-                cout << "Rank : " << currRank << " Prepared a Dataset [" << ff
-                     << "/" << cc << "] of size " << dataset.extent[0] << " x "
+                cout << "AllRanks: Prepared a Dataset [" << ff << "/" << cc
+                     << "] of size " << dataset.extent[0] << " x "
                      << dataset.extent[1] << " x " << dataset.extent[2]
                      << " and Datatype " << dataset.dtype
                      << " iteration=" << w.whichSnapshot << '\n';
@@ -121,23 +121,24 @@ void doFlush(
 
     if (m_barrier_at_flush)
     {
-        if (m_verbose)
-            std::cout << " Barrier at doFlush(), rank:" << currRank
-                      << std::endl;
+        if (m_verbose and !currRank)
+            std::cout << "AllRanks: Barrier at doFlush() ";
+
         MPI_Barrier(MPI_COMM_WORLD);
     }
 
     else
     {
-        if (m_verbose)
-            std::cout << " At doFlush(), rank:" << currRank << std::endl;
+        if (m_verbose and !currRank)
+            std::cout << "AllRanks: At doFlush(), ";
     }
 
-    series->iterations[w.whichSnapshot].seriesFlush(
-        "adios2.engine.preferred_flush_target = \"buffer\"");
-
-    if ((w.whichBuffer % m_diskFlushFrequency) == 0)
+    if ((m_diskFlushFrequency > 0) &&
+        (w.whichBuffer % m_diskFlushFrequency) == 0)
     {
+        if (m_verbose and !currRank)
+            std::cout << " To disk!" << std::endl;
+
         if (m_adiosFlattenSteps)
         {
             series->iterations[w.whichSnapshot].seriesFlush(
@@ -148,6 +149,14 @@ void doFlush(
             series->iterations[w.whichSnapshot].seriesFlush(
                 R"(adios2.engine.preferred_flush_target = "disk")");
         }
+    }
+    else
+    {
+        if (m_verbose and !currRank)
+            std::cout << " To  buffer." << std::endl;
+
+        series->iterations[w.whichSnapshot].seriesFlush(
+            "adios2.engine.preferred_flush_target = \"buffer\"");
     }
 }
 
@@ -183,17 +192,19 @@ void doWork(
         Offset chunk_offset = {
             m_blockX * (m_buffers.size() - w.whichBuffer), 0, 0};
         Extent chunk_extent = {m_blockX, m_blockY, m_blockZ};
-        if (m_verbose)
-        {
-            cout << "Rank: " << currRank << " At snapshot:" << w.whichSnapshot
-                 << " buffer " << w.whichBuffer << "  seed: " << seed;
-            cout << "    box: " << chunk_offset[0] << ", " << chunk_offset[1]
-                 << ", " << chunk_offset[2] << std::endl;
-        }
 
         // prepare data block value
-        auto value = double(
-            seed + currRank + 0.1 * w.whichSnapshot + 100 * w.whichBuffer);
+        double value =
+            seed + w.whichSnapshot + (double)10 * (double)w.whichBuffer;
+
+        if (m_verbose)
+        {
+            cout << "  Rank: " << currRank << " At snapshot:" << w.whichSnapshot
+                 << " buffer " << w.whichBuffer << "  seed: " << seed;
+            cout << "    box: " << chunk_offset[0] << ", " << chunk_offset[1]
+                 << ", " << chunk_offset[2] << "  " << field_name << "/"
+                 << comp_name << std::endl;
+        }
 
         auto numElements = size_t(m_blockX) * m_blockY * m_blockZ;
         auto input = std::shared_ptr<double[]>(new double[numElements]);
@@ -264,7 +275,7 @@ void doConfig(int argc, char *argv[], int currRank)
             if (i + 1 < argc)
             {
                 int value = std::atoi(argv[++i]);
-                if (value > 0)
+                if (value >= 0)
                     m_diskFlushFrequency = value;
                 else if (0 == currRank)
                     std::cerr << "Error: -d value must be a positive integer. "
@@ -287,13 +298,15 @@ void doConfig(int argc, char *argv[], int currRank)
 
     if (0 == currRank)
     {
-        std::cout << " Configuration: \n\t[-v verbose] =" << m_verbose
-                  << "\n\t[-s span] =" << m_span
-                  << "\n\t[-b barrier_at_flush] =" << m_barrier_at_flush
-                  << " \n\t[-d diskFlushAfterNumbuffer] = "
+        std::cout << " Configuration: \n\t[-v verbose: default(no)] = "
+                  << m_verbose << "\n\t[-s use_span: default(no)] = " << m_span
+                  << "\n\t[-b mpi_barrier_at_flush: default(no)] = "
+                  << m_barrier_at_flush
+                  << " \n\t[-d diskFlushAfterNumbuffer: default(4) 0 means "
+                     "flush after every storechunk)] = "
                   << m_diskFlushFrequency
-                  << " \n\t[-f adiosFlattenSteps] = " << m_adiosFlattenSteps
-                  << std::endl;
+                  << " \n\t[-f adiosFlattenSteps: default=no] = "
+                  << m_adiosFlattenSteps << std::endl;
     }
 }
 
@@ -352,11 +365,21 @@ int main(int argc, char *argv[])
                         seed += 0.001;
                         std::this_thread::sleep_for(
                             std::chrono::milliseconds(1000));
+
+                        MPI_Barrier(MPI_COMM_WORLD);
+
+                        if (0 == m_diskFlushFrequency)
+                        {
+                            doFlush(w, series, mpi_rank);
+                        }
                     }
                 }
 
                 doFlush(w, series, mpi_rank);
             }
+
+            for (auto snapID : m_snapshots)
+                series->iterations[snapID].close();
 
             series->close();
         }
