@@ -1,6 +1,6 @@
 language: python
 python:
-  - "3.9"
+  - "3.11"
 
 branches:
   only:
@@ -10,7 +10,7 @@ env:
   global:
     - OPENPMD_GIT_REF="0.16.1"
 
-    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.9"
+    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.10"
     # Install dependencies on Linux and OSX
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
     # for the openPMD-api build, CMake shall search for
@@ -24,11 +24,6 @@ jobs:
     # perform a linux ARMv8 build
     # note: takes >50min, so we need to split
     # +manylinux
-    - services: docker
-      arch: arm64
-      dist: focal
-      env:
-        - CIBW_BUILD="cp39-manylinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
@@ -49,17 +44,7 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="pp310-manylinux_aarch64"
-    - services: docker
-      arch: arm64
-      dist: focal
-      env:
-        - CIBW_BUILD="pp39-manylinux_aarch64"
     # +musllinux
-    - services: docker
-      arch: arm64
-      dist: focal
-      env:
-        - CIBW_BUILD="cp38-musllinux_aarch64 cp39-musllinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
@@ -77,11 +62,6 @@ jobs:
         - CIBW_BUILD="cp314-musllinux_aarch64"
 
     # perform a linux PPC64LE build
-    - services: docker
-      arch: ppc64le
-      dist: focal
-      env:
-        - CIBW_BUILD="cp39-manylinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
@@ -107,11 +87,6 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="cp314-manylinux_ppc64le"
-    - services: docker
-      arch: ppc64le
-      dist: focal
-      env:
-        - CIBW_BUILD="cp39-musllinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
