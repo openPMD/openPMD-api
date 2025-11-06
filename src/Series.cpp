@@ -127,6 +127,52 @@ namespace
         int padding,
         std::string const &postfix,
         std::optional<std::string> const &extension);
+
+    struct TimeoutLazyParsing
+    {
+        using Clock = std::chrono::system_clock;
+        Clock::time_point start_parsing, time_of_last_warning;
+        uint64_t timeout;
+        bool printed_warning_already = false;
+
+        TimeoutLazyParsing(uint64_t timeout_in) : timeout(timeout_in)
+        {
+            if (timeout > 0)
+            {
+                start_parsing = Clock::now();
+                time_of_last_warning = start_parsing;
+            }
+        }
+
+        void now(size_t current_iteration_count, size_t total_iteration_count)
+        {
+            if (timeout == 0)
+            {
+                return;
+            }
+            auto current = Clock::now();
+            auto diff = std::chrono::duration_cast<std::chrono::seconds>(
+                current - time_of_last_warning);
+            if (uint64_t(diff.count()) >= timeout)
+            {
+                auto total_diff =
+                    std::chrono::duration_cast<std::chrono::seconds>(
+                        current - start_parsing);
+                if (!printed_warning_already)
+                {
+                    std::cerr
+                        << R"(Warning: Parsing Iterations is taking a long time. Consider setting {"defer_iteration_parsing": true} for lazy opening of the Series and then explicitly opening Iterations with Iteration::open(). Refer also to the documentation at https://openpmd-api.readthedocs.io. Suppress this warning by setting {"hint_lazy_parsing_timeout": 0}.)"
+                        << '\n';
+                    printed_warning_already = true;
+                }
+                std::cerr << "Elapsed time: " << total_diff.count()
+                          << "s, parsed " << current_iteration_count << " of "
+                          << total_iteration_count << " Iterations."
+                          << std::endl;
+                time_of_last_warning = current;
+            }
+        }
+    };
 } // namespace
 
 struct Series::ParsedInput
@@ -1759,15 +1805,7 @@ void Series::readFileBased(
         bool atLeastOneIterationSuccessful = false;
         std::optional<error::ReadError> forwardFirstError;
 
-        using Clock = std::chrono::system_clock;
-        Clock::time_point start_parsing, time_of_last_warning;
-        auto timeout = series.m_hintLazyParsingAfterTimeout;
-        bool printed_warning_already = false;
-        if (timeout > 0)
-        {
-            start_parsing = Clock::now();
-            time_of_last_warning = start_parsing;
-        }
+        TimeoutLazyParsing timeout(series.m_hintLazyParsingAfterTimeout);
 
         size_t read_iterations = 0;
         for (auto &iteration : series.iterations)
@@ -1777,29 +1815,9 @@ void Series::readFileBased(
             {
                 continue;
             }
-            if (timeout > 0 && !read_only_this_single_iteration.has_value())
+            if (!read_only_this_single_iteration.has_value())
             {
-                auto current = Clock::now();
-                auto diff = std::chrono::duration_cast<std::chrono::seconds>(
-                    current - time_of_last_warning);
-                if (uint64_t(diff.count()) >= timeout)
-                {
-                    auto total_diff =
-                        std::chrono::duration_cast<std::chrono::seconds>(
-                            current - start_parsing);
-                    if (!printed_warning_already)
-                    {
-                        std::cerr
-                            << R"(Warning: Parsing Iterations is taking a long time. Consider setting {"defer_iteration_parsing": true} for lazy opening of the Series and then explicitly opening Iterations with Iteration::open(). Refer also to the documentation at https://openpmd-api.readthedocs.io. Suppress this warning by setting {"hint_lazy_parsing_timeout": 0}.)"
-                            << '\n';
-                        printed_warning_already = true;
-                    }
-                    std::cerr << "Elapsed time: " << total_diff.count()
-                              << "s, parsed " << read_iterations << " of "
-                              << series.iterations.size() << " Iterations."
-                              << std::endl;
-                    time_of_last_warning = current;
-                }
+                timeout.now(read_iterations, iterations.size());
             }
             if (auto error = readIterationEagerly(iteration.second); error)
             {
