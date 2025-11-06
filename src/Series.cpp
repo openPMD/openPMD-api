@@ -2213,6 +2213,10 @@ creating new iterations.
 
     auto currentSteps = currentSnapshot();
 
+    TimeoutLazyParsing timeout{
+        series.m_parseLazily ? 0 : series.m_hintLazyParsingAfterTimeout};
+    size_t parsed_iterations = 0;
+
     switch (iterationEncoding())
     {
     case IterationEncoding::groupBased:
@@ -2230,6 +2234,10 @@ creating new iterations.
                 index != *read_only_this_single_iteration)
             {
                 continue;
+            }
+            if (!read_only_this_single_iteration.has_value())
+            {
+                timeout.now(parsed_iterations, pList.paths->size());
             }
             if (auto err = internal::withRWAccess(
                     IOHandler()->m_seriesStatus,
@@ -2254,6 +2262,7 @@ creating new iterations.
             {
                 readableIterations.push_back(index);
             }
+            ++parsed_iterations;
         }
         if (currentSteps.has_value())
         {
@@ -2310,6 +2319,10 @@ creating new iterations.
 
         for (auto it : *currentSteps)
         {
+            if (!read_only_this_single_iteration.has_value())
+            {
+                timeout.now(parsed_iterations, pList.paths->size());
+            }
             /*
              * Variable-based iteration encoding relies on steps, so parsing
              * must happen after opening the first step.
@@ -2337,6 +2350,7 @@ creating new iterations.
                  */
                 throw *err;
             }
+            ++parsed_iterations;
         }
         return *currentSteps;
     }
