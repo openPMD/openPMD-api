@@ -48,6 +48,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -1757,12 +1758,48 @@ void Series::readFileBased(
     {
         bool atLeastOneIterationSuccessful = false;
         std::optional<error::ReadError> forwardFirstError;
+
+        using Clock = std::chrono::system_clock;
+        Clock::time_point start_parsing, time_of_last_warning;
+        auto timeout = series.m_hintLazyParsingAfterTimeout;
+        bool printed_warning_already = false;
+        if (timeout > 0)
+        {
+            start_parsing = Clock::now();
+            time_of_last_warning = start_parsing;
+        }
+
+        size_t read_iterations = 0;
         for (auto &iteration : series.iterations)
         {
             if (read_only_this_single_iteration.has_value() &&
                 *read_only_this_single_iteration != iteration.first)
             {
                 continue;
+            }
+            if (timeout > 0 && !read_only_this_single_iteration.has_value())
+            {
+                auto current = Clock::now();
+                auto diff = std::chrono::duration_cast<std::chrono::seconds>(
+                    current - time_of_last_warning);
+                if (uint64_t(diff.count()) >= timeout)
+                {
+                    auto total_diff =
+                        std::chrono::duration_cast<std::chrono::seconds>(
+                            current - start_parsing);
+                    if (!printed_warning_already)
+                    {
+                        std::cerr
+                            << R"(Warning: Parsing Iterations is taking a long time. Consider setting {"defer_iteration_parsing": true} for lazy opening of the Series and then explicitly opening Iterations with Iteration::open(). Refer also to the documentation at https://openpmd-api.readthedocs.io. Suppress this warning by setting {"hint_lazy_parsing_timeout": 0}.)"
+                            << '\n';
+                        printed_warning_already = true;
+                    }
+                    std::cerr << "Elapsed time: " << total_diff.count()
+                              << "s, parsed " << read_iterations << " of "
+                              << series.iterations.size() << " Iterations."
+                              << std::endl;
+                    time_of_last_warning = current;
+                }
             }
             if (auto error = readIterationEagerly(iteration.second); error)
             {
@@ -1779,6 +1816,7 @@ void Series::readFileBased(
             {
                 atLeastOneIterationSuccessful = true;
             }
+            ++read_iterations;
         }
         if (!atLeastOneIterationSuccessful)
         {
@@ -3028,6 +3066,10 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
     auto &series = get();
     getJsonOption<bool>(
         options, "defer_iteration_parsing", series.m_parseLazily);
+    getJsonOption<uint64_t>(
+        options,
+        "hint_lazy_parsing_timeout",
+        series.m_hintLazyParsingAfterTimeout);
     internal::SeriesData::SourceSpecifiedViaJSON rankTableSource;
     if (getJsonOptionLowerCase(options, "rank_table", rankTableSource.value))
     {
