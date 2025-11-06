@@ -56,6 +56,9 @@ namespace internal
         typename T_BaseRecord_,
         typename T_BaseRecordData_,
         typename T_BaseIterator>
+#ifdef __HIPCC__
+    __host__
+#endif
     ScalarIterator<T_BaseRecord_, T_BaseRecordData_, T_BaseIterator>::
         ScalarIterator() = default;
 

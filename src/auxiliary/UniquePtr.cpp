@@ -65,6 +65,9 @@ namespace auxiliary
 } // namespace auxiliary
 
 template <typename T>
+#ifdef __HIPCC__
+__host__
+#endif
 UniquePtrWithLambda<T>::UniquePtrWithLambda() = default;
 
 template <typename T>

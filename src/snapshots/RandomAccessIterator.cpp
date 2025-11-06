@@ -10,9 +10,15 @@ template <typename iterator_t>
 RandomAccessIterator<iterator_t>::~RandomAccessIterator() = default;
 
 template <typename iterator_t>
+#ifdef __HIPCC__
+__host__
+#endif
 RandomAccessIterator<iterator_t>::RandomAccessIterator(
     RandomAccessIterator const &other) = default;
 template <typename iterator_t>
+#ifdef __HIPCC__
+__host__
+#endif
 RandomAccessIterator<iterator_t>::RandomAccessIterator(
     RandomAccessIterator
         &&other) noexcept(noexcept(iterator_t(std::declval<iterator_t &&>()))) =
