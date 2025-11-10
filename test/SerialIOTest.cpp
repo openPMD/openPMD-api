@@ -5853,10 +5853,11 @@ void variableBasedSeries(std::string const &file)
 
             iteration.setAttribute("changing_value", i);
 
-            // this tests changing extents and dimensionalities
-            // across iterations
+            // this tests changing extents across iterations
+            // ADIOS2 does not support changing the dimensionality
+            // (older versions used to somewhat support it, but not really)
             auto E_y = iteration.meshes["E"]["y"];
-            unsigned dimensionality = i % 3 + 1;
+            unsigned dimensionality = 3;
             unsigned len = i + 1;
             Extent changingExtent(dimensionality, len);
             E_y.resetDataset({openPMD::Datatype::INT, changingExtent});
@@ -5984,7 +5985,7 @@ void variableBasedSeries(std::string const &file)
             }
 
             auto E_y = iteration.meshes["E"]["y"];
-            unsigned dimensionality = index % 3 + 1;
+            unsigned dimensionality = 3;
             unsigned len = index + 1;
             Extent changingExtent(dimensionality, len);
             REQUIRE(E_y.getExtent() == changingExtent);
