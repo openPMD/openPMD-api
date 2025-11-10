@@ -398,8 +398,7 @@ auto BaseRecord<T_elem>::operator[](key_type const &key) -> mapped_type &
             T_RecordComponent::get();
         }
         mapped_type &ret = keyScalar ? static_cast<mapped_type &>(*this)
-                                     : T_Container::
-                                       operator[](key);
+                                     : T_Container::operator[](key);
         return ret;
     }
 }
@@ -441,8 +440,7 @@ auto BaseRecord<T_elem>::operator[](key_type &&key) -> mapped_type &
             T_RecordComponent::get();
         }
         mapped_type &ret = keyScalar ? static_cast<mapped_type &>(*this)
-                                     : T_Container::
-                                       operator[](std::move(key));
+                                     : T_Container::operator[](std::move(key));
         return ret;
     }
 }
