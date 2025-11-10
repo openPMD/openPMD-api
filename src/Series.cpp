@@ -3119,18 +3119,25 @@ namespace internal
         {
             this->m_sharedStatefulIterator->close();
         }
-        /*
-         * Scenario: A user calls `Series::flush()` but does not check for
-         * thrown exceptions. The exception will propagate further up,
-         * usually thereby popping the stack frame that holds the `Series`
-         * object. `Series::~Series()` will run. This check avoids that the
-         * `Series` is needlessly flushed a second time. Otherwise, error
-         * messages can get very confusing.
-         */
         Series impl;
         impl.setData({this, [](auto const *) {}});
-        if (auto IOHandler = impl.IOHandler();
-            IOHandler && IOHandler->m_lastFlushSuccessful)
+        if (auto IOHandler = impl.IOHandler(); IOHandler &&
+            /*
+             * Scenario: A user calls `Series::flush()` but does not check for
+             * thrown exceptions. The exception will propagate further up,
+             * usually thereby popping the stack frame that holds the `Series`
+             * object. `Series::~Series()` will run. This check avoids that the
+             * `Series` is needlessly flushed a second time. Otherwise, error
+             * messages can get very confusing.
+             */
+
+            IOHandler->m_lastFlushSuccessful &&
+            /*
+             * If a read-only Series is opened without any backend access, then
+             * don't go there now. Just peacefully close.
+             */
+            !(access::readOnly(IOHandler->m_frontendAccess) &&
+              !(*this)->m_writable.written))
         {
             impl.flush();
             /*
