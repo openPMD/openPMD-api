@@ -10,13 +10,13 @@ template <typename iterator_t>
 RandomAccessIterator<iterator_t>::~RandomAccessIterator() = default;
 
 template <typename iterator_t>
-#ifdef __HIPCC__
+#ifdef __HIPCC__  // ROCm 6.2.4 issue, see #1797
 __host__
 #endif
 RandomAccessIterator<iterator_t>::RandomAccessIterator(
     RandomAccessIterator const &other) = default;
 template <typename iterator_t>
-#ifdef __HIPCC__
+#ifdef __HIPCC__  // ROCm 6.2.4 issue, see #1797
 __host__
 #endif
 RandomAccessIterator<iterator_t>::RandomAccessIterator(

@@ -56,7 +56,7 @@ namespace internal
         typename T_BaseRecord_,
         typename T_BaseRecordData_,
         typename T_BaseIterator>
-#ifdef __HIPCC__
+#ifdef __HIPCC__  // ROCm 6.2.4 issue, see #1797
     __host__
 #endif
     ScalarIterator<T_BaseRecord_, T_BaseRecordData_, T_BaseIterator>::
