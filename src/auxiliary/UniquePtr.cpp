@@ -65,7 +65,7 @@ namespace auxiliary
 } // namespace auxiliary
 
 template <typename T>
-#ifdef __HIPCC__  // ROCm 6.2.4 issue, see #1797
+#ifdef __HIPCC__ // ROCm 6.2.4 issue, see #1797
 __host__
 #endif
 UniquePtrWithLambda<T>::UniquePtrWithLambda() = default;
