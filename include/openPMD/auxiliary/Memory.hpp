@@ -24,6 +24,7 @@
 #include "openPMD/Datatype.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
+#include <any>
 #include <complex>
 #include <functional>
 #include <iostream>
@@ -48,30 +49,40 @@ namespace auxiliary
      */
     struct WriteBuffer
     {
-        using EligibleTypes = std::
-            variant<std::shared_ptr<void const>, UniquePtrWithLambda<void>>;
-        EligibleTypes m_buffer;
+        using UniquePtr = std::shared_ptr<UniquePtrWithLambda<void>>;
+        using SharedPtr = std::shared_ptr<void const>;
+        std::any m_buffer;
 
         WriteBuffer();
 
-        template <typename... Args>
-        explicit WriteBuffer(Args &&...args)
-            : m_buffer(std::forward<Args>(args)...)
-        {}
+        WriteBuffer(std::shared_ptr<void const> ptr);
+        // WriteBuffer(std::shared_ptr<void> const &ptr);
 
-        WriteBuffer(WriteBuffer &&) noexcept(
-            noexcept(EligibleTypes(std::declval<EligibleTypes &&>())));
+        WriteBuffer(UniquePtrWithLambda<void> ptr);
+
+        WriteBuffer(WriteBuffer &&) noexcept;
         WriteBuffer(WriteBuffer const &) = delete;
-        WriteBuffer &operator=(WriteBuffer &&) noexcept(noexcept(
-            std::declval<EligibleTypes &>() =
-                std::declval<EligibleTypes &&>()));
+        WriteBuffer &operator=(WriteBuffer &&) noexcept;
         WriteBuffer &operator=(WriteBuffer const &) = delete;
 
         WriteBuffer const &operator=(std::shared_ptr<void const> ptr);
+        // WriteBuffer const &operator=(std::shared_ptr<void> const &ptr);
 
-        WriteBuffer const &operator=(UniquePtrWithLambda<void const> ptr);
+        WriteBuffer const &operator=(UniquePtrWithLambda<void> ptr);
 
         void const *get() const;
+
+        template <typename variant_t>
+        auto as_variant() -> variant_t &
+        {
+            return *std::any_cast<variant_t>(&m_buffer);
+        }
+
+        template <typename variant_t>
+        auto as_variant() const -> variant_t const &
+        {
+            return *std::any_cast<variant_t>(&m_buffer);
+        }
     };
 } // namespace auxiliary
 } // namespace openPMD

@@ -20,7 +20,11 @@
  */
 
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/ChunkInfo.hpp"
+#include "openPMD/auxiliary/Memory_internal.hpp"
+#include "openPMD/auxiliary/UniquePtr.hpp"
 
+#include <any>
 #include <complex>
 #include <functional>
 #include <iostream>
@@ -157,24 +161,40 @@ allocatePtr(Datatype dtype, Extent const &e)
     return allocatePtr(dtype, numPoints);
 }
 
-WriteBuffer::WriteBuffer() : m_buffer(UniquePtrWithLambda<void>())
+WriteBuffer::WriteBuffer() : m_buffer(std::make_any<UniquePtr>())
 {}
 
-WriteBuffer::WriteBuffer(WriteBuffer &&) noexcept(
-    noexcept(EligibleTypes(std::declval<EligibleTypes &&>()))) = default;
-WriteBuffer &WriteBuffer::operator=(WriteBuffer &&) noexcept(noexcept(
-    std::declval<EligibleTypes &>() = std::declval<EligibleTypes &&>())) =
-    default;
+WriteBuffer::WriteBuffer(std::shared_ptr<void const> ptr)
+    : m_buffer(std::make_any<WriteBufferTypes>(std::move(ptr)))
+{}
+// WriteBuffer::WriteBuffer(std::shared_ptr<void> const &ptr)
+//     : WriteBuffer{std::static_pointer_cast<void const>(ptr)}
+// {}
+
+WriteBuffer::WriteBuffer(UniquePtrWithLambda<void> ptr)
+    : m_buffer(
+          std::make_any<WriteBufferTypes>(
+              std::make_shared<UniquePtrWithLambda<void>>(std::move(ptr))))
+{}
+
+WriteBuffer::WriteBuffer(WriteBuffer &&) noexcept = default;
+WriteBuffer &WriteBuffer::operator=(WriteBuffer &&) noexcept = default;
 
 WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<void const> ptr)
 {
-    m_buffer = std::move(ptr);
+    m_buffer = std::make_any<WriteBufferTypes>(std::move(ptr));
     return *this;
 }
+// WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<void> const &ptr)
+// {
+//     operator=(std::static_pointer_cast<void const>(ptr));
+//     return *this;
+// }
 
-WriteBuffer const &WriteBuffer::operator=(UniquePtrWithLambda<void const> ptr)
+WriteBuffer const &WriteBuffer::operator=(UniquePtrWithLambda<void> ptr)
 {
-    m_buffer = std::move(ptr);
+    m_buffer = std::make_any<WriteBufferTypes>(
+        std::make_shared<UniquePtrWithLambda<void>>(std::move(ptr)));
     return *this;
 }
 
@@ -186,6 +206,6 @@ void const *WriteBuffer::get() const
             // we're being sneaky and don't distinguish the types here
             return static_cast<void const *>(arg.get());
         },
-        m_buffer);
+        as_variant<WriteBufferTypes>());
 }
 } // namespace openPMD::auxiliary
