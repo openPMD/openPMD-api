@@ -23,7 +23,6 @@
 #include <any>
 #include <cstddef>
 #include <type_traits>
-#include <variant> // IWYU pragma: export
 
 namespace openPMD
 {
