@@ -26,6 +26,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
 #include <cstdint>
@@ -114,7 +115,7 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
             }
             else if constexpr (std::is_same_v<
                                    ptr_type,
-                                   UniquePtrWithLambda<void>>)
+                                   std::shared_ptr<UniquePtrWithLambda<void>>>)
             {
                 BufferedUniquePtrPut bput;
                 bput.name = std::move(bp.name);
@@ -128,7 +129,7 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                  * (ptr_type does not work for this case).
                  */
                 // clang-format off
-                    bput.data = std::move(arg); // NOLINT(bugprone-move-forwarding-reference)
+                bput.data = std::move(*arg); // NOLINT(bugprone-move-forwarding-reference)
                 // clang-format on
                 bput.dtype = bp.param.dtype;
                 ba.m_uniquePtrPuts.push_back(std::move(bput));
@@ -139,7 +140,7 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     always_false_v<ptr_type>, "Unhandled std::variant branch");
             }
         },
-        bp.param.data.m_buffer);
+        bp.param.data.as_variant<auxiliary::WriteBufferTypes>());
 }
 
 template <int n, typename... Params>
