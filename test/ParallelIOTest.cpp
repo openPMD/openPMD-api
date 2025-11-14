@@ -124,9 +124,7 @@ void write_test_zero_extent(
     Series o = Series(
         filePath.append(".").append(file_ending),
         Access::CREATE_LINEAR,
-        MPI_COMM_WORLD,
-        // Workaround for https://github.com/ornladios/ADIOS2/issues/4716
-        R"({"adios2": {"use_group_table": false}})");
+        MPI_COMM_WORLD);
 
     int const max_step = 100;
 
