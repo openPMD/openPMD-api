@@ -25,21 +25,6 @@
 namespace openPMD
 {}
 
-#if defined(CUDA_VERSION) && !defined(OPENPMD_SKIP_CHECK_ISSUE_1720)
-static_assert(__cplusplus < 202002L || CUDA_VERSION >= 12040, R"(
-Cannot use the openPMD-api in C++20 projects under a Cuda version lower
-than 12.4.0 due to a bug in the implementation of std::variant.
-Further information at:
-https://github.com/openPMD/openPMD-api/issues/1720
-https://forums.developer.nvidia.com/t/nvcc-c-20-std-variant-complie-failed/270162/5
-This cannot be fixed on our side, please either upgrade to CUDA >= 12.4.0
-or use C++17.
-If you think that this assertion is shown wrongly, please apply
-'#define OPENPMD_SKIP_CHECK_ISSUE_1720' before including
-'<openPMD/openPMD.hpp>'.
-)");
-#endif
-
 // IWYU pragma: begin_exports
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
