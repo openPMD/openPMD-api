@@ -458,6 +458,18 @@ public:
     Series &setMeshesPath(std::string const &meshesPath);
 
     /**
+     * @return True if there is a rankTable dataset defined for this Series.
+     *         False in write-only access modes.
+     *         Will indiscriminately return false in file encoding:
+     *         rankTable is not explicitly supported in file encoding,
+     *         finding out if one is defined would require opening all available
+     *         files. You may still call Series::rankTable() to retrieve the
+     *         rank table if you know that there is one, but note that it will
+     *         return the rank table from the file that was last opened.
+     */
+    bool hasRankTableRead();
+
+    /**
      * @throw   no_such_attribute_error If optional attribute is not present.
      * @param collective Run this read operation collectively.
                 There might be an enormous IO overhead if running this
@@ -1008,6 +1020,8 @@ OPENPMD_private
      * steps?
      */
     [[nodiscard]] bool randomAccessSteps() const;
+
+    std::vector<std::string> availableDatasets();
 }; // Series
 
 namespace debug

@@ -215,6 +215,38 @@ Series &Series::setMeshesPath(std::string const &mp)
     return *this;
 }
 
+std::vector<std::string> Series::availableDatasets()
+{
+    if (iterationEncoding() == IterationEncoding::variableBased &&
+        IOHandler()->m_backendAccess == Access::READ_RANDOM_ACCESS)
+    {
+        Parameter<Operation::ADVANCE> advance;
+        advance.mode =
+            Parameter<Operation::ADVANCE>::StepSelection{std::nullopt};
+        IOHandler()->enqueue(IOTask(this, std::move(advance)));
+    }
+    Parameter<Operation::LIST_DATASETS> listDatasets;
+    IOHandler()->enqueue(IOTask(this, listDatasets));
+    IOHandler()->flush(internal::defaultFlushParams);
+    return std::move(*listDatasets.datasets);
+}
+
+bool Series::hasRankTableRead()
+{
+    if (access::writeOnly(IOHandler()->m_frontendAccess))
+    {
+        return false;
+    }
+    auto &series = get();
+    if (series.m_rankTable.m_bufferedRead.has_value())
+    {
+        return true;
+    }
+    auto datasets = availableDatasets();
+    return std::find(datasets.begin(), datasets.end(), "rankTable") !=
+        datasets.end();
+}
+
 #if openPMD_HAVE_MPI
 chunk_assignment::RankMeta Series::rankTable(bool collective)
 #else
@@ -245,21 +277,9 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
         IOHandler()->enqueue(IOTask(this, openFile));
 #endif
     }
-    if (iterationEncoding() == IterationEncoding::variableBased &&
-        IOHandler()->m_backendAccess == Access::READ_RANDOM_ACCESS)
-    {
-        Parameter<Operation::ADVANCE> advance;
-        advance.mode =
-            Parameter<Operation::ADVANCE>::StepSelection{std::nullopt};
-        IOHandler()->enqueue(IOTask(this, std::move(advance)));
-    }
-    Parameter<Operation::LIST_DATASETS> listDatasets;
-    IOHandler()->enqueue(IOTask(this, listDatasets));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (std::none_of(
-            listDatasets.datasets->begin(),
-            listDatasets.datasets->end(),
-            [](std::string const &str) { return str == "rankTable"; }))
+    auto datasets = availableDatasets();
+    if (std::find(datasets.begin(), datasets.end(), "rankTable") ==
+        datasets.end())
     {
         rankTable.m_bufferedRead = chunk_assignment::RankMeta{};
         return {};
