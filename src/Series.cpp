@@ -32,6 +32,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Date.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
@@ -160,9 +161,36 @@ namespace
                         current - start_parsing);
                 if (!printed_warning_already)
                 {
-                    std::cerr
-                        << R"(Warning: Parsing Iterations is taking a long time. Consider setting {"defer_iteration_parsing": true} for lazy opening of the Series and then explicitly opening Iterations with Iteration::open(). Refer also to the documentation at https://openpmd-api.readthedocs.io. Suppress this warning by setting {"hint_lazy_parsing_timeout": 0}.)"
-                        << '\n';
+                    std::cerr << &R"END(
+[openPMD] WARNING: Parsing Iterations is taking a long time.
+Consider using deferred Iteration parsing in order to open the Series lazily.
+This can be achieved by either setting an environment variable:
+
+> export OPENPMD_DEFER_ITERATION_PARSING=1
+
+Or by specifying it as part of a JSON/TOML configuration:
+
+> // C++:
+> Series simData("my_data_%T.%E", R"({"defer_iteration_parsing": true})");
+> // Python:
+> simData = opmd.Series("my_data_%T.%E", {"defer_iteration_parsing": True})
+
+Iterations will then be parsed only upon explicit user request:
+
+> series.snapshots()[100].open()  // new API
+> series.iterations[100].open()   // old API
+
+Alternatively, Iterations will be opened implicitly when iterating in
+READ_LINEAR access mode.
+Refer also to the documentation at https://openpmd-api.readthedocs.io
+
+This warning can be suppressed also by either specifying
+an environment variable:
+
+> export OPENPMD_HINT_LAZY_PARSING_TIMEOUT=0
+
+Or by the JSON/TOML option {"hint_lazy_parsing_timeout": 0}.
+)END"[1] << '\n';
                     printed_warning_already = true;
                 }
                 std::cerr << "Elapsed time: " << total_diff.count()
@@ -3052,9 +3080,18 @@ namespace
      * If yes, read it into the specified location.
      */
     template <typename From, typename Dest = From>
-    void
-    getJsonOption(json::TracingJSON &config, std::string const &key, Dest &dest)
+    void getJsonOption(
+        json::TracingJSON &config,
+        std::string const &key,
+        Dest &dest,
+        std::optional<std::string> envVar = std::nullopt)
     {
+        if (envVar.has_value())
+        {
+            dest = auxiliary::getEnvNum(*envVar, dest);
+            std::cout << "Read from env var " << *envVar << " as: " << dest
+                      << std::endl;
+        }
         if (config.json().contains(key))
         {
             dest = config[key].json().get<From>();
@@ -3097,11 +3134,15 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
 {
     auto &series = get();
     getJsonOption<bool>(
-        options, "defer_iteration_parsing", series.m_parseLazily);
+        options,
+        "defer_iteration_parsing",
+        series.m_parseLazily,
+        "OPENPMD_DEFER_ITERATION_PARSING");
     getJsonOption<uint64_t>(
         options,
         "hint_lazy_parsing_timeout",
-        series.m_hintLazyParsingAfterTimeout);
+        series.m_hintLazyParsingAfterTimeout,
+        "OPENPMD_HINT_LAZY_PARSING_TIMEOUT");
     internal::SeriesData::SourceSpecifiedViaJSON rankTableSource;
     if (getJsonOptionLowerCase(options, "rank_table", rankTableSource.value))
     {
