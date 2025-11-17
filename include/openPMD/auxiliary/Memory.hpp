@@ -58,31 +58,11 @@ namespace auxiliary
             using parent_t = std::shared_ptr<UniquePtrWithLambda<void>>;
 
         public:
-            MovableUniquePtr() = default;
-            MovableUniquePtr(UniquePtrWithLambda<void> ptr_in)
-                : parent_t{std::make_shared<UniquePtrWithLambda<void>>(
-                      std::move(ptr_in))}
-            {}
-            auto get() -> void *
-            {
-                return (**this).get();
-            }
-            [[nodiscard]] auto get() const -> void const *
-            {
-                return (**this).get();
-            }
-            [[nodiscard]] auto release() -> UniquePtrWithLambda<void>
-            {
-                if (parent_t::use_count() > 1)
-                {
-                    throw error::Internal(
-                        "Control flow error: UniquePtr variant of WriteBuffer "
-                        "has been copied.");
-                }
-                UniquePtrWithLambda<void> res = std::move(**this);
-                this->reset();
-                return res;
-            }
+            MovableUniquePtr();
+            MovableUniquePtr(UniquePtrWithLambda<void> ptr_in);
+            auto get() -> void *;
+            [[nodiscard]] auto get() const -> void const *;
+            [[nodiscard]] auto release() -> UniquePtrWithLambda<void>;
         };
         using SharedPtr = std::shared_ptr<void const>;
         /*

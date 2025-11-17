@@ -161,6 +161,36 @@ allocatePtr(Datatype dtype, Extent const &e)
     return allocatePtr(dtype, numPoints);
 }
 
+WriteBuffer::MovableUniquePtr::MovableUniquePtr() = default;
+
+WriteBuffer::MovableUniquePtr::MovableUniquePtr(
+    UniquePtrWithLambda<void> ptr_in)
+    : parent_t{std::make_shared<UniquePtrWithLambda<void>>(std::move(ptr_in))}
+{}
+
+auto WriteBuffer::MovableUniquePtr::get() -> void *
+{
+    return (**this).get();
+}
+
+auto WriteBuffer::MovableUniquePtr::get() const -> void const *
+{
+    return (**this).get();
+}
+
+auto WriteBuffer::MovableUniquePtr::release() -> UniquePtrWithLambda<void>
+{
+    if (parent_t::use_count() > 1)
+    {
+        throw error::Internal(
+            "Control flow error: UniquePtr variant of WriteBuffer "
+            "has been copied.");
+    }
+    UniquePtrWithLambda<void> res = std::move(**this);
+    this->reset();
+    return res;
+}
+
 WriteBuffer::WriteBuffer() : m_buffer(std::make_any<MovableUniquePtr>())
 {}
 
