@@ -49,8 +49,18 @@ namespace auxiliary
      */
     struct WriteBuffer
     {
+        /*
+         * Sic. Have to put the unique_ptr behind a shared_ptr because
+         * std::variant does not want immovable types.
+         */
         using UniquePtr = std::shared_ptr<UniquePtrWithLambda<void>>;
         using SharedPtr = std::shared_ptr<void const>;
+        /*
+         * Use std::any publically since some compilers have trouble with
+         * certain uses of std::variant, so hide it from them.
+         * Look into Memory_internal.hpp for the variant type.
+         * https://github.com/openPMD/openPMD-api/issues/1720
+         */
         std::any m_buffer;
 
         WriteBuffer();
