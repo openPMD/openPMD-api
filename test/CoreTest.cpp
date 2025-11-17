@@ -11,7 +11,7 @@
 
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <catch2/catch.hpp>
@@ -1252,7 +1252,7 @@ TEST_CASE("use_count_test", "[core]")
         std::get<std::shared_ptr<void const>>(
             static_cast<Parameter<Operation::WRITE_DATASET> *>(
                 pprc.get().m_chunks.front().parameter.get())
-                ->data.m_buffer)
+                ->data.as_variant<auxiliary::WriteBufferTypes>())
             .use_count() == 1);
 #endif
 }
