@@ -22,16 +22,13 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 #include <any>
-#include <complex>
 #include <functional>
-#include <iostream>
 #include <memory>
-#include <type_traits>
 #include <utility>
-#include <variant>
 
 namespace openPMD
 {
@@ -52,8 +49,41 @@ namespace auxiliary
         /*
          * Sic. Have to put the unique_ptr behind a shared_ptr because
          * std::variant does not want immovable types.
+         * Use a separate class to avoid mistakes in double dereference.
          */
-        using UniquePtr = std::shared_ptr<UniquePtrWithLambda<void>>;
+        struct MovableUniquePtr
+            : private std::shared_ptr<UniquePtrWithLambda<void>>
+        {
+        private:
+            using parent_t = std::shared_ptr<UniquePtrWithLambda<void>>;
+
+        public:
+            MovableUniquePtr() = default;
+            MovableUniquePtr(UniquePtrWithLambda<void> ptr_in)
+                : parent_t{std::make_shared<UniquePtrWithLambda<void>>(
+                      std::move(ptr_in))}
+            {}
+            auto get() -> void *
+            {
+                return (**this).get();
+            }
+            [[nodiscard]] auto get() const -> void const *
+            {
+                return (**this).get();
+            }
+            [[nodiscard]] auto release() -> UniquePtrWithLambda<void>
+            {
+                if (parent_t::use_count() > 1)
+                {
+                    throw error::Internal(
+                        "Control flow error: UniquePtr variant of WriteBuffer "
+                        "has been copied.");
+                }
+                UniquePtrWithLambda<void> res = std::move(**this);
+                this->reset();
+                return res;
+            }
+        };
         using SharedPtr = std::shared_ptr<void const>;
         /*
          * Use std::any publically since some compilers have trouble with

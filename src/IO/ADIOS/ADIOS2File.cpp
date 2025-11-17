@@ -26,6 +26,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
@@ -115,22 +116,13 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
             }
             else if constexpr (std::is_same_v<
                                    ptr_type,
-                                   std::shared_ptr<UniquePtrWithLambda<void>>>)
+                                   auxiliary::WriteBuffer::MovableUniquePtr>)
             {
                 BufferedUniquePtrPut bput;
                 bput.name = std::move(bp.name);
                 bput.offset = std::move(bp.param.offset);
                 bput.extent = std::move(bp.param.extent);
-                /*
-                 * Note: Moving is required here since it's a unique_ptr.
-                 * std::forward<>() would theoretically work, but it
-                 * requires the type parameter and we don't have that
-                 * inside the lambda.
-                 * (ptr_type does not work for this case).
-                 */
-                // clang-format off
-                bput.data = std::move(*arg); // NOLINT(bugprone-move-forwarding-reference)
-                // clang-format on
+                bput.data = arg.release();
                 bput.dtype = bp.param.dtype;
                 ba.m_uniquePtrPuts.push_back(std::move(bput));
             }

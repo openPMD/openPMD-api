@@ -21,12 +21,10 @@
 #pragma once
 
 #include "openPMD/auxiliary/Memory.hpp"
-#include "openPMD/auxiliary/UniquePtr.hpp"
-#include <memory>
 
 namespace openPMD::auxiliary
 {
 // cannot use a unique_ptr inside a std::variant, so we represent it with this
 using WriteBufferTypes =
-    std::variant<WriteBuffer::UniquePtr, WriteBuffer::SharedPtr>;
+    std::variant<WriteBuffer::MovableUniquePtr, WriteBuffer::SharedPtr>;
 } // namespace openPMD::auxiliary
