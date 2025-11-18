@@ -14,7 +14,22 @@ namespace openPMD
 {
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
     std::variant<std::function<StatefulIterator *()>, StatefulIterator *> begin)
-    : members{std::move(begin)}
+    : members{
+          // Need to put the deferred function behind a shared_ptr to avoid a
+          // gcc14 compiler bug
+          // warning: '*(std::_Function_base*)((char*)this +
+          // 8).std::_Function_base::_M_manager' may be used uninitialized
+          std::visit(
+              auxiliary::overloaded{
+                  [](std::function<StatefulIterator *()> &&f)
+                      -> Members::BufferedIterator_t {
+                      return std::make_shared<
+                          Members::Deferred_t::element_type>(std::move(f));
+                  },
+                  [](StatefulIterator *it) -> Members::BufferedIterator_t {
+                      return it;
+                  }},
+              std::move(begin))}
 {}
 
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
@@ -33,21 +48,19 @@ auto StatefulSnapshotsContainer::get() -> StatefulIterator *
 {
     return std::visit(
         auxiliary::overloaded{
-            [this](
-                std::function<StatefulIterator *()> &deferred_initialization) {
-                auto it = deferred_initialization();
+            [this](Members::Deferred_t &deferred_initialization) {
+                auto it = (*deferred_initialization)();
                 this->members.m_bufferedIterator = it;
                 return it;
             },
-            [](StatefulIterator *it) { return it; }},
+            [](Members::Evaluated_t it) { return it; }},
         members.m_bufferedIterator);
 }
 auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
     return std::visit(
         auxiliary::overloaded{
-            [](std::function<StatefulIterator *()> const &)
-                -> StatefulIterator const * {
+            [](Members::Deferred_t const &) -> StatefulIterator const * {
                 throw std::runtime_error(
                     "[StatefulSnapshotscontainer] Initialization has been "
                     "deferred, but container is accessed as const, so cannot "

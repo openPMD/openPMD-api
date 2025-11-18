@@ -34,8 +34,15 @@ private:
          * make_reading_stateful_iterator.
          * The iterator is resolved upon calling get() below.
          */
-        std::variant<std::function<StatefulIterator *()>, StatefulIterator *>
-            m_bufferedIterator;
+
+        // Need to put the deferred function behind a shared_ptr to avoid a
+        // gcc14 compiler bug
+        // warning: '*(std::_Function_base*)((char*)this +
+        // 8).std::_Function_base::_M_manager' may be used uninitialized
+        using Deferred_t = std::shared_ptr<std::function<StatefulIterator *()>>;
+        using Evaluated_t = StatefulIterator *;
+        using BufferedIterator_t = std::variant<Deferred_t, Evaluated_t>;
+        BufferedIterator_t m_bufferedIterator = nullptr;
     };
     Members members;
 
