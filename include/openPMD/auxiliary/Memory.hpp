@@ -74,10 +74,7 @@ namespace auxiliary
         std::any m_buffer;
 
         WriteBuffer();
-
         WriteBuffer(std::shared_ptr<void const> ptr);
-        // WriteBuffer(std::shared_ptr<void> const &ptr);
-
         WriteBuffer(UniquePtrWithLambda<void> ptr);
 
         WriteBuffer(WriteBuffer &&) noexcept;
@@ -86,8 +83,6 @@ namespace auxiliary
         WriteBuffer &operator=(WriteBuffer const &) = delete;
 
         WriteBuffer const &operator=(std::shared_ptr<void const> ptr);
-        // WriteBuffer const &operator=(std::shared_ptr<void> const &ptr);
-
         WriteBuffer const &operator=(UniquePtrWithLambda<void> ptr);
 
         void const *get() const;

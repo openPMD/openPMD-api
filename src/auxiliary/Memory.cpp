@@ -193,14 +193,9 @@ auto WriteBuffer::MovableUniquePtr::release() -> UniquePtrWithLambda<void>
 
 WriteBuffer::WriteBuffer() : m_buffer(std::make_any<MovableUniquePtr>())
 {}
-
 WriteBuffer::WriteBuffer(std::shared_ptr<void const> ptr)
     : m_buffer(std::make_any<WriteBufferTypes>(std::move(ptr)))
 {}
-// WriteBuffer::WriteBuffer(std::shared_ptr<void> const &ptr)
-//     : WriteBuffer{std::static_pointer_cast<void const>(ptr)}
-// {}
-
 WriteBuffer::WriteBuffer(UniquePtrWithLambda<void> ptr)
     : m_buffer(
           std::make_any<WriteBufferTypes>(MovableUniquePtr(std::move(ptr))))
@@ -214,12 +209,6 @@ WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<void const> ptr)
     m_buffer = std::make_any<WriteBufferTypes>(std::move(ptr));
     return *this;
 }
-// WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<void> const &ptr)
-// {
-//     operator=(std::static_pointer_cast<void const>(ptr));
-//     return *this;
-// }
-
 WriteBuffer const &WriteBuffer::operator=(UniquePtrWithLambda<void> ptr)
 {
     m_buffer =
