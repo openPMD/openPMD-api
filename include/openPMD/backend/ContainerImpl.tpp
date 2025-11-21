@@ -131,8 +131,7 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
         return it->second;
     else
     {
-        if (IOHandler()->m_seriesStatus !=
-                internal::SeriesStatus::Parsing &&
+        if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing &&
             access::readOnly(IOHandler()->m_frontendAccess))
         {
             auxiliary::OutOfRangeMsg const out_of_range_msg;
