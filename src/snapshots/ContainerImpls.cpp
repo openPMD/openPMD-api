@@ -352,14 +352,14 @@ RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
 auto RandomAccessIteratorContainer::currentIteration() const
     -> std::optional<value_type const *>
 {
-    if (auto begin = m_cont.begin(); begin != m_cont.end())
+    for (auto begin = m_cont.rbegin(); begin != m_cont.rend(); ++begin)
     {
-        return std::make_optional<value_type const *>(&*begin);
+        if (!begin->second.closed())
+        {
+            return std::make_optional<value_type const *>(&*begin);
+        }
     }
-    else
-    {
-        return std::nullopt;
-    }
+    return std::nullopt;
 }
 
 auto RandomAccessIteratorContainer::begin() -> iterator
