@@ -20,7 +20,8 @@ template <typename WriteIterations>
 auto run_test_filebased(
     Access writeAccess,
     WriteIterations &&writeIterations,
-    std::string const &ext)
+    std::string const &ext,
+    bool synchronous)
 {
     std::string filename =
         "../samples/close_iteration_reopen/filebased_%T." + ext;
@@ -39,6 +40,11 @@ auto run_test_filebased(
         B_y.resetDataset({Datatype::INT, {5}});
         B_y.storeChunk(data, {0}, {5});
         it.close();
+        // This also verifies that operator[] and at() can be used to access the
+        // Iteration after closing
+        REQUIRE(series.iterations.at(0).closed());
+        REQUIRE(writeIterations(series)[0].closed() == !synchronous);
+        REQUIRE(writeIterations(series).at(0).closed() == !synchronous);
     }
 
     {
@@ -54,6 +60,9 @@ auto run_test_filebased(
         e_position_x.resetDataset({Datatype::INT, {5}});
         e_position_x.storeChunk(data, {0}, {5});
         it.close();
+        REQUIRE(series.iterations.at(1).closed());
+        REQUIRE(writeIterations(series).at(1).closed() == !synchronous);
+        REQUIRE(writeIterations(series)[1].closed() == !synchronous);
     }
     {
         auto it = writeIterations(series)[2];
@@ -281,19 +290,35 @@ auto close_and_reopen_test() -> void
     for (auto writeAccess :
          {Access::CREATE_RANDOM_ACCESS, Access::CREATE_LINEAR})
     {
+        bool synchronous = writeAccess == Access::CREATE_LINEAR;
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.iterations; }, "bp");
+            writeAccess, [](Series &s) { return s.iterations; }, "bp", false);
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.writeIterations(); }, "bp");
+            writeAccess,
+            [](Series &s) { return s.writeIterations(); },
+            "bp",
+            true);
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.snapshots(); }, "bp");
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "bp",
+            synchronous);
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.snapshots(); }, "bp");
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "bp",
+            synchronous);
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.snapshots(); }, "json");
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "json",
+            synchronous);
 #if openPMD_HAVE_HDF5
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.snapshots(); }, "h5");
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "h5",
+            synchronous);
 #endif
 
         /*

@@ -256,7 +256,14 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
         {
             try
             {
-                res.beginStep(/* reread = */ false);
+                if (res.closed())
+                {
+                    res.open();
+                }
+                else
+                {
+                    res.beginStep(/* reread = */ false);
+                }
             }
             catch (error::OperationUnsupportedInBackend const &)
             {
