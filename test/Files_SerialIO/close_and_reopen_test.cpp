@@ -63,6 +63,9 @@ auto run_test_filebased(
         REQUIRE(series.iterations.at(1).closed());
         REQUIRE(writeIterations(series).at(1).closed() == !synchronous);
         REQUIRE(writeIterations(series)[1].closed() == !synchronous);
+        // We are in file-based iteration encoding, so the old iteration should
+        // remain accessible
+        writeIterations(series).at(0);
     }
     {
         auto it = writeIterations(series)[2];

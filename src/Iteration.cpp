@@ -24,6 +24,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
@@ -881,7 +882,9 @@ auto Iteration::beginStep(
         }
     }
 
-    res.stepStatus = status;
+    res.stepStatus = series.iterationEncoding() == IterationEncoding::fileBased
+        ? AdvanceStatus::RANDOMACCESS
+        : status;
     return res;
 }
 
