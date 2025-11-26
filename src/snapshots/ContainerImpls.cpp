@@ -6,6 +6,7 @@
 #include "openPMD/snapshots/IteratorHelpers.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
+#include <cassert>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -209,94 +210,82 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     {
         throw std::runtime_error("Stateful iteration on a read-write Series.");
     }
-    if (access::write(access))
+    else if (
+        access::read(access) ||
+        s.series.iterations.find(key) != s.series.iterations.end())
     {
-        if (auto it = s.series.iterations.find(key);
-            it != s.series.iterations.end())
-        {
-            return at(key);
-        }
-        auto lastIteration = base_iterator->peekCurrentlyOpenIteration();
-        if (lastIteration.has_value())
-        {
-            auto lastIteration_v = lastIteration.value();
-            if (lastIteration_v->first == key)
-            {
-                return s.series.iterations.at(key);
-            }
-            else
-            {
-                lastIteration_v->second.close(); // continue below
-            }
-        }
-
-        // create new
-        auto &res = s.series.iterations[key];
-        Iteration::BeginStepStatus status = [&]() {
-            try
-            {
-                return res.beginStep(/* reread = */ false);
-            }
-            catch (error::OperationUnsupportedInBackend const &)
-            {
-                s.series.iterations.retrieveSeries()
-                    .get()
-                    .m_currentlyActiveIterations.clear();
-                throw;
-            }
-        }();
-        res.setStepStatus(StepStatus::DuringStep);
-
-        s.currentStep.map_during_t(
-            [&](detail::CurrentStep::During_t &during) {
-                switch (status.stepStatus)
-                {
-                case AdvanceStatus::OK:
-                    ++during.step_count;
-                    during.available_iterations_in_step = {key};
-                    break;
-                case AdvanceStatus::RANDOMACCESS:
-                    during.available_iterations_in_step.emplace_back(key);
-                    break;
-                case AdvanceStatus::OVER:
-                    throw error::Internal(
-                        "Backend reported OVER status while trying to create "
-                        "new Iteration.");
-                }
-                base_iterator->get().seen_iterations[key] = during.step_count;
-                during.iteration_idx = key;
-            },
-            [&](detail::CurrentStep::AtTheEdge where_am_i)
-                -> detail::CurrentStep::During_t {
-                base_iterator->get().seen_iterations[key] = 0;
-                switch (where_am_i)
-                {
-                case detail::CurrentStep::AtTheEdge::Begin:
-                    return detail::CurrentStep::During_t{0, key, {key}};
-                case detail::CurrentStep::AtTheEdge::End:
-                    throw error::Internal(
-                        "Trying to create a new output step, but the "
-                        "stream is "
-                        "closed?");
-                }
-                throw std::runtime_error("Unreachable!");
-            });
-
-        return res;
+        return at(key);
     }
-    else if (access::read(access))
+
+    assert(access::write(access));
+
+    auto lastIteration = base_iterator->peekCurrentlyOpenIteration();
+    if (lastIteration.has_value())
     {
-        auto &result = base_iterator->seek(
-            {StatefulIterator::Seek::Seek_Iteration_t{key}});
-        if (result.is_end())
+        auto lastIteration_v = lastIteration.value();
+        if (lastIteration_v->first == key)
         {
-            throw std::out_of_range(
-                "[StatefulSnapshotsContainer::operator[]()] Cannot (yet) skip "
-                "to a Snapshot from an I/O step that is not active.");
+            return s.series.iterations.at(key);
         }
-        return result->second;
+        else
+        {
+            lastIteration_v->second.close(); // continue below
+        }
     }
-    throw error::Internal("Control flow error: This should be unreachable.");
+
+    // create new
+    auto &res = s.series.iterations[key];
+    Iteration::BeginStepStatus status = [&]() {
+        try
+        {
+            return res.beginStep(/* reread = */ false);
+        }
+        catch (error::OperationUnsupportedInBackend const &)
+        {
+            s.series.iterations.retrieveSeries()
+                .get()
+                .m_currentlyActiveIterations.clear();
+            throw;
+        }
+    }();
+    res.setStepStatus(StepStatus::DuringStep);
+
+    s.currentStep.map_during_t(
+        [&](detail::CurrentStep::During_t &during) {
+            switch (status.stepStatus)
+            {
+            case AdvanceStatus::OK:
+                ++during.step_count;
+                during.available_iterations_in_step = {key};
+                break;
+            case AdvanceStatus::RANDOMACCESS:
+                during.available_iterations_in_step.emplace_back(key);
+                break;
+            case AdvanceStatus::OVER:
+                throw error::Internal(
+                    "Backend reported OVER status while trying to create "
+                    "new Iteration.");
+            }
+            base_iterator->get().seen_iterations[key] = during.step_count;
+            during.iteration_idx = key;
+        },
+        [&](detail::CurrentStep::AtTheEdge where_am_i)
+            -> detail::CurrentStep::During_t {
+            base_iterator->get().seen_iterations[key] = 0;
+            switch (where_am_i)
+            {
+            case detail::CurrentStep::AtTheEdge::Begin:
+                return detail::CurrentStep::During_t{0, key, {key}};
+            case detail::CurrentStep::AtTheEdge::End:
+                throw error::Internal(
+                    "Trying to create a new output step, but the "
+                    "stream is "
+                    "closed?");
+            }
+            throw std::runtime_error("Unreachable!");
+        });
+
+    return res;
 }
 
 auto StatefulSnapshotsContainer::clear() -> void
