@@ -35,8 +35,11 @@ except ImportError:
 
 # This "if" is important for distributed dask runs
 if __name__ == "__main__":
-    s = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
-    electrons = s.snapshots()[400].particles["electrons"]
+    s = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only, {
+        "defer_iteration_parsing": True
+    })
+    # with defer_iteration_parsing, open() must be called explicitly
+    electrons = s.snapshots()[400].open().particles["electrons"]
 
     # all particles
     df = electrons.to_df()

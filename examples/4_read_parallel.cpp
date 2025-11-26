@@ -40,11 +40,17 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     Series series = Series(
-        "../samples/git-sample/data%T.h5", Access::READ_ONLY, MPI_COMM_WORLD);
+        "../samples/git-sample/data%T.h5",
+        Access::READ_ONLY,
+        MPI_COMM_WORLD,
+        R"({"defer_iteration_parsing": true})");
     if (0 == mpi_rank)
         cout << "Read a series in parallel with " << mpi_size << " MPI ranks\n";
 
-    MeshRecordComponent E_x = series.snapshots()[100].meshes["E"]["x"];
+    // with defer_iteration_parsing, open() must be called explicitly
+    // explicit Iteration opening is recommended in general for parallel
+    // applications
+    MeshRecordComponent E_x = series.snapshots()[100].open().meshes["E"]["x"];
 
     Offset chunk_offset = {static_cast<long unsigned int>(mpi_rank) + 1, 1, 1};
     Extent chunk_extent = {2, 2, 1};

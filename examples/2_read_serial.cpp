@@ -29,8 +29,10 @@ using namespace openPMD;
 
 int main()
 {
-    Series series =
-        Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
+    Series series = Series(
+        "../samples/git-sample/data%T.h5",
+        Access::READ_ONLY,
+        R"({"defer_iteration_parsing": true})");
     cout << "Read a Series with openPMD standard version " << series.openPMD()
          << '\n';
 
@@ -40,7 +42,8 @@ int main()
         cout << "\n\t" << i.first;
     cout << '\n';
 
-    Iteration i = series.snapshots()[100];
+    // with defer_iteration_parsing, open() must be called explicitly
+    Iteration i = series.snapshots()[100].open();
     cout << "Iteration 100 contains " << i.meshes.size() << " meshes:";
     for (auto const &m : i.meshes)
         cout << "\n\t" << m.first;

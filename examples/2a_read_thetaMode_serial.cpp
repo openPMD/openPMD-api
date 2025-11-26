@@ -31,10 +31,13 @@ int main()
 {
     /* The pattern %E instructs the openPMD-api to determine the file ending
      * automatically. It can also be given explicitly, e.g. `data%T.h5`. */
-    Series series =
-        Series("../samples/git-sample/thetaMode/data%T.h5", Access::READ_ONLY);
+    Series series = Series(
+        "../samples/git-sample/thetaMode/data%T.h5",
+        Access::READ_ONLY,
+        R"({"defer_iteration_parsing": true})");
 
-    Iteration i = series.snapshots()[500];
+    // defer_iteration_parsing implies that open() must be called explicitly
+    Iteration i = series.snapshots()[500].open();
     MeshRecordComponent E_z_modes = i.meshes["E"]["z"];
     Extent extent = E_z_modes.getExtent(); // (modal components, r, z)
 

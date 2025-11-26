@@ -20,13 +20,17 @@ if __name__ == "__main__":
     series = io.Series(
         "../samples/git-sample/data%T.h5",
         io.Access.read_only,
-        comm
+        comm, {
+            "defer_iteration_parsing": True
+        }
     )
     if 0 == comm.rank:
         print("Read a series in parallel with {} MPI ranks".format(
               comm.size))
 
-    E_x = series.snapshots()[100].meshes["E"]["x"]
+    # with defer_iteration_parsing, open() must be called explicitly
+    # explicit use of open() is recommended for parallel applications
+    E_x = series.snapshots()[100].open().meshes["E"]["x"]
 
     chunk_offset = [comm.rank + 1, 1, 1]
     chunk_extent = [2, 2, 1]

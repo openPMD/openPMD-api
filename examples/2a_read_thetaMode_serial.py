@@ -12,9 +12,12 @@ if __name__ == "__main__":
     # The pattern %E instructs the openPMD-api to determine the file ending
     # automatically. It can also be given explicitly, e.g. `data%T.h5`.
     series = io.Series("../samples/git-sample/thetaMode/data%T.h5",
-                       io.Access.read_only)
+                       io.Access.read_only, {
+                           "defer_iteration_parsing": True
+                       })
 
-    i = series.snapshots()[500]
+    # with defer_iteration_parsing, open() must be called explicitly
+    i = series.snapshots()[500].open()
     E_z_modes = i.meshes["E"]["z"]
     shape = E_z_modes.shape  # (modal components, r, z)
 

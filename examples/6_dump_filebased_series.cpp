@@ -7,8 +7,10 @@ using namespace openPMD;
 
 int main()
 {
-    Series o =
-        Series("../samples/git-sample/data%T.h5", Access::READ_RANDOM_ACCESS);
+    Series o = Series(
+        "../samples/git-sample/data%T.h5",
+        Access::READ_RANDOM_ACCESS,
+        R"({"defer_iteration_parsing": true})");
 
     std::cout << "Read iterations ";
     for (auto const &val : o.snapshots())
@@ -39,6 +41,8 @@ int main()
 
     for (auto &[index, i] : o.snapshots())
     {
+        // with defer_iteration_parsing, open() must be called explicitly
+        i.open();
         std::cout << "Read attributes in iteration " << index << ":\n";
         for (auto const &val : i.attributes())
             std::cout << '\t' << val << '\n';
