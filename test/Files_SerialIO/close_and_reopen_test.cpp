@@ -184,7 +184,8 @@ auto run_test_groupbased(
     Access writeAccess,
     WriteIterations &&writeIterations,
     std::string const &ext,
-    std::vector<Access> const &readModes)
+    std::vector<Access> const &readModes,
+    bool synchronous)
 {
     std::string filename =
         "../samples/close_iteration_reopen/groupbased." + ext;
@@ -214,6 +215,18 @@ auto run_test_groupbased(
         B_y.resetDataset({Datatype::INT, {5}});
         B_y.storeChunk(data, {0}, {5});
         it.close();
+        // This also verifies that operator[] and at() can be used to access the
+        // Iteration after closing
+        REQUIRE(series.iterations.at(0).closed());
+        REQUIRE(writeIterations(series)[0].closed() == !synchronous);
+        REQUIRE(writeIterations(series).at(0).closed() == !synchronous);
+        if (synchronous)
+        {
+            // we opened a new step, need to do something in it now,
+            // otherwise we get a corrupted file
+            B_y.storeChunk(data, {0}, {5});
+            it.close();
+        }
     }
 
     {
@@ -229,6 +242,15 @@ auto run_test_groupbased(
         E_y.resetDataset({Datatype::INT, {5}});
         E_y.storeChunk(data, {0}, {5});
         it.close();
+
+        if (!synchronous || series.backend() != "ADIOS2")
+        {
+            writeIterations(series).at(0);
+        }
+        else
+        {
+            REQUIRE_THROWS(writeIterations(series).at(0));
+        }
     }
     {
         auto it = writeIterations(series)[2];
@@ -332,37 +354,43 @@ auto close_and_reopen_test() -> void
             writeAccess,
             [](Series &s) { return s.iterations; },
             "bp4",
-            {Access::READ_ONLY, Access::READ_LINEAR});
+            {Access::READ_ONLY, Access::READ_LINEAR},
+            false);
         // since these write data in a way that distributes one iteration's data
         // over multiple steps, only random access read mode makes sense
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.writeIterations(); },
             "bp4",
-            {Access::READ_RANDOM_ACCESS});
+            {Access::READ_RANDOM_ACCESS},
+            true);
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.snapshots(); },
             "bp4",
-            {Access::READ_RANDOM_ACCESS});
+            {Access::READ_RANDOM_ACCESS},
+            synchronous);
         // that doesnt matter for json tho
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.snapshots(); },
             "json",
-            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR},
+            synchronous);
 #if openPMD_HAVE_HDF5
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.snapshots(); },
             "h5",
-            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR},
+            synchronous);
 #endif
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.snapshots(); },
             "json",
-            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR},
+            synchronous);
     }
 }
 #else
