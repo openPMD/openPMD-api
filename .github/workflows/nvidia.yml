@@ -45,7 +45,7 @@ jobs:
     - name: Build & Install
       run: |
         source /etc/profile.d/modules.sh
-        module load /opt/nvidia/hpc_sdk/modulefiles/nvhpc/25.1
+        module load /opt/nvidia/hpc_sdk/modulefiles/nvhpc/25.9
 
         which nvcc || echo "nvcc not in PATH!"
         which nvc++ || echo "nvc++ not in PATH!"
