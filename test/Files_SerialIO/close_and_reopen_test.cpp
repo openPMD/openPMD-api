@@ -65,6 +65,8 @@ auto run_test_filebased(
         REQUIRE(writeIterations(series)[1].closed() == !synchronous);
         // We are in file-based iteration encoding, so the old iteration should
         // remain accessible
+        // Note: this will create a particlespath at iteration 0, which will
+        // lead to parsing warnings in HDF5.
         writeIterations(series).at(0);
     }
     {
@@ -249,6 +251,10 @@ auto run_test_groupbased(
         }
         else
         {
+            // Cannot go back to an old IO step
+            // Since the other backends do not use IO steps,
+            // going back to an old Iteration should remain possible even
+            // in synchronous modes
             REQUIRE_THROWS(writeIterations(series).at(0));
         }
     }
