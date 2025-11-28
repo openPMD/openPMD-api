@@ -329,8 +329,9 @@ if(openPMD_HAVE_HDF5)
 endif()
 # we imply support for parallel I/O if MPI variant is ON
 if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
-    AND NOT HDF5_IS_PARALLEL      # FindHDF5.cmake
-    AND NOT HDF5_ENABLE_PARALLEL  # hdf5-config.cmake
+    AND NOT (HDF5_IS_PARALLEL      # FindHDF5.cmake
+             OR HDF5_ENABLE_PARALLEL # hdf5-config.cmake < 2.0.0
+             OR HDF5_PROVIDES_PARALLEL) # hdf5-config.cmake >= 2.0.0
 )
     string(CONCAT openPMD_HDF5_STATUS
             "Found MPI but only serial version of HDF5. Either set "
@@ -338,9 +339,11 @@ if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
             "to disable HDF5 or provide a parallel install of HDF5.\n")
 endif()
 # HDF5 includes mpi.h in the public header H5public.h if parallel
-if(openPMD_HAVE_HDF5 AND
-   (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL)
-   AND NOT openPMD_HAVE_MPI)
+if(openPMD_HAVE_HDF5 AND NOT openPMD_HAVE_MPI
+    AND (HDF5_IS_PARALLEL       # FindHDF5.cmake
+         OR HDF5_ENABLE_PARALLEL # hdf5-config.cmake < 2.0.0
+         OR HDF5_PROVIDES_PARALLEL) # hdf5-config.cmake >= 2.0.0
+   )
     string(CONCAT openPMD_HDF5_STATUS
         "Found only parallel version of HDF5 but no MPI. Either set "
         "openPMD_USE_MPI=ON to force using MPI or set openPMD_USE_HDF5=OFF "
