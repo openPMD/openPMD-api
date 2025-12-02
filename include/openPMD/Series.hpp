@@ -217,7 +217,7 @@ namespace internal
          * True if a user opts into lazy parsing.
          */
         bool m_parseLazily = false;
-        uint64_t m_hintLazyParsingAfterTimeout = 20;
+        uint64_t m_hintLazyParsingAfterTimeout = 20;  // seconds
 
         /**
          * In variable-based encoding, all backends except ADIOS2 can only write
