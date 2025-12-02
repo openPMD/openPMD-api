@@ -15,6 +15,7 @@ __host__
 #endif
 RandomAccessIterator<iterator_t>::RandomAccessIterator(
     RandomAccessIterator const &other) = default;
+
 template <typename iterator_t>
 #ifdef __HIPCC__ // ROCm 6.2.4 issue, see #1797
 __host__
@@ -23,9 +24,11 @@ RandomAccessIterator<iterator_t>::RandomAccessIterator(
     RandomAccessIterator
         &&other) noexcept(noexcept(iterator_t(std::declval<iterator_t &&>()))) =
     default;
+
 template <typename iterator_t>
 RandomAccessIterator<iterator_t> &RandomAccessIterator<iterator_t>::operator=(
     RandomAccessIterator const &other) = default;
+
 template <typename iterator_t>
 RandomAccessIterator<iterator_t> &RandomAccessIterator<iterator_t>::operator=(
     RandomAccessIterator
