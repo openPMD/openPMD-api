@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller, Axel Huebl
+/* Copyright 2017-2025 Junmin Gu, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -23,8 +23,9 @@
 #include <mpi.h>
 
 #include <iostream>
+#include <map>
 #include <memory>
-#include <vector> // std::vector
+#include <vector>
 
 #include <chrono>
 #include <thread>
