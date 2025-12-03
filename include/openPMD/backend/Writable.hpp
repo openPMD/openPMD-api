@@ -62,6 +62,16 @@ namespace debug
     void printDirty(Series const &);
 }
 
+class Iteration;
+
+namespace traits
+{
+    template <typename>
+    struct GenerationPolicy;
+    template <>
+    struct GenerationPolicy<Iteration>;
+} // namespace traits
+
 /** @brief Layer to mirror structure of logical data and persistent data in
  * file.
  *
@@ -106,6 +116,7 @@ class Writable final
     friend void debug::printDirty(Series const &);
     friend struct Parameter<Operation::CREATE_DATASET>;
     friend struct Parameter<Operation::OPEN_DATASET>;
+    friend struct traits::GenerationPolicy<Iteration>;
 
 private:
     Writable(internal::AttributableData *);
@@ -155,29 +166,6 @@ OPENPMD_private
     internal::AttributableData *attributable = nullptr;
     Writable *parent = nullptr;
 
-    /** Tracks if there are unwritten changes for this specific Writable.
-     *
-     * Manipulate via Attributable::dirty() and Attributable::setDirty().
-     */
-    bool dirtySelf = true;
-    /**
-     * Tracks if there are unwritten changes anywhere in the
-     * tree whose ancestor this Writable is.
-     *
-     * Invariant: this->dirtyRecursive implies parent->dirtyRecursive.
-     *
-     * dirtySelf and dirtyRecursive are separated since that allows specifying
-     * that `this` is not dirty, but some child is.
-     *
-     * Manipulate via Attributable::dirtyRecursive() and
-     * Attributable::setDirtyRecursive().
-     */
-    bool dirtyRecursive = true;
-    /**
-     * If parent is not null, then this is a key such that:
-     * &(*parent)[key] == this
-     */
-    std::string ownKeyWithinParent;
     /**
      * @brief Whether a Writable has been written to the backend.
      *

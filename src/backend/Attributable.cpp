@@ -162,14 +162,14 @@ auto Attributable::containingIteration() const -> std::pair<
     internal::SeriesData const *>
 {
     constexpr size_t search_queue_size = 3;
-    Writable const *search_queue[search_queue_size]{nullptr};
+    internal::AttributableData const *search_queue[search_queue_size]{nullptr};
     size_t search_queue_idx = 0;
-    Writable const *findSeries = &writable();
+    internal::AttributableData const *findSeries = m_attri.get();
     while (true)
     {
         search_queue[search_queue_idx] = findSeries;
         // we don't need to push the last Writable since it's the Series anyway
-        findSeries = findSeries->parent;
+        findSeries = findSeries->frontend_parent;
         if (!findSeries)
         {
             break;
@@ -182,14 +182,14 @@ auto Attributable::containingIteration() const -> std::pair<
     // End of the queue:
     // Iteration -> Series.iterations -> Series
     auto *series = &auxiliary::deref_dynamic_cast<internal::SeriesData const>(
-        search_queue[search_queue_idx]->attributable);
+        search_queue[search_queue_idx]);
     auto maybe_iteration = search_queue
         [(search_queue_idx + (search_queue_size - 2)) % search_queue_size];
     if (maybe_iteration)
     {
         auto *iteration =
             &auxiliary::deref_dynamic_cast<internal::IterationData const>(
-                maybe_iteration->attributable);
+                maybe_iteration);
         return std::make_pair(std::make_optional(iteration), series);
     }
     else
@@ -236,19 +236,19 @@ std::string Attributable::MyPath::openPMDPath() const
 auto Attributable::myPath() const -> MyPath
 {
     MyPath res;
-    Writable const *findSeries = &writable();
-    while (findSeries->parent)
+    internal::AttributableData *findSeries = m_attri.get();
+    while (findSeries->frontend_parent)
     {
         // we don't need to push_back the ownKeyWithinParent of the Series class
         // so it's alright that this loop doesn't ask the key of the last found
         // Writable
 
         res.group.push_back(findSeries->ownKeyWithinParent);
-        findSeries = findSeries->parent;
+        findSeries = findSeries->frontend_parent;
     }
     std::reverse(res.group.begin(), res.group.end());
-    auto &seriesData = auxiliary::deref_dynamic_cast<internal::SeriesData>(
-        findSeries->attributable);
+    auto &seriesData =
+        auxiliary::deref_dynamic_cast<internal::SeriesData>(findSeries);
     Series series;
     series.setData(
         std::shared_ptr<internal::SeriesData>{
@@ -536,11 +536,18 @@ void Attributable::setWritten(bool val, EnqueueAsynchronously ea)
     writable().written = val;
 }
 
-void Attributable::linkHierarchy(Writable &w)
+void Attributable::linkHierarchy(Attributable &parent)
 {
+    this->linkHierarchy(*parent.m_attri);
+}
+
+void Attributable::linkHierarchy(internal::AttributableData &a)
+{
+    Writable &w = a->m_writable;
     auto handler = w.IOHandler;
     writable().IOHandler = handler;
     writable().parent = &w;
+    m_attri->frontend_parent = &a;
     setDirty(true);
 }
 

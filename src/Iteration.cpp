@@ -55,8 +55,8 @@ Iteration::Iteration() : Attributable(NoInit())
     setTime(static_cast<double>(0));
     setDt(static_cast<double>(1));
     setTimeUnitSI(1);
-    meshes.writable().ownKeyWithinParent = "meshes";
-    particles.writable().ownKeyWithinParent = "particles";
+    meshes.m_attri->ownKeyWithinParent = "meshes";
+    particles.m_attri->ownKeyWithinParent = "particles";
 }
 
 template <typename T>
@@ -303,16 +303,9 @@ void Iteration::flushGroupBased(
     }
 }
 
-void Iteration::flushVariableBased(
-    IterationIndex_t i, internal::FlushParams const &flushParams)
+void Iteration::flushVariableBased(internal::FlushParams const &flushParams)
 {
-    if (!written())
-    {
-        /* create iteration path */
-        Parameter<Operation::OPEN_PATH> pOpen;
-        pOpen.path = "";
-        IOHandler()->enqueue(IOTask(this, pOpen));
-    }
+    setDirty(true);
 
     switch (flushParams.flushLevel)
     {
@@ -323,27 +316,6 @@ void Iteration::flushVariableBased(
     case FlushLevel::UserFlush:
         flush(flushParams);
         break;
-    }
-
-    if (!written())
-    {
-        /* create iteration path */
-        Parameter<Operation::OPEN_PATH> pOpen;
-        pOpen.path = "";
-        IOHandler()->enqueue(IOTask(this, pOpen));
-        /*
-         * In v-based encoding, the snapshot attribute must always be written.
-         * Reason: Even in backends that don't support changing attributes,
-         * variable-based iteration encoding can be used to write one single
-         * iteration. Then, this attribute determines which iteration it is.
-         */
-        Parameter<Operation::WRITE_ATT> wAttr;
-        wAttr.changesOverSteps =
-            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
-        wAttr.name = "snapshot";
-        wAttr.setResource<unsigned long long>(i);
-        wAttr.dtype = Datatype::ULONGLONG;
-        IOHandler()->enqueue(IOTask(this, wAttr));
     }
 }
 
@@ -944,11 +916,11 @@ void Iteration::setStepStatus(StepStatus status)
     }
 }
 
-void Iteration::linkHierarchy(Writable &w)
+void Iteration::linkHierarchy(internal::AttributableData &parent)
 {
-    Attributable::linkHierarchy(w);
-    meshes.linkHierarchy(this->writable());
-    particles.linkHierarchy(this->writable());
+    Attributable::linkHierarchy(parent);
+    meshes.linkHierarchy(*this);
+    particles.linkHierarchy(*this);
 }
 
 void Iteration::runDeferredParseAccess()

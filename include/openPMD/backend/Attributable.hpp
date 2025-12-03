@@ -155,6 +155,33 @@ namespace internal
                 std::shared_ptr<typename T::Data_t>(self, [](auto const *) {}));
             return res;
         }
+
+        internal::AttributableData *frontend_parent = nullptr;
+
+        /** Tracks if there are unwritten changes for this specific Writable.
+         *
+         * Manipulate via Attributable::dirty() and Attributable::setDirty().
+         */
+        bool dirtySelf = true;
+        /**
+         * Tracks if there are unwritten changes anywhere in the
+         * tree whose ancestor this Writable is.
+         *
+         * Invariant: this->dirtyRecursive implies parent->dirtyRecursive.
+         *
+         * dirtySelf and dirtyRecursive are separated since that allows
+         * specifying that `this` is not dirty, but some child is.
+         *
+         * Manipulate via Attributable::dirtyRecursive() and
+         * Attributable::setDirtyRecursive().
+         */
+        bool dirtyRecursive = true;
+
+        /**
+         * If frontend_parent is not null, then this is a key such that:
+         * &(*frontend_parent)[key] == this
+         */
+        std::string ownKeyWithinParent;
     };
 
     template <typename, typename>
@@ -510,18 +537,17 @@ OPENPMD_protected
 
     bool dirty() const
     {
-        return writable().dirtySelf;
+        return m_attri->dirtySelf;
     }
     /** O(1).
      */
     bool dirtyRecursive() const
     {
-        return writable().dirtyRecursive;
+        return m_attri->dirtyRecursive;
     }
     void setDirty(bool dirty_in)
     {
-        auto &w = writable();
-        w.dirtySelf = dirty_in;
+        m_attri->dirtySelf = dirty_in;
         setDirtyRecursive(dirty_in);
     }
     /* Amortized O(1) if dirty_in is true, else O(1).
@@ -542,15 +568,15 @@ OPENPMD_protected
      */
     void setDirtyRecursive(bool dirty_in)
     {
-        auto &w = writable();
-        w.dirtyRecursive = dirty_in;
+        auto &a = *m_attri;
+        a.dirtyRecursive = dirty_in;
         if (dirty_in)
         {
-            auto current = w.parent;
+            auto current = a.frontend_parent;
             while (current && !current->dirtyRecursive)
             {
                 current->dirtyRecursive = true;
-                current = current->parent;
+                current = current->frontend_parent;
             }
         }
     }
@@ -579,9 +605,10 @@ private:
     /**
      * @brief Link with parent.
      *
-     * @param w The Writable representing the parent.
+     * @param parent The Writable representing the parent.
      */
-    virtual void linkHierarchy(Writable &w);
+    void linkHierarchy(Attributable &parent);
+    virtual void linkHierarchy(internal::AttributableData &parent);
 }; // Attributable
 
 // note: we explicitly instantiate Attributable::setAttributeImpl for all T in

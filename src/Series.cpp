@@ -40,6 +40,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
+#include "openPMD/backend/Writable.hpp"
 #include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
@@ -55,6 +56,7 @@
 #include <optional>
 #include <regex>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -882,8 +884,8 @@ void Series::init(
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
                 std::make_unique<DummyIOHandler>(parsed_directory, at));
         auto &series = get();
-        series.iterations.linkHierarchy(writable());
-        series.m_rankTable.m_attributable.linkHierarchy(writable());
+        series.iterations.linkHierarchy(*this);
+        series.m_rankTable.m_attributable.linkHierarchy(*this);
         series.m_deferred_initialization =
             [called_this_already = false, filepath, options, at, comm...](
                 Series &s) mutable {
@@ -1101,9 +1103,9 @@ void Series::initSeries(
                 std::move(ioHandler));
     }
 
-    series.iterations.linkHierarchy(writable);
-    series.iterations.writable().ownKeyWithinParent = "data";
-    series.m_rankTable.m_attributable.linkHierarchy(writable);
+    series.iterations.linkHierarchy(*this);
+    series.iterations.m_attri->ownKeyWithinParent = "data";
+    series.m_rankTable.m_attributable.linkHierarchy(*this);
 
     series.m_name = input->name;
 
@@ -1544,9 +1546,20 @@ void Series::flushGorVBased(
             case IO::HasBeenOpened:
                 if (!it->second.written())
                 {
-                    it->second.parent() = getWritable(&series.iterations);
-                    series.m_currentlyActiveIterations.emplace(it->first);
+                    if (iterationEncoding() != IterationEncoding::variableBased)
+                    {
+                        it->second.parent() = getWritable(&series.iterations);
+                    }
+                    else if (
+                        &it->second.writable() != &series.iterations.writable())
+                    {
+                        throw error::Internal(
+                            "In variable-based encoding, the container of "
+                            "Iterations must be the same backend object as the "
+                            "Iterations themselves.");
+                    }
                 }
+                series.m_currentlyActiveIterations.emplace(it->first);
                 switch (iterationEncoding())
                 {
                     using IE = IterationEncoding;
@@ -1554,7 +1567,7 @@ void Series::flushGorVBased(
                     it->second.flushGroupBased(it->first, flushParams);
                     break;
                 case IE::variableBased:
-                    it->second.flushVariableBased(it->first, flushParams);
+                    it->second.flushVariableBased(flushParams);
                     break;
                 default:
                     throw std::runtime_error(
@@ -2130,6 +2143,16 @@ creating new iterations.
         {
             // parse for the first time, resp. delay the parsing process
             Iteration &i = series.iterations[index];
+            // if (iterationEncoding() == IterationEncoding::variableBased)
+            // {
+            //     static_cast<
+            //         std::shared_ptr<internal::SharedAttributableData> &>(
+            //         *i.m_attri) =
+            //         static_cast<
+            //             std::shared_ptr<internal::SharedAttributableData> &>(
+            //             *series.iterations.m_attri);
+            //     i.linkHierarchy(writable());
+            // }
             i.deferParseAccess({path, index, false, beginStep});
             if (!series.m_parseLazily)
             {
@@ -2485,7 +2508,7 @@ Series::iterations_iterator Series::indexOf(Iteration const &iteration)
     for (auto it = series.iterations.begin(); it != series.iterations.end();
          ++it)
     {
-        if (&it->second.Attributable::get() == &iteration.Attributable::get())
+        if (it->second.m_attri.get() == iteration.m_attri.get())
         {
             return it;
         }
@@ -2706,8 +2729,16 @@ void Series::flushStep(bool doFlush)
          * one IO step.
          */
         Parameter<Operation::WRITE_ATT> wAttr;
+        /*
+         * In v-based encoding, the snapshot attribute must always be written.
+         * Reason: Even in backends that don't support changing attributes,
+         * variable-based iteration encoding can be used to write one single
+         * iteration. Then, this attribute determines which iteration it is.
+         */
         wAttr.changesOverSteps =
-            Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
+            iterationEncoding() == IterationEncoding::variableBased
+            ? Parameter<Operation::WRITE_ATT>::ChangesOverSteps::IfPossible
+            : Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
         wAttr.name = "snapshot";
         wAttr.setResource(
             std::vector<unsigned long long>{
@@ -2961,11 +2992,13 @@ void Series::openIteration(IterationIndex_t index, Iteration &iteration)
         Parameter<Operation::OPEN_PATH> pOpen;
         pOpen.path = auxiliary::replace_first(basePath(), "%T/", "");
         IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
-        /* open iteration path */
-        pOpen.path = iterationEncoding() == IterationEncoding::variableBased
-            ? ""
-            : std::to_string(index);
-        IOHandler()->enqueue(IOTask(&iteration, pOpen));
+        if (iterationEncoding() != IterationEncoding::variableBased)
+        {
+            /* open iteration path */
+            pOpen.path = std::to_string(index);
+            IOHandler()->enqueue(IOTask(&iteration, pOpen));
+        }
+
         break;
     }
     case IE::groupBased:
@@ -3661,7 +3694,9 @@ namespace debug
 {
     void printDirty(Series const &series)
     {
-        auto print = [](Attributable const &attr) {
+        std::stringstream graph;
+        graph << "digraph\n{node [shape=\"box\"];\n";
+        auto print = [&graph](Attributable const &attr) {
             size_t indent = 0;
             {
                 auto current = attr.parent();
@@ -3679,11 +3714,25 @@ namespace debug
             };
             make_indent();
             auto const &w = attr.writable();
-            std::cout << w.ownKeyWithinParent << '\n';
+            std::cout << attr.m_attri->ownKeyWithinParent << '\t'
+                      << attr.m_attri.get() << " -> " << &attr.writable()
+                      << '\n';
             make_indent();
-            std::cout << "Self: " << w.dirtySelf
-                      << "\tRec: " << w.dirtyRecursive << '\n';
-            std::cout << std::endl;
+            std::cout << "Self:\t" << attr.m_attri->dirtySelf
+                      << "\tRec: " << attr.m_attri->dirtyRecursive << '\n';
+            std::cout << '\n';
+            graph << "{rank = same; ";
+            graph << "_" << attr.m_attri.get() << "[color=green, label = \"A "
+                  << attr.m_attri.get() << " '"
+                  << attr.m_attri->ownKeyWithinParent << "'\"]; ";
+            graph << "_" << &w << "[color=blue, label = \"W " << &w << " '"
+                  << attr.m_attri->ownKeyWithinParent << "'\"]; ";
+            graph << "}\n";
+            graph << "_" << &w << " -> _" << attr.m_attri.get()
+                  << "[dir=none];\n";
+            graph << "_" << w.parent << " -> _" << &w << ";\n";
+            graph << "_" << attr.m_attri->frontend_parent << " -> _"
+                  << attr.m_attri.get() << '\n';
         };
         print(series);
         print(series.iterations);
@@ -3739,6 +3788,9 @@ namespace debug
                 }
             }
         }
+        graph << "}";
+        std::cout << graph.str();
+        std::cout.flush();
     }
 } // namespace debug
 } // namespace openPMD

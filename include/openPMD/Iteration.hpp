@@ -136,6 +136,13 @@ namespace internal
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
     };
 } // namespace internal
+
+namespace traits
+{
+    template <>
+    struct GenerationPolicy<Iteration>;
+}
+
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
  * simulation cycle).
  *
@@ -153,6 +160,7 @@ class Iteration : public Attributable
     friend class Writable;
     friend class StatefulIterator;
     friend class StatefulSnapshotsContainer;
+    friend struct traits::GenerationPolicy<Iteration>;
 
 public:
     Iteration(Iteration const &) = default;
@@ -303,7 +311,7 @@ private:
     void flushFileBased(
         std::string const &, IterationIndex_t, internal::FlushParams const &);
     void flushGroupBased(IterationIndex_t, internal::FlushParams const &);
-    void flushVariableBased(IterationIndex_t, internal::FlushParams const &);
+    void flushVariableBased(internal::FlushParams const &);
     void flush(internal::FlushParams const &);
     void deferParseAccess(internal::DeferredParseAccess);
     /*
@@ -419,9 +427,10 @@ private:
     /**
      * @brief Link with parent.
      *
-     * @param w The Writable representing the parent.
+     * @param parent The Writable representing the parent.
      */
-    virtual void linkHierarchy(Writable &w);
+    void linkHierarchy(internal::AttributableData &parent) override;
+    using Attributable::linkHierarchy;
 
     /**
      * @brief Access an iteration in read mode that has potentially not been
@@ -478,4 +487,36 @@ private:
         : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
     {}
 };
+
+namespace traits
+{
+    template <>
+    struct GenerationPolicy<Iteration>
+    {
+        constexpr static bool is_noop = false;
+        template <typename T, typename Container>
+        void operator()(T &ret, Container *c)
+        {
+            if (ret.IOHandler()->m_encoding == IterationEncoding::variableBased)
+            {
+                for (auto &pair :
+                     static_cast<Attributable &>(ret).get().m_attributes)
+                {
+                    static_cast<Attributable &>(*c).get().m_attributes.emplace(
+                        std::move(pair));
+                }
+                static_cast<
+                    std::shared_ptr<internal::SharedAttributableData> &>(
+                    *ret.m_attri) =
+                    static_cast<
+                        std::shared_ptr<internal::SharedAttributableData> &>(
+                        *c->m_attri);
+                internal::AttributableData *attr_of_shared_parent =
+                    c->m_attri->frontend_parent;
+                ret.linkHierarchy(*attr_of_shared_parent);
+                ret.m_attri->frontend_parent = c->m_attri.get();
+            }
+        }
+    };
+} // namespace traits
 } // namespace openPMD
