@@ -48,18 +48,18 @@ namespace auxiliary
     {
         /*
          * Sic. Have to put the unique_ptr behind a shared_ptr because
-         * std::variant does not want immovable types.
+         * std::variant does not want non-copyable types.
          * Use a separate class to avoid mistakes in double dereference.
          */
-        struct MovableUniquePtr
+        struct CopyableUniquePtr
             : private std::shared_ptr<UniquePtrWithLambda<void>>
         {
         private:
             using parent_t = std::shared_ptr<UniquePtrWithLambda<void>>;
 
         public:
-            MovableUniquePtr();
-            MovableUniquePtr(UniquePtrWithLambda<void> ptr_in);
+            CopyableUniquePtr();
+            CopyableUniquePtr(UniquePtrWithLambda<void> ptr_in);
             auto get() -> void *;
             [[nodiscard]] auto get() const -> void const *;
             [[nodiscard]] auto release() -> UniquePtrWithLambda<void>;

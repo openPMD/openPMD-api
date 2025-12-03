@@ -161,24 +161,24 @@ allocatePtr(Datatype dtype, Extent const &e)
     return allocatePtr(dtype, numPoints);
 }
 
-WriteBuffer::MovableUniquePtr::MovableUniquePtr() = default;
+WriteBuffer::CopyableUniquePtr::CopyableUniquePtr() = default;
 
-WriteBuffer::MovableUniquePtr::MovableUniquePtr(
+WriteBuffer::CopyableUniquePtr::CopyableUniquePtr(
     UniquePtrWithLambda<void> ptr_in)
     : parent_t{std::make_shared<UniquePtrWithLambda<void>>(std::move(ptr_in))}
 {}
 
-auto WriteBuffer::MovableUniquePtr::get() -> void *
+auto WriteBuffer::CopyableUniquePtr::get() -> void *
 {
     return (**this).get();
 }
 
-auto WriteBuffer::MovableUniquePtr::get() const -> void const *
+auto WriteBuffer::CopyableUniquePtr::get() const -> void const *
 {
     return (**this).get();
 }
 
-auto WriteBuffer::MovableUniquePtr::release() -> UniquePtrWithLambda<void>
+auto WriteBuffer::CopyableUniquePtr::release() -> UniquePtrWithLambda<void>
 {
     if (parent_t::use_count() > 1)
     {
@@ -191,14 +191,14 @@ auto WriteBuffer::MovableUniquePtr::release() -> UniquePtrWithLambda<void>
     return res;
 }
 
-WriteBuffer::WriteBuffer() : m_buffer(std::make_any<MovableUniquePtr>())
+WriteBuffer::WriteBuffer() : m_buffer(std::make_any<CopyableUniquePtr>())
 {}
 WriteBuffer::WriteBuffer(std::shared_ptr<void const> ptr)
     : m_buffer(std::make_any<WriteBufferTypes>(std::move(ptr)))
 {}
 WriteBuffer::WriteBuffer(UniquePtrWithLambda<void> ptr)
     : m_buffer(
-          std::make_any<WriteBufferTypes>(MovableUniquePtr(std::move(ptr))))
+          std::make_any<WriteBufferTypes>(CopyableUniquePtr(std::move(ptr))))
 {}
 
 WriteBuffer::WriteBuffer(WriteBuffer &&) noexcept = default;
@@ -212,7 +212,7 @@ WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<void const> ptr)
 WriteBuffer const &WriteBuffer::operator=(UniquePtrWithLambda<void> ptr)
 {
     m_buffer =
-        std::make_any<WriteBufferTypes>(MovableUniquePtr(std::move(ptr)));
+        std::make_any<WriteBufferTypes>(CopyableUniquePtr(std::move(ptr)));
     return *this;
 }
 
