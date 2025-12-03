@@ -44,8 +44,8 @@ jobs:
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
-  appleclang18_py:
-    runs-on: macos-15
+  appleclang15_py:
+    runs-on: macos-14
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
