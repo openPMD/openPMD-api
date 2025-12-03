@@ -171,9 +171,9 @@ def iterations_to_cudf(series, species_name):
         (
             cudf.from_pandas(
                 iteration
-                    .particles[species_name]
-                    .to_df()
-                    .assign(iteration=i)
+                .particles[species_name]
+                .to_df()
+                .assign(iteration=i)
             )
             for i, iteration in series.snapshots().items()
         ),
