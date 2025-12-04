@@ -10,7 +10,7 @@ import math
 import numpy as np
 
 
-def particles_to_dataframe(particle_species, slice=None):
+def particles_to_dataframe(particle_species, attributes=None, slice=None):
     """
     Load all records of a particle species into a Pandas DataFrame.
 
@@ -18,6 +18,9 @@ def particles_to_dataframe(particle_species, slice=None):
     ----------
     particle_species : openpmd_api.ParticleSpecies
         A ParticleSpecies class in openPMD-api.
+    attributes : list of strings, optional
+        A list of attributes of the particle_species that should be read and
+        added as extra columns.
     slice : np.s_, optional
         A numpy slice that can be used to load only a sub-selection of
         particles.
@@ -69,6 +72,10 @@ def particles_to_dataframe(particle_species, slice=None):
 
     df = pd.DataFrame(columns)
 
+    if attributes is not None:
+        for attribute in attributes:
+            df[attribute] = particle_species.get_attribute(attribute)
+
     # set a header for the first column (row index)
     #   note: this is NOT the particle id
     df.index.name = "row"
@@ -76,7 +83,7 @@ def particles_to_dataframe(particle_species, slice=None):
     return df
 
 
-def iterations_to_dataframe(series, species_name):
+def iterations_to_dataframe(series, species_name, attributes=None):
     """
     Load all iterations of a particle species into a Pandas DataFrame.
 
@@ -86,6 +93,9 @@ def iterations_to_dataframe(series, species_name):
         A Series class in openPMD-api.
     species_name : string
         The name of a particle species.
+    attributes : list of strings, optional
+        A list of attributes of the particle_species that should be read and
+        added as extra columns.
 
     Returns
     -------
@@ -115,7 +125,7 @@ def iterations_to_dataframe(series, species_name):
         (
             iteration
             .particles[species_name]
-            .to_df()
+            .to_df(attributes=attributes)
             .assign(iteration=i)
             for i, iteration in series.snapshots().items()
         ),
@@ -126,7 +136,7 @@ def iterations_to_dataframe(series, species_name):
     return df
 
 
-def iterations_to_cudf(series, species_name):
+def iterations_to_cudf(series, species_name, attributes=None):
     """
     Load all iterations of a particle species into a cuDF DataFrame.
 
@@ -136,6 +146,9 @@ def iterations_to_cudf(series, species_name):
         A Series class in openPMD-api.
     species_name : string
         The name of a particle species.
+    attributes : list of strings, optional
+        A list of attributes of the particle_species that should be read and
+        added as extra columns.
 
     Returns
     -------
@@ -172,7 +185,7 @@ def iterations_to_cudf(series, species_name):
             cudf.from_pandas(
                 iteration
                 .particles[species_name]
-                .to_df()
+                .to_df(attributes=attributes)
                 .assign(iteration=i)
             )
             for i, iteration in series.snapshots().items()

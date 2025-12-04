@@ -8,12 +8,12 @@ License: LGPLv3+
 import numpy as np
 
 
-def read_chunk_to_df(species, chunk):
+def read_chunk_to_df(species, chunk, attributes=None):
     stride = np.s_[chunk.offset[0]:chunk.offset[0]+chunk.extent[0]]
-    return species.to_df(stride)
+    return species.to_df(attributes=attributes, slice=stride)
 
 
-def particles_to_daskdataframe(particle_species):
+def particles_to_daskdataframe(particle_species, attributes=None):
     """
     Load all records of a particle species into a Dask DataFrame.
 
@@ -21,6 +21,9 @@ def particles_to_daskdataframe(particle_species):
     ----------
     particle_species : openpmd_api.ParticleSpecies
         A ParticleSpecies class in openPMD-api.
+    attributes : list of strings, optional
+        A list of attributes of the particle_species that should be read and
+        added as extra columns.
 
     Returns
     -------
@@ -83,7 +86,9 @@ def particles_to_daskdataframe(particle_species):
 
     # merge DataFrames
     dfs = [
-        delayed(read_chunk_to_df)(particle_species, chunk) for chunk in chunks
+        delayed(read_chunk_to_df)(
+            particle_species, chunk=chunk, attributes=attributes
+        ) for chunk in chunks
     ]
     df = dd.from_delayed(dfs)
 

@@ -38,26 +38,27 @@ if __name__ == "__main__":
     s = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
     electrons = s.snapshots()[400].particles["electrons"]
 
-    # all particles
-    df = electrons.to_df()
+    # all particles, extra column for "particleShape" attribute
+    #                (from ED-PIC extension)
+    df = electrons.to_df(attributes=["particleShape"])
     print(type(df) is pd.DataFrame)
     print(df)
 
     # only first 100 particles
-    df = electrons.to_df(np.s_[:100])
+    df = electrons.to_df(slice=np.s_[:100])
     print(df)
 
     # all particles over all steps
-    df = s.to_df("electrons")
+    df = s.to_df("electrons", attributes=["particleShape"])
     print(df)
 
     if found_cudf:
         # all particles - to GPU
-        cdf = cudf.from_pandas(electrons.to_df())
+        cdf = cudf.from_pandas(electrons.to_df(attributes=["particleShape"]))
         print(cdf)
 
         # all particles over all steps - to GPU
-        cdf = s.to_cudf("electrons")
+        cdf = s.to_cudf("electrons", attributes=["particleShape"])
         print(cdf)
 
     # Particles
@@ -67,7 +68,7 @@ if __name__ == "__main__":
         # pickle capabilities, so we test this here:
         dask.config.set(scheduler='processes')
 
-        df = electrons.to_dask()
+        df = electrons.to_dask(attributes=["particleShape"])
         print(df)
 
         # check chunking of a variable
