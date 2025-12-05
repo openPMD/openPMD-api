@@ -2807,10 +2807,9 @@ void Series::flushStep(bool doFlush)
         wAttr.changesOverSteps =
             Parameter<Operation::WRITE_ATT>::ChangesOverSteps::Yes;
         wAttr.name = "snapshot";
-        wAttr.setResource(
-            std::vector<unsigned long long>{
-                series.m_currentlyActiveIterations.begin(),
-                series.m_currentlyActiveIterations.end()});
+        wAttr.setResource(std::vector<unsigned long long>{
+            series.m_currentlyActiveIterations.begin(),
+            series.m_currentlyActiveIterations.end()});
         series.m_currentlyActiveIterations.clear();
         wAttr.dtype = Datatype::VEC_ULONGLONG;
         IOHandler()->enqueue(IOTask(&series.iterations, wAttr));
@@ -3089,8 +3088,6 @@ namespace
         if (envVar.has_value())
         {
             dest = auxiliary::getEnvNum(*envVar, dest);
-            std::cout << "Read from env var " << *envVar << " as: " << dest
-                      << std::endl;
         }
         if (config.json().contains(key))
         {
