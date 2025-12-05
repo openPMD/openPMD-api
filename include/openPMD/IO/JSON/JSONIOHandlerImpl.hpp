@@ -410,8 +410,15 @@ private:
 
     std::string m_originalExtension;
 
+    /*
+     * In read mode, we can only open the external block storage backend upon
+     * opening the JSON file, because it contains meta information relevant
+     * for configuring the backend.
+     */
+    std::optional<openPMD::json::TracingJSON>
+        m_deferredExternalBlockstorageConfig;
     DatasetMode_s m_datasetMode;
-    DatasetMode_s retrieveDatasetMode(openPMD::json::TracingJSON &config) const;
+    DatasetMode_s retrieveDatasetMode(openPMD::json::TracingJSON &config);
 
     AttributeMode_s m_attributeMode;
     AttributeMode_s

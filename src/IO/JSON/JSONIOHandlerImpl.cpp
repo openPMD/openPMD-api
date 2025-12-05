@@ -25,6 +25,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSONMatcher.hpp"
@@ -350,8 +351,8 @@ namespace
 
         auto get_mandatory = [&](char const *key,
                                  bool lowercase) -> std::string {
-            auto const &val = *optionalOrElse(
-                get_key("mode"), [&]() -> nlohmann::json const * {
+            auto const &val =
+                *optionalOrElse(get_key(key), [&]() -> nlohmann::json const * {
                     throw error::BackendConfigSchema(
                         {configLocation, "mode", key}, "Mandatory key.");
                 });
@@ -395,7 +396,7 @@ namespace
             }
             static_cast<decltype(then)>(then)(val.get<bool>());
         };
-        auto modeString = get_mandatory("type", true);
+        auto modeString = get_mandatory("provider", true);
 
         if (modeString == "stdio")
         {
@@ -466,8 +467,8 @@ namespace
     }
 } // namespace
 
-auto JSONIOHandlerImpl::retrieveDatasetMode(
-    openPMD::json::TracingJSON &config) const -> DatasetMode_s
+auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
+    -> DatasetMode_s
 {
     // start with / copy from current config
     auto res = m_datasetMode;
@@ -485,8 +486,20 @@ auto JSONIOHandlerImpl::retrieveDatasetMode(
                 auto mode = datasetConfig["mode"];
                 if (mode.json().is_object())
                 {
-                    parse_external_mode(
-                        std::move(mode), std::nullopt, configLocation, res);
+                    if (access::writeOnly(m_handler->m_backendAccess))
+                    {
+                        parse_external_mode(
+                            std::move(mode), std::nullopt, configLocation, res);
+                    }
+                    else
+                    {
+                        // sic! initialize the deferred json config as a new
+                        // tracing object
+                        m_deferredExternalBlockstorageConfig =
+                            std::make_optional<openPMD::json::TracingJSON>(
+                                config.json(), config.originallySpecifiedAs);
+                        config.declareFullyRead();
+                    }
                 }
                 else
                 {
@@ -661,6 +674,14 @@ void JSONIOHandlerImpl::createFile(
     VERIFY_ALWAYS(
         access::write(m_handler->m_backendAccess),
         "[JSON] Creating a file in read-only mode is not possible.");
+
+    if (m_deferredExternalBlockstorageConfig.has_value())
+    {
+        throw error::Internal(
+            "Creation of external block storage backend was deferred until "
+            "opening the first file, but a file is created before any was "
+            "opened.");
+    }
 
     /*
      * Need to resolve this later than init() since the openPMD version might be
@@ -1104,6 +1125,28 @@ void JSONIOHandlerImpl::openFile(
     std::string name = parameter.name + m_originalExtension;
 
     auto file = std::get<0>(getPossiblyExisting(name));
+
+    if (m_deferredExternalBlockstorageConfig.has_value())
+    {
+        auto const &contents = obtainJsonContents(file);
+        auto previousConfig = [&]() -> std::optional<nlohmann::json const *> {
+            if (contents->contains("external_storage"))
+            {
+                return std::make_optional<nlohmann::json const *>(
+                    &contents->at("external_storage"));
+            }
+            else
+            {
+                return std::nullopt;
+            }
+        }();
+        parse_external_mode(
+            std::move(*m_deferredExternalBlockstorageConfig),
+            previousConfig,
+            backendConfigKey(),
+            m_datasetMode);
+        m_attributeMode.m_specificationVia = SpecificationVia::Manually;
+    }
 
     associateWithFile(writable, file);
 
@@ -2252,6 +2295,9 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
     auto res = serialImplementation();
 #endif
 
+    bool initialize_external_block_storage =
+        m_deferredExternalBlockstorageConfig.has_value();
+
     if (res->contains(JSONDefaults::openpmd_internal))
     {
         auto const &openpmd_internal = res->at(JSONDefaults::openpmd_internal);
@@ -2281,6 +2327,10 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
             else if (modeOption.value() == "template")
             {
                 m_datasetMode.m_mode = DatasetMode::Template;
+            }
+            else if (modeOption.value() == "external")
+            {
+                initialize_external_block_storage = true;
             }
             else
             {
@@ -2325,6 +2375,31 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
             }
         }
     }
+
+    if (initialize_external_block_storage)
+    {
+        auto previousConfig = [&]() -> std::optional<nlohmann::json const *> {
+            if (res->contains("external_storage"))
+            {
+                return std::make_optional<nlohmann::json const *>(
+                    &res->at("external_storage"));
+            }
+            else
+            {
+                return std::nullopt;
+            }
+        }();
+        parse_external_mode(
+            m_deferredExternalBlockstorageConfig.has_value()
+                ? std::move(*m_deferredExternalBlockstorageConfig)
+                : openPMD::json::TracingJSON(),
+            previousConfig,
+            backendConfigKey(),
+            m_datasetMode);
+        m_attributeMode.m_specificationVia = SpecificationVia::Manually;
+        m_deferredExternalBlockstorageConfig.reset();
+    }
+
     m_jsonVals.emplace(file, res);
     return res;
 }
