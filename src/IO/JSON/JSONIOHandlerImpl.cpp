@@ -323,20 +323,38 @@ namespace
 
     void parse_external_mode(
         json::TracingJSON mode,
+        // In read mode, the metadata section stored under 'external_storage'
+        // These are default values, overridable with the first argument
+        std::optional<nlohmann::json const *> previousCfg,
         std::string const &configLocation,
         JSONIOHandlerImpl::DatasetMode_s &res)
     {
         using SpecificationVia = JSONIOHandlerImpl::SpecificationVia;
         using ExternalBlockStorage = openPMD::ExternalBlockStorage;
 
+        auto get_key =
+            [&](char const *key) -> std::optional<nlohmann::json const *> {
+            if (mode.json().contains(key))
+            {
+                return {&mode.json({key})};
+            }
+            else if (previousCfg.has_value() && (*previousCfg)->contains(key))
+            {
+                return {&(**previousCfg).at(key)};
+            }
+            else
+            {
+                return std::nullopt;
+            }
+        };
+
         auto get_mandatory = [&](char const *key,
                                  bool lowercase) -> std::string {
-            if (!mode.json().contains(key))
-            {
-                throw error::BackendConfigSchema(
-                    {configLocation, "mode", key}, "Mandatory key.");
-            }
-            auto const &val = mode.json({key});
+            auto const &val = *optionalOrElse(
+                get_key("mode"), [&]() -> nlohmann::json const * {
+                    throw error::BackendConfigSchema(
+                        {configLocation, "mode", key}, "Mandatory key.");
+                });
             return optionalOrElse(
                 lowercase ? openPMD::json::asLowerCaseStringDynamic(val)
                           : openPMD::json::asStringDynamic(val),
@@ -348,11 +366,12 @@ namespace
         };
         auto if_contains_optional =
             [&](char const *key, bool lowercase, auto &&then) {
-                if (!mode.json().contains(key))
+                auto const maybeVal = get_key(key);
+                if (!maybeVal.has_value())
                 {
                     return;
                 }
-                auto const &val = mode.json({key});
+                auto const &val = **maybeVal;
                 static_cast<decltype(then)>(then)(optionalOrElse(
                     lowercase ? openPMD::json::asLowerCaseStringDynamic(val)
                               : openPMD::json::asStringDynamic(val),
@@ -363,11 +382,12 @@ namespace
                     }));
             };
         auto if_contains_optional_bool = [&](char const *key, auto &&then) {
-            if (!mode.json().contains(key))
+            auto const maybeVal = get_key(key);
+            if (!maybeVal.has_value())
             {
                 return;
             }
-            auto const &val = mode.json({key});
+            auto const &val = **maybeVal;
             if (!val.is_boolean())
             {
                 throw error::BackendConfigSchema(
@@ -465,7 +485,8 @@ auto JSONIOHandlerImpl::retrieveDatasetMode(
                 auto mode = datasetConfig["mode"];
                 if (mode.json().is_object())
                 {
-                    parse_external_mode(std::move(mode), configLocation, res);
+                    parse_external_mode(
+                        std::move(mode), std::nullopt, configLocation, res);
                 }
                 else
                 {

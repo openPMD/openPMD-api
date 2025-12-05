@@ -37,9 +37,16 @@ namespace openPMD
 // TODO: replace this with a concept upon switching to C++20
 struct DatatypeHandling_Interface
 {
+    /*
+     * Returns false if the same JSON location was previously encoded as
+     * another datatype.
+     */
     template <typename T>
     static auto encodeDatatype(nlohmann::json &) -> bool;
 
+    /*
+     * Returns false if no encoded datatype could be found
+     */
     template <typename Functor, typename... Args>
     static auto decodeDatatype(nlohmann::json const &j, Args &&...args) -> bool;
 };
