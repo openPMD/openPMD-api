@@ -82,9 +82,9 @@ public:
     // returns created JSON key
     template <typename DatatypeHandling, typename T>
     auto store(
-        Extent globalExtent,
-        Offset blockOffset,
-        Extent blockExtent,
+        Extent const &globalExtent,
+        Offset const &blockOffset,
+        Extent const &blockExtent,
         nlohmann::json &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
         std::optional<std::string> infix, // e.g. for distinguishing MPI ranks
@@ -93,14 +93,14 @@ public:
     template <typename DatatypeHandling, typename T>
     void read(
         std::string const &identifier,
-        nlohmann::json &fullJsonDataset,
+        nlohmann::json const &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
         T *data);
 
     template <typename DatatypeHandling, typename T>
     void read(
-        Offset blockOffset,
-        Extent blockExtent,
+        Offset const &blockOffset,
+        Extent const &blockExtent,
         nlohmann::json const &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
         T *data);

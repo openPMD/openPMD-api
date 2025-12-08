@@ -63,9 +63,9 @@ auto ExternalBlockStorage::makeAwsSession(
 
 template <typename DatatypeHandling, typename T>
 auto ExternalBlockStorage::store(
-    Extent globalExtent,
-    Offset blockOffset,
-    Extent blockExtent,
+    Extent const &globalExtent,
+    Offset const &blockOffset,
+    Extent const &blockExtent,
     nlohmann::json &fullJsonDataset,
     nlohmann::json::json_pointer const &path,
     std::optional<std::string> infix,
@@ -157,16 +157,16 @@ auto ExternalBlockStorage::store(
 
 template <typename DatatypeHandling, typename T>
 void ExternalBlockStorage::read(
-    std::string const &identifier,
-    nlohmann::json &fullJsonDataset,
-    nlohmann::json::json_pointer const &path,
-    T *data)
+    [[maybe_unused]] std::string const &identifier,
+    [[maybe_unused]] nlohmann::json const &fullJsonDataset,
+    [[maybe_unused]] nlohmann::json::json_pointer const &path,
+    [[maybe_unused]] T *data)
 {}
 
 template <typename DatatypeHandling, typename T>
 void ExternalBlockStorage::read(
-    Offset blockOffset,
-    Extent blockExtent,
+    Offset const &blockOffset,
+    Extent const &blockExtent,
     nlohmann::json const &fullJsonDataset,
     nlohmann::json::json_pointer const &path,
     T *data)
@@ -232,21 +232,21 @@ void ExternalBlockStorage::sanitizeString(std::string &s)
 
 #define OPENPMD_INSTANTIATE_DATATYPEHANDLING(datatypehandling, type)           \
     template auto ExternalBlockStorage::store<datatypehandling, type>(         \
-        Extent globalExtent,                                                   \
-        Offset blockOffset,                                                    \
-        Extent blockExtent,                                                    \
-        nlohmann::json & fullJsonDataset,                                      \
+        Extent const &globalExtent,                                            \
+        Offset const &blockOffset,                                             \
+        Extent const &blockExtent,                                             \
+        nlohmann::json &fullJsonDataset,                                       \
         nlohmann::json::json_pointer const &path,                              \
         std::optional<std::string> infix,                                      \
         type const *data) -> std::string;                                      \
     template void ExternalBlockStorage::read<datatypehandling, type>(          \
         std::string const &identifier,                                         \
-        nlohmann::json &fullJsonDataset,                                       \
+        nlohmann::json const &fullJsonDataset,                                 \
         nlohmann::json::json_pointer const &path,                              \
         type *data);                                                           \
     template void ExternalBlockStorage::read<datatypehandling, type>(          \
-        Offset blockOffset,                                                    \
-        Extent blockExtent,                                                    \
+        Offset const &blockOffset,                                             \
+        Extent const &blockExtent,                                             \
         nlohmann::json const &fullJsonDataset,                                 \
         nlohmann::json::json_pointer const &path,                              \
         type *data);
