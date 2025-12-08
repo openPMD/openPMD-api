@@ -5110,8 +5110,9 @@ this = "should not warn"
 
     // BP3 engine writes files, BP4 writes directories
     REQUIRE(openPMD::auxiliary::file_exists("../samples/jsonConfiguredBP3.bp"));
-    REQUIRE(openPMD::auxiliary::directory_exists(
-        "../samples/jsonConfiguredBP4.bp"));
+    REQUIRE(
+        openPMD::auxiliary::directory_exists(
+            "../samples/jsonConfiguredBP4.bp"));
 
     std::string readConfigBP3 = R"END(
 {
