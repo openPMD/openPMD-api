@@ -2,6 +2,7 @@
 
 #include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -16,6 +17,30 @@ ExternalBlockStorageBackend::~ExternalBlockStorageBackend() = default;
 
 namespace openPMD
 {
+
+namespace
+{
+    auto flat_extent(Extent const &e) -> size_t
+    {
+        return std::accumulate(
+            e.begin(), e.end(), 1, [](size_t left, size_t right) {
+                return left * right;
+            });
+    }
+
+    template <typename T>
+    void read_impl(
+        internal::ExternalBlockStorageBackend *backend,
+        nlohmann::json const &external_block,
+        T *data,
+        size_t len)
+    {
+        auto const &external_ref =
+            external_block.at("external_ref").get<std::string>();
+        backend->get(external_ref, data, sizeof(T) * len);
+    }
+} // namespace
+
 ExternalBlockStorage::ExternalBlockStorage() = default;
 ExternalBlockStorage::ExternalBlockStorage(
     std::unique_ptr<internal::ExternalBlockStorageBackend> worker)
@@ -125,24 +150,10 @@ auto ExternalBlockStorage::store(
     auto escaped_filesystem_identifier = m_worker->put(
         filesystem_identifier.str(),
         data,
-        std::accumulate(
-            blockExtent.begin(),
-            blockExtent.end(),
-            sizeof(T),
-            [](size_t left, size_t right) { return left * right; }));
+        sizeof(T) * flat_extent(blockExtent));
     block["external_ref"] = escaped_filesystem_identifier;
     return index_as_str;
 }
-
-namespace
-{
-    template <typename T>
-    void read_impl(
-        internal::ExternalBlockStorageBackend *backend,
-        nlohmann::json const &external_block,
-        T *data)
-    {}
-} // namespace
 
 template <typename DatatypeHandling, typename T>
 void ExternalBlockStorage::read(
@@ -161,6 +172,43 @@ void ExternalBlockStorage::read(
     T *data)
 {
     auto &dataset = fullJsonDataset[path];
+    if (!DatatypeHandling::template checkDatatype<T>(dataset))
+    {
+        throw std::runtime_error("Inconsistent chunk storage in datatype.");
+    }
+    auto external_blocks = dataset["external_blocks"];
+    bool found_a_precise_match = false;
+    for (auto it = external_blocks.begin(); it != external_blocks.end(); ++it)
+    {
+        auto const &block = it.value();
+        try
+        {
+            auto const &o = block.at("offset").get<Offset>();
+            auto const &e = block.at("extent").get<Extent>();
+            // Look only for exact matches for now
+            if (o != blockOffset || e != blockExtent)
+            {
+                continue;
+            }
+            found_a_precise_match = true;
+            read_impl(m_worker.get(), block, data, flat_extent(blockExtent));
+            break;
+        }
+        catch (nlohmann::json::exception const &e)
+        {
+            std::cerr << "[ExternalBlockStorage::read] Could not parse block '"
+                      << it.key() << "'. Original error was:\n"
+                      << e.what();
+        }
+    }
+    if (!found_a_precise_match)
+    {
+        throw std::runtime_error(
+            "[ExternalBlockStorage::read] Unable to find a precise match for "
+            "offset " +
+            auxiliary::vec_as_string(blockOffset) + " and extent " +
+            auxiliary::vec_as_string(blockExtent));
+    }
 }
 
 [[nodiscard]] auto ExternalBlockStorage::externalStorageLocation() const

@@ -67,7 +67,8 @@ auto ExternalBlockStorageAws::put(
 
     auto input_data = Aws::MakeShared<imemstream>(
         "PutObjectInputStream", reinterpret_cast<char const *>(data), len);
-    std::static_pointer_cast<Aws::IOStream>(input_data);
+    put_request.SetBody(input_data);
+    put_request.SetContentLength(static_cast<long long>(len));
 
     auto put_outcome = m_client.PutObject(put_request);
 

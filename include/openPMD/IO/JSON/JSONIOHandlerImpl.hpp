@@ -177,6 +177,21 @@ struct JsonDatatypeHandling
         }
     }
 
+    template <typename T_required>
+    static auto checkDatatype(nlohmann::json const &j) -> bool
+    {
+        auto const &needed_datatype =
+            jsonDatatypeToString(determineDatatype<T_required>());
+        if (auto it = j.find("datatype"); it != j.end())
+        {
+            return it.value().get<std::string>() == needed_datatype;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     template <typename Functor, typename... Args>
     static auto decodeDatatype(nlohmann::json const &j, Args &&...args) -> bool
     {

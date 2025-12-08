@@ -47,6 +47,13 @@ struct DatatypeHandling_Interface
     static auto encodeDatatype(nlohmann::json &) -> bool;
 
     /*
+     * Returns false if the encoded datatype does not match T_required
+     * or if no datatype has been encoded.
+     */
+    template <typename T_required>
+    static auto checkDatatype(nlohmann::json const &j) -> bool;
+
+    /*
      * Returns false if no encoded datatype could be found
      */
     template <typename Functor, typename... Args>
