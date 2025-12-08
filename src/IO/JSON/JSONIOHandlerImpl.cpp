@@ -1163,27 +1163,15 @@ void JSONIOHandlerImpl::openFile(
 
     auto file = std::get<0>(getPossiblyExisting(name));
 
-    if (m_deferredExternalBlockstorageConfig.has_value())
-    {
-        auto const &contents = obtainJsonContents(file);
-        auto previousConfig = [&]() -> std::optional<nlohmann::json const *> {
-            if (contents->contains("external_storage"))
-            {
-                return std::make_optional<nlohmann::json const *>(
-                    &contents->at("external_storage"));
-            }
-            else
-            {
-                return std::nullopt;
-            }
-        }();
-        parse_external_mode(
-            std::move(*m_deferredExternalBlockstorageConfig),
-            previousConfig,
-            backendConfigKey(),
-            m_datasetMode);
-        m_attributeMode.m_specificationVia = SpecificationVia::Manually;
-    }
+    // Need to access data in order to resolve external block storage
+    // configuration. EBS for read modes is configured at two places:
+    //
+    // 1. In the JSON config (stored at m_deferredExternalBlockstorageConfig)
+    // 2. In the previous JSON file that we are now opening
+    //
+    // Since the configuration may exclusively take place in either of the two
+    // options, files need to be opened now in any case.
+    obtainJsonContents(file);
 
     associateWithFile(writable, file);
 
