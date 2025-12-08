@@ -58,8 +58,9 @@ ExternalBlockStorageAws::~ExternalBlockStorageAws() = default;
 auto ExternalBlockStorageAws::put(
     std::string const &identifier, void const *data, size_t len) -> std::string
 {
-    auto sanitized = identifier;
-    ExternalBlockStorage::sanitizeString(sanitized);
+    auto sanitized = !identifier.empty() && identifier.at(0) == '/'
+        ? identifier.substr(1)
+        : identifier;
 
     Aws::S3::Model::PutObjectRequest put_request;
     put_request.SetBucket(m_bucketName);
