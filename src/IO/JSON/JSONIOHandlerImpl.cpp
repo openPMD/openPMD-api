@@ -1548,14 +1548,28 @@ namespace
         static constexpr char const *errorMsg =
             "[JSON Backend] Fill with zeroes.";
     };
+
+    struct RetrieveExternally
+    {
+        template <typename T, typename... Args>
+        static void
+        call(ExternalBlockStorage &blockStorage, void *ptr, Args &&...args)
+        {
+            blockStorage.read<internal::JsonDatatypeHandling, T>(
+                std::forward<Args>(args)..., static_cast<T *>(ptr));
+        }
+
+        static constexpr char const *errorMsg = "RetrieveExternally";
+    };
 } // namespace
 
 void JSONIOHandlerImpl::readDataset(
     Writable *writable, Parameter<Operation::READ_DATASET> &parameters)
 {
-    refreshFileFromParent(writable);
-    setAndGetFilePosition(writable);
-    auto &j = obtainJsonContents(writable);
+    auto file = refreshFileFromParent(writable);
+    auto filePosition = setAndGetFilePosition(writable);
+    auto &jsonRoot = *obtainJsonContents(file);
+    auto &j = jsonRoot[filePosition->id];
     DatasetMode localMode = verifyDataset(parameters, j);
 
     std::visit(
@@ -1583,8 +1597,15 @@ void JSONIOHandlerImpl::readDataset(
                 switchNonVectorType<FillWithZeroes>(
                     parameters.dtype, parameters.data.get(), parameters.extent);
             },
-            [&](DatasetMode::External_t const &) {
-                throw std::runtime_error("Unimplemented");
+            [&](DatasetMode::External_t &external) {
+                switchDatasetType<RetrieveExternally>(
+                    parameters.dtype,
+                    *external,
+                    parameters.data.get(),
+                    parameters.offset,
+                    parameters.extent,
+                    jsonRoot,
+                    filePosition->id);
             }},
         localMode.as_base());
 }

@@ -81,6 +81,21 @@ public:
         std::optional<std::string> infix, // e.g. for distinguishing MPI ranks
         T const *data) -> std::string;
 
+    template <typename DatatypeHandling, typename T>
+    void read(
+        std::string const &identifier,
+        nlohmann::json &fullJsonDataset,
+        nlohmann::json::json_pointer const &path,
+        T *data);
+
+    template <typename DatatypeHandling, typename T>
+    void read(
+        Offset blockOffset,
+        Extent blockExtent,
+        nlohmann::json &fullJsonDataset,
+        nlohmann::json::json_pointer const &path,
+        T *data);
+
     [[nodiscard]] auto externalStorageLocation() const -> nlohmann::json;
 
     static void sanitizeString(std::string &s);
