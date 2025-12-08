@@ -73,7 +73,7 @@ auto ExternalBlockStorageStdio::put(
         return filepath;
     }
 
-    FILE *file = std::fopen(filepath.c_str(), "wb");
+    FILE *file = std::fopen(filepath.c_str(), m_openMode.c_str());
     if (!file)
     {
         throw std::runtime_error(
@@ -97,6 +97,41 @@ auto ExternalBlockStorageStdio::put(
     }
 
     return sanitized;
+}
+
+void ExternalBlockStorageStdio::get(
+    std::string const &external_ref, void *data, size_t len)
+{
+    if (len == 0)
+    {
+        return;
+    }
+
+    std::string filepath = concat_filepath(m_directory, external_ref);
+
+    FILE *file = std::fopen(filepath.c_str(), "rb");
+    if (!file)
+    {
+        throw std::runtime_error(
+            "ExternalBlockStorageStdio: failed to open file for reading: " +
+            filepath);
+    }
+
+    size_t read = std::fread(data, 1, len, file);
+    if (read != len)
+    {
+        std::fclose(file);
+        throw std::runtime_error(
+            "ExternalBlockStorageStdio: failed to read full data from file: " +
+            filepath);
+    }
+
+    if (std::fclose(file) != 0)
+    {
+        throw std::runtime_error(
+            "ExternalBlockStorageStdio: failed to close file after reading: " +
+            filepath);
+    }
 }
 
 [[nodiscard]] auto ExternalBlockStorageStdio::externalStorageLocation() const

@@ -24,6 +24,8 @@ struct ExternalBlockStorageBackend
     virtual auto
     put(std::string const &identifier, void const *data, size_t len)
         -> std::string = 0;
+    virtual void
+    get(std::string const &external_ref, void *data, size_t len) = 0;
     [[nodiscard]] virtual auto externalStorageLocation() const
         -> nlohmann::json = 0;
 

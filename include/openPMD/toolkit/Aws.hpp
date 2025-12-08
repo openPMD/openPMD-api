@@ -20,6 +20,7 @@ public:
         std::optional<std::string> endpoint);
     auto put(std::string const &identifier, void const *data, size_t len)
         -> std::string override;
+    void get(std::string const &external_ref, void *data, size_t len) override;
     [[nodiscard]] auto externalStorageLocation() const
         -> nlohmann::json override;
     ~ExternalBlockStorageAws() override;

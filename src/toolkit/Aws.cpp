@@ -1,9 +1,11 @@
 #include "openPMD/toolkit/Aws.hpp"
 
 #include <aws/s3/model/CreateBucketRequest.h>
+#include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
 
 #include <iostream>
+#include <stdexcept>
 
 namespace
 {
@@ -79,6 +81,38 @@ auto ExternalBlockStorageAws::put(
                   << std::endl;
     }
     return sanitized;
+}
+
+void ExternalBlockStorageAws::get(
+    std::string const &external_ref, void *data, size_t len)
+{
+    if (len == 0)
+    {
+        return;
+    }
+
+    Aws::S3::Model::GetObjectRequest get_request;
+    get_request.SetBucket(m_bucketName);
+    get_request.SetKey(external_ref);
+
+    auto get_outcome = m_client.GetObject(get_request);
+    if (!get_outcome.IsSuccess())
+    {
+        throw std::runtime_error(
+            std::string("ExternalBlockStorageAws::get failed: ") +
+            get_outcome.GetError().GetMessage());
+    }
+
+    auto &body = get_outcome.GetResult().GetBody();
+    body.read(
+        reinterpret_cast<char *>(data), static_cast<std::streamsize>(len));
+    std::streamsize read_bytes = body.gcount();
+    if (read_bytes != static_cast<std::streamsize>(len))
+    {
+        throw std::runtime_error(
+            "ExternalBlockStorageAws: failed to read expected number of bytes "
+            "from S3 object");
+    }
 }
 
 [[nodiscard]] auto ExternalBlockStorageAws::externalStorageLocation() const

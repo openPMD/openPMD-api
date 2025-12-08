@@ -138,7 +138,7 @@ namespace
 {
     template <typename T>
     void read_impl(
-        ExternalBlockStorageBackend *backend,
+        internal::ExternalBlockStorageBackend *backend,
         nlohmann::json const &external_block,
         T *data)
     {}
