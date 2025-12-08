@@ -354,14 +354,15 @@ namespace
             auto const &val =
                 *optionalOrElse(get_key(key), [&]() -> nlohmann::json const * {
                     throw error::BackendConfigSchema(
-                        {configLocation, "mode", key}, "Mandatory key.");
+                        {configLocation, "dataset", "mode", key},
+                        "Mandatory key.");
                 });
             return optionalOrElse(
                 lowercase ? openPMD::json::asLowerCaseStringDynamic(val)
                           : openPMD::json::asStringDynamic(val),
                 [&]() -> std::string {
                     throw error::BackendConfigSchema(
-                        {configLocation, "mode", key},
+                        {configLocation, "dataset", "mode", key},
                         "Must be of string type.");
                 });
         };
@@ -378,7 +379,7 @@ namespace
                               : openPMD::json::asStringDynamic(val),
                     [&]() -> std::string {
                         throw error::BackendConfigSchema(
-                            {configLocation, "mode", key},
+                            {configLocation, "dataset", "mode", key},
                             "Must be of string type.");
                     }));
             };
@@ -392,7 +393,8 @@ namespace
             if (!val.is_boolean())
             {
                 throw error::BackendConfigSchema(
-                    {configLocation, "mode", key}, "Must be of boolean type.");
+                    {configLocation, "dataset", "mode", key},
+                    "Must be of boolean type.");
             }
             static_cast<decltype(then)>(then)(val.get<bool>());
         };
@@ -415,7 +417,7 @@ namespace
             openPMD::internal::AwsBuilder builder(
                 // TODO: bucket_name: introduce expansion pattern for openPMD
                 // file name
-                get_mandatory("bucket_name", false),
+                get_mandatory("bucket", false),
                 get_mandatory("access_key_id", false),
                 get_mandatory("secret_access_key", false));
 
@@ -448,7 +450,7 @@ namespace
                     else
                     {
                         throw error::BackendConfigSchema(
-                            {configLocation, "mode", "scheme"},
+                            {configLocation, "dataset", "mode", "scheme"},
                             "Must be either 'http' or 'https'.");
                     }
                 });
@@ -459,7 +461,7 @@ namespace
         else
         {
             throw error::BackendConfigSchema(
-                {configLocation, "mode", "type"},
+                {configLocation, "dataset", "mode", "provider"},
                 "Must be either 'stdio' or 'aws'.");
         }
 
@@ -497,7 +499,7 @@ auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
                         // tracing object
                         m_deferredExternalBlockstorageConfig =
                             std::make_optional<openPMD::json::TracingJSON>(
-                                config.json(), config.originallySpecifiedAs);
+                                mode.json(), mode.originallySpecifiedAs);
                         config.declareFullyRead();
                     }
                 }

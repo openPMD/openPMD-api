@@ -120,7 +120,7 @@ void ExternalBlockStorageAws::get(
     -> nlohmann::json
 {
     nlohmann::json j;
-    j["provider"] = "s3";
+    j["provider"] = "aws";
     if (m_endpoint.has_value())
     {
         j["endpoint"] = *m_endpoint;
