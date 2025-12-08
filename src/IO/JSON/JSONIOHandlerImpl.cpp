@@ -1105,9 +1105,44 @@ void JSONIOHandlerImpl::availableChunks(
 {
     refreshFileFromParent(writable);
     auto filePosition = setAndGetFilePosition(writable);
-    auto &j = obtainJsonContents(writable)["data"];
-    *parameters.chunks = chunksInJSON(j);
-    chunk_assignment::mergeChunks(*parameters.chunks);
+    auto &j = obtainJsonContents(writable);
+
+    auto [extent, datasetmode] = getExtent(j, m_datasetMode.m_mode);
+
+    std::visit(
+        auxiliary::overloaded{
+            [&](DatasetMode::Dataset_t const &) {
+                *parameters.chunks = chunksInJSON(j.at("data"));
+                chunk_assignment::mergeChunks(*parameters.chunks);
+            },
+            [&](DatasetMode::Template_t const &) {
+                /* no-op, no chunks to be loaded */
+            },
+            [&](DatasetMode::External_t &) {
+                auto external_blocks = j.at("external_blocks");
+                auto &res = *parameters.chunks;
+                res.reserve(external_blocks.size());
+                for (auto it = external_blocks.begin();
+                     it != external_blocks.end();
+                     ++it)
+                {
+                    auto const &block = it.value();
+                    try
+                    {
+                        auto const &o = block.at("offset").get<Offset>();
+                        auto const &e = block.at("extent").get<Extent>();
+                        res.emplace_back(o, e);
+                    }
+                    catch (nlohmann::json::exception const &e)
+                    {
+                        std::cerr << "[JSONIOHandlerImpl::availableChunks] "
+                                     "Could not parse block '"
+                                  << it.key() << "'. Original error was:\n"
+                                  << e.what();
+                    }
+                }
+            }},
+        datasetmode.as_base());
 }
 
 void JSONIOHandlerImpl::openFile(

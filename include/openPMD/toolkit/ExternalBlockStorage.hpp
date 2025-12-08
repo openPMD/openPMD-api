@@ -101,7 +101,7 @@ public:
     void read(
         Offset blockOffset,
         Extent blockExtent,
-        nlohmann::json &fullJsonDataset,
+        nlohmann::json const &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
         T *data);
 

@@ -167,7 +167,7 @@ template <typename DatatypeHandling, typename T>
 void ExternalBlockStorage::read(
     Offset blockOffset,
     Extent blockExtent,
-    nlohmann::json &fullJsonDataset,
+    nlohmann::json const &fullJsonDataset,
     nlohmann::json::json_pointer const &path,
     T *data)
 {
@@ -176,7 +176,7 @@ void ExternalBlockStorage::read(
     {
         throw std::runtime_error("Inconsistent chunk storage in datatype.");
     }
-    auto external_blocks = dataset["external_blocks"];
+    auto external_blocks = dataset.at("external_blocks");
     bool found_a_precise_match = false;
     for (auto it = external_blocks.begin(); it != external_blocks.end(); ++it)
     {
@@ -247,7 +247,7 @@ void ExternalBlockStorage::sanitizeString(std::string &s)
     template void ExternalBlockStorage::read<datatypehandling, type>(          \
         Offset blockOffset,                                                    \
         Extent blockExtent,                                                    \
-        nlohmann::json & fullJsonDataset,                                      \
+        nlohmann::json const &fullJsonDataset,                                 \
         nlohmann::json::json_pointer const &path,                              \
         type *data);
 #define OPENPMD_INSTANTIATE(type)                                              \
