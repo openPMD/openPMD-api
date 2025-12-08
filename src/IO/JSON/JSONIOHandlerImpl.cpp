@@ -145,11 +145,30 @@ namespace
         return *accum_ptr;
     }
 
-    void warnUnusedJson(openPMD::json::TracingJSON const &jsonConfig)
+    auto prepend_to_json(nlohmann::json j) -> nlohmann::json
+    {
+        return j;
+    }
+
+    template <typename Arg, typename... Args>
+    auto prepend_to_json(nlohmann::json j, Arg &&arg, Args &&...args)
+        -> nlohmann::json
+    {
+        return nlohmann::json{
+            {std::forward<Arg>(arg),
+             prepend_to_json(std::move(j), std::forward<Args>(args)...)}};
+    }
+
+    template <typename... Args>
+    void warnUnusedJson(
+        openPMD::json::TracingJSON const &jsonConfig,
+        Args &&...extra_json_hierarchy)
     {
         auto shadow = jsonConfig.invertShadow();
         if (shadow.size() > 0)
         {
+            shadow = prepend_to_json(
+                std::move(shadow), std::forward<Args>(extra_json_hierarchy)...);
             switch (jsonConfig.originallySpecifiedAs)
             {
             case openPMD::json::SupportedLanguages::JSON:
@@ -2435,14 +2454,14 @@ JSONIOHandlerImpl::obtainJsonContents(File const &file)
                 return std::nullopt;
             }
         }();
+        auto manual_config = m_deferredExternalBlockstorageConfig.has_value()
+            ? std::move(*m_deferredExternalBlockstorageConfig)
+            : openPMD::json::TracingJSON();
         parse_external_mode(
-            m_deferredExternalBlockstorageConfig.has_value()
-                ? std::move(*m_deferredExternalBlockstorageConfig)
-                : openPMD::json::TracingJSON(),
-            previousConfig,
-            backendConfigKey(),
-            m_datasetMode);
+            manual_config, previousConfig, backendConfigKey(), m_datasetMode);
+        warnUnusedJson(manual_config, "dataset", "mode");
         m_attributeMode.m_specificationVia = SpecificationVia::Manually;
+
         m_deferredExternalBlockstorageConfig.reset();
     }
 
