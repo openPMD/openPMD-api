@@ -5110,8 +5110,9 @@ this = "should not warn"
 
     // BP3 engine writes files, BP4 writes directories
     REQUIRE(openPMD::auxiliary::file_exists("../samples/jsonConfiguredBP3.bp"));
-    REQUIRE(openPMD::auxiliary::directory_exists(
-        "../samples/jsonConfiguredBP4.bp"));
+    REQUIRE(
+        openPMD::auxiliary::directory_exists(
+            "../samples/jsonConfiguredBP4.bp"));
 
     std::string readConfigBP3 = R"END(
 {
@@ -5288,27 +5289,6 @@ TEST_CASE("bp4_steps", "[serial][adios2]")
 
 void serial_iterator(std::string const &file)
 {
-    auto const write_config = R"(
-init_aws_api = true
-rank_table = "posix_hostname"
-
-[json.attribute]
-mode = "short"
-
-[json.dataset.mode]
-provider = "aws"
-access_key_id = "test"
-secret_access_key = "test"
-endpoint = "http://localhost:4566"
-bucket = "simdata"
-        )";
-    auto const read_config = R"(
-init_aws_api = true
-
-[json.dataset.mode]
-access_key_id = "test"
-secret_access_key = "test"
-        )";
     constexpr Extent::value_type extent = 1000;
     {
         Series writeSeries(
@@ -5316,7 +5296,7 @@ secret_access_key = "test"
             Access::CREATE_LINEAR
 #ifndef _WIN32
             ,
-            write_config
+            R"({"rank_table": "posix_hostname"})"
 #endif
         );
         auto iterations = writeSeries.snapshots();
@@ -5331,7 +5311,7 @@ secret_access_key = "test"
         }
     }
 
-    Series readSeries(file, Access::READ_ONLY, read_config);
+    Series readSeries(file, Access::READ_ONLY);
 
     size_t last_iteration_index = 0;
     size_t numberOfIterations = 0;
@@ -5367,23 +5347,19 @@ secret_access_key = "test"
 
 TEST_CASE("serial_iterator", "[serial][adios2]")
 {
-    serial_iterator("../samples/serial_iterator.json");
-    //     for (auto const &t : testedFileExtensions())
-    //     {
-    // #ifdef _WIN32
-    //         serial_iterator("../samples/serial_iterator_filebased_%T." + t);
-    //         serial_iterator("../samples/serial_iterator_groupbased." + t);
-    // #else
-    //         // Add some regex characters into the file names to see that we
-    //         can deal
-    //         // with that. Don't do that on Windows because Windows does not
-    //         like
-    //         // those characters within file paths.
-    //         serial_iterator("../samples/serial_iterator_filebased_+?_%T." +
-    //         t); serial_iterator("../samples/serial_iterator_groupbased_+?." +
-    //         t);
-    // #endif
-    //     }
+    for (auto const &t : testedFileExtensions())
+    {
+#ifdef _WIN32
+        serial_iterator("../samples/serial_iterator_filebased_%T." + t);
+        serial_iterator("../samples/serial_iterator_groupbased." + t);
+#else
+        // Add some regex characters into the file names to see that we can deal
+        // with that. Don't do that on Windows because Windows does not like
+        // those characters within file paths.
+        serial_iterator("../samples/serial_iterator_filebased_+?_%T." + t);
+        serial_iterator("../samples/serial_iterator_groupbased_+?." + t);
+#endif
+    }
 }
 
 void variableBasedSingleIteration(std::string const &file)
