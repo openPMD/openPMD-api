@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 namespace from_format_to_format
@@ -58,17 +59,11 @@ struct switch_::other_type<json::SupportedLanguages::TOML>
 template <typename FromFormatToFormat>
 class convert_json_toml
 {
-    static void with_parsed_cmdline_args(std::string jsonOrToml)
+    static void
+    with_parsed_cmdline_args(openPMD::json::ParsedConfig parsed_config)
     {
         namespace json = openPMD::json;
-        auto [config, originallySpecifiedAs] = json::parseOptions(
-            jsonOrToml,
-            /* considerFiles = */ true,
-            /* convertLowercase = */ false);
-        {
-            // NOLINTNEXTLINE(bugprone-unused-local-non-trivial-variable)
-            [[maybe_unused]] auto _ = std::move(jsonOrToml);
-        }
+        auto [config, originallySpecifiedAs] = std::move(parsed_config);
         switch (originallySpecifiedAs)
         {
             using SL = json::SupportedLanguages;
@@ -81,6 +76,30 @@ class convert_json_toml
             std::cout << config << '\n';
             break;
         }
+    }
+
+    static auto merge(char const **begin, char const **end)
+        -> openPMD::json::ParsedConfig
+    {
+        namespace json = openPMD::json;
+        if (begin == end)
+        {
+            throw std::runtime_error(
+                "merge: need at least one JSON/TOML file.");
+        }
+        auto config = json::parseOptions(
+            *begin,
+            /* considerFiles = */ true,
+            /* convertLowercase = */ false);
+        for (++begin; begin != end; ++begin)
+        {
+            auto [next, _] = json::parseOptions(
+                *begin,
+                /* considerFiles = */ true,
+                /* convertLowercase = */ false);
+            json::merge_internal(config.config, next, /* do_prune = */ false);
+        }
+        return config;
     }
 
 public:
@@ -101,19 +120,15 @@ public:
                 jsonOrToml = readEverything.str();
             }
             break;
-        case 2:
+        default:
             if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)
             {
                 print_help_message(argv[1]);
                 exit(0);
             }
-            jsonOrToml = argv[1];
+            auto parsed_config = merge(argv + 1, argv + argc);
+            with_parsed_cmdline_args(std::move(parsed_config));
             break;
-        default:
-            throw std::runtime_error(
-                std::string("Usage: ") + argv[0] +
-                " [file location or inline JSON/TOML]");
         }
-        with_parsed_cmdline_args(std::move(jsonOrToml));
     }
 };
