@@ -39,7 +39,11 @@
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
+#if openPMD_USE_FILESYSTEM_HEADER
+#include <filesystem>
+#endif
 #include <iomanip>
+#include <ios>
 #include <sstream>
 
 #include <algorithm>
@@ -2591,7 +2595,7 @@ merge the .json files somehow (no tooling provided for this (yet)).
             readme_file.open(
                 dirpath + "/README.txt",
                 std::ios_base::out | std::ios_base::trunc);
-            readme_file << readme_msg + 1;
+            readme_file << &readme_msg[1];
             readme_file.close();
             if (!readme_file.good() &&
                 !filename.fileState->printedReadmeWarningAlready)
@@ -2605,6 +2609,70 @@ merge the .json files somehow (no tooling provided for this (yet)).
                     << readme_msg + 1 << "----------" << std::endl;
                 filename.fileState->printedReadmeWarningAlready = true;
             }
+
+            constexpr char const *merge_script = R"END(
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+parallel_dir="$(dirname "$BASH_SOURCE")"
+parallel_dir="$(cd "$parallel_dir" && pwd)"
+serial_dir="${parallel_dir%.json.parallel}"
+if [[ "$serial_dir" = "$parallel_dir" ]]; then
+    serial_dir="$parallel_dir/merged.json"
+else
+    serial_dir="$serial_dir.json"
+fi
+echo "Will merge files to '$serial_dir'." >&2
+if [[ -e "$serial_dir" ]]; then
+    echo "Target dir already exists, aborting." >&2
+    exit 1
+fi
+if ! which openpmd-merge-json 2>/dev/null; then
+    echo "Did not find 'openpmd-merge-json' on PATH, aborting." >&2
+    exit 1
+fi
+for file in "$parallel_dir"/mpi_rank_*.json; do
+    echo "@$file"
+done |
+    xargs openpmd-merge-json >"$serial_dir"
+# TODO: xargs will only work up to a certain number of files)END";
+            std::string const merge_script_path = dirpath + "/merge.sh";
+            std::fstream merge_file;
+            merge_file.open(
+                merge_script_path, std::ios_base::out | std::ios_base::trunc);
+            merge_file << &merge_script[1];
+            merge_file.close();
+
+            if (!merge_file.good() &&
+                !filename.fileState->printedReadmeWarningAlready)
+            {
+                std::cerr
+                    << "[Warning] Something went wrong in trying to create "
+                       "merge script at '"
+                    << merge_script_path << "'. Will ignore and continue."
+                    << std::endl;
+                filename.fileState->printedReadmeWarningAlready = true;
+            }
+
+#if openPMD_USE_FILESYSTEM_HEADER
+            try
+            {
+                std::filesystem::permissions(
+                    merge_script_path,
+                    std::filesystem::perms::owner_exec |
+                        std::filesystem::perms::owner_exec |
+                        std::filesystem::perms::owner_exec,
+                    std::filesystem::perm_options::add);
+            }
+            catch (std::filesystem::filesystem_error const &e)
+            {
+                std::cerr << "Failed setting executable permissions on '"
+                          << merge_script_path
+                          << "', will ignore. Original error was:\n"
+                          << e.what() << std::endl;
+            }
+#endif
         }
     };
 
