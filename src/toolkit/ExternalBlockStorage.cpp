@@ -90,7 +90,7 @@ auto ExternalBlockStorage::store(
     }();
 
     constexpr size_t padding = 6;
-    std::string index_as_str = [running_index]() {
+    std::string index_as_str = [running_index, &infix]() {
         auto res = std::to_string(running_index);
         auto size = res.size();
         if (size >= padding)
@@ -98,6 +98,10 @@ auto ExternalBlockStorage::store(
             return res;
         }
         std::stringstream padded;
+        if (infix.has_value())
+        {
+            padded << *infix << "--";
+        }
         for (size_t i = 0; i < padding - size; ++i)
         {
             padded << '0';
@@ -142,10 +146,6 @@ auto ExternalBlockStorage::store(
     block["extent"] = blockExtent;
     std::stringstream filesystem_identifier;
     filesystem_identifier << path.to_string();
-    if (infix.has_value())
-    {
-        filesystem_identifier << "--" << *infix;
-    }
     filesystem_identifier << "--" << index_as_str;
     auto escaped_filesystem_identifier = m_worker->put(
         filesystem_identifier.str(),
