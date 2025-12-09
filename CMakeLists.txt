@@ -756,6 +756,7 @@ set(openPMD_TEST_NAMES
 set(openPMD_CLI_TOOL_NAMES
     ls
     convert-toml-json
+    merge-json
 )
 set(openPMD_PYTHON_CLI_TOOL_NAMES
     pipe

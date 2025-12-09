@@ -59,6 +59,15 @@ struct switch_::other_type<json::SupportedLanguages::TOML>
 template <typename FromFormatToFormat>
 class convert_json_toml
 {
+    static void print(toml::value &val)
+    {
+        namespace json = openPMD::json;
+        std::cout << json::format_toml(val);
+    }
+    static void print(nlohmann::json const &val)
+    {
+        std::cout << val << '\n';
+    }
     static void
     with_parsed_cmdline_args(openPMD::json::ParsedConfig parsed_config)
     {
@@ -68,13 +77,17 @@ class convert_json_toml
         {
             using SL = json::SupportedLanguages;
         case SL::JSON: {
-            auto asToml = json::jsonToToml(config);
-            std::cout << json::format_toml(asToml);
+            auto for_print =
+                FromFormatToFormat::template call<SL::JSON>(std::move(config));
+            print(for_print);
         }
         break;
-        case SL::TOML:
-            std::cout << config << '\n';
-            break;
+        case SL::TOML: {
+            auto for_print =
+                FromFormatToFormat::template call<SL::TOML>(std::move(config));
+            print(for_print);
+        }
+        break;
         }
     }
 
