@@ -14,83 +14,72 @@ Changes to "0.16.1"
 Features
 """"""""
 
-- Chunk Distribution:
+- API:
 
-  - Add chunk distribution algorithms for load-balanced data reading (#824)
-  - Strategies: RoundRobin, Blocks, BlocksOfSourceRanks, ByHostname, DiscardingStrategy (#824)
-  - Python bindings for chunk distribution strategies (#824)
-  - Integration with openpmd-pipe tool (#824)
+  - Unify Random-Access API and Streaming API into ``Series::snapshots()``, support reopening closed Iterations (#1592 #1810)
+  - Dataset-specific JSON/TOML configuration (#1646)
+  - Add a selection of chunk distribution algorithms for parallel data access (including RoundRobin, Blocks, BlocksOfSourceRanks, ByHostname, DiscardingStrategy) to the API and to ``openpmd-pipe`` (#824)
 - HDF5:
 
-  - Support for HDF5 filters (compression) with JSON/TOML configuration (#1644)
+  - HDF5 2.0.0 support (#1812)
+  - HDF5 filters (compression) with JSON/TOML configuration, C++ and Python examples for compression (#1644)
   - Support for opening scalar datasets (#1764)
-  - Improved support for various filter implementations (Blosc2, etc.) (#1644)
-- Streaming & API:
-
-  - Unify Random-Access API and Streaming API into ``Series::snapshots()`` (#1592)
-  - Non-spatial meshes support (#1534)
-  - More consistent behavior for reopening Iterations (#1810)
-  - Deferred iteration parsing with hints on timeout (#1802)
 - ADIOS2:
 
-  - Fixes for ADIOS2 v2.11 (#1804)
-  - Random-access for variable-based encoding with step selection (#1706)
-  - Improved support for partial datasets in ReadRandomAccess mode (#1746)
-  - Support for reading v-based Series (#1750)
-  - JSON/TOML: Abbreviated IO modes (#1493)
-- JSON Schema:
+  - ADIOS2 v2.11 support (#1804)
+  - Support reading variable encoding in random access mode (using step selection) (#1706 #1750)
+  - Support reading variable-encoded datasets with changing metadata (partial datasets, modifiable attributes) (#1746)
+  - Allow only up to 100 steps by default in BP5 group encoding (performance consideration) (#1732)
+- JSON/TOML IO backends:
 
-  - Add JSON schema for openPMD file validation (#1426)
-  - Dataset-specific JSON/TOML configuration (#1646)
+  - JSON/TOML: Abbreviated IO modes (#1493)
 - Performance:
 
   - Performance optimizations for interacting with many meshes/species types (#1741)
-  - Improvements in include time optimization (#1774)
+  - C++ API: optimized include times (#1774)
+  - Improve hlushing performance for file-based Series with many steps (#1642)
 - Miscellaneous:
 
+  - Add JSON schema for openPMD file validation, introduce openpmd-convert-toml-json tool (#1426)
+  - Experimental support for openPMD standard 2.0 (#1551)
+  - Non-spatial meshes (in standard 2.0) (#1534)
+  - Stderr hints for lazy parsing when appropriate (#1802)
+  - storeChunk: use const-type pointers (#1778)
   - Pickle API: Cache unpickled Series to avoid repeated file access (#1654)
-  - Support for C++20 standard (#1798)
-  - OpenPMD version 2.0 support (#1551)
 
 Bug Fixes
 """""""""
 
 - ADIOS2:
 
-  - Fix for Span API with BP5 (#1771)
-  - Workaround for joined_dim with maximum size_t value (#1740)
+  - Deactivate Span API in BP5 up to ADIOS2 v2.10.2 (#1771)
+  - Fix propagation of joined dimension to the backend (#1740)
   - Fix late unique_ptr puts without CLOSE_FILE or ADVANCE operations (#1744)
-  - Fix uninitialized values (#1745)
-  - Fix double write from unique_ptr in ADIOS2 (#1743)
-  - Fix breakup with BP5+groupbased with more than 100 steps (#1732)
+  - Fix double write from unique_ptr (#1743)
   - Fix hangup with writeIterations() (#1728)
-  - Support for old CMake versions (#1742)
-  - Support for zero-sized storeChunk in Span API Python (#1738)
-  - Variable encoding: Safeguards for READ_LINEAR mode (#1753)
-  - Support partial datasets in variable encoding (#1746)
-  - Always use CurrentStep() in mode::Read (#1749)
-  - Fix flushing performance for file-based Series with many steps (#1642)
-  - ADIOS2 bugfix for currentStep access in random access (#1706)
+  - Always use CurrentStep() in mode::Read, fixing nonstandard SST workflows (#1749)
 - HDF5:
 
-  - Support for HDF5 >= 2.0.0 parallel detection (#1812)
-  - Fix for reopening Iterations (#1794)
-  - HDF5 parallel check for HDF5 >= 2.0.0 (#1812)
+
+JSON/TOML IO backend:
+
+  - Remove unnecessary putJsonContents() calls (#1782)
+  - Fix uninitialized values (#1745)
 - Python:
 
   - Fix reference counting (#1775)
   - Type conversions for Series constructor (#1737)
+  - Support for zero-sized storeChunk in Span API Python (#1738)
 - General:
 
   - Fix missing check for constant components (#1776)
   - Fixes for deferred initialization (#1777)
-  - Remove unnecessary putJsonContents() calls (#1782)
   - Remove leftover debugging messages (#1816)
-  - Fix Variant issue with certain CUDA versions (#1807)
-  - Fix Iteration::open() for correct use of Span API (#1794)
-  - Deactivate Span API by default in BP5 (#1771)
+  - Fix Variant issue with certain CUDA versions (#1722 #1807)
+  - Fix behavior of Iteration::open() for correct use of Span API (#1794)
   - iterator::operator== fix for C++20 (#1798)
-  - Avoid setting read Series as dirty (#1806)
+  - Fix a couple of false positive warnings (#1806)
+  - Safeguards for READ_LINEAR mode (#1753)
 
 Other
 """""
@@ -98,27 +87,22 @@ Other
 - CMake:
 
   - Skip MPICXX dependency (#1785)
-  - Support for OpenPMD API v2.0 (#1551)
 - CI/Infrastructure:
 
   - Upgrade to macOS-14 (#1808)
   - Upgrade Musllinux runner to Ubuntu 24.04 (#1795)
-  - Upgrade NVidia Nvhpc runner to 25.9 (#1811)
+  - Upgrade Nvidia Nvhpc runner to 25.9 (#1811)
   - Clang Tidy and Sanitizer: Use clang-19 on Ubuntu 24.04 (#1783)
   - Update CodeQL action to v4 (#1790)
+  - Support for new CMake versions (#1742)
   - Various pre-commit updates
+  - Move Ubuntu 20.04 workflows to 22.04 (#1731)
 - Documentation:
 
   - Update streaming documentation to snapshots API (#1773)
   - Doc: First Write with explicit float64 type (#1780)
-- Python:
-
-  - storeChunk: use const-type pointers (#1778)
-- Tooling:
-
-  - Add compile-time check for issue #1720 (#1722)
-  - Move Ubuntu 20.04 workflows to 22.04 (#1731)
   - WarpX repo update (#1733)
+
 
 0.16.1
 ------
