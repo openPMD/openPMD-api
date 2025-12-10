@@ -3,6 +3,123 @@
 Changelog
 =========
 
+0.17.0
+------
+**Date:** TBD
+
+
+Changes to "0.16.1"
+^^^^^^^^^^^^^^^^^^^
+
+Features
+""""""""
+
+- Chunk Distribution:
+
+  - Add chunk distribution algorithms for load-balanced data reading (#824)
+  - Strategies: RoundRobin, Blocks, BlocksOfSourceRanks, ByHostname, DiscardingStrategy (#824)
+  - Python bindings for chunk distribution strategies (#824)
+  - Integration with openpmd-pipe tool (#824)
+- HDF5:
+
+  - Support for HDF5 filters (compression) with JSON/TOML configuration (#1644)
+  - Support for opening scalar datasets (#1764)
+  - Improved support for various filter implementations (Blosc2, etc.) (#1644)
+- Streaming & API:
+
+  - Unify Random-Access API and Streaming API into ``Series::snapshots()`` (#1592)
+  - Non-spatial meshes support (#1534)
+  - More consistent behavior for reopening Iterations (#1810)
+  - Deferred iteration parsing with hints on timeout (#1802)
+- ADIOS2:
+
+  - Fixes for ADIOS2 v2.11 (#1804)
+  - Random-access for variable-based encoding with step selection (#1706)
+  - Improved support for partial datasets in ReadRandomAccess mode (#1746)
+  - Support for reading v-based Series (#1750)
+  - JSON/TOML: Abbreviated IO modes (#1493)
+- JSON Schema:
+
+  - Add JSON schema for openPMD file validation (#1426)
+  - Dataset-specific JSON/TOML configuration (#1646)
+- Performance:
+
+  - Performance optimizations for interacting with many meshes/species types (#1741)
+  - Improvements in include time optimization (#1774)
+- Miscellaneous:
+
+  - Pickle API: Cache unpickled Series to avoid repeated file access (#1654)
+  - Support for C++20 standard (#1798)
+  - OpenPMD version 2.0 support (#1551)
+
+Bug Fixes
+"""""""""
+
+- ADIOS2:
+
+  - Fix for Span API with BP5 (#1771)
+  - Workaround for joined_dim with maximum size_t value (#1740)
+  - Fix late unique_ptr puts without CLOSE_FILE or ADVANCE operations (#1744)
+  - Fix uninitialized values (#1745)
+  - Fix double write from unique_ptr in ADIOS2 (#1743)
+  - Fix breakup with BP5+groupbased with more than 100 steps (#1732)
+  - Fix hangup with writeIterations() (#1728)
+  - Support for old CMake versions (#1742)
+  - Support for zero-sized storeChunk in Span API Python (#1738)
+  - Variable encoding: Safeguards for READ_LINEAR mode (#1753)
+  - Support partial datasets in variable encoding (#1746)
+  - Always use CurrentStep() in mode::Read (#1749)
+  - Fix flushing performance for file-based Series with many steps (#1642)
+  - ADIOS2 bugfix for currentStep access in random access (#1706)
+- HDF5:
+
+  - Support for HDF5 >= 2.0.0 parallel detection (#1812)
+  - Fix for reopening Iterations (#1794)
+  - HDF5 parallel check for HDF5 >= 2.0.0 (#1812)
+- Python:
+
+  - Fix reference counting (#1775)
+  - Type conversions for Series constructor (#1737)
+- General:
+
+  - Fix missing check for constant components (#1776)
+  - Fixes for deferred initialization (#1777)
+  - Remove unnecessary putJsonContents() calls (#1782)
+  - Remove leftover debugging messages (#1816)
+  - Fix Variant issue with certain CUDA versions (#1807)
+  - Fix Iteration::open() for correct use of Span API (#1794)
+  - Deactivate Span API by default in BP5 (#1771)
+  - iterator::operator== fix for C++20 (#1798)
+  - Avoid setting read Series as dirty (#1806)
+
+Other
+"""""
+
+- CMake:
+
+  - Skip MPICXX dependency (#1785)
+  - Support for OpenPMD API v2.0 (#1551)
+- CI/Infrastructure:
+
+  - Upgrade to macOS-14 (#1808)
+  - Upgrade Musllinux runner to Ubuntu 24.04 (#1795)
+  - Upgrade NVidia Nvhpc runner to 25.9 (#1811)
+  - Clang Tidy and Sanitizer: Use clang-19 on Ubuntu 24.04 (#1783)
+  - Update CodeQL action to v4 (#1790)
+  - Various pre-commit updates
+- Documentation:
+
+  - Update streaming documentation to snapshots API (#1773)
+  - Doc: First Write with explicit float64 type (#1780)
+- Python:
+
+  - storeChunk: use const-type pointers (#1778)
+- Tooling:
+
+  - Add compile-time check for issue #1720 (#1722)
+  - Move Ubuntu 20.04 workflows to 22.04 (#1731)
+  - WarpX repo update (#1733)
+
 0.16.1
 ------
 **Date:** 2025-01-15
