@@ -17,6 +17,7 @@ determined by the type of the first file.
 
 int main(int argc, char const **argv)
 {
-    convert_json_toml<from_format_to_format::ID>::run_application(
-        argc, argv, print_help_message);
+    using convert = convert_json_toml<from_format_to_format::ID>;
+    convert::run_application(
+        argc, argv, convert::UseStdinAs::ListOfJson, print_help_message);
 }

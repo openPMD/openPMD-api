@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <iterator>
 #include <openPMD/auxiliary/JSON_internal.hpp>
 
 #include <iostream>
@@ -91,8 +93,22 @@ class convert_json_toml
         }
     }
 
-    static auto merge(char const **begin, char const **end)
-        -> openPMD::json::ParsedConfig
+    struct ByLine : std::string
+    {
+        friend auto operator>>(std::istream &i, ByLine &l) -> std::istream &
+        {
+            decltype(auto) res = std::getline(i, l);
+            if (res)
+            {
+                l.insert(0, 1, '@');
+            }
+            return res;
+        }
+    };
+    using ByLineIterator = std::istream_iterator<ByLine>;
+
+    template <typename It>
+    static auto merge(It begin, It end) -> openPMD::json::ParsedConfig
     {
         namespace json = openPMD::json;
         if (begin == end)
@@ -116,21 +132,40 @@ class convert_json_toml
     }
 
 public:
+    enum class UseStdinAs : std::uint8_t
+    {
+        InlineJson,
+        ListOfJson
+    };
+
     static void run_application(
-        int argc, char const **argv, void (*print_help_message)(char const *))
+        int argc,
+        char const **argv,
+        UseStdinAs stdinconfig,
+        void (*print_help_message)(char const *))
     {
         std::string jsonOrToml;
         switch (argc)
         {
         case 0:
         case 1:
-            // Just read the whole stream into memory
-            // Not very elegant, but we'll hold the entire JSON/TOML dataset
-            // in memory at some point anyway, so it doesn't really matter
+            switch (stdinconfig)
             {
+            case UseStdinAs::InlineJson: {
+                // Just read the whole stream into memory
+                // Not very elegant, but we'll hold the entire JSON/TOML dataset
+                // in memory at some point anyway, so it doesn't really matter
                 std::stringbuf readEverything;
                 std::cin >> &readEverything;
                 jsonOrToml = readEverything.str();
+                break;
+            }
+            case UseStdinAs::ListOfJson: {
+                auto parsed_config =
+                    merge(ByLineIterator(std::cin), ByLineIterator{});
+                with_parsed_cmdline_args(std::move(parsed_config));
+                break;
+            }
             }
             break;
         default:

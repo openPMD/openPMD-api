@@ -37,6 +37,7 @@ equivalently from TOML to JSON.
 
 int main(int argc, char const **argv)
 {
-    convert_json_toml<from_format_to_format::switch_>::run_application(
-        argc, argv, print_help_message);
+    using convert = convert_json_toml<from_format_to_format::switch_>;
+    convert::run_application(
+        argc, argv, convert::UseStdinAs::InlineJson, print_help_message);
 }

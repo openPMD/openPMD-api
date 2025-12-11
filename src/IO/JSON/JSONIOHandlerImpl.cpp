@@ -2625,18 +2625,18 @@ else
 fi
 echo "Will merge files to '$serial_dir'." >&2
 if [[ -e "$serial_dir" ]]; then
-    echo "Target dir already exists, aborting." >&2
+    echo "Target file already exists, aborting." >&2
     exit 1
 fi
-if ! which openpmd-merge-json 2>/dev/null; then
+if ! which openpmd-merge-json >/dev/null 2>&1; then
     echo "Did not find 'openpmd-merge-json' on PATH, aborting." >&2
     exit 1
 fi
 for file in "$parallel_dir"/mpi_rank_*.json; do
-    echo "@$file"
+    echo "$file"
 done |
-    xargs openpmd-merge-json >"$serial_dir"
-# TODO: xargs will only work up to a certain number of files)END";
+    openpmd-merge-json >"$serial_dir"
+)END";
             std::string const merge_script_path = dirpath + "/merge.sh";
             std::fstream merge_file;
             merge_file.open(
