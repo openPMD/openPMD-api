@@ -1,4 +1,4 @@
-/* Copyright 2025 Franz Poeschel
+/* Copyright 2025-2025 Franz Poeschel, Ben Wibking
  *
  * This file is part of openPMD-api.
  *
@@ -56,7 +56,8 @@ namespace
         }
         auto operator==(FilteredInputIterator const &other) const -> bool
         {
-            return static_cast<Iterator const *>(this)->operator==(other);
+            return static_cast<Iterator const &>(*this) ==
+                static_cast<Iterator const &>(other);
         }
         using Iterator::operator*;
         using Iterator::operator->;

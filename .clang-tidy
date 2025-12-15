@@ -2,5 +2,5 @@
 # FIXME: all performance-* reports
 # FIXME: all cert-* reports
 # FIXME: all bugprone-* reports
-Checks: -*,bugprone-*,-bugprone-unhandled-self-assignment,-bugprone-parent-virtual-call,-bugprone-narrowing-conversions,-bugprone-exception-escape,-bugprone-string-literal-with-embedded-nul,cppcoreguidelines-slicing,mpi-*,readability-non-const-parameter,performance-*,modernize-*,-modernize-use-trailing-return-type,-modernize-use-bool-literals,-modernize-avoid-c-arrays,-modernize-use-auto,-modernize-return-braced-init-list,-bugprone-easily-swappable-parameters
+Checks: -*,bugprone-*,-bugprone-unhandled-self-assignment,-bugprone-parent-virtual-call,-bugprone-narrowing-conversions,-bugprone-exception-escape,-bugprone-string-literal-with-embedded-nul,cppcoreguidelines-slicing,mpi-*,readability-non-const-parameter,performance-*,-performance-avoid-endl,modernize-*,-modernize-use-trailing-return-type,-modernize-use-bool-literals,-modernize-avoid-c-arrays,-modernize-use-auto,-modernize-return-braced-init-list,-bugprone-easily-swappable-parameters,-bugprone-chained-comparison
 HeaderFilterRegex: '((^(?!\/share\/openPMD\/).*)*include\/openPMD\/.+\.hpp|src\/^(?!binding).+\.cpp$)'

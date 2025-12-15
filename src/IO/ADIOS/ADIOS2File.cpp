@@ -26,8 +26,11 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <stdexcept>
 
@@ -113,22 +116,13 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
             }
             else if constexpr (std::is_same_v<
                                    ptr_type,
-                                   UniquePtrWithLambda<void>>)
+                                   auxiliary::WriteBuffer::CopyableUniquePtr>)
             {
                 BufferedUniquePtrPut bput;
                 bput.name = std::move(bp.name);
                 bput.offset = std::move(bp.param.offset);
                 bput.extent = std::move(bp.param.extent);
-                /*
-                 * Note: Moving is required here since it's a unique_ptr.
-                 * std::forward<>() would theoretically work, but it
-                 * requires the type parameter and we don't have that
-                 * inside the lambda.
-                 * (ptr_type does not work for this case).
-                 */
-                // clang-format off
-                    bput.data = std::move(arg); // NOLINT(bugprone-move-forwarding-reference)
-                // clang-format on
+                bput.data = arg.release();
                 bput.dtype = bp.param.dtype;
                 ba.m_uniquePtrPuts.push_back(std::move(bput));
             }
@@ -138,7 +132,7 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     always_false_v<ptr_type>, "Unhandled std::variant branch");
             }
         },
-        bp.param.data.m_buffer);
+        bp.param.data.as_variant<auxiliary::WriteBufferTypes>());
 }
 
 template <int n, typename... Params>
@@ -317,7 +311,7 @@ namespace
         return false;
     }
 
-    enum class PerstepParsing
+    enum class PerstepParsing : std::uint8_t
     {
         Supported,
         Unsupported,
@@ -1086,7 +1080,7 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
 #if ADIOS2_VERSION_MAJOR * 1000000000 + ADIOS2_VERSION_MINOR * 100000000 +     \
         ADIOS2_VERSION_PATCH * 1000000 + ADIOS2_VERSION_TWEAK >=               \
     2701001223
-        enum class CleanedFlushTarget
+        enum class CleanedFlushTarget : std::uint8_t
         {
             Buffer,
             Disk,

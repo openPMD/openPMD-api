@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+version_major=1.14
+version_minor=6
+build_var=ubuntu-2404_gcc
+
+cd /opt
+wget "https://github.com/HDFGroup/hdf5_plugins/releases/download/hdf5-${version_major}.${version_minor}/hdf5_plugins-${version_major}-${build_var}.deb" >&2
+sudo dpkg -i "hdf5_plugins-${version_major}-${build_var}.deb" >&2
+rm "hdf5_plugins-${version_major}-${build_var}.deb"
+echo "/HDF_Group/HDF5/${version_major}.${version_minor}/lib/plugin/"

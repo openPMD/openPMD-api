@@ -1,4 +1,5 @@
-/* Copyright 2017-2021 Fabian Koller, Axel Huebl
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Junmin Gu,
+ *                     Luca Fedeli
  *
  * This file is part of openPMD-api.
  *
@@ -32,6 +33,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Date.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
@@ -48,6 +50,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -126,6 +129,79 @@ namespace
         int padding,
         std::string const &postfix,
         std::optional<std::string> const &extension);
+
+    struct TimeoutLazyParsing
+    {
+        using Clock = std::chrono::system_clock;
+        Clock::time_point start_parsing, time_of_last_warning;
+        uint64_t timeout;
+        bool printed_warning_already = false;
+
+        TimeoutLazyParsing(uint64_t timeout_in) : timeout(timeout_in)
+        {
+            if (timeout > 0)
+            {
+                start_parsing = Clock::now();
+                time_of_last_warning = start_parsing;
+            }
+        }
+
+        void now(size_t current_iteration_count, size_t total_iteration_count)
+        {
+            if (timeout == 0)
+            {
+                return;
+            }
+            auto current = Clock::now();
+            auto diff = std::chrono::duration_cast<std::chrono::seconds>(
+                current - time_of_last_warning);
+            if (uint64_t(diff.count()) >= timeout)
+            {
+                auto total_diff =
+                    std::chrono::duration_cast<std::chrono::seconds>(
+                        current - start_parsing);
+                if (!printed_warning_already)
+                {
+                    std::cerr << &R"END(
+[openPMD] WARNING: Parsing Iterations is taking a long time.
+Consider using deferred Iteration parsing in order to open the Series lazily.
+This can be achieved by either setting an environment variable:
+
+> export OPENPMD_DEFER_ITERATION_PARSING=1
+
+Or by specifying it as part of a JSON/TOML configuration:
+
+> // C++:
+> Series simData("my_data_%T.%E", R"({"defer_iteration_parsing": true})");
+> // Python:
+> simData = opmd.Series("my_data_%T.%E", {"defer_iteration_parsing": True})
+
+Iterations will then be parsed only upon explicit user request:
+
+> series.snapshots()[100].open()  // new API
+> series.iterations[100].open()   // old API
+
+Alternatively, Iterations will be opened implicitly when iterating in
+READ_LINEAR access mode.
+Refer also to the documentation at https://openpmd-api.readthedocs.io
+
+This warning can be suppressed also by either specifying
+an environment variable:
+
+> export OPENPMD_HINT_LAZY_PARSING_TIMEOUT=0
+
+Or by the JSON/TOML option {"hint_lazy_parsing_timeout": 0}.
+)END"[1] << '\n';
+                    printed_warning_already = true;
+                }
+                std::cerr << "Elapsed time: " << total_diff.count()
+                          << "s, parsed " << current_iteration_count << " of "
+                          << total_iteration_count << " Iterations."
+                          << std::endl;
+                time_of_last_warning = current;
+            }
+        }
+    };
 } // namespace
 
 struct Series::ParsedInput
@@ -215,6 +291,38 @@ Series &Series::setMeshesPath(std::string const &mp)
     return *this;
 }
 
+std::vector<std::string> Series::availableDatasets()
+{
+    if (iterationEncoding() == IterationEncoding::variableBased &&
+        IOHandler()->m_backendAccess == Access::READ_RANDOM_ACCESS)
+    {
+        Parameter<Operation::ADVANCE> advance;
+        advance.mode =
+            Parameter<Operation::ADVANCE>::StepSelection{std::nullopt};
+        IOHandler()->enqueue(IOTask(this, std::move(advance)));
+    }
+    Parameter<Operation::LIST_DATASETS> listDatasets;
+    IOHandler()->enqueue(IOTask(this, listDatasets));
+    IOHandler()->flush(internal::defaultFlushParams);
+    return std::move(*listDatasets.datasets);
+}
+
+bool Series::hasRankTableRead()
+{
+    if (access::writeOnly(IOHandler()->m_frontendAccess))
+    {
+        return false;
+    }
+    auto &series = get();
+    if (series.m_rankTable.m_bufferedRead.has_value())
+    {
+        return true;
+    }
+    auto datasets = availableDatasets();
+    return std::find(datasets.begin(), datasets.end(), "rankTable") !=
+        datasets.end();
+}
+
 #if openPMD_HAVE_MPI
 chunk_assignment::RankMeta Series::rankTable(bool collective)
 #else
@@ -245,21 +353,9 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
         IOHandler()->enqueue(IOTask(this, openFile));
 #endif
     }
-    if (iterationEncoding() == IterationEncoding::variableBased &&
-        IOHandler()->m_backendAccess == Access::READ_RANDOM_ACCESS)
-    {
-        Parameter<Operation::ADVANCE> advance;
-        advance.mode =
-            Parameter<Operation::ADVANCE>::StepSelection{std::nullopt};
-        IOHandler()->enqueue(IOTask(this, std::move(advance)));
-    }
-    Parameter<Operation::LIST_DATASETS> listDatasets;
-    IOHandler()->enqueue(IOTask(this, listDatasets));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (std::none_of(
-            listDatasets.datasets->begin(),
-            listDatasets.datasets->end(),
-            [](std::string const &str) { return str == "rankTable"; }))
+    auto datasets = availableDatasets();
+    if (std::find(datasets.begin(), datasets.end(), "rankTable") ==
+        datasets.end())
     {
         rankTable.m_bufferedRead = chunk_assignment::RankMeta{};
         return {};
@@ -1092,6 +1188,12 @@ void Series::initSeries(
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
+    if (!input->filenameExtension)
+    {
+        throw error::Internal(
+            "Control flow error: filename extension has not been resolved.");
+    }
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     series.m_filenameExtension = input->filenameExtension.value();
 
     if (series.m_iterationEncoding == IterationEncoding::fileBased &&
@@ -1704,7 +1806,8 @@ void Series::readFileBased(
         {
             if (forwardFirstError.has_value())
             {
-                auto &firstError = forwardFirstError.value();
+                // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+                auto &firstError = *forwardFirstError;
                 firstError.description.append(
                     "\n[Note] Not a single iteration can be successfully "
                     "parsed (see above errors). Returning the first observed "
@@ -1730,12 +1833,20 @@ void Series::readFileBased(
     {
         bool atLeastOneIterationSuccessful = false;
         std::optional<error::ReadError> forwardFirstError;
+
+        TimeoutLazyParsing timeout(series.m_hintLazyParsingAfterTimeout);
+
+        size_t read_iterations = 0;
         for (auto &iteration : series.iterations)
         {
             if (read_only_this_single_iteration.has_value() &&
                 *read_only_this_single_iteration != iteration.first)
             {
                 continue;
+            }
+            if (!read_only_this_single_iteration.has_value())
+            {
+                timeout.now(read_iterations, iterations.size());
             }
             if (auto error = readIterationEagerly(iteration.second); error)
             {
@@ -1752,6 +1863,7 @@ void Series::readFileBased(
             {
                 atLeastOneIterationSuccessful = true;
             }
+            ++read_iterations;
         }
         if (!atLeastOneIterationSuccessful)
         {
@@ -2130,6 +2242,10 @@ creating new iterations.
 
     auto currentSteps = currentSnapshot();
 
+    TimeoutLazyParsing timeout{
+        series.m_parseLazily ? 0 : series.m_hintLazyParsingAfterTimeout};
+    size_t parsed_iterations = 0;
+
     switch (iterationEncoding())
     {
     case IterationEncoding::groupBased:
@@ -2147,6 +2263,10 @@ creating new iterations.
                 index != *read_only_this_single_iteration)
             {
                 continue;
+            }
+            if (!read_only_this_single_iteration.has_value())
+            {
+                timeout.now(parsed_iterations, pList.paths->size());
             }
             if (auto err = internal::withRWAccess(
                     IOHandler()->m_seriesStatus,
@@ -2171,6 +2291,7 @@ creating new iterations.
             {
                 readableIterations.push_back(index);
             }
+            ++parsed_iterations;
         }
         if (currentSteps.has_value())
         {
@@ -2227,6 +2348,10 @@ creating new iterations.
 
         for (auto it : *currentSteps)
         {
+            if (!read_only_this_single_iteration.has_value())
+            {
+                timeout.now(parsed_iterations, pList.paths->size());
+            }
             /*
              * Variable-based iteration encoding relies on steps, so parsing
              * must happen after opening the first step.
@@ -2254,6 +2379,7 @@ creating new iterations.
                  */
                 throw *err;
             }
+            ++parsed_iterations;
         }
         return *currentSteps;
     }
@@ -2955,9 +3081,16 @@ namespace
      * If yes, read it into the specified location.
      */
     template <typename From, typename Dest = From>
-    void
-    getJsonOption(json::TracingJSON &config, std::string const &key, Dest &dest)
+    void getJsonOption(
+        json::TracingJSON &config,
+        std::string const &key,
+        Dest &dest,
+        std::optional<std::string> envVar = std::nullopt)
     {
+        if (envVar.has_value())
+        {
+            dest = auxiliary::getEnvNum(*envVar, dest);
+        }
         if (config.json().contains(key))
         {
             dest = config[key].json().get<From>();
@@ -3000,7 +3133,15 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
 {
     auto &series = get();
     getJsonOption<bool>(
-        options, "defer_iteration_parsing", series.m_parseLazily);
+        options,
+        "defer_iteration_parsing",
+        series.m_parseLazily,
+        "OPENPMD_DEFER_ITERATION_PARSING");
+    getJsonOption<uint64_t>(
+        options,
+        "hint_lazy_parsing_timeout",
+        series.m_hintLazyParsingAfterTimeout,
+        "OPENPMD_HINT_LAZY_PARSING_TIMEOUT");
     internal::SeriesData::SourceSpecifiedViaJSON rankTableSource;
     if (getJsonOptionLowerCase(options, "rank_table", rankTableSource.value))
     {
@@ -3112,18 +3253,25 @@ namespace internal
         {
             this->m_sharedStatefulIterator->close();
         }
-        /*
-         * Scenario: A user calls `Series::flush()` but does not check for
-         * thrown exceptions. The exception will propagate further up,
-         * usually thereby popping the stack frame that holds the `Series`
-         * object. `Series::~Series()` will run. This check avoids that the
-         * `Series` is needlessly flushed a second time. Otherwise, error
-         * messages can get very confusing.
-         */
         Series impl;
         impl.setData({this, [](auto const *) {}});
-        if (auto IOHandler = impl.IOHandler();
-            IOHandler && IOHandler->m_lastFlushSuccessful)
+        if (auto IOHandler = impl.IOHandler(); IOHandler &&
+            /*
+             * Scenario: A user calls `Series::flush()` but does not check for
+             * thrown exceptions. The exception will propagate further up,
+             * usually thereby popping the stack frame that holds the `Series`
+             * object. `Series::~Series()` will run. This check avoids that the
+             * `Series` is needlessly flushed a second time. Otherwise, error
+             * messages can get very confusing.
+             */
+
+            IOHandler->m_lastFlushSuccessful &&
+            /*
+             * If a read-only Series is opened without any backend access, then
+             * don't go there now. Just peacefully close.
+             */
+            !(access::readOnly(IOHandler->m_frontendAccess) &&
+              !(*this)->m_writable.written))
         {
             impl.flush();
             /*
@@ -3406,7 +3554,7 @@ auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>
         auto res = attribute.getOptional<vec_t>();
         if (res.has_value())
         {
-            return res.value();
+            return res;
         }
         else
         {
@@ -3429,6 +3577,7 @@ AbstractIOHandler *Series::runDeferredInitialization()
     auto &series = get();
     if (series.m_deferred_initialization.has_value())
     {
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         auto functor = std::move(*m_series->m_deferred_initialization);
         m_series->m_deferred_initialization = std::nullopt;
         return functor(*this);

@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Franz Poeschel
+/* Copyright 2017-2025 Franz Poeschel, Axel Huebl, Junmin Gu, Luca Fedeli
  *
  * This file is part of openPMD-api.
  *
@@ -1078,7 +1078,6 @@ void JSONIOHandlerImpl::deletePath(
         lastPointer->erase(splitPath[splitPath.size() - 1]);
     }
 
-    putJsonContents(file);
     writable->abstractFilePosition.reset();
     writable->written = false;
 }
@@ -1120,7 +1119,6 @@ void JSONIOHandlerImpl::deleteDataset(
         parent = &obtainJsonContents(writable);
     }
     parent->erase(dataset);
-    putJsonContents(file);
     writable->written = false;
     writable->abstractFilePosition.reset();
 }
@@ -1139,7 +1137,6 @@ void JSONIOHandlerImpl::deleteAttribute(
     auto file = refreshFileFromParent(writable);
     auto &j = obtainJsonContents(writable);
     j.erase(parameters.name);
-    putJsonContents(file);
 }
 
 void JSONIOHandlerImpl::writeDataset(
@@ -1172,7 +1169,6 @@ void JSONIOHandlerImpl::writeDataset(
     switchType<DatasetWriter>(parameters.dtype, j, parameters);
 
     writable->written = true;
-    putJsonContents(file);
 }
 
 void JSONIOHandlerImpl::writeAttribute(
@@ -1207,13 +1203,13 @@ void JSONIOHandlerImpl::writeAttribute(
     switch (m_attributeMode.m_mode)
     {
     case AttributeMode::Long:
-        (*jsonVal)[filePosition->id]["attributes"][parameter.name] = {
+        (*jsonVal)[filePosition->id]["attributes"][name] = {
             {"datatype", jsonDatatypeToString(parameter.dtype)},
             {"value", value}};
         break;
     case AttributeMode::Short:
         // short form
-        (*jsonVal)[filePosition->id]["attributes"][parameter.name] = value;
+        (*jsonVal)[filePosition->id]["attributes"][name] = value;
         break;
     }
     writable->written = true;
@@ -1544,7 +1540,6 @@ void JSONIOHandlerImpl::readAttribute(
     auto const &jsonContents = obtainJsonContents(writable);
     auto const &jsonLoc = jsonContents["attributes"];
     setAndGetFilePosition(writable);
-    std::string error_msg("[JSON] No such attribute '");
     if (!hasKey(jsonLoc, name))
     {
         throw error::ReadError(
@@ -2369,9 +2364,9 @@ nlohmann::json JSONIOHandlerImpl::platformSpecifics()
         Datatype::CDOUBLE,
         Datatype::CLONG_DOUBLE,
         Datatype::BOOL};
-    for (auto it = std::begin(datatypes); it != std::end(datatypes); it++)
+    for (auto &datatype : datatypes)
     {
-        res[jsonDatatypeToString(*it)] = toBytes(*it);
+        res[jsonDatatypeToString(datatype)] = toBytes(datatype);
     }
     return res;
 }
@@ -2487,10 +2482,9 @@ std::array<T, n> JSONIOHandlerImpl::JsonToCpp<std::array<T, n>>::operator()(
 }
 
 template <typename T>
-T JSONIOHandlerImpl::JsonToCpp<
-    T,
-    typename std::enable_if<std::is_floating_point<T>::value>::type>::
-operator()(nlohmann::json const &j)
+T JSONIOHandlerImpl::
+    JsonToCpp<T, std::enable_if_t<std::is_floating_point_v<T>>>::operator()(
+        nlohmann::json const &j)
 {
     try
     {

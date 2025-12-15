@@ -1,3 +1,24 @@
+/* Copyright 2025 Axel Huebl, Fabian Koller, Franz Poeschel, Junmin Gu,
+ *                Junmin Gu, Luca Fedeli
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 // expose private and protected members for invasive testing
 #include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
@@ -4246,7 +4267,7 @@ TEST_CASE("git_adios2_early_chunk_query", "[serial][adios2]")
  */
 #if defined(__unix__) && openPMD_HAVE_ADIOS2_BP5
 
-enum class FlushDuringStep
+enum class FlushDuringStep : std::uint8_t
 {
     Never,
     Default_No,
@@ -4991,7 +5012,8 @@ unused = "as well"
 BufferGrowthFactor = "2.0"
 Profile = "On"
 
-[[adios2.dataset.operators]]
+# single brackets, because an operator may also be given as a single object
+[adios2.dataset.operators]
 type = "blosc"
 parameters.clevel = "1"
 parameters.doshuffle = "BLOSC_BITSHUFFLE"
@@ -5022,7 +5044,7 @@ unused = "dataset parameter"
 [adios2.dataset]
 unused = "too"
 
-[[adios2.dataset.operators]]
+[adios2.dataset.operators]
 type = "blosc"
 [adios2.dataset.operators.parameters]
 clevel = 3
@@ -5799,6 +5821,8 @@ void adios2_group_table(
                 REQUIRE(iteration.meshes["E"].size() == 2);
             }
             break;
+        default:
+            break;
         }
     }
     REQUIRE(counter == 2);
@@ -5850,10 +5874,11 @@ void variableBasedSeries(std::string const &file)
 
             iteration.setAttribute("changing_value", i);
 
-            // this tests changing extents and dimensionalities
-            // across iterations
+            // this tests changing extents across iterations
+            // ADIOS2 does not support changing the dimensionality
+            // (older versions used to somewhat support it, but not really)
             auto E_y = iteration.meshes["E"]["y"];
-            unsigned dimensionality = i % 3 + 1;
+            unsigned dimensionality = 3;
             unsigned len = i + 1;
             Extent changingExtent(dimensionality, len);
             E_y.resetDataset({openPMD::Datatype::INT, changingExtent});
@@ -5981,7 +6006,7 @@ void variableBasedSeries(std::string const &file)
             }
 
             auto E_y = iteration.meshes["E"]["y"];
-            unsigned dimensionality = index % 3 + 1;
+            unsigned dimensionality = 3;
             unsigned len = index + 1;
             Extent changingExtent(dimensionality, len);
             REQUIRE(E_y.getExtent() == changingExtent);
@@ -6223,11 +6248,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 {
   "adios2": {
     "dataset": {
-      "operators": [
-        {
-          "type": "bzip2"
-        }
-      ]
+      "operators": {
+        "type": "bzip2"
+      }
     }
   }
 })END";
@@ -6274,11 +6297,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 {
   "adios2": {
     "dataset": {
-      "operators": [
-        {
-          "type": "bzip2"
-        }
-      ]
+      "operators": {
+        "type": "bzip2"
+      }
     }
   }
 })END";
@@ -6339,11 +6360,9 @@ TEST_CASE("automatically_deactivate_span", "[serial][adios2]")
 {
   "adios2": {
     "dataset": {
-      "operators": [
-        {
-          "type": "bzip2"
-        }
-      ]
+      "operators": {
+        "type": "bzip2"
+      }
     }
   }
 })END";
@@ -6557,13 +6576,6 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_ADIOS2_BP5
 void adios2_bp5_no_steps(bool usesteps)
 {
-    std::string const config = R"END(
-{
-    "adios2":
-    {
-        "use_group_table": true
-    }
-})END";
     {
         adios2::ADIOS adios;
         auto IO = adios.DeclareIO("IO");
@@ -7282,7 +7294,7 @@ TEST_CASE("varying_zero_pattern", "[serial]")
     }
 }
 
-enum class ParseMode
+enum class ParseMode : std::uint8_t
 {
     /*
      * Conventional workflow. Just parse the whole thing and yield iterations

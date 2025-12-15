@@ -25,6 +25,19 @@ Virtual file drivers are configured via JSON/TOML.
 Refer to the page on :ref:`JSON/TOML configuration <backendconfig-hdf5>` for further details.
 
 
+Filters (compression)
+*********************
+
+HDF5 supports so-called filters for transformations such as compression on datasets.
+These can be permanent (applied to an entire dataset) and transient (applied to individual I/O operations).
+The openPMD-api currently supports permanent filters.
+Pipelines of multiple subsequent filters are supported.
+Refer also to `this documentation <https://web.ics.purdue.edu/~aai/HDF5/html/Filters.html>`_.
+
+Filters are applied via :ref:`JSON/TOML configuration <backendconfig-hdf5>`, see there for detailed instructions on how to apply filters.
+There are also extended examples on how to apply compression options to ADIOS2 and HDF5 in the examples: `Python <https://github.com/openPMD/openPMD-api/blob/dev/examples/15_compression.py>`_ / `C++ <https://github.com/openPMD/openPMD-api/blob/dev/examples/15_compression.cpp>`_.
+
+
 Backend-Specific Controls
 -------------------------
 

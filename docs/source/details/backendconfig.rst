@@ -94,6 +94,34 @@ Using the Streaming API (i.e. ``SeriesInterface::readIteration()``) will do this
 Parsing eagerly might be very expensive for a Series with many iterations, but will avoid bugs by forgotten calls to ``Iteration::open()``.
 In complex environments, calling ``Iteration::open()`` on an already open environment does no harm (and does not incur additional runtime cost for additional ``open()`` calls).
 
+By default, the library will print a warning to suggest using deferred Iteration parsing when opening a Series takes long.
+The timeout can be tuned by the JSON/TOML key ``hint_lazy_parsing_timeout`` (integer, seconds):
+if set to a positive value, the library will print periodic warnings to stderr when eager parsing of Iterations takes longer than the specified number of seconds (default: ``20``). Setting this option to ``0`` disables the warnings.
+
+Environment variables may alternatively be used for options concerning deferred iteration parsing:
+
+* Environment variable ``OPENPMD_DEFER_ITERATION_PARSING``: if set to a truthy value (e.g. ``1``), the Series will be opened with deferred iteration parsing as if ``{"defer_iteration_parsing": true}`` had been supplied.
+* Environment variable ``OPENPMD_HINT_LAZY_PARSING_TIMEOUT``: accepts integral values equivalent to the ``hint_lazy_parsing_timeout`` key.
+
+Examples:
+
+.. code-block:: bash
+
+  # enable lazy parsing via env var
+  export OPENPMD_DEFER_ITERATION_PARSING=1
+
+  # disable the parsing hint/warning
+  export OPENPMD_HINT_LAZY_PARSING_TIMEOUT=0
+
+Or in a Series constructor JSON/TOML configuration:
+
+.. code-block:: json
+
+  {
+    "defer_iteration_parsing": true,
+    "hint_lazy_parsing_timeout": 20
+  }
+
 The key ``resizable`` can be passed to ``Dataset`` options.
 It if set to ``{"resizable": true}``, this declares that it shall be allowed to increased the ``Extent`` of a ``Dataset`` via ``resetDataset()`` at a later time, i.e., after it has been first declared (and potentially written).
 For HDF5, resizable Datasets come with a performance penalty.
@@ -185,8 +213,8 @@ Explanation of the single keys:
   Additionally, specifying ``"disk_override"``, ``"buffer_override"`` or ``"new_step_override"`` will take precedence over options specified without the ``_override`` suffix, allowing to invert the normal precedence order.
   This way, a data producing code can hardcode the preferred flush target per ``flush()`` call, but users can e.g. still entirely deactivate flushing to disk in the ``Series`` constructor by specifying ``preferred_flush_target = buffer_override``.
   This is useful when applying the asynchronous IO capabilities of the BP5 engine.
-* ``adios2.dataset.operators``: This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
-  Each object in the list has two keys:
+* ``adios2.dataset.operators``: This key contains either a single ADIOS2 `operator <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_ or a list of operators, used to enable compression or dataset transformations.
+  Each operator is an object with two keys:
 
   * ``type`` supported ADIOS operator type, e.g. zfp, sz
   * ``parameters`` is an associative map of string parameters for the operator (e.g. compression levels)
@@ -247,6 +275,24 @@ Explanation of the single keys:
   An explicit chunk size can be specified as a list of positive integers, e.g. ``hdf5.dataset.chunks = [10, 100]``. Note that this specification should only be used per-dataset, e.g. in ``resetDataset()``/``reset_dataset()``.
 
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
+* ``hdf5.datasets.permanent_filters``: Either a single HDF5 permanent filter specification or a list of HDF5 permanent filter specifications.
+  Each filter specification is a JSON/TOML object, but there are multiple options:
+
+  * Zlib: The Zlib filter has a distinct API in HDF5 and the configuration for Zlib in openPMD is hence also different. It is activated by the mandatory key ``type = "zlib"`` and configured by the optional integer key ``aggression``.
+    Example: ``{"type": "zlib", "aggression": 5}``.
+  * Filters identified by their global ID `registered with the HDF group <https://github.com/HDFGroup/hdf5_plugins/blob/master/docs/RegisteredFilterPlugins.md>`_.
+    They are activated by the mandatory integer key ``id`` containing this global ID.
+    All other keys are optional:
+
+    * ``type = "by_id"`` may optionally be specified for clarity and consistency.
+    * The string key ``flags`` can take the values ``"mandatory"`` or ``"optional"``, indicating if HDF5 should abort execution if the filter cannot be applied for some reason.
+    * The key ``cd_values`` points to a list of nonnegative integers.
+      These are filter-specific configuration options.
+      Refer to the specific filter's documentation.
+
+    Alternatively to an integer ID, the key ``id`` may also be of string type, identifying one of the six builtin filters of HDF5: ``"deflate", "shuffle", "fletcher32", "szip", "nbit", "scaleoffset"``.
+
+
 * ``hdf5.vfd.type`` selects the HDF5 virtual file driver.
   Currently available are:
 

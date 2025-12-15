@@ -17,7 +17,7 @@ sudo apt-get install -y \
 echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | \
   sudo tee /etc/apt/sources.list.d/nvhpc.list
 sudo apt-get update -y
-sudo apt-get install -y --no-install-recommends nvhpc-25-1
+sudo apt-get install -y --no-install-recommends nvhpc-25-9
 
 # things should reside in /opt/nvidia/hpc_sdk now
 

@@ -10,7 +10,9 @@ import openpmd_api as io
 
 if __name__ == "__main__":
     series = io.Series("../samples/git-sample/data%T.h5",
-                       io.Access.read_only)
+                       io.Access.read_only, {
+                           "defer_iteration_parsing": True
+                       })
     print("Read a Series with openPMD standard version %s" %
           series.openPMD)
 
@@ -20,7 +22,8 @@ if __name__ == "__main__":
         print("\t {0}".format(i))
     print("")
 
-    i = series.snapshots()[100]
+    # with defer_iteration_parsing, open() must be called explicitly
+    i = series.snapshots()[100].open()
     print("Iteration 100 contains {0} meshes:".format(len(i.meshes)))
     for m in i.meshes:
         print("\t {0}".format(m))

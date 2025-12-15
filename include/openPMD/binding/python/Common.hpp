@@ -1,4 +1,4 @@
-/* Copyright 2023 The openPMD Community
+/* Copyright 2023-2025 The openPMD Community, Franz Poeschel
  *
  * This header is used to centrally define classes that shall not violate the
  * C++ one-definition-rule (ODR) for various Python translation units.

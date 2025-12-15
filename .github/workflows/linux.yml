@@ -97,9 +97,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install clang-11 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
+
     - name: Build
       env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -Werror}
       run: |
+        # Use this to make the HDF5 plugins available from the C/C++ API.
+        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_ompi_h5_ad2/)
         spack install
@@ -172,8 +175,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get remove openmpi* libopenmpi* *hdf5* || true
-        sudo apt-get install g++ gfortran python3
+        sudo apt-get install g++ gfortran python3 python3-venv
+
         sudo .github/workflows/dependencies/install_spack
+
 
         # Need to build this manually due to broken MPICH package in Ubuntu 24.04
         # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
@@ -182,6 +187,8 @@ jobs:
     - name: Build
       env: {CC: gcc, CXX: g++, MPICH_CC: gcc, MPICH_CXX: g++, CXXFLAGS: -Werror}
       run: |
+        # Use this to make the HDF5 plugins available from the C/C++ API.
+        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
         cmake --version
         mpiexec --version
         mpicxx --version
@@ -190,9 +197,13 @@ jobs:
         eval $(spack env activate --sh .github/ci/spack-envs/gcc13_py312_mpich_h5_ad2/)
         spack install
 
+        python -m venv venv
+        source venv/bin/activate
+        pip install mpi4py numpy hdf5plugin
+
         share/openPMD/download_samples.sh build
         cmake -S . -B build \
-          -DopenPMD_USE_PYTHON=OFF \
+          -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=ON     \
           -DopenPMD_USE_HDF5=ON    \
           -DopenPMD_USE_ADIOS2=ON  \
@@ -238,6 +249,8 @@ jobs:
     - name: Build
       env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
       run: |
+        # Use this to make the HDF5 plugins available from the C/C++ API.
+        export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
         sudo ln -s "$(which cmake)" /usr/bin/cmake
         eval $(spack env activate --sh .github/ci/spack-envs/gcc12_py36_ompi_h5_ad2/)
         spack install
@@ -248,7 +261,8 @@ jobs:
           -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 
@@ -261,6 +275,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas python3-h5py-mpi python3-pip
+        python3 -m pip install jsonschema==4.* referencing
 #       TODO ADIOS2
     - name: Build
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
@@ -278,7 +293,6 @@ jobs:
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 
-        python3 -m pip install jsonschema==4.* referencing
         cd share/openPMD/json_schema
         PATH="../../../build/bin:$PATH" make -j 2
         # We need to exclude the thetaMode example since that has a different
@@ -295,10 +309,10 @@ jobs:
         done
 
   musllinux_py10:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     container:
-      image: quay.io/pypa/musllinux_1_1_x86_64
+      image: quay.io/pypa/musllinux_1_2_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Install
@@ -307,7 +321,7 @@ jobs:
         apk add hdf5-dev
         python3.10 -m pip install numpy h5py
     - name: Build
-      env: {CXXFLAGS: -Werror}
+      env: {CXXFLAGS: "-Werror -Wno-error=maybe-uninitialized"}
       run: |
         share/openPMD/download_samples.sh build
         cmake -S . -B build                  \

@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Franz Poeschel
+/* Copyright 2017-2025 Franz Poeschel, Axel Huebl, Luca Fedeli
  *
  * This file is part of openPMD-api.
  *
@@ -525,9 +525,7 @@ private:
     };
 
     template <typename T>
-    struct JsonToCpp<
-        T,
-        typename std::enable_if<std::is_floating_point<T>::value>::type>
+    struct JsonToCpp<T, typename std::enable_if_t<std::is_floating_point_v<T>>>
     {
         T operator()(nlohmann::json const &);
     };

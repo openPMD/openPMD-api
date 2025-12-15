@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller, Axel Huebl
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Luca Fedeli
  *
  * This file is part of openPMD-api.
  *
@@ -217,6 +217,7 @@ namespace internal
          * True if a user opts into lazy parsing.
          */
         bool m_parseLazily = false;
+        uint64_t m_hintLazyParsingAfterTimeout = 20; // seconds
 
         /**
          * In variable-based encoding, all backends except ADIOS2 can only write
@@ -456,6 +457,18 @@ public:
      * @return  Reference to modified series.
      */
     Series &setMeshesPath(std::string const &meshesPath);
+
+    /**
+     * @return True if there is a rankTable dataset defined for this Series.
+     *         False in write-only access modes.
+     *         Will indiscriminately return false in file encoding:
+     *         rankTable is not explicitly supported in file encoding,
+     *         finding out if one is defined would require opening all available
+     *         files. You may still call Series::rankTable() to retrieve the
+     *         rank table if you know that there is one, but note that it will
+     *         return the rank table from the file that was last opened.
+     */
+    bool hasRankTableRead();
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -1008,6 +1021,8 @@ OPENPMD_private
      * steps?
      */
     [[nodiscard]] bool randomAccessSteps() const;
+
+    std::vector<std::string> availableDatasets();
 }; // Series
 
 namespace debug

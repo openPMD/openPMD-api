@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -155,6 +155,10 @@ namespace
 void ParticleSpecies::flush(
     std::string const &path, internal::FlushParams const &flushParams)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         for (auto &record : *this)
@@ -168,12 +172,15 @@ void ParticleSpecies::flush(
     }
     else
     {
-        auto it = find("position");
-        if (it != end())
-            it->second.setUnitDimension({{UnitDimension::L, 1}});
-        it = find("positionOffset");
-        if (it != end())
-            it->second.setUnitDimension({{UnitDimension::L, 1}});
+        if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
+        {
+            auto it = find("position");
+            if (it != end())
+                it->second.setUnitDimension({{UnitDimension::L, 1}});
+            it = find("positionOffset");
+            if (it != end())
+                it->second.setUnitDimension({{UnitDimension::L, 1}});
+        }
 
         Container<Record>::flush(path, flushParams);
 

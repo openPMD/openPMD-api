@@ -56,6 +56,9 @@ namespace internal
         typename T_BaseRecord_,
         typename T_BaseRecordData_,
         typename T_BaseIterator>
+#ifdef __HIPCC__ // ROCm 6.2.4 issue, see #1797
+    __host__
+#endif
     ScalarIterator<T_BaseRecord_, T_BaseRecordData_, T_BaseIterator>::
         ScalarIterator() = default;
 
@@ -398,8 +401,7 @@ auto BaseRecord<T_elem>::operator[](key_type const &key) -> mapped_type &
             T_RecordComponent::get();
         }
         mapped_type &ret = keyScalar ? static_cast<mapped_type &>(*this)
-                                     : T_Container::
-                                       operator[](key);
+                                     : T_Container::operator[](key);
         return ret;
     }
 }
@@ -441,8 +443,7 @@ auto BaseRecord<T_elem>::operator[](key_type &&key) -> mapped_type &
             T_RecordComponent::get();
         }
         mapped_type &ret = keyScalar ? static_cast<mapped_type &>(*this)
-                                     : T_Container::
-                                       operator[](std::move(key));
+                                     : T_Container::operator[](std::move(key));
         return ret;
     }
 }
@@ -744,7 +745,7 @@ auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
 }
 
 template <typename T_elem>
-auto BaseRecord<T_elem>::swap(BaseRecord &other) -> void
+auto BaseRecord<T_elem>::swap(BaseRecord &other) noexcept -> void
 {
     detail::verifyNonscalar(this);
     detail::verifyNonscalar(&other);
@@ -819,6 +820,11 @@ template <typename T_elem>
 inline void BaseRecord<T_elem>::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {
+    if (!this->dirtyRecursive())
+    {
+        return;
+    }
+
     if (!this->written() && this->empty() && !this->datasetDefined())
         throw std::runtime_error(
             "A Record can not be written without any contained "

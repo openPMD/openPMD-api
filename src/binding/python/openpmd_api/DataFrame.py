@@ -113,11 +113,11 @@ def iterations_to_dataframe(series, species_name):
 
     df = pd.concat(
         (
-            series.iterations[i]
+            iteration
             .particles[species_name]
             .to_df()
             .assign(iteration=i)
-            for i in series.iterations
+            for i, iteration in series.snapshots().items()
         ),
         axis=0,
         ignore_index=True,
@@ -170,12 +170,12 @@ def iterations_to_cudf(series, species_name):
     cdf = cudf.concat(
         (
             cudf.from_pandas(
-                series.iterations[i]
-                      .particles[species_name]
-                      .to_df()
-                      .assign(iteration=i)
+                iteration
+                .particles[species_name]
+                .to_df()
+                .assign(iteration=i)
             )
-            for i in series.iterations
+            for i, iteration in series.snapshots().items()
         ),
         axis=0,
         ignore_index=True,

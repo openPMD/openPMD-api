@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Luca Fedeli
  *
  * This file is part of openPMD-api.
  *
@@ -89,6 +89,7 @@ class Writable final
     friend class ParticleSpecies;
     friend class Series;
     friend class Record;
+    friend class RecordComponent;
     friend class AbstractIOHandlerImpl;
     friend class ADIOS2IOHandlerImpl;
     friend class detail::ADIOS2File;

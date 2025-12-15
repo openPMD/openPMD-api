@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Junmin Gu
  *
  * This file is part of openPMD-api.
  *
@@ -24,6 +24,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
@@ -161,12 +162,21 @@ Iteration &Iteration::open()
         it.m_closed = CloseStatus::Open;
         runDeferredParseAccess();
     }
-    if (getStepStatus() == StepStatus::OutOfStep)
+    switch (getStepStatus())
     {
+    case StepStatus::OutOfStep:
         beginStep(/* reread = */ false);
         setStepStatus(StepStatus::DuringStep);
+        break;
+    case StepStatus::DuringStep:
+    case StepStatus::NoStep: {
+        auto end = begin;
+        ++end;
+        s.flush_impl(begin, end, {FlushLevel::CreateOrOpenFiles});
     }
-    IOHandler()->flush(internal::defaultFlushParams);
+    break;
+    }
+    // IOHandler()->flush(internal::defaultFlushParams);
     return *this;
 }
 
@@ -362,9 +372,14 @@ void Iteration::flush(internal::FlushParams const &flushParams)
                 s.setMeshesPath("meshes/");
                 s.flushMeshesPath();
             }
-            meshes.flush(s.meshesPath(), flushParams);
-            for (auto &m : meshes)
-                m.second.flush(m.first, flushParams);
+            if (meshes.dirtyRecursive())
+            {
+                meshes.flush(s.meshesPath(), flushParams);
+                for (auto &m : meshes)
+                {
+                    m.second.flush(m.first, flushParams);
+                }
+            }
         }
         else
         {
@@ -378,9 +393,14 @@ void Iteration::flush(internal::FlushParams const &flushParams)
                 s.setParticlesPath("particles/");
                 s.flushParticlesPath();
             }
-            particles.flush(s.particlesPath(), flushParams);
-            for (auto &species : particles)
-                species.second.flush(species.first, flushParams);
+            if (particles.dirtyRecursive())
+            {
+                particles.flush(s.particlesPath(), flushParams);
+                for (auto &species : particles)
+                {
+                    species.second.flush(species.first, flushParams);
+                }
+            }
         }
         else
         {
@@ -470,6 +490,11 @@ void Iteration::readGorVBased(
 
 void Iteration::read_impl(std::string const &groupPath)
 {
+    if (!get().m_deferredParseAccess.has_value())
+    {
+        throw error::Internal(
+            "Attempted reparsing an Iteration that is already parsed.");
+    }
     Parameter<Operation::OPEN_PATH> pOpen;
     pOpen.path = groupPath;
     IOHandler()->enqueue(IOTask(this, pOpen));
@@ -857,7 +882,9 @@ auto Iteration::beginStep(
         }
     }
 
-    res.stepStatus = status;
+    res.stepStatus = series.iterationEncoding() == IterationEncoding::fileBased
+        ? AdvanceStatus::RANDOMACCESS
+        : status;
     return res;
 }
 

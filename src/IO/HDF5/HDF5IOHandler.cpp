@@ -1,4 +1,5 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Junmin Gu,
+ *                     Jean Luca Bez, Luca Fedeli, Ulrik Guenther
  *
  * This file is part of openPMD-api.
  *
@@ -76,6 +77,27 @@ namespace openPMD
     } while (0)
 #endif
 
+constexpr char const *const init_json_shadow_str = &R"(
+{
+    "dataset": {
+        "chunks": null,
+        "permanent_filters": null
+    },
+    "independent_stores": null
+})"[1];
+constexpr char const *dataset_cfg_mask = &R"(
+{
+  "dataset": {
+    "chunks": null,
+    "permanent_filters": null
+  }
+}
+)"[1];
+constexpr char const *const flush_cfg_mask = &R"(
+{
+    "independent_stores": null
+})"[1];
+
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     AbstractIOHandler *handler, bool do_warn_unused_params)
     : AbstractIOHandlerImpl(handler)
@@ -151,23 +173,6 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
         m_config = config["hdf5"];
 
         {
-            constexpr char const *const init_json_shadow_str = R"(
-            {
-              "dataset": {
-                "chunks": null
-              },
-              "independent_stores": null
-            })";
-            constexpr char const *const dataset_cfg_mask = R"(
-            {
-              "dataset": {
-                "chunks": null
-              }
-            })";
-            constexpr char const *const flush_cfg_mask = R"(
-            {
-              "independent_stores": null
-            })";
             m_global_dataset_config = m_config.json();
             json::filterByTemplate(
                 m_global_dataset_config,
@@ -178,6 +183,7 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             auto init_json_shadow = nlohmann::json::parse(init_json_shadow_str);
             json::merge_internal(
                 m_config.getShadow(), init_json_shadow, /* do_prune = */ false);
+            m_config["dataset"]["permanent_filters"].declareFullyRead();
         }
 
         // unused params
@@ -408,7 +414,8 @@ void HDF5IOHandlerImpl::createPath(
         else
             position = writable; /* root does not have a parent but might still
                                     have to be written */
-        File file = getFile(position).value();
+        File file =
+            requireFile("createPath", position, /* checkParent = */ false);
         hid_t node_id =
             H5Gopen(file.id, concrete_h5_file_position(position).c_str(), gapl);
         VERIFY(
@@ -464,6 +471,356 @@ void HDF5IOHandlerImpl::createPath(
         "[HDF5] Internal error: Failed to close HDF5 property during path "
         "creation");
 }
+
+namespace
+{
+    using chunking_t = std::vector<hsize_t>;
+    struct DatasetParams
+    {
+        struct ByID
+        {
+            H5Z_filter_t id = 0;
+            unsigned int flags = 0;
+            std::vector<unsigned int> cd_values;
+        };
+        struct Zlib
+        {
+            unsigned aggression = 1;
+        };
+        using filter_t = std::variant<
+            // generic
+            ByID,
+            // H5Pset_deflate
+            Zlib>;
+
+        std::optional<chunking_t> chunking;
+        bool resizable = false;
+        std::vector<filter_t> filters;
+    };
+
+    template <typename JSON, typename Accessor>
+    auto parse_filter_by_id(JSON &filter_config, Accessor &&json_accessor)
+        -> DatasetParams::ByID
+    {
+        DatasetParams::ByID byID;
+        if (!json_accessor(filter_config).contains("id"))
+        {
+            throw error::BackendConfigSchema(
+                {"hdf5", "dataset", "permanent_filters", "id"},
+                "Required key for selecting a filter by ID.");
+        }
+        byID.id = [&]() -> H5Z_filter_t {
+            auto const &id_config = json_accessor(filter_config["id"]);
+            using pair_t = std::pair<std::string, H5Z_filter_t>;
+            std::array<pair_t, 6> filter_types{
+                pair_t{"deflate", H5Z_FILTER_DEFLATE},
+                pair_t{"shuffle", H5Z_FILTER_SHUFFLE},
+                pair_t{"fletcher32", H5Z_FILTER_FLETCHER32},
+                pair_t{"szip", H5Z_FILTER_SZIP},
+                pair_t{"nbit", H5Z_FILTER_NBIT},
+                pair_t{"scaleoffset", H5Z_FILTER_SCALEOFFSET}};
+            auto id_error = [&]() {
+                std::stringstream error;
+                error << "Must be either of unsigned integer type or one of:";
+                for (auto const &pair : filter_types)
+                {
+                    error << " '" << pair.first << "'";
+                }
+                error << ".";
+                return error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "id"},
+                    error.str());
+            };
+            if (id_config.is_number_integer())
+            {
+                return id_config.template get<H5Z_filter_t>();
+            }
+            auto maybe_string = json::asLowerCaseStringDynamic(id_config);
+            if (!maybe_string.has_value())
+            {
+                throw id_error();
+            }
+            for (auto const &[key, res_type] : filter_types)
+            {
+                if (*maybe_string == key)
+                {
+                    return res_type;
+                }
+            }
+            throw id_error();
+        }();
+        byID.flags = [&]() -> unsigned int {
+            if (!json_accessor(filter_config).contains("flags"))
+            {
+                return 0;
+            }
+            auto const &flag_config = json_accessor(filter_config["flags"]);
+            using pair_t = std::pair<std::string, unsigned int>;
+            std::array<pair_t, 2> filter_types{
+                pair_t{"optional", H5Z_FLAG_OPTIONAL},
+                pair_t{"mandatory", H5Z_FLAG_MANDATORY}};
+            auto flag_error = [&]() {
+                std::stringstream error;
+                error << "Must be either of unsigned integer type or one of:";
+                for (auto const &pair : filter_types)
+                {
+                    error << " '" << pair.first << "'";
+                }
+                error << ".";
+                return error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "flags"},
+                    error.str());
+            };
+            if (flag_config.is_number_integer())
+            {
+                return flag_config.template get<unsigned int>();
+            }
+            auto maybe_string = json::asLowerCaseStringDynamic(flag_config);
+            if (!maybe_string.has_value())
+            {
+                throw flag_error();
+            }
+            for (auto const &[key, res_type] : filter_types)
+            {
+                if (*maybe_string == key)
+                {
+                    return res_type;
+                }
+            }
+            throw flag_error();
+        }();
+        if (json_accessor(filter_config).contains("cd_values"))
+        {
+            auto const &cd_values_config =
+                json_accessor(filter_config["cd_values"]);
+            try
+            {
+
+                byID.cd_values =
+                    cd_values_config.template get<std::vector<unsigned int>>();
+            }
+            catch (nlohmann::json::type_error const &)
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "cd_values"},
+                    "Must be an array of unsigned integers.");
+            }
+        }
+        return byID;
+    }
+
+    template <typename JSON, typename Accessor>
+    auto parse_filter_zlib(JSON &filter_config, Accessor &&json_accessor)
+        -> DatasetParams::Zlib
+    {
+        DatasetParams::Zlib zlib;
+        if (json_accessor(filter_config).contains("aggression"))
+        {
+            auto const &aggression_config =
+                json_accessor(filter_config["aggression"]);
+            if (!aggression_config.is_number_integer())
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "aggression"},
+                    "Must be of unsigned integer type.");
+            }
+            zlib.aggression = aggression_config.template get<unsigned>();
+        }
+        return zlib;
+    }
+
+    template <typename JSON, typename Accessor>
+    auto parse_filter(JSON &filter_config, Accessor &&json_accessor)
+        -> DatasetParams::filter_t
+    {
+        auto filter_error = []() {
+            return error::BackendConfigSchema(
+                {"hdf5", "dataset", "permanent_filters"},
+                "Must be either a JSON object or a vector of JSON objects.");
+        };
+        if (!json_accessor(filter_config).is_object())
+        {
+            throw filter_error();
+        }
+
+        enum class filter_type : uint8_t
+        {
+            ByID,
+            Zlib
+        };
+
+        filter_type type = [&]() -> filter_type {
+            if (json_accessor(filter_config).contains("type"))
+            {
+                auto res = json::asLowerCaseStringDynamic(
+                    json_accessor(filter_config["type"]));
+                if (!res.has_value())
+                {
+                    throw error::BackendConfigSchema(
+                        {"hdf5", "dataset", "permanent_filters", "type"},
+                        "Must be of type string.");
+                }
+                using pair_t = std::pair<std::string, filter_type>;
+                std::array<pair_t, 2> filter_types{
+                    pair_t{"by_id", filter_type::ByID},
+                    pair_t{"zlib", filter_type::Zlib}};
+                for (auto const &[key, res_type] : filter_types)
+                {
+                    if (*res == key)
+                    {
+                        return res_type;
+                    }
+                }
+                std::stringstream error;
+                error << "Must be one of:";
+                for (auto const &pair : filter_types)
+                {
+                    error << " '" << pair.first << "'";
+                }
+                error << ".";
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "permanent_filters", "type"},
+                    error.str());
+            }
+            else
+            {
+                return filter_type::ByID;
+            }
+        }();
+
+        switch (type)
+        {
+        case filter_type::ByID:
+            return parse_filter_by_id(filter_config, json_accessor);
+        case filter_type::Zlib:
+            return parse_filter_zlib(filter_config, json_accessor);
+        }
+        throw std::runtime_error("Unreachable!");
+    }
+
+    auto parse_dataset_config(
+        json::TracingJSON &config,
+        std::vector<hsize_t> const &dims,
+        Datatype const d) -> DatasetParams
+    {
+        DatasetParams res;
+
+        // general
+        if (config.json().contains("resizable"))
+        {
+            res.resizable = config["resizable"].json().get<bool>();
+        }
+
+        using compute_chunking_t =
+            std::variant<chunking_t, std::string /* either "none" or "auto"*/>;
+
+        bool chunking_config_from_json = false;
+        auto throw_chunking_error = [&chunking_config_from_json]() {
+            if (chunking_config_from_json)
+            {
+                throw error::BackendConfigSchema(
+                    {"hdf5", "dataset", "chunks"},
+                    R"(Must be "auto", "none", or a an array of integer.)");
+            }
+            else
+            {
+                throw error::WrongAPIUsage(
+                    "Environment variable OPENPMD_HDF5_CHUNKS accepts values "
+                    "'auto' and 'none'.");
+            }
+        };
+
+        compute_chunking_t compute_chunking =
+            auxiliary::getEnvString("OPENPMD_HDF5_CHUNKS", "auto");
+
+        // HDF5 specific
+        if (config.json().contains("hdf5") &&
+            config["hdf5"].json().contains("dataset"))
+        {
+            json::TracingJSON datasetConfig{config["hdf5"]["dataset"]};
+
+            if (datasetConfig.json().contains("chunks"))
+            {
+                chunking_config_from_json = true;
+
+                auto chunks_json = datasetConfig["chunks"];
+                if (chunks_json.json().is_string())
+                {
+
+                    compute_chunking = auxiliary::lowerCase(
+                        chunks_json.json().get<std::string>());
+                }
+                else if (chunks_json.json().is_array())
+                {
+                    try
+                    {
+                        compute_chunking =
+                            chunks_json.json().get<std::vector<hsize_t>>();
+                    }
+                    catch (nlohmann::json::type_error const &)
+                    {
+                        throw_chunking_error();
+                    }
+                }
+                else
+                {
+                    throw_chunking_error();
+                }
+            }
+
+            if (datasetConfig.json().contains("permanent_filters"))
+            {
+                auto permanent_filters = datasetConfig["permanent_filters"];
+                if (permanent_filters.json().is_array())
+                {
+                    permanent_filters.declareFullyRead();
+                    res.filters.reserve(permanent_filters.json().size());
+                    for (auto const &entry : permanent_filters.json())
+                    {
+                        res.filters.push_back(parse_filter(
+                            entry, [](auto const &j) -> nlohmann::json const & {
+                                return j;
+                            }));
+                    }
+                }
+                else
+                {
+                    res.filters = {parse_filter(
+                        permanent_filters,
+                        [](auto &&j) -> nlohmann::json const & {
+                            return j.json();
+                        })};
+                }
+            }
+        }
+        res.chunking = std::visit(
+            auxiliary::overloaded{
+                [&](chunking_t &&explicitly_specified)
+                    -> std::optional<chunking_t> {
+                    return std::move(explicitly_specified);
+                },
+                [&](std::string const &method_name)
+                    -> std::optional<chunking_t> {
+                    if (method_name == "auto")
+                    {
+
+                        return getOptimalChunkDims(dims, toBytes(d));
+                    }
+                    else if (method_name == "none")
+                    {
+                        return std::nullopt;
+                    }
+                    else
+                    {
+                        throw_chunking_error();
+                        throw std::runtime_error("Unreachable!");
+                    }
+                }},
+            std::move(compute_chunking));
+
+        return res;
+    }
+} // namespace
 
 void HDF5IOHandlerImpl::createDataset(
     Writable *writable, Parameter<Operation::CREATE_DATASET> const &parameters)
@@ -525,96 +882,8 @@ void HDF5IOHandlerImpl::createDataset(
             return parsed_config;
         }();
 
-        // general
-        bool is_resizable_dataset = false;
-        if (config.json().contains("resizable"))
-        {
-            is_resizable_dataset = config["resizable"].json().get<bool>();
-        }
-
-        using chunking_t = std::vector<hsize_t>;
-        using compute_chunking_t =
-            std::variant<chunking_t, std::string /* either "none" or "auto"*/>;
-
-        bool chunking_config_from_json = false;
-        auto throw_chunking_error = [&chunking_config_from_json]() {
-            if (chunking_config_from_json)
-            {
-                throw error::BackendConfigSchema(
-                    {"hdf5", "dataset", "chunks"},
-                    R"(Must be "auto", "none", or a an array of integer.)");
-            }
-            else
-            {
-                throw error::WrongAPIUsage(
-                    "Environment variable OPENPMD_HDF5_CHUNKS accepts values "
-                    "'auto' and 'none'.");
-            }
-        };
-
-        compute_chunking_t compute_chunking =
-            auxiliary::getEnvString("OPENPMD_HDF5_CHUNKS", "auto");
-
-        // HDF5 specific
-        if (config.json().contains("hdf5") &&
-            config["hdf5"].json().contains("dataset"))
-        {
-            json::TracingJSON datasetConfig{config["hdf5"]["dataset"]};
-
-            if (datasetConfig.json().contains("chunks"))
-            {
-                chunking_config_from_json = true;
-
-                auto chunks_json = datasetConfig["chunks"];
-                if (chunks_json.json().is_string())
-                {
-
-                    compute_chunking =
-                        json::asLowerCaseStringDynamic(chunks_json.json())
-                            .value();
-                }
-                else if (chunks_json.json().is_array())
-                {
-                    try
-                    {
-                        compute_chunking =
-                            chunks_json.json().get<std::vector<hsize_t>>();
-                    }
-                    catch (nlohmann::json::type_error const &)
-                    {
-                        throw_chunking_error();
-                    }
-                }
-                else
-                {
-                    throw_chunking_error();
-                }
-            }
-        }
-        std::optional<chunking_t> chunking = std::visit(
-            auxiliary::overloaded{
-                [&](chunking_t &&explicitly_specified)
-                    -> std::optional<chunking_t> {
-                    return std::move(explicitly_specified);
-                },
-                [&](std::string const &method_name)
-                    -> std::optional<chunking_t> {
-                    if (method_name == "auto")
-                    {
-
-                        return getOptimalChunkDims(dims, toBytes(d));
-                    }
-                    else if (method_name == "none")
-                    {
-                        return std::nullopt;
-                    }
-                    else
-                    {
-                        throw_chunking_error();
-                        throw std::runtime_error("Unreachable!");
-                    }
-                }},
-            std::move(compute_chunking));
+        auto [chunking, is_resizable_dataset, filters] =
+            parse_dataset_config(config, dims, d);
 
         parameters.warnUnusedParameters(
             config,
@@ -700,25 +969,27 @@ void HDF5IOHandlerImpl::createDataset(
         {
             if (chunking->size() != parameters.extent.size())
             {
-                std::string chunking_printed = [&]() {
-                    if (chunking->empty())
-                    {
-                        return std::string("[]");
-                    }
-                    else
-                    {
-                        std::stringstream s;
-                        auto it = chunking->begin();
-                        auto end = chunking->end();
-                        s << '[' << *it++;
-                        for (; it != end; ++it)
+                // captured structured bindings are a C++20 extension
+                std::string chunking_printed =
+                    [&, &captured_chunking = chunking]() {
+                        if (captured_chunking->empty())
                         {
-                            s << ", " << *it;
+                            return std::string("[]");
                         }
-                        s << ']';
-                        return s.str();
-                    }
-                }();
+                        else
+                        {
+                            std::stringstream s;
+                            auto it = captured_chunking->begin();
+                            auto end = captured_chunking->end();
+                            s << '[' << *it++;
+                            for (; it != end; ++it)
+                            {
+                                s << ", " << *it;
+                            }
+                            s << ']';
+                            return s.str();
+                        }
+                    }();
                 std::cerr << "[HDF5] Chunking for dataset '" << name
                           << "' was specified as " << chunking_printed
                           << ", but dataset has dimensionality "
@@ -738,32 +1009,28 @@ void HDF5IOHandlerImpl::createDataset(
             }
         }
 
-        std::string const &compression = ""; // @todo read from JSON
-        if (!compression.empty())
-            std::cerr
-                << "[HDF5] Compression not yet implemented in HDF5 backend."
-                << std::endl;
-        /*
+        for (auto const &filter : filters)
         {
-            std::vector< std::string > args = auxiliary::split(compression,
-        ":"); std::string const& format = args[0]; if( (format == "zlib" ||
-        format == "gzip" || format == "deflate")
-                && args.size() == 2 )
-            {
-                status = H5Pset_deflate(datasetCreationProperty,
-        std::stoi(args[1])); VERIFY(status == 0, "[HDF5] Internal error: Failed
-        to set deflate compression during dataset creation"); } else if( format
-        == "szip" || format == "nbit" || format == "scaleoffset" ) std::cerr <<
-        "[HDF5] Compression format " << format
-                          << " not yet implemented. Data will not be
-        compressed!"
-                          << std::endl;
-            else
-                std::cerr << "[HDF5] Compression format " << format
-                          << " unknown. Data will not be compressed!"
-                          << std::endl;
+            herr_t status = std::visit(
+                auxiliary::overloaded{
+                    [&](DatasetParams::ByID const &by_id) {
+                        return H5Pset_filter(
+                            datasetCreationProperty,
+                            by_id.id,
+                            by_id.flags,
+                            by_id.cd_values.size(),
+                            by_id.cd_values.data());
+                    },
+                    [&](DatasetParams::Zlib const &zlib) {
+                        return H5Pset_deflate(
+                            datasetCreationProperty, zlib.aggression);
+                    }},
+                filter);
+            VERIFY(
+                status == 0,
+                "[HDF5] Internal error: Failed to set filter during dataset "
+                "creation");
         }
-         */
 
         GetH5DataType getH5DataType({
             {typeid(bool).name(), m_H5T_BOOL_ENUM},
@@ -849,13 +1116,10 @@ void HDF5IOHandlerImpl::extendDataset(
             "HDF5", "Joined Arrays currently only supported in ADIOS2");
     }
 
-    auto res = getFile(writable);
-    if (!res)
-        res = getFile(writable->parent);
+    File file =
+        requireFile("extendDataset", writable, /* checkParent = */ true);
     hid_t dataset_id = H5Dopen(
-        res.value().id,
-        concrete_h5_file_position(writable).c_str(),
-        H5P_DEFAULT);
+        file.id, concrete_h5_file_position(writable).c_str(), H5P_DEFAULT);
     VERIFY(
         dataset_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
@@ -954,8 +1218,7 @@ void HDF5IOHandlerImpl::availableChunks(
     {
         extent.push_back(e);
     }
-    parameters.chunks->push_back(
-        WrittenChunkInfo(std::move(offset), std::move(extent)));
+    parameters.chunks->emplace_back(std::move(offset), std::move(extent));
 
     herr_t status;
     status = H5Sclose(dataset_space);
@@ -1028,13 +1291,13 @@ void HDF5IOHandlerImpl::closeFile(
     Writable *writable, Parameter<Operation::CLOSE_FILE> const &)
 {
     auto optionalFile = getFile(writable);
-    if (!optionalFile)
+    if (!optionalFile.has_value())
     {
         throw std::runtime_error(
             "[HDF5] Trying to close a file that is not "
             "present in the backend");
     }
-    File file = optionalFile.value();
+    File file = *optionalFile;
     H5Fclose(file.id);
     m_openFileIDs.erase(file.id);
     m_fileNames.erase(writable);
@@ -1045,7 +1308,8 @@ void HDF5IOHandlerImpl::closeFile(
 void HDF5IOHandlerImpl::openPath(
     Writable *writable, Parameter<Operation::OPEN_PATH> const &parameters)
 {
-    File file = getFile(writable->parent).value();
+    File file =
+        requireFile("openPath", writable->parent, /* checkParent = */ false);
     hid_t node_id, path_id;
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
@@ -1132,7 +1396,14 @@ void HDF5IOHandlerImpl::openPath(
 void HDF5IOHandlerImpl::openDataset(
     Writable *writable, Parameter<Operation::OPEN_DATASET> &parameters)
 {
-    File file = getFile(writable->parent).value();
+    std::optional<File> fileOpt = getFile(writable->parent);
+    if (!fileOpt.has_value())
+    {
+        throw error::Internal(
+            "[HDF5] Failed to retrieve file for dataset opening. No file "
+            "associated with the writable's parent.");
+    }
+    File file = *fileOpt;
     hid_t node_id, dataset_id;
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
@@ -1383,7 +1654,8 @@ void HDF5IOHandlerImpl::deleteFile(
 
     if (writable->written)
     {
-        hid_t file_id = getFile(writable).value().id;
+        hid_t file_id =
+            requireFile("deleteFile", writable, /* checkParent = */ false).id;
         herr_t status = H5Fclose(file_id);
         VERIFY(
             status == 0,
@@ -1429,8 +1701,8 @@ void HDF5IOHandlerImpl::deletePath(
          * Ugly hack: H5Ldelete can't delete "."
          *            Work around this by deleting from the parent
          */
-        auto res = getFile(writable);
-        File file = res ? res.value() : getFile(writable->parent).value();
+        File file =
+            requireFile("deletePath", writable, /* checkParent = */ true);
         hid_t node_id = H5Gopen(
             file.id,
             concrete_h5_file_position(writable->parent).c_str(),
@@ -1481,8 +1753,8 @@ void HDF5IOHandlerImpl::deleteDataset(
          * Ugly hack: H5Ldelete can't delete "."
          *            Work around this by deleting from the parent
          */
-        auto res = getFile(writable);
-        File file = res ? res.value() : getFile(writable->parent).value();
+        File file =
+            requireFile("deleteDataset", writable, /* checkParent = */ true);
         hid_t node_id = H5Gopen(
             file.id,
             concrete_h5_file_position(writable->parent).c_str(),
@@ -1525,8 +1797,8 @@ void HDF5IOHandlerImpl::deleteAttribute(
         std::string name = parameters.name;
 
         /* Open H5Object to delete in */
-        auto res = getFile(writable);
-        File file = res ? res.value() : getFile(writable->parent).value();
+        File file =
+            requireFile("deleteAttribute", writable, /* checkParent = */ true);
         hid_t node_id = H5Oopen(
             file.id, concrete_h5_file_position(writable).c_str(), H5P_DEFAULT);
         VERIFY(
@@ -1555,8 +1827,7 @@ void HDF5IOHandlerImpl::writeDataset(
             "[HDF5] Writing into a dataset in a file opened as read only is "
             "not possible.");
 
-    auto res = getFile(writable);
-    File file = res ? res.value() : getFile(writable->parent).value();
+    File file = requireFile("writeDataset", writable, /* checkParent = */ true);
 
     hid_t dataset_id, filespace, memspace;
     herr_t status;
@@ -2040,8 +2311,7 @@ void HDF5IOHandlerImpl::writeAttribute(
 void HDF5IOHandlerImpl::readDataset(
     Writable *writable, Parameter<Operation::READ_DATASET> &parameters)
 {
-    auto res = getFile(writable);
-    File file = res ? res.value() : getFile(writable->parent).value();
+    File file = requireFile("readDataset", writable, /* checkParent = */ true);
     hid_t dataset_id, memspace, filespace;
     herr_t status;
     dataset_id = H5Dopen(
@@ -2213,8 +2483,8 @@ void HDF5IOHandlerImpl::readAttribute(
             "[HDF5] Internal error: Writable not marked written during "
             "attribute read");
 
-    auto res = getFile(writable);
-    File file = res ? res.value() : getFile(writable->parent).value();
+    File file =
+        requireFile("readAttribute", writable, /* checkParent = */ true);
 
     hid_t obj_id, attr_id;
     herr_t status;
@@ -2693,7 +2963,14 @@ void HDF5IOHandlerImpl::readAttribute(
             if (H5Tis_variable_str(attr_type))
             {
                 std::vector<char *> vc(dims[0]);
-                status = H5Aread(attr_id, attr_type, vc.data());
+                // clang-format off
+                // NOLINTBEGIN(bugprone-multi-level-implicit-pointer-conversion)
+                // clang-format on
+                status =
+                    H5Aread(attr_id, attr_type, static_cast<void *>(vc.data()));
+                // clang-format off
+                // NOLINTEND(bugprone-multi-level-implicit-pointer-conversion)
+                // clang-format on
                 if (status != 0)
                 {
                     throw error::ReadError(
@@ -2706,8 +2983,17 @@ void HDF5IOHandlerImpl::readAttribute(
                 }
                 for (auto const &val : vc)
                     vs.push_back(auxiliary::strip(std::string(val), {'\0'}));
+                // clang-format off
+                // NOLINTBEGIN(bugprone-multi-level-implicit-pointer-conversion)
+                // clang-format on
                 status = H5Dvlen_reclaim(
-                    attr_type, attr_space, H5P_DEFAULT, vc.data());
+                    attr_type,
+                    attr_space,
+                    H5P_DEFAULT,
+                    static_cast<void *>(vc.data()));
+                // clang-format off
+                // NOLINTEND(bugprone-multi-level-implicit-pointer-conversion)
+                // clang-format on
             }
             else
             {
@@ -2836,8 +3122,7 @@ void HDF5IOHandlerImpl::listPaths(
             "[HDF5] Internal error: Writable not marked written during path "
             "listing");
 
-    auto res = getFile(writable);
-    File file = res ? res.value() : getFile(writable->parent).value();
+    File file = requireFile("listPaths", writable, /* checkParent = */ true);
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1, 10, 0) && openPMD_HAVE_MPI
@@ -2868,7 +3153,7 @@ void HDF5IOHandlerImpl::listPaths(
             ssize_t name_length = H5Gget_objname_by_idx(node_id, i, nullptr, 0);
             std::vector<char> name(name_length + 1);
             H5Gget_objname_by_idx(node_id, i, name.data(), name_length + 1);
-            paths->push_back(std::string(name.data(), name_length));
+            paths->emplace_back(name.data(), name_length);
         }
     }
 
@@ -2892,8 +3177,7 @@ void HDF5IOHandlerImpl::listDatasets(
             "[HDF5] Internal error: Writable not marked written during dataset "
             "listing");
 
-    auto res = getFile(writable);
-    File file = res ? res.value() : getFile(writable->parent).value();
+    File file = requireFile("listDatasets", writable, /* checkParent = */ true);
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1, 10, 0) && openPMD_HAVE_MPI
@@ -2925,7 +3209,7 @@ void HDF5IOHandlerImpl::listDatasets(
             ssize_t name_length = H5Gget_objname_by_idx(node_id, i, nullptr, 0);
             std::vector<char> name(name_length + 1);
             H5Gget_objname_by_idx(node_id, i, name.data(), name_length + 1);
-            datasets->push_back(std::string(name.data(), name_length));
+            datasets->emplace_back(name.data(), name_length);
         }
     }
 
@@ -2949,8 +3233,8 @@ void HDF5IOHandlerImpl::listAttributes(
             "[HDF5] Internal error: Writable not marked written during "
             "attribute listing");
 
-    auto res = getFile(writable);
-    File file = res ? res.value() : getFile(writable->parent).value();
+    File file =
+        requireFile("listAttributes", writable, /* checkParent = */ true);
     hid_t node_id;
 
     hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
@@ -3003,7 +3287,7 @@ void HDF5IOHandlerImpl::listAttributes(
             name.data(),
             name_length + 1,
             H5P_DEFAULT);
-        attributes->push_back(std::string(name.data(), name_length));
+        attributes->emplace_back(name.data(), name_length);
     }
 
     status = H5Oclose(node_id);
@@ -3047,6 +3331,41 @@ HDF5IOHandlerImpl::getFile(Writable *writable)
     res.id = it2->second;
     return std::make_optional(std::move(res));
 }
+auto HDF5IOHandlerImpl::requireFile(
+    std::string const &functionName, Writable *w, bool checkParent) -> File
+{
+    std::optional<File> fileOpt = getFile(w);
+    if (!fileOpt.has_value())
+    {
+        if (checkParent)
+        {
+            fileOpt = getFile(w->parent);
+            if (!fileOpt.has_value())
+            {
+
+                throw error::Internal(
+                    "[HDF5IOHandlerImpl::" + functionName +
+                    "] Control flow error: getFile returned no file for the "
+                    "current Writable or its parent.");
+            }
+            else
+            {
+                return *fileOpt;
+            }
+        }
+        else
+        {
+
+            throw error::Internal(
+                "[HDF5IOHandlerImpl::" + functionName +
+                "] Control flow error: getFile returned no file.");
+        }
+    }
+    else
+    {
+        return *fileOpt;
+    }
+}
 
 std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
 {
@@ -3055,20 +3374,23 @@ std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
     if (params.backendConfig.json().contains("hdf5"))
     {
         auto hdf5_config = params.backendConfig["hdf5"];
+        auto init_json_shadow = nlohmann::json::parse(flush_cfg_mask);
+        json::merge_internal(
+            hdf5_config.getShadow(), init_json_shadow, /* do_prune = */ false);
 
         if (auto shadow = hdf5_config.invertShadow(); shadow.size() > 0)
         {
             switch (hdf5_config.originallySpecifiedAs)
             {
             case json::SupportedLanguages::JSON:
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
+                std::cerr << "Warning: parts of the backend flush "
+                             "configuration for HDF5 remain unused:\n"
                           << shadow << std::endl;
                 break;
             case json::SupportedLanguages::TOML: {
                 auto asToml = json::jsonToToml(shadow);
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
+                std::cerr << "Warning: parts of the backend flush "
+                             "configuration for HDF5 remain unused:\n"
                           << json::format_toml(asToml) << std::endl;
                 break;
             }

@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -41,6 +41,10 @@ PatchRecord::setUnitDimension(std::map<UnitDimension, double> const &udim)
 void PatchRecord::flush_impl(
     std::string const &path, internal::FlushParams const &flushParams)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (!this->datasetDefined())
     {
         if (IOHandler()->m_frontendAccess != Access::READ_ONLY)

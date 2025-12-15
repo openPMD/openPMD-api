@@ -31,6 +31,7 @@ type = "bp4"
 
 # ADIOS2 allows adding several operators
 # Lists are given in TOML by using double brackets
+# For specifying a single operator only, the list may be skipped.
 [[adios2.dataset.operators]]
 type = "zlib"
 
@@ -106,12 +107,12 @@ def main():
             }
         }
         config['adios2']['dataset'] = {
-            'operators': [{
+            'operators': {
                 'type': 'zlib',
                 'parameters': {
                     'clevel': 9
                 }
-            }]
+            }
         }
 
         temperature = iteration.meshes["temperature"]

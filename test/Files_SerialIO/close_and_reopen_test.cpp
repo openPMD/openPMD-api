@@ -1,3 +1,23 @@
+/* Copyright 2025 Franz Poeschel
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "SerialIOTests.hpp"
 #include "openPMD/IO/ADIOS/macros.hpp"
 #include "openPMD/IO/Access.hpp"
@@ -20,7 +40,8 @@ template <typename WriteIterations>
 auto run_test_filebased(
     Access writeAccess,
     WriteIterations &&writeIterations,
-    std::string const &ext)
+    std::string const &ext,
+    bool synchronous)
 {
     std::string filename =
         "../samples/close_iteration_reopen/filebased_%T." + ext;
@@ -39,6 +60,11 @@ auto run_test_filebased(
         B_y.resetDataset({Datatype::INT, {5}});
         B_y.storeChunk(data, {0}, {5});
         it.close();
+        // This also verifies that operator[] and at() can be used to access the
+        // Iteration after closing
+        REQUIRE(series.iterations.at(0).closed());
+        REQUIRE(writeIterations(series)[0].closed() == !synchronous);
+        REQUIRE(writeIterations(series).at(0).closed() == !synchronous);
     }
 
     {
@@ -54,6 +80,14 @@ auto run_test_filebased(
         e_position_x.resetDataset({Datatype::INT, {5}});
         e_position_x.storeChunk(data, {0}, {5});
         it.close();
+        REQUIRE(series.iterations.at(1).closed());
+        REQUIRE(writeIterations(series).at(1).closed() == !synchronous);
+        REQUIRE(writeIterations(series)[1].closed() == !synchronous);
+        // We are in file-based iteration encoding, so the old iteration should
+        // remain accessible
+        // Note: this will create a particlespath at iteration 0, which will
+        // lead to parsing warnings in HDF5.
+        writeIterations(series).at(0);
     }
     {
         auto it = writeIterations(series)[2];
@@ -172,7 +206,8 @@ auto run_test_groupbased(
     Access writeAccess,
     WriteIterations &&writeIterations,
     std::string const &ext,
-    std::vector<Access> const &readModes)
+    std::vector<Access> const &readModes,
+    bool synchronous)
 {
     std::string filename =
         "../samples/close_iteration_reopen/groupbased." + ext;
@@ -202,6 +237,18 @@ auto run_test_groupbased(
         B_y.resetDataset({Datatype::INT, {5}});
         B_y.storeChunk(data, {0}, {5});
         it.close();
+        // This also verifies that operator[] and at() can be used to access the
+        // Iteration after closing
+        REQUIRE(series.iterations.at(0).closed());
+        REQUIRE(writeIterations(series)[0].closed() == !synchronous);
+        REQUIRE(writeIterations(series).at(0).closed() == !synchronous);
+        if (synchronous)
+        {
+            // we opened a new step, need to do something in it now,
+            // otherwise we get a corrupted file
+            B_y.storeChunk(data, {0}, {5});
+            it.close();
+        }
     }
 
     {
@@ -217,6 +264,19 @@ auto run_test_groupbased(
         E_y.resetDataset({Datatype::INT, {5}});
         E_y.storeChunk(data, {0}, {5});
         it.close();
+
+        if (!synchronous || series.backend() != "ADIOS2")
+        {
+            writeIterations(series).at(0);
+        }
+        else
+        {
+            // Cannot go back to an old IO step
+            // Since the other backends do not use IO steps,
+            // going back to an old Iteration should remain possible even
+            // in synchronous modes
+            REQUIRE_THROWS(writeIterations(series).at(0));
+        }
     }
     {
         auto it = writeIterations(series)[2];
@@ -281,19 +341,35 @@ auto close_and_reopen_test() -> void
     for (auto writeAccess :
          {Access::CREATE_RANDOM_ACCESS, Access::CREATE_LINEAR})
     {
+        bool synchronous = writeAccess == Access::CREATE_LINEAR;
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.iterations; }, "bp");
+            writeAccess, [](Series &s) { return s.iterations; }, "bp", false);
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.writeIterations(); }, "bp");
+            writeAccess,
+            [](Series &s) { return s.writeIterations(); },
+            "bp",
+            true);
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.snapshots(); }, "bp");
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "bp",
+            synchronous);
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.snapshots(); }, "bp");
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "bp",
+            synchronous);
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.snapshots(); }, "json");
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "json",
+            synchronous);
 #if openPMD_HAVE_HDF5
         run_test_filebased(
-            writeAccess, [](Series &s) { return s.snapshots(); }, "h5");
+            writeAccess,
+            [](Series &s) { return s.snapshots(); },
+            "h5",
+            synchronous);
 #endif
 
         /*
@@ -304,37 +380,43 @@ auto close_and_reopen_test() -> void
             writeAccess,
             [](Series &s) { return s.iterations; },
             "bp4",
-            {Access::READ_ONLY, Access::READ_LINEAR});
+            {Access::READ_ONLY, Access::READ_LINEAR},
+            false);
         // since these write data in a way that distributes one iteration's data
         // over multiple steps, only random access read mode makes sense
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.writeIterations(); },
             "bp4",
-            {Access::READ_RANDOM_ACCESS});
+            {Access::READ_RANDOM_ACCESS},
+            true);
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.snapshots(); },
             "bp4",
-            {Access::READ_RANDOM_ACCESS});
+            {Access::READ_RANDOM_ACCESS},
+            synchronous);
         // that doesnt matter for json tho
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.snapshots(); },
             "json",
-            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR},
+            synchronous);
 #if openPMD_HAVE_HDF5
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.snapshots(); },
             "h5",
-            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR},
+            synchronous);
 #endif
         run_test_groupbased(
             writeAccess,
             [](Series &s) { return s.snapshots(); },
             "json",
-            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR});
+            {Access::READ_RANDOM_ACCESS, Access::READ_LINEAR},
+            synchronous);
     }
 }
 #else

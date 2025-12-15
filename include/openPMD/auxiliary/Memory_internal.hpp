@@ -1,4 +1,4 @@
-/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
+/* Copyright 2025 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -20,35 +20,11 @@
  */
 #pragma once
 
-#include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
 
-#include <future>
-#include <memory>
-#include <string>
-
-namespace openPMD
+namespace openPMD::auxiliary
 {
-class HDF5IOHandlerImpl;
-
-class HDF5IOHandler : public AbstractIOHandler
-{
-public:
-    HDF5IOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access,
-        json::TracingJSON config);
-    ~HDF5IOHandler() override;
-
-    std::string backendName() const override
-    {
-        return "HDF5";
-    }
-
-    std::future<void> flush(internal::ParsedFlushParams &) override;
-
-private:
-    std::unique_ptr<HDF5IOHandlerImpl> m_impl;
-}; // HDF5IOHandler
-} // namespace openPMD
+// cannot use a unique_ptr inside a std::variant, so we represent it with this
+using WriteBufferTypes =
+    std::variant<WriteBuffer::CopyableUniquePtr, WriteBuffer::SharedPtr>;
+} // namespace openPMD::auxiliary

@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -72,6 +72,10 @@ void MeshRecordComponent::read()
 void MeshRecordComponent::flush(
     std::string const &name, internal::FlushParams const &params)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (access::write(IOHandler()->m_frontendAccess) &&
         !containsAttribute("position"))
     {

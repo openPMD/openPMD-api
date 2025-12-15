@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -366,6 +366,10 @@ template Mesh &Mesh::setTimeOffset(float);
 void Mesh::flush_impl(
     std::string const &name, internal::FlushParams const &flushParams)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         auto &m = get();

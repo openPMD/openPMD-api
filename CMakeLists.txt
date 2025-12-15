@@ -233,6 +233,7 @@ message(STATUS "openPMD-api superbuild: ${openPMD_SUPERBUILD}")
 #     Clang+MPI: Potentially needed MPI::MPI_C targets in the past
 #                (exact MPI flavor & Clang version lost)
 #     BullMPI: PUBLIC dependency to MPI::MPI_CXX is missing in MPI::MPI_C target
+set(MPI_CXX_SKIP_MPICXX ON)  # We do not use MPI-2 only MPI C++ bindings
 set(openPMD_MPI_LINK_C_DEFAULT OFF)
 option(openPMD_MPI_LINK_C  "Also link the MPI C targets" ${openPMD_MPI_LINK_C_DEFAULT})
 mark_as_advanced(openPMD_MPI_LINK_C)
@@ -328,8 +329,9 @@ if(openPMD_HAVE_HDF5)
 endif()
 # we imply support for parallel I/O if MPI variant is ON
 if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
-    AND NOT HDF5_IS_PARALLEL      # FindHDF5.cmake
-    AND NOT HDF5_ENABLE_PARALLEL  # hdf5-config.cmake
+    AND NOT (HDF5_IS_PARALLEL      # FindHDF5.cmake
+             OR HDF5_ENABLE_PARALLEL # hdf5-config.cmake < 2.0.0
+             OR HDF5_PROVIDES_PARALLEL) # hdf5-config.cmake >= 2.0.0
 )
     string(CONCAT openPMD_HDF5_STATUS
             "Found MPI but only serial version of HDF5. Either set "
@@ -337,9 +339,11 @@ if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
             "to disable HDF5 or provide a parallel install of HDF5.\n")
 endif()
 # HDF5 includes mpi.h in the public header H5public.h if parallel
-if(openPMD_HAVE_HDF5 AND
-   (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL)
-   AND NOT openPMD_HAVE_MPI)
+if(openPMD_HAVE_HDF5 AND NOT openPMD_HAVE_MPI
+    AND (HDF5_IS_PARALLEL       # FindHDF5.cmake
+         OR HDF5_ENABLE_PARALLEL # hdf5-config.cmake < 2.0.0
+         OR HDF5_PROVIDES_PARALLEL) # hdf5-config.cmake >= 2.0.0
+   )
     string(CONCAT openPMD_HDF5_STATUS
         "Found only parallel version of HDF5 but no MPI. Either set "
         "openPMD_USE_MPI=ON to force using MPI or set openPMD_USE_HDF5=OFF "
@@ -543,10 +547,18 @@ endif()
 
 # ADIOS2 Backend
 if(openPMD_HAVE_ADIOS2)
-    if(openPMD_HAVE_MPI)
-        target_link_libraries(openPMD PUBLIC adios2::cxx11_mpi)
+    if(${ADIOS2_VERSION} VERSION_GREATER_EQUAL 2.11.0)
+        if(openPMD_HAVE_MPI)
+            target_link_libraries(openPMD PUBLIC adios2::cxx_mpi)
+        else()
+            target_link_libraries(openPMD PUBLIC adios2::cxx)
+        endif()
     else()
-        target_link_libraries(openPMD PUBLIC adios2::cxx11)
+        if(openPMD_HAVE_MPI)
+            target_link_libraries(openPMD PUBLIC adios2::cxx11_mpi)
+        else()
+            target_link_libraries(openPMD PUBLIC adios2::cxx11)
+        endif()
     endif()
 endif()
 
@@ -717,6 +729,7 @@ set(openPMD_EXAMPLE_NAMES
     12_span_write
     13_write_dynamic_configuration
     14_toml_template
+    15_compression
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
@@ -733,6 +746,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     11_particle_dataframe
     12_span_write
     13_write_dynamic_configuration
+    15_compression
 )
 
 if(openPMD_USE_INVASIVE_TESTS)

@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -20,7 +20,11 @@
  */
 
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/ChunkInfo.hpp"
+#include "openPMD/auxiliary/Memory_internal.hpp"
+#include "openPMD/auxiliary/UniquePtr.hpp"
 
+#include <any>
 #include <complex>
 #include <functional>
 #include <iostream>
@@ -40,7 +44,8 @@ allocatePtr(Datatype dtype, uint64_t numPoints)
     {
         using DT = Datatype;
     case DT::VEC_STRING:
-        data = new char *[numPoints];
+        // NOLINTNEXTLINE(bugprone-multi-level-implicit-pointer-conversion)
+        data = static_cast<void *>(new char *[numPoints]);
         del = [](void *p) { delete[] static_cast<char **>(p); };
         break;
     case DT::VEC_LONG_DOUBLE:
@@ -156,24 +161,58 @@ allocatePtr(Datatype dtype, Extent const &e)
     return allocatePtr(dtype, numPoints);
 }
 
-WriteBuffer::WriteBuffer() : m_buffer(UniquePtrWithLambda<void>())
+WriteBuffer::CopyableUniquePtr::CopyableUniquePtr() = default;
+
+WriteBuffer::CopyableUniquePtr::CopyableUniquePtr(
+    UniquePtrWithLambda<void> ptr_in)
+    : parent_t{std::make_shared<UniquePtrWithLambda<void>>(std::move(ptr_in))}
 {}
 
-WriteBuffer::WriteBuffer(WriteBuffer &&) noexcept(
-    noexcept(EligibleTypes(std::declval<EligibleTypes &&>()))) = default;
-WriteBuffer &WriteBuffer::operator=(WriteBuffer &&) noexcept(noexcept(
-    std::declval<EligibleTypes &>() = std::declval<EligibleTypes &&>())) =
-    default;
+auto WriteBuffer::CopyableUniquePtr::get() -> void *
+{
+    return (**this).get();
+}
+
+auto WriteBuffer::CopyableUniquePtr::get() const -> void const *
+{
+    return (**this).get();
+}
+
+auto WriteBuffer::CopyableUniquePtr::release() -> UniquePtrWithLambda<void>
+{
+    if (parent_t::use_count() > 1)
+    {
+        throw error::Internal(
+            "Control flow error: UniquePtr variant of WriteBuffer "
+            "has been copied.");
+    }
+    UniquePtrWithLambda<void> res = std::move(**this);
+    this->reset();
+    return res;
+}
+
+WriteBuffer::WriteBuffer() : m_buffer(std::make_any<CopyableUniquePtr>())
+{}
+WriteBuffer::WriteBuffer(std::shared_ptr<void const> ptr)
+    : m_buffer(std::make_any<WriteBufferTypes>(std::move(ptr)))
+{}
+WriteBuffer::WriteBuffer(UniquePtrWithLambda<void> ptr)
+    : m_buffer(
+          std::make_any<WriteBufferTypes>(CopyableUniquePtr(std::move(ptr))))
+{}
+
+WriteBuffer::WriteBuffer(WriteBuffer &&) noexcept = default;
+WriteBuffer &WriteBuffer::operator=(WriteBuffer &&) noexcept = default;
 
 WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<void const> ptr)
 {
-    m_buffer = std::move(ptr);
+    m_buffer = std::make_any<WriteBufferTypes>(std::move(ptr));
     return *this;
 }
-
-WriteBuffer const &WriteBuffer::operator=(UniquePtrWithLambda<void const> ptr)
+WriteBuffer const &WriteBuffer::operator=(UniquePtrWithLambda<void> ptr)
 {
-    m_buffer = std::move(ptr);
+    m_buffer =
+        std::make_any<WriteBufferTypes>(CopyableUniquePtr(std::move(ptr)));
     return *this;
 }
 
@@ -185,6 +224,6 @@ void const *WriteBuffer::get() const
             // we're being sneaky and don't distinguish the types here
             return static_cast<void const *>(arg.get());
         },
-        m_buffer);
+        as_variant<WriteBufferTypes>());
 }
 } // namespace openPMD::auxiliary

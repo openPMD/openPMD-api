@@ -1,4 +1,4 @@
-/* Copyright 2018-2021 Franz Poeschel
+/* Copyright 2018-2025 Franz Poeschel, Axel Huebl
  *
  * This file is part of openPMD-api.
  *

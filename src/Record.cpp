@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -45,13 +45,17 @@ Record &Record::setUnitDimension(unit_representations::AsMap const &udim)
 }
 Record &Record::setUnitDimension(unit_representations::AsArray const &udim)
 {
-    return setUnitDimension(
-        unit_representations::asMap(udim, /* skip_zeros = */ false));
+    setAttribute("unitDimension", udim);
+    return *this;
 }
 
 void Record::flush_impl(
     std::string const &name, internal::FlushParams const &flushParams)
 {
+    if (!dirtyRecursive())
+    {
+        return;
+    }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         if (scalar())

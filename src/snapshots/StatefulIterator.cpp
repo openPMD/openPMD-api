@@ -172,10 +172,14 @@ StatefulIterator::operator=(StatefulIterator &&other) noexcept = default;
 
 auto StatefulIterator::get() -> SharedData &
 {
+    // forward the std::optional exception in doubt
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     return m_data->value();
 }
 auto StatefulIterator::get() const -> SharedData const &
 {
+    // forward the std::optional exception in doubt
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     return m_data->value();
 }
 
@@ -346,11 +350,16 @@ auto StatefulIterator::resetCurrentIterationToBegin(
 auto StatefulIterator::peekCurrentlyOpenIteration() const
     -> std::optional<value_type const *>
 {
-    if (!m_data || !m_data->has_value())
+    if (!m_data)
     {
         return std::nullopt;
     }
-    auto &s = m_data->value();
+    auto &optional = *m_data;
+    if (!optional.has_value())
+    {
+        return std::nullopt;
+    }
+    auto &s = optional.value();
     auto const &maybeCurrentIteration = s.currentIteration();
     if (!maybeCurrentIteration.has_value())
     {
@@ -938,7 +947,12 @@ StatefulIterator StatefulIterator::end()
 
 auto StatefulIterator::is_end() const -> bool
 {
-    return !m_data || !m_data->has_value() ||
+    if (!m_data)
+    {
+        return true;
+    }
+    auto &optional = *m_data;
+    return !optional.has_value() ||
         std::visit(
             auxiliary::overloaded{
                 [](CurrentStep::Before_t const &) { return false; },
@@ -946,7 +960,7 @@ auto StatefulIterator::is_end() const -> bool
                     return !during.iteration_idx.has_value();
                 },
                 [](CurrentStep::After_t const &) { return true; }},
-            (**m_data).currentStep.as_base());
+            optional->currentStep.as_base());
 }
 
 auto StatefulIterator::assert_end_iterator() const -> void

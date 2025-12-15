@@ -1,4 +1,4 @@
-/* Copyright 2020-2021 Junmin Gu, Axel Huebl
+/* Copyright 2020-2025 Junmin Gu, Axel Huebl, Franz Poeschel, Jean Luca Bez
  *
  * This file is part of openPMD-api.
  *
@@ -135,7 +135,6 @@ public:
     ~Timer()
     {
         MPI_Barrier(MPI_COMM_WORLD);
-        std::string tt = "~" + m_Tag;
         // MemoryProfiler (m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
 
@@ -457,8 +456,14 @@ public:
             return;
         Timer blockTime(s.str(), m_MPIRank);
 
-        Offset off(meshExtent.size(), 0);
-        Extent ext(meshExtent.size(), 1);
+        // Avoid the below forms due to a compiler bug on gcc14
+        // warning: 'void operator delete(void*, std::size_t)' called on pointer
+        // '<unknown>' with nonzero offset [1, 9223372036854775800] Offset
+        // off(meshExtent.size(), 0); Extent ext(meshExtent.size(), 1);
+        Offset off(meshExtent.size());
+        Extent ext(meshExtent.size());
+        std::fill(off.begin(), off.end(), 0);
+        std::fill(ext.begin(), ext.end(), 1);
 
         for (unsigned int i = 0; i < meshExtent.size(); i++)
         {
@@ -487,7 +492,7 @@ public:
             }
         }
 
-        auto prettyLambda = [&](Offset oo, Extent cc) {
+        auto prettyLambda = [&](Offset const &oo, Extent const &cc) {
             std::ostringstream o;
             o << "[ ";
             std::ostringstream c;

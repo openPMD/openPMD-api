@@ -1,4 +1,4 @@
-/* Copyright 2018-2021 Axel Huebl
+/* Copyright 2018-2025 Axel Huebl, Franz Poeschel, Luca Fedeli
  *
  * This file is part of openPMD-api.
  *
@@ -202,6 +202,7 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
 
             continue;
         }
+        // NOLINTNEXTLINE(bugprone-empty-catch)
         catch (const py::cast_error &e)
         {
             // not an index

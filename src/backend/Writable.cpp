@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Luca Fedeli
  *
  * This file is part of openPMD-api.
  *
@@ -33,7 +33,12 @@ Writable::Writable(internal::AttributableData *a) : attributable{a}
 
 Writable::~Writable()
 {
-    if (!IOHandler || !IOHandler->has_value())
+    if (!IOHandler)
+    {
+        return;
+    }
+    auto &optional = *IOHandler;
+    if (!optional.has_value())
     {
         return;
     }
@@ -42,7 +47,7 @@ Writable::~Writable()
      * The DEREGISTER task must not dereference the pointer, but only use it to
      * remove references to this object from internal data structures.
      */
-    IOHandler->value()->enqueue(
+    (*optional)->enqueue(
         IOTask(this, Parameter<Operation::DEREGISTER>(parent)));
 }
 
