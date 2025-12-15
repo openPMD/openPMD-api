@@ -187,6 +187,21 @@ RUN        python3.13 -c "import openpmd_api as io; print(io.__version__); print
 RUN        python3.13 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
+# test in fresh env: Debian:Bullseye + Python 3.14
+FROM       debian:bullseye
+ENV        DEBIAN_FRONTEND noninteractive
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp314-cp314-manylinux2010_x86_64.whl .
+RUN        apt-get update \
+           && apt-get install -y --no-install-recommends python3.14 python3-distutils ca-certificates curl \
+           && rm -rf /var/lib/apt/lists/*
+RUN        python3.14 --version \
+           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+           && python3.14 get-pip.py \
+           && python3.14 -m pip install openPMD_api-*-cp314-cp314-manylinux2010_x86_64.whl
+RUN        python3.14 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
+RUN        python3.14 -m openpmd_api.ls --help
+RUN        openpmd-ls --help
+
 # copy binary artifacts (wheels)
 FROM       quay.io/pypa/manylinux2010_x86_64
 MAINTAINER Axel Huebl <a.huebl@hzdr.de>
