@@ -9,6 +9,7 @@ Upgrade Guide
 ADIOS 2.9.0 is now the minimally supported version for ADIOS2 support.
 
 Python 3.8 support is EOL and removed.
+Python 3.14 is now supported.
 
 
 0.16.0
