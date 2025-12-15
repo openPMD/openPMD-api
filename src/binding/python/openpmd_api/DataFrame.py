@@ -10,7 +10,10 @@ import math
 import numpy as np
 
 
-def particles_to_dataframe(particle_species, attributes=None, slice=None):
+def particles_to_dataframe(particle_species,
+                           *legacy_args,
+                           attributes=None,
+                           slice=None):
     """
     Load all records of a particle species into a Pandas DataFrame.
 
@@ -18,6 +21,8 @@ def particles_to_dataframe(particle_species, attributes=None, slice=None):
     ----------
     particle_species : openpmd_api.ParticleSpecies
         A ParticleSpecies class in openPMD-api.
+    legacy_args : tuple
+        DO NOT USE. Catch-all for legacy, unnamed arguments.
     attributes : list of strings, optional
         A list of attributes of the particle_species that should be read and
         added as extra columns.
@@ -43,6 +48,20 @@ def particles_to_dataframe(particle_species, attributes=None, slice=None):
         are optimal arguments for the slice parameter
     pandas.DataFrame : the central dataframe object created here
     """
+    # backwards compatibility: in openPMD-api 0.17+, we added the
+    # additional "attributes" argument and moved slice= to the end.
+    if legacy_args:
+        if attributes is None and slice is None and len(legacy_args) == 1:
+            slice = legacy_args[0]
+            import warnings
+            warnings.warn("The to_df() argument order changed in "
+                          "openPMD-api 0.17.0!\nThe slice "
+                          "argument must be passed as a named argument.",
+                          DeprecationWarning
+                          )
+        else:
+            raise RuntimeError("to_df() does not support unnamed arguments!")
+
     # import pandas here for a lazy import
     try:
         import pandas as pd
