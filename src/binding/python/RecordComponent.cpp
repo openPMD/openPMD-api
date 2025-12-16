@@ -595,7 +595,7 @@ GetCurrentView::call<std::string>(PythonDynamicMemoryView const &)
 
 pybind11::object PythonDynamicMemoryView::currentView() const
 {
-    return switchNonVectorType<GetCurrentView>(m_datatype, *this);
+    return switchDatasetType<GetCurrentView>(m_datatype, *this);
 }
 
 namespace
@@ -656,7 +656,7 @@ inline PythonDynamicMemoryView store_chunk_span(
         std::begin(shape),
         [&maskIt](std::uint64_t) { return !*(maskIt++); });
 
-    return switchNonVectorType<StoreChunkSpan>(
+    return switchDatasetType<StoreChunkSpan>(
         r.getDatatype(), r, offset, extent);
 }
 
@@ -726,7 +726,7 @@ void load_chunk(
         }
     }
 
-    switchNonVectorType<LoadChunkIntoPythonBuffer>(
+    switchDatasetType<LoadChunkIntoPythonBuffer>(
         r.getDatatype(), r, buffer, buffer_info, offset, extent);
 }
 

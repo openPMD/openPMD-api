@@ -986,9 +986,10 @@ DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
     return storeChunk<T>(std::move(offset), std::move(extent), [](size_t size) {
 #if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
     (defined(__apple_build_version__) && __clang_major__ < 14)
-        return std::shared_ptr<T>{new T[size], [](auto *ptr) { delete[] ptr; }};
+        return UniquePtrWithLambda<T>{
+            new T[size], [](auto *ptr) { delete[] ptr; }};
 #else
-            return std::shared_ptr< T[] >{ new T[ size ] };
+        return std::unique_ptr<T[]>{new T[size]};
 #endif
     });
 }
@@ -1045,7 +1046,7 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     OPENPMD_INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type))                        \
     OPENPMD_INSTANTIATE_FULLMATRIX(type const[])
 
-OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE)
+OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
 #undef OPENPMD_INSTANTIATE
 #undef OPENPMD_INSTANTIATE_FULLMATRIX
 #undef OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT
