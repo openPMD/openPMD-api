@@ -895,9 +895,6 @@ void init_RecordComponent(py::module &m)
                     // std::endl; typestring: encoding + type + number of bytes
                     switch (dtype)
                     {
-                    case DT::BOOL:
-                        return rc.makeConstant(*static_cast<bool *>(buf.ptr));
-                        break;
                     case DT::CHAR:
                         return rc.makeConstant(*static_cast<char *>(buf.ptr));
                         break;
@@ -956,6 +953,11 @@ void init_RecordComponent(py::module &m)
                         return rc.makeConstant(
                             *static_cast<std::complex<long double> *>(buf.ptr));
                         break;
+                    case DT::BOOL:
+                        throw std::runtime_error(
+                            "make_constant: "
+                            "Boolean type not supported!");
+                        break;
                     default:
                         throw std::runtime_error(
                             "make_constant: "
@@ -982,10 +984,6 @@ void init_RecordComponent(py::module &m)
         .def(
             "make_constant",
             &RecordComponent::makeConstant<double>,
-            py::arg("value"))
-        .def(
-            "make_constant",
-            &RecordComponent::makeConstant<bool>,
             py::arg("value"))
         .def(
             "make_empty",
