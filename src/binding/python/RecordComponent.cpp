@@ -584,13 +584,6 @@ struct GetCurrentView
 
     static constexpr char const *errorMsg = "DynamicMemoryView";
 };
-
-template <>
-pybind11::object
-GetCurrentView::call<std::string>(PythonDynamicMemoryView const &)
-{
-    throw std::runtime_error("[DynamicMemoryView] Only PODs allowed.");
-}
 } // namespace
 
 pybind11::object PythonDynamicMemoryView::currentView() const
@@ -628,14 +621,6 @@ struct StoreChunkSpan
 
     static constexpr char const *errorMsg = "RecordComponent.store_chunk()";
 };
-
-template <>
-PythonDynamicMemoryView StoreChunkSpan::call<std::string>(
-    RecordComponent &, Offset const &, Extent const &)
-{
-    throw std::runtime_error(
-        "[RecordComponent.store_chunk()] Only PODs allowed.");
-}
 } // namespace
 
 inline PythonDynamicMemoryView store_chunk_span(
