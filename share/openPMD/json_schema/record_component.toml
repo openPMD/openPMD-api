@@ -44,7 +44,10 @@ title = "Either array or constant"
 
 [allOf.if]
 required = ["attributes"]
-properties.attributes.required = ["shape", "value"]
+# shape optional as of https://github.com/openPMD/openPMD-api/pull/1661
+# JSON schema not powerful enough to check that the shape must be defined
+# at least once (just like we do not check that the shape is consistent).
+properties.attributes.required = ["value"]
 
 [allOf.then]
 title = "Constant dataset"

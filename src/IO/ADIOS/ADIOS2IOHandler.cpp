@@ -834,6 +834,12 @@ void ADIOS2IOHandlerImpl::createDataset(
             "only is not possible.");
     }
 
+    if (Dataset::undefinedExtent(parameters.extent))
+    {
+        throw error::OperationUnsupportedInBackend(
+            "ADIOS2", "No support for Datasets with undefined extent.");
+    }
+
     if (!writable->written)
     {
         /* Sanitize name */
@@ -994,6 +1000,12 @@ void ADIOS2IOHandlerImpl::extendDataset(
     VERIFY_ALWAYS(
         access::write(m_handler->m_backendAccess),
         "[ADIOS2] Cannot extend datasets in read-only mode.");
+    if (Dataset::undefinedExtent(parameters.extent))
+    {
+        throw error::OperationUnsupportedInBackend(
+            "ADIOS2", "No support for Datasets with undefined extent.");
+    }
+
     setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     std::string name = nameOfVariable(writable);

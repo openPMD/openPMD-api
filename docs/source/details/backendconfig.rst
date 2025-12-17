@@ -122,6 +122,11 @@ Or in a Series constructor JSON/TOML configuration:
     "hint_lazy_parsing_timeout": 20
   }
 
+As of openPMD-api 0.17.0, the parser verifies that all records within a mesh or within a particle species have consistent shapes / extents.
+This is used for filling in the shape for constant components that do not define it.
+In order to skip this check in the error case, the key ``{"verify_homogeneous_extents": false}`` may be set (alternatively ``export OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS=0`` will do the same).
+This will help read datasets with inconsistent metadata definitions.
+
 The key ``resizable`` can be passed to ``Dataset`` options.
 It if set to ``{"resizable": true}``, this declares that it shall be allowed to increased the ``Extent`` of a ``Dataset`` via ``resetDataset()`` at a later time, i.e., after it has been first declared (and potentially written).
 For HDF5, resizable Datasets come with a performance penalty.

@@ -96,4 +96,13 @@ std::optional<size_t> Dataset::joinedDimension(Extent const &extent)
     }
     return res;
 }
+
+bool Dataset::undefinedExtent() const
+{
+    return undefinedExtent(extent);
+}
+bool Dataset::undefinedExtent(Extent const &e)
+{
+    return e.size() == 1 && e.at(0) == Dataset::UNDEFINED_EXTENT;
+}
 } // namespace openPMD

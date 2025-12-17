@@ -19,7 +19,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Record.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
@@ -107,21 +109,30 @@ void Record::flush_impl(
     }
 }
 
-void Record::read()
+auto Record::read() -> internal::HomogenizeExtents
 {
+    internal::HomogenizeExtents res(IOHandler()->m_verify_homogeneous_extents);
+    auto check_extent = [&](RecordComponent &rc) {
+        res.check_extent(*this, rc);
+    };
     if (scalar())
     {
-        /* using operator[] will incorrectly update parent */
-        try
-        {
-            T_RecordComponent::read(/* require_unit_si = */ true);
-        }
-        catch (error::ReadError const &err)
-        {
-            std::cerr << "Cannot read scalar record component and will skip it "
-                         "due to read error:\n"
-                      << err.what() << std::endl;
-        }
+        [&]() {
+            /* using operator[] will incorrectly update parent */
+            try
+            {
+                T_RecordComponent::read(/* require_unit_si = */ true);
+            }
+            catch (error::ReadError const &err)
+            {
+                std::cerr
+                    << "Cannot read scalar record component and will skip it "
+                       "due to read error:\n"
+                    << err.what() << std::endl;
+                return; // from lambda
+            }
+            check_extent(*this);
+        }();
     }
     else
     {
@@ -146,7 +157,9 @@ void Record::read()
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 this->container().erase(component);
+                continue;
             }
+            check_extent(rc);
         }
 
         Parameter<Operation::LIST_DATASETS> dList;
@@ -173,13 +186,16 @@ void Record::read()
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 this->container().erase(component);
+                continue;
             }
+            check_extent(rc);
         }
     }
 
     readBase();
 
     readAttributes(ReadMode::FullyReread);
+    return res;
 }
 
 template class BaseRecord<RecordComponent>;

@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
@@ -29,6 +30,7 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -54,6 +56,7 @@ namespace internal
 {
     class IterationData;
     class SeriesData;
+    struct HomogenizeExtents;
 
     class SharedAttributableData
     {
@@ -105,6 +108,7 @@ namespace internal
         friend class openPMD::Attributable;
 
         using SharedData_t = std::shared_ptr<SharedAttributableData>;
+        using A_MAP = SharedData_t::element_type::A_MAP;
 
     public:
         AttributableData();
@@ -154,6 +158,32 @@ namespace internal
             res.setData(
                 std::shared_ptr<typename T::Data_t>(self, [](auto const *) {}));
             return res;
+        }
+
+        inline auto attributes() -> A_MAP &
+        {
+            return operator*().m_attributes;
+        }
+        [[nodiscard]] inline auto attributes() const -> A_MAP const &
+        {
+            return operator*().m_attributes;
+        }
+        [[nodiscard]] inline auto readAttribute(std::string const &name) const
+            -> Attribute const &
+        {
+            auto const &attr = attributes();
+            if (auto it = attr.find(name); it != attr.end())
+            {
+                return it->second;
+            }
+            else
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::NotFound,
+                    std::nullopt,
+                    "Not found: '" + name + "'.");
+            }
         }
     };
 
@@ -213,6 +243,7 @@ class Attributable
     friend class StatefulSnapshotsContainer;
     friend class internal::AttributableData;
     friend class Snapshots;
+    friend struct internal::HomogenizeExtents;
 
 protected:
     // tag for internal constructor

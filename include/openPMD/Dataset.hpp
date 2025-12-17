@@ -54,9 +54,21 @@ public:
          */
         JOINED_DIMENSION = std::numeric_limits<std::uint64_t>::max(),
         /**
-         * Some backends (i.e. JSON and TOML in template mode) support the
-         * creation of dataset with undefined datatype and extent.
-         * The extent should be given as {UNDEFINED_EXTENT} for that.
+         * In some use cases, the extent needs not be specified.
+         * For these, specify Extent{UNDEFINED_EXTENT}.
+         * Use cases:
+         *
+         * 1. Some backends (i.e. JSON and TOML in template mode) support the
+         *    creation of datasets with undefined datatype and extent.
+         *    The extent should be given as {UNDEFINED_EXTENT} for that.
+         * 2. With openPMD 2.0, the shape of constant components may be omitted
+         *    in writing if it is defined somewhere else as part
+         *    of the same Mesh / Species.
+         *    (https://github.com/openPMD/openPMD-standard/pull/289)
+         *    When reading such datasets, the openPMD-api will try to fill in
+         *    the missing extents, so the extent for constistently-defined
+         *    datasets should ideally not be reported by the read-side API
+         *    as undefined.
          */
         UNDEFINED_EXTENT = std::numeric_limits<std::uint64_t>::max() - 1
     };
@@ -87,5 +99,8 @@ public:
 
     std::optional<size_t> joinedDimension() const;
     static std::optional<size_t> joinedDimension(Extent const &);
+
+    bool undefinedExtent() const;
+    static bool undefinedExtent(Extent const &);
 };
 } // namespace openPMD

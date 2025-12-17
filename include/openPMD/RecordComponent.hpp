@@ -158,6 +158,8 @@ public:
      * * Shrinking any dimension's extent.
      * * Changing the number of dimensions.
      *
+     * The dataset extent may be empty to indicate undefined extents.
+     *
      * Backend support for resizing datasets:
      * * JSON: Supported
      * * ADIOS2: Supported as of ADIOS2 2.7.0
@@ -539,6 +541,26 @@ OPENPMD_protected
 
     void verifyChunk(Datatype, Offset const &, Extent const &) const;
 }; // RecordComponent
+
+namespace internal
+{
+    // Must put this after the definition of RecordComponent due to the
+    // deque<RecordComponent>
+    struct HomogenizeExtents
+    {
+        std::deque<RecordComponent> without_extent;
+        std::optional<Extent> retrieved_extent;
+        bool verify_homogeneous_extents = true;
+
+        explicit HomogenizeExtents();
+        HomogenizeExtents(bool verify_homogeneous_extents);
+
+        void check_extent(Attributable const &callsite, RecordComponent &);
+        auto merge(Attributable const &callsite, HomogenizeExtents)
+            -> HomogenizeExtents &;
+        void homogenize(Attributable const &callsite) &&;
+    };
+} // namespace internal
 
 } // namespace openPMD
 

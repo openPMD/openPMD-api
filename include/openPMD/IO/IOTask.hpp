@@ -22,6 +22,7 @@
 
 #include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Export.hpp"

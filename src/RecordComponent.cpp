@@ -24,7 +24,9 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
@@ -59,6 +61,116 @@ namespace internal
         a.setDirtyRecursive(true);
         m_chunks.push(std::move(task));
     }
+
+    static constexpr char const *note_on_deactivating_this_check = R"(
+Note: In order to ignore inconsistent / incomplete extent definitions,
+set the environment variable OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS=0
+or alternatively the JSON option {"verify_homogeneous_extents": false}.
+    )";
+
+    HomogenizeExtents::HomogenizeExtents() = default;
+    HomogenizeExtents::HomogenizeExtents(bool verify_homogeneous_extents_in)
+        : verify_homogeneous_extents(verify_homogeneous_extents_in)
+    {}
+
+    void HomogenizeExtents::check_extent(
+        Attributable const &callsite, RecordComponent &rc)
+    {
+        auto extent = rc.getExtent();
+        if (Dataset::undefinedExtent(extent))
+        {
+            without_extent.emplace_back(rc);
+        }
+        else if (retrieved_extent.has_value())
+        {
+            if (verify_homogeneous_extents && extent != *retrieved_extent)
+            {
+                std::stringstream error_msg;
+                error_msg << "Inconsistent extents found for Record '"
+                          << callsite.myPath().openPMDPath() << "': Component '"
+                          << rc.myPath().openPMDPath() << "' has extent";
+                auxiliary::write_vec_to_stream(error_msg, extent) << ", but ";
+                auxiliary::write_vec_to_stream(error_msg, *retrieved_extent)
+                    << " was found previously."
+                    << note_on_deactivating_this_check;
+                throw error::ReadError(
+                    error::AffectedObject::Group,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    error_msg.str());
+            }
+        }
+        else
+        {
+            retrieved_extent = std::move(extent);
+        }
+    }
+
+    auto HomogenizeExtents::merge(
+        Attributable const &callsite, HomogenizeExtents other)
+        -> HomogenizeExtents &
+    {
+        if (retrieved_extent.has_value() && other.retrieved_extent.has_value())
+        {
+            if (verify_homogeneous_extents &&
+                *retrieved_extent != *other.retrieved_extent)
+            {
+                std::stringstream error_msg;
+                error_msg << "Inconsistent extents found for Record '"
+                          << callsite.myPath().openPMDPath() << "': ";
+                auxiliary::write_vec_to_stream(error_msg, *retrieved_extent)
+                    << " vs. ";
+                auxiliary::write_vec_to_stream(
+                    error_msg, *other.retrieved_extent)
+                    << "." << note_on_deactivating_this_check;
+                throw error::ReadError(
+                    error::AffectedObject::Group,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    error_msg.str());
+            }
+        }
+        else if (!retrieved_extent.has_value())
+        {
+            retrieved_extent = std::move(other.retrieved_extent);
+        }
+
+        for (auto &rc : other.without_extent)
+        {
+            this->without_extent.emplace_back(std::move(rc));
+        }
+        return *this;
+    }
+
+    void HomogenizeExtents::homogenize(Attributable const &callsite) &&
+    {
+        if (!retrieved_extent.has_value())
+        {
+            if (verify_homogeneous_extents)
+            {
+                throw error::ReadError(
+                    error::AffectedObject::Group,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    "No extent found for any component contained in '" +
+                        callsite.myPath().openPMDPath() + "'." +
+                        note_on_deactivating_this_check);
+            }
+            else
+            {
+                return;
+            }
+        }
+        auto &ext = *retrieved_extent;
+        for (auto &rc : without_extent)
+        {
+            rc.setWritten(false, Attributable::EnqueueAsynchronously::No);
+            rc.resetDataset(Dataset(Datatype::UNDEFINED, ext));
+            rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
+        }
+        without_extent.clear();
+    }
+
 } // namespace internal
 
 template <typename T>
@@ -118,7 +230,14 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         throw std::runtime_error("Dataset extent must be at least 1D.");
     if (d.empty())
     {
-        if (d.dtype != Datatype::UNDEFINED)
+        if (d.extent.empty())
+        {
+            throw error::Internal(
+                "A zero-dimensional dataset is not to be considered empty, but "
+                "undefined. This error is an internal safeguard against future "
+                "changes that might not consider this.");
+        }
+        else if (d.dtype != Datatype::UNDEFINED)
         {
             return makeEmpty(std::move(d));
         }
@@ -171,7 +290,7 @@ Extent RecordComponent::getExtent() const
     }
     else
     {
-        return {1};
+        return {Dataset::UNDEFINED_EXTENT};
     }
 }
 
@@ -300,6 +419,13 @@ void RecordComponent::flush(
         {
             setUnitSI(1);
         }
+        auto constant_component_write_shape = [&]() {
+            auto extent = getExtent();
+            return !Dataset::undefinedExtent(extent) &&
+                std::none_of(extent.begin(), extent.end(), [](auto val) {
+                    return val == Dataset::JOINED_DIMENSION;
+                });
+        };
         if (!written())
         {
             if (constant())
@@ -319,16 +445,19 @@ void RecordComponent::flush(
                         Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
                 }
                 IOHandler()->enqueue(IOTask(this, aWrite));
-                aWrite.name = "shape";
-                Attribute a(getExtent());
-                aWrite.dtype = a.dtype;
-                aWrite.m_resource = a.getAny();
-                if (isVBased)
+                if (constant_component_write_shape())
                 {
-                    aWrite.changesOverSteps = Parameter<
-                        Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                    aWrite.name = "shape";
+                    Attribute a(getExtent());
+                    aWrite.dtype = a.dtype;
+                    aWrite.m_resource = a.getAny();
+                    if (isVBased)
+                    {
+                        aWrite.changesOverSteps = Parameter<
+                            Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
+                    }
+                    IOHandler()->enqueue(IOTask(this, aWrite));
                 }
-                IOHandler()->enqueue(IOTask(this, aWrite));
             }
             else
             {
@@ -343,6 +472,13 @@ void RecordComponent::flush(
         {
             if (constant())
             {
+                if (!constant_component_write_shape())
+                {
+                    throw error::WrongAPIUsage(
+                        "Extended constant component from a previous shape to "
+                        "one that cannot be written (empty or with joined "
+                        "dimension).");
+                }
                 bool isVBased = retrieveSeries().iterationEncoding() ==
                     IterationEncoding::variableBased;
                 Parameter<Operation::WRITE_ATT> aWrite;
@@ -410,25 +546,27 @@ namespace
 void RecordComponent::readBase(bool require_unit_si)
 {
     using DT = Datatype;
-    // auto & rc = get();
-    Parameter<Operation::READ_ATT> aRead;
+    auto &rc = get();
 
-    if (constant() && !empty())
-    {
-        aRead.name = "value";
-        IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush(internal::defaultFlushParams);
+    readAttributes(ReadMode::FullyReread);
 
-        Attribute a(Attribute::from_any, *aRead.m_resource);
-        DT dtype = *aRead.dtype;
+    auto read_constant = [&]() {
+        Attribute a = rc.readAttribute("value");
+        DT dtype = a.dtype;
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         switchNonVectorType<MakeConstant>(dtype, *this, a);
         setWritten(true, Attributable::EnqueueAsynchronously::No);
 
-        aRead.name = "shape";
-        IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush(internal::defaultFlushParams);
-        a = Attribute(Attribute::from_any, *aRead.m_resource);
+        if (!containsAttribute("shape"))
+        {
+            setWritten(false, Attributable::EnqueueAsynchronously::No);
+            resetDataset(Dataset(dtype, {Dataset::UNDEFINED_EXTENT}));
+            setWritten(true, Attributable::EnqueueAsynchronously::No);
+
+            return;
+        }
+
+        a = rc.attributes().at("shape");
         Extent e;
 
         // uint64_t check
@@ -438,7 +576,7 @@ void RecordComponent::readBase(bool require_unit_si)
         else
         {
             std::ostringstream oss;
-            oss << "Unexpected datatype (" << *aRead.dtype
+            oss << "Unexpected datatype (" << a.dtype
                 << ") for attribute 'shape' (" << determineDatatype<uint64_t>()
                 << " aka uint64_t)";
             throw error::ReadError(
@@ -451,9 +589,12 @@ void RecordComponent::readBase(bool require_unit_si)
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         resetDataset(Dataset(dtype, e));
         setWritten(true, Attributable::EnqueueAsynchronously::No);
-    }
+    };
 
-    readAttributes(ReadMode::FullyReread);
+    if (constant() && !empty())
+    {
+        read_constant();
+    }
 
     if (require_unit_si)
     {
@@ -467,7 +608,8 @@ void RecordComponent::readBase(bool require_unit_si)
                 "'" +
                     myPath().openPMDPath() + "'.");
         }
-        if (!getAttribute("unitSI").getOptional<double>().has_value())
+        if (auto attr = getAttribute("unitSI");
+            !attr.getOptional<double>().has_value())
         {
             throw error::ReadError(
                 error::AffectedObject::Attribute,
@@ -475,10 +617,8 @@ void RecordComponent::readBase(bool require_unit_si)
                 {},
                 "Unexpected Attribute datatype for 'unitSI' (expected double, "
                 "found " +
-                    datatypeToString(
-                        Attribute(Attribute::from_any, *aRead.m_resource)
-                            .dtype) +
-                    ") in '" + myPath().openPMDPath() + "'.");
+                    datatypeToString(attr.dtype) + ") in '" +
+                    myPath().openPMDPath() + "'.");
         }
     }
 }
@@ -846,9 +986,10 @@ DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
     return storeChunk<T>(std::move(offset), std::move(extent), [](size_t size) {
 #if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
     (defined(__apple_build_version__) && __clang_major__ < 14)
-        return std::shared_ptr<T>{new T[size], [](auto *ptr) { delete[] ptr; }};
+        return UniquePtrWithLambda<T>{
+            new T[size], [](auto *ptr) { delete[] ptr; }};
 #else
-            return std::shared_ptr< T[] >{ new T[ size ] };
+        return std::unique_ptr<T[]>{new T[size]};
 #endif
     });
 }
@@ -905,7 +1046,7 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     OPENPMD_INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type))                        \
     OPENPMD_INSTANTIATE_FULLMATRIX(type const[])
 
-OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE)
+OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
 #undef OPENPMD_INSTANTIATE
 #undef OPENPMD_INSTANTIATE_FULLMATRIX
 #undef OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT

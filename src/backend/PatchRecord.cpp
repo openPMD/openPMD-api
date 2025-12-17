@@ -45,7 +45,7 @@ void PatchRecord::flush_impl(
     {
         return;
     }
-    if (!this->datasetDefined())
+    if (!this->scalar())
     {
         if (IOHandler()->m_frontendAccess != Access::READ_ONLY)
             Container<PatchRecordComponent>::flush(

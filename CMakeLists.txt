@@ -826,6 +826,7 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/close_and_reopen_test.cpp
                 test/Files_SerialIO/filebased_write_test.cpp
                 test/Files_SerialIO/issue_1744_unique_ptrs_at_close_time.cpp
+                test/Files_SerialIO/components_without_extent.cpp
             )
         elseif(${test_name} STREQUAL "ParallelIO" AND openPMD_HAVE_MPI)
             list(APPEND ${out_list}

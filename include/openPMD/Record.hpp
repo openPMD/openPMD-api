@@ -53,7 +53,8 @@ private:
 
     void
     flush_impl(std::string const &, internal::FlushParams const &) override;
-    void read();
+
+    [[nodiscard]] internal::HomogenizeExtents read();
 }; // Record
 
 template <typename T>

@@ -21,6 +21,7 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/UnitDimension.hpp"
@@ -434,6 +435,8 @@ void Mesh::flush_impl(
 
 void Mesh::read()
 {
+    internal::HomogenizeExtents homogenizeExtents(
+        IOHandler()->m_verify_homogeneous_extents);
     internal::EraseStaleEntries<Mesh> map{*this};
 
     using DT = Datatype;
@@ -604,6 +607,7 @@ void Mesh::read()
     if (scalar())
     {
         T_RecordComponent::read();
+        homogenizeExtents.check_extent(*this, *this);
     }
     else
     {
@@ -628,7 +632,9 @@ void Mesh::read()
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 map.forget(component);
+                continue;
             }
+            homogenizeExtents.check_extent(*this, rc);
         }
 
         Parameter<Operation::LIST_DATASETS> dList;
@@ -655,9 +661,13 @@ void Mesh::read()
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
                 map.forget(component);
+                continue;
             }
+            homogenizeExtents.check_extent(*this, rc);
         }
     }
+
+    std::move(homogenizeExtents).homogenize(*this);
 
     readBase();
 

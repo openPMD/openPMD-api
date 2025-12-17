@@ -584,18 +584,11 @@ struct GetCurrentView
 
     static constexpr char const *errorMsg = "DynamicMemoryView";
 };
-
-template <>
-pybind11::object
-GetCurrentView::call<std::string>(PythonDynamicMemoryView const &)
-{
-    throw std::runtime_error("[DynamicMemoryView] Only PODs allowed.");
-}
 } // namespace
 
 pybind11::object PythonDynamicMemoryView::currentView() const
 {
-    return switchNonVectorType<GetCurrentView>(m_datatype, *this);
+    return switchDatasetType<GetCurrentView>(m_datatype, *this);
 }
 
 namespace
@@ -628,14 +621,6 @@ struct StoreChunkSpan
 
     static constexpr char const *errorMsg = "RecordComponent.store_chunk()";
 };
-
-template <>
-PythonDynamicMemoryView StoreChunkSpan::call<std::string>(
-    RecordComponent &, Offset const &, Extent const &)
-{
-    throw std::runtime_error(
-        "[RecordComponent.store_chunk()] Only PODs allowed.");
-}
 } // namespace
 
 inline PythonDynamicMemoryView store_chunk_span(
@@ -656,7 +641,7 @@ inline PythonDynamicMemoryView store_chunk_span(
         std::begin(shape),
         [&maskIt](std::uint64_t) { return !*(maskIt++); });
 
-    return switchNonVectorType<StoreChunkSpan>(
+    return switchDatasetType<StoreChunkSpan>(
         r.getDatatype(), r, offset, extent);
 }
 
@@ -726,7 +711,7 @@ void load_chunk(
         }
     }
 
-    switchNonVectorType<LoadChunkIntoPythonBuffer>(
+    switchDatasetType<LoadChunkIntoPythonBuffer>(
         r.getDatatype(), r, buffer, buffer_info, offset, extent);
 }
 
@@ -910,9 +895,6 @@ void init_RecordComponent(py::module &m)
                     // std::endl; typestring: encoding + type + number of bytes
                     switch (dtype)
                     {
-                    case DT::BOOL:
-                        return rc.makeConstant(*static_cast<bool *>(buf.ptr));
-                        break;
                     case DT::CHAR:
                         return rc.makeConstant(*static_cast<char *>(buf.ptr));
                         break;
@@ -971,6 +953,11 @@ void init_RecordComponent(py::module &m)
                         return rc.makeConstant(
                             *static_cast<std::complex<long double> *>(buf.ptr));
                         break;
+                    case DT::BOOL:
+                        throw std::runtime_error(
+                            "make_constant: "
+                            "Boolean type not supported!");
+                        break;
                     default:
                         throw std::runtime_error(
                             "make_constant: "
@@ -997,10 +984,6 @@ void init_RecordComponent(py::module &m)
         .def(
             "make_constant",
             &RecordComponent::makeConstant<double>,
-            py::arg("value"))
-        .def(
-            "make_constant",
-            &RecordComponent::makeConstant<bool>,
             py::arg("value"))
         .def(
             "make_empty",

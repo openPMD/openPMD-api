@@ -32,3 +32,7 @@ namespace issue_1744_unique_ptrs_at_close_time
 {
 auto issue_1744_unique_ptrs_at_close_time() -> void;
 }
+namespace components_without_extent
+{
+auto components_without_extent() -> void;
+}

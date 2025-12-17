@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/backend/Writable.hpp"
@@ -35,6 +36,8 @@ ParticleSpecies::ParticleSpecies()
 
 void ParticleSpecies::read()
 {
+    internal::HomogenizeExtents homogenizeExtents(
+        IOHandler()->m_verify_homogeneous_extents);
     /* obtain all non-scalar records */
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(this, pList));
@@ -76,17 +79,17 @@ void ParticleSpecies::read()
             auto att_begin = aList.attributes->begin();
             auto att_end = aList.attributes->end();
             auto value = std::find(att_begin, att_end, "value");
-            auto shape = std::find(att_begin, att_end, "shape");
-            if (value != att_end && shape != att_end)
+            if (value != att_end)
             {
                 RecordComponent &rc = r;
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
                 IOHandler()->flush(internal::defaultFlushParams);
                 rc.get().m_isConstant = true;
             }
+            internal::HomogenizeExtents recordExtents;
             try
             {
-                r.read();
+                recordExtents = r.read();
             }
             catch (error::ReadError const &err)
             {
@@ -95,7 +98,9 @@ void ParticleSpecies::read()
                           << err.what() << std::endl;
 
                 map.forget(record_name);
+                continue;
             }
+            homogenizeExtents.merge(*this, std::move(recordExtents));
         }
     }
 
@@ -115,6 +120,7 @@ void ParticleSpecies::read()
     Parameter<Operation::OPEN_DATASET> dOpen;
     for (auto const &record_name : *dList.datasets)
     {
+        internal::HomogenizeExtents recordExtents;
         try
         {
             Record &r = map[record_name];
@@ -127,7 +133,7 @@ void ParticleSpecies::read()
             rc.setWritten(false, Attributable::EnqueueAsynchronously::No);
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
-            r.read();
+            recordExtents = r.read();
         }
         catch (error::ReadError const &err)
         {
@@ -138,8 +144,12 @@ void ParticleSpecies::read()
             map.forget(record_name);
             //(*this)[record_name].erase(RecordComponent::SCALAR);
             // this->erase(record_name);
+            continue;
         }
+        homogenizeExtents.merge(*this, std::move(recordExtents));
     }
+
+    std::move(homogenizeExtents).homogenize(*this);
 
     readAttributes(ReadMode::FullyReread);
 }

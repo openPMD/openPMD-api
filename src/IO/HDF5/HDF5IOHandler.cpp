@@ -835,6 +835,11 @@ void HDF5IOHandlerImpl::createDataset(
         error::throwOperationUnsupportedInBackend(
             "HDF5", "Joined Arrays currently only supported in ADIOS2");
     }
+    else if (Dataset::undefinedExtent(parameters.extent))
+    {
+        throw error::OperationUnsupportedInBackend(
+            "HDF5", "No support for Datasets with undefined extent.");
+    }
 
     if (!writable->written)
     {
@@ -1114,6 +1119,11 @@ void HDF5IOHandlerImpl::extendDataset(
     {
         error::throwOperationUnsupportedInBackend(
             "HDF5", "Joined Arrays currently only supported in ADIOS2");
+    }
+    else if (Dataset::undefinedExtent(parameters.extent))
+    {
+        throw error::OperationUnsupportedInBackend(
+            "HDF5", "No support for Datasets with undefined extent.");
     }
 
     File file =
