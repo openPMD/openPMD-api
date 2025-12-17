@@ -6,7 +6,19 @@ Upgrade Guide
 0.17.0
 ------
 
-ADIOS 2.9.0 is now the minimally supported version for ADIOS2 support.
+ADIOS 2.9.0 is now the minimally supported version for ADIOS2; support for ADIOS 2.11.0 has been added.
+HDF5 1.8.13 is now the minimally supported version for HDF5, support for HDF5 2.0 has been added.
+
+A new unified API for accessing Iterations/Snapshots has been introduced in ``series.snapshots()``.
+This replaces access via ``series.iterations``, ``series.writeIterations()`` and ``series.readIterations()`` which are now deprecated.
+``series.writeIterations()`` and ``series.readIterations()`` are now implemented internally in terms of ``series.snapshots()``, but remain backward-compatible to old useage.
+
+The behavior of ``series.snapshots()`` is determined by the selected ``Access`` type:
+
+* ``Access::CREATE_RANDOM_ACCESS`` and ``Access::READ_RANDOM_ACCESS`` behave the same way as ``series.iterations`` did so far.
+  ``Access::CREATE`` and ``Access::READ_ONLY`` are now aliases for these two access types.
+* ``Access::CREATE_LINEAR`` and ``Access::READ_LINEAR`` are used for creating/accessing Iterations one after another, e.g. in a Stream. These modes are more restricted in their API contract, but will work for streaming and file data alike, and ensure more resource-friendly IO patterns.
+  If the ADIOS2 backend uses steps, then old steps cannot be reopened after closing them.
 
 Python 3.8 and 3.9 support is EOL and removed.
 Python 3.14 is now supported.
