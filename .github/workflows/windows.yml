@@ -34,21 +34,25 @@ jobs:
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
+    - uses: actions/setup-python@v6
+      name: Install Python
+      with:
+        python-version: "3.10"
     - name: Build & Install
       run: |
-        python3.exe -m pip install --upgrade pip setuptools wheel
-        python3.exe -m pip install --upgrade cmake
-        python3.exe -m pip install --upgrade numpy
+        python3 -m pip install --upgrade pip setuptools wheel
+        python3 -m pip install --upgrade cmake
+        python3 -m pip install --upgrade numpy
 
-        python3.exe -m pip wheel .
+        python3 -m pip wheel .
         if(!$?) { Exit $LASTEXITCODE }
-        python3.exe -m pip install openPMD_api-0.17.0.dev0-cp39-cp39-win_amd64.whl
-        if(!$?) { Exit $LASTEXITCODE }
-
-        python3.exe -c "import openpmd_api as api; print(api.variants)"
+        python3 -m pip install --find-links=. openPMD_api
         if(!$?) { Exit $LASTEXITCODE }
 
-        python3.exe -m openpmd_api.ls --help
+        python3 -c "import openpmd_api as api; print(api.variants)"
+        if(!$?) { Exit $LASTEXITCODE }
+
+        python3 -m openpmd_api.ls --help
         if(!$?) { Exit $LASTEXITCODE }
 
   build_win_clang:
