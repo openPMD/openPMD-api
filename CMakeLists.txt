@@ -525,6 +525,9 @@ if(openPMD_BUILD_TESTING)
     add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
     target_link_libraries(openPMD::thirdparty::Catch2
             INTERFACE Catch2::Catch2)
+    add_library(openPMD::thirdparty::Catch2WithMain INTERFACE IMPORTED)
+    target_link_libraries(openPMD::thirdparty::Catch2WithMain
+            INTERFACE Catch2::Catch2WithMain)
 endif()
 
 if(openPMD_HAVE_MPI)
@@ -770,14 +773,11 @@ if(openPMD_HAVE_PYTHON)
 endif()
 
 if(openPMD_BUILD_TESTING)
-    # compile Catch2 implementation part separately
-    add_library(CatchRunner ${_openpmd_lib_type}
-        test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
-    add_library(CatchMain   ${_openpmd_lib_type}
-        test/CatchMain.cpp)    # Serial only
+    # CatchRunner: custom main with MPI support for parallel tests
+    # In Catch2 v3, we link to Catch2 (not Catch2WithMain) since we provide our own main
+    add_library(CatchRunner ${_openpmd_lib_type} test/CatchRunner.cpp)
     openpmd_cxx_required(CatchRunner)
-    openpmd_cxx_required(CatchMain)
-    set_target_properties(CatchRunner CatchMain PROPERTIES
+    set_target_properties(CatchRunner PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}
         LIBRARY_OUTPUT_DIRECTORY ${openPMD_LIBRARY_OUTPUT_DIRECTORY}
         RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
@@ -788,7 +788,6 @@ if(openPMD_BUILD_TESTING)
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
     set_target_properties(CatchRunner PROPERTIES COMPILE_PDB_NAME CatchRunner)
-    set_target_properties(CatchMain PROPERTIES COMPILE_PDB_NAME CatchMain)
     # note: same as above, but for Multi-Config generators
     if(isMultiConfig)
         foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
@@ -801,20 +800,10 @@ if(openPMD_BUILD_TESTING)
                 PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
                 COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
             )
-            set_target_properties(CatchMain PROPERTIES
-                COMPILE_PDB_NAME_${CFG_UPPER} CatchMain
-                ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_ARCHIVE_OUTPUT_DIRECTORY}/${CFG}
-                LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_LIBRARY_OUTPUT_DIRECTORY}/${CFG}
-                RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/${CFG}
-                PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_PDB_OUTPUT_DIRECTORY}/${CFG}
-                COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${openPMD_COMPILE_PDB_OUTPUT_DIRECTORY}/${CFG}
-            )
         endforeach()
     endif()
     target_compile_options(CatchRunner PUBLIC ${_msvc_options})
-    target_compile_options(CatchMain   PUBLIC ${_msvc_options})
     target_link_libraries(CatchRunner PUBLIC openPMD::thirdparty::Catch2)
-    target_link_libraries(CatchMain   PUBLIC openPMD::thirdparty::Catch2)
     if(openPMD_HAVE_MPI)
         target_link_libraries(CatchRunner PUBLIC ${openPMD_MPI_TARGETS})
         target_compile_definitions(CatchRunner PUBLIC openPMD_HAVE_MPI=1)
@@ -875,9 +864,11 @@ if(openPMD_BUILD_TESTING)
         endif()
         target_link_libraries(${testname}Tests PRIVATE openPMD)
         if(${testname} MATCHES "Parallel.+$")
+            # Parallel tests use CatchRunner (custom main with MPI)
             target_link_libraries(${testname}Tests PRIVATE CatchRunner)
         else()
-            target_link_libraries(${testname}Tests PRIVATE CatchMain)
+            # Serial tests use Catch2WithMain (provides default main)
+            target_link_libraries(${testname}Tests PRIVATE openPMD::thirdparty::Catch2WithMain)
         endif()
 
         if(${testname} STREQUAL JSON)

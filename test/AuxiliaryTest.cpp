@@ -37,7 +37,7 @@
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <array>
 #include <exception>
