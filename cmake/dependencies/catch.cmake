@@ -19,9 +19,16 @@ function(find_catch2)
     if(TARGET Catch2::Catch2)
         # nothing to do, target already exists in the superbuild
     elseif(openPMD_USE_INTERNAL_CATCH AND openPMD_catch_src)
+        # Ensure Catch2 is built with PIC so it can be linked into shared libraries
+        set(CMAKE_POSITION_INDEPENDENT_CODE ON)
         add_subdirectory(${openPMD_catch_src} _deps/localCatch2-build/)
     elseif(openPMD_USE_INTERNAL_CATCH AND (openPMD_catch_tar OR openPMD_catch_branch))
         include(FetchContent)
+        # Ensure Catch2 is built with PIC so it can be linked into shared libraries
+        # Set as cache variable (only if not already set) so it's picked up by Catch2's CMakeLists.txt
+        if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+            set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Position independent code")
+        endif()
         if(openPMD_catch_tar)
             FetchContent_Declare(fetchedCatch2
                 URL             ${openPMD_catch_tar}
