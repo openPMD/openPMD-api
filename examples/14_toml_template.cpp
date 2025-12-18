@@ -72,7 +72,7 @@ void write()
      */
     E["z"].resetDataset({});
 
-    ds.extent = {10};
+    ds.extent = std::vector<openPMD::Extent::value_type>{10};
 
     auto electrons = iteration.particles["e"];
     electrons["position"]["x"].resetDataset(ds);

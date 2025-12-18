@@ -344,7 +344,7 @@ private:
      */
     struct BeginStepStatus
     {
-        using AvailableIterations_t = std::vector<uint64_t>;
+        using AvailableIterations_t = std::vector<IterationIndex_t>;
 
         AdvanceStatus stepStatus{};
         /*

@@ -863,7 +863,8 @@ auto Iteration::beginStep(
     else if (thisObject.has_value())
     {
         IterationIndex_t idx = series.indexOf(*thisObject)->first;
-        res.iterationsInOpenedStep = {idx};
+        res.iterationsInOpenedStep =
+            std::vector<Iteration::IterationIndex_t>{idx};
     }
     else
     {

@@ -289,7 +289,8 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
             {
             case AdvanceStatus::OK:
                 ++during.step_count;
-                during.available_iterations_in_step = {key};
+                during.available_iterations_in_step =
+                    std::vector<Iteration::IterationIndex_t>{key};
                 break;
             case AdvanceStatus::RANDOMACCESS:
                 during.available_iterations_in_step.emplace_back(key);

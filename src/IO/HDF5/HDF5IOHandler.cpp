@@ -1582,7 +1582,7 @@ void HDF5IOHandlerImpl::openDataset(
     {
         // Is a scalar. Since the openPMD-api frontend supports no scalar
         // datasets, return the extent as {1}
-        *parameters.extent = {1};
+        *parameters.extent = std::vector<Extent::value_type>{1};
     }
     else
     {
