@@ -289,6 +289,24 @@ void doConfig(int argc, char *argv[], int currRank)
                     << "[Error]: Missing value for -d option. Using default."
                     << std::endl;
         }
+        else if (arg == "-t")
+        {
+            if (i + 1 < argc)
+            {
+                int value = std::atoi(argv[++i]);
+                if (value >= 0)
+                    m_workerTotal = value;
+                else if (0 == currRank)
+                    std::cerr << "Error: -t value must be a positive integer. "
+                                 "Using default."
+                              << std::endl;
+                ;
+            }
+            else if (0 == currRank)
+                std::cerr
+                    << "[Error]: Missing value for -t option. Using default."
+                    << std::endl;
+        }
         else
         {
             if (0 == currRank)
@@ -306,6 +324,8 @@ void doConfig(int argc, char *argv[], int currRank)
                   << " \n\t[-d diskFlushAfterNumbuffer: default(4) 0 means "
                      "flush after every storechunk)] = "
                   << m_diskFlushFrequency
+                  << " \n\t[-t totalWorkerRanks: default(4)] = "
+                  << m_workerTotal
                   << " \n\t[-f adiosFlattenSteps: default=no] = "
                   << m_adiosFlattenSteps << std::endl;
     }
