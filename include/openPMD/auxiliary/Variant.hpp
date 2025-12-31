@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller, Axel Huebl
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -23,7 +23,6 @@
 #include <any>
 #include <cstddef>
 #include <type_traits>
-#include <variant> // IWYU pragma: export
 
 namespace openPMD
 {

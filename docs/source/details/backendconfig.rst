@@ -94,6 +94,39 @@ Using the Streaming API (i.e. ``SeriesInterface::readIteration()``) will do this
 Parsing eagerly might be very expensive for a Series with many iterations, but will avoid bugs by forgotten calls to ``Iteration::open()``.
 In complex environments, calling ``Iteration::open()`` on an already open environment does no harm (and does not incur additional runtime cost for additional ``open()`` calls).
 
+By default, the library will print a warning to suggest using deferred Iteration parsing when opening a Series takes long.
+The timeout can be tuned by the JSON/TOML key ``hint_lazy_parsing_timeout`` (integer, seconds):
+if set to a positive value, the library will print periodic warnings to stderr when eager parsing of Iterations takes longer than the specified number of seconds (default: ``20``). Setting this option to ``0`` disables the warnings.
+
+Environment variables may alternatively be used for options concerning deferred iteration parsing:
+
+* Environment variable ``OPENPMD_DEFER_ITERATION_PARSING``: if set to a truthy value (e.g. ``1``), the Series will be opened with deferred iteration parsing as if ``{"defer_iteration_parsing": true}`` had been supplied.
+* Environment variable ``OPENPMD_HINT_LAZY_PARSING_TIMEOUT``: accepts integral values equivalent to the ``hint_lazy_parsing_timeout`` key.
+
+Examples:
+
+.. code-block:: bash
+
+  # enable lazy parsing via env var
+  export OPENPMD_DEFER_ITERATION_PARSING=1
+
+  # disable the parsing hint/warning
+  export OPENPMD_HINT_LAZY_PARSING_TIMEOUT=0
+
+Or in a Series constructor JSON/TOML configuration:
+
+.. code-block:: json
+
+  {
+    "defer_iteration_parsing": true,
+    "hint_lazy_parsing_timeout": 20
+  }
+
+As of openPMD-api 0.17.0, the parser verifies that all records within a mesh or within a particle species have consistent shapes / extents.
+This is used for filling in the shape for constant components that do not define it.
+In order to skip this check in the error case, the key ``{"verify_homogeneous_extents": false}`` may be set (alternatively ``export OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS=0`` will do the same).
+This will help read datasets with inconsistent metadata definitions.
+
 The key ``resizable`` can be passed to ``Dataset`` options.
 It if set to ``{"resizable": true}``, this declares that it shall be allowed to increased the ``Extent`` of a ``Dataset`` via ``resetDataset()`` at a later time, i.e., after it has been first declared (and potentially written).
 For HDF5, resizable Datasets come with a performance penalty.

@@ -44,8 +44,8 @@ jobs:
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
-  appleclang14_py:
-    runs-on: macos-13
+  appleclang15_py:
+    runs-on: macos-14
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v4
@@ -53,7 +53,9 @@ jobs:
       env: {MACOSX_DEPLOYMENT_TARGET: 11.0}
       run: |
         set +e
-        python3 -m pip install -U numpy pandas
+        python -m venv env
+        source env/bin/activate
+        python -m pip install numpy pandas
         set -e
     - name: Build
       env: {CXXFLAGS: -Werror, MACOSX_DEPLOYMENT_TARGET: 11.0}
@@ -63,6 +65,7 @@ jobs:
       # 11.0+ for arm64/aarch64 (M1/M2) builds
       run: |
         share/openPMD/download_samples.sh build
+        source env/bin/activate
         cmake -S . -B build \
           -DopenPMD_USE_PYTHON=ON  \
           -DopenPMD_USE_MPI=OFF    \

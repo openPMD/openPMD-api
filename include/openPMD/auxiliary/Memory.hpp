@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -22,15 +22,13 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
-#include <complex>
+#include <any>
 #include <functional>
-#include <iostream>
 #include <memory>
-#include <type_traits>
 #include <utility>
-#include <variant>
 
 namespace openPMD
 {
@@ -48,30 +46,58 @@ namespace auxiliary
      */
     struct WriteBuffer
     {
-        using EligibleTypes = std::
-            variant<std::shared_ptr<void const>, UniquePtrWithLambda<void>>;
-        EligibleTypes m_buffer;
+        /*
+         * Sic. Have to put the unique_ptr behind a shared_ptr because
+         * std::variant does not want non-copyable types.
+         * Use a separate class to avoid mistakes in double dereference.
+         */
+        struct CopyableUniquePtr
+            : private std::shared_ptr<UniquePtrWithLambda<void>>
+        {
+        private:
+            using parent_t = std::shared_ptr<UniquePtrWithLambda<void>>;
+
+        public:
+            CopyableUniquePtr();
+            CopyableUniquePtr(UniquePtrWithLambda<void> ptr_in);
+            auto get() -> void *;
+            [[nodiscard]] auto get() const -> void const *;
+            [[nodiscard]] auto release() -> UniquePtrWithLambda<void>;
+        };
+        using SharedPtr = std::shared_ptr<void const>;
+        /*
+         * Use std::any publically since some compilers have trouble with
+         * certain uses of std::variant, so hide it from them.
+         * Look into Memory_internal.hpp for the variant type.
+         * https://github.com/openPMD/openPMD-api/issues/1720
+         */
+        std::any m_buffer;
 
         WriteBuffer();
+        WriteBuffer(std::shared_ptr<void const> ptr);
+        WriteBuffer(UniquePtrWithLambda<void> ptr);
 
-        template <typename... Args>
-        explicit WriteBuffer(Args &&...args)
-            : m_buffer(std::forward<Args>(args)...)
-        {}
-
-        WriteBuffer(WriteBuffer &&) noexcept(
-            noexcept(EligibleTypes(std::declval<EligibleTypes &&>())));
+        WriteBuffer(WriteBuffer &&) noexcept;
         WriteBuffer(WriteBuffer const &) = delete;
-        WriteBuffer &operator=(WriteBuffer &&) noexcept(noexcept(
-            std::declval<EligibleTypes &>() =
-                std::declval<EligibleTypes &&>()));
+        WriteBuffer &operator=(WriteBuffer &&) noexcept;
         WriteBuffer &operator=(WriteBuffer const &) = delete;
 
         WriteBuffer const &operator=(std::shared_ptr<void const> ptr);
-
-        WriteBuffer const &operator=(UniquePtrWithLambda<void const> ptr);
+        WriteBuffer const &operator=(UniquePtrWithLambda<void> ptr);
 
         void const *get() const;
+
+        template <typename variant_t>
+        auto as_variant() -> variant_t &
+        {
+            return *std::any_cast<variant_t>(&m_buffer);
+        }
+
+        template <typename variant_t>
+        auto as_variant() const -> variant_t const &
+        {
+            return *std::any_cast<variant_t>(&m_buffer);
+        }
     };
 } // namespace auxiliary
 } // namespace openPMD

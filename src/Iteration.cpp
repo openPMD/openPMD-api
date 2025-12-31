@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Junmin Gu
  *
  * This file is part of openPMD-api.
  *
@@ -24,6 +24,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
@@ -675,6 +676,9 @@ void Iteration::readMeshes(std::string const &meshesPath)
         IOHandler()->enqueue(IOTask(&m, aList));
         IOHandler()->flush(internal::defaultFlushParams);
 
+        // Find constant scalar meshes. shape generally required for meshes,
+        // shape also required for scalars.
+        // https://github.com/openPMD/openPMD-standard/pull/289
         auto att_begin = aList.attributes->begin();
         auto att_end = aList.attributes->end();
         auto value = std::find(att_begin, att_end, "value");
@@ -859,7 +863,8 @@ auto Iteration::beginStep(
     else if (thisObject.has_value())
     {
         IterationIndex_t idx = series.indexOf(*thisObject)->first;
-        res.iterationsInOpenedStep = {idx};
+        res.iterationsInOpenedStep =
+            std::vector<Iteration::IterationIndex_t>{idx};
     }
     else
     {
@@ -881,7 +886,9 @@ auto Iteration::beginStep(
         }
     }
 
-    res.stepStatus = status;
+    res.stepStatus = series.iterationEncoding() == IterationEncoding::fileBased
+        ? AdvanceStatus::RANDOMACCESS
+        : status;
     return res;
 }
 

@@ -1,3 +1,23 @@
+/* Copyright 2025 Franz Poeschel
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Access.hpp"
@@ -6,6 +26,7 @@
 #include "openPMD/snapshots/IteratorHelpers.hpp"
 #include "openPMD/snapshots/RandomAccessIterator.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
+#include <cassert>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -14,7 +35,22 @@ namespace openPMD
 {
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
     std::variant<std::function<StatefulIterator *()>, StatefulIterator *> begin)
-    : members{std::move(begin)}
+    : members{
+          // Need to put the deferred function behind a shared_ptr to avoid a
+          // gcc14 compiler bug
+          // warning: '*(std::_Function_base*)((char*)this +
+          // 8).std::_Function_base::_M_manager' may be used uninitialized
+          std::visit(
+              auxiliary::overloaded{
+                  [](std::function<StatefulIterator *()> &&f)
+                      -> Members::BufferedIterator_t {
+                      return std::make_shared<
+                          Members::Deferred_t::element_type>(std::move(f));
+                  },
+                  [](StatefulIterator *it) -> Members::BufferedIterator_t {
+                      return it;
+                  }},
+              std::move(begin))}
 {}
 
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
@@ -33,21 +69,19 @@ auto StatefulSnapshotsContainer::get() -> StatefulIterator *
 {
     return std::visit(
         auxiliary::overloaded{
-            [this](
-                std::function<StatefulIterator *()> &deferred_initialization) {
-                auto it = deferred_initialization();
+            [this](Members::Deferred_t &deferred_initialization) {
+                auto it = (*deferred_initialization)();
                 this->members.m_bufferedIterator = it;
                 return it;
             },
-            [](StatefulIterator *it) { return it; }},
+            [](Members::Evaluated_t it) { return it; }},
         members.m_bufferedIterator);
 }
 auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
     return std::visit(
         auxiliary::overloaded{
-            [](std::function<StatefulIterator *()> const &)
-                -> StatefulIterator const * {
+            [](Members::Deferred_t const &) -> StatefulIterator const * {
                 throw std::runtime_error(
                     "[StatefulSnapshotscontainer] Initialization has been "
                     "deferred, but container is accessed as const, so cannot "
@@ -209,79 +243,83 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     {
         throw std::runtime_error("Stateful iteration on a read-write Series.");
     }
-    if (access::write(access))
+    else if (
+        access::read(access) ||
+        s.series.iterations.find(key) != s.series.iterations.end())
     {
-        auto lastIteration = base_iterator->peekCurrentlyOpenIteration();
-        if (lastIteration.has_value())
-        {
-            auto lastIteration_v = lastIteration.value();
-            if (lastIteration_v->first == key)
-            {
-                return s.series.iterations.at(key);
-            }
-            else
-            {
-                lastIteration_v->second.close(); // continue below
-            }
-        }
-        if (auto it = s.series.iterations.find(key);
-            it == s.series.iterations.end())
-        {
-            s.currentStep.map_during_t(
-                [&](detail::CurrentStep::During_t &during) {
-                    ++during.step_count;
-                    base_iterator->get().seen_iterations[key] =
-                        during.step_count;
-                    during.iteration_idx = key;
-                    during.available_iterations_in_step = {key};
-                },
-                [&](detail::CurrentStep::AtTheEdge where_am_i)
-                    -> detail::CurrentStep::During_t {
-                    base_iterator->get().seen_iterations[key] = 0;
-                    switch (where_am_i)
-                    {
-                    case detail::CurrentStep::AtTheEdge::Begin:
-                        return detail::CurrentStep::During_t{0, key, {key}};
-                    case detail::CurrentStep::AtTheEdge::End:
-                        throw error::Internal(
-                            "Trying to create a new output step, but the "
-                            "stream is "
-                            "closed?");
-                    }
-                    throw std::runtime_error("Unreachable!");
-                });
-        }
-        auto &res = s.series.iterations[key];
-        if (res.getStepStatus() != StepStatus::DuringStep)
-        {
-            try
-            {
-                res.beginStep(/* reread = */ false);
-            }
-            catch (error::OperationUnsupportedInBackend const &)
-            {
-                s.series.iterations.retrieveSeries()
-                    .get()
-                    .m_currentlyActiveIterations.clear();
-                throw;
-            }
-            res.setStepStatus(StepStatus::DuringStep);
-        }
-        return res;
+        return at(key);
     }
-    else if (access::read(access))
+
+    assert(access::write(access));
+
+    auto lastIteration = base_iterator->peekCurrentlyOpenIteration();
+    if (lastIteration.has_value())
     {
-        auto &result = base_iterator->seek(
-            {StatefulIterator::Seek::Seek_Iteration_t{key}});
-        if (result.is_end())
+        auto lastIteration_v = lastIteration.value();
+        if (lastIteration_v->first == key)
         {
-            throw std::out_of_range(
-                "[StatefulSnapshotsContainer::operator[]()] Cannot (yet) skip "
-                "to a Snapshot from an I/O step that is not active.");
+            return s.series.iterations.at(key);
         }
-        return result->second;
+        else
+        {
+            lastIteration_v->second.close(); // continue below
+        }
     }
-    throw error::Internal("Control flow error: This should be unreachable.");
+
+    // create new
+    auto &res = s.series.iterations[key];
+    Iteration::BeginStepStatus status = [&]() {
+        try
+        {
+            return res.beginStep(/* reread = */ false);
+        }
+        catch (error::OperationUnsupportedInBackend const &)
+        {
+            s.series.iterations.retrieveSeries()
+                .get()
+                .m_currentlyActiveIterations.clear();
+            throw;
+        }
+    }();
+    res.setStepStatus(StepStatus::DuringStep);
+
+    s.currentStep.map_during_t(
+        [&](detail::CurrentStep::During_t &during) {
+            switch (status.stepStatus)
+            {
+            case AdvanceStatus::OK:
+                ++during.step_count;
+                during.available_iterations_in_step =
+                    std::vector<Iteration::IterationIndex_t>{key};
+                break;
+            case AdvanceStatus::RANDOMACCESS:
+                during.available_iterations_in_step.emplace_back(key);
+                break;
+            case AdvanceStatus::OVER:
+                throw error::Internal(
+                    "Backend reported OVER status while trying to create "
+                    "new Iteration.");
+            }
+            base_iterator->get().seen_iterations[key] = during.step_count;
+            during.iteration_idx = key;
+        },
+        [&](detail::CurrentStep::AtTheEdge where_am_i)
+            -> detail::CurrentStep::During_t {
+            base_iterator->get().seen_iterations[key] = 0;
+            switch (where_am_i)
+            {
+            case detail::CurrentStep::AtTheEdge::Begin:
+                return detail::CurrentStep::During_t{0, key, {key}};
+            case detail::CurrentStep::AtTheEdge::End:
+                throw error::Internal(
+                    "Trying to create a new output step, but the "
+                    "stream is "
+                    "closed?");
+            }
+            throw std::runtime_error("Unreachable!");
+        });
+
+    return res;
 }
 
 auto StatefulSnapshotsContainer::clear() -> void
@@ -352,14 +390,14 @@ RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
 auto RandomAccessIteratorContainer::currentIteration() const
     -> std::optional<value_type const *>
 {
-    if (auto begin = m_cont.begin(); begin != m_cont.end())
+    for (auto begin = m_cont.rbegin(); begin != m_cont.rend(); ++begin)
     {
-        return std::make_optional<value_type const *>(&*begin);
+        if (!begin->second.closed())
+        {
+            return std::make_optional<value_type const *>(&*begin);
+        }
     }
-    else
-    {
-        return std::nullopt;
-    }
+    return std::nullopt;
 }
 
 auto RandomAccessIteratorContainer::begin() -> iterator

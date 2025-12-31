@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Junmin Gu
  *
  * This file is part of openPMD-api.
  *
@@ -22,6 +22,7 @@
 
 #include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Export.hpp"

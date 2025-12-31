@@ -50,6 +50,17 @@ One can also combine all iterations in a single dataframe like this:
    # like before but with a new column "iteration" and all particles
    print(df)
 
+Additionally, one can add additional openPMD particle species attributes, e.g.,
+from the `ED-PIC <https://github.com/openPMD/openPMD-standard/blob/1.1.0/EXT_ED-PIC.md#particle-records-macroparticles>`__ extension
+or `custom code properties <https://impactx.readthedocs.io/en/25.11/dataanalysis/dataanalysis.html#additional-beam-attributes>`__
+as extra dataframe columns:
+
+.. code-block:: python
+
+   df = s.to_df("electrons", attributes=["s_ref"])
+
+   # like before but with a new column "s_ref"
+   print(df)
 
 .. _analysis-pandas-ascii:
 

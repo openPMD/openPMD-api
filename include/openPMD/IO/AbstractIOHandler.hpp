@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller, Axel Huebl
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -314,6 +314,7 @@ public:
     internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
     IterationEncoding m_encoding = IterationEncoding::groupBased;
     OpenpmdStandard m_standard = auxiliary::parseStandard(getStandardDefault());
+    bool m_verify_homogeneous_extents = true;
 }; // AbstractIOHandler
 
 } // namespace openPMD

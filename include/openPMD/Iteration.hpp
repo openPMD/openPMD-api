@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Luca Fedeli
  *
  * This file is part of openPMD-api.
  *
@@ -344,7 +344,7 @@ private:
      */
     struct BeginStepStatus
     {
-        using AvailableIterations_t = std::vector<uint64_t>;
+        using AvailableIterations_t = std::vector<IterationIndex_t>;
 
         AdvanceStatus stepStatus{};
         /*

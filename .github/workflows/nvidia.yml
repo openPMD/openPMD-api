@@ -31,8 +31,8 @@ jobs:
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
-  tests-nvhpc25-1-nvcc:
-    name: NVHPC@25.1
+  tests-nvhpc25-9-nvcc:
+    name: NVHPC@25.9
     runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     # Catch warnings:
@@ -41,11 +41,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Dependencies
-      run: .github/workflows/dependencies/install_nvhpc25-1.sh
+      run: .github/workflows/dependencies/install_nvhpc25-9.sh
     - name: Build & Install
       run: |
         source /etc/profile.d/modules.sh
-        module load /opt/nvidia/hpc_sdk/modulefiles/nvhpc/25.1
+        module load /opt/nvidia/hpc_sdk/modulefiles/nvhpc/25.9
 
         which nvcc || echo "nvcc not in PATH!"
         which nvc++ || echo "nvc++ not in PATH!"

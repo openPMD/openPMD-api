@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -45,7 +45,7 @@ void PatchRecord::flush_impl(
     {
         return;
     }
-    if (!this->datasetDefined())
+    if (!this->scalar())
     {
         if (IOHandler()->m_frontendAccess != Access::READ_ONLY)
             Container<PatchRecordComponent>::flush(

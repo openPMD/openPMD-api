@@ -1,4 +1,4 @@
-/* Copyright 2025 Franz Poeschel
+/* Copyright 2025-2025 Franz Poeschel, Ben Wibking
  *
  * This file is part of openPMD-api.
  *

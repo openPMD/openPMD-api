@@ -1,3 +1,23 @@
+/* Copyright 2025 Franz Poeschel
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "ParallelIOTests.hpp"
 
 #include "openPMD/IO/ADIOS/macros.hpp"
@@ -6,6 +26,7 @@
 #include <numeric>
 
 #include <catch2/catch.hpp>
+#include <optional>
 
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 #include <adios2.h>
@@ -120,8 +141,6 @@ static void create_file_in_serial(bool use_group_table)
                     "__openPMD_groups/data", step, "", "/", true);
                 IO.DefineAttribute<size_t>(
                     "__openPMD_groups/data/meshes", step, "", "/", true);
-                IO.DefineAttribute<size_t>(
-                    "__openPMD_groups/data/meshes/theta", step, "", "/", true);
             }
 
             std::vector<int> data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -129,15 +148,6 @@ static void create_file_in_serial(bool use_group_table)
             if (step % 2 == 1)
             {
                 engine.Put(variable2, data.data());
-                if (use_group_table)
-                {
-                    IO.DefineAttribute<size_t>(
-                        "__openPMD_groups/data/meshes/e_chargeDensity",
-                        step,
-                        "",
-                        "/",
-                        true);
-                }
             }
 
             engine.EndStep();
@@ -147,13 +157,16 @@ static void create_file_in_serial(bool use_group_table)
     }
 }
 
-auto read_file_in_parallel(bool use_group_table) -> void
+auto read_file_in_parallel(
+    std::optional<std::string> const &dont_verify_homogeneous_extents) -> void
 {
     openPMD::Series read(
         "../samples/read_variablebased_randomaccess.bp",
         openPMD::Access::READ_ONLY,
         MPI_COMM_WORLD,
-        "adios2.engine.type = \"bp5\"");
+        json::merge(
+            "adios2.engine.type = \"bp5\"",
+            dont_verify_homogeneous_extents.value_or("{}")));
     for (auto &[index, iteration] : read.snapshots())
     {
         auto data = iteration.meshes["theta"].loadChunk<int>({0}, {10});
@@ -163,42 +176,56 @@ auto read_file_in_parallel(bool use_group_table) -> void
             REQUIRE(data.get()[i] == int(i));
         }
         // clang-format off
-            /*
-             * Step 0:
-             *   uint64_t  /data/snapshot  attr   = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-             * Step 1:
-             *   int32_t   /data/meshes/e_chargeDensity  {10}
-             *   uint64_t  /data/snapshot  attr   = {10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
-             * Step 2:
-             *   uint64_t  /data/snapshot  attr   = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29}
-             * Step 3:
-             *   int32_t   /data/meshes/e_chargeDensity  {10}
-             *   uint64_t  /data/snapshot  attr   = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39}
-             * Step 4:
-             *   uint64_t  /data/snapshot  attr   = {40, 41, 42, 43, 44, 45, 46, 47, 48, 49}
-             */
+        /*
+         * Step 0:
+         *   uint64_t  /data/snapshot  attr   = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+         * Step 1:
+         *   int32_t   /data/meshes/e_chargeDensity  {10}
+         *   uint64_t  /data/snapshot  attr   = {10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
+         * Step 2:
+         *   uint64_t  /data/snapshot  attr   = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29}
+         * Step 3:
+         *   int32_t   /data/meshes/e_chargeDensity  {10}
+         *   uint64_t  /data/snapshot  attr   = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39}
+         * Step 4:
+         *   uint64_t  /data/snapshot  attr   = {40, 41, 42, 43, 44, 45, 46, 47, 48, 49}
+         */
         // clang-format on
         size_t adios_step = index / 10; // 10 iterations per step
         bool step_has_charge_density = adios_step % 2 == 1;
-        if (use_group_table)
+        // Without a group table, the groups need to be recovered from
+        // attributes and variables found in the ADIOS2 file. But since the
+        // e_chargeDensity mesh exists only in a subselection of steps, its
+        // attributes will leak into the other steps, making the API see just an
+        // empty mesh. The behavior now depends on how strictly we are parsing:
+        //
+        // 1. If verify_homogeneous_extent == true (default): The reader will
+        //    notice that no extent is defined anywhere, the mesh will be erased
+        //    with a warning.
+        // 2. If verify_homogeneous_extent == false: An empty mesh will be
+        // returned.
+        if (!dont_verify_homogeneous_extents.has_value())
         {
             REQUIRE(
                 iteration.meshes.contains("e_chargeDensity") ==
                 step_has_charge_density);
+            if (step_has_charge_density)
+            {
+                REQUIRE(iteration.meshes["e_chargeDensity"].scalar());
+            }
         }
         else
         {
-            // Without a group table, the groups need to be recovered from
-            // attributes and variables found in the ADIOS2 file. But since the
-            // e_chargeDensity mesh exists only in a subselection of steps, its
-            // attributes will leak into the other steps, making the API think
-            // that there is data where there is none.
             REQUIRE(iteration.meshes.contains("e_chargeDensity"));
             // Only when the variable is also found, the reading routines will
             // correctly determine that this is a scalar mesh.
             REQUIRE(
                 iteration.meshes["e_chargeDensity"].scalar() ==
                 step_has_charge_density);
+            if (!step_has_charge_density)
+            {
+                REQUIRE(iteration.meshes["e_chargeDensity"].size() == 0);
+            }
         }
         if (step_has_charge_density)
         {
@@ -222,13 +249,14 @@ auto read_variablebased_randomaccess() -> void
         create_file_in_serial(true);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    read_file_in_parallel(true);
+    // read_file_in_parallel(std::nullopt);
     if (rank == 0)
     {
         create_file_in_serial(false);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    read_file_in_parallel(false);
+    read_file_in_parallel(std::nullopt);
+    read_file_in_parallel(R"({"verify_homogeneous_extents": false})");
 }
 } // namespace read_variablebased_randomaccess
 #else

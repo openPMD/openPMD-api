@@ -1,4 +1,4 @@
-/* Copyright 2018-2021 Axel Huebl
+/* Copyright 2018-2025 Axel Huebl, Franz Poeschel, Richard Pausch
  *
  * This file is part of openPMD-api.
  *
@@ -442,6 +442,7 @@ this method.
         .def_property("base_path", &Series::basePath, &Series::setBasePath)
         .def_property(
             "meshes_path", &Series::meshesPath, &Series::setMeshesPath)
+        .def_property_readonly("has_rank_table_read", &Series::hasRankTableRead)
         .def("get_rank_table", &Series::rankTable, py::arg("collective"))
         .def("set_rank_table", &Series::setRankTable, py::arg("my_rank_info"))
         .def_property(

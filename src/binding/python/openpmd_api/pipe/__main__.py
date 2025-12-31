@@ -401,7 +401,10 @@ class pipe:
                             print("\t {0}".format(r))
                 # With linear read mode, we can only load the source rank table
                 # inside `read_iterations()` since it's a dataset.
-                self.inranks = src.get_rank_table(collective=True)
+                if src.has_rank_table_read:
+                    self.inranks = src.get_rank_table(collective=True)
+                else:
+                    self.inranks = {}
                 out_iteration = write_iterations[in_iteration.iteration_index]
                 sys.stdout.flush()
                 self.__copy(

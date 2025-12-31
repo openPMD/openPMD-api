@@ -1,4 +1,5 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2025 Fabian Koller, Axel Huebl, Franz Poeschel, Junmin Gu,
+ *                     Jean Luca Bez, Luca Fedeli, Ulrik Guenther
  *
  * This file is part of openPMD-api.
  *
@@ -834,6 +835,11 @@ void HDF5IOHandlerImpl::createDataset(
         error::throwOperationUnsupportedInBackend(
             "HDF5", "Joined Arrays currently only supported in ADIOS2");
     }
+    else if (Dataset::undefinedExtent(parameters.extent))
+    {
+        throw error::OperationUnsupportedInBackend(
+            "HDF5", "No support for Datasets with undefined extent.");
+    }
 
     if (!writable->written)
     {
@@ -1113,6 +1119,11 @@ void HDF5IOHandlerImpl::extendDataset(
     {
         error::throwOperationUnsupportedInBackend(
             "HDF5", "Joined Arrays currently only supported in ADIOS2");
+    }
+    else if (Dataset::undefinedExtent(parameters.extent))
+    {
+        throw error::OperationUnsupportedInBackend(
+            "HDF5", "No support for Datasets with undefined extent.");
     }
 
     File file =
@@ -1571,7 +1582,7 @@ void HDF5IOHandlerImpl::openDataset(
     {
         // Is a scalar. Since the openPMD-api frontend supports no scalar
         // datasets, return the extent as {1}
-        *parameters.extent = {1};
+        *parameters.extent = std::vector<Extent::value_type>{1};
     }
     else
     {
@@ -3373,20 +3384,23 @@ std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
     if (params.backendConfig.json().contains("hdf5"))
     {
         auto hdf5_config = params.backendConfig["hdf5"];
+        auto init_json_shadow = nlohmann::json::parse(flush_cfg_mask);
+        json::merge_internal(
+            hdf5_config.getShadow(), init_json_shadow, /* do_prune = */ false);
 
         if (auto shadow = hdf5_config.invertShadow(); shadow.size() > 0)
         {
             switch (hdf5_config.originallySpecifiedAs)
             {
             case json::SupportedLanguages::JSON:
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
+                std::cerr << "Warning: parts of the backend flush "
+                             "configuration for HDF5 remain unused:\n"
                           << shadow << std::endl;
                 break;
             case json::SupportedLanguages::TOML: {
                 auto asToml = json::jsonToToml(shadow);
-                std::cerr << "Warning: parts of the backend configuration for "
-                             "HDF5 remain unused:\n"
+                std::cerr << "Warning: parts of the backend flush "
+                             "configuration for HDF5 remain unused:\n"
                           << json::format_toml(asToml) << std::endl;
                 break;
             }

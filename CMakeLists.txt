@@ -329,8 +329,9 @@ if(openPMD_HAVE_HDF5)
 endif()
 # we imply support for parallel I/O if MPI variant is ON
 if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
-    AND NOT HDF5_IS_PARALLEL      # FindHDF5.cmake
-    AND NOT HDF5_ENABLE_PARALLEL  # hdf5-config.cmake
+    AND NOT (HDF5_IS_PARALLEL      # FindHDF5.cmake
+             OR HDF5_ENABLE_PARALLEL # hdf5-config.cmake < 2.0.0
+             OR HDF5_PROVIDES_PARALLEL) # hdf5-config.cmake >= 2.0.0
 )
     string(CONCAT openPMD_HDF5_STATUS
             "Found MPI but only serial version of HDF5. Either set "
@@ -338,9 +339,11 @@ if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
             "to disable HDF5 or provide a parallel install of HDF5.\n")
 endif()
 # HDF5 includes mpi.h in the public header H5public.h if parallel
-if(openPMD_HAVE_HDF5 AND
-   (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL)
-   AND NOT openPMD_HAVE_MPI)
+if(openPMD_HAVE_HDF5 AND NOT openPMD_HAVE_MPI
+    AND (HDF5_IS_PARALLEL       # FindHDF5.cmake
+         OR HDF5_ENABLE_PARALLEL # hdf5-config.cmake < 2.0.0
+         OR HDF5_PROVIDES_PARALLEL) # hdf5-config.cmake >= 2.0.0
+   )
     string(CONCAT openPMD_HDF5_STATUS
         "Found only parallel version of HDF5 but no MPI. Either set "
         "openPMD_USE_MPI=ON to force using MPI or set openPMD_USE_HDF5=OFF "
@@ -544,10 +547,18 @@ endif()
 
 # ADIOS2 Backend
 if(openPMD_HAVE_ADIOS2)
-    if(openPMD_HAVE_MPI)
-        target_link_libraries(openPMD PUBLIC adios2::cxx11_mpi)
+    if(${ADIOS2_VERSION} VERSION_GREATER_EQUAL 2.11.0)
+        if(openPMD_HAVE_MPI)
+            target_link_libraries(openPMD PUBLIC adios2::cxx_mpi)
+        else()
+            target_link_libraries(openPMD PUBLIC adios2::cxx)
+        endif()
     else()
-        target_link_libraries(openPMD PUBLIC adios2::cxx11)
+        if(openPMD_HAVE_MPI)
+            target_link_libraries(openPMD PUBLIC adios2::cxx11_mpi)
+        else()
+            target_link_libraries(openPMD PUBLIC adios2::cxx11)
+        endif()
     endif()
 endif()
 
@@ -816,6 +827,7 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/close_and_reopen_test.cpp
                 test/Files_SerialIO/filebased_write_test.cpp
                 test/Files_SerialIO/issue_1744_unique_ptrs_at_close_time.cpp
+                test/Files_SerialIO/components_without_extent.cpp
             )
         elseif(${test_name} STREQUAL "ParallelIO" AND openPMD_HAVE_MPI)
             list(APPEND ${out_list}

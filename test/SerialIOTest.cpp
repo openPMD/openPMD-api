@@ -1,3 +1,24 @@
+/* Copyright 2025 Axel Huebl, Fabian Koller, Franz Poeschel, Junmin Gu,
+ *                Junmin Gu, Luca Fedeli
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 // expose private and protected members for invasive testing
 #include "openPMD/ChunkInfo_internal.hpp"
 #include "openPMD/Datatype.hpp"
@@ -768,6 +789,11 @@ TEST_CASE("issue_1744_unique_ptrs_at_close_time", "[serial]")
 #endif
 }
 
+TEST_CASE("components_without_extent", "[serial]")
+{
+    components_without_extent::components_without_extent();
+}
+
 #if openPMD_HAVE_ADIOS2
 TEST_CASE("close_and_reopen_test", "[serial]")
 {
@@ -806,7 +832,9 @@ inline void empty_dataset_test(std::string const &file_ending)
     }
     {
         Series series(
-            "../samples/empty_datasets." + file_ending, Access::READ_ONLY);
+            "../samples/empty_datasets." + file_ending,
+            Access::READ_ONLY,
+            R"({"verify_homogeneous_extents": false})");
 
         REQUIRE(series.iterations.contains(1));
         REQUIRE(series.iterations.count(1) == 1);
@@ -2718,7 +2746,8 @@ TEST_CASE("empty_alternate_fbpic", "[serial][hdf5]")
         {
             Series s = Series(
                 "../samples/issue-sample/empty_alternate_fbpic_%T.h5",
-                Access::READ_ONLY);
+                Access::READ_ONLY,
+                R"({"verify_homogeneous_extents": false})");
             REQUIRE(s.iterations.contains(50));
             REQUIRE(s.iterations[50].particles.contains("electrons"));
             REQUIRE(
@@ -2992,7 +3021,7 @@ TEST_CASE("git_hdf5_legacy_picongpu", "[serial][hdf5]")
         auto radiationMask =
             o.iterations[200]
                 .particles["e"]["radiationMask"][RecordComponent::SCALAR];
-        switchNonVectorType<LoadDataset>(
+        switchDatasetType<LoadDataset>(
             radiationMask.getDatatype(), radiationMask);
 
         auto particlePatches = o.iterations[200].particles["e"].particlePatches;
@@ -5853,23 +5882,24 @@ void variableBasedSeries(std::string const &file)
 
             iteration.setAttribute("changing_value", i);
 
-            // this tests changing extents and dimensionalities
-            // across iterations
-            auto E_y = iteration.meshes["E"]["y"];
-            unsigned dimensionality = i % 3 + 1;
+            // this tests changing extents across iterations
+            // ADIOS2 does not support changing the dimensionality
+            // (older versions used to somewhat support it, but not really)
+            auto B_y = iteration.meshes["B"]["y"];
+            unsigned dimensionality = 3;
             unsigned len = i + 1;
             Extent changingExtent(dimensionality, len);
-            E_y.resetDataset({openPMD::Datatype::INT, changingExtent});
+            B_y.resetDataset({openPMD::Datatype::INT, changingExtent});
             std::vector<int> changingData(
                 std::pow(len, dimensionality), dimensionality);
-            E_y.storeChunk(
+            B_y.storeChunk(
                 changingData, Offset(dimensionality, 0), changingExtent);
 
             // this tests datasets that are present in one iteration, but not
             // in others
-            auto E_z = iteration.meshes["E"][std::to_string(i)];
-            E_z.resetDataset({Datatype::INT, {1}});
-            E_z.makeConstant(i);
+            auto rho_i = iteration.meshes["rho"][std::to_string(i)];
+            rho_i.resetDataset({Datatype::INT, {1}});
+            rho_i.makeConstant(i);
             // this tests attributes that are present in one iteration, but not
             // in others
             iteration.meshes["E"].setAttribute("attr_" + std::to_string(i), i);
@@ -5983,11 +6013,11 @@ void variableBasedSeries(std::string const &file)
                 REQUIRE(chunk2.get()[i] == int(index));
             }
 
-            auto E_y = iteration.meshes["E"]["y"];
-            unsigned dimensionality = index % 3 + 1;
+            auto B_y = iteration.meshes["B"]["y"];
+            unsigned dimensionality = 3;
             unsigned len = index + 1;
             Extent changingExtent(dimensionality, len);
-            REQUIRE(E_y.getExtent() == changingExtent);
+            REQUIRE(B_y.getExtent() == changingExtent);
 
             last_iteration_index = index;
 
@@ -5998,7 +6028,7 @@ void variableBasedSeries(std::string const &file)
             {
                 // component is present <=> (otherIteration == i)
                 REQUIRE(
-                    iteration.meshes["E"].contains(
+                    iteration.meshes["rho"].contains(
                         std::to_string(otherIteration)) ==
                     (otherIteration == index));
                 REQUIRE(
@@ -6007,7 +6037,7 @@ void variableBasedSeries(std::string const &file)
                     (otherIteration <= index));
             }
             REQUIRE(
-                iteration.meshes["E"][std::to_string(index)]
+                iteration.meshes["rho"][std::to_string(index)]
                     .getAttribute("value")
                     .get<int>() == int(index));
             REQUIRE(
@@ -6733,7 +6763,11 @@ void extendDataset(std::string const &ext, std::string const &jsonConfig)
     }
 
     {
-        Series read(filename, Access::READ_ONLY, jsonConfig);
+        Series read(
+            filename,
+            Access::READ_ONLY,
+            json::merge(
+                jsonConfig, R"({"verify_homogeneous_extents": false})"));
         auto E_x = read.iterations[0].meshes["E"]["x"];
         REQUIRE(E_x.getExtent() == Extent{10, 5});
         auto chunk = E_x.loadChunk<int>({0, 0}, {10, 5});
@@ -7061,8 +7095,11 @@ void unfinished_iteration_test(
     auto tryReading = [&config, file, encoding](
                           Access access,
                           std::string const &additionalConfig = "{}") {
+        auto merged_config = json::merge(
+            json::merge(config, additionalConfig),
+            R"({"verify_homogeneous_extents": false})");
         {
-            Series read(file, access, json::merge(config, additionalConfig));
+            Series read(file, access, merged_config);
 
             std::vector<decltype(Series::iterations)::key_type> iterations;
             std::cout << "\n\n\nGoing to list iterations in " << file
@@ -7113,7 +7150,7 @@ void unfinished_iteration_test(
         if (encoding == IterationEncoding::fileBased &&
             access == Access::READ_ONLY)
         {
-            Series read(file, access, json::merge(config, additionalConfig));
+            Series read(file, access, merged_config);
             if (additionalConfig == "{}")
             {
                 // Eager parsing, defective iteration has already been removed
