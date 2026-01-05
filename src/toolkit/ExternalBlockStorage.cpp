@@ -12,8 +12,13 @@
 
 namespace openPMD::internal
 {
-ExternalBlockStorageBackend::~ExternalBlockStorageBackend() = default;
+void ExternalBlockStorageBackend::sync()
+{
+    // default for non-async backends: no-op
 }
+
+ExternalBlockStorageBackend::~ExternalBlockStorageBackend() = default;
+} // namespace openPMD::internal
 
 namespace openPMD
 {
@@ -161,7 +166,9 @@ void ExternalBlockStorage::read(
     [[maybe_unused]] nlohmann::json const &fullJsonDataset,
     [[maybe_unused]] nlohmann::json::json_pointer const &path,
     [[maybe_unused]] T *data)
-{}
+{
+    throw std::runtime_error("Unimplemented!");
+}
 
 template <typename DatatypeHandling, typename T>
 void ExternalBlockStorage::read(
@@ -209,6 +216,11 @@ void ExternalBlockStorage::read(
             auxiliary::vec_as_string(blockOffset) + " and extent " +
             auxiliary::vec_as_string(blockExtent));
     }
+}
+
+void ExternalBlockStorage::sync()
+{
+    this->m_worker->sync();
 }
 
 [[nodiscard]] auto ExternalBlockStorage::externalStorageLocation() const

@@ -690,6 +690,13 @@ std::future<void> JSONIOHandlerImpl::flush(internal::ParsedFlushParams &params)
         putJsonContents(file, false);
     }
     m_dirty.clear();
+    std::visit(
+        auxiliary::overloaded{
+            [](DatasetMode::External_t &externalStorage) {
+                externalStorage->sync();
+            },
+            [](auto &&) {}},
+        this->m_datasetMode.m_mode.as_base());
     return std::future<void>();
 }
 

@@ -119,7 +119,9 @@ AwsBuilder::operator ExternalBlockStorage()
     return ExternalBlockStorage{std::make_unique<ExternalBlockStorageAws>(
         std::move(s3_client),
         std::move(m_bucketName),
-        std::move(m_endpointOverride))};
+        std::move(m_endpointOverride),
+        // TODO: Add config option for this
+        /* async = */ true)};
 }
 
 auto AwsBuilder::build() -> ExternalBlockStorage

@@ -29,6 +29,8 @@ struct ExternalBlockStorageBackend
     [[nodiscard]] virtual auto externalStorageLocation() const
         -> nlohmann::json = 0;
 
+    virtual void sync();
+
     virtual ~ExternalBlockStorageBackend();
 };
 } // namespace openPMD::internal
@@ -104,6 +106,8 @@ public:
         nlohmann::json const &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
         T *data);
+
+    void sync();
 
     [[nodiscard]] auto externalStorageLocation() const -> nlohmann::json;
 

@@ -1,10 +1,12 @@
 #include "openPMD/toolkit/Aws.hpp"
 
+#include <aws/s3/S3Client.h>
 #include <aws/s3/model/CreateBucketRequest.h>
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
 
 #include <iostream>
+#include <mutex>
 #include <stdexcept>
 
 namespace
@@ -31,13 +33,44 @@ private:
 
 namespace openPMD::internal
 {
+void AwsAsyncHandler::wait()
+{
+    std::cerr << "Waiting for remaining tasks. Have " << completion_counter
+              << " of " << request_counter << std::endl;
+    size_t target = this->request_counter;
+    std::unique_lock lk(this->mutex);
+    this->event.wait(
+        lk, [this, target]() { return this->completion_counter >= target; });
+    std::cerr << "Finished waiting for remaining tasks" << std::endl;
+}
+
+void AwsAsyncHandler::add_task()
+{
+    this->request_counter++;
+}
+
+void AwsAsyncHandler::add_and_notify_result()
+{
+    std::unique_lock lk(this->mutex);
+    this->completion_counter++;
+    lk.unlock();
+    this->event.notify_all();
+}
+
+AwsAsyncHandler::~AwsAsyncHandler()
+{
+    this->wait();
+}
+
 ExternalBlockStorageAws::ExternalBlockStorageAws(
     Aws::S3::S3Client client,
     std::string bucketName,
-    std::optional<std::string> endpoint)
+    std::optional<std::string> endpoint,
+    bool async)
     : m_client{std::move(client)}
     , m_bucketName(std::move(bucketName))
     , m_endpoint(std::move(endpoint))
+    , m_async(async ? std::make_optional<AwsAsyncHandler>() : std::nullopt)
 {
     Aws::S3::Model::CreateBucketRequest create_request;
     create_request.SetBucket(m_bucketName);
@@ -71,16 +104,49 @@ auto ExternalBlockStorageAws::put(
     put_request.SetBody(input_data);
     put_request.SetContentLength(static_cast<long long>(len));
 
-    auto put_outcome = m_client.PutObject(put_request);
-
-    if (put_outcome.IsSuccess())
+    if (!m_async.has_value())
     {
-        std::cout << "File uploaded successfully to S3!" << std::endl;
+        auto put_outcome = m_client.PutObject(put_request);
+
+        if (put_outcome.IsSuccess())
+        {
+            std::cout << "File synchronously uploaded successfully to S3!"
+                      << std::endl;
+        }
+        else
+        {
+            std::cerr << "Synchronous upload failed: "
+                      << put_outcome.GetError().GetMessage() << std::endl;
+        }
     }
     else
     {
-        std::cerr << "Upload failed: " << put_outcome.GetError().GetMessage()
-                  << std::endl;
+        auto &async_handler = *m_async;
+        auto responseReceivedHandler =
+            [&async_handler](
+                const Aws::S3::S3Client *,
+                const Aws::S3::Model::PutObjectRequest &,
+                const Aws::S3::Model::PutObjectOutcome &put_outcome,
+                const std::shared_ptr<const Aws::Client::AsyncCallerContext>
+                    &) {
+                if (put_outcome.IsSuccess())
+                {
+                    std::cout
+                        << "File asynchronously uploaded successfully to S3!"
+                        << std::endl;
+                }
+                else
+                {
+                    std::cerr << "Asynchronous upload failed: "
+                              << put_outcome.GetError().GetMessage()
+                              << std::endl;
+                }
+                async_handler.add_and_notify_result();
+            };
+        async_handler.add_task();
+        m_client.PutObjectAsync(put_request, responseReceivedHandler);
+        // todo replace this
+        async_handler.wait();
     }
     return sanitized;
 }
@@ -115,6 +181,15 @@ void ExternalBlockStorageAws::get(
             "ExternalBlockStorageAws: failed to read expected number of bytes "
             "from S3 object");
     }
+}
+
+void ExternalBlockStorageAws::sync()
+{
+    if (!this->m_async.has_value())
+    {
+        return;
+    }
+    this->m_async->wait();
 }
 
 [[nodiscard]] auto ExternalBlockStorageAws::externalStorageLocation() const
