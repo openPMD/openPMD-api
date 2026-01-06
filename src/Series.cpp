@@ -3337,11 +3337,14 @@ namespace internal
         // we must not throw in a destructor
         try
         {
+            // The order of operations is important:
+            // close() might need to wait for a number of remaining Aws
+            // operations to finish, so the AwsAPI needs to stay open for that.
+            close();
             if (m_manageAwsAPI.has_value())
             {
                 Aws::ShutdownAPI(*m_manageAwsAPI);
             }
-            close();
         }
         catch (std::exception const &ex)
         {

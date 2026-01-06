@@ -38,13 +38,10 @@ namespace openPMD::internal
 {
 void AwsAsyncCounter::wait()
 {
-    // std::cerr << "Waiting for remaining tasks. Have " << completion_counter
-    //           << " of " << request_counter << std::endl;
     size_t target = this->request_counter;
     std::unique_lock lk(this->mutex);
     this->event.wait(
         lk, [this, target]() { return this->completion_counter >= target; });
-    // std::cerr << "Finished waiting for remaining tasks" << std::endl;
 }
 
 void AwsAsyncCounter::add_task()
@@ -62,7 +59,10 @@ void AwsAsyncCounter::add_and_notify_result()
 
 AwsAsyncCounter::~AwsAsyncCounter()
 {
+    std::cerr << "Waiting for remaining tasks. Have " << completion_counter
+              << " of " << request_counter << std::endl;
     this->wait();
+    std::cerr << "Finished waiting for remaining tasks" << std::endl;
 }
 
 ExternalBlockStorageAws::ExternalBlockStorageAws(
@@ -89,7 +89,11 @@ ExternalBlockStorageAws::ExternalBlockStorageAws(
         std::cout << "Bucket created: " << m_bucketName << std::endl;
     }
 }
-ExternalBlockStorageAws::~ExternalBlockStorageAws() = default;
+ExternalBlockStorageAws::~ExternalBlockStorageAws()
+{
+    // We need to wait for late operations before doing anything else.
+    m_async.reset();
+}
 
 auto ExternalBlockStorageAws::put(
     std::string const &identifier, auxiliary::WriteBuffer data, size_t len)
@@ -130,14 +134,17 @@ auto ExternalBlockStorageAws::put(
         auto &async_counter = *std::visit(
             auxiliary::overloaded{
                 [this](auxiliary::WriteBuffer::CopyableUniquePtr const &) {
+                    std::cout << "Using unique pointer" << std::endl;
                     return &this->m_async->unique_ptr_operations;
                 },
                 [this](auxiliary::WriteBuffer::SharedPtr const &) {
+                    std::cout << "Using shared pointer" << std::endl;
                     return &this->m_async->shared_ptr_operations;
                 }},
             data.as_variant<auxiliary::WriteBufferTypes>());
         auto responseReceivedHandler =
             [&async_counter,
+             sanitized,
              /*
               * Need to keep buffers alive until they have been asynchronously
               * read. Use the closure captures for this. Wrap the WriteBuffer
@@ -159,8 +166,8 @@ auto ExternalBlockStorageAws::put(
                 }
                 else
                 {
-                    std::cerr << "Asynchronous upload failed: "
-                              << put_outcome.GetError().GetMessage()
+                    std::cerr << "Asynchronous upload failed for '" << sanitized
+                              << "': " << put_outcome.GetError().GetMessage()
                               << std::endl;
                 }
                 async_counter.add_and_notify_result();
