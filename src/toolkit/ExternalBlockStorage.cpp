@@ -5,6 +5,7 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <memory>
 #include <nlohmann/json.hpp>
 
 #include <numeric>
@@ -38,12 +39,15 @@ namespace
     void read_impl(
         internal::ExternalBlockStorageBackend *backend,
         nlohmann::json const &external_block,
-        T *data,
+        std::shared_ptr<void> &data,
         size_t len)
     {
         auto const &external_ref =
             external_block.at("external_ref").get<std::string>();
-        backend->get(external_ref, data, sizeof(T) * len);
+        backend->get(
+            external_ref,
+            std::static_pointer_cast<void>(data),
+            sizeof(T) * len);
     }
 } // namespace
 
@@ -166,7 +170,7 @@ void ExternalBlockStorage::read(
     [[maybe_unused]] std::string const &identifier,
     [[maybe_unused]] nlohmann::json const &fullJsonDataset,
     [[maybe_unused]] nlohmann::json::json_pointer const &path,
-    [[maybe_unused]] T *data)
+    [[maybe_unused]] std::shared_ptr<void> &data)
 {
     throw std::runtime_error("Unimplemented!");
 }
@@ -177,7 +181,7 @@ void ExternalBlockStorage::read(
     Extent const &blockExtent,
     nlohmann::json const &fullJsonDataset,
     nlohmann::json::json_pointer const &path,
-    T *data)
+    std::shared_ptr<void> &data)
 {
     auto &dataset = fullJsonDataset[path];
     if (!DatatypeHandling::template checkDatatype<T>(dataset))
@@ -199,7 +203,7 @@ void ExternalBlockStorage::read(
                 continue;
             }
             found_a_precise_match = true;
-            read_impl(m_worker.get(), block, data, flat_extent(blockExtent));
+            read_impl<T>(m_worker.get(), block, data, flat_extent(blockExtent));
             break;
         }
         catch (nlohmann::json::exception const &e)
@@ -256,13 +260,13 @@ void ExternalBlockStorage::sanitizeString(std::string &s)
         std::string const &identifier,                                         \
         nlohmann::json const &fullJsonDataset,                                 \
         nlohmann::json::json_pointer const &path,                              \
-        type *data);                                                           \
+        std::shared_ptr<void> &data);                                          \
     template void ExternalBlockStorage::read<datatypehandling, type>(          \
         Offset const &blockOffset,                                             \
         Extent const &blockExtent,                                             \
         nlohmann::json const &fullJsonDataset,                                 \
         nlohmann::json::json_pointer const &path,                              \
-        type *data);
+        std::shared_ptr<void> &data);
 #define OPENPMD_INSTANTIATE(type)                                              \
     OPENPMD_INSTANTIATE_DATATYPEHANDLING(internal::JsonDatatypeHandling, type)
 OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)

@@ -101,7 +101,7 @@ auto ExternalBlockStorageStdio::put(
 }
 
 void ExternalBlockStorageStdio::get(
-    std::string const &external_ref, void *data, size_t len)
+    std::string const &external_ref, std::shared_ptr<void> data, size_t len)
 {
     if (len == 0)
     {
@@ -118,7 +118,7 @@ void ExternalBlockStorageStdio::get(
             filepath);
     }
 
-    size_t read = std::fread(data, 1, len, file);
+    size_t read = std::fread(data.get(), 1, len, file);
     if (read != len)
     {
         std::fclose(file);

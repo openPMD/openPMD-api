@@ -1606,11 +1606,10 @@ namespace
     struct RetrieveExternally
     {
         template <typename T, typename... Args>
-        static void
-        call(ExternalBlockStorage &blockStorage, void *ptr, Args &&...args)
+        static void call(ExternalBlockStorage &blockStorage, Args &&...args)
         {
             blockStorage.read<internal::JsonDatatypeHandling, T>(
-                std::forward<Args>(args)..., static_cast<T *>(ptr));
+                std::forward<Args>(args)...);
         }
 
         static constexpr char const *errorMsg = "RetrieveExternally";
@@ -1655,11 +1654,11 @@ void JSONIOHandlerImpl::readDataset(
                 switchDatasetType<RetrieveExternally>(
                     parameters.dtype,
                     *external,
-                    parameters.data.get(),
                     parameters.offset,
                     parameters.extent,
                     jsonRoot,
-                    filePosition->id);
+                    filePosition->id,
+                    parameters.data);
             }},
         localMode.as_base());
 }

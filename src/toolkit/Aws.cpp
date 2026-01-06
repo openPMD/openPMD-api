@@ -173,13 +173,14 @@ auto ExternalBlockStorageAws::put(
                 async_counter.add_and_notify_result();
             };
         async_counter.add_task();
-        m_client.PutObjectAsync(put_request, responseReceivedHandler);
+        m_client.PutObjectAsync(
+            put_request, std::move(responseReceivedHandler));
     }
     return sanitized;
 }
 
 void ExternalBlockStorageAws::get(
-    std::string const &external_ref, void *data, size_t len)
+    std::string const &external_ref, std::shared_ptr<void> data, size_t len)
 {
     if (len == 0)
     {
@@ -190,23 +191,69 @@ void ExternalBlockStorageAws::get(
     get_request.SetBucket(m_bucketName);
     get_request.SetKey(external_ref);
 
-    auto get_outcome = m_client.GetObject(get_request);
-    if (!get_outcome.IsSuccess())
-    {
-        throw std::runtime_error(
-            std::string("ExternalBlockStorageAws::get failed: ") +
-            get_outcome.GetError().GetMessage());
-    }
+    auto processGetOutcome = [len](
+                                 Aws::S3::Model::GetObjectOutcome const
+                                     &get_outcome,
+                                 void *data_lambda) {
+        auto &body = get_outcome.GetResult().GetBody();
+        body.read(
+            reinterpret_cast<char *>(data_lambda),
+            static_cast<std::streamsize>(len));
+        std::streamsize read_bytes = body.gcount();
+        if (read_bytes != static_cast<std::streamsize>(len))
+        {
+            throw std::runtime_error(
+                "ExternalBlockStorageAws: failed to read expected number of "
+                "bytes "
+                "from S3 object");
+        }
+    };
 
-    auto &body = get_outcome.GetResult().GetBody();
-    body.read(
-        reinterpret_cast<char *>(data), static_cast<std::streamsize>(len));
-    std::streamsize read_bytes = body.gcount();
-    if (read_bytes != static_cast<std::streamsize>(len))
+    if (!m_async.has_value())
     {
-        throw std::runtime_error(
-            "ExternalBlockStorageAws: failed to read expected number of bytes "
-            "from S3 object");
+        auto get_outcome = m_client.GetObject(get_request);
+        if (!get_outcome.IsSuccess())
+        {
+            throw std::runtime_error(
+                std::string("ExternalBlockStorageAws::get failed: ") +
+                get_outcome.GetError().GetMessage());
+        }
+
+        processGetOutcome(get_outcome, data.get());
+    }
+    else
+    {
+        auto &async_counter = this->m_async->shared_ptr_operations;
+        auto responseReceivedHandler =
+            [&async_counter,
+             external_ref,
+             processGetOutcome_lambda = std::move(processGetOutcome),
+             data_lambda = std::move(data)](
+                const Aws::S3::S3Client *,
+                const Aws::S3::Model::GetObjectRequest &,
+                const Aws::S3::Model::GetObjectOutcome &get_outcome,
+                const std::shared_ptr<const Aws::Client::AsyncCallerContext>
+                    &) {
+                if (get_outcome.IsSuccess())
+                {
+                    // std::cout << "File asynchronously downloaded successfully
+                    // "
+                    //              "from S3!"
+                    //           << std::endl;
+                }
+                else
+                {
+                    std::cerr << "Asynchronous download failed for '"
+                              << external_ref
+                              << "': " << get_outcome.GetError().GetMessage()
+                              << std::endl;
+                }
+                processGetOutcome_lambda(get_outcome, data_lambda.get());
+                async_counter.add_and_notify_result();
+            };
+        async_counter.add_task();
+        m_client.GetObjectAsync(
+            get_request, std::move(responseReceivedHandler));
     }
 }
 

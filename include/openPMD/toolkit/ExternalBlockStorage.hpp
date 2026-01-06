@@ -8,7 +8,6 @@
 #include <nlohmann/json.hpp>
 
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -26,7 +25,9 @@ struct ExternalBlockStorageBackend
     put(std::string const &identifier, auxiliary::WriteBuffer data, size_t len)
         -> std::string = 0;
     virtual void
-    get(std::string const &external_ref, void *data, size_t len) = 0;
+    get(std::string const &external_ref,
+        std::shared_ptr<void> data,
+        size_t len) = 0;
     [[nodiscard]] virtual auto externalStorageLocation() const
         -> nlohmann::json = 0;
 
@@ -98,7 +99,7 @@ public:
         std::string const &identifier,
         nlohmann::json const &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
-        T *data);
+        std::shared_ptr<void> &data);
 
     template <typename DatatypeHandling, typename T>
     void read(
@@ -106,7 +107,7 @@ public:
         Extent const &blockExtent,
         nlohmann::json const &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
-        T *data);
+        std::shared_ptr<void> &data);
 
     void sync();
 
