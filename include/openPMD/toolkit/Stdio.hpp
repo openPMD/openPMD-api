@@ -12,7 +12,8 @@ private:
 
 public:
     ExternalBlockStorageStdio(std::string directory, std::string openMode);
-    auto put(std::string const &identifier, void const *data, size_t len)
+    auto
+    put(std::string const &identifier, auxiliary::WriteBuffer data, size_t len)
         -> std::string override;
     void get(std::string const &external_ref, void *data, size_t len) override;
     [[nodiscard]] auto externalStorageLocation() const

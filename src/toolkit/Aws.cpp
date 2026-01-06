@@ -89,7 +89,8 @@ ExternalBlockStorageAws::ExternalBlockStorageAws(
 ExternalBlockStorageAws::~ExternalBlockStorageAws() = default;
 
 auto ExternalBlockStorageAws::put(
-    std::string const &identifier, void const *data, size_t len) -> std::string
+    std::string const &identifier, auxiliary::WriteBuffer data, size_t len)
+    -> std::string
 {
     auto sanitized = !identifier.empty() && identifier.at(0) == '/'
         ? identifier.substr(1)
@@ -100,7 +101,9 @@ auto ExternalBlockStorageAws::put(
     put_request.SetKey(sanitized);
 
     auto input_data = Aws::MakeShared<imemstream>(
-        "PutObjectInputStream", reinterpret_cast<char const *>(data), len);
+        "PutObjectInputStream",
+        reinterpret_cast<char const *>(data.get()),
+        len);
     put_request.SetBody(input_data);
     put_request.SetContentLength(static_cast<long long>(len));
 

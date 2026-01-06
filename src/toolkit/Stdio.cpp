@@ -62,7 +62,8 @@ ExternalBlockStorageStdio::ExternalBlockStorageStdio(
 ExternalBlockStorageStdio::~ExternalBlockStorageStdio() = default;
 
 auto ExternalBlockStorageStdio::put(
-    std::string const &identifier, void const *data, size_t len) -> std::string
+    std::string const &identifier, auxiliary::WriteBuffer data, size_t len)
+    -> std::string
 {
     auto sanitized = identifier + ".dat";
     ExternalBlockStorage::sanitizeString(sanitized);
@@ -81,7 +82,7 @@ auto ExternalBlockStorageStdio::put(
             filepath);
     }
 
-    size_t written = std::fwrite(data, 1, len, file);
+    size_t written = std::fwrite(data.get(), 1, len, file);
     if (written != len)
     {
         throw std::runtime_error(

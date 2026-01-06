@@ -1,6 +1,7 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/toolkit/AwsBuilder.hpp"
 #include "openPMD/toolkit/StdioBuilder.hpp"
 
@@ -22,7 +23,7 @@ namespace openPMD::internal
 struct ExternalBlockStorageBackend
 {
     virtual auto
-    put(std::string const &identifier, void const *data, size_t len)
+    put(std::string const &identifier, auxiliary::WriteBuffer data, size_t len)
         -> std::string = 0;
     virtual void
     get(std::string const &external_ref, void *data, size_t len) = 0;
@@ -90,7 +91,7 @@ public:
         nlohmann::json &fullJsonDataset,
         nlohmann::json::json_pointer const &path,
         std::optional<std::string> infix, // e.g. for distinguishing MPI ranks
-        T const *data) -> std::string;
+        auxiliary::WriteBuffer data) -> std::string;
 
     template <typename DatatypeHandling, typename T>
     void read(

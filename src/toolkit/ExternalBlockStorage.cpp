@@ -2,6 +2,7 @@
 
 #include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
 #include <nlohmann/json.hpp>
@@ -74,7 +75,7 @@ auto ExternalBlockStorage::store(
     nlohmann::json &fullJsonDataset,
     nlohmann::json::json_pointer const &path,
     std::optional<std::string> infix,
-    T const *data) -> std::string
+    auxiliary::WriteBuffer data) -> std::string
 {
     auto &dataset = fullJsonDataset[path];
 
@@ -154,7 +155,7 @@ auto ExternalBlockStorage::store(
     filesystem_identifier << "--" << index_as_str;
     auto escaped_filesystem_identifier = m_worker->put(
         filesystem_identifier.str(),
-        data,
+        std::move(data),
         sizeof(T) * flat_extent(blockExtent));
     block["external_ref"] = escaped_filesystem_identifier;
     return index_as_str;
@@ -250,7 +251,7 @@ void ExternalBlockStorage::sanitizeString(std::string &s)
         nlohmann::json &fullJsonDataset,                                       \
         nlohmann::json::json_pointer const &path,                              \
         std::optional<std::string> infix,                                      \
-        type const *data) -> std::string;                                      \
+        auxiliary::WriteBuffer) -> std::string;                                \
     template void ExternalBlockStorage::read<datatypehandling, type>(          \
         std::string const &identifier,                                         \
         nlohmann::json const &fullJsonDataset,                                 \

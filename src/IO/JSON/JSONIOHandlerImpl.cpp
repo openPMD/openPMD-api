@@ -1468,11 +1468,10 @@ namespace
     struct StoreExternally
     {
         template <typename T, typename... Args>
-        static void call(
-            ExternalBlockStorage &blockStorage, void const *ptr, Args &&...args)
+        static void call(ExternalBlockStorage &blockStorage, Args &&...args)
         {
             blockStorage.store<internal::JsonDatatypeHandling, T>(
-                std::forward<Args>(args)..., static_cast<T const *>(ptr));
+                std::forward<Args>(args)...);
         }
 
         static constexpr char const *errorMsg = "StoreExternally";
@@ -1526,13 +1525,13 @@ void JSONIOHandlerImpl::writeDataset(
                 switchDatasetType<StoreExternally>(
                     parameters.dtype,
                     *external,
-                    parameters.data.get(),
                     j.at("extent").get<Extent>(),
                     parameters.offset,
                     parameters.extent,
                     jsonRoot,
                     filePosition->id,
-                    std::move(rankInfix));
+                    std::move(rankInfix),
+                    std::move(parameters.data));
             }},
         verifyDataset(parameters, j).as_base());
 
