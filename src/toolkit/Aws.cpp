@@ -38,13 +38,13 @@ namespace openPMD::internal
 {
 void AwsAsyncCounter::wait()
 {
-    std::cerr << "Waiting for remaining tasks. Have " << completion_counter
-              << " of " << request_counter << std::endl;
+    // std::cerr << "Waiting for remaining tasks. Have " << completion_counter
+    //           << " of " << request_counter << std::endl;
     size_t target = this->request_counter;
     std::unique_lock lk(this->mutex);
     this->event.wait(
         lk, [this, target]() { return this->completion_counter >= target; });
-    std::cerr << "Finished waiting for remaining tasks" << std::endl;
+    // std::cerr << "Finished waiting for remaining tasks" << std::endl;
 }
 
 void AwsAsyncCounter::add_task()
@@ -116,8 +116,8 @@ auto ExternalBlockStorageAws::put(
 
         if (put_outcome.IsSuccess())
         {
-            std::cout << "File synchronously uploaded successfully to S3!"
-                      << std::endl;
+            // std::cout << "File synchronously uploaded successfully to S3!"
+            //           << std::endl;
         }
         else
         {
@@ -153,9 +153,9 @@ auto ExternalBlockStorageAws::put(
                 (void)keepalive;
                 if (put_outcome.IsSuccess())
                 {
-                    std::cout
-                        << "File asynchronously uploaded successfully to S3!"
-                        << std::endl;
+                    // std::cout
+                    //     << "File asynchronously uploaded successfully to S3!"
+                    //     << std::endl;
                 }
                 else
                 {
