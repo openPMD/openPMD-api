@@ -1,4 +1,7 @@
 #include "openPMD/toolkit/Aws.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/Memory_internal.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/CreateBucketRequest.h>
@@ -33,7 +36,7 @@ private:
 
 namespace openPMD::internal
 {
-void AwsAsyncHandler::wait()
+void AwsAsyncCounter::wait()
 {
     std::cerr << "Waiting for remaining tasks. Have " << completion_counter
               << " of " << request_counter << std::endl;
@@ -44,12 +47,12 @@ void AwsAsyncHandler::wait()
     std::cerr << "Finished waiting for remaining tasks" << std::endl;
 }
 
-void AwsAsyncHandler::add_task()
+void AwsAsyncCounter::add_task()
 {
     this->request_counter++;
 }
 
-void AwsAsyncHandler::add_and_notify_result()
+void AwsAsyncCounter::add_and_notify_result()
 {
     std::unique_lock lk(this->mutex);
     this->completion_counter++;
@@ -57,7 +60,7 @@ void AwsAsyncHandler::add_and_notify_result()
     this->event.notify_all();
 }
 
-AwsAsyncHandler::~AwsAsyncHandler()
+AwsAsyncCounter::~AwsAsyncCounter()
 {
     this->wait();
 }
@@ -124,14 +127,30 @@ auto ExternalBlockStorageAws::put(
     }
     else
     {
-        auto &async_handler = *m_async;
+        auto &async_counter = *std::visit(
+            auxiliary::overloaded{
+                [this](auxiliary::WriteBuffer::CopyableUniquePtr const &) {
+                    return &this->m_async->unique_ptr_operations;
+                },
+                [this](auxiliary::WriteBuffer::SharedPtr const &) {
+                    return &this->m_async->shared_ptr_operations;
+                }},
+            data.as_variant<auxiliary::WriteBufferTypes>());
         auto responseReceivedHandler =
-            [&async_handler](
+            [&async_counter,
+             /*
+              * Need to keep buffers alive until they have been asynchronously
+              * read. Use the closure captures for this. Wrap the WriteBuffer
+              * inside a shared_ptr to make the std::function copyable.
+              */
+             keepalive =
+                 std::make_shared<auxiliary::WriteBuffer>(std::move(data))](
                 const Aws::S3::S3Client *,
                 const Aws::S3::Model::PutObjectRequest &,
                 const Aws::S3::Model::PutObjectOutcome &put_outcome,
                 const std::shared_ptr<const Aws::Client::AsyncCallerContext>
                     &) {
+                (void)keepalive;
                 if (put_outcome.IsSuccess())
                 {
                     std::cout
@@ -144,12 +163,10 @@ auto ExternalBlockStorageAws::put(
                               << put_outcome.GetError().GetMessage()
                               << std::endl;
                 }
-                async_handler.add_and_notify_result();
+                async_counter.add_and_notify_result();
             };
-        async_handler.add_task();
+        async_counter.add_task();
         m_client.PutObjectAsync(put_request, responseReceivedHandler);
-        // todo replace this
-        async_handler.wait();
     }
     return sanitized;
 }
@@ -192,7 +209,7 @@ void ExternalBlockStorageAws::sync()
     {
         return;
     }
-    this->m_async->wait();
+    this->m_async->shared_ptr_operations.wait();
 }
 
 [[nodiscard]] auto ExternalBlockStorageAws::externalStorageLocation() const

@@ -8,7 +8,7 @@
 
 namespace openPMD::internal
 {
-struct AwsAsyncHandler
+struct AwsAsyncCounter
 {
     std::mutex mutex;
     std::condition_variable event;
@@ -21,7 +21,18 @@ struct AwsAsyncHandler
     void add_task();
     void add_and_notify_result();
 
-    ~AwsAsyncHandler();
+    ~AwsAsyncCounter();
+};
+
+struct AwsAsyncHandler
+{
+    // We can defer std::unique_ptr operations longer than std::shared_ptr
+    // operations, since no one else has the memory, so use two counters. TODO:
+    // Add some form of restriction on how long the std::unique_ptr queue may
+    // become. Currently it can theoretically be spammed ad libitum. Either
+    // restrict the queue to a configurable length, or add a syncEverything()
+    // call.
+    AwsAsyncCounter shared_ptr_operations, unique_ptr_operations;
 };
 
 struct ExternalBlockStorageAws : ExternalBlockStorageBackend
