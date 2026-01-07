@@ -54,6 +54,12 @@ auto AwsBuilder::setVerifySSL(bool verify) -> AwsBuilder &
     return *this;
 }
 
+auto AwsBuilder::setAsyncIO(bool useAsyncIO) -> AwsBuilder &
+{
+    m_useAsyncIO = useAsyncIO;
+    return *this;
+}
+
 auto internal::AwsBuilder::setSessionToken(std::string sessionToken)
     -> AwsBuilder &
 {
@@ -120,8 +126,7 @@ AwsBuilder::operator ExternalBlockStorage()
         std::move(s3_client),
         std::move(m_bucketName),
         std::move(m_endpointOverride),
-        // TODO: Add config option for this
-        /* async = */ true)};
+        m_useAsyncIO.value_or(true))};
 }
 
 auto AwsBuilder::build() -> ExternalBlockStorage

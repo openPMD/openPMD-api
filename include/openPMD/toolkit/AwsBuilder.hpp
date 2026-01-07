@@ -31,6 +31,7 @@ struct AwsBuilder
     std::optional<std::string> m_region;
     std::optional<Scheme> m_scheme;
     std::optional<bool> m_verifySSL;
+    std::optional<bool> m_useAsyncIO;
 
     auto setBucketName(std::string bucketName) -> AwsBuilder &;
     auto setCredentials(std::string accessKeyId, std::string secretKey)
@@ -40,6 +41,7 @@ struct AwsBuilder
     auto setRegion(std::string regionName) -> AwsBuilder &;
     auto setScheme(Scheme s) -> AwsBuilder &;
     auto setVerifySSL(bool verify) -> AwsBuilder &;
+    auto setAsyncIO(bool useAsyncIO) -> AwsBuilder &;
 
     operator ::openPMD::ExternalBlockStorage();
     auto build() -> ::openPMD::ExternalBlockStorage;

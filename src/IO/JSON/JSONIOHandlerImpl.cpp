@@ -458,6 +458,9 @@ namespace
             if_contains_optional_bool("verify_ssl", [&](bool verifySSL) {
                 builder.setVerifySSL(verifySSL);
             });
+            if_contains_optional_bool("async_io", [&](bool useAsyncIO) {
+                builder.setAsyncIO(useAsyncIO);
+            });
             if_contains_optional(
                 "scheme", true, [&](std::string const &scheme) {
                     if (scheme == "http")
