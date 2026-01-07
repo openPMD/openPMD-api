@@ -495,8 +495,8 @@ namespace
     }
 } // namespace
 
-auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
-    -> DatasetMode_s
+auto JSONIOHandlerImpl::retrieveDatasetMode(
+    openPMD::json::TracingJSON &config, bool do_init) -> DatasetMode_s
 {
     // start with / copy from current config
     auto res = m_datasetMode;
@@ -514,7 +514,8 @@ auto JSONIOHandlerImpl::retrieveDatasetMode(openPMD::json::TracingJSON &config)
                 auto mode = datasetConfig["mode"];
                 if (mode.json().is_object())
                 {
-                    if (access::writeOnly(m_handler->m_backendAccess))
+                    if (!do_init ||
+                        access::writeOnly(m_handler->m_backendAccess))
                     {
                         parse_external_mode(
                             std::move(mode), std::nullopt, configLocation, res);
@@ -667,7 +668,7 @@ void JSONIOHandlerImpl::init(openPMD::json::TracingJSON config)
     }
 
     // now modify according to config
-    m_datasetMode = retrieveDatasetMode(config);
+    m_datasetMode = retrieveDatasetMode(config, /* do_init = */ true);
     m_attributeMode = retrieveAttributeMode(config);
 
     if (auto [_, backendConfig] = getBackendConfig(config);
@@ -693,13 +694,9 @@ std::future<void> JSONIOHandlerImpl::flush(internal::ParsedFlushParams &params)
         putJsonContents(file, false);
     }
     m_dirty.clear();
-    std::visit(
-        auxiliary::overloaded{
-            [](DatasetMode::External_t &externalStorage) {
-                externalStorage->syncMandatoryOperations();
-            },
-            [](auto &&) {}},
-        this->m_datasetMode.m_mode.as_base());
+    this->m_datasetMode.mapExternalStorage([](auto &externalStorage) {
+        externalStorage->syncMandatoryOperations();
+    });
     return std::future<void>();
 }
 
@@ -739,6 +736,9 @@ void JSONIOHandlerImpl::createFile(
 
     if (!writable->written)
     {
+        m_datasetMode.mapExternalStorage([](auto &externalStorage) {
+            externalStorage->syncAllOperations();
+        });
         std::string name = parameters.name + m_originalExtension;
 
         auto res_pair = getPossiblyExisting(name);
@@ -781,6 +781,10 @@ void JSONIOHandlerImpl::createFile(
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared<JSONFilePosition>();
+    }
+    else
+    {
+        throw error::Internal("This should not happen.");
     }
 }
 
@@ -854,7 +858,8 @@ void JSONIOHandlerImpl::createDataset(
         parameter.options, /* considerFiles = */ false);
     // Retrieves mode from dataset-specific configuration, falls back to global
     // value if not defined
-    auto [localMode, _, skipWarnings] = retrieveDatasetMode(config);
+    auto [localMode, _, skipWarnings] =
+        retrieveDatasetMode(config, /* do_init = */ false);
     (void)_;
     // No use in introducing logic to skip warnings only for one particular
     // dataset. If warnings are skipped, then they are skipped consistently.
@@ -2056,6 +2061,20 @@ void JSONIOHandlerImpl::touch(
     {
         throw error::Internal(
             "ADIOS2: Tried activating a file that is not open.");
+    }
+}
+
+void JSONIOHandlerImpl::advance(
+    Writable *w, Parameter<Operation::ADVANCE> &param)
+{
+    AbstractIOHandlerImpl::advance(w, param);
+
+    if (access::linear(m_handler->m_backendAccess) &&
+        access::writeOnly(m_handler->m_backendAccess))
+    {
+        m_datasetMode.mapExternalStorage([](auto &externalStorage) {
+            externalStorage->syncAllOperations();
+        });
     }
 }
 

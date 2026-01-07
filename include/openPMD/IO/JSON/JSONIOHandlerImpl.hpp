@@ -307,6 +307,8 @@ public:
 
     void touch(Writable *, Parameter<Operation::TOUCH> const &) override;
 
+    void advance(Writable *, Parameter<Operation::ADVANCE> &) override;
+
     std::future<void> flush(internal::ParsedFlushParams &params);
 
     /*
@@ -365,6 +367,19 @@ public:
         {
             return std::tuple<A, B, C>{
                 m_mode, m_specificationVia, m_skipWarnings};
+        }
+
+        template <typename F>
+        auto mapExternalStorage(F &&functor)
+        {
+            std::visit(
+                auxiliary::overloaded{
+                    [&functor](DatasetMode::External_t &externalStorage) {
+                        return static_cast<decltype(functor)>(functor)(
+                            externalStorage);
+                    },
+                    [](auto &&) {}},
+                m_mode.as_base());
         }
     };
 
@@ -433,7 +448,8 @@ private:
     std::optional<openPMD::json::TracingJSON>
         m_deferredExternalBlockstorageConfig;
     DatasetMode_s m_datasetMode;
-    DatasetMode_s retrieveDatasetMode(openPMD::json::TracingJSON &config);
+    DatasetMode_s
+    retrieveDatasetMode(openPMD::json::TracingJSON &config, bool do_init);
 
     AttributeMode_s m_attributeMode;
     AttributeMode_s
