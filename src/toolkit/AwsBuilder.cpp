@@ -1,11 +1,15 @@
+#include "openPMD/config.hpp"
+
 #include "openPMD/toolkit/AwsBuilder.hpp"
 
 #include "openPMD/toolkit/Aws.hpp"
 #include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
+#if openPMD_HAVE_AWS
 #include <aws/core/auth/AWSCredentials.h>
 #include <aws/core/auth/signer/AWSAuthV4Signer.h>
 #include <aws/core/http/Scheme.h>
+#endif
 
 namespace openPMD::internal
 {
@@ -69,6 +73,7 @@ auto internal::AwsBuilder::setSessionToken(std::string sessionToken)
 
 AwsBuilder::operator ExternalBlockStorage()
 {
+#if openPMD_HAVE_AWS
     Aws::Client::ClientConfiguration config;
 
     if (m_endpointOverride.has_value())
@@ -127,6 +132,11 @@ AwsBuilder::operator ExternalBlockStorage()
         std::move(m_bucketName),
         std::move(m_endpointOverride),
         m_useAsyncIO.value_or(true))};
+#else
+    throw std::runtime_error(
+        "Method not available: openPMD-api has been built without support for "
+        "AWS.");
+#endif
 }
 
 auto AwsBuilder::build() -> ExternalBlockStorage

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "openPMD/config.hpp"
+
 #include <cstdint>
 #include <initializer_list>
 #include <optional>

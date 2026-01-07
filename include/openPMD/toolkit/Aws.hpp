@@ -1,5 +1,9 @@
 #pragma once
 
+#include "openPMD/config.hpp"
+
+#if openPMD_HAVE_AWS
+
 #include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
 #include <aws/s3/S3Client.h>
@@ -64,3 +68,4 @@ public:
     ~ExternalBlockStorageAws() override;
 };
 } // namespace openPMD::internal
+#endif

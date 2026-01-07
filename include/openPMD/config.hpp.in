@@ -45,3 +45,7 @@
 #ifndef openPMD_HAVE_CUDA_EXAMPLES
 #cmakedefine01 openPMD_HAVE_CUDA_EXAMPLES
 #endif
+
+#ifndef openPMD_HAVE_AWS
+#cmakedefine01 openPMD_HAVE_AWS
+#endif

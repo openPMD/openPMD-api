@@ -42,13 +42,16 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
+#include "openPMD/config.hpp"
 #include "openPMD/snapshots/ContainerImpls.hpp"
 #include "openPMD/snapshots/ContainerTraits.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/snapshots/StatefulIterator.hpp"
 #include "openPMD/version.hpp"
 
+#if openPMD_HAVE_AWS
 #include <aws/core/Aws.h>
+#endif
 
 #include <algorithm>
 #include <cctype>
@@ -1207,10 +1210,12 @@ auto Series::initIOHandler(
     // now check for user-specified options
     parseJsonOptions(optionsJson, *input);
 
+#if openPMD_HAVE_AWS
     if (series.m_manageAwsAPI.has_value())
     {
         Aws::InitAPI(*series.m_manageAwsAPI);
     }
+#endif
 
     if (resolve_generic_extension && !input->filenameExtension.has_value())
     {
@@ -3243,6 +3248,7 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
     {
         series.m_rankTable.m_rankTableSource = std::move(rankTableSource);
     }
+#if openPMD_HAVE_AWS
     {
         bool doManageAwsAPI = false;
         getJsonOption<bool>(options, "init_aws_api", doManageAwsAPI);
@@ -3251,6 +3257,7 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
             series.m_manageAwsAPI = std::make_optional<Aws::SDKOptions>();
         }
     }
+#endif
     // backend key
     {
         std::map<std::string, Format> const backendDescriptors{
@@ -3341,10 +3348,12 @@ namespace internal
             // close() might need to wait for a number of remaining Aws
             // operations to finish, so the AwsAPI needs to stay open for that.
             close();
+#if openPMD_HAVE_AWS
             if (m_manageAwsAPI.has_value())
             {
                 Aws::ShutdownAPI(*m_manageAwsAPI);
             }
+#endif
         }
         catch (std::exception const &ex)
         {

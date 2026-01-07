@@ -1,7 +1,11 @@
-#include "openPMD/toolkit/Aws.hpp"
+#include "openPMD/config.hpp"
+
+#if openPMD_HAVE_AWS
+
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/toolkit/Aws.hpp"
 
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/CreateBucketRequest.h>
@@ -290,3 +294,4 @@ void ExternalBlockStorageAws::syncAllOperations()
 }
 
 } // namespace openPMD::internal
+#endif
