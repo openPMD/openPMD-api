@@ -395,7 +395,7 @@ endif()
 unset(openPMD_REQUIRED_ADIOS2_COMPONENTS)
 
 if(openPMD_USE_AWS STREQUAL AUTO)
-    find_package(AWSSDK REQUIRED COMPONENTS s3)
+    find_package(AWSSDK COMPONENTS s3)
     if(AWSSDK_FOUND)
         set(openPMD_HAVE_AWS TRUE)
     else()
