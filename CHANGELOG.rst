@@ -64,10 +64,10 @@ Bug Fixes
   - Fix double write from unique_ptr (#1743)
   - Fix hangup with writeIterations() (#1728)
   - Always use CurrentStep() in mode::Read, fixing nonstandard SST workflows (#1749)
-- HDF5:
+.. - HDF5:
 
 
-JSON/TOML IO backend:
+- JSON/TOML IO backend:
 
   - Remove unnecessary putJsonContents() calls (#1782)
   - Fix uninitialized values (#1745)
