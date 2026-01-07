@@ -14,7 +14,12 @@
 
 namespace openPMD::internal
 {
-void ExternalBlockStorageBackend::sync()
+void ExternalBlockStorageBackend::syncMandatoryOperations()
+{
+    // default for non-async backends: no-op
+}
+
+void ExternalBlockStorageBackend::syncAllOperations()
 {
     // default for non-async backends: no-op
 }
@@ -223,9 +228,14 @@ void ExternalBlockStorage::read(
     }
 }
 
-void ExternalBlockStorage::sync()
+void ExternalBlockStorage::syncMandatoryOperations()
 {
-    this->m_worker->sync();
+    this->m_worker->syncMandatoryOperations();
+}
+
+void ExternalBlockStorage::syncAllOperations()
+{
+    this->m_worker->syncAllOperations();
 }
 
 [[nodiscard]] auto ExternalBlockStorage::externalStorageLocation() const

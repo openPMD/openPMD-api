@@ -58,7 +58,8 @@ public:
         size_t len) override;
     [[nodiscard]] auto externalStorageLocation() const
         -> nlohmann::json override;
-    void sync() override;
+    void syncMandatoryOperations() override;
+    void syncAllOperations() override;
 
     ~ExternalBlockStorageAws() override;
 };

@@ -257,13 +257,23 @@ void ExternalBlockStorageAws::get(
     }
 }
 
-void ExternalBlockStorageAws::sync()
+void ExternalBlockStorageAws::syncMandatoryOperations()
 {
     if (!this->m_async.has_value())
     {
         return;
     }
     this->m_async->shared_ptr_operations.wait();
+}
+
+void ExternalBlockStorageAws::syncAllOperations()
+{
+    if (!this->m_async.has_value())
+    {
+        return;
+    }
+    this->m_async->shared_ptr_operations.wait();
+    this->m_async->unique_ptr_operations.wait();
 }
 
 [[nodiscard]] auto ExternalBlockStorageAws::externalStorageLocation() const

@@ -696,7 +696,7 @@ std::future<void> JSONIOHandlerImpl::flush(internal::ParsedFlushParams &params)
     std::visit(
         auxiliary::overloaded{
             [](DatasetMode::External_t &externalStorage) {
-                externalStorage->sync();
+                externalStorage->syncMandatoryOperations();
             },
             [](auto &&) {}},
         this->m_datasetMode.m_mode.as_base());

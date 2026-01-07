@@ -31,7 +31,8 @@ struct ExternalBlockStorageBackend
     [[nodiscard]] virtual auto externalStorageLocation() const
         -> nlohmann::json = 0;
 
-    virtual void sync();
+    virtual void syncMandatoryOperations();
+    virtual void syncAllOperations();
 
     virtual ~ExternalBlockStorageBackend();
 };
@@ -109,7 +110,8 @@ public:
         nlohmann::json::json_pointer const &path,
         std::shared_ptr<void> &data);
 
-    void sync();
+    void syncMandatoryOperations();
+    void syncAllOperations();
 
     [[nodiscard]] auto externalStorageLocation() const -> nlohmann::json;
 
