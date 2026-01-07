@@ -37,15 +37,21 @@ Features
 
   - Performance optimizations for interacting with many meshes/species types (#1741)
   - C++ API: optimized include times (#1774)
-  - Improve hlushing performance for file-based Series with many steps (#1642)
+  - Improve flushing performance for file-based Series with many steps (#1642)
+- Python:
+
+  - DataFrame: Add attribute columns (#1814)
 - Miscellaneous:
 
   - Add JSON schema for openPMD file validation, introduce openpmd-convert-toml-json tool (#1426)
   - Experimental support for openPMD standard 2.0 (#1551)
   - Non-spatial meshes (in standard 2.0) (#1534)
-  - Stderr hints for lazy parsing when appropriate (#1802)
+  - Optional shape in constant components (#1661)
+  - Stderr hints for lazy parsing when appropriate (#1802 #1816)
   - storeChunk: use const-type pointers (#1778)
+  - Span API: use std::unique_ptr in default fallback (#1820)
   - Pickle API: Cache unpickled Series to avoid repeated file access (#1654)
+  - Fix license headers (#1819)
 
 Bug Fixes
 """""""""
@@ -78,7 +84,7 @@ JSON/TOML IO backend:
   - Fix Variant issue with certain CUDA versions (#1722 #1807)
   - Fix behavior of Iteration::open() for correct use of Span API (#1794)
   - iterator::operator== fix for C++20 (#1798)
-  - Fix a couple of false positive warnings (#1806)
+  - Fix a couple of false positive warnings (#1806 #1824)
   - Safeguards for READ_LINEAR mode (#1753)
 
 Other
@@ -102,6 +108,7 @@ Other
   - Update streaming documentation to snapshots API (#1773)
   - Doc: First Write with explicit float64 type (#1780)
   - WarpX repo update (#1733)
+  - Link code examples to current version instead of dev (#1821)
 
 
 0.16.1
