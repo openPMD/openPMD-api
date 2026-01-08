@@ -513,7 +513,11 @@ void available_chunks_test(std::string const &file_ending)
     }
 
     {
-        Series read(name, Access::READ_ONLY, MPI_COMM_WORLD);
+        Series read(
+            name,
+            Access::READ_ONLY,
+            MPI_COMM_WORLD,
+            R"({"verify_homogeneous_extents": false})");
         Iteration it0 = read.iterations[0];
         auto E_x = it0.meshes["E"]["x"];
         ChunkTable table = E_x.availableChunks();
