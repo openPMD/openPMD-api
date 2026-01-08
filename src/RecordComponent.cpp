@@ -206,14 +206,14 @@ namespace
 #if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
     (defined(__apple_build_version__) && __clang_major__ < 14)
     template <typename T>
-    auto createSpanBufferFallback(size_t size) -> std::shared_ptr<T>
+    auto createSpanBufferFallback(size_t size) -> UniquePtrWithLambda<T>
     {
         return UniquePtrWithLambda<T>{
             new T[size], [](auto *ptr) { delete[] ptr; }};
     }
 #else
     template <typename T>
-    auto createSpanBufferFallback(size_t size) -> std::shared_ptr<T[]>
+    auto createSpanBufferFallback(size_t size) -> std::unique_ptr<T[]>
     {
         return std::unique_ptr<T[]>{new T[size]};
     }
