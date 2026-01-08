@@ -208,13 +208,14 @@ namespace
     template <typename T>
     auto createSpanBufferFallback(size_t size) -> std::shared_ptr<T>
     {
-        return std::shared_ptr<T>{new T[size], [](auto *ptr) { delete[] ptr; }};
+        return UniquePtrWithLambda<T>{
+            new T[size], [](auto *ptr) { delete[] ptr; }};
     }
 #else
     template <typename T>
     auto createSpanBufferFallback(size_t size) -> std::shared_ptr<T[]>
     {
-        return std::shared_ptr<T[]>{new T[size]};
+        return std::unique_ptr<T[]>{new T[size]};
     }
 #endif
 } // namespace
