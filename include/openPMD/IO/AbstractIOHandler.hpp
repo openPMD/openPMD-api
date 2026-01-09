@@ -249,6 +249,49 @@ namespace internal
             return res;
         }
     }
+
+    /**************************************************************************
+     * Since the AbstractIOHandler is linked to every object of the
+     * frontend, it stores a number of members that are needed by methods
+     * traversing the object hierarchy. Those members are found in this struct
+     * from which AbstractIOHandler derives.
+     **************************************************************************/
+    struct GlobalParameters
+    {
+        std::string directory;
+        /*
+         * Originally, the reason for distinguishing these two was that during
+         * parsing in reading access modes, the access type would be temporarily
+         * const_cast'ed to an access type that would support modifying
+         * the openPMD object model. Then, it would be const_cast'ed back to
+         * READ_ONLY, to disable further modifications.
+         * Due to this approach's tendency to cause subtle bugs, and due to its
+         * difficult debugging properties, this was replaced by the SeriesStatus
+         * enum, defined in this file.
+         * The distinction of backendAccess and frontendAccess stays relevant,
+         * since the frontend can use it in order to pretend to the backend that
+         * another access type is being used. This is used by the file-based
+         * append mode, which is entirely implemented by the frontend, which
+         * internally uses the backend in CREATE mode.
+         */
+        Access m_backendAccess;
+        Access m_frontendAccess;
+        std::queue<IOTask> m_work;
+
+        /**
+         * This is to avoid that the destructor tries flushing again if an error
+         * happened. Otherwise, this would lead to confusing error messages.
+         * Initialized as false, set to true after successful construction.
+         * If flushing results in an error, set this back to false.
+         * The destructor will only attempt flushing again if this is true.
+         */
+        bool m_lastFlushSuccessful = false;
+        internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
+        IterationEncoding m_encoding = IterationEncoding::groupBased;
+        OpenpmdStandard m_standard =
+            auxiliary::parseStandard(getStandardDefault());
+        bool m_verify_homogeneous_extents = true;
+    };
 } // namespace internal
 
 namespace detail
@@ -264,7 +307,7 @@ namespace detail
  * scenarios it is therefore necessary to manually execute all operations
  * by calling AbstractIOHandler::flush().
  */
-class AbstractIOHandler
+class AbstractIOHandler : public internal::GlobalParameters
 {
     friend class Series;
     friend class ADIOS2IOHandlerImpl;
@@ -346,45 +389,6 @@ public:
     /** The currently used backend */
     virtual std::string backendName() const = 0;
     virtual bool fullSupportForVariableBasedEncoding() const;
-
-    std::string directory;
-    /*
-     * Originally, the reason for distinguishing these two was that during
-     * parsing in reading access modes, the access type would be temporarily
-     * const_cast'ed to an access type that would support modifying
-     * the openPMD object model. Then, it would be const_cast'ed back to
-     * READ_ONLY, to disable further modifications.
-     * Due to this approach's tendency to cause subtle bugs, and due to its
-     * difficult debugging properties, this was replaced by the SeriesStatus
-     * enum, defined in this file.
-     * The distinction of backendAccess and frontendAccess stays relevant, since
-     * the frontend can use it in order to pretend to the backend that another
-     * access type is being used. This is used by the file-based append mode,
-     * which is entirely implemented by the frontend, which internally uses
-     * the backend in CREATE mode.
-     */
-    Access m_backendAccess;
-    Access m_frontendAccess;
-    std::queue<IOTask> m_work;
-
-    /**************************************************************************
-     * Since the AbstractIOHandler is linked to every object of the frontend, *
-     * it stores a number of members that are needed by methods traversing    *
-     * the object hierarchy. Those members are found below.                   *
-     **************************************************************************/
-
-    /**
-     * This is to avoid that the destructor tries flushing again if an error
-     * happened. Otherwise, this would lead to confusing error messages.
-     * Initialized as false, set to true after successful construction.
-     * If flushing results in an error, set this back to false.
-     * The destructor will only attempt flushing again if this is true.
-     */
-    bool m_lastFlushSuccessful = false;
-    internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
-    IterationEncoding m_encoding = IterationEncoding::groupBased;
-    OpenpmdStandard m_standard = auxiliary::parseStandard(getStandardDefault());
-    bool m_verify_homogeneous_extents = true;
 
 protected:
     /** Implementation of flush operation for subclasses
