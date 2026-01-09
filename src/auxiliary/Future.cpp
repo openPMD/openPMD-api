@@ -28,6 +28,28 @@ DeferredComputation<T>::DeferredComputation(task_type task)
 {}
 
 template <typename T>
+DeferredComputation<T>::~DeferredComputation()
+{
+    if (m_valid)
+    {
+        try
+        {
+            get();
+        }
+        catch (std::exception const &e)
+        {
+            std::cerr << "[DeferredComputation] Error in destructor: '"
+                      << e.what() << "'." << std::endl;
+        }
+        catch (...)
+        {
+            std::cerr << "[DeferredComputation] Unknown error in destructor."
+                      << std::endl;
+        }
+    }
+}
+
+template <typename T>
 auto DeferredComputation<T>::get() -> T
 {
     return m_task();

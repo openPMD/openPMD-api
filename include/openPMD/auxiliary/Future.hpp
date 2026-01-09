@@ -15,6 +15,7 @@ class DeferredComputation
 
 public:
     DeferredComputation(task_type);
+    ~DeferredComputation();
 
     auto get() -> T;
 
