@@ -3614,7 +3614,7 @@ HDF5IOHandler::HDF5IOHandler(
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 
-std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &params)
+std::future<void> HDF5IOHandler::flush_impl(internal::ParsedFlushParams &params)
 {
     return m_impl->flush(params);
 }

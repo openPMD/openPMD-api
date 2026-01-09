@@ -53,7 +53,7 @@ JSONIOHandler::JSONIOHandler(
 {}
 #endif
 
-std::future<void> JSONIOHandler::flush(internal::ParsedFlushParams &params)
+std::future<void> JSONIOHandler::flush_impl(internal::ParsedFlushParams &params)
 {
     return m_impl.flush(params);
 }

@@ -2645,7 +2645,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 {}
 
 std::future<void>
-ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
+ADIOS2IOHandler::flush_impl(internal::ParsedFlushParams &flushParams)
 {
     return m_impl.flush(flushParams);
 }
