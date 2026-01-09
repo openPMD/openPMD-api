@@ -22,6 +22,7 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 
@@ -35,17 +36,13 @@ class JSONIOHandler : public AbstractIOHandler
 {
 public:
     JSONIOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access at,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         openPMD::json::TracingJSON config,
         JSONIOHandlerImpl::FileFormat,
         std::string originalExtension);
 #if openPMD_HAVE_MPI
     JSONIOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access at,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         MPI_Comm,
         openPMD::json::TracingJSON config,
         JSONIOHandlerImpl::FileFormat,
