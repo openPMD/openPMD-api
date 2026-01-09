@@ -21,6 +21,7 @@
  */
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandlerImpl.hpp"
@@ -59,17 +60,10 @@ namespace openPMD
 #endif
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     MPI_Comm comm,
     json::TracingJSON config)
-    : AbstractIOHandler(
-          std::move(initialize_from),
-          std::move(path),
-          at,
-          std::move(config),
-          comm)
+    : AbstractIOHandler(std::move(initialize_from), std::move(config), comm)
     , m_impl{new ParallelHDF5IOHandlerImpl(this, comm)}
 {}
 
@@ -433,27 +427,18 @@ ParallelHDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
 
 #if openPMD_HAVE_MPI
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     MPI_Comm comm,
     json::TracingJSON config)
-    : AbstractIOHandler(
-          std::move(initialize_from),
-          std::move(path),
-          at,
-          std::move(config),
-          comm)
+    : AbstractIOHandler(std::move(initialize_from), std::move(config), comm)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }
 #else
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string const &path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     json::TracingJSON config)
-    : AbstractIOHandler(std::move(initialize_from), path, at, std::move(config))
+    : AbstractIOHandler(std::move(initialize_from), std::move(config))
 {
     throw std::runtime_error(
         "openPMD-api built without parallel support and without HDF5 support");

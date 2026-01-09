@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/config.hpp"
 
@@ -37,14 +38,12 @@ class ParallelHDF5IOHandler : public AbstractIOHandler
 public:
 #if openPMD_HAVE_MPI
     ParallelHDF5IOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         MPI_Comm,
         json::TracingJSON config);
 #else
     ParallelHDF5IOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         std::string const &path,
         Access,
         json::TracingJSON config);

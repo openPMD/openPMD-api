@@ -37,6 +37,7 @@ auto file_state_lifetime() -> void
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
@@ -88,9 +89,11 @@ struct Fixture
         std::string originalExtension)
         : directory(std::move(directory_in))
         , handler(createIOHandler(
-              std::nullopt,
-              directory,
-              access,
+              internal::AbstractIOHandlerInitFrom{[&]() {
+                  internal::GlobalParameters res{access};
+                  res.directory = directory;
+                  return res;
+              }()},
               format,
               std::move(originalExtension)))
         , writable(root.root())
