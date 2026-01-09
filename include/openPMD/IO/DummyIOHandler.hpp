@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/IOTask.hpp"
 
@@ -34,7 +35,7 @@ namespace openPMD
 class DummyIOHandler : public AbstractIOHandler
 {
 public:
-    DummyIOHandler(std::string, Access);
+    DummyIOHandler(internal::AbstractIOHandlerInitFrom &&);
     ~DummyIOHandler() override = default;
 
     /** No-op consistent with the IOHandler interface to enable library use
