@@ -11,6 +11,7 @@
 
 // comment to keep clang-format from reordering
 #include "openPMD/DatatypeMacros.hpp"
+#include "openPMD/backend/Attributable.hpp"
 
 #include <future>
 #include <memory>
@@ -70,6 +71,21 @@ namespace core
         return internal::LoadStoreConfig{getOffset(), getExtent()};
     }
 
+    auto ConfigureLoadStore::deferFlush(Attributable &attr)
+    {
+        auto index = attr.IOHandler()->m_flushCounter;
+        return [attr,
+                old_index = *index,
+                current_index = std::weak_ptr(index)]() mutable {
+            auto lock_current_index = current_index.lock();
+            if (!lock_current_index || *lock_current_index >= old_index)
+            {
+                return;
+            }
+            attr.seriesFlush();
+        };
+    }
+
     auto ConfigureLoadStore::getOffset() -> Offset const &
     {
         if (!m_offset.has_value())
@@ -118,8 +134,8 @@ namespace core
     {
         auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
         return auxiliary::DeferredComputation<std::shared_ptr<T>>(
-            [res_lambda = std::move(res), rc = m_rc]() mutable {
-                rc.seriesFlush();
+            [res_lambda = std::move(res), dflush = deferFlush(m_rc)]() mutable {
+                dflush();
                 return res_lambda;
             });
     }
@@ -141,20 +157,19 @@ namespace core
 
     struct VisitorEnqueueLoadVariant
     {
-        template <typename T>
-        static auto call(RecordComponent &rc, internal::LoadStoreConfig cfg)
+        template <typename T, typename F>
+        static auto
+        call(RecordComponent &rc, internal::LoadStoreConfig cfg, F &&dflush)
             -> auxiliary::DeferredComputation<
                 auxiliary::detail::shared_ptr_dataset_types>
         {
             auto res = rc.loadChunkAllocate_impl<T>(std::move(cfg));
             return auxiliary::DeferredComputation<
                 auxiliary::detail::shared_ptr_dataset_types>(
-
-                [res_lambda = std::move(res), rc_lambda = rc]() mutable
+                [res_lambda = std::move(res),
+                 dflush_lambda = std::forward<F>(dflush)]() mutable
                     -> auxiliary::detail::shared_ptr_dataset_types {
-                    std::cout << "Flushing Series from Future" << std::endl;
-                    rc_lambda.seriesFlush();
-                    std::cout << "Flushed Series from Future" << std::endl;
+                    dflush_lambda();
                     return res_lambda;
                 });
         }
@@ -164,7 +179,8 @@ namespace core
         -> auxiliary::DeferredComputation<
             auxiliary::detail::shared_ptr_dataset_types>
     {
-        return m_rc.visit<VisitorEnqueueLoadVariant>(this->storeChunkConfig());
+        return m_rc.visit<VisitorEnqueueLoadVariant>(
+            this->storeChunkConfig(), deferFlush(m_rc));
     }
 
     struct VisitorLoadVariant
@@ -215,7 +231,7 @@ namespace core
             determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
             storeChunkConfig());
         return auxiliary::DeferredComputation<void>(
-            [rc_lambda = m_rc]() mutable -> void { rc_lambda.seriesFlush(); });
+            [dflush = deferFlush(m_rc)]() mutable -> void { dflush(); });
     }
 
     template <typename Ptr_Type>
@@ -251,8 +267,8 @@ namespace core
         this->m_rc.loadChunk_impl(
             std::move(this->m_buffer), this->storeChunkConfig());
         return auxiliary::DeferredComputation<void>(
-            [rc_lambda = this->m_rc]() mutable -> void {
-                rc_lambda.seriesFlush();
+            [dflush = this->deferFlush(this->m_rc)]() mutable -> void {
+                dflush();
             });
     }
 

@@ -327,13 +327,15 @@ public:
      * backends that decide to implement this operation asynchronously.
      */
     std::future<void> flush(internal::FlushParams const &);
+    std::shared_ptr<unsigned long long> m_flushCounter =
+        std::make_shared<unsigned long long>(0);
 
     /** Process operations in queue according to FIFO.
      *
      * @return  Future indicating the completion state of the operation for
      * backends that decide to implement this operation asynchronously.
      */
-    virtual std::future<void> flush(internal::ParsedFlushParams &) = 0;
+    std::future<void> flush(internal::ParsedFlushParams &);
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;
@@ -377,6 +379,9 @@ public:
     IterationEncoding m_encoding = IterationEncoding::groupBased;
     OpenpmdStandard m_standard = auxiliary::parseStandard(getStandardDefault());
     bool m_verify_homogeneous_extents = true;
+
+protected:
+    virtual std::future<void> flush_impl(internal::ParsedFlushParams &) = 0;
 }; // AbstractIOHandler
 
 } // namespace openPMD

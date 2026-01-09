@@ -951,7 +951,7 @@ public:
         try
         {
             auto params = internal::defaultParsedFlushParams;
-            this->flush(params);
+            this->flush_impl(params);
         }
         catch (std::exception const &ex)
         {
@@ -999,6 +999,6 @@ public:
         return true;
     }
 
-    std::future<void> flush(internal::ParsedFlushParams &) override;
+    std::future<void> flush_impl(internal::ParsedFlushParams &) override;
 }; // ADIOS2IOHandler
 } // namespace openPMD

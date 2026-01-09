@@ -22,6 +22,7 @@ template <typename Ptr_Type>
 class ConfigureLoadStoreFromBuffer;
 template <typename T>
 class DynamicMemoryView;
+class Attributable;
 
 namespace internal
 {
@@ -86,6 +87,8 @@ namespace core
 
         [[nodiscard]] auto dim() const -> uint8_t;
         auto storeChunkConfig() -> internal::LoadStoreConfig;
+
+        auto deferFlush(Attributable &);
 
     public:
         auto getOffset() -> Offset const &;
@@ -228,9 +231,12 @@ namespace compose
     template <typename ChildClass>
     class ConfigureLoadStore
     {
+        ConfigureLoadStore() = default;
+
     public:
         auto offset(Offset) -> ChildClass &;
         auto extent(Extent) -> ChildClass &;
+        friend ChildClass;
     };
 
     /** Configuration for a Store operation with a buffer type.
