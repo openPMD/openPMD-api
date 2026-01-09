@@ -48,11 +48,9 @@ namespace openPMD
                         including nlohmann::json in a .hpp file.
  * @return  Smart pointer to created IOHandler.
  */
-template <typename JSON>
+template <typename Init_t, typename JSON>
 std::unique_ptr<AbstractIOHandler> createIOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access access,
+    Init_t &&initialize_from,
     Format format,
     std::string originalExtension,
     MPI_Comm comm,
@@ -79,21 +77,16 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
                         including nlohmann::json in a .hpp file.
  * @return  Smart pointer to created IOHandler.
  */
-template <typename JSON>
+template <typename Init_t, typename JSON>
 std::unique_ptr<AbstractIOHandler> createIOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access access,
+    Init_t &&initialize_from,
     Format format,
     std::string originalExtension,
     JSON options,
     std::string const &pathAsItWasSpecifiedInTheConstructor);
 
 // version without configuration to use in AuxiliaryTest
+template <typename Init_t>
 std::unique_ptr<AbstractIOHandler> createIOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access access,
-    Format format,
-    std::string originalExtension);
+    Init_t &&initialize_from, Format format, std::string originalExtension);
 } // namespace openPMD
