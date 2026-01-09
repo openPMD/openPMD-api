@@ -21,6 +21,7 @@
 // expose private and protected members for invasive testing
 #include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/Future.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -51,6 +52,12 @@
 
 using namespace openPMD;
 
+auto wrapAccess(openPMD::Access at)
+    -> openPMD::internal::AbstractIOHandlerInitFrom
+{
+    return openPMD::internal::GlobalParameters{at};
+}
+
 namespace openPMD::test
 {
 struct TestHelper : public Attributable
@@ -60,7 +67,7 @@ struct TestHelper : public Attributable
         writable().IOHandler =
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
                 createIOHandler(
-                    std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
+                    wrapAccess(Access::CREATE), Format::JSON, ".json"));
     }
 };
 } // namespace openPMD::test
@@ -175,8 +182,7 @@ TEST_CASE("container_default_test", "[auxiliary]")
     Container<openPMD::test::S> c = Container<openPMD::test::S>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(
-                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(wrapAccess(Access::CREATE), Format::JSON, ".json"));
 
     REQUIRE(c.empty());
     REQUIRE(c.erase("nonExistentKey") == false);
@@ -216,8 +222,7 @@ TEST_CASE("container_retrieve_test", "[auxiliary]")
     Container<structure> c = Container<structure>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(
-                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(wrapAccess(Access::CREATE), Format::JSON, ".json"));
 
     structure s;
     std::string text =
@@ -291,8 +296,7 @@ TEST_CASE("container_access_test", "[auxiliary]")
     Container<Widget> c = Container<Widget>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(
-                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(wrapAccess(Access::CREATE), Format::JSON, ".json"));
 
     c["1firstWidget"] = Widget(0);
     REQUIRE(c.size() == 1);

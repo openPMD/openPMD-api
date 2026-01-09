@@ -31,6 +31,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
@@ -977,9 +978,7 @@ public:
 #if openPMD_HAVE_MPI
 
     ADIOS2IOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         MPI_Comm,
         json::TracingJSON options,
         std::string engineType,
@@ -988,9 +987,7 @@ public:
 #endif
 
     ADIOS2IOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         json::TracingJSON options,
         std::string engineType,
         std::string specifiedExtension);

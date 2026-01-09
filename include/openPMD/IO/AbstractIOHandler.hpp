@@ -258,6 +258,8 @@ namespace internal
      **************************************************************************/
     struct GlobalParameters
     {
+        GlobalParameters(Access at);
+
         std::string directory;
         /*
          * Originally, the reason for distinguishing these two was that during
@@ -276,7 +278,6 @@ namespace internal
          */
         Access m_backendAccess;
         Access m_frontendAccess;
-        std::queue<IOTask> m_work;
 
         /**
          * This is to avoid that the destructor tries flushing again if an error
@@ -291,13 +292,19 @@ namespace internal
         OpenpmdStandard m_standard =
             auxiliary::parseStandard(getStandardDefault());
         bool m_verify_homogeneous_extents = true;
+
+    protected:
+        explicit GlobalParameters();
     };
 } // namespace internal
 
 namespace detail
 {
     class ADIOS2File;
-}
+    struct InitFrom_Tag
+    {};
+    constexpr InitFrom_Tag InitFrom_Tag_v;
+} // namespace detail
 
 /** Interface for communicating between logical and physically persistent data.
  *
@@ -326,23 +333,16 @@ protected:
 
 public:
 #if openPMD_HAVE_MPI
-    template <typename TracingJSON>
+    template <typename InitFrom, typename TracingJSON>
     AbstractIOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access at,
-        TracingJSON &&jsonConfig,
-        MPI_Comm);
+        InitFrom &&initialize_from, TracingJSON &&jsonConfig, MPI_Comm);
 #endif
 
-    template <typename TracingJSON>
-    AbstractIOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access at,
-        TracingJSON &&jsonConfig);
+    template <typename InitFrom, typename TracingJSON>
+    AbstractIOHandler(InitFrom &&initialize_from, TracingJSON &&jsonConfig);
 
-    AbstractIOHandler(std::optional<std::unique_ptr<AbstractIOHandler>>);
+    template <typename InitFrom>
+    AbstractIOHandler(detail::InitFrom_Tag, InitFrom &&);
 
     virtual ~AbstractIOHandler();
 
@@ -370,12 +370,16 @@ public:
      * backends that decide to implement this operation asynchronously.
      */
     std::future<void> flush(internal::FlushParams const &);
+<<<<<<< HEAD
     /** Counter tracking the number of flush operations. This is later used to
      * avoid repeated flushing in the DeferredComputation objects returned by
      * the loadStoreChunk() API. (The counter is copied as a weak reference to
      * the shared pointer, and the value is compared to the value upon enqueuing
      * the operation. If the flush counter has proceeded past the old value, our
      * operation has already been run.) */
+=======
+    std::queue<IOTask> m_work;
+>>>>>>> 689ec45c8 (Better initialization of global params)
     std::shared_ptr<unsigned long long> m_flushCounter =
         std::make_shared<unsigned long long>(0);
 
