@@ -40,6 +40,7 @@ class ParticleSpecies
     friend class Iteration;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    friend class internal::ScientificDefaults<ParticleSpecies>;
 
 public:
     ParticlePatches particlePatches;

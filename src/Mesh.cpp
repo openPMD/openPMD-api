@@ -35,17 +35,7 @@
 
 namespace openPMD
 {
-Mesh::Mesh()
-{
-    setTimeOffset(0.f);
-
-    setGeometry(Geometry::cartesian);
-    setDataOrder(DataOrder::C);
-
-    setAxisLabels({"x"}); // empty strings are not allowed in HDF5
-    setGridSpacing(std::vector<double>{1});
-    setGridGlobalOffset({0});
-}
+Mesh::Mesh() = default;
 
 Mesh::Geometry Mesh::geometry() const
 {
@@ -204,27 +194,24 @@ Mesh &Mesh::setGridUnitSI(std::vector<double> const &gusi)
     return setGridUnitSIPerDimension(gusi);
 }
 
-namespace
+auto Mesh::retrieveDimensionality() const -> uint64_t
 {
-    uint64_t retrieveMeshDimensionality(Mesh const &m)
+    if (containsAttribute("axisLabels"))
     {
-        if (m.containsAttribute("axisLabels"))
-        {
-            return m.axisLabels().size();
-        }
-
-        // maybe we have record components and can ask them
-        if (auto it = m.begin(); it != m.end())
-        {
-            return it->second.getDimensionality();
-        }
-        /*
-         * Since some backends cannot distinguish between vector and
-         * scalar values, the most likely answer here is 1.
-         */
-        return 1;
+        return axisLabels().size();
     }
-} // namespace
+
+    // maybe we have record components and can ask them
+    if (auto it = begin(); it != end())
+    {
+        return it->second.getDimensionality();
+    }
+    /*
+     * Since some backends cannot distinguish between vector and
+     * scalar values, the most likely answer here is 1.
+     */
+    return 1;
+}
 
 std::vector<double> Mesh::gridUnitSIPerDimension() const
 {
@@ -235,7 +222,7 @@ std::vector<double> Mesh::gridUnitSIPerDimension() const
             // If the openPMD version is lower than 2.0, the gridUnitSI is a
             // scalar interpreted for all axes. Copy it d times.
             return std::vector<double>(
-                retrieveMeshDimensionality(*this),
+                retrieveDimensionality(),
                 getAttribute("gridUnitSI").get<double>());
         }
         return getAttribute("gridUnitSI").get<std::vector<double>>();
@@ -244,7 +231,7 @@ std::vector<double> Mesh::gridUnitSIPerDimension() const
     {
         // gridUnitSI is an optional attribute
         // if it is missing, the mesh is interpreted as unscaled
-        return std::vector<double>(retrieveMeshDimensionality(*this), 1.);
+        return std::vector<double>(retrieveDimensionality(), 1.);
     }
 }
 
@@ -341,7 +328,7 @@ unit_representations::AsArrays Mesh::gridUnitDimension() const
         // if it is missing, the mesh is interpreted as spatial
         auto spatialMesh =
             unit_representations::asArray({{UnitDimension::L, 1}});
-        auto dim = retrieveMeshDimensionality(*this);
+        auto dim = retrieveDimensionality();
         unit_representations::AsArrays res(dim, spatialMesh);
         return res;
     }
@@ -426,7 +413,7 @@ void Mesh::flush_impl(
             else
             {
                 setGridUnitSIPerDimension(
-                    std::vector<double>(retrieveMeshDimensionality(*this), 1));
+                    std::vector<double>(retrieveDimensionality(), 1));
             }
         }
         flushAttributes(flushParams);

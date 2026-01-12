@@ -167,6 +167,7 @@ class Iteration
     friend class StatefulSnapshotsContainer;
     template <typename>
     friend struct traits::GenerationPolicy;
+    friend class internal::ScientificDefaults<Iteration>;
 
 public:
     Iteration(Iteration const &) = default;

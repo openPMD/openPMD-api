@@ -45,6 +45,7 @@ class Mesh
 {
     friend class Container<Mesh>;
     friend class Iteration;
+    friend class internal::ScientificDefaults<Mesh>;
 
 public:
     Mesh(Mesh const &) = default;
@@ -332,6 +333,7 @@ private:
     void
     flush_impl(std::string const &, internal::FlushParams const &) override;
     void read();
+    auto retrieveDimensionality() const -> uint64_t;
 }; // Mesh
 
 static_assert(internal::IsContainer_v<Mesh>);
