@@ -47,7 +47,7 @@ void ScientificDefaults<Child>::addDefaultFor(
             return get_value;
         }
     }();
-    std::cout << "\tInitializing default for '" << key << "' = ";
+    std::cout << "\tInitializing default for '" << key << "' = '";
     if constexpr (auxiliary::IsVector_v<
                       std::remove_reference_t<decltype(value)>>)
     {
@@ -156,7 +156,7 @@ void ScientificDefaults<Child>::addDefaults()
             "gridSpacing", &Mesh::setGridSpacing, [&]() {
                 if (dimensionality < 100)
                 {
-                    return std::vector<double>(1.0, dimensionality);
+                    return std::vector<double>(dimensionality, 1.0);
                 }
                 else
                 {
@@ -165,11 +165,11 @@ void ScientificDefaults<Child>::addDefaults()
             });
         addDefaultFor<std::vector<double> const &>(
             "gridGlobalOffset", &Mesh::setGridGlobalOffset, [&]() {
-                // if (dimensionality < 100)
-                // {
-                //     return std::vector<double>(0.0, dimensionality);
-                // }
-                // else
+                if (dimensionality < 100)
+                {
+                    return std::vector<double>(dimensionality, 0.0);
+                }
+                else
                 {
                     return std::vector<double>{0.0};
                 }

@@ -3317,6 +3317,14 @@ namespace internal
             !(access::readOnly(IOHandler->m_frontendAccess) &&
               !(*this)->m_writable.written))
         {
+            for (auto &[_, iteration] : iterations)
+            {
+                (void)_;
+                if (!iteration.closed())
+                {
+                    iteration.close(/* flush = */ false);
+                }
+            }
             impl.flush();
             /*
              * In file-based iteration encoding, this must be triggered by
