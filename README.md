@@ -381,7 +381,7 @@ The following people and institutions [contributed](https://github.com/openPMD/o
 
 Maintained by the following research groups:
 
-* [Computational Radiation Physics (CRD)](https://www.casus.science/casus/team/) at CASUS/HZDR, led by [Michael Bussmann](https://github.com/bussmann)
+* [Computational Radiation Physics (CRP)](https://www.casus.science/casus/team/) at CASUS/HZDR, led by [Michael Bussmann](https://github.com/bussmann)
 * [Accelerator Modeling Program (AMP)](https://atap.lbl.gov/accelerator-modeling-program/) at LBNL, led by [Jean-Luc Vay](https://github.com/jlvay)
 * [Scientific Data Management (SDM)](https://crd.lbl.gov/divisions/scidata/sdm/) at LBNL, led by [Kesheng (John) Wu](https://github.com/john18)
 
