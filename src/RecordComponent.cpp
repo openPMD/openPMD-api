@@ -53,7 +53,7 @@ namespace openPMD
 namespace internal
 {
     RecordComponentData::RecordComponentData() = default;
-    auto RecordComponentData::push_chunk(IOTask &&task) -> void
+    auto RecordComponentData::push_chunk(IOTask &&task) -> bool
     {
         Attributable a;
         a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
@@ -77,6 +77,7 @@ namespace internal
 #endif
         a.setDirtyRecursive(true);
         m_chunks.push(std::move(task));
+        return a.IOHandler()->m_flush_immediately;
     }
 
     static constexpr char const *note_on_deactivating_this_check = R"(
@@ -715,7 +716,10 @@ void RecordComponent::storeChunk_impl(
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::move(buffer);
     auto &rc = get();
-    rc.push_chunk(IOTask(this, std::move(dWrite)));
+    if (rc.push_chunk(IOTask(this, std::move(dWrite))))
+    {
+        seriesFlush();
+    }
 }
 
 void RecordComponent::verifyChunk(
@@ -976,7 +980,10 @@ void RecordComponent::loadChunk_impl(
         dRead.extent = extent;
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast<void>(data);
-        rc.push_chunk(IOTask(this, dRead));
+        if (rc.push_chunk(IOTask(this, dRead)))
+        {
+            seriesFlush();
+        }
     }
 }
 

@@ -3206,6 +3206,11 @@ void Series::parseJsonOptions(
         "verify_homogeneous_extents",
         gp.m_verify_homogeneous_extents,
         "OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS");
+    getJsonOption<bool>(
+        options,
+        "flush_immediately",
+        gp.m_flush_immediately,
+        "OPENPMD_FLUSH_IMMEDIATELY");
     internal::SeriesData::SourceSpecifiedViaJSON rankTableSource;
     if (getJsonOptionLowerCase(options, "rank_table", rankTableSource.value))
     {

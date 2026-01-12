@@ -75,7 +75,7 @@ namespace internal
          */
         std::queue<IOTask> m_chunks;
 
-        void push_chunk(IOTask &&task);
+        [[nodiscard]] auto push_chunk(IOTask &&task) -> bool;
         /**
          * Stores the value for constant record components.
          * Ignored otherwise.
