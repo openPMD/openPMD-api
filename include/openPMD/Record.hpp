@@ -23,17 +23,22 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <string>
 #include <type_traits>
 
 namespace openPMD
 {
-class Record : public BaseRecord<RecordComponent>
+class Record
+    : public BaseRecord<RecordComponent>
+    , internal::ScientificDefaults<Record>
 {
     friend class Container<Record>;
     friend class Iteration;
     friend class ParticleSpecies;
+    template <typename>
+    friend class internal::ScientificDefaults;
 
 public:
     Record(Record const &) = default;
@@ -56,6 +61,8 @@ private:
 
     [[nodiscard]] internal::HomogenizeExtents read();
 }; // Record
+
+static_assert(internal::HasScientificDefaults_v<Record>);
 
 template <typename T>
 inline T Record::timeOffset() const

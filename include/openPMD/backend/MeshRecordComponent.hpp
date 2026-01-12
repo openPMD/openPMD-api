@@ -43,7 +43,8 @@ class MeshRecordComponent
     friend class BaseRecord;
     template <typename, typename>
     friend class internal::BaseRecordData;
-    friend class internal::ScientificDefaults<MeshRecordComponent>;
+    template <typename>
+    friend class internal::ScientificDefaults;
 
     friend class Mesh;
 

@@ -664,13 +664,15 @@ TEST_CASE("particleSpecies_modification_test", "[core]")
     REQUIRE(0 == patches.numAttributes());
     auto &offset = patches["offset"];
     REQUIRE(0 == offset.size());
-    REQUIRE(1 == offset.numAttributes()); // unitDimension
-    std::array<double, 7> zeros{{0., 0., 0., 0., 0., 0., 0.}};
-    REQUIRE(zeros == offset.unitDimension());
 
     auto &off_x = offset["x"];
     off_x.resetDataset(dset);
+
+    o.iterations[42].close();
+    REQUIRE(1 == offset.numAttributes()); // unitDimension
     REQUIRE(1 == off_x.unitSI());
+    std::array<double, 7> zeros{{0., 0., 0., 0., 0., 0., 0.}};
+    REQUIRE(zeros == offset.unitDimension());
 }
 
 TEST_CASE("record_constructor_test", "[core]")

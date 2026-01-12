@@ -201,8 +201,8 @@ private:
     friend class internal::ScalarIterator;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
-    friend class internal::ScientificDefaults<BaseRecord<T_elem>>;
-    friend class internal::ScientificDefaults<Mesh>;
+    template <typename>
+    friend class internal::ScientificDefaults;
 
     using Data_t =
         internal::BaseRecordData<T_elem, typename T_RecordComponent::Data_t>;

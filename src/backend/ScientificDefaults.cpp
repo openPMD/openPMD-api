@@ -2,12 +2,14 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/Record.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include <iostream>
+#include <typeinfo>
 #include <utility>
 
 namespace openPMD::internal
@@ -132,14 +134,32 @@ void ScientificDefaults<Child>::finalize(Access at)
     if constexpr (IsContainer_v<Child>)
     {
         using Container_t = AsContainer_t<Child>;
-        using value_t = typename Container_t::value_type;
-        if constexpr (HasScientificDefaults_v<value_t>)
+        using mapped_type = typename Container_t::mapped_type;
+        if constexpr (HasScientificDefaults_v<mapped_type>)
         {
-            for (auto &[_, right] : *this)
+            // std::cout << "Iterate children" << std::endl;
+            for (auto &[_, right] : asChild())
             {
                 (void)_;
-                right.ScientificDefaults<value_t>::finalize(at);
+                right.ScientificDefaults<mapped_type>::finalize(at);
             }
+        }
+        // else
+        // {
+        //     std::cout << "Child type has no defaults tho ("
+        //               << typeid(mapped_type).name() << ")" << std::endl;
+        // }
+    }
+    // else
+    // {
+    //     std::cout << "Not a container type tho" << std::endl;
+    // }
+
+    if constexpr (std::is_same_v<Child, ParticleSpecies>)
+    {
+        for (auto &[_, right] : asChild().particlePatches)
+        {
+            right.finalize(at);
         }
     }
 }
@@ -222,6 +242,12 @@ void ScientificDefaults<Child>::addDefaults()
 
         addParentDefaults<BaseRecord<MeshRecordComponent>>();
     }
+    else if constexpr (std::is_same_v<Child, Record>)
+    {
+        addDefaultFor("timeOffset", 0.f, &Record::setTimeOffset);
+
+        addParentDefaults<BaseRecord<RecordComponent>>();
+    }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {
         addDefaultFor<unit_representations::AsArray const &>(
@@ -233,5 +259,6 @@ template class ScientificDefaults<Iteration>;
 template class ScientificDefaults<Mesh>;
 template class ScientificDefaults<MeshRecordComponent>;
 template class ScientificDefaults<ParticleSpecies>;
+template class ScientificDefaults<Record>;
 template class ScientificDefaults<BaseRecord<MeshRecordComponent>>;
 } // namespace openPMD::internal
