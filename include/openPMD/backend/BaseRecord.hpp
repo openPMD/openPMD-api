@@ -26,6 +26,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <array>
 #include <stdexcept>
@@ -165,6 +166,8 @@ namespace internal
     };
 } // namespace internal
 
+class Mesh;
+
 /**
  * @brief Base class for any type of record (e.g. mesh or particle record).
  *
@@ -179,6 +182,7 @@ template <typename T_elem>
 class BaseRecord
     : public Container<T_elem>
     , public T_elem // T_RecordComponent
+    , internal::ScientificDefaults<BaseRecord<T_elem>>
 {
 public:
     using T_RecordComponent = T_elem;
@@ -197,6 +201,8 @@ private:
     friend class internal::ScalarIterator;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    friend class internal::ScientificDefaults<BaseRecord<T_elem>>;
+    friend class internal::ScientificDefaults<Mesh>;
 
     using Data_t =
         internal::BaseRecordData<T_elem, typename T_RecordComponent::Data_t>;

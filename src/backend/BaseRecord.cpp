@@ -34,14 +34,7 @@ namespace openPMD
 namespace internal
 {
     template <typename T_elem, typename T_RecordComponentData>
-    BaseRecordData<T_elem, T_RecordComponentData>::BaseRecordData()
-    {
-        Attributable impl;
-        impl.setData({this, [](auto const *) {}});
-        impl.setAttribute(
-            "unitDimension",
-            std::array<double, 7>{{0., 0., 0., 0., 0., 0., 0.}});
-    }
+    BaseRecordData<T_elem, T_RecordComponentData>::BaseRecordData() = default;
 
 #define OPENPMD_INSTANTIATE(recordcomponenttype)                               \
     template class BaseRecordData<                                             \

@@ -27,6 +27,12 @@ using CallResult_t = typename IsCallable<F>::type;
 
 namespace openPMD::internal
 {
+/*
+ * This class implements writing and reading for attributes defined by the
+ * openPMD standard.
+ * It implements (most of) the attribute definitions from
+ * github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md
+ */
 template <typename Child> // CRT
 class ScientificDefaults
 {
@@ -37,14 +43,29 @@ private:
     template <typename F>
     using setter_t = Child &(Child::*)();
 
+    template <typename Setter = void, typename V>
+    void addDefaultFor_worker(char const *key, V &&value, Setter &&setter);
+
+    template <typename V>
+    void addDefaultFor_worker(char const *key, V &&value);
+
+    template <typename F, typename... Args>
+    void addDefaultFor_resolveValue(char const *key, F &&get_value, Args &&...);
+
     template <typename Setter = void, typename F>
     void addDefaultFor(
         char const *key,
+        F &&get_value,
         Child &(Child::*)(std::conditional_t<
                           std::is_void_v<Setter>,
                           std::remove_reference_t<detail::CallResult_t<F>>,
-                          Setter>),
-        F &&get_value);
+                          Setter>));
+
+    template <typename F>
+    void addDefaultFor(char const *key, F &&get_value);
+
+    template <typename Parent>
+    void addParentDefaults();
     // template<typename F>
     // void addDefaultFor(char const *key, F&& get_value);
 protected:

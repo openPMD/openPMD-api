@@ -756,10 +756,17 @@ TEST_CASE("mesh_constructor_test", "[core]")
     Mesh &m = o.iterations[42].meshes["E"];
 
     std::vector<double> pos{0};
-    /* unitSI and position are set to default values upon flushing */
+    /* unitSI and position are set to default values upon closing */
     REQUIRE(m["x"].resetDataset(globalDataset).numAttributes() == 0);
     REQUIRE(m["y"].resetDataset(globalDataset).numAttributes() == 0);
     REQUIRE(m["z"].resetDataset(globalDataset).numAttributes() == 0);
+
+    for (auto const &attr : m.attributes())
+    {
+        std::cout << "Attribute: " << attr << std::endl;
+    }
+    REQUIRE(m.numAttributes() == 0);
+    o.iterations[42].close();
 
     REQUIRE(m.geometry() == Mesh::Geometry::cartesian);
     REQUIRE(m.dataOrder() == Mesh::DataOrder::C);
@@ -774,7 +781,6 @@ TEST_CASE("mesh_constructor_test", "[core]")
         7); /* axisLabels, dataOrder, geometry, gridGlobalOffset, gridSpacing,
                timeOffset, unitDimension */
 
-    o.flush();
     REQUIRE(m["x"].unitSI() == 1);
     REQUIRE(m["x"].numAttributes() == 2); /* unitSI, position */
     REQUIRE(m["x"].position<double>() == pos);

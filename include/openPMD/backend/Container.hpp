@@ -22,6 +22,7 @@
 
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
 #include <initializer_list>
@@ -344,30 +345,10 @@ namespace internal
         ~EraseStaleEntries();
     };
 
-    template <template <typename...> class Base, typename... Args>
-    auto infer_template_args(Base<Args...> &) -> Base<Args...>;
-
-    template <typename T, typename SFINAE = void>
-    struct IsContainer
-    {
-        static constexpr bool value = false;
-    };
-
     template <typename T>
-    struct IsContainer<
-        T,
-        std::void_t<decltype(infer_template_args<Container>(
-            std::declval<T &>()))>>
-    {
-        static constexpr bool value = true;
-        using type =
-            decltype(infer_template_args<Container>(std::declval<T &>()));
-    };
-
+    constexpr bool IsContainer_v = auxiliary::IsTemplateBaseOf_v<Container, T>;
     template <typename T>
-    constexpr bool IsContainer_v = IsContainer<T>::value;
-    template <typename T>
-    using AsContainer_t = typename IsContainer<T>::type;
+    using AsContainer_t = auxiliary::AsTemplateBase_t<Container, T>;
 
     static_assert(!IsContainer_v<int>);
     static_assert(IsContainer_v<Container<Attributable>>);

@@ -203,6 +203,34 @@ namespace detail
     // little trick to avoid trailing commas in the macro expansions below
     template <typename Arg, typename... Args>
     using variant_tail_t = std::variant<Args...>;
+
+    template <template <typename...> class Base, typename... Args>
+    auto infer_template_args(Base<Args...> &) -> Base<Args...>;
+
+    template <
+        template <typename> class Base,
+        typename T,
+        typename SFINAE = void>
+    struct IsTemplateBaseOf
+    {
+        static constexpr bool value = false;
+    };
+
+    template <template <typename> class Base, typename T>
+    struct IsTemplateBaseOf<
+        Base,
+        T,
+        std::void_t<decltype(detail::infer_template_args<Base>(
+            std::declval<T &>()))>>
+    {
+        static constexpr bool value = true;
+        using type =
+            decltype(detail::infer_template_args<Base>(std::declval<T &>()));
+    };
 } // namespace detail
 
+template <template <typename> class Base, typename T>
+constexpr bool IsTemplateBaseOf_v = detail::IsTemplateBaseOf<Base, T>::value;
+template <template <typename> class Base, typename T>
+using AsTemplateBase_t = typename detail::IsTemplateBaseOf<Base, T>::type;
 } // namespace openPMD::auxiliary
