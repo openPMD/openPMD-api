@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <vector>
 
@@ -32,7 +33,9 @@ namespace internal
     class BaseRecordData;
 }
 
-class MeshRecordComponent : public RecordComponent
+class MeshRecordComponent
+    : public RecordComponent
+    , internal::ScientificDefaults<MeshRecordComponent>
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;

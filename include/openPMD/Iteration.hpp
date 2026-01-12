@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <cstdint>
 #include <deque>
@@ -151,7 +152,9 @@ namespace internal
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
-class Iteration : public Attributable
+class Iteration
+    : public Attributable
+    , internal::ScientificDefaults<Iteration>
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;

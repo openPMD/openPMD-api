@@ -32,6 +32,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 
@@ -121,6 +122,20 @@ Iteration &Iteration::close(bool _flush)
         // (this means that closing an iteration that has not been parsed
         // yet keeps it re-openable)
         break;
+    }
+    {
+        Access at = IOHandler()->m_frontendAccess;
+        finalize(at);
+        for (auto &[_, mesh] : meshes)
+        {
+            (void)_;
+            mesh.internal::ScientificDefaults<Mesh>::finalize(at);
+        }
+        for (auto &[_, ps] : particles)
+        {
+            (void)_;
+            ps.finalize(at);
+        }
     }
     if (_flush)
     {

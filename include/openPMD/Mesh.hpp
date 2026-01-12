@@ -23,7 +23,9 @@
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <ostream>
 #include <string>
@@ -37,7 +39,9 @@ namespace openPMD
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records
  */
-class Mesh : public BaseRecord<MeshRecordComponent>
+class Mesh
+    : public BaseRecord<MeshRecordComponent>
+    , internal::ScientificDefaults<Mesh>
 {
     friend class Container<Mesh>;
     friend class Iteration;
@@ -329,6 +333,11 @@ private:
     flush_impl(std::string const &, internal::FlushParams const &) override;
     void read();
 }; // Mesh
+
+static_assert(internal::IsContainer_v<Mesh>);
+static_assert(std::is_same_v<
+              Container<MeshRecordComponent>,
+              internal::AsContainer_t<Mesh>>);
 
 template <typename T>
 inline std::vector<T> Mesh::gridSpacing() const

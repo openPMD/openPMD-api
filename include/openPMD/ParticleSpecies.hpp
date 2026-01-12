@@ -24,13 +24,16 @@
 #include "openPMD/Record.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <string>
 
 namespace openPMD
 {
 
-class ParticleSpecies : public Container<Record>
+class ParticleSpecies
+    : public Container<Record>
+    , internal::ScientificDefaults<ParticleSpecies>
 {
     friend class Container<ParticleSpecies>;
     friend class Container<Record>;

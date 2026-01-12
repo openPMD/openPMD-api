@@ -426,6 +426,7 @@ set(CORE_SOURCE
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
         src/backend/Writable.cpp
+        src/backend/ScientificDefaults.cpp
         src/auxiliary/OneDimensionalBlockSlicer.cpp
         src/helper/list_series.cpp
         src/snapshots/ContainerImpls.cpp
