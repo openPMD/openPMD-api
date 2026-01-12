@@ -2,6 +2,8 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include <iostream>
@@ -35,7 +37,6 @@ void ScientificDefaults<Child>::addDefaultFor(
     {
         return;
     }
-    std::cout << "\tInitializing default for '" << key << "'" << std::endl;
     auto value = [&]() {
         if constexpr (detail::IsCallable_v<F>)
         {
@@ -46,6 +47,17 @@ void ScientificDefaults<Child>::addDefaultFor(
             return get_value;
         }
     }();
+    std::cout << "\tInitializing default for '" << key << "' = ";
+    if constexpr (auxiliary::IsVector_v<
+                      std::remove_reference_t<decltype(value)>>)
+    {
+        auxiliary::write_vec_to_stream(std::cout, value);
+    }
+    else
+    {
+        std::cout << value;
+    }
+    std::cout << "'" << std::endl;
     (asChild().*setter)(std::move(value));
 }
 // template <typename Child>
@@ -100,6 +112,8 @@ void ScientificDefaults<Child>::addDefaults()
     if constexpr (std::is_same_v<Child, Mesh>)
     {
         auto dimensionality = asChild().retrieveDimensionality();
+        // std::cout << "Dimensionality is " << dimensionality << " for '"
+        //           << asChild().myPath().openPMDPath() << "'" << std::endl;
 
         addDefaultFor("timeOffset", &Mesh::setTimeOffset, 0.f);
         addDefaultFor(
@@ -146,18 +160,18 @@ void ScientificDefaults<Child>::addDefaults()
                 }
                 else
                 {
-                    return std::vector<double>();
+                    return std::vector<double>{1.0};
                 }
             });
         addDefaultFor<std::vector<double> const &>(
             "gridGlobalOffset", &Mesh::setGridGlobalOffset, [&]() {
-                if (dimensionality < 100)
+                // if (dimensionality < 100)
+                // {
+                //     return std::vector<double>(0.0, dimensionality);
+                // }
+                // else
                 {
-                    return std::vector<double>(0.0, dimensionality);
-                }
-                else
-                {
-                    return std::vector<double>();
+                    return std::vector<double>{0.0};
                 }
             });
     }
