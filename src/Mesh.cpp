@@ -256,7 +256,9 @@ Mesh &Mesh::setUnitDimension(unit_representations::AsMap const &udim)
 {
     if (!udim.empty())
     {
-        std::array<double, 7> tmpUnitDimension = this->unitDimension();
+        std::array<double, 7> tmpUnitDimension =
+            this->containsAttribute("unitDimension") ? this->unitDimension()
+                                                     : std::array<double, 7>{0};
         unit_representations::auxiliary::fromMapOfUnitDimension(
             tmpUnitDimension.data(), udim);
         setAttribute("unitDimension", tmpUnitDimension);
@@ -272,15 +274,20 @@ Mesh &Mesh::setUnitDimension(unit_representations::AsArray const &udim)
 
 Mesh &Mesh::setGridUnitDimension(unit_representations::AsMaps const &udims)
 {
-    auto rawGridUnitDimension = [this]() {
-        try
+    auto rawGridUnitDimension = [&udims, this]() {
+        if (!this->contains("gridUnitDimension"))
+        {
+            std::vector<double> res(udims.size() * 7);
+            for (size_t i = 0; i < udims.size(); ++i)
+            {
+                res[7 * i] = 1;
+            }
+            return res;
+        }
+        else
         {
             return this->getAttribute("gridUnitDimension")
                 .get<std::vector<double>>();
-        }
-        catch (no_such_attribute_error const &)
-        {
-            return std::vector<double>();
         }
     }();
     rawGridUnitDimension.resize(7 * udims.size());
