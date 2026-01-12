@@ -292,6 +292,8 @@ namespace internal
         OpenpmdStandard m_standard =
             auxiliary::parseStandard(getStandardDefault());
         bool m_verify_homogeneous_extents = true;
+        // If true, then flush directly upon storeChunk
+        bool m_flush_immediately = false;
 
     protected:
         explicit GlobalParameters();
