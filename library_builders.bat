@@ -17,29 +17,13 @@ exit /b 0
 
 :build_adios2
   if exist adios2-stamp exit /b 0
-  curl -sLo adios2-2.10.2.zip ^
-    https://github.com/ornladios/ADIOS2/archive/v2.10.2.zip
-  powershell Expand-Archive adios2-2.10.2.zip -DestinationPath dep-adios2
-
-  curl -sLo dep-adios2/ADIOS2-2.10.2/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/patches-fix-32-bit-builds.patch
-
-  :: Use git-am for applying the patch,
-  :: for some reason, python -m patch just silently does nothing.
-  :: git-am requires a Git repository to apply a patch, but the release zip
-  :: strips away any Git info, so we just quickly initialize a repository.
-  cd dep-adios2/ADIOS2-2.10.2
-  git init
-  git config user.email "tooling@tools.com"
-  git config user.name "Tooling"
-  git add .
-  git commit --message="Initial commit so we can use git-am"
-  git am patch.diff
-  cd ..
-  cd ..
+  curl -sLo adios2-2.11.0.zip ^
+    https://github.com/ornladios/ADIOS2/archive/v2.11.0.zip
+  powershell Expand-Archive adios2-2.11.0.zip -DestinationPath dep-adios2
 
   cmake --version
 
-  cmake -S dep-adios2/ADIOS2-2.10.2 -B build-adios2 ^
+  cmake -S dep-adios2/ADIOS2-2.11.0 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  ^
     -DBUILD_SHARED_LIBS=OFF     ^
@@ -49,7 +33,7 @@ exit /b 0
     -DADIOS2_Blosc2_PREFER_SHARED=OFF ^
     -DADIOS2_USE_Blosc2=ON      ^
     -DADIOS2_USE_BZip2=OFF      ^
-    -DADIOS2_USE_Campaign=OFF   ^
+    -DADIOS2_USE_Campaign=ON   ^
     -DADIOS2_USE_Fortran=OFF    ^
     -DADIOS2_USE_HDF5=OFF       ^
     -DADIOS2_USE_MHS=OFF        ^

@@ -75,8 +75,8 @@ function install_buildessentials {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.10.2.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.10.2.tar.gz
+    curl -sLo adios2-2.11.0.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
@@ -94,7 +94,7 @@ function build_adios2 {
         -DADIOS2_Blosc2_PREFER_SHARED=OFF         \
         -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Blosc2=ON                    \
-        -DADIOS2_USE_Campaign=OFF                 \
+        -DADIOS2_USE_Campaign=ON                  \
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_HDF5=OFF                     \
         -DADIOS2_USE_MHS=OFF                      \
