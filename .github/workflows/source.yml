@@ -80,3 +80,4 @@ jobs:
         uses: ax3l/zenodo-validator@custom-extra-prop
         with:
           path: '.rodare.json'
+          allowed_extra_properties: 'pub_id'  # HZDR Pub-ID linked to RODARE entries
