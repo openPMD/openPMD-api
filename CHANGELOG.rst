@@ -5,7 +5,15 @@ Changelog
 
 0.17.0
 ------
-**Date:** TBD
+**Date:** 2025-01-14
+
+Chunk Distribution Strategies, HDF5 Compression, Snapshots API Improvements, Variable Encoding & Performance
+
+This release adds support for advanced chunk distribution strategies for data organization in parallel read operations.
+New filtering and compression features are available for HDF5 via JSON/TOML configuration.
+The streaming API has been refined with the unified Snapshots API and improved support for lazy parsing.
+ADIOS2 variable-based encoding has been further improved with support for various backends and edge cases.
+HDF5 scalar dataset reading is now supported, and multiple performance optimizations have been added throughout.
 
 
 Changes to "0.16.1"
@@ -49,7 +57,7 @@ Features
   - Optional shape in constant components (#1661)
   - Stderr hints for lazy parsing when appropriate (#1802 #1816)
   - storeChunk: use const-type pointers (#1778)
-  - Span API: use std::unique_ptr in default fallback (#1820)
+  - Span API: use ``std::unique_ptr`` in default fallback (#1820)
   - Pickle API: Cache unpickled Series to avoid repeated file access (#1654)
   - Fix license headers (#1819)
 
@@ -60,16 +68,14 @@ Bug Fixes
 
   - Deactivate Span API in BP5 up to ADIOS2 v2.10.2 (#1771)
   - Fix propagation of joined dimension to the backend (#1740)
-  - Fix late unique_ptr puts without CLOSE_FILE or ADVANCE operations (#1744)
-  - Fix double write from unique_ptr (#1743)
-  - Fix hangup with writeIterations() (#1728)
-  - Always use CurrentStep() in mode::Read, fixing nonstandard SST workflows (#1749)
-.. - HDF5:
-
+  - Fix late ``unique_ptr`` puts without ``CLOSE_FILE`` or ``ADVANCE`` operations (#1744)
+  - Fix double write from ``unique_ptr`` (#1743)
+  - Fix hangup with ``writeIterations()`` (#1728)
+  - Always use ``CurrentStep()`` in ``mode::Read``, fixing nonstandard SST workflows (#1749)
 
 - JSON/TOML IO backend:
 
-  - Remove unnecessary putJsonContents() calls (#1782)
+  - Remove unnecessary ``putJsonContents()`` calls (#1782)
   - Fix uninitialized values (#1745)
 - Python:
 
@@ -82,17 +88,17 @@ Bug Fixes
   - Fixes for deferred initialization (#1777)
   - Remove leftover debugging messages (#1816)
   - Fix Variant issue with certain CUDA versions (#1722 #1807)
-  - Fix behavior of Iteration::open() for correct use of Span API (#1794)
-  - iterator::operator== fix for C++20 (#1798)
+  - Fix behavior of ``Iteration::open()`` for correct use of Span API (#1794)
+  - ``iterator::operator==`` fix for C++20 (#1798)
   - Fix a couple of false positive warnings (#1806 #1824)
-  - Safeguards for READ_LINEAR mode (#1753)
+  - Safeguards for ``READ_LINEAR`` mode (#1753)
 
 Other
 """""
 
 - CMake:
 
-  - Skip MPICXX dependency (#1785)
+  - Skip ``MPICXX`` dependency (#1785)
 - CI/Infrastructure:
 
   - Upgrade to macOS-14 (#1808)
@@ -106,9 +112,9 @@ Other
 - Documentation:
 
   - Update streaming documentation to snapshots API (#1773)
-  - Doc: First Write with explicit float64 type (#1780)
+  - Doc: First Write with explicit ``float64`` type (#1780)
   - WarpX repo update (#1733)
-  - Link code examples to current version instead of dev (#1821)
+  - Link code examples to current version instead of ``dev`` (#1821)
 
 
 0.16.1
