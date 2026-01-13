@@ -51,10 +51,11 @@ namespace internal
         Attributable a;
         a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
 // this check can be too costly in some setups
-#if 1
-        if ((*a.containingIteration().first.value())
-                .asInternalCopyOf<Iteration>()
-                .closed())
+#if openPMD_USE_INVASIVE_TESTS
+
+        auto &iterationData = *a.containingIteration().first.value();
+        auto iteration = iterationData.asInternalCopyOf<Iteration>();
+        if (iteration.closed() && !iterationData.allow_reopening_implicitly)
         {
             throw error::WrongAPIUsage(
                 "Cannot write/read chunks to/from closed Iterations.");
