@@ -77,6 +77,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Validate Zenodo Metadata
-        uses: vsoch/zenodo-validator@main
+        uses: ax3l/zenodo-validator@custom-extra-prop
         with:
           path: '.rodare.json'
