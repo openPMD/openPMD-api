@@ -275,13 +275,13 @@ Mesh &Mesh::setUnitDimension(unit_representations::AsArray const &udim)
 Mesh &Mesh::setGridUnitDimension(unit_representations::AsMaps const &udims)
 {
     auto rawGridUnitDimension = [&udims, this]() {
-        if (!this->contains("gridUnitDimension"))
+        if (!this->containsAttribute("gridUnitDimension"))
         {
             std::vector<double> res(udims.size() * 7);
-            for (size_t i = 0; i < udims.size(); ++i)
-            {
-                res[7 * i] = 1;
-            }
+            // for (size_t i = 0; i < udims.size(); ++i)
+            // {
+            //     res[7 * i] = 1;
+            // }
             return res;
         }
         else
