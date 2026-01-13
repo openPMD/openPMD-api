@@ -425,10 +425,6 @@ void RecordComponent::flush(
                     "RecordComponent::resetDataset()).");
             }
         }
-        if (!containsAttribute("unitSI"))
-        {
-            setUnitSI(1);
-        }
         auto constant_component_write_shape = [&]() {
             auto extent = getExtent();
             return !Dataset::undefinedExtent(extent) &&

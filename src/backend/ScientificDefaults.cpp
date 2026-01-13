@@ -139,7 +139,9 @@ void ScientificDefaults<Child>::finalize(Access at)
     {
         for (auto &[_, right] : asChild().particlePatches)
         {
-            right.finalize(at);
+            right
+                .ScientificDefaults<BaseRecord<PatchRecordComponent>>::finalize(
+                    at);
         }
     }
 }
@@ -247,11 +249,40 @@ void ScientificDefaults<Child>::addDefaults()
         addDefaultFor<unit_representations::AsArray const &>(
             "unitDimension", unit_representations::AsArray{});
     }
+    else if constexpr (std::is_same_v<Child, RecordComponent>)
+    {
+        addDefaultFor("unitSI", 1.0, &RecordComponent::setUnitSI);
+    }
+    else if constexpr (std::is_same_v<Child, MeshRecordComponent>)
+    {
+        // position
+        auto dimensionality = asChild().getDimensionality();
+        addDefaultFor(
+            "position",
+            [&]() {
+                if (dimensionality < 100)
+                {
+                    return std::vector<double>(dimensionality, 0.5);
+                }
+                else
+                {
+                    return std::vector<double>{0.0};
+                }
+            },
+            &MeshRecordComponent::setPosition);
+        addParentDefaults<RecordComponent>();
+    }
+    else if constexpr (std::is_same_v<Child, PatchRecordComponent>)
+    {
+        addParentDefaults<RecordComponent>();
+    }
 }
 
 template class ScientificDefaults<Iteration>;
 template class ScientificDefaults<Mesh>;
 template class ScientificDefaults<MeshRecordComponent>;
+template class ScientificDefaults<RecordComponent>;
+template class ScientificDefaults<PatchRecordComponent>;
 template class ScientificDefaults<ParticleSpecies>;
 template class ScientificDefaults<Record>;
 template class ScientificDefaults<BaseRecord<MeshRecordComponent>>;

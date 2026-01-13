@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/UniquePtr.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 // comment to prevent this include from being moved by clang-format
 #include "openPMD/DatatypeMacros.hpp"
@@ -110,7 +111,9 @@ namespace internal
 template <typename>
 class BaseRecord;
 
-class RecordComponent : public BaseRecordComponent
+class RecordComponent
+    : public BaseRecordComponent
+    , internal::ScientificDefaults<RecordComponent>
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
@@ -128,6 +131,8 @@ class RecordComponent : public BaseRecordComponent
     friend class MeshRecordComponent;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
+    template <typename>
+    friend class internal::ScientificDefaults;
 
 public:
     enum class Allocation

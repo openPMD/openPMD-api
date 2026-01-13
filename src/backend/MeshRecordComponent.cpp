@@ -76,11 +76,6 @@ void MeshRecordComponent::flush(
     {
         return;
     }
-    if (access::write(IOHandler()->m_frontendAccess) &&
-        !containsAttribute("position"))
-    {
-        setPosition(std::vector<double>{0});
-    }
     RecordComponent::flush(name, params);
 }
 
