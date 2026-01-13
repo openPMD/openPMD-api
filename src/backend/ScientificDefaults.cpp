@@ -1,4 +1,5 @@
 #include "openPMD/backend/ScientificDefaults.hpp"
+
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
@@ -10,8 +11,8 @@
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
+
 #include <iostream>
-#include <typeinfo>
 #include <utility>
 
 namespace openPMD::internal
@@ -105,26 +106,6 @@ void ScientificDefaults<Child>::addParentDefaults()
 {
     asChild().ScientificDefaults<Parent>::addDefaults();
 }
-// template <typename Child>
-// template <typename F>
-// void ScientificDefaults<Child>::addDefaultFor(char const *key, F &&get_value)
-// {
-//     if (asChild().containsAttribute(key))
-//     {
-//         return;
-//     }
-//     auto value = [&]() {
-//         if constexpr (detail::IsCallable_v<F>)
-//         {
-//             return get_value();
-//         }
-//         else
-//         {
-//             return get_value;
-//         }
-//     }();
-//     asChild().setAttribute(key, std::move(value));
-// }
 
 template <typename Child>
 void ScientificDefaults<Child>::finalize(Access at)
@@ -139,23 +120,13 @@ void ScientificDefaults<Child>::finalize(Access at)
         using mapped_type = typename Container_t::mapped_type;
         if constexpr (HasScientificDefaults_v<mapped_type>)
         {
-            // std::cout << "Iterate children" << std::endl;
             for (auto &[_, right] : asChild())
             {
                 (void)_;
                 right.ScientificDefaults<mapped_type>::finalize(at);
             }
         }
-        // else
-        // {
-        //     std::cout << "Child type has no defaults tho ("
-        //               << typeid(mapped_type).name() << ")" << std::endl;
-        // }
     }
-    // else
-    // {
-    //     std::cout << "Not a container type tho" << std::endl;
-    // }
 
     if constexpr (std::is_same_v<Child, ParticleSpecies>)
     {
@@ -175,8 +146,6 @@ void ScientificDefaults<Child>::addDefaults()
     if constexpr (std::is_same_v<Child, Mesh>)
     {
         auto dimensionality = asChild().retrieveDimensionality();
-        // std::cout << "Dimensionality is " << dimensionality << " for '"
-        //           << asChild().myPath().openPMDPath() << "'" << std::endl;
 
         addDefaultFor("timeOffset", 0.f, &Mesh::setTimeOffset);
         addDefaultFor(
@@ -193,9 +162,10 @@ void ScientificDefaults<Child>::addDefaults()
                     return {"x", "y"};
                 case 3:
                     return {"x", "y", "z"};
-                default: {
+                default:
                     if (dimensionality < 100)
                     {
+                        // x1, x2, x3, x4, ...
                         std::vector<std::string> res;
                         res.reserve(dimensionality);
                         for (uint64_t i = 0; i < dimensionality; ++i)
@@ -208,9 +178,9 @@ void ScientificDefaults<Child>::addDefaults()
                     {
                         return {
                             "Please verify dimensionality. Was inferred as '" +
-                            std::to_string(dimensionality) + "'."};
+                            std::to_string(dimensionality) +
+                            "'. Seems a bit much."};
                     }
-                }
                 }
                 return std::vector<std::string>{"x", "y", "z"};
             },

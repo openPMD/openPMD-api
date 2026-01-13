@@ -768,10 +768,6 @@ TEST_CASE("mesh_constructor_test", "[core]")
     REQUIRE(m["y"].resetDataset(globalDataset).numAttributes() == 0);
     REQUIRE(m["z"].resetDataset(globalDataset).numAttributes() == 0);
 
-    for (auto const &attr : m.attributes())
-    {
-        std::cout << "Attribute: " << attr << std::endl;
-    }
     REQUIRE(m.numAttributes() == 0);
     o.iterations[42].close();
 

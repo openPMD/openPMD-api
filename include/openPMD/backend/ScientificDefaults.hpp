@@ -52,6 +52,9 @@ private:
     template <typename F, typename... Args>
     void addDefaultFor_resolveValue(char const *key, F &&get_value, Args &&...);
 
+    // These two below overloads exist only for type inference purposes
+    // Apart from this, they just forward their arguments to
+    // addDefaultFor_resolveValue
     template <typename Setter = void, typename F>
     void addDefaultFor(
         char const *key,
@@ -66,8 +69,7 @@ private:
 
     template <typename Parent>
     void addParentDefaults();
-    // template<typename F>
-    // void addDefaultFor(char const *key, F&& get_value);
+
 protected:
     void finalize(Access);
     void addDefaults();

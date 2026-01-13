@@ -166,8 +166,6 @@ namespace internal
     };
 } // namespace internal
 
-class Mesh;
-
 /**
  * @brief Base class for any type of record (e.g. mesh or particle record).
  *
