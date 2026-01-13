@@ -175,15 +175,12 @@ void ParticleSpecies::flush(
             record.second.flush(record.first, flushParams);
         for (auto &patch : particlePatches)
             patch.second.flush(patch.first, flushParams);
-        if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-        {
-            particlePatches.setDirty(false);
-        }
     }
     else
     {
         if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
         {
+            // Should we defer this ScientificDefaults?
             auto it = find("position");
             if (it != end())
                 it->second.setUnitDimension({{UnitDimension::L, 1}});
@@ -203,13 +200,10 @@ void ParticleSpecies::flush(
             for (auto &patch : particlePatches)
                 patch.second.flush(patch.first, flushParams);
         }
-        else
-        {
-            particlePatches.setDirty(false);
-        }
     }
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
+        particlePatches.setDirty(false);
         setDirty(false);
     }
 }
