@@ -178,17 +178,6 @@ void ParticleSpecies::flush(
     }
     else
     {
-        if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-        {
-            // Should we defer this ScientificDefaults?
-            auto it = find("position");
-            if (it != end())
-                it->second.setUnitDimension({{UnitDimension::L, 1}});
-            it = find("positionOffset");
-            if (it != end())
-                it->second.setUnitDimension({{UnitDimension::L, 1}});
-        }
-
         Container<Record>::flush(path, flushParams);
 
         for (auto &record : *this)

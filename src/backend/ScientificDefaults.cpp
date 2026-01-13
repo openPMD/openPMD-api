@@ -11,6 +11,7 @@
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
 #include <utility>
@@ -70,6 +71,12 @@ void ScientificDefaults<Child>::addDefaultFor_resolveValue(
             auxiliary::IsArray_v<std::remove_reference_t<decltype(value)>>)
         {
             auxiliary::write_vec_to_stream(std::cout, value);
+        }
+        else if constexpr (std::is_same_v<
+                               std::remove_reference_t<decltype(value)>,
+                               unit_representations::AsMap>)
+        {
+            std::cout << "Unit_Map";
         }
         else
         {
@@ -217,6 +224,17 @@ void ScientificDefaults<Child>::addDefaults()
     else if constexpr (std::is_same_v<Child, Record>)
     {
         addDefaultFor("timeOffset", 0.f, &Record::setTimeOffset);
+        auto const &keyInParent = asChild().writable().ownKeyWithinParent;
+
+        if (keyInParent == "position" || keyInParent == "positionOffset")
+        {
+            addDefaultFor<unit_representations::AsMap const &>(
+                "unitDimension",
+                []() {
+                    return unit_representations::AsMap{{UnitDimension::L, 1.0}};
+                },
+                &Record::setUnitDimension);
+        }
 
         addParentDefaults<BaseRecord<RecordComponent>>();
     }
