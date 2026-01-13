@@ -692,11 +692,16 @@ TEST_CASE("record_constructor_test", "[core]")
     REQUIRE(r["y"].resetDataset(dset).numAttributes() == 0); /* unitSI */
     // REQUIRE(r["z"].unitSI() == 1);
     REQUIRE(r["z"].resetDataset(dset).numAttributes() == 0); /* unitSI */
+    REQUIRE(r.numAttributes() == 0);
+    // TODO: unitSI
+    // REQUIRE(r["x"].numAttributes() == 0);
+    // REQUIRE(r["y"].numAttributes() == 0);
+    // REQUIRE(r["z"].numAttributes() == 0);
+    o.iterations[42].close();
     std::array<double, 7> zeros{{0., 0., 0., 0., 0., 0., 0.}};
     REQUIRE(r.unitDimension() == zeros);
     REQUIRE(r.timeOffset<float>() == static_cast<float>(0));
     REQUIRE(r.numAttributes() == 2); /* timeOffset, unitDimension */
-    o.flush();
     REQUIRE(r["x"].unitSI() == 1);
     REQUIRE(r["y"].unitSI() == 1);
     REQUIRE(r["z"].unitSI() == 1);
@@ -778,10 +783,11 @@ TEST_CASE("mesh_constructor_test", "[core]")
     REQUIRE(m.gridSpacing<double>() == gs);
     std::vector<double> ggo{0};
     REQUIRE(m.gridGlobalOffset() == ggo);
+    auxiliary::write_vec_to_stream(std::cout, m.attributes()) << std::endl;
     REQUIRE(
         m.numAttributes() ==
-        7); /* axisLabels, dataOrder, geometry, gridGlobalOffset, gridSpacing,
-               timeOffset, unitDimension */
+        8); /* axisLabels, dataOrder, geometry, gridGlobalOffset, gridSpacing,
+               timeOffset, unitDimension, gridUnitSI */
 
     REQUIRE(m["x"].unitSI() == 1);
     REQUIRE(m["x"].numAttributes() == 2); /* unitSI, position */
@@ -803,24 +809,27 @@ TEST_CASE("mesh_modification_test", "[core]")
     m["y"].resetDataset(globalDataset);
     m["z"].resetDataset(globalDataset);
 
+    o.iterations[42].close(); // trigger writing for defaults
+    o.iterations[42].open();
+
     m.setGeometry(Mesh::Geometry::spherical);
     REQUIRE(m.geometry() == Mesh::Geometry::spherical);
-    REQUIRE(m.numAttributes() == 7);
+    REQUIRE(m.numAttributes() == 8);
     m.setDataOrder(Mesh::DataOrder::F);
     REQUIRE(m.dataOrder() == Mesh::DataOrder::F);
-    REQUIRE(m.numAttributes() == 7);
+    REQUIRE(m.numAttributes() == 8);
     std::vector<std::string> al{"z_", "y_", "x_"};
     m.setAxisLabels({"z_", "y_", "x_"});
     REQUIRE(m.axisLabels() == al);
-    REQUIRE(m.numAttributes() == 7);
+    REQUIRE(m.numAttributes() == 8);
     std::vector<double> gs{1e-5, 2e-5, 3e-5};
     m.setGridSpacing(gs);
     REQUIRE(m.gridSpacing<double>() == gs);
-    REQUIRE(m.numAttributes() == 7);
+    REQUIRE(m.numAttributes() == 8);
     std::vector<double> ggo{1e-10, 2e-10, 3e-10};
     m.setGridGlobalOffset({1e-10, 2e-10, 3e-10});
     REQUIRE(m.gridGlobalOffset() == ggo);
-    REQUIRE(m.numAttributes() == 7);
+    REQUIRE(m.numAttributes() == 8);
     m.setGridUnitSI(42.0);
     REQUIRE(m.gridUnitSI() == static_cast<double>(42));
     REQUIRE(m.numAttributes() == 8);

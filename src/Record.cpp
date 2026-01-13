@@ -29,10 +29,7 @@
 
 namespace openPMD
 {
-Record::Record()
-{
-    setTimeOffset(0.f);
-}
+Record::Record() = default;
 
 Record &Record::setUnitDimension(unit_representations::AsMap const &udim)
 {

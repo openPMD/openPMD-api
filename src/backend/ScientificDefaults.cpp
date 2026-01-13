@@ -8,6 +8,8 @@
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/PatchRecord.hpp"
+#include "openPMD/backend/PatchRecordComponent.hpp"
 #include <iostream>
 #include <typeinfo>
 #include <utility>
@@ -247,6 +249,10 @@ void ScientificDefaults<Child>::addDefaults()
         addDefaultFor("timeOffset", 0.f, &Record::setTimeOffset);
 
         addParentDefaults<BaseRecord<RecordComponent>>();
+    }
+    else if constexpr (std::is_same_v<Child, PatchRecord>)
+    {
+        addParentDefaults<BaseRecord<PatchRecordComponent>>();
     }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {
