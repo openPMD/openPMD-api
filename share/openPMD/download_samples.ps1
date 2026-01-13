@@ -24,10 +24,10 @@ Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/566b35
 7z.exe x -r example-3d-bp4.tar
 7z.exe x -r legacy_datasets.tar.gz
 7z.exe x -r legacy_datasets.tar
-Move-Item -Path example-3d\hdf5\* samples\git-sample\
-Move-Item -Path example-thetaMode\hdf5\* samples\git-sample\thetaMode\
-Move-Item -Path example-3d-bp4\* samples\git-sample\3d-bp4\
-Move-Item -Path legacy_datasets\* samples\git-sample\legacy\
+Move-Item -Path example-3d\hdf5\* -Destination samples\git-sample\ -Force
+Move-Item -Path example-thetaMode\hdf5\* -Destination samples\git-sample\thetaMode\ -Force
+Move-Item -Path example-3d-bp4\* -Destination samples\git-sample\3d-bp4\ -Force
+Move-Item -Path legacy_datasets\* -Destination samples\git-sample\legacy\ -Force
 Remove-Item -Recurse -Force example-3d*
 Remove-Item -Recurse -Force example-thetaMode*
 Remove-Item -Recurse -Force example-3d-bp4*
@@ -44,7 +44,7 @@ Remove-Item *.zip
 # Ref.: https://github.com/openPMD/openPMD-viewer/issues/296
 Invoke-WebRequest https://github.com/openPMD/openPMD-viewer/files/5655027/diags.zip -OutFile empty_alternate_fbpic.zip
 Expand-Archive empty_alternate_fbpic.zip
-Move-Item -Path empty_alternate_fbpic\diags\hdf5\data00000050.h5 samples\issue-sample\empty_alternate_fbpic_00000050.h5
+Move-Item -Path empty_alternate_fbpic\diags\hdf5\data00000050.h5 -Destination samples\issue-sample\empty_alternate_fbpic_00000050.h5 -Force
 Remove-Item -Recurse -Force empty_alternate_fbpic*
 
 cd $orgdir
