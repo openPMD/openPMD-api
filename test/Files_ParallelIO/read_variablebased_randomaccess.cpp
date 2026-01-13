@@ -249,7 +249,7 @@ auto read_variablebased_randomaccess() -> void
         create_file_in_serial(true);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    // read_file_in_parallel(std::nullopt);
+    read_file_in_parallel(std::nullopt);
     if (rank == 0)
     {
         create_file_in_serial(false);
