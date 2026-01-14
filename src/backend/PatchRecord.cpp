@@ -70,10 +70,7 @@ void PatchRecord::flush_impl(
     }
     else
         T_RecordComponent::flush(path, flushParams);
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-    {
-        setDirty(false);
-    }
+    determineUnsetDirty(flushParams.flushLevel);
 }
 
 void PatchRecord::read()

@@ -377,10 +377,7 @@ void Attributable::flushAttributes(internal::FlushParams const &flushParams)
         }
     }
     // Do this outside the if branch to also setDirty to dirtyRecursive
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-    {
-        setDirty(false);
-    }
+    determineUnsetDirty(flushParams.flushLevel);
 }
 
 void Attributable::readAttributes(ReadMode mode)

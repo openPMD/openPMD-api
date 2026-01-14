@@ -379,7 +379,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             m.second.flush(m.first, flushParams);
         for (auto &species : particles)
             species.second.flush(species.first, flushParams);
-        setDirty(false);
+        determineUnsetDirty(flushParams.flushLevel);
     }
     else
     {
@@ -433,9 +433,9 @@ void Iteration::flush(internal::FlushParams const &flushParams)
     }
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
-        setDirty(false);
-        meshes.setDirty(false);
-        particles.setDirty(false);
+        determineUnsetDirty(flushParams.flushLevel);
+        meshes.determineUnsetDirty(flushParams.flushLevel);
+        particles.determineUnsetDirty(flushParams.flushLevel);
     }
 }
 

@@ -197,11 +197,8 @@ void ParticleSpecies::flush(
                 patch.second.flush(patch.first, flushParams);
         }
     }
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-    {
-        particlePatches.setDirty(false);
-        setDirty(false);
-    }
+    determineUnsetDirty(flushParams.flushLevel);
+    particlePatches.determineUnsetDirty(flushParams.flushLevel);
 }
 void ParticleSpecies::scientificDefaults_impl(
     internal::WriteOrRead, OpenpmdStandard)

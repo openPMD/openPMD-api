@@ -554,10 +554,7 @@ void RecordComponent::flush(
 
         flushAttributes(flushParams);
     }
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-    {
-        setDirty(false);
-    }
+    determineUnsetDirty(flushParams.flushLevel);
 }
 
 void RecordComponent::read()

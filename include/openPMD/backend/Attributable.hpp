@@ -613,6 +613,27 @@ OPENPMD_protected
     {
         return writable().dirtyRecursive;
     }
+    void determineUnsetDirty(FlushLevel fl)
+    {
+        switch (fl)
+        {
+        case FlushLevel::UserFlush:
+            setDirty(false);
+            break;
+        case FlushLevel::InternalFlush:
+            // Used for parsing
+            if (IOHandler()->m_seriesStatus == internal::SeriesStatus::Parsing)
+            {
+                throw error::Internal(
+                    "Parsing procedures should directly unset dirty.");
+            }
+            break;
+        case FlushLevel::SkeletonOnly:
+        case FlushLevel::CreateOrOpenFiles:
+            // noop
+            break;
+        }
+    }
     void setDirty(bool dirty_in)
     {
         auto &w = writable();

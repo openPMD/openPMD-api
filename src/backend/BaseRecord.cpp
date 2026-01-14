@@ -799,10 +799,7 @@ inline void BaseRecord<T_elem>::flush(
     }
 
     this->flush_impl(name, flushParams);
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
-    {
-        this->setDirty(false);
-    }
+    this->determineUnsetDirty(flushParams.flushLevel);
     // flush_impl must take care to correctly set the dirty() flag so this
     // method doesn't do it
 }
