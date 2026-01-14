@@ -167,6 +167,12 @@ void write_test_zero_extent(
         Access::CREATE_LINEAR,
         MPI_COMM_WORLD);
 
+    if (o.flushImmediately() && !writeAllChunks)
+    {
+        // immediate flushing makes storeChunk collective, cannot do this
+        return;
+    }
+
     int const max_step = 100;
 
     for (int step = 0; step <= max_step; step += 20)
@@ -945,8 +951,25 @@ void close_iteration_test(std::string const &file_ending)
         {
             REQUIRE(data[i % 4] == chunk.get()[i]);
         }
-        auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
-        // REQUIRE_THROWS(read.flush());
+        // Cannot write/read chunks to/from closed Iterations.
+        if (read.flushImmediately())
+        {
+#if openPMD_USE_INVASIVE_TESTS
+            REQUIRE_THROWS_WITH(
+                E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4}),
+                "Cannot write/read chunks to/from closed Iterations.");
+#else
+            REQUIRE_THROWS_WITH(
+                E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4}),
+                "Wrong API usage: [Series] Closed iteration (idx=1) must be "
+                "open()ed explicitly before interacting with it again.");
+#endif
+        }
+        else
+        {
+            auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
+            // REQUIRE_THROWS(read.flush());
+        }
     }
 
     chunk_assignment::RankMeta compare;
