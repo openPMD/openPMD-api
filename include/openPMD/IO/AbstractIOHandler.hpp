@@ -62,7 +62,7 @@ enum class FlushLevel
     UserFlush,
     /**
      * Flush triggered by storeChunk in immediate flush mode.
-     * Must not perform storeChunk operations of the Span API.
+     * Must not perform operations enqueued in m_chunks.
      */
     ImmediateFlush,
     /**
