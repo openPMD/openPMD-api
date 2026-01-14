@@ -5926,7 +5926,7 @@ void variableBasedSeries(std::string const &file)
         REQUIRE(auxiliary::directory_exists(file));
     };
 
-    auto testRead = [&file, &extent](
+    auto testRead = [&file](
                         std::string const &parseMode,
                         bool supportsModifiableAttributes,
                         Access access = Access::READ_LINEAR) {
