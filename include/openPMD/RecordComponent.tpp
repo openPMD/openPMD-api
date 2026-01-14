@@ -166,7 +166,8 @@ inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
             storeChunk_impl(
                 auxiliary::WriteBuffer(std::move(data)),
                 getBufferView.dtype,
-                std::move(ls_cfg));
+                std::move(ls_cfg),
+                /*flush_immediately=*/false);
         }
         // storeChunk(std::move(data), std::move(o), std::move(e));
     }

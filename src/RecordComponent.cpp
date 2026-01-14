@@ -725,7 +725,8 @@ void RecordComponent::readBase()
 void RecordComponent::storeChunk_impl(
     auxiliary::WriteBuffer buffer,
     Datatype dtype,
-    internal::LoadStoreConfigWithBuffer cfg)
+    internal::LoadStoreConfigWithBuffer cfg,
+    std::optional<bool> flush_immediately)
 {
     auto [o, e, memorySelection] = std::move(cfg);
     verifyChunk(dtype, o, e);
@@ -738,7 +739,7 @@ void RecordComponent::storeChunk_impl(
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::move(buffer);
     auto &rc = get();
-    rc.push_chunk(IOTask(this, std::move(dWrite)));
+    rc.push_chunk(IOTask(this, std::move(dWrite)), flush_immediately);
 }
 
 void RecordComponent::verifyChunk(

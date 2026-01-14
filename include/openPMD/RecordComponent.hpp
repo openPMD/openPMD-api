@@ -489,7 +489,8 @@ private:
     void storeChunk_impl(
         auxiliary::WriteBuffer buffer,
         Datatype datatype,
-        internal::LoadStoreConfigWithBuffer);
+        internal::LoadStoreConfigWithBuffer,
+        std::optional<bool> flush_immediately = std::nullopt);
 
     template <typename T>
     DynamicMemoryView<T> storeChunkSpan_impl(internal::LoadStoreConfig);
