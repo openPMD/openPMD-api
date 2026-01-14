@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Spack Cache
       uses: actions/cache@v3
       with: {path: /opt/spack, key: clangtidy19_nopy_ompi_h5_ad2 }
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Spack Cache
       uses: actions/cache@v3
       with: {path: /opt/spack, key: clang19_nopy_ompi_h5_ad2 }
