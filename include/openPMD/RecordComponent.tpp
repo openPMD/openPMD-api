@@ -161,8 +161,14 @@ inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
         getBufferView.out->ptr = static_cast<void *>(data.get());
         if (size > 0)
         {
-            storeChunk(std::move(data), std::move(o), std::move(e));
+            internal::LoadStoreConfigWithBuffer ls_cfg{
+                std::move(o), std::move(e), std::nullopt};
+            storeChunk_impl(
+                auxiliary::WriteBuffer(std::move(data)),
+                getBufferView.dtype,
+                std::move(ls_cfg));
         }
+        // storeChunk(std::move(data), std::move(o), std::move(e));
     }
     setDirtyRecursive(true);
     return DynamicMemoryView<T>{std::move(getBufferView), size, *this};

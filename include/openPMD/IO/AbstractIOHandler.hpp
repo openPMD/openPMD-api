@@ -61,6 +61,11 @@ enum class FlushLevel
      */
     UserFlush,
     /**
+     * Flush triggered by storeChunk in immediate flush mode.
+     * Must not perform storeChunk operations of the Span API.
+     */
+    ImmediateFlush,
+    /**
      * Default mode, used when flushes are triggered internally, e.g. during
      * parsing to read attributes. Does not trigger a flush point.
      * All operations must be performed by a backend, except for those that
@@ -92,6 +97,7 @@ namespace flush_level
         {
         case FlushLevel::UserFlush:
             return true;
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
         case FlushLevel::CreateOrOpenFiles:
@@ -99,13 +105,13 @@ namespace flush_level
         }
         return false; // unreachable
     }
-    // same as global_flushpoint for now, but we will soon introduce
-    // immediate_flush
+
     inline constexpr auto write_datasets(FlushLevel fl)
     {
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
             return true;
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
@@ -119,6 +125,7 @@ namespace flush_level
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
             return true;
         case FlushLevel::SkeletonOnly:
@@ -132,6 +139,7 @@ namespace flush_level
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
             return true;
@@ -372,16 +380,13 @@ public:
      * backends that decide to implement this operation asynchronously.
      */
     std::future<void> flush(internal::FlushParams const &);
-<<<<<<< HEAD
+    std::queue<IOTask> m_work;
     /** Counter tracking the number of flush operations. This is later used to
      * avoid repeated flushing in the DeferredComputation objects returned by
      * the loadStoreChunk() API. (The counter is copied as a weak reference to
      * the shared pointer, and the value is compared to the value upon enqueuing
      * the operation. If the flush counter has proceeded past the old value, our
      * operation has already been run.) */
-=======
-    std::queue<IOTask> m_work;
->>>>>>> 689ec45c8 (Better initialization of global params)
     std::shared_ptr<unsigned long long> m_flushCounter =
         std::make_shared<unsigned long long>(0);
 
