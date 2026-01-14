@@ -762,7 +762,7 @@ TEST_CASE("mesh_constructor_test", "[core]")
 
     Mesh &m = o.iterations[42].meshes["E"];
 
-    std::vector<double> pos{0};
+    std::vector<double> pos{0.5};
     /* unitSI and position are set to default values upon closing */
     REQUIRE(m["x"].resetDataset(globalDataset).numAttributes() == 0);
     REQUIRE(m["y"].resetDataset(globalDataset).numAttributes() == 0);
