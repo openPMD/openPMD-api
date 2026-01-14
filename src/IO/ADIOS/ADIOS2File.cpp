@@ -1049,25 +1049,16 @@ void ADIOS2File::flush_impl(
         drainedUniquePtrPuts.swap(m_uniquePtrPuts);
     }
 
-    if (readOnly(m_mode))
+    if (readOnly(m_mode) || flush_level::write_datasets(level))
     {
-        level = FlushLevel::UserFlush;
-    }
-
-    switch (level)
-    {
-    case FlushLevel::UserFlush:
         performPutGets(*this, eng);
         m_updateSpans.clear();
         m_buffer.clear();
         m_alreadyEnqueued.clear();
         drainedUniquePtrPuts.clear();
-
-        break;
-
-    case FlushLevel::InternalFlush:
-    case FlushLevel::SkeletonOnly:
-    case FlushLevel::CreateOrOpenFiles:
+    }
+    else
+    {
         /*
          * Tasks have been given to ADIOS2, but we don't flush them
          * yet. So, move everything to m_alreadyEnqueued to avoid
@@ -1084,7 +1075,6 @@ void ADIOS2File::flush_impl(
                 "wrong time.");
         }
         m_buffer.clear();
-        break;
     }
 }
 

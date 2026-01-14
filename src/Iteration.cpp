@@ -306,15 +306,9 @@ void Iteration::flushFileBased(
         s.openIteration(i, *this);
     }
 
-    switch (flushParams.flushLevel)
+    if (flush_level::flush_hierarchy(flushParams.flushLevel))
     {
-    case FlushLevel::CreateOrOpenFiles:
-        break;
-    case FlushLevel::SkeletonOnly:
-    case FlushLevel::InternalFlush:
-    case FlushLevel::UserFlush:
         flush(flushParams);
-        break;
     }
 }
 
@@ -329,15 +323,9 @@ void Iteration::flushGroupBased(
         IOHandler()->enqueue(IOTask(this, pCreate));
     }
 
-    switch (flushParams.flushLevel)
+    if (flush_level::flush_hierarchy(flushParams.flushLevel))
     {
-    case FlushLevel::CreateOrOpenFiles:
-        break;
-    case FlushLevel::SkeletonOnly:
-    case FlushLevel::InternalFlush:
-    case FlushLevel::UserFlush:
         flush(flushParams);
-        break;
     }
 }
 
@@ -352,16 +340,12 @@ void Iteration::flushVariableBased(
         IOHandler()->enqueue(IOTask(this, pOpen));
     }
 
-    switch (flushParams.flushLevel)
+    if (!flush_level::flush_hierarchy(flushParams.flushLevel))
     {
-    case FlushLevel::CreateOrOpenFiles:
         return;
-    case FlushLevel::SkeletonOnly:
-    case FlushLevel::InternalFlush:
-    case FlushLevel::UserFlush:
-        flush(flushParams);
-        break;
     }
+
+    flush(flushParams);
 
     if (!written())
     {

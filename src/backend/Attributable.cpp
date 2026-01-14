@@ -361,15 +361,9 @@ template void Attributable::seriesFlush_impl<false>(
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)
 {
-    switch (flushParams.flushLevel)
+    if (!flush_level::write_attributes(flushParams.flushLevel))
     {
-    case FlushLevel::SkeletonOnly:
-    case FlushLevel::CreateOrOpenFiles:
         return;
-    case FlushLevel::InternalFlush:
-    case FlushLevel::UserFlush:
-        // pass
-        break;
     }
     if (dirty())
     {

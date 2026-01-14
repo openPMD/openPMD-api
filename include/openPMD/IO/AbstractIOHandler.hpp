@@ -81,6 +81,64 @@ enum class FlushLevel
     CreateOrOpenFiles
 };
 
+namespace flush_level
+{
+    inline constexpr auto global_flushpoint(FlushLevel fl)
+    {
+        switch (fl)
+        {
+        case FlushLevel::UserFlush:
+            return true;
+        case FlushLevel::InternalFlush:
+        case FlushLevel::SkeletonOnly:
+        case FlushLevel::CreateOrOpenFiles:
+            return false;
+        }
+        return false; // unreachable
+    }
+    // same as global_flushpoint for now, but we will soon introduce
+    // immediate_flush
+    inline constexpr auto write_datasets(FlushLevel fl)
+    {
+        switch (fl)
+        {
+        case FlushLevel::UserFlush:
+            return true;
+        case FlushLevel::InternalFlush:
+        case FlushLevel::SkeletonOnly:
+        case FlushLevel::CreateOrOpenFiles:
+            return false;
+        }
+        return false; // unreachable
+    }
+    inline constexpr auto write_attributes(FlushLevel fl)
+    {
+        switch (fl)
+        {
+        case FlushLevel::UserFlush:
+        case FlushLevel::InternalFlush:
+            return true;
+        case FlushLevel::SkeletonOnly:
+        case FlushLevel::CreateOrOpenFiles:
+            return false;
+        }
+        return false; // unreachable
+    }
+    inline constexpr auto flush_hierarchy(FlushLevel fl)
+    {
+        switch (fl)
+        {
+        case FlushLevel::UserFlush:
+        case FlushLevel::InternalFlush:
+        case FlushLevel::SkeletonOnly:
+            return true;
+        case FlushLevel::CreateOrOpenFiles:
+            return false;
+        }
+        return false; // unreachable
+    }
+} // namespace flush_level
+
 enum class OpenpmdStandard
 {
     v_1_0_0,
