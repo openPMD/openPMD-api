@@ -4356,6 +4356,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
     Datatype dtype = determineDatatype<int32_t>();
     {
         Series write("../samples/bp5_flush.bp", Access::CREATE_LINEAR, cfg);
+        bool flushImmediately = write.flushImmediately();
 
         {
             auto component =
@@ -4392,8 +4393,16 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         if (flushDuringStep == FlushDuringStep::Default_Yes ||
             flushDuringStep == FlushDuringStep::Always)
         {
-            // should still be roughly within 1% of 4Mb
-            REQUIRE(std::abs(1 - double(currentSize) / (4 * size)) <= 0.01);
+            if (flushImmediately)
+            {
+                // should still be roughly within 1% of 8Mb
+                REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
+            }
+            else
+            {
+                // should still be roughly within 1% of 4Mb
+                REQUIRE(std::abs(1 - double(currentSize) / (4 * size)) <= 0.01);
+            }
         }
         else
         {
@@ -4433,8 +4442,17 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         }
         else if (flushDuringStep == FlushDuringStep::Default_Yes)
         {
-            // should now be roughly within 1% of 8Mb
-            REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
+            if (flushImmediately)
+            {
+                // should now be roughly within 1% of 12Mb
+                REQUIRE(
+                    std::abs(1 - double(currentSize) / (12 * size)) <= 0.01);
+            }
+            else
+            {
+                // should now be roughly within 1% of 8Mb
+                REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
+            }
         }
         else
         {

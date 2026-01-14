@@ -109,7 +109,7 @@ The openPMD-api distinguishes between a number of different access modes:
 Deferred Data API Contract
 --------------------------
 
-IO operations are in general not performed by the openPMD API immediately after calling the corresponding API function.
+In the C++ API, IO operations are by default not performed by the openPMD API immediately after calling the corresponding API function.
 Rather, operations are enqueued internally and performed at so-called *flush points*.
 A flush point is a point within an application's sequential control flow where the openPMD API must uphold the following guarantees:
 
@@ -119,6 +119,11 @@ A flush point is a point within an application's sequential control flow where t
 *   In read mode, a buffer into which data from a dataset should be filled, must have been filled with the requested data after the flush point.
 
 In short: operations requested by ``storeChunk()`` and ``loadChunk()`` must happen exactly at flush points.
+
+The openPMD-api may be configured to flush immediately upon calling a load/store operation, using either the JSON key ``{"flush_immediately": true}`` or the environment variable ``OPENPMD_FLUSH_IMMEDIATELY=1``, in order to introduce implicit flush points at each such method call.
+Refer also to the :ref:`documentation page <backend_independent_config>` on JSON/TOML configuration.
+This mode helps avoiding typical pitfalls in a deferred load/store API for performance-noncritical operations.
+Immediate flushing is the default in the Python API.
 
 Flush points are triggered by:
 

@@ -636,6 +636,7 @@ OPENPMD_protected
                     "Internal flushes should not unset dirty flags.");
             }
             break;
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::SkeletonOnly:
         case FlushLevel::CreateOrOpenFiles:
             // noop

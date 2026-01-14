@@ -75,7 +75,8 @@ namespace internal
          */
         std::queue<IOTask> m_chunks;
 
-        [[nodiscard]] auto push_chunk(IOTask &&task) -> bool;
+        void push_chunk(
+            IOTask &&task, std::optional<bool> immediate_flush = std::nullopt);
         /**
          * Stores the value for constant record components.
          * Ignored otherwise.
@@ -488,7 +489,8 @@ private:
     void storeChunk_impl(
         auxiliary::WriteBuffer buffer,
         Datatype datatype,
-        internal::LoadStoreConfigWithBuffer);
+        internal::LoadStoreConfigWithBuffer,
+        std::optional<bool> flush_immediately = std::nullopt);
 
     template <typename T>
     DynamicMemoryView<T> storeChunkSpan_impl(internal::LoadStoreConfig);
