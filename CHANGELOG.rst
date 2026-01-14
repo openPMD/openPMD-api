@@ -7,13 +7,14 @@ Changelog
 ------
 **Date:** 2025-01-14
 
-Chunk Distribution Strategies, HDF5 Compression, Snapshots API Improvements, Variable Encoding & Performance
+Unified Snapshots API, HDF5 Compression, Dataset-Specific Backend Configuration, fully supported Variable Encoding in ADIOS2, Chunk Distribution Strategies & Performance
 
-This release adds support for advanced chunk distribution strategies for data organization in parallel read operations.
-New filtering and compression features are available for HDF5 via JSON/TOML configuration.
-The streaming API has been refined with the unified Snapshots API and improved support for lazy parsing.
-ADIOS2 variable-based encoding has been further improved with support for various backends and edge cases.
-HDF5 scalar dataset reading is now supported, and multiple performance optimizations have been added throughout.
+This release unifies the Streaming API and the Random-Access File API into a unified Snapshots API, with improved support for lazy parsing.
+Filtering and compression features are now also available for HDF5 (previously only ADIOS2), configured via JSON/TOML.
+JSON/TOML configuration can now target individual datasets for an improved tuning of compression operations.
+Variable Encoding is now fully supported in ADIOS2 (one ADIOS2 step per Iteration), as an alternative for File Encoding (one file per Iteration).
+Advanced chunk distribution strategies are now available in the API and in ``openpmd-pipe`` for data organization in parallel read operations.
+Multiple performance optimizations have been added throughout.
 
 
 Changes to "0.16.1"
