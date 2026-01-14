@@ -64,6 +64,8 @@ void ScientificDefaults<Child>::addDefaultFor_resolveValue(
             return get_value;
         }
     }();
+    constexpr bool debug = true;
+    if constexpr (debug)
     {
         std::cout << "\tInitializing default for '" << key << "' = '";
         if constexpr (
@@ -167,7 +169,13 @@ void ScientificDefaults<Child>::addDefaults()
     std::cout << "Adding defaults for '" << asChild().myPath().openPMDPath()
               << "'" << std::endl;
 
-    if constexpr (std::is_same_v<Child, Mesh>)
+    if constexpr (std::is_same_v<Child, Iteration>)
+    {
+        addDefaultFor("time", 0., &Iteration::setTime);
+        addDefaultFor("dt", 1., &Iteration::setDt);
+        addDefaultFor("timeUnitSI", 1.0, &Iteration::setTimeUnitSI);
+    }
+    else if constexpr (std::is_same_v<Child, Mesh>)
     {
         auto dimensionality = asChild().retrieveDimensionality();
 

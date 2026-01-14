@@ -619,6 +619,9 @@ TEST_CASE("iteration_default_test", "[core]")
 
     Iteration &i = o.iterations[42];
 
+    REQUIRE(i.numAttributes() == 0);
+
+    i.close();
     REQUIRE(i.time<double>() == static_cast<double>(0));
     REQUIRE(i.dt<double>() == static_cast<double>(1));
     REQUIRE(i.timeUnitSI() == static_cast<double>(1));

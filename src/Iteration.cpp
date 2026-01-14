@@ -53,9 +53,6 @@ using internal::DeferredParseAccess;
 Iteration::Iteration() : Attributable(NoInit())
 {
     setData(std::make_shared<Data_t>());
-    setTime(static_cast<double>(0));
-    setDt(static_cast<double>(1));
-    setTimeUnitSI(1);
     meshes.writable().ownKeyWithinParent = "meshes";
     particles.writable().ownKeyWithinParent = "particles";
 }
