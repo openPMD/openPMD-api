@@ -799,6 +799,8 @@ public:
             "Cannot call this on an instance of Series.");
     }
 
+    [[nodiscard]] bool flushImmediately() const;
+
     // clang-format off
 OPENPMD_private
     // clang-format on

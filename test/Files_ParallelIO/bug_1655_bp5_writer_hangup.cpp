@@ -39,6 +39,11 @@ auto worker(std::string const &ext) -> void
     std::string filename = "../samples/ptl_%T." + ext;
 
     Series series = Series(filename, Access::CREATE_LINEAR, MPI_COMM_WORLD);
+    if (series.flushImmediately())
+    {
+        // Cannot run this test in immediate flush mode
+        return;
+    }
 
     Datatype datatype = determineDatatype<float>();
 

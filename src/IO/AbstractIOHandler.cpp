@@ -47,6 +47,9 @@ std::ostream &operator<<(std::ostream &os, FlushLevel l)
     case FlushLevel::CreateOrOpenFiles:
         os << "CreateOrOpenFiles";
         break;
+    case FlushLevel::ImmediateFlush:
+        os << "ImmediateFlush";
+        break;
     }
     return os;
 }

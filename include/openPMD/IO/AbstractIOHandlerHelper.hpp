@@ -33,10 +33,6 @@ namespace openPMD
  * @param   initialize_from Optionally initialize the IOHandler from a previous
  *                      interim IOHandler which to replace with the handler now
  *                      being initialized.
- * @param   path        Path to root folder for all operations associated with
- the desired handler.
- * @param   access      Access mode describing desired operations and
- permissions of the desired handler.
  * @param   format      Format describing the IO backend of the desired handler.
  * @param   originalExtension The filename extension as it was originally
  *                            specified by the user.
@@ -63,10 +59,6 @@ std::unique_ptr<AbstractIOHandler> createIOHandler(
  * @param   initialize_from Optionally initialize the IOHandler from a previous
  *                      interim IOHandler which to replace with the handler now
  *                      being initialized.
- * @param   path        Path to root folder for all operations associated with
- * the desired handler.
- * @param   access      Access describing desired operations and permissions
- * of the desired handler.
  * @param   format      Format describing the IO backend of the desired handler.
  * @param   originalExtension The filename extension as it was originally
  *                            specified by the user.

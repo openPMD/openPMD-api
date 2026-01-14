@@ -61,6 +61,11 @@ enum class FlushLevel
      */
     UserFlush,
     /**
+     * Flush triggered by storeChunk in immediate flush mode.
+     * Must not perform operations enqueued in m_chunks.
+     */
+    ImmediateFlush,
+    /**
      * Default mode, used when flushes are triggered internally, e.g. during
      * parsing to read attributes. Does not trigger a flush point.
      * All operations must be performed by a backend, except for those that
@@ -92,6 +97,7 @@ namespace flush_level
         {
         case FlushLevel::UserFlush:
             return true;
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
         case FlushLevel::CreateOrOpenFiles:
@@ -99,13 +105,13 @@ namespace flush_level
         }
         return false; // unreachable
     }
-    // same as global_flushpoint for now, but we will soon introduce
-    // immediate_flush
+
     inline constexpr auto write_datasets(FlushLevel fl)
     {
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
             return true;
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
@@ -119,6 +125,7 @@ namespace flush_level
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
             return true;
         case FlushLevel::SkeletonOnly:
@@ -132,6 +139,7 @@ namespace flush_level
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
             return true;
