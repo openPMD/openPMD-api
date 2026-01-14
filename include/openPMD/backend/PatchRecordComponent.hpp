@@ -154,10 +154,7 @@ inline void PatchRecordComponent::load(std::shared_ptr<T> data)
     dRead.dtype = getDatatype();
     dRead.data = std::static_pointer_cast<void>(data);
     auto &rc = get();
-    if (rc.push_chunk(IOTask(this, dRead)))
-    {
-        seriesFlush();
-    }
+    rc.push_chunk(IOTask(this, dRead));
 }
 
 template <typename T>
@@ -196,10 +193,7 @@ inline void PatchRecordComponent::store(uint64_t idx, T data)
     dWrite.dtype = dtype;
     dWrite.data = std::make_shared<T>(data);
     auto &rc = get();
-    if (rc.push_chunk(IOTask(this, std::move(dWrite))))
-    {
-        seriesFlush();
-    }
+    rc.push_chunk(IOTask(this, std::move(dWrite)));
 }
 
 template <typename T>
@@ -228,9 +222,6 @@ inline void PatchRecordComponent::store(T data)
     dWrite.dtype = dtype;
     dWrite.data = std::make_shared<T>(data);
     auto &rc = get();
-    if (rc.push_chunk(IOTask(this, std::move(dWrite))))
-    {
-        seriesFlush();
-    }
+    rc.push_chunk(IOTask(this, std::move(dWrite)));
 }
 } // namespace openPMD

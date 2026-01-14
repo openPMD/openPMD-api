@@ -20,8 +20,8 @@
  */
 // expose private and protected members for invasive testing
 #include "openPMD/Error.hpp"
-#include "openPMD/auxiliary/Future.hpp"
 #include "openPMD/IO/AbstractIOHandler_internal.hpp"
+#include "openPMD/auxiliary/Future.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
