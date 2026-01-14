@@ -45,7 +45,8 @@ class Mesh
 {
     friend class Container<Mesh>;
     friend class Iteration;
-    friend class internal::ScientificDefaults<Mesh>;
+    template <typename>
+    friend class internal::ScientificDefaults;
 
 public:
     Mesh(Mesh const &) = default;

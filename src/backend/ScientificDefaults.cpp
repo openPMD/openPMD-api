@@ -134,11 +134,26 @@ void ScientificDefaults<Child>::finalize(Access at)
             }
         }
     }
+    // sic! no else
 
-    if constexpr (std::is_same_v<Child, ParticleSpecies>)
+    if constexpr (std::is_same_v<Child, Iteration>)
+    {
+        for (auto &[_, right] : asChild().meshes)
+        {
+            (void)_;
+            right.ScientificDefaults<Mesh>::finalize(at);
+        }
+        for (auto &[_, right] : asChild().particles)
+        {
+            (void)_;
+            right.ScientificDefaults<ParticleSpecies>::finalize(at);
+        }
+    }
+    else if constexpr (std::is_same_v<Child, ParticleSpecies>)
     {
         for (auto &[_, right] : asChild().particlePatches)
         {
+            (void)_;
             right
                 .ScientificDefaults<BaseRecord<PatchRecordComponent>>::finalize(
                     at);

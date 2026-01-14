@@ -123,20 +123,12 @@ Iteration &Iteration::close(bool _flush)
         // yet keeps it re-openable)
         break;
     }
+
     {
         Access at = IOHandler()->m_frontendAccess;
         finalize(at);
-        for (auto &[_, mesh] : meshes)
-        {
-            (void)_;
-            mesh.internal::ScientificDefaults<Mesh>::finalize(at);
-        }
-        for (auto &[_, ps] : particles)
-        {
-            (void)_;
-            ps.finalize(at);
-        }
     }
+
     if (_flush)
     {
         if (flag == StepStatus::DuringStep)
