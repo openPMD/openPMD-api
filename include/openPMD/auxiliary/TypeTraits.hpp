@@ -208,7 +208,7 @@ namespace detail
     auto infer_template_args(Base<Args...> &) -> Base<Args...>;
 
     template <
-        template <typename> class Base,
+        template <typename...> class Base,
         typename T,
         typename SFINAE = void>
     struct IsTemplateBaseOf
@@ -216,7 +216,7 @@ namespace detail
         static constexpr bool value = false;
     };
 
-    template <template <typename> class Base, typename T>
+    template <template <typename...> class Base, typename T>
     struct IsTemplateBaseOf<
         Base,
         T,
@@ -229,8 +229,8 @@ namespace detail
     };
 } // namespace detail
 
-template <template <typename> class Base, typename T>
+template <template <typename...> class Base, typename T>
 constexpr bool IsTemplateBaseOf_v = detail::IsTemplateBaseOf<Base, T>::value;
-template <template <typename> class Base, typename T>
+template <template <typename...> class Base, typename T>
 using AsTemplateBase_t = typename detail::IsTemplateBaseOf<Base, T>::type;
 } // namespace openPMD::auxiliary
