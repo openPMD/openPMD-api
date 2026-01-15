@@ -479,7 +479,7 @@ auto BaseRecord<T_elem>::erase(key_type const &key) -> size_type
 {
     bool const keyScalar = (key == RecordComponent::SCALAR);
     size_type res;
-    if (!keyScalar || (keyScalar && this->at(key).constant()))
+    if (!keyScalar)
         res = Container<T_elem>::erase(key);
     else
     {
@@ -487,12 +487,6 @@ auto BaseRecord<T_elem>::erase(key_type const &key) -> size_type
         eraseScalar();
     }
 
-    if (keyScalar)
-    {
-        this->setWritten(false, Attributable::EnqueueAsynchronously::No);
-        this->writable().abstractFilePosition.reset();
-        this->get().m_datasetDefined = false;
-    }
     return res;
 }
 

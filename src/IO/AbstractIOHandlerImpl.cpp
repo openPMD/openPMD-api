@@ -235,7 +235,12 @@ std::future<void> AbstractIOHandlerImpl::flush()
                 auto &parameter = deref_dynamic_cast<Parameter<O::DELETE_PATH>>(
                     i.parameter.get());
                 writeToStderr(
-                    "[", i.writable->parent, "->", i.writable, "] DELETE_PATH");
+                    "[",
+                    i.writable->parent,
+                    "->",
+                    i.writable,
+                    "] DELETE_PATH: ",
+                    parameter.path);
                 deletePath(i.writable, parameter);
                 break;
             }
@@ -248,7 +253,8 @@ std::future<void> AbstractIOHandlerImpl::flush()
                     i.writable->parent,
                     "->",
                     i.writable,
-                    "] DELETE_DATASET");
+                    "] DELETE_DATASET: ",
+                    parameter.name);
                 deleteDataset(i.writable, parameter);
                 break;
             }
