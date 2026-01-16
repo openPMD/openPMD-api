@@ -169,6 +169,24 @@ void ScientificDefaults<Child>::addDefaults()
     std::cout << "Adding defaults for '" << asChild().myPath().openPMDPath()
               << "'" << std::endl;
 
+    // First some verifications
+    if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
+    {
+        if (asChild().empty() && !asChild().datasetDefined())
+        {
+            std::cerr
+                << "Cannot flush Record without any contained components: '"
+                << asChild().myPath().openPMDPath() << "'. Will ignore.";
+            if (asChild().written())
+            {
+                std::cerr << "\n(Note: The Record seems to have been written "
+                             "previously?)";
+            }
+            std::cerr << std::endl;
+            return;
+        }
+    }
+
     if constexpr (std::is_same_v<Child, Iteration>)
     {
         addDefaultFor("time", 0., &Iteration::setTime);
@@ -267,11 +285,6 @@ void ScientificDefaults<Child>::addDefaults()
     {
         addParentDefaults<BaseRecord<PatchRecordComponent>>();
     }
-    else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
-    {
-        addDefaultFor<unit_representations::AsArray const &>(
-            "unitDimension", unit_representations::AsArray{});
-    }
     else if constexpr (std::is_same_v<Child, RecordComponent>)
     {
         addDefaultFor("unitSI", 1.0, &RecordComponent::setUnitSI);
@@ -298,6 +311,11 @@ void ScientificDefaults<Child>::addDefaults()
     else if constexpr (std::is_same_v<Child, PatchRecordComponent>)
     {
         addParentDefaults<RecordComponent>();
+    }
+    else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
+    {
+        addDefaultFor<unit_representations::AsArray const &>(
+            "unitDimension", unit_representations::AsArray{});
     }
 }
 

@@ -1300,16 +1300,14 @@ TEST_CASE("empty_record_test", "[core]")
 
     o.iterations[1].meshes["E"].setComment(
         "No assumption about contained RecordComponents will be made");
-    REQUIRE_THROWS_WITH(
-        o.flush(),
-        Catch::Matchers::Equals(
-            "A Record can not be written without any contained "
-            "RecordComponents: E"));
-    o.iterations[1].meshes["E"][RecordComponent::SCALAR].resetDataset(
-        Dataset(Datatype::DOUBLE, {1}));
     auto B = o.iterations[1].meshes["B"];
     B.resetDataset(Dataset(Datatype::DOUBLE, {1}));
-    o.flush();
+    auto sneakily_keep_meshes_alive = o.iterations[1].meshes;
+    o.close();
+#if openPMD_USE_INVASIVE_TESTS
+    REQUIRE(!sneakily_keep_meshes_alive["E"].written());
+    REQUIRE(sneakily_keep_meshes_alive["B"].written());
+#endif
 }
 
 TEST_CASE("zero_extent_component", "[core]")

@@ -814,10 +814,10 @@ inline void BaseRecord<T_elem>::flush(
     }
 
     if (!this->written() && this->empty() && !this->datasetDefined())
-        throw std::runtime_error(
-            "A Record can not be written without any contained "
-            "RecordComponents: " +
-            name);
+        // Verify upon ScientificDefaults::finalize() that the Record has been
+        // populized. For now, we will assume that data will come later; ignore
+        // this Record at the moment.
+        return;
 
     /*
      * Defensive programming. Normally, this error should yield as soon as
