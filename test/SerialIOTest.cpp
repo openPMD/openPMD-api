@@ -2544,48 +2544,61 @@ TEST_CASE("patch_test", "[serial]")
 
 inline void deletion_test(const std::string &backend)
 {
-    Series o = Series("../samples/serial_deletion." + backend, Access::CREATE);
+    {
+        Series o =
+            Series("../samples/serial_deletion." + backend, Access::CREATE);
 
-    o.setAttribute(
-        "removed",
-        "this attribute will be removed after being written to disk");
-    o.flush();
+        o.setAttribute(
+            "removed",
+            "this attribute will be removed after being written to disk");
+        o.flush();
 
-    o.deleteAttribute("removed");
-    o.flush();
+        o.deleteAttribute("removed");
+        o.flush();
 
-    ParticleSpecies &e = o.iterations[1].particles["e"];
-    auto dset = Dataset(Datatype::DOUBLE, {1});
-    e["position"][RecordComponent::SCALAR].resetDataset(dset);
-    e["position"][RecordComponent::SCALAR].makeConstant(20.0);
-    e["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-    e["positionOffset"][RecordComponent::SCALAR].makeConstant(22.0);
-    e.erase("deletion");
-    e.seriesFlush();
+        ParticleSpecies &e = o.iterations[1].particles["e"];
+        auto dset = Dataset(Datatype::DOUBLE, {1});
+        e["position"][RecordComponent::SCALAR].resetDataset(dset);
+        e["position"][RecordComponent::SCALAR].makeConstant(20.0);
+        e["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+        e["positionOffset"][RecordComponent::SCALAR].makeConstant(22.0);
+        e.erase("deletion");
+        e.seriesFlush();
 
-    e["deletion_scalar"][RecordComponent::SCALAR].resetDataset(dset);
-    o.flush();
+        e["deletion_scalar"][RecordComponent::SCALAR].resetDataset(dset);
+        o.flush();
 
-    e["deletion_scalar"].erase(RecordComponent::SCALAR);
-    e.erase("deletion_scalar");
-    o.flush();
+        e["deletion_scalar"].erase(RecordComponent::SCALAR);
+        e.erase("deletion_scalar");
+        o.flush();
 
-    e["deletion_scalar_two"][RecordComponent::SCALAR].resetDataset(dset);
-    o.flush();
+        e["deletion_scalar_two"][RecordComponent::SCALAR].resetDataset(dset);
+        o.flush();
 
-    e["deletion_scalar_two"].erase(
-        e["deletion_scalar_two"].find(RecordComponent::SCALAR));
-    e.erase(e.find("deletion_scalar_two"));
-    o.flush();
+        e["deletion_scalar_two"].erase(
+            e["deletion_scalar_two"].find(RecordComponent::SCALAR));
+        e.erase(e.find("deletion_scalar_two"));
+        o.flush();
 
-    double value = 0.;
-    e["deletion_scalar_constant"][RecordComponent::SCALAR].resetDataset(dset);
-    e["deletion_scalar_constant"][RecordComponent::SCALAR].makeConstant(value);
-    o.flush();
+        double value = 0.;
+        e["deletion_scalar_constant"][RecordComponent::SCALAR].resetDataset(
+            dset);
+        e["deletion_scalar_constant"][RecordComponent::SCALAR].makeConstant(
+            value);
+        o.flush();
 
-    e["deletion_scalar_constant"].erase(RecordComponent::SCALAR);
-    e.erase("deletion_scalar_constant");
-    o.flush();
+        e["deletion_scalar_constant"].erase(RecordComponent::SCALAR);
+        e.erase("deletion_scalar_constant");
+        o.flush();
+        o.close();
+    }
+    {
+        Series i("../samples/serial_deletion." + backend, Access::READ_ONLY);
+        ParticleSpecies &e = i.snapshots()[1].particles["e"];
+        REQUIRE(!e.contains("deletion_scalar"));
+        REQUIRE(!e.contains("deletion_scalar_two"));
+        REQUIRE(!e.contains("deletion_scalar_constant"));
+    }
 }
 
 TEST_CASE("deletion_test", "[serial]")
