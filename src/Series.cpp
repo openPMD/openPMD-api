@@ -3280,10 +3280,12 @@ namespace internal
         if (this->m_sharedStatefulIterator)
         {
             this->m_sharedStatefulIterator->close();
+            this->m_sharedStatefulIterator.reset();
         }
         Series impl;
         impl.setData({this, [](auto const *) {}});
-        if (auto IOHandler = impl.IOHandler(); IOHandler &&
+        auto IOHandler = impl.IOHandler();
+        if (IOHandler &&
             /*
              * Scenario: A user calls `Series::flush()` but does not check for
              * thrown exceptions. The exception will propagate further up,
@@ -3317,7 +3319,7 @@ namespace internal
         // This releases the openPMD hierarchy
         iterations.container().clear();
         // Release the IO Handler
-        if (operator*().m_writable.IOHandler)
+        if (IOHandler)
         {
             *operator*().m_writable.IOHandler = std::nullopt;
         }
