@@ -18,6 +18,18 @@
 
 namespace openPMD::internal
 {
+template <typename RecordType, typename GetDefaultValue>
+template <typename S>
+auto ConfigAttribute<RecordType, GetDefaultValue>::withSetter(
+    SetterType<S> setter)
+    && -> ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetterType<S>>
+{
+    return ConfigAttributeWithSetter<
+        RecordType,
+        GetDefaultValue,
+        SetterType<S>>{std::move(*this), setter};
+}
+
 template <typename Child>
 auto ScientificDefaults<Child>::asChild() -> Child &
 {
@@ -189,19 +201,21 @@ void ScientificDefaults<Child>::addDefaults()
 
     if constexpr (std::is_same_v<Child, Iteration>)
     {
-        addDefaultFor("time", 0., &Iteration::setTime);
-        addDefaultFor("dt", 1., &Iteration::setDt);
-        addDefaultFor("timeUnitSI", 1.0, &Iteration::setTimeUnitSI);
+        defaultAttribute("time", 0.).withSetter (&Iteration::setTime)();
+        defaultAttribute("dt", 1.).withSetter (&Iteration::setDt)();
+        defaultAttribute("timeUnitSI", 1.0)
+            .withSetter (&Iteration::setTimeUnitSI)();
     }
     else if constexpr (std::is_same_v<Child, Mesh>)
     {
         auto dimensionality = asChild().retrieveDimensionality();
 
-        addDefaultFor("timeOffset", 0.f, &Mesh::setTimeOffset);
-        addDefaultFor(
-            "geometry", Mesh::Geometry::cartesian, &Mesh::setGeometry);
-        addDefaultFor("dataOrder", Mesh::DataOrder::C, &Mesh::setDataOrder);
-        addDefaultFor<std::vector<std::string> const &>(
+        defaultAttribute("timeOffset", 0.f).withSetter (&Mesh::setTimeOffset)();
+        defaultAttribute("geometry", Mesh::Geometry::cartesian)
+            .withSetter (&Mesh::setGeometry)();
+        defaultAttribute("dataOrder", Mesh::DataOrder::C)
+            .withSetter (&Mesh::setDataOrder)();
+        defaultAttribute(
             "axisLabels",
             [&]() -> std::vector<std::string> {
                 switch (dimensionality)
@@ -233,9 +247,10 @@ void ScientificDefaults<Child>::addDefaults()
                     }
                 }
                 return std::vector<std::string>{"x", "y", "z"};
-            },
-            &Mesh::setAxisLabels);
-        addDefaultFor<std::vector<double> const &>(
+            })
+            .template withSetter<std::vector<std::string> const &> (
+                &Mesh::setAxisLabels)();
+        defaultAttribute(
             "gridSpacing",
             [&]() {
                 if (dimensionality < 100)
@@ -246,9 +261,10 @@ void ScientificDefaults<Child>::addDefaults()
                 {
                     return std::vector<double>{1.0};
                 }
-            },
-            &Mesh::setGridSpacing);
-        addDefaultFor<std::vector<double> const &>(
+            })
+            .template withSetter<std::vector<double> const &> (
+                &Mesh::setGridSpacing)();
+        defaultAttribute(
             "gridGlobalOffset",
             [&]() {
                 if (dimensionality < 100)
@@ -259,14 +275,16 @@ void ScientificDefaults<Child>::addDefaults()
                 {
                     return std::vector<double>{0.0};
                 }
-            },
-            &Mesh::setGridGlobalOffset);
+            })
+            .template withSetter<std::vector<double> const &> (
+                &Mesh::setGridGlobalOffset)();
 
         addParentDefaults<BaseRecord<MeshRecordComponent>>();
     }
     else if constexpr (std::is_same_v<Child, Record>)
     {
-        addDefaultFor("timeOffset", 0.f, &Record::setTimeOffset);
+        defaultAttribute("timeOffset", 0.f)
+            .withSetter (&Record::setTimeOffset)();
         auto const &keyInParent = asChild().writable().ownKeyWithinParent;
 
         if (keyInParent == "position" || keyInParent == "positionOffset")
@@ -287,25 +305,23 @@ void ScientificDefaults<Child>::addDefaults()
     }
     else if constexpr (std::is_same_v<Child, RecordComponent>)
     {
-        addDefaultFor("unitSI", 1.0, &RecordComponent::setUnitSI);
+        defaultAttribute("unitSI", 1.0)
+            .withSetter (&RecordComponent::setUnitSI)();
     }
     else if constexpr (std::is_same_v<Child, MeshRecordComponent>)
     {
         // position
         auto dimensionality = asChild().getDimensionality();
-        addDefaultFor(
-            "position",
-            [&]() {
-                if (dimensionality < 100)
-                {
-                    return std::vector<double>(dimensionality, 0.5);
-                }
-                else
-                {
-                    return std::vector<double>{0.0};
-                }
-            },
-            &MeshRecordComponent::setPosition);
+        defaultAttribute("position", [&]() {
+            if (dimensionality < 100)
+            {
+                return std::vector<double>(dimensionality, 0.5);
+            }
+            else
+            {
+                return std::vector<double>{0.0};
+            }
+        }).withSetter (&MeshRecordComponent::setPosition)();
         addParentDefaults<RecordComponent>();
     }
     else if constexpr (std::is_same_v<Child, PatchRecordComponent>)
