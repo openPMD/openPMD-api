@@ -93,6 +93,7 @@ Bug Fixes
   - ``iterator::operator==`` fix for C++20 (#1798)
   - Fix a couple of false positive warnings (#1806 #1824)
   - Safeguards for ``READ_LINEAR`` mode (#1753)
+  - Fix & simplify ``BaseRecord::erase`` (#1841)
 
 Other
 """""
