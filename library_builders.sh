@@ -173,6 +173,32 @@ function build_blosc2 {
     touch blosc-stamp2
 }
 
+function build_sqlite {
+    if [ -e sqlite-stamp ]; then return; fi
+
+    SQLITE_VERSION="3510200"  # "3.51.2"
+
+    curl -sLO https://www.sqlite.org/2026/sqlite-autoconf-${SQLITE_VERSION}.tar.gz
+    file sqlite-autoconf*.tar.gz
+    tar xzf sqlite-autoconf-${SQLITE_VERSION}.tar.gz
+    rm sqlite-autoconf*.tar.gz
+
+    cd sqlite-autoconf-${SQLITE_VERSION}
+
+    ./configure                 \
+      --disable-shared          \
+      --prefix=${BUILD_PREFIX}  \
+      --all                     \
+      --disable-readline
+    make
+    ${SUDO} make install
+
+    cd -
+    rm -rf sqlite-autoconf*
+
+    touch sqlite-stamp
+}
+
 function build_zfp {
     if [ -e zfp-stamp ]; then return; fi
 
@@ -316,6 +342,7 @@ fi
 
 install_buildessentials
 build_zlib
+build_sqlite
 build_zfp
 build_blosc2
 build_hdf5

@@ -42,7 +42,8 @@ exit /b 0
     -DADIOS2_USE_Python=OFF     ^
     -DADIOS2_USE_ZeroMQ=OFF     ^
     -DADIOS2_USE_ZFP=ON         ^
-    -DADIOS2_RUN_INSTALL_TEST=OFF
+    -DADIOS2_RUN_INSTALL_TEST=OFF ^
+    -DSQLite3_ROOT=%BUILD_PREFIX%/SQLite3
   if errorlevel 1 exit 1
 :: TODO: Could NOT find HDF5 (missing: HDF5_LIBRARIES C)
 ::  -DADIOS2_USE_HDF5=ON
@@ -144,6 +145,52 @@ exit /b 0
   if errorlevel 1 exit 1
 exit /b 0
 
+:build_sqlite
+  if exist sqlite-stamp exit /b 0
+
+  set SQLITE_VERSION="3510200"
+
+  curl -sLo sqlite-amalgamation-%SQLITE_VERSION%.zip ^
+    https://www.sqlite.org/2026/sqlite-amalgamation-%SQLITE_VERSION%.zip
+  if errorlevel 1 exit 1
+
+  powershell Expand-Archive sqlite-amalgamation-%SQLITE_VERSION%.zip -DestinationPath '.'
+  if errorlevel 1 exit 1
+
+  cd sqlite-amalgamation-%SQLITE_VERSION%
+  if errorlevel 1 exit 1
+
+  REM Create a minimal CMakeLists.txt
+  (
+  echo cmake_minimum_required(VERSION 3.10^)
+  echo project(sqlite3 C^)
+  echo add_library(sqlite3 STATIC sqlite3.c^)
+  echo target_compile_definitions(sqlite3 PRIVATE SQLITE_ENABLE_FTS3 SQLITE_ENABLE_FTS5 SQLITE_ENABLE_RTREE SQLITE_ENABLE_DBSTAT_VTAB SQLITE_ENABLE_RBU SQLITE_ENABLE_SESSION^)
+  echo set_property(TARGET sqlite3 PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"^)
+  echo install(TARGETS sqlite3 ARCHIVE DESTINATION lib^)
+  echo install(FILES sqlite3.h DESTINATION include^)
+  ) > CMakeLists.txt
+
+  :: build and install
+  cmake -S . -B build ^
+    -DCMAKE_INSTALL_PREFIX=%BUILD_PREFIX%/SQLite3
+  if errorlevel 1 exit 1
+
+  cmake --build build --config Release
+  if errorlevel 1 exit 1
+
+  cmake --install build --config Release
+  if errorlevel 1 exit 1
+
+  :: cleanup
+  cd ..
+  rmdir /s /q sqlite-amalgamation-%SQLITE_VERSION%
+  if errorlevel 1 exit 1
+
+  break > sqlite-stamp
+  if errorlevel 1 exit 1
+exit /b 0
+
 :build_zfp
   if exist zfp-stamp exit /b 0
 
@@ -209,6 +256,7 @@ exit /b 0
 :main
 call :install_buildessentials
 call :build_zlib
+call :build_sqlite
 :: build_bzip2
 :: build_szip
 call :build_zfp
