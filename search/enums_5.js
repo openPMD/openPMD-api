@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['readmode_866',['ReadMode',['../classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0',1,'openPMD::AttributableInterface']]]
+  ['iterationencoding_0',['IterationEncoding',['../namespaceopen_p_m_d.html#a836aa9398502263fb423787947bf4ff8',1,'openPMD']]]
 ];

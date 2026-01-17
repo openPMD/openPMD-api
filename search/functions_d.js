@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['name_746',['name',['../classopen_p_m_d_1_1_series_interface.html#a147d588a307cc54316857115fa56e9b0',1,'openPMD::SeriesInterface']]],
-  ['numattributes_747',['numAttributes',['../classopen_p_m_d_1_1_attributable_interface.html#ae73e05ffb924bd34595fd3675928fc84',1,'openPMD::AttributableInterface']]]
+  ['name_0',['name',['../classopen_p_m_d_1_1_series.html#ae045dcfe12292f5c5edeef37ea594336',1,'openPMD::Series']]],
+  ['numattributes_1',['numAttributes',['../classopen_p_m_d_1_1_attributable.html#a7b840a8b766e1babc2c73d6f964a7df5',1,'openPMD::Attributable']]]
 ];

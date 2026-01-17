@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['totalextent_856',['totalExtent',['../classopen_p_m_d_1_1_m_p_i_benchmark.html#a98b45a51e0aed506aa805b8551fc5867',1,'openPMD::MPIBenchmark']]]
+  ['offset_0',['offset',['../structopen_p_m_d_1_1_chunk_info.html#a3d93015c2910caf58b93512ff905e12a',1,'openPMD::ChunkInfo']]],
+  ['options_1',['options',['../classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067',1,'openPMD::Dataset']]]
 ];

@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['dataorder_860',['DataOrder',['../classopen_p_m_d_1_1_mesh.html#af28bf48368071545c77bb981b8c89009',1,'openPMD::Mesh']]],
-  ['datatype_861',['Datatype',['../namespaceopen_p_m_d.html#ac04f58bb14b584a3685793e5b29ccd00',1,'openPMD']]]
+  ['closestatus_0',['CloseStatus',['../namespaceopen_p_m_d.html#ad11a2f65f1518e3a2ac8bda1bb063aa3',1,'openPMD']]]
 ];

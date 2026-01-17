@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['offset_849',['offset',['../structopen_p_m_d_1_1_chunk_info.html#a3d93015c2910caf58b93512ff905e12a',1,'openPMD::ChunkInfo']]],
-  ['openpmd_5fdatatypes_850',['openPMD_Datatypes',['../namespaceopen_p_m_d.html#a276c2fa9e763d9c53ae30f3cadf3d317',1,'openPMD']]],
-  ['options_851',['options',['../classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067',1,'openPMD::Dataset']]]
+  ['location_0',['location',['../structopen_p_m_d_1_1_a_d_i_o_s2_file_position.html#a7c3dfe82ee37ad6f03f2d7a546d6a0ff',1,'openPMD::ADIOS2FilePosition']]]
 ];
