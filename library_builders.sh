@@ -9,8 +9,10 @@ BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
 if [ "$(uname -s)" = "Darwin" ]
 then
     CPU_COUNT="${CPU_COUNT:-3}"
+    SUDO="sudo"
 else
     CPU_COUNT="${CPU_COUNT:-2}"
+    SUDO=""
 fi
 
 function install_buildessentials {
@@ -112,11 +114,11 @@ function build_adios2 {
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
 
     make -j${CPU_COUNT}
-    make install
+    ${SUDO} make install
 
     # CMake Config package of C-Blosc 2.10.1+ only
     # https://github.com/ornladios/ADIOS2/issues/3903
-    rm -rf ${BUILD_PREFIX}/lib*/cmake/adios2/FindBlosc2.cmake
+    ${SUDO} rm -rf ${BUILD_PREFIX}/lib*/cmake/adios2/FindBlosc2.cmake
 
     cd -
 
@@ -163,7 +165,7 @@ function build_blosc2 {
       "${architecture_specific_flags[@]}"    \
       ../c-blosc2-*
     make -j${CPU_COUNT}
-    make install
+    ${SUDO} make install
     cd -
 
     rm -rf build-blosc2
@@ -192,7 +194,7 @@ function build_zfp {
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       ../zfp-*
     make -j${CPU_COUNT}
-    make install
+    ${SUDO} make install
     cd -
 
     rm -rf build-zfp
@@ -220,8 +222,8 @@ function build_zlib {
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
 
     PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --parallel ${CPU_COUNT}
-    PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --target install
-    rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so
+    PATH=${CMAKE_BIN}:${PATH} ${SUDO} cmake --build build-zlib --target install
+    ${SUDO} rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so
 
     rm -rf build-zlib
 
@@ -292,7 +294,7 @@ function build_hdf5 {
     fi
 
     make -j${CPU_COUNT}
-    make install
+    ${SUDO} make install
     cd ..
 
     touch hdf5-stamp
