@@ -618,7 +618,9 @@ void init_Attributable(py::module &m)
             "get_attribute",
             [](Attributable &attr, std::string const &key) {
                 auto v = attr.getAttribute(key);
-                return v.getVariant<attribute_types>();
+                return std::visit(
+                    [](auto const &val) { return py::cast(val); },
+                    v.getVariant<attribute_types>());
                 // TODO instead of returning lists, return all arrays (ndim > 0)
                 // as numpy arrays?
             })
