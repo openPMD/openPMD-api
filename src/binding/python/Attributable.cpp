@@ -614,14 +614,15 @@ void init_Attributable(py::module &m)
         // double, 7 > >)
 
         // C++ pass-through API: Getter
-        .def(
-            "get_attribute",
-            [](Attributable &attr, std::string const &key) {
-                auto v = attr.getAttribute(key);
-                return v.getVariant<attribute_types>();
-                // TODO instead of returning lists, return all arrays (ndim > 0)
-                // as numpy arrays?
-            })
+        // .def(
+        //     "get_attribute",
+        //     [](Attributable &attr, std::string const &key) {
+        //         auto v = attr.getAttribute(key);
+        //         return v.getVariant<attribute_types>();
+        //         // TODO instead of returning lists, return all arrays (ndim >
+        //         0)
+        //         // as numpy arrays?
+        //     })
         .def_property_readonly(
             "attribute_dtypes",
             [](Attributable const &attributable) {
