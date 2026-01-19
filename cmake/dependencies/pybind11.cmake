@@ -67,10 +67,10 @@ set(openPMD_pybind11_src ""
     "Local path to pybind11 source directory (preferred if set)")
 
 # tarball fetcher
-set(openPMD_pybind11_tar "https://github.com/pybind/pybind11/archive/refs/tags/v3.0.1.tar.gz"
+set(openPMD_pybind11_tar "https://github.com/pybind/pybind11/archive/refs/tags/v2.13.6.tar.gz"
         CACHE STRING
         "Remote tarball link to pull and build pybind11 from if(openPMD_USE_INTERNAL_PYBIND11)")
-set(openPMD_pybind11_tar_hash "SHA256=741633da746b7c738bb71f1854f957b9da660bcd2dce68d71949037f0969d0ca"
+set(openPMD_pybind11_tar_hash "SHA256=e08cb87f4773da97fa7b5f035de8763abc656d87d5773e62f6da0587d1f0ec20"
         CACHE STRING
         "Hash checksum of the tarball of pybind11 if(openPMD_USE_INTERNAL_PYBIND11)")
 
@@ -78,7 +78,7 @@ set(openPMD_pybind11_tar_hash "SHA256=741633da746b7c738bb71f1854f957b9da660bcd2d
 set(openPMD_pybind11_repo "https://github.com/pybind/pybind11.git"
     CACHE STRING
     "Repository URI to pull and build pybind11 from if(openPMD_USE_INTERNAL_PYBIND11)")
-set(openPMD_pybind11_branch "v3.0.1"
+set(openPMD_pybind11_branch "v2.13.6"
     CACHE STRING
     "Repository branch for openPMD_pybind11_repo if(openPMD_USE_INTERNAL_PYBIND11)")
 
