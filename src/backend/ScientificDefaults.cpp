@@ -1,5 +1,6 @@
 #include "openPMD/backend/ScientificDefaults.hpp"
 
+#include "openPMD/Error.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
@@ -7,6 +8,7 @@
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
@@ -48,7 +50,9 @@ ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>::
             Functor,
             AttributeReaderBottom>>
 {
-    throw std::runtime_error("Unimplemented!");
+    return (std::move(*this))
+        .configureReaders()
+        .template withReader<ExpectedAttributeType>(std::move(f));
 }
 
 template <
@@ -76,85 +80,6 @@ template <typename Child>
 auto ScientificDefaults<Child>::asChild() const -> Child const &
 {
     return *static_cast<Child const *>(this);
-}
-
-template <typename Child>
-template <typename Setter, typename V>
-void ScientificDefaults<Child>::addDefaultFor_worker(
-    char const *, V &&value, Setter &&setter)
-{
-    (asChild().*setter)(std::forward<V>(value));
-}
-
-template <typename Child>
-template <typename V>
-void ScientificDefaults<Child>::addDefaultFor_worker(char const *key, V &&value)
-{
-    asChild().setAttribute(key, std::forward<V>(value));
-}
-
-template <typename Child>
-template <typename F, typename... Args>
-void ScientificDefaults<Child>::addDefaultFor_resolveValue(
-    char const *key, F &&get_value, Args &&...args)
-{
-    if (asChild().containsAttribute(key))
-    {
-        return;
-    }
-    auto value = [&]() {
-        if constexpr (detail::IsCallable_v<F>)
-        {
-            return get_value();
-        }
-        else
-        {
-            return get_value;
-        }
-    }();
-    constexpr bool debug = true;
-    if constexpr (debug)
-    {
-        std::cout << "\tInitializing default for '" << key << "' = '";
-        if constexpr (
-            auxiliary::IsVector_v<std::remove_reference_t<decltype(value)>> ||
-            auxiliary::IsArray_v<std::remove_reference_t<decltype(value)>>)
-        {
-            auxiliary::write_vec_to_stream(std::cout, value);
-        }
-        else if constexpr (std::is_same_v<
-                               std::remove_reference_t<decltype(value)>,
-                               unit_representations::AsMap>)
-        {
-            std::cout << "Unit_Map";
-        }
-        else
-        {
-            std::cout << value;
-        }
-        std::cout << "'" << std::endl;
-    }
-    addDefaultFor_worker(key, std::move(value), std::forward<Args>(args)...);
-}
-
-template <typename Child>
-template <typename Setter, typename F>
-void ScientificDefaults<Child>::addDefaultFor(
-    char const *key,
-    F &&get_value,
-    Child &(Child::*setter)(std::conditional_t<
-                            std::is_void_v<Setter>,
-                            std::remove_reference_t<detail::CallResult_t<F>>,
-                            Setter>))
-{
-    addDefaultFor_resolveValue(key, std::forward<F>(get_value), setter);
-}
-
-template <typename Child>
-template <typename F>
-void ScientificDefaults<Child>::addDefaultFor(char const *key, F &&get_value)
-{
-    addDefaultFor_resolveValue(key, std::forward<F>(get_value));
 }
 
 template <typename Child>
@@ -216,6 +141,7 @@ void ScientificDefaults<Child>::addDefaults()
 {
     std::cout << "Adding defaults for '" << asChild().myPath().openPMDPath()
               << "'" << std::endl;
+    using maybe_read_error = std::optional<error::ReadError>;
 
     // First some verifications
     if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
@@ -246,7 +172,20 @@ void ScientificDefaults<Child>::addDefaults()
     {
         auto dimensionality = asChild().retrieveDimensionality();
 
-        defaultAttribute("timeOffset", 0.f).withSetter (&Mesh::setTimeOffset)();
+        defaultAttribute("timeOffset", 0.f)
+            .withSetter(&Mesh::setTimeOffset)
+            .template withReader<std::string>([](Mesh &m, std::string val) {
+                if ("cartesian" == val)
+                    m.setGeometry(Mesh::Geometry::cartesian);
+                else if ("thetaMode" == val)
+                    m.setGeometry(Mesh::Geometry::thetaMode);
+                else if ("cylindrical" == val)
+                    m.setGeometry(Mesh::Geometry::cylindrical);
+                else if ("spherical" == val)
+                    m.setGeometry(Mesh::Geometry::spherical);
+                else
+                    m.setGeometry(std::move(val));
+            })();
         defaultAttribute("geometry", Mesh::Geometry::cartesian)
             .withSetter (&Mesh::setGeometry)();
         defaultAttribute("dataOrder", Mesh::DataOrder::C)
@@ -314,6 +253,9 @@ void ScientificDefaults<Child>::addDefaults()
             })
             .template withSetter<std::vector<double> const &> (
                 &Mesh::setGridGlobalOffset)();
+        defaultAttribute("unitDimension", unit_representations::AsArray{})
+            .template withSetter<unit_representations::AsArray const &> (
+                &Child::setUnitDimension)();
 
         addParentDefaults<BaseRecord<MeshRecordComponent>>();
     }
@@ -325,18 +267,25 @@ void ScientificDefaults<Child>::addDefaults()
 
         if (keyInParent == "position" || keyInParent == "positionOffset")
         {
-            addDefaultFor<unit_representations::AsMap const &>(
+            defaultAttribute(
                 "unitDimension",
                 []() {
                     return unit_representations::AsMap{{UnitDimension::L, 1.0}};
-                },
-                &Record::setUnitDimension);
+                })
+                .template withSetter<unit_representations::AsMap const &> (
+                    &Record::setUnitDimension)();
         }
+        defaultAttribute("unitDimension", unit_representations::AsArray{})
+            .template withSetter<unit_representations::AsArray const &> (
+                &Child::setUnitDimension)();
 
         addParentDefaults<BaseRecord<RecordComponent>>();
     }
     else if constexpr (std::is_same_v<Child, PatchRecord>)
     {
+        defaultAttribute("unitDimension", unit_representations::AsArray{})
+            .template withSetter<unit_representations::AsArray const &> (
+                &Child::setUnitDimension)();
         addParentDefaults<BaseRecord<PatchRecordComponent>>();
     }
     else if constexpr (std::is_same_v<Child, RecordComponent>)
@@ -366,8 +315,6 @@ void ScientificDefaults<Child>::addDefaults()
     }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {
-        addDefaultFor<unit_representations::AsArray const &>(
-            "unitDimension", unit_representations::AsArray{});
     }
 }
 

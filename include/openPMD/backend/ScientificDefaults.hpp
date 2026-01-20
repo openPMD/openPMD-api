@@ -1,8 +1,12 @@
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/Access.hpp"
-#include <iostream>
+#include "openPMD/backend/Attribute.hpp"
+
+#include <stdexcept>
 #include <type_traits>
+#include <variant>
 
 namespace openPMD::detail
 {
@@ -84,6 +88,7 @@ struct ConfigAttribute
 
 namespace attribute_read_result
 {
+    // TODO: Enqueue tried types for error messages
     struct TypeUnmatched
     {};
     struct Success
@@ -95,7 +100,13 @@ using AttributeReadResult = std::variant<
     error::ReadError>;
 
 struct AttributeReaderBottom
-{};
+{
+    template <typename... Args>
+    auto operator()(Args &&...) -> AttributeReadResult
+    {
+        return attribute_read_result::TypeUnmatched{};
+    }
+};
 
 template <
     typename RecordType,
@@ -104,29 +115,19 @@ template <
     typename RecursiveReader>
 struct AttributeReader
 {
-    RecursiveReader recursiveReader;
     // : ComponentType&, ExpectedAttributeType const& -> optional<ReadError>
     Functor functor;
+    RecursiveReader recursiveReader;
 
-    AttributeReader(RecursiveReader recursiveReader_in, Functor functor_in)
-        : recursiveReader(std::move(recursiveReader_in))
-        , functor(std::move(functor_in))
+    AttributeReader(Functor functor_in, RecursiveReader recursiveReader_in)
+        : functor(std::move(functor_in))
+        , recursiveReader(std::move(recursiveReader_in))
     {}
 
     auto operator()(RecordType &record, Attribute const &attr)
         -> AttributeReadResult
     {
-        AttributeReadResult recursiveResult = [&]() {
-            if constexpr (std::
-                              is_same_v<RecursiveReader, AttributeReaderBottom>)
-            {
-                return attribute_read_result::TypeUnmatched{};
-            }
-            else
-            {
-                return recursiveGetter(record, attr);
-            }
-        }();
+        AttributeReadResult recursiveResult = recursiveReader(record, attr);
         return std::visit(
             auxiliary::overloaded{
                 [](attribute_read_result::Success &&success)
@@ -148,13 +149,13 @@ struct AttributeReader
                                           RecordType &,
                                           ExpectedAttributeType>>)
                     {
-                        this->functor(record, std::move(val));
+                        this->functor(record, std::move(*val));
                         return attribute_read_result::Success{};
                     }
                     else
                     {
                         auto maybe_a_read_error =
-                            this->functor(record, std::move(val));
+                            this->functor(record, std::move(*val));
                         if (maybe_a_read_error.has_value())
                         {
                             return std::move(*maybe_a_read_error);
@@ -208,13 +209,10 @@ struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
         (this->child.*setter)(std::forward<DefaultValue>(val));
     }
 
-    void operator()()
+    template <typename... Args>
+    void operator()(Args &&...)
     {
-        if (this->child.containsAttribute(this->attrName))
-        {
-            return;
-        }
-        set(this->get());
+        throw std::runtime_error("Unimplemented");
     }
 };
 
@@ -247,7 +245,50 @@ struct ConfigAttributeWithSetterAndReader
             ExpectedAttributeType,
             Functor,
             AttributeReader_t>>
-    {}
+    {
+        return {
+            std::move(*static_cast<parent_t *>(this)),
+            AttributeReader<
+                RecordType,
+                ExpectedAttributeType,
+                Functor,
+                AttributeReader_t>{
+                std::move(f), std::move(this->attributeReader)}};
+    }
+
+    // TODO distinguish if we are parsing or writing
+    void operator()()
+    {
+        if (this->child.containsAttribute(this->attrName))
+        {
+            return;
+        }
+        this->set(this->get());
+        auto attribute = this->child.getAttribute(this->attrName);
+        auto dt = attribute.dtype;
+        AttributeReadResult readResult =
+            attributeReader(this->child, attribute);
+        std::visit(
+            auxiliary::overloaded{
+                [&](attribute_read_result::TypeUnmatched) {
+                    std::cerr
+                        << "Unexpected type '" << dt << "' for attribute '"
+                        << this->attrName << "' in '"
+                        << this->child.myPath().openPMDPath()
+                        << "'. Expected one of [UNIMPLEMENTED: PRINT TYPES "
+                           "HERE] or convertible to such a type."
+                        << std::endl;
+                },
+                [&](error::ReadError const &err) {
+                    std::cerr
+                        << "Unexpected error while trying to read attribute '"
+                        << this->attrName << "' in '"
+                        << this->child.myPath().openPMDPath()
+                        << "': " << err.what() << std::endl;
+                },
+                [](attribute_read_result::Success) { /* no-op */ }},
+            std::move(readResult));
+    }
 };
 
 /*
@@ -276,30 +317,6 @@ private:
             attrName,
             std::forward<GetDefaultValue>(getDefaultValue)};
     }
-
-    template <typename Setter = void, typename V>
-    void addDefaultFor_worker(char const *key, V &&value, Setter &&setter);
-
-    template <typename V>
-    void addDefaultFor_worker(char const *key, V &&value);
-
-    template <typename F, typename... Args>
-    void addDefaultFor_resolveValue(char const *key, F &&get_value, Args &&...);
-
-    // These two below overloads exist only for type inference purposes
-    // Apart from this, they just forward their arguments to
-    // addDefaultFor_resolveValue
-    template <typename Setter = void, typename F>
-    void addDefaultFor(
-        char const *key,
-        F &&get_value,
-        Child &(Child::*)(std::conditional_t<
-                          std::is_void_v<Setter>,
-                          std::remove_reference_t<detail::CallResult_t<F>>,
-                          Setter>));
-
-    template <typename F>
-    void addDefaultFor(char const *key, F &&get_value);
 
     template <typename Parent>
     void addParentDefaults();
