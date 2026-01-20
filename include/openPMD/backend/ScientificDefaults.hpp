@@ -82,6 +82,93 @@ struct ConfigAttribute
     }
 };
 
+namespace attribute_read_result
+{
+    struct TypeUnmatched
+    {};
+    struct Success
+    {};
+} // namespace attribute_read_result
+using AttributeReadResult = std::variant<
+    attribute_read_result::Success,
+    attribute_read_result::TypeUnmatched,
+    error::ReadError>;
+
+struct AttributeReaderBottom
+{};
+
+template <
+    typename RecordType,
+    typename ExpectedAttributeType,
+    typename Functor,
+    typename RecursiveReader>
+struct AttributeReader
+{
+    RecursiveReader recursiveReader;
+    // : ComponentType&, ExpectedAttributeType const& -> optional<ReadError>
+    Functor functor;
+
+    AttributeReader(RecursiveReader recursiveReader_in, Functor functor_in)
+        : recursiveReader(std::move(recursiveReader_in))
+        , functor(std::move(functor_in))
+    {}
+
+    auto operator()(RecordType &record, Attribute const &attr)
+        -> AttributeReadResult
+    {
+        AttributeReadResult recursiveResult = [&]() {
+            if constexpr (std::
+                              is_same_v<RecursiveReader, AttributeReaderBottom>)
+            {
+                return attribute_read_result::TypeUnmatched{};
+            }
+            else
+            {
+                return recursiveGetter(record, attr);
+            }
+        }();
+        return std::visit(
+            auxiliary::overloaded{
+                [](attribute_read_result::Success &&success)
+                    -> AttributeReadResult { return success; },
+                [](error::ReadError &&err) -> AttributeReadResult {
+                    return std::move(err);
+                },
+                [this, &attr, &record](attribute_read_result::TypeUnmatched &&)
+                    -> AttributeReadResult {
+                    auto val = attr.getOptional<ExpectedAttributeType>();
+                    if (!val.has_value())
+                    {
+                        return attribute_read_result::TypeUnmatched{};
+                    }
+                    if constexpr (std::is_same_v<
+                                      void,
+                                      std::invoke_result_t<
+                                          Functor,
+                                          RecordType &,
+                                          ExpectedAttributeType>>)
+                    {
+                        this->functor(record, std::move(val));
+                        return attribute_read_result::Success{};
+                    }
+                    else
+                    {
+                        auto maybe_a_read_error =
+                            this->functor(record, std::move(val));
+                        if (maybe_a_read_error.has_value())
+                        {
+                            return std::move(*maybe_a_read_error);
+                        }
+                        return attribute_read_result::Success{};
+                    }
+                }},
+            std::move(recursiveResult));
+    }
+};
+
+template <typename, typename, typename, typename>
+struct ConfigAttributeWithSetterAndReader;
+
 template <
     typename RecordType,
     typename GetDefaultValue,
@@ -96,6 +183,26 @@ struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
     {}
 
     SetDefaultValue setter;
+
+    template <typename ExpectedAttributeType, typename Functor>
+    [[nodiscard]] auto
+    withReader(Functor f) && -> ConfigAttributeWithSetterAndReader<
+        RecordType,
+        GetDefaultValue,
+        SetDefaultValue,
+        AttributeReader<
+            RecordType,
+            ExpectedAttributeType,
+            Functor,
+            AttributeReaderBottom>>;
+
+    [[nodiscard]] auto
+    configureReaders() && -> ConfigAttributeWithSetterAndReader<
+        RecordType,
+        GetDefaultValue,
+        SetDefaultValue,
+        AttributeReaderBottom>;
+
     void set(DefaultValue &&val)
     {
         (this->child.*setter)(std::forward<DefaultValue>(val));
@@ -109,6 +216,38 @@ struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
         }
         set(this->get());
     }
+};
+
+template <
+    typename RecordType,
+    typename GetDefaultValue,
+    typename SetDefaultValue,
+    typename AttributeReader_t>
+struct ConfigAttributeWithSetterAndReader
+    : ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>
+{
+    AttributeReader_t attributeReader;
+    using parent_t =
+        ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>;
+
+    ConfigAttributeWithSetterAndReader(
+        parent_t &&par, AttributeReader_t attributeReader_in)
+        : parent_t(std::move(par))
+        , attributeReader(std::move(attributeReader_in))
+    {}
+
+    template <typename ExpectedAttributeType, typename Functor>
+    [[nodiscard]] auto
+    withReader(Functor f) && -> ConfigAttributeWithSetterAndReader<
+        RecordType,
+        GetDefaultValue,
+        SetDefaultValue,
+        AttributeReader<
+            RecordType,
+            ExpectedAttributeType,
+            Functor,
+            AttributeReader_t>>
+    {}
 };
 
 /*

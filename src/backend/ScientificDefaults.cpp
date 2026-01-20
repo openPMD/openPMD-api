@@ -14,6 +14,7 @@
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
+#include <stdexcept>
 #include <utility>
 
 namespace openPMD::internal
@@ -28,6 +29,41 @@ auto ConfigAttribute<RecordType, GetDefaultValue>::withSetter(
         RecordType,
         GetDefaultValue,
         SetterType<S>>{std::move(*this), setter};
+}
+
+template <
+    typename RecordType,
+    typename GetDefaultValue,
+    typename SetDefaultValue>
+template <typename ExpectedAttributeType, typename Functor>
+[[nodiscard]] auto
+ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>::
+    withReader(Functor f) && -> ConfigAttributeWithSetterAndReader<
+        RecordType,
+        GetDefaultValue,
+        SetDefaultValue,
+        AttributeReader<
+            RecordType,
+            ExpectedAttributeType,
+            Functor,
+            AttributeReaderBottom>>
+{
+    throw std::runtime_error("Unimplemented!");
+}
+
+template <
+    typename RecordType,
+    typename GetDefaultValue,
+    typename SetDefaultValue>
+[[nodiscard]] auto
+ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>::
+    configureReaders() && -> ConfigAttributeWithSetterAndReader<
+        RecordType,
+        GetDefaultValue,
+        SetDefaultValue,
+        AttributeReaderBottom>
+{
+    return {std::move(*this), AttributeReaderBottom{}};
 }
 
 template <typename Child>
