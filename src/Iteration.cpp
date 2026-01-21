@@ -121,10 +121,7 @@ Iteration &Iteration::close(bool _flush)
         break;
     }
 
-    {
-        Access at = IOHandler()->m_frontendAccess;
-        finalize(at);
-    }
+    addDefaultsRecursively();
 
     if (_flush)
     {

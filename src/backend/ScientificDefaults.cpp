@@ -99,12 +99,9 @@ void ScientificDefaults<Child>::addParentDefaults()
 }
 
 template <typename Child>
-void ScientificDefaults<Child>::finalize(Access at)
+void ScientificDefaults<Child>::addDefaultsRecursively()
 {
-    if (access::write(at))
-    {
-        addDefaults();
-    }
+    addDefaults();
     if constexpr (IsContainer_v<Child>)
     {
         using Container_t = AsContainer_t<Child>;
@@ -114,7 +111,7 @@ void ScientificDefaults<Child>::finalize(Access at)
             for (auto &[_, right] : asChild())
             {
                 (void)_;
-                right.ScientificDefaults<mapped_type>::finalize(at);
+                right.ScientificDefaults<mapped_type>::addDefaultsRecursively();
             }
         }
     }
@@ -125,12 +122,12 @@ void ScientificDefaults<Child>::finalize(Access at)
         for (auto &[_, right] : asChild().meshes)
         {
             (void)_;
-            right.ScientificDefaults<Mesh>::finalize(at);
+            right.ScientificDefaults<Mesh>::addDefaultsRecursively();
         }
         for (auto &[_, right] : asChild().particles)
         {
             (void)_;
-            right.ScientificDefaults<ParticleSpecies>::finalize(at);
+            right.ScientificDefaults<ParticleSpecies>::addDefaultsRecursively();
         }
     }
     else if constexpr (std::is_same_v<Child, ParticleSpecies>)
@@ -138,19 +135,20 @@ void ScientificDefaults<Child>::finalize(Access at)
         for (auto &[_, right] : asChild().particlePatches)
         {
             (void)_;
-            right
-                .ScientificDefaults<BaseRecord<PatchRecordComponent>>::finalize(
-                    at);
+            right.ScientificDefaults<
+                BaseRecord<PatchRecordComponent>>::addDefaultsRecursively();
         }
     }
 }
 
 template <typename Child>
-void ScientificDefaults<Child>::addDefaults()
+template <bool write>
+void ScientificDefaults<Child>::defaults_impl()
 {
     std::cout << "Adding defaults for '" << asChild().myPath().openPMDPath()
               << "'" << std::endl;
     using maybe_read_error = std::optional<error::ReadError>;
+    constexpr auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
     // First some verifications
     if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
@@ -172,10 +170,10 @@ void ScientificDefaults<Child>::addDefaults()
 
     if constexpr (std::is_same_v<Child, Iteration>)
     {
-        defaultAttribute("time", 0.).withSetter (&Iteration::setTime)();
-        defaultAttribute("dt", 1.).withSetter (&Iteration::setDt)();
+        defaultAttribute("time", 0.).withSetter (&Iteration::setTime)(wor);
+        defaultAttribute("dt", 1.).withSetter (&Iteration::setDt)(wor);
         defaultAttribute("timeUnitSI", 1.0)
-            .withSetter (&Iteration::setTimeUnitSI)();
+            .withSetter (&Iteration::setTimeUnitSI)(wor);
     }
     else if constexpr (std::is_same_v<Child, Mesh>)
     {
@@ -194,11 +192,11 @@ void ScientificDefaults<Child>::addDefaults()
                     m.setGeometry(Mesh::Geometry::spherical);
                 else
                     m.setGeometry(std::move(val));
-            })();
+            })(wor);
         defaultAttribute("geometry", Mesh::Geometry::cartesian)
-            .withSetter (&Mesh::setGeometry)();
+            .withSetter (&Mesh::setGeometry)(wor);
         defaultAttribute("dataOrder", Mesh::DataOrder::C)
-            .withSetter (&Mesh::setDataOrder)();
+            .withSetter (&Mesh::setDataOrder)(wor);
         defaultAttribute(
             "axisLabels",
             [&]() -> std::vector<std::string> {
@@ -233,7 +231,7 @@ void ScientificDefaults<Child>::addDefaults()
                 return std::vector<std::string>{"x", "y", "z"};
             })
             .template withSetter<std::vector<std::string> const &> (
-                &Mesh::setAxisLabels)();
+                &Mesh::setAxisLabels)(wor);
         defaultAttribute(
             "gridSpacing",
             [&]() {
@@ -247,7 +245,7 @@ void ScientificDefaults<Child>::addDefaults()
                 }
             })
             .template withSetter<std::vector<double> const &> (
-                &Mesh::setGridSpacing)();
+                &Mesh::setGridSpacing)(wor);
         defaultAttribute(
             "gridGlobalOffset",
             [&]() {
@@ -261,17 +259,17 @@ void ScientificDefaults<Child>::addDefaults()
                 }
             })
             .template withSetter<std::vector<double> const &> (
-                &Mesh::setGridGlobalOffset)();
+                &Mesh::setGridGlobalOffset)(wor);
         defaultAttribute("unitDimension", unit_representations::AsArray{})
             .template withSetter<unit_representations::AsArray const &> (
-                &Child::setUnitDimension)();
+                &Child::setUnitDimension)(wor);
 
         addParentDefaults<BaseRecord<MeshRecordComponent>>();
     }
     else if constexpr (std::is_same_v<Child, Record>)
     {
         defaultAttribute("timeOffset", 0.f)
-            .withSetter (&Record::setTimeOffset)();
+            .withSetter (&Record::setTimeOffset)(wor);
         auto const &keyInParent = asChild().writable().ownKeyWithinParent;
 
         if (keyInParent == "position" || keyInParent == "positionOffset")
@@ -282,11 +280,11 @@ void ScientificDefaults<Child>::addDefaults()
                     return unit_representations::AsMap{{UnitDimension::L, 1.0}};
                 })
                 .template withSetter<unit_representations::AsMap const &> (
-                    &Record::setUnitDimension)();
+                    &Record::setUnitDimension)(wor);
         }
         defaultAttribute("unitDimension", unit_representations::AsArray{})
             .template withSetter<unit_representations::AsArray const &> (
-                &Child::setUnitDimension)();
+                &Child::setUnitDimension)(wor);
 
         addParentDefaults<BaseRecord<RecordComponent>>();
     }
@@ -300,7 +298,7 @@ void ScientificDefaults<Child>::addDefaults()
     else if constexpr (std::is_same_v<Child, RecordComponent>)
     {
         defaultAttribute("unitSI", 1.0)
-            .withSetter (&RecordComponent::setUnitSI)();
+            .withSetter (&RecordComponent::setUnitSI)(wor);
     }
     else if constexpr (std::is_same_v<Child, MeshRecordComponent>)
     {
@@ -315,7 +313,7 @@ void ScientificDefaults<Child>::addDefaults()
             {
                 return std::vector<double>{0.0};
             }
-        }).withSetter (&MeshRecordComponent::setPosition)();
+        }).withSetter (&MeshRecordComponent::setPosition)(wor);
         addParentDefaults<RecordComponent>();
     }
     else if constexpr (std::is_same_v<Child, PatchRecordComponent>)
@@ -324,7 +322,14 @@ void ScientificDefaults<Child>::addDefaults()
     }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {
+        // no-op, unitDimension setters only exist for subclasses
     }
+}
+
+template <typename Child>
+void ScientificDefaults<Child>::addDefaults()
+{
+    defaults_impl</* write = */ true>();
 }
 
 template class ScientificDefaults<Iteration>;

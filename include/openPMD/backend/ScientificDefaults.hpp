@@ -33,9 +33,13 @@ private:
     template <typename Parent>
     void addParentDefaults();
 
+    template <bool write>
+    void defaults_impl();
+
 protected:
-    void finalize(Access);
+    void addDefaultsRecursively();
     void addDefaults();
+    void readDefaults();
 };
 
 template <typename Child>

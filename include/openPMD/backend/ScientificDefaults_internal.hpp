@@ -1,10 +1,8 @@
 #pragma once
 
 #include "openPMD/Error.hpp"
-#include "openPMD/IO/Access.hpp"
 #include "openPMD/backend/Attribute.hpp"
 
-#include <stdexcept>
 #include <type_traits>
 #include <variant>
 
@@ -32,6 +30,12 @@ using CallResult_t = typename IsCallable<F>::type;
 
 namespace openPMD::internal
 {
+enum class WriteOrRead : std::uint8_t
+{
+    Write,
+    Read
+};
+
 template <typename, typename, typename>
 struct ConfigAttributeWithSetter;
 
@@ -209,10 +213,22 @@ struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
         (this->child.*setter)(std::forward<DefaultValue>(val));
     }
 
-    template <typename... Args>
-    void operator()(Args &&...)
+    void operator()(WriteOrRead wor)
     {
-        throw std::runtime_error("Unimplemented");
+        switch (wor)
+        {
+        case WriteOrRead::Write:
+            if (this->child.containsAttribute(this->attrName))
+            {
+                return;
+            }
+            this->set(this->get());
+            break;
+        case WriteOrRead::Read:
+            // Reading implemented by subclass
+            // ConfigAttributeWithSetterAndReader
+            break;
+        }
     }
 };
 
@@ -256,38 +272,41 @@ struct ConfigAttributeWithSetterAndReader
                 std::move(f), std::move(this->attributeReader)}};
     }
 
-    // TODO distinguish if we are parsing or writing
-    void operator()()
+    void operator()(WriteOrRead wor)
     {
-        if (this->child.containsAttribute(this->attrName))
+        parent_t::operator()(wor);
+        switch (wor)
         {
-            return;
+        case WriteOrRead::Write:
+            break;
+        case WriteOrRead::Read: {
+            auto attribute = this->child.getAttribute(this->attrName);
+            auto dt = attribute.dtype;
+            AttributeReadResult readResult =
+                attributeReader(this->child, attribute);
+            std::visit(
+                auxiliary::overloaded{
+                    [&](attribute_read_result::TypeUnmatched) {
+                        std::cerr
+                            << "Unexpected type '" << dt << "' for attribute '"
+                            << this->attrName << "' in '"
+                            << this->child.myPath().openPMDPath()
+                            << "'. Expected one of [UNIMPLEMENTED: PRINT TYPES "
+                               "HERE] or convertible to such a type."
+                            << std::endl;
+                    },
+                    [&](error::ReadError const &err) {
+                        std::cerr << "Unexpected error while trying to read "
+                                     "attribute '"
+                                  << this->attrName << "' in '"
+                                  << this->child.myPath().openPMDPath()
+                                  << "': " << err.what() << std::endl;
+                    },
+                    [](attribute_read_result::Success) { /* no-op */ }},
+                std::move(readResult));
         }
-        this->set(this->get());
-        auto attribute = this->child.getAttribute(this->attrName);
-        auto dt = attribute.dtype;
-        AttributeReadResult readResult =
-            attributeReader(this->child, attribute);
-        std::visit(
-            auxiliary::overloaded{
-                [&](attribute_read_result::TypeUnmatched) {
-                    std::cerr
-                        << "Unexpected type '" << dt << "' for attribute '"
-                        << this->attrName << "' in '"
-                        << this->child.myPath().openPMDPath()
-                        << "'. Expected one of [UNIMPLEMENTED: PRINT TYPES "
-                           "HERE] or convertible to such a type."
-                        << std::endl;
-                },
-                [&](error::ReadError const &err) {
-                    std::cerr
-                        << "Unexpected error while trying to read attribute '"
-                        << this->attrName << "' in '"
-                        << this->child.myPath().openPMDPath()
-                        << "': " << err.what() << std::endl;
-                },
-                [](attribute_read_result::Success) { /* no-op */ }},
-            std::move(readResult));
+        break;
+        }
     }
 };
 } // namespace openPMD::internal
