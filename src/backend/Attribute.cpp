@@ -52,6 +52,10 @@ constexpr auto eligible_conversions() -> std::array<bool, num_datatypes>
     {
         return eligible_conversions<typename TargetType::value_type>();
     }
+    else if constexpr (std::is_same_v<std::string, TargetType>)
+    {
+        return eligible_conversions<char>();
+    }
     else
     {
         std::array<bool, num_datatypes> res = {};
@@ -63,6 +67,9 @@ constexpr auto eligible_conversions() -> std::array<bool, num_datatypes>
     res[datatypeIndex<type>()] = res[datatypeIndex<type::value_type>()];
         OPENPMD_FOREACH_VECTOR_DATATYPE(OPENPMD_ENUMERATE_TYPES)
 #undef OPENPMD_ENUMERATE_TYPES
+        res[datatypeIndex<std::string>()] = res[datatypeIndex<char>()];
+        res[datatypeIndex<std::vector<std::string>>()] =
+            res[datatypeIndex<char>()];
         return res;
     }
 }

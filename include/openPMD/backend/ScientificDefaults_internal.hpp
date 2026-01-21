@@ -1,7 +1,10 @@
 #pragma once
 
 #include "openPMD/Error.hpp"
+#include "openPMD/Mesh.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 
 #include <type_traits>
 #include <variant>
@@ -312,6 +315,31 @@ struct ConfigAttributeWithSetterAndReader
 
     void operator()(WriteOrRead wor)
     {
+        auto write_to_stderr = [](Attribute const &a) -> std::ostream & {
+            std::visit(
+                [](auto const &val) {
+                    using val_t = std::remove_cv_t<
+                        std::remove_reference_t<decltype(val)>>;
+                    if constexpr (
+                        auxiliary::IsVector_v<val_t> ||
+                        auxiliary::IsArray_v<val_t>)
+                    {
+                        auxiliary::write_vec_to_stream(std::cerr, val);
+                    }
+                    else if constexpr (std::is_same_v<
+                                           val_t,
+                                           unit_representations::AsMap>)
+                    {
+                        std::cerr << "Unit_Map";
+                    }
+                    else
+                    {
+                        std::cerr << val;
+                    }
+                },
+                a.getVariant<attribute_types>());
+            return std::cerr;
+        };
         parent_t::operator()(wor);
         switch (wor)
         {
@@ -325,10 +353,12 @@ struct ConfigAttributeWithSetterAndReader
             std::visit(
                 auxiliary::overloaded{
                     [&](attribute_read_result::TypeUnmatched) {
-                        std::cerr
-                            << "Unexpected type '" << dt << "' for attribute '"
-                            << this->attrName << "' in '"
-                            << this->child.myPath().openPMDPath()
+                        std::cerr << "Unexpected type '" << dt
+                                  << "' for attribute '" << this->attrName
+                                  << "' in '"
+                                  << this->child.myPath().openPMDPath()
+                                  << "' with value '";
+                        write_to_stderr(attribute)
                             << "'. Expected one of [UNIMPLEMENTED: PRINT TYPES "
                                "HERE] or convertible to such a type."
                             << std::endl;
@@ -338,7 +368,9 @@ struct ConfigAttributeWithSetterAndReader
                                      "attribute '"
                                   << this->attrName << "' in '"
                                   << this->child.myPath().openPMDPath()
-                                  << "': " << err.what() << std::endl;
+                                  << "'' with value '";
+                        write_to_stderr(attribute)
+                            << "': " << err.what() << std::endl;
                     },
                     [](attribute_read_result::Success) { /* no-op */ }},
                 std::move(readResult));
