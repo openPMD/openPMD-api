@@ -209,7 +209,7 @@ void ScientificDefaults<Child>::defaults_impl()
     constexpr auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
     // First some verifications
-    if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
+    if constexpr (write && auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {
         if (asChild().empty() && !asChild().datasetDefined())
         {
@@ -281,6 +281,7 @@ void ScientificDefaults<Child>::defaults_impl()
             [&]() -> std::vector<std::string> {
                 switch (dimensionality)
                 {
+                case 0:
                 case 1:
                     return {"x"};
                 case 2:

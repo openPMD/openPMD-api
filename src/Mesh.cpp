@@ -434,6 +434,8 @@ void Mesh::read()
         IOHandler()->m_verify_homogeneous_extents);
     internal::EraseStaleEntries<Mesh> map{*this};
 
+    internal::ScientificDefaults<Mesh>::readDefaults();
+
     Parameter<Operation::READ_ATT> aRead;
 
     // TODO move this to ScientificDefaults
@@ -545,8 +547,6 @@ void Mesh::read()
     readBase();
 
     readAttributes(ReadMode::FullyReread);
-
-    internal::ScientificDefaults<Mesh>::readDefaults();
 }
 } // namespace openPMD
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
@@ -33,6 +34,34 @@ using CallResult_t = typename IsCallable<F>::type;
 
 namespace openPMD::internal
 {
+namespace
+{
+    template <typename T>
+    auto write_val_to_stderr(T const &val) -> std::ostream &
+    {
+        if constexpr (auxiliary::IsVector_v<T> || auxiliary::IsArray_v<T>)
+        {
+            auxiliary::write_vec_to_stream(std::cerr, val);
+        }
+        else if constexpr (std::is_same_v<T, unit_representations::AsMap>)
+        {
+            std::cerr << "Unit_Map";
+        }
+        else
+        {
+            std::cerr << val;
+        }
+        return std::cerr;
+    }
+    auto write_to_stderr(Attribute const &a) -> std::ostream &
+    {
+        std::visit(
+            [](auto const &val) { write_val_to_stderr(val); },
+            a.getVariant<attribute_types>());
+        return std::cerr;
+    };
+
+} // namespace
 enum class WriteOrRead : std::uint8_t
 {
     Write,
@@ -41,6 +70,10 @@ enum class WriteOrRead : std::uint8_t
 
 template <typename, typename, typename>
 struct ConfigAttributeWithSetter;
+
+/////////////////////
+// ConfigAttribute //
+// //////////////////
 
 template <typename RecordType, typename GetDefaultValue>
 struct ConfigAttribute
@@ -114,6 +147,10 @@ struct AttributeReaderBottom
         return attribute_read_result::TypeUnmatched{};
     }
 };
+
+/////////////////////
+// AttributeReader //
+/////////////////////
 
 template <
     typename RecordType,
@@ -214,6 +251,10 @@ struct AttributeReader
 template <typename, typename, typename, typename>
 struct ConfigAttributeWithSetterAndReader;
 
+///////////////////////////////
+// ConfigAttributeWithSetter //
+///////////////////////////////
+
 template <
     typename RecordType,
     typename GetDefaultValue,
@@ -263,6 +304,10 @@ struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
     }
 };
 
+////////////////////////////////////////
+// ConfigAttributeWithSetterAndReader //
+////////////////////////////////////////
+
 template <
     typename RecordType,
     typename GetDefaultValue,
@@ -306,47 +351,46 @@ struct ConfigAttributeWithSetterAndReader
     template <typename ExpectedAttributeType>
     [[nodiscard]] auto withReader() &&
     {
+        auto defaultSetter = [/* must not capture this as it is moved */
+                              setter_lambda = this->setter](
+                                 RecordType &r, ExpectedAttributeType val) {
+            (r.*setter_lambda)(std::move(val));
+        };
         return (std::move(*this))
             .template withReader<ExpectedAttributeType>(
-                [this](RecordType &, ExpectedAttributeType val) {
-                    parent_t::set(std::move(val));
-                });
+                std::move(defaultSetter));
     }
 
     void operator()(WriteOrRead wor)
     {
-        auto write_to_stderr = [](Attribute const &a) -> std::ostream & {
-            std::visit(
-                [](auto const &val) {
-                    using val_t = std::remove_cv_t<
-                        std::remove_reference_t<decltype(val)>>;
-                    if constexpr (
-                        auxiliary::IsVector_v<val_t> ||
-                        auxiliary::IsArray_v<val_t>)
-                    {
-                        auxiliary::write_vec_to_stream(std::cerr, val);
-                    }
-                    else if constexpr (std::is_same_v<
-                                           val_t,
-                                           unit_representations::AsMap>)
-                    {
-                        std::cerr << "Unit_Map";
-                    }
-                    else
-                    {
-                        std::cerr << val;
-                    }
-                },
-                a.getVariant<attribute_types>());
-            return std::cerr;
-        };
         parent_t::operator()(wor);
         switch (wor)
         {
         case WriteOrRead::Write:
             break;
         case WriteOrRead::Read: {
-            auto attribute = this->child.getAttribute(this->attrName);
+            Parameter<Operation::READ_ATT> aRead;
+            aRead.name = this->attrName;
+            auto IOHandler = this->child.IOHandler();
+            IOHandler->enqueue(IOTask(&this->child, aRead));
+            try
+            {
+                IOHandler->flush(defaultFlushParams);
+            }
+            catch (error::ReadError const &e)
+            {
+                std::cerr << "Could not read expected attribute '"
+                          << this->attrName << "' in '"
+                          << this->child.myPath().openPMDPath()
+                          << ". Will initialize it with a default value. "
+                             "Original error: "
+                          << e.what() << std::endl;
+                this->set(this->get());
+                return;
+            }
+
+            Attribute attribute(
+                Attribute::from_any, std::move(*aRead.m_resource));
             auto dt = attribute.dtype;
             AttributeReadResult readResult =
                 attributeReader(this->child, attribute);
