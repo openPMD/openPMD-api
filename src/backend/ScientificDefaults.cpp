@@ -135,8 +135,7 @@ void ScientificDefaults<Child>::addDefaultsRecursively()
         for (auto &[_, right] : asChild().particlePatches)
         {
             (void)_;
-            right.ScientificDefaults<
-                BaseRecord<PatchRecordComponent>>::addDefaultsRecursively();
+            right.ScientificDefaults<PatchRecord>::addDefaultsRecursively();
         }
     }
 }
@@ -292,7 +291,7 @@ void ScientificDefaults<Child>::defaults_impl()
     {
         defaultAttribute("unitDimension", unit_representations::AsArray{})
             .template withSetter<unit_representations::AsArray const &> (
-                &Child::setUnitDimension)();
+                &Child::setUnitDimension)(wor);
         addParentDefaults<BaseRecord<PatchRecordComponent>>();
     }
     else if constexpr (std::is_same_v<Child, RecordComponent>)
@@ -340,4 +339,5 @@ template class ScientificDefaults<PatchRecordComponent>;
 template class ScientificDefaults<ParticleSpecies>;
 template class ScientificDefaults<Record>;
 template class ScientificDefaults<BaseRecord<MeshRecordComponent>>;
+template class ScientificDefaults<PatchRecord>;
 } // namespace openPMD::internal

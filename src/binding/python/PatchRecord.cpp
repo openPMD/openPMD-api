@@ -28,6 +28,8 @@
 #include "openPMD/binding/python/Container.H"
 #include "openPMD/binding/python/UnitDimension.hpp"
 
+#include <variant>
+
 void init_PatchRecord(py::module &m)
 {
     auto py_pr_cnt = declare_container<PyPatchRecordContainer, Attributable>(
@@ -38,11 +40,23 @@ void init_PatchRecord(py::module &m)
         .def_property(
             "unit_dimension",
             &PatchRecord::unitDimension,
-            &PatchRecord::setUnitDimension,
+            [](PatchRecord &self,
+               std::variant<
+                   unit_representations::AsMap,
+                   unit_representations::AsArray> const &arg) -> PatchRecord & {
+                return std::visit(
+                    [&](auto const &arg_resolved) -> PatchRecord & {
+                        return self.setUnitDimension(arg_resolved);
+                    },
+                    arg);
+            },
             python::doc_unit_dimension)
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_dimension", &PatchRecord::setUnitDimension);
+        .def(
+            "set_unit_dimension",
+            py::overload_cast<unit_representations::AsMap const &>(
+                &PatchRecord::setUnitDimension));
 
     finalize_container<PyPatchRecordContainer>(py_pr_cnt);
 }

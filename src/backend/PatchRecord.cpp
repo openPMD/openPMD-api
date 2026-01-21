@@ -39,6 +39,12 @@ PatchRecord::setUnitDimension(std::map<UnitDimension, double> const &udim)
     }
     return *this;
 }
+PatchRecord &
+PatchRecord::setUnitDimension(unit_representations::AsArray const &udim)
+{
+    setAttribute("unitDimension", udim);
+    return *this;
+}
 
 void PatchRecord::flush_impl(
     std::string const &path, internal::FlushParams const &flushParams)

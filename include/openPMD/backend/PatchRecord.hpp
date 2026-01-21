@@ -22,20 +22,25 @@
 
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <string>
-#include <unordered_map>
 
 namespace openPMD
 {
-class PatchRecord : public BaseRecord<PatchRecordComponent>
+class PatchRecord
+    : public BaseRecord<PatchRecordComponent>
+    , internal::ScientificDefaults<PatchRecord>
 {
     friend class Container<PatchRecord>;
     friend class ParticleSpecies;
     friend class ParticlePatches;
+    template <typename>
+    friend class internal::ScientificDefaults;
 
 public:
-    PatchRecord &setUnitDimension(std::map<UnitDimension, double> const &);
+    PatchRecord &setUnitDimension(unit_representations::AsMap const &);
+    PatchRecord &setUnitDimension(unit_representations::AsArray const &udim);
     ~PatchRecord() override = default;
 
 private:
