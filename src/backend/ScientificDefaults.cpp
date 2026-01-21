@@ -1,4 +1,5 @@
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/ScientificDefaults_internal.hpp"
 
 #include "openPMD/Error.hpp"
 #include "openPMD/Iteration.hpp"
@@ -6,7 +7,6 @@
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Record.hpp"
 #include "openPMD/UnitDimension.hpp"
-#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -16,7 +16,6 @@
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
-#include <stdexcept>
 #include <utility>
 
 namespace openPMD::internal
@@ -80,6 +79,16 @@ template <typename Child>
 auto ScientificDefaults<Child>::asChild() const -> Child const &
 {
     return *static_cast<Child const *>(this);
+}
+
+template <typename Child>
+template <typename GetDefaultValue>
+[[nodiscard]] auto ScientificDefaults<Child>::defaultAttribute(
+    char const *attrName, GetDefaultValue &&getDefaultValue)
+    -> ConfigAttribute<Child, GetDefaultValue>
+{
+    return ConfigAttribute{
+        asChild(), attrName, std::forward<GetDefaultValue>(getDefaultValue)};
 }
 
 template <typename Child>
