@@ -131,6 +131,55 @@ struct AttributeReader
     auto operator()(RecordType &record, Attribute const &attr)
         -> AttributeReadResult
     {
+        constexpr bool call_functor_with_raw_attribute = std::is_invocable_v<
+            Functor,
+            RecordType &,
+            ExpectedAttributeType,
+            Attribute const &>;
+
+        auto normalized_functor =
+            [this, &attr](
+                RecordType &r,
+                ExpectedAttributeType val) -> std::optional<error::ReadError> {
+            if constexpr (call_functor_with_raw_attribute)
+            {
+                constexpr bool functor_has_return_type = !std::is_same_v<
+                    void,
+                    std::invoke_result_t<
+                        Functor,
+                        RecordType &,
+                        ExpectedAttributeType,
+                        Attribute const &>>;
+                if constexpr (functor_has_return_type)
+                {
+                    return this->functor(r, std::move(val), attr);
+                }
+                else
+                {
+                    this->functor(r, std::move(val), attr);
+                    return std::nullopt;
+                }
+            }
+            else
+            {
+                constexpr bool functor_has_return_type = !std::is_same_v<
+                    void,
+                    std::invoke_result_t<
+                        Functor,
+                        RecordType &,
+                        ExpectedAttributeType>>;
+                if constexpr (functor_has_return_type)
+                {
+                    return this->functor(r, std::move(val));
+                }
+                else
+                {
+                    this->functor(r, std::move(val));
+                    return std::nullopt;
+                }
+            }
+        };
+
         AttributeReadResult recursiveResult = recursiveReader(record, attr);
         return std::visit(
             auxiliary::overloaded{
@@ -139,33 +188,21 @@ struct AttributeReader
                 [](error::ReadError &&err) -> AttributeReadResult {
                     return std::move(err);
                 },
-                [this, &attr, &record](attribute_read_result::TypeUnmatched &&)
+                [this, &attr, &record, &normalized_functor](
+                    attribute_read_result::TypeUnmatched &&)
                     -> AttributeReadResult {
                     auto val = attr.getOptional<ExpectedAttributeType>();
                     if (!val.has_value())
                     {
                         return attribute_read_result::TypeUnmatched{};
                     }
-                    if constexpr (std::is_same_v<
-                                      void,
-                                      std::invoke_result_t<
-                                          Functor,
-                                          RecordType &,
-                                          ExpectedAttributeType>>)
+                    auto maybe_a_read_error =
+                        normalized_functor(record, std::move(*val));
+                    if (maybe_a_read_error.has_value())
                     {
-                        this->functor(record, std::move(*val));
-                        return attribute_read_result::Success{};
+                        return std::move(*maybe_a_read_error);
                     }
-                    else
-                    {
-                        auto maybe_a_read_error =
-                            this->functor(record, std::move(*val));
-                        if (maybe_a_read_error.has_value())
-                        {
-                            return std::move(*maybe_a_read_error);
-                        }
-                        return attribute_read_result::Success{};
-                    }
+                    return attribute_read_result::Success{};
                 }},
             std::move(recursiveResult));
     }
@@ -189,17 +226,8 @@ struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
 
     SetDefaultValue setter;
 
-    template <typename ExpectedAttributeType, typename Functor>
-    [[nodiscard]] auto
-    withReader(Functor f) && -> ConfigAttributeWithSetterAndReader<
-        RecordType,
-        GetDefaultValue,
-        SetDefaultValue,
-        AttributeReader<
-            RecordType,
-            ExpectedAttributeType,
-            Functor,
-            AttributeReaderBottom>>;
+    template <typename ExpectedAttributeType, typename... Args>
+    [[nodiscard]] auto withReader(Args &&...) &&;
 
     [[nodiscard]] auto
     configureReaders() && -> ConfigAttributeWithSetterAndReader<
@@ -270,6 +298,16 @@ struct ConfigAttributeWithSetterAndReader
                 Functor,
                 AttributeReader_t>{
                 std::move(f), std::move(this->attributeReader)}};
+    }
+
+    template <typename ExpectedAttributeType>
+    [[nodiscard]] auto withReader() &&
+    {
+        return (std::move(*this))
+            .template withReader<ExpectedAttributeType>(
+                [this](RecordType &, ExpectedAttributeType val) {
+                    parent_t::set(std::move(val));
+                });
     }
 
     void operator()(WriteOrRead wor)

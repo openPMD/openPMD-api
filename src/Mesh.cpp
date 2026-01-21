@@ -28,6 +28,7 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <algorithm>
@@ -433,131 +434,9 @@ void Mesh::read()
         IOHandler()->m_verify_homogeneous_extents);
     internal::EraseStaleEntries<Mesh> map{*this};
 
-    using DT = Datatype;
     Parameter<Operation::READ_ATT> aRead;
 
-    aRead.name = "geometry";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::STRING)
-    {
-        std::string tmpGeometry =
-            Attribute(Attribute::from_any, *aRead.m_resource)
-                .get<std::string>();
-        if ("cartesian" == tmpGeometry)
-            setGeometry(Geometry::cartesian);
-        else if ("thetaMode" == tmpGeometry)
-            setGeometry(Geometry::thetaMode);
-        else if ("cylindrical" == tmpGeometry)
-            setGeometry(Geometry::cylindrical);
-        else if ("spherical" == tmpGeometry)
-            setGeometry(Geometry::spherical);
-        else
-            setGeometry(tmpGeometry);
-    }
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'geometry' (expected a string, "
-            "found " +
-                datatypeToString(
-                    Attribute(Attribute::from_any, *aRead.m_resource).dtype) +
-                ")");
-
-    aRead.name = "dataOrder";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::CHAR)
-        setDataOrder(
-            static_cast<DataOrder>(
-                Attribute(Attribute::from_any, *aRead.m_resource).get<char>()));
-    else if (*aRead.dtype == DT::STRING)
-    {
-        std::string tmpDataOrder =
-            Attribute(Attribute::from_any, *aRead.m_resource)
-                .get<std::string>();
-        if (tmpDataOrder.size() == 1)
-            setDataOrder(static_cast<DataOrder>(tmpDataOrder[0]));
-        else
-            throw error::ReadError(
-                error::AffectedObject::Attribute,
-                error::Reason::UnexpectedContent,
-                {},
-                "Unexpected Attribute value for 'dataOrder': " + tmpDataOrder);
-    }
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'dataOrder' (expected char or "
-            "string, found " +
-                datatypeToString(
-                    Attribute(Attribute::from_any, *aRead.m_resource).dtype) +
-                ")");
-
-    aRead.name = "axisLabels";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    Attribute a = Attribute(Attribute::from_any, *aRead.m_resource);
-    if (auto val = a.getOptional<std::vector<std::string>>(); val.has_value())
-        setAxisLabels(*val);
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'axisLabels' (expected a vector "
-            "of string, found " +
-                datatypeToString(
-                    Attribute(Attribute::from_any, *aRead.m_resource).dtype) +
-                ")");
-
-    aRead.name = "gridSpacing";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    a = Attribute(Attribute::from_any, *aRead.m_resource);
-    if (*aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT)
-        setGridSpacing(a.get<std::vector<float>>());
-    else if (*aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE)
-        setGridSpacing(a.get<std::vector<double>>());
-    else if (
-        *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE)
-        setGridSpacing(a.get<std::vector<long double>>());
-    // conversion cast if a backend reports an integer type
-    else if (auto val = a.getOptional<std::vector<double>>(); val.has_value())
-        setGridSpacing(val.value());
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'gridSpacing' (expected a "
-            "vector of double, found " +
-                datatypeToString(
-                    Attribute(Attribute::from_any, *aRead.m_resource).dtype) +
-                ")");
-
-    aRead.name = "gridGlobalOffset";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(Attribute::from_any, *aRead.m_resource)
-                       .getOptional<std::vector<double>>();
-        val.has_value())
-        setGridGlobalOffset(val.value());
-    else
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            "Unexpected Attribute datatype for 'gridGlobalOffset' (expected a "
-            "vector of double, found " +
-                datatypeToString(
-                    Attribute(Attribute::from_any, *aRead.m_resource).dtype) +
-                ")");
-
+    // TODO move this to ScientificDefaults
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
@@ -666,6 +545,8 @@ void Mesh::read()
     readBase();
 
     readAttributes(ReadMode::FullyReread);
+
+    internal::ScientificDefaults<Mesh>::readDefaults();
 }
 } // namespace openPMD
 

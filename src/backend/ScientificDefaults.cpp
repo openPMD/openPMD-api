@@ -1,4 +1,5 @@
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/backend/ScientificDefaults_internal.hpp"
 
 #include "openPMD/Error.hpp"
@@ -13,9 +14,12 @@
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
+#include <optional>
+#include <type_traits>
 #include <utility>
 
 namespace openPMD::internal
@@ -36,22 +40,15 @@ template <
     typename RecordType,
     typename GetDefaultValue,
     typename SetDefaultValue>
-template <typename ExpectedAttributeType, typename Functor>
+template <typename ExpectedAttributeType, typename... Args>
 [[nodiscard]] auto
 ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>::
-    withReader(Functor f) && -> ConfigAttributeWithSetterAndReader<
-        RecordType,
-        GetDefaultValue,
-        SetDefaultValue,
-        AttributeReader<
-            RecordType,
-            ExpectedAttributeType,
-            Functor,
-            AttributeReaderBottom>>
+    withReader(Args &&...args) &&
 {
     return (std::move(*this))
         .configureReaders()
-        .template withReader<ExpectedAttributeType>(std::move(f));
+        .template withReader<ExpectedAttributeType>(
+            std::forward<Args>(args)...);
 }
 
 template <
@@ -140,12 +137,74 @@ void ScientificDefaults<Child>::addDefaultsRecursively()
     }
 }
 
+template <typename SetterFunctor>
+auto ensureFloatingVector(SetterFunctor &&set)
+{
+    return [set_lambda = std::forward<SetterFunctor>(set)](
+               auto &, auto &&converted_val, Attribute const &orig_val) {
+        std::visit(
+            [&converted_val, &set_lambda](auto const &val) {
+                using actual_type =
+                    std::remove_cv_t<std::remove_reference_t<decltype(val)>>;
+                if constexpr (auxiliary::IsVector_v<actual_type>)
+                {
+                    if constexpr (std::is_floating_point_v<
+                                      typename actual_type::value_type>)
+                    {
+                        set_lambda(val);
+                    }
+                    else
+                    {
+                        set_lambda(
+                            static_cast<decltype(converted_val)>(
+                                converted_val));
+                    }
+                }
+                else
+                {
+                    if constexpr (std::is_floating_point_v<actual_type>)
+                    {
+                        set_lambda(std::vector<actual_type>{val});
+                    }
+                    else
+                    {
+                        set_lambda(
+                            static_cast<decltype(converted_val)>(
+                                converted_val));
+                    }
+                }
+            },
+            orig_val.getVariant<attribute_types>());
+    };
+}
+
+template <typename SetterFunctor>
+auto ensureFloatingScalar(SetterFunctor &&set)
+{
+    return [set_lambda = std::forward<SetterFunctor>(set)](
+               auto &, auto &&converted_val, Attribute const &orig_val) {
+        std::visit(
+            [&converted_val, &set_lambda](auto const &val) {
+                using actual_type =
+                    std::remove_cv_t<std::remove_reference_t<decltype(val)>>;
+                if constexpr (std::is_floating_point_v<actual_type>)
+                {
+                    set_lambda(val);
+                }
+                else
+                {
+                    set_lambda(
+                        static_cast<decltype(converted_val)>(converted_val));
+                }
+            },
+            orig_val.getVariant<attribute_types>());
+    };
+}
+
 template <typename Child>
 template <bool write>
 void ScientificDefaults<Child>::defaults_impl()
 {
-    std::cout << "Adding defaults for '" << asChild().myPath().openPMDPath()
-              << "'" << std::endl;
     using maybe_read_error = std::optional<error::ReadError>;
     constexpr auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
@@ -180,6 +239,11 @@ void ScientificDefaults<Child>::defaults_impl()
 
         defaultAttribute("timeOffset", 0.f)
             .withSetter(&Mesh::setTimeOffset)
+            .template withReader<float>(ensureFloatingScalar(
+                [this](auto &&val) { asChild().setTimeOffset(val); }))(wor);
+
+        defaultAttribute("geometry", Mesh::Geometry::cartesian)
+            .withSetter(&Mesh::setGeometry)
             .template withReader<std::string>([](Mesh &m, std::string val) {
                 if ("cartesian" == val)
                     m.setGeometry(Mesh::Geometry::cartesian);
@@ -192,10 +256,26 @@ void ScientificDefaults<Child>::defaults_impl()
                 else
                     m.setGeometry(std::move(val));
             })(wor);
-        defaultAttribute("geometry", Mesh::Geometry::cartesian)
-            .withSetter (&Mesh::setGeometry)(wor);
+
         defaultAttribute("dataOrder", Mesh::DataOrder::C)
-            .withSetter (&Mesh::setDataOrder)(wor);
+            .withSetter(&Mesh::setDataOrder)
+            .template withReader<char>(
+                [](Mesh &m, char val) -> maybe_read_error {
+                    if (val == 'C' || val == 'F')
+                    {
+                        m.setDataOrder(static_cast<Mesh::DataOrder>(val));
+                        return std::nullopt;
+                    }
+                    else
+                    {
+                        return error::ReadError(
+                            error::AffectedObject::Attribute,
+                            error::Reason::UnexpectedContent,
+                            std::nullopt,
+                            "Data order must be either C or F.");
+                    }
+                })(wor);
+
         defaultAttribute(
             "axisLabels",
             [&]() -> std::vector<std::string> {
@@ -229,8 +309,10 @@ void ScientificDefaults<Child>::defaults_impl()
                 }
                 return std::vector<std::string>{"x", "y", "z"};
             })
-            .template withSetter<std::vector<std::string> const &> (
-                &Mesh::setAxisLabels)(wor);
+            .template withSetter<std::vector<std::string> const &>(
+                &Mesh::setAxisLabels)
+            .template withReader<std::vector<std::string>>()(wor);
+
         defaultAttribute(
             "gridSpacing",
             [&]() {
@@ -243,8 +325,13 @@ void ScientificDefaults<Child>::defaults_impl()
                     return std::vector<double>{1.0};
                 }
             })
-            .template withSetter<std::vector<double> const &> (
-                &Mesh::setGridSpacing)(wor);
+            .template withSetter<std::vector<double> const &>(
+                &Mesh::setGridSpacing)
+            .template withReader<std::vector<double>>(
+                ensureFloatingVector([this](auto &&val) {
+                    asChild().setGridSpacing(static_cast<decltype(val)>(val));
+                }))(wor);
+
         defaultAttribute(
             "gridGlobalOffset",
             [&]() {
@@ -257,11 +344,17 @@ void ScientificDefaults<Child>::defaults_impl()
                     return std::vector<double>{0.0};
                 }
             })
-            .template withSetter<std::vector<double> const &> (
-                &Mesh::setGridGlobalOffset)(wor);
+            .template withSetter<std::vector<double> const &>(
+                &Mesh::setGridGlobalOffset)
+            .template withReader<std::vector<double>>(
+                /* gridGlobalOffset requires vector<double> precisely, so no
+                   handling for different floating types here */
+                )(wor);
+
         defaultAttribute("unitDimension", unit_representations::AsArray{})
-            .template withSetter<unit_representations::AsArray const &> (
-                &Child::setUnitDimension)(wor);
+            .template withSetter<unit_representations::AsArray const &>(
+                &Child::setUnitDimension)
+            .template withReader<unit_representations::AsArray>()(wor);
 
         addParentDefaults<BaseRecord<MeshRecordComponent>>();
     }
@@ -329,6 +422,12 @@ template <typename Child>
 void ScientificDefaults<Child>::addDefaults()
 {
     defaults_impl</* write = */ true>();
+}
+
+template <typename Child>
+void ScientificDefaults<Child>::readDefaults()
+{
+    defaults_impl</* write = */ false>();
 }
 
 template class ScientificDefaults<Iteration>;
