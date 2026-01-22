@@ -109,7 +109,7 @@ void PatchRecord::read()
         prc.setWritten(true, Attributable::EnqueueAsynchronously::No);
         try
         {
-            prc.read(/* require_unit_si = */ false);
+            prc.read();
         }
         catch (error::ReadError const &err)
         {

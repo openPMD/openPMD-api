@@ -382,8 +382,8 @@ void ScientificDefaults<Child>::defaults_impl()
     {
         defaultAttribute("timeOffset", 0.f)
             .withSetter (&Record::setTimeOffset)(wor);
-        auto const &keyInParent = asChild().writable().ownKeyWithinParent;
 
+        auto const &keyInParent = asChild().writable().ownKeyWithinParent;
         if (keyInParent == "position" || keyInParent == "positionOffset")
         {
             defaultAttribute(
@@ -410,27 +410,37 @@ void ScientificDefaults<Child>::defaults_impl()
     else if constexpr (std::is_same_v<Child, RecordComponent>)
     {
         defaultAttribute("unitSI", 1.0)
-            .withSetter (&RecordComponent::setUnitSI)(wor);
+            .withSetter(&RecordComponent::setUnitSI)
+            .withReader()(wor);
     }
     else if constexpr (std::is_same_v<Child, MeshRecordComponent>)
     {
-        // position
         auto dimensionality = asChild().getDimensionality();
-        defaultAttribute("position", [&]() {
-            if (dimensionality < 100)
-            {
-                return std::vector<double>(dimensionality, 0.5);
-            }
-            else
-            {
-                return std::vector<double>{0.0};
-            }
-        }).withSetter (&MeshRecordComponent::setPosition)(wor);
+
+        defaultAttribute(
+            "position",
+            [&]() {
+                if (dimensionality < 100)
+                {
+                    return std::vector<double>(dimensionality, 0.5);
+                }
+                else
+                {
+                    return std::vector<double>{0.0};
+                }
+            })
+            .withSetter(&MeshRecordComponent::setPosition)
+            .withReader(ensureFloatingVector([this](auto &&val) {
+                this->asChild().setPosition(static_cast<decltype(val)>(val));
+            }))(wor);
+
         addParentDefaults<RecordComponent, write>();
     }
     else if constexpr (std::is_same_v<Child, PatchRecordComponent>)
     {
-        addParentDefaults<RecordComponent, write>();
+        // We don't require unitSI for PatchRecordComponent
+        //
+        // addParentDefaults<RecordComponent, write>();
     }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {

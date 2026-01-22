@@ -522,9 +522,9 @@ void RecordComponent::flush(
     }
 }
 
-void RecordComponent::read(bool require_unit_si)
+void RecordComponent::read()
 {
-    readBase(require_unit_si);
+    readBase();
 }
 
 namespace
@@ -549,7 +549,7 @@ namespace
     };
 } // namespace
 
-void RecordComponent::readBase(bool require_unit_si)
+void RecordComponent::readBase()
 {
     using DT = Datatype;
     auto &rc = get();
@@ -600,32 +600,6 @@ void RecordComponent::readBase(bool require_unit_si)
     if (constant() && !empty())
     {
         read_constant();
-    }
-
-    if (require_unit_si)
-    {
-        if (!containsAttribute("unitSI"))
-        {
-            throw error::ReadError(
-                error::AffectedObject::Attribute,
-                error::Reason::NotFound,
-                {},
-                "Attribute unitSI required for record components, not found in "
-                "'" +
-                    myPath().openPMDPath() + "'.");
-        }
-        if (auto attr = getAttribute("unitSI");
-            !attr.getOptional<double>().has_value())
-        {
-            throw error::ReadError(
-                error::AffectedObject::Attribute,
-                error::Reason::UnexpectedContent,
-                {},
-                "Unexpected Attribute datatype for 'unitSI' (expected double, "
-                "found " +
-                    datatypeToString(attr.dtype) + ") in '" +
-                    myPath().openPMDPath() + "'.");
-        }
     }
 }
 

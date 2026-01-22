@@ -491,7 +491,7 @@ public:
 
 protected:
     void flush(std::string const &, internal::FlushParams const &);
-    void read(bool require_unit_si);
+    void read();
 
 private:
     /**
@@ -539,7 +539,7 @@ OPENPMD_protected
         BaseRecordComponent::setData(m_recordComponentData);
     }
 
-    void readBase(bool require_unit_si);
+    void readBase();
 
     template <typename T>
     void verifyChunk(Offset const &, Extent const &) const;

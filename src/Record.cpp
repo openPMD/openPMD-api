@@ -120,7 +120,7 @@ auto Record::read() -> internal::HomogenizeExtents
             /* using operator[] will incorrectly update parent */
             try
             {
-                T_RecordComponent::read(/* require_unit_si = */ true);
+                T_RecordComponent::read();
             }
             catch (error::ReadError const &err)
             {
@@ -148,7 +148,7 @@ auto Record::read() -> internal::HomogenizeExtents
             rc.get().m_isConstant = true;
             try
             {
-                rc.read(/* require_unit_si = */ true);
+                rc.read();
             }
             catch (error::ReadError const &err)
             {
@@ -177,7 +177,7 @@ auto Record::read() -> internal::HomogenizeExtents
             rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
             try
             {
-                rc.read(/* require_unit_si = */ true);
+                rc.read();
             }
             catch (error::ReadError const &err)
             {
