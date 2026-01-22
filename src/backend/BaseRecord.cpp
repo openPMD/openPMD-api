@@ -768,40 +768,7 @@ inline bool BaseRecord<T_elem>::scalar() const
 template <typename T_elem>
 inline void BaseRecord<T_elem>::readBase()
 {
-    using DT = Datatype;
-    Parameter<Operation::READ_ATT> aRead;
-
-    aRead.name = "unitDimension";
-    this->IOHandler()->enqueue(IOTask(this, aRead));
-    this->IOHandler()->flush(internal::defaultFlushParams);
-    if (auto val = Attribute(Attribute::from_any, *aRead.m_resource)
-                       .getOptional<std::array<double, 7>>();
-        val.has_value())
-        this->setAttribute("unitDimension", val.value());
-    else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'unitDimension'");
-
-    aRead.name = "timeOffset";
-    this->IOHandler()->enqueue(IOTask(this, aRead));
-    this->IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::FLOAT)
-        this->setAttribute(
-            "timeOffset",
-            Attribute(Attribute::from_any, *aRead.m_resource).get<float>());
-    else if (*aRead.dtype == DT::DOUBLE)
-        this->setAttribute(
-            "timeOffset",
-            Attribute(Attribute::from_any, *aRead.m_resource).get<double>());
-    // conversion cast if a backend reports an integer type
-    else if (
-        auto val = Attribute(Attribute::from_any, *aRead.m_resource)
-                       .getOptional<double>();
-        val.has_value())
-        this->setAttribute("timeOffset", val.value());
-    else
-        throw std::runtime_error(
-            "Unexpected Attribute datatype for 'timeOffset'");
+    internal::ScientificDefaults<BaseRecord<T_elem>>::readDefaults();
 }
 
 template <typename T_elem>

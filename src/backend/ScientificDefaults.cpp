@@ -261,11 +261,6 @@ void ScientificDefaults<Child>::defaults_impl()
     {
         auto dimensionality = asChild().retrieveDimensionality();
 
-        defaultAttribute("timeOffset", 0.f)
-            .withSetter(&Mesh::setTimeOffset)
-            .withReader(ensureFloatingScalar(
-                [this](auto &&val) { asChild().setTimeOffset(val); }))(wor);
-
         defaultAttribute("geometry", Mesh::Geometry::cartesian)
             .withSetter(&Mesh::setGeometry)
             .template withReader<std::string>([](Mesh &m, std::string val) {
@@ -375,6 +370,12 @@ void ScientificDefaults<Child>::defaults_impl()
                    handling for different floating types here */
                 )(wor);
 
+        defaultAttribute("timeOffset", 0.f)
+            .withSetter(&Mesh::setTimeOffset)
+            .withReader(ensureFloatingScalar([this](auto &&val) {
+                asChild().setAttribute("timeOffset", val);
+            }))(wor);
+
         addParentDefaults<BaseRecord<MeshRecordComponent>, write>();
     }
     else if constexpr (std::is_same_v<Child, Record>)
@@ -393,6 +394,12 @@ void ScientificDefaults<Child>::defaults_impl()
                 .template withSetter<unit_representations::AsMap const &> (
                     &Record::setUnitDimension)(wor);
         }
+
+        defaultAttribute("timeOffset", 0.f)
+            .withSetter(&Record::setTimeOffset)
+            .withReader(ensureFloatingScalar([this](auto &&val) {
+                asChild().setAttribute("timeOffset", val);
+            }))(wor);
 
         addParentDefaults<BaseRecord<RecordComponent>, write>();
     }
@@ -453,5 +460,7 @@ template class ScientificDefaults<PatchRecordComponent>;
 template class ScientificDefaults<ParticleSpecies>;
 template class ScientificDefaults<Record>;
 template class ScientificDefaults<BaseRecord<MeshRecordComponent>>;
+template class ScientificDefaults<BaseRecord<PatchRecordComponent>>;
+template class ScientificDefaults<BaseRecord<RecordComponent>>;
 template class ScientificDefaults<PatchRecord>;
 } // namespace openPMD::internal
