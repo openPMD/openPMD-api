@@ -70,6 +70,11 @@ enum class WriteOrRead : std::uint8_t
     Read
 };
 
+struct GenericSetter
+{
+    /* use setAttribute() */
+};
+
 template <typename, typename, typename>
 struct ConfigAttributeWithSetter;
 
@@ -114,6 +119,11 @@ struct ConfigAttribute
         RecordType,
         GetDefaultValue,
         SetterType<S>>;
+
+    [[nodiscard]] auto withGenericSetter() && -> ConfigAttributeWithSetter<
+        RecordType,
+        GetDefaultValue,
+        GenericSetter>;
 
     auto get() -> DefaultValue
     {
@@ -274,8 +284,11 @@ struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
     {}
 
     SetDefaultValue setter;
+    static_assert(
+        std::is_member_function_pointer_v<SetDefaultValue> ||
+        std::is_same_v<SetDefaultValue, GenericSetter>);
 
-    template <typename ExpectedAttributeType, typename... Args>
+    template <typename ExpectedAttributeType = DefaultValue, typename... Args>
     [[nodiscard]] auto withReader(Args &&...) &&;
 
     [[nodiscard]] auto
@@ -287,7 +300,15 @@ struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
 
     void set(DefaultValue &&val)
     {
-        (this->child.*setter)(std::forward<DefaultValue>(val));
+        if constexpr (std::is_same_v<SetDefaultValue, GenericSetter>)
+        {
+            this->child.setAttribute(
+                this->attrName, std::forward<DefaultValue>(val));
+        }
+        else
+        {
+            (this->child.*setter)(std::forward<DefaultValue>(val));
+        }
     }
 
     void operator()(WriteOrRead wor)
@@ -324,6 +345,7 @@ struct ConfigAttributeWithSetterAndReader
     AttributeReader_t attributeReader;
     using parent_t =
         ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>;
+    using DefaultValue = typename parent_t::DefaultValue;
 
     ConfigAttributeWithSetterAndReader(
         parent_t &&par, AttributeReader_t attributeReader_in)
@@ -331,7 +353,7 @@ struct ConfigAttributeWithSetterAndReader
         , attributeReader(std::move(attributeReader_in))
     {}
 
-    template <typename ExpectedAttributeType, typename Functor>
+    template <typename ExpectedAttributeType = DefaultValue, typename Functor>
     [[nodiscard]] auto
     withReader(Functor f) && -> ConfigAttributeWithSetterAndReader<
         RecordType,
@@ -353,14 +375,26 @@ struct ConfigAttributeWithSetterAndReader
                 std::move(f), std::move(this->attributeReader)}};
     }
 
-    template <typename ExpectedAttributeType>
+    template <typename ExpectedAttributeType = DefaultValue>
     [[nodiscard]] auto withReader() &&
     {
-        auto defaultSetter = [/* must not capture this as it is moved */
-                              setter_lambda = this->setter](
-                                 RecordType &r, ExpectedAttributeType val) {
-            (r.*setter_lambda)(std::move(val));
-        };
+        auto defaultSetter = [&]() {
+            if constexpr (std::is_same_v<SetDefaultValue, GenericSetter>)
+            {
+                return [attrName_lambda = this->attrName](
+                           RecordType &r, ExpectedAttributeType val) {
+                    r.setAttribute(attrName_lambda, std::move(val));
+                };
+            }
+            else
+            {
+                return [/* must not capture this as it is moved */
+                        setter_lambda = this->setter](
+                           RecordType &r, ExpectedAttributeType val) {
+                    (r.*setter_lambda)(std::move(val));
+                };
+            }
+        }();
         return (std::move(*this))
             .template withReader<ExpectedAttributeType>(
                 std::move(defaultSetter));

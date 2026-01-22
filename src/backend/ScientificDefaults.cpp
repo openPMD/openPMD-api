@@ -35,6 +35,15 @@ auto ConfigAttribute<RecordType, GetDefaultValue>::withSetter(
         GetDefaultValue,
         SetterType<S>>{std::move(*this), setter};
 }
+template <typename RecordType, typename GetDefaultValue>
+auto ConfigAttribute<RecordType, GetDefaultValue>::withGenericSetter()
+    && -> ConfigAttributeWithSetter<RecordType, GetDefaultValue, GenericSetter>
+{
+    return ConfigAttributeWithSetter<
+        RecordType,
+        GetDefaultValue,
+        GenericSetter>{std::move(*this), GenericSetter{}};
+}
 
 template <
     typename RecordType,
@@ -238,15 +247,15 @@ void ScientificDefaults<Child>::defaults_impl()
     {
         defaultAttribute("time", 0.)
             .withSetter(&Iteration::setTime)
-            .template withReader<double>(ensureFloatingScalar(
+            .withReader(ensureFloatingScalar(
                 [this](auto &&val) { this->asChild().setTime(val); }))(wor);
         defaultAttribute("dt", 1.)
             .withSetter(&Iteration::setDt)
-            .template withReader<double>(ensureFloatingScalar(
+            .withReader(ensureFloatingScalar(
                 [this](auto &&val) { this->asChild().setDt(val); }))(wor);
         defaultAttribute("timeUnitSI", 1.0)
             .withSetter(&Iteration::setTimeUnitSI)
-            .template withReader<double>()(wor);
+            .withReader()(wor);
     }
     else if constexpr (std::is_same_v<Child, Mesh>)
     {
@@ -254,7 +263,7 @@ void ScientificDefaults<Child>::defaults_impl()
 
         defaultAttribute("timeOffset", 0.f)
             .withSetter(&Mesh::setTimeOffset)
-            .template withReader<float>(ensureFloatingScalar(
+            .withReader(ensureFloatingScalar(
                 [this](auto &&val) { asChild().setTimeOffset(val); }))(wor);
 
         defaultAttribute("geometry", Mesh::Geometry::cartesian)
@@ -327,7 +336,7 @@ void ScientificDefaults<Child>::defaults_impl()
             })
             .template withSetter<std::vector<std::string> const &>(
                 &Mesh::setAxisLabels)
-            .template withReader<std::vector<std::string>>()(wor);
+            .withReader()(wor);
 
         defaultAttribute(
             "gridSpacing",
@@ -343,10 +352,9 @@ void ScientificDefaults<Child>::defaults_impl()
             })
             .template withSetter<std::vector<double> const &>(
                 &Mesh::setGridSpacing)
-            .template withReader<std::vector<double>>(
-                ensureFloatingVector([this](auto &&val) {
-                    asChild().setGridSpacing(static_cast<decltype(val)>(val));
-                }))(wor);
+            .withReader(ensureFloatingVector([this](auto &&val) {
+                asChild().setGridSpacing(static_cast<decltype(val)>(val));
+            }))(wor);
 
         defaultAttribute(
             "gridGlobalOffset",
@@ -362,15 +370,10 @@ void ScientificDefaults<Child>::defaults_impl()
             })
             .template withSetter<std::vector<double> const &>(
                 &Mesh::setGridGlobalOffset)
-            .template withReader<std::vector<double>>(
+            .withReader(
                 /* gridGlobalOffset requires vector<double> precisely, so no
                    handling for different floating types here */
                 )(wor);
-
-        defaultAttribute("unitDimension", unit_representations::AsArray{})
-            .template withSetter<unit_representations::AsArray const &>(
-                &Child::setUnitDimension)
-            .template withReader<unit_representations::AsArray>()(wor);
 
         addParentDefaults<BaseRecord<MeshRecordComponent>, write>();
     }
@@ -390,17 +393,11 @@ void ScientificDefaults<Child>::defaults_impl()
                 .template withSetter<unit_representations::AsMap const &> (
                     &Record::setUnitDimension)(wor);
         }
-        defaultAttribute("unitDimension", unit_representations::AsArray{})
-            .template withSetter<unit_representations::AsArray const &> (
-                &Child::setUnitDimension)(wor);
 
         addParentDefaults<BaseRecord<RecordComponent>, write>();
     }
     else if constexpr (std::is_same_v<Child, PatchRecord>)
     {
-        defaultAttribute("unitDimension", unit_representations::AsArray{})
-            .template withSetter<unit_representations::AsArray const &> (
-                &Child::setUnitDimension)(wor);
         addParentDefaults<BaseRecord<PatchRecordComponent>, write>();
     }
     else if constexpr (std::is_same_v<Child, RecordComponent>)
@@ -430,7 +427,9 @@ void ScientificDefaults<Child>::defaults_impl()
     }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {
-        // no-op, unitDimension setters only exist for subclasses
+        defaultAttribute("unitDimension", unit_representations::AsArray{})
+            .withGenericSetter()
+            .withReader()(wor);
     }
 }
 
