@@ -1,5 +1,6 @@
 #pragma once
 
+#include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Mesh.hpp"
@@ -7,6 +8,7 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 
+#include <iostream>
 #include <type_traits>
 #include <variant>
 
@@ -128,9 +130,10 @@ struct ConfigAttribute
 
 namespace attribute_read_result
 {
-    // TODO: Enqueue tried types for error messages
     struct TypeUnmatched
-    {};
+    {
+        std::deque<Datatype> expectedDatatypes;
+    };
     struct Success
     {};
 } // namespace attribute_read_result
@@ -229,12 +232,14 @@ struct AttributeReader
                     return std::move(err);
                 },
                 [this, &attr, &record, &normalized_functor](
-                    attribute_read_result::TypeUnmatched &&)
+                    attribute_read_result::TypeUnmatched &&type_unmatched)
                     -> AttributeReadResult {
                     auto val = attr.getOptional<ExpectedAttributeType>();
                     if (!val.has_value())
                     {
-                        return attribute_read_result::TypeUnmatched{};
+                        type_unmatched.expectedDatatypes.emplace_back(
+                            determineDatatype<ExpectedAttributeType>());
+                        return std::move(type_unmatched);
                     }
                     auto maybe_a_read_error =
                         normalized_functor(record, std::move(*val));
@@ -396,16 +401,16 @@ struct ConfigAttributeWithSetterAndReader
                 attributeReader(this->child, attribute);
             std::visit(
                 auxiliary::overloaded{
-                    [&](attribute_read_result::TypeUnmatched) {
+                    [&](attribute_read_result::TypeUnmatched &&type_unmatched) {
                         std::cerr << "Unexpected type '" << dt
                                   << "' for attribute '" << this->attrName
                                   << "' in '"
                                   << this->child.myPath().openPMDPath()
                                   << "' with value '";
-                        write_to_stderr(attribute)
-                            << "'. Expected one of [UNIMPLEMENTED: PRINT TYPES "
-                               "HERE] or convertible to such a type."
-                            << std::endl;
+                        write_to_stderr(attribute) << "'. Expected one of ";
+                        auxiliary::write_vec_to_stream(
+                            std::cerr, type_unmatched.expectedDatatypes)
+                            << " or convertible to such a type." << std::endl;
                     },
                     [&](error::ReadError const &err) {
                         std::cerr << "Unexpected error while trying to read "
