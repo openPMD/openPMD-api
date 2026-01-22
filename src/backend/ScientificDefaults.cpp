@@ -89,10 +89,18 @@ template <typename GetDefaultValue>
 }
 
 template <typename Child>
-template <typename Parent>
+template <typename Parent, bool write>
 void ScientificDefaults<Child>::addParentDefaults()
 {
-    asChild().ScientificDefaults<Parent>::addDefaults();
+    // Cannot directly call read_impl as it is private
+    if constexpr (write)
+    {
+        asChild().ScientificDefaults<Parent>::addDefaults();
+    }
+    else
+    {
+        asChild().ScientificDefaults<Parent>::readDefaults();
+    }
 }
 
 template <typename Child>
@@ -357,7 +365,7 @@ void ScientificDefaults<Child>::defaults_impl()
                 &Child::setUnitDimension)
             .template withReader<unit_representations::AsArray>()(wor);
 
-        addParentDefaults<BaseRecord<MeshRecordComponent>>();
+        addParentDefaults<BaseRecord<MeshRecordComponent>, write>();
     }
     else if constexpr (std::is_same_v<Child, Record>)
     {
@@ -379,14 +387,14 @@ void ScientificDefaults<Child>::defaults_impl()
             .template withSetter<unit_representations::AsArray const &> (
                 &Child::setUnitDimension)(wor);
 
-        addParentDefaults<BaseRecord<RecordComponent>>();
+        addParentDefaults<BaseRecord<RecordComponent>, write>();
     }
     else if constexpr (std::is_same_v<Child, PatchRecord>)
     {
         defaultAttribute("unitDimension", unit_representations::AsArray{})
             .template withSetter<unit_representations::AsArray const &> (
                 &Child::setUnitDimension)(wor);
-        addParentDefaults<BaseRecord<PatchRecordComponent>>();
+        addParentDefaults<BaseRecord<PatchRecordComponent>, write>();
     }
     else if constexpr (std::is_same_v<Child, RecordComponent>)
     {
@@ -407,11 +415,11 @@ void ScientificDefaults<Child>::defaults_impl()
                 return std::vector<double>{0.0};
             }
         }).withSetter (&MeshRecordComponent::setPosition)(wor);
-        addParentDefaults<RecordComponent>();
+        addParentDefaults<RecordComponent, write>();
     }
     else if constexpr (std::is_same_v<Child, PatchRecordComponent>)
     {
-        addParentDefaults<RecordComponent>();
+        addParentDefaults<RecordComponent, write>();
     }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {

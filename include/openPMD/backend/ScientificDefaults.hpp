@@ -30,7 +30,7 @@ private:
     defaultAttribute(char const *attrName, GetDefaultValue &&getDefaultValue)
         -> ConfigAttribute<Child, GetDefaultValue>;
 
-    template <typename Parent>
+    template <typename Parent, bool write>
     void addParentDefaults();
 
     template <bool write>
