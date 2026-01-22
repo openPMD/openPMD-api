@@ -236,10 +236,17 @@ void ScientificDefaults<Child>::defaults_impl()
 
     if constexpr (std::is_same_v<Child, Iteration>)
     {
-        defaultAttribute("time", 0.).withSetter (&Iteration::setTime)(wor);
-        defaultAttribute("dt", 1.).withSetter (&Iteration::setDt)(wor);
+        defaultAttribute("time", 0.)
+            .withSetter(&Iteration::setTime)
+            .template withReader<double>(ensureFloatingScalar(
+                [this](auto &&val) { this->asChild().setTime(val); }))(wor);
+        defaultAttribute("dt", 1.)
+            .withSetter(&Iteration::setDt)
+            .template withReader<double>(ensureFloatingScalar(
+                [this](auto &&val) { this->asChild().setDt(val); }))(wor);
         defaultAttribute("timeUnitSI", 1.0)
-            .withSetter (&Iteration::setTimeUnitSI)(wor);
+            .withSetter(&Iteration::setTimeUnitSI)
+            .template withReader<double>()(wor);
     }
     else if constexpr (std::is_same_v<Child, Mesh>)
     {
