@@ -88,6 +88,7 @@ function build_adios2 {
     # Since the PR does not cleanly merge, avoid_conflicts.patch is also needed
     patch -p1 ../avoid_conflicts.patch
     patch -p1 ../0001-GTKorvo-Upstream-4812.patch
+    cd ..
 
     # build
     mkdir build-adios2
