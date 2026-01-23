@@ -83,6 +83,12 @@ function build_adios2 {
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
 
+    cd ADIOS2-*
+    # Need this PR for static builds https://github.com/ornladios/ADIOS2/pull/4812
+    # Since the PR does not cleanly merge, avoid_conflicts.patch is also needed
+    patch -p1 ../avoid_conflicts.patch
+    patch -p1 ../0001-GTKorvo-Upstream-4812.patch
+
     # build
     mkdir build-adios2
     cd build-adios2

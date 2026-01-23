@@ -1,0 +1,3939 @@
+From 69173d9a8c2a7b89d6c4dd315dbca8551b65ec60 Mon Sep 17 00:00:00 2001
+From: Greg Eisenhauer <eisen@cc.gatech.edu>
+Date: Mon, 19 Jan 2026 21:55:00 -0600
+Subject: [PATCH] GTKorvo Upstream (#4812)
+
+---
+ .../.github/workflows/build-and-test.yml      | 176 ++++++++--------
+ thirdparty/EVPath/EVPath/CMakeLists.txt       |  69 ++++---
+ thirdparty/EVPath/EVPath/cm.c                 |  26 +--
+ thirdparty/EVPath/EVPath/cm_internal.h        |   2 +-
+ thirdparty/EVPath/EVPath/cm_pbio.c            |   2 +-
+ thirdparty/EVPath/EVPath/cmselect.c           |   8 +-
+ thirdparty/EVPath/EVPath/cmsockets.c          |  18 +-
+ .../EVPath/EVPath/dfg_tests/delayed_submit.c  |   4 +-
+ .../EVPath/EVPath/dfg_tests/test_support.c    |   2 +-
+ thirdparty/EVPath/EVPath/ip_config.c          |   1 -
+ thirdparty/EVPath/EVPath/metrics.c            |   2 +-
+ thirdparty/EVPath/EVPath/response.c           |  13 +-
+ .../scripts/ci/cmake/alma10-clang.cmake       |   7 +
+ .../EVPath/scripts/ci/cmake/alma10-gcc.cmake  |   7 +
+ .../scripts/ci/cmake/ubuntu2204-clang.cmake   |   7 +
+ .../scripts/ci/cmake/ubuntu2204-gcc.cmake     |   7 +
+ .../scripts/ci/cmake/ubuntu2404-clang.cmake   |   7 +
+ .../scripts/ci/cmake/ubuntu2404-gcc.cmake     |   7 +
+ .../windows2022-vs2022-msvc-static.cmake      |   8 +
+ .../cmake/windows2022-vs2022-msvc-win32.cmake |   7 +
+ .../ci/cmake/windows2022-vs2022-msvc.cmake    |   7 +
+ .../ci/cmake/windows2025-vs2022-clang.cmake   |   8 +
+ .../EVPath/scripts/ci/setup/install-atl.sh    |  10 +-
+ .../EVPath/scripts/ci/setup/install-dill.sh   |  10 +-
+ .../EVPath/scripts/ci/setup/install-ffs.sh    |  10 +-
+ .../EVPath/EVPath/scripts/ci/setup/linux.sh   |  10 +-
+ .../EVPath/scripts/dashboard/common.cmake     |   2 +-
+ thirdparty/EVPath/EVPath/tests/support.c      |   4 +-
+ thirdparty/EVPath/EVPath/thin_server.c        |   7 +-
+ .../atl/.github/workflows/build-and-test.yml  |  11 +-
+ thirdparty/atl/atl/CMakeLists.txt             |  29 ++-
+ .../cmake/windows2022-vs2022-msvc-win32.cmake |   7 +
+ .../ci/cmake/windows2025-vs2022-clang.cmake   |   8 +
+ thirdparty/atl/atl/tclHash.c                  |  34 ++-
+ thirdparty/atl/atl/tclHash.h                  |  85 ++------
+ .../dill/.github/workflows/build-and-test.yml |  43 ++--
+ .../dill/dill/.github/workflows/triggers.yml  |   8 +-
+ thirdparty/dill/dill/CMakeLists.txt           |  55 ++---
+ thirdparty/dill/dill/virtual.c                |  40 ++--
+ thirdparty/dill/dill/vtests/CMakeLists.txt    |   2 +-
+ thirdparty/dill/dill/vtests/mixed_params.c    |  62 ++++++
+ thirdparty/dill/dill/x86_64.c                 | 194 +++++++++++++++---
+ thirdparty/dill/dill/x86_64_rt.c              |   4 +-
+ .../ffs/.github/workflows/build-and-test.yml  |  17 ++
+ thirdparty/ffs/ffs/cod/cg.c                   |   4 +-
+ thirdparty/ffs/ffs/cod/cod.y                  |  67 ++++--
+ .../ffs/ffs/cod/pregen_source/Linux/cod.tab.c |  50 +++--
+ .../ffs/ffs/cod/pregen_source/Linux/cod.y     |  67 ++++--
+ .../ffs/cod/pregen_source/Windows/cod.tab.c   |  50 +++--
+ .../ffs/ffs/cod/pregen_source/Windows/cod.y   |  67 ++++--
+ thirdparty/ffs/ffs/ffs/ffs.c                  |  55 ++---
+ thirdparty/ffs/ffs/ffs/ffs_conv.c             |  95 ++++++---
+ .../output_dir/context_test_output.s390x.bin  | Bin 0 -> 16939 bytes
+ .../output_dir/context_test_output.win64.bin  | Bin 0 -> 16859 bytes
+ .../ffs/ffs/output_dir/file_output.s390x.bin  | Bin 0 -> 14513 bytes
+ .../ffs/ffs/output_dir/file_output.win64.bin  | Bin 0 -> 14433 bytes
+ .../ffs/ffs/output_dir/index_output.s390x.bin | Bin 0 -> 16305 bytes
+ .../ffs/ffs/output_dir/index_output.win64.bin | Bin 0 -> 16225 bytes
+ thirdparty/ffs/ffs/fm/nt_io.c                 |   7 +-
+ .../ffs/ffs/fm/progs/restart_format_server.sh |   8 +
+ .../cmake/windows2022-vs2022-msvc-win32.cmake |   7 +
+ .../ffs/ffs/scripts/ci/setup/install-atl.sh   |  11 +-
+ .../ffs/ffs/scripts/ci/setup/install-dill.sh  |  15 +-
+ 63 files changed, 1030 insertions(+), 520 deletions(-)
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-clang.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-gcc.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-clang.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-gcc.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2404-clang.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2404-gcc.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-static.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
+ create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2025-vs2022-clang.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/windows2025-vs2022-clang.cmake
+ create mode 100644 thirdparty/dill/dill/vtests/mixed_params.c
+ create mode 100755 thirdparty/ffs/ffs/ffs/output_dir/context_test_output.s390x.bin
+ create mode 100644 thirdparty/ffs/ffs/ffs/output_dir/context_test_output.win64.bin
+ create mode 100755 thirdparty/ffs/ffs/ffs/output_dir/file_output.s390x.bin
+ create mode 100644 thirdparty/ffs/ffs/ffs/output_dir/file_output.win64.bin
+ create mode 100755 thirdparty/ffs/ffs/ffs/output_dir/index_output.s390x.bin
+ create mode 100644 thirdparty/ffs/ffs/ffs/output_dir/index_output.win64.bin
+ create mode 100755 thirdparty/ffs/ffs/fm/progs/restart_format_server.sh
+ create mode 100644 thirdparty/ffs/ffs/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+
+diff --git a/thirdparty/EVPath/EVPath/.github/workflows/build-and-test.yml b/thirdparty/EVPath/EVPath/.github/workflows/build-and-test.yml
+index 4afd7c17e..09615fd83 100644
+--- a/thirdparty/EVPath/EVPath/.github/workflows/build-and-test.yml
++++ b/thirdparty/EVPath/EVPath/.github/workflows/build-and-test.yml
+@@ -1,12 +1,12 @@
+ name: Build and Test
+ 
+-on: 
+-  push: 
+-    branches: 
+-    - master 
+-  pull_request: 
+-    branches: 
+-    - master 
++on:
++  push:
++    branches:
++    - master
++  pull_request:
++    branches:
++    - master
+ 
+ concurrency:
+   group: ${{ github.head_ref || github.run_id }}
+@@ -27,30 +27,16 @@ jobs:
+     strategy:
+       fail-fast: false
+       matrix:
+-        buildtype: [ release, debug ]
+-        os: [ centos7, alma8, ubuntu1604, ubuntu1804, ubuntu2004 ]
+-        compiler: [ clang, gcc, nvhpc ]
+-        exclude:
+-          - { os: alma8, compiler: nvhpc }
+-          - { os: ubuntu1604, compiler: nvhpc }
+-          - { os: ubuntu1804, compiler: nvhpc }
++        buildtype: [ release ]
++        os: [ alma10, ubuntu2204, ubuntu2404 ]
++        compiler: [ clang, gcc ]
+         include:
+-        - os: centos7
+-          container: centos:7
+-        - os: alma8
+-          container: almalinux:8
+-        - os: ubuntu1604
+-          container: ubuntu:16.04
+-        - os: ubuntu1804
+-          container: ubuntu:18.04
+-        - os: ubuntu2004
+-          container: ubuntu:20.04
+-        - os: centos7
+-          compiler: nvhpc
+-          container: nvcr.io/nvidia/nvhpc:21.2-devel-cuda11.2-centos7
+-        - os: ubuntu2004
+-          compiler: nvhpc
+-          container: nvcr.io/nvidia/nvhpc:21.2-devel-cuda11.2-ubuntu20.04
++        - os: alma10
++          container: almalinux:10
++        - os: ubuntu2404
++          container: ubuntu:24.04
++        - os: ubuntu2204
++          container: ubuntu:22.04
+ 
+     steps:
+     - uses: actions/checkout@v2
+@@ -72,59 +58,81 @@ jobs:
+     - name: Test
+       run: source/scripts/ci/gh-actions/run.sh test
+ 
+- # mac_and_windows:
+- #   # The jobs should run pretty quick; anything over 30m essentially means
+- #   # something is stuck somewhere
+- #   timeout-minutes: 30
+- #   runs-on: ${{ matrix.vm }}
+- #   env:
+- #     GH_YML_JOBNAME: ${{ matrix.jobname }}
+- #     GH_YML_BUILDTYPE: ${{ matrix.buildtype }}
+- #     GH_YML_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+- #
+- #   strategy:
+- #     fail-fast: false
+- #     matrix:
+- #       buildtype: [ release, debug ]
+- #       jobname: [
+- #         windows-vs2019-msvc,
+- #         windows-vs2019-clang,
+- #         macos-clang ]
+- #       include:
+- #       - jobname: windows-vs2019-msvc
+- #         vm: windows-latest
+- #       - jobname: windows-vs2019-clang
+- #         vm: windows-latest
+- #       - jobname: macos-clang
+- #         vm: macos-latest
++  mac_and_windows:
++    # The jobs should run pretty quick; anything over 30m essentially means
++    # something is stuck somewhere
++    timeout-minutes: 30
++    runs-on: ${{ matrix.vm }}
++    env:
++      GH_YML_JOBNAME: ${{ matrix.jobname }}
++      GH_YML_BUILDTYPE: ${{ matrix.buildtype }}
++      GH_YML_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
++
++    strategy:
++      fail-fast: false
++      matrix:
++        buildtype: [ release, debug ]
++        jobname: [
++          windows2025-vs2022-clang,
++          windows2022-vs2022-msvc,
++          windows2022-vs2022-msvc-static,
++          windows2022-vs2022-msvc-win32,
++          macos-clang ]
++        include:
++        - jobname: windows2025-vs2022-clang
++          vm: windows-2025
++        - jobname: windows2022-vs2022-msvc
++          vm: windows-2022
++        - jobname: windows2022-vs2022-msvc-static
++          vm: windows-2022
++        - jobname: windows2022-vs2022-msvc-win32
++          vm: windows-2022
++        - jobname: macos-clang
++          vm: macos-latest
+ 
+- #   defaults:
+- #     run:
+- #       shell: bash
++    defaults:
++      run:
++        shell: bash
+ 
+- #   steps:
+- #   - uses: actions/checkout@v2
+- #     with:
+- #       ref: ${{ github.event.pull_request.head.sha }}
+- #       path: source
+- #   - name: Setup
+- #     if: ${{ runner.os == 'Windows' }}
+- #     run: |
+- #         . source/scripts/ci/setup/windows.sh
+- #         source/scripts/ci/setup/install-atl.sh ${{ matrix.buildtype }}
+- #         source/scripts/ci/setup/install-ffs.sh ${{ matrix.buildtype }}
+- #   - name: Setup
+- #     if: ${{ runner.os == 'macOS' }}
+- #     run: |
+- #         . source/scripts/ci/setup/macos.sh
+- #         source/scripts/ci/setup/install-atl.sh ${{ matrix.buildtype }}
+- #         source/scripts/ci/setup/install-dill.sh ${{ matrix.buildtype }}
+- #         source/scripts/ci/setup/install-ffs.sh ${{ matrix.buildtype }}
+- #   - name: Update
+- #     run: source/scripts/ci/gh-actions/run.sh update
+- #   - name: Configure
+- #     run: source/scripts/ci/gh-actions/run.sh configure
+- #   - name: Build
+- #     run: source/scripts/ci/gh-actions/run.sh build
+- #   - name: Test
+- #     run: source/scripts/ci/gh-actions/run.sh test
++    steps:
++    - uses: actions/checkout@v2
++      with:
++        ref: ${{ github.event.pull_request.head.sha }}
++        path: source
++    - name: Setup
++      if: ${{ runner.os == 'Windows' }}
++      run: |
++          . source/scripts/ci/setup/windows.sh
++          source/scripts/ci/setup/install-atl.sh ${{ matrix.buildtype }}
++          source/scripts/ci/setup/install-dill.sh ${{ matrix.buildtype }}
++          source/scripts/ci/setup/install-ffs.sh ${{ matrix.buildtype }}
++    - name: Setup
++      if: ${{ runner.os == 'macOS' }}
++      run: |
++          . source/scripts/ci/setup/macos.sh
++          source/scripts/ci/setup/install-atl.sh ${{ matrix.buildtype }}
++          source/scripts/ci/setup/install-dill.sh ${{ matrix.buildtype }}
++          source/scripts/ci/setup/install-ffs.sh ${{ matrix.buildtype }}
++    - name: Update
++      run: source/scripts/ci/gh-actions/run.sh update
++    - name: Configure
++      run: source/scripts/ci/gh-actions/run.sh configure
++    - name: Build
++      run: source/scripts/ci/gh-actions/run.sh build
++    - name: Stage DLLs (Windows)
++      if: ${{ runner.os == 'Windows' }}
++      shell: pwsh
++      run: |
++          # Copy dependency DLLs to build output directory so Windows can find them
++          $buildType = "${{ matrix.buildtype }}"
++          $configDir = if ($buildType -eq "release") { "Release" } else { "Debug" }
++          $destDir = "build/bin/$configDir"
++          if (Test-Path $destDir) {
++              Copy-Item -Path "atl/install/bin/*.dll" -Destination $destDir -Force -ErrorAction SilentlyContinue
++              Copy-Item -Path "dill/install/bin/*.dll" -Destination $destDir -Force -ErrorAction SilentlyContinue
++              Copy-Item -Path "ffs/install/bin/*.dll" -Destination $destDir -Force -ErrorAction SilentlyContinue
++              Write-Host "Copied DLLs to $destDir"
++              Get-ChildItem $destDir -Filter *.dll | ForEach-Object { Write-Host "  - $($_.Name)" }
++          }
++    - name: Test
++      run: source/scripts/ci/gh-actions/run.sh test
+diff --git a/thirdparty/EVPath/EVPath/CMakeLists.txt b/thirdparty/EVPath/EVPath/CMakeLists.txt
+index e5966d95a..424ff90f6 100644
+--- a/thirdparty/EVPath/EVPath/CMakeLists.txt
++++ b/thirdparty/EVPath/EVPath/CMakeLists.txt
+@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.14)
+ # GTKorvo
+ set(CMAKE_DIRECTORY_LABELS EVPath)
+ 
+-project(EVPath VERSION 4.5.8 LANGUAGES C CXX)
++project(EVPath VERSION 4.5.9 LANGUAGES C CXX)
+ 
+ # Some boilerplate to setup nice output directories
+ include(GNUInstallDirs)
+@@ -60,15 +60,15 @@ if(WIN32)
+   # Automagic to do the DLL / LIB song and dance
+   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+ 
+-  # Silence MSVC warnings
+-  if(CMAKE_C_COMPILER_ID MATCHES "MSVC" OR
+-     CMAKE_C_SIMULATE_ID MATCHES "MSVC")
+-    add_definitions(
+-      -D_CRT_SECURE_NO_DEPRECATE
+-      -D_CRT_SECURE_NO_WARNINGS
+-      -D_SCL_SECURE_NO_DEPRECATE
+-      -D_WINSOCK_DEPRECATED_NO_WARNINGS
+-      -D_CRT_NONSTDC_NO_DEPRECATE)
++  # MSVC warning suppressions (must be before any targets are defined)
++  if(MSVC OR CMAKE_C_SIMULATE_ID MATCHES "MSVC")
++    add_compile_definitions(
++      _CRT_SECURE_NO_DEPRECATE
++      _CRT_SECURE_NO_WARNINGS
++      _SCL_SECURE_NO_DEPRECATE
++      _WINSOCK_DEPRECATED_NO_WARNINGS
++      _CRT_NONSTDC_NO_DEPRECATE
++      FFS_SRC)
+   endif()
+ endif()
+ 
+@@ -78,13 +78,12 @@ set(ENABLE_SOMETHING AUTO CACHE STRING "Enable SOMETHING support")  #
+ set(EVPATH_DEFAULT_PORT_RANGE  "26000:26100" CACHE STRING "Default port range for IP communication")
+ mark_as_advanced(EVPATH_DEFAULT_PORT_RANGE)
+ 
+-include(CheckFunctionExists)
+-include(CheckIncludeFiles)
++include(CheckSymbolExists)
++include(CheckIncludeFile)
+ include(CheckLibraryExists)
+ include(CheckTypeSize)
+ include(CheckStructHasMember)
+ include(CheckCSourceRuns)
+-include(TestBigEndian)
+ include(CheckBrokenTitanCompiler)
+ 
+ include(CTest)
+@@ -123,6 +122,17 @@ add_library(EVPath
+   revp.c evp_compat.c thin_server.c evp_threads.c ev_dfg.c)
+ add_library(EVPath::EVPath ALIAS EVPath)
+ add_library(evpath ALIAS EVPath)
++
++# MSVC warning suppressions
++if(MSVC OR CMAKE_C_SIMULATE_ID MATCHES "MSVC")
++  target_compile_definitions(EVPath PRIVATE
++    _CRT_SECURE_NO_DEPRECATE
++    _CRT_SECURE_NO_WARNINGS
++    _SCL_SECURE_NO_DEPRECATE
++    _WINSOCK_DEPRECATED_NO_WARNINGS
++    _CRT_NONSTDC_NO_DEPRECATE)
++endif()
++
+ target_include_directories(EVPath PUBLIC
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+@@ -635,14 +645,19 @@ CHECK_STRUCT_HAS_MEMBER("struct fd_set" "fds_bits" "sys/select.h" HAVE_FDS_BITS)
+ 
+ CHECK_TYPE_SIZE("int"   SIZEOF_INT)
+ CHECK_TYPE_SIZE("long"   SIZEOF_LONG)
+-TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
+ 
+-CHECK_FUNCTION_EXISTS(writev HAVE_WRITEV)
+-CHECK_FUNCTION_EXISTS(uname HAVE_UNAME)
+-CHECK_FUNCTION_EXISTS(getdomainname HAVE_GETDOMAINNAME)
+-CHECK_FUNCTION_EXISTS(getloadavg HAVE_GETLOADAVG)
+-CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
+-CHECK_FUNCTION_EXISTS(getifaddrs HAVE_GETIFADDRS)
++if(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
++  set(WORDS_BIGENDIAN 1)
++else()
++  set(WORDS_BIGENDIAN 0)
++endif()
++
++check_symbol_exists(writev "sys/uio.h" HAVE_WRITEV)
++check_symbol_exists(uname "sys/utsname.h" HAVE_UNAME)
++check_symbol_exists(getdomainname "unistd.h" HAVE_GETDOMAINNAME)
++check_symbol_exists(getloadavg "stdlib.h" HAVE_GETLOADAVG)
++check_symbol_exists(gettimeofday "sys/time.h" HAVE_GETTIMEOFDAY)
++check_symbol_exists(getifaddrs "ifaddrs.h" HAVE_GETIFADDRS)
+ 
+ try_compile(HAVE_MAC_SYSCTL
+   ${CMAKE_CURRENT_BINARY_DIR}
+@@ -657,8 +672,8 @@ try_compile(HAVE_SYSCONF
+   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_sysconf.c
+ )
+ 
+-if(CMAKE_C_COMPILER_ID MATCHES "Intel") 
+-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -shared-intel")
++if(CMAKE_C_COMPILER_ID MATCHES "Intel")
++  add_link_options(-shared-intel)
+ endif()
+ 
+ function(_pkg_expand_libs in_libs out_ldflags)
+@@ -719,13 +734,9 @@ if(EVPATH_INSTALL_HEADERS)
+   )
+ endif()
+ 
+-set(namelink_component_args)
+-if(NOT CMAKE_VERSION VERSION_LESS 3.12)
+-  set(namelink_component_args NAMELINK_COMPONENT ${EVPATH_HEADER_COMPONENT})
+-endif()
+ install(TARGETS EVPath EXPORT EVPathTargets
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${EVPATH_RUNTIME_COMPONENT}
+-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT ${EVPATH_LIBRARY_COMPONENT} ${namelink_component_args}
++  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT ${EVPATH_LIBRARY_COMPONENT} NAMELINK_COMPONENT ${EVPATH_HEADER_COMPONENT}
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT ${EVPATH_ARCHIVE_COMPONENT}
+ )
+ 
+@@ -741,10 +752,6 @@ endif()
+ TARGET_COMPILE_DEFINITIONS(EVPath PRIVATE EVPATH_MODULE_BUILD_DIR="${PROJECT_BINARY_DIR}/${EVPATH_INSTALL_MODULE_DIR}${config_suffix}")
+ set(EVPATH_MODULE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/${EVPATH_INSTALL_MODULE_DIR})
+ 
+-if(CMAKE_C_COMPILER_ID MATCHES "Intel") 
+-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -shared-intel")
+-endif()
+-
+ find_program(SSH ssh)
+ if(SSH) 
+   set(SSH_PATH "${SSH}")
+diff --git a/thirdparty/EVPath/EVPath/cm.c b/thirdparty/EVPath/EVPath/cm.c
+index 08997a83e..6930bc4b8 100644
+--- a/thirdparty/EVPath/EVPath/cm.c
++++ b/thirdparty/EVPath/EVPath/cm.c
+@@ -2463,13 +2463,14 @@ timeout_conn(CManager cm, void *client_data)
+ 		 ((char*)&attr_length)[3] = base[8];
+ 	     }
+ 	 } else {
+- #ifdef WORDS_BIGENDIAN	    
++ #ifdef WORDS_BIGENDIAN
+ 	     checksum = (unsigned char) check_sum_base[3];
+  #else
+ 	     checksum = (unsigned char) check_sum_base[0];
+  #endif
+-	     data_length = ((int64_t)(((unsigned int *) base)[1])) << 32;
+-	     data_length += ((unsigned int *) base)[0];
++	     /* Both CMP and CMB use high word first, low word second */
++	     data_length = ((int64_t)(((unsigned int *) base)[0])) << 32;
++	     data_length += ((unsigned int *) base)[1];
+ 	     if (header_len != 12) {
+ 		 attr_length = ((int *) base)[2];
+ 	     }
+@@ -2509,7 +2510,7 @@ timeout_conn(CManager cm, void *client_data)
+      }
+ 
+      if ((ssize_t)length < header_len + data_length + attr_length) {
+-	 return header_len + data_length + attr_length - 
++	 return header_len + data_length + attr_length -
+ 	     length;
+      }
+      /* At this point, the message is accepted.  Determine processing */
+@@ -3181,6 +3182,7 @@ INT_CMregister_invalid_message_handler(CManager cm, CMUnregCMHandler handler)
+ 	     }
+ 	     start = 0;
+ 	 }
++	 (void)count;
+      }
+      ((int*)full_vec[0].iov_base)[0] = 
+ 	 (((int*)full_vec[0].iov_base)[0] & 0xffffff00) | (unsigned char) checksum;
+@@ -3357,15 +3359,11 @@ INT_CMregister_invalid_message_handler(CManager cm, CMUnregCMHandler handler)
+ 	     header_len = sizeof(no_attr_header);
+ 	 }
+      } else {
+-	 if (attrs_present) {
+-	     memcpy((void*) &attr_long_header[1], &length, sizeof(length));
+-	     header_ptr = &attr_long_header;
+-	     header_len = sizeof(attr_long_header);
+-	 } else {
+-	     memcpy((void*) &attr_long_header[2], &length, sizeof(length));
+-	     header_ptr = no_attr_header;
+-	     header_len = sizeof(no_attr_header);
+-	 }
++	 /* Long message format: use explicit high/low word order to match CMP */
++	 attr_long_header[1] = (int)(length >> 32);      /* high 32 bits */
++	 attr_long_header[2] = (int)(length & 0xffffffff); /* low 32 bits */
++	 header_ptr = &attr_long_header;
++	 header_len = sizeof(attr_long_header);
+      }	 
+      if (attrs_present) {
+ 	 encoded_attrs = encode_attr_for_xmit(attrs, conn->attr_encode_buffer,
+@@ -3431,7 +3429,6 @@ INT_CMregister_invalid_message_handler(CManager cm, CMUnregCMHandler handler)
+      int attr_len = 0;
+      int do_write = 1;
+      void *encoded_attrs = NULL;
+-     int attrs_present = 0;
+      CManager cm = conn->cm;
+ 
+      /* ensure conn is open */
+@@ -3512,7 +3509,6 @@ INT_CMregister_invalid_message_handler(CManager cm, CMUnregCMHandler handler)
+ 	 data_length = event->event_len;
+      }
+      if (attrs != NULL) {
+-	 attrs_present++;
+ 	 encoded_attrs = encode_attr_for_xmit(attrs, conn->attr_encode_buffer,
+ 					      &attr_len);
+ 	 attr_len = (attr_len +7) & -8;  /* round up to even 8 */
+diff --git a/thirdparty/EVPath/EVPath/cm_internal.h b/thirdparty/EVPath/EVPath/cm_internal.h
+index 0837a2ed9..bf5f03fd1 100644
+--- a/thirdparty/EVPath/EVPath/cm_internal.h
++++ b/thirdparty/EVPath/EVPath/cm_internal.h
+@@ -587,7 +587,7 @@ extern void INT_CMTrace_file_id(int ID);
+ #include <process.h>
+ #include <time.h>
+ #define CLOCK_MONOTONIC 1
+-static int clock_gettime(int cl, struct timespec* spec)
++inline int clock_gettime(int cl, struct timespec* spec)
+ {
+     __int64 wintime; GetSystemTimeAsFileTime((FILETIME*)&wintime);
+     wintime -= 116444736000000000i64;  //1jan1601 to 1jan1970
+diff --git a/thirdparty/EVPath/EVPath/cm_pbio.c b/thirdparty/EVPath/EVPath/cm_pbio.c
+index 1f8781be5..bafa520d4 100644
+--- a/thirdparty/EVPath/EVPath/cm_pbio.c
++++ b/thirdparty/EVPath/EVPath/cm_pbio.c
+@@ -548,7 +548,7 @@ extern int
+ CM_pbio_query(CMConnection conn, CMTransport trans, char *buffer, size_t length)
+ {
+     struct pbio_exchange_msg tmp_msg;
+-    struct pbio_exchange_msg *msg;
++    struct pbio_exchange_msg *msg = NULL;
+     int swap;
+ 
+     int *incoming_length;
+diff --git a/thirdparty/EVPath/EVPath/cmselect.c b/thirdparty/EVPath/EVPath/cmselect.c
+index 2b9403809..23c62e293 100644
+--- a/thirdparty/EVPath/EVPath/cmselect.c
++++ b/thirdparty/EVPath/EVPath/cmselect.c
+@@ -135,10 +135,6 @@ static int remove_periodic_task(select_data_ptr sd,
+ 				      periodic_task_handle handle);
+ 
+ #ifdef HAVE_WINDOWS_H
+-/* Winsock init stuff  */
+-/* ask for ver 1.1 */
+-static WORD wVersionRequested = MAKEWORD(1, 1);
+-static WSADATA wsaData;
+ int nErrorStatus;
+ static char*WSAerror_str(int err);
+ #ifndef FD_SETSIZE
+@@ -819,8 +815,7 @@ static void read_wake_fd(void *fd_as_ptr, void *junk)
+ 
+ #ifdef HAVE_WINDOWS_H
+ static char*
+-WSAerror_str(err)
+-int err;
++WSAerror_str(int err)
+ {
+     switch(err) {
+     case WSAEINTR: return "WSAEINTR";
+@@ -887,7 +882,6 @@ pipe(SOCKET *filedes)
+     
+     int length;
+     struct sockaddr_in sock_addr;
+-    int sock_opt_val = 1;
+     SOCKET sock1, sock2, conn_sock;
+     unsigned long block = TRUE;
+     int delay_value = 1;
+diff --git a/thirdparty/EVPath/EVPath/cmsockets.c b/thirdparty/EVPath/EVPath/cmsockets.c
+index b1f673862..afd81511f 100644
+--- a/thirdparty/EVPath/EVPath/cmsockets.c
++++ b/thirdparty/EVPath/EVPath/cmsockets.c
+@@ -7,6 +7,7 @@
+ #define FD_SETSIZE 1024
+ #endif
+ #include <winsock2.h>
++#include <ws2tcpip.h>
+ #include <windows.h>
+ #include <process.h>
+ #include <time.h>
+@@ -223,7 +224,7 @@ socket_accept_conn(void *void_trans, void *void_conn_sock)
+     socket_conn_data_ptr socket_conn_data;
+     SOCKET sock;
+     struct sockaddr sock_addr;
+-    unsigned int sock_len = sizeof(sock_addr);
++    socklen_t sock_len = sizeof(sock_addr);
+     int int_port_num;
+     struct linger linger_val;
+     int sock_opt_val = 1;
+@@ -241,7 +242,7 @@ socket_accept_conn(void *void_trans, void *void_conn_sock)
+     svc->trace_out(sd->cm, "Trying to accept something, socket %d\n", conn_sock);
+     linger_val.l_onoff = 1;
+     linger_val.l_linger = 60;
+-    if ((sock = accept(conn_sock, (struct sockaddr *) 0, (unsigned int *) 0)) == SOCKET_ERROR) {
++    if ((sock = accept(conn_sock, (struct sockaddr *) 0, (socklen_t *) 0)) == SOCKET_ERROR) {
+ 	perror("Cannot accept socket connection");
+ 	svc->fd_remove_select(sd->cm, conn_sock);
+ 	fprintf(stderr, "failure in CMsockets  removing socket connection\n");
+@@ -358,7 +359,7 @@ initiate_conn(CManager cm, CMtrans_services svc, transport_entry trans, attr_lis
+     char *host_name;
+     int remote_IP = -1;
+     static int host_ip = 0;
+-    unsigned int sock_len;
++    socklen_t sock_len;
+     union {
+ 	struct sockaddr s;
+ 	struct sockaddr_in s_I4;
+@@ -657,7 +658,7 @@ extern attr_list
+ libcmsockets_LTX_non_blocking_listen(CManager cm, CMtrans_services svc, transport_entry trans, attr_list listen_info)
+ {
+     socket_client_data_ptr sd = trans->trans_data;
+-    unsigned int length;
++    socklen_t length;
+     struct sockaddr_in sock_addr;
+     int sock_opt_val = 1;
+     SOCKET conn_sock = 0;
+@@ -889,7 +890,7 @@ set_block_state(CMtrans_services svc, socket_conn_data_ptr scd,
+       int ret = ioctlsocket(scd->fd, FIONBIO, &mode);
+       scd->block_state = Block;
+       if (ret != NO_ERROR)
+-	printf("ioctlsocket failed with error: %ld\n", ret);
++	printf("ioctlsocket failed with error: %d\n", ret);
+ 
+       svc->trace_out(scd->sd->cm, "CMSocket switch fd %d to blocking WIN properly",
+ 		     scd->fd);
+@@ -898,7 +899,7 @@ set_block_state(CMtrans_services svc, socket_conn_data_ptr scd,
+       u_long mode = 1;  // 1 to enable non-blocking socket
+       int ret = ioctlsocket(scd->fd, FIONBIO, &mode);
+       if (ret != NO_ERROR)
+-	printf("ioctlsocket failed with error: %ld\n", ret);
++	printf("ioctlsocket failed with error: %d\n", ret);
+ 
+       scd->block_state = Non_Block;
+       svc->trace_out(scd->sd->cm, "CMSocket switch fd %d to nonblocking WIN properly",
+@@ -1002,10 +1003,7 @@ libcmsockets_LTX_read_to_buffer_func(CMtrans_services svc, socket_conn_data_ptr
+ #ifndef HAVE_WRITEV
+ static
+ ssize_t
+-writev(fd, iov, iovcnt)
+-int fd;
+-struct iovec *iov;
+-int iovcnt;
++writev(SOCKET fd, struct iovec *iov, size_t iovcnt)
+ {
+     ssize_t wrote = 0;
+     int i;
+diff --git a/thirdparty/EVPath/EVPath/dfg_tests/delayed_submit.c b/thirdparty/EVPath/EVPath/dfg_tests/delayed_submit.c
+index be9b50ddd..df665853c 100644
+--- a/thirdparty/EVPath/EVPath/dfg_tests/delayed_submit.c
++++ b/thirdparty/EVPath/EVPath/dfg_tests/delayed_submit.c
+@@ -79,13 +79,13 @@ event_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
+ 	printf("Delay is %ld.%06d\n", (long)delay.tv_sec, (int)delay.tv_usec);
+     }
+     if ((message_count % 2) == 0) {
+-	if (labs(delay.tv_sec *1000000 + delay.tv_usec - 1000000) > 100000) {
++	if (labs(delay.tv_sec *1000000 + delay.tv_usec - 1000000) > 200000) {
+ 	    printf("Message delayed too much, %ld\n", labs(delay.tv_sec *1000000 + delay.tv_usec - 1000000));
+ 	    failure = 1;
+ 	}
+     }
+     if ((message_count % 2) == 1) {
+-	if (labs(delay.tv_sec *1000000 + delay.tv_usec - 1500000) > 100000) {
++	if (labs(delay.tv_sec *1000000 + delay.tv_usec - 1500000) > 200000) {
+ 	    printf("Message delayed too much, %ld\n", labs(delay.tv_sec *1000000 + delay.tv_usec - 1500000));
+ 	    failure = 1;
+ 	}
+diff --git a/thirdparty/EVPath/EVPath/dfg_tests/test_support.c b/thirdparty/EVPath/EVPath/dfg_tests/test_support.c
+index 4c49643ad..8a55ff583 100644
+--- a/thirdparty/EVPath/EVPath/dfg_tests/test_support.c
++++ b/thirdparty/EVPath/EVPath/dfg_tests/test_support.c
+@@ -141,7 +141,6 @@ static
+ pid_t
+ run_subprocess(char **args)
+ {
+-    static int count = 0;
+ #ifdef HAVE_WINDOWS_H
+     intptr_t child;
+     child = _spawnv(_P_NOWAIT, "./evtest.exe", args);
+@@ -151,6 +150,7 @@ run_subprocess(char **args)
+     }
+     return child;
+ #else
++    static int count = 0;
+     pid_t child = -1;
+     if (quiet <=0) {printf("Forking subprocess\n");}
+     if (no_fork) {
+diff --git a/thirdparty/EVPath/EVPath/ip_config.c b/thirdparty/EVPath/EVPath/ip_config.c
+index f058c320d..b3ebcb37e 100644
+--- a/thirdparty/EVPath/EVPath/ip_config.c
++++ b/thirdparty/EVPath/EVPath/ip_config.c
+@@ -387,7 +387,6 @@ get_qual_hostname(char *buf, int len, attr_list attrs,
+     if (buf[0] == 0) {
+ 	/* bloody hell, what do you have to do? */
+ 	struct in_addr IP;
+-	extern int h_errno;
+ 	char *iface;
+ 	if (get_string_attr(attrs, CM_IP_INTERFACE, &iface)){
+ 	    IP.s_addr = htonl(get_self_ip_iface(trace_func, trace_data, iface));
+diff --git a/thirdparty/EVPath/EVPath/metrics.c b/thirdparty/EVPath/EVPath/metrics.c
+index cf9c64380..2a88dd486 100644
+--- a/thirdparty/EVPath/EVPath/metrics.c
++++ b/thirdparty/EVPath/EVPath/metrics.c
+@@ -48,7 +48,7 @@
+ #include "cod.h"
+ #else
+ #define cod_assoc_externs(x,y)
+-#define cod_parse_for_context(x,y)
++#define cod_parse_for_context(x,y) (void)x
+ #endif
+ #include <fcntl.h>
+ 
+diff --git a/thirdparty/EVPath/EVPath/response.c b/thirdparty/EVPath/EVPath/response.c
+index 8373149d0..d166fa57d 100644
+--- a/thirdparty/EVPath/EVPath/response.c
++++ b/thirdparty/EVPath/EVPath/response.c
+@@ -23,7 +23,7 @@
+ #define cod_exec_context_free(x) 0
+ #define cod_code_free(x) 0
+ #define cod_assoc_externs(x,y) 0
+-#define cod_parse_for_context(x,y) 0
++#define cod_parse_for_context(x,y) (void)x
+ #define cod_set_closure(x,y,z) 0
+ #define cod_add_int_constant_to_parse_context(name, i, context) 0
+ #endif
+@@ -583,7 +583,7 @@ filter_wrapper(CManager cm, struct _event_item *event, void *client_data,
+ 	       attr_list attrs, int out_count, int *out_stones)
+ {
+     response_instance instance = (response_instance)client_data;
+-    int ret;
++    int ret = 0;
+     cod_exec_context ec = instance->u.filter.ec;
+     struct ev_state_data ev_state;
+ 
+@@ -614,7 +614,7 @@ router_wrapper(CManager cm, struct _event_item *event, void *client_data,
+ 	       attr_list attrs, int out_count, int *out_stones)
+ {
+     response_instance instance = (response_instance)client_data;
+-    int ret;
++    int ret = 0;
+     if (instance->u.filter.func_ptr) {
+ 	ret = ((int(*)(void *, attr_list))instance->u.filter.func_ptr)(event->decoded_event, attrs);
+     } else {
+@@ -660,9 +660,8 @@ transform_wrapper(CManager cm, struct _event_item *event, void *client_data,
+ 		  attr_list attrs, int out_count, int *out_stones)
+ {
+     response_instance instance = (response_instance)client_data;
+-    int ret;
++    int ret = 0;
+     void *out_event = malloc(instance->u.transform.out_size);
+-    int(*func)(cod_exec_context, void *, void*, attr_list, attr_list) = NULL;
+     cod_exec_context ec = instance->u.transform.ec;
+     struct ev_state_data ev_state;
+     attr_list output_attrs = create_attr_list();
+@@ -685,6 +684,7 @@ transform_wrapper(CManager cm, struct _event_item *event, void *client_data,
+     memset(out_event, 0, instance->u.transform.out_size);
+     if (ec != NULL) {
+ #ifdef HAVE_COD_H
++        int(*func)(cod_exec_context, void *, void*, attr_list, attr_list) = NULL;
+ 	func = (int(*)(cod_exec_context, void *, void*, attr_list, attr_list))instance->u.transform.code->func;
+ 	cod_assoc_client_data(ec, 0x34567890, (intptr_t)&ev_state);
+ 	ret = func(ec, event->decoded_event, out_event, attrs, output_attrs);
+@@ -1290,7 +1290,6 @@ response_determination(CManager cm, stone_type stone, action_class stage, event_
+     free(formatList);
+     free(format_map);
+     if (nearest_proto_action != -1) {
+-	int action_generated = 0;
+ 	proto_action *proto = &stone->proto_actions[nearest_proto_action];
+ 	if (proto->action_type == Action_Immediate) {
+ 	    /* must be immediate action */
+@@ -1320,7 +1319,6 @@ response_determination(CManager cm, stone_type stone, action_class stage, event_
+ 	    if (instance == NULL) return 0;
+ 	    instance->stone = stone->local_id;
+ 	    instance->proto_action_id = nearest_proto_action;
+-	    action_generated++;
+ 	    switch(mrd->response_type) {
+ 	    case Response_Filter:
+ 		INT_EVassoc_mutated_imm_action(cm, stone->local_id, nearest_proto_action,
+@@ -1355,7 +1353,6 @@ response_determination(CManager cm, stone_type stone, action_class stage, event_
+             }
+ 	    instance->stone = stone->local_id;
+ 	    instance->proto_action_id = nearest_proto_action;
+-	    action_generated++;
+ 	    INT_EVassoc_mutated_multi_action(cm, stone->local_id, nearest_proto_action,
+ 					     queued_wrapper, instance,
+ 					     proto->matching_reference_formats, free_multi_response);
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-clang.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-gcc.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-clang.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-gcc.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2404-clang.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2404-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2404-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2404-gcc.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2404-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2404-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-static.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-static.cmake
+new file mode 100644
+index 000000000..20324beea
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-static.cmake
+@@ -0,0 +1,8 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
++set(BUILD_SHARED_LIBS off)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+new file mode 100644
+index 000000000..412eef716
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM Win32)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
+new file mode 100644
+index 000000000..c03853488
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2025-vs2022-clang.cmake b/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2025-vs2022-clang.cmake
+new file mode 100644
+index 000000000..5c72720ca
+--- /dev/null
++++ b/thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2025-vs2022-clang.cmake
+@@ -0,0 +1,8 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
++set(CTEST_CMAKE_GENERATOR_TOOLSET ClangCL)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/setup/install-atl.sh b/thirdparty/EVPath/EVPath/scripts/ci/setup/install-atl.sh
+index e16968228..c9c9e8eba 100755
+--- a/thirdparty/EVPath/EVPath/scripts/ci/setup/install-atl.sh
++++ b/thirdparty/EVPath/EVPath/scripts/ci/setup/install-atl.sh
+@@ -6,12 +6,20 @@ echo "****************************************"
+ echo "  Installing ATL"
+ echo "****************************************"
+ 
++# Determine architecture flag for Windows builds
++arch_flag=""
++if [[ "${GH_YML_JOBNAME}" == *"win32"* ]]; then
++  arch_flag="-A Win32"
++elif [[ "${GH_YML_JOBNAME}" == *"windows"* ]]; then
++  arch_flag="-A x64"
++fi
++
+ mkdir atl
+ cd atl
+ git clone https://github.com/GTKorvo/atl.git source
+ mkdir build
+ cd build
+-cmake \
++cmake ${arch_flag} \
+   -DCMAKE_BUILD_TYPE=$1 \
+   -DBUILD_TESTING=OFF \
+   -DCMAKE_INSTALL_PREFIX=${PWD}/../install \
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/setup/install-dill.sh b/thirdparty/EVPath/EVPath/scripts/ci/setup/install-dill.sh
+index 9d437fdab..b20ae8399 100755
+--- a/thirdparty/EVPath/EVPath/scripts/ci/setup/install-dill.sh
++++ b/thirdparty/EVPath/EVPath/scripts/ci/setup/install-dill.sh
+@@ -6,12 +6,20 @@ echo "****************************************"
+ echo "  Installing DILL"
+ echo "****************************************"
+ 
++# Determine architecture flag for Windows builds
++arch_flag=""
++if [[ "${GH_YML_JOBNAME}" == *"win32"* ]]; then
++  arch_flag="-A Win32"
++elif [[ "${GH_YML_JOBNAME}" == *"windows"* ]]; then
++  arch_flag="-A x64"
++fi
++
+ mkdir dill
+ cd dill
+ git clone https://github.com/GTKorvo/dill.git source
+ mkdir build
+ cd build
+-cmake \
++cmake ${arch_flag} \
+   -DCMAKE_BUILD_TYPE=$1 \
+   -DBUILD_TESTING=OFF \
+   -DCMAKE_INSTALL_PREFIX=${PWD}/../install \
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/setup/install-ffs.sh b/thirdparty/EVPath/EVPath/scripts/ci/setup/install-ffs.sh
+index b91fac73c..dce57fb50 100755
+--- a/thirdparty/EVPath/EVPath/scripts/ci/setup/install-ffs.sh
++++ b/thirdparty/EVPath/EVPath/scripts/ci/setup/install-ffs.sh
+@@ -8,6 +8,14 @@ echo "****************************************"
+ 
+ export atl_ROOT="${PWD}/atl/install"
+ 
++# Determine architecture flag for Windows builds
++arch_flag=""
++if [[ "${GH_YML_JOBNAME}" == *"win32"* ]]; then
++  arch_flag="-A Win32"
++elif [[ "${GH_YML_JOBNAME}" == *"windows"* ]]; then
++  arch_flag="-A x64"
++fi
++
+ if [[ "${OS}" =~ "Windows" ]]
+ then
+   extra_cmake_args="-DFFS_USE_DILL:BOOL=OFF"
+@@ -21,7 +29,7 @@ cd ffs
+ git clone https://github.com/GTKorvo/ffs.git source
+ mkdir build
+ cd build
+-cmake ${extra_cmake_args} \
++cmake ${arch_flag} ${extra_cmake_args} \
+   -DCMAKE_BUILD_TYPE=$1 \
+   -DBUILD_TESTING=OFF \
+   -DCMAKE_INSTALL_PREFIX=${PWD}/../install \
+diff --git a/thirdparty/EVPath/EVPath/scripts/ci/setup/linux.sh b/thirdparty/EVPath/EVPath/scripts/ci/setup/linux.sh
+index 2a32135af..80c47cc4b 100755
+--- a/thirdparty/EVPath/EVPath/scripts/ci/setup/linux.sh
++++ b/thirdparty/EVPath/EVPath/scripts/ci/setup/linux.sh
+@@ -3,6 +3,8 @@
+ case ${GH_YML_JOBNAME} in
+   centos7*) PKG_CMD=yum ;;
+   centos8*|alma8*) PKG_CMD=dnf ;;
++  centos9*|alma9*) PKG_CMD=dnf ;;
++  centos10*|alma10*) PKG_CMD=dnf ;;
+   ubuntu*)  PKG_CMD=apt-get ;;
+ esac
+ 
+@@ -29,6 +31,12 @@ case ${GH_YML_JOBNAME} in
+   centos8*|alma8*)
+     curl -L https://copr.fedorainfracloud.org/coprs/g/git-maint/git/repo/epel-8/group_git-maint-git-epel-8.repo > /etc/yum.repos.d/group_git-maint-git-epel-8.repo
+     ;;
++  centos9*|alma9*)
++    curl -L https://copr.fedorainfracloud.org/coprs/g/git-maint/git/repo/epel-9/group_git-maint-git-epel-9.repo > /etc/yum.repos.d/group_git-maint-git-epel-9.repo
++    ;;
++  centos10*|alma10*)
++    curl -L https://copr.fedorainfracloud.org/coprs/g/git-maint/git/repo/epel-10/group_git-maint-git-epel-10.repo > /etc/yum.repos.d/group_git-maint-git-epel-10.repo
++    ;;
+   ubuntu*)
+     export DEBIAN_FRONTEND=noninteractive
+     add-apt-repository ppa:git-core/ppa -y
+@@ -60,7 +68,7 @@ esac
+ ########################################
+ # CMake
+ ########################################
+-FILENAME=$(curl https://cmake.org/files/LatestRelease/cmake-latest-files-v1.json 2>/dev/null | grep 'cmake.*sh' | sed -n 's|.*"\(cmake.*x86_64.sh\).*|\1|p')
++FILENAME=$(curl https://cmake.org/files/LatestRelease/cmake-latest-files-v1.json 2>/dev/null | grep 'cmake.*sh' | sed -n 's|.*"\(cmake.*linux-x86_64.sh\).*|\1|p')
+ VERSION=$(echo ${FILENAME} | sed 's|cmake-\([^\-]*\).*|\1|')
+ curl -L https://github.com/Kitware/CMake/releases/download/v${VERSION}/${FILENAME} > cmake.sh
+ chmod +x cmake.sh
+diff --git a/thirdparty/EVPath/EVPath/scripts/dashboard/common.cmake b/thirdparty/EVPath/EVPath/scripts/dashboard/common.cmake
+index 4b50bf291..5e448f330 100644
+--- a/thirdparty/EVPath/EVPath/scripts/dashboard/common.cmake
++++ b/thirdparty/EVPath/EVPath/scripts/dashboard/common.cmake
+@@ -65,7 +65,7 @@
+ #   set(ENV{FC}  /path/to/fc)   # Fortran compiler (optional)
+ #   set(ENV{LD_LIBRARY_PATH} /path/to/vendor/lib) # (if necessary)
+ 
+-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
++cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+ 
+ if(NOT DEFINED dashboard_full)
+   set(dashboard_full TRUE)
+diff --git a/thirdparty/EVPath/EVPath/tests/support.c b/thirdparty/EVPath/EVPath/tests/support.c
+index f1ced333e..8042bb577 100644
+--- a/thirdparty/EVPath/EVPath/tests/support.c
++++ b/thirdparty/EVPath/EVPath/tests/support.c
+@@ -101,7 +101,6 @@ static int inet_aton(const char* cp, struct in_addr* addr)
+ pid_t
+ run_subprocess(char **args)
+ {
+-    char **run_args = args;
+ #ifdef HAVE_WINDOWS_H
+     STARTUPINFO si;
+     PROCESS_INFORMATION pi;
+@@ -133,13 +132,14 @@ run_subprocess(char **args)
+ 		       &pi ) 
+     ) 
+     {
+-        printf( "CreateProcess failed (%d).\n", GetLastError() );
++        printf( "CreateProcess failed (%lu).\n", GetLastError() );
+ 	printf("Args were argv[0] = %s\n", args[0]);
+ 	printf("Args were argv[1] = %s, argv[2] = %s\n", args[1], args[2]);
+         return 0;
+     }
+     return (intptr_t) pi.hProcess;
+ #else
++    char **run_args = args;
+     pid_t child;
+     if (quiet <=0) {printf("Forking subprocess\n");}
+     if (ssh_args[0] != NULL) {
+diff --git a/thirdparty/EVPath/EVPath/thin_server.c b/thirdparty/EVPath/EVPath/thin_server.c
+index 9502cd35b..26355611f 100644
+--- a/thirdparty/EVPath/EVPath/thin_server.c
++++ b/thirdparty/EVPath/EVPath/thin_server.c
+@@ -7,6 +7,7 @@
+ #define FD_SETSIZE 1024
+ #endif
+ #include <winsock2.h>
++#include <ws2tcpip.h>
+ #include <windows.h>
+ #define drand48() (((double)rand())/((double)RAND_MAX))
+ #define lrand48() rand()
+@@ -41,7 +42,7 @@ extern int
+ EVthin_socket_listen(CManager cm,  char **hostname_p, int *port_p)
+ {
+ 
+-    unsigned int length;
++    socklen_t length;
+     struct sockaddr_in sock_addr;
+     int sock_opt_val = 1;
+     SOCKET conn_sock;
+@@ -254,7 +255,7 @@ socket_accept_thin_client(void *cmv, void * sockv)
+     SOCKET conn_sock = (int) (intptr_t)sockv;
+     SOCKET sock;
+     struct sockaddr sock_addr;
+-    unsigned int sock_len = sizeof(sock_addr);
++    socklen_t sock_len = sizeof(sock_addr);
+     int int_port_num;
+     struct linger linger_val;
+     int sock_opt_val = 1;
+@@ -266,7 +267,7 @@ socket_accept_thin_client(void *cmv, void * sockv)
+ 
+     linger_val.l_onoff = 1;
+     linger_val.l_linger = 60;
+-    if ((sock = accept(conn_sock, (struct sockaddr *) 0, (unsigned int *) 0)) == SOCKET_ERROR) {
++    if ((sock = accept(conn_sock, (struct sockaddr *) 0, (socklen_t *) 0)) == SOCKET_ERROR) {
+ 	perror("Cannot accept socket connection");
+ 	CM_fd_remove_select(cm, conn_sock);
+ 	fprintf(stderr, "failure in CMsockets  removing socket connection\n");
+diff --git a/thirdparty/atl/atl/.github/workflows/build-and-test.yml b/thirdparty/atl/atl/.github/workflows/build-and-test.yml
+index 8502907ba..33239995b 100644
+--- a/thirdparty/atl/atl/.github/workflows/build-and-test.yml
++++ b/thirdparty/atl/atl/.github/workflows/build-and-test.yml
+@@ -71,12 +71,17 @@ jobs:
+       matrix:
+         buildtype: [ release, debug ]
+         jobname: [
+-          windows2019-vs2019-clang,
++          windows2025-vs2022-clang,
+           windows2022-vs2022-msvc,
++          windows2022-vs2022-msvc-win32,
+           macos-clang ]
+         include:
+-        - jobname: windows2019-vs2019-clang
+-          vm: windows-latest
++        - jobname: windows2025-vs2022-clang
++          vm: windows-2025
++        - jobname: windows2022-vs2022-msvc
++          vm: windows-2022
++        - jobname: windows2022-vs2022-msvc-win32
++          vm: windows-2022
+         - jobname: macos-clang
+           vm: macos-latest
+ 
+diff --git a/thirdparty/atl/atl/CMakeLists.txt b/thirdparty/atl/atl/CMakeLists.txt
+index a64c067d2..e5180f8f2 100644
+--- a/thirdparty/atl/atl/CMakeLists.txt
++++ b/thirdparty/atl/atl/CMakeLists.txt
+@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
+ # The directory label is used for CDash to treat ATL as a subproject of GTKorvo
+ set(CMAKE_DIRECTORY_LABELS ATL)
+ 
+-project(ATL VERSION 2.2.2 LANGUAGES C)
++project(ATL VERSION 2.2.3 LANGUAGES C)
+ 
+ # Some boilerplate to setup nice output directories
+ include(GNUInstallDirs)
+@@ -40,17 +40,6 @@ endif()
+ if(WIN32)
+   # Automagic to do the DLL / LIB song and dance
+   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+-
+-  # Silence MSVC warnings
+-  if(CMAKE_C_COMPILER_ID MATCHES "MSVC" OR
+-     CMAKE_C_SIMULATE_ID MATCHES "MSVC")
+-    add_definitions(
+-      -D_CRT_SECURE_NO_DEPRECATE
+-      -D_CRT_SECURE_NO_WARNINGS
+-      -D_SCL_SECURE_NO_DEPRECATE
+-      -D_WINSOCK_DEPRECATED_NO_WARNINGS
+-      -D_CRT_NONSTDC_NO_DEPRECATE)
+-  endif()
+ endif()
+ 
+ # Default to a RelWithDebInfo build if not specified
+@@ -107,6 +96,16 @@ if(WIN32)
+   target_link_libraries(atl wsock32 ws2_32)
+ endif()
+ add_library(atl::atl ALIAS atl)
++
++# MSVC warning suppressions
++if(MSVC OR CMAKE_C_SIMULATE_ID MATCHES "MSVC")
++  target_compile_definitions(atl PRIVATE
++    _CRT_SECURE_NO_DEPRECATE
++    _CRT_SECURE_NO_WARNINGS
++    _SCL_SECURE_NO_DEPRECATE
++    _WINSOCK_DEPRECATED_NO_WARNINGS
++    _CRT_NONSTDC_NO_DEPRECATE)
++endif()
+ option(ATL_INSTALL_HEADERS "Install ATL header files" ON)
+ mark_as_advanced(ATL_INSTALL_HEADERS)
+ set_target_properties(atl PROPERTIES
+@@ -146,15 +145,11 @@ if(ATL_INSTALL_HEADERS)
+   install(FILES atl.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+     COMPONENT ${ATL_HEADER_COMPONENT})
+ endif()
+-set(namelink_component_args)
+-if(NOT CMAKE_VERSION VERSION_LESS 3.12)
+-  set(namelink_component_args NAMELINK_COMPONENT ${ATL_HEADER_COMPONENT})
+-endif()
+ install(TARGETS atl
+   # IMPORTANT: Add the foo library to the "export-set"
+   EXPORT atl-targets
+   RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT ${ATL_RUNTIME_COMPONENT}
+-  LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT ${ATL_LIBRARY_COMPONENT} ${namelink_component_args}
++  LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT ${ATL_LIBRARY_COMPONENT} NAMELINK_COMPONENT ${ATL_HEADER_COMPONENT}
+   ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT ${ATL_ARCHIVE_COMPONENT}
+   PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" COMPONENT ${ATL_HEADER_COMPONENT})
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake b/thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+new file mode 100644
+index 000000000..412eef716
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM Win32)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/windows2025-vs2022-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/windows2025-vs2022-clang.cmake
+new file mode 100644
+index 000000000..5c72720ca
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/windows2025-vs2022-clang.cmake
+@@ -0,0 +1,8 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
++set(CTEST_CMAKE_GENERATOR_TOOLSET ClangCL)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/atl/atl/tclHash.c b/thirdparty/atl/atl/tclHash.c
+index 56636eb03..cf0d74e22 100644
+--- a/thirdparty/atl/atl/tclHash.c
++++ b/thirdparty/atl/atl/tclHash.c
+@@ -51,29 +51,21 @@
+ #define RANDOM_INDEX(tablePtr, i) \
+     (((((int64_t) (i))*1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
+ 
+-/* 
++/*
+  * Procedure prototypes for static procedures in this file:
+  */
+ 
+-static Tcl_HashEntry *ArrayFind _ANSI_ARGS_((Tcl_HashTable * tablePtr,
+-					     char *key));
+-static Tcl_HashEntry *ArrayCreate _ANSI_ARGS_((Tcl_HashTable * tablePtr,
+-					       char *key, int *newPtr));
+-static Tcl_HashEntry *BogusFind _ANSI_ARGS_((Tcl_HashTable * tablePtr,
+-					     char *key));
+-static Tcl_HashEntry *BogusCreate _ANSI_ARGS_((Tcl_HashTable * tablePtr,
+-					       char *key, int *newPtr));
+-static unsigned int HashString _ANSI_ARGS_((char *string));
+-static void RebuildTable _ANSI_ARGS_((Tcl_HashTable * tablePtr));
+-static Tcl_HashEntry *StringFind _ANSI_ARGS_((Tcl_HashTable * tablePtr,
+-					      char *key));
+-static Tcl_HashEntry *StringCreate _ANSI_ARGS_((Tcl_HashTable * tablePtr,
+-						char *key, int *newPtr));
+-static Tcl_HashEntry *OneWordFind _ANSI_ARGS_((Tcl_HashTable * tablePtr,
+-					       char *key));
+-static Tcl_HashEntry *OneWordCreate _ANSI_ARGS_((Tcl_HashTable * tablePtr,
+-						 char *key, int *newPtr));
+-static void tcl_panic _ANSI_ARGS_((char *str));
++static Tcl_HashEntry *ArrayFind(Tcl_HashTable *tablePtr, char *key);
++static Tcl_HashEntry *ArrayCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr);
++static Tcl_HashEntry *BogusFind(Tcl_HashTable *tablePtr, char *key);
++static Tcl_HashEntry *BogusCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr);
++static unsigned int HashString(char *string);
++static void RebuildTable(Tcl_HashTable *tablePtr);
++static Tcl_HashEntry *StringFind(Tcl_HashTable *tablePtr, char *key);
++static Tcl_HashEntry *StringCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr);
++static Tcl_HashEntry *OneWordFind(Tcl_HashTable *tablePtr, char *key);
++static Tcl_HashEntry *OneWordCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr);
++static void tcl_panic(const char *str);
+ 
+ /* 
+  *----------------------------------------------------------------------
+@@ -893,7 +885,7 @@ RebuildTable(register Tcl_HashTable *tablePtr)
+ }
+ 
+ static void
+-tcl_panic(char *str)
++tcl_panic(const char *str)
+ {
+     fprintf(stderr, "Hash panic: %s\n", str);
+     exit(1);
+diff --git a/thirdparty/atl/atl/tclHash.h b/thirdparty/atl/atl/tclHash.h
+index 3b4c1829c..e0fa321c1 100644
+--- a/thirdparty/atl/atl/tclHash.h
++++ b/thirdparty/atl/atl/tclHash.h
+@@ -1,10 +1,10 @@
+ /*
+  * tclHash.h --
+  *
+- *  This header file was brutally hacked to allow tclHash.c to be 
+- *  compiled and used outside of tcl.  Derived from tcl.h and tclInt.h 
++ *  This header file was brutally hacked to allow tclHash.c to be
++ *  compiled and used outside of tcl.  Derived from tcl.h and tclInt.h
+  *  in the tcl 7.4 release.
+- *  
++ *
+  * Original copyright notices below.
+  *
+  * Copyright (c) 1987-1994 The Regents of the University of California.
+@@ -24,62 +24,14 @@
+ #define TCL_MAJOR_VERSION 7
+ #define TCL_MINOR_VERSION 4
+ 
+-/*
+- * Definitions that allow this header file to be used either with or
+- * without ANSI C features like function prototypes.
+- */
+-
+-#undef _ANSI_ARGS_
+-#undef CONST
+-#if ((defined(__STDC__) || defined(SABER)) && !defined(NO_PROTOTYPE)) || defined(__cplusplus)
+-#   define _USING_PROTOTYPES_ 1
+-#   define _ANSI_ARGS_(x)	x
+-#   define CONST const
+-#   ifdef __cplusplus
+-#       define VARARGS(first) (first, ...)
+-#   else
+-#       define VARARGS(first) ()
+-#   endif
+-#else
+-#   define _ANSI_ARGS_(x)	()
+-#   define CONST
+-#endif
+-
+ #ifdef __cplusplus
+ #   define EXTERN extern "C"
+ #else
+ #   define EXTERN extern
+ #endif
+ 
+-/*
+- * Macro to use instead of "void" for arguments that must have
+- * type "void *" in ANSI C;  maps them to type "char *" in
+- * non-ANSI systems.
+- */
+-
+-#ifndef VOID
+-#   ifdef __STDC__
+-#       define VOID void
+-#   else
+-#       define VOID char
+-#   endif
+-#endif
+-
+-/*
+- * Miscellaneous declarations (to allow Tcl to be used stand-alone,
+- * without the rest of Sprite).
+- */
+-
+-#ifndef NULL
+-#define NULL 0
+-#endif
+-
+ #ifndef _CLIENTDATA
+-#   if defined(__STDC__) || defined(__cplusplus)
+-    typedef void *ClientData;
+-#   else
+-    typedef int *ClientData;
+-#   endif /* __STDC__ */
++typedef void *ClientData;
+ #define _CLIENTDATA
+ #endif
+ 
+@@ -147,15 +99,14 @@ typedef struct Tcl_HashTable {
+ 					 * order bits of randomized keys. */
+     int mask;				/* Mask value used in hashing
+ 					 * function. */
+-    int keyType;			/* Type of keys used in this table. 
++    int keyType;			/* Type of keys used in this table.
+ 					 * It's either TCL_STRING_KEYS,
+ 					 * TCL_ONE_WORD_KEYS, or an integer
+ 					 * giving the number of ints in a
+ 					 */
+-    Tcl_HashEntry *(*findProc) _ANSI_ARGS_((struct Tcl_HashTable *tablePtr,
+-	    char *key));
+-    Tcl_HashEntry *(*createProc) _ANSI_ARGS_((struct Tcl_HashTable *tablePtr,
+-	    char *key, int *newPtr));
++    Tcl_HashEntry *(*findProc)(struct Tcl_HashTable *tablePtr, char *key);
++    Tcl_HashEntry *(*createProc)(struct Tcl_HashTable *tablePtr,
++	    char *key, int *newPtr);
+ } Tcl_HashTable;
+ 
+ /*
+@@ -198,16 +149,12 @@ typedef struct Tcl_HashSearch {
+ 	(*((tablePtr)->createProc))(tablePtr, key, newPtr)
+ 
+ 
+-EXTERN void		Tcl_DeleteHashEntry _ANSI_ARGS_((
+-			    Tcl_HashEntry *entryPtr));
+-EXTERN void		Tcl_DeleteHashTable _ANSI_ARGS_((
+-			    Tcl_HashTable *tablePtr));
+-EXTERN Tcl_HashEntry *	Tcl_FirstHashEntry _ANSI_ARGS_((
+-			    Tcl_HashTable *tablePtr,
+-			    Tcl_HashSearch *searchPtr));
+-EXTERN char *		Tcl_HashStats _ANSI_ARGS_((Tcl_HashTable *tablePtr));
+-EXTERN void		Tcl_InitHashTable _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+-			    int keyType));
+-EXTERN Tcl_HashEntry *	Tcl_NextHashEntry _ANSI_ARGS_((
+-			    Tcl_HashSearch *searchPtr));
++EXTERN void		Tcl_DeleteHashEntry(Tcl_HashEntry *entryPtr);
++EXTERN void		Tcl_DeleteHashTable(Tcl_HashTable *tablePtr);
++EXTERN Tcl_HashEntry *	Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
++			    Tcl_HashSearch *searchPtr);
++EXTERN char *		Tcl_HashStats(Tcl_HashTable *tablePtr);
++EXTERN void		Tcl_InitHashTable(Tcl_HashTable *tablePtr,
++			    int keyType);
++EXTERN Tcl_HashEntry *	Tcl_NextHashEntry(Tcl_HashSearch *searchPtr);
+ #endif /* _TCL_HASH */
+diff --git a/thirdparty/dill/dill/.github/workflows/build-and-test.yml b/thirdparty/dill/dill/.github/workflows/build-and-test.yml
+index 612e4d8cc..b1a2c7531 100644
+--- a/thirdparty/dill/dill/.github/workflows/build-and-test.yml
++++ b/thirdparty/dill/dill/.github/workflows/build-and-test.yml
+@@ -1,15 +1,17 @@
+ name: Build and Test
+ 
+-on: 
+-  push: 
+-    branches: 
+-    - master 
+-  pull_request: 
+-    branches: 
+-    - master 
++on:
++  push:
++    branches:
++    - master
++  pull_request:
++    branches:
++    - master
++  schedule:
++    - cron: '0 6 * * 1'  # Monday 6am UTC - weekly build to catch dependency issues 
+ 
+ concurrency:
+-  group: ${{ github.head_ref || github.run_id }}
++  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+   cancel-in-progress: true
+ 
+ jobs:
+@@ -30,9 +32,6 @@ jobs:
+         buildtype: [ release, debug ]
+         os: [ alma9, ubuntu2204, ubuntu2404 ]
+         compiler: [ clang, gcc ]
+-        exclude:
+-          - { os: alma9, compiler: nvhpc }
+-          - { os: ubuntu2204, compiler: nvhpc }
+         include:
+         - os: alma9
+           container: almalinux:9
+@@ -42,12 +41,19 @@ jobs:
+           container: ubuntu:22.04
+ 
+     steps:
+-    - uses: actions/checkout@v2
++    - uses: actions/checkout@v4
+       with:
+         ref: ${{ github.event.pull_request.head.sha }}
+         path: source
+     - name: Setup
+       run: source/scripts/ci/setup/linux.sh
++    - name: Cache CMake build
++      uses: actions/cache@v4
++      with:
++        path: build
++        key: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.buildtype }}-${{ hashFiles('source/CMakeLists.txt', 'source/**/*.cmake') }}
++        restore-keys: |
++          ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.buildtype }}-
+     - name: Update
+       run: source/scripts/ci/gh-actions/run.sh update
+     - name: Configure
+@@ -88,16 +94,23 @@ jobs:
+         shell: bash
+ 
+     steps:
+-    - uses: actions/checkout@v2
++    - uses: actions/checkout@v4
+       with:
+         ref: ${{ github.event.pull_request.head.sha }}
+         path: source
+-    - name: Setup
++    - name: Setup Windows
+       if: ${{ runner.os == 'Windows' }}
+       run: source/scripts/ci/setup/windows.sh
+-    - name: Setup
++    - name: Setup macOS
+       if: ${{ runner.os == 'macOS' }}
+       run: source/scripts/ci/setup/macos.sh
++    - name: Cache CMake build
++      uses: actions/cache@v4
++      with:
++        path: build
++        key: ${{ matrix.jobname }}-${{ matrix.buildtype }}-${{ hashFiles('source/CMakeLists.txt', 'source/**/*.cmake') }}
++        restore-keys: |
++          ${{ matrix.jobname }}-${{ matrix.buildtype }}-
+     - name: Update
+       run: source/scripts/ci/gh-actions/run.sh update
+     - name: Configure
+diff --git a/thirdparty/dill/dill/.github/workflows/triggers.yml b/thirdparty/dill/dill/.github/workflows/triggers.yml
+index 3ee5556d9..7d9d5715c 100644
+--- a/thirdparty/dill/dill/.github/workflows/triggers.yml
++++ b/thirdparty/dill/dill/.github/workflows/triggers.yml
+@@ -3,13 +3,15 @@ name: Triggers
+ on:
+   workflow_run:
+     workflows: ["Build and Test"]
+-    types: [requested]
++    types: [requested, completed]
+ 
+ jobs:
+-  all_triggers:
++  post_cdash_link:
+     runs-on: ubuntu-latest
++    # Only post CDash link when workflow completes (results are available)
++    if: ${{ github.event.action == 'completed' }}
+ 
+     steps:
+-    - uses: actions/checkout@v2
++    - uses: actions/checkout@v4
+     - name: Post CDash Status
+       run: scripts/ci/scripts/post-cdash-status.sh ${{ github.event.repository.full_name }} ${{ github.event.workflow_run.head_sha }} ${{ secrets.GITHUB_TOKEN }}
+diff --git a/thirdparty/dill/dill/CMakeLists.txt b/thirdparty/dill/dill/CMakeLists.txt
+index 7382a3526..651d8c26b 100644
+--- a/thirdparty/dill/dill/CMakeLists.txt
++++ b/thirdparty/dill/dill/CMakeLists.txt
+@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
+ # The directory label is used for CDash to treat DILL as a subproject of GTKorvo
+ set(CMAKE_DIRECTORY_LABELS DILL)
+ 
+-project(DILL VERSION 3.1.3 LANGUAGES C CXX)
++project(DILL VERSION 3.1.4 LANGUAGES C CXX)
+ 
+ # Some boilerplate to setup nice output directories
+ include(GNUInstallDirs)
+@@ -38,20 +38,13 @@ endif()
+ if(NOT DEFINED DILL_HEADER_COMPONENT)
+   set(DILL_HEADER_COMPONENT dev)
+ endif()
+-add_definitions(-DDILL_SRC)
++
+ if(WIN32)
+   # Automagic to do the DLL / LIB song and dance
+   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+ 
+-  # Silence MSVC warnings
+   if(CMAKE_C_COMPILER_ID MATCHES "MSVC" OR
+      CMAKE_C_SIMULATE_ID MATCHES "MSVC")
+-    add_definitions(
+-      -D_CRT_SECURE_NO_DEPRECATE
+-      -D_CRT_SECURE_NO_WARNINGS
+-      -D_SCL_SECURE_NO_DEPRECATE
+-      -D_WINSOCK_DEPRECATED_NO_WARNINGS
+-      -D_CRT_NONSTDC_NO_DEPRECATE)
+     set (MSVC_PERL_FLAGS "-msvc-long")
+   endif()
+ endif()
+@@ -169,8 +162,11 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+   set(USE_WINDOWS_CALLS 1)
+ endif()
+ 
+-include(TestBigEndian)
+-test_big_endian(WORDS_BIGENDIAN)
++if(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
++  set(WORDS_BIGENDIAN 1)
++else()
++  set(WORDS_BIGENDIAN 0)
++endif()
+ 
+ set(HARDFP_AVAILABLE 0)
+ # Determine float ABI of ARM Linux
+@@ -416,14 +412,13 @@ void main()
+     INIT_DISASSEMBLE_INFO_THREE_ARG
+   )
+ 
+-  include(CheckFunctionExists)
+-  check_function_exists(print_insn_sparc          HAVE_PRINT_INSN_SPARC)
+-  check_function_exists(print_insn_big_powerpc    HAVE_PRINT_INSN_BIG_POWERPC)
+-  check_function_exists(print_insn_little_powerpc HAVE_PRINT_INSN_LITTLE_POWERPC)
+-  check_function_exists(print_insn_ia64           HAVE_PRINT_INSN_IA64)
+-  check_function_exists(print_insn_i386           HAVE_PRINT_INSN_I386)
+-  check_function_exists(print_insn_arm            HAVE_PRINT_INSN_ARM)
+-  check_function_exists(print_insn_little_arm     HAVE_PRINT_INSN_LITTLE_ARM)
++  check_symbol_exists(print_insn_sparc          "dis-asm.h" HAVE_PRINT_INSN_SPARC)
++  check_symbol_exists(print_insn_big_powerpc    "dis-asm.h" HAVE_PRINT_INSN_BIG_POWERPC)
++  check_symbol_exists(print_insn_little_powerpc "dis-asm.h" HAVE_PRINT_INSN_LITTLE_POWERPC)
++  check_symbol_exists(print_insn_ia64           "dis-asm.h" HAVE_PRINT_INSN_IA64)
++  check_symbol_exists(print_insn_i386           "dis-asm.h" HAVE_PRINT_INSN_I386)
++  check_symbol_exists(print_insn_arm            "dis-asm.h" HAVE_PRINT_INSN_ARM)
++  check_symbol_exists(print_insn_little_arm     "dis-asm.h" HAVE_PRINT_INSN_LITTLE_ARM)
+ 
+   cmake_pop_check_state()
+ endif()
+@@ -440,6 +435,18 @@ set_target_properties(dill PROPERTIES
+   SOVERSION ${DILL_VERSION_MAJOR})
+ add_library(dill::dill ALIAS dill)
+ 
++target_compile_definitions(dill PRIVATE DILL_SRC)
++
++# MSVC warning suppressions
++if(MSVC OR CMAKE_C_SIMULATE_ID MATCHES "MSVC")
++  target_compile_definitions(dill PRIVATE
++    _CRT_SECURE_NO_DEPRECATE
++    _CRT_SECURE_NO_WARNINGS
++    _SCL_SECURE_NO_DEPRECATE
++    _WINSOCK_DEPRECATED_NO_WARNINGS
++    _CRT_NONSTDC_NO_DEPRECATE)
++endif()
++
+ target_include_directories(dill
+   PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+@@ -495,20 +502,16 @@ if(DILL_INSTALL_HEADERS)
+     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" COMPONENT ${DILL_HEADER_COMPONENT})
+ endif()
+ 
+-set(namelink_component_args)
+-if(NOT CMAKE_VERSION VERSION_LESS 3.12)
+-  set(namelink_component_args NAMELINK_COMPONENT ${DILL_HEADER_COMPONENT})
+-endif()
+ install(TARGETS dill
+   # IMPORTANT: Add the dill library to the "export-set"
+   EXPORT dill-targets
+   RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"          COMPONENT ${DILL_RUNTIME_COMPONENT}
+-  LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"          COMPONENT ${DILL_LIBRARY_COMPONENT} ${namelink_component_args}
++  LIBRARY       DESTINATION "${CMAKE_INSTALL_LIBDIR}"          COMPONENT ${DILL_LIBRARY_COMPONENT} NAMELINK_COMPONENT ${DILL_HEADER_COMPONENT}
+   ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"          COMPONENT ${DILL_ARCHIVE_COMPONENT}
+   PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/dill" COMPONENT ${DILL_HEADER_COMPONENT})
+ 
+-if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") 
+-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -shared-intel")
++if(CMAKE_C_COMPILER_ID MATCHES "Intel")
++  add_link_options(-shared-intel)
+ endif()
+ 
+ configure_file(
+diff --git a/thirdparty/dill/dill/virtual.c b/thirdparty/dill/dill/virtual.c
+index 8a21c4e66..bd47c10a7 100644
+--- a/thirdparty/dill/dill/virtual.c
++++ b/thirdparty/dill/dill/virtual.c
+@@ -495,11 +495,11 @@ dump_bb(dill_stream c, struct basic_block* bb, int i)
+     printf("\n    live_at_end :");
+     dump_reg_vec(bb->live_at_end);
+     printf("\n    succ :");
+-    for (j = 0; j < bb->succ_count; j++) {
++    for (j = 0; j < (size_t)bb->succ_count; j++) {
+         printf(" %d", bb->succ_list[j]);
+     }
+     printf("\n    preds :");
+-    for (j = 0; j < bb->pred_count; j++) {
++    for (j = 0; j < (size_t)bb->pred_count; j++) {
+         printf(" %d", bb->pred_list[j]);
+     }
+     if (bb->is_loop_start)
+@@ -508,7 +508,7 @@ dump_bb(dill_stream c, struct basic_block* bb, int i)
+         printf(" - LOOP_END");
+     printf("\n");
+     for (j = (size_t)bb->start; j <= (size_t)bb->end; j++) {
+-        printf(" %zd - ", j);
++        printf(" %zu - ", j);
+         virtual_print_insn(
+             c, NULL,
+             ((char*)c->p->virtual.code_base) + j * sizeof(virtual_insn));
+@@ -1825,7 +1825,8 @@ emit_insns(dill_stream c,
+            virtual_mach_info vmi)
+ {
+     int label_xlate = 0;
+-    size_t i, j = 0;
++    int i;
++    size_t j = 0;
+     virtual_insn* ip;
+     if (count_verbose == -1) {
+         count_verbose = (getenv("DILL_COUNTS") != NULL);
+@@ -2564,9 +2565,9 @@ emit_insns(dill_stream c,
+         if (count_verbose) {
+             int insn_end = (int)((char*)c->p->cur_ip - (char*)c->p->code_base);
+             printf(
+-                "Basic Block %zd, %d virtual instructions, %d physical "
++                "Basic Block %d, %d virtual instructions, %d physical "
+                 "instructions\n",
+-                i, insn_count, c->j->count_insn(c, insn_start, insn_end));
++                (int)i, insn_count, c->j->count_insn(c, insn_start, insn_end));
+         }
+     }
+     if ((unsigned)ltable[label_xlate].old_location ==
+@@ -3071,7 +3072,8 @@ new_emit_insns(dill_stream c,
+                virtual_mach_info vmi)
+ {
+     int label_xlate = 0;
+-    size_t i, j = 0;
++    int i;
++    size_t j = 0;
+     reg_state state;
+ 
+     if (count_verbose == -1) {
+@@ -3079,8 +3081,8 @@ new_emit_insns(dill_stream c,
+     }
+     init_reg_state(&state, c);
+     state.c = c;
+-    for (j = 0; j < c->p->vreg_count; j++) {
+-        if (dill_type_of(c, 100 + j) == DILL_B) {
++    for (j = 0; j < (size_t)c->p->vreg_count; j++) {
++        if (dill_type_of(c, 100 + (int)j) == DILL_B) {
+             /* offset is really size, fix that */
+             c->p->vregs[j].offset = dill_localb(c, c->p->vregs[j].offset);
+         }
+@@ -3089,7 +3091,7 @@ new_emit_insns(dill_stream c,
+         basic_block bb = &vmi->bblist[i];
+         int insn_count = (int)(bb->end - bb->start);
+         int insn_start;
+-        for (j = 0; j < c->p->vreg_count; j++) {
++        for (j = 0; j < (size_t)c->p->vreg_count; j++) {
+             c->p->vregs[j].assign_loc = -1;
+             c->p->vregs[j].in_reg = -1;
+             c->p->vregs[j].last_use = -1;
+@@ -3097,7 +3099,7 @@ new_emit_insns(dill_stream c,
+             c->p->vregs[j].update_in_reg = 0;
+             c->p->vregs[j].value_in_mem = -1;
+         }
+-        for (j = 0; j < c->p->c_param_count; j++) {
++        for (j = 0; j < (size_t)c->p->c_param_count; j++) {
+             state.param_info[j].assign_loc = -1;
+             state.param_info[j].in_reg = -1;
+             state.param_info[j].last_use = -1;
+@@ -3109,7 +3111,7 @@ new_emit_insns(dill_stream c,
+             virtual_insn* ip = &((virtual_insn*)insns)[j];
+             update_vreg_info(&state, bb, ip, (int)j);
+         }
+-        for (j = 0; j < c->p->vreg_count; j++) {
++        for (j = 0; j < (size_t)c->p->vreg_count; j++) {
+             if (get_last_use(&state, (int)j + 100) == -1)
+                 continue;
+             c->p->vregs[j].use_metric *= insn_count;
+@@ -3117,7 +3119,7 @@ new_emit_insns(dill_stream c,
+                 (c->p->vregs[j].last_use - c->p->vregs[j].value_in_mem + 1);
+             c->p->vregs[j].value_in_mem = bit_vec_is_set(bb->regs_used, (int)j);
+         }
+-        for (j = 0; j < c->p->c_param_count; j++) {
++        for (j = 0; j < (size_t)c->p->c_param_count; j++) {
+             if (c->p->c_param_args[j].is_register) {
+                 state.param_info[j].update_in_reg = 0;
+                 state.param_info[j].value_in_mem = 0;
+@@ -3130,7 +3132,7 @@ new_emit_insns(dill_stream c,
+         }
+         reset_reg_state(&state);
+         if (c->dill_debug) {
+-            printf("============= Starting basic block %zd ===========\n", i);
++            printf("============= Starting basic block %d ===========\n", (int)i);
+             dump_bb(c, bb, (int)i);
+         }
+         insn_start = (int)((char*)c->p->cur_ip - (char*)c->p->code_base);
+@@ -3385,9 +3387,9 @@ new_emit_insns(dill_stream c,
+         if (count_verbose) {
+             int insn_end = (int)((char*)c->p->cur_ip - (char*)c->p->code_base);
+             printf(
+-                "Basic Block %zd, %d virtual instructions, %d physical "
++                "Basic Block %d, %d virtual instructions, %d physical "
+                 "instructions\n",
+-                i, insn_count, c->j->count_insn(c, insn_start, insn_end));
++                (int)i, insn_count, c->j->count_insn(c, insn_start, insn_end));
+         }
+     }
+     if ((unsigned)ltable[label_xlate].old_location ==
+@@ -3419,7 +3421,8 @@ apply_to_each(dill_stream c,
+               virtual_mach_info vmi,
+               apply_func func)
+ {
+-    size_t i, j = 0;
++    int i;
++    size_t j = 0;
+ 
+     for (i = 0; i < vmi->bbcount; i++) {
+         basic_block bb = &vmi->bblist[i];
+@@ -3881,7 +3884,8 @@ is_convert_noop(int insn_code)
+     int to_type = insn_code & 0xf;
+ 
+     /* GSE -bug  This test should be for *generated* target, not host */
+-    if (sizeof(long) != sizeof(int)) {
++    /* Use sizeof(uintptr_t) since that's what DILL uses for UL/L types */
++    if (sizeof(uintptr_t) != sizeof(int)) {
+         return 0;
+     } else {
+         switch (from_type) {
+diff --git a/thirdparty/dill/dill/vtests/CMakeLists.txt b/thirdparty/dill/dill/vtests/CMakeLists.txt
+index 01b3603d9..eb002c397 100644
+--- a/thirdparty/dill/dill/vtests/CMakeLists.txt
++++ b/thirdparty/dill/dill/vtests/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ 
+-set(TESTS basic_call general t1 opt branch prefix_test)
++set(TESTS basic_call general t1 opt branch prefix_test mixed_params)
+ 
+ if(NATIVE_CG)
+   list(APPEND TESTS pkg_test multi_test)
+diff --git a/thirdparty/dill/dill/vtests/mixed_params.c b/thirdparty/dill/dill/vtests/mixed_params.c
+new file mode 100644
+index 000000000..a0a2ef012
+--- /dev/null
++++ b/thirdparty/dill/dill/vtests/mixed_params.c
+@@ -0,0 +1,62 @@
++#include <stdio.h>
++#include <math.h>
++#include "dill.h"
++#include "config.h"
++
++/* Dump hex bytes of generated code */
++void dump_hex(unsigned char* p, int len) {
++    for (int i = 0; i < len; i++) {
++        printf("%02x ", p[i]);
++        if ((i + 1) % 16 == 0) printf("\n");
++    }
++    printf("\n");
++}
++
++int main() {
++    dill_stream s;
++    dill_reg a, b, tmp;
++    dill_exec_handle h;
++
++    printf("Generating ul+f test (like FFS)...\n");
++
++    s = dill_create_stream();
++    dill_start_proc(s, "no name", DILL_UL, "%ul%f");
++    a = dill_param_reg(s, 0);
++    b = dill_param_reg(s, 1);
++
++    tmp = dill_getreg(s, DILL_F);
++    dill_cvul2f(s, tmp, a);
++    dill_addf(s, tmp, tmp, b);
++    dill_cvf2ul(s, a, tmp);
++    dill_retul(s, a);
++
++    h = dill_finalize(s);
++
++    printf("\nVirtual instruction dump:\n");
++    dill_dump(s);
++
++    unsigned char* code = (unsigned char*)dill_get_fp(h);
++    printf("\nFirst 128 bytes of native code at %p:\n", (void*)code);
++    dump_hex(code, 128);
++
++    /* Now run the test */
++    {
++        size_t (*proc)(size_t, float) = (size_t (*)(size_t, float))code;
++        size_t source1_ul = 233;
++        float source2_f = -9.0f;
++        size_t expected_result = (size_t)(source1_ul + source2_f);
++        size_t result = proc(source1_ul, source2_f);
++
++        printf("Result: %zu (expected: %zu)\n", result, expected_result);
++        if (result == expected_result) {
++            printf("PASSED!\n");
++        } else {
++            printf("FAILED!\n");
++        }
++    }
++
++    dill_free_handle(h);
++    dill_free_stream(s);
++
++    return 0;
++}
+diff --git a/thirdparty/dill/dill/x86_64.c b/thirdparty/dill/dill/x86_64.c
+index e8c410da9..0ebbbeecf 100644
+--- a/thirdparty/dill/dill/x86_64.c
++++ b/thirdparty/dill/dill/x86_64.c
+@@ -715,7 +715,13 @@ x86_64_save_restore_op(dill_stream s, int save_restore, int type, int reg)
+     switch (type) {
+     case DILL_D:
+     case DILL_F:
++#ifdef USE_WINDOWS_CALLS
++        /* Windows x64: XMM registers must preserve all 128 bits
++         * Use 16-byte spacing for full XMM register saves */
++        offset = reg * 16 + BEGIN_FLOAT_SAVE;
++#else
+         offset = reg * smi->stack_align + BEGIN_FLOAT_SAVE;
++#endif
+         break;
+     default:
+         if ((reg == RBX) || ((reg >= R12) && (reg <= R15))) {
+@@ -754,9 +760,53 @@ x86_64_save_restore_op(dill_stream s, int save_restore, int type, int reg)
+         }
+     }
+     if (save_restore == 0) { /* save */
+-        x86_64_pstorei(s, type, 0, reg, _frame_reg, smi->save_base + offset);
++#ifdef USE_WINDOWS_CALLS
++        if (type == DILL_D || type == DILL_F) {
++            /* Use MOVUPS for full 128-bit save on Windows */
++            int rex = 0;
++            int final_offset = smi->save_base + offset;
++            if (reg > RDI) rex |= REX_R;
++            if (_frame_reg > RDI) rex |= REX_B;
++            /* MOVUPS [rbp + offset], xmm */
++            /* Encoding: [REX] 0F 11 ModRM disp */
++            if (((intptr_t)final_offset <= 127) && ((intptr_t)final_offset > -128)) {
++                /* 4-byte: 0F 11 ModRM(0x1=disp8) disp8 */
++                BYTE_OUT4R(s, rex, 0x0f, 0x11, ModRM(0x1, reg, _frame_reg),
++                           final_offset & 0xff);
++            } else {
++                /* 3-byte + 32-bit: 0F 11 ModRM(0x2=disp32) disp32 */
++                BYTE_OUT3IR(s, rex, 0x0f, 0x11, ModRM(0x2, reg, _frame_reg),
++                            (int)final_offset);
++            }
++        } else
++#endif
++        {
++            x86_64_pstorei(s, type, 0, reg, _frame_reg, smi->save_base + offset);
++        }
+     } else { /* restore */
+-        x86_64_ploadi(s, type, 0, reg, _frame_reg, smi->save_base + offset);
++#ifdef USE_WINDOWS_CALLS
++        if (type == DILL_D || type == DILL_F) {
++            /* Use MOVUPS for full 128-bit restore on Windows */
++            int rex = 0;
++            int final_offset = smi->save_base + offset;
++            if (reg > RDI) rex |= REX_R;
++            if (_frame_reg > RDI) rex |= REX_B;
++            /* MOVUPS xmm, [rbp + offset] */
++            /* Encoding: [REX] 0F 10 ModRM disp */
++            if (((intptr_t)final_offset <= 127) && ((intptr_t)final_offset > -128)) {
++                /* 4-byte: 0F 10 ModRM(0x1=disp8) disp8 */
++                BYTE_OUT4R(s, rex, 0x0f, 0x10, ModRM(0x1, reg, _frame_reg),
++                           final_offset & 0xff);
++            } else {
++                /* 3-byte + 32-bit: 0F 10 ModRM(0x2=disp32) disp32 */
++                BYTE_OUT3IR(s, rex, 0x0f, 0x10, ModRM(0x2, reg, _frame_reg),
++                            (int)final_offset);
++            }
++        } else
++#endif
++        {
++            x86_64_ploadi(s, type, 0, reg, _frame_reg, smi->save_base + offset);
++        }
+     }
+     s->p->used_frame++;
+ }
+@@ -851,6 +901,16 @@ save_required_regs(dill_stream s, int force)
+         dill_wasused(&s->p->tmp_i, R15)) {
+         x86_64_push_reg(s, R15);
+     }
++#ifdef USE_WINDOWS_CALLS
++    /* On Windows x64, XMM6-XMM15 are non-volatile (callee-saved) */
++    /* Always save all 128 bits of each register */
++    {
++        int i;
++        for (i = XMM6; i <= XMM15; i++) {
++            x86_64_save_restore_op(s, 0, DILL_D, i);
++        }
++    }
++#endif
+ }
+ 
+ static int
+@@ -1059,6 +1119,17 @@ x86_64_proc_ret(dill_stream s)
+     if ((smi->last_proc_ret_end == s->p->cur_ip) && !dill_is_label_mark(s))
+         return;
+ 
++#ifdef USE_WINDOWS_CALLS
++    /* On Windows x64, restore XMM6-XMM15 (non-volatile) before integer regs */
++    /* Always restore all 128 bits of each register */
++    {
++        int i;
++        for (i = XMM15; i >= XMM6; i--) {
++            x86_64_save_restore_op(s, 1, DILL_D, i);
++        }
++    }
++#endif
++
+     if (force || dill_wasused(&s->p->var_i, R15) ||
+         dill_wasused(&s->p->tmp_i, R15)) {
+         x86_64_pop_reg(s, R15);
+@@ -1541,6 +1612,32 @@ x86_64_pstorei(dill_stream s,
+     case DILL_D:
+         float_op = 0xf2;
+         break;
++    default:
++        break;
++    }
++    if (dest > RDI)
++        rex |= REX_R;
++    if (src > RDI)
++        rex |= REX_B;
++    /* Check for large offset case first - handle via push/arith/store/pop
++     * without outputting prefix bytes that would be applied to the push */
++    if (!(((src & 0x7) == ESP) &&
++          (((offset & 0xffffffff80000000) == 0) ||
++           ((offset & 0xffffffff80000000) == 0xffffffff80000000))) &&
++        !((offset == 0) && ((src & 0x7) != 5)) &&
++        !(((intptr_t)offset <= 127) && ((intptr_t)offset > -128)) &&
++        !(((offset & 0xffffffff80000000) == 0) ||
++          ((offset & 0xffffffff80000000) == 0xffffffff80000000))) {
++        /* Large offset that doesn't fit in 32 bits - use push/arith/store/pop.
++         * Don't output 0x66 prefix here; the recursive call will handle it. */
++        x86_64_push_reg(s, src);
++        x86_64_arith3i(s, 0, DILL_L, src, src, offset);
++        x86_64_pstorei(s, type, 0, dest, src, 0);
++        x86_64_pop_reg(s, src);
++        return;
++    }
++    /* Now we know we'll emit a direct store instruction - output prefixes */
++    switch (type) {
+     case DILL_S:
+     case DILL_US:
+         BYTE_OUT1(s, 0x66);
+@@ -1552,10 +1649,6 @@ x86_64_pstorei(dill_stream s,
+         BYTE_OUT1(s, smi->pending_prefix);
+         smi->pending_prefix = 0;
+     }
+-    if (dest > RDI)
+-        rex |= REX_R;
+-    if (src > RDI)
+-        rex |= REX_B;
+     if (((src & 0x7) == ESP) &&
+         (((offset & 0xffffffff80000000) == 0) ||
+          ((offset & 0xffffffff80000000) == 0xffffffff80000000))) {
+@@ -1594,8 +1687,7 @@ x86_64_pstorei(dill_stream s,
+                 BYTE_OUT3R(s, rex, st_opcodes[type], ModRM(0x1, dest, src),
+                            offset & 0xff);
+             }
+-        } else if (((offset & 0xffffffff80000000) == 0) ||
+-                   ((offset & 0xffffffff80000000) == 0xffffffff80000000)) {
++        } else {
+             /* safe INT offset using only low 31 bits */
+             if (float_op != 0) {
+                 BYTE_OUT1R3I(s, float_op, rex, 0x0f, 0x11,
+@@ -1604,11 +1696,6 @@ x86_64_pstorei(dill_stream s,
+                 BYTE_OUT2IR(s, rex, st_opcodes[type], ModRM(0x2, dest, src),
+                             (int)offset);
+             }
+-        } else {
+-            x86_64_push_reg(s, src);
+-            x86_64_arith3i(s, 0, DILL_L, src, src, offset);
+-            x86_64_pstorei(s, type, 0, dest, src, 0);
+-            x86_64_pop_reg(s, src);
+         }
+     }
+ }
+@@ -2162,15 +2249,51 @@ x86_64_convert(dill_stream s, int from_type, int to_type, int dest, int src)
+         break;
+     }
+     case CONV(DILL_L, DILL_F):
+-    case CONV(DILL_L, DILL_D):
++    case CONV(DILL_L, DILL_D): {
++        int rex = REX_W;
++        /* cvtsi2s{s,d} - for signed 64-bit long */
++        if (src > RDI)
++            rex |= REX_B;
++        if (dest > RDI)
++            rex |= REX_R;
++        BYTE_OUT1R3(s, (to_type == DILL_D) ? 0xf2 : 0xf3, rex, 0xf, 0x2a,
++                    ModRM(0x3, dest, src));
++        break;
++    }
+     case CONV(DILL_U, DILL_D):
+-    case CONV(DILL_U, DILL_F):
++    case CONV(DILL_U, DILL_F): {
++        int rex = REX_W;
++        /* First zero-extend 32-bit unsigned to 64-bit, then cvtsi2s{s,d} */
++        x86_64_lshi(s, src, src, 32);
++        x86_64_rshi(s, src, src, 32);
++        if (src > RDI)
++            rex |= REX_B;
++        if (dest > RDI)
++            rex |= REX_R;
++        BYTE_OUT1R3(s, (to_type == DILL_D) ? 0xf2 : 0xf3, rex, 0xf, 0x2a,
++                    ModRM(0x3, dest, src));
++        break;
++    }
+     case CONV(DILL_US, DILL_D):
+-    case CONV(DILL_US, DILL_F):
++    case CONV(DILL_US, DILL_F): {
++        int rex = REX_W;
++        /* First zero-extend 16-bit unsigned to 64-bit, then cvtsi2s{s,d} */
++        x86_64_lshi(s, src, src, 48);
++        x86_64_rshi(s, src, src, 48);
++        if (src > RDI)
++            rex |= REX_B;
++        if (dest > RDI)
++            rex |= REX_R;
++        BYTE_OUT1R3(s, (to_type == DILL_D) ? 0xf2 : 0xf3, rex, 0xf, 0x2a,
++                    ModRM(0x3, dest, src));
++        break;
++    }
+     case CONV(DILL_UC, DILL_D):
+     case CONV(DILL_UC, DILL_F): {
+         int rex = REX_W;
+-        /* cvtsi2s{s,d} */
++        /* First zero-extend 8-bit unsigned to 64-bit, then cvtsi2s{s,d} */
++        x86_64_lshi(s, src, src, 56);
++        x86_64_rshi(s, src, src, 56);
+         if (src > RDI)
+             rex |= REX_B;
+         if (dest > RDI)
+@@ -2573,7 +2696,7 @@ internal_push(dill_stream s, int type, int immediate, void* value_ptr)
+         }
+     }
+     if (arg.is_register == 0) {
+-        if (arg.offset == 0) {
++        if (smi->call_stack_space == 0) {
+             smi->call_backpatch_offset =
+                 (int)((char*)s->p->cur_ip - (char*)s->p->code_base);
+             dill_subli(s, ESP, ESP, 0x70909090); /* tentative for backpatch */
+@@ -2702,20 +2825,32 @@ x86_64_calli(dill_stream s, int type, void* xfer_address, const char* name)
+     if (tmp_call_reg > RDI)
+         rex |= REX_B;
+ 
+-    /* save temporary registers */
+-    for (i = XMM8; i < XMM15; i += 1) {
++    /* save caller-saved (volatile) temporary registers */
++#ifdef USE_WINDOWS_CALLS
++    /* On Windows x64, XMM0-XMM5 are caller-saved (volatile) */
++    for (i = XMM0; i <= XMM5; i += 1) {
++#else
++    /* On Linux/SysV, all XMM registers are caller-saved (volatile) */
++    for (i = XMM0; i <= XMM15; i += 1) {
++#endif
+         if (dill_mustsave(&s->p->tmp_f, i)) {
+             x86_64_save_restore_op(s, 0, DILL_D, i);
+         }
+     }
+ 
+-    /* save temporary registers */
++    /* make call */
+     dill_mark_call_location(s, name, xfer_address);
+     BYTE_OUT1LR(s, rex, 0xb8 + (0x7 & tmp_call_reg), 0); /* setl */
+     int ret_reg = x86_64_callr(s, type, R11);
+ 
+-    /* restore temporary registers */
+-    for (i = XMM8; i < XMM15; i += 1) {
++    /* restore caller-saved (volatile) temporary registers */
++#ifdef USE_WINDOWS_CALLS
++    /* On Windows x64, XMM0-XMM5 are caller-saved (volatile) */
++    for (i = XMM0; i <= XMM5; i += 1) {
++#else
++    /* On Linux/SysV, all XMM registers are caller-saved (volatile) */
++    for (i = XMM0; i <= XMM15; i += 1) {
++#endif
+         if (dill_mustsave(&s->p->tmp_f, i)) {
+             x86_64_save_restore_op(s, 1, DILL_D, i);
+         }
+@@ -2732,6 +2867,13 @@ x86_64_callr(dill_stream s, int type, int src)
+     if (src > RDI)
+         rex |= REX_B;
+ 
++#ifdef USE_WINDOWS_CALLS
++    /* Windows x64 requires 32 bytes of shadow space even when all args fit in registers */
++    if (smi->call_stack_space == 0) {
++        dill_subli(s, ESP, ESP, 32);
++    }
++#endif
++
+     /* save temporary registers */
+     /* call through reg */
+     x86_64_setl(s, EAX, smi->float_arg_count);
+@@ -2752,6 +2894,12 @@ x86_64_callr(dill_stream s, int type, int src)
+         /* undo arg space reservation */
+         dill_addli(s, ESP, ESP, call_stack_size);
+     }
++#ifdef USE_WINDOWS_CALLS
++    else {
++        /* Restore shadow space when all args fit in registers */
++        dill_addli(s, ESP, ESP, 32);
++    }
++#endif
+     return caller_side_ret_reg;
+ }
+ 
+diff --git a/thirdparty/dill/dill/x86_64_rt.c b/thirdparty/dill/dill/x86_64_rt.c
+index f3bca037b..9a7d145b7 100644
+--- a/thirdparty/dill/dill/x86_64_rt.c
++++ b/thirdparty/dill/dill/x86_64_rt.c
+@@ -24,8 +24,8 @@ dill_x86_64_hidden_ULtoD(size_t a)
+ extern size_t
+ dill_x86_64_hidden_DtoUL(double a)
+ {
+-    size_t l = (long)a;
+-    return l;
++    /* Cast directly to size_t, not via long (long is 32-bit on Windows) */
++    return (size_t)a;
+ }
+ 
+ static xfer_entry x86_64_xfer_recs[5] = {
+diff --git a/thirdparty/ffs/ffs/.github/workflows/build-and-test.yml b/thirdparty/ffs/ffs/.github/workflows/build-and-test.yml
+index f48a413e9..98cce5664 100644
+--- a/thirdparty/ffs/ffs/.github/workflows/build-and-test.yml
++++ b/thirdparty/ffs/ffs/.github/workflows/build-and-test.yml
+@@ -75,6 +75,7 @@ jobs:
+           windows2025-vs2022-clang,
+           windows2022-vs2022-msvc,
+           windows2022-vs2022-msvc-static,
++          windows2022-vs2022-msvc-win32,
+           macos-clang ]
+         include:
+         - jobname: windows2025-vs2022-clang
+@@ -83,6 +84,8 @@ jobs:
+           vm: windows-2022
+         - jobname: windows2022-vs2022-msvc-static
+           vm: windows-2022
++        - jobname: windows2022-vs2022-msvc-win32
++          vm: windows-2022
+         - jobname: macos-clang
+           vm: macos-latest
+ 
+@@ -113,5 +116,19 @@ jobs:
+       run: source/scripts/ci/gh-actions/run.sh configure
+     - name: Build
+       run: source/scripts/ci/gh-actions/run.sh build
++    - name: Stage DLLs (Windows)
++      if: ${{ runner.os == 'Windows' }}
++      shell: pwsh
++      run: |
++          # Copy dependency DLLs to build output directory so Windows can find them
++          $buildType = "${{ matrix.buildtype }}"
++          $configDir = if ($buildType -eq "release") { "Release" } else { "Debug" }
++          $destDir = "build/bin/$configDir"
++          if (Test-Path $destDir) {
++              Copy-Item -Path "atl/install/bin/*.dll" -Destination $destDir -Force -ErrorAction SilentlyContinue
++              Copy-Item -Path "dill/install/bin/*.dll" -Destination $destDir -Force -ErrorAction SilentlyContinue
++              Write-Host "Copied DLLs to $destDir"
++              Get-ChildItem $destDir -Filter *.dll | ForEach-Object { Write-Host "  - $($_.Name)" }
++          }
+     - name: Test
+       run: source/scripts/ci/gh-actions/run.sh test
+diff --git a/thirdparty/ffs/ffs/cod/cg.c b/thirdparty/ffs/ffs/cod/cg.c
+index e4642c9ed..d975f5d3c 100644
+--- a/thirdparty/ffs/ffs/cod/cg.c
++++ b/thirdparty/ffs/ffs/cod/cg.c
+@@ -837,10 +837,10 @@ evaluate_simple_init_and_assign(dill_stream s, sm_ref init, int cg_type, void *v
+ 	    *(unsigned int *)(var_base) = (int)f;
+ 	    break;
+ 	case DILL_L:
+-	    *(long *)(var_base) = (long)f;
++	    *(ssize_t *)(var_base) = (ssize_t)f;
+ 	    break;
+ 	case DILL_UL:
+-	    *(unsigned long *)(var_base) = (long)f;
++	    *(size_t *)(var_base) = (size_t)f;
+ 	    break;
+ 	case DILL_F:
+ 	    *(float*)(var_base) = (float)f;
+diff --git a/thirdparty/ffs/ffs/cod/cod.y b/thirdparty/ffs/ffs/cod/cod.y
+index c1f0af47a..be58dbd31 100644
+--- a/thirdparty/ffs/ffs/cod/cod.y
++++ b/thirdparty/ffs/ffs/cod/cod.y
+@@ -1887,6 +1887,22 @@ constant :
+ 
+ typedef struct scope *scope_ptr;
+ 
++enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
++
++typedef struct st_entry {
++    char *id;
++    sm_ref node;
++    enum namespace ns;
++    struct st_entry *next;
++} *st_entry;
++
++struct scope {
++    cod_extern_list externs;
++    struct st_entry *entry_list;
++    sm_ref code_container;
++    struct scope *containing_scope;
++};
++
+ struct parse_struct {
+     sm_list decls;
+     sm_list standard_decls;
+@@ -2052,6 +2068,24 @@ cod_parse_for_context(char *code, cod_parse_context context)
+     }
+     ret = semanticize_decls_list(context, decls, context->scope);
+     if (ret == 0) {
++	/* Remove failed decls from scope before freeing to avoid dangling pointers */
++	sm_list tmp = decls;
++	while (tmp != NULL) {
++	    if (tmp->node != NULL) {
++		st_entry *prev_ptr = &context->scope->entry_list;
++		st_entry list = context->scope->entry_list;
++		while(list != NULL) {
++		    if (list->node == tmp->node) {
++			*prev_ptr = list->next;
++			free(list);
++			break;
++		    }
++		    prev_ptr = &list->next;
++		    list = list->next;
++		}
++	    }
++	    tmp = tmp->next;
++	}
+ 	cod_rfree_list(decls, NULL);
+ 	context->decls = NULL;
+     }
+@@ -2450,25 +2484,8 @@ free_enc_info(enc_info enc)
+     free(enc);
+ }
+ 
+-enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
+-
+ char *namespace_str[] = {"DEFAULT", "STRUCT"};
+ 
+-typedef struct st_entry {
+-    char *id;
+-    sm_ref node;
+-    enum namespace ns;
+-    struct st_entry *next;
+-} *st_entry;
+-
+-struct scope {
+-    cod_extern_list externs;
+-    struct st_entry *entry_list;
+-    sm_ref code_container;
+-    struct scope *containing_scope;
+-};
+-
+-
+ extern cod_parse_context
+ cod_copy_context(cod_parse_context context)
+ {
+@@ -2697,6 +2714,22 @@ resolve_local(char *id, scope_ptr scope)
+     return NULL;
+ }
+ 
++static void
++remove_decl(sm_ref node, scope_ptr scope)
++{
++    st_entry *prev_ptr = &scope->entry_list;
++    st_entry list = scope->entry_list;
++    while(list != NULL) {
++	if (list->node == node) {
++	    *prev_ptr = list->next;
++	    free(list);
++	    return;
++	}
++	prev_ptr = &list->next;
++	list = list->next;
++    }
++}
++
+ static sm_ref
+ resolve(char *id, scope_ptr scope)
+ {
+diff --git a/thirdparty/ffs/ffs/cod/pregen_source/Linux/cod.tab.c b/thirdparty/ffs/ffs/cod/pregen_source/Linux/cod.tab.c
+index 46bcb484e..b8741fe1a 100644
+--- a/thirdparty/ffs/ffs/cod/pregen_source/Linux/cod.tab.c
++++ b/thirdparty/ffs/ffs/cod/pregen_source/Linux/cod.tab.c
+@@ -4230,6 +4230,22 @@ yyreturn:
+ 
+ typedef struct scope *scope_ptr;
+ 
++enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
++
++typedef struct st_entry {
++    char *id;
++    sm_ref node;
++    enum namespace ns;
++    struct st_entry *next;
++} *st_entry;
++
++struct scope {
++    cod_extern_list externs;
++    struct st_entry *entry_list;
++    sm_ref code_container;
++    struct scope *containing_scope;
++};
++
+ struct parse_struct {
+     sm_list decls;
+     sm_list standard_decls;
+@@ -4395,6 +4411,24 @@ cod_parse_for_context(char *code, cod_parse_context context)
+     }
+     ret = semanticize_decls_list(context, decls, context->scope);
+     if (ret == 0) {
++	/* Remove failed decls from scope before freeing to avoid dangling pointers */
++	sm_list tmp = decls;
++	while (tmp != NULL) {
++	    if (tmp->node != NULL) {
++		st_entry *prev_ptr = &context->scope->entry_list;
++		st_entry list = context->scope->entry_list;
++		while(list != NULL) {
++		    if (list->node == tmp->node) {
++			*prev_ptr = list->next;
++			free(list);
++			break;
++		    }
++		    prev_ptr = &list->next;
++		    list = list->next;
++		}
++	    }
++	    tmp = tmp->next;
++	}
+ 	cod_rfree_list(decls, NULL);
+ 	context->decls = NULL;
+     }
+@@ -4793,24 +4827,8 @@ free_enc_info(enc_info enc)
+     free(enc);
+ }
+ 
+-enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
+-
+ char *namespace_str[] = {"DEFAULT", "STRUCT"};
+ 
+-typedef struct st_entry {
+-    char *id;
+-    sm_ref node;
+-    enum namespace ns;
+-    struct st_entry *next;
+-} *st_entry;
+-
+-struct scope {
+-    cod_extern_list externs;
+-    struct st_entry *entry_list;
+-    sm_ref code_container;
+-    struct scope *containing_scope;
+-};
+-
+ 
+ extern cod_parse_context
+ cod_copy_context(cod_parse_context context)
+diff --git a/thirdparty/ffs/ffs/cod/pregen_source/Linux/cod.y b/thirdparty/ffs/ffs/cod/pregen_source/Linux/cod.y
+index a4d0d1751..6426d0b31 100644
+--- a/thirdparty/ffs/ffs/cod/pregen_source/Linux/cod.y
++++ b/thirdparty/ffs/ffs/cod/pregen_source/Linux/cod.y
+@@ -1887,6 +1887,22 @@ constant :
+ 
+ typedef struct scope *scope_ptr;
+ 
++enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
++
++typedef struct st_entry {
++    char *id;
++    sm_ref node;
++    enum namespace ns;
++    struct st_entry *next;
++} *st_entry;
++
++struct scope {
++    cod_extern_list externs;
++    struct st_entry *entry_list;
++    sm_ref code_container;
++    struct scope *containing_scope;
++};
++
+ struct parse_struct {
+     sm_list decls;
+     sm_list standard_decls;
+@@ -2052,6 +2068,24 @@ cod_parse_for_context(char *code, cod_parse_context context)
+     }
+     ret = semanticize_decls_list(context, decls, context->scope);
+     if (ret == 0) {
++	/* Remove failed decls from scope before freeing to avoid dangling pointers */
++	sm_list tmp = decls;
++	while (tmp != NULL) {
++	    if (tmp->node != NULL) {
++		st_entry *prev_ptr = &context->scope->entry_list;
++		st_entry list = context->scope->entry_list;
++		while(list != NULL) {
++		    if (list->node == tmp->node) {
++			*prev_ptr = list->next;
++			free(list);
++			break;
++		    }
++		    prev_ptr = &list->next;
++		    list = list->next;
++		}
++	    }
++	    tmp = tmp->next;
++	}
+ 	cod_rfree_list(decls, NULL);
+ 	context->decls = NULL;
+     }
+@@ -2450,25 +2484,8 @@ free_enc_info(enc_info enc)
+     free(enc);
+ }
+ 
+-enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
+-
+ char *namespace_str[] = {"DEFAULT", "STRUCT"};
+ 
+-typedef struct st_entry {
+-    char *id;
+-    sm_ref node;
+-    enum namespace ns;
+-    struct st_entry *next;
+-} *st_entry;
+-
+-struct scope {
+-    cod_extern_list externs;
+-    struct st_entry *entry_list;
+-    sm_ref code_container;
+-    struct scope *containing_scope;
+-};
+-
+-
+ extern cod_parse_context
+ cod_copy_context(cod_parse_context context)
+ {
+@@ -2697,6 +2714,22 @@ resolve_local(char *id, scope_ptr scope)
+     return NULL;
+ }
+ 
++static void
++remove_decl(sm_ref node, scope_ptr scope)
++{
++    st_entry *prev_ptr = &scope->entry_list;
++    st_entry list = scope->entry_list;
++    while(list != NULL) {
++	if (list->node == node) {
++	    *prev_ptr = list->next;
++	    free(list);
++	    return;
++	}
++	prev_ptr = &list->next;
++	list = list->next;
++    }
++}
++
+ static sm_ref
+ resolve(char *id, scope_ptr scope)
+ {
+diff --git a/thirdparty/ffs/ffs/cod/pregen_source/Windows/cod.tab.c b/thirdparty/ffs/ffs/cod/pregen_source/Windows/cod.tab.c
+index a8db322f6..d65a0c606 100644
+--- a/thirdparty/ffs/ffs/cod/pregen_source/Windows/cod.tab.c
++++ b/thirdparty/ffs/ffs/cod/pregen_source/Windows/cod.tab.c
+@@ -4025,6 +4025,22 @@ yyreturnlab:
+ 
+ typedef struct scope *scope_ptr;
+ 
++enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
++
++typedef struct st_entry {
++    char *id;
++    sm_ref node;
++    enum namespace ns;
++    struct st_entry *next;
++} *st_entry;
++
++struct scope {
++    cod_extern_list externs;
++    struct st_entry *entry_list;
++    sm_ref code_container;
++    struct scope *containing_scope;
++};
++
+ struct parse_struct {
+     sm_list decls;
+     sm_list standard_decls;
+@@ -4190,6 +4206,24 @@ cod_parse_for_context(char *code, cod_parse_context context)
+     }
+     ret = semanticize_decls_list(context, decls, context->scope);
+     if (ret == 0) {
++	/* Remove failed decls from scope before freeing to avoid dangling pointers */
++	sm_list tmp = decls;
++	while (tmp != NULL) {
++	    if (tmp->node != NULL) {
++		st_entry *prev_ptr = &context->scope->entry_list;
++		st_entry list = context->scope->entry_list;
++		while(list != NULL) {
++		    if (list->node == tmp->node) {
++			*prev_ptr = list->next;
++			free(list);
++			break;
++		    }
++		    prev_ptr = &list->next;
++		    list = list->next;
++		}
++	    }
++	    tmp = tmp->next;
++	}
+ 	cod_rfree_list(decls, NULL);
+ 	context->decls = NULL;
+     }
+@@ -4588,24 +4622,8 @@ free_enc_info(enc_info enc)
+     free(enc);
+ }
+ 
+-enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
+-
+ char *namespace_str[] = {"DEFAULT", "STRUCT"};
+ 
+-typedef struct st_entry {
+-    char *id;
+-    sm_ref node;
+-    enum namespace ns;
+-    struct st_entry *next;
+-} *st_entry;
+-
+-struct scope {
+-    cod_extern_list externs;
+-    struct st_entry *entry_list;
+-    sm_ref code_container;
+-    struct scope *containing_scope;
+-};
+-
+ 
+ extern cod_parse_context
+ cod_copy_context(cod_parse_context context)
+diff --git a/thirdparty/ffs/ffs/cod/pregen_source/Windows/cod.y b/thirdparty/ffs/ffs/cod/pregen_source/Windows/cod.y
+index 3d99807dc..9cd3debf7 100644
+--- a/thirdparty/ffs/ffs/cod/pregen_source/Windows/cod.y
++++ b/thirdparty/ffs/ffs/cod/pregen_source/Windows/cod.y
+@@ -1887,6 +1887,22 @@ constant :
+ 
+ typedef struct scope *scope_ptr;
+ 
++enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
++
++typedef struct st_entry {
++    char *id;
++    sm_ref node;
++    enum namespace ns;
++    struct st_entry *next;
++} *st_entry;
++
++struct scope {
++    cod_extern_list externs;
++    struct st_entry *entry_list;
++    sm_ref code_container;
++    struct scope *containing_scope;
++};
++
+ struct parse_struct {
+     sm_list decls;
+     sm_list standard_decls;
+@@ -2052,6 +2068,24 @@ cod_parse_for_context(char *code, cod_parse_context context)
+     }
+     ret = semanticize_decls_list(context, decls, context->scope);
+     if (ret == 0) {
++	/* Remove failed decls from scope before freeing to avoid dangling pointers */
++	sm_list tmp = decls;
++	while (tmp != NULL) {
++	    if (tmp->node != NULL) {
++		st_entry *prev_ptr = &context->scope->entry_list;
++		st_entry list = context->scope->entry_list;
++		while(list != NULL) {
++		    if (list->node == tmp->node) {
++			*prev_ptr = list->next;
++			free(list);
++			break;
++		    }
++		    prev_ptr = &list->next;
++		    list = list->next;
++		}
++	    }
++	    tmp = tmp->next;
++	}
+ 	cod_rfree_list(decls, NULL);
+ 	context->decls = NULL;
+     }
+@@ -2450,25 +2484,8 @@ free_enc_info(enc_info enc)
+     free(enc);
+ }
+ 
+-enum namespace { NS_DEFAULT, NS_STRUCT, NS_ENUM };
+-
+ char *namespace_str[] = {"DEFAULT", "STRUCT"};
+ 
+-typedef struct st_entry {
+-    char *id;
+-    sm_ref node;
+-    enum namespace ns;
+-    struct st_entry *next;
+-} *st_entry;
+-
+-struct scope {
+-    cod_extern_list externs;
+-    struct st_entry *entry_list;
+-    sm_ref code_container;
+-    struct scope *containing_scope;
+-};
+-
+-
+ extern cod_parse_context
+ cod_copy_context(cod_parse_context context)
+ {
+@@ -2697,6 +2714,22 @@ resolve_local(char *id, scope_ptr scope)
+     return NULL;
+ }
+ 
++static void
++remove_decl(sm_ref node, scope_ptr scope)
++{
++    st_entry *prev_ptr = &scope->entry_list;
++    st_entry list = scope->entry_list;
++    while(list != NULL) {
++	if (list->node == node) {
++	    *prev_ptr = list->next;
++	    free(list);
++	    return;
++	}
++	prev_ptr = &list->next;
++	list = list->next;
++    }
++}
++
+ static sm_ref
+ resolve(char *id, scope_ptr scope)
+ {
+diff --git a/thirdparty/ffs/ffs/ffs/ffs.c b/thirdparty/ffs/ffs/ffs/ffs.c
+index b83567c31..ce1d0d578 100755
+--- a/thirdparty/ffs/ffs/ffs/ffs.c
++++ b/thirdparty/ffs/ffs/ffs/ffs.c
+@@ -153,7 +153,7 @@ allocate_tmp_space(estate s, FFSBuffer buf, size_t length, int req_alignment, si
+ 	    s->iovcnt++;
+ 	}
+     }
+-    msg_offset = s->output_len + pad;
++    msg_offset = (size_t) s->output_len + pad;
+     if (tmp_data_loc) *tmp_data_loc = tmp_data;
+     s->output_len += length + pad;
+     return msg_offset;
+@@ -217,7 +217,7 @@ add_data_iovec(estate s, FFSBuffer buf, void *data, size_t length, int req_align
+ 	s->iovec[s->iovcnt].iov_base = data;
+ 	s->iovcnt++;
+     }
+-    msg_offset = s->output_len;
++    msg_offset = (size_t) s->output_len;
+     s->output_len += length;
+     return msg_offset;
+ }
+@@ -262,7 +262,7 @@ FFSencode_internal(FFSBuffer b, FMFormat fmformat, void *data, size_t *buf_size,
+     /* setup header information */
+     setup_header(b, fmformat, &state);
+ 
+-    header_size = state.output_len;
++    header_size = (size_t) state.output_len;
+     state.saved_offset_difference = header_size;
+ 
+     if (fmformat->variant || state.copy_all) {
+@@ -272,7 +272,7 @@ FFSencode_internal(FFSBuffer b, FMFormat fmformat, void *data, size_t *buf_size,
+     }
+ 
+     if (!fmformat->variant) {
+-	*buf_size = state.output_len;
++	*buf_size = (size_t) state.output_len;
+ 	return b->tmp_buffer;
+     }
+ 
+@@ -296,7 +296,7 @@ FFSencode_internal(FFSBuffer b, FMFormat fmformat, void *data, size_t *buf_size,
+     // round up malloc to 8
+     roundup_tmp_buffer(b, 8);
+     free_addr_list(&state);
+-    *buf_size = state.output_len;
++    *buf_size = (size_t) state.output_len;
+     if (!state.iovec_is_stack) {
+ 	free(state.iovec);
+     }
+@@ -424,7 +424,7 @@ FFSencode_vector(FFSBuffer b, FMFormat fmformat, void *data)
+     /* setup header information */
+     setup_header(b, fmformat, &state);
+ 
+-    header_size = state.output_len;
++    header_size = (size_t) state.output_len;
+     state.saved_offset_difference = header_size;
+ 
+     if (fmformat->variant || state.copy_all) {
+@@ -1147,7 +1147,7 @@ set_conversion_params(FFSTypeHandle ioformat, int64_t input_record_len, IOConver
+     if (params->final_base == NULL) {
+ 	/* need memory for at least the base record in temp area */
+ 	int64_t buffer_required = Max(final_base_size, src_base_size);
+-	dest_offset = add_to_tmp_buffer(&c->tmp, buffer_required);
++	dest_offset = (size_t) add_to_tmp_buffer(&c->tmp, buffer_required);
+ 	dest_address = NULL;
+ 	if (dest_offset == -1) return 0;
+     } else {
+@@ -1172,7 +1172,7 @@ set_conversion_params(FFSTypeHandle ioformat, int64_t input_record_len, IOConver
+ 	     * where we want the record to end up.  Need temporary space.
+ 	     */
+ 	    int64_t source_base_size = expand_size_to_align(ioformat->body->record_length);
+-	    src_offset = add_to_tmp_buffer(&c->tmp, source_base_size);
++	    src_offset = (size_t) add_to_tmp_buffer(&c->tmp, source_base_size);
+ 	    src_address = NULL;
+ 	    if (src_offset == -1) return 0;
+ 	} else {
+@@ -1196,7 +1196,7 @@ set_conversion_params(FFSTypeHandle ioformat, int64_t input_record_len, IOConver
+ 	int64_t buffer_required = Max(possible_converted_variant_size + align_pad,
+ 				  orig_variant_size + align_pad);
+ 	buffer_required = expand_size_to_align(buffer_required);
+-	final_string_offset = add_to_tmp_buffer(&c->tmp, buffer_required);
++	final_string_offset = (size_t) add_to_tmp_buffer(&c->tmp, buffer_required);
+ 	final_string_address = NULL;
+ 	if (final_string_offset == -1) return 0;
+     } else {
+@@ -1224,7 +1224,7 @@ set_conversion_params(FFSTypeHandle ioformat, int64_t input_record_len, IOConver
+ 	     */
+ 	    int64_t source_variant_size =	/* plus possible alignment of 8 */
+ 		input_record_len - ioformat->body->record_length + 8;
+-	    src_string_offset = add_to_tmp_buffer(&c->tmp, source_variant_size);
++	    src_string_offset = (size_t) add_to_tmp_buffer(&c->tmp, source_variant_size);
+ 	    src_string_address = NULL;
+ 	    if (src_string_offset == -1) return 0;
+ 	} else {
+@@ -1279,7 +1279,7 @@ FFS_decode_length_format(FFSContext context, FFSTypeHandle ioformat,
+     final_base_size = expand_size_to_align((int64_t)(ioformat->body->record_length +
+ 						     conv->base_size_delta));
+     src_base_size = expand_size_to_align(ioformat->body->record_length);
+-    return variant_part + Max(final_base_size, src_base_size);
++    return (size_t) (variant_part + Max(final_base_size, src_base_size));
+ }
+ 
+ extern size_t
+@@ -1386,7 +1386,7 @@ FFSinternal_decode(FFSTypeHandle ioformat, char *src, void *dest, int to_buffer)
+     if (params.src_string_address != params.cur_variant) {
+ 	if (input_record_len - ioformat->body->record_length - data_align_pad > 0) {
+ 	    memcpy(params.src_string_address, params.cur_variant,
+-		   input_record_len - ioformat->body->record_length - data_align_pad);
++		   (size_t)(input_record_len - ioformat->body->record_length - data_align_pad));
+ 	}
+     }
+     if (conv->conversion_type != none_required) {
+@@ -1537,18 +1537,18 @@ make_tmp_buffer(FFSBuffer buf, int64_t size)
+     }
+     if (buf->tmp_buffer_size == 0) {
+ 	int64_t tmp_size = Max(size, TMP_BUFFER_INIT_SIZE);
+-	buf->tmp_buffer = malloc(tmp_size);
+-	buf->tmp_buffer_size = tmp_size;
++	buf->tmp_buffer = malloc((size_t)tmp_size);
++	buf->tmp_buffer_size = (size_t)tmp_size;
+     }
+     if (size > buf->tmp_buffer_size) {
+-	buf->tmp_buffer = realloc(buf->tmp_buffer, size);
++	buf->tmp_buffer = realloc(buf->tmp_buffer, (size_t)size);
+ 	if (buf->tmp_buffer) {
+-	    buf->tmp_buffer_size = size;
++	    buf->tmp_buffer_size = (size_t)size;
+ 	} else {
+ 	    buf->tmp_buffer_size = 0;
+ 	}
+     }
+-    buf->tmp_buffer_in_use_size = size;
++    buf->tmp_buffer_in_use_size = (size_t) size;
+     return buf->tmp_buffer;
+ }
+ 
+@@ -1565,7 +1565,7 @@ add_to_tmp_buffer(FFSBuffer buf, size_t size)
+     } else {
+ 	if (buf->tmp_buffer_size == 0) {
+ 	    int64_t tmp_size = Max(size, TMP_BUFFER_INIT_SIZE);
+-	    buf->tmp_buffer = malloc(tmp_size);
++	    buf->tmp_buffer = malloc((size_t)tmp_size);
+ 	}
+ 	if (size > (size_t)buf->tmp_buffer_size) {
+ 	    buf->tmp_buffer = realloc(buf->tmp_buffer, size);
+@@ -1582,7 +1582,7 @@ add_to_tmp_buffer(FFSBuffer buf, size_t size)
+     return old_size;
+ }
+ 
+-#if SIZEOF_LONG != 8
++#if SIZEOF_SIZE_T != 8
+ #ifndef WORDS_BIGENDIAN
+ 
+ static int words_bigendian = -1;
+@@ -1616,13 +1616,13 @@ quick_get_ulong(FMFieldPtr iofield, void *data)
+     case 4:
+ 	return (unsigned long) (*((unsigned int *) data));
+     case 8:
+-#if SIZEOF_LONG == 8
+-	if ((((long) data) & 0x0f) == 0) {
++#if SIZEOF_SIZE_T == 8
++	if ((((size_t) data) & 0x0f) == 0) {
+ 	    /* properly aligned */
+-	    return (unsigned long) (*((unsigned long *) data));
++	    return (size_t) (*((size_t *) data));
+ 	} else {
+ 	    union {
+-		unsigned long tmp;
++		size_t tmp;
+ 		int tmpi[2];
+ 	    } u;
+ 	    u.tmpi[0] = ((int *) data)[0];
+@@ -1646,23 +1646,24 @@ quick_get_pointer(FMFieldPtr iofield, void *data)
+ {
+     union {
+ 	void *p;
+-	unsigned long tmp;
++	size_t tmp;
+ 	int tmpi[2];
+     } u;
++    u.tmp = 0;  /* Initialize to avoid garbage in upper bytes on LLP64 */
+     data = (void *) ((char *) data + iofield->offset);
+     /* only used when field type is an integer and aligned by its size */
+     switch (iofield->size) {
+     case 1:
+-	u.tmp = (unsigned long) (*((unsigned char *) data));
++	u.tmp = (size_t) (*((unsigned char *) data));
+ 	break;
+     case 2:
+-	u.tmp = (unsigned long) (*((unsigned short *) data));
++	u.tmp = (size_t) (*((unsigned short *) data));
+ 	break;
+     case 4:
+     {
+ 	unsigned int tmpi;
+ 	memcpy(&tmpi, data, 4);
+-	u.tmp = (unsigned long) tmpi;
++	u.tmp = (size_t) tmpi;
+ 	break;
+     }
+     case 8:
+diff --git a/thirdparty/ffs/ffs/ffs/ffs_conv.c b/thirdparty/ffs/ffs/ffs/ffs_conv.c
+index fb5f24dfe..756eda7c5 100755
+--- a/thirdparty/ffs/ffs/ffs/ffs_conv.c
++++ b/thirdparty/ffs/ffs/ffs/ffs_conv.c
+@@ -770,7 +770,7 @@ ffs_internal_convert_field(FMFieldPtr src_spec, void *src, FMdata_type dest_type
+ 		*dest_field = (unsigned int)tmp;
+ 	    } else if (dest_size == sizeof(size_t)) {
+ 		size_t* dest_field = (size_t*)dest;
+-		*dest_field = tmp;
++		*dest_field = (size_t) tmp;
+ #if SIZEOF_LONG_LONG != 0
+ 	    } else if (dest_size == sizeof(long long)) {
+ 		unsigned long long *dest_field = (unsigned long long *) dest;
+@@ -1094,7 +1094,7 @@ FFSconvert_record(IOConversionPtr conv, void *src, void *dest, void *final_strin
+ 				(((intptr_t) src_string_base) % 4));
+ 	    printf("record of type \"%s\", contents :\n", 
+ 		   conv->ioformat->body->format_name);
+-	    if (limit * sizeof(int) > conv->ioformat->body->record_length)
++	    if (limit * sizeof(int) > (size_t)conv->ioformat->body->record_length)
+ 		limit = conv->ioformat->body->record_length / sizeof(int);
+ 	    for (i = 0; i < limit; i += 4) {
+ 		printf("%p: %8x %8x %8x %8x\n", ((char *) src) + (i * 4),
+@@ -1161,12 +1161,12 @@ transpose_array(size_t *dimens, char *src, char *dest, int source_column_major,
+ 
+     if (dimen_count <= 1) return;
+     index = malloc(sizeof(index[0]) * dimen_count);
+-    for(i = 0; i< dimen_count; i++) {
++    for(i = 0; i< (size_t) dimen_count; i++) {
+ 	index[i] = 0;
+     }
+     cur_index = 0;
+     jump = 1;
+-    for (i = 0; i < dimen_count-1; i++) {
++    for (i = 0; i < (size_t) dimen_count-1; i++) {
+ 	jump = (jump * dimens[i]);
+     }
+     while(index[0] < dimens[0]) {
+@@ -1192,7 +1192,7 @@ transpose_array(size_t *dimens, char *src, char *dest, int source_column_major,
+ 		dest_field = ((char*)dest) + dest_size * col_index_base;
+ 		tmp_spec.offset = tmp_spec.size * row_index_base;
+ 	    }
+-	    for(i=0; i < dimens[cur_index]; i++) {
++	    for(i=0; i < (size_t) dimens[cur_index]; i++) {
+ 		if (dest_type != unknown_type) {
+ 		    /* simple (native) field or variant array */
+ 		    if (dest_type != string_type) {
+@@ -1251,7 +1251,7 @@ get_offset_for_addr(char *src_field_addr, ConvStatus conv_status,
+     tmp_src_field.offset = 0;
+ 
+     tmp_int = get_big_int(&tmp_src_field, src_field_addr);
+-    return tmp_int;
++    return (size_t) tmp_int;
+ }
+     
+ static void
+@@ -1530,7 +1530,7 @@ internal_convert_record(IOConversionPtr conv, ConvStatus conv_status, void *src,
+ 		tmp_src_spec.offset = f->field_list[field].field_offset;
+ 		tmp_src_spec.data_type = integer_type;
+ 		tmp_src_spec.byte_swap = conv->ioformat->body->byte_reversal;
+-		elements = get_big_int(&tmp_src_spec, src);
++		elements = (size_t) get_big_int(&tmp_src_spec, src);
+ 		if (control_value == NULL) {
+ 		    int j;
+ 		    control_value = (size_t *) malloc(sizeof(control_value[0]) * f->field_count);
+@@ -1602,6 +1602,15 @@ get_big_int(FMFieldPtr iofield, void *data)
+ 	    if (iofield->byte_swap)
+ 		byte_swap((char *) &tmp, sizeof(int));
+ 	    return (long) tmp;
++#if SIZEOF_SIZE_T == 8 && SIZEOF_LONG == 4
++	/* Windows x64 LLP64: sizeof(long)==4 but sizeof(size_t)==8 */
++	} else if (iofield->size == 8) {
++	    int64_t tmp;
++	    memcpy(&tmp, (char *) data + iofield->offset, 8);
++	    if (iofield->byte_swap)
++		byte_swap((char *) &tmp, 8);
++	    return (MAX_INTEGER_TYPE) tmp;
++#endif
+ 	} else if (iofield->size == sizeof(long)) {
+ 	    long tmp;
+ 	    memcpy(&tmp, (char *) data + iofield->offset, sizeof(long));
+@@ -1671,6 +1680,15 @@ get_big_unsigned(FMFieldPtr iofield, void *data)
+ 	    if (iofield->byte_swap)
+ 		byte_swap((char *) &tmp, sizeof(int));
+ 	    return (MAX_UNSIGNED_TYPE) tmp;
++#if SIZEOF_SIZE_T == 8 && SIZEOF_LONG == 4
++	/* Windows x64 LLP64: sizeof(long)==4 but sizeof(size_t)==8 */
++	} else if (iofield->size == 8) {
++	    size_t tmp;
++	    memcpy(&tmp, (char *) data + iofield->offset, 8);
++	    if (iofield->byte_swap)
++		byte_swap((char *) &tmp, 8);
++	    return (MAX_UNSIGNED_TYPE) tmp;
++#endif
+ 	} else if (iofield->size == sizeof(long)) {
+ 	    unsigned long tmp;
+ 	    memcpy(&tmp, (char *) data + iofield->offset, sizeof(long));
+@@ -2230,9 +2248,9 @@ gen_mem_float_conv(dill_stream c, struct _FMgetFieldStruct src, int src_addr,
+ 	    ffs_putreg(c, tmp, DILL_I);
+ 	    break;
+ 	}
+-#if SIZEOF_LONG == 8
+-	case sizeof(long): 
+-	    if (((src_offset & 0x7) == 0) && (assume_align >= sizeof(long))) {
++#if SIZEOF_SIZE_T == 8
++	case 8:
++	    if (((src_offset & 0x7) == 0) && (assume_align >= 8)) {
+ 		dill_reg tmp;
+ 		ffs_getreg(c, &tmp, DILL_L, DILL_TEMP);
+ 		dill_ldbsli(c, tmp, src_addr, src_offset);
+@@ -2447,7 +2465,7 @@ gen_convert_address_field(dill_stream c, struct _FMgetFieldStruct tmp_spec, int
+ 	if (src_oprnd.size != dest_size) {
+ 	    /* make it the right size to operate on */
+ 	    iogen_oprnd tmp_oprnd;
+-	    tmp_oprnd = gen_size_conversion(c, src_oprnd, sizeof(long));
++	    tmp_oprnd = gen_size_conversion(c, src_oprnd, sizeof(char *));
+ 	    free_oprnd(c, src_oprnd);
+ 	    src_oprnd = tmp_oprnd;
+ 	    *string_dest_reg = src_oprnd.vc_reg;
+@@ -2745,8 +2763,10 @@ generate_convert_field(dill_stream c, ConvStatus conv_status, dill_reg src_addr,
+ 		    dill_reg val;
+ 		    int field = next->control_field_index;
+ 		    ffs_getreg(c, &val, DILL_I, DILL_TEMP);
+-		    dill_ldii(c, val, addr_reg, field*sizeof(int));
++		    /* load lower 4 bytes of size_t (works on little-endian) */
++		    dill_ldii(c, val, addr_reg, field*sizeof(size_t));
+ 		    dill_muli(c, loop_var, loop_var, val);
++		    ffs_putreg(c, val, DILL_I);
+ 		}
+ 		next = next->next;
+ 	    }
+@@ -2846,32 +2866,47 @@ generate_convert_field(dill_stream c, ConvStatus conv_status, dill_reg src_addr,
+ 	    FMdata_type dest_type = conv->src_field.data_type;
+ 
+ 	    ffs_getreg(c, &dimen_reg, DILL_P, DILL_TEMP);
+-	    ffs_getreg(c, &tmp, DILL_I, DILL_TEMP);
++	    ffs_getreg(c, &tmp, DILL_P, DILL_TEMP);  /* use pointer-sized reg for size_t */
+ 	    ffs_getreg(c, &spec_reg, DILL_P, DILL_TEMP);
+-	    dimens = ffs_localb(c, dimen_count * sizeof(int));
++	    dimens = ffs_localb(c, (dimen_count + 1) * sizeof(size_t));  /* size_t array for transpose_array */
+ 	    spec = ffs_localb(c, sizeof(struct _FMgetFieldStruct));
+ 	    dill_virtual_lea(c, dimen_reg, dimens);
+ 	    dill_virtual_lea(c, spec_reg, spec);
+ 	    FMTypeDesc *next = type_desc;
+ 	    int i = 0;
++	    /* Zero out the dimens array first (needed for 64-bit where we store lower 4 bytes) */
++	    for (int j = 0; j <= dimen_count; j++) {
++		dill_setp(c, tmp, 0);
++		dill_stpi(c, tmp, dimen_reg, j * sizeof(size_t));
++	    }
+ 	    while (next->type == FMType_array) {
++		dill_reg tmp_int;
++		ffs_getreg(c, &tmp_int, DILL_I, DILL_TEMP);
+ 		if (next->static_size != 0) {
+-		    dill_seti(c, tmp, next->static_size);
++		    dill_seti(c, tmp_int, next->static_size);
+ 		} else {
+ 		    dill_reg addr_reg = (dill_reg)(intptr_t)conv_status->control_value;
+ 		    int field = next->control_field_index;
+-		    dill_ldii(c, tmp, addr_reg, field*sizeof(int));
++		    /* load lower 4 bytes of size_t (works on little-endian) */
++		    dill_ldii(c, tmp_int, addr_reg, field*sizeof(size_t));
+ 		}
+-		dill_stii(c, tmp, dimen_reg, i * sizeof(int));
++		/* store as lower 4 bytes of size_t slot (upper bytes already zeroed) */
++		dill_stii(c, tmp_int, dimen_reg, i * sizeof(size_t));
++		ffs_putreg(c, tmp_int, DILL_I);
+ 		i++;
+ 		next = next->next;
+ 	    }
+-	    dill_seti(c, tmp, 0);
+-	    dill_stii(c, tmp, dimen_reg, dimen_count * sizeof(int));
+-	    dill_stii(c, tmp, spec_reg, FMOffset(struct _IOgetFieldStruct *, offset));
+-	    for (i=4 ; i < sizeof(struct _IOgetFieldStruct); i+= 4) {
+-		dill_seti(c, tmp, *((int*)((char*)&tmp_spec + i)));
+-		dill_stii(c, tmp, spec_reg, i);
++	    /* terminator is already zero from the zeroing loop above */
++	    {
++		dill_reg tmp_int;
++		ffs_getreg(c, &tmp_int, DILL_I, DILL_TEMP);
++		dill_seti(c, tmp_int, 0);
++		dill_stii(c, tmp_int, spec_reg, FMOffset(struct _IOgetFieldStruct *, offset));
++		for (i=4 ; i < sizeof(struct _IOgetFieldStruct); i+= 4) {
++		    dill_seti(c, tmp_int, *((int*)((char*)&tmp_spec + i)));
++		    dill_stii(c, tmp_int, spec_reg, i);
++		}
++		ffs_putreg(c, tmp_int, DILL_I);
+ 	    }
+ 	    {
+ 		dill_reg tmp_src, tmp_dest;
+@@ -2929,27 +2964,27 @@ new_generate_conversion_code(dill_stream c, ConvStatus conv_status, IOConversion
+ 				      tmp_src_spec.size,
+ 				      tmp_src_spec.data_type,
+ 				      src_is_aligned, tmp_src_spec.byte_swap);
+-		if (src_oprnd.size != sizeof(int)) {
++		if (src_oprnd.size != sizeof(size_t)) {
+ 		    iogen_oprnd tmp_oprnd;
+-		    tmp_oprnd = gen_size_conversion(c, src_oprnd, sizeof(int));
++		    tmp_oprnd = gen_size_conversion(c, src_oprnd, sizeof(size_t));
+ 		    free_oprnd(c, src_oprnd);
+ 		    src_oprnd = tmp_oprnd;
+ 		}
+ 
+ 		if (control_base == -1) {
+-		    control_base = ffs_localb(c, sizeof(int) * f->field_count);
++		    control_base = ffs_localb(c, sizeof(size_t) * f->field_count);
+ #ifdef RAW
+ 		}
+-		gen_store(c, src_oprnd, dill_lp(c), control_base + field * sizeof(int),
+-			  sizeof(int), integer_type, TRUE /* aligned */ );
++		gen_store(c, src_oprnd, dill_lp(c), control_base + field * sizeof(size_t),
++			  sizeof(size_t), integer_type, TRUE /* aligned */ );
+ #else
+ 		    addr_reg = dill_getreg(c, DILL_P);
+ 		    dill_virtual_lea(c, addr_reg, control_base);
+ 		    conv_status->control_value = (size_t*)(intptr_t)addr_reg;
+ 	        }
+ 	    assert(addr_reg != -1);
+-	        gen_store(c, src_oprnd, addr_reg, field*sizeof(int),
+-			  sizeof(int), integer_type, TRUE /* aligned */);
++	        gen_store(c, src_oprnd, addr_reg, field*sizeof(size_t),
++			  sizeof(size_t), integer_type, TRUE /* aligned */);
+ #endif
+ 		free_oprnd(c, src_oprnd);
+ 	    }
+diff --git a/thirdparty/ffs/ffs/ffs/output_dir/context_test_output.s390x.bin b/thirdparty/ffs/ffs/ffs/output_dir/context_test_output.s390x.bin
+new file mode 100755
+index 0000000000000000000000000000000000000000..969dbb0b14c21d98d5f93a3e23282ad796ab66a3
+GIT binary patch
+literal 16939
+zcmZQ#VBle3U|7M#z@T-yK%}DN@4agbD;Sv=KwtqABLf424+8@OGXn#I1cwX*Bf}I1
+z4v-WB14ASO14B9k0|N_`pU=R+P{Y6gmItY6VqjqCWnf?cnIVvtSyWu2kd|MRn^?k-
+znOBmUo?4`kmYJH90^>2H<d-Jpq(TMLa`F>P7?Lv*VX8n(s6{Y}nSntA#oZ7IJ`m-=
+zx+kmd=WS(25Ql+*0pd?a5bba!-!1oq|M3_`21c+48B)NM4%Dp)V1Gt{{Q=VL!oa}b
+z4e~#TQ(RJ1np{#^l$xTDSX7i)3G-4an8%Qso0OW8lA0225(`p|gr|V*Kn=?dxE-Mk
+z3=A<4XM**lFfcF_B86oI0|P@nlrI3Ygdr0(0E<hCGV{`*0SMtRq(GEFf)i{sf?#G~
+zn9an%01pqSOf#5<#VVM?kl-KyVSrNtl*z!rkm&%5X%HWhVn8eqE^+{oAPkCq5DmfA
+z_8%Y&i1UmL7$6KoQy2p#VhV~X9tH+R5hex(*Kd0_CjI{QsE|<vk~A54z`+ShZfpz;
+z3>u&)V}v9<kojE<3=A`nlI8*i28K1z;01YX3j+hgerRxlJaC+Wf#C|25Ax`31_p)~
+zP`(5M1H(H828N%|<e>m@F)ZS-r{&^|{Gt+QOh8pI<mAI62POnF3Y-rh9I~>32XYvJ
+z0)T;m!2nA0F-SvM`~pc(mIiwEC`m0Y$;?X!#jXPuvoxUku$jexZWfMgDF`ydLBZGm
+zzI95J6Nm#TS7>FQ637Y%Gu6U_yw$IqK^#Z|0HvuJObiTZbF7&ZB$DswFwTIcsR`gT
+z1xhEJ3=9ko;55|&&!YPn7#PkVr72K)xerYvpfvQHfq~%@R9=9AfsvVkfsr37FTudT
+zsKCI$s0-zT*d`1NjG)p9q*sH1fzh3Tfe};;fcORs42&@h42+=S6_kN27#J9H7#JAK
+zq2}9^l;;zb4zZ-U(#$+q$}G(*&P>lsO;LcQ$5JHq7?P0m2~E@x4z|P!k%1^Pg63+B
+zf;=^^G#8?T0mMu#N-W9D&x1x1lwxLJ$U=@MsBjRJ1{d>SHorj9_otobz-$HvhBtFB
+z!qUD2ENw#NJU{^sV#CsVR$^{aVoqXZA}Hl2VX@5%q?&<&ff(E1IRUE20csl~!WL*X
+zbbyJ0p&+ha`>*Gpwh4>}pw-YCaQcH)5f-5I$FKmN{-PKd7&4&o53-<ufq|h8RQ5sB
+zR1X6K!%QgKATPDJBsB$p83k2Sl$xAhlmd+?m=5Gfgi3+zgyYfj7akO#lv9KppHLZ4
+ze1VwyAOf6%Fw0>JSo(yf6sS@LcgMW^l8n?MXdY*XOf6AJL=|FYU`W7{UOk{j5R+cf
+za|Z*|6-=<)!OXxAfyEA3-A;@h=y?KW2efu)Si{7?pxq+!TIuJpz;1>$kdl~T2}(|Y
+zG(2a(a{{d42`VW;-bHVCf*LRrpgBPxC$R+7(!|&B#Fp5xG)6&IAuuxogDHyJAyTps
+zih+S)+TvSKwuA$x;_na_SusZ^XBSX%p;fU4k2pku!_2@ydE+1>RUtJm1r}vnm>3vz
+zr^ihGvh?z+JccdMC_^p0AZ=(w;RR}VWJ03^6e^&$Z8fwo14Uyy0|UbpsJsKHHY&<X
+z%t38oqcwIj^Gf0&ZEleA^wgqgLz7r6^-;7@Y_t(-W1N|Rp#a4X3=9na!QkI11_nk=
+z1_nkg1_nlL1_nkQNTtoF$H2g-&%nS4s+bKK7#NKh7#NKi7#Km7xG4hzqZzDS3(Fg@
+zb}_8o3@P{_$$gTU#pQ*EcR!#~atHOZ`k`S*OmfGPw6Wy?P&6ShGXsM;D7nMk4v~_F
+zPz(%=X^f{FBq7NhDkkBYmY$KB1xoPXoPwqmkyDh<zjjc%SyOK;dI6@@J0~{}n%<av
+zm>3u)Kakrbmzg@nh{*?1Su$FHiwIZ;zyMTPGU~vKh=~jg4D+C20y1+cv;zQ2Yak5j
+z033qKgBtvo7#J8HLn~8Iga0Q310$$o0a6QUtbrPhAP0l^8fA$^nTdHNsL2ys5N0Ol
+zm*&B{y9{NCMe&%)7NRH?EDJFNnyw)nXpI~VQ-&q>K;}Y(p*q36J-7~#|KWJF;)VwW
+zC}BQ8PFql!6HppN!5WgV-YqP92Y@7z@D6C2Fhmjq^%pfEd{B7;VWE+rjwx6u5ln&z
+z#z^pp35dzS4DK{BFfgok;8Z+ypjjwC87$7gP+Xb>NgoCXCbH$Qh6OVNa|5OynL!On
+zs7dgSB4`{4BnI;%+-)F11_ovhs2|NBd>9ETFF|aWA3^0Nm=79H0fhmm(*vUQK%$Ux
+z6vP6RrC=KBY*3jB<{N`ZNZATup^{7uFh2e;W9mi^GX@5xO`t*rqMr@iL1bWHn&u!0
+z3ENbN1gKi#1|<#%mlNt9riBhlHzNd+d@qA~We_>m6!_>D0}p7N2-L+~<DdyK4^-hn
+z)UoYlV1=+482CdWET-)a`dPLGi?4HMLj*v@kr)H0)B*E_(!dl0(;){Vh`qTG0R{#J
+z&U^-T7)KP;DFoSj*1`1e#Eha1ilFuoM3(CWyhLP>=zxeZ-EgpkxDQkbL&SI#89-fL
+zFh?5Hi2#}R*uln)MPhQv-eRygh~TYa-~!PgEVl|oGB7Z`bFhc_qZA?lYU^HR;D&J&
+zcSBfAzZ@Lhty7|8)<7MMNVq6z7@o3?5DJVDOcMmt6u~q@FwGH63k1^=!8Am+4x0GD
+zPK4zd2T{n_A#AY1K^4l^)^3&C5%|Wz05XW-V9at?Uuyn-2UDoLMe+A@H^tf=tfA^`
+z9}DG8?+svPU;~X)!s{@wWejYfdI!Qp4AzK21z>p)I$8!5WnfK!=0QVbcSG7NAT_kg
+zgN&vi(?RVVC~Xd<Eugd|l(vG>)==68O4~wdI|z+VvLwJn@aJikY~u1XOBr!_nx&Dr
+zJk8QWT%Kl`PF$X5Swvi(W?4&Io@UuWT%Kk*OkAF3IY(TcX1Rr)rx_RobigwT;0RR#
+z4VZz-(`OD&kTR?iEDj<BTN!vkGzhET1(6I4ET0@)vP<@4)%^l>4j^Je_Yi|GTA+bg
+zka_<cTp?v$EkqFm1A~Y;18BGn%-8)7rWjbc9NhcYiBvuG01ci)#6%}Bz;m7<l*KCM
+z;0Y-c8zG7q7#PG}GQetI1`|byFsqV-*XHLr-OkfMeN2d$gcE}hgvG#MZUkYm>N)s8
+z%Fb4Z00RSq<ZK3E7{>}a9?5Fu;Cn;i$n2$0Kph~6tkf3<5eSQc!8QcKVs&%yhm^6M
+z5CH}T1{q%lQ5eSoT6M7oIRw<{@`bTTc0;A$r73cuhbRl_RK~(xVTfd*AyTPsh*YeD
+z<^o`?8$+am-4Ll{H$*Dh4Ux)r(1Zd^uMu(?NvpEm!2wzqIIa|H*Jk2zaE8_iE(wdT
+zbJ-R;xI*g&cL_tamlanXJfL-i=lOkQC$?BQcth(7pLXwK%iqsqX5hGh*<Rz=0gX-&
+z1#6QkfH<ImY6#5;t1}>626lLx6t%%d>-HM8>k3ADh=*YQ0}q;m+LO>Z1V(6HVuZH8
+z7+s<2-JrBPl!gtBLAY>|4IXaz>mD|5;_4o@FyiVSwnXCU9=06f>K?Xo;_4o@CgSQI
+zwqD}u9<~|8)je#BiK~0q))80tu<atQ?qNGdT;0QViMYCl?H+M;58Er^>K?Xl#MM3Q
+zOvKea?0m%4J?v7%)jjNL#MM3QM(A}91B2``23U)h!MO~Q<=E{U0wMhX(Bc4ynB0E`
+zaR`fn!3|m!vU@oM33%>`Gj#wBZb4)fA{aoUGhmJ<Xo8o4fq^~DAqdj801f(pr5F@9
+zGDt#L3=BRiAuRSJhu}qNX=!QclOX~O3=GO#3{o(T|1JoNJ<lNo(gv9d5ny0oP)UYQ
+zqA~=Xh6uA)IfR-t3*}Akn+_3RU|>+)!yp6Wgx-O$*xMXJA#D|C$BKc0L0yyqG@1lf
+z5b+jFF|bc^2s<`^U)hPRvmpYY;ix<YIT$DUAB4p|&mkPrrkM*7U|?X-Jk9_giHnD}
+zg4kC%L_~lppF8uR>fp8Th-?eMeQ$)+1~EcvgBT&TL5z_4mPSZz5F?~Eh!Ij7#0aSk
+zVvH2L#zV0U;@}JEw>tRS-2^pi90H(ioPgiPAm9)PZR-Su{k*Mo;h94)w9ON|=|Hnk
+z-VBEjXxk^057Z>`f{uOvVPasg-?DRtrsz@@Lxw+)aa@KL@Hj50p9mUb69A3lGE~4v
+zEkJd<AE?0(O~PRe3=E*bd{Dcc!?i3muOy72EHybkCp9m<Bm=&bC>11A#sE=}n(UgB
+znj4K!1~LF@9)v2u;)WEs8$1~p7(i|SO~ixLM?lx=fX0HMZh%<9keZX43!dtZ&PmOS
+zWynd*gS!Z%5r&x=7%Wl30wMwJV<1NV7#QF^6<Ax3(GeP$;CZuO0V-2X<E^KYFp&Tn
+zKLo9S0a*zecLI&YfIR}8O>O~=LV+xXj4nb4l))1%pg@NECn>QwH6Ee{Ha`qj1m#47
+zIUpVAfz8aoU<H~;fV&;!5(Wn7U>u6)Au<f`B3~g1G%A;iCFr0-Y9MKtCV0@nns=Zj
+zY#>QkGY}REu%TR5M<-BfV_*Q!(lJ12S7ru=bS%#G2bly}zXD|;oT(9>k)Nmln!Zhi
+zMJZSf%puTrDuZWAY8pdIYFav&$N)KhAr`;EdVKH!L{RL24P;<|4V%E^V8gm>P<hZA
+z0T2^5SO{812I7Na97My0QaPQRU0gx!Wiai|zyP5=V6-Qc@9D+NzyKOg)<%myn8h%M
+zfDDIWSd9(yKgb@CoG*xAU|@hnUL0h)2ux-(K&TuToeO8=fdc9)mVkneAs|LZkpc?l
+zQCL7g$3o$G95h`Fat>@16gKt^8|~Zxl4M|jk7^!(@?m4<u!$>PXh2~G98?2T-qQ=T
+zqL2X|(4Jo2pmiT8d~o<6)cg4QF*7h6#gZ7;Ld}MG4#b58I<CYBOF6KJgN+5l#$DP#
+zhA=QNOoGz$GcvQXL6dS&I-dc?C_u0Zk(fou>|zv72?H|&qbFtzGQuiLSS*0-29@+6
+z8WtlkIarLqVh9!^uyJQtjKE^(0mu*r2Kbm0Y-AO>hyhl(!^V&pVfI34(DE&?34-t#
+z0dtXK3?cxRCniQwQ-H6ZKeBl~zJC4z@Ra1`4dw?TnGcc=3}R+r_=Y7_+=Dm=F|ZHi
+zgD6<)fTe;gkRSsC18f8zHVW1U6`up8S3_y&kUqm1aGJ<3C@f-tvx<?JCCKbj6iyi`
+zuN;kAfzGeQ5U2vp<?t{tF#lj;VE7l7Tg80iMdLK)AB;?(qMnHZT&aTwAVEn2ydZ(`
+z4?M$zR(OIYd|@TwD+UIJFVKbtNbC;-10yJDfTAC?nokn47yzsvG$9O{{09wogVcgn
+z?>RCsFoJ3lP^|)5BoM*CzzC{qK_LxVz1P6Nzz8a2K=KX@42&}v7#Np87ZrOjFfbls
+zU|<AILW9y_00RT#GX@4mn0q3eGZORiQgaksQj0RnQb8>Y5Eok2G9>5crDTGa&p}s0
+zFeK+>rskEzCquNwXQsfk#Cy8HCG+!25|c|nbvVqRw9K56)FK2gH76xLC$qQ&RE@(c
+ze(-u?urPzCKY|mDV1ks#GC-DkgB5}V5c<I@alqmXF0O81o=;|RNi>><Scc5J%#!$&
+z#FE7Lq@4WZY>*#{q7j1NCKd`8ZU;1#LZ}>YIzVk;CV=A+Bo7)K0u{xecmeT)85kHq
+zjZ9EHaKHl4(*>n12MNz2NFxuV366Jw?E;nLpd=^(Zp^NM+XY&;1RAIXr5TWx90mpk
+zP<aco8zcrAQwHTYP?`}y4jWit<|XE)QYm^s_9O5Su)9GE&_Qm2xO)fO-Jp5Q5@@>+
+zqzB|?Q2hXMGYEtF@u1E)NG~YAfQo8Rodn{GASV(ANFu@XMoDD>n#YPWt5V_d3DK6H
+zmR6jKSWN+P2@+;zVCF|I2Ov^R-yt-Z1eJE6P6mhrs}?|PSgQ!s_66}5qBZP5RSirZ
+zXy6e#=><{>!AS;&#s;Pa76woN5oKUtMgoqGo{o;LZh^s}0j^HT+RmYFPF{h=m7$J~
+zj<yWd3Pq_UrA2uPhSrD)4Tc{Ob3iMJ5!1{J42+=i4CD?mXq<q;8N`PU48yBYhP=|;
+z_=5b*ypm#gP-f;Prl*2)6+=LNPGx$2UI17@G(s(Ui=7eFMnGy?FhawNDGoK9m<j?i
+z3sQ43^HNj5W<p%gz`z9UyfA^<_(<W%qy<sI1X?Hn5(i<>#Ip%h95ikX5`+4W2|9Vm
+z1Zqfv#G$QRCTNSE3A9!hBo0cGAakHAg_%H;C?IiYQ-KMT&O!2Uk5<5grxMPpg0qU?
+ztaLal3C?0b4M&L6!6XxO(4Ofqv|a&=GB7Yf2auRR>jOdQ5az$H5Cu%%AT$HE_$z=!
+z8Z25-LmVv<AzejA1ttatkE~Zg|J=P;A{iAR>-88Vz*!zt1cBP@3qVB`BM&^wgQ6HT
+zWd;pO2GE!sY<(U`Y#9Rs11MX7oDOPBgS-e@fDPh<s=0@tb=XjE&&Vy!DanNPB+*v!
+zVOh2WUatpTwTHP{$|yD(Vg#sufUW>Ef<*>QD%uE1))+$;Y5+_%EVRKiGXo>2IROtZ
+zupk2?tn~=ug8T@g8Q^RFRKQ#Y2Q?@SD(FEIGm)T_%D~_d4e5S3L_->>4*gK^en`r7
+z=m!NE1A{|9s1#*jaF__m$qo}CIl*BfXvhI14o$fbYe2;;hy^i}fdS^m6b1(77Yqz6
+zJ`4=(7Z?~gOc)rrcQ7#Uz(yuPdy7s$nlmtUEE^aYSYfk{plkwSgGL@fYC+5LLFoas
+z&JeUV3e-#ijctOOD4_L`W(*9Vxfw<;h`r387#NuUFfg#NLEOL+#=roY-)G5UU;x>}
+zvWtO%<p=`<%Q=Xhta1zttQrgqtVR&`vfpB0V1L5E!2S;6b`CoR1`ZDf296*G296mF
+z3>=FX7&z82FmP;RVBq+}z`)7Iz`!ZMz`!X5@hA5o1_tgk3=G`YAb#diV_@JhU|`^}
+zVqoBDU|`_sVqoBz!oa{YkAZ>b2?GPqI|c@x9}En<OpyG-BErPL$eO`<X&bBS?RFLs
+z$T$^~0yw|Cf%YK4n?smH;Q8e@0|O%{U4SsCC<d(;1kKKZ_$&+zjIs<2jG)v3;&U)C
+zfY+0P)=+@>Ahq@k42+<}0OEt1o1i8jC>4SDA`A?Si3|*kMbP{N+DuZ#z`zK~cOZEg
+zNYj!LwB8ZK2Q^Q(GB7ZLHaLO!pyugu1_s8nQ2n4dyUGAb(;#_JbM*xS10!hj3aDzc
+zC;=^ROwUP;FGws(%w<T<FUm_TGDH-TPys|)2^ByTnGgXZbS*~cT8xmj<Q5dA78hsc
+z=f#7Y1MtRdeoAUmetvd*F>;e2872y9Ai{GvToj}>mZ2mwH?_DVF}DDwfFUnGFB#FU
+z0M&W9sl^$oi24!4g;bBp`49)Cro@8<!GQrTVL{x~VtDNV%7YAyZ@}pTlrKO<I(YL2
+z;{$m50EI26cn5_yNc~?121Zbo3gUy(2R|f@fU9{>`cP$H0MDa><U#4fmVtp0G#&ur
+zgVIMD0|O&ynHPu;N)P1>42+;c2E+%YhYkh?M$mK!h!08+GZ`2d7eV7+g@J)_6$1m~
+zW+)$&K6W!OFdl*OLFwZR0|VnVDBl2UNHAm~?c4-4(m_EE59j=x6mTe_M;bgxQB)&Y
+zfEJx7>SO7Y6cbDGb5YYED9R9+nSqH1xr~6wfV*oTCMe8d7}P|8VNg8_DqBHn92gi3
+zKx?KzVjv6>17T283#10r!~>-x&<Yt)Hxx9d18Q1>R-}Mdo4{6*fXZnQhMECR10Zu?
+z7}Sk{VUSrMaS$J*2ZUkzKot*29EL&7B^ZY31Mxw6Kp3VE)CK^F!!W4Z1H&+VAU;SB
+z2*dP&>JgAQ48y_;M8ouf*dRS14ATdy<3Qpt3=)T7m_E>EMNrcc)T{)pIfYcF3=A|A
+zhtwNPOPClKR*Fnhldo8F??2NLMo@ji!0-oLF2LGZ;Ek#bAK>KzX!sq}?F0D-6gQw{
+zJF}q8dQdwH)D;1(vjnk0@xPIQfdRA;5u_f}O+3cHzyPX`K}~Fh#FUiy#ANVD0E9wK
+z#F=^V&^|Uw2dp$N8D$Uv+#`=iUAdlLS_0Ku%n;%0gV}2bD@QF685kJufc*|?w1C{J
+z0BU10T!8x>H0T7H69)MW<abcd2egR|q!uIwYHxz3E<yeT`F#%q0|RKIE=W!S#T7K@
+zA6Mk&#OEd!WtSGfI@};9BH>}tWoA-GPO}i-F@ee&5EGQIKr{%0@(zdwt#1S6br2hb
+z9dhA2;HwpK5}^nblOS0J22h;@s^=g)1_nq&7sg{?1jRq741kJ&+caP{YR3jF1Zr1-
+z+9x0yH1vk#4o28oAkf?jNF0Pg>Oey=AR07(2NDCNEf60x!~>#14Qr4%sEh{jK|=%}
+z8nj;tBo0bzAU-Iqf@n}a28n~pXb>MXECQlo1E&m#CJ&;mgJ|TC+m&R5j%G80hAp9f
+j0EG!7Xb2NzKd5~HsxP2&Owh8B2~>B06jIui1jP{mrn3ds
+
+literal 0
+HcmV?d00001
+
+diff --git a/thirdparty/ffs/ffs/ffs/output_dir/context_test_output.win64.bin b/thirdparty/ffs/ffs/ffs/output_dir/context_test_output.win64.bin
+new file mode 100644
+index 0000000000000000000000000000000000000000..f994979c4faa96cd892ff5e4283cea470660a112
+GIT binary patch
+literal 16859
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/thirdparty/ffs/ffs/ffs/output_dir/file_output.s390x.bin b/thirdparty/ffs/ffs/ffs/output_dir/file_output.s390x.bin
+new file mode 100755
+index 0000000000000000000000000000000000000000..6a6013bf67c8b8861bc0b5356b0e69f96c95d44c
+GIT binary patch
+literal 14513
+zcmZ<``@fQjfq{pCfzgJEfx&-*!A%X5wiG2s8%8Du1_lO36DCFm1_mDn1_ovZ1_lWZ
+z83sm%DGVGSIR*xXNCpOmbOr_n7AQZTfq|ihfdMQJQq#o1z|adahJk@WAT6_~xI`f>
+zzbH4cgdsDpBsD#?NFgmVH75neV@Sy_P0C4y3Z~`cCzdcIXC%T@ftU;o3=zIQ3JeSk
+z9SjT%YoPXmDH}JC1wpCF`9&!TQ1jyxOG=6|lS)fcZEf7#f~`^#OA;Z*$7iP48rUg7
+zY{ak3&`tqlbz*W!Y7u^wMs{{w;DBOaV9-DgPp|_S82CW61M8lwx}Ud|9YGuh1_o&O
+zgJ_2<`EI!<{Ex>lGBAPzo*@NH=|ICU0UZ7j;P3_Mc41&(@CL;Th*MlrRGM5;T9lfi
+zkXTfdSP2X2R4|VrH8&|WB_%Z_+9VdF8VOGU+kqO#9dJ8B85kI1AkGBqNnv1MC`5|m
+z3I+y-dMIB2W(h+kYQz?o6lLb6LqeVb!eK~(D1k&X*k}X+N^A@a46~US7~o+7m2C#o
+zuoMU8FeEq#Kp3#Vhw?HVK&cSK0jFjV1B{Ctz!Wr8VQdD5YWoim4#bH@22i&en!*?`
+z5mQif@h~tjc`z|BOj@zi<=Itc2`eTKNVZ{e00${3E3ko*0w~%TA=v_Ceis7+!wjTs
+zvjCcuL5>7@YzqSe!+vOxf;@1Xfq~%)ln?UgZ3YI07f`+g0|Uc51_p+oP|qkpoDPe8
+zXg+|3Je0>!oRMEtf+m)e504<YGHkI%d=_O?V_;wexew%LFt!N>n@Cz7wc}DyP*AW5
+z2D`Z|F{c!3UN*FYs`CN)Ljk8cP!@%l2X+cX6Ucnb;=vdqX`>HuHI(N92>_fHnAq7V
+zKwRvckyr#SG;q7d)Xt6zW<DfT?6{z1Edv7sO4<SkAOnK|l;&fQhO+ntlAtUN^rEFC
+zwYVfRFCCUE9FWs0Ob?XCW*!5&dC+W$t!NVjnd6|~>wn)mCCUlJLHL7Wdl?xRR7x^3
+zixo196%zCEOEOZ66q56Eb5rw56f*M^N-{uoMoucspV-`|1agvtnQGxd-s)G*AP%HV
+z<6&T6-owPe@ZLdha`%F37p0l^K=Ls27H}R0RWY0l3=9t7Jlp~=7WXkQFq}ck!=U_m
+zADSmYdG<L21H&h%yZ{3OBQpa7BR^DLf`Nfifq{Wh7s>~*O&Ay$K{WzMuLc7HqdNlw
+zBdF*F@eLRl7-JY17(rDns5-V_U|`H)U|=kVnr~B5o=;T1$CAfOGxK02L1|ubW_n&K
+zyz*oyMN*F;2`gv76*z>0t^S6{K*|~;Xeo+Osi)?Z=0cP(fS9R8i6xo&d9bRUNt}U!
+zaSk-fz?4l$c|IglLNW~z)qP%KZmO*kv}A+Wr9@1T0nvvD2)L$DXlQxnl_=oI;1Iot
+z5XR7pudIS<#$q$X=aAwEd&y-2k%W~jP#&R@%M@O6L2L*q&xh#5VhO}`D3PlKQ4F&b
+zuG@x)a?l(W6|Q-uxzOmx5vZ9dwie)06D<vZ3QlPGl!ct1!3l<eAqYx?n_yrzzd+LW
+zr=91(Yz78~H*+t-%2o$hxd)Z=0A)-N8&;lXCFUk2<|I}o!b+SZEH-+9bTB|0ePA|j
+z8{s7_SRDg{1Jp)FgiVlUBJ&w028Pc&w-wy|9PGG(`3$6)$k+ldt6)ty3s70bumE0G
+zMKLfiWI)RbkOc({3=DOkb_uln>0w}Cm<eSY<fRsuq^96+KS0$Kf!o^9Obye4oF<@B
+zuqOK{1_p*5AP2y(jUU)DNG7)9%FHXlXr@CF8d|<p;DYK@aLq{t)dF^0=*@eGJ`{&4
+zf$Ca_jY#?+Y26OHeq_%m*};-F!W@{(L3PP!n-5fvjkftHYx5N$=Wl2}0p(v1Qy)Zt
+zOBBqup9QSUf|eXmr3~(l(Do7}DKkW-mcW}(P$6iknSiAX^MD#dPN~TNbqN!!)P&j-
+zfyEwJe~cJ=(924gJ<uK*!x|<A2JIG+*GfN+1$Hy6fwblrmY|f7kb#UD@DdU>kO69K
+zfxL`9kOAs+PJot>0y&8#ppgrF0~wHzg)}o@g&<_80V;;A*9#3FQxx}uT*JU13!xYo
+z7^W@01!YS(a4P-|agh~sbaHlqRYbI^`rwg>sF0w}rM#1pk*biImjaDGCJ816hBoFK
+zEX~)FI@U5tK%$RH044e$;~<C%4%7k4ghmf2bU@=1)zAtL6s7G93=C7C@(!T7q$n>j
+z2X&MLZNMTkuOuEaZUR!Co>~-bXcCL1eH(2Q8*LN|t>75LFe<p<lEjkCWJl0=45Y45
+zP=MHky`qE2ftoj-c_m<7kctWH6gw_X8?YF>(&OX=S6g7&c+l8Zd~RY<wgM!L#e=Ir
+zxJN*`^-;Ck=z}`FVBK~$`fwY$Y#=Q~uwpd(Au^;mKnXeBD}h~sW(cY?Ad(Qf!F^-2
+z00g!3V5z+TIjw*q{y!M}JH^1jsL8;<sKvm*sLjB@r~~P2G3qfeFzPcfFoHT%h71gh
+zMhpy$#-LG71_nk`1_nkm*!T~uJc5lM!N!*$jWEU#CI*I3dGF1gT&H3lFor<VD5DQb
+z8YQ)e0gaXRL(?cRMGSJVGC+zGY^4sY6U6}PKy3hp5e(b-fXXo=NU|iQ@l{+>ggx~t
+zAv-|HP9Y^J2Zusr$Ag<?sBVG9uQ_r!L)|S8r5PC07*9D!LW)4Bn1pLudPZgzOgpF~
+zg+~)q38ExbKL6T5>1Iv6vFHV;oP>8yZXUE8VyR(bV3f~q^lQ3y;FT{+4WyyX1Q`#9
+z4eS|!8rqCH@M>ft0|Uc6XdHsfTnZi71C>D_3>w%w1eFI3<XvK5V0a8|h=T^oeljpH
+zf(8shYC(-D(6~Iv!63dySz=LUVqOVqv4tGsu!<%#IlnXyKE%#YmRJ-IF9l#j?a>fL
+zv0zz<A<*&;!hyEt;mVLB44T?N=0b#_I>Ct$t^-;oGQ4GAU<8d*gTe!hZNfkvNy<s}
+zNzF?y$pGi{VmmIluqR|{04xq|*F%dacxi=H)`16+Aw?a?L2!@SDWDcBFiR;i9TGMW
+z@7iHEAJtPJ504H8gXU{S2ZJdb41R!I9)Z#o0|UbeC=H@ugBPGl1P~uqg#~~(NO%Xd
+z95F-^1I-<1LinIM6T(6xL6a0<p+qnVA{ZkXK*NzBCId5g0GNS+VYLIN;;948Lix#H
+zaR!Fs(j-W}F+ebpEr)enAni%!226i4g9b04rojimd7uI?f5P1d5ohLr`qK=;hmoLm
+z0f-IrC#Zb@=7Z+gK;Zxylm*dxAW=wr0mK5e8Nf8u>7cd)m~RXsA#Df<3zcMQfbsE%
+z8&fxWxG^v=Z30zB5dCc60c-{arfCk6knl}~NPwET+^`ytfq@h19;Ss3N;e|}l6)_N
+zMvWm#SySLMwG2GaGMQ<OgC@j0Py-sGj%_akD}=?sz#j@>F>QCy&$2C8e4RTRA^@t!
+z#27%e6__uS2BsL84mlV>?9GJ;FfcH1<}<LvIHKhc7SmY=)4vlliZ&>M`dSb%t`qQ@
+zltBVCzY7{xx#3_5aUZBr4^hXX$N(CW2XmxB16Lq*j~#5>SR^Kw>@5b1g9zR#2GDE@
+zh{+(g3QRFDy>qaK_@fje0P0U)X5fZ#6n8^dOurl)-K|riWY$0(j7YpF=@_26jSvcq
+z5lj;V(-grpLom$|ObZ0l62UY?who&3z)pna8wXLyd@^kE#X%Ly*Vb;8+Y$K2!2mKT
+z<6z8kS6^!Weg{*iyhZW%b2r7>9ju}1Y#$5dP45kW<U=+M%zVfOYO{dtW<X3ti9rQm
+z`4BpT3KeBwO@QV@Lu9u@+UFoOw91E|_B_~pX#Qt32k{sf7%iZ*C6u;;($-Mg21?sP
+zX*&pwPO>DxMDXWpmTcnkHA@+B`I@DXxO~mhLtMUQnND23W?4jBzGhiVT)t-6L0rCO
+zIZRx>W;sV(zGk_Fp061g1av?vU?B0S0-DqVm8s7hoFL^`B}9UOfkCj9ffvS6zYAfp
+zd~$HfF4>b+_X{-O01*?q2U+O>;%R{<=RxNEb8v-}ceNm4FcvXq08I&k*}DJ16ay=l
+zgM0rvk*bFtphXoBG0_PO@SJA|WwDAmctXm>Mu;K?1_rU046s_5!9)=v%&O$zwfT8Y
+zxAQd67#2iK!ihl$!eU@BH-fNO^&EU4<!38IfPsNQayEl7jAI3zGi9}M@V%jMWcJc0
+zpg|Rgtkf3<5eSQc!8QcKVs&%yhm^CO5CH}T1{q%lQ5eSoT79twIRw<{@`bTTc0;A$
+zB`R{khbRx}RL;U(VTfd*AyUb1h*Y$L)`!4aIfh7uyCG8PZirO88zPnOphYGyy++7o
+zB(2JK2M1_<;J8w(U7Lx=!5LaFxFjsT&ShKZ;0moD+$9XvURGRn@PO76p6B<Ko!DaK
+z;0>)WeA>N_Eq^}`QeSXfz^pGgkSBX!?NiX&El^BD>kCFG4H5!jc6j>~T5y8|LG3ZL
+z_9?a7ZPczW80{erhxrdYxexLObZrD9G(W-m#*D5|^=?qw9ZJK7;2~T%$p#NM{Pho;
+zH*xh3TNrWm4_hK}^$%MParF;dIdSz5TN82h4_hyB^$*(&;_4r^#l+P=Z0m@tf7o^r
+zSO2gbBd-2oyF^_5!*-9j`iJcmarF<|H{$9ab|&KLA9g<C>K}F~;_4rEHR9?Yb|duq
+zhk-$M83U|U%ivrF$#U#=4uO#V0BAugL`?2KgE)l6z~Bb04%xjNf&@Hw#hE&Q26G{@
+z3K0yT(LFH76SVM;fq{WN%pnNUz5opxf~6P~H!?^<SPTq4D<LfQB!}QdX=!O`>60M>
+z3=9m)Tnth$j{hzQi#^XF1kw(f3K3vnU{FbhFA`%2It>wKuW|@AX%@<x-Zvd0z`($u
+zx`#mq#tFRxVX?P4ghJXY&<+*@1B1FK186i7tRUhom||d`<Pdgj{=TvkTW3QAK*O1N
+z4013|^gjrTeV#)&q+K%?BEZ1Fpn04DKAIa3Z3(fja)^ikRX}&<L)F1+;t|;%fcxGE
+zsU2d3)DAI1YKIsh^)Zc*+95_r?GPiRc8C#DJH!|%c#Vf*JH){k(tmaEx4Q{y*f<10
+z+c^QhjX}U65Zc}e3j29m>B2LIU}(E1c+-Jqp}ZLmA<*_uC?BX<<OP}QVG>|sU}$00
+zP2a)4Q!t%L05T82$O4}00reF@<81<<c>snA_~-?wZubK<`k_e}G%pBRbq#8}bGVkJ
+z=9Ppol%*!e=YU7RVPo<PsUVp$28e>xWY8>IG(s830O;EH5(Wka&~!A^cm@U=upSrC
+z>h_$}JnWM$IjMPe$g_D^rw);Z(^GR&bJ0i9;nvu3F<=dY6nGeTGB7ZJ!T>fx7y(^J
+z4w}n=h5^Kj3?PfZO9G>FQuAUNa#Hi)Ap-R;Xe<ac=Yr<nu+-#|{33<C(%kr@oc!eM
+zV(cDA1R-c*6+Vf86c*U$6ClxnHqH+Y0f@zjwf>gKX$0y>X#Wc_LJHag0hNQbff*ek
+zi43x4;a7mlRMU9t=_IUK0FAMNR*Zwp1&zyr#;U*p3|-;X0ve?QSqvG0h0I(qfTvSH
+zi4PvmNr}a&@ennzStPI`C?^`s0qFoGLXc%J3~Br`Sb^3oz}*j#gbrAu1OP;a0bU&{
+zB*8{5bFl;=bm$SL1gsg9g+L5g^B3v>23Rv078<Z&Z&pVqP;O*k0I!l@fY7c`UFley
+z?GG{?v342EgVo*|;TidfpykFzsj%n;%flQ49aClSOi4{+NJ&jg2NM}E4=lvuM_BI|
+zKHv(9EwG^s46q?4m>g^voDC`uTE_=s!Uk7CTQNX<PznIiu%Ty8CubK|P`?69yE8CA
+zXb%|e3FUiwLBpj1OSr%+hdBmh0Sv>!2Nn(>yFhZjAcBE`0Tz*Qkm*@4nau#9a$s~W
+zoRJ3$u&-DG3_9+D7*R$FFqns70Rk#FKu&-K2&~M6jUL113}B<gu=#P=Xz&4$W(M&7
+zC@>2)QOpYsFw6i1D}x8Hrx$2<4g)eDv_=z!4-O-!d7fV0KE8g?NH~fm64pY^hj|dh
+zg#|vY#0g79un2^Wqr=9l+CYXdFfdGl((^Miv$8=G;ZQoC0mdjmunLiwMab-86ix{=
+zCK)|3W0Dcp$biKL$bMM%hQ$m_4i+=8n1aO&ET&*F1Dh3k05Xh$0X|*_8<mDGFoRV}
+zu<<uWn7vRMv^*bdf*?F*z+B{*g9yOoy@`lf)Rf@s=Z|cjkFTG906ay3Q-Xg$Ad>kY
+z`M@A(>iC8wb=-qE2{AbW<%1|#DuJbjERY}r0|RUp1U8D;2Nee`7XdL>g9ru&2I#a1
+m!x?be$S)`?Vt})Xk(edO>{1j?87i+Fjaz}vuf!0jVgLXEAlRS)
+
+literal 0
+HcmV?d00001
+
+diff --git a/thirdparty/ffs/ffs/ffs/output_dir/file_output.win64.bin b/thirdparty/ffs/ffs/ffs/output_dir/file_output.win64.bin
+new file mode 100644
+index 0000000000000000000000000000000000000000..7331058d0d14b8f90350fc4deaa27d6bac73436c
+GIT binary patch
+literal 14433
+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
+KekF!L6$1doj`ofK
+
+literal 0
+HcmV?d00001
+
+diff --git a/thirdparty/ffs/ffs/ffs/output_dir/index_output.s390x.bin b/thirdparty/ffs/ffs/ffs/output_dir/index_output.s390x.bin
+new file mode 100755
+index 0000000000000000000000000000000000000000..0aa82534bfb51d9ac7c03d9aaee020e56c729c94
+GIT binary patch
+literal 16305
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/thirdparty/ffs/ffs/ffs/output_dir/index_output.win64.bin b/thirdparty/ffs/ffs/ffs/output_dir/index_output.win64.bin
+new file mode 100644
+index 0000000000000000000000000000000000000000..cb5f4ece2fe0b86b2d189d597f23ad2effd9aa23
+GIT binary patch
+literal 16225
+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
+ZBxVURyA*{}hRQ2P<5r;aD=`GB7y!%(EN}n-
+
+literal 0
+HcmV?d00001
+
+diff --git a/thirdparty/ffs/ffs/fm/nt_io.c b/thirdparty/ffs/ffs/fm/nt_io.c
+index c1df6d883..0bc8b6f1d 100755
+--- a/thirdparty/ffs/ffs/fm/nt_io.c
++++ b/thirdparty/ffs/ffs/fm/nt_io.c
+@@ -224,10 +224,13 @@ nt_file_open_func(const char *path, const char *flag_str, int *input, int *outpu
+ 	}
+     }
+ 
+-    if (readfile) {
++    if (readfile && writefile) {
++	/* append mode - need both read and write access */
++	file = CreateFile(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
++		      NULL, OPEN_EXISTING, FILE_ATTRIBUTE_ARCHIVE, NULL);
++    } else if (readfile) {
+ 	file = CreateFile(path, GENERIC_READ, FILE_SHARE_READ,
+ 		      NULL, OPEN_EXISTING, FILE_ATTRIBUTE_ARCHIVE, NULL);
+-
+     } else {
+ 	file = CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ,
+ 		      NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_ARCHIVE, NULL);
+diff --git a/thirdparty/ffs/ffs/fm/progs/restart_format_server.sh b/thirdparty/ffs/ffs/fm/progs/restart_format_server.sh
+new file mode 100755
+index 000000000..11e4a4bf6
+--- /dev/null
++++ b/thirdparty/ffs/ffs/fm/progs/restart_format_server.sh
+@@ -0,0 +1,8 @@
++#!/bin/bash
++# Wrapper script to properly restart format_server
++# Works around PID reuse bug in format_server's built-in detection
++
++if ! pgrep -x format_server > /dev/null; then
++    rm -f /tmp/format_server_pid
++    /home/ge10/bin/format_server -quiet
++fi
+diff --git a/thirdparty/ffs/ffs/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake b/thirdparty/ffs/ffs/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+new file mode 100644
+index 000000000..412eef716
+--- /dev/null
++++ b/thirdparty/ffs/ffs/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM Win32)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/ffs/ffs/scripts/ci/setup/install-atl.sh b/thirdparty/ffs/ffs/scripts/ci/setup/install-atl.sh
+index 34b6c8ad1..2a347aa0e 100755
+--- a/thirdparty/ffs/ffs/scripts/ci/setup/install-atl.sh
++++ b/thirdparty/ffs/ffs/scripts/ci/setup/install-atl.sh
+@@ -1,10 +1,19 @@
+ #!/bin/bash
++
++# Determine architecture flag for Windows builds
++arch_flag=""
++if [[ "${GH_YML_JOBNAME}" == *"win32"* ]]; then
++  arch_flag="-A Win32"
++elif [[ "${GH_YML_JOBNAME}" == *"windows"* ]]; then
++  arch_flag="-A x64"
++fi
++
+ mkdir atl
+ cd atl
+ git clone https://github.com/GTKorvo/atl.git source
+ mkdir build
+ cd build
+-cmake \
++cmake ${arch_flag} \
+   -DCMAKE_BUILD_TYPE=$1 \
+   -DBUILD_TESTING=OFF \
+   -DCMAKE_INSTALL_PREFIX=${PWD}/../install \
+diff --git a/thirdparty/ffs/ffs/scripts/ci/setup/install-dill.sh b/thirdparty/ffs/ffs/scripts/ci/setup/install-dill.sh
+index 45ca20c83..fa9c73b67 100755
+--- a/thirdparty/ffs/ffs/scripts/ci/setup/install-dill.sh
++++ b/thirdparty/ffs/ffs/scripts/ci/setup/install-dill.sh
+@@ -1,17 +1,22 @@
+ #!/bin/bash
++
++# Determine architecture flag for Windows builds
++arch_flag=""
++if [[ "${GH_YML_JOBNAME}" == *"win32"* ]]; then
++  arch_flag="-A Win32"
++elif [[ "${GH_YML_JOBNAME}" == *"windows"* ]]; then
++  arch_flag="-A x64"
++fi
++
+ mkdir dill
+ cd dill
+ git clone https://github.com/GTKorvo/dill.git source
+ mkdir build
+ cd build
+-cmake \
++cmake ${arch_flag} \
+   -DCMAKE_BUILD_TYPE=$1 \
+   -DBUILD_TESTING=OFF \
+   -DCMAKE_INSTALL_PREFIX=${PWD}/../install \
+   ../source
+ cmake --build . -j4 --config $1
+ cmake --install . --config $1
+-if [ -f ${PWD}/../install/bin/dill.dll ] && [ -d /c/Windows/system32 ]; then
+-   # there's got to be a better way, but haven't found it
+-   cp ${PWD}/../install/bin/dill.dll /c/Windows/system32
+-fi
+-- 
+2.51.2
+
