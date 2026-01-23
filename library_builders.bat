@@ -26,7 +26,7 @@ exit /b 0
   :: git-am requires a Git repository to apply a patch, but the release zip
   :: strips away any Git info, so we just quickly initialize a repository.
 
-  cd dep-adios2/ADIOS2-2.10.2
+  cd dep-adios2/ADIOS2-2.11.0
   git init
   git config user.email "tooling@tools.com"
   git config user.name "Tooling"
