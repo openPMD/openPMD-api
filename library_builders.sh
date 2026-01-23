@@ -74,10 +74,10 @@ function install_buildessentials {
     touch buildessentials-stamp
 }
 
-function build_adios2 {
-    if [ -e adios2-stamp ]; then return; fi
+function build_ {
+    if [ -e -stamp ]; then return; fi
 
-    # curl -sLo adios2-2.11.0.tar.gz \
+    # curl -sLo -2.11.0.tar.gz \
     #     https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
     # file adios2*.tar.gz
     # tar -xzf adios2*.tar.gz
@@ -125,6 +125,7 @@ function build_adios2 {
         -DCMAKE_VERBOSE_MAKEFILE=ON               \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
+        -DFFS_USE_DILL=FALSE                      \
         -DADIOS2_INSTALL_GENERATE_CONFIG=OFF      \
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
 
