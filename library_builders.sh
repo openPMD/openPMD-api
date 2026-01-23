@@ -94,6 +94,8 @@ function build_adios2 {
     git clone https://github.com/ornladios/ADIOS2 ADIOS2-2.11.0
     cd ADIOS2-2.11.0
     git checkout 7a21e4ef2f5def6659e67084b5210a66582d4b1a
+    patch -p1 ../0001-Try-another-fix.patch
+    git diff
     cd ..
 
     # build

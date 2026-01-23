@@ -1,0 +1,29 @@
+From 176fd3197c1702c8aa9dc6f7bf667729ae6bd2d2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Franz=20P=C3=B6schel?= <franz.poeschel@gmail.com>
+Date: Fri, 23 Jan 2026 18:10:23 +0100
+Subject: [PATCH] Try another fix
+
+---
+ thirdparty/ffs/CMakeLists.txt | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/thirdparty/ffs/CMakeLists.txt b/thirdparty/ffs/CMakeLists.txt
+index e47512f58..f02868257 100644
+--- a/thirdparty/ffs/CMakeLists.txt
++++ b/thirdparty/ffs/CMakeLists.txt
+@@ -4,7 +4,11 @@ set(BUILD_TESTING OFF)
+ set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_CMAKEDIR}/thirdparty")
+ 
+ set(FFS_USE_ATL ON CACHE INTERNAL "")
+-set(FFS_USE_DILL ON CACHE INTERNAL "")
++if(TARGET dill::dill)
++  set(FFS_USE_DILL ON CACHE INTERNAL "")
++else()
++  set(FFS_USE_DILL OFF CACHE INTERNAL "")
++endif()
+ set(FFS_LIBRARIES_ONLY ON CACHE INTERNAL "")
+ set(FFS_QUIET ON CACHE INTERNAL "")
+ set(FFS_LIBRARY_PREFIX adios2${ADIOS2_LIBRARY_SUFFIX}_ CACHE INTERNAL "")
+-- 
+2.51.2
+
