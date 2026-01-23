@@ -85,9 +85,9 @@ function build_adios2 {
 
     cd ADIOS2-*
     # Need this PR for static builds https://github.com/ornladios/ADIOS2/pull/4812
-    # Since the PR does not cleanly merge, avoid_conflicts.patch is also needed
-    patch -p1 ../avoid_conflicts.patch
-    patch -p1 ../0001-GTKorvo-Upstream-4812.patch
+    # Since the PR does not cleanly merge, this is a custom patch that checks out
+    # the subdirectories of the atl, dill, EVPath and ffs thirdparty libraries
+    patch -p1 ../0001-Pull-in-atl-dill-EVPath-ffs-after-merging-https-gith.patch
     cd ..
 
     # build

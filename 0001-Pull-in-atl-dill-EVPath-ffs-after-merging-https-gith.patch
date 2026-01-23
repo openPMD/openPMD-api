@@ -1,7 +1,8 @@
-From 69173d9a8c2a7b89d6c4dd315dbca8551b65ec60 Mon Sep 17 00:00:00 2001
-From: Greg Eisenhauer <eisen@cc.gatech.edu>
-Date: Mon, 19 Jan 2026 21:55:00 -0600
-Subject: [PATCH] GTKorvo Upstream (#4812)
+From eaf2f25dfe5dcd73228ae5c77c6e9dd01f6a26e4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Franz=20P=C3=B6schel?= <franz.poeschel@gmail.com>
+Date: Fri, 23 Jan 2026 15:46:07 +0100
+Subject: [PATCH] Pull in atl, dill, EVPath, ffs after merging
+ https://github.com/ornladios/ADIOS2/pull/4812
 
 ---
  .../.github/workflows/build-and-test.yml      | 176 ++++++++--------
@@ -33,21 +34,95 @@ Subject: [PATCH] GTKorvo Upstream (#4812)
  .../EVPath/scripts/dashboard/common.cmake     |   2 +-
  thirdparty/EVPath/EVPath/tests/support.c      |   4 +-
  thirdparty/EVPath/EVPath/thin_server.c        |   7 +-
- .../atl/.github/workflows/build-and-test.yml  |  11 +-
+ .../atl/.github/workflows/build-and-test.yml  |  49 ++---
  thirdparty/atl/atl/CMakeLists.txt             |  29 ++-
+ .../atl/scripts/ci/cmake/alma8-clang.cmake    |   7 +
+ .../atl/atl/scripts/ci/cmake/alma8-gcc.cmake  |   7 +
+ .../atl/scripts/ci/cmake/alma8-intel.cmake    |   7 +
+ .../scripts/ci/cmake/alma8-inteloneapi.cmake  |   7 +
+ .../atl/scripts/ci/cmake/alma9-clang.cmake    |   7 +
+ .../atl/atl/scripts/ci/cmake/alma9-gcc.cmake  |   7 +
+ .../atl/scripts/ci/cmake/centos7-clang.cmake  |   2 +-
+ .../atl/scripts/ci/cmake/centos7-gcc.cmake    |   2 +-
+ .../atl/scripts/ci/cmake/centos7-nvhpc.cmake  |   2 +-
+ .../atl/scripts/ci/cmake/centos8-clang.cmake  |   2 +-
+ .../atl/scripts/ci/cmake/centos8-gcc.cmake    |   2 +-
+ .../atl/scripts/ci/cmake/centos8-intel.cmake  |   2 +-
+ .../ci/cmake/centos8-inteloneapi.cmake        |   2 +-
+ .../atl/scripts/ci/cmake/macos-clang.cmake    |   2 +-
+ .../scripts/ci/cmake/ubuntu1604-clang.cmake   |   2 +-
+ .../atl/scripts/ci/cmake/ubuntu1604-gcc.cmake |   2 +-
+ .../scripts/ci/cmake/ubuntu1804-clang.cmake   |   2 +-
+ .../atl/scripts/ci/cmake/ubuntu1804-gcc.cmake |   2 +-
+ .../scripts/ci/cmake/ubuntu1804-intel.cmake   |   2 +-
+ .../ci/cmake/ubuntu1804-inteloneapi.cmake     |   2 +-
+ .../scripts/ci/cmake/ubuntu2004-clang.cmake   |   2 +-
+ .../atl/scripts/ci/cmake/ubuntu2004-gcc.cmake |   2 +-
+ .../scripts/ci/cmake/ubuntu2004-nvhpc.cmake   |   2 +-
+ .../scripts/ci/cmake/ubuntu2204-clang.cmake   |   7 +
+ .../atl/scripts/ci/cmake/ubuntu2204-gcc.cmake |   7 +
+ .../scripts/ci/cmake/ubuntu2404-clang.cmake   |   7 +
+ .../atl/scripts/ci/cmake/ubuntu2404-gcc.cmake |   7 +
+ .../scripts/ci/cmake/ubuntu2404-intel.cmake   |   7 +
+ .../ci/cmake/ubuntu2404-inteloneapi.cmake     |   7 +
+ .../scripts/ci/cmake/ubuntu2404-nvhpc.cmake   |   7 +
+ .../atl/scripts/ci/cmake/unix-common.cmake    |   2 +-
+ .../atl/scripts/ci/cmake/windows-common.cmake |   2 +-
+ .../ci/cmake/windows-vs2019-clang.cmake       |   2 +-
+ .../ci/cmake/windows-vs2019-msvc.cmake        |   2 +-
+ .../ci/cmake/windows2019-vs2019-clang.cmake   |   8 +
  .../cmake/windows2022-vs2022-msvc-win32.cmake |   7 +
+ .../ci/cmake/windows2022-vs2022-msvc.cmake    |   7 +
  .../ci/cmake/windows2025-vs2022-clang.cmake   |   8 +
+ thirdparty/atl/atl/scripts/ci/setup/linux.sh  |   4 +-
+ .../atl/atl/scripts/dashboard/common.cmake    |   2 +-
  thirdparty/atl/atl/tclHash.c                  |  34 ++-
  thirdparty/atl/atl/tclHash.h                  |  85 ++------
- .../dill/.github/workflows/build-and-test.yml |  43 ++--
+ .../dill/.github/workflows/build-and-test.yml |  80 +++----
  .../dill/dill/.github/workflows/triggers.yml  |   8 +-
  thirdparty/dill/dill/CMakeLists.txt           |  55 ++---
- thirdparty/dill/dill/virtual.c                |  40 ++--
+ .../dill/scripts/ci/cmake/alma8-clang.cmake   |   2 +-
+ .../dill/scripts/ci/cmake/alma8-gcc.cmake     |   2 +-
+ .../dill/scripts/ci/cmake/alma8-intel.cmake   |   2 +-
+ .../scripts/ci/cmake/alma8-inteloneapi.cmake  |   2 +-
+ .../dill/scripts/ci/cmake/alma9-clang.cmake   |   7 +
+ .../dill/scripts/ci/cmake/alma9-gcc.cmake     |   7 +
+ .../dill/scripts/ci/cmake/alma9-intel.cmake   |   7 +
+ .../scripts/ci/cmake/alma9-inteloneapi.cmake  |   7 +
+ .../dill/scripts/ci/cmake/centos7-clang.cmake |   2 +-
+ .../dill/scripts/ci/cmake/centos7-gcc.cmake   |   2 +-
+ .../dill/scripts/ci/cmake/centos7-nvhpc.cmake |   2 +-
+ .../dill/scripts/ci/cmake/macos-clang.cmake   |   2 +-
+ .../scripts/ci/cmake/ubuntu1604-clang.cmake   |   2 +-
+ .../scripts/ci/cmake/ubuntu1604-gcc.cmake     |   2 +-
+ .../scripts/ci/cmake/ubuntu1804-clang.cmake   |   2 +-
+ .../scripts/ci/cmake/ubuntu1804-gcc.cmake     |   2 +-
+ .../scripts/ci/cmake/ubuntu2004-clang.cmake   |   2 +-
+ .../scripts/ci/cmake/ubuntu2004-gcc.cmake     |   2 +-
+ .../scripts/ci/cmake/ubuntu2204-clang.cmake   |   7 +
+ .../scripts/ci/cmake/ubuntu2204-gcc.cmake     |   7 +
+ .../scripts/ci/cmake/ubuntu2404-clang.cmake   |   7 +
+ .../scripts/ci/cmake/ubuntu2404-gcc.cmake     |   7 +
+ .../scripts/ci/cmake/ubuntu2404-intel.cmake   |   7 +
+ .../ci/cmake/ubuntu2404-inteloneapi.cmake     |   7 +
+ .../scripts/ci/cmake/ubuntu2404-nvhpc.cmake   |   7 +
+ .../dill/scripts/ci/cmake/unix-common.cmake   |   2 +-
+ .../scripts/ci/cmake/windows-common.cmake     |   2 +-
+ .../ci/cmake/windows2019-vs2019-clang.cmake   |   2 +-
+ .../ci/cmake/windows2022-vs2022-clang.cmake   |   8 +
+ .../ci/cmake/windows2022-vs2022-msvc.cmake    |   2 +-
+ .../ci/cmake/windows2025-vs2022-msvc.cmake    |   7 +
+ .../dill/dill/scripts/ci/setup/linux.sh       |   8 +
+ .../dill/dill/scripts/dashboard/common.cmake  |   2 +-
+ thirdparty/dill/dill/virtual.c                |  58 ++++--
  thirdparty/dill/dill/vtests/CMakeLists.txt    |   2 +-
  thirdparty/dill/dill/vtests/mixed_params.c    |  62 ++++++
- thirdparty/dill/dill/x86_64.c                 | 194 +++++++++++++++---
- thirdparty/dill/dill/x86_64_rt.c              |   4 +-
+ thirdparty/dill/dill/vtests/multi_test.c      |   3 +-
+ thirdparty/dill/dill/vtests/t1.c              |   1 +
+ thirdparty/dill/dill/x86_64.c                 | 195 +++++++++++++++---
+ thirdparty/dill/dill/x86_64_rt.c              |   5 +-
  .../ffs/.github/workflows/build-and-test.yml  |  17 ++
+ thirdparty/ffs/ffs/CMakeLists.txt             |   2 +-
  thirdparty/ffs/ffs/cod/cg.c                   |   4 +-
  thirdparty/ffs/ffs/cod/cod.y                  |  67 ++++--
  .../ffs/ffs/cod/pregen_source/Linux/cod.tab.c |  50 +++--
@@ -65,9 +140,9 @@ Subject: [PATCH] GTKorvo Upstream (#4812)
  thirdparty/ffs/ffs/fm/nt_io.c                 |   7 +-
  .../ffs/ffs/fm/progs/restart_format_server.sh |   8 +
  .../cmake/windows2022-vs2022-msvc-win32.cmake |   7 +
- .../ffs/ffs/scripts/ci/setup/install-atl.sh   |  11 +-
+ .../ffs/ffs/scripts/ci/setup/install-atl.sh   |  12 +-
  .../ffs/ffs/scripts/ci/setup/install-dill.sh  |  15 +-
- 63 files changed, 1030 insertions(+), 520 deletions(-)
+ 137 files changed, 1331 insertions(+), 613 deletions(-)
  create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-clang.cmake
  create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/alma10-gcc.cmake
  create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/ubuntu2204-clang.cmake
@@ -78,8 +153,36 @@ Subject: [PATCH] GTKorvo Upstream (#4812)
  create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
  create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
  create mode 100644 thirdparty/EVPath/EVPath/scripts/ci/cmake/windows2025-vs2022-clang.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/alma8-clang.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/alma8-gcc.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/alma8-intel.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/alma8-inteloneapi.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/alma9-clang.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/alma9-gcc.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/ubuntu2204-clang.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/ubuntu2204-gcc.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-clang.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-gcc.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-intel.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-inteloneapi.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-nvhpc.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/windows2019-vs2019-clang.cmake
  create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
+ create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
  create mode 100644 thirdparty/atl/atl/scripts/ci/cmake/windows2025-vs2022-clang.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/alma9-clang.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/alma9-gcc.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/alma9-intel.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/alma9-inteloneapi.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/ubuntu2204-clang.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/ubuntu2204-gcc.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-clang.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-gcc.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-intel.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-inteloneapi.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-nvhpc.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/windows2022-vs2022-clang.cmake
+ create mode 100644 thirdparty/dill/dill/scripts/ci/cmake/windows2025-vs2022-msvc.cmake
  create mode 100644 thirdparty/dill/dill/vtests/mixed_params.c
  create mode 100755 thirdparty/ffs/ffs/ffs/output_dir/context_test_output.s390x.bin
  create mode 100644 thirdparty/ffs/ffs/ffs/output_dir/context_test_output.win64.bin
@@ -1106,20 +1209,73 @@ index 9502cd35b..26355611f 100644
  	CM_fd_remove_select(cm, conn_sock);
  	fprintf(stderr, "failure in CMsockets  removing socket connection\n");
 diff --git a/thirdparty/atl/atl/.github/workflows/build-and-test.yml b/thirdparty/atl/atl/.github/workflows/build-and-test.yml
-index 8502907ba..33239995b 100644
+index 3e4355f9e..33239995b 100644
 --- a/thirdparty/atl/atl/.github/workflows/build-and-test.yml
 +++ b/thirdparty/atl/atl/.github/workflows/build-and-test.yml
-@@ -71,12 +71,17 @@ jobs:
+@@ -8,6 +8,10 @@ on:
+     branches: 
+     - master 
+ 
++concurrency:
++  group: ${{ github.head_ref || github.run_id }}
++  cancel-in-progress: true
++
+ jobs:
+   linux:
+     # The jobs should run pretty quick; anything over 30m essentially means
+@@ -24,29 +28,17 @@ jobs:
+       fail-fast: false
+       matrix:
+         buildtype: [ release, debug ]
+-        os: [ centos7, centos8, ubuntu1604, ubuntu1804, ubuntu2004 ]
+-        compiler: [ clang, gcc, nvhpc ]
++        os: [ alma9, ubuntu2204, ubuntu2404 ]
++        compiler: [ clang, gcc ]
+         exclude:
+-          - { os: centos8, compiler: nvhpc }
+-          - { os: ubuntu1604, compiler: nvhpc }
+-          - { os: ubuntu1804, compiler: nvhpc }
++          - { os: alma9, compiler: nvhpc }
+         include:
+-        - os: centos7
+-          container: centos:7
+-        - os: centos8
+-          container: centos:8
+-        - os: ubuntu1604
+-          container: ubuntu:16.04
+-        - os: ubuntu1804
+-          container: ubuntu:18.04
+-        - os: ubuntu2004
+-          container: ubuntu:20.04
+-        - os: centos7
+-          compiler: nvhpc
+-          container: nvcr.io/nvidia/nvhpc:21.2-devel-cuda11.2-centos7
+-        - os: ubuntu2004
+-          compiler: nvhpc
+-          container: nvcr.io/nvidia/nvhpc:21.2-devel-cuda11.2-ubuntu20.04
++        - os: alma9
++          container: almalinux:9
++        - os: ubuntu2404
++          container: ubuntu:24.04
++        - os: ubuntu2204
++          container: ubuntu:22.04
+ 
+     steps:
+     - uses: actions/checkout@v2
+@@ -79,14 +71,17 @@ jobs:
        matrix:
          buildtype: [ release, debug ]
          jobname: [
--          windows2019-vs2019-clang,
+-          windows-vs2019-msvc,
+-          windows-vs2019-clang,
 +          windows2025-vs2022-clang,
-           windows2022-vs2022-msvc,
++          windows2022-vs2022-msvc,
 +          windows2022-vs2022-msvc-win32,
            macos-clang ]
          include:
--        - jobname: windows2019-vs2019-clang
+-        - jobname: windows-vs2019-msvc
+-          vm: windows-latest
+-        - jobname: windows-vs2019-clang
 -          vm: windows-latest
 +        - jobname: windows2025-vs2022-clang
 +          vm: windows-2025
@@ -1195,6 +1351,399 @@ index a64c067d2..e5180f8f2 100644
    ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT ${ATL_ARCHIVE_COMPONENT}
    PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" COMPONENT ${ATL_HEADER_COMPONENT})
  
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/alma8-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/alma8-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/alma8-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/alma8-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/alma8-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/alma8-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/alma8-intel.cmake b/thirdparty/atl/atl/scripts/ci/cmake/alma8-intel.cmake
+new file mode 100644
+index 000000000..eef16225d
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/alma8-intel.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  icc)
++set(ENV{CXX} icpc)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/alma8-inteloneapi.cmake b/thirdparty/atl/atl/scripts/ci/cmake/alma8-inteloneapi.cmake
+new file mode 100644
+index 000000000..22644a90f
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/alma8-inteloneapi.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  icx)
++set(ENV{CXX} icpx)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/alma9-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/alma9-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/alma9-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/alma9-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/alma9-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/alma9-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/centos7-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/centos7-clang.cmake
+index 868b8b44b..d31fdc344 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/centos7-clang.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/centos7-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} clang)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/centos7-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/centos7-gcc.cmake
+index fbda9f71a..1db9bae06 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/centos7-gcc.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/centos7-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} gcc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/centos7-nvhpc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/centos7-nvhpc.cmake
+index e24825a11..f65fabfcf 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/centos7-nvhpc.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/centos7-nvhpc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} nvc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/centos8-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/centos8-clang.cmake
+index 868b8b44b..d31fdc344 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/centos8-clang.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/centos8-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} clang)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/centos8-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/centos8-gcc.cmake
+index fbda9f71a..1db9bae06 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/centos8-gcc.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/centos8-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} gcc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/centos8-intel.cmake b/thirdparty/atl/atl/scripts/ci/cmake/centos8-intel.cmake
+index bec1ebb3a..4dcbceb9a 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/centos8-intel.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/centos8-intel.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} icc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/centos8-inteloneapi.cmake b/thirdparty/atl/atl/scripts/ci/cmake/centos8-inteloneapi.cmake
+index 0ad910067..857564894 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/centos8-inteloneapi.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/centos8-inteloneapi.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} icx)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/macos-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/macos-clang.cmake
+index 868b8b44b..d31fdc344 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/macos-clang.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/macos-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} clang)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1604-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1604-clang.cmake
+index 868b8b44b..d31fdc344 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1604-clang.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1604-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} clang)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1604-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1604-gcc.cmake
+index fbda9f71a..1db9bae06 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1604-gcc.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1604-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} gcc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-clang.cmake
+index 868b8b44b..d31fdc344 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-clang.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} clang)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-gcc.cmake
+index fbda9f71a..1db9bae06 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-gcc.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} gcc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-intel.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-intel.cmake
+index 4f90b2728..2d8d4df8a 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-intel.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-intel.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  icc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-inteloneapi.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-inteloneapi.cmake
+index 0ad910067..857564894 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-inteloneapi.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu1804-inteloneapi.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} icx)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-clang.cmake
+index 868b8b44b..d31fdc344 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-clang.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} clang)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-gcc.cmake
+index fbda9f71a..1db9bae06 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-gcc.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} gcc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-nvhpc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-nvhpc.cmake
+index e24825a11..f65fabfcf 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-nvhpc.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2004-nvhpc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} nvc)
+ 
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2204-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2204-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2204-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2204-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2204-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2204-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-gcc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-intel.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-intel.cmake
+new file mode 100644
+index 000000000..eef16225d
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-intel.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  icc)
++set(ENV{CXX} icpc)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-inteloneapi.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-inteloneapi.cmake
+new file mode 100644
+index 000000000..22644a90f
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-inteloneapi.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  icx)
++set(ENV{CXX} icpx)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-nvhpc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-nvhpc.cmake
+new file mode 100644
+index 000000000..02960cfd2
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/ubuntu2404-nvhpc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  nvc)
++set(ENV{CXX} nvc++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/unix-common.cmake b/thirdparty/atl/atl/scripts/ci/cmake/unix-common.cmake
+index 84108d4d2..1a0ef8a99 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/unix-common.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/unix-common.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ if(NOT CTEST_CMAKE_GENERATOR)
+   set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/windows-common.cmake b/thirdparty/atl/atl/scripts/ci/cmake/windows-common.cmake
+index 44dcf6fe9..3046f11ac 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/windows-common.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/windows-common.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
+ include(${CMAKE_CURRENT_LIST_DIR}/common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/windows-vs2019-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/windows-vs2019-clang.cmake
+index a1907cec3..f286dce95 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/windows-vs2019-clang.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/windows-vs2019-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(dashboard_cache "
+ ")
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/windows-vs2019-msvc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/windows-vs2019-msvc.cmake
+index c6eb48d0a..fe254c9c0 100644
+--- a/thirdparty/atl/atl/scripts/ci/cmake/windows-vs2019-msvc.cmake
++++ b/thirdparty/atl/atl/scripts/ci/cmake/windows-vs2019-msvc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(dashboard_cache "
+ ")
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/windows2019-vs2019-clang.cmake b/thirdparty/atl/atl/scripts/ci/cmake/windows2019-vs2019-clang.cmake
+new file mode 100644
+index 000000000..4f74c86d3
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/windows2019-vs2019-clang.cmake
+@@ -0,0 +1,8 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 16 2019")
++set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
++set(CTEST_CMAKE_GENERATOR_TOOLSET ClangCL)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
 diff --git a/thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake b/thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc-win32.cmake
 new file mode 100644
 index 000000000..412eef716
@@ -1205,6 +1754,19 @@ index 000000000..412eef716
 +
 +set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
 +set(CTEST_CMAKE_GENERATOR_PLATFORM Win32)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc.cmake b/thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
+new file mode 100644
+index 000000000..c03853488
+--- /dev/null
++++ b/thirdparty/atl/atl/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
 +
 +list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
 +include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
@@ -1222,6 +1784,34 @@ index 000000000..5c72720ca
 +
 +list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
 +include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/atl/atl/scripts/ci/setup/linux.sh b/thirdparty/atl/atl/scripts/ci/setup/linux.sh
+index aabff30e3..d1ac6bd4b 100755
+--- a/thirdparty/atl/atl/scripts/ci/setup/linux.sh
++++ b/thirdparty/atl/atl/scripts/ci/setup/linux.sh
+@@ -2,7 +2,9 @@
+ 
+ case ${GH_YML_JOBNAME} in
+   centos7*) PKG_CMD=yum ;;
+-  centos8*) PKG_CMD=dnf ;;
++  centos8*|alma8*) PKG_CMD=dnf ;;
++  alma9*) PKG_CMD=dnf ;;
++  alma10*) PKG_CMD=dnf ;;
+   ubuntu*)  PKG_CMD=apt-get ;;
+ esac
+ 
+diff --git a/thirdparty/atl/atl/scripts/dashboard/common.cmake b/thirdparty/atl/atl/scripts/dashboard/common.cmake
+index 4b50bf291..5e448f330 100644
+--- a/thirdparty/atl/atl/scripts/dashboard/common.cmake
++++ b/thirdparty/atl/atl/scripts/dashboard/common.cmake
+@@ -65,7 +65,7 @@
+ #   set(ENV{FC}  /path/to/fc)   # Fortran compiler (optional)
+ #   set(ENV{LD_LIBRARY_PATH} /path/to/vendor/lib) # (if necessary)
+ 
+-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
++cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+ 
+ if(NOT DEFINED dashboard_full)
+   set(dashboard_full TRUE)
 diff --git a/thirdparty/atl/atl/tclHash.c b/thirdparty/atl/atl/tclHash.c
 index 56636eb03..cf0d74e22 100644
 --- a/thirdparty/atl/atl/tclHash.c
@@ -1405,7 +1995,7 @@ index 3b4c1829c..e0fa321c1 100644
 +EXTERN Tcl_HashEntry *	Tcl_NextHashEntry(Tcl_HashSearch *searchPtr);
  #endif /* _TCL_HASH */
 diff --git a/thirdparty/dill/dill/.github/workflows/build-and-test.yml b/thirdparty/dill/dill/.github/workflows/build-and-test.yml
-index 612e4d8cc..b1a2c7531 100644
+index ce67c5a27..b1a2c7531 100644
 --- a/thirdparty/dill/dill/.github/workflows/build-and-test.yml
 +++ b/thirdparty/dill/dill/.github/workflows/build-and-test.yml
 @@ -1,15 +1,17 @@
@@ -1434,18 +2024,41 @@ index 612e4d8cc..b1a2c7531 100644
    cancel-in-progress: true
  
  jobs:
-@@ -30,9 +32,6 @@ jobs:
+@@ -28,37 +30,30 @@ jobs:
+       fail-fast: false
+       matrix:
          buildtype: [ release, debug ]
-         os: [ alma9, ubuntu2204, ubuntu2404 ]
-         compiler: [ clang, gcc ]
+-        os: [ centos7, alma8, ubuntu1604, ubuntu1804, ubuntu2004 ]
+-        compiler: [ clang, gcc, nvhpc ]
 -        exclude:
--          - { os: alma9, compiler: nvhpc }
--          - { os: ubuntu2204, compiler: nvhpc }
+-          - { os: alma8, compiler: nvhpc }
+-          - { os: ubuntu1604, compiler: nvhpc }
+-          - { os: ubuntu1804, compiler: nvhpc }
++        os: [ alma9, ubuntu2204, ubuntu2404 ]
++        compiler: [ clang, gcc ]
          include:
-         - os: alma9
-           container: almalinux:9
-@@ -42,12 +41,19 @@ jobs:
-           container: ubuntu:22.04
+-        - os: centos7
+-          container: centos:7
+-        - os: alma8
+-          container: almalinux:8
+-        - os: ubuntu1604
+-          container: ubuntu:16.04
+-        - os: ubuntu1804
+-          container: ubuntu:18.04
+-        - os: ubuntu2004
+-          container: ubuntu:20.04
+-        - os: centos7
+-          compiler: nvhpc
+-          container: nvcr.io/nvidia/nvhpc:21.2-devel-cuda11.2-centos7
+-        - os: ubuntu2004
+-          compiler: nvhpc
+-          container: nvcr.io/nvidia/nvhpc:21.2-devel-cuda11.2-ubuntu20.04
++        - os: alma9
++          container: almalinux:9
++        - os: ubuntu2404
++          container: ubuntu:24.04
++        - os: ubuntu2204
++          container: ubuntu:22.04
  
      steps:
 -    - uses: actions/checkout@v2
@@ -1465,7 +2078,27 @@ index 612e4d8cc..b1a2c7531 100644
      - name: Update
        run: source/scripts/ci/gh-actions/run.sh update
      - name: Configure
-@@ -88,16 +94,23 @@ jobs:
+@@ -83,14 +78,14 @@ jobs:
+       matrix:
+         buildtype: [ release, debug ]
+         jobname: [
+-          windows2019-vs2019-clang,
+-          windows2022-vs2022-msvc,
++          windows2022-vs2022-clang,
++          windows2025-vs2022-msvc,
+           macos-clang ]
+         include:
+-        - jobname: windows2019-vs2019-clang
+-          vm: windows-2019
+-        - jobname: windows2022-vs2022-msvc
++        - jobname: windows2022-vs2022-clang
+           vm: windows-2022
++        - jobname: windows2025-vs2022-msvc
++          vm: windows-2025
+         - jobname: macos-clang
+           vm: macos-latest
+ 
+@@ -99,16 +94,23 @@ jobs:
          shell: bash
  
      steps:
@@ -1516,14 +2149,14 @@ index 3ee5556d9..7d9d5715c 100644
      - name: Post CDash Status
        run: scripts/ci/scripts/post-cdash-status.sh ${{ github.event.repository.full_name }} ${{ github.event.workflow_run.head_sha }} ${{ secrets.GITHUB_TOKEN }}
 diff --git a/thirdparty/dill/dill/CMakeLists.txt b/thirdparty/dill/dill/CMakeLists.txt
-index 7382a3526..651d8c26b 100644
+index cb3f2335e..651d8c26b 100644
 --- a/thirdparty/dill/dill/CMakeLists.txt
 +++ b/thirdparty/dill/dill/CMakeLists.txt
 @@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
  # The directory label is used for CDash to treat DILL as a subproject of GTKorvo
  set(CMAKE_DIRECTORY_LABELS DILL)
  
--project(DILL VERSION 3.1.3 LANGUAGES C CXX)
+-project(DILL VERSION 3.1.2 LANGUAGES C CXX)
 +project(DILL VERSION 3.1.4 LANGUAGES C CXX)
  
  # Some boilerplate to setup nice output directories
@@ -1629,8 +2262,397 @@ index 7382a3526..651d8c26b 100644
  endif()
  
  configure_file(
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/alma8-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/alma8-clang.cmake
+index 6f6f2e2d4..f21ec0d54 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/alma8-clang.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/alma8-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  clang)
+ set(ENV{CXX} clang++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/alma8-gcc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/alma8-gcc.cmake
+index 8a1c976d8..9450b0ff3 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/alma8-gcc.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/alma8-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  gcc)
+ set(ENV{CXX} g++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/alma8-intel.cmake b/thirdparty/dill/dill/scripts/ci/cmake/alma8-intel.cmake
+index b173d984e..eef16225d 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/alma8-intel.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/alma8-intel.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  icc)
+ set(ENV{CXX} icpc)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/alma8-inteloneapi.cmake b/thirdparty/dill/dill/scripts/ci/cmake/alma8-inteloneapi.cmake
+index 09ca1203c..22644a90f 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/alma8-inteloneapi.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/alma8-inteloneapi.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  icx)
+ set(ENV{CXX} icpx)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/alma9-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/alma9-clang.cmake
+new file mode 100644
+index 000000000..6f6f2e2d4
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/alma9-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: chuck.atkins@kitware.com
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/alma9-gcc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/alma9-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/alma9-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/alma9-intel.cmake b/thirdparty/dill/dill/scripts/ci/cmake/alma9-intel.cmake
+new file mode 100644
+index 000000000..b173d984e
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/alma9-intel.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: chuck.atkins@kitware.com
++
++set(ENV{CC}  icc)
++set(ENV{CXX} icpc)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/alma9-inteloneapi.cmake b/thirdparty/dill/dill/scripts/ci/cmake/alma9-inteloneapi.cmake
+new file mode 100644
+index 000000000..09ca1203c
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/alma9-inteloneapi.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: chuck.atkins@kitware.com
++
++set(ENV{CC}  icx)
++set(ENV{CXX} icpx)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/centos7-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/centos7-clang.cmake
+index 6f6f2e2d4..f21ec0d54 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/centos7-clang.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/centos7-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  clang)
+ set(ENV{CXX} clang++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/centos7-gcc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/centos7-gcc.cmake
+index 8a1c976d8..9450b0ff3 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/centos7-gcc.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/centos7-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  gcc)
+ set(ENV{CXX} g++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/centos7-nvhpc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/centos7-nvhpc.cmake
+index 30e1f6cd5..02960cfd2 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/centos7-nvhpc.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/centos7-nvhpc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  nvc)
+ set(ENV{CXX} nvc++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/macos-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/macos-clang.cmake
+index 868b8b44b..d31fdc344 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/macos-clang.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/macos-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC} clang)
+ 
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1604-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1604-clang.cmake
+index 6f6f2e2d4..f21ec0d54 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1604-clang.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1604-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  clang)
+ set(ENV{CXX} clang++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1604-gcc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1604-gcc.cmake
+index 8a1c976d8..9450b0ff3 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1604-gcc.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1604-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  gcc)
+ set(ENV{CXX} g++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1804-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1804-clang.cmake
+index 6f6f2e2d4..f21ec0d54 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1804-clang.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1804-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  clang)
+ set(ENV{CXX} clang++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1804-gcc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1804-gcc.cmake
+index 8a1c976d8..9450b0ff3 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1804-gcc.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu1804-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  gcc)
+ set(ENV{CXX} g++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2004-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2004-clang.cmake
+index 6f6f2e2d4..f21ec0d54 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2004-clang.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2004-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  clang)
+ set(ENV{CXX} clang++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2004-gcc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2004-gcc.cmake
+index 8a1c976d8..9450b0ff3 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2004-gcc.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2004-gcc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(ENV{CC}  gcc)
+ set(ENV{CXX} g++)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2204-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2204-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2204-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2204-gcc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2204-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2204-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-clang.cmake
+new file mode 100644
+index 000000000..f21ec0d54
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-clang.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  clang)
++set(ENV{CXX} clang++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-gcc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-gcc.cmake
+new file mode 100644
+index 000000000..9450b0ff3
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-gcc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  gcc)
++set(ENV{CXX} g++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-intel.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-intel.cmake
+new file mode 100644
+index 000000000..eef16225d
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-intel.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  icc)
++set(ENV{CXX} icpc)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-inteloneapi.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-inteloneapi.cmake
+new file mode 100644
+index 000000000..22644a90f
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-inteloneapi.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  icx)
++set(ENV{CXX} icpx)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-nvhpc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-nvhpc.cmake
+new file mode 100644
+index 000000000..02960cfd2
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/ubuntu2404-nvhpc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: eisen@cc.gatech.edu
++
++set(ENV{CC}  nvc)
++set(ENV{CXX} nvc++)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/unix-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/unix-common.cmake b/thirdparty/dill/dill/scripts/ci/cmake/unix-common.cmake
+index 93631c10c..2326e59ce 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/unix-common.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/unix-common.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ string(APPEND dashboard_cache "
+ ")
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/windows-common.cmake b/thirdparty/dill/dill/scripts/ci/cmake/windows-common.cmake
+index 1b227e539..94820aff9 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/windows-common.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/windows-common.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ string(APPEND dashboard_cache "
+ ")
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/windows2019-vs2019-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/windows2019-vs2019-clang.cmake
+index f562eccdf..4f74c86d3 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/windows2019-vs2019-clang.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/windows2019-vs2019-clang.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(CTEST_CMAKE_GENERATOR "Visual Studio 16 2019")
+ set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/windows2022-vs2022-clang.cmake b/thirdparty/dill/dill/scripts/ci/cmake/windows2022-vs2022-clang.cmake
+new file mode 100644
+index 000000000..89f7f5bf0
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/windows2022-vs2022-clang.cmake
+@@ -0,0 +1,8 @@
++# Client maintainer: chuck.atkins@kitware.com
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
++set(CTEST_CMAKE_GENERATOR_TOOLSET ClangCL)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/windows2022-vs2022-msvc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
+index 3a9b473d5..c03853488 100644
+--- a/thirdparty/dill/dill/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
++++ b/thirdparty/dill/dill/scripts/ci/cmake/windows2022-vs2022-msvc.cmake
+@@ -1,4 +1,4 @@
+-# Client maintainer: chuck.atkins@kitware.com
++# Client maintainer: eisen@cc.gatech.edu
+ 
+ set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
+ set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
+diff --git a/thirdparty/dill/dill/scripts/ci/cmake/windows2025-vs2022-msvc.cmake b/thirdparty/dill/dill/scripts/ci/cmake/windows2025-vs2022-msvc.cmake
+new file mode 100644
+index 000000000..3a9b473d5
+--- /dev/null
++++ b/thirdparty/dill/dill/scripts/ci/cmake/windows2025-vs2022-msvc.cmake
+@@ -0,0 +1,7 @@
++# Client maintainer: chuck.atkins@kitware.com
++
++set(CTEST_CMAKE_GENERATOR "Visual Studio 17 2022")
++set(CTEST_CMAKE_GENERATOR_PLATFORM x64)
++
++list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
++include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
+diff --git a/thirdparty/dill/dill/scripts/ci/setup/linux.sh b/thirdparty/dill/dill/scripts/ci/setup/linux.sh
+index 7d85cd02a..7e449e309 100755
+--- a/thirdparty/dill/dill/scripts/ci/setup/linux.sh
++++ b/thirdparty/dill/dill/scripts/ci/setup/linux.sh
+@@ -3,6 +3,8 @@
+ case ${GH_YML_JOBNAME} in
+   centos7*) PKG_CMD=yum ;;
+   centos8*|alma8*) PKG_CMD=dnf ;;
++  centos9*|alma9*) PKG_CMD=dnf ;;
++  centos10*|alma10*) PKG_CMD=dnf ;;
+   ubuntu*)  PKG_CMD=apt-get ;;
+ esac
+ 
+@@ -29,6 +31,12 @@ case ${GH_YML_JOBNAME} in
+   centos8*|alma8*)
+     curl -L https://copr.fedorainfracloud.org/coprs/g/git-maint/git/repo/epel-8/group_git-maint-git-epel-8.repo > /etc/yum.repos.d/group_git-maint-git-epel-8.repo
+     ;;
++  centos9*|alma9*)
++    curl -L https://copr.fedorainfracloud.org/coprs/g/git-maint/git/repo/epel-9/group_git-maint-git-epel-9.repo > /etc/yum.repos.d/group_git-maint-git-epel-9.repo
++    ;;
++  centos10*|alma10*)
++    curl -L https://copr.fedorainfracloud.org/coprs/g/git-maint/git/repo/epel-10/group_git-maint-git-epel-10.repo > /etc/yum.repos.d/group_git-maint-git-epel-10.repo
++    ;;
+   ubuntu*)
+     export DEBIAN_FRONTEND=noninteractive
+     add-apt-repository ppa:git-core/ppa -y
+diff --git a/thirdparty/dill/dill/scripts/dashboard/common.cmake b/thirdparty/dill/dill/scripts/dashboard/common.cmake
+index 4b50bf291..5e448f330 100644
+--- a/thirdparty/dill/dill/scripts/dashboard/common.cmake
++++ b/thirdparty/dill/dill/scripts/dashboard/common.cmake
+@@ -65,7 +65,7 @@
+ #   set(ENV{FC}  /path/to/fc)   # Fortran compiler (optional)
+ #   set(ENV{LD_LIBRARY_PATH} /path/to/vendor/lib) # (if necessary)
+ 
+-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
++cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+ 
+ if(NOT DEFINED dashboard_full)
+   set(dashboard_full TRUE)
 diff --git a/thirdparty/dill/dill/virtual.c b/thirdparty/dill/dill/virtual.c
-index 8a21c4e66..bd47c10a7 100644
+index 2e5356f86..bd47c10a7 100644
 --- a/thirdparty/dill/dill/virtual.c
 +++ b/thirdparty/dill/dill/virtual.c
 @@ -495,11 +495,11 @@ dump_bb(dill_stream c, struct basic_block* bb, int i)
@@ -1656,7 +2678,39 @@ index 8a21c4e66..bd47c10a7 100644
          virtual_print_insn(
              c, NULL,
              ((char*)c->p->virtual.code_base) + j * sizeof(virtual_insn));
-@@ -1825,7 +1825,8 @@ emit_insns(dill_stream c,
+@@ -526,6 +526,19 @@ dump_bbs(dill_stream c)
+     }
+ }
+ 
++#if defined(__GNUC__) && !defined(__clang__)
++#if defined __GNUC__ && defined __GNUC_MINOR__
++# define __GNUC_PREREQ(maj, min) \
++        ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
++#else
++# define __GNUC_PREREQ(maj, min) 0
++#endif
++#  if __GNUC_PREREQ(4,6)
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wstringop-overflow"
++#  endif
++#endif
++/* overflow is confused about operation on bit_vec->vec, suppress warning */
+ static int
+ add_regs(bit_vec dest, bit_vec src)
+ {
+@@ -553,6 +566,11 @@ remove_regs(bit_vec dest, bit_vec src)
+         dest->vec[i] = (dest->vec[i] & ~src->vec[i]);
+     }
+ }
++#if defined(__GNUC__) && !defined(__clang__)
++#  if __GNUC_PREREQ(4,6)
++#pragma GCC diagnostic pop
++#  endif
++#endif
+ 
+ static void
+ clear_bit_vec(bit_vec b)
+@@ -1807,7 +1825,8 @@ emit_insns(dill_stream c,
             virtual_mach_info vmi)
  {
      int label_xlate = 0;
@@ -1666,7 +2720,7 @@ index 8a21c4e66..bd47c10a7 100644
      virtual_insn* ip;
      if (count_verbose == -1) {
          count_verbose = (getenv("DILL_COUNTS") != NULL);
-@@ -2564,9 +2565,9 @@ emit_insns(dill_stream c,
+@@ -2546,9 +2565,9 @@ emit_insns(dill_stream c,
          if (count_verbose) {
              int insn_end = (int)((char*)c->p->cur_ip - (char*)c->p->code_base);
              printf(
@@ -1678,7 +2732,7 @@ index 8a21c4e66..bd47c10a7 100644
          }
      }
      if ((unsigned)ltable[label_xlate].old_location ==
-@@ -3071,7 +3072,8 @@ new_emit_insns(dill_stream c,
+@@ -3053,7 +3072,8 @@ new_emit_insns(dill_stream c,
                 virtual_mach_info vmi)
  {
      int label_xlate = 0;
@@ -1688,7 +2742,7 @@ index 8a21c4e66..bd47c10a7 100644
      reg_state state;
  
      if (count_verbose == -1) {
-@@ -3079,8 +3081,8 @@ new_emit_insns(dill_stream c,
+@@ -3061,8 +3081,8 @@ new_emit_insns(dill_stream c,
      }
      init_reg_state(&state, c);
      state.c = c;
@@ -1699,7 +2753,7 @@ index 8a21c4e66..bd47c10a7 100644
              /* offset is really size, fix that */
              c->p->vregs[j].offset = dill_localb(c, c->p->vregs[j].offset);
          }
-@@ -3089,7 +3091,7 @@ new_emit_insns(dill_stream c,
+@@ -3071,7 +3091,7 @@ new_emit_insns(dill_stream c,
          basic_block bb = &vmi->bblist[i];
          int insn_count = (int)(bb->end - bb->start);
          int insn_start;
@@ -1708,7 +2762,7 @@ index 8a21c4e66..bd47c10a7 100644
              c->p->vregs[j].assign_loc = -1;
              c->p->vregs[j].in_reg = -1;
              c->p->vregs[j].last_use = -1;
-@@ -3097,7 +3099,7 @@ new_emit_insns(dill_stream c,
+@@ -3079,7 +3099,7 @@ new_emit_insns(dill_stream c,
              c->p->vregs[j].update_in_reg = 0;
              c->p->vregs[j].value_in_mem = -1;
          }
@@ -1717,7 +2771,7 @@ index 8a21c4e66..bd47c10a7 100644
              state.param_info[j].assign_loc = -1;
              state.param_info[j].in_reg = -1;
              state.param_info[j].last_use = -1;
-@@ -3109,7 +3111,7 @@ new_emit_insns(dill_stream c,
+@@ -3091,7 +3111,7 @@ new_emit_insns(dill_stream c,
              virtual_insn* ip = &((virtual_insn*)insns)[j];
              update_vreg_info(&state, bb, ip, (int)j);
          }
@@ -1726,7 +2780,7 @@ index 8a21c4e66..bd47c10a7 100644
              if (get_last_use(&state, (int)j + 100) == -1)
                  continue;
              c->p->vregs[j].use_metric *= insn_count;
-@@ -3117,7 +3119,7 @@ new_emit_insns(dill_stream c,
+@@ -3099,7 +3119,7 @@ new_emit_insns(dill_stream c,
                  (c->p->vregs[j].last_use - c->p->vregs[j].value_in_mem + 1);
              c->p->vregs[j].value_in_mem = bit_vec_is_set(bb->regs_used, (int)j);
          }
@@ -1735,7 +2789,7 @@ index 8a21c4e66..bd47c10a7 100644
              if (c->p->c_param_args[j].is_register) {
                  state.param_info[j].update_in_reg = 0;
                  state.param_info[j].value_in_mem = 0;
-@@ -3130,7 +3132,7 @@ new_emit_insns(dill_stream c,
+@@ -3112,7 +3132,7 @@ new_emit_insns(dill_stream c,
          }
          reset_reg_state(&state);
          if (c->dill_debug) {
@@ -1744,7 +2798,7 @@ index 8a21c4e66..bd47c10a7 100644
              dump_bb(c, bb, (int)i);
          }
          insn_start = (int)((char*)c->p->cur_ip - (char*)c->p->code_base);
-@@ -3385,9 +3387,9 @@ new_emit_insns(dill_stream c,
+@@ -3367,9 +3387,9 @@ new_emit_insns(dill_stream c,
          if (count_verbose) {
              int insn_end = (int)((char*)c->p->cur_ip - (char*)c->p->code_base);
              printf(
@@ -1756,7 +2810,7 @@ index 8a21c4e66..bd47c10a7 100644
          }
      }
      if ((unsigned)ltable[label_xlate].old_location ==
-@@ -3419,7 +3421,8 @@ apply_to_each(dill_stream c,
+@@ -3401,7 +3421,8 @@ apply_to_each(dill_stream c,
                virtual_mach_info vmi,
                apply_func func)
  {
@@ -1766,7 +2820,7 @@ index 8a21c4e66..bd47c10a7 100644
  
      for (i = 0; i < vmi->bbcount; i++) {
          basic_block bb = &vmi->bblist[i];
-@@ -3881,7 +3884,8 @@ is_convert_noop(int insn_code)
+@@ -3863,7 +3884,8 @@ is_convert_noop(int insn_code)
      int to_type = insn_code & 0xf;
  
      /* GSE -bug  This test should be for *generated* target, not host */
@@ -1855,8 +2909,41 @@ index 000000000..a0a2ef012
 +
 +    return 0;
 +}
+diff --git a/thirdparty/dill/dill/vtests/multi_test.c b/thirdparty/dill/dill/vtests/multi_test.c
+index b8d6071cb..25e65fdc1 100644
+--- a/thirdparty/dill/dill/vtests/multi_test.c
++++ b/thirdparty/dill/dill/vtests/multi_test.c
+@@ -7,6 +7,7 @@
+ 
+ int main(int argc, char **argv) 
+ { 
++#ifdef VERBOSE_OUTPUT
+     int verbose = 0;
+     int i;
+     for (i=1; i < argc; i++) {
+@@ -14,7 +15,7 @@ int main(int argc, char **argv)
+ 	    verbose++;
+ 	}
+     }
+-
++#endif
+     {
+ 	dill_stream s = dill_create_stream();
+ 	int (*func1)();
+diff --git a/thirdparty/dill/dill/vtests/t1.c b/thirdparty/dill/dill/vtests/t1.c
+index cb820a31e..469a6f913 100644
+--- a/thirdparty/dill/dill/vtests/t1.c
++++ b/thirdparty/dill/dill/vtests/t1.c
+@@ -67,6 +67,7 @@ void a () {
+      if (target == (void*)-1) perror("mmap");
+ #else
+      target = (void*)malloc(dill_code_size(s));
++     (void)target;
+ #endif
+      if (verbose) dill_dump(s);
+ 
 diff --git a/thirdparty/dill/dill/x86_64.c b/thirdparty/dill/dill/x86_64.c
-index e8c410da9..0ebbbeecf 100644
+index 068d403c1..0ebbbeecf 100644
 --- a/thirdparty/dill/dill/x86_64.c
 +++ b/thirdparty/dill/dill/x86_64.c
 @@ -715,7 +715,13 @@ x86_64_save_restore_op(dill_stream s, int save_restore, int type, int reg)
@@ -2160,8 +3247,16 @@ index e8c410da9..0ebbbeecf 100644
      return caller_side_ret_reg;
  }
  
+@@ -2978,6 +3126,7 @@ x86_64_flush(void* base, void* limit)
+     DWORD dummy;
+     size_t size = ((intptr_t)limit - (intptr_t)base);
+     result = VirtualProtect(base, size, PAGE_EXECUTE_READWRITE, &dummy);
++    (void) result;
+ #endif
+ }
+ extern void
 diff --git a/thirdparty/dill/dill/x86_64_rt.c b/thirdparty/dill/dill/x86_64_rt.c
-index f3bca037b..9a7d145b7 100644
+index 2a686a79b..9a7d145b7 100644
 --- a/thirdparty/dill/dill/x86_64_rt.c
 +++ b/thirdparty/dill/dill/x86_64_rt.c
 @@ -24,8 +24,8 @@ dill_x86_64_hidden_ULtoD(size_t a)
@@ -2175,6 +3270,14 @@ index f3bca037b..9a7d145b7 100644
  }
  
  static xfer_entry x86_64_xfer_recs[5] = {
+@@ -94,6 +94,7 @@ x86_64_package_stitch(char* code, call_t* t, dill_pkg pkg)
+     DWORD dummy;
+     result =
+         VirtualProtect(tmp, pkg->code_size, PAGE_EXECUTE_READWRITE, &dummy);
++    (void) result;
+ #endif
+     return tmp + pkg->entry_offset;
+ }
 diff --git a/thirdparty/ffs/ffs/.github/workflows/build-and-test.yml b/thirdparty/ffs/ffs/.github/workflows/build-and-test.yml
 index f48a413e9..98cce5664 100644
 --- a/thirdparty/ffs/ffs/.github/workflows/build-and-test.yml
@@ -2216,6 +3319,19 @@ index f48a413e9..98cce5664 100644
 +          }
      - name: Test
        run: source/scripts/ci/gh-actions/run.sh test
+diff --git a/thirdparty/ffs/ffs/CMakeLists.txt b/thirdparty/ffs/ffs/CMakeLists.txt
+index cabe652a5..ddbf43a0c 100644
+--- a/thirdparty/ffs/ffs/CMakeLists.txt
++++ b/thirdparty/ffs/ffs/CMakeLists.txt
+@@ -318,7 +318,7 @@ if(NOT HAS_IOV_BASE_IOVEC)
+   set(NEED_IOVEC_DEFINE TRUE)
+ endif()
+ 
+-TRY_RUN(RUN_RESULT COMPILE_RESULT
++try_run(FFS_FLOAT_FORMAT_TEST COMPILE_RESULT
+         # Binary directory:
+         ${CMAKE_CURRENT_BINARY_DIR}/
+         # source file
 diff --git a/thirdparty/ffs/ffs/cod/cg.c b/thirdparty/ffs/ffs/cod/cg.c
 index e4642c9ed..d975f5d3c 100644
 --- a/thirdparty/ffs/ffs/cod/cg.c
@@ -3878,7 +4994,7 @@ index 000000000..412eef716
 +list(APPEND CTEST_UPDATE_NOTES_FILES "${CMAKE_CURRENT_LIST_FILE}")
 +include(${CMAKE_CURRENT_LIST_DIR}/windows-common.cmake)
 diff --git a/thirdparty/ffs/ffs/scripts/ci/setup/install-atl.sh b/thirdparty/ffs/ffs/scripts/ci/setup/install-atl.sh
-index 34b6c8ad1..2a347aa0e 100755
+index 023a27bde..2a347aa0e 100755
 --- a/thirdparty/ffs/ffs/scripts/ci/setup/install-atl.sh
 +++ b/thirdparty/ffs/ffs/scripts/ci/setup/install-atl.sh
 @@ -1,10 +1,19 @@
@@ -3902,6 +5018,11 @@ index 34b6c8ad1..2a347aa0e 100755
    -DCMAKE_BUILD_TYPE=$1 \
    -DBUILD_TESTING=OFF \
    -DCMAKE_INSTALL_PREFIX=${PWD}/../install \
+@@ -15,4 +24,3 @@ if [ -f ${PWD}/../install/bin/atl.dll ] && [ -d /c/Windows/system32 ]; then
+    # there's got to be a better way, but haven't found it
+    cp ${PWD}/../install/bin/atl.dll /c/Windows/system32
+ fi
+-
 diff --git a/thirdparty/ffs/ffs/scripts/ci/setup/install-dill.sh b/thirdparty/ffs/ffs/scripts/ci/setup/install-dill.sh
 index 45ca20c83..fa9c73b67 100755
 --- a/thirdparty/ffs/ffs/scripts/ci/setup/install-dill.sh
