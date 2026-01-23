@@ -33,6 +33,7 @@ exit /b 0
   git add .
   git commit --message="Initial commit so we can use git-am"
   git am ..\..\0001-Fix-h_errno-declarations-for-Windows.patch
+  git show
   cd ..
   cd ..
 
