@@ -53,11 +53,18 @@ namespace internal
 // this check can be too costly in some setups
 #if openPMD_USE_INVASIVE_TESTS
 
-        auto &iterationData = *a.containingIteration().first.value();
+        auto maybe_an_iteration = a.containingIteration().first;
+        if (!maybe_an_iteration.has_value())
+        {
+            throw std::runtime_error(
+                "Trying to write to/read from a RecordComponent that is not "
+                "contained by any Iteration.");
+        }
+        auto &iterationData = *maybe_an_iteration.value();
         auto iteration = iterationData.asInternalCopyOf<Iteration>();
         if (iteration.closed() && !iterationData.allow_reopening_implicitly)
         {
-            throw error::WrongAPIUsage(
+            throw std::runtime_error(
                 "Cannot write/read chunks to/from closed Iterations.");
         }
 #endif
