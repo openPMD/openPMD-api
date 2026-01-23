@@ -77,17 +77,23 @@ function install_buildessentials {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.11.0.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
-    file adios2*.tar.gz
-    tar -xzf adios2*.tar.gz
-    rm adios2*.tar.gz
+    # curl -sLo adios2-2.11.0.tar.gz \
+    #     https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
+    # file adios2*.tar.gz
+    # tar -xzf adios2*.tar.gz
+    # rm adios2*.tar.gz
 
-    cd ADIOS2-*
-    # Need this PR for static builds https://github.com/ornladios/ADIOS2/pull/4812
-    # Since the PR does not cleanly merge, this is a custom patch that checks out
-    # the subdirectories of the atl, dill, EVPath and ffs thirdparty libraries
-    patch -p1 ../0001-Pull-in-atl-dill-EVPath-ffs-after-merging-https-gith.patch
+    # cd ADIOS2-*
+    # # Need this PR for static builds https://github.com/ornladios/ADIOS2/pull/4812
+    # # Since the PR does not cleanly merge, this is a custom patch that checks out
+    # # the subdirectories of the atl, dill, EVPath and ffs thirdparty libraries
+    # patch -p1 ../0001-Pull-in-atl-dill-EVPath-ffs-after-merging-https-gith.patch
+    # cd ..
+
+    # temporary, need to try sth
+    git clone https://github.com/ornladios/ADIOS2 ADIOS2-2.11.0
+    cd ADIOS2-2.11.0
+    git checkout 7a21e4ef2f5def6659e67084b5210a66582d4b1a
     cd ..
 
     # build
