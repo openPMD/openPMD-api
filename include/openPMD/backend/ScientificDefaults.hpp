@@ -1,5 +1,6 @@
 #pragma once
 
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Access.hpp"
 
 #include <type_traits>
@@ -31,15 +32,15 @@ private:
         -> ConfigAttribute<Child, GetDefaultValue>;
 
     template <typename Parent, bool write>
-    void addParentDefaults();
+    void addParentDefaults(OpenpmdStandard);
 
     template <bool write>
-    void defaults_impl();
+    void defaults_impl(OpenpmdStandard);
 
 protected:
-    void addDefaultsRecursively();
-    void addDefaults();
-    void readDefaults();
+    void addDefaultsRecursively(OpenpmdStandard);
+    void addDefaults(OpenpmdStandard);
+    void readDefaults(OpenpmdStandard);
 };
 
 template <typename Child>

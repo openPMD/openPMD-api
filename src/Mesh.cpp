@@ -412,18 +412,6 @@ void Mesh::flush_impl(
                     comp.second.flush(comp.first, flushParams);
             }
         }
-        if (!containsAttribute("gridUnitSI"))
-        {
-            if (IOHandler()->m_standard < OpenpmdStandard::v_2_0_0)
-            {
-                setGridUnitSI(1);
-            }
-            else
-            {
-                setGridUnitSIPerDimension(
-                    std::vector<double>(retrieveDimensionality(), 1));
-            }
-        }
         flushAttributes(flushParams);
     }
 }
@@ -434,50 +422,7 @@ void Mesh::read()
         IOHandler()->m_verify_homogeneous_extents);
     internal::EraseStaleEntries<Mesh> map{*this};
 
-    internal::ScientificDefaults<Mesh>::readDefaults();
-
-    Parameter<Operation::READ_ATT> aRead;
-
-    // TODO move this to ScientificDefaults
-    aRead.name = "gridUnitSI";
-    IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush(internal::defaultFlushParams);
-    if (IOHandler()->m_standard >= OpenpmdStandard::v_2_0_0)
-    {
-        if (auto val = Attribute(Attribute::from_any, *aRead.m_resource)
-                           .getOptional<std::vector<double>>();
-            val.has_value())
-            setGridUnitSIPerDimension(val.value());
-        else
-            throw error::ReadError(
-                error::AffectedObject::Attribute,
-                error::Reason::UnexpectedContent,
-                {},
-                "Unexpected Attribute datatype for 'gridUnitSI' "
-                "(expected vector of double, found " +
-                    datatypeToString(
-                        Attribute(Attribute::from_any, *aRead.m_resource)
-                            .dtype) +
-                    ")");
-    }
-    else
-    {
-        if (auto val = Attribute(Attribute::from_any, *aRead.m_resource)
-                           .getOptional<double>();
-            val.has_value())
-            setGridUnitSI(val.value());
-        else
-            throw error::ReadError(
-                error::AffectedObject::Attribute,
-                error::Reason::UnexpectedContent,
-                {},
-                "Unexpected Attribute datatype for 'gridUnitSI' "
-                "(expected double, found " +
-                    datatypeToString(
-                        Attribute(Attribute::from_any, *aRead.m_resource)
-                            .dtype) +
-                    ")");
-    }
+    internal::ScientificDefaults<Mesh>::readDefaults(IOHandler()->m_standard);
 
     if (scalar())
     {

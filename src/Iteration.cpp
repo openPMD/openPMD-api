@@ -123,7 +123,7 @@ Iteration &Iteration::close(bool _flush)
 
     if (access::write(IOHandler()->m_frontendAccess))
     {
-        addDefaultsRecursively();
+        addDefaultsRecursively(IOHandler()->m_standard);
     }
 
     if (_flush)
@@ -513,7 +513,8 @@ void Iteration::read_impl(std::string const &groupPath)
     pOpen.path = groupPath;
     IOHandler()->enqueue(IOTask(this, pOpen));
 
-    internal::ScientificDefaults<Iteration>::readDefaults();
+    internal::ScientificDefaults<Iteration>::readDefaults(
+        IOHandler()->m_standard);
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */

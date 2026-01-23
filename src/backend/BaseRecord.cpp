@@ -768,7 +768,8 @@ inline bool BaseRecord<T_elem>::scalar() const
 template <typename T_elem>
 inline void BaseRecord<T_elem>::readBase()
 {
-    internal::ScientificDefaults<BaseRecord<T_elem>>::readDefaults();
+    internal::ScientificDefaults<BaseRecord<T_elem>>::readDefaults(
+        this->IOHandler()->m_standard);
 }
 
 template <typename T_elem>

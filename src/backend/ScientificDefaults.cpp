@@ -1,4 +1,5 @@
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/backend/ScientificDefaults_internal.hpp"
 
@@ -99,23 +100,23 @@ template <typename GetDefaultValue>
 
 template <typename Child>
 template <typename Parent, bool write>
-void ScientificDefaults<Child>::addParentDefaults()
+void ScientificDefaults<Child>::addParentDefaults(OpenpmdStandard standard)
 {
     // Cannot directly call read_impl as it is private
     if constexpr (write)
     {
-        asChild().ScientificDefaults<Parent>::addDefaults();
+        asChild().ScientificDefaults<Parent>::addDefaults(standard);
     }
     else
     {
-        asChild().ScientificDefaults<Parent>::readDefaults();
+        asChild().ScientificDefaults<Parent>::readDefaults(standard);
     }
 }
 
 template <typename Child>
-void ScientificDefaults<Child>::addDefaultsRecursively()
+void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
 {
-    addDefaults();
+    addDefaults(standard);
     if constexpr (IsContainer_v<Child>)
     {
         using Container_t = AsContainer_t<Child>;
@@ -125,7 +126,8 @@ void ScientificDefaults<Child>::addDefaultsRecursively()
             for (auto &[_, right] : asChild())
             {
                 (void)_;
-                right.ScientificDefaults<mapped_type>::addDefaultsRecursively();
+                right.ScientificDefaults<mapped_type>::addDefaultsRecursively(
+                    standard);
             }
         }
     }
@@ -136,12 +138,13 @@ void ScientificDefaults<Child>::addDefaultsRecursively()
         for (auto &[_, right] : asChild().meshes)
         {
             (void)_;
-            right.ScientificDefaults<Mesh>::addDefaultsRecursively();
+            right.ScientificDefaults<Mesh>::addDefaultsRecursively(standard);
         }
         for (auto &[_, right] : asChild().particles)
         {
             (void)_;
-            right.ScientificDefaults<ParticleSpecies>::addDefaultsRecursively();
+            right.ScientificDefaults<ParticleSpecies>::addDefaultsRecursively(
+                standard);
         }
     }
     else if constexpr (std::is_same_v<Child, ParticleSpecies>)
@@ -149,7 +152,8 @@ void ScientificDefaults<Child>::addDefaultsRecursively()
         for (auto &[_, right] : asChild().particlePatches)
         {
             (void)_;
-            right.ScientificDefaults<PatchRecord>::addDefaultsRecursively();
+            right.ScientificDefaults<PatchRecord>::addDefaultsRecursively(
+                standard);
         }
     }
 }
@@ -220,7 +224,7 @@ auto ensureFloatingScalar(SetterFunctor &&set)
 
 template <typename Child>
 template <bool write>
-void ScientificDefaults<Child>::defaults_impl()
+void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 {
     using maybe_read_error = std::optional<error::ReadError>;
     constexpr auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
@@ -376,7 +380,32 @@ void ScientificDefaults<Child>::defaults_impl()
                 asChild().setAttribute("timeOffset", val);
             }))(wor);
 
-        addParentDefaults<BaseRecord<MeshRecordComponent>, write>();
+        if (standard >= OpenpmdStandard::v_2_0_0)
+        {
+            defaultAttribute(
+                "gridUnitSI",
+                [&]() {
+                    if (dimensionality < 100)
+                    {
+                        return std::vector<double>(dimensionality, 1.);
+                    }
+                    else
+                    {
+                        return std::vector<double>{1.};
+                    }
+                })
+                .template withSetter<std::vector<double> const &>(
+                    &Mesh::setGridUnitSIPerDimension)
+                .withReader()(wor);
+        }
+        else
+        {
+            defaultAttribute("gridUnitSI", 1.0)
+                .withSetter(&Mesh::setGridUnitSI)
+                .withReader()(wor);
+        }
+
+        addParentDefaults<BaseRecord<MeshRecordComponent>, write>(standard);
     }
     else if constexpr (std::is_same_v<Child, Record>)
     {
@@ -401,11 +430,11 @@ void ScientificDefaults<Child>::defaults_impl()
                 asChild().setAttribute("timeOffset", val);
             }))(wor);
 
-        addParentDefaults<BaseRecord<RecordComponent>, write>();
+        addParentDefaults<BaseRecord<RecordComponent>, write>(standard);
     }
     else if constexpr (std::is_same_v<Child, PatchRecord>)
     {
-        addParentDefaults<BaseRecord<PatchRecordComponent>, write>();
+        addParentDefaults<BaseRecord<PatchRecordComponent>, write>(standard);
     }
     else if constexpr (std::is_same_v<Child, RecordComponent>)
     {
@@ -434,7 +463,7 @@ void ScientificDefaults<Child>::defaults_impl()
                 this->asChild().setPosition(static_cast<decltype(val)>(val));
             }))(wor);
 
-        addParentDefaults<RecordComponent, write>();
+        addParentDefaults<RecordComponent, write>(standard);
     }
     else if constexpr (std::is_same_v<Child, PatchRecordComponent>)
     {
@@ -451,15 +480,15 @@ void ScientificDefaults<Child>::defaults_impl()
 }
 
 template <typename Child>
-void ScientificDefaults<Child>::addDefaults()
+void ScientificDefaults<Child>::addDefaults(OpenpmdStandard standard)
 {
-    defaults_impl</* write = */ true>();
+    defaults_impl</* write = */ true>(standard);
 }
 
 template <typename Child>
-void ScientificDefaults<Child>::readDefaults()
+void ScientificDefaults<Child>::readDefaults(OpenpmdStandard standard)
 {
-    defaults_impl</* write = */ false>();
+    defaults_impl</* write = */ false>(standard);
 }
 
 template class ScientificDefaults<Iteration>;
