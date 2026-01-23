@@ -75,9 +75,9 @@ function install_buildessentials {
 }
 
 function build_adios2 {
-    if [ -e -stamp ]; then return; fi
+    if [ -e adios2-stamp ]; then return; fi
 
-    # curl -sLo -2.11.0.tar.gz \
+    # curl -sLo adios2-2.11.0.tar.gz \
     #     https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
     # file adios2*.tar.gz
     # tar -xzf adios2*.tar.gz
