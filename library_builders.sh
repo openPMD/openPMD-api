@@ -94,7 +94,7 @@ function build_adios2 {
     git clone https://github.com/ornladios/ADIOS2 ADIOS2-2.11.0
     cd ADIOS2-2.11.0
     git checkout 7a21e4ef2f5def6659e67084b5210a66582d4b1a
-    patch -p1 ../0001-Try-another-fix.patch
+    patch -p1 ../ADIOS2_4820.patch
     git diff
     cd ..
 
@@ -125,7 +125,6 @@ function build_adios2 {
         -DCMAKE_VERBOSE_MAKEFILE=ON               \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
-        -DFFS_USE_DILL=FALSE                      \
         -DADIOS2_INSTALL_GENERATE_CONFIG=OFF      \
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
 

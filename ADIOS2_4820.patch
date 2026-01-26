@@ -1,0 +1,42 @@
+From c7961dd9e12d72b279db75fd184d2b3b4f151560 Mon Sep 17 00:00:00 2001
+From: Greg Eisenhauer <eisen@cc.gatech.edu>
+Date: Mon, 26 Jan 2026 15:55:08 -0500
+Subject: [PATCH] Fix MacOS Static build without FFI
+
+---
+ thirdparty/EVPath/EVPath/EVPathConfigCommon.cmake.in | 4 +++-
+ thirdparty/ffs/CMakeLists.txt                        | 6 +++++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/thirdparty/EVPath/EVPath/EVPathConfigCommon.cmake.in b/thirdparty/EVPath/EVPath/EVPathConfigCommon.cmake.in
+index 16afb7ef7d..9b35728090 100644
+--- a/thirdparty/EVPath/EVPath/EVPathConfigCommon.cmake.in
++++ b/thirdparty/EVPath/EVPath/EVPathConfigCommon.cmake.in
+@@ -4,7 +4,9 @@ find_dependency(atl @atl_VERSION@)
+ find_dependency(ffs @ffs_VERSION@)
+ 
+ if(NOT @BUILD_SHARED_LIBS@)
+-  find_dependency(dill @dill_VERSION@)
++  if(@HAVE_COD_H@)
++    find_dependency(dill @dill_VERSION@)
++  endif()
+ 
+   if(@NVML_FOUND@)
+     find_dependency(NVML)
+diff --git a/thirdparty/ffs/CMakeLists.txt b/thirdparty/ffs/CMakeLists.txt
+index e47512f581..ebead5095d 100644
+--- a/thirdparty/ffs/CMakeLists.txt
++++ b/thirdparty/ffs/CMakeLists.txt
+@@ -4,7 +4,11 @@ set(BUILD_TESTING OFF)
+ set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_CMAKEDIR}/thirdparty")
+ 
+ set(FFS_USE_ATL ON CACHE INTERNAL "")
+-set(FFS_USE_DILL ON CACHE INTERNAL "")
++if(TARGET dill::dill)
++  set(FFS_USE_DILL ON CACHE INTERNAL "")
++else()
++  set(FFS_USE_DILL OFF CACHE INTERNAL "")
++endif()      
+ set(FFS_LIBRARIES_ONLY ON CACHE INTERNAL "")
+ set(FFS_QUIET ON CACHE INTERNAL "")
+ set(FFS_LIBRARY_PREFIX adios2${ADIOS2_LIBRARY_SUFFIX}_ CACHE INTERNAL "")
