@@ -21,6 +21,8 @@ exit /b 0
     https://github.com/ornladios/ADIOS2/archive/v2.11.0.zip
   powershell Expand-Archive adios2-2.11.0.zip -DestinationPath dep-adios2
 
+  curl -sLo dep-adios2/ADIOS2-2.11.0/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/13e9747799e32841b29f166c2bcdfd82ee915f1a.patch
+
   :: Use git-am for applying the patch,
   :: for some reason, python -m patch just silently does nothing.
   :: git-am requires a Git repository to apply a patch, but the release zip
@@ -32,8 +34,7 @@ exit /b 0
   git config user.name "Tooling"
   git add .
   git commit --message="Initial commit so we can use git-am"
-  git am ..\..\..\0001-Fix-h_errno-declarations-for-Windows.patch
-  git show
+  git am patch.diff
   cd ..
   cd ..
 
