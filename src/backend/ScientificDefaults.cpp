@@ -25,56 +25,6 @@
 
 namespace openPMD::internal
 {
-template <typename RecordType, typename GetDefaultValue>
-template <typename S>
-auto ConfigAttribute<RecordType, GetDefaultValue>::withSetter(
-    SetterType<S> setter)
-    && -> ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetterType<S>>
-{
-    return ConfigAttributeWithSetter<
-        RecordType,
-        GetDefaultValue,
-        SetterType<S>>{std::move(*this), setter};
-}
-template <typename RecordType, typename GetDefaultValue>
-auto ConfigAttribute<RecordType, GetDefaultValue>::withGenericSetter()
-    && -> ConfigAttributeWithSetter<RecordType, GetDefaultValue, GenericSetter>
-{
-    return ConfigAttributeWithSetter<
-        RecordType,
-        GetDefaultValue,
-        GenericSetter>{std::move(*this), GenericSetter{}};
-}
-
-template <
-    typename RecordType,
-    typename GetDefaultValue,
-    typename SetDefaultValue>
-template <typename ExpectedAttributeType, typename... Args>
-[[nodiscard]] auto
-ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>::
-    withReader(Args &&...args) &&
-{
-    return (std::move(*this))
-        .configureReaders()
-        .template withReader<ExpectedAttributeType>(
-            std::forward<Args>(args)...);
-}
-
-template <
-    typename RecordType,
-    typename GetDefaultValue,
-    typename SetDefaultValue>
-[[nodiscard]] auto
-ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>::
-    configureReaders() && -> ConfigAttributeWithSetterAndReader<
-        RecordType,
-        GetDefaultValue,
-        SetDefaultValue,
-        AttributeReaderBottom>
-{
-    return {std::move(*this), AttributeReaderBottom{}};
-}
 
 template <typename Child>
 auto ScientificDefaults<Child>::asChild() -> Child &
@@ -89,13 +39,11 @@ auto ScientificDefaults<Child>::asChild() const -> Child const &
 }
 
 template <typename Child>
-template <typename GetDefaultValue>
-[[nodiscard]] auto ScientificDefaults<Child>::defaultAttribute(
-    char const *attrName, GetDefaultValue &&getDefaultValue)
-    -> ConfigAttribute<Child, GetDefaultValue>
+[[nodiscard]] auto
+ScientificDefaults<Child>::defaultAttribute(char const *attrName)
+    -> ConfigAttribute
 {
-    return ConfigAttribute{
-        asChild(), attrName, std::forward<GetDefaultValue>(getDefaultValue)};
+    return ConfigAttribute{asChild(), attrName};
 }
 
 template <typename Child>
@@ -249,25 +197,26 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 
     if constexpr (std::is_same_v<Child, Iteration>)
     {
-        defaultAttribute("time", 0.)
-            .withSetter(&Iteration::setTime)
+        defaultAttribute("time")
+            .template withSetter<Iteration>(0., &Iteration::setTime)
             .withReader(ensureFloatingScalar(
                 [this](auto &&val) { this->asChild().setTime(val); }))(wor);
-        defaultAttribute("dt", 1.)
-            .withSetter(&Iteration::setDt)
+        defaultAttribute("dt")
+            .template withSetter<Iteration>(1., &Iteration::setDt)
             .withReader(ensureFloatingScalar(
                 [this](auto &&val) { this->asChild().setDt(val); }))(wor);
-        defaultAttribute("timeUnitSI", 1.0)
-            .withSetter(&Iteration::setTimeUnitSI)
+        defaultAttribute("timeUnitSI")
+            .template withSetter<Iteration>(1.0, &Iteration::setTimeUnitSI)
             .withReader()(wor);
     }
     else if constexpr (std::is_same_v<Child, Mesh>)
     {
         auto dimensionality = asChild().retrieveDimensionality();
 
-        defaultAttribute("geometry", Mesh::Geometry::cartesian)
-            .withSetter(&Mesh::setGeometry)
-            .template withReader<std::string>([](Mesh &m, std::string val) {
+        defaultAttribute("geometry")
+            .template withSetter<Mesh>(
+                Mesh::Geometry::cartesian, &Mesh::setGeometry)
+            .withReader([](Mesh &m, std::string val) {
                 if ("cartesian" == val)
                     m.setGeometry(Mesh::Geometry::cartesian);
                 else if ("thetaMode" == val)
@@ -280,128 +229,124 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                     m.setGeometry(std::move(val));
             })(wor);
 
-        defaultAttribute("dataOrder", Mesh::DataOrder::C)
-            .withSetter(&Mesh::setDataOrder)
-            .template withReader<char>(
-                [](Mesh &m, char val) -> maybe_read_error {
-                    if (val == 'C' || val == 'F')
-                    {
-                        m.setDataOrder(static_cast<Mesh::DataOrder>(val));
-                        return std::nullopt;
-                    }
-                    else
-                    {
-                        return error::ReadError(
-                            error::AffectedObject::Attribute,
-                            error::Reason::UnexpectedContent,
-                            std::nullopt,
-                            "Data order must be either C or F.");
-                    }
-                })(wor);
-
-        defaultAttribute(
-            "axisLabels",
-            [&]() -> std::vector<std::string> {
-                switch (dimensionality)
+        defaultAttribute("dataOrder")
+            .template withSetter<Mesh>(Mesh::DataOrder::C, &Mesh::setDataOrder)
+            .withReader([](Mesh &m, char val) -> maybe_read_error {
+                if (val == 'C' || val == 'F')
                 {
-                case 0:
-                case 1:
-                    return {"x"};
-                case 2:
-                    return {"x", "y"};
-                case 3:
-                    return {"x", "y", "z"};
-                default:
-                    if (dimensionality < 100)
-                    {
-                        // x1, x2, x3, x4, ...
-                        std::vector<std::string> res;
-                        res.reserve(dimensionality);
-                        for (uint64_t i = 0; i < dimensionality; ++i)
-                        {
-                            res.emplace_back("x" + std::to_string(i));
-                        }
-                        return res;
-                    }
-                    else
-                    {
-                        return {
-                            "Please verify dimensionality. Was inferred as '" +
-                            std::to_string(dimensionality) +
-                            "'. Seems a bit much."};
-                    }
-                }
-                return std::vector<std::string>{"x", "y", "z"};
-            })
-            .template withSetter<std::vector<std::string> const &>(
-                &Mesh::setAxisLabels)
-            .withReader()(wor);
-
-        defaultAttribute(
-            "gridSpacing",
-            [&]() {
-                if (dimensionality < 100)
-                {
-                    return std::vector<double>(dimensionality, 1.0);
+                    m.setDataOrder(static_cast<Mesh::DataOrder>(val));
+                    return std::nullopt;
                 }
                 else
                 {
-                    return std::vector<double>{1.0};
+                    return error::ReadError(
+                        error::AffectedObject::Attribute,
+                        error::Reason::UnexpectedContent,
+                        std::nullopt,
+                        "Data order must be either C or F.");
                 }
-            })
-            .template withSetter<std::vector<double> const &>(
+            })(wor);
+
+        defaultAttribute("axisLabels")
+            .template withSetter<Mesh, std::vector<std::string> const &>(
+                [&]() -> std::vector<std::string> {
+                    switch (dimensionality)
+                    {
+                    case 0:
+                    case 1:
+                        return {"x"};
+                    case 2:
+                        return {"x", "y"};
+                    case 3:
+                        return {"x", "y", "z"};
+                    default:
+                        if (dimensionality < 100)
+                        {
+                            // x1, x2, x3, x4, ...
+                            std::vector<std::string> res;
+                            res.reserve(dimensionality);
+                            for (uint64_t i = 0; i < dimensionality; ++i)
+                            {
+                                res.emplace_back("x" + std::to_string(i));
+                            }
+                            return res;
+                        }
+                        else
+                        {
+                            return {
+                                "Please verify dimensionality. Was inferred as "
+                                "'" +
+                                std::to_string(dimensionality) +
+                                "'. Seems a bit much."};
+                        }
+                    }
+                    return std::vector<std::string>{"x", "y", "z"};
+                },
+                &Mesh::setAxisLabels)
+            .withReader()(wor);
+
+        defaultAttribute("gridSpacing")
+            .template withSetter<Mesh, std::vector<double> const &>(
+                [&]() {
+                    if (dimensionality < 100)
+                    {
+                        return std::vector<double>(dimensionality, 1.0);
+                    }
+                    else
+                    {
+                        return std::vector<double>{1.0};
+                    }
+                },
                 &Mesh::setGridSpacing)
             .withReader(ensureFloatingVector([this](auto &&val) {
                 asChild().setGridSpacing(static_cast<decltype(val)>(val));
             }))(wor);
 
-        defaultAttribute(
-            "gridGlobalOffset",
-            [&]() {
-                if (dimensionality < 100)
-                {
-                    return std::vector<double>(dimensionality, 0.0);
-                }
-                else
-                {
-                    return std::vector<double>{0.0};
-                }
-            })
-            .template withSetter<std::vector<double> const &>(
+        defaultAttribute("gridGlobalOffset")
+            .template withSetter<Mesh, std::vector<double> const &>(
+                [&]() {
+                    if (dimensionality < 100)
+                    {
+                        return std::vector<double>(dimensionality, 0.0);
+                    }
+                    else
+                    {
+                        return std::vector<double>{0.0};
+                    }
+                },
                 &Mesh::setGridGlobalOffset)
             .withReader(
                 /* gridGlobalOffset requires vector<double> precisely, so no
                    handling for different floating types here */
                 )(wor);
 
-        defaultAttribute("timeOffset", 0.f)
-            .withSetter(&Mesh::setTimeOffset)
+        defaultAttribute("timeOffset")
+            .template withSetter<Mesh>(0.f, &Mesh::setTimeOffset)
             .withReader(ensureFloatingScalar([this](auto &&val) {
                 asChild().setAttribute("timeOffset", val);
             }))(wor);
 
         if (standard >= OpenpmdStandard::v_2_0_0)
         {
-            defaultAttribute(
-                "gridUnitSI",
-                [&]() {
-                    if (dimensionality < 100)
-                    {
-                        return std::vector<double>(dimensionality, 1.);
-                    }
-                    else
-                    {
-                        return std::vector<double>{1.};
-                    }
-                })
-                .template withSetter<std::vector<double> const &>(
+            defaultAttribute("gridUnitSI")
+                .template withSetter<Mesh, std::vector<double> const &>(
+                    [&]() {
+                        if (dimensionality < 100)
+                        {
+                            return std::vector<double>(dimensionality, 1.);
+                        }
+                        else
+                        {
+                            return std::vector<double>{1.};
+                        }
+                    },
                     &Mesh::setGridUnitSIPerDimension)
                 .withReader()(wor);
         }
         else
         {
-            defaultAttribute("gridUnitSI", 1.0)
-                .withSetter(&Mesh::setGridUnitSI)
+            defaultAttribute("gridUnitSI")
+                .template withSetter<Mesh>(1.0, &Mesh::setGridUnitSI)
                 .withReader()(wor);
         }
 
@@ -409,23 +354,25 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
     }
     else if constexpr (std::is_same_v<Child, Record>)
     {
-        defaultAttribute("timeOffset", 0.f)
-            .withSetter (&Record::setTimeOffset)(wor);
+        defaultAttribute("timeOffset")
+            .template withSetter<Record>(0.f, &Record::setTimeOffset)(wor);
 
         auto const &keyInParent = asChild().writable().ownKeyWithinParent;
         if (keyInParent == "position" || keyInParent == "positionOffset")
         {
-            defaultAttribute(
-                "unitDimension",
-                []() {
-                    return unit_representations::AsMap{{UnitDimension::L, 1.0}};
-                })
-                .template withSetter<unit_representations::AsMap const &> (
+            defaultAttribute("unitDimension")
+                .template withSetter<
+                    Record,
+                    unit_representations::AsMap const &>(
+                    []() {
+                        return unit_representations::AsMap{
+                            {UnitDimension::L, 1.0}};
+                    },
                     &Record::setUnitDimension)(wor);
         }
 
-        defaultAttribute("timeOffset", 0.f)
-            .withSetter(&Record::setTimeOffset)
+        defaultAttribute("timeOffset")
+            .template withSetter<Record>(0.f, &Record::setTimeOffset)
             .withReader(ensureFloatingScalar([this](auto &&val) {
                 asChild().setAttribute("timeOffset", val);
             }))(wor);
@@ -438,27 +385,28 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
     }
     else if constexpr (std::is_same_v<Child, RecordComponent>)
     {
-        defaultAttribute("unitSI", 1.0)
-            .withSetter(&RecordComponent::setUnitSI)
+        defaultAttribute("unitSI")
+            .template withSetter<RecordComponent>(
+                1.0, &RecordComponent::setUnitSI)
             .withReader()(wor);
     }
     else if constexpr (std::is_same_v<Child, MeshRecordComponent>)
     {
         auto dimensionality = asChild().getDimensionality();
 
-        defaultAttribute(
-            "position",
-            [&]() {
-                if (dimensionality < 100)
-                {
-                    return std::vector<double>(dimensionality, 0.5);
-                }
-                else
-                {
-                    return std::vector<double>{0.0};
-                }
-            })
-            .withSetter(&MeshRecordComponent::setPosition)
+        defaultAttribute("position")
+            .template withSetter<MeshRecordComponent>(
+                [&]() {
+                    if (dimensionality < 100)
+                    {
+                        return std::vector<double>(dimensionality, 0.5);
+                    }
+                    else
+                    {
+                        return std::vector<double>{0.0};
+                    }
+                },
+                &MeshRecordComponent::setPosition)
             .withReader(ensureFloatingVector([this](auto &&val) {
                 this->asChild().setPosition(static_cast<decltype(val)>(val));
             }))(wor);
@@ -473,8 +421,8 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
     }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {
-        defaultAttribute("unitDimension", unit_representations::AsArray{})
-            .withGenericSetter()
+        defaultAttribute("unitDimension")
+            .withGenericSetter(unit_representations::AsArray{})
             .withReader()(wor);
     }
 }

@@ -8,6 +8,7 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 
+#include <functional>
 #include <iostream>
 #include <type_traits>
 #include <variant>
@@ -61,7 +62,7 @@ namespace
             [](auto const &val) { write_val_to_stderr(val); },
             a.getVariant<attribute_types>());
         return std::cerr;
-    };
+    }
 
 } // namespace
 enum class WriteOrRead : std::uint8_t
@@ -70,70 +71,97 @@ enum class WriteOrRead : std::uint8_t
     Read
 };
 
-struct GenericSetter
-{
-    /* use setAttribute() */
-};
-
-template <typename, typename, typename>
-struct ConfigAttributeWithSetter;
+template <typename>
+struct ConfigAttributeWithSetterAndReader;
 
 /////////////////////
 // ConfigAttribute //
 // //////////////////
 
-template <typename RecordType, typename GetDefaultValue>
 struct ConfigAttribute
 {
-    using DefaultValue = detail::CallResult_t<GetDefaultValue>;
-    template <typename S>
-    using SetterType = RecordType &(
-        RecordType::
-            *)(std::conditional_t<
-               std::is_void_v<S>,
-               std::remove_reference_t<detail::CallResult_t<GetDefaultValue>>,
-               S>);
-
-    RecordType &child;
+    Attributable &child;
     char const *attrName;
-    GetDefaultValue &&getDefaultValue;
+    std::function<void(Attributable &)> initDefaultAttribute;
 
-    ConfigAttribute(
-        RecordType &child_in,
-        char const *attrName_in,
-        GetDefaultValue &&getDefaultValue_in)
-        : child(child_in)
-        , attrName(attrName_in)
-        , getDefaultValue(std::forward<GetDefaultValue>(getDefaultValue_in))
+    ConfigAttribute(Attributable &child_in, char const *attrName_in)
+        : child(child_in), attrName(attrName_in)
     {}
 
     ConfigAttribute(ConfigAttribute const &) = delete;
-    ConfigAttribute(ConfigAttribute &&) = default;
+    ConfigAttribute(ConfigAttribute &&) = delete;
 
     ConfigAttribute &operator=(ConfigAttribute const &) = delete;
-    ConfigAttribute &operator=(ConfigAttribute &&) = default;
+    ConfigAttribute &operator=(ConfigAttribute &&) = delete;
 
-    template <typename S = void>
-    [[nodiscard]] auto
-    withSetter(SetterType<S>) && -> ConfigAttributeWithSetter<
-        RecordType,
-        GetDefaultValue,
-        SetterType<S>>;
-
-    [[nodiscard]] auto withGenericSetter() && -> ConfigAttributeWithSetter<
-        RecordType,
-        GetDefaultValue,
-        GenericSetter>;
-
-    auto get() -> DefaultValue
+    template <typename RecordType, typename S = void, typename GetDefaultValue>
+    [[nodiscard]] auto withSetter(
+        GetDefaultValue &&getDefaultVal,
+        RecordType &(RecordType::*setDefaultVal)(
+            std::conditional_t<
+                std::is_void_v<S>,
+                detail::CallResult_t<GetDefaultValue>,
+                S>)) -> ConfigAttribute &
     {
-        if constexpr (detail::IsCallable_v<GetDefaultValue>)
+        initDefaultAttribute = [getDefaultVal_lambda = std::move(getDefaultVal),
+                                setDefaultVal](Attributable &attr) {
+            RecordType *record = dynamic_cast<RecordType *>(&attr);
+            if (!record)
+            {
+                throw error::Internal("dynamic cast failure");
+            }
+            if constexpr (detail::IsCallable_v<GetDefaultValue>)
+            {
+                ((*record).*setDefaultVal)(getDefaultVal_lambda());
+            }
+            else
+            {
+                ((*record).*setDefaultVal)(std::move(getDefaultVal_lambda));
+            }
+        };
+        return *this;
+    }
+
+    template <typename DefaultValue>
+    [[nodiscard]] auto withGenericSetter(DefaultValue &&defaultVal)
+        -> ConfigAttribute &
+    {
+        initDefaultAttribute = [this,
+                                defaultVal_lambda =
+                                    std::forward<DefaultValue &&>(defaultVal)](
+                                   Attributable &attr) {
+            attr.setAttribute(this->attrName, std::move(defaultVal_lambda));
+        };
+        return *this;
+    }
+
+    template <typename... Args>
+    [[nodiscard]] auto withReader(Args &&...) -> ConfigAttribute &
+    {
+        // TODO
+        return *this;
+    }
+
+    [[nodiscard]] auto configureReaders() -> ConfigAttribute &
+    {
+        // TODO
+        return *this;
+    }
+    void operator()(WriteOrRead wor)
+    {
+        switch (wor)
         {
-            return std::forward<GetDefaultValue>(getDefaultValue)();
-        }
-        else
-        {
-            return std::forward<GetDefaultValue>(getDefaultValue);
+        case WriteOrRead::Write:
+            if (this->child.containsAttribute(this->attrName))
+            {
+                return;
+            }
+            this->initDefaultAttribute(this->child);
+            break;
+        case WriteOrRead::Read:
+            // Reading implemented by subclass
+            // ConfigAttributeWithSetterAndReader
+            break;
         }
     }
 };
@@ -263,84 +291,12 @@ struct AttributeReader
     }
 };
 
-template <typename, typename, typename, typename>
-struct ConfigAttributeWithSetterAndReader;
-
-///////////////////////////////
-// ConfigAttributeWithSetter //
-///////////////////////////////
-
-template <
-    typename RecordType,
-    typename GetDefaultValue,
-    typename SetDefaultValue>
-struct ConfigAttributeWithSetter : ConfigAttribute<RecordType, GetDefaultValue>
-{
-    using parent_t = ConfigAttribute<RecordType, GetDefaultValue>;
-    using DefaultValue = typename parent_t::DefaultValue;
-
-    ConfigAttributeWithSetter(parent_t &&par, SetDefaultValue setter_in)
-        : parent_t(std::move(par)), setter(setter_in)
-    {}
-
-    SetDefaultValue setter;
-    static_assert(
-        std::is_member_function_pointer_v<SetDefaultValue> ||
-        std::is_same_v<SetDefaultValue, GenericSetter>);
-
-    template <typename ExpectedAttributeType = DefaultValue, typename... Args>
-    [[nodiscard]] auto withReader(Args &&...) &&;
-
-    [[nodiscard]] auto
-    configureReaders() && -> ConfigAttributeWithSetterAndReader<
-        RecordType,
-        GetDefaultValue,
-        SetDefaultValue,
-        AttributeReaderBottom>;
-
-    void set(DefaultValue &&val)
-    {
-        if constexpr (std::is_same_v<SetDefaultValue, GenericSetter>)
-        {
-            this->child.setAttribute(
-                this->attrName, std::forward<DefaultValue>(val));
-        }
-        else
-        {
-            (this->child.*setter)(std::forward<DefaultValue>(val));
-        }
-    }
-
-    void operator()(WriteOrRead wor)
-    {
-        switch (wor)
-        {
-        case WriteOrRead::Write:
-            if (this->child.containsAttribute(this->attrName))
-            {
-                return;
-            }
-            this->set(this->get());
-            break;
-        case WriteOrRead::Read:
-            // Reading implemented by subclass
-            // ConfigAttributeWithSetterAndReader
-            break;
-        }
-    }
-};
-
 ////////////////////////////////////////
 // ConfigAttributeWithSetterAndReader //
 ////////////////////////////////////////
-
-template <
-    typename RecordType,
-    typename GetDefaultValue,
-    typename SetDefaultValue,
-    typename AttributeReader_t>
-struct ConfigAttributeWithSetterAndReader
-    : ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>
+#if 0
+template <typename AttributeReader_t>
+struct ConfigAttributeWithSetterAndReader : ConfigAttribute
 {
     AttributeReader_t attributeReader;
     using parent_t =
@@ -462,4 +418,5 @@ struct ConfigAttributeWithSetterAndReader
         }
     }
 };
+#endif
 } // namespace openPMD::internal

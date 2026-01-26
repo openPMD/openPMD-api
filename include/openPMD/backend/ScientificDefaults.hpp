@@ -7,7 +7,6 @@
 
 namespace openPMD::internal
 {
-template <typename, typename>
 struct ConfigAttribute;
 
 /*
@@ -26,10 +25,8 @@ private:
     template <typename F>
     using setter_t = Child &(Child::*)();
 
-    template <typename GetDefaultValue>
-    [[nodiscard]] auto
-    defaultAttribute(char const *attrName, GetDefaultValue &&getDefaultValue)
-        -> ConfigAttribute<Child, GetDefaultValue>;
+    [[nodiscard]] auto defaultAttribute(char const *attrName)
+        -> ConfigAttribute;
 
     template <typename Parent, bool write>
     void addParentDefaults(OpenpmdStandard);
