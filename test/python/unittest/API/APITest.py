@@ -1692,7 +1692,7 @@ class APITest(unittest.TestCase):
         extent = [1, 1, 1]
         obj = io.Dataset(data_type, extent)
         if found_numpy:
-            d = np.array((1, 1, 1, ), dtype=np.int_)
+            d = np.array((1, 1, 1, ), dtype="l")
             obj2 = io.Dataset(d.dtype, d.shape)
             assert data_type == io.determine_datatype(d.dtype)
             assert obj2.dtype == obj.dtype

@@ -330,22 +330,13 @@ AttributeWithShapeAndResource<T>::operator bool() const
 }
 
 #define OPENPMD_INSTANTIATE_GETATTRIBUTE(type)                                 \
+    template struct AttributeWithShape<type>;                                  \
+    template struct AttributeWithShapeAndResource<type>;                       \
     template AttributeWithShape<type> PreloadAdiosAttributes::getAttribute(    \
         std::string const &name) const;                                        \
     template auto AdiosAttributes::getAttribute(                               \
         size_t step, adios2::IO &IO, std::string const &name) const            \
-        -> AttributeWithShapeAndResource<type>;                                \
-    template AttributeWithShapeAndResource<                                    \
-        type>::AttributeWithShapeAndResource(AttributeWithShape<type> parent); \
-    template AttributeWithShapeAndResource<type>::                             \
-        AttributeWithShapeAndResource(                                         \
-            size_t len_in,                                                     \
-            type const                                                         \
-                *data_in, /* NOLINTNEXTLINE(bugprone-macro-parentheses)  */    \
-            std::optional<std::vector<type>> resource_in);                     \
-    template AttributeWithShapeAndResource<                                    \
-        type>::AttributeWithShapeAndResource(adios2::Attribute<type> attr);    \
-    template AttributeWithShapeAndResource<type>::operator bool() const;
+        -> AttributeWithShapeAndResource<type>;
 ADIOS2_FOREACH_TYPE_1ARG(OPENPMD_INSTANTIATE_GETATTRIBUTE)
 #undef OPENPMD_INSTANTIATE_GETATTRIBUTE
 } // namespace openPMD::detail
