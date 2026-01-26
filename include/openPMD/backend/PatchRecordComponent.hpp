@@ -160,7 +160,10 @@ template <typename T>
 inline void PatchRecordComponent::store(uint64_t idx, T data)
 {
     Datatype dtype = determineDatatype<T>();
-    if (dtype != getDatatype())
+    if (dtype != getDatatype() && !isSameInteger<T>(getDatatype()) &&
+        !isSameFloatingPoint<T>(getDatatype()) &&
+        !isSameComplexFloatingPoint<T>(getDatatype()) &&
+        !isSameChar<T>(getDatatype()))
     {
         std::ostringstream oss;
         oss << "Datatypes of patch data (" << dtype << ") and dataset ("
@@ -187,7 +190,10 @@ template <typename T>
 inline void PatchRecordComponent::store(T data)
 {
     Datatype dtype = determineDatatype<T>();
-    if (dtype != getDatatype())
+    if (dtype != getDatatype() && !isSameInteger<T>(getDatatype()) &&
+        !isSameFloatingPoint<T>(getDatatype()) &&
+        !isSameComplexFloatingPoint<T>(getDatatype()) &&
+        !isSameChar<T>(getDatatype()))
     {
         std::ostringstream oss;
         oss << "Datatypes of patch data (" << dtype << ") and dataset ("
