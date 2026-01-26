@@ -128,7 +128,7 @@ if __name__ == "__main__":
     d = Dataset(partial_particleOff.dtype, mpiDims)
     electrons["positionOffset"]["x"].reset_dataset(d)
 
-    dset = Dataset(np.dtype(np.uint64), extent=[2])
+    dset = Dataset(np.dtype("uint64"), extent=[2])
     electrons.particle_patches["numParticles"].reset_dataset(dset)
     electrons.particle_patches["numParticlesOffset"]. \
         reset_dataset(dset)
