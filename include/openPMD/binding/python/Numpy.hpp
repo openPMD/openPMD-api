@@ -58,6 +58,9 @@ inline Datatype dtype_from_numpy(pybind11::dtype const dt)
         return Datatype::INT;
     else if (dt.char_() == pybind11::dtype("int_").char_())
         return Datatype::LONG;
+    else if (dt.char_() == pybind11::dtype("long").char_()) // alias used on
+                                                            // Win64
+        return Datatype::LONG;
     else if (dt.char_() == pybind11::dtype("longlong").char_())
         return Datatype::LONGLONG;
     else if (dt.char_() == pybind11::dtype("ushort").char_())
@@ -65,6 +68,9 @@ inline Datatype dtype_from_numpy(pybind11::dtype const dt)
     else if (dt.char_() == pybind11::dtype("uintc").char_())
         return Datatype::UINT;
     else if (dt.char_() == pybind11::dtype("uint").char_())
+        return Datatype::ULONG;
+    else if (dt.char_() == pybind11::dtype("ulong").char_()) // alias used on
+                                                             // Win64
         return Datatype::ULONG;
     else if (dt.char_() == pybind11::dtype("ulonglong").char_())
         return Datatype::ULONGLONG;
