@@ -22,6 +22,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <algorithm>
 
@@ -59,10 +60,16 @@ PatchRecordComponent::PatchRecordComponent(
     static_cast<RecordComponent &>(*this).operator=(baseRecord);
 }
 
+void PatchRecordComponent::read()
+{
+    readBase();
+    internal::ScientificDefaults<PatchRecordComponent>::readDefaults(
+        IOHandler()->m_standard);
+}
+
 PatchRecordComponent::PatchRecordComponent() : RecordComponent(NoInit())
 {
     setData(std::make_shared<Data_t>());
-    setUnitSI(1);
 }
 
 PatchRecordComponent::PatchRecordComponent(NoInit) : RecordComponent(NoInit())

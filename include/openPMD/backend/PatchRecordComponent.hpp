@@ -98,6 +98,10 @@ OPENPMD_private
 
     using RecordComponent::flush;
 
+    // This differs from RecordComponent::read() such that unitSI is not
+    // required
+    void read();
+
     // clang-format off
 OPENPMD_protected
     // clang-format on
