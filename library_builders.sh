@@ -90,13 +90,17 @@ function build_adios2 {
     # patch -p1 ../0001-Pull-in-atl-dill-EVPath-ffs-after-merging-https-gith.patch
     # cd ..
 
-    # temporary, need to try sth
+    # temporary for macOS on ADIOS 2.11.0
     git clone https://github.com/ornladios/ADIOS2 ADIOS2-2.11.0
     cd ADIOS2-2.11.0
     git checkout 7a21e4ef2f5def6659e67084b5210a66582d4b1a
-    curl -sLo 4820.patch https://github.com/ornladios/ADIOS2/pull/4820.patch
-    git am 4820.patch
-    git diff
+    if [ "$(uname -s)" = "Darwin" ]
+    then
+        curl -sLo 4820.patch https://github.com/ornladios/ADIOS2/pull/4820.patch
+        GIT_COMMITTER_NAME="Greg Eisenhauer" GIT_COMMITTER_EMAIL="eisen@cc.gatech.edu" \
+          git am 4820.patch
+        git diff
+    fi
     cd ..
 
     # build
