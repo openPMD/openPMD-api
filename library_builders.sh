@@ -24,7 +24,7 @@ function install_buildessentials {
         #   - Travis-CI macOS ships a pre-installed HDF5
         brew unlink hdf5 || true
         brew uninstall --ignore-dependencies hdf5 || true
-        rm -rf /usr/local/Cellar/hdf5git
+        rm -rf /usr/local/Cellar/hdf5
     fi
 
     # musllinux: Alpine Linux
