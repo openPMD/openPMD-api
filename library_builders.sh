@@ -9,8 +9,10 @@ BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
 if [ "$(uname -s)" = "Darwin" ]
 then
     CPU_COUNT="${CPU_COUNT:-3}"
+    SUDO="sudo"
 else
     CPU_COUNT="${CPU_COUNT:-2}"
+    SUDO=""
 fi
 
 function install_buildessentials {
@@ -75,11 +77,24 @@ function install_buildessentials {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.10.2.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.10.2.tar.gz
-    file adios2*.tar.gz
-    tar -xzf adios2*.tar.gz
-    rm adios2*.tar.gz
+    # static build of macOS on ADIOS 2.11.0
+    # https://github.com/ornladios/ADIOS2/issues/4807
+    if [ "$(uname -s)" = "Darwin" ]
+    then
+        git clone https://github.com/ornladios/ADIOS2 ADIOS2-2.11.0
+        cd ADIOS2-2.11.0
+        git checkout 7a21e4ef2f5def6659e67084b5210a66582d4b1a
+        curl -sLo 4820.diff https://github.com/ornladios/ADIOS2/pull/4820/commits/c7961dd9e12d72b279db75fd184d2b3b4f151560.diff
+        GIT_COMMITTER_NAME="Greg Eisenhauer" GIT_COMMITTER_EMAIL="eisen@cc.gatech.edu" \
+          patch -p1 < 4820.diff
+        cd ..
+    else
+        curl -sLo adios2-2.11.0.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
+        file adios2*.tar.gz
+        tar -xzf adios2*.tar.gz
+        rm adios2*.tar.gz
+    fi
 
     # build
     mkdir build-adios2
@@ -94,7 +109,7 @@ function build_adios2 {
         -DADIOS2_Blosc2_PREFER_SHARED=OFF         \
         -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Blosc2=ON                    \
-        -DADIOS2_USE_Campaign=OFF                 \
+        -DADIOS2_USE_Campaign=ON                  \
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_HDF5=OFF                     \
         -DADIOS2_USE_MHS=OFF                      \
@@ -112,11 +127,11 @@ function build_adios2 {
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
 
     make -j${CPU_COUNT}
-    make install
+    ${SUDO} make install
 
     # CMake Config package of C-Blosc 2.10.1+ only
     # https://github.com/ornladios/ADIOS2/issues/3903
-    rm -rf ${BUILD_PREFIX}/lib*/cmake/adios2/FindBlosc2.cmake
+    ${SUDO} rm -rf ${BUILD_PREFIX}/lib*/cmake/adios2/FindBlosc2.cmake
 
     cd -
 
@@ -163,12 +178,38 @@ function build_blosc2 {
       "${architecture_specific_flags[@]}"    \
       ../c-blosc2-*
     make -j${CPU_COUNT}
-    make install
+    ${SUDO} make install
     cd -
 
     rm -rf build-blosc2
 
     touch blosc-stamp2
+}
+
+function build_sqlite {
+    if [ -e sqlite-stamp ]; then return; fi
+
+    SQLITE_VERSION="3510200"  # "3.51.2"
+
+    curl -sLO https://www.sqlite.org/2026/sqlite-autoconf-${SQLITE_VERSION}.tar.gz
+    file sqlite-autoconf*.tar.gz
+    tar xzf sqlite-autoconf-${SQLITE_VERSION}.tar.gz
+    rm sqlite-autoconf*.tar.gz
+
+    cd sqlite-autoconf-${SQLITE_VERSION}
+
+    ./configure                 \
+      --disable-shared          \
+      --prefix=${BUILD_PREFIX}  \
+      --all                     \
+      --disable-readline
+    make
+    ${SUDO} make install
+
+    cd -
+    rm -rf sqlite-autoconf*
+
+    touch sqlite-stamp
 }
 
 function build_zfp {
@@ -192,7 +233,7 @@ function build_zfp {
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       ../zfp-*
     make -j${CPU_COUNT}
-    make install
+    ${SUDO} make install
     cd -
 
     rm -rf build-zfp
@@ -220,8 +261,8 @@ function build_zlib {
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
 
     PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --parallel ${CPU_COUNT}
-    PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --target install
-    rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so
+    PATH=${CMAKE_BIN}:${PATH} ${SUDO} cmake --build build-zlib --target install
+    ${SUDO} rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so
 
     rm -rf build-zlib
 
@@ -292,7 +333,7 @@ function build_hdf5 {
     fi
 
     make -j${CPU_COUNT}
-    make install
+    ${SUDO} make install
     cd ..
 
     touch hdf5-stamp
@@ -314,6 +355,7 @@ fi
 
 install_buildessentials
 build_zlib
+build_sqlite
 build_zfp
 build_blosc2
 build_hdf5

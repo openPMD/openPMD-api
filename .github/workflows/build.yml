@@ -40,19 +40,19 @@ jobs:
               CMAKE_GENERATOR: "Visual Studio 17 2022"
               CMAKE_GENERATOR_PLATFORM: "Win32"
 
-          - os: macos-13
+          - os: macos-15-intel
             arch: "x86_64"
             env:
-              MACOSX_DEPLOYMENT_TARGET: 11.0
+              MACOSX_DEPLOYMENT_TARGET: 15.0
 
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
           #   https://github.com/pypa/cibuildwheel/pull/704
-          - os: macos-13
+          - os: macos-14
             arch: "arm64"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
-              MACOSX_DEPLOYMENT_TARGET: 11.0
+              MACOSX_DEPLOYMENT_TARGET: 14.0
 
           # Apple universal builds that contain x86-64 and arm64 binary code
           #   Needs extra treatment of all librarys that are not CMake
@@ -60,17 +60,17 @@ jobs:
           #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
           # ADIOS1 tricky to build and HDF5 even with CMake as well (as of 1.12)
           # We could build them twice and use `lipo` to combine the lib artifacts.
-          #- os: macos-13
+          #- os: macos-15-intel
           #  arch: "universal2"
           #  env:
           #    CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
-          #    MACOSX_DEPLOYMENT_TARGET: 11.0
+          #    MACOSX_DEPLOYMENT_TARGET: 14.0
 
     steps:
     - uses: actions/checkout@v4
       with:
         path: 'src'
-        ref: '0.16.1'
+        ref: '0.17.0'
 
     - uses: actions/checkout@v4
       with:
@@ -87,12 +87,12 @@ jobs:
         python -m pip install cibuildwheel==3.2.1
 
     # 0.16.1.post1 bump
-    - name: Download Patch 1/1
-      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
-      id: setupversion
-      with:
-        url: "https://github.com/openPMD/openPMD-api/commit/f94a1d48eefbc81784a9c25f61c913cf30fe2ece.patch"
-        target: src/.patch/
+#    - name: Download Patch 1/1
+#      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
+#      id: setupversion
+#      with:
+#        url: "https://github.com/openPMD/openPMD-api/commit/f94a1d48eefbc81784a9c25f61c913cf30fe2ece.patch"
+#        target: src/.patch/
 
 #    # Patch: Fix versioning
 #    - name: Download Patch 1/2
@@ -110,10 +110,10 @@ jobs:
 #        url: "https://github.com/openPMD/openPMD-api/pull/1684.patch"
 #        target: src/.patch/
 
-    - name: Apply Patches
-      run: |
-        cd src
-        git apply .patch/f94a1d48eefbc81784a9c25f61c913cf30fe2ece.patch
+#    - name: Apply Patches
+#      run: |
+#        cd src
+#        git apply .patch/f94a1d48eefbc81784a9c25f61c913cf30fe2ece.patch
 
     - name: Build wheel
       env:
