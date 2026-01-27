@@ -237,6 +237,11 @@ struct ConfigAttribute
         }
 
         Attribute attribute(Attribute::from_any, std::move(*aRead.m_resource));
+        if (attributeReaders.empty())
+        {
+            std::cout << "Empty attribute readers for " << this->attrName
+                      << std::endl;
+        }
         for (auto &attributeReader : attributeReaders)
         {
 

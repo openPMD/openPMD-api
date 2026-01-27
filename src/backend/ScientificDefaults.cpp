@@ -207,7 +207,7 @@ namespace
     auto require_type_base(Fun &&fun)
         -> NewAttributeReader::process_attribute_type
     {
-        return [&fun](
+        return [fun_lambda = std::forward<Fun>(fun)](
                    Attributable &record,
                    char const *attrName,
                    Attribute const &attr) -> std::optional<error::ReadError> {
@@ -224,12 +224,12 @@ namespace
                                 -> std::optional<error::ReadError> {
                                 if constexpr (std::is_void_v<
                                                   std::invoke_result_t<
-                                                      Fun &&,
+                                                      decltype(fun_lambda),
                                                       Attributable &,
                                                       char const *,
                                                       T>>)
                                 {
-                                    std::forward<Fun>(fun)(
+                                    std::move(fun_lambda)(
                                         record,
                                         attrName,
                                         std::move(casted_val));
@@ -237,7 +237,7 @@ namespace
                                 }
                                 else
                                 {
-                                    return std::forward<Fun>(fun)(
+                                    return std::move(fun_lambda)(
                                         record,
                                         attrName,
                                         std::move(casted_val));
@@ -262,10 +262,10 @@ namespace
     auto require_type_generic(Fun &&fun)
         -> NewAttributeReader::process_attribute_type
     {
-        return require_type_base<T>(
-            [&fun](Attributable &, char const *, T val) {
-                std::forward<Fun>(fun)(std::move(val));
-            });
+        return require_type_base<T>([fun_lambda = std::forward<Fun>(fun)](
+                                        Attributable &, char const *, T val) {
+            std::move(fun_lambda)(std::move(val));
+        });
     }
 
     template <typename T>
@@ -287,6 +287,7 @@ namespace
                 res.push_back(dt);
             }
         }
+        res.push_back(Datatype::ARR_DBL_7);
         return res;
     }
 
