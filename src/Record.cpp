@@ -24,6 +24,7 @@
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 
 #include <iostream>
 
@@ -191,7 +192,7 @@ auto Record::read() -> internal::HomogenizeExtents
         }
     }
 
-    readBase();
+    internal::ScientificDefaults<Record>::readDefaults(IOHandler()->m_standard);
 
     readAttributes(ReadMode::FullyReread);
     return res;

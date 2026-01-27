@@ -489,7 +489,7 @@ void Mesh::read()
 
     std::move(homogenizeExtents).homogenize(*this);
 
-    readBase();
+    internal::ScientificDefaults<Mesh>::readDefaults(IOHandler()->m_standard);
 
     readAttributes(ReadMode::FullyReread);
 }

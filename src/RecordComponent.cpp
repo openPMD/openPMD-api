@@ -29,6 +29,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/ScientificDefaults.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 
 // comment so clang-format does not move this
@@ -525,6 +526,8 @@ void RecordComponent::flush(
 void RecordComponent::read()
 {
     readBase();
+    internal::ScientificDefaults<RecordComponent>::readDefaults(
+        IOHandler()->m_standard);
 }
 
 namespace

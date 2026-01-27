@@ -366,9 +366,6 @@ public:
      */
     bool scalar() const;
 
-protected:
-    void readBase();
-
 private:
     void flush(std::string const &, internal::FlushParams const &) final;
     virtual void

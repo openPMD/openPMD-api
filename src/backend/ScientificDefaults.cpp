@@ -492,7 +492,8 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
     else if constexpr (std::is_same_v<Child, Record>)
     {
         defaultAttribute("timeOffset")
-            .template withSetter<Record>(0.f, &Record::setTimeOffset)(wor);
+            .template withSetter<Record>(0.f, &Record::setTimeOffset)
+            .withReader(float_types, require_scalar)(wor);
 
         auto const &keyInParent = asChild().writable().ownKeyWithinParent;
         if (keyInParent == "position" || keyInParent == "positionOffset")
