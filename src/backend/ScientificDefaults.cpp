@@ -552,6 +552,14 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
         // We don't require unitSI for PatchRecordComponent
         //
         // addParentDefaults<RecordComponent, write>();
+        //
+        // But we still set it when writing. Doesnt hurt and some readers might
+        // expect it.
+        defaultAttribute("unitSI").template withSetter<PatchRecordComponent>(
+            1.0, &PatchRecordComponent::setUnitSI)
+            // Do NOT add a reader here.
+            // .withReader(float_types, require_type<double>())
+            (wor);
     }
     else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
     {

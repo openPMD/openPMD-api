@@ -216,6 +216,11 @@ struct ConfigAttribute
 
     void read()
     {
+        if (attributeReaders.empty())
+        {
+            // No readers emplaced for this attribute
+            return;
+        }
         AttributeReadResult res = attribute_read_result::TypeUnmatched{};
         Parameter<Operation::READ_ATT> aRead;
         aRead.name = this->attrName;
@@ -237,11 +242,6 @@ struct ConfigAttribute
         }
 
         Attribute attribute(Attribute::from_any, std::move(*aRead.m_resource));
-        if (attributeReaders.empty())
-        {
-            // No readers emplaced for this attribute
-            return;
-        }
         for (auto &attributeReader : attributeReaders)
         {
 
