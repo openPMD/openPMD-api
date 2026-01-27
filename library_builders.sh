@@ -24,7 +24,7 @@ function install_buildessentials {
         #   - Travis-CI macOS ships a pre-installed HDF5
         brew unlink hdf5 || true
         brew uninstall --ignore-dependencies hdf5 || true
-        rm -rf /usr/local/Cellar/hdf5
+        rm -rf /usr/local/Cellar/hdf5git
     fi
 
     # musllinux: Alpine Linux
@@ -77,31 +77,22 @@ function install_buildessentials {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    # curl -sLo adios2-2.11.0.tar.gz \
-    #     https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
-    # file adios2*.tar.gz
-    # tar -xzf adios2*.tar.gz
-    # rm adios2*.tar.gz
+    curl -sLo adios2-2.11.0.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
+    file adios2*.tar.gz
+    tar -xzf adios2*.tar.gz
+    rm adios2*.tar.gz
 
-    # cd ADIOS2-*
-    # # Need this PR for static builds https://github.com/ornladios/ADIOS2/pull/4812
-    # # Since the PR does not cleanly merge, this is a custom patch that checks out
-    # # the subdirectories of the atl, dill, EVPath and ffs thirdparty libraries
-    # patch -p1 ../0001-Pull-in-atl-dill-EVPath-ffs-after-merging-https-gith.patch
-    # cd ..
-
-    # temporary for macOS on ADIOS 2.11.0
-    git clone https://github.com/ornladios/ADIOS2 ADIOS2-2.11.0
-    cd ADIOS2-2.11.0
-    git checkout 7a21e4ef2f5def6659e67084b5210a66582d4b1a
+    # static build of macOS on ADIOS 2.11.0
+    # https://github.com/ornladios/ADIOS2/issues/4807
     if [ "$(uname -s)" = "Darwin" ]
     then
-        curl -sLo 4820.patch https://github.com/ornladios/ADIOS2/pull/4820.patch
+        cd ADIOS2-2.11.0
+        curl -sLo 4820.diff https://github.com/ornladios/ADIOS2/pull/4820.diff
         GIT_COMMITTER_NAME="Greg Eisenhauer" GIT_COMMITTER_EMAIL="eisen@cc.gatech.edu" \
-          git am 4820.patch
-        git diff
+          patch -p1 < 4820.diff
+        cd ..
     fi
-    cd ..
 
     # build
     mkdir build-adios2

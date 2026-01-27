@@ -21,6 +21,7 @@ exit /b 0
     https://github.com/ornladios/ADIOS2/archive/v2.11.0.zip
   powershell Expand-Archive adios2-2.11.0.zip -DestinationPath dep-adios2
 
+  :: Patch Win32 on ADIOS 2.11.0 https://github.com/ornladios/ADIOS2/issues/4808
   curl -sLo dep-adios2/ADIOS2-2.11.0/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/13e9747799e32841b29f166c2bcdfd82ee915f1a.patch
 
   :: Use git-am for applying the patch,
