@@ -124,6 +124,22 @@ namespace detail
     {
         constexpr static bool value = true;
     };
+
+    template <typename T>
+    struct ScalarType
+    {
+        using type = T;
+    };
+    template <typename T>
+    struct ScalarType<std::vector<T>>
+    {
+        using type = T;
+    };
+    template <typename T, size_t N>
+    struct ScalarType<std::array<T, N>>
+    {
+        using type = T;
+    };
 } // namespace detail
 
 template <typename T>
@@ -140,6 +156,9 @@ using IsPointer_t = typename detail::IsPointer<T>::type;
 
 template <typename C>
 inline constexpr bool IsChar_v = detail::IsChar<C>::value;
+
+template <typename T>
+using ScalarType_t = typename detail::ScalarType<T>::type;
 
 /** Emulate in the C++ concept ContiguousContainer
  *

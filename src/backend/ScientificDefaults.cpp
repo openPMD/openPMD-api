@@ -1,6 +1,9 @@
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/Datatype.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/ScientificDefaults_internal.hpp"
 
 #include "openPMD/Error.hpp"
@@ -106,69 +109,200 @@ void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
     }
 }
 
-template <typename SetterFunctor>
-auto ensureFloatingVector(SetterFunctor &&set)
+namespace
 {
-    return [set_lambda = std::forward<SetterFunctor>(set)](
-               auto &, auto &&converted_val, Attribute const &orig_val) {
-        std::visit(
-            [&converted_val, &set_lambda](auto const &val) {
-                using actual_type =
-                    std::remove_cv_t<std::remove_reference_t<decltype(val)>>;
-                if constexpr (auxiliary::IsVector_v<actual_type>)
+    NewAttributeReader::process_attribute_type require_scalar =
+        [](Attributable &record,
+           char const *attrName,
+           Attribute const &attr) -> std::optional<error::ReadError> {
+        return std::visit(
+            [&](auto const &attr_val) -> std::optional<error::ReadError> {
+                using actual_type = std::remove_cv_t<
+                    std::remove_reference_t<decltype(attr_val)>>;
+                if constexpr (
+                    auxiliary::IsVector_v<actual_type> ||
+                    auxiliary::IsArray_v<actual_type>)
                 {
-                    if constexpr (std::is_floating_point_v<
-                                      typename actual_type::value_type>)
-                    {
-                        set_lambda(val);
-                    }
-                    else
-                    {
-                        set_lambda(
-                            static_cast<decltype(converted_val)>(
-                                converted_val));
-                    }
+                    using base_type = typename actual_type::value_type;
+                    auto converted_or_error =
+                        detail::doConvert<actual_type, base_type>(&attr_val);
+                    return std::visit(
+                        auxiliary::overloaded{
+                            [&](base_type casted_val)
+                                -> std::optional<error::ReadError> {
+                                record.setAttribute<base_type>(
+                                    attrName, casted_val);
+                                return std::nullopt;
+                            },
+                            [](std::runtime_error const &err)
+                                -> std::optional<error::ReadError> {
+                                return error::ReadError(
+                                    error::AffectedObject::Attribute,
+                                    error::Reason::UnexpectedContent,
+                                    std::nullopt,
+                                    std::string("Expected a scalar type: ") +
+                                        err.what());
+                            }},
+                        converted_or_error);
                 }
                 else
                 {
-                    if constexpr (std::is_floating_point_v<actual_type>)
-                    {
-                        set_lambda(std::vector<actual_type>{val});
-                    }
-                    else
-                    {
-                        set_lambda(
-                            static_cast<decltype(converted_val)>(
-                                converted_val));
-                    }
+                    return std::nullopt;
                 }
             },
-            orig_val.getVariant<attribute_types>());
+            attr.getVariant<attribute_types>());
     };
-}
 
-template <typename SetterFunctor>
-auto ensureFloatingScalar(SetterFunctor &&set)
-{
-    return [set_lambda = std::forward<SetterFunctor>(set)](
-               auto &, auto &&converted_val, Attribute const &orig_val) {
-        std::visit(
-            [&converted_val, &set_lambda](auto const &val) {
-                using actual_type =
-                    std::remove_cv_t<std::remove_reference_t<decltype(val)>>;
-                if constexpr (std::is_floating_point_v<actual_type>)
+    NewAttributeReader::process_attribute_type require_vector =
+        [](Attributable &record,
+           char const *attrName,
+           Attribute const &attr) -> std::optional<error::ReadError> {
+        return std::visit(
+            [&](auto const &attr_val) -> std::optional<error::ReadError> {
+                using actual_type = std::remove_cv_t<
+                    std::remove_reference_t<decltype(attr_val)>>;
+                if constexpr (std::is_same_v<actual_type, bool>)
                 {
-                    set_lambda(val);
+                    return error::ReadError(
+                        error::AffectedObject::Attribute,
+                        error::Reason::UnexpectedContent,
+                        std::nullopt,
+                        "Expected a vector type, found a boolean.");
+                }
+                else if constexpr (!auxiliary::IsVector_v<actual_type>)
+                {
+                    using base_type = auxiliary::ScalarType_t<actual_type>;
+
+                    auto converted_or_error =
+                        detail::doConvert<actual_type, std::vector<base_type>>(
+                            &attr_val);
+                    return std::visit(
+                        auxiliary::overloaded{
+                            [&](std::vector<base_type> casted_val)
+                                -> std::optional<error::ReadError> {
+                                record.setAttribute<std::vector<base_type>>(
+                                    attrName, std::move(casted_val));
+                                return std::nullopt;
+                            },
+                            [](std::runtime_error const &err)
+                                -> std::optional<error::ReadError> {
+                                return error::ReadError(
+                                    error::AffectedObject::Attribute,
+                                    error::Reason::UnexpectedContent,
+                                    std::nullopt,
+                                    std::string("Expected a scalar type: ") +
+                                        err.what());
+                            }},
+                        converted_or_error);
                 }
                 else
                 {
-                    set_lambda(
-                        static_cast<decltype(converted_val)>(converted_val));
+                    return std::nullopt;
                 }
             },
-            orig_val.getVariant<attribute_types>());
+            attr.getVariant<attribute_types>());
     };
-}
+
+    template <typename T, typename Fun>
+    auto require_type_base(Fun &&fun)
+        -> NewAttributeReader::process_attribute_type
+    {
+        return [&fun](
+                   Attributable &record,
+                   char const *attrName,
+                   Attribute const &attr) -> std::optional<error::ReadError> {
+            return std::visit(
+                [&](auto const &attr_val) -> std::optional<error::ReadError> {
+                    using actual_type = std::remove_cv_t<
+                        std::remove_reference_t<decltype(attr_val)>>;
+
+                    auto converted_or_error =
+                        detail::doConvert<actual_type, T>(&attr_val);
+                    return std::visit(
+                        auxiliary::overloaded{
+                            [&](T casted_val)
+                                -> std::optional<error::ReadError> {
+                                if constexpr (std::is_void_v<
+                                                  std::invoke_result_t<
+                                                      Fun &&,
+                                                      Attributable &,
+                                                      char const *,
+                                                      T>>)
+                                {
+                                    std::forward<Fun>(fun)(
+                                        record,
+                                        attrName,
+                                        std::move(casted_val));
+                                    return std::nullopt;
+                                }
+                                else
+                                {
+                                    return std::forward<Fun>(fun)(
+                                        record,
+                                        attrName,
+                                        std::move(casted_val));
+                                }
+                            },
+                            [](std::runtime_error const &err)
+                                -> std::optional<error::ReadError> {
+                                return error::ReadError(
+                                    error::AffectedObject::Attribute,
+                                    error::Reason::UnexpectedContent,
+                                    std::nullopt,
+                                    std::string("Expected a scalar type: ") +
+                                        err.what());
+                            }},
+                        converted_or_error);
+                },
+                attr.getVariant<attribute_types>());
+        };
+    }
+
+    template <typename T, typename Fun>
+    auto require_type_generic(Fun &&fun)
+        -> NewAttributeReader::process_attribute_type
+    {
+        return require_type_base<T>(
+            [&fun](Attributable &, char const *, T val) {
+                std::forward<Fun>(fun)(std::move(val));
+            });
+    }
+
+    template <typename T>
+    auto require_type()
+    {
+        return require_type_base<T>(
+            [](Attributable &record, char const *attrName, T val) {
+                record.template setAttribute<T>(attrName, std::move(val));
+            });
+    }
+
+    auto get_float_types() -> std::deque<Datatype>
+    {
+        std::deque<Datatype> res;
+        for (auto dt : openPMD_Datatypes())
+        {
+            if (isFloatingPoint(dt))
+            {
+                res.push_back(dt);
+            }
+        }
+        return res;
+    }
+
+    auto get_string_types() -> std::deque<Datatype>
+    {
+        return {
+            Datatype::STRING,
+            Datatype::VEC_STRING,
+            Datatype::CHAR,
+            Datatype::VEC_CHAR,
+            Datatype::UCHAR,
+            Datatype::VEC_UCHAR,
+            Datatype::SCHAR,
+            Datatype::VEC_SCHAR};
+    }
+} // namespace
 
 template <typename Child>
 template <bool write>
@@ -176,6 +310,8 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 {
     using maybe_read_error = std::optional<error::ReadError>;
     constexpr auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
+    auto float_types = get_float_types();
+    auto string_types = get_string_types();
 
     // First some verifications
     if constexpr (write && auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
@@ -199,15 +335,13 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
     {
         defaultAttribute("time")
             .template withSetter<Iteration>(0., &Iteration::setTime)
-            .withReader(ensureFloatingScalar(
-                [this](auto &&val) { this->asChild().setTime(val); }))(wor);
+            .withReader(float_types, require_scalar)(wor);
         defaultAttribute("dt")
             .template withSetter<Iteration>(1., &Iteration::setDt)
-            .withReader(ensureFloatingScalar(
-                [this](auto &&val) { this->asChild().setDt(val); }))(wor);
+            .withReader(float_types, require_scalar)(wor);
         defaultAttribute("timeUnitSI")
             .template withSetter<Iteration>(1.0, &Iteration::setTimeUnitSI)
-            .withReader()(wor);
+            .withReader(float_types, require_type<double>())(wor);
     }
     else if constexpr (std::is_same_v<Child, Mesh>)
     {
@@ -216,36 +350,43 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
         defaultAttribute("geometry")
             .template withSetter<Mesh>(
                 Mesh::Geometry::cartesian, &Mesh::setGeometry)
-            .withReader([](Mesh &m, std::string val) {
-                if ("cartesian" == val)
-                    m.setGeometry(Mesh::Geometry::cartesian);
-                else if ("thetaMode" == val)
-                    m.setGeometry(Mesh::Geometry::thetaMode);
-                else if ("cylindrical" == val)
-                    m.setGeometry(Mesh::Geometry::cylindrical);
-                else if ("spherical" == val)
-                    m.setGeometry(Mesh::Geometry::spherical);
-                else
-                    m.setGeometry(std::move(val));
-            })(wor);
+            .withReader(
+                string_types,
+                require_type_generic<std::string>([this](std::string val) {
+                    auto &m = asChild();
+                    if ("cartesian" == val)
+                        m.setGeometry(Mesh::Geometry::cartesian);
+                    else if ("thetaMode" == val)
+                        m.setGeometry(Mesh::Geometry::thetaMode);
+                    else if ("cylindrical" == val)
+                        m.setGeometry(Mesh::Geometry::cylindrical);
+                    else if ("spherical" == val)
+                        m.setGeometry(Mesh::Geometry::spherical);
+                    else
+                        m.setGeometry(std::move(val));
+                }))(wor);
 
         defaultAttribute("dataOrder")
             .template withSetter<Mesh>(Mesh::DataOrder::C, &Mesh::setDataOrder)
-            .withReader([](Mesh &m, char val) -> maybe_read_error {
-                if (val == 'C' || val == 'F')
-                {
-                    m.setDataOrder(static_cast<Mesh::DataOrder>(val));
-                    return std::nullopt;
-                }
-                else
-                {
-                    return error::ReadError(
-                        error::AffectedObject::Attribute,
-                        error::Reason::UnexpectedContent,
-                        std::nullopt,
-                        "Data order must be either C or F.");
-                }
-            })(wor);
+            .withReader(
+                string_types,
+                require_type_generic<char>(
+                    [this](char val) -> maybe_read_error {
+                        auto &m = this->asChild();
+                        if (val == 'C' || val == 'F')
+                        {
+                            m.setDataOrder(static_cast<Mesh::DataOrder>(val));
+                            return std::nullopt;
+                        }
+                        else
+                        {
+                            return error::ReadError(
+                                error::AffectedObject::Attribute,
+                                error::Reason::UnexpectedContent,
+                                std::nullopt,
+                                "Data order must be either C or F.");
+                        }
+                    }))(wor);
 
         defaultAttribute("axisLabels")
             .template withSetter<Mesh, std::vector<std::string> const &>(
@@ -283,7 +424,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                     return std::vector<std::string>{"x", "y", "z"};
                 },
                 &Mesh::setAxisLabels)
-            .withReader()(wor);
+            .withReader(string_types, require_vector)(wor);
 
         defaultAttribute("gridSpacing")
             .template withSetter<Mesh, std::vector<double> const &>(
@@ -298,9 +439,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                     }
                 },
                 &Mesh::setGridSpacing)
-            .withReader(ensureFloatingVector([this](auto &&val) {
-                asChild().setGridSpacing(static_cast<decltype(val)>(val));
-            }))(wor);
+            .withReader(float_types, require_vector)(wor);
 
         defaultAttribute("gridGlobalOffset")
             .template withSetter<Mesh, std::vector<double> const &>(
@@ -315,16 +454,11 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                     }
                 },
                 &Mesh::setGridGlobalOffset)
-            .withReader(
-                /* gridGlobalOffset requires vector<double> precisely, so no
-                   handling for different floating types here */
-                )(wor);
+            .withReader(float_types, require_type<std::vector<double>>())(wor);
 
         defaultAttribute("timeOffset")
             .template withSetter<Mesh>(0.f, &Mesh::setTimeOffset)
-            .withReader(ensureFloatingScalar([this](auto &&val) {
-                asChild().setAttribute("timeOffset", val);
-            }))(wor);
+            .withReader(float_types, require_scalar)(wor);
 
         if (standard >= OpenpmdStandard::v_2_0_0)
         {
@@ -341,13 +475,15 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                         }
                     },
                     &Mesh::setGridUnitSIPerDimension)
-                .withReader()(wor);
+                .withReader(float_types, require_type<std::vector<double>>())(
+                    wor);
         }
         else
         {
             defaultAttribute("gridUnitSI")
                 .template withSetter<Mesh>(1.0, &Mesh::setGridUnitSI)
-                .withReader()(wor);
+                .withReader(float_types, require_type<std::vector<double>>())(
+                    wor);
         }
 
         addParentDefaults<BaseRecord<MeshRecordComponent>, write>(standard);
@@ -373,9 +509,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 
         defaultAttribute("timeOffset")
             .template withSetter<Record>(0.f, &Record::setTimeOffset)
-            .withReader(ensureFloatingScalar([this](auto &&val) {
-                asChild().setAttribute("timeOffset", val);
-            }))(wor);
+            .withReader(float_types, require_scalar)(wor);
 
         addParentDefaults<BaseRecord<RecordComponent>, write>(standard);
     }
@@ -388,7 +522,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
         defaultAttribute("unitSI")
             .template withSetter<RecordComponent>(
                 1.0, &RecordComponent::setUnitSI)
-            .withReader()(wor);
+            .withReader(float_types, require_type<double>())(wor);
     }
     else if constexpr (std::is_same_v<Child, MeshRecordComponent>)
     {
@@ -407,9 +541,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                     }
                 },
                 &MeshRecordComponent::setPosition)
-            .withReader(ensureFloatingVector([this](auto &&val) {
-                this->asChild().setPosition(static_cast<decltype(val)>(val));
-            }))(wor);
+            .withReader(float_types, require_vector)(wor);
 
         addParentDefaults<RecordComponent, write>(standard);
     }
@@ -423,7 +555,9 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
     {
         defaultAttribute("unitDimension")
             .withGenericSetter(unit_representations::AsArray{})
-            .withReader()(wor);
+            .withReader(
+                float_types,
+                require_type<unit_representations::AsArray>())(wor);
     }
 }
 

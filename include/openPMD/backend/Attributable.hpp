@@ -57,8 +57,7 @@ namespace internal
     class IterationData;
     class SeriesData;
     struct HomogenizeExtents;
-    template <typename>
-    struct ConfigAttributeWithSetterAndReader;
+    struct ConfigAttribute;
 
     class SharedAttributableData
     {
@@ -246,8 +245,7 @@ class Attributable
     friend class internal::AttributableData;
     friend class Snapshots;
     friend struct internal::HomogenizeExtents;
-    template <typename>
-    friend struct internal::ConfigAttributeWithSetterAndReader;
+    friend struct internal::ConfigAttribute;
 
 protected:
     // tag for internal constructor

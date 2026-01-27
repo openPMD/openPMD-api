@@ -65,14 +65,72 @@ namespace
     }
 
 } // namespace
+
+namespace attribute_read_result
+{
+    struct TypeUnmatched
+    {
+        std::deque<Datatype> expectedDatatypes;
+    };
+    struct Success
+    {};
+} // namespace attribute_read_result
+
+using AttributeReadResult = std::variant<
+    attribute_read_result::Success,
+    attribute_read_result::TypeUnmatched,
+    error::ReadError>;
+
+struct NewAttributeReader
+{
+    std::deque<Datatype> eligibleDatatypes;
+    using process_attribute_type =
+        std::function<std::optional<error::ReadError>(
+            Attributable &, char const *, Attribute const &)>;
+    std::optional<process_attribute_type> processAttribute;
+
+    NewAttributeReader(
+        std::deque<Datatype> eligibleDatatypes_in,
+        std::optional<process_attribute_type> processAttribute_in)
+        : eligibleDatatypes(std::move(eligibleDatatypes_in))
+        , processAttribute(std::move(processAttribute_in))
+    {}
+
+    auto operator()(
+        Attributable &record,
+        char const *attrName,
+        Attribute const &a,
+        std::deque<Datatype> unmatched_so_far) -> AttributeReadResult
+    {
+        if (std::find(
+                eligibleDatatypes.begin(), eligibleDatatypes.end(), a.dtype) ==
+            eligibleDatatypes.end())
+        {
+            auto res = attribute_read_result::TypeUnmatched{
+                std::move(unmatched_so_far)};
+            for (auto dt : this->eligibleDatatypes)
+            {
+                res.expectedDatatypes.push_back(dt);
+            }
+            return res;
+        }
+        if (processAttribute.has_value())
+        {
+            auto maybe_error = (*processAttribute)(record, attrName, a);
+            if (maybe_error.has_value())
+            {
+                return *maybe_error;
+            }
+        }
+        return attribute_read_result::Success{};
+    }
+};
+
 enum class WriteOrRead : std::uint8_t
 {
     Write,
     Read
 };
-
-template <typename>
-struct ConfigAttributeWithSetterAndReader;
 
 /////////////////////
 // ConfigAttribute //
@@ -83,6 +141,8 @@ struct ConfigAttribute
     Attributable &child;
     char const *attrName;
     std::function<void(Attributable &)> initDefaultAttribute;
+    // processed "from left to right"
+    std::deque<NewAttributeReader> attributeReaders;
 
     ConfigAttribute(Attributable &child_in, char const *attrName_in)
         : child(child_in), attrName(attrName_in)
@@ -135,288 +195,102 @@ struct ConfigAttribute
         return *this;
     }
 
-    template <typename... Args>
-    [[nodiscard]] auto withReader(Args &&...) -> ConfigAttribute &
+    [[nodiscard]] auto withReader(
+        std::deque<Datatype> eligibleDatatypes,
+        std::optional<NewAttributeReader::process_attribute_type>
+            processAttribute = std::nullopt) -> ConfigAttribute &
     {
-        // TODO
+        this->attributeReaders.emplace_back(
+            std::move(eligibleDatatypes), std::move(processAttribute));
         return *this;
     }
 
-    [[nodiscard]] auto configureReaders() -> ConfigAttribute &
+    void write()
     {
-        // TODO
-        return *this;
+        if (this->child.containsAttribute(this->attrName))
+        {
+            return;
+        }
+        this->initDefaultAttribute(this->child);
     }
+
+    void read()
+    {
+        AttributeReadResult res = attribute_read_result::TypeUnmatched{};
+        Parameter<Operation::READ_ATT> aRead;
+        aRead.name = this->attrName;
+        auto IOHandler = this->child.IOHandler();
+        IOHandler->enqueue(IOTask(&this->child, aRead));
+        try
+        {
+            IOHandler->flush(defaultFlushParams);
+        }
+        catch (error::ReadError const &e)
+        {
+            std::cerr << "Could not read expected attribute '" << this->attrName
+                      << "' in '" << this->child.myPath().openPMDPath()
+                      << ". Will initialize it with a default value. "
+                         "Original error: "
+                      << e.what() << std::endl;
+            this->initDefaultAttribute(this->child);
+            return;
+        }
+
+        Attribute attribute(Attribute::from_any, std::move(*aRead.m_resource));
+        for (auto &attributeReader : attributeReaders)
+        {
+
+            if (auto *not_matched =
+                    std::get_if<attribute_read_result::TypeUnmatched>(&res))
+            {
+                res = attributeReader(
+                    this->child,
+                    this->attrName,
+                    attribute,
+                    std::move(not_matched->expectedDatatypes));
+            }
+            else
+            {
+                break;
+            }
+        }
+        auto dt = attribute.dtype;
+        std::visit(
+            auxiliary::overloaded{
+                [&](attribute_read_result::TypeUnmatched &&type_unmatched) {
+                    std::cerr << "Unexpected type '" << dt
+                              << "' for attribute '" << this->attrName
+                              << "' in '" << this->child.myPath().openPMDPath()
+                              << "' with value '";
+                    write_to_stderr(attribute) << "'. Expected one of ";
+                    auxiliary::write_vec_to_stream(
+                        std::cerr, type_unmatched.expectedDatatypes)
+                        << " or convertible to such a type." << std::endl;
+                },
+                [&](error::ReadError const &err) {
+                    std::cerr << "Unexpected error while trying to read "
+                                 "attribute '"
+                              << this->attrName << "' in '"
+                              << this->child.myPath().openPMDPath()
+                              << "'' with value '";
+                    write_to_stderr(attribute)
+                        << "': " << err.what() << std::endl;
+                },
+                [](attribute_read_result::Success) { /* no-op */ }},
+            std::move(res));
+    }
+
     void operator()(WriteOrRead wor)
     {
         switch (wor)
         {
         case WriteOrRead::Write:
-            if (this->child.containsAttribute(this->attrName))
-            {
-                return;
-            }
-            this->initDefaultAttribute(this->child);
+            write();
             break;
         case WriteOrRead::Read:
-            // Reading implemented by subclass
-            // ConfigAttributeWithSetterAndReader
+            read();
             break;
         }
     }
 };
-
-namespace attribute_read_result
-{
-    struct TypeUnmatched
-    {
-        std::deque<Datatype> expectedDatatypes;
-    };
-    struct Success
-    {};
-} // namespace attribute_read_result
-using AttributeReadResult = std::variant<
-    attribute_read_result::Success,
-    attribute_read_result::TypeUnmatched,
-    error::ReadError>;
-
-struct AttributeReaderBottom
-{
-    template <typename... Args>
-    auto operator()(Args &&...) -> AttributeReadResult
-    {
-        return attribute_read_result::TypeUnmatched{};
-    }
-};
-
-/////////////////////
-// AttributeReader //
-/////////////////////
-
-template <
-    typename RecordType,
-    typename ExpectedAttributeType,
-    typename Functor,
-    typename RecursiveReader>
-struct AttributeReader
-{
-    // : ComponentType&, ExpectedAttributeType const& -> optional<ReadError>
-    Functor functor;
-    RecursiveReader recursiveReader;
-
-    AttributeReader(Functor functor_in, RecursiveReader recursiveReader_in)
-        : functor(std::move(functor_in))
-        , recursiveReader(std::move(recursiveReader_in))
-    {}
-
-    auto operator()(RecordType &record, Attribute const &attr)
-        -> AttributeReadResult
-    {
-        constexpr bool call_functor_with_raw_attribute = std::is_invocable_v<
-            Functor,
-            RecordType &,
-            ExpectedAttributeType,
-            Attribute const &>;
-
-        auto normalized_functor =
-            [this, &attr](
-                RecordType &r,
-                ExpectedAttributeType val) -> std::optional<error::ReadError> {
-            if constexpr (call_functor_with_raw_attribute)
-            {
-                constexpr bool functor_has_return_type = !std::is_same_v<
-                    void,
-                    std::invoke_result_t<
-                        Functor,
-                        RecordType &,
-                        ExpectedAttributeType,
-                        Attribute const &>>;
-                if constexpr (functor_has_return_type)
-                {
-                    return this->functor(r, std::move(val), attr);
-                }
-                else
-                {
-                    this->functor(r, std::move(val), attr);
-                    return std::nullopt;
-                }
-            }
-            else
-            {
-                constexpr bool functor_has_return_type = !std::is_same_v<
-                    void,
-                    std::invoke_result_t<
-                        Functor,
-                        RecordType &,
-                        ExpectedAttributeType>>;
-                if constexpr (functor_has_return_type)
-                {
-                    return this->functor(r, std::move(val));
-                }
-                else
-                {
-                    this->functor(r, std::move(val));
-                    return std::nullopt;
-                }
-            }
-        };
-
-        AttributeReadResult recursiveResult = recursiveReader(record, attr);
-        return std::visit(
-            auxiliary::overloaded{
-                [](attribute_read_result::Success &&success)
-                    -> AttributeReadResult { return success; },
-                [](error::ReadError &&err) -> AttributeReadResult {
-                    return std::move(err);
-                },
-                [this, &attr, &record, &normalized_functor](
-                    attribute_read_result::TypeUnmatched &&type_unmatched)
-                    -> AttributeReadResult {
-                    auto val = attr.getOptional<ExpectedAttributeType>();
-                    if (!val.has_value())
-                    {
-                        type_unmatched.expectedDatatypes.emplace_back(
-                            determineDatatype<ExpectedAttributeType>());
-                        return std::move(type_unmatched);
-                    }
-                    auto maybe_a_read_error =
-                        normalized_functor(record, std::move(*val));
-                    if (maybe_a_read_error.has_value())
-                    {
-                        return std::move(*maybe_a_read_error);
-                    }
-                    return attribute_read_result::Success{};
-                }},
-            std::move(recursiveResult));
-    }
-};
-
-////////////////////////////////////////
-// ConfigAttributeWithSetterAndReader //
-////////////////////////////////////////
-#if 0
-template <typename AttributeReader_t>
-struct ConfigAttributeWithSetterAndReader : ConfigAttribute
-{
-    AttributeReader_t attributeReader;
-    using parent_t =
-        ConfigAttributeWithSetter<RecordType, GetDefaultValue, SetDefaultValue>;
-    using DefaultValue = typename parent_t::DefaultValue;
-
-    ConfigAttributeWithSetterAndReader(
-        parent_t &&par, AttributeReader_t attributeReader_in)
-        : parent_t(std::move(par))
-        , attributeReader(std::move(attributeReader_in))
-    {}
-
-    template <typename ExpectedAttributeType = DefaultValue, typename Functor>
-    [[nodiscard]] auto
-    withReader(Functor f) && -> ConfigAttributeWithSetterAndReader<
-        RecordType,
-        GetDefaultValue,
-        SetDefaultValue,
-        AttributeReader<
-            RecordType,
-            ExpectedAttributeType,
-            Functor,
-            AttributeReader_t>>
-    {
-        return {
-            std::move(*static_cast<parent_t *>(this)),
-            AttributeReader<
-                RecordType,
-                ExpectedAttributeType,
-                Functor,
-                AttributeReader_t>{
-                std::move(f), std::move(this->attributeReader)}};
-    }
-
-    template <typename ExpectedAttributeType = DefaultValue>
-    [[nodiscard]] auto withReader() &&
-    {
-        auto defaultSetter = [&]() {
-            if constexpr (std::is_same_v<SetDefaultValue, GenericSetter>)
-            {
-                return [attrName_lambda = this->attrName](
-                           RecordType &r, ExpectedAttributeType val) {
-                    r.setAttribute(attrName_lambda, std::move(val));
-                };
-            }
-            else
-            {
-                return [/* must not capture this as it is moved */
-                        setter_lambda = this->setter](
-                           RecordType &r, ExpectedAttributeType val) {
-                    (r.*setter_lambda)(std::move(val));
-                };
-            }
-        }();
-        return (std::move(*this))
-            .template withReader<ExpectedAttributeType>(
-                std::move(defaultSetter));
-    }
-
-    void operator()(WriteOrRead wor)
-    {
-        parent_t::operator()(wor);
-        switch (wor)
-        {
-        case WriteOrRead::Write:
-            break;
-        case WriteOrRead::Read: {
-            Parameter<Operation::READ_ATT> aRead;
-            aRead.name = this->attrName;
-            auto IOHandler = this->child.IOHandler();
-            IOHandler->enqueue(IOTask(&this->child, aRead));
-            try
-            {
-                IOHandler->flush(defaultFlushParams);
-            }
-            catch (error::ReadError const &e)
-            {
-                std::cerr << "Could not read expected attribute '"
-                          << this->attrName << "' in '"
-                          << this->child.myPath().openPMDPath()
-                          << ". Will initialize it with a default value. "
-                             "Original error: "
-                          << e.what() << std::endl;
-                this->set(this->get());
-                return;
-            }
-
-            Attribute attribute(
-                Attribute::from_any, std::move(*aRead.m_resource));
-            auto dt = attribute.dtype;
-            AttributeReadResult readResult =
-                attributeReader(this->child, attribute);
-            std::visit(
-                auxiliary::overloaded{
-                    [&](attribute_read_result::TypeUnmatched &&type_unmatched) {
-                        std::cerr << "Unexpected type '" << dt
-                                  << "' for attribute '" << this->attrName
-                                  << "' in '"
-                                  << this->child.myPath().openPMDPath()
-                                  << "' with value '";
-                        write_to_stderr(attribute) << "'. Expected one of ";
-                        auxiliary::write_vec_to_stream(
-                            std::cerr, type_unmatched.expectedDatatypes)
-                            << " or convertible to such a type." << std::endl;
-                    },
-                    [&](error::ReadError const &err) {
-                        std::cerr << "Unexpected error while trying to read "
-                                     "attribute '"
-                                  << this->attrName << "' in '"
-                                  << this->child.myPath().openPMDPath()
-                                  << "'' with value '";
-                        write_to_stderr(attribute)
-                            << "': " << err.what() << std::endl;
-                    },
-                    [](attribute_read_result::Success) { /* no-op */ }},
-                std::move(readResult));
-        }
-        break;
-        }
-    }
-};
-#endif
 } // namespace openPMD::internal
