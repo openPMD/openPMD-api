@@ -77,21 +77,23 @@ function install_buildessentials {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.11.0.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
-    file adios2*.tar.gz
-    tar -xzf adios2*.tar.gz
-    rm adios2*.tar.gz
-
     # static build of macOS on ADIOS 2.11.0
     # https://github.com/ornladios/ADIOS2/issues/4807
     if [ "$(uname -s)" = "Darwin" ]
     then
+        git clone https://github.com/ornladios/ADIOS2 ADIOS2-2.11.0
         cd ADIOS2-2.11.0
-        curl -sLo 4820.diff https://github.com/ornladios/ADIOS2/pull/4820.diff
+        git checkout 7a21e4ef2f5def6659e67084b5210a66582d4b1a
+        curl -sLo 4820.diff https://github.com/ornladios/ADIOS2/pull/4820/commits/c7961dd9e12d72b279db75fd184d2b3b4f151560.diff
         GIT_COMMITTER_NAME="Greg Eisenhauer" GIT_COMMITTER_EMAIL="eisen@cc.gatech.edu" \
           patch -p1 < 4820.diff
         cd ..
+    else
+        curl -sLo adios2-2.11.0.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
+        file adios2*.tar.gz
+        tar -xzf adios2*.tar.gz
+        rm adios2*.tar.gz
     fi
 
     # build
