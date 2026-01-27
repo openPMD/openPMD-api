@@ -43,7 +43,7 @@ jobs:
           - os: macos-15-intel
             arch: "x86_64"
             env:
-              MACOSX_DEPLOYMENT_TARGET: 11.0
+              MACOSX_DEPLOYMENT_TARGET: 15.0
 
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
@@ -52,7 +52,7 @@ jobs:
             arch: "arm64"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
-              MACOSX_DEPLOYMENT_TARGET: 11.0
+              MACOSX_DEPLOYMENT_TARGET: 14.0
 
           # Apple universal builds that contain x86-64 and arm64 binary code
           #   Needs extra treatment of all librarys that are not CMake
@@ -64,7 +64,7 @@ jobs:
           #  arch: "universal2"
           #  env:
           #    CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
-          #    MACOSX_DEPLOYMENT_TARGET: 11.0
+          #    MACOSX_DEPLOYMENT_TARGET: 14.0
 
     steps:
     - uses: actions/checkout@v4
