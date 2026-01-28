@@ -75,7 +75,7 @@ constexpr auto eligible_conversions() -> std::array<bool, num_datatypes>
 }
 
 template <typename U>
-auto Attribute::get_impl() const -> std::variant<U, std::runtime_error>
+auto Attribute::getOrError() const -> std::variant<U, std::runtime_error>
 {
     constexpr std::array<bool, num_datatypes> conversions =
         eligible_conversions<U>();
@@ -111,7 +111,7 @@ auto Attribute::get_impl() const -> std::variant<U, std::runtime_error>
 template <typename U>
 U Attribute::get() const
 {
-    auto res = get_impl<U>();
+    auto res = getOrError<U>();
 
     return std::visit(
         [](auto &&containedValue) -> U {
@@ -131,7 +131,7 @@ U Attribute::get() const
 template <typename U>
 std::optional<U> Attribute::getOptional() const
 {
-    auto res = get_impl<U>();
+    auto res = getOrError<U>();
 
     return std::visit(
         [](auto &&containedValue) -> std::optional<U> {

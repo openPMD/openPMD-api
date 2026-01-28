@@ -422,76 +422,72 @@ namespace
             attr.getVariant<attribute_types>());
     };
 
-    template <typename T, typename Fun>
-    auto require_type_impl(Fun &&fun) -> AttributeReader::process_attribute_type
+    template <typename T>
+    auto require_type_impl(
+        std::function<std::optional<error::ReadError>(
+            Attributable &, char const *, T)> processAttribute)
+        -> AttributeReader::process_attribute_type
     {
-        return [fun_lambda = std::forward<Fun>(fun)](
+        return [processAttribute_lambda = std::move(processAttribute)](
                    Attributable &record,
                    char const *attrName,
                    Attribute const &attr) -> std::optional<error::ReadError> {
+            auto converted_or_error = attr.getOrError<T>();
             return std::visit(
-                [&](auto const &attr_val) -> std::optional<error::ReadError> {
-                    using actual_type = std::remove_cv_t<
-                        std::remove_reference_t<decltype(attr_val)>>;
-
-                    auto converted_or_error =
-                        detail::doConvert<actual_type, T>(&attr_val);
-                    return std::visit(
-                        auxiliary::overloaded{
-                            [&](T casted_val)
-                                -> std::optional<error::ReadError> {
-                                if constexpr (std::is_void_v<
-                                                  std::invoke_result_t<
-                                                      decltype(fun_lambda),
-                                                      Attributable &,
-                                                      char const *,
-                                                      T>>)
-                                {
-                                    std::move(fun_lambda)(
-                                        record,
-                                        attrName,
-                                        std::move(casted_val));
-                                    return std::nullopt;
-                                }
-                                else
-                                {
-                                    return std::move(fun_lambda)(
-                                        record,
-                                        attrName,
-                                        std::move(casted_val));
-                                }
-                            },
-                            [](std::runtime_error const &err)
-                                -> std::optional<error::ReadError> {
-                                return error::ReadError(
-                                    error::AffectedObject::Attribute,
-                                    error::Reason::UnexpectedContent,
-                                    std::nullopt,
-                                    std::string("Expected a scalar type: ") +
-                                        err.what());
-                            }},
-                        converted_or_error);
-                },
-                attr.getVariant<attribute_types>());
+                auxiliary::overloaded{
+                    [&](T casted_val) -> std::optional<error::ReadError> {
+                        return processAttribute_lambda(
+                            record, attrName, std::move(casted_val));
+                    },
+                    [](std::runtime_error const &err)
+                        -> std::optional<error::ReadError> {
+                        return error::ReadError(
+                            error::AffectedObject::Attribute,
+                            error::Reason::UnexpectedContent,
+                            std::nullopt,
+                            std::string("Expected a scalar type: ") +
+                                err.what());
+                    }},
+                converted_or_error);
         };
     }
     // namespace
 
-    template <typename T, typename Fun>
-    auto require_type(Fun &&fun) -> ConfigAttribute::process_attribute_type
+    template <typename T>
+    auto require_type(
+        std::function<std::optional<error::ReadError>(T)> processAttribute)
+        -> ConfigAttribute::process_attribute_type
     {
-        return require_type_impl<T>([fun_lambda = std::forward<Fun>(fun)](
-                                        Attributable &, char const *, T val) {
-            std::move(fun_lambda)(std::move(val));
-        });
+        return require_type_impl<T>(
+            [processAttribute_lambda = std::move(processAttribute)](
+                Attributable &, char const *, T val) {
+                return processAttribute_lambda(std::move(val));
+            });
+    }
+
+    template <typename T>
+    auto require_type_noerr(std::function<void(T)> processAttribute)
+        -> ConfigAttribute::process_attribute_type
+    {
+        return require_type_impl<T>(
+            [processAttribute_lambda = std::move(processAttribute)](
+                Attributable &,
+                char const *,
+                T val) -> std::optional<error::ReadError> {
+                processAttribute_lambda(std::move(val));
+                return std::nullopt;
+            });
     }
 
     template <typename T>
     auto require_type() -> ConfigAttribute::process_attribute_type
     {
         return require_type_impl<T>(
-            [](Attributable &record, char const *attrName, T val) {
+            [](Attributable &record,
+               char const *attrName,
+               T val) -> std::optional<error::ReadError> {
                 record.template setAttribute<T>(attrName, std::move(val));
+                return std::nullopt;
             });
     }
 
@@ -573,7 +569,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                 Mesh::Geometry::cartesian, &Mesh::setGeometry)
             .withReader(
                 string_types,
-                require_type<std::string>([this](std::string val) {
+                require_type_noerr<std::string>([this](std::string val) {
                     auto &m = asChild();
                     if ("cartesian" == val)
                         m.setGeometry(Mesh::Geometry::cartesian);

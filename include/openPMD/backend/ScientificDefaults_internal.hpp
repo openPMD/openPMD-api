@@ -140,9 +140,12 @@ namespace
     extern ConfigAttribute::process_attribute_type require_scalar;
     // try converting to vectors (e.g. when a scalar or an array is given)
     extern ConfigAttribute::process_attribute_type require_vector;
-    // F: T -> void
-    template <typename T, typename F>
-    auto require_type(F &&) -> ConfigAttribute::process_attribute_type;
+    template <typename T>
+    auto require_type(std::function<std::optional<error::ReadError>(T)>)
+        -> ConfigAttribute::process_attribute_type;
+    template <typename T>
+    auto require_type_noerr(std::function<void(T)>)
+        -> ConfigAttribute::process_attribute_type;
     // common case: directly use setAttribute
     template <typename T>
     auto require_type() -> ConfigAttribute::process_attribute_type;
