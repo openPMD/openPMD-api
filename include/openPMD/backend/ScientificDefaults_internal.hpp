@@ -97,6 +97,8 @@ struct ConfigAttribute
     // processed "from left to right"
     std::deque<AttributeReader> attributeReaders;
 
+    template <typename RecordType, typename ValueType>
+    using set_default_val_t = RecordType &(RecordType::*)(ValueType);
     using process_attribute_type = AttributeReader::process_attribute_type;
 
     ConfigAttribute(Attributable &child_in, char const *attrName_in);
@@ -110,11 +112,12 @@ struct ConfigAttribute
     template <typename RecordType, typename S = void, typename GetDefaultValue>
     [[nodiscard]] auto withSetter(
         GetDefaultValue &&getDefaultVal,
-        RecordType &(RecordType::*setDefaultVal)(
+        set_default_val_t<
+            RecordType,
             std::conditional_t<
                 std::is_void_v<S>,
                 detail::CallResult_t<GetDefaultValue>,
-                S>)) -> ConfigAttribute &;
+                S>> setDefaultVal) -> ConfigAttribute &;
 
     template <typename DefaultValue>
     [[nodiscard]] auto withGenericSetter(DefaultValue &&defaultVal)

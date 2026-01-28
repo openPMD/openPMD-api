@@ -104,11 +104,12 @@ ConfigAttribute::ConfigAttribute(
 template <typename RecordType, typename S, typename GetDefaultValue>
 auto ConfigAttribute::withSetter(
     GetDefaultValue &&getDefaultVal,
-    RecordType &(RecordType::*setDefaultVal)(
+    set_default_val_t<
+        RecordType,
         std::conditional_t<
             std::is_void_v<S>,
             detail::CallResult_t<GetDefaultValue>,
-            S>)) -> ConfigAttribute &
+            S>> setDefaultVal) -> ConfigAttribute &
 {
     initDefaultAttribute = [getDefaultVal_lambda =
                                 std::forward<GetDefaultValue>(getDefaultVal),
