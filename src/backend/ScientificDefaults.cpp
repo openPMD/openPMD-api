@@ -62,7 +62,7 @@ namespace
 
 AttributeReader::AttributeReader(
     std::deque<Datatype> eligibleDatatypes_in,
-    std::optional<process_attribute_type> processAttribute_in)
+    std::optional<std::shared_ptr<ProcessAttribute>> processAttribute_in)
     : eligibleDatatypes(std::move(eligibleDatatypes_in))
     , processAttribute(std::move(processAttribute_in))
 {}
@@ -87,7 +87,7 @@ auto AttributeReader::operator()(
     }
     if (processAttribute.has_value())
     {
-        auto maybe_error = (*processAttribute)(record, attrName, a);
+        auto maybe_error = (**processAttribute)(record, attrName, a);
         if (maybe_error.has_value())
         {
             return *maybe_error;
@@ -145,7 +145,7 @@ auto ConfigAttribute::withGenericSetter(DefaultValue &&defaultVal)
 
 auto ConfigAttribute::withReader(
     std::deque<Datatype> eligibleDatatypes,
-    std::optional<AttributeReader::process_attribute_type> processAttribute)
+    std::optional<std::shared_ptr<ProcessAttribute>> processAttribute)
     -> ConfigAttribute &
 {
     this->attributeReaders.emplace_back(
@@ -328,33 +328,89 @@ void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
     }
 }
 
-namespace
+template <typename T>
+struct to_scalar
 {
-    template <typename T>
-    struct to_scalar
-    {
-        using type = T;
-    };
-    template <typename T>
-    struct to_scalar<std::vector<T>>
-    {
-        using type = T;
-    };
-    template <typename T, size_t N>
-    struct to_scalar<std::array<T, N>>
-    {
-        using type = T;
-    };
+    using type = T;
+};
+template <typename T>
+struct to_scalar<std::vector<T>>
+{
+    using type = T;
+};
+template <typename T, size_t N>
+struct to_scalar<std::array<T, N>>
+{
+    using type = T;
+};
 
-    ConfigAttribute::process_attribute_type require_scalar =
-        [](Attributable &record,
-           char const *attrName,
-           Attribute const &attr) -> std::optional<error::ReadError> {
-        return std::visit(
-            [&](auto const &attr_val) -> std::optional<error::ReadError> {
-                using actual_type = std::remove_cv_t<
-                    std::remove_reference_t<decltype(attr_val)>>;
-                using target_type = typename to_scalar<actual_type>::type;
+auto RequireScalar::operator()(
+    Attributable &record, char const *attrName, Attribute const &attr)
+    -> std::optional<error::ReadError>
+{
+    return std::visit(
+        [&](auto const &attr_val) -> std::optional<error::ReadError> {
+            using actual_type =
+                std::remove_cv_t<std::remove_reference_t<decltype(attr_val)>>;
+            using target_type = typename to_scalar<actual_type>::type;
+            auto converted_or_error = attr.getOrError<target_type>();
+            return std::visit(
+                auxiliary::overloaded{
+                    [&](target_type casted_val)
+                        -> std::optional<error::ReadError> {
+                        record.setAttribute<target_type>(
+                            attrName, std::move(casted_val));
+                        return std::nullopt;
+                    },
+                    [](std::runtime_error const &err)
+                        -> std::optional<error::ReadError> {
+                        return error::ReadError(
+                            error::AffectedObject::Attribute,
+                            error::Reason::UnexpectedContent,
+                            std::nullopt,
+                            std::string("Expected a scalar type: ") +
+                                err.what());
+                    }},
+                converted_or_error);
+        },
+        attr.getVariant<attribute_types>());
+}
+
+template <typename T>
+struct to_vector
+{
+    using type = std::vector<T>;
+};
+template <typename T>
+struct to_vector<std::vector<T>>
+{
+    using type = std::vector<T>;
+};
+template <typename T, size_t N>
+struct to_vector<std::array<T, N>>
+{
+    using type = std::vector<T>;
+};
+
+auto RequireVector::operator()(
+    Attributable &record, char const *attrName, Attribute const &attr)
+    -> std::optional<error::ReadError>
+{
+    return std::visit(
+        [&](auto const &attr_val) -> std::optional<error::ReadError> {
+            using actual_type =
+                std::remove_cv_t<std::remove_reference_t<decltype(attr_val)>>;
+            if constexpr (std::is_same_v<bool, actual_type>)
+            {
+                return error::ReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    "Expected a vector type, found a boolean.");
+            }
+            else
+            {
+                using target_type = typename to_vector<actual_type>::type;
                 auto converted_or_error = attr.getOrError<target_type>();
                 return std::visit(
                     auxiliary::overloaded{
@@ -374,136 +430,60 @@ namespace
                                     err.what());
                         }},
                     converted_or_error);
-            },
-            attr.getVariant<attribute_types>());
-    };
+            }
+        },
+        attr.getVariant<attribute_types>());
+}
 
-    template <typename T>
-    struct to_vector
-    {
-        using type = std::vector<T>;
-    };
-    template <typename T>
-    struct to_vector<std::vector<T>>
-    {
-        using type = std::vector<T>;
-    };
-    template <typename T, size_t N>
-    struct to_vector<std::array<T, N>>
-    {
-        using type = std::vector<T>;
-    };
-
-    ConfigAttribute::process_attribute_type require_vector =
-        [](Attributable &record,
-           char const *attrName,
-           Attribute const &attr) -> std::optional<error::ReadError> {
-        return std::visit(
-            [&](auto const &attr_val) -> std::optional<error::ReadError> {
-                using actual_type = std::remove_cv_t<
-                    std::remove_reference_t<decltype(attr_val)>>;
-                if constexpr (std::is_same_v<bool, actual_type>)
+template <typename T>
+auto RequireType<T>::operator()(
+    Attributable &record, char const *attrName, Attribute const &attr)
+    -> std::optional<error::ReadError>
+{
+    auto converted_or_error = attr.getOrError<T>();
+    return std::visit(
+        auxiliary::overloaded{
+            [&](T casted_val) -> std::optional<error::ReadError> {
+                if (this->postProcess.has_value())
                 {
-                    return error::ReadError(
-                        error::AffectedObject::Attribute,
-                        error::Reason::UnexpectedContent,
-                        std::nullopt,
-                        "Expected a vector type, found a boolean.");
+                    return (**this->postProcess)(std::move(casted_val));
                 }
                 else
                 {
-                    using target_type = typename to_vector<actual_type>::type;
-                    auto converted_or_error = attr.getOrError<target_type>();
-                    return std::visit(
-                        auxiliary::overloaded{
-                            [&](target_type casted_val)
-                                -> std::optional<error::ReadError> {
-                                record.setAttribute<target_type>(
-                                    attrName, std::move(casted_val));
-                                return std::nullopt;
-                            },
-                            [](std::runtime_error const &err)
-                                -> std::optional<error::ReadError> {
-                                return error::ReadError(
-                                    error::AffectedObject::Attribute,
-                                    error::Reason::UnexpectedContent,
-                                    std::nullopt,
-                                    std::string("Expected a scalar type: ") +
-                                        err.what());
-                            }},
-                        converted_or_error);
+                    record.setAttribute<T>(attrName, std::move(casted_val));
+                    return std::nullopt;
                 }
             },
-            attr.getVariant<attribute_types>());
-    };
+            [](std::runtime_error const &err)
+                -> std::optional<error::ReadError> {
+                return error::ReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    std::string("Expected a scalar type: ") + err.what());
+            }},
+        converted_or_error);
+}
 
-    template <typename T>
-    auto require_type_impl(
-        std::function<std::optional<error::ReadError>(
-            Attributable &, char const *, T)> processAttribute)
-        -> AttributeReader::process_attribute_type
-    {
-        return [processAttribute_lambda = std::move(processAttribute)](
-                   Attributable &record,
-                   char const *attrName,
-                   Attribute const &attr) -> std::optional<error::ReadError> {
-            auto converted_or_error = attr.getOrError<T>();
-            return std::visit(
-                auxiliary::overloaded{
-                    [&](T casted_val) -> std::optional<error::ReadError> {
-                        return processAttribute_lambda(
-                            record, attrName, std::move(casted_val));
-                    },
-                    [](std::runtime_error const &err)
-                        -> std::optional<error::ReadError> {
-                        return error::ReadError(
-                            error::AffectedObject::Attribute,
-                            error::Reason::UnexpectedContent,
-                            std::nullopt,
-                            std::string("Expected a scalar type: ") +
-                                err.what());
-                    }},
-                converted_or_error);
-        };
-    }
-    // namespace
+namespace
+{
+    std::shared_ptr<ProcessAttribute> require_scalar =
+        std::make_shared<RequireScalar>();
+    // try converting to vectors (e.g. when a scalar or an array is given)
+    std::shared_ptr<ProcessAttribute> require_vector =
+        std::make_shared<RequireVector>();
 
-    template <typename T>
-    auto require_type(
-        std::function<std::optional<error::ReadError>(T)> processAttribute)
-        -> ConfigAttribute::process_attribute_type
+    template <typename T, typename Fun>
+    auto require_type(Fun &&fun) -> std::shared_ptr<ProcessAttribute>
     {
-        return require_type_impl<T>(
-            [processAttribute_lambda = std::move(processAttribute)](
-                Attributable &, char const *, T val) {
-                return processAttribute_lambda(std::move(val));
-            });
+        return std::make_shared<RequireType<T>>(
+            constructor_tag_v, std::forward<Fun>(fun));
     }
 
     template <typename T>
-    auto require_type_noerr(std::function<void(T)> processAttribute)
-        -> ConfigAttribute::process_attribute_type
+    auto require_type() -> std::shared_ptr<ProcessAttribute>
     {
-        return require_type_impl<T>(
-            [processAttribute_lambda = std::move(processAttribute)](
-                Attributable &,
-                char const *,
-                T val) -> std::optional<error::ReadError> {
-                processAttribute_lambda(std::move(val));
-                return std::nullopt;
-            });
-    }
-
-    template <typename T>
-    auto require_type() -> ConfigAttribute::process_attribute_type
-    {
-        return require_type_impl<T>(
-            [](Attributable &record,
-               char const *attrName,
-               T val) -> std::optional<error::ReadError> {
-                record.template setAttribute<T>(attrName, std::move(val));
-                return std::nullopt;
-            });
+        return std::make_shared<RequireType<T>>();
     }
 
     auto get_float_types() -> std::deque<Datatype>
@@ -584,7 +564,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                 Mesh::Geometry::cartesian, &Mesh::setGeometry)
             .withReader(
                 string_types,
-                require_type_noerr<std::string>([this](std::string val) {
+                require_type<std::string>([this](std::string val) {
                     auto &m = asChild();
                     if ("cartesian" == val)
                         m.setGeometry(Mesh::Geometry::cartesian);

@@ -50,6 +50,121 @@ namespace attribute_read_result
     {};
 } // namespace attribute_read_result
 
+/*
+ * The structs below implement the typical routines for parsing an attribute.
+ * This implies validation and conversion.
+ */
+
+/*
+ * General interface for attribute processing used in struct AttributeReader.
+ */
+struct ProcessAttribute
+{
+    virtual auto operator()(Attributable &, char const *, Attribute const &)
+        -> std::optional<error::ReadError> = 0;
+    virtual ~ProcessAttribute() = default;
+};
+
+/*
+ * Interface for validating an attribute whose type has already been determined.
+ */
+template <typename T>
+struct PostProcessConvertedAttribute
+{
+    virtual auto operator()(T val) -> std::optional<error::ReadError> = 0;
+    virtual ~PostProcessConvertedAttribute() = default;
+};
+
+struct constructor_tag
+{};
+static constexpr constructor_tag constructor_tag_v = {};
+
+template <typename T, typename Functor>
+struct PostProcessConvertedAttributeImpl : PostProcessConvertedAttribute<T>
+{
+    template <typename T_, typename Functor_>
+    friend auto makePostProcessConvertedAttribute(Functor_ &&fun)
+        -> std::shared_ptr<PostProcessConvertedAttribute<T_>>;
+
+    template <typename Fun>
+    PostProcessConvertedAttributeImpl(constructor_tag, Fun &&f)
+        : fun{std::forward<Fun>(f)}
+    {}
+
+    Functor fun;
+    auto operator()(T val) -> std::optional<error::ReadError> override
+    {
+        return fun(std::move(val));
+    }
+};
+
+template <typename T, typename Fun>
+auto makePostProcessConvertedAttribute(Fun &&fun)
+    -> std::shared_ptr<PostProcessConvertedAttribute<T>>
+{
+    auto functor = [fun_lambda = std::forward<Fun>(fun)](
+                       T val) -> std::optional<error::ReadError> {
+        if constexpr (!std::is_void_v<std::invoke_result<Fun &&, T>>)
+        {
+            std::move(fun_lambda)(std::move(val));
+            return std::nullopt;
+        }
+        else
+        {
+            return std::move(fun_lambda)(std::move(val));
+        }
+    };
+    return std::make_shared<
+        PostProcessConvertedAttributeImpl<T, decltype(functor)>>(
+        constructor_tag_v, std::move(functor));
+}
+
+/*
+ * Validate an attribute by requiring one specific type T, and by optionally
+ * postprocessing it. Type conversions for the attribute are attempted.
+ */
+template <typename T>
+struct RequireType : ProcessAttribute
+{
+    std::optional<std::shared_ptr<PostProcessConvertedAttribute<T>>>
+        postProcess;
+
+    explicit RequireType() = default;
+
+    template <typename Functor>
+    RequireType(constructor_tag, Functor &&fun)
+        : postProcess(
+              makePostProcessConvertedAttribute<T>(std::forward<Functor>(fun)))
+    {}
+
+    auto operator()(Attributable &, char const *, Attribute const &)
+        -> std::optional<error::ReadError> override;
+};
+
+/*
+ * Validate an attribute by requiring a vector type, potentially wrapping
+ * scalar values into a vector.
+ * Note that this employs no type checking for the base type, this is done
+ * by the type list argument of ConfigAttribute::withReader().
+ */
+struct RequireVector : ProcessAttribute
+{
+    auto operator()(Attributable &, char const *, Attribute const &)
+        -> std::optional<error::ReadError> override;
+};
+
+/*
+ * Validate an attribute by requiring a scalar type, potentially unwrapping
+ * single values from a vector.
+ * Note that this employs no type checking for the base type, this is done
+ * by the type list argument of ConfigAttribute::withReader().
+ */
+struct RequireScalar : ProcessAttribute
+{
+    auto operator()(Attributable &, char const *, Attribute const &)
+        -> std::optional<error::ReadError> override;
+};
+
 using AttributeReadResult = std::variant<
     attribute_read_result::Success,
     attribute_read_result::TypeUnmatched,
@@ -61,16 +176,12 @@ using AttributeReadResult = std::variant<
  */
 struct AttributeReader
 {
-    using process_attribute_type =
-        std::function<std::optional<error::ReadError>(
-            Attributable &, char const *, Attribute const &)>;
-
     std::deque<Datatype> eligibleDatatypes;
-    std::optional<process_attribute_type> processAttribute;
+    std::optional<std::shared_ptr<ProcessAttribute>> processAttribute;
 
     AttributeReader(
         std::deque<Datatype> eligibleDatatypes_in,
-        std::optional<process_attribute_type> processAttribute_in);
+        std::optional<std::shared_ptr<ProcessAttribute>> processAttribute_in);
 
     auto operator()(
         Attributable &record,
@@ -99,7 +210,6 @@ struct ConfigAttribute
 
     template <typename RecordType, typename ValueType>
     using set_default_val_t = RecordType &(RecordType::*)(ValueType);
-    using process_attribute_type = AttributeReader::process_attribute_type;
 
     ConfigAttribute(Attributable &child_in, char const *attrName_in);
 
@@ -125,8 +235,8 @@ struct ConfigAttribute
 
     [[nodiscard]] auto withReader(
         std::deque<Datatype> eligibleDatatypes,
-        std::optional<process_attribute_type> processAttribute = std::nullopt)
-        -> ConfigAttribute &;
+        std::optional<std::shared_ptr<ProcessAttribute>> processAttribute =
+            std::nullopt) -> ConfigAttribute &;
 
     void write();
     void read();
@@ -137,18 +247,14 @@ struct ConfigAttribute
 // attributes in withReader()
 namespace
 { // try converting to scalar values (e.g. when a vector of length 1 is given)
-    extern ConfigAttribute::process_attribute_type require_scalar;
+    extern std::shared_ptr<ProcessAttribute> require_scalar;
     // try converting to vectors (e.g. when a scalar or an array is given)
-    extern ConfigAttribute::process_attribute_type require_vector;
-    template <typename T>
-    auto require_type(std::function<std::optional<error::ReadError>(T)>)
-        -> ConfigAttribute::process_attribute_type;
-    template <typename T>
-    auto require_type_noerr(std::function<void(T)>)
-        -> ConfigAttribute::process_attribute_type;
+    extern std::shared_ptr<ProcessAttribute> require_vector;
+    template <typename T, typename Fun>
+    auto require_type(Fun &&) -> std::shared_ptr<ProcessAttribute>;
     // common case: directly use setAttribute
     template <typename T>
-    auto require_type() -> ConfigAttribute::process_attribute_type;
+    auto require_type() -> std::shared_ptr<ProcessAttribute>;
 
     auto get_float_types() -> std::deque<Datatype>;
     auto get_string_types() -> std::deque<Datatype>;
