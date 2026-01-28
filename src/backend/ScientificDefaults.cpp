@@ -344,6 +344,7 @@ struct to_scalar<std::array<T, N>>
     using type = T;
 };
 
+// 2, 0.0976562
 auto RequireScalar::operator()(
     Attributable &record, char const *attrName, Attribute const &attr)
     -> std::optional<error::ReadError>
@@ -392,6 +393,7 @@ struct to_vector<std::array<T, N>>
     using type = std::vector<T>;
 };
 
+// 1, 0.113281
 auto RequireVector::operator()(
     Attributable &record, char const *attrName, Attribute const &attr)
     -> std::optional<error::ReadError>
@@ -435,6 +437,7 @@ auto RequireVector::operator()(
         attr.getVariant<attribute_types>());
 }
 
+// 3, 0.0117188
 template <typename T>
 auto RequireType<T>::operator()(
     Attributable &record, char const *attrName, Attribute const &attr)
