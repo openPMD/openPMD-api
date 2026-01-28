@@ -1,7 +1,6 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/Access.hpp"
 
 #include <type_traits>
 
