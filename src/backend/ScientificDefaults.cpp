@@ -61,7 +61,8 @@ namespace
     }
 
     // Helper function to set geometry based on string value
-    inline void setMeshGeometryFromString(Mesh &mesh, std::string val)
+    inline auto setMeshGeometryFromString(Mesh &mesh, std::string val)
+        -> std::optional<error::ReadError>
     {
         if ("cartesian" == val)
             mesh.setGeometry(Mesh::Geometry::cartesian);
@@ -73,6 +74,7 @@ namespace
             mesh.setGeometry(Mesh::Geometry::spherical);
         else
             mesh.setGeometry(std::move(val));
+        return std::nullopt;
     }
 
     // Helper function to set data order based on char value
@@ -506,11 +508,15 @@ namespace
     std::shared_ptr<ProcessAttribute> require_vector =
         std::make_shared<RequireVector>();
 
-    template <typename T, typename Fun>
-    auto require_type(Fun &&fun) -> std::shared_ptr<ProcessAttribute>
+    template <typename T, typename RecordType>
+    auto require_type(
+        RecordType &&record,
+        std::optional<error::ReadError> (*handler)(
+            std::remove_reference_t<RecordType> &, T))
+        -> std::shared_ptr<ProcessAttribute>
     {
         return std::make_shared<RequireType<T>>(
-            constructor_tag_v, std::forward<Fun>(fun));
+            std::forward<RecordType>(record), handler);
     }
 
     template <typename T>
@@ -551,8 +557,6 @@ template <typename Child>
 template <bool write>
 void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 {
-    using maybe_read_error = std::optional<error::ReadError>;
-
     auto float_types = get_float_types();
     auto string_types = get_string_types();
 
@@ -597,17 +601,13 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
                 Mesh::Geometry::cartesian, &Mesh::setGeometry)
             .withReader(
                 string_types,
-                require_type<std::string>([this](std::string val) {
-                    setMeshGeometryFromString(asChild(), std::move(val));
-                }))(wor);
+                require_type(asChild(), &setMeshGeometryFromString))(wor);
 
         defaultAttribute("dataOrder")
             .template withSetter<Mesh>(Mesh::DataOrder::C, &Mesh::setDataOrder)
             .withReader(
                 string_types,
-                require_type<char>([this](char val) -> maybe_read_error {
-                    return setMeshDataOrderFromChar(asChild(), val);
-                }))(wor);
+                require_type(asChild(), &setMeshDataOrderFromChar))(wor);
 
         defaultAttribute("axisLabels")
             .template withSetter<Mesh, std::vector<std::string> const &>(

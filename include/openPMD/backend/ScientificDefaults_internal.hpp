@@ -75,49 +75,37 @@ struct PostProcessConvertedAttribute
     virtual ~PostProcessConvertedAttribute() = default;
 };
 
-struct constructor_tag
-{};
-static constexpr constructor_tag constructor_tag_v = {};
-
-template <typename T, typename Functor>
+/*
+ * Defer validation to a function pointer of type handler_t.
+ */
+template <typename T, typename RecordType>
 struct PostProcessConvertedAttributeImpl : PostProcessConvertedAttribute<T>
 {
-    template <typename T_, typename Functor_>
-    friend auto makePostProcessConvertedAttribute(Functor_ &&fun)
-        -> std::shared_ptr<PostProcessConvertedAttribute<T_>>;
+    RecordType record;
+    using handler_t = std::optional<error::ReadError> (*)(RecordType &, T);
+    handler_t reader;
 
-    template <typename Fun>
-    PostProcessConvertedAttributeImpl(constructor_tag, Fun &&f)
-        : fun{std::forward<Fun>(f)}
+    PostProcessConvertedAttributeImpl(RecordType record_in, handler_t reader_in)
+        : record(std::move(record_in)), reader(reader_in)
     {}
 
-    Functor fun;
     auto operator()(T val) -> std::optional<error::ReadError> override
     {
-        return fun(std::move(val));
+        return (*reader)(record, std::move(val));
     }
 };
 
-// 4, 0.152344
-template <typename T, typename Fun>
-auto makePostProcessConvertedAttribute(Fun &&fun)
+template <typename T, typename RecordType>
+auto makePostProcessConvertedAttribute(
+    RecordType &&record,
+    std::optional<error::ReadError> (*handler)(
+        std::remove_reference_t<RecordType> &, T))
     -> std::shared_ptr<PostProcessConvertedAttribute<T>>
 {
-    auto functor = [fun_lambda = std::forward<Fun>(fun)](
-                       T val) -> std::optional<error::ReadError> {
-        if constexpr (!std::is_void_v<std::invoke_result<Fun &&, T>>)
-        {
-            std::move(fun_lambda)(std::move(val));
-            return std::nullopt;
-        }
-        else
-        {
-            return std::move(fun_lambda)(std::move(val));
-        }
-    };
-    return std::make_shared<
-        PostProcessConvertedAttributeImpl<T, decltype(functor)>>(
-        constructor_tag_v, std::move(functor));
+    return std::make_shared<PostProcessConvertedAttributeImpl<
+        T,
+        std::remove_reference_t<RecordType>>>(
+        std::forward<RecordType>(record), handler);
 }
 
 /*
@@ -132,10 +120,13 @@ struct RequireType : ProcessAttribute
 
     explicit RequireType() = default;
 
-    template <typename Functor>
-    RequireType(constructor_tag, Functor &&fun)
-        : postProcess(
-              makePostProcessConvertedAttribute<T>(std::forward<Functor>(fun)))
+    template <typename RecordType>
+    RequireType(
+        RecordType &&record,
+        std::optional<error::ReadError> (*handler)(
+            std::remove_reference_t<RecordType> &, T))
+        : postProcess(makePostProcessConvertedAttribute(
+              std::forward<RecordType>(record), handler))
     {}
 
     auto operator()(Attributable &, char const *, Attribute const &)
@@ -251,8 +242,11 @@ namespace
     extern std::shared_ptr<ProcessAttribute> require_scalar;
     // try converting to vectors (e.g. when a scalar or an array is given)
     extern std::shared_ptr<ProcessAttribute> require_vector;
-    template <typename T, typename Fun>
-    auto require_type(Fun &&) -> std::shared_ptr<ProcessAttribute>;
+    template <typename T, typename RecordType>
+    auto require_type(
+        std::optional<error::ReadError> (*)(
+            std::remove_reference_t<RecordType> &, T))
+        -> std::shared_ptr<ProcessAttribute>;
     // common case: directly use setAttribute
     template <typename T>
     auto require_type() -> std::shared_ptr<ProcessAttribute>;
