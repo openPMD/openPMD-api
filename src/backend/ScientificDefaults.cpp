@@ -59,6 +59,92 @@ namespace
             a.getVariant<attribute_types>());
         return std::cerr;
     }
+
+    // Helper function to set geometry based on string value
+    inline void setMeshGeometryFromString(Mesh &mesh, std::string val)
+    {
+        if ("cartesian" == val)
+            mesh.setGeometry(Mesh::Geometry::cartesian);
+        else if ("thetaMode" == val)
+            mesh.setGeometry(Mesh::Geometry::thetaMode);
+        else if ("cylindrical" == val)
+            mesh.setGeometry(Mesh::Geometry::cylindrical);
+        else if ("spherical" == val)
+            mesh.setGeometry(Mesh::Geometry::spherical);
+        else
+            mesh.setGeometry(std::move(val));
+    }
+
+    // Helper function to set data order based on char value
+    inline auto setMeshDataOrderFromChar(Mesh &mesh, char val)
+        -> std::optional<error::ReadError>
+    {
+        if (val == 'C' || val == 'F')
+        {
+            mesh.setDataOrder(static_cast<Mesh::DataOrder>(val));
+            return std::nullopt;
+        }
+        else
+        {
+            return error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                std::nullopt,
+                "Data order must be either C or F.");
+        }
+    }
+
+    // Helper function to create default axis labels based on dimensionality
+    inline auto createDefaultAxisLabels(uint64_t dimensionality)
+        -> std::vector<std::string>
+    {
+        switch (dimensionality)
+        {
+        case 0:
+        case 1:
+            return {"x"};
+        case 2:
+            return {"x", "y"};
+        case 3:
+            return {"x", "y", "z"};
+        default:
+            if (dimensionality < 100)
+            {
+                // x1, x2, x3, x4, ...
+                std::vector<std::string> res;
+                res.reserve(dimensionality);
+                for (uint64_t i = 0; i < dimensionality; ++i)
+                {
+                    res.emplace_back("x" + std::to_string(i));
+                }
+                return res;
+            }
+            else
+            {
+                std::string msg =
+                    "Please verify dimensionality. Was inferred as '";
+                msg += std::to_string(dimensionality);
+                msg += "'. Seems a bit much.";
+                return {std::move(msg)};
+            }
+        }
+        return std::vector<std::string>{"x", "y", "z"};
+    }
+
+    // Helper function to create default vector based on dimensionality
+    inline auto
+    createDefaultVector(uint64_t dimensionality, double defaultValue)
+        -> std::vector<double>
+    {
+        if (dimensionality < 100)
+        {
+            return std::vector<double>(dimensionality, defaultValue);
+        }
+        else
+        {
+            return std::vector<double>{defaultValue};
+        }
+    }
 } // namespace
 
 AttributeReader::AttributeReader(
@@ -339,11 +425,13 @@ auto RequireScalar::operator()(
     return std::visit(
         auxiliary::overloaded{
             [](std::runtime_error const &err) -> res_t {
+                std::string msg = "Expected a scalar type: ";
+                msg += err.what();
                 return error::ReadError(
                     error::AffectedObject::Attribute,
                     error::Reason::UnexpectedContent,
                     std::nullopt,
-                    std::string("Expected a scalar type: ") + err.what());
+                    std::move(msg));
             },
             [&](Attribute converted_attr) -> res_t {
                 record.setAttribute(attrName, std::move(converted_attr));
@@ -362,11 +450,13 @@ auto RequireVector::operator()(
     return std::visit(
         auxiliary::overloaded{
             [](std::runtime_error const &err) -> res_t {
+                std::string msg = "Expected a vector type: ";
+                msg += err.what();
                 return error::ReadError(
                     error::AffectedObject::Attribute,
                     error::Reason::UnexpectedContent,
                     std::nullopt,
-                    std::string("Expected a vector type: ") + err.what());
+                    std::move(msg));
             },
             [&](Attribute converted_attr) -> res_t {
                 record.setAttribute(attrName, std::move(converted_attr));
@@ -397,11 +487,13 @@ auto RequireType<T>::operator()(
             },
             [](std::runtime_error const &err)
                 -> std::optional<error::ReadError> {
+                std::string msg = "Expected a scalar type: ";
+                msg += err.what();
                 return error::ReadError(
                     error::AffectedObject::Attribute,
                     error::Reason::UnexpectedContent,
                     std::nullopt,
-                    std::string("Expected a scalar type: ") + err.what());
+                    std::move(msg));
             }},
         converted_or_error);
 }
@@ -506,17 +598,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
             .withReader(
                 string_types,
                 require_type<std::string>([this](std::string val) {
-                    auto &m = asChild();
-                    if ("cartesian" == val)
-                        m.setGeometry(Mesh::Geometry::cartesian);
-                    else if ("thetaMode" == val)
-                        m.setGeometry(Mesh::Geometry::thetaMode);
-                    else if ("cylindrical" == val)
-                        m.setGeometry(Mesh::Geometry::cylindrical);
-                    else if ("spherical" == val)
-                        m.setGeometry(Mesh::Geometry::spherical);
-                    else
-                        m.setGeometry(std::move(val));
+                    setMeshGeometryFromString(asChild(), std::move(val));
                 }))(wor);
 
         defaultAttribute("dataOrder")
@@ -524,87 +606,26 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
             .withReader(
                 string_types,
                 require_type<char>([this](char val) -> maybe_read_error {
-                    auto &m = this->asChild();
-                    if (val == 'C' || val == 'F')
-                    {
-                        m.setDataOrder(static_cast<Mesh::DataOrder>(val));
-                        return std::nullopt;
-                    }
-                    else
-                    {
-                        return error::ReadError(
-                            error::AffectedObject::Attribute,
-                            error::Reason::UnexpectedContent,
-                            std::nullopt,
-                            "Data order must be either C or F.");
-                    }
+                    return setMeshDataOrderFromChar(asChild(), val);
                 }))(wor);
 
         defaultAttribute("axisLabels")
             .template withSetter<Mesh, std::vector<std::string> const &>(
                 [&]() -> std::vector<std::string> {
-                    switch (dimensionality)
-                    {
-                    case 0:
-                    case 1:
-                        return {"x"};
-                    case 2:
-                        return {"x", "y"};
-                    case 3:
-                        return {"x", "y", "z"};
-                    default:
-                        if (dimensionality < 100)
-                        {
-                            // x1, x2, x3, x4, ...
-                            std::vector<std::string> res;
-                            res.reserve(dimensionality);
-                            for (uint64_t i = 0; i < dimensionality; ++i)
-                            {
-                                res.emplace_back("x" + std::to_string(i));
-                            }
-                            return res;
-                        }
-                        else
-                        {
-                            return {
-                                "Please verify dimensionality. Was inferred as "
-                                "'" +
-                                std::to_string(dimensionality) +
-                                "'. Seems a bit much."};
-                        }
-                    }
-                    return std::vector<std::string>{"x", "y", "z"};
+                    return createDefaultAxisLabels(dimensionality);
                 },
                 &Mesh::setAxisLabels)
             .withReader(string_types, require_vector)(wor);
 
         defaultAttribute("gridSpacing")
             .template withSetter<Mesh, std::vector<double> const &>(
-                [&]() {
-                    if (dimensionality < 100)
-                    {
-                        return std::vector<double>(dimensionality, 1.0);
-                    }
-                    else
-                    {
-                        return std::vector<double>{1.0};
-                    }
-                },
+                [&]() { return createDefaultVector(dimensionality, 1.0); },
                 &Mesh::setGridSpacing)
             .withReader(float_types, require_vector)(wor);
 
         defaultAttribute("gridGlobalOffset")
             .template withSetter<Mesh, std::vector<double> const &>(
-                [&]() {
-                    if (dimensionality < 100)
-                    {
-                        return std::vector<double>(dimensionality, 0.0);
-                    }
-                    else
-                    {
-                        return std::vector<double>{0.0};
-                    }
-                },
+                [&]() { return createDefaultVector(dimensionality, 0.0); },
                 &Mesh::setGridGlobalOffset)
             .withReader(float_types, require_type<std::vector<double>>())(wor);
 
@@ -616,16 +637,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
         {
             defaultAttribute("gridUnitSI")
                 .template withSetter<Mesh, std::vector<double> const &>(
-                    [&]() {
-                        if (dimensionality < 100)
-                        {
-                            return std::vector<double>(dimensionality, 1.);
-                        }
-                        else
-                        {
-                            return std::vector<double>{1.};
-                        }
-                    },
+                    [&]() { return createDefaultVector(dimensionality, 1.); },
                     &Mesh::setGridUnitSIPerDimension)
                 .withReader(float_types, require_type<std::vector<double>>())(
                     wor);
@@ -683,16 +695,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 
         defaultAttribute("position")
             .template withSetter<MeshRecordComponent>(
-                [&]() {
-                    if (dimensionality < 100)
-                    {
-                        return std::vector<double>(dimensionality, 0.5);
-                    }
-                    else
-                    {
-                        return std::vector<double>{0.0};
-                    }
-                },
+                [&]() { return createDefaultVector(dimensionality, 0.5); },
                 &MeshRecordComponent::setPosition)
             .withReader(float_types, require_vector)(wor);
 
