@@ -278,6 +278,7 @@ public:
     template <typename T>
     bool setAttribute(std::string const &key, T value);
     bool setAttribute(std::string const &key, char const value[]);
+    bool setAttribute(std::string const &key, Attribute value);
     /** @}
      */
 

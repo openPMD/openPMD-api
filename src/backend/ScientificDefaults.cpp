@@ -27,6 +27,7 @@
 
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -328,113 +329,50 @@ void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
     }
 }
 
-template <typename T>
-struct to_scalar
-{
-    using type = T;
-};
-template <typename T>
-struct to_scalar<std::vector<T>>
-{
-    using type = T;
-};
-template <typename T, size_t N>
-struct to_scalar<std::array<T, N>>
-{
-    using type = T;
-};
-
 // 2, 0.0976562
 auto RequireScalar::operator()(
     Attributable &record, char const *attrName, Attribute const &attr)
     -> std::optional<error::ReadError>
 {
+    auto res = attr.requireScalar();
+    using res_t = std::optional<error::ReadError>;
     return std::visit(
-        [&](auto const &attr_val) -> std::optional<error::ReadError> {
-            using actual_type =
-                std::remove_cv_t<std::remove_reference_t<decltype(attr_val)>>;
-            using target_type = typename to_scalar<actual_type>::type;
-            auto converted_or_error = attr.getOrError<target_type>();
-            return std::visit(
-                auxiliary::overloaded{
-                    [&](target_type casted_val)
-                        -> std::optional<error::ReadError> {
-                        record.setAttribute<target_type>(
-                            attrName, std::move(casted_val));
-                        return std::nullopt;
-                    },
-                    [](std::runtime_error const &err)
-                        -> std::optional<error::ReadError> {
-                        return error::ReadError(
-                            error::AffectedObject::Attribute,
-                            error::Reason::UnexpectedContent,
-                            std::nullopt,
-                            std::string("Expected a scalar type: ") +
-                                err.what());
-                    }},
-                converted_or_error);
-        },
-        attr.getVariant<attribute_types>());
+        auxiliary::overloaded{
+            [](std::runtime_error const &err) -> res_t {
+                return error::ReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::UnexpectedContent,
+                    std::nullopt,
+                    std::string("Expected a scalar type: ") + err.what());
+            },
+            [&](Attribute converted_attr) -> res_t {
+                record.setAttribute(attrName, std::move(converted_attr));
+                return std::nullopt;
+            }},
+        std::move(res));
 }
-
-template <typename T>
-struct to_vector
-{
-    using type = std::vector<T>;
-};
-template <typename T>
-struct to_vector<std::vector<T>>
-{
-    using type = std::vector<T>;
-};
-template <typename T, size_t N>
-struct to_vector<std::array<T, N>>
-{
-    using type = std::vector<T>;
-};
 
 // 1, 0.113281
 auto RequireVector::operator()(
     Attributable &record, char const *attrName, Attribute const &attr)
     -> std::optional<error::ReadError>
 {
+    auto res = attr.requireVector();
+    using res_t = std::optional<error::ReadError>;
     return std::visit(
-        [&](auto const &attr_val) -> std::optional<error::ReadError> {
-            using actual_type =
-                std::remove_cv_t<std::remove_reference_t<decltype(attr_val)>>;
-            if constexpr (std::is_same_v<bool, actual_type>)
-            {
+        auxiliary::overloaded{
+            [](std::runtime_error const &err) -> res_t {
                 return error::ReadError(
                     error::AffectedObject::Attribute,
                     error::Reason::UnexpectedContent,
                     std::nullopt,
-                    "Expected a vector type, found a boolean.");
-            }
-            else
-            {
-                using target_type = typename to_vector<actual_type>::type;
-                auto converted_or_error = attr.getOrError<target_type>();
-                return std::visit(
-                    auxiliary::overloaded{
-                        [&](target_type casted_val)
-                            -> std::optional<error::ReadError> {
-                            record.setAttribute<target_type>(
-                                attrName, std::move(casted_val));
-                            return std::nullopt;
-                        },
-                        [](std::runtime_error const &err)
-                            -> std::optional<error::ReadError> {
-                            return error::ReadError(
-                                error::AffectedObject::Attribute,
-                                error::Reason::UnexpectedContent,
-                                std::nullopt,
-                                std::string("Expected a scalar type: ") +
-                                    err.what());
-                        }},
-                    converted_or_error);
-            }
-        },
-        attr.getVariant<attribute_types>());
+                    std::string("Expected a vector type: ") + err.what());
+            },
+            [&](Attribute converted_attr) -> res_t {
+                record.setAttribute(attrName, std::move(converted_attr));
+                return std::nullopt;
+            }},
+        std::move(res));
 }
 
 // 3, 0.0117188

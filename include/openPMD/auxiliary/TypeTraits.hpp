@@ -160,6 +160,9 @@ inline constexpr bool IsChar_v = detail::IsChar<C>::value;
 template <typename T>
 using ScalarType_t = typename detail::ScalarType<T>::type;
 
+template <typename T>
+using VectorType_t = std::vector<ScalarType_t<T>>;
+
 /** Emulate in the C++ concept ContiguousContainer
  *
  * Users can implement this trait for a type to signal it can be used as

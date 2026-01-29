@@ -72,6 +72,36 @@ Attributable::Attributable()
 Attributable::Attributable(NoInit) noexcept
 {}
 
+bool Attributable::setAttribute(std::string const &key, Attribute attribute)
+{
+    auto &attri = get();
+    if (IOHandler() &&
+        IOHandler()->m_seriesStatus == internal::SeriesStatus::Default &&
+        Access::READ_ONLY == IOHandler()->m_frontendAccess)
+    {
+        auxiliary::OutOfRangeMsg const out_of_range_msg(
+            "Attribute", "can not be set (read-only).");
+        error::throwNoSuchAttribute(out_of_range_msg(key));
+    }
+
+    setDirty(true);
+    auto it = attri.m_attributes.lower_bound(key);
+    if (it != attri.m_attributes.end() &&
+        !attri.m_attributes.key_comp()(key, it->first))
+    {
+        // key already exists in map, just replace the value
+        it->second = std::move(attribute);
+        return true;
+    }
+    else
+    {
+        // emplace a new map element for an unknown key
+        attri.m_attributes.emplace_hint(
+            it, std::make_pair(key, std::move(attribute)));
+        return false;
+    }
+}
+
 Attribute Attributable::getAttribute(std::string const &key) const
 {
     auto &attri = get();

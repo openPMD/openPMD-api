@@ -148,6 +148,107 @@ std::optional<U> Attribute::getOptional() const
         std::move(res));
 }
 
+template <typename is_type>
+std::variant<Attribute, std::runtime_error>
+requireVector_impl(Attribute const &attr, attribute_types const &variant)
+{
+    using res_t = std::variant<Attribute, std::runtime_error>;
+    if constexpr (auxiliary::IsVector_v<is_type>)
+    {
+        return attr;
+    }
+    else if constexpr (auxiliary::IsArray_v<is_type>)
+    {
+        using target_type = auxiliary::VectorType_t<is_type>;
+        auto maybe_res = detail::doConvert<is_type, target_type>(
+            &std::get<is_type>(variant));
+        return std::visit(
+            auxiliary::overloaded{
+                [](target_type val) -> res_t {
+                    return Attribute(std::move(val));
+                },
+                [](std::runtime_error err) -> res_t { return err; }},
+            maybe_res);
+    }
+    else if constexpr (std::is_same_v<is_type, bool>)
+    {
+        return std::runtime_error("Cannot cast bool to a vector is_type.");
+    }
+    else
+    {
+        return Attribute(std::vector<is_type>{std::get<is_type>(variant)});
+    }
+}
+
+std::variant<Attribute, std::runtime_error> Attribute::requireVector() const
+{
+    auto variant = Variant::getVariant<attribute_types>();
+    size_t index = variant.index();
+
+#define OPENPMD_ENUMERATE_TYPES(type)                                          \
+    case datatypeIndex<type>(): {                                              \
+        return requireVector_impl<type>(*this, variant);                       \
+        break;                                                                 \
+    }
+
+    switch (index)
+    {
+        OPENPMD_FOREACH_DATATYPE(OPENPMD_ENUMERATE_TYPES)
+    default:
+        return {std::runtime_error("Unreachable!")};
+    }
+#undef OPENPMD_ENUMERATE_TYPES
+
+    return {std::runtime_error("Unreachable!")};
+}
+
+template <typename is_type>
+std::variant<Attribute, std::runtime_error>
+requireScalar_impl(Attribute const &attr, attribute_types const &variant)
+{
+    using res_t = std::variant<Attribute, std::runtime_error>;
+    if constexpr (
+        auxiliary::IsVector_v<is_type> || auxiliary::IsArray_v<is_type>)
+    {
+        using target_type = auxiliary::ScalarType_t<is_type>;
+        auto maybe_res = detail::doConvert<is_type, target_type>(
+            &std::get<is_type>(variant));
+        return std::visit(
+            auxiliary::overloaded{
+                [](target_type val) -> res_t {
+                    return Attribute(std::move(val));
+                },
+                [](std::runtime_error err) -> res_t { return err; }},
+            maybe_res);
+    }
+    else
+    {
+        return attr;
+    }
+}
+
+std::variant<Attribute, std::runtime_error> Attribute::requireScalar() const
+{
+    auto variant = Variant::getVariant<attribute_types>();
+    size_t index = variant.index();
+
+#define OPENPMD_ENUMERATE_TYPES(type)                                          \
+    case datatypeIndex<type>(): {                                              \
+        return requireScalar_impl<type>(*this, variant);                       \
+        break;                                                                 \
+    }
+
+    switch (index)
+    {
+        OPENPMD_FOREACH_DATATYPE(OPENPMD_ENUMERATE_TYPES)
+    default:
+        return {std::runtime_error("Unreachable!")};
+    }
+#undef OPENPMD_ENUMERATE_TYPES
+
+    return {std::runtime_error("Unreachable!")};
+}
+
 #define OPENPMD_INSTANTIATE(type)                                              \
     template type Attribute::get() const;                                      \
     template std::optional<type> Attribute::getOptional() const;
