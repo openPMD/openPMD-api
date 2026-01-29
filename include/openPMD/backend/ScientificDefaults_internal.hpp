@@ -1,13 +1,17 @@
 #pragma once
 
 #include "openPMD/Error.hpp"
+#include "openPMD/Mesh.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
 
 #include <deque>
 #include <iostream>
+#include <optional>
+#include <string>
 #include <type_traits>
 #include <variant>
+#include <vector>
 
 namespace openPMD::detail
 {
@@ -36,8 +40,19 @@ namespace openPMD::internal
 namespace
 {
     template <typename T>
-    auto write_val_to_stderr(T const &val) -> std::ostream &;
-    auto write_to_stderr(Attribute const &a) -> std::ostream &;
+    inline auto write_val_to_stderr(T const &val) -> std::ostream &;
+    inline auto write_to_stderr(Attribute const &a) -> std::ostream &;
+
+    // Helper functions used in ScientificDefaults implementations
+    inline auto setMeshGeometryFromString(Mesh &mesh, std::string val)
+        -> std::optional<error::ReadError>;
+    inline auto setMeshDataOrderFromChar(Mesh &mesh, char val)
+        -> std::optional<error::ReadError>;
+    inline auto createDefaultAxisLabels(uint64_t dimensionality)
+        -> std::vector<std::string>;
+    inline auto
+    createDefaultVector(uint64_t dimensionality, double defaultValue)
+        -> std::vector<double>;
 } // namespace
 
 namespace attribute_read_result
@@ -85,14 +100,10 @@ struct PostProcessConvertedAttributeImpl : PostProcessConvertedAttribute<T>
     using handler_t = std::optional<error::ReadError> (*)(RecordType &, T);
     handler_t reader;
 
-    PostProcessConvertedAttributeImpl(RecordType record_in, handler_t reader_in)
-        : record(std::move(record_in)), reader(reader_in)
-    {}
+    PostProcessConvertedAttributeImpl(
+        RecordType record_in, handler_t reader_in);
 
-    auto operator()(T val) -> std::optional<error::ReadError> override
-    {
-        return (*reader)(record, std::move(val));
-    }
+    auto operator()(T val) -> std::optional<error::ReadError> override;
 };
 
 template <typename T, typename RecordType>
@@ -100,13 +111,7 @@ auto makePostProcessConvertedAttribute(
     RecordType &&record,
     std::optional<error::ReadError> (*handler)(
         std::remove_reference_t<RecordType> &, T))
-    -> std::shared_ptr<PostProcessConvertedAttribute<T>>
-{
-    return std::make_shared<PostProcessConvertedAttributeImpl<
-        T,
-        std::remove_reference_t<RecordType>>>(
-        std::forward<RecordType>(record), handler);
-}
+    -> std::shared_ptr<PostProcessConvertedAttribute<T>>;
 
 /*
  * Validate an attribute by requiring one specific type T, and by optionally
@@ -124,10 +129,7 @@ struct RequireType : ProcessAttribute
     RequireType(
         RecordType &&record,
         std::optional<error::ReadError> (*handler)(
-            std::remove_reference_t<RecordType> &, T))
-        : postProcess(makePostProcessConvertedAttribute(
-              std::forward<RecordType>(record), handler))
-    {}
+            std::remove_reference_t<RecordType> &, T));
 
     auto operator()(Attributable &, char const *, Attribute const &)
         -> std::optional<error::ReadError> override;
@@ -251,7 +253,7 @@ namespace
     template <typename T>
     auto require_type() -> std::shared_ptr<ProcessAttribute>;
 
-    auto get_float_types() -> std::deque<Datatype>;
-    auto get_string_types() -> std::deque<Datatype>;
+    inline auto get_float_types() -> std::deque<Datatype>;
+    inline auto get_string_types() -> std::deque<Datatype>;
 } // namespace
 } // namespace openPMD::internal

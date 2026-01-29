@@ -33,6 +33,7 @@
 
 namespace openPMD::internal
 {
+// 1. Helper functions in anonymous namespace (from header)
 namespace
 {
     template <typename T>
@@ -61,7 +62,7 @@ namespace
     }
 
     // Helper function to set geometry based on string value
-    inline auto setMeshGeometryFromString(Mesh &mesh, std::string val)
+    auto setMeshGeometryFromString(Mesh &mesh, std::string val)
         -> std::optional<error::ReadError>
     {
         if ("cartesian" == val)
@@ -78,7 +79,7 @@ namespace
     }
 
     // Helper function to set data order based on char value
-    inline auto setMeshDataOrderFromChar(Mesh &mesh, char val)
+    auto setMeshDataOrderFromChar(Mesh &mesh, char val)
         -> std::optional<error::ReadError>
     {
         if (val == 'C' || val == 'F')
@@ -97,7 +98,7 @@ namespace
     }
 
     // Helper function to create default axis labels based on dimensionality
-    inline auto createDefaultAxisLabels(uint64_t dimensionality)
+    auto createDefaultAxisLabels(uint64_t dimensionality)
         -> std::vector<std::string>
     {
         switch (dimensionality)
@@ -134,8 +135,7 @@ namespace
     }
 
     // Helper function to create default vector based on dimensionality
-    inline auto
-    createDefaultVector(uint64_t dimensionality, double defaultValue)
+    auto createDefaultVector(uint64_t dimensionality, double defaultValue)
         -> std::vector<double>
     {
         if (dimensionality < 100)
@@ -149,6 +149,45 @@ namespace
     }
 } // namespace
 
+// 2. Template implementations from header
+// Template implementations from header
+template <typename T, typename RecordType>
+PostProcessConvertedAttributeImpl<T, RecordType>::
+    PostProcessConvertedAttributeImpl(RecordType record_in, handler_t reader_in)
+    : record(std::move(record_in)), reader(reader_in)
+{}
+
+template <typename T, typename RecordType>
+auto PostProcessConvertedAttributeImpl<T, RecordType>::operator()(T val)
+    -> std::optional<error::ReadError>
+{
+    return (*reader)(record, std::move(val));
+}
+
+template <typename T, typename RecordType>
+auto makePostProcessConvertedAttribute(
+    RecordType &&record,
+    std::optional<error::ReadError> (*handler)(
+        std::remove_reference_t<RecordType> &, T))
+    -> std::shared_ptr<PostProcessConvertedAttribute<T>>
+{
+    return std::make_shared<PostProcessConvertedAttributeImpl<
+        T,
+        std::remove_reference_t<RecordType>>>(
+        std::forward<RecordType>(record), handler);
+}
+
+template <typename T>
+template <typename RecordType>
+RequireType<T>::RequireType(
+    RecordType &&record,
+    std::optional<error::ReadError> (*handler)(
+        std::remove_reference_t<RecordType> &, T))
+    : postProcess(makePostProcessConvertedAttribute(
+          std::forward<RecordType>(record), handler))
+{}
+
+// 3. AttributeReader class implementations
 AttributeReader::AttributeReader(
     std::deque<Datatype> eligibleDatatypes_in,
     std::optional<std::shared_ptr<ProcessAttribute>> processAttribute_in)
@@ -185,6 +224,7 @@ auto AttributeReader::operator()(
     return attribute_read_result::Success{};
 }
 
+// 4. ConfigAttribute class implementations
 ConfigAttribute::ConfigAttribute(
     Attributable &child_in, char const *attrName_in)
     : child(child_in), attrName(attrName_in)
@@ -337,87 +377,8 @@ void ConfigAttribute::operator()(WriteOrRead wor)
     }
 }
 
-template <typename Child>
-auto ScientificDefaults<Child>::asChild() -> Child &
-{
-    return *static_cast<Child *>(this);
-}
-
-template <typename Child>
-auto ScientificDefaults<Child>::asChild() const -> Child const &
-{
-    return *static_cast<Child const *>(this);
-}
-
-template <typename Child>
-[[nodiscard]] auto
-ScientificDefaults<Child>::defaultAttribute(char const *attrName)
-    -> ConfigAttribute
-{
-    return ConfigAttribute{asChild(), attrName};
-}
-
-template <typename Child>
-template <typename Parent, bool write>
-void ScientificDefaults<Child>::addParentDefaults(OpenpmdStandard standard)
-{
-    // Cannot directly call read_impl as it is private
-    if constexpr (write)
-    {
-        asChild().ScientificDefaults<Parent>::addDefaults(standard);
-    }
-    else
-    {
-        asChild().ScientificDefaults<Parent>::readDefaults(standard);
-    }
-}
-
-template <typename Child>
-void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
-{
-    addDefaults(standard);
-    if constexpr (IsContainer_v<Child>)
-    {
-        using Container_t = AsContainer_t<Child>;
-        using mapped_type = typename Container_t::mapped_type;
-        if constexpr (HasScientificDefaults_v<mapped_type>)
-        {
-            for (auto &[_, right] : asChild())
-            {
-                (void)_;
-                right.ScientificDefaults<mapped_type>::addDefaultsRecursively(
-                    standard);
-            }
-        }
-    }
-    // sic! no else
-
-    if constexpr (std::is_same_v<Child, Iteration>)
-    {
-        for (auto &[_, right] : asChild().meshes)
-        {
-            (void)_;
-            right.ScientificDefaults<Mesh>::addDefaultsRecursively(standard);
-        }
-        for (auto &[_, right] : asChild().particles)
-        {
-            (void)_;
-            right.ScientificDefaults<ParticleSpecies>::addDefaultsRecursively(
-                standard);
-        }
-    }
-    else if constexpr (std::is_same_v<Child, ParticleSpecies>)
-    {
-        for (auto &[_, right] : asChild().particlePatches)
-        {
-            (void)_;
-            right.ScientificDefaults<PatchRecord>::addDefaultsRecursively(
-                standard);
-        }
-    }
-}
-
-// 2, 0.0976562
+// 5. ProcessAttribute implementations (RequireScalar, RequireVector,
+// RequireType) 2, 0.0976562
 auto RequireScalar::operator()(
     Attributable &record, char const *attrName, Attribute const &attr)
     -> std::optional<error::ReadError>
@@ -500,6 +461,8 @@ auto RequireType<T>::operator()(
         converted_or_error);
 }
 
+// 6. Helper functions in anonymous namespace (require_scalar, require_vector,
+// require_type, etc.)
 namespace
 {
     std::shared_ptr<ProcessAttribute> require_scalar =
@@ -552,6 +515,87 @@ namespace
             Datatype::VEC_SCHAR};
     }
 } // namespace
+
+// 7. ScientificDefaults template implementations
+template <typename Child>
+auto ScientificDefaults<Child>::asChild() -> Child &
+{
+    return *static_cast<Child *>(this);
+}
+
+template <typename Child>
+auto ScientificDefaults<Child>::asChild() const -> Child const &
+{
+    return *static_cast<Child const *>(this);
+}
+
+template <typename Child>
+[[nodiscard]] auto
+ScientificDefaults<Child>::defaultAttribute(char const *attrName)
+    -> ConfigAttribute
+{
+    return ConfigAttribute{asChild(), attrName};
+}
+
+template <typename Child>
+template <typename Parent, bool write>
+void ScientificDefaults<Child>::addParentDefaults(OpenpmdStandard standard)
+{
+    // Cannot directly call read_impl as it is private
+    if constexpr (write)
+    {
+        asChild().ScientificDefaults<Parent>::addDefaults(standard);
+    }
+    else
+    {
+        asChild().ScientificDefaults<Parent>::readDefaults(standard);
+    }
+}
+
+template <typename Child>
+void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
+{
+    addDefaults(standard);
+    if constexpr (IsContainer_v<Child>)
+    {
+        using Container_t = AsContainer_t<Child>;
+        using mapped_type = typename Container_t::mapped_type;
+        if constexpr (HasScientificDefaults_v<mapped_type>)
+        {
+            for (auto &[_, right] : asChild())
+            {
+                (void)_;
+                right.ScientificDefaults<mapped_type>::addDefaultsRecursively(
+                    standard);
+            }
+        }
+    }
+    // sic! no else
+
+    if constexpr (std::is_same_v<Child, Iteration>)
+    {
+        for (auto &[_, right] : asChild().meshes)
+        {
+            (void)_;
+            right.ScientificDefaults<Mesh>::addDefaultsRecursively(standard);
+        }
+        for (auto &[_, right] : asChild().particles)
+        {
+            (void)_;
+            right.ScientificDefaults<ParticleSpecies>::addDefaultsRecursively(
+                standard);
+        }
+    }
+    else if constexpr (std::is_same_v<Child, ParticleSpecies>)
+    {
+        for (auto &[_, right] : asChild().particlePatches)
+        {
+            (void)_;
+            right.ScientificDefaults<PatchRecord>::addDefaultsRecursively(
+                standard);
+        }
+    }
+}
 
 template <typename Child>
 template <bool write>
@@ -737,6 +781,7 @@ void ScientificDefaults<Child>::readDefaults(OpenpmdStandard standard)
     defaults_impl</* write = */ false>(standard);
 }
 
+// 8. Template instantiations
 template class ScientificDefaults<Iteration>;
 template class ScientificDefaults<Mesh>;
 template class ScientificDefaults<MeshRecordComponent>;
