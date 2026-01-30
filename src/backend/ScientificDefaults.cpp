@@ -784,13 +784,21 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
             // .withReader(float_types, require_type<double>())
             (wor);
     }
-    else if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, Child>)
+    else if constexpr (detail::IsBaseRecord_v<Child>)
     {
         defaultAttribute("unitDimension")
             .withGenericSetter(unit_representations::AsArray{})
             .withReader(
                 float_types,
                 require_type<unit_representations::AsArray>())(wor);
+    }
+    else if constexpr (std::is_same_v<Child, ParticleSpecies>)
+    {
+        // no-op
+    }
+    else
+    {
+        static_assert(auxiliary::dependent_false_v<Child>, "Unknown class");
     }
 }
 

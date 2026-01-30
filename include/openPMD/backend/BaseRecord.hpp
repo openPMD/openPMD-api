@@ -382,6 +382,21 @@ namespace detail
 
     template <typename BaseRecord>
     void verifyNonscalar(BaseRecord *self);
+
+    template <typename T>
+    struct IsBaseRecord
+    {
+        constexpr static bool value = false;
+    };
+
+    template <typename T>
+    struct IsBaseRecord<BaseRecord<T>>
+    {
+        constexpr static bool value = true;
+    };
+
+    template <typename T>
+    constexpr bool IsBaseRecord_v = IsBaseRecord<T>::value;
 } // namespace detail
 
 template <typename T_elem>
