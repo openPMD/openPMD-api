@@ -224,6 +224,36 @@ auto AttributeReader::operator()(
     return attribute_read_result::Success{};
 }
 
+namespace
+{
+    // Need SFINAE for this since MSVC doesnt understand if constexpr
+    template <typename GetDefaultValue, typename SFINAE = void>
+    struct CallGetDefaultValue
+    {
+        GetDefaultValue val;
+        CallGetDefaultValue(GetDefaultValue val_in) : val(std::move(val_in))
+        {}
+        auto operator()() && -> GetDefaultValue
+        {
+            return std::move(val);
+        }
+    };
+
+    template <typename GetDefaultValue>
+    struct CallGetDefaultValue<
+        GetDefaultValue,
+        std::void_t<std::invoke_result_t<GetDefaultValue>>>
+    {
+        GetDefaultValue val;
+        CallGetDefaultValue(GetDefaultValue val_in) : val(std::move(val_in))
+        {}
+        auto operator()() && -> std::invoke_result_t<GetDefaultValue>
+        {
+            return std::move(val)();
+        }
+    };
+} // namespace
+
 // 4. ConfigAttribute class implementations
 ConfigAttribute::ConfigAttribute(
     Attributable &child_in, char const *attrName_in)
@@ -240,23 +270,18 @@ auto ConfigAttribute::withSetter(
             detail::CallResult_t<GetDefaultValue>,
             S>> setDefaultVal) -> ConfigAttribute &
 {
-    initDefaultAttribute = [getDefaultVal_lambda =
-                                std::forward<GetDefaultValue>(getDefaultVal),
-                            setDefaultVal](Attributable &attr) {
-        RecordType *record = dynamic_cast<RecordType *>(&attr);
-        if (!record)
-        {
-            throw error::Internal("dynamic cast failure");
-        }
-        if constexpr (detail::IsCallable_v<GetDefaultValue>)
-        {
-            ((*record).*setDefaultVal)(getDefaultVal_lambda());
-        }
-        else
-        {
-            ((*record).*setDefaultVal)(std::move(getDefaultVal_lambda));
-        }
-    };
+    initDefaultAttribute =
+        [callDefaultValue =
+             CallGetDefaultValue<std::remove_reference_t<GetDefaultValue>>(
+                 std::forward<GetDefaultValue>(getDefaultVal)),
+         setDefaultVal](Attributable &attr) mutable {
+            RecordType *record = dynamic_cast<RecordType *>(&attr);
+            if (!record)
+            {
+                throw error::Internal("dynamic cast failure");
+            }
+            ((*record).*setDefaultVal)(std::move(callDefaultValue)());
+        };
     return *this;
 }
 
