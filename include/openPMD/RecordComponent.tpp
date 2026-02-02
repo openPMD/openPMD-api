@@ -84,6 +84,41 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         .storeSpan<T>(std::forward<F>(createBuffer));
 }
 
+namespace detail
+{
+    template <typename T>
+    struct pointer_as_void;
+
+    template <typename T>
+    struct pointer_as_void<std::shared_ptr<T>>
+    {
+        static auto call(std::shared_ptr<T> const &ptr)
+            -> std::shared_ptr<void const>
+        {
+            return std::static_pointer_cast<void const>(ptr);
+        }
+    };
+
+    template <typename T>
+    struct pointer_as_void<std::unique_ptr<T>>
+    {
+        static auto call(std::unique_ptr<T> &&ptr) -> UniquePtrWithLambda<void>
+        {
+            return UniquePtrWithLambda<void>(std::move(ptr));
+        }
+    };
+    template <typename T>
+    struct pointer_as_void<std::unique_ptr<T[]>>
+    {
+        static auto call(std::unique_ptr<T[]> &&ptr)
+            -> UniquePtrWithLambda<void>
+        {
+            return UniquePtrWithLambda<T[]>(std::move(ptr))
+                .template static_cast_<void>();
+        }
+    };
+} // namespace detail
+
 template <typename T, typename F>
 inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
     internal::LoadStoreConfig cfg, F &&createBuffer)
@@ -161,10 +196,12 @@ inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
         getBufferView.out->ptr = static_cast<void *>(data.get());
         if (size > 0)
         {
+            using ptr_type = decltype(data);
             internal::LoadStoreConfigWithBuffer ls_cfg{
                 std::move(o), std::move(e), std::nullopt};
             storeChunk_impl(
-                auxiliary::WriteBuffer(std::move(data)),
+                auxiliary::WriteBuffer(
+                    detail::pointer_as_void<ptr_type>::call(std::move(data))),
                 getBufferView.dtype,
                 std::move(ls_cfg),
                 /*flush_immediately=*/false);

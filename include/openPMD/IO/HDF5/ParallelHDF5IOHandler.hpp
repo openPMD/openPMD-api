@@ -44,8 +44,6 @@ public:
 #else
     ParallelHDF5IOHandler(
         internal::AbstractIOHandlerInitFrom &&initialize_from,
-        std::string const &path,
-        Access,
         json::TracingJSON config);
 #endif
     ~ParallelHDF5IOHandler() override;
