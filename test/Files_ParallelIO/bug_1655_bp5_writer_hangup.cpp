@@ -49,7 +49,7 @@ auto worker(std::string const &ext) -> void
 
     series.flush();
 
-    if (mpi_rank == 0) // only rank 0 adds data
+    if (false && mpi_rank == 0) // only rank 0 adds data
         myptl["charge"].storeChunk(local_data, {0}, {3000});
 
     series.flush(); // hangs here

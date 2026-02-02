@@ -167,6 +167,12 @@ void write_test_zero_extent(
         Access::CREATE_LINEAR,
         MPI_COMM_WORLD);
 
+    if (!writeAllChunks)
+    {
+        // immediate flushing makes storeChunk collective, cannot do this
+        return;
+    }
+
     int const max_step = 100;
 
     for (int step = 0; step <= max_step; step += 20)
@@ -929,7 +935,8 @@ void close_iteration_test(std::string const &file_ending)
         {
             REQUIRE(data[i % 4] == chunk.get()[i]);
         }
-        auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
+        // Cannot write/read chunks to/from closed Iterations.
+        // auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
         // REQUIRE_THROWS(read.flush());
     }
 

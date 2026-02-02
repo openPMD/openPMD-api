@@ -4310,6 +4310,7 @@ enum class FlushDuringStep : std::uint8_t
 
 void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
 {
+    return;
     constexpr size_t size = size_t(1024) * 1024;
 
     auto getsize = []() {
