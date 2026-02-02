@@ -513,13 +513,17 @@ void RecordComponent::flush(
     {
         return;
     }
-    if (access::readOnly(IOHandler()->m_frontendAccess) &&
-        flush_level::global_flushpoint(flushParams.flushLevel))
+    if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-        while (!rc.m_chunks.empty())
+        // sic! this needs to be a separate if term, otherwise flushes may
+        // wrongly jump into the write branch below
+        if (flush_level::global_flushpoint(flushParams.flushLevel))
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
+            while (!rc.m_chunks.empty())
+            {
+                IOHandler()->enqueue(rc.m_chunks.front());
+                rc.m_chunks.pop();
+            }
         }
     }
     else
