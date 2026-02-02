@@ -39,6 +39,11 @@ auto worker(std::string const &ext) -> void
     std::string filename = "../samples/ptl_%T." + ext;
 
     Series series = Series(filename, Access::CREATE_LINEAR, MPI_COMM_WORLD);
+    if (series.flushImmediately())
+    {
+        // Cannot run this test in immediate flush mode
+        return;
+    }
 
     Datatype datatype = determineDatatype<float>();
 
@@ -49,7 +54,7 @@ auto worker(std::string const &ext) -> void
 
     series.flush();
 
-    if (false && mpi_rank == 0) // only rank 0 adds data
+    if (mpi_rank == 0) // only rank 0 adds data
         myptl["charge"].storeChunk(local_data, {0}, {3000});
 
     series.flush(); // hangs here

@@ -3614,6 +3614,16 @@ void Series::visitHierarchy(HierarchyVisitor &v, bool recursive)
     v(*this);
 }
 
+bool Series::flushImmediately() const
+{
+    auto ioHandler = IOHandler();
+    if (!ioHandler)
+    {
+        return false;
+    }
+    return ioHandler->m_flush_immediately;
+}
+
 auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>
 {
     using vec_t = std::vector<IterationIndex_t>;
