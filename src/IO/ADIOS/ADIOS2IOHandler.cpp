@@ -2686,7 +2686,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
           std::move(initialize_from), std::move(path), at, std::move(config))
 {}
 
-std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> ADIOS2IOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

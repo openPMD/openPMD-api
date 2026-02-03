@@ -462,7 +462,8 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
-std::future<void> ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void>
+ParallelHDF5IOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }
