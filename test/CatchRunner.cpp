@@ -28,6 +28,9 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
 
     Catch::Session session;
+    // session.configData().runOrder = Catch::TestRunOrder::Declared;
+    MPI_Bcast(
+        &session.configData().rngSeed, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
     int result = session.applyCommandLine(argc, argv);
     if (result == 0)
     {
