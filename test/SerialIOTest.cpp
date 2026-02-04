@@ -5852,7 +5852,7 @@ TEST_CASE("adios2_group_table", "[serial]")
 void variableBasedSeries(std::string const &file)
 {
     constexpr Extent::value_type extent = 1000;
-    auto testWrite = [&file](std::string const &jsonConfig) {
+    auto testWrite = [&](std::string const &jsonConfig) {
         Series writeSeries(file, Access::CREATE_LINEAR, jsonConfig);
         writeSeries.setAttribute("some_global", "attribute");
         writeSeries.setIterationEncoding(IterationEncoding::variableBased);
@@ -5926,8 +5926,7 @@ void variableBasedSeries(std::string const &file)
         REQUIRE(auxiliary::directory_exists(file));
     };
 
-    auto testRead = [&file](
-                        std::string const &parseMode,
+    auto testRead = [&](std::string const &parseMode,
                         bool supportsModifiableAttributes,
                         Access access = Access::READ_LINEAR) {
         /*

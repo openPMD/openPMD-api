@@ -22,9 +22,9 @@ function(find_catch2)
         # Ensure Catch2 is built with PIC so it can be linked into shared libraries
         add_subdirectory(${openPMD_catch_src} _deps/localCatch2-build/)
         # Mark Catch2 as system code to suppress warnings and set position independent code
-        set_target_properties(Catch2::Catch2 PROPERTIES
+        set_target_properties(Catch2 PROPERTIES
             POSITION_INDEPENDENT_CODE ON
-            INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2::Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
+            INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
         )
     elseif(openPMD_USE_INTERNAL_CATCH AND (openPMD_catch_tar OR openPMD_catch_branch))
         include(FetchContent)
@@ -43,9 +43,9 @@ function(find_catch2)
         endif()
         FetchContent_MakeAvailable(fetchedCatch2)
         # Ensure Catch2 is built with PIC and mark as system code to suppress warnings
-        set_target_properties(Catch2::Catch2 PROPERTIES
+        set_target_properties(Catch2 PROPERTIES
             POSITION_INDEPENDENT_CODE ON
-            INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2::Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
+            INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
         )
 
         # advanced fetch options
