@@ -34,8 +34,17 @@ private:
     void defaults_impl(OpenpmdStandard);
 
 protected:
-    void addDefaultsRecursively(OpenpmdStandard);
-    void addDefaults(OpenpmdStandard);
+    // Called upon Iteration::close(), will fill in defaults below Iteration
+    // level. If the Iteration is not explicitly closed, will be called upon
+    // Series::close().
+    void writeDefaultsRecursively(OpenpmdStandard);
+    // Currently called internally only from writeDefaultsRecursively
+    void writeDefaults(OpenpmdStandard);
+    // Convention: This is called for each openPMD object (group, dataset)
+    // exactly once and only upon its most derived object (e.g. upon
+    // RecordComponent, not BaseRecordComponent). The readDefaults() method will
+    // deal with parent class definitions. This is necessary since the derived
+    // class may override standard attribute definitions from a base class.
     void readDefaults(OpenpmdStandard);
 };
 

@@ -569,7 +569,7 @@ void ScientificDefaults<Child>::addParentDefaults(OpenpmdStandard standard)
     // Cannot directly call read_impl as it is private
     if constexpr (write)
     {
-        asChild().ScientificDefaults<Parent>::addDefaults(standard);
+        asChild().ScientificDefaults<Parent>::writeDefaults(standard);
     }
     else
     {
@@ -578,9 +578,10 @@ void ScientificDefaults<Child>::addParentDefaults(OpenpmdStandard standard)
 }
 
 template <typename Child>
-void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
+void ScientificDefaults<Child>::writeDefaultsRecursively(
+    OpenpmdStandard standard)
 {
-    addDefaults(standard);
+    writeDefaults(standard);
     if constexpr (IsContainer_v<Child>)
     {
         using Container_t = AsContainer_t<Child>;
@@ -590,7 +591,7 @@ void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
             for (auto &[_, right] : asChild())
             {
                 (void)_;
-                right.ScientificDefaults<mapped_type>::addDefaultsRecursively(
+                right.ScientificDefaults<mapped_type>::writeDefaultsRecursively(
                     standard);
             }
         }
@@ -602,12 +603,12 @@ void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
         for (auto &[_, right] : asChild().meshes)
         {
             (void)_;
-            right.ScientificDefaults<Mesh>::addDefaultsRecursively(standard);
+            right.ScientificDefaults<Mesh>::writeDefaultsRecursively(standard);
         }
         for (auto &[_, right] : asChild().particles)
         {
             (void)_;
-            right.ScientificDefaults<ParticleSpecies>::addDefaultsRecursively(
+            right.ScientificDefaults<ParticleSpecies>::writeDefaultsRecursively(
                 standard);
         }
     }
@@ -616,7 +617,7 @@ void ScientificDefaults<Child>::addDefaultsRecursively(OpenpmdStandard standard)
         for (auto &[_, right] : asChild().particlePatches)
         {
             (void)_;
-            right.ScientificDefaults<PatchRecord>::addDefaultsRecursively(
+            right.ScientificDefaults<PatchRecord>::writeDefaultsRecursively(
                 standard);
         }
     }
@@ -803,7 +804,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 }
 
 template <typename Child>
-void ScientificDefaults<Child>::addDefaults(OpenpmdStandard standard)
+void ScientificDefaults<Child>::writeDefaults(OpenpmdStandard standard)
 {
     defaults_impl</* write = */ true>(standard);
 }
