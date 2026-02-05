@@ -26,6 +26,9 @@ function(find_catch2)
             POSITION_INDEPENDENT_CODE ON
             INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
         )
+        if(CMAKE_CXX_CLANG_TIDY)
+            set_target_properties(Catch2 PROPERTIES CXX_CLANG_TIDY "")
+        endif()
     elseif(openPMD_USE_INTERNAL_CATCH AND (openPMD_catch_tar OR openPMD_catch_branch))
         include(FetchContent)
         if(openPMD_catch_tar)
@@ -47,7 +50,9 @@ function(find_catch2)
             POSITION_INDEPENDENT_CODE ON
             INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
         )
-
+        if(CMAKE_CXX_CLANG_TIDY)
+            set_target_properties(Catch2 PROPERTIES CXX_CLANG_TIDY "")
+        endif()
         # advanced fetch options
         mark_as_advanced(FETCHCONTENT_BASE_DIR)
         mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
