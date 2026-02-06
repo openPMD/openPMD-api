@@ -56,10 +56,10 @@ set(openPMD_json_src ""
     "Local path to nlohmann_json source directory (preferred if set)")
 
 # tarball fetcher
-set(openPMD_json_tar "https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz"
+set(openPMD_json_tar "https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz"
     CACHE STRING
     "Remote tarball link to pull and build nlohmann_json from if(openPMD_USE_INTERNAL_JSON)")
-set(openPMD_json_tar_hash "SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406"
+set(openPMD_json_tar_hash "SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187"
     CACHE STRING
     "Hash checksum of the tarball of nlohmann_json if(openPMD_USE_INTERNAL_JSON)")
 
@@ -67,7 +67,7 @@ set(openPMD_json_tar_hash "SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018
 set(openPMD_json_repo "https://github.com/nlohmann/json.git"
     CACHE STRING
     "Repository URI to pull and build nlohmann_json from if(openPMD_USE_INTERNAL_JSON)")
-set(openPMD_json_branch "v3.11.3"
+set(openPMD_json_branch "v3.12.0"
     CACHE STRING
     "Repository branch for openPMD_json_repo if(openPMD_USE_INTERNAL_JSON)")
 
