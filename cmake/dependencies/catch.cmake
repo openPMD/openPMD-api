@@ -20,7 +20,10 @@ function(find_catch2)
         # nothing to do, target already exists in the superbuild
     elseif(openPMD_USE_INTERNAL_CATCH AND openPMD_catch_src)
         # Ensure Catch2 is built with PIC so it can be linked into shared libraries
+        set(_old_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
+        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
         add_subdirectory(${openPMD_catch_src} _deps/localCatch2-build/)
+        set(BUILD_SHARED_LIBS ${_old_BUILD_SHARED_LIBS})
         # Mark Catch2 as system code to suppress warnings and set position independent code
         set_target_properties(Catch2 PROPERTIES
             POSITION_INDEPENDENT_CODE ON
@@ -30,6 +33,8 @@ function(find_catch2)
             set_target_properties(Catch2 PROPERTIES CXX_CLANG_TIDY "")
         endif()
     elseif(openPMD_USE_INTERNAL_CATCH AND (openPMD_catch_tar OR openPMD_catch_branch))
+        set(_old_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
+        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
         include(FetchContent)
         if(openPMD_catch_tar)
             FetchContent_Declare(fetchedCatch2
@@ -45,6 +50,7 @@ function(find_catch2)
             )
         endif()
         FetchContent_MakeAvailable(fetchedCatch2)
+        set(BUILD_SHARED_LIBS ${_old_BUILD_SHARED_LIBS})
         # Ensure Catch2 is built with PIC and mark as system code to suppress warnings
         set_target_properties(Catch2 PROPERTIES
             POSITION_INDEPENDENT_CODE ON
