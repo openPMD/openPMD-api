@@ -1286,7 +1286,7 @@ TEST_CASE("use_count_test", "[core]")
     pprc.resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
     pprc.store(0, static_cast<uint64_t>(1));
     REQUIRE(
-        std::get<std::shared_ptr<void const>>(
+        std::get<std::shared_ptr<void>>(
             static_cast<Parameter<Operation::WRITE_DATASET> *>(
                 pprc.get().m_chunks.front().parameter.get())
                 ->data.as_variant<auxiliary::WriteBufferTypes>())
