@@ -5,6 +5,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
@@ -208,40 +209,31 @@ namespace core
         return res;
     }
 
-    template <typename Ptr_Type>
-    ConfigureStoreChunkFromBuffer<Ptr_Type>::ConfigureStoreChunkFromBuffer(
-        Ptr_Type buffer, ConfigureLoadStore &&core)
+    ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer(
+        auxiliary::WriteBuffer buffer, Datatype, ConfigureLoadStore &&core)
         : ConfigureLoadStore(std::move(core)), m_buffer(std::move(buffer))
     {}
 
-    template <typename Ptr_Type>
-    auto ConfigureStoreChunkFromBuffer<Ptr_Type>::storeChunkConfig()
+    auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
         -> internal::LoadStoreConfigWithBuffer
     {
         return internal::LoadStoreConfigWithBuffer{
             this->getOffset(), this->getExtent(), m_mem_select};
     }
 
-    template <typename Ptr_Type>
-    auto ConfigureStoreChunkFromBuffer<Ptr_Type>::enqueueStore()
+    auto ConfigureStoreChunkFromBuffer::enqueueStore()
         -> auxiliary::DeferredComputation<void>
     {
         this->m_rc.storeChunk_impl(
-            asWriteBuffer(std::move(m_buffer)),
-            determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
-            storeChunkConfig());
+            std::move(m_buffer), m_datatype, storeChunkConfig());
         return auxiliary::DeferredComputation<void>(
             [dflush = deferFlush(m_rc)]() mutable -> void { dflush(); });
     }
 
-    template <typename Ptr_Type>
-    auto ConfigureStoreChunkFromBuffer<Ptr_Type>::store(EnqueuePolicy ep)
-        -> void
+    auto ConfigureStoreChunkFromBuffer::store(EnqueuePolicy ep) -> void
     {
         this->m_rc.storeChunk_impl(
-            asWriteBuffer(std::move(m_buffer)),
-            determineDatatype<auxiliary::IsPointer_t<Ptr_Type>>(),
-            storeChunkConfig());
+            std::move(m_buffer), m_datatype, storeChunkConfig());
         switch (ep)
         {
         case EnqueuePolicy::Defer:
@@ -252,31 +244,37 @@ namespace core
         }
     }
 
-    template <typename Ptr_Type>
-    auto ConfigureLoadStoreFromBuffer<Ptr_Type>::enqueueLoad()
+    auto ConfigureLoadStoreFromBuffer::enqueueLoad()
         -> auxiliary::DeferredComputation<void>
     {
-        static_assert(
-            std::is_same_v<
-                Ptr_Type,
-                std::shared_ptr<
-                    std::remove_cv_t<typename Ptr_Type::element_type>>>,
-            "ConfigureLoadStoreFromBuffer must be instantiated with a "
-            "non-const "
-            "shared_ptr type.");
+        auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
+            &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
+        if (!shared_ptr)
+        {
+            throw std::runtime_error(
+                "ConfigureLoadStoreFromBuffer must be instantiated with a "
+                "non-const shared_ptr type.");
+        }
         this->m_rc.loadChunk_impl(
-            std::move(this->m_buffer), this->storeChunkConfig());
+            *shared_ptr, m_datatype, this->storeChunkConfig());
         return auxiliary::DeferredComputation<void>(
             [dflush = this->deferFlush(this->m_rc)]() mutable -> void {
                 dflush();
             });
     }
 
-    template <typename Ptr_Type>
-    auto ConfigureLoadStoreFromBuffer<Ptr_Type>::load(EnqueuePolicy ep) -> void
+    auto ConfigureLoadStoreFromBuffer::load(EnqueuePolicy ep) -> void
     {
+        auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
+            &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
+        if (!shared_ptr)
+        {
+            throw std::runtime_error(
+                "ConfigureLoadStoreFromBuffer must be instantiated with a "
+                "non-const shared_ptr type.");
+        }
         this->m_rc.loadChunk_impl(
-            std::move(this->m_buffer), this->storeChunkConfig());
+            *shared_ptr, m_datatype, this->storeChunkConfig());
         switch (ep)
         {
 
@@ -341,39 +339,7 @@ OPENPMD_FOREACH_DATASET_DATATYPE(
 #undef INSTANTIATE_METHOD_TEMPLATES
 #undef INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT
 
-#define INSTANTIATE_HALF(pointer_type)                                         \
-    template class OPENPMD_APPLY_TEMPLATE(                                     \
-        ConfigureStoreChunkFromBuffer, pointer_type);                          \
-    template class core::OPENPMD_APPLY_TEMPLATE(                               \
-        ConfigureStoreChunkFromBuffer, pointer_type);                          \
-    template class compose::ConfigureLoadStore<OPENPMD_APPLY_TEMPLATE(         \
-        ConfigureStoreChunkFromBuffer, pointer_type)>;                         \
-    template class compose::ConfigureStoreChunkFromBuffer<                     \
-        OPENPMD_APPLY_TEMPLATE(ConfigureStoreChunkFromBuffer, pointer_type)>;
-
-#define INSTANTIATE_FULL(pointer_type)                                         \
-    INSTANTIATE_HALF(pointer_type)                                             \
-    template class OPENPMD_APPLY_TEMPLATE(                                     \
-        ConfigureLoadStoreFromBuffer, pointer_type);                           \
-    template class core::OPENPMD_APPLY_TEMPLATE(                               \
-        ConfigureLoadStoreFromBuffer, pointer_type);                           \
-    template class compose::ConfigureLoadStore<OPENPMD_APPLY_TEMPLATE(         \
-        ConfigureLoadStoreFromBuffer, pointer_type)>;                          \
-    template class compose::ConfigureStoreChunkFromBuffer<                     \
-        OPENPMD_APPLY_TEMPLATE(ConfigureLoadStoreFromBuffer, pointer_type)>;
-
-#define INSTANTIATE_STORE_CHUNK_FROM_BUFFER(dtype)                             \
-    INSTANTIATE_FULL(std::shared_ptr<dtype>)                                   \
-    INSTANTIATE_HALF(std::shared_ptr<dtype const>)                             \
-    INSTANTIATE_HALF(UniquePtrWithLambda<dtype>)                               \
-    INSTANTIATE_HALF(UniquePtrWithLambda<dtype const>)
-
-OPENPMD_FOREACH_DATASET_DATATYPE(INSTANTIATE_STORE_CHUNK_FROM_BUFFER)
-
-#undef INSTANTIATE_STORE_CHUNK_FROM_BUFFER
 #undef INSTANTIATE_METHOD_TEMPLATES
-#undef INSTANTIATE_FULL
-#undef INSTANTIATE_HALF
 #undef OPENPMD_ARRAY
 #undef OPENPMD_APPLY_TEMPLATE
 
