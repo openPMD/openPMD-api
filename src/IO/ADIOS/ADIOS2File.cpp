@@ -106,7 +106,9 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
     std::visit(
         [&](auto &&arg) {
             using ptr_type = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<ptr_type, std::shared_ptr<void const>>)
+            if constexpr (
+                std::is_same_v<ptr_type, std::shared_ptr<void const>> ||
+                std::is_same_v<ptr_type, std::shared_ptr<void>>)
             {
                 auto ptr = static_cast<T const *>(arg.get());
                 auto &engine = ba.getEngine();

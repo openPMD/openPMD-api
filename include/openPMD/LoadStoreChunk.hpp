@@ -2,6 +2,7 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/auxiliary/Future.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
@@ -16,9 +17,7 @@
 namespace openPMD
 {
 class RecordComponent;
-template <typename Ptr_Type>
 class ConfigureStoreChunkFromBuffer;
-template <typename Ptr_Type>
 class ConfigureLoadStoreFromBuffer;
 template <typename T>
 class DynamicMemoryView;
@@ -100,8 +99,9 @@ namespace core
         template <typename T>
         struct shared_ptr_return_type_impl
         {
-            using type = ConfigureLoadStoreFromBuffer<
-                std::shared_ptr<std::remove_extent_t<T>>>;
+            using return_type = ConfigureLoadStoreFromBuffer;
+            using normalize_pointer_type =
+                std::shared_ptr<std::remove_extent_t<T>>;
         };
         /*
          * ..., but if it is a const type, Load operations make no sense, so the
@@ -110,21 +110,27 @@ namespace core
         template <typename T>
         struct shared_ptr_return_type_impl<T const>
         {
-            using type = ConfigureStoreChunkFromBuffer<
-                std::shared_ptr<std::remove_extent_t<T> const>>;
+            using return_type = ConfigureStoreChunkFromBuffer;
+            using normalize_pointer_type =
+                std::shared_ptr<std::remove_extent_t<T> const>;
         };
 
         template <typename T>
-        using shared_ptr_return_type =
-            typename shared_ptr_return_type_impl<std::remove_extent_t<T>>::type;
+        using shared_ptr_return_type = typename shared_ptr_return_type_impl<
+            std::remove_extent_t<T>>::return_type;
+        template <typename T>
+        using shared_ptr_normalized_type = typename shared_ptr_return_type_impl<
+            std::remove_extent_t<T>>::normalized_pointer_type;
 
         /*
          * As loading into unique pointer types makes no sense, the case is
          * simpler for unique pointers. Just remove the array extents here.
          */
         template <typename T>
-        using unique_ptr_return_type = ConfigureStoreChunkFromBuffer<
-            UniquePtrWithLambda<std::remove_extent_t<T>>>;
+        using unique_ptr_return_type = ConfigureStoreChunkFromBuffer;
+        template <typename T>
+        using unique_ptr_normalized_type =
+            UniquePtrWithLambda<std::remove_extent_t<T>>;
 
         // @todo rvalue references..?
         template <typename T>
@@ -166,14 +172,15 @@ namespace core
             -> auxiliary::detail::shared_ptr_dataset_types;
     };
 
-    template <typename Ptr_Type>
     class ConfigureStoreChunkFromBuffer : public ConfigureLoadStore
     {
     public:
-        Ptr_Type m_buffer;
+        auxiliary::WriteBuffer m_buffer;
+        Datatype m_datatype;
         std::optional<MemorySelection> m_mem_select;
 
-        ConfigureStoreChunkFromBuffer(Ptr_Type buffer, ConfigureLoadStore &&);
+        ConfigureStoreChunkFromBuffer(
+            auxiliary::WriteBuffer buffer, Datatype, ConfigureLoadStore &&);
 
         auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
 
@@ -205,13 +212,10 @@ namespace core
         }
     };
 
-    template <typename Ptr_Type>
-    class ConfigureLoadStoreFromBuffer
-        : public ConfigureStoreChunkFromBuffer<Ptr_Type>
+    class ConfigureLoadStoreFromBuffer : public ConfigureStoreChunkFromBuffer
     {
     public:
-        using ConfigureStoreChunkFromBuffer<
-            Ptr_Type>::ConfigureStoreChunkFromBuffer;
+        using ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer;
 
         auto enqueueLoad() -> auxiliary::DeferredComputation<void>;
 
@@ -272,31 +276,26 @@ class ConfigureLoadStore
     ConfigureLoadStore(core::ConfigureLoadStore &&);
 };
 
-template <typename Ptr_Type>
 class ConfigureStoreChunkFromBuffer
-    : public core::ConfigureStoreChunkFromBuffer<Ptr_Type>
-    , public compose::ConfigureLoadStore<
-          ConfigureStoreChunkFromBuffer<Ptr_Type>>
+    : public core::ConfigureStoreChunkFromBuffer
+    , public compose::ConfigureLoadStore<ConfigureStoreChunkFromBuffer>
     , public compose::ConfigureStoreChunkFromBuffer<
-          ConfigureStoreChunkFromBuffer<Ptr_Type>>
+          ConfigureStoreChunkFromBuffer>
 {
     friend class core::ConfigureLoadStore;
 
-    using core::ConfigureStoreChunkFromBuffer<
-        Ptr_Type>::ConfigureStoreChunkFromBuffer;
+    using core::ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer;
 };
 
-template <typename Ptr_Type>
 class ConfigureLoadStoreFromBuffer
-    : public core::ConfigureLoadStoreFromBuffer<Ptr_Type>
-    , public compose::ConfigureLoadStore<ConfigureLoadStoreFromBuffer<Ptr_Type>>
+    : public core::ConfigureLoadStoreFromBuffer
+    , public compose::ConfigureLoadStore<ConfigureLoadStoreFromBuffer>
     , public compose::ConfigureStoreChunkFromBuffer<
-          ConfigureLoadStoreFromBuffer<Ptr_Type>>
+          ConfigureLoadStoreFromBuffer>
 {
     friend class ConfigureLoadStoreCore;
 
-    using core::ConfigureLoadStoreFromBuffer<
-        Ptr_Type>::ConfigureLoadStoreFromBuffer;
+    using core::ConfigureLoadStoreFromBuffer::ConfigureLoadStoreFromBuffer;
 };
 } // namespace openPMD
 
