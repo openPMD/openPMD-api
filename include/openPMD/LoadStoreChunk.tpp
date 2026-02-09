@@ -8,6 +8,7 @@ template <typename T>
 auto ConfigureLoadStore::withSharedPtr(std::shared_ptr<T> data)
     -> shared_ptr_return_type<T>
 {
+    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
     if (!data)
     {
         throw std::runtime_error(
@@ -18,7 +19,7 @@ auto ConfigureLoadStore::withSharedPtr(std::shared_ptr<T> data)
             std::static_pointer_cast<
                 std::conditional_t<std::is_const_v<T>, void const, void>>(
                 std::move(data))),
-        determineDatatype<std::remove_extent_t<T>>(),
+        determineDatatype<T_decayed>(),
         {std::move(*this)});
 }
 template <typename T>
@@ -26,6 +27,7 @@ auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
     -> unique_ptr_return_type<T>
 
 {
+    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
     if (!data)
     {
         throw std::runtime_error(
@@ -40,7 +42,7 @@ auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
                     raw_ptr,
                     [data_lambda =
                          std::move(data)](auto const *) { /* no-op */ })),
-            determineDatatype<std::remove_extent_t<T>>(),
+            determineDatatype<T_decayed>(),
             {std::move(*this)});
     }
     else
@@ -48,13 +50,14 @@ auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
         return unique_ptr_return_type<T>(
             auxiliary::WriteBuffer(
                 std::move(data).template static_cast_<void>()),
-            determineDatatype<std::remove_extent_t<T>>(),
+            determineDatatype<T_decayed>(),
             {std::move(*this)});
     }
 }
 template <typename T>
 auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
 {
+    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
     if (!data)
     {
         throw std::runtime_error(
@@ -65,7 +68,7 @@ auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
             std::static_pointer_cast<
                 std::conditional_t<std::is_const_v<T>, void const, void>>(
                 auxiliary::shareRaw(data))),
-        determineDatatype<std::remove_extent_t<T>>(),
+        determineDatatype<T_decayed>(),
         {std::move(*this)});
 }
 
