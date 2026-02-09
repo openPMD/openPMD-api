@@ -1,3 +1,22 @@
+function(catch_preconfigure)
+    set(_old_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+endfunction()
+
+function(catch_postconfigure)
+    set(BUILD_SHARED_LIBS ${_old_BUILD_SHARED_LIBS})
+    unset(_old_BUILD_SHARED_LIBS)
+    # Mark Catch2 as system code to suppress warnings and set position independent code
+    # Ensure Catch2 is built with PIC so it can be linked into shared libraries
+    set_target_properties(Catch2 PROPERTIES
+        POSITION_INDEPENDENT_CODE ON
+        INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
+    )
+    if(CMAKE_CXX_CLANG_TIDY)
+        set_target_properties(Catch2 PROPERTIES CXX_CLANG_TIDY "")
+    endif()
+endfunction()
+
 function(find_catch2)
     if(TARGET Catch2::Catch2)
         message(STATUS "Catch2::Catch2 target already imported")
@@ -19,22 +38,11 @@ function(find_catch2)
     if(TARGET Catch2::Catch2)
         # nothing to do, target already exists in the superbuild
     elseif(openPMD_USE_INTERNAL_CATCH AND openPMD_catch_src)
-        # Ensure Catch2 is built with PIC so it can be linked into shared libraries
-        set(_old_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
-        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+        catch_preconfigure()
         add_subdirectory(${openPMD_catch_src} _deps/localCatch2-build/)
-        set(BUILD_SHARED_LIBS ${_old_BUILD_SHARED_LIBS})
-        # Mark Catch2 as system code to suppress warnings and set position independent code
-        set_target_properties(Catch2 PROPERTIES
-            POSITION_INDEPENDENT_CODE ON
-            INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
-        )
-        if(CMAKE_CXX_CLANG_TIDY)
-            set_target_properties(Catch2 PROPERTIES CXX_CLANG_TIDY "")
-        endif()
+        catch_postconfigure()
     elseif(openPMD_USE_INTERNAL_CATCH AND (openPMD_catch_tar OR openPMD_catch_branch))
-        set(_old_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
-        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+        catch_preconfigure()
         include(FetchContent)
         if(openPMD_catch_tar)
             FetchContent_Declare(fetchedCatch2
@@ -50,15 +58,7 @@ function(find_catch2)
             )
         endif()
         FetchContent_MakeAvailable(fetchedCatch2)
-        set(BUILD_SHARED_LIBS ${_old_BUILD_SHARED_LIBS})
-        # Ensure Catch2 is built with PIC and mark as system code to suppress warnings
-        set_target_properties(Catch2 PROPERTIES
-            POSITION_INDEPENDENT_CODE ON
-            INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
-        )
-        if(CMAKE_CXX_CLANG_TIDY)
-            set_target_properties(Catch2 PROPERTIES CXX_CLANG_TIDY "")
-        endif()
+        catch_postconfigure()
         # advanced fetch options
         mark_as_advanced(FETCHCONTENT_BASE_DIR)
         mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
