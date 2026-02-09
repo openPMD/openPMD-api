@@ -220,7 +220,7 @@ WriteBuffer::WriteBuffer(WriteBuffer &&) noexcept = default;
 WriteBuffer &WriteBuffer::operator=(WriteBuffer &&) noexcept = default;
 
 template <typename T>
-WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<T> const &ptr)
+WriteBuffer &WriteBuffer::operator=(std::shared_ptr<T> const &ptr)
 {
     if constexpr (std::is_const_v<T>)
     {
@@ -234,7 +234,7 @@ WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<T> const &ptr)
     }
     return *this;
 }
-WriteBuffer const &WriteBuffer::operator=(UniquePtrWithLambda<void> ptr)
+WriteBuffer &WriteBuffer::operator=(UniquePtrWithLambda<void> ptr)
 {
     m_buffer =
         std::make_any<WriteBufferTypes>(CopyableUniquePtr(std::move(ptr)));
@@ -254,17 +254,14 @@ void const *WriteBuffer::get() const
 
 #define OPENPMD_INSTANTIATE(dtype)                                             \
     template WriteBuffer::WriteBuffer(std::shared_ptr<dtype>);                 \
-    template WriteBuffer const &WriteBuffer::operator=(                        \
+    template WriteBuffer &WriteBuffer::operator=(                              \
         std::shared_ptr<dtype> const &);
 
-// currently not instantiating <T const> types, this class is internal and we
-// dont need it
-OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
+OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE)
 template WriteBuffer::WriteBuffer(std::shared_ptr<void>);
-template WriteBuffer const &
-WriteBuffer::operator=(std::shared_ptr<void> const &);
+template WriteBuffer &WriteBuffer::operator=(std::shared_ptr<void> const &);
 template WriteBuffer::WriteBuffer(std::shared_ptr<void const>);
-template WriteBuffer const &
+template WriteBuffer &
 WriteBuffer::operator=(std::shared_ptr<void const> const &);
 
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
