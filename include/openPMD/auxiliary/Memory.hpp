@@ -87,8 +87,8 @@ namespace auxiliary
 
         // @todo implementation must distinguish const types
         template <typename T>
-        WriteBuffer const &operator=(std::shared_ptr<T> const &ptr);
-        WriteBuffer const &operator=(UniquePtrWithLambda<void> ptr);
+        WriteBuffer &operator=(std::shared_ptr<T> const &ptr);
+        WriteBuffer &operator=(UniquePtrWithLambda<void> ptr);
 
         void const *get() const;
 
