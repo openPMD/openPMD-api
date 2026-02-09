@@ -497,8 +497,8 @@ private:
         internal::LoadStoreConfig, F &&createBuffer);
 
     template <typename T>
-    void
-        loadChunk_impl(std::shared_ptr<T>, internal::LoadStoreConfigWithBuffer);
+    void loadChunk_impl(
+        std::shared_ptr<T> const &, internal::LoadStoreConfigWithBuffer);
     void loadChunk_impl(
         std::shared_ptr<void> const &,
         Datatype,

@@ -257,6 +257,17 @@ void const *WriteBuffer::get() const
     template WriteBuffer const &WriteBuffer::operator=(                        \
         std::shared_ptr<dtype> const &);
 
+// currently not instantiating <T const> types, this class is internal and we
+// dont need it
 OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
+template WriteBuffer::WriteBuffer(std::shared_ptr<void>);
+template WriteBuffer const &
+WriteBuffer::operator=(std::shared_ptr<void> const &);
+template WriteBuffer::WriteBuffer(std::shared_ptr<void const>);
+template WriteBuffer const &
+WriteBuffer::operator=(std::shared_ptr<void const> const &);
+
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+
 #undef OPENPMD_INSTANTIATE
 } // namespace openPMD::auxiliary

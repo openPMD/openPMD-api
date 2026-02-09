@@ -865,29 +865,53 @@ std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 
 namespace detail
 {
-    template <typename To>
-    struct do_convert
+    struct FillBuffer
     {
-        template <typename From>
-        static std::optional<To> call(Attribute &attr)
+        template <typename T>
+        static void call(
+            void *target,
+            size_t numPoints,
+            RecordComponent const &component,
+            internal::RecordComponentData const &rc)
         {
-            if constexpr (std::is_convertible_v<From, To>)
+            std::optional<T> val = rc.m_constantValue.getOptional<T>();
+
+            if (val.has_value())
             {
-                return std::make_optional<To>(attr.get<From>());
+                auto raw_ptr = static_cast<T *>(target);
+                std::fill(raw_ptr, raw_ptr + numPoints, *val);
             }
             else
             {
-                return std::nullopt;
+                std::string const data_type_str =
+                    datatypeToString(component.getDatatype());
+                std::string const requ_type_str =
+                    datatypeToString(determineDatatype<T>());
+                std::string err_msg =
+                    "Type conversion during chunk loading not possible! ";
+                err_msg +=
+                    "Data: " + data_type_str + "; Load as: " + requ_type_str;
+                throw error::WrongAPIUsage(err_msg);
             }
         }
 
-        static constexpr char const *errorMsg = "is_conversible";
+        static constexpr char const *errorMsg = "FillBuffer";
     };
 } // namespace detail
 
-template <typename T_with_extent>
+template <typename T>
 void RecordComponent::loadChunk_impl(
-    std::shared_ptr<T_with_extent> data,
+    std::shared_ptr<T> const &data, internal::LoadStoreConfigWithBuffer cfg)
+{
+    loadChunk_impl(
+        std::static_pointer_cast<void>(data),
+        determineDatatype<std::remove_cv_t<std::remove_extent_t<T>>>(),
+        std::move(cfg));
+}
+
+void RecordComponent::loadChunk_impl(
+    std::shared_ptr<void> const &data,
+    Datatype dtype_requested,
     internal::LoadStoreConfigWithBuffer cfg)
 {
     if (cfg.memorySelection.has_value())
@@ -895,8 +919,6 @@ void RecordComponent::loadChunk_impl(
         throw error::WrongAPIUsage(
             "Unsupported: Memory selections in chunk loading.");
     }
-    using T = std::remove_cv_t<std::remove_extent_t<T_with_extent>>;
-    Datatype dtype = determineDatatype(data);
     /*
      * For constant components, we implement type conversion, so there is
      * a separate check further below.
@@ -907,11 +929,10 @@ void RecordComponent::loadChunk_impl(
      *
      * Attention: Do NOT use operator==(), doesnt work properly on Windows!
      */
-    if (!isSame(dtype, getDatatype()) && !constant())
+    if (!isSame(dtype_requested, getDatatype()) && !constant())
         {
             std::string const data_type_str = datatypeToString(getDatatype());
-            std::string const requ_type_str =
-                datatypeToString(determineDatatype<T>());
+            std::string const requ_type_str = datatypeToString(dtype_requested);
             std::string err_msg =
                 "Type conversion during chunk loading not yet implemented! ";
             err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
@@ -946,25 +967,8 @@ void RecordComponent::loadChunk_impl(
         for (auto const &dimensionSize : extent)
             numPoints *= dimensionSize;
 
-        std::optional<T> val =
-            switchNonVectorType<detail::do_convert</* To = */ T>>(
-                /* dt = */ getDatatype(), rc.m_constantValue);
-
-        if (val.has_value())
-        {
-            auto raw_ptr = static_cast<T *>(data.get());
-            std::fill(raw_ptr, raw_ptr + numPoints, *val);
-        }
-        else
-        {
-            std::string const data_type_str = datatypeToString(getDatatype());
-            std::string const requ_type_str =
-                datatypeToString(determineDatatype<T>());
-            std::string err_msg =
-                "Type conversion during chunk loading not possible! ";
-            err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
-            throw error::WrongAPIUsage(err_msg);
-        }
+        switchDatasetType<detail::FillBuffer>(
+            dtype_requested, data.get(), numPoints, *this, rc);
     }
     else
     {
@@ -1082,7 +1086,8 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     template void RecordComponent::storeChunk<type>(                           \
         UniquePtrWithLambda<type> data, Offset o, Extent e);                   \
     template void RecordComponent::loadChunk_impl(                             \
-        std::shared_ptr<type> data, internal::LoadStoreConfigWithBuffer cfg);  \
+        std::shared_ptr<type> const &data,                                     \
+        internal::LoadStoreConfigWithBuffer cfg);                              \
     template std::shared_ptr<type> RecordComponent::loadChunkAllocate_impl(    \
         internal::LoadStoreConfig cfg);
 

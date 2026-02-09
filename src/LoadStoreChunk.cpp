@@ -316,6 +316,9 @@ namespace compose
 } // namespace compose
 
 template class compose::ConfigureLoadStore<ConfigureLoadStore>;
+template class compose::ConfigureLoadStore<ConfigureLoadStoreFromBuffer>;
+template class compose::ConfigureStoreChunkFromBuffer<
+    ConfigureLoadStoreFromBuffer>;
 
 // need this for clang-tidy
 #define OPENPMD_ARRAY(type) type[]
