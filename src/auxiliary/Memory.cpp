@@ -257,7 +257,9 @@ void const *WriteBuffer::get() const
     template WriteBuffer &WriteBuffer::operator=(                              \
         std::shared_ptr<dtype> const &);
 
-OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE)
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
 template WriteBuffer::WriteBuffer(std::shared_ptr<void>);
 template WriteBuffer &WriteBuffer::operator=(std::shared_ptr<void> const &);
 template WriteBuffer::WriteBuffer(std::shared_ptr<void const>);
