@@ -210,8 +210,10 @@ namespace core
     }
 
     ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer(
-        auxiliary::WriteBuffer buffer, Datatype, ConfigureLoadStore &&core)
-        : ConfigureLoadStore(std::move(core)), m_buffer(std::move(buffer))
+        auxiliary::WriteBuffer buffer, Datatype dt, ConfigureLoadStore &&core)
+        : ConfigureLoadStore(std::move(core))
+        , m_buffer(std::move(buffer))
+        , m_datatype(dt)
     {}
 
     auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
