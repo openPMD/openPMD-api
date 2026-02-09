@@ -14,7 +14,11 @@ auto ConfigureLoadStore::withSharedPtr(std::shared_ptr<T> data)
             "Unallocated pointer passed during chunk store.");
     }
     return shared_ptr_return_type<T>(
-        std::static_pointer_cast<std::remove_extent_t<T>>(std::move(data)),
+        auxiliary::WriteBuffer(
+            std::static_pointer_cast<
+                std::conditional_t<std::is_const_v<T>, void const, void>>(
+                std::move(data))),
+        determineDatatype<std::remove_extent_t<T>>(),
         {std::move(*this)});
 }
 template <typename T>
@@ -27,9 +31,26 @@ auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
         throw std::runtime_error(
             "Unallocated pointer passed during chunk store.");
     }
-    return unique_ptr_return_type<T>(
-        std::move(data).template static_cast_<std::remove_extent_t<T>>(),
-        {std::move(*this)});
+    if constexpr (std::is_const_v<T>)
+    {
+        void const *raw_ptr = data.get();
+        return unique_ptr_return_type<T>(
+            auxiliary::WriteBuffer(
+                std::shared_ptr<void const>(
+                    raw_ptr,
+                    [data_lambda =
+                         std::move(data)](auto const *) { /* no-op */ })),
+            determineDatatype<std::remove_extent_t<T>>(),
+            {std::move(*this)});
+    }
+    else
+    {
+        return unique_ptr_return_type<T>(
+            auxiliary::WriteBuffer(
+                std::move(data).template static_cast_<void>()),
+            determineDatatype<std::remove_extent_t<T>>(),
+            {std::move(*this)});
+    }
 }
 template <typename T>
 auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
@@ -40,7 +61,12 @@ auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
             "Unallocated pointer passed during chunk store.");
     }
     return shared_ptr_return_type<T>(
-        auxiliary::shareRaw(data), {std::move(*this)});
+        auxiliary::WriteBuffer(
+            std::static_pointer_cast<
+                std::conditional_t<std::is_const_v<T>, void const, void>>(
+                auxiliary::shareRaw(data))),
+        determineDatatype<std::remove_extent_t<T>>(),
+        {std::move(*this)});
 }
 
 template <typename T, typename Del>
