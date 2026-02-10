@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     return result;
 }
 #else
-int main(int argc, char *argv[])
+int main()
 {
     throw std::runtime_error("Serial tests use Catch2's provided main.");
 }
