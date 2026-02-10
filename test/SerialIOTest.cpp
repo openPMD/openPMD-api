@@ -37,7 +37,8 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/openPMD.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <algorithm>
 #include <array>
@@ -2260,7 +2261,7 @@ inline void fileBased_write_test(const std::string &backend)
         Series(
             "../samples/subdir/serial_fileBased_write%T." + backend,
             Access::READ_WRITE),
-        Catch::Equals(
+        Catch::Matchers::Equals(
             "Cannot write to a series with inconsistent iteration padding. "
             "Please specify '%0<N>T' or open as read-only."));
 
@@ -5864,7 +5865,7 @@ TEST_CASE("adios2_group_table", "[serial]")
 void variableBasedSeries(std::string const &file)
 {
     constexpr Extent::value_type extent = 1000;
-    auto testWrite = [&file](std::string const &jsonConfig) {
+    auto testWrite = [&](std::string const &jsonConfig) {
         Series writeSeries(file, Access::CREATE_LINEAR, jsonConfig);
         writeSeries.setAttribute("some_global", "attribute");
         writeSeries.setIterationEncoding(IterationEncoding::variableBased);
@@ -5938,8 +5939,7 @@ void variableBasedSeries(std::string const &file)
         REQUIRE(auxiliary::directory_exists(file));
     };
 
-    auto testRead = [&file, &extent](
-                        std::string const &parseMode,
+    auto testRead = [&](std::string const &parseMode,
                         bool supportsModifiableAttributes,
                         Access access = Access::READ_LINEAR) {
         /*
@@ -7240,7 +7240,7 @@ TEST_CASE("late_setting_of_iterationencoding", "[serial]")
         REQUIRE_THROWS_WITH(
             series.setIterationEncoding(
                 ::openPMD::IterationEncoding::fileBased),
-            Catch::Equals(
+            Catch::Matchers::Equals(
                 "Wrong API usage: For fileBased formats the "
                 "iteration expansion pattern %T must "
                 "be included in the file name"));

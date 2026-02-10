@@ -22,7 +22,7 @@
 
 #include "openPMD/IO/ADIOS/macros.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <mpi.h>
 
 namespace iterate_nonstreaming_series

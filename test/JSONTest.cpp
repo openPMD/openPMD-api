@@ -24,7 +24,8 @@
 #include "openPMD/helper/list_series.hpp"
 #include "openPMD/openPMD.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <algorithm>
 #include <fstream>

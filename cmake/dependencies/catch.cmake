@@ -1,3 +1,22 @@
+function(catch_preconfigure)
+    set(_old_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+endfunction()
+
+function(catch_postconfigure)
+    set(BUILD_SHARED_LIBS ${_old_BUILD_SHARED_LIBS})
+    unset(_old_BUILD_SHARED_LIBS)
+    # Mark Catch2 as system code to suppress warnings and set position independent code
+    # Ensure Catch2 is built with PIC so it can be linked into shared libraries
+    set_target_properties(Catch2 PROPERTIES
+        POSITION_INDEPENDENT_CODE ON
+        INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:Catch2,INTERFACE_INCLUDE_DIRECTORIES>"
+    )
+    if(CMAKE_CXX_CLANG_TIDY)
+        set_target_properties(Catch2 PROPERTIES CXX_CLANG_TIDY "")
+    endif()
+endfunction()
+
 function(find_catch2)
     if(TARGET Catch2::Catch2)
         message(STATUS "Catch2::Catch2 target already imported")
@@ -19,8 +38,11 @@ function(find_catch2)
     if(TARGET Catch2::Catch2)
         # nothing to do, target already exists in the superbuild
     elseif(openPMD_USE_INTERNAL_CATCH AND openPMD_catch_src)
+        catch_preconfigure()
         add_subdirectory(${openPMD_catch_src} _deps/localCatch2-build/)
+        catch_postconfigure()
     elseif(openPMD_USE_INTERNAL_CATCH AND (openPMD_catch_tar OR openPMD_catch_branch))
+        catch_preconfigure()
         include(FetchContent)
         if(openPMD_catch_tar)
             FetchContent_Declare(fetchedCatch2
@@ -36,7 +58,7 @@ function(find_catch2)
             )
         endif()
         FetchContent_MakeAvailable(fetchedCatch2)
-
+        catch_postconfigure()
         # advanced fetch options
         mark_as_advanced(FETCHCONTENT_BASE_DIR)
         mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
@@ -45,7 +67,7 @@ function(find_catch2)
         mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
         #mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FETCHEDCatch2)
     elseif(NOT openPMD_USE_INTERNAL_CATCH)
-        find_package(Catch2 2.13.10 CONFIG REQUIRED)
+        find_package(Catch2 3.0.0 CONFIG REQUIRED)
         message(STATUS "Catch2: Found version '${Catch2_VERSION}'")
     endif()
 endfunction()
@@ -56,10 +78,10 @@ set(openPMD_catch_src ""
     "Local path to Catch2 source directory (preferred if set)")
 
 # tarball fetcher
-set(openPMD_catch_tar "https://github.com/catchorg/Catch2/archive/refs/tags/v2.13.10.tar.gz"
+set(openPMD_catch_tar "https://github.com/catchorg/Catch2/archive/refs/tags/v3.11.0.tar.gz"
     CACHE STRING
     "Remote tarball link to pull and build Catch2 from if(openPMD_USE_INTERNAL_CATCH)")
-set(openPMD_catch_tar_hash "SHA256=d54a712b7b1d7708bc7a819a8e6e47b2fde9536f487b89ccbca295072a7d9943"
+set(openPMD_catch_tar_hash "SHA256=82fa1cb59dc28bab220935923f7469b997b259eb192fb9355db62da03c2a3137"
     CACHE STRING
     "Hash checksum of the tarball of Catch2 if(openPMD_USE_INTERNAL_CATCH)")
 
@@ -67,7 +89,7 @@ set(openPMD_catch_tar_hash "SHA256=d54a712b7b1d7708bc7a819a8e6e47b2fde9536f487b8
 set(openPMD_catch_repo "https://github.com/catchorg/Catch2.git"
     CACHE STRING
     "Repository URI to pull and build Catch2 from if(openPMD_USE_INTERNAL_CATCH)")
-set(openPMD_catch_branch "v2.13.10"
+set(openPMD_catch_branch "v3.11.0"
     CACHE STRING
     "Repository branch for openPMD_catch_repo if(openPMD_USE_INTERNAL_CATCH)")
 

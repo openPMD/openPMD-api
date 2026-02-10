@@ -25,7 +25,7 @@
 
 #include <numeric>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <optional>
 
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI

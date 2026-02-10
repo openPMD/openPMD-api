@@ -34,7 +34,8 @@
 #include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <algorithm>
 #include <array>
@@ -1100,7 +1101,7 @@ TEST_CASE("wrapper_test", "[core]")
     // it once? value = 43.; mrc2.makeConstant(value);
     REQUIRE_THROWS_WITH(
         mrc2.makeConstant(value),
-        Catch::Equals(
+        Catch::Matchers::Equals(
             "A recordComponent can not (yet) be made constant after "
             "it has been written."));
     std::array<double, 1> moreData = {{112233.}};
@@ -1121,7 +1122,7 @@ TEST_CASE("wrapper_test", "[core]")
     int wrongData = 42;
     REQUIRE_THROWS_WITH(
         o.iterations[5].meshes["E"]["y"].storeChunkRaw(&wrongData, {0}, {1}),
-        Catch::Equals(
+        Catch::Matchers::Equals(
             "Datatypes of chunk data (INT) and record component "
             "(DOUBLE) do not match."));
     std::shared_ptr<double> storeData = std::make_shared<double>(44);
@@ -1192,7 +1193,7 @@ TEST_CASE("wrapper_test", "[core]")
             .particles["electrons"]
             .particlePatches["numParticles"][RecordComponent::SCALAR]
             .store(idx + 1, 42.),
-        Catch::Equals(
+        Catch::Matchers::Equals(
             "Datatypes of patch data (DOUBLE) and dataset (" + u64str.str() +
             ") do not match."));
     o.iterations[6]
@@ -1285,7 +1286,7 @@ TEST_CASE("empty_record_test", "[core]")
         "No assumption about contained RecordComponents will be made");
     REQUIRE_THROWS_WITH(
         o.flush(),
-        Catch::Equals(
+        Catch::Matchers::Equals(
             "A Record can not be written without any contained "
             "RecordComponents: E"));
     o.iterations[1].meshes["E"][RecordComponent::SCALAR].resetDataset(
@@ -1302,10 +1303,11 @@ TEST_CASE("zero_extent_component", "[core]")
     auto E_x = o.iterations[1].meshes["E"]["x"];
     E_x.setComment("Datasets must contain dimensions.");
     // REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::LONG, {})),
-    //                    Catch::Equals("Dataset extent must be at least 1D."));
+    //                    Catch::Matchers::Equals("Dataset extent must be at
+    //                    least 1D."));
     REQUIRE_THROWS_WITH(
         E_x.makeEmpty<int>(0),
-        Catch::Equals("Dataset extent must be at least 1D."));
+        Catch::Matchers::Equals("Dataset extent must be at least 1D."));
     E_x.resetDataset(Dataset(Datatype::DOUBLE, {1}));
 }
 
@@ -1313,17 +1315,17 @@ TEST_CASE("no_file_ending", "[core]")
 {
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output", Access::CREATE),
-        Catch::Equals(
+        Catch::Matchers::Equals(
             "Unknown file format! Did you specify a file ending? "
             "Specified file name was './new_openpmd_output'."));
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output_%T", Access::CREATE),
-        Catch::Equals(
+        Catch::Matchers::Equals(
             "Unknown file format! Did you specify a file ending? "
             "Specified file name was './new_openpmd_output_%T'."));
     REQUIRE_THROWS_WITH(
         Series("./new_openpmd_output_%05T", Access::CREATE),
-        Catch::Equals(
+        Catch::Matchers::Equals(
             "Unknown file format! Did you specify a file ending? "
             "Specified file name was './new_openpmd_output_%05T'."));
     {
@@ -1625,7 +1627,7 @@ TEST_CASE("load_chunk_wrong_datatype", "[core]")
             read.iterations[0]
                 .meshes["rho"][RecordComponent::SCALAR]
                 .loadChunk<double>({0}, {10}),
-            Catch::Equals(err_msg));
+            Catch::Matchers::Equals(err_msg));
     }
 }
 
@@ -1694,7 +1696,7 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
         REQUIRE(attr.get<std::array<int, 7>>() == arrayint);
         REQUIRE_THROWS_WITH(
             (attr.get<std::array<int, 8>>()),
-            Catch::Equals(
+            Catch::Matchers::Equals(
                 "getCast: no vector to array conversion possible "
                 "(wrong requested array size)."));
 #endif
