@@ -124,6 +124,74 @@ namespace core
     }
 
     template <typename T>
+    auto ConfigureLoadStore::withSharedPtr(std::shared_ptr<T> data)
+        -> shared_ptr_return_type<T>
+    {
+        using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
+        if (!data)
+        {
+            throw std::runtime_error(
+                "Unallocated pointer passed during chunk store.");
+        }
+        return shared_ptr_return_type<T>(
+            auxiliary::WriteBuffer(
+                std::static_pointer_cast<
+                    std::conditional_t<std::is_const_v<T>, void const, void>>(
+                    std::move(data))),
+            determineDatatype<T_decayed>(),
+            {std::move(*this)});
+    }
+    template <typename T>
+    auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
+        -> unique_ptr_return_type<T>
+
+    {
+        using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
+        if (!data)
+        {
+            throw std::runtime_error(
+                "Unallocated pointer passed during chunk store.");
+        }
+        if constexpr (std::is_const_v<T>)
+        {
+            void const *raw_ptr = data.get();
+            return unique_ptr_return_type<T>(
+                auxiliary::WriteBuffer(
+                    std::shared_ptr<void const>(
+                        raw_ptr,
+                        [data_lambda =
+                             std::move(data)](auto const *) { /* no-op */ })),
+                determineDatatype<T_decayed>(),
+                {std::move(*this)});
+        }
+        else
+        {
+            return unique_ptr_return_type<T>(
+                auxiliary::WriteBuffer(
+                    std::move(data).template static_cast_<void>()),
+                determineDatatype<T_decayed>(),
+                {std::move(*this)});
+        }
+    }
+    template <typename T>
+    auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
+    {
+        using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
+        if (!data)
+        {
+            throw std::runtime_error(
+                "Unallocated pointer passed during chunk store.");
+        }
+        return shared_ptr_return_type<T>(
+            auxiliary::WriteBuffer(
+                std::static_pointer_cast<
+                    std::conditional_t<std::is_const_v<T>, void const, void>>(
+                    auxiliary::shareRaw(data))),
+            determineDatatype<T_decayed>(),
+            {std::move(*this)});
+    }
+
+    template <typename T>
     auto ConfigureLoadStore::enqueueStore() -> DynamicMemoryView<T>
     {
         return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
@@ -324,6 +392,7 @@ template class compose::ConfigureStoreChunkFromBuffer<
 
 // need this for clang-tidy
 #define OPENPMD_ARRAY(type) type[]
+#define OPENPMD_POINTER(type) type *
 #define OPENPMD_APPLY_TEMPLATE(template_, type) template_<type>
 
 #define INSTANTIATE_METHOD_TEMPLATES(dtype)                                    \
@@ -332,11 +401,26 @@ template class compose::ConfigureStoreChunkFromBuffer<
             std::shared_ptr, dtype)>;                                          \
     template auto core::ConfigureLoadStore::load(EnqueuePolicy)                \
         ->std::shared_ptr<dtype>;
+#define INSTANTIATE_FULLMATRIX(dtype)                                          \
+    template auto core::ConfigureLoadStore::withSharedPtr(                     \
+        std::shared_ptr<dtype> data) -> shared_ptr_return_type<dtype>;         \
+    template auto core::ConfigureLoadStore::withUniquePtr(                     \
+        UniquePtrWithLambda<dtype> data) -> unique_ptr_return_type<dtype>;
 #define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
     INSTANTIATE_METHOD_TEMPLATES(type)                                         \
     INSTANTIATE_METHOD_TEMPLATES(OPENPMD_ARRAY(type))                          \
+    INSTANTIATE_FULLMATRIX(type)                                               \
+    INSTANTIATE_FULLMATRIX(type const)                                         \
+    INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type))                                \
+    INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type const))                          \
     template auto core::ConfigureLoadStore::enqueueStore()                     \
-        -> DynamicMemoryView<type>;
+        -> DynamicMemoryView<type>;                                            \
+    template auto core::ConfigureLoadStore::withRawPtr(OPENPMD_POINTER(type)   \
+                                                           data)               \
+        ->OPENPMD_APPLY_TEMPLATE(shared_ptr_return_type, type);                \
+    template auto core::ConfigureLoadStore::withRawPtr(                        \
+        OPENPMD_POINTER(type const) data)                                      \
+        ->OPENPMD_APPLY_TEMPLATE(shared_ptr_return_type, type const);
 
 OPENPMD_FOREACH_DATASET_DATATYPE(
     INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT)
@@ -346,6 +430,7 @@ OPENPMD_FOREACH_DATASET_DATATYPE(
 
 #undef INSTANTIATE_METHOD_TEMPLATES
 #undef OPENPMD_ARRAY
+#undef OPENPMD_POINTER
 #undef OPENPMD_APPLY_TEMPLATE
 
 ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc)
