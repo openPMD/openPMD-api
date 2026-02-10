@@ -539,12 +539,13 @@ void Series::flushRankTable(FlushLevel l, Attributable &attributable)
     };
 
     auto writeDataset = [&rank, &maxSize, this, &attributable](
-                            std::shared_ptr<char> put, size_t num_lines = 1) {
+                            std::shared_ptr<char> const &put,
+                            size_t num_lines = 1) {
         Parameter<Operation::WRITE_DATASET> chunk;
         chunk.dtype = Datatype::CHAR;
         chunk.offset = {uint64_t(rank), 0};
         chunk.extent = {num_lines, maxSize};
-        chunk.data = std::move(put);
+        chunk.data = put;
         IOHandler()->enqueue(IOTask(&attributable, std::move(chunk)));
     };
 
