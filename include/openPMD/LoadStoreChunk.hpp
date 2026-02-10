@@ -76,6 +76,7 @@ namespace core
         friend class compose::ConfigureLoadStore;
         template <typename ChildClass>
         friend class compose::ConfigureLoadStoreFromBuffer;
+        friend class openPMD::RecordComponent;
 
     protected:
         ConfigureLoadStore(RecordComponent &);
@@ -89,6 +90,21 @@ namespace core
 
         auto deferFlush(Attributable &);
 
+    private:
+        auto withSharedPtr_impl_mut(std::shared_ptr<void> data, Datatype)
+            -> openPMD::ConfigureLoadStoreFromBuffer;
+        auto
+        withSharedPtr_impl_const(std::shared_ptr<void const> data, Datatype)
+            -> openPMD::ConfigureStoreChunkFromBuffer;
+        auto withUniquePtr_impl_mut(UniquePtrWithLambda<void>, Datatype)
+            -> openPMD::ConfigureStoreChunkFromBuffer;
+        auto withUniquePtr_impl_const(UniquePtrWithLambda<void const>, Datatype)
+            -> openPMD::ConfigureStoreChunkFromBuffer;
+        auto withRawPtr_impl_mut(void *data, Datatype)
+            -> openPMD::ConfigureLoadStoreFromBuffer;
+        auto withRawPtr_impl_const(void const *data, Datatype)
+            -> openPMD::ConfigureStoreChunkFromBuffer;
+
     public:
         auto getOffset() -> Offset const &;
         auto getExtent() -> Extent const &;
@@ -99,7 +115,7 @@ namespace core
         template <typename T>
         struct shared_ptr_return_type_impl
         {
-            using return_type = ConfigureLoadStoreFromBuffer;
+            using return_type = openPMD::ConfigureLoadStoreFromBuffer;
             using normalize_pointer_type =
                 std::shared_ptr<std::remove_extent_t<T>>;
         };
@@ -110,7 +126,7 @@ namespace core
         template <typename T>
         struct shared_ptr_return_type_impl<T const>
         {
-            using return_type = ConfigureStoreChunkFromBuffer;
+            using return_type = openPMD::ConfigureStoreChunkFromBuffer;
             using normalize_pointer_type =
                 std::shared_ptr<std::remove_extent_t<T> const>;
         };
@@ -127,7 +143,7 @@ namespace core
          * simpler for unique pointers. Just remove the array extents here.
          */
         template <typename T>
-        using unique_ptr_return_type = ConfigureStoreChunkFromBuffer;
+        using unique_ptr_return_type = openPMD::ConfigureStoreChunkFromBuffer;
         template <typename T>
         using unique_ptr_normalized_type =
             UniquePtrWithLambda<std::remove_extent_t<T>>;
