@@ -505,6 +505,8 @@ private:
         internal::LoadStoreConfigWithBuffer);
     template <typename T>
     std::shared_ptr<T> loadChunkAllocate_impl(internal::LoadStoreConfig);
+    std::shared_ptr<void> loadChunkAllocate_impl(
+        Datatype, size_t dtype_size, internal::LoadStoreConfig);
 
     // clang-format off
 OPENPMD_protected
