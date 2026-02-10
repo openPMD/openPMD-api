@@ -232,8 +232,15 @@ template <typename T_with_extent>
 std::shared_ptr<T_with_extent>
 RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
 {
-    using T = std::remove_extent_t<T_with_extent>;
-    // static_assert(!std::is_same_v<T, std::string>, "EVIL");
+    using T = std::remove_cv_t<std::remove_extent_t<T_with_extent>>;
+    auto res = loadChunkAllocate_impl(
+        determineDatatype<T>(), sizeof(T), std::move(cfg));
+    return std::static_pointer_cast<T_with_extent>(res);
+}
+
+std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
+    Datatype dtype, size_t dtype_size, internal::LoadStoreConfig cfg)
+{
     auto [o, e] = std::move(cfg);
 
     size_t numPoints = 1;
@@ -242,25 +249,16 @@ RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
         numPoints *= val;
     }
 
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
-    (defined(__apple_build_version__) && __clang_major__ < 14)
-    auto newData = std::shared_ptr<T_with_extent>(
-        new T[numPoints], [](T *p) { delete[] p; });
+    auto newData =
+        std::shared_ptr<void>(new char[numPoints * dtype_size], [](void *p) {
+            delete[] (static_cast<char *>(p));
+        });
     prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
-        .withSharedPtr(newData)
+        .withSharedPtr_impl_mut(newData, dtype)
         .load(EnqueuePolicy::Defer);
     return newData;
-#else
-    auto newData = std::shared_ptr<T[]>(new T[numPoints]);
-    prepareLoadStore()
-        .offset(std::move(o))
-        .extent(std::move(e))
-        .withSharedPtr(newData)
-        .load(EnqueuePolicy::Defer);
-    return std::static_pointer_cast<T_with_extent>(std::move(newData));
-#endif
 }
 
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
