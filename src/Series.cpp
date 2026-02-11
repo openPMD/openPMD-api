@@ -585,7 +585,7 @@ void Series::flushRankTable(FlushLevel l, Attributable &attributable)
                  * > }
                  */
                 [asRawPtr](char *) { delete asRawPtr; }};
-            writeDataset(std::move(put), /* num_lines = */ size);
+            writeDataset(put, /* num_lines = */ size);
         }
 
         // Must ensure that the Writable is consistently set to written on all
@@ -603,7 +603,7 @@ void Series::flushRankTable(FlushLevel l, Attributable &attributable)
         new char[maxSize]{}, [](char const *ptr) { delete[] ptr; }};
     std::copy_n(myRankInfo.c_str(), mySize, put.get());
 
-    writeDataset(std::move(put));
+    writeDataset(put);
 }
 
 std::string Series::particlesPath() const
