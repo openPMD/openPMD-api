@@ -200,8 +200,7 @@ inline auto RecordComponent::visit(Args &&...args)
 
 // definitions for LoadStoreChunk.hpp
 template <typename T, typename F>
-auto core::ConfigureLoadStore::enqueueStore(F &&createBuffer)
-    -> DynamicMemoryView<T>
+auto ConfigureLoadStore::enqueueStore(F &&createBuffer) -> DynamicMemoryView<T>
 {
     return m_rc.storeChunkSpanCreateBuffer_impl<T>(
         storeChunkConfig(), std::forward<F>(createBuffer));

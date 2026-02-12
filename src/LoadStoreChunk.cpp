@@ -57,415 +57,389 @@ namespace
     }
 } // namespace
 
-namespace core
+ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc) : m_rc(rc)
+{}
+
+auto ConfigureLoadStore::dim() const -> uint8_t
 {
-    ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc) : m_rc(rc)
-    {}
+    return m_rc.getDimensionality();
+}
 
-    auto ConfigureLoadStore::dim() const -> uint8_t
-    {
-        return m_rc.getDimensionality();
-    }
+auto ConfigureLoadStore::storeChunkConfig() -> internal::LoadStoreConfig
+{
+    return internal::LoadStoreConfig{getOffset(), getExtent()};
+}
 
-    auto ConfigureLoadStore::storeChunkConfig() -> internal::LoadStoreConfig
-    {
-        return internal::LoadStoreConfig{getOffset(), getExtent()};
-    }
-
-    auto ConfigureLoadStore::deferFlush(Attributable &attr)
-    {
-        auto index = attr.IOHandler()->m_flushCounter;
-        return [attr,
-                old_index = *index,
-                current_index = std::weak_ptr(index)]() mutable {
-            auto lock_current_index = current_index.lock();
-            if (!lock_current_index || *lock_current_index >= old_index)
-            {
-                return;
-            }
-            attr.seriesFlush();
-        };
-    }
-
-    auto ConfigureLoadStore::getOffset() -> Offset const &
-    {
-        if (!m_offset.has_value())
+auto ConfigureLoadStore::deferFlush(Attributable &attr)
+{
+    auto index = attr.IOHandler()->m_flushCounter;
+    return [attr,
+            old_index = *index,
+            current_index = std::weak_ptr(index)]() mutable {
+        auto lock_current_index = current_index.lock();
+        if (!lock_current_index || *lock_current_index >= old_index)
         {
-            if (m_rc.joinedDimension().has_value())
-            {
-                m_offset = std::make_optional<Offset>();
-            }
-            else
-            {
-                m_offset = std::make_optional<Offset>(dim(), 0);
-            }
+            return;
         }
-        return *m_offset;
-    }
-
-    auto ConfigureLoadStore::getExtent() -> Extent const &
-    {
-        if (!m_extent.has_value())
-        {
-            m_extent = std::make_optional<Extent>(m_rc.getExtent());
-            if (m_offset.has_value())
-            {
-                auto it_o = m_offset->begin();
-                auto end_o = m_offset->end();
-                auto it_e = m_extent->begin();
-                auto end_e = m_extent->end();
-                for (; it_o != end_o && it_e != end_e; ++it_e, ++it_o)
-                {
-                    *it_e -= *it_o;
-                }
-            }
-        }
-        return *m_extent;
-    }
-
-    auto ConfigureLoadStore::withSharedPtr_impl_mut(
-        std::shared_ptr<void> data, Datatype datatype)
-        -> openPMD::ConfigureLoadStoreFromBuffer
-    {
-        if (!data)
-        {
-            throw std::runtime_error(
-                "Unallocated pointer passed during chunk store.");
-        }
-        return openPMD::ConfigureLoadStoreFromBuffer(
-            auxiliary::WriteBuffer(std::move(data)),
-            datatype,
-            {std::move(*this)});
-    }
-    auto ConfigureLoadStore::withSharedPtr_impl_const(
-        std::shared_ptr<void const> data, Datatype datatype)
-        -> openPMD::ConfigureStoreChunkFromBuffer
-    {
-        if (!data)
-        {
-            throw std::runtime_error(
-                "Unallocated pointer passed during chunk store.");
-        }
-        return openPMD::ConfigureStoreChunkFromBuffer(
-            auxiliary::WriteBuffer(std::move(data)),
-            datatype,
-            {std::move(*this)});
-    }
-
-    template <typename T>
-    auto ConfigureLoadStore::withSharedPtr(std::shared_ptr<T> data)
-        -> shared_ptr_return_type<T>
-    {
-        using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
-        constexpr auto dtype = determineDatatype<T_decayed>();
-        if constexpr (std::is_const_v<T>)
-        {
-            return withSharedPtr_impl_const(data, dtype);
-        }
-        else
-        {
-            return withSharedPtr_impl_mut(data, dtype);
-        }
-    }
-
-    auto ConfigureLoadStore::withUniquePtr_impl_mut(
-        UniquePtrWithLambda<void> data, Datatype dtype)
-        -> openPMD::ConfigureStoreChunkFromBuffer
-
-    {
-        if (!data)
-        {
-            throw std::runtime_error(
-                "Unallocated pointer passed during chunk store.");
-        }
-
-        return openPMD::ConfigureStoreChunkFromBuffer(
-            auxiliary::WriteBuffer(std::move(data)), dtype, {std::move(*this)});
-    }
-    auto ConfigureLoadStore::withUniquePtr_impl_const(
-        UniquePtrWithLambda<void const> data, Datatype dtype)
-        -> openPMD::ConfigureStoreChunkFromBuffer
-
-    {
-        if (!data)
-        {
-            throw std::runtime_error(
-                "Unallocated pointer passed during chunk store.");
-        }
-
-        void const *raw_ptr = data.release();
-        auto &deleter = data.get_deleter();
-        return openPMD::ConfigureStoreChunkFromBuffer(
-            auxiliary::WriteBuffer(
-                std::shared_ptr<void const>(
-                    raw_ptr,
-                    [deleter_lambda = std::move(deleter)](auto const *p) {
-                        deleter_lambda(p);
-                    })),
-            dtype,
-            {std::move(*this)});
-    }
-    template <typename T>
-    auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
-        -> unique_ptr_return_type<T>
-
-    {
-        using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
-        constexpr auto dtype = determineDatatype<T_decayed>();
-        if constexpr (std::is_const_v<T>)
-        {
-            return withUniquePtr_impl_const(
-                std::move(data).template static_cast_<void const>(), dtype);
-        }
-        else
-        {
-            return withUniquePtr_impl_mut(
-                std::move(data).template static_cast_<void>(), dtype);
-        }
-    }
-
-    auto ConfigureLoadStore::withRawPtr_impl_mut(void *data, Datatype dtype)
-        -> openPMD::ConfigureLoadStoreFromBuffer
-    {
-        if (!data)
-        {
-            throw std::runtime_error(
-                "Unallocated pointer passed during chunk store.");
-        }
-        return openPMD::ConfigureLoadStoreFromBuffer(
-            auxiliary::WriteBuffer(auxiliary::shareRaw(data)),
-            dtype,
-            {std::move(*this)});
-    }
-
-    auto
-    ConfigureLoadStore::withRawPtr_impl_const(void const *data, Datatype dtype)
-        -> openPMD::ConfigureStoreChunkFromBuffer
-    {
-        if (!data)
-        {
-            throw std::runtime_error(
-                "Unallocated pointer passed during chunk store.");
-        }
-        return openPMD::ConfigureStoreChunkFromBuffer(
-            auxiliary::WriteBuffer(auxiliary::shareRaw(data)),
-            dtype,
-            {std::move(*this)});
-    }
-
-    template <typename T>
-    auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
-    {
-        using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
-        constexpr auto dtype = determineDatatype<T_decayed>();
-        if constexpr (std::is_const_v<T>)
-        {
-            return withRawPtr_impl_const(data, dtype);
-        }
-        else
-        {
-            return withRawPtr_impl_mut(data, dtype);
-        }
-    }
-
-    template <typename T>
-    auto ConfigureLoadStore::enqueueStore() -> DynamicMemoryView<T>
-    {
-        return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
-    }
-
-    template <typename T>
-    auto ConfigureLoadStore::enqueueLoad()
-        -> auxiliary::DeferredComputation<std::shared_ptr<T>>
-    {
-        auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
-        return auxiliary::DeferredComputation<std::shared_ptr<T>>(
-            [res_lambda = std::move(res), dflush = deferFlush(m_rc)]() mutable {
-                dflush();
-                return res_lambda;
-            });
-    }
-
-    template <typename T>
-    auto ConfigureLoadStore::load(EnqueuePolicy ep) -> std::shared_ptr<T>
-    {
-        auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
-        switch (ep)
-        {
-        case EnqueuePolicy::Defer:
-            break;
-        case EnqueuePolicy::Immediate:
-            m_rc.seriesFlush();
-            break;
-        }
-        return res;
-    }
-
-    struct VisitorEnqueueLoadVariant
-    {
-        template <typename T, typename F>
-        static auto
-        call(RecordComponent &rc, internal::LoadStoreConfig cfg, F &&dflush)
-            -> auxiliary::DeferredComputation<
-                auxiliary::detail::shared_ptr_dataset_types>
-        {
-            auto res = rc.loadChunkAllocate_impl<T>(std::move(cfg));
-            return auxiliary::DeferredComputation<
-                auxiliary::detail::shared_ptr_dataset_types>(
-                [res_lambda = std::move(res),
-                 dflush_lambda = std::forward<F>(dflush)]() mutable
-                    -> auxiliary::detail::shared_ptr_dataset_types {
-                    dflush_lambda();
-                    return res_lambda;
-                });
-        }
+        attr.seriesFlush();
     };
+}
 
-    auto ConfigureLoadStore::enqueueLoadVariant()
+auto ConfigureLoadStore::getOffset() -> Offset const &
+{
+    if (!m_offset.has_value())
+    {
+        if (m_rc.joinedDimension().has_value())
+        {
+            m_offset = std::make_optional<Offset>();
+        }
+        else
+        {
+            m_offset = std::make_optional<Offset>(dim(), 0);
+        }
+    }
+    return *m_offset;
+}
+
+auto ConfigureLoadStore::getExtent() -> Extent const &
+{
+    if (!m_extent.has_value())
+    {
+        m_extent = std::make_optional<Extent>(m_rc.getExtent());
+        if (m_offset.has_value())
+        {
+            auto it_o = m_offset->begin();
+            auto end_o = m_offset->end();
+            auto it_e = m_extent->begin();
+            auto end_e = m_extent->end();
+            for (; it_o != end_o && it_e != end_e; ++it_e, ++it_o)
+            {
+                *it_e -= *it_o;
+            }
+        }
+    }
+    return *m_extent;
+}
+
+auto ConfigureLoadStore::withSharedPtr_impl_mut(
+    std::shared_ptr<void> data, Datatype datatype)
+    -> openPMD::ConfigureLoadStoreFromBuffer
+{
+    if (!data)
+    {
+        throw std::runtime_error(
+            "Unallocated pointer passed during chunk store.");
+    }
+    return openPMD::ConfigureLoadStoreFromBuffer(
+        auxiliary::WriteBuffer(std::move(data)), datatype, {std::move(*this)});
+}
+auto ConfigureLoadStore::withSharedPtr_impl_const(
+    std::shared_ptr<void const> data, Datatype datatype)
+    -> openPMD::ConfigureStoreChunkFromBuffer
+{
+    if (!data)
+    {
+        throw std::runtime_error(
+            "Unallocated pointer passed during chunk store.");
+    }
+    return openPMD::ConfigureStoreChunkFromBuffer(
+        auxiliary::WriteBuffer(std::move(data)), datatype, {std::move(*this)});
+}
+
+template <typename T>
+auto ConfigureLoadStore::withSharedPtr(std::shared_ptr<T> data)
+    -> shared_ptr_return_type<T>
+{
+    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
+    constexpr auto dtype = determineDatatype<T_decayed>();
+    if constexpr (std::is_const_v<T>)
+    {
+        return withSharedPtr_impl_const(data, dtype);
+    }
+    else
+    {
+        return withSharedPtr_impl_mut(data, dtype);
+    }
+}
+
+auto ConfigureLoadStore::withUniquePtr_impl_mut(
+    UniquePtrWithLambda<void> data, Datatype dtype)
+    -> openPMD::ConfigureStoreChunkFromBuffer
+
+{
+    if (!data)
+    {
+        throw std::runtime_error(
+            "Unallocated pointer passed during chunk store.");
+    }
+
+    return openPMD::ConfigureStoreChunkFromBuffer(
+        auxiliary::WriteBuffer(std::move(data)), dtype, {std::move(*this)});
+}
+auto ConfigureLoadStore::withUniquePtr_impl_const(
+    UniquePtrWithLambda<void const> data, Datatype dtype)
+    -> openPMD::ConfigureStoreChunkFromBuffer
+
+{
+    if (!data)
+    {
+        throw std::runtime_error(
+            "Unallocated pointer passed during chunk store.");
+    }
+
+    void const *raw_ptr = data.release();
+    auto &deleter = data.get_deleter();
+    return openPMD::ConfigureStoreChunkFromBuffer(
+        auxiliary::WriteBuffer(
+            std::shared_ptr<void const>(
+                raw_ptr,
+                [deleter_lambda = std::move(deleter)](auto const *p) {
+                    deleter_lambda(p);
+                })),
+        dtype,
+        {std::move(*this)});
+}
+template <typename T>
+auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
+    -> unique_ptr_return_type<T>
+
+{
+    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
+    constexpr auto dtype = determineDatatype<T_decayed>();
+    if constexpr (std::is_const_v<T>)
+    {
+        return withUniquePtr_impl_const(
+            std::move(data).template static_cast_<void const>(), dtype);
+    }
+    else
+    {
+        return withUniquePtr_impl_mut(
+            std::move(data).template static_cast_<void>(), dtype);
+    }
+}
+
+auto ConfigureLoadStore::withRawPtr_impl_mut(void *data, Datatype dtype)
+    -> openPMD::ConfigureLoadStoreFromBuffer
+{
+    if (!data)
+    {
+        throw std::runtime_error(
+            "Unallocated pointer passed during chunk store.");
+    }
+    return openPMD::ConfigureLoadStoreFromBuffer(
+        auxiliary::WriteBuffer(auxiliary::shareRaw(data)),
+        dtype,
+        {std::move(*this)});
+}
+
+auto ConfigureLoadStore::withRawPtr_impl_const(void const *data, Datatype dtype)
+    -> openPMD::ConfigureStoreChunkFromBuffer
+{
+    if (!data)
+    {
+        throw std::runtime_error(
+            "Unallocated pointer passed during chunk store.");
+    }
+    return openPMD::ConfigureStoreChunkFromBuffer(
+        auxiliary::WriteBuffer(auxiliary::shareRaw(data)),
+        dtype,
+        {std::move(*this)});
+}
+
+template <typename T>
+auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
+{
+    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
+    constexpr auto dtype = determineDatatype<T_decayed>();
+    if constexpr (std::is_const_v<T>)
+    {
+        return withRawPtr_impl_const(data, dtype);
+    }
+    else
+    {
+        return withRawPtr_impl_mut(data, dtype);
+    }
+}
+
+template <typename T>
+auto ConfigureLoadStore::enqueueStore() -> DynamicMemoryView<T>
+{
+    return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
+}
+
+template <typename T>
+auto ConfigureLoadStore::enqueueLoad()
+    -> auxiliary::DeferredComputation<std::shared_ptr<T>>
+{
+    auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
+    return auxiliary::DeferredComputation<std::shared_ptr<T>>(
+        [res_lambda = std::move(res), dflush = deferFlush(m_rc)]() mutable {
+            dflush();
+            return res_lambda;
+        });
+}
+
+template <typename T>
+auto ConfigureLoadStore::load(EnqueuePolicy ep) -> std::shared_ptr<T>
+{
+    auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
+    switch (ep)
+    {
+    case EnqueuePolicy::Defer:
+        break;
+    case EnqueuePolicy::Immediate:
+        m_rc.seriesFlush();
+        break;
+    }
+    return res;
+}
+
+struct VisitorEnqueueLoadVariant
+{
+    template <typename T, typename F>
+    static auto
+    call(RecordComponent &rc, internal::LoadStoreConfig cfg, F &&dflush)
         -> auxiliary::DeferredComputation<
             auxiliary::detail::shared_ptr_dataset_types>
     {
-        return m_rc.visit<VisitorEnqueueLoadVariant>(
-            this->storeChunkConfig(), deferFlush(m_rc));
-    }
-
-    struct VisitorLoadVariant
-    {
-        template <typename T>
-        static auto call(RecordComponent &rc, internal::LoadStoreConfig cfg)
-            -> auxiliary::detail::shared_ptr_dataset_types
-        {
-            return rc.loadChunkAllocate_impl<T>(std::move(cfg));
-        }
-    };
-
-    auto ConfigureLoadStore::loadVariant(EnqueuePolicy ep)
-        -> auxiliary::detail::shared_ptr_dataset_types
-    {
-        auto res = m_rc.visit<VisitorLoadVariant>(this->storeChunkConfig());
-        switch (ep)
-        {
-        case EnqueuePolicy::Defer:
-            break;
-        case EnqueuePolicy::Immediate:
-            m_rc.seriesFlush();
-            break;
-        }
-        return res;
-    }
-
-    ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer(
-        auxiliary::WriteBuffer buffer, Datatype dt, ConfigureLoadStore &&core)
-        : ConfigureLoadStore(std::move(core))
-        , m_buffer(std::move(buffer))
-        , m_datatype(dt)
-    {}
-
-    auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
-        -> internal::LoadStoreConfigWithBuffer
-    {
-        return internal::LoadStoreConfigWithBuffer{
-            this->getOffset(), this->getExtent(), m_mem_select};
-    }
-
-    auto ConfigureStoreChunkFromBuffer::enqueueStore()
-        -> auxiliary::DeferredComputation<void>
-    {
-        this->m_rc.storeChunk_impl(
-            std::move(m_buffer), m_datatype, storeChunkConfig());
-        return auxiliary::DeferredComputation<void>(
-            [dflush = deferFlush(m_rc)]() mutable -> void { dflush(); });
-    }
-
-    auto ConfigureStoreChunkFromBuffer::store(EnqueuePolicy ep) -> void
-    {
-        this->m_rc.storeChunk_impl(
-            std::move(m_buffer), m_datatype, storeChunkConfig());
-        switch (ep)
-        {
-        case EnqueuePolicy::Defer:
-            break;
-        case EnqueuePolicy::Immediate:
-            m_rc.seriesFlush();
-            break;
-        }
-    }
-
-    auto ConfigureLoadStoreFromBuffer::enqueueLoad()
-        -> auxiliary::DeferredComputation<void>
-    {
-        auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
-            &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
-        if (!shared_ptr)
-        {
-            throw std::runtime_error(
-                "ConfigureLoadStoreFromBuffer must be instantiated with a "
-                "non-const shared_ptr type.");
-        }
-        this->m_rc.loadChunk_impl(
-            *shared_ptr, m_datatype, this->storeChunkConfig());
-        return auxiliary::DeferredComputation<void>(
-            [dflush = this->deferFlush(this->m_rc)]() mutable -> void {
-                dflush();
+        auto res = rc.loadChunkAllocate_impl<T>(std::move(cfg));
+        return auxiliary::DeferredComputation<
+            auxiliary::detail::shared_ptr_dataset_types>(
+            [res_lambda = std::move(res),
+             dflush_lambda = std::forward<F>(dflush)]() mutable
+                -> auxiliary::detail::shared_ptr_dataset_types {
+                dflush_lambda();
+                return res_lambda;
             });
     }
+};
 
-    auto ConfigureLoadStoreFromBuffer::load(EnqueuePolicy ep) -> void
-    {
-        auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
-            &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
-        if (!shared_ptr)
-        {
-            throw std::runtime_error(
-                "ConfigureLoadStoreFromBuffer must be instantiated with a "
-                "non-const shared_ptr type.");
-        }
-        this->m_rc.loadChunk_impl(
-            *shared_ptr, m_datatype, this->storeChunkConfig());
-        switch (ep)
-        {
-
-        case EnqueuePolicy::Defer:
-            break;
-        case EnqueuePolicy::Immediate:
-            this->m_rc.seriesFlush();
-            break;
-        }
-    }
-} // namespace core
-
-namespace compose
+auto ConfigureLoadStore::enqueueLoadVariant() -> auxiliary::DeferredComputation<
+    auxiliary::detail::shared_ptr_dataset_types>
 {
-    template <typename ChildClass>
-    auto ConfigureLoadStore<ChildClass>::extent(Extent extent) -> ChildClass &
-    {
-        static_cast<ChildClass *>(this)->m_extent =
-            std::make_optional<Extent>(std::move(extent));
-        return *static_cast<ChildClass *>(this);
-    }
+    return m_rc.visit<VisitorEnqueueLoadVariant>(
+        this->storeChunkConfig(), deferFlush(m_rc));
+}
 
-    template <typename ChildClass>
-    auto ConfigureLoadStore<ChildClass>::offset(Offset offset) -> ChildClass &
+struct VisitorLoadVariant
+{
+    template <typename T>
+    static auto call(RecordComponent &rc, internal::LoadStoreConfig cfg)
+        -> auxiliary::detail::shared_ptr_dataset_types
     {
-        static_cast<ChildClass *>(this)->m_offset =
-            std::make_optional<Offset>(std::move(offset));
-        return *static_cast<ChildClass *>(this);
+        return rc.loadChunkAllocate_impl<T>(std::move(cfg));
     }
+};
 
-    template <typename ChildClass>
-    auto ConfigureStoreChunkFromBuffer<ChildClass>::memorySelection(
-        MemorySelection sel) -> ChildClass &
+auto ConfigureLoadStore::loadVariant(EnqueuePolicy ep)
+    -> auxiliary::detail::shared_ptr_dataset_types
+{
+    auto res = m_rc.visit<VisitorLoadVariant>(this->storeChunkConfig());
+    switch (ep)
     {
-        static_cast<ChildClass *>(this)->m_mem_select =
-            std::make_optional<MemorySelection>(std::move(sel));
-        return *static_cast<ChildClass *>(this);
+    case EnqueuePolicy::Defer:
+        break;
+    case EnqueuePolicy::Immediate:
+        m_rc.seriesFlush();
+        break;
     }
-} // namespace compose
+    return res;
+}
 
-template class compose::ConfigureLoadStore<ConfigureLoadStore>;
-template class compose::ConfigureLoadStore<ConfigureLoadStoreFromBuffer>;
-template class compose::ConfigureStoreChunkFromBuffer<
-    ConfigureLoadStoreFromBuffer>;
+ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer(
+    auxiliary::WriteBuffer buffer, Datatype dt, ConfigureLoadStore &&core)
+    : ConfigureLoadStore(std::move(core))
+    , m_buffer(std::move(buffer))
+    , m_datatype(dt)
+{}
+
+auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
+    -> internal::LoadStoreConfigWithBuffer
+{
+    return internal::LoadStoreConfigWithBuffer{
+        this->getOffset(), this->getExtent(), m_mem_select};
+}
+
+auto ConfigureStoreChunkFromBuffer::enqueueStore()
+    -> auxiliary::DeferredComputation<void>
+{
+    this->m_rc.storeChunk_impl(
+        std::move(m_buffer), m_datatype, storeChunkConfig());
+    return auxiliary::DeferredComputation<void>(
+        [dflush = deferFlush(m_rc)]() mutable -> void { dflush(); });
+}
+
+auto ConfigureStoreChunkFromBuffer::store(EnqueuePolicy ep) -> void
+{
+    this->m_rc.storeChunk_impl(
+        std::move(m_buffer), m_datatype, storeChunkConfig());
+    switch (ep)
+    {
+    case EnqueuePolicy::Defer:
+        break;
+    case EnqueuePolicy::Immediate:
+        m_rc.seriesFlush();
+        break;
+    }
+}
+
+auto ConfigureLoadStoreFromBuffer::enqueueLoad()
+    -> auxiliary::DeferredComputation<void>
+{
+    auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
+        &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
+    if (!shared_ptr)
+    {
+        throw std::runtime_error(
+            "ConfigureLoadStoreFromBuffer must be instantiated with a "
+            "non-const shared_ptr type.");
+    }
+    this->m_rc.loadChunk_impl(
+        *shared_ptr, m_datatype, this->storeChunkConfig());
+    return auxiliary::DeferredComputation<void>(
+        [dflush = this->deferFlush(this->m_rc)]() mutable -> void {
+            dflush();
+        });
+}
+
+auto ConfigureLoadStoreFromBuffer::load(EnqueuePolicy ep) -> void
+{
+    auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
+        &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
+    if (!shared_ptr)
+    {
+        throw std::runtime_error(
+            "ConfigureLoadStoreFromBuffer must be instantiated with a "
+            "non-const shared_ptr type.");
+    }
+    this->m_rc.loadChunk_impl(
+        *shared_ptr, m_datatype, this->storeChunkConfig());
+    switch (ep)
+    {
+
+    case EnqueuePolicy::Defer:
+        break;
+    case EnqueuePolicy::Immediate:
+        this->m_rc.seriesFlush();
+        break;
+    }
+}
+
+void ConfigureLoadStore::extent_impl(Extent extent)
+{
+    m_extent = std::make_optional<Extent>(std::move(extent));
+}
+
+void ConfigureLoadStore::offset_impl(Offset offset)
+{
+    m_offset = std::make_optional<Offset>(std::move(offset));
+}
+
+void ConfigureStoreChunkFromBuffer::memorySelection_impl(MemorySelection sel)
+{
+    m_mem_select = std::make_optional<MemorySelection>(std::move(sel));
+}
+// namespace core
 
 // need this for clang-tidy
 #define OPENPMD_ARRAY(type) type[]
@@ -473,15 +447,15 @@ template class compose::ConfigureStoreChunkFromBuffer<
 #define OPENPMD_APPLY_TEMPLATE(template_, type) template_<type>
 
 #define INSTANTIATE_METHOD_TEMPLATES(dtype)                                    \
-    template auto core::ConfigureLoadStore::enqueueLoad()                      \
+    template auto ConfigureLoadStore::enqueueLoad()                            \
         -> auxiliary::DeferredComputation<OPENPMD_APPLY_TEMPLATE(              \
             std::shared_ptr, dtype)>;                                          \
-    template auto core::ConfigureLoadStore::load(EnqueuePolicy)                \
+    template auto ConfigureLoadStore::load(EnqueuePolicy)                      \
         ->std::shared_ptr<dtype>;
 #define INSTANTIATE_FULLMATRIX(dtype)                                          \
-    template auto core::ConfigureLoadStore::withSharedPtr(                     \
+    template auto ConfigureLoadStore::withSharedPtr(                           \
         std::shared_ptr<dtype> data) -> shared_ptr_return_type<dtype>;         \
-    template auto core::ConfigureLoadStore::withUniquePtr(                     \
+    template auto ConfigureLoadStore::withUniquePtr(                           \
         UniquePtrWithLambda<dtype> data) -> unique_ptr_return_type<dtype>;
 #define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
     INSTANTIATE_METHOD_TEMPLATES(type)                                         \
@@ -490,13 +464,12 @@ template class compose::ConfigureStoreChunkFromBuffer<
     INSTANTIATE_FULLMATRIX(type const)                                         \
     INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type))                                \
     INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type const))                          \
-    template auto core::ConfigureLoadStore::enqueueStore()                     \
+    template auto ConfigureLoadStore::enqueueStore()                           \
         -> DynamicMemoryView<type>;                                            \
-    template auto core::ConfigureLoadStore::withRawPtr(OPENPMD_POINTER(type)   \
-                                                           data)               \
+    template auto ConfigureLoadStore::withRawPtr(OPENPMD_POINTER(type) data)   \
         ->OPENPMD_APPLY_TEMPLATE(shared_ptr_return_type, type);                \
-    template auto core::ConfigureLoadStore::withRawPtr(                        \
-        OPENPMD_POINTER(type const) data)                                      \
+    template auto ConfigureLoadStore::withRawPtr(OPENPMD_POINTER(type const)   \
+                                                     data)                     \
         ->OPENPMD_APPLY_TEMPLATE(shared_ptr_return_type, type const);
 
 OPENPMD_FOREACH_DATASET_DATATYPE(
@@ -509,11 +482,4 @@ OPENPMD_FOREACH_DATASET_DATATYPE(
 #undef OPENPMD_ARRAY
 #undef OPENPMD_POINTER
 #undef OPENPMD_APPLY_TEMPLATE
-
-ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc)
-    : core::ConfigureLoadStore{rc}
-{}
-ConfigureLoadStore::ConfigureLoadStore(core::ConfigureLoadStore &&core)
-    : core::ConfigureLoadStore{std::move(core)}
-{}
 } // namespace openPMD
