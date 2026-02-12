@@ -107,15 +107,6 @@ namespace internal
     class BaseRecordData;
 } // namespace internal
 
-namespace core
-{
-    class ConfigureLoadStore;
-    class ConfigureLoadStoreFromBuffer;
-    class ConfigureStoreChunkFromBuffer;
-    struct VisitorEnqueueLoadVariant;
-    struct VisitorLoadVariant;
-} // namespace core
-
 template <typename>
 class BaseRecord;
 
@@ -141,11 +132,11 @@ class RecordComponent
     friend T &internal::makeOwning(T &self, Series_type);
     friend class internal::ScientificDefaults;
     friend class Attributable;
-    friend class core::ConfigureLoadStore;
-    friend class core::ConfigureLoadStoreFromBuffer;
-    friend class core::ConfigureStoreChunkFromBuffer;
-    friend struct core::VisitorEnqueueLoadVariant;
-    friend struct core::VisitorLoadVariant;
+    friend class ConfigureLoadStore;
+    friend class ConfigureLoadStoreFromBuffer;
+    friend class ConfigureStoreChunkFromBuffer;
+    friend struct VisitorEnqueueLoadVariant;
+    friend struct VisitorLoadVariant;
 
 public:
     enum class Allocation

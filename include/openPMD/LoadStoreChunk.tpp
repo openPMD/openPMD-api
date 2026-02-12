@@ -2,7 +2,7 @@
 
 #include "openPMD/LoadStoreChunk.hpp"
 
-namespace openPMD::core
+namespace openPMD
 {
 template <typename T, typename Del>
 auto ConfigureLoadStore::withUniquePtr(std::unique_ptr<T, Del> data)
@@ -22,4 +22,4 @@ auto ConfigureLoadStore::withContiguousContainer(T_ContiguousContainer &data)
     }
     return withRawPtr(data.data());
 }
-} // namespace openPMD::core
+} // namespace openPMD
