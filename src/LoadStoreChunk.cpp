@@ -146,22 +146,6 @@ auto ConfigureLoadStore::withSharedPtr_impl_const(
         auxiliary::WriteBuffer(std::move(data)), datatype, {std::move(*this)});
 }
 
-template <typename T>
-auto ConfigureLoadStore::withSharedPtr(std::shared_ptr<T> data)
-    -> shared_ptr_return_type<T>
-{
-    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
-    constexpr auto dtype = determineDatatype<T_decayed>();
-    if constexpr (std::is_const_v<T>)
-    {
-        return withSharedPtr_impl_const(data, dtype);
-    }
-    else
-    {
-        return withSharedPtr_impl_mut(data, dtype);
-    }
-}
-
 auto ConfigureLoadStore::withUniquePtr_impl_mut(
     UniquePtrWithLambda<void> data, Datatype dtype)
     -> openPMD::ConfigureStoreChunkFromBuffer
@@ -199,24 +183,6 @@ auto ConfigureLoadStore::withUniquePtr_impl_const(
         dtype,
         {std::move(*this)});
 }
-template <typename T>
-auto ConfigureLoadStore::withUniquePtr(UniquePtrWithLambda<T> data)
-    -> unique_ptr_return_type<T>
-
-{
-    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
-    constexpr auto dtype = determineDatatype<T_decayed>();
-    if constexpr (std::is_const_v<T>)
-    {
-        return withUniquePtr_impl_const(
-            std::move(data).template static_cast_<void const>(), dtype);
-    }
-    else
-    {
-        return withUniquePtr_impl_mut(
-            std::move(data).template static_cast_<void>(), dtype);
-    }
-}
 
 auto ConfigureLoadStore::withRawPtr_impl_mut(void *data, Datatype dtype)
     -> openPMD::ConfigureLoadStoreFromBuffer
@@ -244,21 +210,6 @@ auto ConfigureLoadStore::withRawPtr_impl_const(void const *data, Datatype dtype)
         auxiliary::WriteBuffer(auxiliary::shareRaw(data)),
         dtype,
         {std::move(*this)});
-}
-
-template <typename T>
-auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
-{
-    using T_decayed = std::remove_cv_t<std::remove_extent_t<T>>;
-    constexpr auto dtype = determineDatatype<T_decayed>();
-    if constexpr (std::is_const_v<T>)
-    {
-        return withRawPtr_impl_const(data, dtype);
-    }
-    else
-    {
-        return withRawPtr_impl_mut(data, dtype);
-    }
 }
 
 template <typename T>
@@ -452,25 +403,10 @@ void ConfigureStoreChunkFromBuffer::memorySelection_impl(MemorySelection sel)
             std::shared_ptr, dtype)>;                                          \
     template auto ConfigureLoadStore::load(EnqueuePolicy)                      \
         ->std::shared_ptr<dtype>;
-#define INSTANTIATE_FULLMATRIX(dtype)                                          \
-    template auto ConfigureLoadStore::withSharedPtr(                           \
-        std::shared_ptr<dtype> data) -> shared_ptr_return_type<dtype>;         \
-    template auto ConfigureLoadStore::withUniquePtr(                           \
-        UniquePtrWithLambda<dtype> data) -> unique_ptr_return_type<dtype>;
 #define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
     INSTANTIATE_METHOD_TEMPLATES(type)                                         \
     INSTANTIATE_METHOD_TEMPLATES(OPENPMD_ARRAY(type))                          \
-    INSTANTIATE_FULLMATRIX(type)                                               \
-    INSTANTIATE_FULLMATRIX(type const)                                         \
-    INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type))                                \
-    INSTANTIATE_FULLMATRIX(OPENPMD_ARRAY(type const))                          \
-    template auto ConfigureLoadStore::enqueueStore()                           \
-        -> DynamicMemoryView<type>;                                            \
-    template auto ConfigureLoadStore::withRawPtr(OPENPMD_POINTER(type) data)   \
-        ->OPENPMD_APPLY_TEMPLATE(shared_ptr_return_type, type);                \
-    template auto ConfigureLoadStore::withRawPtr(OPENPMD_POINTER(type const)   \
-                                                     data)                     \
-        ->OPENPMD_APPLY_TEMPLATE(shared_ptr_return_type, type const);
+    template auto ConfigureLoadStore::enqueueStore() -> DynamicMemoryView<type>;
 
 OPENPMD_FOREACH_DATASET_DATATYPE(
     INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT)
