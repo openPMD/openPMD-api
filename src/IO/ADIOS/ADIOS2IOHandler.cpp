@@ -1032,13 +1032,7 @@ void ADIOS2IOHandlerImpl::openFile(
     }
 
     std::string name = parameters.name + fileSuffix();
-
     auto file = std::get<PE_InvalidatableFile>(getPossiblyExisting(name));
-
-    associateWithFile(writable, file);
-
-    writable->written = true;
-    writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
 
     auto how_to_open = [&]() {
         switch (parameters.reopen)
@@ -1054,8 +1048,18 @@ void ADIOS2IOHandlerImpl::openFile(
     }();
 
     // enforce opening the file
-    // lazy opening is deathly in parallel situations
+    // lazy opening is deadly in parallel situations
     auto &fileData = getFileData(file, how_to_open);
+
+    // the following calls present the new file to the IO handler's data
+    // structures. do this only after the file has been successfully open, to
+    // avoid invalid state.
+
+    associateWithFile(writable, file);
+
+    writable->written = true;
+    writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
+
     *parameters.out_parsePreference = fileData.parsePreference;
     m_dirty.emplace(std::move(file));
 }
