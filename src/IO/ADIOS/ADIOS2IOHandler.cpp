@@ -708,15 +708,19 @@ void ADIOS2IOHandlerImpl::createFile(
             VERIFY(success, "[ADIOS2] Could not create directory.");
         }
 
+        // enforce opening the file
+        // lazy opening is deathly in parallel situations
+        auto &fileData =
+            getFileData(shared_name, IfFileNotOpen::CreateImplicitly);
+
+        // only emplace the file into our structures after it has been
+        // successfully opened. otherwise, errors will lead to undefined state.
+
         associateWithFile(writable, shared_name);
         this->m_dirty.emplace(shared_name);
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
-        // enforce opening the file
-        // lazy opening is deathly in parallel situations
-        auto &fileData =
-            getFileData(shared_name, IfFileNotOpen::CreateImplicitly);
 
         if (!printedWarningsAlready.noGroupBased &&
             m_writeAttributesFromThisRank &&
