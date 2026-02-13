@@ -7,14 +7,12 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
-#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 // comment to keep clang-format from reordering
 #include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
-#include <future>
 #include <memory>
 #include <optional>
 #include <stdexcept>
