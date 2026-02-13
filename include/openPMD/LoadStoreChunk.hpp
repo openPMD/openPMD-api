@@ -45,7 +45,7 @@ namespace auxiliary::detail
 #undef OPENPMD_ENUMERATE_TYPES
 } // namespace auxiliary::detail
 
-enum class EnqueuePolicy
+enum class EnqueuePolicy : std::uint8_t
 {
     Defer,
     Immediate
@@ -73,12 +73,16 @@ protected:
 
     auto deferFlush(Attributable &);
 
+    auto getOffset() -> Offset const &;
+    auto getExtent() -> Extent const &;
+
     // The below methods return void.
     // For chaining calls, they should return *this, but this class right
     // here is going to be somewhere in the inheritance chain, and the final
     // class should be returned. Could be solved more elegantly with CRT,
     // but that blows up compile-time, so we make internal void functions
     // and then repeat them in the final classes.
+    // (e.g. ConfigureLoadStoreFromBuffer::offset())
 
     void offset_impl(Offset);
     void extent_impl(Extent);
@@ -100,9 +104,7 @@ private:
 public:
     using this_t = ConfigureLoadStore;
 
-    auto getOffset() -> Offset const &;
-    auto getExtent() -> Extent const &;
-
+    // Configuration methods (always available)
     auto offset(Offset offset) -> this_t &
     {
         offset_impl(std::move(offset));
@@ -113,43 +115,29 @@ public:
         extent_impl(std::move(extent));
         return *this;
     }
+
     /*
      * If the type is non-const, then the return type should be
-     * ConfigureLoadStoreFromBuffer<>, ...
+     * ConfigureLoadStoreFromBuffer, but if it is a const type, Load operations
+     * make no sense, so the return type should be
+     * ConfigureStoreChunkFromBuffer<>.
      */
     template <typename T>
-    struct shared_ptr_return_type_impl
-    {
-        using return_type = openPMD::ConfigureLoadStoreFromBuffer;
-        using normalize_pointer_type = std::shared_ptr<std::remove_extent_t<T>>;
-    };
-    /*
-     * ..., but if it is a const type, Load operations make no sense, so the
-     * return type should be ConfigureStoreChunkFromBuffer<>.
-     */
-    template <typename T>
-    struct shared_ptr_return_type_impl<T const>
-    {
-        using return_type = openPMD::ConfigureStoreChunkFromBuffer;
-        using normalize_pointer_type =
-            std::shared_ptr<std::remove_extent_t<T> const>;
-    };
-
-    template <typename T>
-    using shared_ptr_return_type = typename shared_ptr_return_type_impl<
-        std::remove_extent_t<T>>::return_type;
-    template <typename T>
-    using shared_ptr_normalized_type = typename shared_ptr_return_type_impl<
-        std::remove_extent_t<T>>::normalized_pointer_type;
+    using shared_ptr_return_type = std::conditional_t<
+        std::is_const_v<T>,
+        ConfigureStoreChunkFromBuffer,
+        ConfigureLoadStoreFromBuffer>;
 
     /*
      * As loading into unique pointer types makes no sense, the case is
      * simpler for unique pointers. Just remove the array extents here.
+     * (Our interface wrappers still support const-type unique pointers,
+     * but the internal logic does not handle them separately.)
      */
     template <typename T>
     using unique_ptr_return_type = openPMD::ConfigureStoreChunkFromBuffer;
 
-    // @todo rvalue references..?
+    // Buffer specification methods (return specialized configurations)
     template <typename T>
     auto withSharedPtr(std::shared_ptr<T>) -> shared_ptr_return_type<T>;
     template <typename T>
@@ -164,6 +152,7 @@ public:
             auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
             shared_ptr_return_type<typename T_ContiguousContainer::value_type>>;
 
+    // Enqueue methods (deferred execution)
     template <typename T>
     [[nodiscard]] auto enqueueStore() -> DynamicMemoryView<T>;
     // definition for this one is in RecordComponent.tpp since it needs the
@@ -175,11 +164,12 @@ public:
     [[nodiscard]] auto enqueueLoad()
         -> auxiliary::DeferredComputation<std::shared_ptr<T>>;
 
-    template <typename T>
-    [[nodiscard]] auto load(EnqueuePolicy) -> std::shared_ptr<T>;
-
     [[nodiscard]] auto enqueueLoadVariant() -> auxiliary::DeferredComputation<
         auxiliary::detail::shared_ptr_dataset_types>;
+
+    // Direct execution methods (with EnqueuePolicy)
+    template <typename T>
+    [[nodiscard]] auto load(EnqueuePolicy) -> std::shared_ptr<T>;
 
     [[nodiscard]] auto loadVariant(EnqueuePolicy)
         -> auxiliary::detail::shared_ptr_dataset_types;
@@ -205,9 +195,12 @@ protected:
     // and then repeat them in the final classes.
     void memorySelection_impl(MemorySelection);
 
+    auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
+
 public:
     using this_t = ConfigureStoreChunkFromBuffer;
 
+    // Configuration methods (always available)
     auto offset(Offset offset) -> this_t &
     {
         offset_impl(std::move(offset));
@@ -224,10 +217,10 @@ public:
         return *this;
     }
 
-    auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
-
+    // Enqueue method (deferred execution)
     auto enqueueStore() -> auxiliary::DeferredComputation<void>;
 
+    // Direct execution method (with EnqueuePolicy)
     auto store(EnqueuePolicy) -> void;
 
     /** This intentionally shadows the parent class's enqueueLoad methods in
@@ -263,6 +256,7 @@ class ConfigureLoadStoreFromBuffer : public ConfigureStoreChunkFromBuffer
 public:
     using this_t = ConfigureLoadStoreFromBuffer;
 
+    // Configuration methods (always available)
     auto offset(Offset offset) -> this_t &
     {
         offset_impl(std::move(offset));
@@ -279,8 +273,10 @@ public:
         return *this;
     }
 
+    // Enqueue method (deferred execution)
     auto enqueueLoad() -> auxiliary::DeferredComputation<void>;
 
+    // Direct execution method (with EnqueuePolicy)
     auto load(EnqueuePolicy) -> void;
 };
 
