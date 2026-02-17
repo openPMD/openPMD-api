@@ -497,12 +497,13 @@ this method.
         .def("set_iteration_format", &Series::setIterationFormat)
         .def("set_name", &Series::setName)
 
-        .def_readwrite(
+        .def_property_readonly(
             "iterations",
-            &Series::iterations,
-            py::return_value_policy::copy,
-            // garbage collection: return value must be freed before Series
-            py::keep_alive<1, 0>())
+            py::cpp_function(
+                [](Series &s) { return s.iterations; },
+                py::return_value_policy::copy,
+                // garbage collection: return value must be freed before Series
+                py::keep_alive<1, 0>()))
         .def(
             "read_iterations",
             [](Series &s) {
