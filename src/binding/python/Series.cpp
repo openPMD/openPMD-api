@@ -301,7 +301,8 @@ not possible once it has been closed.
                     throw std::runtime_error("Unreachable");
                 },
                 // copy + keepalive
-                py::return_value_policy::copy)
+                py::return_value_policy::copy,
+                py::keep_alive<0, 1>())
             .def(
                 "current_iteration",
                 [](Snapshots &s) -> std::optional<IndexedIteration> {
@@ -315,6 +316,7 @@ not possible once it has been closed.
                         return std::nullopt;
                     }
                 },
+                py::keep_alive<0, 1>(),
                 "Return the iteration that is currently being written to, if "
                 "it "
                 "exists.");
