@@ -85,13 +85,13 @@ repos:
   - id: pycln
     name: pycln (python)
 
-# Sorts Python imports according to PEP8
-# https://www.python.org/dev/peps/pep-0008/#imports
-- repo: https://github.com/pycqa/isort
-  rev: 9.0.0a3
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.15.1
+
   hooks:
-  - id: isort
-    name: isort (python)
+  - id: ruff-check
+    args: [ --fix, --exit-non-zero-on-fix ]
+  - id: ruff-format
 
 # Python: Flake8 (checks only, does this support auto-fixes?)
 #- repo: https://github.com/PyCQA/flake8

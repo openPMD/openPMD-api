@@ -20,7 +20,9 @@ jobs:
     - name: PEP8
       run: |
         python3 -m pip install -U flake8
-        python3 -m flake8 --exclude=thirdParty .
+        # E203: checks that ':' is not preceded by a space
+        # But the Ruff formatter has better logic for that
+        python3 -m flake8 --extend-ignore=E203 --exclude=thirdParty .
 
   static-analysis:
     runs-on: ubuntu-22.04
