@@ -101,7 +101,7 @@ void init_Iteration(py::module &m)
                 py::return_value_policy::copy,
                 // garbage collection: return value must be freed before
                 // Iteration
-                py::keep_alive<1, 0>()))
+                py::keep_alive<0, 1>()))
         .def_property_readonly(
             "particles",
             py::cpp_function(
@@ -109,7 +109,7 @@ void init_Iteration(py::module &m)
                 py::return_value_policy::copy,
                 // garbage collection: return value must be freed before
                 // Iteration
-                py::keep_alive<1, 0>()));
+                py::keep_alive<0, 1>()));
 
     add_pickle(
         cl, [](openPMD::Series series, std::vector<std::string> const &group) {
