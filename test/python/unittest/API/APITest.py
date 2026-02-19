@@ -2341,6 +2341,66 @@ class APITest(unittest.TestCase):
         self.assertEqual(loaded_from_scalar, np.array([45]))
         series_read_again.close()
 
+    def testKeepaliveComponentExtraction(self):
+        """Test that keepalive specifications guard root objects from garbage collection."""
+        for ext in tested_file_extensions:
+            self.backend_keepalive_component_extraction(ext)
+
+    def backend_keepalive_component_extraction(self, file_ending):
+        """Helper function that creates an openPMD Series, extracts a component,
+        discards the parent objects, forces garbage collection, and then writes data
+        using only the returned component."""
+        import gc
+
+        filename = "../samples/unittest_py_keepalive." + file_ending
+        path = filename
+
+        def get_component_only():
+            """
+            Create a Series, access a component, discard the Series and Iteration,
+            and return only the component. The keepalive specification should
+            guard the root objects from garbage collection.
+            """
+            series = io.Series(path, io.Access.create)
+            backend = series.backend
+            iteration = series.iterations[0]
+            mesh = iteration.meshes["E"]
+            component = mesh["x"]
+
+            mesh.axis_labels = ["x", "y"]
+            component.reset_dataset(io.Dataset(np.dtype("float"), [10, 10]))
+
+            del iteration
+            del mesh
+            del series
+            gc.collect()
+
+            return component, backend
+
+        component, backend = get_component_only()
+        gc.collect()
+
+        component[:, :] = np.reshape(
+            np.arange(100, dtype=np.dtype("float")),
+            [10, 10]
+        )
+
+        component.series_flush()
+        if backend == "ADIOS2":
+            # need to close the step for data to become visible in ADIOS2
+            # cant close the step since we threw away the Iteration, so we need
+            # to trigger the GC here
+            del component
+            gc.collect()
+
+        read = io.Series(path, io.Access.read_only)
+        loaded = read.iterations[0].meshes["E"]["x"][:]
+        read.flush()
+        np.testing.assert_array_equal(
+            loaded,
+            np.reshape(np.arange(100, dtype=np.dtype("float")), [10, 10])
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
