@@ -2026,6 +2026,9 @@ class APITest(unittest.TestCase):
         # Cleaner: write.close()
         # But let's keep this instance to test that that workflow stays
         # functional.
+        # Need to delete everything as garbage collection will keep `write`
+        # alive as long as E_x is around.
+        del E_x
         del write
 
         read = io.Series(

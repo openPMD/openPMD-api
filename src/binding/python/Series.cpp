@@ -647,5 +647,18 @@ Parameters:
             py::arg("comm"),
             docs_merge_json)
 #endif
-        ;
+        .def("__del__", [](Series &s) {
+            try
+            {
+                s.close();
+            }
+            catch (std::exception const &e)
+            {
+                std::cerr << "Error during close: " << e.what() << std::endl;
+            }
+            catch (...)
+            {
+                std::cerr << "Unknown error during close." << std::endl;
+            }
+        });
 }
