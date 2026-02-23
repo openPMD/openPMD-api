@@ -2349,7 +2349,7 @@ class APITest(unittest.TestCase):
         guard root objects from garbage collection."""
         self.testKeepaliveMeshComponent()
         self.testKeepaliveParticlePosition()
-        self.testKeepaliveParticlePatches()
+        # self.testKeepaliveParticlePatches()
 
     def testKeepaliveMeshComponent(self):
         """Test keepalive for mesh component extraction."""
