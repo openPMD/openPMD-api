@@ -1,4 +1,3 @@
-#if 0
 #include "openPMD/backend/ScientificDefaults.hpp"
 #include "openPMD/backend/ScientificDefaults_auxiliary.hpp"
 #include "openPMD/backend/ScientificDefaults_impl.hpp"
@@ -24,90 +23,58 @@
 namespace openPMD::internal
 {
 // 7. ScientificDefaults template implementations
-template <typename Child>
-auto ScientificDefaults<Child>::asChild() -> Child &
-{
-    return *static_cast<Child *>(this);
-}
-
-template <typename Child>
-auto ScientificDefaults<Child>::asChild() const -> Child const &
-{
-    return *static_cast<Child const *>(this);
-}
-
-template <typename Child>
-[[nodiscard]] auto
-ScientificDefaults<Child>::defaultAttribute(char const *attrName)
+[[nodiscard]] auto ScientificDefaults::defaultAttribute(char const *attrName)
     -> ConfigAttribute
 {
-    return ConfigAttribute{asChild(), attrName};
+    return ConfigAttribute{as_attributable(), attrName};
 }
 
-template <typename Child>
-template <typename Parent, bool write>
-void ScientificDefaults<Child>::addParentDefaults(OpenpmdStandard standard)
-{
-    // Cannot directly call read_impl as it is private
-    if constexpr (write)
-    {
-        asChild().ScientificDefaults<Parent>::writeDefaults(standard);
-    }
-    else
-    {
-        asChild().ScientificDefaults<Parent>::readDefaults(standard);
-    }
-}
+// {
+//     writeDefaults(standard);
+//     if constexpr (IsContainer_v)
+//     {
+//         using Container_t = AsContainer_t;
+//         using mapped_type = typename Container_t::mapped_type;
+//         if constexpr (HasScientificDefaults_v<mapped_type>)
+//         {
+//             for (auto &[_, right] : asChild())
+//             {
+//                 (void)_;
+//                 right.ScientificDefaults<mapped_type>::writeDefaultsRecursively(
+//                     standard);
+//             }
+//         }
+//     }
+//     // sic! no else
 
-template <typename Child>
-void ScientificDefaults<Child>::writeDefaultsRecursively(
-    OpenpmdStandard standard)
-{
-    writeDefaults(standard);
-    if constexpr (IsContainer_v<Child>)
-    {
-        using Container_t = AsContainer_t<Child>;
-        using mapped_type = typename Container_t::mapped_type;
-        if constexpr (HasScientificDefaults_v<mapped_type>)
-        {
-            for (auto &[_, right] : asChild())
-            {
-                (void)_;
-                right.ScientificDefaults<mapped_type>::writeDefaultsRecursively(
-                    standard);
-            }
-        }
-    }
-    // sic! no else
+//     if constexpr (std::is_same_v<Child, Iteration>)
+//     {
+//         for (auto &[_, right] : asChild().meshes)
+//         {
+//             (void)_;
+//             right.ScientificDefaults<Mesh>::writeDefaultsRecursively(standard);
+//         }
+//         for (auto &[_, right] : asChild().particles)
+//         {
+//             (void)_;
+//             right.ScientificDefaults<ParticleSpecies>::writeDefaultsRecursively(
+//                 standard);
+//         }
+//     }
+//     else if constexpr (std::is_same_v<Child, ParticleSpecies>)
+//     {
+//         for (auto &[_, right] : asChild().particlePatches)
+//         {
+//             (void)_;
+//             right.ScientificDefaults<PatchRecord>::writeDefaultsRecursively(
+//                 standard);
+//         }
+//     }
+// }
 
-    if constexpr (std::is_same_v<Child, Iteration>)
-    {
-        for (auto &[_, right] : asChild().meshes)
-        {
-            (void)_;
-            right.ScientificDefaults<Mesh>::writeDefaultsRecursively(standard);
-        }
-        for (auto &[_, right] : asChild().particles)
-        {
-            (void)_;
-            right.ScientificDefaults<ParticleSpecies>::writeDefaultsRecursively(
-                standard);
-        }
-    }
-    else if constexpr (std::is_same_v<Child, ParticleSpecies>)
-    {
-        for (auto &[_, right] : asChild().particlePatches)
-        {
-            (void)_;
-            right.ScientificDefaults<PatchRecord>::writeDefaultsRecursively(
-                standard);
-        }
-    }
-}
-
-template <typename Child>
+#if 0
 template <bool write>
-void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
+void ScientificDefaults::defaults_impl(OpenpmdStandard standard)
 {
     auto float_types = get_float_types();
     auto string_types = get_string_types();
@@ -134,15 +101,6 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 
     if constexpr (std::is_same_v<Child, Iteration>)
     {
-        defaultAttribute("time")
-            .template withSetter<Iteration>(0., &Iteration::setTime)
-            .withReader(float_types, require_scalar)(wor);
-        defaultAttribute("dt")
-            .template withSetter<Iteration>(1., &Iteration::setDt)
-            .withReader(float_types, require_scalar)(wor);
-        defaultAttribute("timeUnitSI")
-            .template withSetter<Iteration>(1.0, &Iteration::setTimeUnitSI)
-            .withReader(float_types, require_type<double>())(wor);
     }
     else if constexpr (std::is_same_v<Child, Mesh>)
     {
@@ -276,7 +234,7 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
             // .withReader(float_types, require_type<double>())
             (wor);
     }
-    else if constexpr (detail::IsBaseRecord_v<Child>)
+    else if constexpr (detail::IsBaseRecord_v)
     {
         defaultAttribute("unitDimension")
             .withGenericSetter(unit_representations::AsArray{})
@@ -290,33 +248,18 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
     }
     else
     {
-        static_assert(auxiliary::dependent_false_v<Child>, "Unknown class");
+        static_assert(auxiliary::dependent_false_v, "Unknown class");
     }
 }
-
-template <typename Child>
-void ScientificDefaults<Child>::writeDefaults(OpenpmdStandard standard)
-{
-    defaults_impl</* write = */ true>(standard);
-}
-
-template <typename Child>
-void ScientificDefaults<Child>::readDefaults(OpenpmdStandard standard)
-{
-    defaults_impl</* write = */ false>(standard);
-}
-
-// 8. Template instantiations
-template class ScientificDefaults<Iteration>;
-template class ScientificDefaults<Mesh>;
-template class ScientificDefaults<MeshRecordComponent>;
-template class ScientificDefaults<RecordComponent>;
-template class ScientificDefaults<PatchRecordComponent>;
-template class ScientificDefaults<ParticleSpecies>;
-template class ScientificDefaults<Record>;
-template class ScientificDefaults<BaseRecord<MeshRecordComponent>>;
-template class ScientificDefaults<BaseRecord<PatchRecordComponent>>;
-template class ScientificDefaults<BaseRecord<RecordComponent>>;
-template class ScientificDefaults<PatchRecord>;
-} // namespace openPMD::internal
 #endif
+
+void ScientificDefaults::writeDefaults(OpenpmdStandard standard)
+{
+    defaults_impl(/* write = */ true, standard);
+}
+
+void ScientificDefaults::readDefaults(OpenpmdStandard standard)
+{
+    defaults_impl(/* write = */ false, standard);
+}
+} // namespace openPMD::internal

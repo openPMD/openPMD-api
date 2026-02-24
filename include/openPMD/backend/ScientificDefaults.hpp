@@ -16,20 +16,21 @@ struct ConfigAttribute;
  */
 class ScientificDefaults
 {
-private:
+protected:
     [[nodiscard]] auto defaultAttribute(char const *attrName)
         -> ConfigAttribute;
 
-    template <typename Parent, bool write>
-    void addParentDefaults(OpenpmdStandard);
+    // template <typename Parent, bool write>
+    // void addParentDefaults(OpenpmdStandard);
 
     virtual void defaults_impl(bool write, OpenpmdStandard);
+    virtual auto as_attributable() -> Attributable &;
 
 protected:
     // Called upon Iteration::close(), will fill in defaults below Iteration
     // level. If the Iteration is not explicitly closed, will be called upon
     // Series::close().
-    void writeDefaultsRecursively(OpenpmdStandard);
+    // void writeDefaultsRecursively(OpenpmdStandard);
     // Currently called internally only from writeDefaultsRecursively
     void writeDefaults(OpenpmdStandard);
     // Convention: This is called for each openPMD object (group, dataset)

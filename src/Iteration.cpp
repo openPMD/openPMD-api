@@ -33,6 +33,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/ScientificDefaults_impl.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 
@@ -942,6 +943,28 @@ void Iteration::runDeferredParseAccess()
         it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
         IOHandler()->m_seriesStatus = oldStatus;
     }
+}
+
+void Iteration::defaults_impl(bool write, OpenpmdStandard)
+{
+    using namespace internal;
+    auto float_types = get_float_types();
+    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
+
+    defaultAttribute("time")
+        .template withSetter<Iteration>(0., &Iteration::setTime)
+        .withReader(float_types, require_scalar)(wor);
+    defaultAttribute("dt")
+        .template withSetter<Iteration>(1., &Iteration::setDt)
+        .withReader(float_types, require_scalar)(wor);
+    defaultAttribute("timeUnitSI")
+        .template withSetter<Iteration>(1.0, &Iteration::setTimeUnitSI)
+        .withReader(float_types, require_type<double>())(wor);
+}
+
+auto Iteration::as_attributable() -> Attributable &
+{
+    return *this;
 }
 
 template float Iteration::time<float>() const;

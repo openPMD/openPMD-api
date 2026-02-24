@@ -462,6 +462,10 @@ private:
      *
      */
     void runDeferredParseAccess();
+
+protected:
+    void defaults_impl(bool write, OpenpmdStandard) override;
+    auto as_attributable() -> Attributable & override;
 }; // Iteration
 
 namespace traits
