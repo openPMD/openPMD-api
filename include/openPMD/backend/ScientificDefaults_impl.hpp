@@ -4,81 +4,21 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/ScientificDefaults_auxiliary.hpp"
 
 #include <deque>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <type_traits>
 #include <variant>
-#include <vector>
-
-namespace openPMD::detail
-{
-template <typename F, typename SFINAE = void>
-struct IsCallable
-{
-    static constexpr bool value = false;
-    using type = F;
-};
-
-template <typename F>
-struct IsCallable<F, std::void_t<decltype(std::declval<F>()())>>
-{
-    static constexpr bool value = true;
-    using type = decltype(std::declval<F>()());
-};
-
-template <typename F>
-constexpr bool IsCallable_v = IsCallable<F>::value;
-template <typename F>
-using CallResult_t = typename IsCallable<F>::type;
-} // namespace openPMD::detail
 
 namespace openPMD::internal
 {
-namespace
-{
-    template <typename T>
-    inline auto write_val_to_stderr(T const &val) -> std::ostream &;
-    inline auto write_to_stderr(Attribute const &a) -> std::ostream &;
-
-    // Helper functions used in ScientificDefaults implementations
-    inline auto setMeshGeometryFromString(Mesh &mesh, std::string val)
-        -> std::optional<error::ReadError>;
-    inline auto setMeshDataOrderFromChar(Mesh &mesh, char val)
-        -> std::optional<error::ReadError>;
-    inline auto createDefaultAxisLabels(uint64_t dimensionality)
-        -> std::vector<std::string>;
-    inline auto
-    createDefaultVector(uint64_t dimensionality, double defaultValue)
-        -> std::vector<double>;
-} // namespace
-
-namespace attribute_read_result
-{
-    struct TypeUnmatched
-    {
-        std::deque<Datatype> expectedDatatypes;
-    };
-    struct Success
-    {};
-} // namespace attribute_read_result
 
 /*
  * The structs below implement the typical routines for parsing an attribute.
  * This implies validation and conversion.
  */
-
-/*
- * General interface for attribute processing used in struct AttributeReader.
- */
-struct ProcessAttribute
-{
-    virtual auto operator()(Attributable &, char const *, Attribute const &)
-        -> std::optional<error::ReadError> = 0;
-    virtual ~ProcessAttribute() = default;
-};
 
 /*
  * Interface for validating an attribute whose type has already been determined.
@@ -100,10 +40,14 @@ struct PostProcessConvertedAttributeImpl : PostProcessConvertedAttribute<T>
     using handler_t = std::optional<error::ReadError> (*)(RecordType &, T);
     handler_t reader;
 
-    PostProcessConvertedAttributeImpl(
-        RecordType record_in, handler_t reader_in);
+    PostProcessConvertedAttributeImpl(RecordType record_in, handler_t reader_in)
+        : record(std::move(record_in)), reader(reader_in)
+    {}
 
-    auto operator()(T val) -> std::optional<error::ReadError> override;
+    auto operator()(T val) -> std::optional<error::ReadError> override
+    {
+        return (*reader)(record, std::move(val));
+    }
 };
 
 template <typename T, typename RecordType>
@@ -111,7 +55,23 @@ auto makePostProcessConvertedAttribute(
     RecordType &&record,
     std::optional<error::ReadError> (*handler)(
         std::remove_reference_t<RecordType> &, T))
-    -> std::shared_ptr<PostProcessConvertedAttribute<T>>;
+    -> std::shared_ptr<PostProcessConvertedAttribute<T>>
+{
+    return std::make_shared<PostProcessConvertedAttributeImpl<
+        T,
+        std::remove_reference_t<RecordType>>>(
+        std::forward<RecordType>(record), handler);
+}
+
+/*
+ * General interface for attribute processing used in struct AttributeReader.
+ */
+struct ProcessAttribute
+{
+    virtual auto operator()(Attributable &, char const *, Attribute const &)
+        -> std::optional<error::ReadError> = 0;
+    virtual ~ProcessAttribute() = default;
+};
 
 /*
  * Validate an attribute by requiring one specific type T, and by optionally
@@ -129,11 +89,48 @@ struct RequireType : ProcessAttribute
     RequireType(
         RecordType &&record,
         std::optional<error::ReadError> (*handler)(
-            std::remove_reference_t<RecordType> &, T));
+            std::remove_reference_t<RecordType> &, T))
+        : postProcess(makePostProcessConvertedAttribute(
+              std::forward<RecordType>(record), handler))
+    {}
 
-    auto operator()(Attributable &, char const *, Attribute const &)
-        -> std::optional<error::ReadError> override;
+    auto operator()(
+        Attributable &record, char const *attrName, Attribute const &attr)
+        -> std::optional<error::ReadError> override
+    {
+        auto converted_or_error = attr.getOrError<T>();
+        return std::visit(
+            auxiliary::overloaded{
+                [&](T casted_val) -> std::optional<error::ReadError> {
+                    if (this->postProcess.has_value())
+                    {
+                        return (**this->postProcess)(std::move(casted_val));
+                    }
+                    else
+                    {
+                        record.setAttribute<T>(attrName, std::move(casted_val));
+                        return std::nullopt;
+                    }
+                },
+                [](std::runtime_error const &err)
+                    -> std::optional<error::ReadError> {
+                    std::string msg = "Expected a scalar type: ";
+                    msg += err.what();
+                    return error::ReadError(
+                        error::AffectedObject::Attribute,
+                        error::Reason::UnexpectedContent,
+                        std::nullopt,
+                        std::move(msg));
+                }},
+            converted_or_error);
+    }
 };
+
+// Postprocessing handlers
+auto setMeshGeometryFromString(Mesh &mesh, std::string val)
+    -> std::optional<error::ReadError>;
+auto setMeshDataOrderFromChar(Mesh &mesh, char val)
+    -> std::optional<error::ReadError>;
 
 /*
  * Validate an attribute by requiring a vector type, potentially wrapping
@@ -159,6 +156,16 @@ struct RequireScalar : ProcessAttribute
         -> std::optional<error::ReadError> override;
 };
 
+namespace attribute_read_result
+{
+    struct TypeUnmatched
+    {
+        std::deque<Datatype> expectedDatatypes;
+    };
+    struct Success
+    {};
+} // namespace attribute_read_result
+
 using AttributeReadResult = std::variant<
     attribute_read_result::Success,
     attribute_read_result::TypeUnmatched,
@@ -182,12 +189,6 @@ struct AttributeReader
         char const *attrName,
         Attribute const &a,
         std::deque<Datatype> unmatched_so_far) -> AttributeReadResult;
-};
-
-enum class WriteOrRead : std::uint8_t
-{
-    Write,
-    Read
 };
 
 /////////////////////
@@ -220,7 +221,7 @@ struct ConfigAttribute
             RecordType,
             std::conditional_t<
                 std::is_void_v<S>,
-                detail::CallResult_t<GetDefaultValue>,
+                auxiliary::CallResult_t<GetDefaultValue>,
                 S>> setDefaultVal) -> ConfigAttribute &;
 
     template <typename DefaultValue>
@@ -239,21 +240,24 @@ struct ConfigAttribute
 
 // below are some helpers that may be used as processing functions for
 // attributes in withReader()
-namespace
-{ // try converting to scalar values (e.g. when a vector of length 1 is given)
-    extern std::shared_ptr<ProcessAttribute> require_scalar;
-    // try converting to vectors (e.g. when a scalar or an array is given)
-    extern std::shared_ptr<ProcessAttribute> require_vector;
-    template <typename T, typename RecordType>
-    auto require_type(
-        std::optional<error::ReadError> (*)(
-            std::remove_reference_t<RecordType> &, T))
-        -> std::shared_ptr<ProcessAttribute>;
-    // common case: directly use setAttribute
-    template <typename T>
-    auto require_type() -> std::shared_ptr<ProcessAttribute>;
 
-    inline auto get_float_types() -> std::deque<Datatype>;
-    inline auto get_string_types() -> std::deque<Datatype>;
-} // namespace
+// try converting to scalar values (e.g. when a vector of length 1 is given)
+extern std::shared_ptr<ProcessAttribute> require_scalar;
+// try converting to vectors (e.g. when a scalar or an array is given)
+extern std::shared_ptr<ProcessAttribute> require_vector;
+
+template <typename T, typename RecordType>
+auto require_type(
+    std::optional<error::ReadError> (*)(
+        std::remove_reference_t<RecordType> &, T))
+    -> std::shared_ptr<ProcessAttribute>;
+// common case: directly use setAttribute
+template <typename T>
+auto require_type() -> std::shared_ptr<ProcessAttribute>;
+
+auto get_float_types() -> std::deque<Datatype>;
+auto get_string_types() -> std::deque<Datatype>;
+
 } // namespace openPMD::internal
+
+#include "openPMD/backend/ScientificDefaults_impl.tpp"

@@ -1,546 +1,27 @@
 #include "openPMD/backend/ScientificDefaults.hpp"
-#include "openPMD/Datatype.hpp"
-#include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/ThrowError.hpp"
-#include "openPMD/auxiliary/Variant.hpp"
-#include "openPMD/backend/Attribute.hpp"
-#include "openPMD/backend/ScientificDefaults_internal.hpp"
+#include "openPMD/backend/ScientificDefaults_auxiliary.hpp"
+#include "openPMD/backend/ScientificDefaults_impl.hpp"
 
-#include "openPMD/Datatype.hpp"
-#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Record.hpp"
 #include "openPMD/UnitDimension.hpp"
-#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
-#include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
-#include <functional>
 
 #include <iostream>
-#include <optional>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
 namespace openPMD::internal
 {
-// 1. Helper functions in anonymous namespace (from header)
-namespace
-{
-    template <typename T>
-    auto write_val_to_stderr(T const &val) -> std::ostream &
-    {
-        if constexpr (auxiliary::IsVector_v<T> || auxiliary::IsArray_v<T>)
-        {
-            auxiliary::write_vec_to_stream(std::cerr, val);
-        }
-        else if constexpr (std::is_same_v<T, unit_representations::AsMap>)
-        {
-            std::cerr << "Unit_Map";
-        }
-        else
-        {
-            std::cerr << val;
-        }
-        return std::cerr;
-    }
-    auto write_to_stderr(Attribute const &a) -> std::ostream &
-    {
-        std::visit(
-            [](auto const &val) { write_val_to_stderr(val); },
-            a.getVariant<attribute_types>());
-        return std::cerr;
-    }
-
-    // Helper function to set geometry based on string value
-    auto setMeshGeometryFromString(Mesh &mesh, std::string val)
-        -> std::optional<error::ReadError>
-    {
-        if ("cartesian" == val)
-            mesh.setGeometry(Mesh::Geometry::cartesian);
-        else if ("thetaMode" == val)
-            mesh.setGeometry(Mesh::Geometry::thetaMode);
-        else if ("cylindrical" == val)
-            mesh.setGeometry(Mesh::Geometry::cylindrical);
-        else if ("spherical" == val)
-            mesh.setGeometry(Mesh::Geometry::spherical);
-        else
-            mesh.setGeometry(std::move(val));
-        return std::nullopt;
-    }
-
-    // Helper function to set data order based on char value
-    auto setMeshDataOrderFromChar(Mesh &mesh, char val)
-        -> std::optional<error::ReadError>
-    {
-        if (val == 'C' || val == 'F')
-        {
-            mesh.setDataOrder(static_cast<Mesh::DataOrder>(val));
-            return std::nullopt;
-        }
-        else
-        {
-            return error::ReadError(
-                error::AffectedObject::Attribute,
-                error::Reason::UnexpectedContent,
-                std::nullopt,
-                "Data order must be either C or F.");
-        }
-    }
-
-    // Helper function to create default axis labels based on dimensionality
-    auto createDefaultAxisLabels(uint64_t dimensionality)
-        -> std::vector<std::string>
-    {
-        switch (dimensionality)
-        {
-        case 0:
-        case 1:
-            return {"x"};
-        case 2:
-            return {"x", "y"};
-        case 3:
-            return {"x", "y", "z"};
-        default:
-            if (dimensionality < 100)
-            {
-                // x1, x2, x3, x4, ...
-                std::vector<std::string> res;
-                res.reserve(dimensionality);
-                for (uint64_t i = 0; i < dimensionality; ++i)
-                {
-                    res.emplace_back("x" + std::to_string(i));
-                }
-                return res;
-            }
-            else
-            {
-                std::string msg =
-                    "Please verify dimensionality. Was inferred as '";
-                msg += std::to_string(dimensionality);
-                msg += "'. Seems a bit much.";
-                return {std::move(msg)};
-            }
-        }
-        return std::vector<std::string>{"x", "y", "z"};
-    }
-
-    // Helper function to create default vector based on dimensionality
-    auto createDefaultVector(uint64_t dimensionality, double defaultValue)
-        -> std::vector<double>
-    {
-        if (dimensionality < 100)
-        {
-            return std::vector<double>(dimensionality, defaultValue);
-        }
-        else
-        {
-            return std::vector<double>{defaultValue};
-        }
-    }
-} // namespace
-
-// 2. Template implementations from header
-// Template implementations from header
-template <typename T, typename RecordType>
-PostProcessConvertedAttributeImpl<T, RecordType>::
-    PostProcessConvertedAttributeImpl(RecordType record_in, handler_t reader_in)
-    : record(std::move(record_in)), reader(reader_in)
-{}
-
-template <typename T, typename RecordType>
-auto PostProcessConvertedAttributeImpl<T, RecordType>::operator()(T val)
-    -> std::optional<error::ReadError>
-{
-    return (*reader)(record, std::move(val));
-}
-
-template <typename T, typename RecordType>
-auto makePostProcessConvertedAttribute(
-    RecordType &&record,
-    std::optional<error::ReadError> (*handler)(
-        std::remove_reference_t<RecordType> &, T))
-    -> std::shared_ptr<PostProcessConvertedAttribute<T>>
-{
-    return std::make_shared<PostProcessConvertedAttributeImpl<
-        T,
-        std::remove_reference_t<RecordType>>>(
-        std::forward<RecordType>(record), handler);
-}
-
-template <typename T>
-template <typename RecordType>
-RequireType<T>::RequireType(
-    RecordType &&record,
-    std::optional<error::ReadError> (*handler)(
-        std::remove_reference_t<RecordType> &, T))
-    : postProcess(makePostProcessConvertedAttribute(
-          std::forward<RecordType>(record), handler))
-{}
-
-// 3. AttributeReader class implementations
-AttributeReader::AttributeReader(
-    std::deque<Datatype> eligibleDatatypes_in,
-    std::optional<std::shared_ptr<ProcessAttribute>> processAttribute_in)
-    : eligibleDatatypes(std::move(eligibleDatatypes_in))
-    , processAttribute(std::move(processAttribute_in))
-{}
-
-auto AttributeReader::operator()(
-    Attributable &record,
-    char const *attrName,
-    Attribute const &a,
-    std::deque<Datatype> unmatched_so_far) -> AttributeReadResult
-{
-    if (std::find(
-            eligibleDatatypes.begin(), eligibleDatatypes.end(), a.dtype) ==
-        eligibleDatatypes.end())
-    {
-        auto res =
-            attribute_read_result::TypeUnmatched{std::move(unmatched_so_far)};
-        for (auto dt : this->eligibleDatatypes)
-        {
-            res.expectedDatatypes.push_back(dt);
-        }
-        return res;
-    }
-    if (processAttribute.has_value())
-    {
-        auto maybe_error = (**processAttribute)(record, attrName, a);
-        if (maybe_error.has_value())
-        {
-            return *maybe_error;
-        }
-    }
-    return attribute_read_result::Success{};
-}
-
-namespace
-{
-    // Need SFINAE for this since MSVC doesnt understand if constexpr
-    template <typename GetDefaultValue, typename SFINAE = void>
-    struct CallGetDefaultValue
-    {
-        GetDefaultValue val;
-        CallGetDefaultValue(GetDefaultValue val_in) : val(std::move(val_in))
-        {}
-        auto operator()() && -> GetDefaultValue
-        {
-            return std::move(val);
-        }
-    };
-
-    template <typename GetDefaultValue>
-    struct CallGetDefaultValue<
-        GetDefaultValue,
-        std::void_t<std::invoke_result_t<GetDefaultValue>>>
-    {
-        GetDefaultValue val;
-        CallGetDefaultValue(GetDefaultValue val_in) : val(std::move(val_in))
-        {}
-        auto operator()() && -> std::invoke_result_t<GetDefaultValue>
-        {
-            return std::move(val)();
-        }
-    };
-} // namespace
-
-// 4. ConfigAttribute class implementations
-ConfigAttribute::ConfigAttribute(
-    Attributable &child_in, char const *attrName_in)
-    : child(child_in), attrName(attrName_in)
-{}
-
-template <typename RecordType, typename S, typename GetDefaultValue>
-auto ConfigAttribute::withSetter(
-    GetDefaultValue &&getDefaultVal,
-    set_default_val_t<
-        RecordType,
-        std::conditional_t<
-            std::is_void_v<S>,
-            detail::CallResult_t<GetDefaultValue>,
-            S>> setDefaultVal) -> ConfigAttribute &
-{
-    initDefaultAttribute =
-        [callDefaultValue =
-             CallGetDefaultValue<std::remove_reference_t<GetDefaultValue>>(
-                 std::forward<GetDefaultValue>(getDefaultVal)),
-         setDefaultVal](Attributable &attr) mutable {
-            RecordType *record = dynamic_cast<RecordType *>(&attr);
-            if (!record)
-            {
-                throw error::Internal("dynamic cast failure");
-            }
-            ((*record).*setDefaultVal)(std::move(callDefaultValue)());
-        };
-    return *this;
-}
-
-template <typename DefaultValue>
-auto ConfigAttribute::withGenericSetter(DefaultValue &&defaultVal)
-    -> ConfigAttribute &
-{
-    initDefaultAttribute =
-        [this, defaultVal_lambda = std::forward<DefaultValue &&>(defaultVal)](
-            Attributable &attr) {
-            attr.setAttribute(this->attrName, std::move(defaultVal_lambda));
-        };
-    return *this;
-}
-
-auto ConfigAttribute::withReader(
-    std::deque<Datatype> eligibleDatatypes,
-    std::optional<std::shared_ptr<ProcessAttribute>> processAttribute)
-    -> ConfigAttribute &
-{
-    this->attributeReaders.emplace_back(
-        std::move(eligibleDatatypes), std::move(processAttribute));
-    return *this;
-}
-
-void ConfigAttribute::write()
-{
-    if (this->child.containsAttribute(this->attrName) ||
-        !this->initDefaultAttribute.has_value())
-    {
-        return;
-    }
-    this->initDefaultAttribute.operator*()(this->child);
-}
-
-void ConfigAttribute::read()
-{
-    if (attributeReaders.empty())
-    {
-        // No readers emplaced for this attribute
-        return;
-    }
-    AttributeReadResult res = attribute_read_result::TypeUnmatched{};
-    Parameter<Operation::READ_ATT> aRead;
-    aRead.name = this->attrName;
-    auto IOHandler = this->child.IOHandler();
-    IOHandler->enqueue(IOTask(&this->child, aRead));
-    try
-    {
-        IOHandler->flush(defaultFlushParams);
-    }
-    catch (error::ReadError const &e)
-    {
-        std::cerr << "Could not read expected attribute '" << this->attrName
-                  << "' in '" << this->child.myPath().openPMDPath() << ".";
-        if (this->initDefaultAttribute.has_value())
-        {
-            std::cerr << " Will initialize it with a default value.";
-            this->initDefaultAttribute.operator*()(this->child);
-        }
-        std::cerr << " Original error: " << e.what() << std::endl;
-        return;
-    }
-
-    Attribute attribute(Attribute::from_any, std::move(*aRead.m_resource));
-    for (auto &attributeReader : attributeReaders)
-    {
-
-        if (auto *not_matched =
-                std::get_if<attribute_read_result::TypeUnmatched>(&res))
-        {
-            res = attributeReader(
-                this->child,
-                this->attrName,
-                attribute,
-                std::move(not_matched->expectedDatatypes));
-        }
-        else
-        {
-            break;
-        }
-    }
-    auto dt = attribute.dtype;
-    std::visit(
-        auxiliary::overloaded{
-            [&](attribute_read_result::TypeUnmatched &&type_unmatched) {
-                std::cerr << "Unexpected type '" << dt << "' for attribute '"
-                          << this->attrName << "' in '"
-                          << this->child.myPath().openPMDPath()
-                          << "' with value '";
-                write_to_stderr(attribute) << "'. Expected one of ";
-                auxiliary::write_vec_to_stream(
-                    std::cerr, type_unmatched.expectedDatatypes)
-                    << " or convertible to such a type." << std::endl;
-            },
-            [&](error::ReadError const &err) {
-                std::cerr << "Unexpected error while trying to read "
-                             "attribute '"
-                          << this->attrName << "' in '"
-                          << this->child.myPath().openPMDPath()
-                          << "'' with value '";
-                write_to_stderr(attribute) << "': " << err.what() << std::endl;
-            },
-            [](attribute_read_result::Success) { /* no-op */ }},
-        std::move(res));
-}
-
-void ConfigAttribute::operator()(WriteOrRead wor)
-{
-    switch (wor)
-    {
-    case WriteOrRead::Write:
-        write();
-        break;
-    case WriteOrRead::Read:
-        read();
-        break;
-    }
-}
-
-// 5. ProcessAttribute implementations (RequireScalar, RequireVector,
-// RequireType) 2, 0.0976562
-auto RequireScalar::operator()(
-    Attributable &record, char const *attrName, Attribute const &attr)
-    -> std::optional<error::ReadError>
-{
-    auto res = attr.requireScalar();
-    using res_t = std::optional<error::ReadError>;
-    return std::visit(
-        auxiliary::overloaded{
-            [](std::runtime_error const &err) -> res_t {
-                std::string msg = "Expected a scalar type: ";
-                msg += err.what();
-                return error::ReadError(
-                    error::AffectedObject::Attribute,
-                    error::Reason::UnexpectedContent,
-                    std::nullopt,
-                    std::move(msg));
-            },
-            [&](Attribute converted_attr) -> res_t {
-                record.setAttribute(attrName, std::move(converted_attr));
-                return std::nullopt;
-            }},
-        std::move(res));
-}
-
-// 1, 0.113281
-auto RequireVector::operator()(
-    Attributable &record, char const *attrName, Attribute const &attr)
-    -> std::optional<error::ReadError>
-{
-    auto res = attr.requireVector();
-    using res_t = std::optional<error::ReadError>;
-    return std::visit(
-        auxiliary::overloaded{
-            [](std::runtime_error const &err) -> res_t {
-                std::string msg = "Expected a vector type: ";
-                msg += err.what();
-                return error::ReadError(
-                    error::AffectedObject::Attribute,
-                    error::Reason::UnexpectedContent,
-                    std::nullopt,
-                    std::move(msg));
-            },
-            [&](Attribute converted_attr) -> res_t {
-                record.setAttribute(attrName, std::move(converted_attr));
-                return std::nullopt;
-            }},
-        std::move(res));
-}
-
-// 3, 0.0117188
-template <typename T>
-auto RequireType<T>::operator()(
-    Attributable &record, char const *attrName, Attribute const &attr)
-    -> std::optional<error::ReadError>
-{
-    auto converted_or_error = attr.getOrError<T>();
-    return std::visit(
-        auxiliary::overloaded{
-            [&](T casted_val) -> std::optional<error::ReadError> {
-                if (this->postProcess.has_value())
-                {
-                    return (**this->postProcess)(std::move(casted_val));
-                }
-                else
-                {
-                    record.setAttribute<T>(attrName, std::move(casted_val));
-                    return std::nullopt;
-                }
-            },
-            [](std::runtime_error const &err)
-                -> std::optional<error::ReadError> {
-                std::string msg = "Expected a scalar type: ";
-                msg += err.what();
-                return error::ReadError(
-                    error::AffectedObject::Attribute,
-                    error::Reason::UnexpectedContent,
-                    std::nullopt,
-                    std::move(msg));
-            }},
-        converted_or_error);
-}
-
-// 6. Helper functions in anonymous namespace (require_scalar, require_vector,
-// require_type, etc.)
-namespace
-{
-    std::shared_ptr<ProcessAttribute> require_scalar =
-        std::make_shared<RequireScalar>();
-    // try converting to vectors (e.g. when a scalar or an array is given)
-    std::shared_ptr<ProcessAttribute> require_vector =
-        std::make_shared<RequireVector>();
-
-    template <typename T, typename RecordType>
-    auto require_type(
-        RecordType &&record,
-        std::optional<error::ReadError> (*handler)(
-            std::remove_reference_t<RecordType> &, T))
-        -> std::shared_ptr<ProcessAttribute>
-    {
-        return std::make_shared<RequireType<T>>(
-            std::forward<RecordType>(record), handler);
-    }
-
-    template <typename T>
-    auto require_type() -> std::shared_ptr<ProcessAttribute>
-    {
-        return std::make_shared<RequireType<T>>();
-    }
-
-    auto get_float_types() -> std::deque<Datatype>
-    {
-        std::deque<Datatype> res;
-        for (auto dt : openPMD_Datatypes())
-        {
-            if (isFloatingPoint(dt))
-            {
-                res.push_back(dt);
-            }
-        }
-        res.push_back(Datatype::ARR_DBL_7);
-        return res;
-    }
-
-    auto get_string_types() -> std::deque<Datatype>
-    {
-        return {
-            Datatype::STRING,
-            Datatype::VEC_STRING,
-            Datatype::CHAR,
-            Datatype::VEC_CHAR,
-            Datatype::UCHAR,
-            Datatype::VEC_UCHAR,
-            Datatype::SCHAR,
-            Datatype::VEC_SCHAR};
-    }
-} // namespace
-
 // 7. ScientificDefaults template implementations
 template <typename Child>
 auto ScientificDefaults<Child>::asChild() -> Child &
@@ -682,20 +163,24 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
         defaultAttribute("axisLabels")
             .template withSetter<Mesh, std::vector<std::string> const &>(
                 [&]() -> std::vector<std::string> {
-                    return createDefaultAxisLabels(dimensionality);
+                    return auxiliary::createDefaultAxisLabels(dimensionality);
                 },
                 &Mesh::setAxisLabels)
             .withReader(string_types, require_vector)(wor);
 
         defaultAttribute("gridSpacing")
             .template withSetter<Mesh, std::vector<double> const &>(
-                [&]() { return createDefaultVector(dimensionality, 1.0); },
+                [&]() {
+                    return auxiliary::createDefaultVector(dimensionality, 1.0);
+                },
                 &Mesh::setGridSpacing)
             .withReader(float_types, require_vector)(wor);
 
         defaultAttribute("gridGlobalOffset")
             .template withSetter<Mesh, std::vector<double> const &>(
-                [&]() { return createDefaultVector(dimensionality, 0.0); },
+                [&]() {
+                    return auxiliary::createDefaultVector(dimensionality, 0.0);
+                },
                 &Mesh::setGridGlobalOffset)
             .withReader(float_types, require_type<std::vector<double>>())(wor);
 
@@ -707,7 +192,10 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
         {
             defaultAttribute("gridUnitSI")
                 .template withSetter<Mesh, std::vector<double> const &>(
-                    [&]() { return createDefaultVector(dimensionality, 1.); },
+                    [&]() {
+                        return auxiliary::createDefaultVector(
+                            dimensionality, 1.);
+                    },
                     &Mesh::setGridUnitSIPerDimension)
                 .withReader(float_types, require_type<std::vector<double>>())(
                     wor);
@@ -765,7 +253,9 @@ void ScientificDefaults<Child>::defaults_impl(OpenpmdStandard standard)
 
         defaultAttribute("position")
             .template withSetter<MeshRecordComponent>(
-                [&]() { return createDefaultVector(dimensionality, 0.5); },
+                [&]() {
+                    return auxiliary::createDefaultVector(dimensionality, 0.5);
+                },
                 &MeshRecordComponent::setPosition)
             .withReader(float_types, require_vector)(wor);
 
