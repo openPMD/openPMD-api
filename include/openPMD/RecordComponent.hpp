@@ -487,6 +487,12 @@ public:
     auto visit(Args &&...args) -> decltype(Visitor::template call<char>(
         std::declval<RecordComponent &>(), std::forward<Args>(args)...));
 
+    template <typename Visitor>
+    void visitHierarchy(Visitor &v)
+    {
+        v(*this);
+    }
+
     static constexpr char const *const SCALAR = "\vScalar";
 
 protected:

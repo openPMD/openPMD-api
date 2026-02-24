@@ -92,6 +92,12 @@ public:
     template <typename T>
     void store(T);
 
+    template <typename Visitor>
+    void visitHierarchy(Visitor &v)
+    {
+        v(*this);
+    }
+
     // clang-format off
 OPENPMD_private
     // clang-format on

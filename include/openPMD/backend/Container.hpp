@@ -262,6 +262,16 @@ public:
         return container().emplace(std::forward<Args>(args)...);
     }
 
+    template <typename Visitor>
+    void visitHierarchy(Visitor &v)
+    {
+        v(*this);
+        for (auto &p : *this)
+        {
+            p.second.visitHierarchy();
+        }
+    }
+
     // clang-format off
 OPENPMD_protected
     // clang-format on

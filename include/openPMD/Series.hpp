@@ -778,6 +778,13 @@ public:
      */
     void close();
 
+    template <typename Visitor>
+    void visitHierarchy(Visitor &v)
+    {
+        v(*this);
+        get().iterations.visitHierarchy(v);
+    }
+
     /**
      * This overrides Attributable::iterationFlush() which will fail on Series.
      */

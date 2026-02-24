@@ -283,6 +283,14 @@ public:
     [[deprecated("This attribute is no longer set by the openPMD-api.")]] bool
     closedByWriter() const;
 
+    template <typename Visitor>
+    void visitHierarchy(Visitor &v)
+    {
+        v(*this);
+        meshes.visitHierarchy(v);
+        particles.visitHierarchy(v);
+    }
+
     Container<Mesh> meshes{};
     Container<ParticleSpecies> particles{}; // particleSpecies?
 

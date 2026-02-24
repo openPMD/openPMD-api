@@ -46,6 +46,13 @@ class ParticleSpecies
 public:
     ParticlePatches particlePatches;
 
+    template <typename Visitor>
+    void visitHierarchy(Visitor &v)
+    {
+        Container<Record>::visitHierarchy(v);
+        particlePatches.visitHierarchy(v);
+    }
+
 private:
     ParticleSpecies();
 

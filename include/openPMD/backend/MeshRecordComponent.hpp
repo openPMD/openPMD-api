@@ -96,6 +96,12 @@ public:
      */
     template <typename T>
     MeshRecordComponent &makeConstant(T);
+
+    template <typename Visitor>
+    void visitHierarchy(Visitor &v)
+    {
+        v(*this);
+    }
 };
 
 template <typename T>
