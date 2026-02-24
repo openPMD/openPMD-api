@@ -370,6 +370,8 @@ private:
     void readMeshes(std::string const &meshesPath);
     void readParticles(std::string const &particlesPath);
 
+    void setDefaultAttributes();
+
     /**
      * Status after beginning an IO step. Currently includes:
      * * The advance status (OK, OVER, RANDOMACCESS)
@@ -465,7 +467,6 @@ private:
 
 protected:
     void defaults_impl(bool write, OpenpmdStandard) override;
-    auto as_attributable() -> Attributable & override;
 }; // Iteration
 
 namespace traits

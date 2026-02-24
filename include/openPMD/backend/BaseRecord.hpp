@@ -382,6 +382,9 @@ private:
     flush_impl(std::string const &, internal::FlushParams const &) = 0;
 
     void eraseScalar();
+
+protected:
+    void defaults_impl(bool write, OpenpmdStandard) override;
 }; // BaseRecord
 
 namespace detail

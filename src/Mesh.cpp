@@ -29,6 +29,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/ScientificDefaults_impl.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <algorithm>
@@ -214,6 +215,72 @@ auto Mesh::retrieveDimensionality() const -> uint64_t
     return 1;
 }
 
+void Mesh::defaults_impl(bool write, OpenpmdStandard standard)
+{
+    using namespace internal;
+    auto float_types = get_float_types();
+    auto string_types = get_string_types();
+    auto dimensionality = retrieveDimensionality();
+    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
+
+    defaultAttribute(*this, "geometry")
+        .template withSetter<Mesh>(
+            Mesh::Geometry::cartesian, &Mesh::setGeometry)
+        .withReader(
+            string_types, require_type(*this, &setMeshGeometryFromString))(wor);
+
+    defaultAttribute(*this, "dataOrder")
+        .template withSetter<Mesh>(Mesh::DataOrder::C, &Mesh::setDataOrder)
+        .withReader(
+            string_types, require_type(*this, &setMeshDataOrderFromChar))(wor);
+
+    defaultAttribute(*this, "axisLabels")
+        .template withSetter<Mesh, std::vector<std::string> const &>(
+            [&]() -> std::vector<std::string> {
+                return auxiliary::createDefaultAxisLabels(dimensionality);
+            },
+            &Mesh::setAxisLabels)
+        .withReader(string_types, require_vector)(wor);
+
+    defaultAttribute(*this, "gridSpacing")
+        .template withSetter<Mesh, std::vector<double> const &>(
+            [&]() {
+                return auxiliary::createDefaultVector(dimensionality, 1.0);
+            },
+            &Mesh::setGridSpacing)
+        .withReader(float_types, require_vector)(wor);
+
+    defaultAttribute(*this, "gridGlobalOffset")
+        .template withSetter<Mesh, std::vector<double> const &>(
+            [&]() {
+                return auxiliary::createDefaultVector(dimensionality, 0.0);
+            },
+            &Mesh::setGridGlobalOffset)
+        .withReader(float_types, require_type<std::vector<double>>())(wor);
+
+    defaultAttribute(*this, "timeOffset")
+        .template withSetter<Mesh>(0.f, &Mesh::setTimeOffset)
+        .withReader(float_types, require_scalar)(wor);
+
+    if (standard >= OpenpmdStandard::v_2_0_0)
+    {
+        defaultAttribute(*this, "gridUnitSI")
+            .template withSetter<Mesh, std::vector<double> const &>(
+                [&]() {
+                    return auxiliary::createDefaultVector(dimensionality, 1.);
+                },
+                &Mesh::setGridUnitSIPerDimension)
+            .withReader(float_types, require_type<std::vector<double>>())(wor);
+    }
+    else
+    {
+        defaultAttribute(*this, "gridUnitSI")
+            .template withSetter<Mesh>(1.0, &Mesh::setGridUnitSI)
+            .withReader(float_types, require_type<std::vector<double>>())(wor);
+    }
+
+    BaseRecord<MeshRecordComponent>::defaults_impl(write, standard);
+}
 std::vector<double> Mesh::gridUnitSIPerDimension() const
 {
     if (containsAttribute("gridUnitSI"))

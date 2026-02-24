@@ -30,8 +30,10 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/ScientificDefaults.hpp"
 #include "openPMD/backend/ScientificDefaults_impl.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
@@ -44,6 +46,7 @@
 #include <optional>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
 #include <variant>
 
 namespace openPMD
@@ -124,7 +127,7 @@ Iteration &Iteration::close(bool _flush)
 
     if (access::write(IOHandler()->m_frontendAccess))
     {
-        writeDefaultsRecursively(IOHandler()->m_standard);
+        setDefaultAttributes();
     }
 
     if (_flush)
@@ -156,6 +159,40 @@ Iteration &Iteration::close(bool _flush)
         }
     }
     return *this;
+}
+
+void Iteration::setDefaultAttributes()
+{
+    auto standard = IOHandler()->m_standard;
+    visitHierarchy([standard](auto &component) {
+        using ComponentType = std::remove_reference_t<decltype(component)>;
+        if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, ComponentType>)
+        {
+            if (component.empty() && !component.datasetDefined())
+            {
+                std::cerr
+                    << "Cannot flush Record without any contained components: '"
+                    << component.myPath().openPMDPath() << "'. Will ignore.";
+                if (component.written())
+                {
+                    std::cerr
+                        << "\n(Note: The Record seems to have been written "
+                           "previously?)";
+                }
+                std::cerr << std::endl;
+                return;
+            }
+        }
+
+        if constexpr (
+            !std::is_same_v<ComponentType, Container<Mesh>> &&
+            !std::is_same_v<ComponentType, Container<Record>> &&
+            !std::is_same_v<ComponentType, Container<PatchRecord>> &&
+            !std::is_same_v<ComponentType, Container<ParticleSpecies>>)
+        {
+            component.writeDefaults(standard);
+        }
+    });
 }
 
 Iteration &Iteration::open()
@@ -951,20 +988,15 @@ void Iteration::defaults_impl(bool write, OpenpmdStandard)
     auto float_types = get_float_types();
     auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
-    defaultAttribute("time")
+    defaultAttribute(*this, "time")
         .template withSetter<Iteration>(0., &Iteration::setTime)
         .withReader(float_types, require_scalar)(wor);
-    defaultAttribute("dt")
+    defaultAttribute(*this, "dt")
         .template withSetter<Iteration>(1., &Iteration::setDt)
         .withReader(float_types, require_scalar)(wor);
-    defaultAttribute("timeUnitSI")
+    defaultAttribute(*this, "timeUnitSI")
         .template withSetter<Iteration>(1.0, &Iteration::setTimeUnitSI)
         .withReader(float_types, require_type<double>())(wor);
-}
-
-auto Iteration::as_attributable() -> Attributable &
-{
-    return *this;
 }
 
 template float Iteration::time<float>() const;

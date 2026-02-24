@@ -64,6 +64,9 @@ private:
     {
         return m_containerData;
     }
+
+protected:
+    void defaults_impl(bool write, OpenpmdStandard) override;
 };
 
 namespace traits

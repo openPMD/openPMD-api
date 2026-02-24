@@ -30,6 +30,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/ScientificDefaults_impl.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 
 // comment so clang-format does not move this
@@ -692,6 +693,16 @@ void RecordComponent::verifyChunk(
     }
 }
 
+void RecordComponent::defaults_impl(bool write, OpenpmdStandard)
+{
+    using namespace internal;
+    auto float_types = get_float_types();
+    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
+
+    defaultAttribute(*this, "unitSI")
+        .template withSetter<RecordComponent>(1.0, &RecordComponent::setUnitSI)
+        .withReader(float_types, require_type<double>())(wor);
+}
 namespace
 {
     struct LoadChunkVariant

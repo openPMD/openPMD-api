@@ -19,8 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/ScientificDefaults_impl.hpp"
 
 namespace openPMD
 {
@@ -64,6 +66,24 @@ MeshRecordComponent &MeshRecordComponent::setPosition(std::vector<T> pos)
     return *this;
 }
 
+void MeshRecordComponent::defaults_impl(bool write, OpenpmdStandard standard)
+{
+    using namespace internal;
+    auto float_types = get_float_types();
+    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
+
+    auto dimensionality = getDimensionality();
+
+    defaultAttribute(*this, "position")
+        .template withSetter<MeshRecordComponent>(
+            [&]() {
+                return auxiliary::createDefaultVector(dimensionality, 0.5);
+            },
+            &MeshRecordComponent::setPosition)
+        .withReader(float_types, require_vector)(wor);
+
+    RecordComponent::defaults_impl(write, standard);
+}
 template MeshRecordComponent &
 MeshRecordComponent::setPosition(std::vector<float> pos);
 template MeshRecordComponent &

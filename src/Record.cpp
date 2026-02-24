@@ -25,6 +25,7 @@
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/ScientificDefaults_impl.hpp"
 
 #include <iostream>
 
@@ -198,5 +199,32 @@ auto Record::read() -> internal::HomogenizeExtents
     return res;
 }
 
+void Record::defaults_impl(bool write, OpenpmdStandard standard)
+{
+    using namespace internal;
+    auto float_types = get_float_types();
+    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
+
+    defaultAttribute(*this, "timeOffset")
+        .template withSetter<Record>(0.f, &Record::setTimeOffset)
+        .withReader(float_types, require_scalar)(wor);
+
+    auto const &keyInParent = writable().ownKeyWithinParent;
+    if (keyInParent == "position" || keyInParent == "positionOffset")
+    {
+        defaultAttribute(*this, "unitDimension")
+            .template withSetter<Record, unit_representations::AsMap const &>(
+                []() {
+                    return unit_representations::AsMap{{UnitDimension::L, 1.0}};
+                },
+                &Record::setUnitDimension)(wor);
+    }
+
+    defaultAttribute(*this, "timeOffset")
+        .template withSetter<Record>(0.f, &Record::setTimeOffset)
+        .withReader(float_types, require_scalar)(wor);
+
+    BaseRecord<RecordComponent>::defaults_impl(write, standard);
+}
 template class BaseRecord<RecordComponent>;
 } // namespace openPMD

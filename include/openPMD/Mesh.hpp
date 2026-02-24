@@ -332,6 +332,9 @@ private:
     flush_impl(std::string const &, internal::FlushParams const &) override;
     void read();
     auto retrieveDimensionality() const -> uint64_t;
+
+protected:
+    void defaults_impl(bool write, OpenpmdStandard) override;
 }; // Mesh
 
 static_assert(internal::IsContainer_v<Mesh>);

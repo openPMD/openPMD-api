@@ -57,6 +57,9 @@ private:
     flush_impl(std::string const &, internal::FlushParams const &) override;
 
     [[nodiscard]] internal::HomogenizeExtents read();
+
+protected:
+    void defaults_impl(bool write, OpenpmdStandard) override;
 }; // Record
 
 static_assert(internal::HasScientificDefaults_v<Record>);

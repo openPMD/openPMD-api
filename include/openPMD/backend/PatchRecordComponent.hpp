@@ -111,6 +111,9 @@ OPENPMD_protected
 
     PatchRecordComponent();
     PatchRecordComponent(NoInit);
+
+protected:
+    void defaults_impl(bool write, OpenpmdStandard) override;
 }; // PatchRecordComponent
 
 template <typename T>

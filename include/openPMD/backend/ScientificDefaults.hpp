@@ -17,14 +17,13 @@ struct ConfigAttribute;
 class ScientificDefaults
 {
 protected:
-    [[nodiscard]] auto defaultAttribute(char const *attrName)
+    [[nodiscard]] auto defaultAttribute(Attributable &, char const *attrName)
         -> ConfigAttribute;
 
     // template <typename Parent, bool write>
     // void addParentDefaults(OpenpmdStandard);
 
-    virtual void defaults_impl(bool write, OpenpmdStandard);
-    virtual auto as_attributable() -> Attributable &;
+    virtual void defaults_impl(bool write, OpenpmdStandard) = 0;
 
 protected:
     // Called upon Iteration::close(), will fill in defaults below Iteration

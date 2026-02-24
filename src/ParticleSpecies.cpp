@@ -20,8 +20,6 @@
  */
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
-#include "openPMD/Series.hpp"
-#include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <algorithm>
@@ -195,5 +193,9 @@ void ParticleSpecies::flush(
         particlePatches.setDirty(false);
         setDirty(false);
     }
+}
+void ParticleSpecies::defaults_impl(bool /* write */, OpenpmdStandard)
+{
+    // no-op
 }
 } // namespace openPMD

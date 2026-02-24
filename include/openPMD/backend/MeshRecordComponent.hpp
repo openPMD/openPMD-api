@@ -99,6 +99,9 @@ public:
     {
         v(*this);
     }
+
+protected:
+    void defaults_impl(bool write, OpenpmdStandard) override;
 };
 
 template <typename T>

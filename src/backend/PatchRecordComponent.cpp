@@ -23,6 +23,7 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/ScientificDefaults_impl.hpp"
 
 #include <algorithm>
 
@@ -73,4 +74,23 @@ PatchRecordComponent::PatchRecordComponent() : RecordComponent(NoInit())
 
 PatchRecordComponent::PatchRecordComponent(NoInit) : RecordComponent(NoInit())
 {}
+
+void PatchRecordComponent::defaults_impl(bool write, OpenpmdStandard)
+{
+    using namespace internal;
+    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
+
+    // We don't require unitSI for PatchRecordComponent
+    //
+    // addParentDefaults<RecordComponent, write>();
+    //
+    // But we still set it when writing. Doesnt hurt and some readers might
+    // expect it.
+    defaultAttribute(*this, "unitSI")
+        .template withSetter<PatchRecordComponent>(
+            1.0, &PatchRecordComponent::setUnitSI)
+        // Do NOT add a reader here.
+        // .withReader(numerical_types, require_type<double>())
+        (wor);
+}
 } // namespace openPMD

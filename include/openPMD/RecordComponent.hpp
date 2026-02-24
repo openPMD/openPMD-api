@@ -550,6 +550,9 @@ OPENPMD_protected
     void verifyChunk(Offset const &, Extent const &) const;
 
     void verifyChunk(Datatype, Offset const &, Extent const &) const;
+
+protected:
+    void defaults_impl(bool write, OpenpmdStandard) override;
 }; // RecordComponent
 
 namespace internal

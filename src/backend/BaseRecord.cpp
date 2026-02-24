@@ -21,6 +21,7 @@
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/backend/ScientificDefaults_impl.hpp"
 
 #include <optional>
 
@@ -815,6 +816,23 @@ void BaseRecord<T_elem>::eraseScalar()
     this->writable().abstractFilePosition.reset();
 }
 
+template <typename T_elem>
+void BaseRecord<T_elem>::defaults_impl(bool write, OpenpmdStandard)
+{
+    using namespace internal;
+    auto float_types = get_float_types();
+    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
+
+    this->defaultAttribute(*this, "unitDimension")
+        .withGenericSetter(unit_representations::AsArray{})
+        .withReader(float_types, require_type<unit_representations::AsArray>())(
+            wor);
+
+    if (scalar())
+    {
+        T_elem::scientificDefaults_impl(write, standard);
+    }
+}
 template <typename T_elem>
 BaseRecord<T_elem>::~BaseRecord() = default;
 
