@@ -33,14 +33,13 @@ namespace openPMD
 
 class ParticleSpecies
     : public Container<Record>
-    , internal::ScientificDefaults<ParticleSpecies>
+    , internal::ScientificDefaults
 {
     friend class Container<ParticleSpecies>;
     friend class Container<Record>;
     friend class Iteration;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
-    template <typename>
     friend class internal::ScientificDefaults;
 
 public:

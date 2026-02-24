@@ -180,7 +180,8 @@ template <typename T_elem>
 class BaseRecord
     : public Container<T_elem>
     , public T_elem // T_RecordComponent
-    , internal::ScientificDefaults<BaseRecord<T_elem>>
+// ScientificDefaults already inherited via Container
+// , internal::ScientificDefaults
 {
 public:
     using T_RecordComponent = T_elem;
@@ -199,7 +200,6 @@ private:
     friend class internal::ScalarIterator;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
-    template <typename>
     friend class internal::ScientificDefaults;
 
     using Data_t =

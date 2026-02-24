@@ -1,3 +1,4 @@
+#if 0
 #include "openPMD/backend/ScientificDefaults.hpp"
 #include "openPMD/backend/ScientificDefaults_auxiliary.hpp"
 #include "openPMD/backend/ScientificDefaults_impl.hpp"
@@ -318,3 +319,4 @@ template class ScientificDefaults<BaseRecord<PatchRecordComponent>>;
 template class ScientificDefaults<BaseRecord<RecordComponent>>;
 template class ScientificDefaults<PatchRecord>;
 } // namespace openPMD::internal
+#endif

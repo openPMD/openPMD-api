@@ -422,7 +422,7 @@ void Mesh::read()
         IOHandler()->m_verify_homogeneous_extents);
     internal::EraseStaleEntries<Mesh> map{*this};
 
-    internal::ScientificDefaults<Mesh>::readDefaults(IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
 
     if (scalar())
     {
@@ -489,7 +489,7 @@ void Mesh::read()
 
     std::move(homogenizeExtents).homogenize(*this);
 
-    internal::ScientificDefaults<Mesh>::readDefaults(IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
 
     readAttributes(ReadMode::FullyReread);
 }

@@ -43,9 +43,7 @@ namespace openPMD
 /**
  * @todo add support for constant patch record components
  */
-class PatchRecordComponent
-    : public RecordComponent
-    , internal::ScientificDefaults<PatchRecordComponent>
+class PatchRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
@@ -56,7 +54,6 @@ class PatchRecordComponent
     friend class ParticlePatches;
     friend class PatchRecord;
     friend class ParticleSpecies;
-    template <typename>
     friend class internal::ScientificDefaults;
 
 public:

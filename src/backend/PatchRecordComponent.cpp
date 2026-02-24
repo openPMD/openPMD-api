@@ -63,8 +63,7 @@ PatchRecordComponent::PatchRecordComponent(
 void PatchRecordComponent::read()
 {
     readBase();
-    internal::ScientificDefaults<PatchRecordComponent>::readDefaults(
-        IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
 }
 
 PatchRecordComponent::PatchRecordComponent() : RecordComponent(NoInit())

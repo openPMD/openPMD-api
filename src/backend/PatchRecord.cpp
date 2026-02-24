@@ -73,8 +73,7 @@ void PatchRecord::flush_impl(
 
 void PatchRecord::read()
 {
-    internal::ScientificDefaults<PatchRecord>::readDefaults(
-        IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
 
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));

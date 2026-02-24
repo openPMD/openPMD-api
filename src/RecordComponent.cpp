@@ -526,8 +526,7 @@ void RecordComponent::flush(
 void RecordComponent::read()
 {
     readBase();
-    internal::ScientificDefaults<RecordComponent>::readDefaults(
-        IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
 }
 
 namespace

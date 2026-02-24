@@ -14,24 +14,16 @@ struct ConfigAttribute;
  * It implements (most of) the attribute definitions from
  * github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md
  */
-template <typename Child> // CRT
 class ScientificDefaults
 {
 private:
-    auto asChild() -> Child &;
-    auto asChild() const -> Child const &;
-
-    template <typename F>
-    using setter_t = Child &(Child::*)();
-
     [[nodiscard]] auto defaultAttribute(char const *attrName)
         -> ConfigAttribute;
 
     template <typename Parent, bool write>
     void addParentDefaults(OpenpmdStandard);
 
-    template <bool write>
-    void defaults_impl(OpenpmdStandard);
+    virtual void defaults_impl(bool write, OpenpmdStandard);
 
 protected:
     // Called upon Iteration::close(), will fill in defaults below Iteration
@@ -50,5 +42,5 @@ protected:
 
 template <typename Child>
 constexpr bool HasScientificDefaults_v =
-    std::is_base_of_v<ScientificDefaults<Child>, Child>;
+    std::is_base_of_v<ScientificDefaults, Child>;
 } // namespace openPMD::internal

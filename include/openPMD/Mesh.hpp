@@ -39,13 +39,10 @@ namespace openPMD
  * @see
  * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records
  */
-class Mesh
-    : public BaseRecord<MeshRecordComponent>
-    , internal::ScientificDefaults<Mesh>
+class Mesh : public BaseRecord<MeshRecordComponent>
 {
     friend class Container<Mesh>;
     friend class Iteration;
-    template <typename>
     friend class internal::ScientificDefaults;
 
 public:

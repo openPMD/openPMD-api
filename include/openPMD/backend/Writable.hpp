@@ -51,7 +51,6 @@ namespace internal
     class SharedAttributableData;
     class AttributableData;
     class SeriesData;
-    template <typename>
     class ScientificDefaults;
 } // namespace internal
 namespace detail
@@ -108,7 +107,6 @@ class Writable final
     friend void debug::printDirty(Series const &);
     friend struct Parameter<Operation::CREATE_DATASET>;
     friend struct Parameter<Operation::OPEN_DATASET>;
-    template <typename>
     friend class internal::ScientificDefaults;
 
 private:

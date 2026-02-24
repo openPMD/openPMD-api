@@ -28,14 +28,11 @@
 
 namespace openPMD
 {
-class PatchRecord
-    : public BaseRecord<PatchRecordComponent>
-    , internal::ScientificDefaults<PatchRecord>
+class PatchRecord : public BaseRecord<PatchRecordComponent>
 {
     friend class Container<PatchRecord>;
     friend class ParticleSpecies;
     friend class ParticlePatches;
-    template <typename>
     friend class internal::ScientificDefaults;
 
 public:

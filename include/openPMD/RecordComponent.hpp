@@ -113,7 +113,7 @@ class BaseRecord;
 
 class RecordComponent
     : public BaseRecordComponent
-    , internal::ScientificDefaults<RecordComponent>
+    , protected internal::ScientificDefaults
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
@@ -131,7 +131,6 @@ class RecordComponent
     friend class MeshRecordComponent;
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
-    template <typename>
     friend class internal::ScientificDefaults;
 
 public:

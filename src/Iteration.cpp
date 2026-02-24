@@ -513,8 +513,7 @@ void Iteration::read_impl(std::string const &groupPath)
     pOpen.path = groupPath;
     IOHandler()->enqueue(IOTask(this, pOpen));
 
-    internal::ScientificDefaults<Iteration>::readDefaults(
-        IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */

@@ -33,9 +33,7 @@ namespace internal
     class BaseRecordData;
 }
 
-class MeshRecordComponent
-    : public RecordComponent
-    , internal::ScientificDefaults<MeshRecordComponent>
+class MeshRecordComponent : public RecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
@@ -43,7 +41,6 @@ class MeshRecordComponent
     friend class BaseRecord;
     template <typename, typename>
     friend class internal::BaseRecordData;
-    template <typename>
     friend class internal::ScientificDefaults;
 
     friend class Mesh;

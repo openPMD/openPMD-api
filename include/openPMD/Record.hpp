@@ -30,14 +30,11 @@
 
 namespace openPMD
 {
-class Record
-    : public BaseRecord<RecordComponent>
-    , internal::ScientificDefaults<Record>
+class Record : public BaseRecord<RecordComponent>
 {
     friend class Container<Record>;
     friend class Iteration;
     friend class ParticleSpecies;
-    template <typename>
     friend class internal::ScientificDefaults;
 
 public:
