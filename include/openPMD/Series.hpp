@@ -779,7 +779,7 @@ public:
     void close();
 
     template <typename Visitor>
-    void visitHierarchy(Visitor &v)
+    void visitHierarchy(Visitor &&v)
     {
         v(*this);
         get().iterations.visitHierarchy(v);

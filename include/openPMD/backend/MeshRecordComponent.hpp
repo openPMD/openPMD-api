@@ -95,7 +95,7 @@ public:
     MeshRecordComponent &makeConstant(T);
 
     template <typename Visitor>
-    void visitHierarchy(Visitor &v)
+    void visitHierarchy(Visitor &&v)
     {
         v(*this);
     }

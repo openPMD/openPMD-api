@@ -284,7 +284,7 @@ public:
     closedByWriter() const;
 
     template <typename Visitor>
-    void visitHierarchy(Visitor &v)
+    void visitHierarchy(Visitor &&v)
     {
         v(*this);
         meshes.visitHierarchy(v);

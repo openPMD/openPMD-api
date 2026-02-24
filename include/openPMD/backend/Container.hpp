@@ -263,7 +263,7 @@ public:
     }
 
     template <typename Visitor>
-    void visitHierarchy(Visitor &v)
+    void visitHierarchy(Visitor &&v)
     {
         v(*this);
         for (auto &p : *this)

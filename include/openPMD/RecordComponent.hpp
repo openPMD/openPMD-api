@@ -487,7 +487,7 @@ public:
         std::declval<RecordComponent &>(), std::forward<Args>(args)...));
 
     template <typename Visitor>
-    void visitHierarchy(Visitor &v)
+    void visitHierarchy(Visitor &&v)
     {
         v(*this);
     }
