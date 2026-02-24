@@ -268,7 +268,7 @@ public:
         v(*this);
         for (auto &p : *this)
         {
-            p.second.visitHierarchy();
+            p.second.visitHierarchy(v);
         }
     }
 

@@ -366,6 +366,16 @@ public:
      */
     bool scalar() const;
 
+    template <typename Visitor>
+    void visitHierarchy(Visitor &&v)
+    {
+        v(*this);
+        for (auto &p : *this)
+        {
+            p.second.visitHierarchy(v);
+        }
+    }
+
 private:
     void flush(std::string const &, internal::FlushParams const &) final;
     virtual void
