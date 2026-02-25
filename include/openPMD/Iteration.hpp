@@ -456,7 +456,7 @@ private:
      *
      * @param w The Writable representing the parent.
      */
-    virtual void linkHierarchy(Writable &w);
+    void linkHierarchy(Writable &w) override;
 
     /**
      * @brief Access an iteration in read mode that has potentially not been
