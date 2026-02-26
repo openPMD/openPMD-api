@@ -420,6 +420,8 @@ inline size_t toBits(Datatype d)
     return toBytes(d) * CHAR_BIT;
 }
 
+constexpr bool isSigned(Datatype d);
+
 /** Compare if a Datatype is a vector type
  *
  * @param d Datatype to test
@@ -714,40 +716,7 @@ constexpr bool isSameChar(Datatype d1, Datatype d2);
  * some platforms, e.g. if long and long long are the same or double and
  * long double will also return true.
  */
-inline bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
-{
-    // exact same type
-    if (static_cast<int>(d) == static_cast<int>(e))
-        return true;
-
-    bool d_is_vec = isVector(d);
-    bool e_is_vec = isVector(e);
-
-    // same int
-    bool d_is_int, d_is_sig;
-    std::tie(d_is_int, d_is_sig) = isInteger(d);
-    bool e_is_int, e_is_sig;
-    std::tie(e_is_int, e_is_sig) = isInteger(e);
-    if (d_is_int && e_is_int && d_is_vec == e_is_vec && d_is_sig == e_is_sig &&
-        toBits(d) == toBits(e))
-        return true;
-
-    // same float
-    bool d_is_fp = isFloatingPoint(d);
-    bool e_is_fp = isFloatingPoint(e);
-
-    if (d_is_fp && e_is_fp && d_is_vec == e_is_vec && toBits(d) == toBits(e))
-        return true;
-
-    // same complex floating point
-    bool d_is_cfp = isComplexFloatingPoint(d);
-    bool e_is_cfp = isComplexFloatingPoint(e);
-
-    if (d_is_cfp && e_is_cfp && d_is_vec == e_is_vec && toBits(d) == toBits(e))
-        return true;
-
-    return false;
-}
+constexpr bool isSame(openPMD::Datatype d, openPMD::Datatype e);
 
 /**
  * @brief basicDatatype Strip openPMD Datatype of std::vector, std::array et.
