@@ -2471,7 +2471,7 @@ class APITest(unittest.TestCase):
             iteration = series.snapshots()[0]
             particles = iteration.particles["electrons"]
 
-            dset = io.Dataset(np.dtype("float"), [30])
+            dset = io.Dataset(np.dtype(np.float32), [30])
             position_x = particles["position"]["x"]
             position_x.reset_dataset(dset)
             position_x[:] = np.arange(30, dtype=np.float32)
