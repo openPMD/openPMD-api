@@ -294,7 +294,8 @@ template <typename T>
 inline constexpr Datatype determineDatatype(T &&val)
 {
     (void)val; // don't need this, it only has a name for Doxygen
-    using T_stripped = std::remove_cv_t<std::remove_reference_t<T>>;
+    using T_stripped =
+        std::remove_extent_t<std::remove_cv_t<std::remove_reference_t<T>>>;
     if constexpr (auxiliary::IsPointer_v<T_stripped>)
     {
         return determineDatatype<auxiliary::IsPointer_t<T_stripped>>();
@@ -596,13 +597,18 @@ inline std::tuple<bool, bool> isInteger()
 template <typename T_FP>
 inline bool isSameFloatingPoint(Datatype d)
 {
+    return isSameFloatingPoint(d, determineDatatype<T_FP>());
+}
+
+inline bool isSameFloatingPoint(Datatype d1, Datatype d2)
+{
     // template
-    bool tt_is_fp = isFloatingPoint<T_FP>();
+    bool tt_is_fp = isFloatingPoint(d1);
 
     // Datatype
-    bool dt_is_fp = isFloatingPoint(d);
+    bool dt_is_fp = isFloatingPoint(d2);
 
-    if (tt_is_fp && dt_is_fp && toBits(d) == toBits(determineDatatype<T_FP>()))
+    if (tt_is_fp && dt_is_fp && toBits(d1) == toBits(d2))
         return true;
     else
         return false;
@@ -618,14 +624,18 @@ inline bool isSameFloatingPoint(Datatype d)
 template <typename T_CFP>
 inline bool isSameComplexFloatingPoint(Datatype d)
 {
+    return isSameComplexFloatingPoint(d, determineDatatype<T_CFP>());
+}
+
+inline bool isSameComplexFloatingPoint(Datatype d1, Datatype d2)
+{
     // template
-    bool tt_is_cfp = isComplexFloatingPoint<T_CFP>();
+    bool tt_is_cfp = isComplexFloatingPoint(d1);
 
     // Datatype
-    bool dt_is_cfp = isComplexFloatingPoint(d);
+    bool dt_is_cfp = isComplexFloatingPoint(d2);
 
-    if (tt_is_cfp && dt_is_cfp &&
-        toBits(d) == toBits(determineDatatype<T_CFP>()))
+    if (tt_is_cfp && dt_is_cfp && toBits(d1) == toBits(d2))
         return true;
     else
         return false;
@@ -641,16 +651,21 @@ inline bool isSameComplexFloatingPoint(Datatype d)
 template <typename T_Int>
 inline bool isSameInteger(Datatype d)
 {
+    return isSameInteger(d, determineDatatype<T_Int>());
+}
+
+inline bool isSameInteger(Datatype d1, Datatype d2)
+{
     // template
     bool tt_is_int, tt_is_sig;
-    std::tie(tt_is_int, tt_is_sig) = isInteger<T_Int>();
+    std::tie(tt_is_int, tt_is_sig) = isInteger(d1);
 
     // Datatype
     bool dt_is_int, dt_is_sig;
-    std::tie(dt_is_int, dt_is_sig) = isInteger(d);
+    std::tie(dt_is_int, dt_is_sig) = isInteger(d2);
 
     if (tt_is_int && dt_is_int && tt_is_sig == dt_is_sig &&
-        toBits(d) == toBits(determineDatatype<T_Int>()))
+        toBits(d1) == toBits(d2))
         return true;
     else
         return false;
@@ -690,6 +705,8 @@ constexpr bool isChar(Datatype d)
  */
 template <typename T_Char>
 constexpr bool isSameChar(Datatype d);
+
+constexpr bool isSameChar(Datatype d1, Datatype d2);
 
 /** Comparison for two Datatypes
  *
