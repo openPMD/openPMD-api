@@ -2349,25 +2349,22 @@ class APITest(unittest.TestCase):
         guard root objects from garbage collection."""
         self.testKeepaliveMeshComponent()
         self.testKeepaliveParticlePosition()
-        self.testKeepaliveParticlePatches()
+        # self.testKeepaliveParticlePatches()
 
     def testKeepaliveMeshComponent(self):
         """Test keepalive for mesh component extraction."""
-        # for ext in tested_file_extensions:
-        #     self.backend_keepalive_mesh_component(ext)
-        self.backend_keepalive_mesh_component("bp5")
+        for ext in tested_file_extensions:
+            self.backend_keepalive_mesh_component(ext)
 
     def testKeepaliveParticlePosition(self):
         """Test keepalive for particle position component extraction."""
-        # for ext in tested_file_extensions:
-        #     self.backend_keepalive_particle_position(ext)
-        self.backend_keepalive_particle_position("bp5")
+        for ext in tested_file_extensions:
+            self.backend_keepalive_particle_position(ext)
 
     def testKeepaliveParticlePatches(self):
         """Test keepalive for particle patches component extraction."""
-        # for ext in tested_file_extensions:
-        #     self.backend_keepalive_particle_patches(ext)
-        self.backend_keepalive_particle_patches("bp5")
+        for ext in tested_file_extensions:
+            self.backend_keepalive_particle_patches(ext)
 
     def backend_keepalive_mesh_component(self, file_ending):
         """Helper function that tests keepalive
