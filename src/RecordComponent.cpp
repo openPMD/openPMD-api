@@ -835,19 +835,15 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
      * Ref. `if (constant())` branch.
      */
     if (dtype != getDatatype() && !constant())
-        if (!isSameInteger<T>(getDatatype()) &&
-            !isSameFloatingPoint<T>(getDatatype()) &&
-            !isSameComplexFloatingPoint<T>(getDatatype()) &&
-            !isSameChar<T>(getDatatype()))
-        {
-            std::string const data_type_str = datatypeToString(getDatatype());
-            std::string const requ_type_str =
-                datatypeToString(determineDatatype<T>());
-            std::string err_msg =
-                "Type conversion during chunk loading not yet implemented! ";
-            err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
-            throw std::runtime_error(err_msg);
-        }
+    {
+        std::string const data_type_str = datatypeToString(getDatatype());
+        std::string const requ_type_str =
+            datatypeToString(determineDatatype<T>());
+        std::string err_msg =
+            "Type conversion during chunk loading not yet implemented! ";
+        err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
+        throw std::runtime_error(err_msg);
+    }
 
     uint8_t dim = getDimensionality();
 
