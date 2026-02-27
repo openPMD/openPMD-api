@@ -292,7 +292,7 @@ constexpr inline bool isSameChar(Datatype d, Datatype e)
 
 constexpr bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
 {
-    auto res =
+    return
         // exact same type
         static_cast<int>(d) == static_cast<int>(e)
         // same int
@@ -303,14 +303,6 @@ constexpr bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
         || isSameComplexFloatingPoint(d, e)
         // same char
         || isSameChar(d, e);
-    if (!res)
-    {
-        std::cerr << "Comparing Datatype " << d << " to " << e << " failed:\n";
-        std::cerr << "\t(signed: " << isSigned(d) << ", size: " << toBits(d)
-                  << ") -- (signed: " << isSigned(e) << ", size: " << toBits(e)
-                  << ")" << std::endl;
-    }
-    return res;
 }
 } // namespace openPMD
 
