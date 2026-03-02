@@ -96,43 +96,45 @@ std::vector<std::string> list_directory(std::string const &path)
     return ret;
 }
 
-std::string get_parent(std::string const &path)
+#ifndef _WIN32
+// Need to manually preserve sticky bit and setgid on Unix systems
+namespace
 {
-    std::string parent = path;
-    size_t pos = parent.find_last_of(directory_separator);
-    if (pos != std::string::npos)
+    std::string get_parent(std::string const &path)
     {
-        parent = parent.substr(0, pos);
-        if (parent.empty())
-            parent = "/";
-    }
-    else
-    {
-        parent.clear();
-    }
-    return parent;
-}
-
-mode_t get_permissions(std::string const &path)
-{
-    std::string parent = get_parent(path);
-    if (parent.empty())
-    {
-        return 0;
-    }
-    if (!directory_exists(parent))
-    {
-        return 0;
+        std::string parent = path;
+        size_t pos = parent.find_last_of(directory_separator);
+        if (pos != std::string::npos)
+        {
+            parent = parent.substr(0, pos);
+            if (parent.empty())
+                parent = "/";
+        }
+        else
+        {
+            parent.clear();
+        }
+        return parent;
     }
 
-    struct stat s;
-    if (stat(parent.c_str(), &s) != 0)
+    mode_t get_permissions(std::string const &path)
     {
-        return 0;
-    }
+        std::string parent = get_parent(path);
+        if (parent.empty() || !directory_exists(parent))
+        {
+            return 0;
+        }
 
-    return s.st_mode & 07777;
-}
+        struct stat s;
+        if (stat(parent.c_str(), &s) != 0)
+        {
+            return 0;
+        }
+
+        return s.st_mode & 07777;
+    }
+} // namespace
+#endif
 
 bool create_directories(std::string const &path)
 {
