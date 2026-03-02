@@ -2209,7 +2209,6 @@ class APITest(unittest.TestCase):
 
     def testCustomGeometries(self):
         DS = io.Dataset
-        DT = io.Datatype
         sample_data = np.ones([10], dtype=np.int_)
 
         write = io.Series("../samples/custom_geometries_python.json",
