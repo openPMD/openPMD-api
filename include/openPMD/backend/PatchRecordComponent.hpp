@@ -122,7 +122,8 @@ template <typename T>
 inline void PatchRecordComponent::load(std::shared_ptr<T> data)
 {
     Datatype dtype = determineDatatype<T>();
-    if (dtype != getDatatype())
+    // Attention: Do NOT use operator==(), doesnt work properly on Windows!
+    if (!isSame(dtype, getDatatype()))
         throw std::runtime_error(
             "Type conversion during particle patch loading not yet "
             "implemented");

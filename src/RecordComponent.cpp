@@ -833,8 +833,10 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
      * JSON/TOML backends as they might implicitly turn a LONG into an INT in a
      * constant component. The frontend needs to catch such edge cases.
      * Ref. `if (constant())` branch.
+     *
+     * Attention: Do NOT use operator==(), doesnt work properly on Windows!
      */
-    if (dtype != getDatatype() && !constant())
+    if (!isSame(dtype, getDatatype()) && !constant())
     {
         std::string const data_type_str = datatypeToString(getDatatype());
         std::string const requ_type_str =
