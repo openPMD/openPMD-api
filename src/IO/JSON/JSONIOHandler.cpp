@@ -32,7 +32,8 @@ JSONIOHandler::JSONIOHandler(
     openPMD::json::TracingJSON jsonCfg,
     JSONIOHandlerImpl::FileFormat format,
     std::string originalExtension)
-    : AbstractIOHandler{std::move(initialize_from), std::move(path), at, std::move(jsonCfg)}
+    : AbstractIOHandler{
+          std::move(initialize_from), std::move(path), at, std::move(jsonCfg)}
     , m_impl{this, format, std::move(originalExtension)}
 {}
 
@@ -45,7 +46,8 @@ JSONIOHandler::JSONIOHandler(
     openPMD::json::TracingJSON jsonCfg,
     JSONIOHandlerImpl::FileFormat format,
     std::string originalExtension)
-    : AbstractIOHandler{std::move(initialize_from), std::move(path), at, std::move(jsonCfg)}
+    : AbstractIOHandler{
+          std::move(initialize_from), std::move(path), at, std::move(jsonCfg)}
     , m_impl{
           JSONIOHandlerImpl{this, comm, format, std::move(originalExtension)}}
 {}

@@ -513,9 +513,10 @@ void Iteration::read_impl(std::string const &groupPath)
         setDt(Attribute(Attribute::from_any, *aRead.m_resource)
                   .get<long double>());
     // conversion cast if a backend reports an integer type
-    else if (auto val = Attribute(Attribute::from_any, *aRead.m_resource)
-                            .getOptional<double>();
-             val.has_value())
+    else if (
+        auto val = Attribute(Attribute::from_any, *aRead.m_resource)
+                       .getOptional<double>();
+        val.has_value())
         setDt(val.value());
     else
         throw error::ReadError(
@@ -539,9 +540,10 @@ void Iteration::read_impl(std::string const &groupPath)
         setTime(Attribute(Attribute::from_any, *aRead.m_resource)
                     .get<long double>());
     // conversion cast if a backend reports an integer type
-    else if (auto val = Attribute(Attribute::from_any, *aRead.m_resource)
-                            .getOptional<double>();
-             val.has_value())
+    else if (
+        auto val = Attribute(Attribute::from_any, *aRead.m_resource)
+                       .getOptional<double>();
+        val.has_value())
         setTime(val.value());
     else
         throw error::ReadError(

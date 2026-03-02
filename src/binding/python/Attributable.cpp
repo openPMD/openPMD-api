@@ -422,15 +422,17 @@ bool setAttributeFromObject_char(
 #endif
     // this must come after tryCast<vector<char>>,
     // because tryCast<vector<string>> implicitly covers chars as well
-    else if (auto list_of_string = tryCast<ListString>(obj);
-             list_of_string.has_value())
+    else if (
+        auto list_of_string = tryCast<ListString>(obj);
+        list_of_string.has_value())
     {
         return attr.setAttribute<ListString>(key, std::move(*list_of_string));
     }
     // Again: `char` vs. `signed char`, resp. `char` vs. `unsigned char`
     // depending on `char`'s signedness.
-    else if (auto list_of_int = tryCast<std::vector<int>>(obj);
-             list_of_int.has_value())
+    else if (
+        auto list_of_int = tryCast<std::vector<int>>(obj);
+        list_of_int.has_value())
     {
         std::vector<explicit_char_type> casted;
         casted.reserve(list_of_int->size());

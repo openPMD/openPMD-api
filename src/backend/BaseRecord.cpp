@@ -801,9 +801,10 @@ inline void BaseRecord<T_elem>::readBase()
             "timeOffset",
             Attribute(Attribute::from_any, *aRead.m_resource).get<double>());
     // conversion cast if a backend reports an integer type
-    else if (auto val = Attribute(Attribute::from_any, *aRead.m_resource)
-                            .getOptional<double>();
-             val.has_value())
+    else if (
+        auto val = Attribute(Attribute::from_any, *aRead.m_resource)
+                       .getOptional<double>();
+        val.has_value())
         this->setAttribute("timeOffset", val.value());
     else
         throw std::runtime_error(

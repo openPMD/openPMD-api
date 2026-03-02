@@ -114,9 +114,10 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
 
                 engine.Put(var, ptr);
             }
-            else if constexpr (std::is_same_v<
-                                   ptr_type,
-                                   auxiliary::WriteBuffer::CopyableUniquePtr>)
+            else if constexpr (
+                std::is_same_v<
+                    ptr_type,
+                    auxiliary::WriteBuffer::CopyableUniquePtr>)
             {
                 BufferedUniquePtrPut bput;
                 bput.name = std::move(bp.name);

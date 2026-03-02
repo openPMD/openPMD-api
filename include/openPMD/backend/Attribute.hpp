@@ -153,9 +153,10 @@ namespace detail
         {
             U res{};
             res.reserve(pv->size());
-            if constexpr (std::is_convertible_v<
-                              typename T::value_type,
-                              typename U::value_type>)
+            if constexpr (
+                std::is_convertible_v<
+                    typename T::value_type,
+                    typename U::value_type>)
             {
                 std::copy(pv->begin(), pv->end(), std::back_inserter(res));
                 return {res};
@@ -194,9 +195,10 @@ namespace detail
         {
             U res{};
             res.reserve(pv->size());
-            if constexpr (std::is_convertible_v<
-                              typename T::value_type,
-                              typename U::value_type>)
+            if constexpr (
+                std::is_convertible_v<
+                    typename T::value_type,
+                    typename U::value_type>)
             {
                 std::copy(pv->begin(), pv->end(), std::back_inserter(res));
                 return {res};
@@ -234,9 +236,10 @@ namespace detail
         else if constexpr (auxiliary::IsVector_v<T> && auxiliary::IsArray_v<U>)
         {
             U res{};
-            if constexpr (std::is_convertible_v<
-                              typename T::value_type,
-                              typename U::value_type>)
+            if constexpr (
+                std::is_convertible_v<
+                    typename T::value_type,
+                    typename U::value_type>)
             {
                 if (res.size() != pv->size())
                 {

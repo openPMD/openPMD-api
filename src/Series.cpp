@@ -2581,8 +2581,9 @@ std::string Series::iterationFilename(IterationIndex_t i)
     {
         return series.m_overrideFilebasedFilename.value();
     }
-    else if (auto iteration = series.m_iterationFilenames.find(i); //
-             iteration != series.m_iterationFilenames.end())
+    else if (
+        auto iteration = series.m_iterationFilenames.find(i); //
+        iteration != series.m_iterationFilenames.end())
     {
         return iteration->second;
     }
