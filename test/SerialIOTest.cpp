@@ -184,8 +184,6 @@ TEST_CASE("char_roundtrip", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        if (t == "h5")
-            continue;
         char_roundtrip(t);
     }
 }
