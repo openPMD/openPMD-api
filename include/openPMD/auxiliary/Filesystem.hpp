@@ -21,6 +21,7 @@
 #pragma once
 
 #include <string>
+#include <sys/types.h>
 #include <vector>
 
 #include "openPMD/config.hpp"
@@ -65,6 +66,10 @@ namespace auxiliary
      * @return  Vector of all contained files and directories.
      */
     std::vector<std::string> list_directory(std::string const &path);
+
+    std::string get_parent(std::string const &path);
+
+    mode_t get_permissions(std::string const &path);
 
     /** Create all required directories to have a reachable given absolute or
      * relative path.
