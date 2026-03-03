@@ -68,6 +68,20 @@ bool file_exists(std::string const &path)
 
 std::vector<std::string> list_directory(std::string const &path)
 {
+    auto res = list_directory_nothrow(path);
+    if (!res)
+    {
+        throw std::system_error(std::error_code(errno, std::system_category()));
+    }
+    else
+    {
+        return *res;
+    }
+}
+
+std::optional<std::vector<std::string>>
+list_directory_nothrow(std::string const &path)
+{
     std::vector<std::string> ret;
 #ifdef _WIN32
     std::string pattern(path);
@@ -86,7 +100,9 @@ std::vector<std::string> list_directory(std::string const &path)
 #else
     auto directory = opendir(path.c_str());
     if (!directory)
-        throw std::system_error(std::error_code(errno, std::system_category()));
+    {
+        return std::nullopt;
+    }
     dirent *entry;
     while ((entry = readdir(directory)) != nullptr)
         if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
@@ -150,14 +166,20 @@ bool remove_directory(std::string const &path)
         return (0 == remove(p.c_str()));
     };
 #endif
-    for (auto const &entry : list_directory(path))
+    auto entries = list_directory_nothrow(path);
+    // Check if some other process was faster deleting this
+    if (entries)
     {
-        auto partialPath = path;
-        partialPath.append(std::string(1, directory_separator)).append(entry);
-        if (directory_exists(partialPath))
-            success &= remove_directory(partialPath);
-        else if (file_exists(partialPath))
-            success &= remove_file(partialPath);
+        for (auto const &entry : *entries)
+        {
+            auto partialPath = path;
+            partialPath.append(std::string(1, directory_separator))
+                .append(entry);
+            if (directory_exists(partialPath))
+                success &= remove_directory(partialPath);
+            else if (file_exists(partialPath))
+                success &= remove_file(partialPath);
+        }
     }
     success &= del(path);
     return success;
