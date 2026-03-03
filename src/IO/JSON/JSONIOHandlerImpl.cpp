@@ -1538,6 +1538,15 @@ void JSONIOHandlerImpl::readAttribute(
     refreshFileFromParent(writable);
     auto name = removeSlashes(parameters.name);
     auto const &jsonContents = obtainJsonContents(writable);
+    if (!hasKey(jsonContents, "attributes"))
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::NotFound,
+            "JSON",
+            "Tried looking up attribute '" + name + "' at location: " +
+                setAndGetFilePosition(writable, false)->id.to_string());
+    }
     auto const &jsonLoc = jsonContents["attributes"];
     setAndGetFilePosition(writable);
     if (!hasKey(jsonLoc, name))
