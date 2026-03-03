@@ -4,6 +4,23 @@
 
 namespace openPMD::internal
 {
+template <typename T, typename RecordType>
+auto require_type(
+    RecordType &&record,
+    std::optional<error::ReadError> (*handler)(
+        std::remove_reference_t<RecordType> &, T))
+    -> std::shared_ptr<ProcessAttribute>
+{
+    return std::make_shared<RequireType<T>>(
+        std::forward<RecordType>(record), handler);
+}
+
+template <typename T>
+auto require_type() -> std::shared_ptr<ProcessAttribute>
+{
+    return std::make_shared<RequireType<T>>();
+}
+
 namespace
 {
     // Need SFINAE for this since MSVC doesnt understand if constexpr
@@ -70,22 +87,4 @@ auto ConfigAttribute::withGenericSetter(DefaultValue &&defaultVal)
         };
     return *this;
 }
-
-template <typename T, typename RecordType>
-auto require_type(
-    RecordType &&record,
-    std::optional<error::ReadError> (*handler)(
-        std::remove_reference_t<RecordType> &, T))
-    -> std::shared_ptr<ProcessAttribute>
-{
-    return std::make_shared<RequireType<T>>(
-        std::forward<RecordType>(record), handler);
-}
-
-template <typename T>
-auto require_type() -> std::shared_ptr<ProcessAttribute>
-{
-    return std::make_shared<RequireType<T>>();
-}
-
 } // namespace openPMD::internal
