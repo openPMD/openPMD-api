@@ -21,7 +21,7 @@
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
-#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
+#include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
 
 #include <optional>
 

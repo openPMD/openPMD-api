@@ -22,8 +22,8 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
-#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 #include <algorithm>
 

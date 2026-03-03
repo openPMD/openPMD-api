@@ -36,8 +36,8 @@
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
-#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 #include <algorithm>
 #include <exception>

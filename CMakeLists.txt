@@ -428,7 +428,9 @@ set(CORE_SOURCE
         src/backend/Writable.cpp
         src/backend/scientific_defaults/ScientificDefaults.cpp
         src/backend/scientific_defaults/ScientificDefaults_auxiliary.cpp
-        src/backend/scientific_defaults/ScientificDefaults_impl.cpp
+        src/backend/scientific_defaults/ProcessParsedAttribute.cpp
+        src/backend/scientific_defaults/AttributeReader.cpp
+        src/backend/scientific_defaults/ConfigAttribute.cpp
         src/auxiliary/OneDimensionalBlockSlicer.cpp
         src/helper/list_series.cpp
         src/snapshots/ContainerImpls.cpp

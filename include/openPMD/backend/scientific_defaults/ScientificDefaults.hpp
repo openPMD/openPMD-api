@@ -31,7 +31,7 @@ protected:
     //
     // Used both by writeDefaults() and readDefaults().
     //
-    // Use helpers from ScientificDefaults_impl.hpp for writing implementations.
+    // Use helpers from ConfigAttribute.hpp for writing implementations.
     virtual void defaults_impl(bool write, OpenpmdStandard) = 0;
 
     // Called upon Iteration::close(), will fill in defaults below Iteration

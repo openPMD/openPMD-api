@@ -30,8 +30,8 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
+#include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
-#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 // comment so clang-format does not move this
 #include "openPMD/DatatypeMacros.hpp"

@@ -1,26 +1,9 @@
 #pragma once
 
-#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
+#include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
 
 namespace openPMD::internal
 {
-template <typename T, typename RecordType>
-auto require_type(
-    RecordType &&record,
-    std::optional<error::ReadError> (*handler)(
-        std::remove_reference_t<RecordType> &, T))
-    -> std::shared_ptr<ProcessAttribute>
-{
-    return std::make_shared<RequireType<T>>(
-        std::forward<RecordType>(record), handler);
-}
-
-template <typename T>
-auto require_type() -> std::shared_ptr<ProcessAttribute>
-{
-    return std::make_shared<RequireType<T>>();
-}
-
 namespace
 {
     // Need SFINAE for this since MSVC doesnt understand if constexpr
