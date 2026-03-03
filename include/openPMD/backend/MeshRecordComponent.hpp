@@ -21,7 +21,7 @@
 #pragma once
 
 #include "openPMD/RecordComponent.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 #include <vector>
 

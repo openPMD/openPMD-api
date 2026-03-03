@@ -27,7 +27,7 @@
 #include "openPMD/auxiliary/UniquePtr.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 // comment to prevent this include from being moved by clang-format
 #include "openPMD/DatatypeMacros.hpp"

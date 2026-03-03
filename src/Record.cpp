@@ -24,8 +24,8 @@
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
-#include "openPMD/backend/ScientificDefaults_impl.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 #include <iostream>
 

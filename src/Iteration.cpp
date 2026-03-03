@@ -34,10 +34,10 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
-#include "openPMD/backend/ScientificDefaults_impl.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 #include <algorithm>
 #include <exception>

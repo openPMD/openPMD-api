@@ -1,5 +1,5 @@
 
-#include "openPMD/backend/ScientificDefaults_auxiliary.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_auxiliary.hpp"
 
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"

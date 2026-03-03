@@ -23,7 +23,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 #include <string>
 #include <type_traits>

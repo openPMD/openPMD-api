@@ -24,7 +24,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 #include <memory>
 #include <sstream>

@@ -21,8 +21,8 @@
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
-#include "openPMD/backend/ScientificDefaults_impl.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 namespace openPMD
 {

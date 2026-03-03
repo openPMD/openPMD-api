@@ -1,5 +1,5 @@
-#include "openPMD/backend/ScientificDefaults.hpp"
-#include "openPMD/backend/ScientificDefaults_impl.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/backend/Writable.hpp"

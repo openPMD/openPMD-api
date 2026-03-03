@@ -4,7 +4,7 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
-#include "openPMD/backend/ScientificDefaults_auxiliary.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_auxiliary.hpp"
 
 #include <deque>
 #include <optional>
@@ -269,4 +269,4 @@ auto get_float_types() -> std::deque<Datatype>;
 auto get_string_types() -> std::deque<Datatype>;
 } // namespace openPMD::internal
 
-#include "openPMD/backend/ScientificDefaults_impl.tpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.tpp"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "openPMD/backend/ScientificDefaults_impl.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 namespace openPMD::internal
 {

@@ -28,9 +28,9 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
-#include "openPMD/backend/ScientificDefaults_impl.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_impl.hpp"
 
 #include <algorithm>
 #include <iostream>

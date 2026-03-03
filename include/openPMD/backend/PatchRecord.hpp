@@ -22,7 +22,7 @@
 
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
-#include "openPMD/backend/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 #include <string>
 
