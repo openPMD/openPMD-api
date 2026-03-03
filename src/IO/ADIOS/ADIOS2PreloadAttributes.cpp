@@ -248,7 +248,7 @@ PreloadAdiosAttributes::getAttribute(std::string const &name) const
     }
     AttributeLocation const &location = it->second;
     Datatype determinedDatatype = determineDatatype<T>();
-    if (location.dt != determinedDatatype)
+    if (!isSame(location.dt, determinedDatatype))
     {
         std::stringstream errorMsg;
         errorMsg << "[ADIOS2] Wrong datatype for attribute: " << name

@@ -1950,12 +1950,11 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 
     readBase();
 
-    using DT = Datatype;
     aRead.name = "iterationEncoding";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
     IterationEncoding encoding_out;
-    if (*aRead.dtype == DT::STRING)
+    if (isSame(*aRead.dtype, Datatype::STRING))
     {
         std::string encoding = Attribute(Attribute::from_any, *aRead.m_resource)
                                    .get<std::string>();
@@ -2010,7 +2009,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     aRead.name = "iterationFormat";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::STRING)
+    if (isSame(*aRead.dtype, Datatype::STRING))
     {
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         setIterationFormat(Attribute(Attribute::from_any, *aRead.m_resource)

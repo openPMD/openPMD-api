@@ -657,7 +657,7 @@ void RecordComponent::verifyChunk(
     if (empty())
         throw std::runtime_error(
             "Chunks cannot be written for an empty RecordComponent.");
-    if (dtype != getDatatype())
+    if (!isSame(dtype, getDatatype()))
     {
         std::ostringstream oss;
         oss << "Datatypes of chunk data (" << dtype
