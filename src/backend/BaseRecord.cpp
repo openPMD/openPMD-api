@@ -817,7 +817,8 @@ void BaseRecord<T_elem>::eraseScalar()
 }
 
 template <typename T_elem>
-void BaseRecord<T_elem>::defaults_impl(bool write, OpenpmdStandard)
+void BaseRecord<T_elem>::scientificDefaults_impl(
+    bool write, OpenpmdStandard standard)
 {
     using namespace internal;
     auto float_types = get_float_types();

@@ -75,7 +75,7 @@ PatchRecordComponent::PatchRecordComponent() : RecordComponent(NoInit())
 PatchRecordComponent::PatchRecordComponent(NoInit) : RecordComponent(NoInit())
 {}
 
-void PatchRecordComponent::defaults_impl(bool write, OpenpmdStandard)
+void PatchRecordComponent::scientificDefaults_impl(bool write, OpenpmdStandard)
 {
     using namespace internal;
     auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;

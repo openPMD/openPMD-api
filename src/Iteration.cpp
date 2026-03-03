@@ -982,7 +982,7 @@ void Iteration::runDeferredParseAccess()
     }
 }
 
-void Iteration::defaults_impl(bool write, OpenpmdStandard)
+void Iteration::scientificDefaults_impl(bool write, OpenpmdStandard)
 {
     using namespace internal;
     auto float_types = get_float_types();

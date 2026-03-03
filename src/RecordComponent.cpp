@@ -693,7 +693,7 @@ void RecordComponent::verifyChunk(
     }
 }
 
-void RecordComponent::defaults_impl(bool write, OpenpmdStandard)
+void RecordComponent::scientificDefaults_impl(bool write, OpenpmdStandard)
 {
     using namespace internal;
     auto float_types = get_float_types();

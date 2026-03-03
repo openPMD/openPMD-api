@@ -1,13 +1,10 @@
 #pragma once
 
-#include "openPMD/IO/AbstractIOHandler.hpp"
-
-#include <type_traits>
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
 
 namespace openPMD::internal
 {
-struct ConfigAttribute;
-
 /*
  * This is the interface for implementing required scientific attributes defined
  * by the openPMD standard (writing and reading). The interface is inherited by
@@ -31,8 +28,9 @@ protected:
     //
     // Used both by writeDefaults() and readDefaults().
     //
-    // Use helpers from ConfigAttribute.hpp for writing implementations.
-    virtual void defaults_impl(bool write, OpenpmdStandard) = 0;
+    // Use defaultAttribute() for creating an attribute, use helpers inside
+    // ConfigAttribute for defining it.
+    virtual void scientificDefaults_impl(bool write, OpenpmdStandard) = 0;
 
     // Called upon Iteration::close(), will fill in defaults below Iteration
     // level. If the Iteration is not explicitly closed, will be called upon
@@ -43,8 +41,4 @@ protected:
     // Called at appropriate places during parsing.
     void readDefaults(OpenpmdStandard);
 };
-
-template <typename Child>
-constexpr bool HasScientificDefaults_v =
-    std::is_base_of_v<ScientificDefaults, Child>;
 } // namespace openPMD::internal

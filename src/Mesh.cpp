@@ -215,7 +215,7 @@ auto Mesh::retrieveDimensionality() const -> uint64_t
     return 1;
 }
 
-void Mesh::defaults_impl(bool write, OpenpmdStandard standard)
+void Mesh::scientificDefaults_impl(bool write, OpenpmdStandard standard)
 {
     using namespace internal;
     auto float_types = get_float_types();
@@ -279,7 +279,7 @@ void Mesh::defaults_impl(bool write, OpenpmdStandard standard)
             .withReader(float_types, require_type<std::vector<double>>())(wor);
     }
 
-    BaseRecord<MeshRecordComponent>::defaults_impl(write, standard);
+    BaseRecord<MeshRecordComponent>::scientificDefaults_impl(write, standard);
 }
 std::vector<double> Mesh::gridUnitSIPerDimension() const
 {

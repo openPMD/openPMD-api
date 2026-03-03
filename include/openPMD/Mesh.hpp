@@ -334,13 +334,8 @@ private:
     auto retrieveDimensionality() const -> uint64_t;
 
 protected:
-    void defaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
 }; // Mesh
-
-static_assert(internal::IsContainer_v<Mesh>);
-static_assert(std::is_same_v<
-              Container<MeshRecordComponent>,
-              internal::AsContainer_t<Mesh>>);
 
 template <typename T>
 inline std::vector<T> Mesh::gridSpacing() const

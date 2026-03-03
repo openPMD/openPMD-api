@@ -16,11 +16,11 @@ ScientificDefaults::defaultAttribute(Attributable &attr, char const *attrName)
 
 void ScientificDefaults::writeDefaults(OpenpmdStandard standard)
 {
-    defaults_impl(/* write = */ true, standard);
+    scientificDefaults_impl(/* write = */ true, standard);
 }
 
 void ScientificDefaults::readDefaults(OpenpmdStandard standard)
 {
-    defaults_impl(/* write = */ false, standard);
+    scientificDefaults_impl(/* write = */ false, standard);
 }
 } // namespace openPMD::internal

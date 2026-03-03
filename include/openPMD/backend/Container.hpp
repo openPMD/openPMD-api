@@ -354,13 +354,5 @@ namespace internal
 
         ~EraseStaleEntries();
     };
-
-    template <typename T>
-    constexpr bool IsContainer_v = auxiliary::IsTemplateBaseOf_v<Container, T>;
-    template <typename T>
-    using AsContainer_t = auxiliary::AsTemplateBase_t<Container, T>;
-
-    static_assert(!IsContainer_v<int>);
-    static_assert(IsContainer_v<Container<Attributable>>);
 } // namespace internal
 } // namespace openPMD

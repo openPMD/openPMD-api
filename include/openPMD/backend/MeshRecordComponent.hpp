@@ -101,7 +101,7 @@ public:
     }
 
 protected:
-    void defaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
 };
 
 template <typename T>

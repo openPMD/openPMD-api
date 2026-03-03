@@ -28,6 +28,8 @@ struct ConfigAttribute
     ConfigAttribute &operator=(ConfigAttribute const &) = delete;
     ConfigAttribute &operator=(ConfigAttribute &&) = delete;
 
+    // Specify a custom function for setting the default attribute,
+    // instead of just using setAttribute().
     template <typename RecordType, typename S = void, typename GetDefaultValue>
     [[nodiscard]] auto withSetter(
         GetDefaultValue &&getDefaultVal,
@@ -38,10 +40,12 @@ struct ConfigAttribute
                 auxiliary::CallResult_t<GetDefaultValue>,
                 S>> setDefaultVal) -> ConfigAttribute &;
 
+    // Generically use setAttribute() for initializing
     template <typename DefaultValue>
     [[nodiscard]] auto withGenericSetter(DefaultValue &&defaultVal)
         -> ConfigAttribute &;
 
+    // Add readers for attribute parsing
     [[nodiscard]] auto withReader(
         std::deque<Datatype> eligibleDatatypes,
         std::optional<std::shared_ptr<ProcessParsedAttribute>>

@@ -59,10 +59,8 @@ private:
     [[nodiscard]] internal::HomogenizeExtents read();
 
 protected:
-    void defaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
 }; // Record
-
-static_assert(internal::HasScientificDefaults_v<Record>);
 
 template <typename T>
 inline T Record::timeOffset() const

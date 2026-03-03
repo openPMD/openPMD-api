@@ -199,7 +199,7 @@ auto Record::read() -> internal::HomogenizeExtents
     return res;
 }
 
-void Record::defaults_impl(bool write, OpenpmdStandard standard)
+void Record::scientificDefaults_impl(bool write, OpenpmdStandard standard)
 {
     using namespace internal;
     auto float_types = get_float_types();
@@ -224,7 +224,7 @@ void Record::defaults_impl(bool write, OpenpmdStandard standard)
         .template withSetter<Record>(0.f, &Record::setTimeOffset)
         .withReader(float_types, require_scalar)(wor);
 
-    BaseRecord<RecordComponent>::defaults_impl(write, standard);
+    BaseRecord<RecordComponent>::scientificDefaults_impl(write, standard);
 }
 template class BaseRecord<RecordComponent>;
 } // namespace openPMD

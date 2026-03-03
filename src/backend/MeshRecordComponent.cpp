@@ -66,7 +66,8 @@ MeshRecordComponent &MeshRecordComponent::setPosition(std::vector<T> pos)
     return *this;
 }
 
-void MeshRecordComponent::defaults_impl(bool write, OpenpmdStandard standard)
+void MeshRecordComponent::scientificDefaults_impl(
+    bool write, OpenpmdStandard standard)
 {
     using namespace internal;
     auto float_types = get_float_types();
@@ -82,7 +83,7 @@ void MeshRecordComponent::defaults_impl(bool write, OpenpmdStandard standard)
             &MeshRecordComponent::setPosition)
         .withReader(float_types, require_vector)(wor);
 
-    RecordComponent::defaults_impl(write, standard);
+    RecordComponent::scientificDefaults_impl(write, standard);
 }
 template MeshRecordComponent &
 MeshRecordComponent::setPosition(std::vector<float> pos);

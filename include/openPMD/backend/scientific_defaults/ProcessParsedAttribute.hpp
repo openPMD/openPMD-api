@@ -1,13 +1,17 @@
 #pragma once
 
 #include "openPMD/Error.hpp"
-#include "openPMD/Mesh.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
 
 #include <optional>
 #include <string>
 #include <type_traits>
+
+namespace openPMD
+{
+class Mesh;
+}
 
 namespace openPMD::internal
 {
