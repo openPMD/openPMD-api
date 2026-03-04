@@ -2212,7 +2212,6 @@ class APITest(unittest.TestCase):
 
     def testCustomGeometries(self):
         DS = io.Dataset
-        DT = io.Datatype
         sample_data = np.ones([10], dtype=np.int_)
 
         write = io.Series("../samples/custom_geometries_python.json",
@@ -2220,25 +2219,25 @@ class APITest(unittest.TestCase):
         E = write.iterations[0].meshes["E"]
         E.set_attribute("geometry", "other:customGeometry")
         E_x = E["x"]
-        E_x.reset_dataset(DS(DT.LONG, [10]))
+        E_x.reset_dataset(DS(np.dtype(np.int_), [10]))
         E_x[:] = sample_data
 
         B = write.iterations[0].meshes["B"]
         B.set_geometry("customGeometry")
         B_x = B["x"]
-        B_x.reset_dataset(DS(DT.LONG, [10]))
+        B_x.reset_dataset(DS(np.dtype(np.int_), [10]))
         B_x[:] = sample_data
 
         e_energyDensity = write.iterations[0].meshes["e_energyDensity"]
         e_energyDensity.set_geometry("other:customGeometry")
         e_energyDensity_x = e_energyDensity[io.Mesh_Record_Component.SCALAR]
-        e_energyDensity_x.reset_dataset(DS(DT.LONG, [10]))
+        e_energyDensity_x.reset_dataset(DS(np.dtype(np.int_), [10]))
         e_energyDensity_x[:] = sample_data
 
         e_chargeDensity = write.iterations[0].meshes["e_chargeDensity"]
         e_chargeDensity.set_geometry(io.Geometry.other)
         e_chargeDensity_x = e_chargeDensity[io.Mesh_Record_Component.SCALAR]
-        e_chargeDensity_x.reset_dataset(DS(DT.LONG, [10]))
+        e_chargeDensity_x.reset_dataset(DS(np.dtype(np.int_), [10]))
         e_chargeDensity_x[:] = sample_data
 
         self.assertTrue(write)

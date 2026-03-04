@@ -294,7 +294,8 @@ template <typename T>
 inline constexpr Datatype determineDatatype(T &&val)
 {
     (void)val; // don't need this, it only has a name for Doxygen
-    using T_stripped = std::remove_cv_t<std::remove_reference_t<T>>;
+    using T_stripped =
+        std::remove_extent_t<std::remove_cv_t<std::remove_reference_t<T>>>;
     if constexpr (auxiliary::IsPointer_v<T_stripped>)
     {
         return determineDatatype<auxiliary::IsPointer_t<T_stripped>>();
@@ -418,6 +419,8 @@ inline size_t toBits(Datatype d)
 {
     return toBytes(d) * CHAR_BIT;
 }
+
+constexpr bool isSigned(Datatype d);
 
 /** Compare if a Datatype is a vector type
  *
@@ -596,13 +599,18 @@ inline std::tuple<bool, bool> isInteger()
 template <typename T_FP>
 inline bool isSameFloatingPoint(Datatype d)
 {
+    return isSameFloatingPoint(d, determineDatatype<T_FP>());
+}
+
+inline bool isSameFloatingPoint(Datatype d1, Datatype d2)
+{
     // template
-    bool tt_is_fp = isFloatingPoint<T_FP>();
+    bool tt_is_fp = isFloatingPoint(d1);
 
     // Datatype
-    bool dt_is_fp = isFloatingPoint(d);
+    bool dt_is_fp = isFloatingPoint(d2);
 
-    if (tt_is_fp && dt_is_fp && toBits(d) == toBits(determineDatatype<T_FP>()))
+    if (tt_is_fp && dt_is_fp && toBits(d1) == toBits(d2))
         return true;
     else
         return false;
@@ -618,14 +626,18 @@ inline bool isSameFloatingPoint(Datatype d)
 template <typename T_CFP>
 inline bool isSameComplexFloatingPoint(Datatype d)
 {
+    return isSameComplexFloatingPoint(d, determineDatatype<T_CFP>());
+}
+
+inline bool isSameComplexFloatingPoint(Datatype d1, Datatype d2)
+{
     // template
-    bool tt_is_cfp = isComplexFloatingPoint<T_CFP>();
+    bool tt_is_cfp = isComplexFloatingPoint(d1);
 
     // Datatype
-    bool dt_is_cfp = isComplexFloatingPoint(d);
+    bool dt_is_cfp = isComplexFloatingPoint(d2);
 
-    if (tt_is_cfp && dt_is_cfp &&
-        toBits(d) == toBits(determineDatatype<T_CFP>()))
+    if (tt_is_cfp && dt_is_cfp && toBits(d1) == toBits(d2))
         return true;
     else
         return false;
@@ -641,16 +653,21 @@ inline bool isSameComplexFloatingPoint(Datatype d)
 template <typename T_Int>
 inline bool isSameInteger(Datatype d)
 {
+    return isSameInteger(d, determineDatatype<T_Int>());
+}
+
+inline bool isSameInteger(Datatype d1, Datatype d2)
+{
     // template
     bool tt_is_int, tt_is_sig;
-    std::tie(tt_is_int, tt_is_sig) = isInteger<T_Int>();
+    std::tie(tt_is_int, tt_is_sig) = isInteger(d1);
 
     // Datatype
     bool dt_is_int, dt_is_sig;
-    std::tie(dt_is_int, dt_is_sig) = isInteger(d);
+    std::tie(dt_is_int, dt_is_sig) = isInteger(d2);
 
     if (tt_is_int && dt_is_int && tt_is_sig == dt_is_sig &&
-        toBits(d) == toBits(determineDatatype<T_Int>()))
+        toBits(d1) == toBits(d2))
         return true;
     else
         return false;
@@ -691,46 +708,15 @@ constexpr bool isChar(Datatype d)
 template <typename T_Char>
 constexpr bool isSameChar(Datatype d);
 
+constexpr bool isSameChar(Datatype d1, Datatype d2);
+
 /** Comparison for two Datatypes
  *
  * Besides returning true for the same types, identical implementations on
  * some platforms, e.g. if long and long long are the same or double and
  * long double will also return true.
  */
-inline bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
-{
-    // exact same type
-    if (static_cast<int>(d) == static_cast<int>(e))
-        return true;
-
-    bool d_is_vec = isVector(d);
-    bool e_is_vec = isVector(e);
-
-    // same int
-    bool d_is_int, d_is_sig;
-    std::tie(d_is_int, d_is_sig) = isInteger(d);
-    bool e_is_int, e_is_sig;
-    std::tie(e_is_int, e_is_sig) = isInteger(e);
-    if (d_is_int && e_is_int && d_is_vec == e_is_vec && d_is_sig == e_is_sig &&
-        toBits(d) == toBits(e))
-        return true;
-
-    // same float
-    bool d_is_fp = isFloatingPoint(d);
-    bool e_is_fp = isFloatingPoint(e);
-
-    if (d_is_fp && e_is_fp && d_is_vec == e_is_vec && toBits(d) == toBits(e))
-        return true;
-
-    // same complex floating point
-    bool d_is_cfp = isComplexFloatingPoint(d);
-    bool e_is_cfp = isComplexFloatingPoint(e);
-
-    if (d_is_cfp && e_is_cfp && d_is_vec == e_is_vec && toBits(d) == toBits(e))
-        return true;
-
-    return false;
-}
+constexpr bool isSame(openPMD::Datatype d, openPMD::Datatype e);
 
 /**
  * @brief basicDatatype Strip openPMD Datatype of std::vector, std::array et.

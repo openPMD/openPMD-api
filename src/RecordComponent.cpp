@@ -647,7 +647,7 @@ void RecordComponent::verifyChunk(
     if (empty())
         throw std::runtime_error(
             "Chunks cannot be written for an empty RecordComponent.");
-    if (dtype != getDatatype())
+    if (!isSame(dtype, getDatatype()))
     {
         std::ostringstream oss;
         oss << "Datatypes of chunk data (" << dtype
@@ -823,21 +823,19 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
      * JSON/TOML backends as they might implicitly turn a LONG into an INT in a
      * constant component. The frontend needs to catch such edge cases.
      * Ref. `if (constant())` branch.
+     *
+     * Attention: Do NOT use operator==(), doesnt work properly on Windows!
      */
-    if (dtype != getDatatype() && !constant())
-        if (!isSameInteger<T>(getDatatype()) &&
-            !isSameFloatingPoint<T>(getDatatype()) &&
-            !isSameComplexFloatingPoint<T>(getDatatype()) &&
-            !isSameChar<T>(getDatatype()))
-        {
-            std::string const data_type_str = datatypeToString(getDatatype());
-            std::string const requ_type_str =
-                datatypeToString(determineDatatype<T>());
-            std::string err_msg =
-                "Type conversion during chunk loading not yet implemented! ";
-            err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
-            throw std::runtime_error(err_msg);
-        }
+    if (!isSame(dtype, getDatatype()) && !constant())
+    {
+        std::string const data_type_str = datatypeToString(getDatatype());
+        std::string const requ_type_str =
+            datatypeToString(determineDatatype<T>());
+        std::string err_msg =
+            "Type conversion during chunk loading not yet implemented! ";
+        err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
+        throw std::runtime_error(err_msg);
+    }
 
     uint8_t dim = getDimensionality();
 

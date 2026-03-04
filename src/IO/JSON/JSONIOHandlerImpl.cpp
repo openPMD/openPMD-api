@@ -2332,7 +2332,7 @@ auto JSONIOHandlerImpl::verifyDataset(
         }
         Datatype dt = stringToDatatype(j["datatype"].get<std::string>());
         VERIFY_ALWAYS(
-            dt == parameters.dtype,
+            isSame(dt, parameters.dtype),
             "[JSON] Read/Write request does not fit the dataset's type");
     }
     catch (json::basic_json::type_error &)

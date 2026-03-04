@@ -489,7 +489,14 @@ inline void store_chunk(
 
     check_buffer_is_contiguous(a);
 
-    // dtype_from_numpy(a.dtype())
+    if (!dtype_to_numpy(r.getDatatype()).is(a.dtype()))
+    {
+        std::stringstream err;
+        err << "Attempting store from Python array of type '"
+            << dtype_from_numpy(a.dtype())
+            << "' into Record Component of type '" << r.getDatatype() << "'.";
+        throw error::WrongAPIUsage(err.str());
+    }
     switchDatasetType<StoreChunkFromPythonArray>(
         r.getDatatype(), r, a, offset, extent);
 }
@@ -769,6 +776,15 @@ inline void load_chunk(
     }
 
     check_buffer_is_contiguous(a);
+
+    if (!dtype_to_numpy(r.getDatatype()).is(a.dtype()))
+    {
+        std::stringstream err;
+        err << "Attempting load into Python array of type '"
+            << dtype_from_numpy(a.dtype())
+            << "' from Record Component of type '" << r.getDatatype() << "'.";
+        throw error::WrongAPIUsage(err.str());
+    }
 
     switchDatasetType<LoadChunkIntoPythonArray>(
         r.getDatatype(), r, a, offset, extent);

@@ -25,6 +25,7 @@
 // comment to prevent clang-format from moving this #include up
 // datatype macros may be included and un-included in other headers
 #include "openPMD/DatatypeMacros.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 
 #include <string>
 #include <type_traits> // std::void_t
@@ -252,6 +253,56 @@ template <typename T_Char>
 constexpr inline bool isSameChar(Datatype d)
 {
     return switchType<detail::IsSameChar<T_Char>>(d);
+}
+
+namespace detail
+{
+    struct IsSigned
+    {
+        template <typename T>
+        static constexpr bool call()
+        {
+            if constexpr (auxiliary::IsVector_v<T> || auxiliary::IsArray_v<T>)
+            {
+                return call<typename T::value_type>();
+            }
+            else if constexpr (std::is_same_v<T, std::string>)
+            {
+                return call<char>();
+            }
+            else
+            {
+                return std::is_signed_v<T>;
+            }
+        }
+
+        static constexpr char const *errorMsg = "IsSigned";
+    };
+} // namespace detail
+
+constexpr inline bool isSigned(Datatype d)
+{
+    return switchType<detail::IsSigned>(d);
+}
+
+constexpr inline bool isSameChar(Datatype d, Datatype e)
+{
+    return isChar(d) && isChar(e) && isSigned(d) == isSigned(e);
+}
+
+constexpr bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
+{
+    return
+        // exact same type
+        static_cast<int>(d) == static_cast<int>(e)
+        // same int
+        || isSameInteger(d, e)
+        // same float
+        || isSameFloatingPoint(d, e)
+        // same complex floating point
+        || isSameComplexFloatingPoint(d, e)
+        // same char
+        || isSameChar(d, e);
 }
 } // namespace openPMD
 
