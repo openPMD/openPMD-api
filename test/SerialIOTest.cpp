@@ -5404,6 +5404,7 @@ TEST_CASE("variableBasedSingleIteration", "[serial][adios2]")
     }
 }
 
+#if openPMD_HAVE_ADIOS2_BP5
 // verify that the iteration index is cached inside the Iteration object and
 // that Series::indexOf can make use of it to find the map entry without
 // scanning all iterations.
@@ -5438,7 +5439,7 @@ TEST_CASE("iterationIndexCaching", "[serial][adios2]")
 
     remove_file(file);
 }
-
+#endif
 namespace epsilon
 {
 template <typename T>
