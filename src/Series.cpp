@@ -2606,7 +2606,8 @@ Series::iterations_iterator Series::indexOf(Iteration const &iteration)
     auto &series = get();
     // first try the cached index; if it points to the correct entry return it
     auto idx = iteration.get().m_iterationIndex;
-    if (idx != 0) // zero is default/unset but index 0 is valid, so we still check
+    if (idx !=
+        0) // zero is default/unset but index 0 is valid, so we still check
     {
         auto it = series.iterations.find(idx);
         if (it != series.iterations.end() &&

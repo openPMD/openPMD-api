@@ -19,8 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "openPMD/Iteration.hpp" // needed for index caching in operator[]
 #include "openPMD/backend/Container.hpp"
-#include "openPMD/Iteration.hpp"  // needed for index caching in operator[]
 /*
  * Instantiations in src/backend/Container.cpp
  * This file exists so that our tests can include the Container class with

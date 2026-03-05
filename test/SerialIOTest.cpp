@@ -5404,7 +5404,6 @@ TEST_CASE("variableBasedSingleIteration", "[serial][adios2]")
     }
 }
 
-
 // verify that the iteration index is cached inside the Iteration object and
 // that Series::indexOf can make use of it to find the map entry without
 // scanning all iterations.
