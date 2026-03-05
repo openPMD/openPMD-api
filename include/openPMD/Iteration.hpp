@@ -130,6 +130,15 @@ namespace internal
         StepStatus m_stepStatus = StepStatus::NoStep;
 
         /**
+         * Cached copy of the key under which this Iteration lives in
+         * <code>Series::iterations</code>.  Populated when the iteration
+         * object is created/inserted.  This allows constant-time lookup
+         * of the owning map entry instead of a linear scan in
+         * <code>Series::indexOf()</code>.
+         */
+        uint64_t m_iterationIndex = 0;
+
+        /**
          * Information on a parsing request that has not yet been executed.
          * Otherwise empty.
          */
@@ -246,6 +255,18 @@ public:
      */
     bool closed() const;
 
+    /**
+     * @brief Get the cached iteration index.
+     *        This is the key under which this iteration is stored in the
+     *        Series::iterations map. Used for testing the index caching
+     *        optimization.
+     *
+     * @return The cached iteration index.
+     */
+    uint64_t getCachedIterationIndex() const
+    {
+        return get().m_iterationIndex;
+    }
     /**
      * @brief Has the iteration been parsed yet?
               If not, it will contain no structure yet.

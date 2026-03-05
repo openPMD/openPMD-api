@@ -5404,6 +5404,42 @@ TEST_CASE("variableBasedSingleIteration", "[serial][adios2]")
     }
 }
 
+
+// verify that the iteration index is cached inside the Iteration object and
+// that Series::indexOf can make use of it to find the map entry without
+// scanning all iterations.
+TEST_CASE("iterationIndexCaching", "[serial][adios2]")
+{
+    using auxiliary::remove_file;
+    std::string file = "tmp-index-cache.bp5";
+    // ensure a clean slate
+    remove_file(file);
+
+    // write a few iterations and close them
+    {
+        Series s(file, Access::CREATE_LINEAR);
+        for (uint64_t i = 0; i < 3; ++i)
+        {
+            auto &it = s.iterations[i];
+            it.setTime<double>(static_cast<double>(i));
+            it.close();
+        }
+        s.flush();
+    }
+
+    // reopen read-only and inspect internal index
+    {
+        Series s(file, Access::READ_ONLY);
+        for (auto &pair : s.iterations)
+        {
+            auto &iter = pair.second;
+            REQUIRE(iter.getCachedIterationIndex() == pair.first);
+        }
+    }
+
+    remove_file(file);
+}
+
 namespace epsilon
 {
 template <typename T>
