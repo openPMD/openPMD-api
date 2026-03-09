@@ -256,18 +256,6 @@ public:
     bool closed() const;
 
     /**
-     * @brief Get the cached iteration index.
-     *        This is the key under which this iteration is stored in the
-     *        Series::iterations map. Used for testing the index caching
-     *        optimization.
-     *
-     * @return The cached iteration index.
-     */
-    uint64_t getCachedIterationIndex() const
-    {
-        return *get().m_iterationIndex;
-    }
-    /**
      * @brief Has the iteration been parsed yet?
               If not, it will contain no structure yet.
      *
@@ -296,6 +284,16 @@ public:
 
 private:
     Iteration();
+
+    /**
+     * @brief Get the cached iteration index.
+     *        This is the key under which this iteration is stored in the
+     *        Series::iterations map. Used internally for testing the index
+     *        caching optimization.
+     *
+     * @return The cached iteration index.
+     */
+    uint64_t getCachedIterationIndex() const;
 
     using Data_t = internal::IterationData;
     std::shared_ptr<Data_t> m_iterationData;

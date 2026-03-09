@@ -5427,13 +5427,15 @@ TEST_CASE("iterationIndexCaching", "[serial][adios2]")
         s.flush();
     }
 
-    // reopen read-only and inspect internal index
+    // reopen read-only and verify that Series::indexOf can find each iteration
+    // based on the cached index in the Iteration object
     {
         Series s(file, Access::READ_ONLY);
         for (auto &pair : s.iterations)
         {
             auto &iter = pair.second;
-            REQUIRE(iter.getCachedIterationIndex() == pair.first);
+            auto it = s.indexOf(iter);
+            REQUIRE(it->first == pair.first);
         }
     }
 
