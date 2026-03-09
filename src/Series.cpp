@@ -2606,30 +2606,23 @@ Series::iterations_iterator Series::indexOf(Iteration const &iteration)
     auto &series = get();
     // first try the cached index; if it points to the correct entry return it
     auto idx = iteration.get().m_iterationIndex;
-    if (idx !=
-        0) // zero is default/unset but index 0 is valid, so we still check
+    if (!idx.has_value())
     {
-        auto it = series.iterations.find(idx);
-        if (it != series.iterations.end() &&
-            &it->second.Attributable::get() == &iteration.Attributable::get())
-        {
-            return it;
-        }
-        // if the cached index is stale (shouldn't happen), fall back
+        throw error::Internal("Iteration index not known.");
     }
-    // fallback to linear scan for safety
-    for (auto it = series.iterations.begin(); it != series.iterations.end();
-         ++it)
+
+    auto it = series.iterations.find(*idx);
+    if (it != series.iterations.end() &&
+        &it->second.Attributable::get() == &iteration.Attributable::get())
     {
-        if (&it->second.Attributable::get() == &iteration.Attributable::get())
-        {
-            // update cache so future calls are fast
-            it->second.get().m_iterationIndex = it->first;
-            return it;
-        }
+        return it;
     }
-    throw std::runtime_error(
-        "[Iteration::close] Iteration not found in Series.");
+    else
+    {
+        throw error::Internal(
+            "Iteration " + std::to_string(*idx) +
+            " no longer known by the Series?");
+    }
 }
 
 AdvanceStatus Series::advance(

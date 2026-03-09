@@ -136,7 +136,7 @@ namespace internal
          * of the owning map entry instead of a linear scan in
          * <code>Series::indexOf()</code>.
          */
-        uint64_t m_iterationIndex = 0;
+        std::optional<uint64_t> m_iterationIndex = 0;
 
         /**
          * Information on a parsing request that has not yet been executed.
@@ -265,7 +265,7 @@ public:
      */
     uint64_t getCachedIterationIndex() const
     {
-        return get().m_iterationIndex;
+        return *get().m_iterationIndex;
     }
     /**
      * @brief Has the iteration been parsed yet?
