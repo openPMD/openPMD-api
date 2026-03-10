@@ -62,9 +62,9 @@ namespace traits
     {
         constexpr static bool is_noop = false;
         template <typename T>
-        void operator()(T &ret)
+        void operator()(T &it)
         {
-            ret.particlePatches.linkHierarchy(ret.writable());
+            it->second.particlePatches.linkHierarchy(it->second.writable());
         }
     };
 } // namespace traits

@@ -140,7 +140,8 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
 
         T t = T();
         t.linkHierarchy(writable());
-        auto &ret = container().insert({key, std::move(t)}).first->second;
+        auto inserted_iterator = container().insert({key, std::move(t)}).first;
+        auto &ret = inserted_iterator->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
             ret.writable().ownKeyWithinParent = key;
@@ -156,7 +157,7 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
             ret.get().m_iterationIndex = key;
         }
         traits::GenerationPolicy<T> gen;
-        gen(ret);
+        gen(inserted_iterator);
         return ret;
     }
 }
@@ -178,7 +179,8 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
 
         T t = T();
         t.linkHierarchy(writable());
-        auto &ret = container().insert({key, std::move(t)}).first->second;
+        auto inserted_iterator = container().insert({key, std::move(t)}).first;
+        auto &ret = inserted_iterator->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
             ret.writable().ownKeyWithinParent = std::move(key);
@@ -192,7 +194,7 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
             ret.get().m_iterationIndex = key;
         }
         traits::GenerationPolicy<T> gen;
-        gen(ret);
+        gen(inserted_iterator);
         return ret;
     }
 }

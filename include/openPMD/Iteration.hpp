@@ -162,6 +162,8 @@ class Iteration : public Attributable
     friend class Writable;
     friend class StatefulIterator;
     friend class StatefulSnapshotsContainer;
+    template <typename>
+    friend struct traits::GenerationPolicy;
 
 public:
     Iteration(Iteration const &) = default;
@@ -449,6 +451,20 @@ private:
      */
     void runDeferredParseAccess();
 }; // Iteration
+
+namespace traits
+{
+    template <>
+    struct GenerationPolicy<Iteration>
+    {
+        constexpr static bool is_noop = false;
+        template <typename Iterator>
+        void operator()(Iterator &it)
+        {
+            it->second.get().m_iterationIndex = it->first;
+        }
+    };
+} // namespace traits
 
 extern template float Iteration::time<float>() const;
 
