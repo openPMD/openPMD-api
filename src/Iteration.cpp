@@ -59,6 +59,16 @@ Iteration::Iteration() : Attributable(NoInit())
     particles.writable().ownKeyWithinParent = "particles";
 }
 
+uint64_t Iteration::getCachedIterationIndex() const
+{
+    auto idx = get().m_iterationIndex;
+    if (!idx.has_value())
+    {
+        throw error::Internal("Iteration index not known.");
+    }
+    return *idx;
+}
+
 template <typename T>
 Iteration &Iteration::setTime(T newTime)
 {

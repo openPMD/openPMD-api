@@ -130,6 +130,15 @@ namespace internal
         StepStatus m_stepStatus = StepStatus::NoStep;
 
         /**
+         * Cached copy of the key under which this Iteration lives in
+         * <code>Series::iterations</code>.  Populated when the iteration
+         * object is created/inserted.  This allows constant-time lookup
+         * of the owning map entry instead of a linear scan in
+         * <code>Series::indexOf()</code>.
+         */
+        std::optional<uint64_t> m_iterationIndex = 0;
+
+        /**
          * Information on a parsing request that has not yet been executed.
          * Otherwise empty.
          */
@@ -153,6 +162,8 @@ class Iteration : public Attributable
     friend class Writable;
     friend class StatefulIterator;
     friend class StatefulSnapshotsContainer;
+    template <typename>
+    friend struct traits::GenerationPolicy;
 
 public:
     Iteration(Iteration const &) = default;
@@ -275,6 +286,16 @@ public:
 
 private:
     Iteration();
+
+    /**
+     * @brief Get the cached iteration index.
+     *        This is the key under which this iteration is stored in the
+     *        Series::iterations map. Used internally for testing the index
+     *        caching optimization.
+     *
+     * @return The cached iteration index.
+     */
+    uint64_t getCachedIterationIndex() const;
 
     using Data_t = internal::IterationData;
     std::shared_ptr<Data_t> m_iterationData;
@@ -430,6 +451,20 @@ private:
      */
     void runDeferredParseAccess();
 }; // Iteration
+
+namespace traits
+{
+    template <>
+    struct GenerationPolicy<Iteration>
+    {
+        constexpr static bool is_noop = false;
+        template <typename Iterator>
+        void operator()(Iterator &it)
+        {
+            it->second.get().m_iterationIndex = it->first;
+        }
+    };
+} // namespace traits
 
 extern template float Iteration::time<float>() const;
 

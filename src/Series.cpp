@@ -2603,16 +2603,25 @@ std::string Series::iterationFilename(IterationIndex_t i)
 Series::iterations_iterator Series::indexOf(Iteration const &iteration)
 {
     auto &series = get();
-    for (auto it = series.iterations.begin(); it != series.iterations.end();
-         ++it)
+    // first try the cached index; if it points to the correct entry return it
+    auto idx = iteration.get().m_iterationIndex;
+    if (!idx.has_value())
     {
-        if (&it->second.Attributable::get() == &iteration.Attributable::get())
-        {
-            return it;
-        }
+        throw error::Internal("Iteration index not known.");
     }
-    throw std::runtime_error(
-        "[Iteration::close] Iteration not found in Series.");
+
+    auto it = series.iterations.find(*idx);
+    if (it != series.iterations.end() &&
+        &it->second.Attributable::get() == &iteration.Attributable::get())
+    {
+        return it;
+    }
+    else
+    {
+        throw error::Internal(
+            "Iteration " + std::to_string(*idx) +
+            " no longer known by the Series?");
+    }
 }
 
 AdvanceStatus Series::advance(
