@@ -19,8 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "openPMD/Iteration.hpp" // needed for index caching in operator[]
 #include "openPMD/backend/Container.hpp"
+
 /*
  * Instantiations in src/backend/Container.cpp
  * This file exists so that our tests can include the Container class with
@@ -150,12 +150,6 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
         {
             ret.writable().ownKeyWithinParent = std::to_string(key);
         }
-        // remember our key inside the iteration object itself so that
-        // Series::indexOf becomes constant/ log-time instead of linear.
-        if constexpr (std::is_same_v<T, Iteration>)
-        {
-            ret.get().m_iterationIndex = key;
-        }
         traits::GenerationPolicy<T> gen;
         gen(inserted_iterator);
         return ret;
@@ -189,10 +183,6 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
         {
             ret.writable().ownKeyWithinParent = std::to_string(std::move(key));
         }
-        if constexpr (std::is_same_v<T, Iteration>)
-        {
-            ret.get().m_iterationIndex = key;
-        }
         traits::GenerationPolicy<T> gen;
         gen(inserted_iterator);
         return ret;
@@ -213,23 +203,13 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(value_type const &value)
     -> std::pair<iterator, bool>
 {
-    auto res = container().insert(value);
-    if constexpr (std::is_same_v<T, Iteration>)
-    {
-        res.first->second.get().m_iterationIndex = res.first->first;
-    }
-    return res;
+    return container().insert(value);
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(value_type &&value)
     -> std::pair<iterator, bool>
 {
-    auto res = container().insert(value);
-    if constexpr (std::is_same_v<T, Iteration>)
-    {
-        res.first->second.get().m_iterationIndex = res.first->first;
-    }
-    return res;
+    return container().insert(value);
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(
