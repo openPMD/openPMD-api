@@ -485,7 +485,7 @@ OPENPMD_protected
     /** @} */
 
     template <bool flush_entire_series>
-    void seriesFlush_impl(internal::FlushParams const &);
+    void seriesFlush_impl(internal::FlushParams const &, bool flush_io_handler);
 
     void flushAttributes(internal::FlushParams const &);
 

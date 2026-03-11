@@ -22,6 +22,7 @@
 #include "openPMD/Dataset.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -239,10 +240,15 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
     auto &rc = get();
     auto cleanup = defer([&rc, this]() {
         if (rc.m_dataset.has_value() &&
-            rc.m_dataset->dtype != Datatype::UNDEFINED)
+            rc.m_dataset->dtype != Datatype::UNDEFINED &&
+            IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
         {
+            // TODO: try getting flush_io_handler = false to run
             seriesFlush_impl</* flush_entire_series = */ false>(
-                {FlushLevel::SkeletonOnly});
+                {FlushLevel::SkeletonOnly}, /* flush_io_handler = */ true);
+            Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
+            dCreate.name = Attributable::get().m_writable.ownKeyWithinParent;
+            IOHandler()->enqueue(IOTask(this, dCreate));
         }
     });
     if (written())

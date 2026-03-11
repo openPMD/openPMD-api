@@ -349,14 +349,15 @@ uintptr_t Attributable::memoryID() const
 }
 
 template <bool flush_entire_series>
-void Attributable::seriesFlush_impl(internal::FlushParams const &flushParams)
+void Attributable::seriesFlush_impl(
+    internal::FlushParams const &flushParams, bool flush_io_handler)
 {
-    writable().seriesFlush<flush_entire_series>(flushParams);
+    writable().seriesFlush<flush_entire_series>(flushParams, flush_io_handler);
 }
-template void
-Attributable::seriesFlush_impl<true>(internal::FlushParams const &flushParams);
-template void
-Attributable::seriesFlush_impl<false>(internal::FlushParams const &flushParams);
+template void Attributable::seriesFlush_impl<true>(
+    internal::FlushParams const &flushParams, bool flush_io_handler);
+template void Attributable::seriesFlush_impl<false>(
+    internal::FlushParams const &flushParams, bool flush_io_handler);
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)
 {

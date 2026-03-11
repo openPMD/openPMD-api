@@ -52,16 +52,20 @@ Writable::~Writable()
 }
 
 template <bool flush_entire_series>
-void Writable::seriesFlush(std::string backendConfig)
+void Writable::seriesFlush(std::string backendConfig, bool flush_io_handler)
 {
     seriesFlush<flush_entire_series>(
-        internal::FlushParams{FlushLevel::UserFlush, std::move(backendConfig)});
+        internal::FlushParams{FlushLevel::UserFlush, std::move(backendConfig)},
+        flush_io_handler);
 }
-template void Writable::seriesFlush<true>(std::string backendConfig);
-template void Writable::seriesFlush<false>(std::string backendConfig);
+template void
+Writable::seriesFlush<true>(std::string backendConfig, bool flush_io_handler);
+template void
+Writable::seriesFlush<false>(std::string backendConfig, bool flush_io_handler);
 
 template <bool flush_entire_series>
-void Writable::seriesFlush(internal::FlushParams const &flushParams)
+void Writable::seriesFlush(
+    internal::FlushParams const &flushParams, bool flush_io_handler)
 {
     Attributable impl;
     impl.setData({attributable, [](auto const *) {}});
@@ -103,10 +107,10 @@ void Writable::seriesFlush(internal::FlushParams const &flushParams)
             return {series.iterations.begin(), series.iterations.end()};
         }
     }();
-    series.flush_impl(begin, end, flushParams);
+    series.flush_impl(begin, end, flushParams, flush_io_handler);
 }
-template void
-Writable::seriesFlush<true>(internal::FlushParams const &flushParams);
-template void
-Writable::seriesFlush<false>(internal::FlushParams const &flushParams);
+template void Writable::seriesFlush<true>(
+    internal::FlushParams const &flushParams, bool flush_io_handler);
+template void Writable::seriesFlush<false>(
+    internal::FlushParams const &flushParams, bool flush_io_handler);
 } // namespace openPMD

@@ -128,14 +128,15 @@ public:
      * it.
      */
     template <bool flush_entire_series>
-    void seriesFlush(std::string backendConfig = "{}");
+    void
+    seriesFlush(std::string backendConfig = "{}", bool flush_io_handler = true);
 
     // clang-format off
 OPENPMD_private
     // clang-format on
 
     template <bool flush_entire_series>
-    void seriesFlush(internal::FlushParams const &);
+    void seriesFlush(internal::FlushParams const &, bool flush_io_handler);
     /*
      * These members need to be shared pointers since distinct instances of
      * Writable may share them.

@@ -90,6 +90,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     {
         size *= ext;
     }
+
     /*
      * Flushing the skeleton does not create datasets,
      * so we might need to do it now.
