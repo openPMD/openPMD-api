@@ -408,7 +408,6 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             if (!s.containsAttribute("meshesPath"))
             {
                 s.setMeshesPath("meshes/");
-                s.flushMeshesPath();
             }
             if (meshes.dirtyRecursive())
             {
@@ -429,7 +428,6 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             if (!s.containsAttribute("particlesPath"))
             {
                 s.setParticlesPath("particles/");
-                s.flushParticlesPath();
             }
             if (particles.dirtyRecursive())
             {

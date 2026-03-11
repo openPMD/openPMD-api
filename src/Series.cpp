@@ -1688,26 +1688,6 @@ void Series::flushGorVBased(
     }
 }
 
-void Series::flushMeshesPath()
-{
-    Parameter<Operation::WRITE_ATT> aWrite;
-    aWrite.name = "meshesPath";
-    Attribute a = getAttribute("meshesPath");
-    aWrite.m_resource = a.getAny();
-    aWrite.dtype = a.dtype;
-    IOHandler()->enqueue(IOTask(this, aWrite));
-}
-
-void Series::flushParticlesPath()
-{
-    Parameter<Operation::WRITE_ATT> aWrite;
-    aWrite.name = "particlesPath";
-    Attribute a = getAttribute("particlesPath");
-    aWrite.m_resource = a.getAny();
-    aWrite.dtype = a.dtype;
-    IOHandler()->enqueue(IOTask(this, aWrite));
-}
-
 void Series::readFileBased(
     std::optional<IterationIndex_t> read_only_this_single_iteration)
 {
