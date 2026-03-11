@@ -457,7 +457,12 @@ std::future<void> AbstractIOHandlerImpl::flush()
                 auto &parameter = deref_dynamic_cast<Parameter<O::SET_WRITTEN>>(
                     i.parameter.get());
                 writeToStderr(
-                    "[", i.writable->parent, "->", i.writable, "] SET_WRITTEN");
+                    "[",
+                    i.writable->parent,
+                    "->",
+                    i.writable,
+                    "] SET_WRITTEN ",
+                    parameter.target_status ? "true" : "false");
                 setWritten(i.writable, parameter);
                 break;
             }
