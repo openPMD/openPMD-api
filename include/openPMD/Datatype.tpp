@@ -301,11 +301,6 @@ constexpr inline bool isSigned(Datatype d)
     return switchType<detail::IsSigned>(d);
 }
 
-constexpr inline bool isSameChar(Datatype d, Datatype e)
-{
-    return isChar(d) && isChar(e) && isSigned(d) == isSigned(e);
-}
-
 constexpr bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
 {
     return
