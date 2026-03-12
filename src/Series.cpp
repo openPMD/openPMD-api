@@ -1543,6 +1543,8 @@ void Series::flushFileBased(
             }
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
+             * TODO: Ideally, we would skip this in SkeletonOnly flush mode, but
+             * for some reason, this leads to hanging parallel tests..?
              */
             setDirty(allDirty);
         }
