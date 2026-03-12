@@ -1546,8 +1546,7 @@ void Series::flushFileBased(
              */
             setDirty(allDirty);
         }
-        setDirty(false);
-
+        determineUnsetDirty(flushParams.flushLevel);
         // Phase 3
         if (flushIOHandler)
         {

@@ -405,7 +405,8 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 
         if (!meshes.empty() || s.containsAttribute("meshesPath"))
         {
-            if (!s.containsAttribute("meshesPath"))
+            if (!s.containsAttribute("meshesPath") &&
+                flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
             {
                 s.setMeshesPath("meshes/");
             }
@@ -425,7 +426,8 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 
         if (!particles.empty() || s.containsAttribute("particlesPath"))
         {
-            if (!s.containsAttribute("particlesPath"))
+            if (!s.containsAttribute("particlesPath") &&
+                flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
             {
                 s.setParticlesPath("particles/");
             }
