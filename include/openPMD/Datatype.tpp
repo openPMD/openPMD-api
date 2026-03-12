@@ -230,7 +230,7 @@ namespace detail
         {
             return is_char_v<T>;
         }
-        template<size_t N>
+        template <size_t N>
         static constexpr bool call()
         {
             return false;
