@@ -993,7 +993,7 @@ OPENPMD_private
      *
      * @param doFlush If true, flush the IO handler.
      */
-    void flushStep(bool doFlush);
+    void flushStep(bool doFlush, FlushLevel l);
 
     /*
      * setIterationEncoding() should only be called by users of our public API,

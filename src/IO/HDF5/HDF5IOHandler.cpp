@@ -3562,7 +3562,7 @@ auto HDF5IOHandlerImpl::requireFile(
 
 std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
 {
-    auto res = AbstractIOHandlerImpl::flush();
+    auto res = AbstractIOHandlerImpl::flush(params.flushLevel);
 
     if (params.backendConfig.json().contains("hdf5"))
     {

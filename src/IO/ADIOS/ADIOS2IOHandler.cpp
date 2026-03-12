@@ -582,7 +582,7 @@ overrideFlushTarget(FlushTarget &inplace, FlushTarget new_val)
 std::future<void>
 ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
 {
-    auto res = AbstractIOHandlerImpl::flush();
+    auto res = AbstractIOHandlerImpl::flush(flushParams.flushLevel);
 
     detail::ADIOS2File::ADIOS2FlushParams adios2FlushParams{
         flushParams.flushLevel, m_flushTarget};

@@ -27,6 +27,29 @@
 
 #include <utility>
 
+namespace openPMD
+{
+std::ostream &operator<<(std::ostream &os, FlushLevel l)
+{
+    switch (l)
+    {
+    case FlushLevel::UserFlush:
+        os << "UserFlush";
+        break;
+    case FlushLevel::InternalFlush:
+        os << "InternalFlush";
+        break;
+    case FlushLevel::SkeletonOnly:
+        os << "SkeletonOnly";
+        break;
+    case FlushLevel::CreateOrOpenFiles:
+        os << "CreateOrOpenFiles";
+        break;
+    }
+    return os;
+}
+} // namespace openPMD
+
 namespace openPMD::auxiliary
 {
 using pair_t = std::pair<OpenpmdStandard, char const *>;

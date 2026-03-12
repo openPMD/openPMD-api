@@ -26,6 +26,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
+#include <ostream>
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
@@ -80,6 +81,8 @@ enum class FlushLevel
      */
     CreateOrOpenFiles
 };
+
+std::ostream &operator<<(std::ostream &, FlushLevel);
 
 namespace flush_level
 {

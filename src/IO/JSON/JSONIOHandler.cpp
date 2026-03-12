@@ -53,8 +53,8 @@ JSONIOHandler::JSONIOHandler(
 {}
 #endif
 
-std::future<void> JSONIOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> JSONIOHandler::flush(internal::ParsedFlushParams &params)
 {
-    return m_impl.flush();
+    return m_impl.flush(params);
 }
 } // namespace openPMD

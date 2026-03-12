@@ -347,7 +347,7 @@ void Iteration::flushVariableBased(
 
     flush(flushParams);
 
-    if (!written())
+    if (!written() && flush_level::write_datasets(flushParams.flushLevel))
     {
         /* create iteration path */
         Parameter<Operation::OPEN_PATH> pOpen;

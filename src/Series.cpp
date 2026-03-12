@@ -2681,7 +2681,7 @@ AdvanceStatus Series::advance(
 
     if (mode == AdvanceMode::ENDSTEP)
     {
-        flushStep(/* doFlush = */ false);
+        flushStep(/* doFlush = */ false, FlushLevel::UserFlush);
     }
 
     Parameter<Operation::ADVANCE> param;
@@ -2787,7 +2787,7 @@ AdvanceStatus Series::advance(AdvanceMode mode)
 
     if (mode == AdvanceMode::ENDSTEP)
     {
-        flushStep(/* doFlush = */ false);
+        flushStep(/* doFlush = */ false, FlushLevel::UserFlush);
     }
 
     Parameter<Operation::ADVANCE> param;
@@ -2810,8 +2810,12 @@ AdvanceStatus Series::advance(AdvanceMode mode)
     return *param.status;
 }
 
-void Series::flushStep(bool doFlush)
+void Series::flushStep(bool doFlush, FlushLevel l)
 {
+    if (!flush_level::write_datasets(l))
+    {
+        return;
+    }
     auto &series = get();
     if (!series.m_currentlyActiveIterations.empty() &&
         access::write(IOHandler()->m_frontendAccess))
@@ -3315,7 +3319,7 @@ namespace internal
              */
             if (impl.iterationEncoding() != IterationEncoding::fileBased)
             {
-                impl.flushStep(/* doFlush = */ true);
+                impl.flushStep(/* doFlush = */ true, FlushLevel::UserFlush);
             }
         }
         // Not strictly necessary, but clear the map of iterations

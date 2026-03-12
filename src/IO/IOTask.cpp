@@ -35,6 +35,97 @@ Writable *getWritable(Attributable *a)
     return &a->writable();
 }
 
+std::ostream &operator<<(std::ostream &os, Operation op)
+{
+    switch (op)
+    {
+    case Operation::CREATE_FILE:
+        os << "CREATE_FILE";
+        break;
+    case Operation::CHECK_FILE:
+        os << "CHECK_FILE";
+        break;
+    case Operation::OPEN_FILE:
+        os << "OPEN_FILE";
+        break;
+    case Operation::CLOSE_FILE:
+        os << "CLOSE_FILE";
+        break;
+    case Operation::DELETE_FILE:
+        os << "DELETE_FILE";
+        break;
+    case Operation::CREATE_PATH:
+        os << "CREATE_PATH";
+        break;
+    case Operation::CLOSE_PATH:
+        os << "CLOSE_PATH";
+        break;
+    case Operation::OPEN_PATH:
+        os << "OPEN_PATH";
+        break;
+    case Operation::DELETE_PATH:
+        os << "DELETE_PATH";
+        break;
+    case Operation::LIST_PATHS:
+        os << "LIST_PATHS";
+        break;
+    case Operation::CREATE_DATASET:
+        os << "CREATE_DATASET";
+        break;
+    case Operation::EXTEND_DATASET:
+        os << "EXTEND_DATASET";
+        break;
+    case Operation::OPEN_DATASET:
+        os << "OPEN_DATASET";
+        break;
+    case Operation::DELETE_DATASET:
+        os << "DELETE_DATASET";
+        break;
+    case Operation::WRITE_DATASET:
+        os << "WRITE_DATASET";
+        break;
+    case Operation::READ_DATASET:
+        os << "READ_DATASET";
+        break;
+    case Operation::LIST_DATASETS:
+        os << "LIST_DATASETS";
+        break;
+    case Operation::GET_BUFFER_VIEW:
+        os << "GET_BUFFER_VIEW";
+        break;
+    case Operation::DELETE_ATT:
+        os << "DELETE_ATT";
+        break;
+    case Operation::WRITE_ATT:
+        os << "WRITE_ATT";
+        break;
+    case Operation::READ_ATT:
+        os << "READ_ATT";
+        break;
+    case Operation::READ_ATT_ALLSTEPS:
+        os << "READ_ATT_ALLSTEPS";
+        break;
+    case Operation::LIST_ATTS:
+        os << "LIST_ATTS";
+        break;
+    case Operation::ADVANCE:
+        os << "ADVANCE";
+        break;
+    case Operation::AVAILABLE_CHUNKS:
+        os << "AVAILABLE_CHUNKS";
+        break;
+    case Operation::DEREGISTER:
+        os << "DEREGISTER";
+        break;
+    case Operation::TOUCH:
+        os << "TOUCH";
+        break;
+    case Operation::SET_WRITTEN:
+        os << "SET_WRITTEN";
+        break;
+    }
+    return os;
+}
 template <>
 void AbstractParameter::warnUnusedParameters<json::TracingJSON>(
     json::TracingJSON &config,

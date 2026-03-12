@@ -241,7 +241,7 @@ public:
 
     void touch(Writable *, Parameter<Operation::TOUCH> const &) override;
 
-    std::future<void> flush();
+    std::future<void> flush(internal::ParsedFlushParams &params);
 
 private:
 #if openPMD_HAVE_MPI

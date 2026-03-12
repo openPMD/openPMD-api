@@ -35,6 +35,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <variant>
@@ -88,6 +89,8 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
     SET_WRITTEN //!< tell backend to consider a file written / not written
 }; // note: if you change the enum members here, please update
    // docs/source/dev/design.rst
+
+std::ostream &operator<<(std::ostream &os, Operation op);
 
 namespace internal
 {

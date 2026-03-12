@@ -39,7 +39,7 @@ public:
 
     virtual ~AbstractIOHandlerImpl() = default;
 
-    std::future<void> flush();
+    std::future<void> flush(FlushLevel);
 
     /**
      * Close the file corresponding with the writable and release file handles.

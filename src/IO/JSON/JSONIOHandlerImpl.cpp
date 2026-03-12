@@ -24,6 +24,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSONMatcher.hpp"
@@ -444,9 +445,9 @@ void JSONIOHandlerImpl::init(openPMD::json::TracingJSON config)
 
 JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
 
-std::future<void> JSONIOHandlerImpl::flush()
+std::future<void> JSONIOHandlerImpl::flush(internal::ParsedFlushParams &params)
 {
-    AbstractIOHandlerImpl::flush();
+    AbstractIOHandlerImpl::flush(params.flushLevel);
     if (access::readOnly(m_handler->m_backendAccess) && !m_dirty.empty())
     {
         throw error::Internal(
