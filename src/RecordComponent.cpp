@@ -928,14 +928,14 @@ void RecordComponent::loadChunk_impl(
      * Attention: Do NOT use operator==(), doesnt work properly on Windows!
      */
     if (!isSame(dtype_requested, getDatatype()) && !constant())
-        {
-            std::string const data_type_str = datatypeToString(getDatatype());
-            std::string const requ_type_str = datatypeToString(dtype_requested);
-            std::string err_msg =
-                "Type conversion during chunk loading not yet implemented! ";
-            err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
-            throw std::runtime_error(err_msg);
-        }
+    {
+        std::string const data_type_str = datatypeToString(getDatatype());
+        std::string const requ_type_str = datatypeToString(dtype_requested);
+        std::string err_msg =
+            "Type conversion during chunk loading not yet implemented! ";
+        err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
+        throw std::runtime_error(err_msg);
+    }
 
     auto dim = getDimensionality();
     auto [offset, extent, memorySelection] = std::move(cfg);
