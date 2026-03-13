@@ -182,6 +182,7 @@ namespace internal
      * To be used for reading
      */
     FlushParams const defaultFlushParams{};
+    FlushParams const publicFlush{FlushLevel::UserFlush};
 
     struct ParsedFlushParams;
 

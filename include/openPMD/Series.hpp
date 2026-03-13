@@ -909,7 +909,7 @@ OPENPMD_private
         iterations_iterator end,
         internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
-    void flushRankTable();
+    void flushRankTable(FlushLevel);
     /* Parameter `read_only_this_single_iteration` used for reopening an
      * Iteration after closing it.
      */

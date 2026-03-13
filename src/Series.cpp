@@ -405,7 +405,7 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
         readDataset.data = get;
 
         IOHandler()->enqueue(IOTask(&rankTable.m_attributable, readDataset));
-        IOHandler()->flush(internal::defaultFlushParams);
+        IOHandler()->flush(internal::publicFlush);
     };
 
 #if openPMD_HAVE_MPI
@@ -464,8 +464,12 @@ Series &Series::setRankTable(const std::string &myRankInfo)
     return *this;
 }
 
-void Series::flushRankTable()
+void Series::flushRankTable(FlushLevel l)
 {
+    if (!flush_level::global_flushpoint(l))
+    {
+        return;
+    }
     auto &series = get();
     auto &rankTable = series.m_rankTable;
     auto maybeMyRankInfo = std::visit(
@@ -1634,7 +1638,7 @@ void Series::flushGorVBased(
             fCreate.name = series.m_name;
             IOHandler()->enqueue(IOTask(this, fCreate));
 
-            flushRankTable();
+            flushRankTable(flushParams.flushLevel);
         }
 
         series.iterations.flush(

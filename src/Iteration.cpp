@@ -288,7 +288,7 @@ void Iteration::flushFileBased(
         s.get()
             .m_rankTable.m_attributable.get()
             .m_writable.abstractFilePosition.reset();
-        s.flushRankTable();
+        s.flushRankTable(flushParams.flushLevel);
 
         /* create basePath */
         Parameter<Operation::CREATE_PATH> pCreate;

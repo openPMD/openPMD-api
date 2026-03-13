@@ -1975,6 +1975,10 @@ inline void fileBased_write_test(const std::string &backend)
                 "\\",
                 "/"));
 
+        // TODO: somehow make the rank table appear in iteration 1
+        o.iterations[1];
+        o.flush();
+
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
         std::vector<double> position_global(4);
