@@ -1316,6 +1316,12 @@ void ADIOS2IOHandlerImpl::getBufferView(
         parameters.out->backendManagedBuffer = false;
         return;
     }
+    else if (parameters.queryOnly)
+    {
+        parameters.out->backendManagedBuffer = true;
+        return;
+    }
+
     setAndGetFilePosition(writable);
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
