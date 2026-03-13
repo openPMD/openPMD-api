@@ -244,7 +244,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
             IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
         {
             seriesFlush_impl</* flush_entire_series = */ false>(
-                {FlushLevel::SkeletonOnly}, /* flush_io_handler = */ false);
+                {FlushLevel::SkeletonOnly}, /* flush_io_handler = */ true);
         }
     });
     if (written())
