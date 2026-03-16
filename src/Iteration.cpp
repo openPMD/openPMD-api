@@ -387,16 +387,28 @@ void Iteration::flush(internal::FlushParams const &flushParams)
          * meshesPath and particlesPath are stored there */
         Series s = retrieveSeries();
 
+        auto set_and_get_mp_path =
+            [&](char const *attrName,
+                char const *defaultVal,
+                Series &(Series::*set)(std::string const &)) -> std::string {
+            if (s.containsAttribute(attrName))
+            {
+                return s.getAttribute(attrName).get<std::string>();
+            }
+            else
+            {
+                (s.*set)(defaultVal);
+                return defaultVal;
+            }
+        };
+
         if (!meshes.empty() || s.containsAttribute("meshesPath"))
         {
-            if (!s.containsAttribute("meshesPath") &&
-                flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
-            {
-                s.setMeshesPath("meshes/");
-            }
+            auto meshesPath = set_and_get_mp_path(
+                "meshesPath", "meshes/", &Series::setMeshesPath);
             if (meshes.dirtyRecursive())
             {
-                meshes.flush(s.meshesPath(), flushParams);
+                meshes.flush(meshesPath, flushParams);
                 for (auto &m : meshes)
                 {
                     m.second.flush(m.first, flushParams);
@@ -410,14 +422,11 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 
         if (!particles.empty() || s.containsAttribute("particlesPath"))
         {
-            if (!s.containsAttribute("particlesPath") &&
-                flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
-            {
-                s.setParticlesPath("particles/");
-            }
+            auto particlesPath = set_and_get_mp_path(
+                "particlesPath", "particles/", &Series::setParticlesPath);
             if (particles.dirtyRecursive())
             {
-                particles.flush(s.particlesPath(), flushParams);
+                particles.flush(particlesPath, flushParams);
                 for (auto &species : particles)
                 {
                     species.second.flush(species.first, flushParams);

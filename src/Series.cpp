@@ -1498,6 +1498,12 @@ void Series::flushFileBased(
     case Access::APPEND_RANDOM_ACCESS:
     case Access::APPEND_LINEAR: {
         bool allDirty = dirty();
+        // In flush level SkeletonOnly, we might need to set some attributes
+        // (especially: particlesPath, meshesPath), but cannot flush them yet
+        // (as writing attributes is only permissible at higher flush levels).
+        // This flag records if the Series became dirty during this flush. If
+        // yes, we set the Series back to dirty at the end of flushing.
+        bool hasBecomeDirty = false;
         for (auto it = begin; it != end; ++it)
         {
             // Phase 1
@@ -1550,9 +1556,27 @@ void Series::flushFileBased(
              * TODO: Ideally, we would skip this in SkeletonOnly flush mode, but
              * for some reason, this leads to hanging parallel tests..?
              */
+            if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
+            {
+                if (allDirty && !dirty())
+                {
+                    throw error::Internal(
+                        "Flush mode SkeletonOnly must not unset dirty flags.");
+                }
+                hasBecomeDirty |=
+                    flushParams.flushLevel == FlushLevel::SkeletonOnly &&
+                    !allDirty && dirty();
+            }
             setDirty(allDirty);
         }
-        determineUnsetDirty(flushParams.flushLevel);
+        if (!hasBecomeDirty)
+        {
+            determineUnsetDirty(flushParams.flushLevel);
+        }
+        else
+        {
+            setDirty(true);
+        }
         // Phase 3
         if (flushIOHandler)
         {
