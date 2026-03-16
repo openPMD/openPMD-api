@@ -130,7 +130,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
              * actual data yet.
              */
             seriesFlush_impl</* flush_entire_series = */ false>(
-                {FlushLevel::SkeletonOnly});
+                {FlushLevel::SkeletonOnly}, /*flush_io_handler=*/false);
             Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
             dCreate.name = Attributable::get().m_writable.ownKeyWithinParent;
             IOHandler()->enqueue(IOTask(this, dCreate));
