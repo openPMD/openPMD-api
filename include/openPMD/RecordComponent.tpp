@@ -134,7 +134,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
             dCreate.name = Attributable::get().m_writable.ownKeyWithinParent;
             IOHandler()->enqueue(IOTask(this, dCreate));
 
-            setWritten(true, EnqueueAsynchronously::Yes);
+            setWritten(true, EnqueueAsynchronously::OnlyAsync);
         }
 
         IOHandler()->enqueue(IOTask(this, getBufferView));
