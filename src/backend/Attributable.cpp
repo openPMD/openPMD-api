@@ -524,12 +524,18 @@ void Attributable::setWritten(bool val, EnqueueAsynchronously ea)
     switch (ea)
     {
 
-    case EnqueueAsynchronously::Yes: {
+    case EnqueueAsynchronously::OnlyAsync: {
         Parameter<Operation::SET_WRITTEN> param;
         param.target_status = val;
         IOHandler()->enqueue(IOTask(this, param));
+        return;
     }
-    break;
+    case EnqueueAsynchronously::Both: {
+        Parameter<Operation::SET_WRITTEN> param;
+        param.target_status = val;
+        IOHandler()->enqueue(IOTask(this, param));
+        break;
+    }
     case EnqueueAsynchronously::No:
         break;
     }

@@ -1503,9 +1503,9 @@ void Series::flushFileBased(
                  * current iteration by the backend)
                  */
                 this->setWritten(
-                    false, Attributable::EnqueueAsynchronously::Yes);
+                    false, Attributable::EnqueueAsynchronously::Both);
                 series.iterations.setWritten(
-                    false, Attributable::EnqueueAsynchronously::Yes);
+                    false, Attributable::EnqueueAsynchronously::Both);
 
                 setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);
@@ -1996,7 +1996,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         setIterationEncoding_internal(
             encoding_out, internal::default_or_explicit::explicit_);
-        setWritten(old_written, Attributable::EnqueueAsynchronously::Yes);
+        setWritten(old_written, Attributable::EnqueueAsynchronously::Both);
     }
     else
         throw std::runtime_error(

@@ -589,9 +589,10 @@ OPENPMD_protected
     {
         return writable().written;
     }
-    enum class EnqueueAsynchronously : bool
+    enum class EnqueueAsynchronously : uint8_t
     {
-        Yes,
+        OnlyAsync,
+        Both,
         No
     };
     /*
