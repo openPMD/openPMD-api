@@ -301,7 +301,8 @@ not possible once it has been closed.
                     throw std::runtime_error("Unreachable");
                 },
                 // copy + keepalive
-                py::return_value_policy::copy)
+                py::return_value_policy::copy,
+                py::keep_alive<0, 1>())
             .def(
                 "current_iteration",
                 [](Snapshots &s) -> std::optional<IndexedIteration> {
@@ -315,6 +316,7 @@ not possible once it has been closed.
                         return std::nullopt;
                     }
                 },
+                py::keep_alive<0, 1>(),
                 "Return the iteration that is currently being written to, if "
                 "it "
                 "exists.");
@@ -503,7 +505,7 @@ this method.
                 [](Series &s) { return s.iterations; },
                 py::return_value_policy::copy,
                 // garbage collection: return value must be freed before Series
-                py::keep_alive<1, 0>()))
+                py::keep_alive<0, 1>()))
         .def(
             "read_iterations",
             [](Series &s) {
@@ -645,5 +647,18 @@ Parameters:
             py::arg("comm"),
             docs_merge_json)
 #endif
-        ;
+        .def("__del__", [](Series &s) {
+            try
+            {
+                s.close();
+            }
+            catch (std::exception const &e)
+            {
+                std::cerr << "Error during close: " << e.what() << std::endl;
+            }
+            catch (...)
+            {
+                std::cerr << "Unknown error during close." << std::endl;
+            }
+        });
 }

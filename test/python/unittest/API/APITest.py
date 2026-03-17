@@ -2026,6 +2026,9 @@ class APITest(unittest.TestCase):
         # Cleaner: write.close()
         # But let's keep this instance to test that that workflow stays
         # functional.
+        # Need to delete everything as garbage collection will keep `write`
+        # alive as long as E_x is around.
+        del E_x
         del write
 
         read = io.Series(
@@ -2340,6 +2343,170 @@ class APITest(unittest.TestCase):
         series_read_again.flush()
         self.assertEqual(loaded_from_scalar, np.array([45]))
         series_read_again.close()
+
+    def testKeepaliveComponentExtraction(self):
+        """Test that keepalive specifications
+        guard root objects from garbage collection."""
+        self.testKeepaliveMeshComponent()
+        self.testKeepaliveParticlePosition()
+        self.testKeepaliveParticlePatches()
+
+    def testKeepaliveMeshComponent(self):
+        """Test keepalive for mesh component extraction."""
+        for ext in tested_file_extensions:
+            self.backend_keepalive_mesh_component(ext)
+
+    def testKeepaliveParticlePosition(self):
+        """Test keepalive for particle position component extraction."""
+        for ext in tested_file_extensions:
+            self.backend_keepalive_particle_position(ext)
+
+    def testKeepaliveParticlePatches(self):
+        """Test keepalive for particle patches component extraction."""
+        for ext in tested_file_extensions:
+            self.backend_keepalive_particle_patches(ext)
+
+    def backend_keepalive_mesh_component(self, file_ending):
+        """Helper function that tests keepalive
+        for mesh component extraction."""
+        import gc
+
+        filename = "unittest_py_keepalive_mesh." + file_ending
+        path = filename
+
+        def get_component_only():
+            series = io.Series(path, io.Access.create_linear)
+            backend = series.backend
+            iteration = series.snapshots()[0]
+            mesh = iteration.meshes["E"]
+            component = mesh["x"]
+
+            mesh.axis_labels = ["x", "y"]
+            component.reset_dataset(io.Dataset(np.dtype("float"), [10, 10]))
+
+            del iteration
+            del mesh
+            del series
+            gc.collect()
+
+            return component, backend
+
+        component, backend = get_component_only()
+        gc.collect()
+
+        component[:, :] = np.reshape(
+            np.arange(100, dtype=np.dtype("float")),
+            [10, 10]
+        )
+
+        component.series_flush()
+        if backend == "ADIOS2":
+            del component
+            gc.collect()
+
+        read = io.Series(path, io.Access.read_only)
+        loaded = read.snapshots()[0].meshes["E"]["x"][:]
+        read.flush()
+        np.testing.assert_array_equal(
+            loaded,
+            np.reshape(np.arange(100, dtype=np.dtype("float")), [10, 10])
+        )
+
+    def backend_keepalive_particle_position(self, file_ending):
+        """Helper function that tests keepalive
+        for particle position component extraction."""
+        import gc
+
+        filename = "unittest_py_keepalive_particle." + file_ending
+        path = filename
+        num_particles = 100
+
+        def get_component_only():
+            series = io.Series(path, io.Access.create_linear)
+            backend = series.backend
+            iteration = series.snapshots()[0]
+            particles = iteration.particles["electrons"]
+            position = particles["position"]["x"]
+
+            position.reset_dataset(
+                io.Dataset(np.dtype("float"), [num_particles]))
+
+            del iteration
+            del particles
+            del series
+            gc.collect()
+
+            return position, backend
+
+        position, backend = get_component_only()
+        gc.collect()
+
+        position[:] = np.arange(num_particles, dtype=np.dtype("float"))
+
+        position.series_flush()
+        if backend == "ADIOS2":
+            del position
+            gc.collect()
+
+        read = io.Series(path, io.Access.read_only)
+        loaded = read.snapshots()[0] \
+            .particles["electrons"]["position"]["x"][:]
+        read.flush()
+        np.testing.assert_array_equal(
+            loaded,
+            np.arange(num_particles, dtype=np.dtype("float"))
+        )
+
+    def backend_keepalive_particle_patches(self, file_ending):
+        """Helper function that tests keepalive
+        for particle patches extraction."""
+        import gc
+
+        filename = "unittest_py_keepalive_patches." + file_ending
+        path = filename
+
+        def get_component_only():
+            series = io.Series(path, io.Access.create_linear)
+            backend = series.backend
+            iteration = series.snapshots()[0]
+            particles = iteration.particles["electrons"]
+
+            dset = io.Dataset(np.dtype(np.float32), [30])
+            position_x = particles["position"]["x"]
+            position_x.reset_dataset(dset)
+            position_x[:] = np.arange(30, dtype=np.float32)
+
+            dset = io.Dataset(np.dtype("uint64"), [2])
+            num_particles_comp = particles.particle_patches["numParticles"]
+            num_particles_comp.reset_dataset(dset)
+            num_particles_comp.store(0, np.uint64(10))
+            num_particles_comp.store(1, np.uint64(20))
+
+            del iteration
+            del particles
+            del series
+            gc.collect()
+
+            return num_particles_comp, backend
+
+        component, backend = get_component_only()
+        gc.collect()
+
+        component.store(0, np.uint64(50))
+
+        component.series_flush()
+        if backend == "ADIOS2":
+            del component
+            gc.collect()
+
+        read = io.Series(path, io.Access.read_only)
+        loaded = read.snapshots()[0] \
+            .particles["electrons"].particle_patches["numParticles"].load()
+        read.flush()
+        np.testing.assert_array_equal(
+            loaded[0],
+            np.uint64(50)
+        )
 
 
 if __name__ == '__main__':
