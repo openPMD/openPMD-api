@@ -112,6 +112,46 @@ list_directory_nothrow(std::string const &path)
     return ret;
 }
 
+#ifndef _WIN32
+// Need to manually preserve sticky bit and setgid on Unix systems
+namespace
+{
+    std::string get_parent(std::string const &path)
+    {
+        std::string parent = path;
+        size_t pos = parent.find_last_of(directory_separator);
+        if (pos != std::string::npos)
+        {
+            parent = parent.substr(0, pos);
+            if (parent.empty())
+                parent = "/";
+        }
+        else
+        {
+            parent.clear();
+        }
+        return parent;
+    }
+
+    mode_t get_permissions(std::string const &path)
+    {
+        std::string parent = get_parent(path);
+        if (parent.empty() || !directory_exists(parent))
+        {
+            return 0;
+        }
+
+        struct stat s;
+        if (stat(parent.c_str(), &s) != 0)
+        {
+            return 0;
+        }
+
+        return s.st_mode & 07777;
+    }
+} // namespace
+#endif
+
 bool create_directories(std::string const &path)
 {
     if (directory_exists(path))
@@ -122,10 +162,11 @@ bool create_directories(std::string const &path)
         return CreateDirectory(p.c_str(), nullptr);
     };
 #else
-    mode_t mask = umask(0);
-    umask(mask);
-    auto mk = [mask](std::string const &p) -> bool {
-        return (0 == mkdir(p.c_str(), 0777 & ~mask));
+    auto mk = [](std::string const &p) -> bool {
+        // preserve sticky and setgid from parent
+        mode_t parentPerms =
+            get_permissions(get_parent(p)) & (S_ISVTX | S_ISGID);
+        return (0 == mkdir(p.c_str(), 0777 | parentPerms));
     };
 #endif
     std::istringstream ss(path);
