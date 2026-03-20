@@ -127,7 +127,7 @@ Iteration &Iteration::close(bool _flush)
 
     if (access::write(IOHandler()->m_frontendAccess))
     {
-        setDefaultAttributes();
+        populateDefaultMetadata();
     }
 
     if (_flush)
@@ -159,40 +159,6 @@ Iteration &Iteration::close(bool _flush)
         }
     }
     return *this;
-}
-
-void Iteration::setDefaultAttributes()
-{
-    auto standard = IOHandler()->m_standard;
-    visitHierarchy([standard](auto &component) {
-        using ComponentType = std::remove_reference_t<decltype(component)>;
-        if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, ComponentType>)
-        {
-            if (component.empty() && !component.datasetDefined())
-            {
-                std::cerr
-                    << "Cannot flush Record without any contained components: '"
-                    << component.myPath().openPMDPath() << "'. Will ignore.";
-                if (component.written())
-                {
-                    std::cerr
-                        << "\n(Note: The Record seems to have been written "
-                           "previously?)";
-                }
-                std::cerr << std::endl;
-                return;
-            }
-        }
-
-        if constexpr (
-            !std::is_same_v<ComponentType, Container<Mesh>> &&
-            !std::is_same_v<ComponentType, Container<Record>> &&
-            !std::is_same_v<ComponentType, Container<PatchRecord>> &&
-            !std::is_same_v<ComponentType, Container<ParticleSpecies>>)
-        {
-            component.writeDefaults(standard);
-        }
-    });
 }
 
 Iteration &Iteration::open()
@@ -276,6 +242,40 @@ bool Iteration::closedByWriter() const
     {
         return false;
     }
+}
+
+void Iteration::populateDefaultMetadata()
+{
+    auto standard = IOHandler()->m_standard;
+    visitHierarchy([standard](auto &component) {
+        using ComponentType = std::remove_reference_t<decltype(component)>;
+        if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, ComponentType>)
+        {
+            if (component.empty() && !component.datasetDefined())
+            {
+                std::cerr
+                    << "Cannot flush Record without any contained components: '"
+                    << component.myPath().openPMDPath() << "'. Will ignore.";
+                if (component.written())
+                {
+                    std::cerr
+                        << "\n(Note: The Record seems to have been written "
+                           "previously?)";
+                }
+                std::cerr << std::endl;
+                return;
+            }
+        }
+
+        if constexpr (
+            !std::is_same_v<ComponentType, Container<Mesh>> &&
+            !std::is_same_v<ComponentType, Container<Record>> &&
+            !std::is_same_v<ComponentType, Container<PatchRecord>> &&
+            !std::is_same_v<ComponentType, Container<ParticleSpecies>>)
+        {
+            component.writeDefaults(standard);
+        }
+    });
 }
 
 void Iteration::flushFileBased(

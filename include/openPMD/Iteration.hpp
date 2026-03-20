@@ -291,6 +291,11 @@ public:
         particles.visitHierarchy(v);
     }
 
+    // TODO: make this available on every class that inherits from
+    // scientificdefaults for this, somehow make visitHierarchy a non-template,
+    // so we can use it as a virtual function of attributable
+    void populateDefaultMetadata();
+
     Container<Mesh> meshes{};
     Container<ParticleSpecies> particles{}; // particleSpecies?
 
@@ -369,8 +374,6 @@ private:
     void read_impl(std::string const &groupPath);
     void readMeshes(std::string const &meshesPath);
     void readParticles(std::string const &particlesPath);
-
-    void setDefaultAttributes();
 
     /**
      * Status after beginning an IO step. Currently includes:
