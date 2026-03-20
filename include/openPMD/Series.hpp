@@ -65,7 +65,15 @@ namespace openPMD
 class ReadIterations;
 class StatefulIterator;
 class Series;
-class Series;
+
+class Iterations : public Container<Iteration, Iteration::IterationIndex_t>
+{
+public:
+    void visitHierarchy(HierarchyVisitor &v) override
+    {
+        visitHierarchyImpl<Iterations>(v);
+    }
+};
 
 namespace internal
 {
@@ -101,8 +109,8 @@ namespace internal
         SeriesData &operator=(SeriesData &&) = delete;
 
         using IterationIndex_t = Iteration::IterationIndex_t;
-        using IterationsContainer_t = Container<Iteration, IterationIndex_t>;
-        IterationsContainer_t iterations{};
+        using IterationsContainer_t = Iterations;
+        Iterations iterations{};
 
         /**
          * Series::readIterations() returns an iterator type that modifies the
@@ -386,7 +394,7 @@ public:
      * Type for a container of Iterations indexed by IterationIndex_t.
      */
     using IterationsContainer_t = internal::SeriesData::IterationsContainer_t;
-    IterationsContainer_t iterations;
+    Iterations iterations;
 
     /**
      * @brief Is this a usable Series object?

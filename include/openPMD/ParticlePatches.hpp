@@ -38,6 +38,11 @@ public:
     size_t numPatches() const;
     ~ParticlePatches() override = default;
 
+    void visitHierarchy(HierarchyVisitor &v) override
+    {
+        visitHierarchyImpl<ParticlePatches>(v);
+    }
+
 private:
     ParticlePatches() = default;
     void read();

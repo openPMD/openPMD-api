@@ -367,15 +367,6 @@ public:
      */
     bool scalar() const;
 
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        v(*this);
-        for (auto &p : *this)
-        {
-            p.second.visitHierarchy(v);
-        }
-    }
-
 private:
     void flush(std::string const &, internal::FlushParams const &) final;
     virtual void

@@ -31,15 +31,6 @@
 
 namespace openPMD
 {
-template <typename Val, typename Key, typename Map>
-void Container<Val, Key, Map>::visitHierarchy(HierarchyVisitor &v)
-{
-    v(*this);
-    for (auto &p : *this)
-    {
-        p.second.visitHierarchy(v);
-    }
-}
 #define OPENPMD_COMMA ,
 #define OPENPMD_INSTANTIATE(type) template class Container<type>;
 
@@ -59,8 +50,8 @@ namespace internal
 {
     template class EraseStaleEntries<Mesh>;
     template class EraseStaleEntries<ParticleSpecies>;
-    template class EraseStaleEntries<Container<Mesh>>;
-    template class EraseStaleEntries<Container<ParticleSpecies>>;
+    template class EraseStaleEntries<Meshes>;
+    template class EraseStaleEntries<Particles>;
 } // namespace internal
 
 } // namespace openPMD

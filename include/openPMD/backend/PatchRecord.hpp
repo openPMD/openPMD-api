@@ -40,6 +40,11 @@ public:
     PatchRecord &setUnitDimension(unit_representations::AsArray const &udim);
     ~PatchRecord() override = default;
 
+    void visitHierarchy(HierarchyVisitor &v) override
+    {
+        visitHierarchyImpl<PatchRecord>(v);
+    }
+
 private:
     PatchRecord() = default;
 

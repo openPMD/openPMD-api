@@ -147,6 +147,22 @@ namespace internal
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
     };
 } // namespace internal
+class Meshes : public Container<Mesh>
+{
+public:
+    void visitHierarchy(HierarchyVisitor &v) override
+    {
+        visitHierarchyImpl<Meshes>(v);
+    }
+};
+class Particles : public Container<ParticleSpecies>
+{
+public:
+    void visitHierarchy(HierarchyVisitor &v) override
+    {
+        visitHierarchyImpl<Particles>(v);
+    }
+};
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
  * simulation cycle).
  *
@@ -296,8 +312,8 @@ public:
     // so we can use it as a virtual function of attributable
     void populateDefaultMetadata();
 
-    Container<Mesh> meshes{};
-    Container<ParticleSpecies> particles{}; // particleSpecies?
+    Meshes meshes{};
+    Particles particles{}; // particleSpecies?
 
     virtual ~Iteration() = default;
 

@@ -48,7 +48,7 @@ public:
 
     void visitHierarchy(HierarchyVisitor &v) override
     {
-        Container<Record>::visitHierarchy(v);
+        visitHierarchyImpl<ParticleSpecies>(v);
         particlePatches.visitHierarchy(v);
     }
 
