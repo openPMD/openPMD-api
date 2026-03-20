@@ -404,6 +404,10 @@ public:
 
     virtual void visitHierarchy(HierarchyVisitor &);
 
+    // definition inside include/openPMD/backend/HierarchyVisitorImpl.hpp
+    template <typename Lambda>
+    void visitHierarchyFromLambda(Lambda &&lambda);
+
     [[nodiscard]] OpenpmdStandard openPMDStandard() const;
 
     // clang-format off
