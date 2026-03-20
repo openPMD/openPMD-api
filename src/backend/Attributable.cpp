@@ -295,6 +295,11 @@ void Attributable::touch()
     setDirtyRecursive(true);
 }
 
+void Attributable::visitHierarchy(HierarchyVisitor &)
+{
+    throw std::runtime_error("Cannot call this on base class");
+}
+
 OpenpmdStandard Attributable::openPMDStandard() const
 {
     return IOHandler()->m_standard;

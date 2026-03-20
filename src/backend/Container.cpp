@@ -26,10 +26,20 @@
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/HierarchyVisitorImpl.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
 namespace openPMD
 {
+template <typename Val, typename Key, typename Map>
+void Container<Val, Key, Map>::visitHierarchy(HierarchyVisitor &v)
+{
+    v(*this);
+    for (auto &p : *this)
+    {
+        p.second.visitHierarchy(v);
+    }
+}
 #define OPENPMD_COMMA ,
 #define OPENPMD_INSTANTIATE(type) template class Container<type>;
 

@@ -263,15 +263,7 @@ public:
         return container().emplace(std::forward<Args>(args)...);
     }
 
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        v(*this);
-        for (auto &p : *this)
-        {
-            p.second.visitHierarchy(v);
-        }
-    }
-
+    void visitHierarchy(HierarchyVisitor &v) override;
     // clang-format off
 OPENPMD_protected
     // clang-format on
