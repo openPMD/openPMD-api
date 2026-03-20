@@ -89,8 +89,7 @@ public:
     template <typename T>
     void store(T);
 
-    template <typename Visitor>
-    void visitHierarchy(Visitor &&v)
+    void visitHierarchy(HierarchyVisitor &v) override
     {
         v(*this);
     }

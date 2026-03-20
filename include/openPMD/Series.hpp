@@ -31,6 +31,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
@@ -778,8 +779,7 @@ public:
      */
     void close();
 
-    template <typename Visitor>
-    void visitHierarchy(Visitor &&v)
+    void visitHierarchy(HierarchyVisitor &v) override
     {
         v(*this);
         get().iterations.visitHierarchy(v);

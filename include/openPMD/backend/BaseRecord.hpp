@@ -26,6 +26,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 #include <array>
@@ -366,8 +367,7 @@ public:
      */
     bool scalar() const;
 
-    template <typename Visitor>
-    void visitHierarchy(Visitor &&v)
+    void visitHierarchy(HierarchyVisitor &v) override
     {
         v(*this);
         for (auto &p : *this)

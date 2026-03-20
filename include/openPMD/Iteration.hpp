@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 #include <cstdint>
@@ -283,8 +284,7 @@ public:
     [[deprecated("This attribute is no longer set by the openPMD-api.")]] bool
     closedByWriter() const;
 
-    template <typename Visitor>
-    void visitHierarchy(Visitor &&v)
+    void visitHierarchy(HierarchyVisitor &v) override
     {
         v(*this);
         meshes.visitHierarchy(v);

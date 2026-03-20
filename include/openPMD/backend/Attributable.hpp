@@ -25,6 +25,7 @@
 #include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <cstddef>
@@ -400,6 +401,8 @@ public:
      *        been modified.
      */
     void touch();
+
+    virtual void visitHierarchy(HierarchyVisitor &);
 
     [[nodiscard]] OpenpmdStandard openPMDStandard() const;
 

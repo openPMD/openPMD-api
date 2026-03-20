@@ -24,6 +24,7 @@
 #include "openPMD/Record.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 #include <string>
@@ -45,8 +46,7 @@ class ParticleSpecies
 public:
     ParticlePatches particlePatches;
 
-    template <typename Visitor>
-    void visitHierarchy(Visitor &&v)
+    void visitHierarchy(HierarchyVisitor &v) override
     {
         Container<Record>::visitHierarchy(v);
         particlePatches.visitHierarchy(v);

@@ -24,6 +24,7 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/HierarchyVisitor.hpp"
 
 #include <initializer_list>
 #include <map>
@@ -262,8 +263,7 @@ public:
         return container().emplace(std::forward<Args>(args)...);
     }
 
-    template <typename Visitor>
-    void visitHierarchy(Visitor &&v)
+    void visitHierarchy(HierarchyVisitor &v) override
     {
         v(*this);
         for (auto &p : *this)
