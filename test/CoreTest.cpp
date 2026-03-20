@@ -1298,11 +1298,11 @@ TEST_CASE("use_count_test", "[core]")
     else
     {
         REQUIRE(
-                std::get<std::shared_ptr<void>>(
-                    static_cast<Parameter<Operation::WRITE_DATASET> *>(
-                        pprc.get().m_chunks.front().parameter.get())
-                        ->data.as_variant<auxiliary::WriteBufferTypes>())
-                    .use_count() == 1);
+            std::get<std::shared_ptr<void>>(
+                static_cast<Parameter<Operation::WRITE_DATASET> *>(
+                    pprc.get().m_chunks.front().parameter.get())
+                    ->data.as_variant<auxiliary::WriteBufferTypes>())
+                .use_count() == 1);
     }
 #endif
 }
