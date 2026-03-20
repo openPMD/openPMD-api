@@ -34,6 +34,12 @@ void init_Iteration(py::module &m)
     auto py_it_cont = declare_container<PyIterationContainer, Attributable>(
         m, "Iteration_Container");
 
+    py::class_<Meshes, Container<Mesh>, Attributable> meshes(m, "Meshes");
+    py::class_<Particles, Container<ParticleSpecies>, Attributable> particles(
+        m, "Particles");
+    (void)meshes;
+    (void)particles;
+
     // `clang-format on/off` doesn't help here.
     // Writing this without a macro would lead to a huge diff due to
     // clang-format.

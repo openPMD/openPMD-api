@@ -370,6 +370,14 @@ not possible once it has been closed.
         .value("random_access", SnapshotWorkflow::RandomAccess)
         .value("synchronous", SnapshotWorkflow::Synchronous);
 
+    py::class_<
+        Iterations,
+        // huh, do we not declare this anywhere???
+        // Container<Iteration, Iteration::IterationIndex_t>,
+        Attributable>
+        iterations(m, "Iterations");
+    (void)iterations;
+
     py::class_<Series, Attributable> cl(m, "Series");
     ::auxiliary::ForEachType<
         ::internal::DefineSeriesConstructorPerPathType,
