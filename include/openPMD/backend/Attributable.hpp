@@ -408,6 +408,37 @@ public:
     template <typename Lambda>
     void visitHierarchyFromLambda(Lambda &&lambda);
 
+    /**
+     * Recursively freeze structural definitions made so far on the current
+     * object and all its children.
+     *
+     * This includes:
+     * 1. Explicit attribute writes
+     * 2. Implicit attributes, i.e.: Attributes defined by the openPMD standard
+     *    will now be populated with sensible default values
+     * 3. Dataset creation: The Dataset declarations set by resetDataset() will
+     *    now be fixed. Datasets can no longer be changed to constant components
+     *    after this.
+     * 4. Hierarchy setup, i.e. creation of group paths.
+     *
+     * WARNING: this is still under development and not fully implemented yet
+     * (implementation status: only bullet 2. from above. ref.
+     * https://github.com/openPMD/openPMD-api/pull/1862 for the rest.)
+     *
+     * Uses of this include:
+     * 1. Setting up the metadata is a collective operation in some backends
+     *    (read: HDF5). When interacting with a dataset non-collectively (e.g.
+     *    single ranks without data contribution, variable number of blocks per
+     *    rank), this call harmonizes the collective metadata setup.
+     * 2. Forcing the creation of default attributes. By default, these are
+     *    written upon closing the containing Iteration / Series. Calling this
+     *    soon can make data available for early readers (e.g. read while the
+     *    writer is still modifying).
+     *
+     * Modifying the frozen structural setup is only possible insofar as the
+     * backend supports this, e.g. by dataset extension, attribute overwrite or
+     * group deletion.
+     */
     void commitStructuralSetup();
 
     [[nodiscard]] OpenpmdStandard openPMDStandard() const;
