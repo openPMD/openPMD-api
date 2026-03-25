@@ -2376,7 +2376,6 @@ class APITest(unittest.TestCase):
             mesh.axis_labels = ["x", "y"]
             component.reset_dataset(io.Dataset(np.dtype("float"), [10, 10]))
 
-            iteration.populate_default_metadata()
             del iteration
             del mesh
             del series
@@ -2424,7 +2423,6 @@ class APITest(unittest.TestCase):
             position.reset_dataset(
                 io.Dataset(np.dtype("float"), [num_particles]))
 
-            iteration.populate_default_metadata()
             del iteration
             del particles
             del series
@@ -2476,7 +2474,6 @@ class APITest(unittest.TestCase):
             num_particles_comp.store(0, np.uint64(10))
             num_particles_comp.store(1, np.uint64(20))
 
-            iteration.populate_default_metadata()
             del iteration
             del particles
             del series

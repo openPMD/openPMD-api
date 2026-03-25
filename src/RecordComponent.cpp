@@ -516,6 +516,7 @@ void RecordComponent::flush(
             rc.m_chunks.pop();
         }
 
+        populateDefaults(this, flushParams);
         flushAttributes(flushParams);
     }
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)

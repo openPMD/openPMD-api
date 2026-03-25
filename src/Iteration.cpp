@@ -125,10 +125,10 @@ Iteration &Iteration::close(bool _flush)
         break;
     }
 
-    if (access::write(IOHandler()->m_frontendAccess))
-    {
-        populateDefaultMetadata();
-    }
+    // if (access::write(IOHandler()->m_frontendAccess))
+    // {
+    //     populateDefaultMetadata();
+    // }
 
     if (_flush)
     {
@@ -459,6 +459,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             particles.setDirty(false);
         }
 
+        populateDefaults(this, flushParams);
         flushAttributes(flushParams);
     }
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)

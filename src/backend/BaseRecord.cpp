@@ -792,6 +792,10 @@ inline void BaseRecord<T_elem>::flush(
             "one or more regular components.");
     }
 
+    if (access::write(this->IOHandler()->m_backendAccess))
+    {
+        this->populateDefaults(this, flushParams);
+    }
     this->flush_impl(name, flushParams);
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {

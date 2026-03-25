@@ -180,7 +180,7 @@ template <typename T_elem>
 class BaseRecord
     : public Container<T_elem>
     , public T_elem // T_RecordComponent
-// ScientificDefaults already inherited via Container
+// ScientificDefaults already inherited via RecordComponent
 // , internal::ScientificDefaults
 {
 public:

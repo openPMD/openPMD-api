@@ -3,6 +3,11 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
 
+namespace openPMD
+{
+class Attributable;
+}
+
 namespace openPMD::internal
 {
 /*
@@ -15,6 +20,8 @@ namespace openPMD::internal
  */
 class ScientificDefaults
 {
+    friend class ::openPMD::Attributable;
+
 protected:
     [[nodiscard]] auto defaultAttribute(Attributable &, char const *attrName)
         -> ConfigAttribute;
