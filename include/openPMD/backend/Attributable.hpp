@@ -408,6 +408,8 @@ public:
     template <typename Lambda>
     void visitHierarchyFromLambda(Lambda &&lambda);
 
+    void commitStructuralSetup();
+
     [[nodiscard]] OpenpmdStandard openPMDStandard() const;
 
     // clang-format off

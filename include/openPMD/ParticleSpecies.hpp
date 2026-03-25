@@ -42,6 +42,7 @@ class ParticleSpecies
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
     friend class internal::ScientificDefaults;
+    friend class Attributable;
 
 public:
     ParticlePatches particlePatches;

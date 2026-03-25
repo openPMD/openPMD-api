@@ -185,6 +185,7 @@ class Iteration
     template <typename>
     friend struct traits::GenerationPolicy;
     friend class internal::ScientificDefaults;
+    friend class Attributable;
 
 public:
     Iteration(Iteration const &) = default;
@@ -306,11 +307,6 @@ public:
         meshes.visitHierarchy(v);
         particles.visitHierarchy(v);
     }
-
-    // TODO: make this available on every class that inherits from
-    // scientificdefaults for this, somehow make visitHierarchy a non-template,
-    // so we can use it as a virtual function of attributable
-    void populateDefaultMetadata();
 
     Meshes meshes{};
     Particles particles{}; // particleSpecies?

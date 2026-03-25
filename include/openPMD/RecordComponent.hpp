@@ -133,6 +133,7 @@ class RecordComponent
     template <typename T>
     friend T &internal::makeOwning(T &self, Series);
     friend class internal::ScientificDefaults;
+    friend class Attributable;
 
 public:
     enum class Allocation

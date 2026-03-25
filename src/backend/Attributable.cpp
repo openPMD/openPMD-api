@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/HierarchyVisitorImpl.hpp"
 
 #include <algorithm>
 #include <complex>
@@ -298,6 +299,37 @@ void Attributable::touch()
 void Attributable::visitHierarchy(HierarchyVisitor &)
 {
     throw std::runtime_error("Cannot call this on base class");
+}
+
+void Attributable::commitStructuralSetup()
+{
+    auto standard = IOHandler()->m_standard;
+    visitHierarchyFromLambda([standard](auto &component) {
+        using ComponentType = std::remove_reference_t<decltype(component)>;
+        if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, ComponentType>)
+        {
+            if (component.empty() && !component.datasetDefined())
+            {
+                std::cerr
+                    << "Cannot flush Record without any contained components:'"
+                    << component.myPath().openPMDPath() << "'. Will ignore.";
+                if (component.written())
+                {
+                    std::cerr
+                        << "\n(Note: The Record seems to have been written "
+                           "previously?)";
+                }
+                std::cerr << std::endl;
+                return;
+            }
+        }
+
+        if constexpr (
+            std::is_base_of_v<internal::ScientificDefaults, ComponentType>)
+        {
+            component.writeDefaults(standard);
+        }
+    });
 }
 
 OpenpmdStandard Attributable::openPMDStandard() const

@@ -14,11 +14,15 @@ class HierarchyVisitorFromLambda : public HierarchyVisitor
 {
     Lambda lambda;
 
-public:
     template <typename Arg>
     HierarchyVisitorFromLambda(uint8_t /* constructor_tag */, Arg &&arg)
         : lambda(std::forward<Arg>(arg))
     {}
+
+    template <typename Lambda_in>
+    friend auto makeHierarchyVisitorFromLambda(Lambda_in &&lambda);
+
+public:
     void operator()(Iteration &obj) override
     {
         lambda(obj);

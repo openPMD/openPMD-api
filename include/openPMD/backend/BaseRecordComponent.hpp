@@ -82,6 +82,7 @@ class BaseRecordComponent : virtual public Attributable
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
+    friend class Attributable;
 
 public:
     /*

@@ -34,7 +34,6 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
-#include "openPMD/backend/HierarchyVisitorImpl.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
@@ -128,7 +127,7 @@ Iteration &Iteration::close(bool _flush)
 
     // if (access::write(IOHandler()->m_frontendAccess))
     // {
-    //     populateDefaultMetadata();
+    //     commitStructuralSetup();
     // }
 
     if (_flush)
@@ -243,41 +242,6 @@ bool Iteration::closedByWriter() const
     {
         return false;
     }
-}
-
-void Iteration::populateDefaultMetadata()
-{
-    auto standard = IOHandler()->m_standard;
-    visitHierarchyFromLambda([standard](auto &component) {
-        using ComponentType = std::remove_reference_t<decltype(component)>;
-        if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, ComponentType>)
-        {
-            if (component.empty() && !component.datasetDefined())
-            {
-                std::cerr
-                    << "Cannot flush Record without any contained components:'"
-                    << component.myPath().openPMDPath() << "'. Will ignore.";
-                if (component.written())
-                {
-                    std::cerr
-                        << "\n(Note: The Record seems to have been written "
-                           "previously?)";
-                }
-                std::cerr << std::endl;
-                return;
-            }
-        }
-
-        if constexpr (
-            !std::is_same_v<ComponentType, Iterations> &&
-            !std::is_same_v<ComponentType, Meshes> &&
-            !std::is_same_v<ComponentType, ParticlePatches> &&
-            !std::is_same_v<ComponentType, Particles> &&
-            !std::is_same_v<ComponentType, Series>)
-        {
-            component.writeDefaults(standard);
-        }
-    });
 }
 
 void Iteration::flushFileBased(

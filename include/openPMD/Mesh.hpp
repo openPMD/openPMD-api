@@ -44,6 +44,7 @@ class Mesh : public BaseRecord<MeshRecordComponent>
     friend class Container<Mesh>;
     friend class Iteration;
     friend class internal::ScientificDefaults;
+    friend class Attributable;
 
 public:
     Mesh(Mesh const &) = default;

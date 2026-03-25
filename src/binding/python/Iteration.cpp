@@ -98,7 +98,6 @@ void init_Iteration(py::module &m)
         .def("set_time", &Iteration::setTime<double>)
         .def("set_dt", &Iteration::setDt<double>)
         .def("set_time_unit_SI", &Iteration::setTimeUnitSI)
-        .def("populate_default_metadata", &Iteration::populateDefaultMetadata)
 
         .def_property_readonly(
             "meshes",
