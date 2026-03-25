@@ -3571,8 +3571,8 @@ void Series::close()
 
 void Series::visitHierarchy(HierarchyVisitor &v)
 {
-    v(*this);
     get().iterations.visitHierarchy(v);
+    v(*this);
 }
 
 auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>

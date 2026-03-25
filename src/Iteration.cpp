@@ -254,6 +254,13 @@ bool Iteration::closedByWriter() const
     }
 }
 
+void Iteration::visitHierarchy(HierarchyVisitor &v)
+{
+    meshes.visitHierarchy(v);
+    particles.visitHierarchy(v);
+    v(*this);
+}
+
 void Iteration::flushFileBased(
     std::string const &filename,
     IterationIndex_t i,

@@ -266,11 +266,11 @@ public:
     template <typename ChildClass>
     void visitHierarchyImpl(HierarchyVisitor &v)
     {
-        v(*static_cast<ChildClass *>(this));
         for (auto &p : *this)
         {
             p.second.visitHierarchy(v);
         }
+        v(*static_cast<ChildClass *>(this));
     }
 
     // clang-format off

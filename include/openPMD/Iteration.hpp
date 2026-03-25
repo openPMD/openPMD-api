@@ -298,12 +298,7 @@ public:
     [[deprecated("This attribute is no longer set by the openPMD-api.")]] bool
     closedByWriter() const;
 
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        v(*this);
-        meshes.visitHierarchy(v);
-        particles.visitHierarchy(v);
-    }
+    void visitHierarchy(HierarchyVisitor &v) override;
 
     Meshes meshes{};
     Particles particles{};

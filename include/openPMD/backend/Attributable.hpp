@@ -402,9 +402,27 @@ public:
      */
     void touch();
 
-    virtual void visitHierarchy(HierarchyVisitor &);
+    /**
+     * Visitor pattern for the openPMD object hierarchy in postfix traversal.
+     *
+     * @note As the HierarchyVisitor interface can be tedious to implement,
+     *       consider using visitHierarchyFromLambda for a more convenient
+     *       interface.
+     *
+     * @param visitor Operations to run for each object.
+     */
+    virtual void visitHierarchy(HierarchyVisitor &visitor);
 
-    // definition inside include/openPMD/backend/HierarchyVisitorImpl.hpp
+    /**
+     * Visitor pattern for the openPMD object hierarchy in postfix traversal,
+     * lambda version.
+     *
+     * The lambda parameter will be called with a reference to each object in
+     * the current object's enclosed hierarchy.
+     *
+     * @note Definition inside include/openPMD/backend/HierarchyVisitorImpl.hpp.
+     * @param lambda Operations to run for each object.
+     */
     template <typename Lambda>
     void visitHierarchyFromLambda(Lambda &&lambda);
 
