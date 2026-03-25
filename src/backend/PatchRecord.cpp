@@ -47,6 +47,11 @@ PatchRecord::setUnitDimension(unit_representations::AsArray const &udim)
     return *this;
 }
 
+void PatchRecord::visitHierarchy(HierarchyVisitor &v)
+{
+    visitHierarchyImpl<PatchRecord>(v);
+}
+
 void PatchRecord::flush_impl(
     std::string const &path, internal::FlushParams const &flushParams)
 {

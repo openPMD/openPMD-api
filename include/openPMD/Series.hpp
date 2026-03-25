@@ -69,10 +69,7 @@ class Series;
 class Iterations : public Container<Iteration, Iteration::IterationIndex_t>
 {
 public:
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        visitHierarchyImpl<Iterations>(v);
-    }
+    void visitHierarchy(HierarchyVisitor &v) override;
 };
 
 namespace internal
@@ -787,11 +784,7 @@ public:
      */
     void close();
 
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        v(*this);
-        get().iterations.visitHierarchy(v);
-    }
+    void visitHierarchy(HierarchyVisitor &v) override;
 
     /**
      * This overrides Attributable::iterationFlush() which will fail on Series.

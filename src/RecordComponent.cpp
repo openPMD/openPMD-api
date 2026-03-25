@@ -383,6 +383,11 @@ bool RecordComponent::empty() const
     return get().m_isEmpty;
 }
 
+void RecordComponent::visitHierarchy(HierarchyVisitor &v)
+{
+    v(*this);
+}
+
 void RecordComponent::flush(
     std::string const &name, internal::FlushParams const &flushParams)
 {

@@ -37,6 +37,11 @@
 
 namespace openPMD
 {
+void Mesh::visitHierarchy(HierarchyVisitor &v)
+{
+    visitHierarchyImpl<Mesh>(v);
+}
+
 Mesh::Mesh() = default;
 
 Mesh::Geometry Mesh::geometry() const

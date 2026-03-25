@@ -218,6 +218,11 @@ struct Series::ParsedInput
     bool verify_homogeneous_extents = true;
 }; // ParsedInput
 
+void Iterations::visitHierarchy(HierarchyVisitor &v)
+{
+    visitHierarchyImpl<Iterations>(v);
+}
+
 std::string Series::openPMD() const
 {
     return getAttribute("openPMD").get<std::string>();
@@ -3562,6 +3567,12 @@ void Series::close()
 {
     get().close();
     m_attri.reset();
+}
+
+void Series::visitHierarchy(HierarchyVisitor &v)
+{
+    v(*this);
+    get().iterations.visitHierarchy(v);
 }
 
 auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>

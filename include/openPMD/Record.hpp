@@ -50,10 +50,7 @@ public:
     template <typename T>
     Record &setTimeOffset(T);
 
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        visitHierarchyImpl<Record>(v);
-    }
+    void visitHierarchy(HierarchyVisitor &v) override;
 
 private:
     Record();

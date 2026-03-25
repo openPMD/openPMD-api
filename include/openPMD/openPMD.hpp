@@ -45,6 +45,7 @@ namespace openPMD
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/HierarchyVisitorImpl.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"

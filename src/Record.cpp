@@ -31,6 +31,10 @@
 
 namespace openPMD
 {
+void Record::visitHierarchy(HierarchyVisitor &v)
+{
+    visitHierarchyImpl<Record>(v);
+}
 Record::Record() = default;
 
 Record &Record::setUnitDimension(unit_representations::AsMap const &udim)

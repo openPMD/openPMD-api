@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/ParticleSpecies.hpp"
@@ -298,7 +299,8 @@ void Attributable::touch()
 
 void Attributable::visitHierarchy(HierarchyVisitor &)
 {
-    throw std::runtime_error("Cannot call this on base class");
+    throw error::Internal(
+        "[Attributable::visitHierarchy] Cannot call this on base class.");
 }
 
 void Attributable::commitStructuralSetup()

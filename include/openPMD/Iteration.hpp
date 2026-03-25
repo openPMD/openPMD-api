@@ -147,22 +147,19 @@ namespace internal
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
     };
 } // namespace internal
+
 class Meshes : public Container<Mesh>
 {
 public:
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        visitHierarchyImpl<Meshes>(v);
-    }
+    void visitHierarchy(HierarchyVisitor &v) override;
 };
+
 class Particles : public Container<ParticleSpecies>
 {
 public:
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        visitHierarchyImpl<Particles>(v);
-    }
+    void visitHierarchy(HierarchyVisitor &v) override;
 };
+
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
  * simulation cycle).
  *
@@ -309,7 +306,7 @@ public:
     }
 
     Meshes meshes{};
-    Particles particles{}; // particleSpecies?
+    Particles particles{};
 
     virtual ~Iteration() = default;
 

@@ -54,6 +54,11 @@ Extent PatchRecordComponent::getExtent() const
     }
 }
 
+void PatchRecordComponent::visitHierarchy(HierarchyVisitor &v)
+{
+    v(*this);
+}
+
 PatchRecordComponent::PatchRecordComponent(
     BaseRecord<PatchRecordComponent> const &baseRecord)
     : RecordComponent(NoInit())

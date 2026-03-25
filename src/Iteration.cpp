@@ -54,6 +54,16 @@ namespace openPMD
 using internal::CloseStatus;
 using internal::DeferredParseAccess;
 
+void Meshes::visitHierarchy(HierarchyVisitor &v)
+{
+    visitHierarchyImpl<Meshes>(v);
+}
+
+void Particles::visitHierarchy(HierarchyVisitor &v)
+{
+    visitHierarchyImpl<Particles>(v);
+}
+
 Iteration::Iteration() : Attributable(NoInit())
 {
     setData(std::make_shared<Data_t>());
