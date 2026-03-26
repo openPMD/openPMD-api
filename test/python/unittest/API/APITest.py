@@ -2344,13 +2344,6 @@ class APITest(unittest.TestCase):
         self.assertEqual(loaded_from_scalar, np.array([45]))
         series_read_again.close()
 
-    def testKeepaliveComponentExtraction(self):
-        """Test that keepalive specifications
-        guard root objects from garbage collection."""
-        self.testKeepaliveMeshComponent()
-        self.testKeepaliveParticlePosition()
-        self.testKeepaliveParticlePatches()
-
     def testKeepaliveMeshComponent(self):
         """Test keepalive for mesh component extraction."""
         for ext in tested_file_extensions:
