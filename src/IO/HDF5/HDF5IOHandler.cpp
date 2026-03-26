@@ -25,6 +25,7 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
+#include "openPMD/auxiliary/Defer.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
@@ -2506,6 +2507,15 @@ void HDF5IOHandlerImpl::readAttribute(
         H5Pset_all_coll_metadata_ops(fapl, true);
     }
 #endif
+    auto defer_close_fapl = auxiliary::defer([&]() {
+        status = H5Pclose(fapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 "
+                         "attribute during attribute read."
+                      << std::endl;
+        }
+    });
 
     obj_id =
         H5Oopen(file.id, concrete_h5_file_position(writable).c_str(), fapl);
@@ -2519,7 +2529,26 @@ void HDF5IOHandlerImpl::readAttribute(
                 concrete_h5_file_position(writable).c_str() +
                 "' during attribute read");
     }
+    auto defer_close_obj_id = auxiliary::defer([&]() {
+        status = H5Oclose(obj_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close " +
+                    concrete_h5_file_position(writable) +
+                    " during attribute read."
+                      << std::endl;
+            ;
+        }
+    });
     std::string const &attr_name = parameters.name;
+    if (H5Aexists(obj_id, attr_name.c_str()) <= 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::NotFound,
+            "HDF5",
+            parameters.name);
+    }
     attr_id = H5Aopen(obj_id, attr_name.c_str(), H5P_DEFAULT);
     if (attr_id < 0)
     {
@@ -2533,10 +2562,38 @@ void HDF5IOHandlerImpl::readAttribute(
                 concrete_h5_file_position(writable).c_str() +
                 ") during attribute read");
     }
+    auto defer_close_attr_id = auxiliary::defer([&]() {
+        status = H5Aclose(attr_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close attribute " +
+                    attr_name + " at " + concrete_h5_file_position(writable) +
+                    " during attribute read."
+                      << std::endl;
+        }
+    });
 
     hid_t attr_type, attr_space;
     attr_type = H5Aget_type(attr_id);
+    auto defer_close_attr_type = auxiliary::defer([&]() {
+        status = H5Tclose(attr_type);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close attribute "
+                         "file space during attribute read."
+                      << std::endl;
+        }
+    });
     attr_space = H5Aget_space(attr_id);
+    auto defer_close_attr_space = auxiliary::defer([&]() {
+        status = H5Sclose(attr_space);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close attribute "
+                         "datatype during attribute read."
+                      << std::endl;
+        }
+    });
 
     int ndims = H5Sget_simple_extent_ndims(attr_space);
     std::vector<hsize_t> dims(ndims, 0);
@@ -3065,63 +3122,9 @@ void HDF5IOHandlerImpl::readAttribute(
                 " at " + concrete_h5_file_position(writable));
     }
 
-    status = H5Tclose(attr_type);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close attribute datatype during "
-            "attribute read");
-    }
-    status = H5Sclose(attr_space);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close attribute file space "
-            "during "
-            "attribute read");
-    }
-
     auto dtype = parameters.dtype;
     *dtype = a.dtype;
     *parameters.m_resource = a.getAny();
-
-    status = H5Aclose(attr_id);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close attribute " + attr_name +
-                " at " + concrete_h5_file_position(writable) +
-                " during attribute read");
-    }
-    status = H5Oclose(obj_id);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close " +
-                concrete_h5_file_position(writable) + " during attribute read");
-    }
-    status = H5Pclose(fapl);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close HDF5 attribute during "
-            "attribute read");
-    }
 }
 
 void HDF5IOHandlerImpl::listPaths(
