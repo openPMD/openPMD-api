@@ -2559,10 +2559,13 @@ void run_test()
         E_x.storeChunk(data, {unsigned(mpi_rank * 2), 0}, {1, 10});
         E_x.storeChunk(data, {unsigned(mpi_rank * 2 + 1), 0}, {1, 10});
         series.flush();
+        series.close();
     }
+    MPI_Barrier(MPI_COMM_WORLD);
 
     {
-        Series series(filename, openPMD::Access::READ_ONLY, MPI_COMM_WORLD);
+        Series series(
+            filename, openPMD::Access::READ_ONLY /* , MPI_COMM_WORLD */);
         /*
          * Inquire the writing application's "MPI rank -> hostname" mapping.
          * The reading application needs to know about its own mapping.

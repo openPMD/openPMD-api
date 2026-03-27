@@ -94,6 +94,8 @@ std::vector<std::string> distributeStringsToAllRanks(
     int *sizesBuffer = new int[size];
     int *displs = new int[size];
 
+    MPI_Barrier(communicator);
+
     MPI_Allgather(
         &sendLength, 1, MPI_INT, sizesBuffer, 1, MPI_INT, communicator);
 

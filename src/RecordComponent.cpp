@@ -238,15 +238,15 @@ namespace
 RecordComponent &RecordComponent::resetDataset(Dataset d)
 {
     auto &rc = get();
-    auto cleanup = defer([&rc, this]() {
-        if (rc.m_dataset.has_value() &&
-            rc.m_dataset->dtype != Datatype::UNDEFINED &&
-            IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
-        {
-            seriesFlush_impl</* flush_entire_series = */ false>(
-                {FlushLevel::SkeletonOnly}, /* flush_io_handler = */ true);
-        }
-    });
+    // auto cleanup = defer([&rc, this]() {
+    //     if (rc.m_dataset.has_value() &&
+    //         rc.m_dataset->dtype != Datatype::UNDEFINED &&
+    //         IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
+    //     {
+    //         seriesFlush_impl</* flush_entire_series = */ false>(
+    //             {FlushLevel::SkeletonOnly}, /* flush_io_handler = */ true);
+    //     }
+    // });
     if (written())
     {
         if (!rc.m_dataset.has_value())
