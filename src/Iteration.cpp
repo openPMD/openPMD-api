@@ -272,6 +272,10 @@ void Iteration::flushFileBased(
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
     Series s = retrieveSeries();
+    auto &series = s.get();
+
+    bool do_flush_rank_table =
+        !series.m_rankTable.m_attributable.written() || !this->written();
 
     if (!written())
     {
@@ -279,16 +283,6 @@ void Iteration::flushFileBased(
         Parameter<Operation::CREATE_FILE> fCreate;
         fCreate.name = filename;
         IOHandler()->enqueue(IOTask(&s.writable(), fCreate));
-
-        /*
-         * If it was written before, then in the context of another iteration.
-         */
-        auto &attr = s.get().m_rankTable.m_attributable;
-        attr.setWritten(false, Attributable::EnqueueAsynchronously::Both);
-        s.get()
-            .m_rankTable.m_attributable.get()
-            .m_writable.abstractFilePosition.reset();
-        s.flushRankTable(flushParams.flushLevel);
 
         /* create basePath */
         Parameter<Operation::CREATE_PATH> pCreate;
@@ -304,6 +298,18 @@ void Iteration::flushFileBased(
         // operations for read/read-write mode
         /* open file */
         s.openIteration(i, *this);
+    }
+
+    if (do_flush_rank_table)
+    {
+        /*
+         * If it was written before, then in the context of another iteration.
+         */
+        auto &attr = series.m_rankTable.m_attributable;
+        attr.setWritten(false, Attributable::EnqueueAsynchronously::Both);
+        attr.get().m_writable.abstractFilePosition.reset();
+
+        s.flushRankTable(flushParams.flushLevel);
     }
 
     if (flush_level::flush_hierarchy(flushParams.flushLevel))

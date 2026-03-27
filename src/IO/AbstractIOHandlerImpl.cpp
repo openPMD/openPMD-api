@@ -153,6 +153,8 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
 {
     using namespace auxiliary;
 
+    writeToStderr("\nFLUSHING");
+
     while (!(*m_handler).m_work.empty())
     {
         IOTask &i = (*m_handler).m_work.front();
@@ -574,6 +576,7 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
         }
         (*m_handler).m_work.pop();
     }
+    writeToStderr("FLUSHED\n");
     return std::future<void>();
 }
 

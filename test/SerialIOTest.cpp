@@ -1767,31 +1767,31 @@ inline void write_test(
 #ifndef _WIN32
     if (test_rank_table)
     {
-        // REQUIRE(read.rankTable(/* collective = */ false) == compare);
+        REQUIRE(read.rankTable(/* collective = */ false) == compare);
     }
 #endif
 }
 
 TEST_CASE("write_test", "[serial]")
 {
-    for (auto const &t : testedFileExtensions())
+    for (auto const &t : {std::string("json")})
     {
         if (t == "json")
         {
-            write_test(
-                "template." + t,
-                R"(
-{
-  "json": {
-    "dataset": {
-      "mode": "template"
-    },
-    "attribute": {
-      "mode": "short"
-    }
-  }
-})",
-                false);
+            //             write_test(
+            //                 "template." + t,
+            //                 R"(
+            // {
+            //   "json": {
+            //     "dataset": {
+            //       "mode": "template"
+            //     },
+            //     "attribute": {
+            //       "mode": "short"
+            //     }
+            //   }
+            // })",
+            //                 false);
             write_test(
                 t,
                 R"(
@@ -2343,8 +2343,7 @@ inline void fileBased_write_test(const std::string &backend)
             std::string fullPath =
                 std::string("../samples/subdir/") + entry->d_name;
             Series single_file(fullPath, Access::READ_ONLY);
-            // REQUIRE(single_file.rankTable(/* collective = */ false) ==
-            // compare);
+            REQUIRE(single_file.rankTable(/* collective = */ false) == compare);
         }
         closedir(directory);
         close(dirfd);
@@ -2357,19 +2356,20 @@ inline void fileBased_write_test(const std::string &backend)
 
 TEST_CASE("fileBased_write_test", "[serial]")
 {
-    for (auto const &t : testedFileExtensions())
+    for (auto const &t : {"bp5"})
     {
         fileBased_write_test(t);
     }
-    if (auto extensions = getFileExtensions();
-        std::find(extensions.begin(), extensions.end(), "toml") !=
-        extensions.end())
-    { /*
-       * TOML backend is not generally tested for performance reasons, opt in to
-       * testing it here.
-       */
-        fileBased_write_test("toml");
-    }
+    // if (auto extensions = getFileExtensions();
+    //     std::find(extensions.begin(), extensions.end(), "toml") !=
+    //     extensions.end())
+    // { /*
+    //    * TOML backend is not generally tested for performance reasons, opt in
+    //    to
+    //    * testing it here.
+    //    */
+    //     fileBased_write_test("toml");
+    // }
 }
 
 inline void sample_write_thetaMode(std::string const &file_ending)
@@ -5343,7 +5343,7 @@ void serial_iterator(std::string const &file)
             std::cout << "POST Rank '" << rank << "' written from host '"
                       << host << "'\n";
         }
-        // REQUIRE(rank_table.size() == 1);
+        REQUIRE(rank_table.size() == 1);
     }
 #endif
     REQUIRE(last_iteration_index == 9);

@@ -1661,7 +1661,10 @@ void Series::flushGorVBased(
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
             IOHandler()->enqueue(IOTask(this, fCreate));
+        }
 
+        if (!series.m_rankTable.m_attributable.written())
+        {
             flushRankTable(flushParams.flushLevel);
         }
 
