@@ -40,6 +40,12 @@
     static void openPMD_parallel_##name();                                     \
     TEST_CASE(#name, tags)                                                     \
     {                                                                          \
+        int flag;                                                              \
+        MPI_Initialized(&flag);                                                \
+        if (!flag)                                                             \
+        {                                                                      \
+            throw std::runtime_error("MPI IS NOT INITIALIZED");                \
+        }                                                                      \
         MPI_Barrier(MPI_COMM_WORLD);                                           \
         int rank;                                                              \
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);                                  \
@@ -50,6 +56,14 @@
         MPI_Barrier(MPI_COMM_WORLD);                                           \
         openPMD_parallel_##name();                                             \
         MPI_Barrier(MPI_COMM_WORLD);                                           \
+    }                                                                          \
+    static void openPMD_parallel_##name()
+
+#define DEACTIVATE_TEST_CASE(name, tags)                                       \
+    static void openPMD_parallel_##name();                                     \
+    TEST_CASE(#name, tags)                                                     \
+    {                                                                          \
+        return;                                                                \
     }                                                                          \
     static void openPMD_parallel_##name()
 
@@ -512,7 +526,7 @@ void available_chunks_test(std::string const &file_ending)
     }
 }
 
-PARALLEL_TEST_CASE(available_chunks_test, "[parallel][adios]")
+DEACTIVATE_TEST_CASE(available_chunks_test, "[parallel][adios]")
 {
     available_chunks_test("bp");
 }
@@ -574,7 +588,7 @@ PARALLEL_TEST_CASE(extend_dataset, "[parallel]")
 #endif
 
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
-PARALLEL_TEST_CASE(adios_write_test, "[parallel][adios]")
+DEACTIVATE_TEST_CASE(adios_write_test, "[parallel][adios]")
 {
     Series o = Series(
         "../samples/parallel_write.bp",
