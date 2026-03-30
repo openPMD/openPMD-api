@@ -1774,24 +1774,24 @@ inline void write_test(
 
 TEST_CASE("write_test", "[serial]")
 {
-    for (auto const &t : {std::string("json")})
+    for (auto const &t : testedFileExtensions())
     {
         if (t == "json")
         {
-            //             write_test(
-            //                 "template." + t,
-            //                 R"(
-            // {
-            //   "json": {
-            //     "dataset": {
-            //       "mode": "template"
-            //     },
-            //     "attribute": {
-            //       "mode": "short"
-            //     }
-            //   }
-            // })",
-            //                 false);
+            write_test(
+                "template." + t,
+                R"(
+{
+  "json": {
+    "dataset": {
+      "mode": "template"
+    },
+    "attribute": {
+      "mode": "short"
+    }
+  }
+})",
+                false);
             write_test(
                 t,
                 R"(
@@ -1974,10 +1974,6 @@ inline void fileBased_write_test(const std::string &backend)
                 "../samples/subdir/serial_fileBased_write%03T." + backend,
                 "\\",
                 "/"));
-
-        // TODO: somehow make the rank table appear in iteration 1
-        o.iterations[1];
-        o.flush();
 
         ParticleSpecies &e_1 = o.iterations[1].particles["e"];
 
@@ -2356,20 +2352,19 @@ inline void fileBased_write_test(const std::string &backend)
 
 TEST_CASE("fileBased_write_test", "[serial]")
 {
-    for (auto const &t : {"bp5"})
+    for (auto const &t : testedFileExtensions())
     {
         fileBased_write_test(t);
     }
-    // if (auto extensions = getFileExtensions();
-    //     std::find(extensions.begin(), extensions.end(), "toml") !=
-    //     extensions.end())
-    // { /*
-    //    * TOML backend is not generally tested for performance reasons, opt in
-    //    to
-    //    * testing it here.
-    //    */
-    //     fileBased_write_test("toml");
-    // }
+    if (auto extensions = getFileExtensions();
+        std::find(extensions.begin(), extensions.end(), "toml") !=
+        extensions.end())
+    { /*
+       * TOML backend is not generally tested for performance reasons, opt in to
+       * testing it here.
+       */
+        fileBased_write_test("toml");
+    }
 }
 
 inline void sample_write_thetaMode(std::string const &file_ending)
