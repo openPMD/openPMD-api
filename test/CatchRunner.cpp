@@ -29,9 +29,8 @@ int main(int argc, char *argv[])
 
     Catch::Session session;
     // session.configData().runOrder = Catch::TestRunOrder::Declared;
-    session.configData().rngSeed = 3036063643;
-    // MPI_Bcast(
-    //     &session.configData().rngSeed, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
+    MPI_Bcast(
+        &session.configData().rngSeed, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
     int result = session.applyCommandLine(argc, argv);
     if (result == 0)
     {
