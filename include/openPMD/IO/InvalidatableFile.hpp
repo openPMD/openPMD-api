@@ -82,4 +82,14 @@ struct hash<openPMD::InvalidatableFile>
 
     result_type operator()(argument_type const &s) const noexcept;
 };
+
+template <>
+struct less<openPMD::InvalidatableFile>
+{
+    using first_argument_type = openPMD::InvalidatableFile;
+    using second_argument_type = first_argument_type;
+    using result_type = typename std::less<std::string>::result_type;
+    result_type
+    operator()(first_argument_type const &, second_argument_type const &) const;
+};
 } // namespace std
