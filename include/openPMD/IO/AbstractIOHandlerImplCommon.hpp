@@ -28,10 +28,10 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace openPMD
 {
@@ -50,7 +50,10 @@ protected:
      * without the OS path
      */
     std::unordered_map<Writable *, InvalidatableFile> m_files;
-    std::unordered_set<InvalidatableFile> m_dirty;
+    // MUST be an ordered set in order to consistently flush on different
+    // parallel processes (same logic cant apply to m_files since Writable*
+    // pointers are not predictable)
+    std::set<InvalidatableFile> m_dirty;
 
     enum PossiblyExisting
     {

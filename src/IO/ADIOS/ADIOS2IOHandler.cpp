@@ -1747,7 +1747,7 @@ void ADIOS2IOHandlerImpl::listPaths(
      */
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
 
-    std::unordered_set<std::string> subdirs;
+    std::set<std::string> subdirs;
     /*
      * When reading an attribute, we cannot distinguish
      * whether its containing "folder" is a group or a
@@ -1889,7 +1889,7 @@ void ADIOS2IOHandlerImpl::listDatasets(
 
     auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
 
-    std::unordered_set<std::string> subdirs;
+    std::set<std::string> subdirs;
     for (auto var : fileData.availableVariablesPrefixed(myName))
     {
         // if string still contains a slash, variable is a dataset below the

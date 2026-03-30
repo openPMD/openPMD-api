@@ -80,3 +80,9 @@ std::hash<openPMD::InvalidatableFile>::operator()(
     return std::hash<shared_ptr<openPMD::InvalidatableFile::FileState>>{}(
         s.fileState);
 }
+auto std::less<openPMD::InvalidatableFile>::operator()(
+    first_argument_type const &first, second_argument_type const &second) const
+    -> result_type
+{
+    return less<>()(*first, *second);
+}
