@@ -451,7 +451,7 @@ void HDF5IOHandlerImpl::createPath(
         /* Close the groups */
         while (!groups.empty())
         {
-            status = H5Gclose(groups.top());
+            status = H5Gclose(groups.top()); //
             VERIFY(
                 status == 0,
                 "[HDF5] Internal error: Failed to close HDF5 group during path "
@@ -466,7 +466,7 @@ void HDF5IOHandlerImpl::createPath(
         m_fileNames[writable] = file.name;
     }
 
-    status = H5Pclose(gapl);
+    status = H5Pclose(gapl); //
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to close HDF5 property during path "
@@ -1065,32 +1065,32 @@ void HDF5IOHandlerImpl::createDataset(
             "creation");
 
         herr_t status;
-        status = H5Dclose(group_id);
+        status = H5Dclose(group_id); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 dataset during "
             "dataset creation");
-        status = H5Tclose(datatype);
+        status = H5Tclose(datatype); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 datatype during "
             "dataset creation");
-        status = H5Pclose(datasetCreationProperty);
+        status = H5Pclose(datasetCreationProperty); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 dataset creation "
             "property during dataset creation");
-        status = H5Sclose(space);
+        status = H5Sclose(space); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 dataset space during "
             "dataset creation");
-        status = H5Gclose(node_id);
+        status = H5Gclose(node_id); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 group during dataset "
             "creation");
-        status = H5Pclose(gapl);
+        status = H5Pclose(gapl); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 property during "
@@ -1168,7 +1168,7 @@ void HDF5IOHandlerImpl::extendDataset(
         "[HDF5] Internal error: Failed to extend HDF5 dataset during dataset "
         "extension");
 
-    status = H5Dclose(dataset_id);
+    status = H5Dclose(dataset_id); //
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to close HDF5 dataset during dataset "
@@ -1232,13 +1232,13 @@ void HDF5IOHandlerImpl::availableChunks(
     parameters.chunks->emplace_back(std::move(offset), std::move(extent));
 
     herr_t status;
-    status = H5Sclose(dataset_space);
+    status = H5Sclose(dataset_space); //
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to close HDF5 dataset space during "
         "availableChunks task");
 
-    status = H5Dclose(dataset_id);
+    status = H5Dclose(dataset_id); //
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to close HDF5 dataset during "
@@ -1363,7 +1363,7 @@ void HDF5IOHandlerImpl::openPath(
         }
 
         herr_t status;
-        status = H5Gclose(path_id);
+        status = H5Gclose(path_id); //
         if (status != 0)
         {
             throw error::ReadError(
@@ -1376,7 +1376,7 @@ void HDF5IOHandlerImpl::openPath(
     }
 
     herr_t status;
-    status = H5Gclose(node_id);
+    status = H5Gclose(node_id); //
     if (status != 0)
     {
         throw error::ReadError(
@@ -1386,7 +1386,7 @@ void HDF5IOHandlerImpl::openPath(
             "[HDF5] Internal error: Failed to close HDF5 group during path "
             "opening");
     }
-    status = H5Pclose(gapl);
+    status = H5Pclose(gapl); //
     if (status != 0)
     {
         throw error::ReadError(
@@ -1546,12 +1546,12 @@ void HDF5IOHandlerImpl::openDataset(
                 }
                 else if (H5Tequal(dataset_type, next_type))
                 {
-                    H5Tclose(next_type);
+                    H5Tclose(next_type); //
                     throw_error();
                 }
                 else
                 {
-                    if (H5Tclose(dataset_type) != 0)
+                    if (H5Tclose(dataset_type) != 0) //
                     {
                         throw error::ReadError(
                             error::AffectedObject::Group,
@@ -1599,7 +1599,7 @@ void HDF5IOHandlerImpl::openDataset(
     }
 
     herr_t status;
-    status = H5Sclose(dataset_space);
+    status = H5Sclose(dataset_space); //
     if (status != 0)
     {
         throw error::ReadError(
@@ -1609,7 +1609,7 @@ void HDF5IOHandlerImpl::openDataset(
             "Internal error: Failed to close HDF5 dataset space during "
             "dataset opening");
     }
-    status = H5Tclose(dataset_type);
+    status = H5Tclose(dataset_type); //
     if (status != 0)
     {
         throw error::ReadError(
@@ -1619,7 +1619,7 @@ void HDF5IOHandlerImpl::openDataset(
             "Internal error: Failed to close HDF5 dataset type during "
             "dataset opening");
     }
-    status = H5Dclose(dataset_id);
+    status = H5Dclose(dataset_id); //
     if (status != 0)
     {
         throw error::ReadError(
@@ -1629,7 +1629,7 @@ void HDF5IOHandlerImpl::openDataset(
             "Internal error: Failed to close HDF5 dataset during dataset "
             "opening");
     }
-    status = H5Gclose(node_id);
+    status = H5Gclose(node_id); //
     if (status != 0)
     {
         throw error::ReadError(
@@ -1639,7 +1639,7 @@ void HDF5IOHandlerImpl::openDataset(
             "Internal error: Failed to close HDF5 group during dataset "
             "opening");
     }
-    status = H5Pclose(gapl);
+    status = H5Pclose(gapl); //
     if (status != 0)
     {
         throw error::ReadError(
@@ -1730,7 +1730,7 @@ void HDF5IOHandlerImpl::deletePath(
         VERIFY(
             status == 0, "[HDF5] Internal error: Failed to delete HDF5 group");
 
-        status = H5Gclose(node_id);
+        status = H5Gclose(node_id); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 group during path "
@@ -1782,7 +1782,7 @@ void HDF5IOHandlerImpl::deleteDataset(
         VERIFY(
             status == 0, "[HDF5] Internal error: Failed to delete HDF5 group");
 
-        status = H5Gclose(node_id);
+        status = H5Gclose(node_id); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 group during dataset "
@@ -1959,22 +1959,22 @@ void HDF5IOHandlerImpl::writeDataset(
     default:
         throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }
-    status = H5Tclose(dataType);
+    status = H5Tclose(dataType); //
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to close dataset datatype during "
         "dataset write");
-    status = H5Sclose(filespace);
+    status = H5Sclose(filespace); //
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to close dataset file space during "
         "dataset write");
-    status = H5Sclose(memspace);
+    status = H5Sclose(memspace); //
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to close dataset memory space during "
         "dataset write");
-    status = H5Dclose(dataset_id);
+    status = H5Dclose(dataset_id); //
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to close dataset " +
@@ -2075,7 +2075,7 @@ void HDF5IOHandlerImpl::writeAttribute(
             node_id >= 0,
             "[HDF5] Internal error: Failed to create HDF5 attribute during "
             "attribute write");
-        status = H5Sclose(dataspace);
+        status = H5Sclose(dataspace); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 dataspace during "
@@ -2503,7 +2503,7 @@ void HDF5IOHandlerImpl::readDataset(
         {
             dataType = m_H5T_LONG_DOUBLE_80_LE;
         }
-        status = H5Tclose(checkDatasetTypeAgain);
+        status = H5Tclose(checkDatasetTypeAgain); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 dataset type during "
@@ -2517,7 +2517,7 @@ void HDF5IOHandlerImpl::readDataset(
         {
             dataType = m_H5T_CLONG_DOUBLE_80_LE;
         }
-        status = H5Tclose(checkDatasetTypeAgain);
+        status = H5Tclose(checkDatasetTypeAgain); //
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to close HDF5 dataset type during "
