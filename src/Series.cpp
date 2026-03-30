@@ -571,6 +571,11 @@ void Series::flushRankTable()
                 [asRawPtr](char *) { delete asRawPtr; }};
             writeDataset(std::move(put), /* num_lines = */ size);
         }
+
+        // Must ensure that the Writable is consistently set to written on all
+        // ranks
+        series.m_rankTable.m_attributable.setWritten(
+            true, EnqueueAsynchronously::OnlyAsync);
         return;
     }
 #endif
