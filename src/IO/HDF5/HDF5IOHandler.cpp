@@ -1898,18 +1898,38 @@ void HDF5IOHandlerImpl::writeDataset(
 
     File file = requireFile("writeDataset", writable, /* checkParent = */ true);
 
-    hid_t dataset_id, filespace, memspace;
     herr_t status;
+    hid_t dataset_id, filespace, memspace;
     dataset_id = H5Dopen(
         file.id, concrete_h5_file_position(writable).c_str(), H5P_DEFAULT);
     VERIFY(
         dataset_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
         "write");
+    auto defer_close_dataset = auxiliary::defer([&]() {
+        status = H5Dclose(dataset_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close dataset " +
+                    concrete_h5_file_position(writable) +
+                    " during dataset write"
+                      << std::endl;
+        }
+    });
 
     filespace = H5Dget_space(dataset_id);
+    auto defer_close_filespace = auxiliary::defer([&]() {
+        status = H5Sclose(filespace);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close dataset file "
+                         "space during dataset write"
+                      << std::endl;
+        }
+    });
     int ndims = H5Sget_simple_extent_ndims(filespace);
 
+    auxiliary::opaque_defer_type defer_close_memspace;
     if (ndims == 0)
     {
         if (parameters.offset != Offset{0} || parameters.extent != Extent{1})
@@ -1930,6 +1950,16 @@ void HDF5IOHandlerImpl::writeDataset(
             memspace > 0,
             "[HDF5] Internal error: Failed to create memspace during dataset "
             "write");
+        defer_close_memspace =
+            auxiliary::defer([&]() {
+                status = H5Sclose(memspace); //
+                if (status != 0)
+                {
+                    std::cerr << "[HDF5] Internal error: Failed to close "
+                                 "dataset memory space during dataset write"
+                              << std::endl;
+                }
+            }).to_opaque();
     }
     else
     {
@@ -1943,6 +1973,16 @@ void HDF5IOHandlerImpl::writeDataset(
             block.push_back(static_cast<hsize_t>(val));
         memspace = H5Screate_simple(
             static_cast<int>(block.size()), block.data(), nullptr);
+        defer_close_memspace =
+            auxiliary::defer([&]() {
+                status = H5Sclose(memspace); //
+                if (status != 0)
+                {
+                    std::cerr << "[HDF5] Internal error: Failed to close "
+                                 "dataset memory space during dataset write"
+                              << std::endl;
+                }
+            }).to_opaque();
         status = H5Sselect_hyperslab(
             filespace,
             H5S_SELECT_SET,
@@ -1973,6 +2013,15 @@ void HDF5IOHandlerImpl::writeDataset(
         dataType >= 0,
         "[HDF5] Internal error: Failed to get HDF5 datatype during dataset "
         "write");
+    auto defer_close_dataType = auxiliary::defer([&]() {
+        status = H5Tclose(dataType);
+        if (status == 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close dataset "
+                         "datatype during dataset write."
+                      << std::endl;
+        }
+    });
     switch (a.dtype)
     {
         using DT = Datatype;
@@ -2011,26 +2060,6 @@ void HDF5IOHandlerImpl::writeDataset(
     default:
         throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }
-    status = H5Tclose(dataType); //
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset datatype during "
-        "dataset write");
-    status = H5Sclose(filespace); //
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset file space during "
-        "dataset write");
-    status = H5Sclose(memspace); //
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset memory space during "
-        "dataset write");
-    status = H5Dclose(dataset_id); //
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset " +
-            concrete_h5_file_position(writable) + " during dataset write");
 
     m_fileNames[writable] = file.name;
 }
