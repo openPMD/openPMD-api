@@ -826,6 +826,7 @@ if(openPMD_BUILD_TESTING)
         elseif(${test_name} STREQUAL "Core")
             list(APPEND ${out_list}
                 test/Files_Core/automatic_variable_encoding.cpp
+                test/Files_Core/read_nonexistent_attribute.cpp
             )
         endif()
     endmacro()

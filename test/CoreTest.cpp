@@ -1750,6 +1750,11 @@ TEST_CASE("automatic_variable_encoding", "[adios2]")
     automatic_variable_encoding::automatic_variable_encoding();
 }
 
+TEST_CASE("read_nonexistent_attribute", "[core]")
+{
+    read_nonexistent_attribute::read_nonexistent_attribute();
+}
+
 TEST_CASE("unique_ptr", "[core]")
 {
     auto stdptr = std::make_unique<int>(5);
