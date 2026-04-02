@@ -25,6 +25,7 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
+#include "openPMD/auxiliary/Defer.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
@@ -388,6 +389,8 @@ void HDF5IOHandlerImpl::createPath(
             "[HDF5] Creating a path in a file opened as read only is not "
             "possible.");
 
+    herr_t status = 0;
+
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1, 10, 0) && openPMD_HAVE_MPI
     if (m_hdf5_collective_metadata)
@@ -396,7 +399,15 @@ void HDF5IOHandlerImpl::createPath(
     }
 #endif
 
-    herr_t status;
+    auto defer_close_gapl = auxiliary::defer([&]() {
+        status = H5Pclose(gapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 property "
+                         "during path creation."
+                      << std::endl;
+        }
+    });
 
     if (!writable->written)
     {
@@ -426,6 +437,20 @@ void HDF5IOHandlerImpl::createPath(
         /* Create the path in the file */
         std::stack<hid_t> groups;
         groups.push(node_id);
+        auto defer_close_groups = auxiliary::defer([&]() {
+            while (!groups.empty())
+            {
+                status = H5Gclose(groups.top());
+                if (status != 0)
+                {
+                    std::cerr
+                        << "[HDF5] Internal error: Failed to close HDF5 group "
+                           "during path creation."
+                        << std::endl;
+                }
+                groups.pop();
+            }
+        });
         for (std::string const &folder : auxiliary::split(path, "/", false))
         {
             // avoid creation of paths that already exist
@@ -447,29 +472,12 @@ void HDF5IOHandlerImpl::createPath(
             groups.push(group_id);
         }
 
-        /* Close the groups */
-        while (!groups.empty())
-        {
-            status = H5Gclose(groups.top());
-            VERIFY(
-                status == 0,
-                "[HDF5] Internal error: Failed to close HDF5 group during path "
-                "creation");
-            groups.pop();
-        }
-
         writable->written = true;
         writable->abstractFilePosition =
             std::make_shared<HDF5FilePosition>(path);
 
         m_fileNames[writable] = file.name;
     }
-
-    status = H5Pclose(gapl);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 property during path "
-        "creation");
 }
 
 namespace
@@ -840,6 +848,7 @@ void HDF5IOHandlerImpl::createDataset(
         throw error::OperationUnsupportedInBackend(
             "HDF5", "No support for Datasets with undefined extent.");
     }
+    herr_t status = 0;
 
     if (!writable->written)
     {
@@ -923,6 +932,27 @@ void HDF5IOHandlerImpl::createDataset(
             node_id >= 0,
             "[HDF5] Internal error: Failed to open HDF5 group during dataset "
             "creation");
+        auto defer_close_node_id =
+            auxiliary::defer([&]() {
+                status = H5Gclose(node_id);
+                if (status != 0)
+                {
+                    std::cerr
+                        << "[HDF5] Internal error: Failed to close HDF5 group "
+                           "during dataset creation."
+                        << std::endl;
+                }
+            });
+        auto defer_close_gapl = auxiliary::defer([&]() {
+            status = H5Pclose(gapl);
+            if (status != 0)
+            {
+                std::cerr
+                    << "[HDF5] Internal error: Failed to close HDF5 property "
+                       "during dataset creation."
+                    << std::endl;
+            }
+        });
 
         if (access::append(m_handler->m_backendAccess))
         {
@@ -938,7 +968,7 @@ void HDF5IOHandlerImpl::createDataset(
                 // > should be able to detect and recycle the file space when no
                 // > other reference to the deleted object exists
                 // https://github.com/openPMD/openPMD-api/pull/1007#discussion_r867223316
-                herr_t status = H5Ldelete(node_id, name.c_str(), H5P_DEFAULT);
+                status = H5Ldelete(node_id, name.c_str(), H5P_DEFAULT);
                 VERIFY(
                     status == 0,
                     "[HDF5] Internal error: Failed to delete old dataset '" +
@@ -964,9 +994,29 @@ void HDF5IOHandlerImpl::createDataset(
             space >= 0,
             "[HDF5] Internal error: Failed to create dataspace during dataset "
             "creation");
+        auto defer_close_space = auxiliary::defer([&]() {
+            status = H5Sclose(space);
+            if (status != 0)
+            {
+                std::cerr
+                    << "[HDF5] Internal error: Failed to close HDF5 dataset "
+                       "space during dataset creation."
+                    << std::endl;
+            }
+        });
 
         /* enable chunking on the created dataspace */
         hid_t datasetCreationProperty = H5Pcreate(H5P_DATASET_CREATE);
+        auto defer_close_datasetCreationProperty = auxiliary::defer([&]() {
+            status = H5Pclose(datasetCreationProperty);
+            if (status != 0)
+            {
+                std::cerr
+                    << "[HDF5] Internal error: Failed to close HDF5 dataset "
+                       "creation property during dataset creation."
+                    << std::endl;
+            }
+        });
 
         H5Pset_fill_time(datasetCreationProperty, H5D_FILL_TIME_NEVER);
 
@@ -1003,7 +1053,7 @@ void HDF5IOHandlerImpl::createDataset(
             }
             else
             {
-                herr_t status = H5Pset_chunk(
+                status = H5Pset_chunk(
                     datasetCreationProperty,
                     chunking->size(),
                     chunking->data());
@@ -1016,7 +1066,7 @@ void HDF5IOHandlerImpl::createDataset(
 
         for (auto const &filter : filters)
         {
-            herr_t status = std::visit(
+            status = std::visit(
                 auxiliary::overloaded{
                     [&](DatasetParams::ByID const &by_id) {
                         return H5Pset_filter(
@@ -1050,6 +1100,16 @@ void HDF5IOHandlerImpl::createDataset(
             datatype >= 0,
             "[HDF5] Internal error: Failed to get HDF5 datatype during dataset "
             "creation");
+        auto defer_close_datatype = auxiliary::defer([&]() {
+            status = H5Tclose(datatype);
+            if (status != 0)
+            {
+                std::cerr
+                    << "[HDF5] Internal error: Failed to close HDF5 datatype "
+                       "during dataset creation."
+                    << std::endl;
+            }
+        });
         hid_t group_id = H5Dcreate(
             node_id,
             name.c_str(),
@@ -1062,38 +1122,16 @@ void HDF5IOHandlerImpl::createDataset(
             group_id >= 0,
             "[HDF5] Internal error: Failed to create HDF5 group during dataset "
             "creation");
-
-        herr_t status;
-        status = H5Dclose(group_id);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 dataset during "
-            "dataset creation");
-        status = H5Tclose(datatype);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 datatype during "
-            "dataset creation");
-        status = H5Pclose(datasetCreationProperty);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 dataset creation "
-            "property during dataset creation");
-        status = H5Sclose(space);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 dataset space during "
-            "dataset creation");
-        status = H5Gclose(node_id);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 group during dataset "
-            "creation");
-        status = H5Pclose(gapl);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 property during "
-            "dataset creation");
+        auto defer_close_group_id = auxiliary::defer([&]() {
+            status = H5Dclose(group_id);
+            if (status != 0)
+            {
+                std::cerr
+                    << "[HDF5] Internal error: Failed to close HDF5 dataset "
+                       "during dataset creation."
+                    << std::endl;
+            }
+        });
 
         writable->written = true;
         writable->abstractFilePosition =
@@ -1134,6 +1172,16 @@ void HDF5IOHandlerImpl::extendDataset(
         dataset_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
         "extension");
+    herr_t status = 0;
+    auto defer_close_dataset_id = auxiliary::defer([&]() {
+        status = H5Dclose(dataset_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 dataset "
+                         "during dataset extension."
+                      << std::endl;
+        }
+    });
 
     // Datasets may only be extended if they have chunked layout, so let's see
     // whether this one does
@@ -1160,17 +1208,10 @@ void HDF5IOHandlerImpl::extendDataset(
     for (auto const &val : parameters.extent)
         size.push_back(static_cast<hsize_t>(val));
 
-    herr_t status;
     status = H5Dset_extent(dataset_id, size.data());
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to extend HDF5 dataset during dataset "
-        "extension");
-
-    status = H5Dclose(dataset_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 dataset during dataset "
         "extension");
 }
 
@@ -1191,7 +1232,26 @@ void HDF5IOHandlerImpl::availableChunks(
         dataset_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
         "read");
+    herr_t status = 0;
+    auto defer_close_dataset_id = auxiliary::defer([&]() {
+        status = H5Dclose(dataset_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 dataset "
+                         "during availableChunks task."
+                      << std::endl;
+        }
+    });
     hid_t dataset_space = H5Dget_space(dataset_id);
+    auto defer_close_dataset_space = auxiliary::defer([&]() {
+        status = H5Sclose(dataset_space);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 dataset "
+                         "space during availableChunks task."
+                      << std::endl;
+        }
+    });
     int ndims = H5Sget_simple_extent_ndims(dataset_space);
     VERIFY(
         ndims >= 0,
@@ -1229,19 +1289,6 @@ void HDF5IOHandlerImpl::availableChunks(
         extent.push_back(e);
     }
     parameters.chunks->emplace_back(std::move(offset), std::move(extent));
-
-    herr_t status;
-    status = H5Sclose(dataset_space);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 dataset space during "
-        "availableChunks task");
-
-    status = H5Dclose(dataset_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 dataset during "
-        "availableChunks task");
 }
 
 void HDF5IOHandlerImpl::openFile(
@@ -1329,6 +1376,16 @@ void HDF5IOHandlerImpl::openPath(
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
 #endif
+    herr_t status = 0;
+    auto defer_close_gapl = auxiliary::defer([&]() {
+        status = H5Pclose(gapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 property "
+                         "during path opening."
+                      << std::endl;
+        }
+    });
 
     node_id = H5Gopen(
         file.id, concrete_h5_file_position(writable->parent).c_str(), gapl);
@@ -1341,6 +1398,15 @@ void HDF5IOHandlerImpl::openPath(
             "[HDF5] Internal error: Failed to open HDF5 group during path "
             "opening");
     }
+    auto defer_close_node_id = auxiliary::defer([&]() {
+        status = H5Gclose(node_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 group "
+                         "during path opening."
+                      << std::endl;
+        }
+    });
 
     /* Sanitize path */
     std::string path = parameters.path;
@@ -1360,40 +1426,17 @@ void HDF5IOHandlerImpl::openPath(
                 "[HDF5] Internal error: Failed to open HDF5 group during path "
                 "opening");
         }
-
-        herr_t status;
-        status = H5Gclose(path_id);
-        if (status != 0)
-        {
-            throw error::ReadError(
-                error::AffectedObject::Group,
-                error::Reason::Other,
-                "HDF5",
-                "[HDF5] Internal error: Failed to close HDF5 group during path "
-                "opening");
-        }
-    }
-
-    herr_t status;
-    status = H5Gclose(node_id);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Group,
-            error::Reason::Other,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close HDF5 group during path "
-            "opening");
-    }
-    status = H5Pclose(gapl);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Group,
-            error::Reason::Other,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close HDF5 property during path "
-            "opening");
+        auto defer_close_path_id =
+            auxiliary::defer([&]() {
+                status = H5Gclose(path_id);
+                if (status != 0)
+                {
+                    std::cerr
+                        << "[HDF5] Internal error: Failed to close HDF5 group "
+                           "during path opening."
+                        << std::endl;
+                }
+            });
     }
 
     writable->written = true;
@@ -1423,6 +1466,16 @@ void HDF5IOHandlerImpl::openDataset(
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
 #endif
+    herr_t status = 0;
+    auto defer_close_gapl = auxiliary::defer([&]() {
+        status = H5Pclose(gapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 property "
+                         "during dataset opening."
+                      << std::endl;
+        }
+    });
 
     node_id = H5Gopen(
         file.id, concrete_h5_file_position(writable->parent).c_str(), gapl);
@@ -1435,6 +1488,15 @@ void HDF5IOHandlerImpl::openDataset(
             "Internal error: Failed to open HDF5 group during dataset "
             "opening");
     }
+    auto defer_close_node_id = auxiliary::defer([&]() {
+        status = H5Gclose(node_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 group "
+                         "during dataset opening."
+                      << std::endl;
+        }
+    });
 
     /* Sanitize name */
     std::string name = parameters.name;
@@ -1453,10 +1515,40 @@ void HDF5IOHandlerImpl::openDataset(
             "Internal error: Failed to open HDF5 dataset during dataset "
             "opening");
     }
+    auto defer_close_dataset_id = auxiliary::defer([&]() {
+        status = H5Dclose(dataset_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 dataset "
+                         "during dataset opening."
+                      << std::endl;
+        }
+    });
 
     hid_t dataset_type, dataset_space;
     dataset_type = H5Dget_type(dataset_id);
+    auto defer_close_dataset_type = auxiliary::defer([&]() {
+        status = H5Tclose(dataset_type);
+        if (status != 0)
+        {
+            std::cerr
+                << "[HDF5] Internal error: Failed to close HDF5 dataset type "
+                   "during dataset opening."
+                << std::endl;
+        }
+    });
+
     dataset_space = H5Dget_space(dataset_id);
+    auto defer_close_dataset_space = auxiliary::defer([&]() {
+        status = H5Sclose(dataset_space);
+        if (status != 0)
+        {
+            std::cerr
+                << "[HDF5] Internal error: Failed to close HDF5 dataset space "
+                   "during dataset opening."
+                << std::endl;
+        }
+    });
 
     H5S_class_t dataset_class = H5Sget_simple_extent_type(dataset_space);
 
@@ -1534,36 +1626,37 @@ void HDF5IOHandlerImpl::openDataset(
                         "HDF5",
                         "Unknown dataset type");
                 };
+
                 if (remaining_tries == 0)
                 {
                     throw_error();
                 }
+
                 hid_t next_type = H5Tget_super(dataset_type);
                 if (next_type == H5I_INVALID_HID)
                 {
                     throw_error();
                 }
-                else if (H5Tequal(dataset_type, next_type))
+
+                auto defer_close_next_type = auxiliary::defer([&]() {
+                    status = H5Tclose(next_type);
+                    if (status != 0)
+                    {
+                        std::cerr
+                            << "[HDF5] Internal error: Failed to close HDF5 "
+                               "dataset type during dataset opening."
+                            << std::endl;
+                    }
+                });
+
+                if (H5Tequal(dataset_type, next_type))
                 {
-                    H5Tclose(next_type);
                     throw_error();
                 }
-                else
-                {
-                    if (H5Tclose(dataset_type) != 0)
-                    {
-                        throw error::ReadError(
-                            error::AffectedObject::Group,
-                            error::Reason::Other,
-                            "HDF5",
-                            "Internal error: Failed to close HDF5 dataset type "
-                            "during "
-                            "dataset opening");
-                    }
-                    dataset_type = next_type;
-                    --remaining_tries;
-                    repeat = true;
-                }
+
+                dataset_type = next_type;
+                --remaining_tries;
+                repeat = true;
             }
         } while (repeat);
     }
@@ -1595,58 +1688,6 @@ void HDF5IOHandlerImpl::openDataset(
             e.push_back(val);
         auto &extent = parameters.extent;
         *extent = e;
-    }
-
-    herr_t status;
-    status = H5Sclose(dataset_space);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Group,
-            error::Reason::Other,
-            "HDF5",
-            "Internal error: Failed to close HDF5 dataset space during "
-            "dataset opening");
-    }
-    status = H5Tclose(dataset_type);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Group,
-            error::Reason::Other,
-            "HDF5",
-            "Internal error: Failed to close HDF5 dataset type during "
-            "dataset opening");
-    }
-    status = H5Dclose(dataset_id);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Group,
-            error::Reason::Other,
-            "HDF5",
-            "Internal error: Failed to close HDF5 dataset during dataset "
-            "opening");
-    }
-    status = H5Gclose(node_id);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Group,
-            error::Reason::Other,
-            "HDF5",
-            "Internal error: Failed to close HDF5 group during dataset "
-            "opening");
-    }
-    status = H5Pclose(gapl);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Group,
-            error::Reason::Other,
-            "HDF5",
-            "Internal error: Failed to close HDF5 property during dataset "
-            "opening");
     }
 
     writable->written = true;
@@ -1721,19 +1762,25 @@ void HDF5IOHandlerImpl::deletePath(
             node_id >= 0,
             "[HDF5] Internal error: Failed to open HDF5 group during path "
             "deletion");
+        herr_t status = 0;
+        auto defer_close_node_id =
+            auxiliary::defer([&]() {
+                status = H5Gclose(node_id);
+                if (status != 0)
+                {
+                    std::cerr
+                        << "[HDF5] Internal error: Failed to close HDF5 group "
+                           "during path deletion."
+                        << std::endl;
+                }
+            });
 
         path += static_cast<HDF5FilePosition *>(
                     writable->abstractFilePosition.get())
                     ->location;
-        herr_t status = H5Ldelete(node_id, path.c_str(), H5P_DEFAULT);
+        status = H5Ldelete(node_id, path.c_str(), H5P_DEFAULT);
         VERIFY(
             status == 0, "[HDF5] Internal error: Failed to delete HDF5 group");
-
-        status = H5Gclose(node_id);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 group during path "
-            "deletion");
 
         writable->written = false;
         writable->abstractFilePosition.reset();
@@ -1773,19 +1820,25 @@ void HDF5IOHandlerImpl::deleteDataset(
             node_id >= 0,
             "[HDF5] Internal error: Failed to open HDF5 group during dataset "
             "deletion");
+        herr_t status = 0;
+        auto defer_close_node_id =
+            auxiliary::defer([&]() {
+                status = H5Gclose(node_id);
+                if (status != 0)
+                {
+                    std::cerr
+                        << "[HDF5] Internal error: Failed to close HDF5 group "
+                           "during dataset deletion."
+                        << std::endl;
+                }
+            });
 
         name += static_cast<HDF5FilePosition *>(
                     writable->abstractFilePosition.get())
                     ->location;
-        herr_t status = H5Ldelete(node_id, name.c_str(), H5P_DEFAULT);
+        status = H5Ldelete(node_id, name.c_str(), H5P_DEFAULT);
         VERIFY(
             status == 0, "[HDF5] Internal error: Failed to delete HDF5 group");
-
-        status = H5Gclose(node_id);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 group during dataset "
-            "deletion");
 
         writable->written = false;
         writable->abstractFilePosition.reset();
@@ -1815,17 +1868,23 @@ void HDF5IOHandlerImpl::deleteAttribute(
             node_id >= 0,
             "[HDF5] Internal error: Failed to open HDF5 group during attribute "
             "deletion");
+        herr_t status = 0;
+        auto defer_close_node_id =
+            auxiliary::defer([&]() {
+                status = H5Oclose(node_id);
+                if (status != 0)
+                {
+                    std::cerr
+                        << "[HDF5] Internal error: Failed to close HDF5 group "
+                           "during attribute deletion."
+                        << std::endl;
+                }
+            });
 
-        herr_t status = H5Adelete(node_id, name.c_str());
+        status = H5Adelete(node_id, name.c_str());
         VERIFY(
             status == 0,
             "[HDF5] Internal error: Failed to delete HDF5 attribute");
-
-        status = H5Oclose(node_id);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 group during "
-            "attribute deletion");
     }
 }
 
@@ -1839,18 +1898,38 @@ void HDF5IOHandlerImpl::writeDataset(
 
     File file = requireFile("writeDataset", writable, /* checkParent = */ true);
 
-    hid_t dataset_id, filespace, memspace;
     herr_t status;
+    hid_t dataset_id, filespace, memspace;
     dataset_id = H5Dopen(
         file.id, concrete_h5_file_position(writable).c_str(), H5P_DEFAULT);
     VERIFY(
         dataset_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
         "write");
+    auto defer_close_dataset = auxiliary::defer([&]() {
+        status = H5Dclose(dataset_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close dataset " +
+                    concrete_h5_file_position(writable) +
+                    " during dataset write"
+                      << std::endl;
+        }
+    });
 
     filespace = H5Dget_space(dataset_id);
+    auto defer_close_filespace = auxiliary::defer([&]() {
+        status = H5Sclose(filespace);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close dataset file "
+                         "space during dataset write"
+                      << std::endl;
+        }
+    });
     int ndims = H5Sget_simple_extent_ndims(filespace);
 
+    auxiliary::opaque_defer_type defer_close_memspace;
     if (ndims == 0)
     {
         if (parameters.offset != Offset{0} || parameters.extent != Extent{1})
@@ -1871,6 +1950,16 @@ void HDF5IOHandlerImpl::writeDataset(
             memspace > 0,
             "[HDF5] Internal error: Failed to create memspace during dataset "
             "write");
+        defer_close_memspace =
+            auxiliary::defer([&]() {
+                status = H5Sclose(memspace); //
+                if (status != 0)
+                {
+                    std::cerr << "[HDF5] Internal error: Failed to close "
+                                 "dataset memory space during dataset write"
+                              << std::endl;
+                }
+            }).to_opaque();
     }
     else
     {
@@ -1884,6 +1973,16 @@ void HDF5IOHandlerImpl::writeDataset(
             block.push_back(static_cast<hsize_t>(val));
         memspace = H5Screate_simple(
             static_cast<int>(block.size()), block.data(), nullptr);
+        defer_close_memspace =
+            auxiliary::defer([&]() {
+                status = H5Sclose(memspace); //
+                if (status != 0)
+                {
+                    std::cerr << "[HDF5] Internal error: Failed to close "
+                                 "dataset memory space during dataset write"
+                              << std::endl;
+                }
+            }).to_opaque();
         status = H5Sselect_hyperslab(
             filespace,
             H5S_SELECT_SET,
@@ -1914,6 +2013,15 @@ void HDF5IOHandlerImpl::writeDataset(
         dataType >= 0,
         "[HDF5] Internal error: Failed to get HDF5 datatype during dataset "
         "write");
+    auto defer_close_dataType = auxiliary::defer([&]() {
+        status = H5Tclose(dataType);
+        if (status == 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close dataset "
+                         "datatype during dataset write."
+                      << std::endl;
+        }
+    });
     switch (a.dtype)
     {
         using DT = Datatype;
@@ -1952,26 +2060,6 @@ void HDF5IOHandlerImpl::writeDataset(
     default:
         throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }
-    status = H5Tclose(dataType);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset datatype during "
-        "dataset write");
-    status = H5Sclose(filespace);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset file space during "
-        "dataset write");
-    status = H5Sclose(memspace);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset memory space during "
-        "dataset write");
-    status = H5Dclose(dataset_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset " +
-            concrete_h5_file_position(writable) + " during dataset write");
 
     m_fileNames[writable] = file.name;
 }
@@ -1993,6 +2081,7 @@ void HDF5IOHandlerImpl::writeAttribute(
     auto res = getFile(writable);
     File file = res ? res.value() : getFile(writable->parent).value();
     hid_t node_id, attribute_id;
+    herr_t status = 0;
 
     hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
 #if H5_VERSION_GE(1, 10, 0) && openPMD_HAVE_MPI
@@ -2001,6 +2090,15 @@ void HDF5IOHandlerImpl::writeAttribute(
         H5Pset_all_coll_metadata_ops(fapl, true);
     }
 #endif
+    auto defer_close_fapl = auxiliary::defer([&]() {
+        status = H5Pclose(fapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 "
+                         "property during attribute write."
+                      << std::endl;
+        }
+    });
 
     node_id =
         H5Oopen(file.id, concrete_h5_file_position(writable).c_str(), fapl);
@@ -2008,9 +2106,18 @@ void HDF5IOHandlerImpl::writeAttribute(
         node_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 object during attribute "
         "write");
+    auto defer_close_node_id = auxiliary::defer([&]() {
+        status = H5Oclose(node_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close " +
+                    concrete_h5_file_position(writable) +
+                    " during attribute write."
+                      << std::endl;
+        }
+    });
     Attribute const att(Attribute::from_any, parameters.m_resource);
     Datatype dtype = parameters.dtype;
-    herr_t status;
     GetH5DataType getH5DataType({
         {typeid(bool).name(), m_H5T_BOOL_ENUM},
         {typeid(std::complex<float>).name(), m_H5T_CFLOAT},
@@ -2022,6 +2129,15 @@ void HDF5IOHandlerImpl::writeAttribute(
         dataType >= 0,
         "[HDF5] Internal error: Failed to get HDF5 datatype during attribute "
         "write");
+    auto defer_close_dataType = auxiliary::defer([&]() {
+        status = H5Tclose(dataType);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 datatype "
+                         "during attribute write."
+                      << std::endl;
+        }
+    });
     std::string name = parameters.name;
     auto create_attribute_anew = [&]() {
         hid_t dataspace = getH5DataSpace(att);
@@ -2029,6 +2145,15 @@ void HDF5IOHandlerImpl::writeAttribute(
             dataspace >= 0,
             "[HDF5] Internal error: Failed to get HDF5 dataspace during "
             "attribute write");
+        auto defer_close_dataspace = auxiliary::defer([&]() {
+            status = H5Sclose(dataspace);
+            if (status != 0)
+            {
+                std::cerr << "[HDF5] Internal error: Failed to close HDF5 "
+                             "dataspace during attribute write."
+                          << std::endl;
+            }
+        });
         attribute_id = H5Acreate(
             node_id,
             name.c_str(),
@@ -2039,11 +2164,6 @@ void HDF5IOHandlerImpl::writeAttribute(
         VERIFY(
             node_id >= 0,
             "[HDF5] Internal error: Failed to create HDF5 attribute during "
-            "attribute write");
-        status = H5Sclose(dataspace);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 dataspace during "
             "attribute write");
     };
     if (H5Aexists(node_id, name.c_str()) != 0)
@@ -2066,7 +2186,7 @@ void HDF5IOHandlerImpl::writeAttribute(
             equal >= 0,
             "[HDF5] Internal error: Failed to compare HDF5 attribute types "
             "during attribute write");
-        if (equal == 0) // unequal
+        if (equal == 0) // unequal - need to delete and recreate
         {
             status = H5Aclose(attribute_id);
             VERIFY(
@@ -2087,6 +2207,16 @@ void HDF5IOHandlerImpl::writeAttribute(
     {
         create_attribute_anew();
     }
+    auto defer_close_attribute_id = auxiliary::defer([&]() {
+        status = H5Aclose(attribute_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close attribute " +
+                    name + " at " + concrete_h5_file_position(writable) +
+                    " during attribute write."
+                      << std::endl;
+        }
+    });
 
     using DT = Datatype;
     switch (dtype)
@@ -2293,28 +2423,6 @@ void HDF5IOHandlerImpl::writeAttribute(
         "[HDF5] Internal error: Failed to write attribute " + name + " at " +
             concrete_h5_file_position(writable));
 
-    status = H5Tclose(dataType);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 datatype during Attribute "
-        "write");
-
-    status = H5Aclose(attribute_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close attribute " + name + " at " +
-            concrete_h5_file_position(writable) + " during attribute write");
-    status = H5Oclose(node_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close " +
-            concrete_h5_file_position(writable) + " during attribute write");
-    status = H5Pclose(fapl);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 property during attribute "
-        "write");
-
     m_fileNames[writable] = file.name;
 }
 
@@ -2330,8 +2438,28 @@ void HDF5IOHandlerImpl::readDataset(
         dataset_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
         "read");
+    auto defer_close_dataset_id = auxiliary::defer([&]() {
+        status = H5Dclose(dataset_id);
+        if (status != 0)
+        {
+            std::cerr
+                << "[HDF5] Internal error: Failed to close dataset during "
+                   "dataset read."
+                << std::endl;
+        }
+    });
 
     filespace = H5Dget_space(dataset_id);
+    auto defer_close_filespace = auxiliary::defer([&]() {
+        status = H5Sclose(filespace);
+        if (status != 0)
+        {
+            std::cerr
+                << "[HDF5] Internal error: Failed to close dataset file space "
+                   "during dataset read."
+                << std::endl;
+        }
+    });
     int ndims = H5Sget_simple_extent_ndims(filespace);
 
     if (ndims == 0)
@@ -2379,6 +2507,16 @@ void HDF5IOHandlerImpl::readDataset(
             "[HDF5] Internal error: Failed to select hyperslab during dataset "
             "read");
     }
+    auto defer_close_memspace = auxiliary::defer([&]() {
+        status = H5Sclose(memspace);
+        if (status != 0)
+        {
+            std::cerr
+                << "[HDF5] Internal error: Failed to close dataset memory "
+                   "space during dataset read."
+                << std::endl;
+        }
+    });
 
     void *data = parameters.data.get();
 
@@ -2419,6 +2557,16 @@ void HDF5IOHandlerImpl::readDataset(
         {typeid(std::complex<long double>).name(), m_H5T_CLONG_DOUBLE},
     });
     hid_t dataType = getH5DataType(a);
+    auto defer_close_dataType = auxiliary::defer([&]() {
+        status = H5Tclose(dataType);
+        if (status != 0)
+        {
+            std::cerr
+                << "[HDF5] Internal error: Failed to close dataset datatype "
+                   "during dataset read."
+                << std::endl;
+        }
+    });
     if (H5Tequal(dataType, H5T_NATIVE_LDOUBLE))
     {
         // We have previously determined in openDataset() that this dataset is
@@ -2427,29 +2575,37 @@ void HDF5IOHandlerImpl::readDataset(
         // the worked-around m_H5T_LONG_DOUBLE_80_LE.
         // Check this.
         hid_t checkDatasetTypeAgain = H5Dget_type(dataset_id);
+        auto defer_close_checkDatasetTypeAgain = auxiliary::defer([&]() {
+            status = H5Tclose(checkDatasetTypeAgain);
+            if (status != 0)
+            {
+                std::cerr << "[HDF5] Internal error: Failed to close HDF5 "
+                             "dataset type during dataset reading."
+                          << std::endl;
+            }
+        });
         if (!H5Tequal(checkDatasetTypeAgain, H5T_NATIVE_LDOUBLE))
         {
             dataType = m_H5T_LONG_DOUBLE_80_LE;
         }
-        status = H5Tclose(checkDatasetTypeAgain);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 dataset type during "
-            "dataset reading");
     }
     else if (H5Tequal(dataType, m_H5T_CLONG_DOUBLE))
     {
         // Same deal for m_H5T_CLONG_DOUBLE
         hid_t checkDatasetTypeAgain = H5Dget_type(dataset_id);
+        auto defer_close_checkDatasetTypeAgain = auxiliary::defer([&]() {
+            status = H5Tclose(checkDatasetTypeAgain);
+            if (status != 0)
+            {
+                std::cerr << "[HDF5] Internal error: Failed to close HDF5 "
+                             "dataset type during dataset reading."
+                          << std::endl;
+            }
+        });
         if (!H5Tequal(checkDatasetTypeAgain, m_H5T_CLONG_DOUBLE))
         {
             dataType = m_H5T_CLONG_DOUBLE_80_LE;
         }
-        status = H5Tclose(checkDatasetTypeAgain);
-        VERIFY(
-            status == 0,
-            "[HDF5] Internal error: Failed to close HDF5 dataset type during "
-            "dataset reading");
     }
     VERIFY(
         dataType >= 0,
@@ -2463,26 +2619,6 @@ void HDF5IOHandlerImpl::readDataset(
         m_datasetTransferProperty,
         data);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to read dataset");
-
-    status = H5Tclose(dataType);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset datatype during "
-        "dataset read");
-    status = H5Sclose(filespace);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset file space during "
-        "dataset read");
-    status = H5Sclose(memspace);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset memory space during "
-        "dataset read");
-    status = H5Dclose(dataset_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close dataset during dataset read");
 }
 
 void HDF5IOHandlerImpl::readAttribute(
@@ -2506,6 +2642,15 @@ void HDF5IOHandlerImpl::readAttribute(
         H5Pset_all_coll_metadata_ops(fapl, true);
     }
 #endif
+    auto defer_close_fapl = auxiliary::defer([&]() {
+        status = H5Pclose(fapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 "
+                         "attribute during attribute read."
+                      << std::endl;
+        }
+    });
 
     obj_id =
         H5Oopen(file.id, concrete_h5_file_position(writable).c_str(), fapl);
@@ -2519,7 +2664,26 @@ void HDF5IOHandlerImpl::readAttribute(
                 concrete_h5_file_position(writable).c_str() +
                 "' during attribute read");
     }
+    auto defer_close_obj_id = auxiliary::defer([&]() {
+        status = H5Oclose(obj_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close " +
+                    concrete_h5_file_position(writable) +
+                    " during attribute read."
+                      << std::endl;
+            ;
+        }
+    });
     std::string const &attr_name = parameters.name;
+    if (H5Aexists(obj_id, attr_name.c_str()) <= 0)
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::NotFound,
+            "HDF5",
+            parameters.name);
+    }
     attr_id = H5Aopen(obj_id, attr_name.c_str(), H5P_DEFAULT);
     if (attr_id < 0)
     {
@@ -2533,10 +2697,38 @@ void HDF5IOHandlerImpl::readAttribute(
                 concrete_h5_file_position(writable).c_str() +
                 ") during attribute read");
     }
+    auto defer_close_attr_id = auxiliary::defer([&]() {
+        status = H5Aclose(attr_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close attribute " +
+                    attr_name + " at " + concrete_h5_file_position(writable) +
+                    " during attribute read."
+                      << std::endl;
+        }
+    });
 
     hid_t attr_type, attr_space;
     attr_type = H5Aget_type(attr_id);
+    auto defer_close_attr_type = auxiliary::defer([&]() {
+        status = H5Tclose(attr_type);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close attribute "
+                         "file space during attribute read."
+                      << std::endl;
+        }
+    });
     attr_space = H5Aget_space(attr_id);
+    auto defer_close_attr_space = auxiliary::defer([&]() {
+        status = H5Sclose(attr_space);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close attribute "
+                         "datatype during attribute read."
+                      << std::endl;
+        }
+    });
 
     int ndims = H5Sget_simple_extent_ndims(attr_space);
     std::vector<hsize_t> dims(ndims, 0);
@@ -3065,63 +3257,9 @@ void HDF5IOHandlerImpl::readAttribute(
                 " at " + concrete_h5_file_position(writable));
     }
 
-    status = H5Tclose(attr_type);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close attribute datatype during "
-            "attribute read");
-    }
-    status = H5Sclose(attr_space);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close attribute file space "
-            "during "
-            "attribute read");
-    }
-
     auto dtype = parameters.dtype;
     *dtype = a.dtype;
     *parameters.m_resource = a.getAny();
-
-    status = H5Aclose(attr_id);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close attribute " + attr_name +
-                " at " + concrete_h5_file_position(writable) +
-                " during attribute read");
-    }
-    status = H5Oclose(obj_id);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close " +
-                concrete_h5_file_position(writable) + " during attribute read");
-    }
-    status = H5Pclose(fapl);
-    if (status != 0)
-    {
-        throw error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::CannotRead,
-            "HDF5",
-            "[HDF5] Internal error: Failed to close HDF5 attribute during "
-            "attribute read");
-    }
 }
 
 void HDF5IOHandlerImpl::listPaths(
@@ -3133,6 +3271,7 @@ void HDF5IOHandlerImpl::listPaths(
             "listing");
 
     File file = requireFile("listPaths", writable, /* checkParent = */ true);
+    herr_t status = 0;
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1, 10, 0) && openPMD_HAVE_MPI
@@ -3141,15 +3280,34 @@ void HDF5IOHandlerImpl::listPaths(
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
 #endif
+    auto defer_close_gapl = auxiliary::defer([&]() {
+        status = H5Pclose(gapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 property "
+                         "during path listing."
+                      << std::endl;
+        }
+    });
 
     hid_t node_id =
         H5Gopen(file.id, concrete_h5_file_position(writable).c_str(), gapl);
     VERIFY(
         node_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 group during path listing");
+    auto defer_close_node_id = auxiliary::defer([&]() {
+        status = H5Gclose(node_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 group " +
+                    concrete_h5_file_position(writable) +
+                    " during path listing."
+                      << std::endl;
+        }
+    });
 
     H5G_info_t group_info;
-    herr_t status = H5Gget_info(node_id, &group_info);
+    status = H5Gget_info(node_id, &group_info);
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to get HDF5 group info for " +
@@ -3166,17 +3324,6 @@ void HDF5IOHandlerImpl::listPaths(
             paths->emplace_back(name.data(), name_length);
         }
     }
-
-    status = H5Gclose(node_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 group " +
-            concrete_h5_file_position(writable) + " during path listing");
-    status = H5Pclose(gapl);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 property during path "
-        "listing");
 }
 
 void HDF5IOHandlerImpl::listDatasets(
@@ -3188,6 +3335,7 @@ void HDF5IOHandlerImpl::listDatasets(
             "listing");
 
     File file = requireFile("listDatasets", writable, /* checkParent = */ true);
+    herr_t status = 0;
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1, 10, 0) && openPMD_HAVE_MPI
@@ -3196,6 +3344,15 @@ void HDF5IOHandlerImpl::listDatasets(
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
 #endif
+    auto defer_close_gapl = auxiliary::defer([&]() {
+        status = H5Pclose(gapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 property "
+                         "during dataset listing."
+                      << std::endl;
+        }
+    });
 
     hid_t node_id =
         H5Gopen(file.id, concrete_h5_file_position(writable).c_str(), gapl);
@@ -3203,9 +3360,19 @@ void HDF5IOHandlerImpl::listDatasets(
         node_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 group during dataset "
         "listing");
+    auto defer_close_node_id = auxiliary::defer([&]() {
+        status = H5Gclose(node_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 group " +
+                    concrete_h5_file_position(writable) +
+                    " during dataset listing."
+                      << std::endl;
+        }
+    });
 
     H5G_info_t group_info;
-    herr_t status = H5Gget_info(node_id, &group_info);
+    status = H5Gget_info(node_id, &group_info);
     VERIFY(
         status == 0,
         "[HDF5] Internal error: Failed to get HDF5 group info for " +
@@ -3222,17 +3389,6 @@ void HDF5IOHandlerImpl::listDatasets(
             datasets->emplace_back(name.data(), name_length);
         }
     }
-
-    status = H5Gclose(node_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 group " +
-            concrete_h5_file_position(writable) + " during dataset listing");
-    status = H5Pclose(gapl);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 property during dataset "
-        "listing");
 }
 
 void HDF5IOHandlerImpl::listAttributes(
@@ -3246,6 +3402,7 @@ void HDF5IOHandlerImpl::listAttributes(
     File file =
         requireFile("listAttributes", writable, /* checkParent = */ true);
     hid_t node_id;
+    herr_t status = 0;
 
     hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
 #if H5_VERSION_GE(1, 10, 0) && openPMD_HAVE_MPI
@@ -3254,6 +3411,15 @@ void HDF5IOHandlerImpl::listAttributes(
         H5Pset_all_coll_metadata_ops(fapl, true);
     }
 #endif
+    auto defer_close_fapl = auxiliary::defer([&]() {
+        status = H5Pclose(fapl);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 property "
+                         "during attribute listing."
+                      << std::endl;
+        }
+    });
 
     node_id =
         H5Oopen(file.id, concrete_h5_file_position(writable).c_str(), fapl);
@@ -3261,8 +3427,16 @@ void HDF5IOHandlerImpl::listAttributes(
         node_id >= 0,
         "[HDF5] Internal error: Failed to open HDF5 group during attribute "
         "listing");
-
-    herr_t status;
+    auto defer_close_node_id = auxiliary::defer([&]() {
+        status = H5Oclose(node_id);
+        if (status != 0)
+        {
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 object " +
+                    concrete_h5_file_position(writable) +
+                    " during attribute listing."
+                      << std::endl;
+        }
+    });
 #if H5_VERSION_GE(1, 12, 0)
     H5O_info2_t object_info;
     status = H5Oget_info3(node_id, &object_info, H5O_INFO_NUM_ATTRS);
@@ -3299,17 +3473,6 @@ void HDF5IOHandlerImpl::listAttributes(
             H5P_DEFAULT);
         attributes->emplace_back(name.data(), name_length);
     }
-
-    status = H5Oclose(node_id);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 object during attribute "
-        "listing");
-    status = H5Pclose(fapl);
-    VERIFY(
-        status == 0,
-        "[HDF5] Internal error: Failed to close HDF5 property during dataset "
-        "listing");
 }
 
 void HDF5IOHandlerImpl::deregister(

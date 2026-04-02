@@ -24,3 +24,8 @@ namespace automatic_variable_encoding
 {
 auto automatic_variable_encoding() -> void;
 }
+
+namespace read_nonexistent_attribute
+{
+auto read_nonexistent_attribute() -> void;
+}
