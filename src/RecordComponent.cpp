@@ -257,7 +257,8 @@ std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr_impl_mut(newData, dtype)
-        .loadRaw(EnqueuePolicy::Defer);
+        .unsafeNoAutomaticFlush()
+        .load();
     return newData;
 }
 
@@ -858,7 +859,7 @@ std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
         operation.extent(std::move(e));
     }
 
-    return operation.loadRaw<T>(EnqueuePolicy::Defer);
+    return operation.unsafeNoAutomaticFlush().load<T>().get();
 }
 
 namespace detail
@@ -999,7 +1000,7 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         operation.extent(std::move(e));
     }
 
-    operation.withSharedPtr(std::move(data)).loadRaw(EnqueuePolicy::Defer);
+    operation.withSharedPtr(std::move(data)).unsafeNoAutomaticFlush().load();
 }
 
 template <typename T>
@@ -1009,7 +1010,8 @@ void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
-        .loadRaw(EnqueuePolicy::Defer);
+        .unsafeNoAutomaticFlush()
+        .load();
 }
 
 template <typename T>
@@ -1019,7 +1021,8 @@ void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr(std::move(data))
-        .storeRaw(EnqueuePolicy::Defer);
+        .unsafeNoAutomaticFlush()
+        .store();
 }
 
 template <typename T>
@@ -1030,7 +1033,8 @@ void RecordComponent::storeChunk(
         .offset(std::move(o))
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
-        .storeRaw(EnqueuePolicy::Defer);
+        .unsafeNoAutomaticFlush()
+        .store();
 }
 
 template <typename T>
@@ -1040,7 +1044,8 @@ void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
-        .storeRaw(EnqueuePolicy::Defer);
+        .unsafeNoAutomaticFlush()
+        .store();
 }
 
 template <typename T>
