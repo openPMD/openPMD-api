@@ -2015,7 +2015,7 @@ void HDF5IOHandlerImpl::writeDataset(
         "write");
     auto defer_close_dataType = auxiliary::defer([&]() {
         status = H5Tclose(dataType);
-        if (status == 0)
+        if (status != 0)
         {
             std::cerr << "[HDF5] Internal error: Failed to close dataset "
                          "datatype during dataset write."
