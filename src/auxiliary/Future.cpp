@@ -49,6 +49,11 @@ DeferredComputation<T>::DeferredComputation(task_type task)
 {}
 
 template <typename T>
+DeferredComputation<T>::DeferredComputation(cached_type cached_val)
+    : m_task(detail::CachedValue<T>{std::move(cached_val)})
+{}
+
+template <typename T>
 DeferredComputation<T>::~DeferredComputation()
 {
     try
