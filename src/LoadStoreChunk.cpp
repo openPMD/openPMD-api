@@ -211,13 +211,13 @@ auto ConfigureLoadStore::withRawPtr_impl_const(void const *data, Datatype dtype)
 }
 
 template <typename T>
-auto ConfigureLoadStore::enqueueStore() -> DynamicMemoryView<T>
+auto ConfigureLoadStore::storeSpan() -> DynamicMemoryView<T>
 {
     return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
 }
 
 template <typename T>
-auto ConfigureLoadStore::enqueueLoad()
+auto ConfigureLoadStore::load()
     -> auxiliary::DeferredComputation<std::shared_ptr<T>>
 {
     auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
@@ -263,7 +263,7 @@ struct VisitorEnqueueLoadVariant
     }
 };
 
-auto ConfigureLoadStore::enqueueLoadVariant() -> auxiliary::DeferredComputation<
+auto ConfigureLoadStore::loadVariant() -> auxiliary::DeferredComputation<
     auxiliary::detail::shared_ptr_dataset_types>
 {
     return m_rc.visit<VisitorEnqueueLoadVariant>(
@@ -309,7 +309,7 @@ auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
         this->getOffset(), this->getExtent(), m_mem_select};
 }
 
-auto ConfigureStoreChunkFromBuffer::enqueueStore()
+auto ConfigureStoreChunkFromBuffer::store()
     -> auxiliary::DeferredComputation<void>
 {
     this->m_rc.storeChunk_impl(
@@ -332,7 +332,7 @@ auto ConfigureStoreChunkFromBuffer::storeRaw(EnqueuePolicy ep) -> void
     }
 }
 
-auto ConfigureLoadStoreFromBuffer::enqueueLoad()
+auto ConfigureLoadStoreFromBuffer::load()
     -> auxiliary::DeferredComputation<void>
 {
     auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
@@ -396,7 +396,7 @@ void ConfigureStoreChunkFromBuffer::memorySelection_impl(MemorySelection sel)
 #define OPENPMD_APPLY_TEMPLATE(template_, type) template_<type>
 
 #define INSTANTIATE_METHOD_TEMPLATES(dtype)                                    \
-    template auto ConfigureLoadStore::enqueueLoad()                            \
+    template auto ConfigureLoadStore::load()                                   \
         -> auxiliary::DeferredComputation<OPENPMD_APPLY_TEMPLATE(              \
             std::shared_ptr, dtype)>;                                          \
     template auto ConfigureLoadStore::loadRaw(EnqueuePolicy)                   \
@@ -404,7 +404,7 @@ void ConfigureStoreChunkFromBuffer::memorySelection_impl(MemorySelection sel)
 #define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
     INSTANTIATE_METHOD_TEMPLATES(type)                                         \
     INSTANTIATE_METHOD_TEMPLATES(OPENPMD_ARRAY(type))                          \
-    template auto ConfigureLoadStore::enqueueStore() -> DynamicMemoryView<type>;
+    template auto ConfigureLoadStore::storeSpan() -> DynamicMemoryView<type>;
 
 OPENPMD_FOREACH_DATASET_DATATYPE(
     INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT)
