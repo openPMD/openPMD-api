@@ -68,6 +68,8 @@ protected:
     std::optional<Offset> m_offset;
     std::optional<Extent> m_extent;
 
+    bool m_unsafeNoAutomaticFlush = false;
+
     [[nodiscard]] auto dim() const -> uint8_t;
     auto storeChunkConfig() -> internal::LoadStoreConfig;
 
@@ -86,6 +88,7 @@ protected:
 
     void offset_impl(Offset);
     void extent_impl(Extent);
+    void unsafeNoAutomaticFlush_impl();
 
 private:
     auto withSharedPtr_impl_mut(std::shared_ptr<void> data, Datatype)
@@ -113,6 +116,11 @@ public:
     auto extent(Extent extent) -> this_t &
     {
         extent_impl(std::move(extent));
+        return *this;
+    }
+    auto unsafeNoAutomaticFlush() -> this_t &
+    {
+        unsafeNoAutomaticFlush_impl();
         return *this;
     }
 
@@ -213,6 +221,11 @@ public:
         extent_impl(std::move(extent));
         return *this;
     }
+    auto unsafeNoAutomaticFlush() -> this_t &
+    {
+        unsafeNoAutomaticFlush_impl();
+        return *this;
+    }
     auto memorySelection(MemorySelection memorySelection) -> this_t &
     {
         memorySelection_impl(std::move(memorySelection));
@@ -269,6 +282,11 @@ public:
     auto extent(Extent extent) -> this_t &
     {
         extent_impl(std::move(extent));
+        return *this;
+    }
+    auto unsafeNoAutomaticFlush() -> this_t &
+    {
+        unsafeNoAutomaticFlush_impl();
         return *this;
     }
     auto memorySelection(MemorySelection memorySelection) -> this_t &
