@@ -218,9 +218,9 @@ struct Series::ParsedInput
     bool verify_homogeneous_extents = true;
 }; // ParsedInput
 
-void Iterations::visitHierarchy(HierarchyVisitor &v)
+void Iterations::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Iterations>(v);
+    visitHierarchyImpl<Iterations>(v, recursive);
 }
 
 std::string Series::openPMD() const
@@ -3569,9 +3569,9 @@ void Series::close()
     m_attri.reset();
 }
 
-void Series::visitHierarchy(HierarchyVisitor &v)
+void Series::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
-    get().iterations.visitHierarchy(v);
+    get().iterations.visitHierarchy(v, recursive);
     v(*this);
 }
 

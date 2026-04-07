@@ -89,7 +89,7 @@ public:
     template <typename T>
     void store(T);
 
-    void visitHierarchy(HierarchyVisitor &v) override;
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
     // clang-format off
 OPENPMD_private

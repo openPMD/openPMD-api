@@ -38,7 +38,7 @@ public:
     size_t numPatches() const;
     ~ParticlePatches() override = default;
 
-    void visitHierarchy(HierarchyVisitor &v) override;
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
 private:
     ParticlePatches() = default;

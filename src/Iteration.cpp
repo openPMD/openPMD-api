@@ -54,14 +54,14 @@ namespace openPMD
 using internal::CloseStatus;
 using internal::DeferredParseAccess;
 
-void Meshes::visitHierarchy(HierarchyVisitor &v)
+void Meshes::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Meshes>(v);
+    visitHierarchyImpl<Meshes>(v, recursive);
 }
 
-void Particles::visitHierarchy(HierarchyVisitor &v)
+void Particles::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Particles>(v);
+    visitHierarchyImpl<Particles>(v, recursive);
 }
 
 Iteration::Iteration() : Attributable(NoInit())
@@ -254,10 +254,10 @@ bool Iteration::closedByWriter() const
     }
 }
 
-void Iteration::visitHierarchy(HierarchyVisitor &v)
+void Iteration::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
-    meshes.visitHierarchy(v);
-    particles.visitHierarchy(v);
+    meshes.visitHierarchy(v, recursive);
+    particles.visitHierarchy(v, recursive);
     v(*this);
 }
 

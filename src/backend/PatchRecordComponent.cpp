@@ -54,7 +54,7 @@ Extent PatchRecordComponent::getExtent() const
     }
 }
 
-void PatchRecordComponent::visitHierarchy(HierarchyVisitor &v)
+void PatchRecordComponent::visitHierarchy(HierarchyVisitor &v, bool)
 {
     v(*this);
 }

@@ -47,9 +47,9 @@ PatchRecord::setUnitDimension(unit_representations::AsArray const &udim)
     return *this;
 }
 
-void PatchRecord::visitHierarchy(HierarchyVisitor &v)
+void PatchRecord::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<PatchRecord>(v);
+    visitHierarchyImpl<PatchRecord>(v, recursive);
 }
 
 void PatchRecord::flush_impl(

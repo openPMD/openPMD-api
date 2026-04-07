@@ -264,11 +264,14 @@ public:
     }
 
     template <typename ChildClass>
-    void visitHierarchyImpl(HierarchyVisitor &v)
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
     {
-        for (auto &p : *this)
+        if (recursive)
         {
-            p.second.visitHierarchy(v);
+            for (auto &p : *this)
+            {
+                p.second.visitHierarchy(v, recursive);
+            }
         }
         v(*static_cast<ChildClass *>(this));
     }

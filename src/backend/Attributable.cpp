@@ -297,41 +297,45 @@ void Attributable::touch()
     setDirtyRecursive(true);
 }
 
-void Attributable::visitHierarchy(HierarchyVisitor &)
+void Attributable::visitHierarchy(HierarchyVisitor &, bool)
 {
     throw error::Internal(
         "[Attributable::visitHierarchy] Cannot call this on base class.");
 }
 
-void Attributable::commitStructuralSetup()
+void Attributable::populateMissingMetadata(bool recursive)
 {
     auto standard = IOHandler()->m_standard;
-    visitHierarchyFromLambda([standard](auto &component) {
-        using ComponentType = std::remove_reference_t<decltype(component)>;
-        if constexpr (auxiliary::IsTemplateBaseOf_v<BaseRecord, ComponentType>)
-        {
-            if (component.empty() && !component.datasetDefined())
+    visitHierarchyFromLambda(
+        [standard](auto &component) {
+            using ComponentType = std::remove_reference_t<decltype(component)>;
+            if constexpr (
+                auxiliary::IsTemplateBaseOf_v<BaseRecord, ComponentType>)
             {
-                std::cerr
-                    << "Cannot flush Record without any contained components:'"
-                    << component.myPath().openPMDPath() << "'. Will ignore.";
-                if (component.written())
+                if (component.empty() && !component.datasetDefined())
                 {
-                    std::cerr
-                        << "\n(Note: The Record seems to have been written "
-                           "previously?)";
+                    std::cerr << "Cannot flush Record without any contained "
+                                 "components:'"
+                              << component.myPath().openPMDPath()
+                              << "'. Will ignore.";
+                    if (component.written())
+                    {
+                        std::cerr
+                            << "\n(Note: The Record seems to have been written "
+                               "previously?)";
+                    }
+                    std::cerr << std::endl;
+                    return;
                 }
-                std::cerr << std::endl;
-                return;
             }
-        }
 
-        if constexpr (
-            std::is_base_of_v<internal::ScientificDefaults, ComponentType>)
-        {
-            component.writeDefaults(standard);
-        }
-    });
+            if constexpr (
+                std::is_base_of_v<internal::ScientificDefaults, ComponentType>)
+            {
+                component.writeDefaults(standard);
+            }
+        },
+        recursive);
 }
 
 OpenpmdStandard Attributable::openPMDStandard() const

@@ -47,11 +47,7 @@ class ParticleSpecies
 public:
     ParticlePatches particlePatches;
 
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        visitHierarchyImpl<ParticleSpecies>(v);
-        particlePatches.visitHierarchy(v);
-    }
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
 private:
     ParticleSpecies();

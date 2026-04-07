@@ -326,7 +326,7 @@ public:
         typename = std::enable_if_t<std::is_floating_point<T>::value>>
     Mesh &setTimeOffset(T timeOffset);
 
-    void visitHierarchy(HierarchyVisitor &v) override;
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
 private:
     Mesh();

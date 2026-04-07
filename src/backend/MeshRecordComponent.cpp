@@ -66,6 +66,11 @@ MeshRecordComponent &MeshRecordComponent::setPosition(std::vector<T> pos)
     return *this;
 }
 
+void MeshRecordComponent::visitHierarchy(HierarchyVisitor &v, bool)
+{
+    v(*this);
+}
+
 void MeshRecordComponent::scientificDefaults_impl(
     bool write, OpenpmdStandard standard)
 {

@@ -654,7 +654,10 @@ void init_Attributable(py::module &m)
         // TODO remove in future versions (deprecated)
         .def("set_comment", &Attributable::setComment)
         .def("my_path", &Attributable::myPath)
-        .def("commit_structural_setup", &Iteration::commitStructuralSetup);
+        .def(
+            "populate_missing_metadata",
+            &Iteration::populateMissingMetadata,
+            py::arg("recursive"));
 
     py::bind_vector<PyAttributeKeys>(m, "Attribute_Keys");
 }

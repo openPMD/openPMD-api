@@ -95,10 +95,7 @@ public:
     template <typename T>
     MeshRecordComponent &makeConstant(T);
 
-    void visitHierarchy(HierarchyVisitor &v) override
-    {
-        v(*this);
-    }
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
 protected:
     void scientificDefaults_impl(bool write, OpenpmdStandard) override;

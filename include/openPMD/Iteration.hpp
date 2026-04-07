@@ -151,13 +151,13 @@ namespace internal
 class Meshes : public Container<Mesh>
 {
 public:
-    void visitHierarchy(HierarchyVisitor &v) override;
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 };
 
 class Particles : public Container<ParticleSpecies>
 {
 public:
-    void visitHierarchy(HierarchyVisitor &v) override;
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 };
 
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
@@ -298,7 +298,7 @@ public:
     [[deprecated("This attribute is no longer set by the openPMD-api.")]] bool
     closedByWriter() const;
 
-    void visitHierarchy(HierarchyVisitor &v) override;
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
     Meshes meshes{};
     Particles particles{};

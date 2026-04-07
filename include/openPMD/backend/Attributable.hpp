@@ -408,10 +408,14 @@ public:
      * @note As the HierarchyVisitor interface can be tedious to implement,
      *       consider using visitHierarchyFromLambda for a more convenient
      *       interface.
+
+     * @note to developers: if at any point a prefix traversal should become
+     *       necessary, consider emplacing configuration options for this inside
+     *       HierarchyVisitor to keep the interface clean.
      *
      * @param visitor Operations to run for each object.
      */
-    virtual void visitHierarchy(HierarchyVisitor &visitor);
+    virtual void visitHierarchy(HierarchyVisitor &visitor, bool recursive);
 
     /**
      * Visitor pattern for the openPMD object hierarchy in postfix traversal,
@@ -422,42 +426,31 @@ public:
      *
      * @note Definition inside include/openPMD/backend/HierarchyVisitorImpl.hpp.
      * @param lambda Operations to run for each object.
+     * @param recursive Extend the operation recursively to children.
      */
     template <typename Lambda>
-    void visitHierarchyFromLambda(Lambda &&lambda);
+    void visitHierarchyFromLambda(Lambda &&lambda, bool recursive);
 
-    /**
-     * Recursively freeze structural definitions made so far on the current
-     * object and all its children.
+    /** Create standard defined attributes with default values now, insofar they
+     *  are still missing.
      *
-     * This includes:
-     * 1. Explicit attribute writes
-     * 2. Implicit attributes, i.e.: Attributes defined by the openPMD standard
-     *    will now be populated with sensible default values
-     * 3. Dataset creation: The Dataset declarations set by resetDataset() will
-     *    now be fixed. Datasets can no longer be changed to constant components
-     *    after this.
-     * 4. Hierarchy setup, i.e. creation of group paths.
+     * Refer to
+     * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md
+     * for the attributes implied by this operation.
      *
-     * WARNING: this is still under development and not fully implemented yet
-     * (implementation status: only bullet 2. from above. ref.
-     * https://github.com/openPMD/openPMD-api/pull/1862 for the rest.)
+     * By default, standard defined attributes are written upon closing the
+     * containing Iteration / Series. Calling this soon can make data available
+     * for early readers (e.g. read while the writer is still modifying). In
+     * workflows that keep single Iterations open over an extended period of
+     * time (e.g. back-transformed diagnostics), this can help creating readable
+     * files earlier than without.
      *
-     * Uses of this include:
-     * 1. Setting up the metadata is a collective operation in some backends
-     *    (read: HDF5). When interacting with a dataset non-collectively (e.g.
-     *    single ranks without data contribution, variable number of blocks per
-     *    rank), this call harmonizes the collective metadata setup.
-     * 2. Forcing the creation of default attributes. By default, these are
-     *    written upon closing the containing Iteration / Series. Calling this
-     *    soon can make data available for early readers (e.g. read while the
-     *    writer is still modifying).
+     * Attributes may still be modified after this as usual. Attributes defined
+     * before this call will not be modified by it.
      *
-     * Modifying the frozen structural setup is only possible insofar as the
-     * backend supports this, e.g. by dataset extension, attribute overwrite or
-     * group deletion.
+     * @param recursive Extend the operation recursively to children.
      */
-    void commitStructuralSetup();
+    void populateMissingMetadata(bool recursive);
 
     [[nodiscard]] OpenpmdStandard openPMDStandard() const;
 

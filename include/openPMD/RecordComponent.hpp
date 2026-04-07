@@ -488,7 +488,7 @@ public:
     auto visit(Args &&...args) -> decltype(Visitor::template call<char>(
         std::declval<RecordComponent &>(), std::forward<Args>(args)...));
 
-    void visitHierarchy(HierarchyVisitor &v) override;
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
     static constexpr char const *const SCALAR = "\vScalar";
 

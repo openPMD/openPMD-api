@@ -81,9 +81,9 @@ auto makeHierarchyVisitorFromLambda(Lambda &&lambda)
 }
 
 template <typename Lambda>
-void Attributable::visitHierarchyFromLambda(Lambda &&lambda)
+void Attributable::visitHierarchyFromLambda(Lambda &&lambda, bool recursive)
 {
     auto visitor = makeHierarchyVisitorFromLambda(std::forward<Lambda>(lambda));
-    this->visitHierarchy(visitor);
+    this->visitHierarchy(visitor, recursive);
 }
 } // namespace openPMD
