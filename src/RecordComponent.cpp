@@ -257,7 +257,7 @@ std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr_impl_mut(newData, dtype)
-        .load(EnqueuePolicy::Defer);
+        .loadRaw(EnqueuePolicy::Defer);
     return newData;
 }
 
@@ -858,7 +858,7 @@ std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
         operation.extent(std::move(e));
     }
 
-    return operation.load<T>(EnqueuePolicy::Defer);
+    return operation.loadRaw<T>(EnqueuePolicy::Defer);
 }
 
 namespace detail
@@ -999,7 +999,7 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         operation.extent(std::move(e));
     }
 
-    operation.withSharedPtr(std::move(data)).load(EnqueuePolicy::Defer);
+    operation.withSharedPtr(std::move(data)).loadRaw(EnqueuePolicy::Defer);
 }
 
 template <typename T>
@@ -1009,7 +1009,7 @@ void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
-        .load(EnqueuePolicy::Defer);
+        .loadRaw(EnqueuePolicy::Defer);
 }
 
 template <typename T>
@@ -1019,7 +1019,7 @@ void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr(std::move(data))
-        .store(EnqueuePolicy::Defer);
+        .storeRaw(EnqueuePolicy::Defer);
 }
 
 template <typename T>
@@ -1030,7 +1030,7 @@ void RecordComponent::storeChunk(
         .offset(std::move(o))
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
-        .store(EnqueuePolicy::Defer);
+        .storeRaw(EnqueuePolicy::Defer);
 }
 
 template <typename T>
@@ -1040,7 +1040,7 @@ void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
-        .store(EnqueuePolicy::Defer);
+        .storeRaw(EnqueuePolicy::Defer);
 }
 
 template <typename T>
