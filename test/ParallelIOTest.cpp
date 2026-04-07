@@ -492,13 +492,13 @@ void available_chunks_test(std::string const &file_ending)
             .withContiguousContainer(ydata_firstandlastrow)
             .offset({0, 3ul * mpi_rank})
             .extent({1, 3})
-            .enqueueStore();
+            .store();
         E_y.prepareLoadStore()
             .offset({1, 3ul * mpi_rank})
             .extent({3, 3})
             .withContiguousContainer(ydata)
             .memorySelection({{1, 1}, {5, 5}})
-            .enqueueStore();
+            .store();
         // if condition checks if this PR is available in ADIOS2:
         // https://github.com/ornladios/ADIOS2/pull/4169
         if constexpr (CanTheMemorySelectionBeReset)
@@ -507,7 +507,7 @@ void available_chunks_test(std::string const &file_ending)
                 .withContiguousContainer(ydata_firstandlastrow)
                 .offset({4, 3ul * mpi_rank})
                 .extent({1, 3})
-                .enqueueStore();
+                .store();
         }
         it0.close();
     }
@@ -548,14 +548,13 @@ void available_chunks_test(std::string const &file_ending)
         auto E_y = it0.meshes["E"]["y"];
         auto width = E_y.getExtent()[1];
         auto first_row =
-            E_y.prepareLoadStore().extent({1, width}).enqueueLoad<int>().get();
+            E_y.prepareLoadStore().extent({1, width}).load<int>().get();
         auto middle_rows = E_y.prepareLoadStore()
                                .offset({1, 0})
                                .extent({3, width})
-                               .enqueueLoad<int>()
+                               .load<int>()
                                .get();
-        auto last_row =
-            E_y.prepareLoadStore().offset({4, 0}).enqueueLoad<int>().get();
+        auto last_row = E_y.prepareLoadStore().offset({4, 0}).load<int>().get();
         read.flush();
 
         for (auto row : [&]() -> std::vector<std::shared_ptr<int> *> {

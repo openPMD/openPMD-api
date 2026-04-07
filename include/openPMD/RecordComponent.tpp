@@ -79,7 +79,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     return prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
-        .enqueueStore<T>(std::forward<F>(createBuffer));
+        .storeSpan<T>(std::forward<F>(createBuffer));
 }
 
 template <typename T, typename F>
@@ -200,7 +200,7 @@ inline auto RecordComponent::visit(Args &&...args)
 
 // definitions for LoadStoreChunk.hpp
 template <typename T, typename F>
-auto ConfigureLoadStore::enqueueStore(F &&createBuffer) -> DynamicMemoryView<T>
+auto ConfigureLoadStore::storeSpan(F &&createBuffer) -> DynamicMemoryView<T>
 {
     return m_rc.storeChunkSpanCreateBuffer_impl<T>(
         storeChunkConfig(), std::forward<F>(createBuffer));

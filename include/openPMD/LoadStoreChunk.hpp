@@ -154,17 +154,17 @@ public:
 
     // Enqueue methods (deferred execution)
     template <typename T>
-    [[nodiscard]] auto enqueueStore() -> DynamicMemoryView<T>;
+    [[nodiscard]] auto storeSpan() -> DynamicMemoryView<T>;
     // definition for this one is in RecordComponent.tpp since it needs the
     // definition of class RecordComponent.
     template <typename T, typename F>
-    [[nodiscard]] auto enqueueStore(F &&createBuffer) -> DynamicMemoryView<T>;
+    [[nodiscard]] auto storeSpan(F &&createBuffer) -> DynamicMemoryView<T>;
 
     template <typename T>
-    [[nodiscard]] auto enqueueLoad()
+    [[nodiscard]] auto load()
         -> auxiliary::DeferredComputation<std::shared_ptr<T>>;
 
-    [[nodiscard]] auto enqueueLoadVariant() -> auxiliary::DeferredComputation<
+    [[nodiscard]] auto loadVariant() -> auxiliary::DeferredComputation<
         auxiliary::detail::shared_ptr_dataset_types>;
 
 private:
@@ -220,7 +220,7 @@ public:
     }
 
     // Enqueue method (deferred execution)
-    auto enqueueStore() -> auxiliary::DeferredComputation<void>;
+    auto store() -> auxiliary::DeferredComputation<void>;
 
     /** This intentionally shadows the parent class's enqueueLoad methods in
      * order to show a compile error when using load() on an object
@@ -228,7 +228,7 @@ public:
      * typecasting if needed.
      */
     template <typename X = void>
-    auto enqueueLoad()
+    auto load()
     {
         static_assert(
             auxiliary::dependent_false_v<X>,
@@ -278,7 +278,7 @@ public:
     }
 
     // Enqueue method (deferred execution)
-    auto enqueueLoad() -> auxiliary::DeferredComputation<void>;
+    auto load() -> auxiliary::DeferredComputation<void>;
 
 private:
     // Direct execution method (with EnqueuePolicy)

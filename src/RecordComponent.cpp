@@ -1049,7 +1049,7 @@ DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
     return prepareLoadStore()
         .offset(std::move(offset))
         .extent(std::move(extent))
-        .enqueueStore<T>();
+        .storeSpan<T>();
 }
 
 template <typename T>

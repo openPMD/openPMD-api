@@ -949,7 +949,7 @@ inline void constant_scalar(std::string const &file_ending)
         E_y.prepareLoadStore()
             .extent({1, 2, 3})
             .withUniquePtr(std::move(E).static_cast_<unsigned int const>())
-            .enqueueStore();
+            .store();
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.snapshots()[1].meshes["E"];
@@ -1760,7 +1760,7 @@ inline void write_test(
     auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
 
     auto variantTypeDataset = rc.loadChunkVariant();
-    auto variantTypeDataset2 = rc.prepareLoadStore().enqueueLoadVariant().get();
+    auto variantTypeDataset2 = rc.prepareLoadStore().loadVariant().get();
     rc.seriesFlush();
     for (auto ptr : {&variantTypeDataset, &variantTypeDataset2})
     {
