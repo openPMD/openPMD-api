@@ -241,21 +241,6 @@ auto ConfigureLoadStore::load()
         });
 }
 
-template <typename T>
-auto ConfigureLoadStore::loadRaw(EnqueuePolicy ep) -> std::shared_ptr<T>
-{
-    auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
-    switch (ep)
-    {
-    case EnqueuePolicy::Defer:
-        break;
-    case EnqueuePolicy::Immediate:
-        m_rc.seriesFlush();
-        break;
-    }
-    return res;
-}
-
 struct VisitorEnqueueLoadVariantWithFlush
 {
     template <typename T, typename F>
@@ -313,21 +298,6 @@ struct VisitorLoadVariant
     }
 };
 
-auto ConfigureLoadStore::loadVariantRaw(EnqueuePolicy ep)
-    -> auxiliary::detail::shared_ptr_dataset_types
-{
-    auto res = m_rc.visit<VisitorLoadVariant>(this->storeChunkConfig());
-    switch (ep)
-    {
-    case EnqueuePolicy::Defer:
-        break;
-    case EnqueuePolicy::Immediate:
-        m_rc.seriesFlush();
-        break;
-    }
-    return res;
-}
-
 ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer(
     auxiliary::WriteBuffer buffer, Datatype dt, ConfigureLoadStore &&core)
     : ConfigureLoadStore(std::move(core))
@@ -356,20 +326,6 @@ auto ConfigureStoreChunkFromBuffer::store()
         [dflush = deferFlush(m_rc)]() mutable -> void { dflush(); });
 }
 
-auto ConfigureStoreChunkFromBuffer::storeRaw(EnqueuePolicy ep) -> void
-{
-    this->m_rc.storeChunk_impl(
-        std::move(m_buffer), m_datatype, storeChunkConfig());
-    switch (ep)
-    {
-    case EnqueuePolicy::Defer:
-        break;
-    case EnqueuePolicy::Immediate:
-        m_rc.seriesFlush();
-        break;
-    }
-}
-
 auto ConfigureLoadStoreFromBuffer::load()
     -> auxiliary::DeferredComputation<void>
 {
@@ -392,29 +348,6 @@ auto ConfigureLoadStoreFromBuffer::load()
         [dflush = this->deferFlush(this->m_rc)]() mutable -> void {
             dflush();
         });
-}
-
-auto ConfigureLoadStoreFromBuffer::loadRaw(EnqueuePolicy ep) -> void
-{
-    auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
-        &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
-    if (!shared_ptr)
-    {
-        throw std::runtime_error(
-            "ConfigureLoadStoreFromBuffer must be instantiated with a "
-            "non-const shared_ptr type.");
-    }
-    this->m_rc.loadChunk_impl(
-        *shared_ptr, m_datatype, this->storeChunkConfig());
-    switch (ep)
-    {
-
-    case EnqueuePolicy::Defer:
-        break;
-    case EnqueuePolicy::Immediate:
-        this->m_rc.seriesFlush();
-        break;
-    }
 }
 
 void ConfigureLoadStore::extent_impl(Extent extent)
@@ -446,9 +379,7 @@ void ConfigureStoreChunkFromBuffer::memorySelection_impl(MemorySelection sel)
 #define INSTANTIATE_METHOD_TEMPLATES(dtype)                                    \
     template auto ConfigureLoadStore::load()                                   \
         -> auxiliary::DeferredComputation<OPENPMD_APPLY_TEMPLATE(              \
-            std::shared_ptr, dtype)>;                                          \
-    template auto ConfigureLoadStore::loadRaw(EnqueuePolicy)                   \
-        ->std::shared_ptr<dtype>;
+            std::shared_ptr, dtype)>;
 #define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
     INSTANTIATE_METHOD_TEMPLATES(type)                                         \
     INSTANTIATE_METHOD_TEMPLATES(OPENPMD_ARRAY(type))                          \
