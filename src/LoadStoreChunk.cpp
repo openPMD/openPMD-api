@@ -2,8 +2,10 @@
 
 #include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
+#include "openPMD/auxiliary/Future.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
@@ -70,6 +72,12 @@ auto ConfigureLoadStore::storeChunkConfig() -> internal::LoadStoreConfig
 
 auto ConfigureLoadStore::deferFlush(Attributable &attr)
 {
+    if (m_unsafeNoAutomaticFlush)
+    {
+        throw error::Internal(
+            "Configuring an automatic flush operating after configuring that "
+            "those should be switched off.");
+    }
     auto index = attr.IOHandler()->m_flushCounter;
     return [attr,
             old_index = *index,
@@ -221,6 +229,11 @@ auto ConfigureLoadStore::load()
     -> auxiliary::DeferredComputation<std::shared_ptr<T>>
 {
     auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
+    if (m_unsafeNoAutomaticFlush)
+    {
+        return auxiliary::DeferredComputation<std::shared_ptr<T>>(
+            std::move(res));
+    }
     return auxiliary::DeferredComputation<std::shared_ptr<T>>(
         [res_lambda = std::move(res), dflush = deferFlush(m_rc)]() mutable {
             dflush();
@@ -243,7 +256,7 @@ auto ConfigureLoadStore::loadRaw(EnqueuePolicy ep) -> std::shared_ptr<T>
     return res;
 }
 
-struct VisitorEnqueueLoadVariant
+struct VisitorEnqueueLoadVariantWithFlush
 {
     template <typename T, typename F>
     static auto
@@ -262,12 +275,32 @@ struct VisitorEnqueueLoadVariant
             });
     }
 };
+struct VisitorEnqueueLoadVariantWithoutFlush
+{
+    template <typename T>
+    static auto call(RecordComponent &rc, internal::LoadStoreConfig cfg)
+        -> auxiliary::DeferredComputation<
+            auxiliary::detail::shared_ptr_dataset_types>
+    {
+        auto res = rc.loadChunkAllocate_impl<T>(std::move(cfg));
+        return auxiliary::DeferredComputation<
+            auxiliary::detail::shared_ptr_dataset_types>(std::move(res));
+    }
+};
 
 auto ConfigureLoadStore::loadVariant() -> auxiliary::DeferredComputation<
     auxiliary::detail::shared_ptr_dataset_types>
 {
-    return m_rc.visit<VisitorEnqueueLoadVariant>(
-        this->storeChunkConfig(), deferFlush(m_rc));
+    if (m_unsafeNoAutomaticFlush)
+    {
+        return m_rc.visit<VisitorEnqueueLoadVariantWithoutFlush>(
+            this->storeChunkConfig());
+    }
+    else
+    {
+        return m_rc.visit<VisitorEnqueueLoadVariantWithFlush>(
+            this->storeChunkConfig(), deferFlush(m_rc));
+    }
 }
 
 struct VisitorLoadVariant
@@ -314,6 +347,11 @@ auto ConfigureStoreChunkFromBuffer::store()
 {
     this->m_rc.storeChunk_impl(
         std::move(m_buffer), m_datatype, storeChunkConfig());
+    if (m_unsafeNoAutomaticFlush)
+    {
+        return auxiliary::DeferredComputation<void>(
+            auxiliary::detail::CachedValue<void>());
+    }
     return auxiliary::DeferredComputation<void>(
         [dflush = deferFlush(m_rc)]() mutable -> void { dflush(); });
 }
@@ -345,6 +383,11 @@ auto ConfigureLoadStoreFromBuffer::load()
     }
     this->m_rc.loadChunk_impl(
         *shared_ptr, m_datatype, this->storeChunkConfig());
+    if (m_unsafeNoAutomaticFlush)
+    {
+        return auxiliary::DeferredComputation<void>(
+            auxiliary::detail::CachedValue<void>());
+    }
     return auxiliary::DeferredComputation<void>(
         [dflush = this->deferFlush(this->m_rc)]() mutable -> void {
             dflush();
@@ -382,6 +425,11 @@ void ConfigureLoadStore::extent_impl(Extent extent)
 void ConfigureLoadStore::offset_impl(Offset offset)
 {
     m_offset = std::make_optional<Offset>(std::move(offset));
+}
+
+void ConfigureLoadStore::unsafeNoAutomaticFlush_impl()
+{
+    m_unsafeNoAutomaticFlush = true;
 }
 
 void ConfigureStoreChunkFromBuffer::memorySelection_impl(MemorySelection sel)

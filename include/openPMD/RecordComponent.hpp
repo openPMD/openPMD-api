@@ -135,7 +135,8 @@ class RecordComponent
     friend class ConfigureLoadStore;
     friend class ConfigureLoadStoreFromBuffer;
     friend class ConfigureStoreChunkFromBuffer;
-    friend struct VisitorEnqueueLoadVariant;
+    friend struct VisitorEnqueueLoadVariantWithoutFlush;
+    friend struct VisitorEnqueueLoadVariantWithFlush;
     friend struct VisitorLoadVariant;
 
 public:
