@@ -229,7 +229,7 @@ auto ConfigureLoadStore::enqueueLoad()
 }
 
 template <typename T>
-auto ConfigureLoadStore::load(EnqueuePolicy ep) -> std::shared_ptr<T>
+auto ConfigureLoadStore::loadRaw(EnqueuePolicy ep) -> std::shared_ptr<T>
 {
     auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
     switch (ep)
@@ -280,7 +280,7 @@ struct VisitorLoadVariant
     }
 };
 
-auto ConfigureLoadStore::loadVariant(EnqueuePolicy ep)
+auto ConfigureLoadStore::loadVariantRaw(EnqueuePolicy ep)
     -> auxiliary::detail::shared_ptr_dataset_types
 {
     auto res = m_rc.visit<VisitorLoadVariant>(this->storeChunkConfig());
@@ -318,7 +318,7 @@ auto ConfigureStoreChunkFromBuffer::enqueueStore()
         [dflush = deferFlush(m_rc)]() mutable -> void { dflush(); });
 }
 
-auto ConfigureStoreChunkFromBuffer::store(EnqueuePolicy ep) -> void
+auto ConfigureStoreChunkFromBuffer::storeRaw(EnqueuePolicy ep) -> void
 {
     this->m_rc.storeChunk_impl(
         std::move(m_buffer), m_datatype, storeChunkConfig());
@@ -351,7 +351,7 @@ auto ConfigureLoadStoreFromBuffer::enqueueLoad()
         });
 }
 
-auto ConfigureLoadStoreFromBuffer::load(EnqueuePolicy ep) -> void
+auto ConfigureLoadStoreFromBuffer::loadRaw(EnqueuePolicy ep) -> void
 {
     auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
         &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
@@ -399,7 +399,7 @@ void ConfigureStoreChunkFromBuffer::memorySelection_impl(MemorySelection sel)
     template auto ConfigureLoadStore::enqueueLoad()                            \
         -> auxiliary::DeferredComputation<OPENPMD_APPLY_TEMPLATE(              \
             std::shared_ptr, dtype)>;                                          \
-    template auto ConfigureLoadStore::load(EnqueuePolicy)                      \
+    template auto ConfigureLoadStore::loadRaw(EnqueuePolicy)                   \
         ->std::shared_ptr<dtype>;
 #define INSTANTIATE_METHOD_TEMPLATES_WITH_AND_WITHOUT_EXTENT(type)             \
     INSTANTIATE_METHOD_TEMPLATES(type)                                         \

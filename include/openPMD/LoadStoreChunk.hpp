@@ -167,17 +167,19 @@ public:
     [[nodiscard]] auto enqueueLoadVariant() -> auxiliary::DeferredComputation<
         auxiliary::detail::shared_ptr_dataset_types>;
 
+private:
     // Direct execution methods (with EnqueuePolicy)
     template <typename T>
-    [[nodiscard]] auto load(EnqueuePolicy) -> std::shared_ptr<T>;
+    [[nodiscard]] auto loadRaw(EnqueuePolicy) -> std::shared_ptr<T>;
 
-    [[nodiscard]] auto loadVariant(EnqueuePolicy)
+    [[nodiscard]] auto loadVariantRaw(EnqueuePolicy)
         -> auxiliary::detail::shared_ptr_dataset_types;
 };
 
 class ConfigureStoreChunkFromBuffer : public ConfigureLoadStore
 {
     friend class ConfigureLoadStore;
+    friend class RecordComponent;
 
 protected:
     auxiliary::WriteBuffer m_buffer;
@@ -220,9 +222,6 @@ public:
     // Enqueue method (deferred execution)
     auto enqueueStore() -> auxiliary::DeferredComputation<void>;
 
-    // Direct execution method (with EnqueuePolicy)
-    auto store(EnqueuePolicy) -> void;
-
     /** This intentionally shadows the parent class's enqueueLoad methods in
      * order to show a compile error when using load() on an object
      * of this class. The parent method can still be accessed through
@@ -237,8 +236,12 @@ public:
             "unique_ptr.");
     }
 
+private:
+    // Direct execution method (with EnqueuePolicy)
+    auto storeRaw(EnqueuePolicy) -> void;
+
     template <typename X = void>
-    auto load(EnqueuePolicy)
+    auto loadRaw(EnqueuePolicy)
     {
         static_assert(
             auxiliary::dependent_false_v<X>,
@@ -250,6 +253,7 @@ public:
 class ConfigureLoadStoreFromBuffer : public ConfigureStoreChunkFromBuffer
 {
     friend class ConfigureLoadStore;
+    friend class RecordComponent;
 
     using ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer;
 
@@ -276,8 +280,9 @@ public:
     // Enqueue method (deferred execution)
     auto enqueueLoad() -> auxiliary::DeferredComputation<void>;
 
+private:
     // Direct execution method (with EnqueuePolicy)
-    auto load(EnqueuePolicy) -> void;
+    auto loadRaw(EnqueuePolicy) -> void;
 };
 
 } // namespace openPMD
