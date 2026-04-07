@@ -102,6 +102,19 @@ auto DeferredComputation<T>::operator()() -> T
 }
 
 template <typename T>
+void DeferredComputation<T>::forget() &&
+{
+    std::visit(
+        auxiliary::overloaded{
+            [](detail::OneTimeTask<T> &task) {
+                task.m_task = {};
+                task.m_task_valid = false;
+            },
+            [](detail::CachedValue<T> const &) {}},
+        this->m_task);
+}
+
+template <typename T>
 auto DeferredComputation<T>::valid() const noexcept -> bool
 {
     return std::visit(
