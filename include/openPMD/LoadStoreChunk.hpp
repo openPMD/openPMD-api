@@ -45,12 +45,6 @@ namespace auxiliary::detail
 #undef OPENPMD_ENUMERATE_TYPES
 } // namespace auxiliary::detail
 
-enum class EnqueuePolicy : std::uint8_t
-{
-    Defer,
-    Immediate
-};
-
 /*
  * Actual data members of `ConfigureLoadStore<>` and methods that don't
  * depend on the ChildClass template parameter. By extracting the members to
@@ -174,20 +168,11 @@ public:
 
     [[nodiscard]] auto loadVariant() -> auxiliary::DeferredComputation<
         auxiliary::detail::shared_ptr_dataset_types>;
-
-private:
-    // Direct execution methods (with EnqueuePolicy)
-    template <typename T>
-    [[nodiscard]] auto loadRaw(EnqueuePolicy) -> std::shared_ptr<T>;
-
-    [[nodiscard]] auto loadVariantRaw(EnqueuePolicy)
-        -> auxiliary::detail::shared_ptr_dataset_types;
 };
 
 class ConfigureStoreChunkFromBuffer : public ConfigureLoadStore
 {
     friend class ConfigureLoadStore;
-    friend class RecordComponent;
 
 protected:
     auxiliary::WriteBuffer m_buffer;
@@ -248,19 +233,6 @@ public:
             "Cannot load chunk data into a buffer that is const or a "
             "unique_ptr.");
     }
-
-private:
-    // Direct execution method (with EnqueuePolicy)
-    auto storeRaw(EnqueuePolicy) -> void;
-
-    template <typename X = void>
-    auto loadRaw(EnqueuePolicy)
-    {
-        static_assert(
-            auxiliary::dependent_false_v<X>,
-            "Cannot load chunk data into a buffer that is const or a "
-            "unique_ptr.");
-    }
 };
 
 class ConfigureLoadStoreFromBuffer : public ConfigureStoreChunkFromBuffer
@@ -297,10 +269,6 @@ public:
 
     // Enqueue method (deferred execution)
     auto load() -> auxiliary::DeferredComputation<void>;
-
-private:
-    // Direct execution method (with EnqueuePolicy)
-    auto loadRaw(EnqueuePolicy) -> void;
 };
 
 } // namespace openPMD
