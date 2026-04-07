@@ -9,62 +9,108 @@
 
 #include "openPMD/DatatypeMacros.hpp"
 
+namespace openPMD::auxiliary::detail
+{
+template <typename T>
+auto OneTimeTask<T>::operator()() -> T
+{
+    if (!this->m_task_valid)
+    {
+        throw std::runtime_error(
+            "[DeferredComputation] No valid state. Probably already "
+            "computed.");
+    }
+    if (!this->m_task)
+    {
+        throw std::runtime_error(
+            "[DeferredComputation] No valid task was specified.");
+    }
+    this->m_task_valid = false;
+    if constexpr (std::is_void_v<T>)
+    {
+        std::move(this->m_task)();
+        this->m_task = {};
+    }
+    else
+    {
+        auto res = std::move(this->m_task)();
+        this->m_task = {}; // reset
+        return res;
+    }
+}
+} // namespace openPMD::auxiliary::detail
+
 namespace openPMD::auxiliary
 {
 
 template <typename T>
 DeferredComputation<T>::DeferredComputation(task_type task)
-    : m_task([wrapped_task = std::move(task), this]() {
-        if (!this->m_valid)
-        {
-            throw std::runtime_error(
-                "[DeferredComputation] No valid state. Probably already "
-                "computed.");
-        }
-        this->m_valid = false;
-        return std::move(wrapped_task)();
-    })
-    , m_valid(true)
+    : m_task(detail::OneTimeTask<T>{std::move(task)})
 {}
 
 template <typename T>
 DeferredComputation<T>::~DeferredComputation()
 {
-    if (m_valid)
+    try
     {
-        try
-        {
-            get();
-        }
-        catch (std::exception const &e)
-        {
-            std::cerr << "[DeferredComputation] Error in destructor: '"
-                      << e.what() << "'." << std::endl;
-        }
-        catch (...)
-        {
-            std::cerr << "[DeferredComputation] Unknown error in destructor."
-                      << std::endl;
-        }
+        std::visit(
+            auxiliary::overloaded{
+                [](detail::OneTimeTask<T> &task) {
+                    if (task.m_task_valid)
+                    {
+                        std::move(task)();
+                    }
+                },
+                [](detail::CachedValue<T> &) {}},
+            this->m_task);
+    }
+    catch (std::exception const &e)
+    {
+        std::cerr << "[DeferredComputation] Error in destructor: '" << e.what()
+                  << "'." << std::endl;
+    }
+    catch (...)
+    {
+        std::cerr << "[DeferredComputation] Unknown error in destructor."
+                  << std::endl;
     }
 }
 
 template <typename T>
 auto DeferredComputation<T>::get() -> T
 {
-    return m_task();
+    return std::visit(
+        auxiliary::overloaded{
+            [](detail::OneTimeTask<T> &task) -> T { return std::move(task)(); },
+            [](detail::CachedValue<T> &cached) -> T {
+                if constexpr (std::is_void_v<T>)
+                {
+                    return;
+                }
+                else
+                {
+                    return cached.val;
+                }
+            }},
+        this->m_task);
 }
 
 template <typename T>
 auto DeferredComputation<T>::operator()() -> T
 {
-    return m_task();
+    return get();
 }
 
 template <typename T>
 auto DeferredComputation<T>::valid() const noexcept -> bool
 {
-    return m_valid;
+    return std::visit(
+        auxiliary::overloaded{
+            [](detail::OneTimeTask<T> const &task) {
+                return task.m_task_valid;
+            },
+            [](detail::CachedValue<T> const &) { return true; }},
+        this->m_task);
 }
 
 template class DeferredComputation<void>;
