@@ -18,6 +18,7 @@ public:
     ~DeferredComputation();
 
     auto get() -> T;
+    auto operator()() -> T;
 
     [[nodiscard]] auto valid() const noexcept -> bool;
 };

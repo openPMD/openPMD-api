@@ -56,6 +56,12 @@ auto DeferredComputation<T>::get() -> T
 }
 
 template <typename T>
+auto DeferredComputation<T>::operator()() -> T
+{
+    return m_task();
+}
+
+template <typename T>
 auto DeferredComputation<T>::valid() const noexcept -> bool
 {
     return m_valid;
