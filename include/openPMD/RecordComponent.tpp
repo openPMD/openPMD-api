@@ -47,7 +47,7 @@ RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
         .offset(std::move(o))
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
-        .store(EnqueuePolicy::Defer);
+        .storeRaw(EnqueuePolicy::Defer);
 }
 
 template <typename T_ContiguousContainer>
@@ -69,7 +69,7 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 
     std::move(storeChunkConfig)
         .withContiguousContainer(data)
-        .store(EnqueuePolicy::Defer);
+        .storeRaw(EnqueuePolicy::Defer);
 }
 
 template <typename T, typename F>
