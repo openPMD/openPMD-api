@@ -87,16 +87,17 @@ auto DeferredComputation<T>::get() -> T
     return std::visit(
         auxiliary::overloaded{
             [](detail::OneTimeTask<T> &task) -> T { return std::move(task)(); },
-            [](detail::CachedValue<T> &cached) -> T {
-                if constexpr (std::is_void_v<T>)
-                {
-                    return;
-                }
-                else
-                {
-                    return cached.val;
-                }
-            }},
+            [](detail::CachedValue<T> &cached) -> T { return cached.val; }},
+        this->m_task);
+}
+
+template <>
+auto DeferredComputation<void>::get() -> void
+{
+    std::visit(
+        auxiliary::overloaded{
+            [](detail::OneTimeTask<void> &task) { std::move(task)(); },
+            [](detail::CachedValue<void> &) { return; }},
         this->m_task);
 }
 
