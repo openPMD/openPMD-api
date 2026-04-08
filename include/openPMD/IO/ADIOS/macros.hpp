@@ -50,6 +50,10 @@ namespace openPMD
 {
 namespace detail
 {
+    /** Trait to check if a variable supports SetMemorySelection
+     *
+     * @tparam Variable ADIOS2 variable type
+     */
     template <typename Variable, typename SFINAE = void>
     struct CanTheMemorySelectionBeReset
     {
@@ -65,6 +69,7 @@ namespace detail
     };
 } // namespace detail
 
+/** Whether ADIOS2 Variable supports SetMemorySelection */
 constexpr bool CanTheMemorySelectionBeReset =
     detail::CanTheMemorySelectionBeReset<adios2::Variable<int>>::value;
 } // namespace openPMD
