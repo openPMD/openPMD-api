@@ -394,7 +394,8 @@ protected:
      * @param params Parsed flush parameters
      * @return Future indicating completion state
      */
-    virtual std::future<void> flush_impl(internal::ParsedFlushParams &) = 0;
+    virtual std::future<void>
+    flush_impl(internal::ParsedFlushParams &params) = 0;
 }; // AbstractIOHandler
 
 } // namespace openPMD
