@@ -563,7 +563,8 @@ struct OPENPMDAPI_EXPORT
     }
 
     // in parameters
-    /** If true, only query if the backend supports buffer views without performing operation */
+    /** If true, only query if the backend supports buffer views without
+     * performing operation */
     bool queryOnly = false;
     Offset offset;
     Extent extent;
