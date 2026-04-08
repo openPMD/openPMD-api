@@ -414,6 +414,7 @@ public:
      *       HierarchyVisitor to keep the interface clean.
      *
      * @param visitor Operations to run for each object.
+     * @param recursive Extend the operation recursively to children.
      */
     virtual void visitHierarchy(HierarchyVisitor &visitor, bool recursive);
 

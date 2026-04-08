@@ -371,8 +371,7 @@ auto StatefulSnapshotsContainer::snapshotWorkflow() const -> SnapshotWorkflow
     return SnapshotWorkflow::Synchronous;
 }
 
-RandomAccessIteratorContainer::RandomAccessIteratorContainer(
-    Container<Iteration, key_type> cont)
+RandomAccessIteratorContainer::RandomAccessIteratorContainer(Iterations cont)
     : m_cont(std::move(cont))
 {}
 

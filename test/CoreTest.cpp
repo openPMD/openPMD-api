@@ -1087,7 +1087,7 @@ TEST_CASE("wrapper_test", "[core]")
         Datatype::LONG_DOUBLE);
     REQUIRE(o.iterations[1].meshes["E"]["x"].getExtent() == Extent{7});
 
-    Container<Iteration, uint64_t> its = o.iterations;
+    Iterations its = o.iterations;
     its[1].meshes["E"]["y"].resetDataset(Dataset(Datatype::CHAR, {2}));
     REQUIRE(o.iterations[1].meshes["E"].count("y") == 1);
     REQUIRE(o.iterations[1].meshes["E"]["y"].getDatatype() == Datatype::CHAR);

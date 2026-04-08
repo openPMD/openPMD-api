@@ -537,4 +537,10 @@ private:
         : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
     {}
 };
+
+class Iterations : public Container<Iteration, Iteration::IterationIndex_t>
+{
+public:
+    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
+};
 } // namespace openPMD

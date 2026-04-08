@@ -66,12 +66,6 @@ class ReadIterations;
 class StatefulIterator;
 class Series;
 
-class Iterations : public Container<Iteration, Iteration::IterationIndex_t>
-{
-public:
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-};
-
 namespace internal
 {
     /* Just a more self-documenting boolean used for

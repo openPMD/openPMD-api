@@ -218,11 +218,6 @@ struct Series::ParsedInput
     bool verify_homogeneous_extents = true;
 }; // ParsedInput
 
-void Iterations::visitHierarchy(HierarchyVisitor &v, bool recursive)
-{
-    visitHierarchyImpl<Iterations>(v, recursive);
-}
-
 std::string Series::openPMD() const
 {
     return getAttribute("openPMD").get<std::string>();

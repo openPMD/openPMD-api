@@ -131,9 +131,9 @@ class RandomAccessIteratorContainer : public AbstractSnapshotsContainer
 {
 private:
     friend class Series;
-    using Container_t = Container<Iteration, key_type>;
+    using Container_t = Iterations;
     Container_t m_cont;
-    RandomAccessIteratorContainer(Container<Iteration, key_type> cont);
+    RandomAccessIteratorContainer(Iterations cont);
 
     using concrete_iterator_type = RandomAccessIterator<Container_t::iterator>;
     using concrete_reverse_iterator_type =

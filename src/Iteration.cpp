@@ -983,6 +983,11 @@ void Iteration::scientificDefaults_impl(bool write, OpenpmdStandard)
         .withReader(float_types, require_type<double>())(wor);
 }
 
+void Iterations::visitHierarchy(HierarchyVisitor &v, bool recursive)
+{
+    visitHierarchyImpl<Iterations>(v, recursive);
+}
+
 template float Iteration::time<float>() const;
 template double Iteration::time<double>() const;
 template long double Iteration::time<long double>() const;
