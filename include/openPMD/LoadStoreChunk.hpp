@@ -22,11 +22,18 @@ class Attributable;
 
 namespace internal
 {
+    /** Internal configuration for load/store operations without buffer. Default
+     * values for optionally specified parameters (offset, extent) must be
+     * computed to create this configuration struct. */
     struct LoadStoreConfig
     {
         Offset offset;
         Extent extent;
     };
+    /** Internal configuration for load/store operations with buffer. Default
+     * values for optionally specified parameters (offset, extent) must be
+     * computed to create this configuration struct. MemorySelection remains
+     * optional even then. */
     struct LoadStoreConfigWithBuffer
     {
         Offset offset;
@@ -45,7 +52,8 @@ namespace auxiliary::detail
 #undef OPENPMD_ENUMERATE_TYPES
 } // namespace auxiliary::detail
 
-/*
+/** Base class for configuring load/store chunk operations.
+ *
  * Actual data members of `ConfigureLoadStore<>` and methods that don't
  * depend on the ChildClass template parameter. By extracting the members to
  * this struct, we can pass them around between different instances of the
@@ -102,16 +110,41 @@ public:
     using this_t = ConfigureLoadStore;
 
     // Configuration methods (always available)
+
+    /** Set the offset within the dataset
+     *
+     * Optional. The operation will apply without offset by default (i.e. offset
+     * = (0, 0, ...)).
+     *
+     * @param offset Offset within the dataset
+     * @return Reference to this object for chaining
+     */
     auto offset(Offset offset) -> this_t &
     {
         offset_impl(std::move(offset));
         return *this;
     }
+    /** Set the extent within the dataset
+     *
+     * Optional. The operation will apply to the entire dataset by default (i.e.
+     * operation extent = global dataset extent - operation offset).
+     *
+     * @param extent Extent within the dataset, counted from the offset
+     * @return Reference to this object for chaining
+     */
     auto extent(Extent extent) -> this_t &
     {
         extent_impl(std::move(extent));
         return *this;
     }
+    /** Disable automatic flush after store operation
+     *
+     * The returned objects of type DeferredComputation will still return a
+     * buffer upon get() / operator()(), but these buffers are not guaranteed to
+     * be filled until explicitly flushing.
+     *
+     * @return Reference to this object for chaining
+     */
     auto unsafeNoAutomaticFlush() -> this_t &
     {
         unsafeNoAutomaticFlush_impl();
@@ -170,6 +203,14 @@ public:
         auxiliary::detail::shared_ptr_dataset_types>;
 };
 
+/** Configuration for storing chunks from a buffer.
+ *
+ * This class is used to configure a store chunk operation, where data is
+ * stored from a provided buffer into a dataset.
+ * This class is distinct from ConfigureLoadStoreFromBuffer, since reading
+ * data does not make sense on const / unique pointer types. This way, the type
+ * system will only allow read operations where they can actually run.
+ */
 class ConfigureStoreChunkFromBuffer : public ConfigureLoadStore
 {
     friend class ConfigureLoadStore;
@@ -188,6 +229,8 @@ protected:
     // class should be returned. Could be solved more elegantly with CRT,
     // but that blows up compile-time, so we make internal void functions
     // and then repeat them in the final classes.
+
+    /** Set memory selection for non-contiguous memory regions */
     void memorySelection_impl(MemorySelection);
 
     auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
@@ -196,21 +239,54 @@ public:
     using this_t = ConfigureStoreChunkFromBuffer;
 
     // Configuration methods (always available)
+
+    /** Set the offset within the dataset
+     *
+     * Optional. The operation will apply without offset by default (i.e. offset
+     * = (0, 0, ...)).
+     *
+     * @param offset Offset within the dataset
+     * @return Reference to this object for chaining
+     */
     auto offset(Offset offset) -> this_t &
     {
         offset_impl(std::move(offset));
         return *this;
     }
+
+    /** Set the extent within the dataset
+     *
+     * Optional. The operation will apply to the entire dataset by default (i.e.
+     * operation extent = global dataset extent - operation offset).
+     *
+     * @param extent Extent within the dataset, counted from the offset
+     * @return Reference to this object for chaining
+     */
     auto extent(Extent extent) -> this_t &
     {
         extent_impl(std::move(extent));
         return *this;
     }
+
+    /** Disable automatic flush after store operation
+     *
+     * The returned objects of type DeferredComputation will still return a
+     * buffer upon get() / operator()(), but these buffers are not guaranteed to
+     * be filled until explicitly flushing.
+     *
+     * @return Reference to this object for chaining
+     */
     auto unsafeNoAutomaticFlush() -> this_t &
     {
         unsafeNoAutomaticFlush_impl();
         return *this;
     }
+
+    /** Set memory selection for non-contiguous memory regions
+     *
+     * @param memorySelection Selection of memory region
+     * @return Reference to this object for chaining
+     */
     auto memorySelection(MemorySelection memorySelection) -> this_t &
     {
         memorySelection_impl(std::move(memorySelection));
@@ -218,6 +294,11 @@ public:
     }
 
     // Enqueue method (deferred execution)
+
+    /** Store the chunk data
+     *
+     * @return Deferred computation that performs the store when invoked
+     */
     auto store() -> auxiliary::DeferredComputation<void>;
 
     /** This intentionally shadows the parent class's enqueueLoad methods in
@@ -235,6 +316,11 @@ public:
     }
 };
 
+/** Configuration for loading/storing chunks from/to a buffer.
+ *
+ * This class supports both loading and storing operations, allowing
+ * reading data into or writing data from a provided buffer.
+ */
 class ConfigureLoadStoreFromBuffer : public ConfigureStoreChunkFromBuffer
 {
     friend class ConfigureLoadStore;
@@ -246,21 +332,54 @@ public:
     using this_t = ConfigureLoadStoreFromBuffer;
 
     // Configuration methods (always available)
+
+    /** Set the offset within the dataset
+     *
+     * Optional. The operation will apply without offset by default (i.e. offset
+     * = (0, 0, ...)).
+     *
+     * @param offset Offset within the dataset
+     * @return Reference to this object for chaining
+     */
     auto offset(Offset offset) -> this_t &
     {
         offset_impl(std::move(offset));
         return *this;
     }
+
+    /** Set the extent within the dataset
+     *
+     * Optional. The operation will apply to the entire dataset by default (i.e.
+     * operation extent = global dataset extent - operation offset).
+     *
+     * @param extent Extent within the dataset, counted from the offset
+     * @return Reference to this object for chaining
+     */
     auto extent(Extent extent) -> this_t &
     {
         extent_impl(std::move(extent));
         return *this;
     }
+
+    /** Disable automatic flush after operation
+     *
+     * The returned objects of type DeferredComputation will still return a
+     * buffer upon get() / operator()(), but these buffers are not guaranteed to
+     * be filled until explicitly flushing.
+     *
+     * @return Reference to this object for chaining
+     */
     auto unsafeNoAutomaticFlush() -> this_t &
     {
         unsafeNoAutomaticFlush_impl();
         return *this;
     }
+
+    /** Set memory selection for non-contiguous memory regions
+     *
+     * @param memorySelection Selection of memory region
+     * @return Reference to this object for chaining
+     */
     auto memorySelection(MemorySelection memorySelection) -> this_t &
     {
         memorySelection_impl(std::move(memorySelection));
@@ -268,6 +387,11 @@ public:
     }
 
     // Enqueue method (deferred execution)
+
+    /** Load the chunk data into the buffer
+     *
+     * @return Deferred computation that performs the load when invoked
+     */
     auto load() -> auxiliary::DeferredComputation<void>;
 };
 
