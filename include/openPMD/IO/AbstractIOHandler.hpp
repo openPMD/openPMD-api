@@ -327,6 +327,12 @@ public:
      * backends that decide to implement this operation asynchronously.
      */
     std::future<void> flush(internal::FlushParams const &);
+    /** Counter tracking the number of flush operations. This is later used to
+     * avoid repeated flushing in the DeferredComputation objects returned by
+     * the loadStoreChunk() API. (The counter is copied as a weak reference to
+     * the shared pointer, and the value is compared to the value upon enqueuing
+     * the operation. If the flush counter has proceeded past the old value, our
+     * operation has already been run.) */
     std::shared_ptr<unsigned long long> m_flushCounter =
         std::make_shared<unsigned long long>(0);
 
@@ -381,6 +387,13 @@ public:
     bool m_verify_homogeneous_extents = true;
 
 protected:
+    /** Implementation of flush operation for subclasses
+     *
+     * Do not call directly, use flush() wrapper instead.
+     *
+     * @param params Parsed flush parameters
+     * @return Future indicating completion state
+     */
     virtual std::future<void> flush_impl(internal::ParsedFlushParams &) = 0;
 }; // AbstractIOHandler
 

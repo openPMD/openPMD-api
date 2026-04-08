@@ -224,6 +224,14 @@ public:
      */
     bool empty() const;
 
+    /** Prepare a load/store chunk configuration object
+     *
+     * This is the entry point for the experimental new API for loading and
+     * storing chunks. It returns a ConfigureLoadStore object that can be used
+     * to specify offset, extent, and buffer for the operation.
+     *
+     * @return ConfigureLoadStore object for configuring the operation
+     */
     ConfigureLoadStore prepareLoadStore();
 
     /** Load and allocate a chunk of data

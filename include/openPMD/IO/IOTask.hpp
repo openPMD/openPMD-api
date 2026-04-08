@@ -498,6 +498,7 @@ struct OPENPMDAPI_EXPORT
 
     Extent extent = {};
     Offset offset = {};
+    /** Optional memory selection for non-contiguous memory regions */
     std::optional<MemorySelection> memorySelection = std::nullopt;
     Datatype dtype = Datatype::UNDEFINED;
     auxiliary::WriteBuffer data;
@@ -562,7 +563,8 @@ struct OPENPMDAPI_EXPORT
     }
 
     // in parameters
-    bool queryOnly = false; // query if the backend supports this
+    /** If true, only query if the backend supports buffer views without performing operation */
+    bool queryOnly = false;
     Offset offset;
     Extent extent;
     Datatype dtype = Datatype::UNDEFINED;
