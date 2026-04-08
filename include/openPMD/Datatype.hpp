@@ -790,7 +790,7 @@ Datatype stringToDatatype(const std::string &s);
  * @param dt Datatype to output
  * @return Reference to the stream
  */
-std::ostream &operator<<(std::ostream &, openPMD::Datatype const &);
+std::ostream &operator<<(std::ostream &os, openPMD::Datatype const &dt);
 
 template <typename T>
 constexpr auto datatypeIndex() -> size_t
