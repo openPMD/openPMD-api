@@ -6,6 +6,17 @@
 
 namespace openPMD::auxiliary
 {
+/** Defer wrapper
+ *
+ * Executes a functor when destroyed unless explicitly cancelled.
+ * Similar to Go's defer or C++'s experimental::scope_exit.
+ *
+ * Similar also to DeferredComputation under Future.hpp, but has another
+ * application scope (this: internal resource cleanup, that: public Future-like
+ * API) and is hence kept separate.
+ *
+ * @tparam F The functor type
+ */
 template <typename F>
 struct defer_type
 {
@@ -51,8 +62,17 @@ struct defer_type
     auto operator=(defer_type const &) -> defer_type & = delete;
 };
 
+/** Type-erased defer wrapper for void functors */
 using opaque_defer_type = defer_type<std::function<void()>>;
 
+/** Create a defer wrapper
+ *
+ * Creates a defer wrapper that will execute the given functor when
+ * destroyed.
+ *
+ * @param functor The functor to execute on destruction
+ * @return A defer wrapper
+ */
 template <typename F>
 auto defer(F &&functor) -> defer_type<std::remove_reference_t<F>>
 {

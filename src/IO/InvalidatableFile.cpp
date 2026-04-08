@@ -77,11 +77,3 @@ bool openPMD::InvalidatableFile::operator<(InvalidatableFile const &f) const
 {
     return operator*() < *f;
 }
-
-std::hash<openPMD::InvalidatableFile>::result_type
-std::hash<openPMD::InvalidatableFile>::operator()(
-    const openPMD::InvalidatableFile &s) const noexcept
-{
-    return std::hash<shared_ptr<openPMD::InvalidatableFile::FileState>>{}(
-        s.fileState);
-}

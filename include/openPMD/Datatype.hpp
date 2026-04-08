@@ -420,6 +420,11 @@ inline size_t toBits(Datatype d)
     return toBytes(d) * CHAR_BIT;
 }
 
+/** Check if a Datatype is a signed type
+ *
+ * @param d Datatype to test
+ * @return true if signed type (integer, floating point, complex), else false
+ */
 constexpr bool isSigned(Datatype d);
 
 /** Compare if a Datatype is a vector type
@@ -602,6 +607,13 @@ inline bool isSameFloatingPoint(Datatype d)
     return isSameFloatingPoint(d, determineDatatype<T_FP>());
 }
 
+/** Compare if two Datatypes are equivalent floating point types
+ *
+ * @param d1 First Datatype to compare
+ * @param d2 Second Datatype to compare
+ * @return true if both types are floating point and have same bitness, else
+ * false
+ */
 inline bool isSameFloatingPoint(Datatype d1, Datatype d2)
 {
     // template
@@ -629,6 +641,13 @@ inline bool isSameComplexFloatingPoint(Datatype d)
     return isSameComplexFloatingPoint(d, determineDatatype<T_CFP>());
 }
 
+/** Compare if two Datatypes are equivalent complex floating point types
+ *
+ * @param d1 First Datatype to compare
+ * @param d2 Second Datatype to compare
+ * @return true if both types are complex floating point and have same bitness,
+ * else false
+ */
 inline bool isSameComplexFloatingPoint(Datatype d1, Datatype d2)
 {
     // template
@@ -656,6 +675,13 @@ inline bool isSameInteger(Datatype d)
     return isSameInteger(d, determineDatatype<T_Int>());
 }
 
+/** Compare if two Datatypes are equivalent integer types
+ *
+ * @param d1 First Datatype to compare
+ * @param d2 Second Datatype to compare
+ * @return true if both types are integers, same signedness and same bitness,
+ * else false
+ */
 inline bool isSameInteger(Datatype d1, Datatype d2)
 {
     // template
@@ -708,6 +734,13 @@ constexpr bool isChar(Datatype d)
 template <typename T_Char>
 constexpr bool isSameChar(Datatype d);
 
+/** Compare if two Datatypes are equivalent char types
+ *
+ * @param d1 First Datatype to compare
+ * @param d2 Second Datatype to compare
+ * @return true if both types are chars with same signedness and size, else
+ * false
+ */
 constexpr bool isSameChar(Datatype d1, Datatype d2);
 
 /** Comparison for two Datatypes
@@ -715,6 +748,10 @@ constexpr bool isSameChar(Datatype d1, Datatype d2);
  * Besides returning true for the same types, identical implementations on
  * some platforms, e.g. if long and long long are the same or double and
  * long double will also return true.
+ *
+ * @param d First Datatype to compare
+ * @param e Second Datatype to compare
+ * @return true if the datatypes are equivalent
  */
 constexpr bool isSame(openPMD::Datatype d, openPMD::Datatype e);
 
@@ -726,14 +763,33 @@ constexpr bool isSame(openPMD::Datatype d, openPMD::Datatype e);
  */
 Datatype basicDatatype(Datatype dt);
 
+/** Convert a scalar Datatype to its vector variant
+ *
+ * @param dt Scalar Datatype to convert
+ * @return Vector Datatype (e.g., INT becomes VEC_INT)
+ */
 Datatype toVectorType(Datatype dt);
 
+/** Convert a Datatype to its string representation
+ *
+ * @param dt Datatype to convert
+ * @return String representation of the Datatype
+ */
 std::string datatypeToString(Datatype dt);
 
+/** Convert a string to a Datatype
+ *
+ * @param s String representation of a Datatype
+ * @return The corresponding Datatype
+ */
 Datatype stringToDatatype(const std::string &s);
 
-void warnWrongDtype(std::string const &key, Datatype store, Datatype request);
-
+/** Stream operator for Datatype
+ *
+ * @param os Output stream
+ * @param dt Datatype to output
+ * @return Reference to the stream
+ */
 std::ostream &operator<<(std::ostream &, openPMD::Datatype const &);
 
 template <typename T>
