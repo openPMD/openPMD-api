@@ -72,7 +72,8 @@ namespace traits
 {
     /** Generation policy for ParticleSpecies objects.
      *
-     * Links particle patches to their parent hierarchy when a species is created.
+     * Links particle patches to their parent hierarchy when a species is
+     * created.
      */
     template <>
     struct GenerationPolicy<ParticleSpecies>
