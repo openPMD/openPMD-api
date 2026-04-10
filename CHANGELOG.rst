@@ -1,7 +1,45 @@
 .. _install-changelog:
 
 Changelog
-=========
+==========
+
+0.17.1
+------
+**Date:** YYYY-MM-DD
+
+Bug Fixes
+"""""""""
+
+- ADIOS2:
+
+  - Flush dirty ADIOS2 files in sorted order (#1868)
+  - Keep written flag consistent across MPI ranks for rankTable (#1869)
+  - Fix parallel deletion (#1858)
+  - Do not flush if the backend does not support Span API (#1863)
+- HDF5:
+
+  - Proper status check (#1870)
+  - Close operations also upon failure (#1866)
+- API:
+
+  - Cache Iteration indexes instead of computing them on the spot (#1860)
+  - Harmonize Datatype equality checks (#1854)
+
+Other
+"""""
+
+- Python:
+
+  - Fix keep_alive specifications, add tests for keep_alive (#1851)
+  - Remove duplicate Python test (#1867)
+- Dependencies:
+
+  - Bump toml11 to 4.4.0, nlohmann_json to 3.12.0 (#1842)
+  - Version bump pybind11 -> 3.0.2 (#1849)
+- CI/Infrastructure:
+
+  - create_directories: preserve sticky and setgid permissions (#1855)
+  - Fix AppVeyor 64bit build (#1832)
 
 0.17.0
 ------
