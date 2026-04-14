@@ -62,12 +62,12 @@ public:
      *
      * @param task The callable to execute
      */
-    DeferredComputation(task_type);
+    DeferredComputation(task_type task);
     /** Construct from a cached value
      *
      * @param val The pre-computed value
      */
-    DeferredComputation(cached_type);
+    DeferredComputation(cached_type val);
 
     ~DeferredComputation();
 
