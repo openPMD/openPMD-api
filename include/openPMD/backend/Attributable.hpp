@@ -480,10 +480,6 @@ OPENPMD_protected
 
     void flushAttributes(internal::FlushParams const &);
 
-    void populateDefaults(
-        internal::ScientificDefaults *self,
-        internal::FlushParams const &params);
-
     enum ReadMode
     {
         /**

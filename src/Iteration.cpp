@@ -135,10 +135,10 @@ Iteration &Iteration::close(bool _flush)
         break;
     }
 
-    // if (access::write(IOHandler()->m_frontendAccess))
-    // {
-    //     commitStructuralSetup();
-    // }
+    if (access::write(IOHandler()->m_frontendAccess))
+    {
+        populateMissingMetadata(true);
+    }
 
     if (_flush)
     {
@@ -442,7 +442,6 @@ void Iteration::flush(internal::FlushParams const &flushParams)
             particles.setDirty(false);
         }
 
-        populateDefaults(this, flushParams);
         flushAttributes(flushParams);
     }
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)

@@ -383,16 +383,6 @@ void Attributable::flushAttributes(internal::FlushParams const &flushParams)
     }
 }
 
-void Attributable::populateDefaults(
-    internal::ScientificDefaults *self, internal::FlushParams const &params)
-{
-    if (params.flushLevel != FlushLevel::UserFlush)
-    {
-        return;
-    }
-    self->writeDefaults(IOHandler()->m_standard);
-}
-
 void Attributable::readAttributes(ReadMode mode)
 {
     auto &attri = get();

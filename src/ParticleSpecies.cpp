@@ -182,7 +182,6 @@ void ParticleSpecies::flush(
     }
     else
     {
-        populateDefaults(this, flushParams);
         Container<Record>::flush(path, flushParams);
 
         for (auto &record : *this)
