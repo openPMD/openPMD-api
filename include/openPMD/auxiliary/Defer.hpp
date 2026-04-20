@@ -23,13 +23,13 @@ struct defer_type
 
     auto to_opaque() && -> defer_type<std::function<void()>>
     {
-        do_run_this = false;
         if (!do_run_this)
         {
             return defer_type<std::function<void()>>{{}, false};
         }
         else
         {
+            do_run_this = false;
             return defer_type<std::function<void()>>{
                 std::function<void()>{std::move(functor)}};
         }
