@@ -119,7 +119,7 @@ auto DeferredComputation<T>::operator()() -> T
 }
 
 template <typename T>
-void DeferredComputation<T>::forget() &&
+void DeferredComputation<T>::invalidate() &&
 {
     std::visit(
         auxiliary::overloaded{
