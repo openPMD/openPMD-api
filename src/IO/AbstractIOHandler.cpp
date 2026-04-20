@@ -154,7 +154,11 @@ std::future<void> AbstractIOHandler::flush(internal::ParsedFlushParams &params)
     // been flushed already.
     bool increase_flush_counter = !m_work.empty();
     auto res = this->flush_impl(params);
-    if (increase_flush_counter && m_work.empty())
+    if (!m_work.empty())
+    {
+        throw error::Internal("flush() did not clear all work!");
+    }
+    if (increase_flush_counter)
     {
         ++*m_flushCounter;
     }

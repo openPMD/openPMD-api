@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <type_traits>
 #include <variant>
 
 namespace openPMD::auxiliary::detail
@@ -68,6 +69,15 @@ public:
      * @param val The pre-computed value
      */
     DeferredComputation(cached_type val);
+
+    explicit DeferredComputation();
+
+    DeferredComputation(DeferredComputation &&) noexcept;
+    DeferredComputation(DeferredComputation const &) = delete;
+
+    auto operator=(DeferredComputation &&) noexcept -> DeferredComputation &;
+    auto operator=(DeferredComputation const &)
+        -> DeferredComputation & = delete;
 
     ~DeferredComputation();
 

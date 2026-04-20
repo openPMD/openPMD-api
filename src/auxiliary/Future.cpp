@@ -54,6 +54,17 @@ DeferredComputation<T>::DeferredComputation(cached_type cached_val)
 {}
 
 template <typename T>
+DeferredComputation<T>::DeferredComputation() = default;
+
+template <typename T>
+DeferredComputation<T>::DeferredComputation(DeferredComputation &&) noexcept =
+    default;
+
+template <typename T>
+auto DeferredComputation<T>::operator=(DeferredComputation &&) noexcept
+    -> DeferredComputation & = default;
+
+template <typename T>
 DeferredComputation<T>::~DeferredComputation()
 {
     try
