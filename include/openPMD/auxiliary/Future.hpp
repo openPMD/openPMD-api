@@ -95,7 +95,7 @@ public:
 
     /** Discard the computation without executing it
      */
-    void forget() &&;
+    void invalidate() &&;
 
     /** Check if the computation is valid
      *
