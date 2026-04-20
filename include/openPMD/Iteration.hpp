@@ -136,7 +136,7 @@ namespace internal
          * of the owning map entry instead of a linear scan in
          * <code>Series::indexOf()</code>.
          */
-        std::optional<uint64_t> m_iterationIndex = 0;
+        std::optional<uint64_t> m_iterationIndex = std::nullopt;
 
         /**
          * Information on a parsing request that has not yet been executed.
