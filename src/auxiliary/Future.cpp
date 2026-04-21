@@ -57,12 +57,12 @@ template <typename T>
 DeferredComputation<T>::DeferredComputation() = default;
 
 template <typename T>
-DeferredComputation<T>::DeferredComputation(DeferredComputation &&) noexcept =
-    default;
+DeferredComputation<T>::DeferredComputation(DeferredComputation &&) noexcept(
+    noexcept_move) = default;
 
 template <typename T>
-auto DeferredComputation<T>::operator=(DeferredComputation &&) noexcept
-    -> DeferredComputation & = default;
+auto DeferredComputation<T>::operator=(DeferredComputation &&) noexcept(
+    noexcept_move) -> DeferredComputation & = default;
 
 template <typename T>
 DeferredComputation<T>::~DeferredComputation()
