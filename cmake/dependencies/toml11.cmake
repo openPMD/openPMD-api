@@ -64,10 +64,10 @@ set(openPMD_toml11_src ""
     "Local path to toml11 source directory (preferred if set)")
 
 # tarball fetcher
-set(openPMD_toml11_tar "https://github.com/ToruNiina/toml11/archive/refs/tags/v4.4.0.tar.gz"
+set(openPMD_toml11_tar "https://github.com/ToruNiina/toml11/archive/b32a2fff0d27e1f7522f26a125101500ddb47156.tar.gz"
         CACHE STRING
         "Remote tarball link to pull and build toml11 from if(openPMD_USE_INTERNAL_TOML11)")
-set(openPMD_toml11_tar_hash "SHA256=815bfe6792aa11a13a133b86e7f0f45edc5d71eb78f5fb6686c49c7f792b9049"
+set(openPMD_toml11_tar_hash "SHA256=c82df2d6a437795a1b5ac0b87886d5eb481deb60d6e79adb1688017857347cda"
         CACHE STRING
         "Hash checksum of the tarball of toml11 if(openPMD_USE_INTERNAL_TOML11)")
 
@@ -75,7 +75,7 @@ set(openPMD_toml11_tar_hash "SHA256=815bfe6792aa11a13a133b86e7f0f45edc5d71eb78f5
 set(openPMD_toml11_repo "https://github.com/ToruNiina/toml11.git"
     CACHE STRING
     "Repository URI to pull and build toml11 from if(openPMD_USE_INTERNAL_TOML11)")
-set(openPMD_toml11_branch "v4.4.0"
+set(openPMD_toml11_branch "b32a2fff0d27e1f7522f26a125101500ddb47156"
     CACHE STRING
     "Repository branch for openPMD_toml11_repo if(openPMD_USE_INTERNAL_TOML11)")
 
