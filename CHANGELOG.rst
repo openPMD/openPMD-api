@@ -18,12 +18,12 @@ Bug Fixes
   - Do not flush if the backend does not support Span API (#1863)
 - HDF5:
 
-  - Proper status check (#1870)
-  - Close operations also upon failure (#1866)
+  - Execute close operations also upon failure (#1866 #1870 #1872)
 - API:
 
-  - Cache Iteration indexes instead of computing them on the spot (#1860)
+  - Cache Iteration indexes instead of computing them on the spot (#1860 #1873)
   - Harmonize Datatype equality checks (#1854)
+  - create_directories: preserve sticky and setgid permissions (#1855)
 
 Other
 """""
@@ -34,11 +34,10 @@ Other
   - Remove duplicate Python test (#1867)
 - Dependencies:
 
-  - Bump toml11 to 4.4.0, nlohmann_json to 3.12.0 (#1842)
+  - Version bump toml11 to recent main branch (b32a2fff0d27e1f7522f26a125101500ddb47156), nlohmann_json to 3.12.0 (#1842 #1874)
   - Version bump pybind11 -> 3.0.2 (#1849)
 - CI/Infrastructure:
 
-  - create_directories: preserve sticky and setgid permissions (#1855)
   - Fix AppVeyor 64bit build (#1832)
 
 0.17.0
