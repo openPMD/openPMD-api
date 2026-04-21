@@ -1950,16 +1950,15 @@ void HDF5IOHandlerImpl::writeDataset(
             memspace > 0,
             "[HDF5] Internal error: Failed to create memspace during dataset "
             "write");
-        defer_close_memspace =
-            auxiliary::defer([&]() {
-                status = H5Sclose(memspace); //
-                if (status != 0)
-                {
-                    std::cerr << "[HDF5] Internal error: Failed to close "
-                                 "dataset memory space during dataset write"
-                              << std::endl;
-                }
-            }).to_opaque();
+        defer_close_memspace = auxiliary::defer([&]() {
+            status = H5Sclose(memspace); //
+            if (status != 0)
+            {
+                std::cerr << "[HDF5] Internal error: Failed to close "
+                             "dataset memory space during dataset write"
+                          << std::endl;
+            }
+        });
     }
     else
     {
@@ -1973,16 +1972,15 @@ void HDF5IOHandlerImpl::writeDataset(
             block.push_back(static_cast<hsize_t>(val));
         memspace = H5Screate_simple(
             static_cast<int>(block.size()), block.data(), nullptr);
-        defer_close_memspace =
-            auxiliary::defer([&]() {
-                status = H5Sclose(memspace); //
-                if (status != 0)
-                {
-                    std::cerr << "[HDF5] Internal error: Failed to close "
-                                 "dataset memory space during dataset write"
-                              << std::endl;
-                }
-            }).to_opaque();
+        defer_close_memspace = auxiliary::defer([&]() {
+            status = H5Sclose(memspace); //
+            if (status != 0)
+            {
+                std::cerr << "[HDF5] Internal error: Failed to close "
+                             "dataset memory space during dataset write"
+                          << std::endl;
+            }
+        });
         status = H5Sselect_hyperslab(
             filespace,
             H5S_SELECT_SET,

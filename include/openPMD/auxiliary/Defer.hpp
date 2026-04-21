@@ -21,19 +21,31 @@ struct defer_type
         std::move(functor)();
     }
 
-    auto to_opaque() && -> defer_type<std::function<void()>>
+    explicit defer_type() = default;
+
+    struct forwarding_tag
+    {};
+
+    template <typename F_>
+    defer_type(forwarding_tag, F_ &&functor_in)
+        : functor{std::forward<F_>(functor_in)}
+    {}
+
+    template <typename F_>
+    defer_type(defer_type<F_> &&other) : functor{std::move(other.functor)}
     {
-        do_run_this = false;
-        if (!do_run_this)
-        {
-            return defer_type<std::function<void()>>{{}, false};
-        }
-        else
-        {
-            return defer_type<std::function<void()>>{
-                std::function<void()>{std::move(functor)}};
-        }
+        other.do_run_this = false;
     }
+
+    template <typename F_>
+    auto operator=(defer_type<F_> &&other)
+    {
+        functor = std::move(other.functor);
+        other.do_run_this = false;
+    }
+
+    defer_type(defer_type const &) = delete;
+    auto operator=(defer_type const &) -> defer_type & = delete;
 };
 
 using opaque_defer_type = defer_type<std::function<void()>>;
@@ -41,6 +53,8 @@ using opaque_defer_type = defer_type<std::function<void()>>;
 template <typename F>
 auto defer(F &&functor) -> defer_type<std::remove_reference_t<F>>
 {
-    return defer_type<std::remove_reference_t<F>>{std::forward<F>(functor)};
+    using res_t = defer_type<std::remove_reference_t<F>>;
+    using tag_t = typename res_t::forwarding_tag;
+    return res_t{tag_t{}, std::forward<F>(functor)};
 }
 } // namespace openPMD::auxiliary
