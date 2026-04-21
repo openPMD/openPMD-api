@@ -23,17 +23,17 @@
 
 #include "openPMD/config.hpp"
 
-#include <deque>
-#include <nlohmann/json.hpp>
-#include <toml.hpp>
+#include "openPMD/auxiliary/toml11_wrapper.hpp"
 
-#include <optional>
+#include <nlohmann/json.hpp>
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
 #endif
 
+#include <deque>
 #include <memory> // std::shared_ptr
+#include <optional>
 #include <utility> // std::forward
 
 namespace openPMD

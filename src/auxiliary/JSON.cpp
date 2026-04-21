@@ -26,10 +26,10 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/auxiliary/toml11_wrapper.hpp"
 
 #include <limits>
 #include <queue>
-#include <toml.hpp>
 
 #include <algorithm>
 #include <cctype> // std::isspace
