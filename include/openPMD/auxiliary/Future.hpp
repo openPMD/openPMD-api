@@ -59,6 +59,11 @@ class DeferredComputation
     std::variant<detail::OneTimeTask<T>, detail::CachedValue<T>> m_task;
 
 public:
+    static constexpr bool noexcept_move =
+        std::is_move_constructible_v<detail::OneTimeTask<T>> &&
+        std::is_move_assignable_v<detail::OneTimeTask<T>> &&
+        std::is_move_constructible_v<detail::CachedValue<T>> &&
+        std::is_move_assignable_v<detail::CachedValue<T>>;
     /** Construct from a callable
      *
      * @param task The callable to execute
@@ -72,10 +77,11 @@ public:
 
     explicit DeferredComputation();
 
-    DeferredComputation(DeferredComputation &&) noexcept;
+    DeferredComputation(DeferredComputation &&) noexcept(noexcept_move);
     DeferredComputation(DeferredComputation const &) = delete;
 
-    auto operator=(DeferredComputation &&) noexcept -> DeferredComputation &;
+    auto operator=(DeferredComputation &&) noexcept(noexcept_move)
+        -> DeferredComputation &;
     auto operator=(DeferredComputation const &)
         -> DeferredComputation & = delete;
 
