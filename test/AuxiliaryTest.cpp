@@ -24,10 +24,12 @@
 #define OPENPMD_protected public:
 #endif
 #include "openPMD/Dataset.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Future.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
@@ -544,4 +546,32 @@ TEST_CASE("filesystem_test", "[auxiliary]")
 TEST_CASE("drain_set_test", "[auxiliary]")
 {
     drain_set::drain_set();
+}
+
+TEST_CASE("future_test", "[auxiliary]")
+{
+    using task_type = auxiliary::DeferredComputation<std::string>;
+    size_t counter = 0;
+
+    auto make_task = [&counter]() {
+        counter = 0;
+        return task_type{[&counter]() {
+            ++counter;
+            return "success";
+        }};
+    };
+
+    auto move_construct = make_task();
+    task_type move_constructed(std::move(move_construct));
+    REQUIRE(counter == 0);
+    REQUIRE(move_constructed() == "success");
+    REQUIRE(counter == 1);
+    REQUIRE_THROWS_AS(move_constructed(), error::WrongAPIUsage);
+
+    auto move_assign = make_task();
+    task_type move_assigned = std::move(move_assign);
+    REQUIRE(counter == 0);
+    REQUIRE(move_assigned() == "success");
+    REQUIRE(counter == 1);
+    REQUIRE_THROWS_AS(move_assigned(), error::WrongAPIUsage);
 }
