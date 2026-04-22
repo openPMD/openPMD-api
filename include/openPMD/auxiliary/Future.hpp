@@ -11,8 +11,27 @@ template <typename T>
 struct OneTimeTask
 {
     using task_type = std::function<T()>;
-    task_type m_task;
-    bool m_task_valid = true;
+    // Helper struct so we get auto-generated move constructor / assignment
+    // operator, but can still override constructors outside
+    struct Members
+    {
+        task_type m_task;
+        bool m_task_valid = true;
+    };
+    Members members;
+
+    static constexpr bool noexcept_move =
+        std::is_move_constructible_v<Members> &&
+        std::is_move_assignable_v<Members>;
+
+    explicit OneTimeTask();
+    OneTimeTask(task_type);
+
+    OneTimeTask(OneTimeTask &&) noexcept(noexcept_move);
+    OneTimeTask(OneTimeTask const &) = delete;
+
+    auto operator=(OneTimeTask &&) noexcept(noexcept_move) -> OneTimeTask &;
+    auto operator=(OneTimeTask const &) -> OneTimeTask & = delete;
 
     auto operator()() -> T;
 };
