@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 // expose private and protected members for invasive testing
+#include "openPMD/Error.hpp"
+#include "openPMD/auxiliary/Future.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -537,4 +539,32 @@ TEST_CASE("filesystem_test", "[auxiliary]")
 
     REQUIRE(!remove_file("./nonexistent_file_in_cmake_bin_directory"));
 #endif
+}
+
+TEST_CASE("future_test", "[auxiliary]")
+{
+    using task_type = auxiliary::DeferredComputation<std::string>;
+    size_t counter = 0;
+
+    auto make_task = [&counter]() {
+        counter = 0;
+        return task_type{[&counter]() {
+            ++counter;
+            return "success";
+        }};
+    };
+
+    auto move_construct = make_task();
+    task_type move_constructed(std::move(move_construct));
+    REQUIRE(counter == 0);
+    REQUIRE(move_constructed() == "success");
+    REQUIRE(counter == 1);
+    REQUIRE_THROWS_AS(move_constructed(), error::WrongAPIUsage);
+
+    auto move_assign = make_task();
+    task_type move_assigned = std::move(move_assign);
+    REQUIRE(counter == 0);
+    REQUIRE(move_assigned() == "success");
+    REQUIRE(counter == 1);
+    REQUIRE_THROWS_AS(move_assigned(), error::WrongAPIUsage);
 }

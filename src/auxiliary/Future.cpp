@@ -1,4 +1,5 @@
 #include "openPMD/auxiliary/Future.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/RecordComponent.hpp"
 
 #include <iostream>
@@ -39,13 +40,13 @@ auto OneTimeTask<T>::operator()() -> T
 {
     if (!members.m_task_valid)
     {
-        throw std::runtime_error(
+        throw error::WrongAPIUsage(
             "[DeferredComputation] No valid state. Probably already "
             "computed.");
     }
     if (!members.m_task)
     {
-        throw std::runtime_error(
+        throw error::WrongAPIUsage(
             "[DeferredComputation] No valid task was specified.");
     }
     members.m_task_valid = false;
@@ -168,6 +169,7 @@ auto DeferredComputation<T>::valid() const noexcept -> bool
 
 template class DeferredComputation<void>;
 template class DeferredComputation<RecordComponent::shared_ptr_dataset_types>;
+template class DeferredComputation<std::string>; // used in tests
 
 // need this for clang-tidy
 #define OPENPMD_ARRAY(type) type[]
