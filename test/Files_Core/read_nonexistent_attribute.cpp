@@ -20,8 +20,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch_tostring.hpp>
-
 #if !openPMD_USE_INVASIVE_TESTS
 
 namespace read_nonexistent_attribute
