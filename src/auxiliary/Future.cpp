@@ -12,29 +12,52 @@
 namespace openPMD::auxiliary::detail
 {
 template <typename T>
+OneTimeTask<T>::OneTimeTask() = default;
+
+template <typename T>
+OneTimeTask<T>::OneTimeTask(task_type task) : members{std::move(task)}
+{}
+
+template <typename T>
+OneTimeTask<T>::OneTimeTask(OneTimeTask &&other) noexcept(noexcept_move)
+    : members(std::move(other.members))
+{
+    other.members.m_task_valid = false;
+}
+
+template <typename T>
+auto OneTimeTask<T>::operator=(OneTimeTask &&other) noexcept(noexcept_move)
+    -> OneTimeTask &
+{
+    this->members = std::move(other.members);
+    other.members.m_task_valid = false;
+    return *this;
+}
+
+template <typename T>
 auto OneTimeTask<T>::operator()() -> T
 {
-    if (!this->m_task_valid)
+    if (!members.m_task_valid)
     {
         throw std::runtime_error(
             "[DeferredComputation] No valid state. Probably already "
             "computed.");
     }
-    if (!this->m_task)
+    if (!members.m_task)
     {
         throw std::runtime_error(
             "[DeferredComputation] No valid task was specified.");
     }
-    this->m_task_valid = false;
+    members.m_task_valid = false;
     if constexpr (std::is_void_v<T>)
     {
-        std::move(this->m_task)();
-        this->m_task = {};
+        std::move(members.m_task)();
+        members.m_task = {};
     }
     else
     {
-        auto res = std::move(this->m_task)();
-        this->m_task = {}; // reset
+        auto res = std::move(members.m_task)();
+        members.m_task = {}; // reset
         return res;
     }
 }
@@ -72,7 +95,7 @@ DeferredComputation<T>::~DeferredComputation()
         std::visit(
             auxiliary::overloaded{
                 [](detail::OneTimeTask<T> &task) {
-                    if (task.m_task_valid)
+                    if (task.members.m_task_valid)
                     {
                         std::move(task)();
                     }
@@ -124,8 +147,8 @@ void DeferredComputation<T>::invalidate() &&
     std::visit(
         auxiliary::overloaded{
             [](detail::OneTimeTask<T> &task) {
-                task.m_task = {};
-                task.m_task_valid = false;
+                task.members.m_task = {};
+                task.members.m_task_valid = false;
             },
             [](detail::CachedValue<T> const &) {}},
         this->m_task);
@@ -137,7 +160,7 @@ auto DeferredComputation<T>::valid() const noexcept -> bool
     return std::visit(
         auxiliary::overloaded{
             [](detail::OneTimeTask<T> const &task) {
-                return task.m_task_valid;
+                return task.members.m_task_valid;
             },
             [](detail::CachedValue<T> const &) { return true; }},
         this->m_task);
