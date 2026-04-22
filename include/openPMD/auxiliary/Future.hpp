@@ -124,7 +124,7 @@ public:
 
     /** Check if the computation is valid
      *
-     * @return true if the computation has not been forgotten
+     * @return true if the computation has not been invalidated
      */
     [[nodiscard]] auto valid() const noexcept -> bool;
 };
