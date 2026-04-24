@@ -718,6 +718,7 @@ void ADIOS2File::configure_IO()
                 std::to_string((uint64_t)MaxShmMB * (uint64_t)1048576));
     }
 #endif
+    constexpr int default_stats_level = openPMD_HAS_ADIOS_2_12;
     if (notYetConfigured("StatsLevel"))
     {
         /*
@@ -726,8 +727,8 @@ void ADIOS2File::configure_IO()
          * environment variable "OPENPMD_ADIOS2_STATS_LEVEL" be positive.
          * The ADIOS2 default was "1" (on).
          */
-        auto stats_level =
-            auxiliary::getEnvNum("OPENPMD_ADIOS2_STATS_LEVEL", 0);
+        auto stats_level = auxiliary::getEnvNum(
+            "OPENPMD_ADIOS2_STATS_LEVEL", default_stats_level);
         m_IO.SetParameter("StatsLevel", std::to_string(stats_level));
     }
     if (m_impl->realEngineType() == "sst" && notYetConfigured("QueueLimit"))

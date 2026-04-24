@@ -50,7 +50,7 @@ int main()
     // Iterations can be accessed independently from one another. This more
     // restricted mode enables performance optimizations in the backends, and
     // more importantly is compatible with streaming I/O.
-    Series series = Series("electrons.sst", Access::CREATE_LINEAR, R"(
+    Series series = Series("electrons.bp5", Access::CREATE_LINEAR, R"(
 {
   "adios2": {
     "engine": {
