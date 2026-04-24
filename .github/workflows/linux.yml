@@ -339,7 +339,7 @@ jobs:
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v6
-    - uses: conda-incubator/setup-miniconda@v3
+    - uses: conda-incubator/setup-miniconda@v4
       name: Setup conda
       with:
         auto-update-conda: true
