@@ -520,11 +520,17 @@ void init_Attributable(py::module &m)
             })
         .def(
             "series_flush",
-            py::overload_cast<std::string>(&Attributable::seriesFlush),
+            [](Attributable &attr, std::string const &backend_config) {
+                py::gil_scoped_release release_gil;
+                attr.seriesFlush(backend_config);
+            },
             py::arg("backend_config") = "{}")
         .def(
             "iteration_flush",
-            py::overload_cast<std::string>(&Attributable::iterationFlush),
+            [](Attributable &attr, std::string const &backend_config) {
+                py::gil_scoped_release release_gil;
+                attr.iterationFlush(backend_config);
+            },
             py::arg("backend_config") = "{}")
 
         .def_property_readonly(

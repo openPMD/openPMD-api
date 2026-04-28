@@ -82,11 +82,10 @@ void init_Iteration(py::module &m)
             })
         .def(
             "close",
-            /*
-             * Cannot release the GIL here since Python buffers might be
-             * accessed in deferred tasks
-             */
-            &Iteration::close,
+            [](Iteration &iteration, bool flush) {
+                py::gil_scoped_release release_gil;
+                iteration.close(flush);
+            },
             py::arg("flush") = true)
 
         // TODO remove in future versions (deprecated)
