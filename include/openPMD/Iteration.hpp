@@ -473,7 +473,8 @@ private:
     void runDeferredParseAccess();
 
 protected:
-    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(
+        internal::WriteOrRead, OpenpmdStandard) override;
 }; // Iteration
 
 namespace traits

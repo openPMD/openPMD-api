@@ -818,11 +818,10 @@ void BaseRecord<T_elem>::eraseScalar()
 
 template <typename T_elem>
 void BaseRecord<T_elem>::scientificDefaults_impl(
-    bool write, OpenpmdStandard standard)
+    internal::WriteOrRead wor, OpenpmdStandard standard)
 {
     using namespace internal;
     auto float_types = get_float_types();
-    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
     this->defaultAttribute(*this, "unitDimension")
         .withGenericSetter(unit_representations::AsArray{})
@@ -831,7 +830,7 @@ void BaseRecord<T_elem>::scientificDefaults_impl(
 
     if (scalar())
     {
-        T_elem::scientificDefaults_impl(write, standard);
+        T_elem::scientificDefaults_impl(wor, standard);
     }
 }
 template <typename T_elem>

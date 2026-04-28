@@ -965,11 +965,11 @@ void Iteration::runDeferredParseAccess()
     }
 }
 
-void Iteration::scientificDefaults_impl(bool write, OpenpmdStandard)
+void Iteration::scientificDefaults_impl(
+    internal::WriteOrRead wor, OpenpmdStandard)
 {
     using namespace internal;
     auto float_types = get_float_types();
-    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
     defaultAttribute(*this, "time")
         .template withSetter<Iteration>(0., &Iteration::setTime)

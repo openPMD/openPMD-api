@@ -9,12 +9,19 @@
 
 namespace openPMD::internal
 {
+/*
+ * Configures parsing and writing (default values) logic for standard-defined
+ * attributes. Created by ScientificDefaults::defaultAttribute(). To be used in
+ * implementations of ScientificDefaults::scientificDefaults_impl().
+ */
 struct ConfigAttribute
 {
     Attributable &attributable;
     char const *attrName;
     std::optional<std::function<void(Attributable &)>> initDefaultAttribute;
-    // processed "from left to right"
+    // Processed "from left to right".
+    // The first reader with a matching datatype is selected. If a ReadError
+    // happens, no further readers will be attempted.
     std::deque<AttributeReader> attributeReaders;
 
     template <typename RecordType, typename ValueType>

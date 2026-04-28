@@ -48,7 +48,7 @@ void ConfigAttribute::read()
         // No readers emplaced for this attribute
         return;
     }
-    AttributeReadResult res = attribute_read_result::TypeUnmatched{};
+
     Parameter<Operation::READ_ATT> aRead;
     aRead.name = this->attrName;
     auto IOHandler = this->attributable.IOHandler();
@@ -70,11 +70,12 @@ void ConfigAttribute::read()
         std::cerr << " Original error: " << e.what() << std::endl;
         return;
     }
-
     Attribute attribute(Attribute::from_any, std::move(*aRead.m_resource));
+
+    AttributeReadResult res = attribute_read_result::TypeUnmatched{};
     for (auto &attributeReader : attributeReaders)
     {
-
+        // run the next attribute reader if there has been no match yet
         if (auto *not_matched =
                 std::get_if<attribute_read_result::TypeUnmatched>(&res))
         {
@@ -89,6 +90,12 @@ void ConfigAttribute::read()
             break;
         }
     }
+
+    /*
+     * If any trouble has been had, print a warning. Don't throw errors or try
+     * to correct anything at this place. Instead return parsed data to the user
+     * as it was found on disk, even if it is not standard-compliant.
+     */
     auto dt = attribute.dtype;
     std::visit(
         auxiliary::overloaded{

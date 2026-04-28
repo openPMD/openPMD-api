@@ -26,6 +26,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_auxiliary.hpp"
 
 #include <ostream>
 #include <string>
@@ -337,7 +338,8 @@ private:
     auto retrieveDimensionality() const -> uint64_t;
 
 protected:
-    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(
+        internal::WriteOrRead, OpenpmdStandard) override;
 }; // Mesh
 
 template <typename T>

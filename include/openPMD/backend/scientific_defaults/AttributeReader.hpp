@@ -32,7 +32,12 @@ using AttributeReadResult = std::variant<
  */
 struct AttributeReader
 {
+    // List of Datatypes accepted for this attribute
     std::deque<Datatype> eligibleDatatypes;
+    // Optional postprocessing for custom logic of the form:
+    //
+    // (Attributable&, char const *name, Attribute const&)
+    //     -> optional<ReadError>
     std::optional<std::shared_ptr<ProcessParsedAttribute>> processAttribute;
 
     AttributeReader(

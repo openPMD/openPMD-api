@@ -26,6 +26,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_auxiliary.hpp"
 
 #include <string>
 
@@ -63,7 +64,8 @@ private:
     }
 
 protected:
-    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(
+        internal::WriteOrRead, OpenpmdStandard) override;
 };
 
 namespace traits

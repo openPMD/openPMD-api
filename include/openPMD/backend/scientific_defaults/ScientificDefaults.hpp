@@ -2,6 +2,7 @@
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/scientific_defaults/ConfigAttribute.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_auxiliary.hpp"
 
 namespace openPMD
 {
@@ -37,7 +38,8 @@ protected:
     //
     // Use defaultAttribute() for creating an attribute, use helpers inside
     // ConfigAttribute for defining it.
-    virtual void scientificDefaults_impl(bool write, OpenpmdStandard) = 0;
+    virtual void
+        scientificDefaults_impl(internal::WriteOrRead, OpenpmdStandard) = 0;
 
     // Called upon Iteration::close(), will fill in defaults below Iteration
     // level. If the Iteration is not explicitly closed, will be called upon

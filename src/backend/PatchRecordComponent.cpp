@@ -80,10 +80,10 @@ PatchRecordComponent::PatchRecordComponent() : RecordComponent(NoInit())
 PatchRecordComponent::PatchRecordComponent(NoInit) : RecordComponent(NoInit())
 {}
 
-void PatchRecordComponent::scientificDefaults_impl(bool write, OpenpmdStandard)
+void PatchRecordComponent::scientificDefaults_impl(
+    internal::WriteOrRead wor, OpenpmdStandard)
 {
     using namespace internal;
-    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
     // We don't require unitSI for PatchRecordComponent
     //

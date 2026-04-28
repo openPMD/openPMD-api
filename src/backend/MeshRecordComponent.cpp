@@ -72,11 +72,10 @@ void MeshRecordComponent::visitHierarchy(HierarchyVisitor &v, bool)
 }
 
 void MeshRecordComponent::scientificDefaults_impl(
-    bool write, OpenpmdStandard standard)
+    internal::WriteOrRead wor, OpenpmdStandard standard)
 {
     using namespace internal;
     auto float_types = get_float_types();
-    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
     auto dimensionality = getDimensionality();
 
@@ -88,7 +87,7 @@ void MeshRecordComponent::scientificDefaults_impl(
             &MeshRecordComponent::setPosition)
         .withReader(float_types, require_vector)(wor);
 
-    RecordComponent::scientificDefaults_impl(write, standard);
+    RecordComponent::scientificDefaults_impl(wor, standard);
 }
 template MeshRecordComponent &
 MeshRecordComponent::setPosition(std::vector<float> pos);

@@ -61,7 +61,8 @@ private:
     [[nodiscard]] internal::HomogenizeExtents read();
 
 protected:
-    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(
+        internal::WriteOrRead, OpenpmdStandard) override;
 }; // Record
 
 template <typename T>

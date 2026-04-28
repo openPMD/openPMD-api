@@ -3,6 +3,7 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/backend/scientific_defaults/ScientificDefaults_auxiliary.hpp"
 
 namespace openPMD::internal
 {
@@ -16,11 +17,11 @@ ScientificDefaults::defaultAttribute(Attributable &attr, char const *attrName)
 
 void ScientificDefaults::writeDefaults(OpenpmdStandard standard)
 {
-    scientificDefaults_impl(/* write = */ true, standard);
+    scientificDefaults_impl(WriteOrRead::Write, standard);
 }
 
 void ScientificDefaults::readDefaults(OpenpmdStandard standard)
 {
-    scientificDefaults_impl(/* write = */ false, standard);
+    scientificDefaults_impl(WriteOrRead::Read, standard);
 }
 } // namespace openPMD::internal

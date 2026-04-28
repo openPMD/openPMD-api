@@ -698,11 +698,11 @@ void RecordComponent::verifyChunk(
     }
 }
 
-void RecordComponent::scientificDefaults_impl(bool write, OpenpmdStandard)
+void RecordComponent::scientificDefaults_impl(
+    internal::WriteOrRead wor, OpenpmdStandard)
 {
     using namespace internal;
     auto float_types = get_float_types();
-    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
     defaultAttribute(*this, "unitSI")
         .template withSetter<RecordComponent>(1.0, &RecordComponent::setUnitSI)

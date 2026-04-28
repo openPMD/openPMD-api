@@ -98,7 +98,8 @@ public:
     void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
 protected:
-    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(
+        internal::WriteOrRead, OpenpmdStandard) override;
 };
 
 template <typename T>

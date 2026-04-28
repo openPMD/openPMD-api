@@ -203,11 +203,11 @@ auto Record::read() -> internal::HomogenizeExtents
     return res;
 }
 
-void Record::scientificDefaults_impl(bool write, OpenpmdStandard standard)
+void Record::scientificDefaults_impl(
+    internal::WriteOrRead wor, OpenpmdStandard standard)
 {
     using namespace internal;
     auto float_types = get_float_types();
-    auto const wor = write ? WriteOrRead::Write : WriteOrRead::Read;
 
     defaultAttribute(*this, "timeOffset")
         .template withSetter<Record>(0.f, &Record::setTimeOffset)
@@ -228,7 +228,7 @@ void Record::scientificDefaults_impl(bool write, OpenpmdStandard standard)
         .template withSetter<Record>(0.f, &Record::setTimeOffset)
         .withReader(float_types, require_scalar)(wor);
 
-    BaseRecord<RecordComponent>::scientificDefaults_impl(write, standard);
+    BaseRecord<RecordComponent>::scientificDefaults_impl(wor, standard);
 }
 template class BaseRecord<RecordComponent>;
 } // namespace openPMD

@@ -200,7 +200,8 @@ void ParticleSpecies::flush(
         setDirty(false);
     }
 }
-void ParticleSpecies::scientificDefaults_impl(bool /* write */, OpenpmdStandard)
+void ParticleSpecies::scientificDefaults_impl(
+    internal::WriteOrRead, OpenpmdStandard)
 {
     // no-op
 }

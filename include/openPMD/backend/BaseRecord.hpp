@@ -375,7 +375,8 @@ private:
     void eraseScalar();
 
 protected:
-    void scientificDefaults_impl(bool write, OpenpmdStandard) override;
+    void scientificDefaults_impl(
+        internal::WriteOrRead, OpenpmdStandard) override;
 }; // BaseRecord
 
 namespace detail

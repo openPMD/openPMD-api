@@ -16,7 +16,11 @@ class Mesh;
 namespace openPMD::internal
 {
 /*
- * General interface for attribute processing used in struct AttributeReader.
+ * General interface for custom attribute parsing used in struct
+ * AttributeReader. Is applied after the attribute has already been checked
+ * against a list of eligible datatypes.
+ *
+ * The rest of the files contains various implementations.
  */
 struct ProcessParsedAttribute
 {
@@ -30,7 +34,7 @@ struct ProcessParsedAttribute
 //////////////////////////////////////////////////////////
 
 /*
- * Helper interface for validating an attribute whose type has already been
+ * Use for optional postprocessing in RequireType, after the type has been
  * determined. Poor-man's lambda, in an attempt at reducing use of template
  * types. The only implementation at PostProcessConvertedAttributeImpl<T> is
  * conceptually equivalent to storing an object of type RecordType in the lambda
