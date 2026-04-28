@@ -284,22 +284,8 @@ not possible once it has been closed.
             .def(
                 "__getitem__",
                 [](Snapshots &s, Series::IterationIndex_t key) {
-                    switch (s.snapshotWorkflow())
-                    {
-                    case openPMD::SnapshotWorkflow::RandomAccess:
-                        return s[key];
-                    case openPMD::SnapshotWorkflow::Synchronous:
-                        auto lastIteration = s.currentIteration();
-                        if (lastIteration.has_value() &&
-                            lastIteration.value()->first != key)
-                        {
-                            // this must happen under the GIL
-                            lastIteration.value()->second.close();
-                        }
-                        py::gil_scoped_release release;
-                        return s[key];
-                    }
-                    throw std::runtime_error("Unreachable");
+                    py::gil_scoped_release release;
+                    return s[key];
                 },
                 // copy + keepalive
                 py::return_value_policy::copy,
@@ -337,10 +323,6 @@ not possible once it has been closed.
                  */
                 if (!iterator.first_iteration)
                 {
-                    if (!(*iterator).closed())
-                    {
-                        (*iterator).close();
-                    }
                     py::gil_scoped_release release;
                     ++iterator;
                 }
