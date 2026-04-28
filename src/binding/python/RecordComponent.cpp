@@ -20,6 +20,7 @@
  */
 #include <limits>
 #include <pybind11/detail/common.h>
+#include <pybind11/gil.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -331,7 +332,8 @@ struct StoreChunkFromPythonArray
         // a race condition by manipulating the data that was passed
         std::shared_ptr<T> shared(
             (T *)data, [owning_handle = a.cast<py::object>()](T *) {
-                // no-op
+                py::gil_scoped_acquire need_the_gil_for_this;
+                owning_handle.~object();
             });
         r.storeChunk(std::move(shared), offset, extent);
     }
@@ -354,7 +356,8 @@ struct LoadChunkIntoPythonArray
         // a race condition by manipulating the data that was passed
         std::shared_ptr<T> shared(
             (T *)data, [owning_handle = a.cast<py::object>()](T *) {
-                // no-op
+                py::gil_scoped_acquire need_the_gil_for_this;
+                owning_handle.~object();
             });
         r.loadChunk(std::move(shared), offset, extent);
     }
@@ -378,7 +381,8 @@ struct LoadChunkIntoPythonBuffer
         // a race condition by manipulating the data that was passed
         std::shared_ptr<T> shared(
             (T *)data, [owning_handle = buffer.cast<py::object>()](T *) {
-                // no-op
+                py::gil_scoped_acquire need_the_gil_for_this;
+                owning_handle.~object();
             });
         r.loadChunk(std::move(shared), offset, extent);
     }

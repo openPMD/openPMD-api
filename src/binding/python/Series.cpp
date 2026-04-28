@@ -35,6 +35,7 @@
 
 #include <optional>
 #include <pybind11/attr.h>
+#include <pybind11/gil.h>
 #include <stdexcept>
 #include <tuple>
 
@@ -482,7 +483,13 @@ this method.
             &Series::iterationFormat,
             &Series::setIterationFormat)
         .def_property("name", &Series::name, &Series::setName)
-        .def("flush", &Series::flush, py::arg("backend_config") = "{}")
+        .def(
+            "flush",
+            [](Series &s, std::string const &backend_config) {
+                py::gil_scoped_release release_gil;
+                s.flush(backend_config);
+            },
+            py::arg("backend_config") = "{}")
 
         .def_property_readonly(
             "backend", static_cast<std::string (Series::*)()>(&Series::backend))
