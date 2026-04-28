@@ -324,7 +324,6 @@ struct StoreChunkFromPythonArray
         Offset const &offset,
         Extent const &extent)
     {
-        a.inc_ref();
         void *data = a.mutable_data();
         // here, we store an owning handle in the lambda capture so that
         // temporary and lost-scope variables stay alive until we flush
