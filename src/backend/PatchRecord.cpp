@@ -108,7 +108,7 @@ void PatchRecord::read()
     }
 
     readAttributes(ReadMode::FullyReread);
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(*this, IOHandler()->m_standard);
 
     setDirty(false);
 }

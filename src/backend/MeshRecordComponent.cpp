@@ -42,7 +42,7 @@ MeshRecordComponent::MeshRecordComponent(
 void MeshRecordComponent::read()
 {
     readBase();
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(*this, IOHandler()->m_standard);
 }
 
 void MeshRecordComponent::flush(

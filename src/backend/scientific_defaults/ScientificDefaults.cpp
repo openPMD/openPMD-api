@@ -20,8 +20,16 @@ void ScientificDefaults::writeDefaults(OpenpmdStandard standard)
     scientificDefaults_impl(WriteOrRead::Write, standard);
 }
 
-void ScientificDefaults::readDefaults(OpenpmdStandard standard)
+void ScientificDefaults::readDefaults(
+    Attributable &self, OpenpmdStandard standard)
 {
+    auto old_dirty = self.dirty();
     scientificDefaults_impl(WriteOrRead::Read, standard);
+    if (!old_dirty)
+    {
+        // did not become dirty by reading
+        // but setAttribute() might have been used, so set it again
+        self.setDirty(false);
+    }
 }
 } // namespace openPMD::internal

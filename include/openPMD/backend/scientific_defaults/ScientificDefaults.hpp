@@ -48,6 +48,6 @@ protected:
     void writeDefaults(OpenpmdStandard);
 
     // Called at appropriate places during parsing.
-    void readDefaults(OpenpmdStandard);
+    void readDefaults(Attributable &, OpenpmdStandard);
 };
 } // namespace openPMD::internal

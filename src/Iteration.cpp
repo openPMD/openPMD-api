@@ -599,7 +599,7 @@ void Iteration::read_impl(std::string const &groupPath)
     particles.setDirty(false);
 
     readAttributes(ReadMode::FullyReread);
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(*this, IOHandler()->m_standard);
 
 #ifdef openPMD_USE_INVASIVE_TESTS
     if (containsAttribute("__openPMD_internal_fail"))

@@ -59,6 +59,7 @@ namespace internal
     class SeriesData;
     struct HomogenizeExtents;
     struct ConfigAttribute;
+    class ScientificDefaults;
 
     class SharedAttributableData
     {
@@ -247,6 +248,7 @@ class Attributable
     friend class Snapshots;
     friend struct internal::HomogenizeExtents;
     friend struct internal::ConfigAttribute;
+    friend class internal::ScientificDefaults;
 
 protected:
     // tag for internal constructor

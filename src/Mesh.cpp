@@ -564,7 +564,7 @@ void Mesh::read()
     std::move(homogenizeExtents).homogenize(*this);
 
     readAttributes(ReadMode::FullyReread);
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
+    internal::ScientificDefaults::readDefaults(*this, IOHandler()->m_standard);
 }
 } // namespace openPMD
 

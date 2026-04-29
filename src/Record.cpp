@@ -197,8 +197,8 @@ auto Record::read() -> internal::HomogenizeExtents
         }
     }
 
+    internal::ScientificDefaults::readDefaults(*this, IOHandler()->m_standard);
     readAttributes(ReadMode::FullyReread);
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
 
     return res;
 }
