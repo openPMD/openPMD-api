@@ -110,6 +110,7 @@ struct RequireType : ProcessParsedAttribute
 
 template <typename T, typename RecordType>
 auto require_type(
+    RecordType &&record,
     std::optional<error::ReadError> (*)(
         std::remove_reference_t<RecordType> &, T))
     -> std::shared_ptr<ProcessParsedAttribute>;
