@@ -718,7 +718,7 @@ void ADIOS2File::configure_IO()
                 std::to_string((uint64_t)MaxShmMB * (uint64_t)1048576));
     }
 #endif
-    constexpr int default_stats_level = openPMD_HAS_ADIOS_2_12;
+    constexpr int default_stats_level = openPMD_HAS_ADIOS_2_12_1;
     if (notYetConfigured("StatsLevel"))
     {
         /*
