@@ -498,8 +498,6 @@ void Mesh::read()
         IOHandler()->m_verify_homogeneous_extents);
     internal::EraseStaleEntries<Mesh> map{*this};
 
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
-
     if (scalar())
     {
         T_RecordComponent::read();
@@ -565,9 +563,8 @@ void Mesh::read()
 
     std::move(homogenizeExtents).homogenize(*this);
 
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
-
     readAttributes(ReadMode::FullyReread);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
 }
 } // namespace openPMD
 

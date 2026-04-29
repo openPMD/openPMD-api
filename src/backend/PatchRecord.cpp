@@ -78,8 +78,6 @@ void PatchRecord::flush_impl(
 
 void PatchRecord::read()
 {
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
-
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));
     IOHandler()->flush(internal::defaultFlushParams);
@@ -108,6 +106,10 @@ void PatchRecord::read()
             this->container().erase(component_name);
         }
     }
+
+    readAttributes(ReadMode::FullyReread);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
+
     setDirty(false);
 }
 } // namespace openPMD

@@ -29,8 +29,11 @@ namespace openPMD
 {
 void ParticleSpecies::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
+    if (recursive)
+    {
+        particlePatches.visitHierarchy(v, recursive);
+    }
     visitHierarchyImpl<ParticleSpecies>(v, recursive);
-    particlePatches.visitHierarchy(v, recursive);
 }
 
 ParticleSpecies::ParticleSpecies()

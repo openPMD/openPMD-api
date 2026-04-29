@@ -3566,7 +3566,10 @@ void Series::close()
 
 void Series::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
-    get().iterations.visitHierarchy(v, recursive);
+    if (recursive)
+    {
+        get().iterations.visitHierarchy(v, recursive);
+    }
     v(*this);
 }
 

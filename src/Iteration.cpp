@@ -256,8 +256,11 @@ bool Iteration::closedByWriter() const
 
 void Iteration::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
-    meshes.visitHierarchy(v, recursive);
-    particles.visitHierarchy(v, recursive);
+    if (recursive)
+    {
+        meshes.visitHierarchy(v, recursive);
+        particles.visitHierarchy(v, recursive);
+    }
     v(*this);
 }
 
@@ -534,8 +537,6 @@ void Iteration::read_impl(std::string const &groupPath)
     pOpen.path = groupPath;
     IOHandler()->enqueue(IOTask(this, pOpen));
 
-    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
-
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
     Series s = retrieveSeries();
@@ -598,6 +599,8 @@ void Iteration::read_impl(std::string const &groupPath)
     particles.setDirty(false);
 
     readAttributes(ReadMode::FullyReread);
+    internal::ScientificDefaults::readDefaults(IOHandler()->m_standard);
+
 #ifdef openPMD_USE_INVASIVE_TESTS
     if (containsAttribute("__openPMD_internal_fail"))
     {
