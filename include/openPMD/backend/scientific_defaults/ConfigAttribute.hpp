@@ -64,6 +64,8 @@ struct ConfigAttribute
 };
 
 auto get_float_types() -> std::deque<Datatype>;
+auto get_int_types() -> std::deque<Datatype>;
+auto get_numerical_types() -> std::deque<Datatype>;
 auto get_string_types() -> std::deque<Datatype>;
 } // namespace openPMD::internal
 

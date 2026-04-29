@@ -2,6 +2,7 @@
 #include "openPMD/backend/scientific_defaults/AttributeReader.hpp"
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/backend/Attribute.hpp"
 
 #include <optional>
@@ -36,6 +37,10 @@ auto AttributeReader::operator()(
     }
     if (processAttribute.has_value())
     {
+        if (!*processAttribute)
+        {
+            throw error::Internal("Invalid function pointer");
+        }
         auto maybe_error = (**processAttribute)(record, attrName, a);
         if (maybe_error.has_value())
         {

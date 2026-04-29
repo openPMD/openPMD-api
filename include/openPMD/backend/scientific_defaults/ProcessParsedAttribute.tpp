@@ -80,7 +80,7 @@ auto RequireType<T>::operator()(
             },
             [](std::runtime_error const &err)
                 -> std::optional<error::ReadError> {
-                std::string msg = "Expected a scalar type: ";
+                std::string msg = "Expected specific type: ";
                 msg += err.what();
                 return error::ReadError(
                     error::AffectedObject::Attribute,

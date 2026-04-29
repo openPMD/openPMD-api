@@ -4,6 +4,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>

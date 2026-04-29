@@ -702,11 +702,11 @@ void RecordComponent::scientificDefaults_impl(
     internal::WriteOrRead wor, OpenpmdStandard)
 {
     using namespace internal;
-    auto float_types = get_float_types();
+    auto numerical_types = get_numerical_types();
 
     defaultAttribute(*this, "unitSI")
         .template withSetter<RecordComponent>(1.0, &RecordComponent::setUnitSI)
-        .withReader(float_types, require_type<double>())(wor);
+        .withReader(numerical_types, require_type<double>())(wor);
 }
 namespace
 {

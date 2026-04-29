@@ -656,7 +656,7 @@ void init_Attributable(py::module &m)
         .def("my_path", &Attributable::myPath)
         .def(
             "populate_missing_metadata",
-            &Iteration::populateMissingMetadata,
+            &Attributable::populateMissingMetadata,
             py::arg("recursive"));
 
     py::bind_vector<PyAttributeKeys>(m, "Attribute_Keys");

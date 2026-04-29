@@ -229,6 +229,9 @@ namespace detail
     template <template <typename...> class Base, typename... Args>
     auto infer_template_args(Base<Args...> &) -> Base<Args...>;
 
+    template <template <typename...> class Base, typename... Args>
+    auto infer_template_args(Base<Args...> const &) -> Base<Args...>;
+
     template <
         template <typename...> class Base,
         typename T,

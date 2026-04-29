@@ -115,6 +115,18 @@ public:
     template <typename U>
     std::optional<U> getOptional() const;
 
+    /** Retrieve a stored specific Attribute and cast if convertible.
+     *  Like Attribute::get<>(), but returns an exception instead of throwing it
+     * if no conversion is possible.
+     *
+     * @note This performs a static_cast and might introduce precision loss if
+     *       requested. Check dtype explicitly beforehand if needed.
+     *
+     * @tparam  U   Type of the object to be casted to.
+     * @return  Copy of the retrieved object, casted to type U.
+     *          A runtime_error (as return value, no thrown) if no conversion is
+     *          possible.
+     */
     template <typename U>
     std::variant<U, std::runtime_error> getOrError() const;
 

@@ -225,6 +225,8 @@ void Mesh::scientificDefaults_impl(
 {
     using namespace internal;
     auto float_types = get_float_types();
+    auto int_types = get_int_types();
+    auto numerical_types = get_numerical_types();
     auto string_types = get_string_types();
     auto dimensionality = retrieveDimensionality();
 
@@ -253,7 +255,8 @@ void Mesh::scientificDefaults_impl(
                 return auxiliary::createDefaultVector(dimensionality, 1.0);
             },
             &Mesh::setGridSpacing)
-        .withReader(float_types, require_vector)(wor);
+        .withReader(float_types, require_vector)
+        .withReader(int_types, require_type<std::vector<double>>())(wor);
 
     defaultAttribute(*this, "gridGlobalOffset")
         .template withSetter<Mesh, std::vector<double> const &>(
@@ -261,11 +264,12 @@ void Mesh::scientificDefaults_impl(
                 return auxiliary::createDefaultVector(dimensionality, 0.0);
             },
             &Mesh::setGridGlobalOffset)
-        .withReader(float_types, require_type<std::vector<double>>())(wor);
+        .withReader(numerical_types, require_type<std::vector<double>>())(wor);
 
     defaultAttribute(*this, "timeOffset")
         .template withSetter<Mesh>(0.f, &Mesh::setTimeOffset)
-        .withReader(float_types, require_scalar)(wor);
+        .withReader(float_types, require_scalar)
+        .withReader(int_types, require_type<double>())(wor);
 
     if (standard >= OpenpmdStandard::v_2_0_0)
     {
@@ -275,13 +279,13 @@ void Mesh::scientificDefaults_impl(
                     return auxiliary::createDefaultVector(dimensionality, 1.);
                 },
                 &Mesh::setGridUnitSIPerDimension)
-            .withReader(float_types, require_type<std::vector<double>>())(wor);
+            .withReader(int_types, require_type<std::vector<double>>())(wor);
     }
     else
     {
         defaultAttribute(*this, "gridUnitSI")
             .template withSetter<Mesh>(1.0, &Mesh::setGridUnitSI)
-            .withReader(float_types, require_type<std::vector<double>>())(wor);
+            .withReader(numerical_types, require_type<double>())(wor);
     }
 
     BaseRecord<MeshRecordComponent>::scientificDefaults_impl(wor, standard);

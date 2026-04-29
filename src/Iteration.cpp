@@ -970,16 +970,20 @@ void Iteration::scientificDefaults_impl(
 {
     using namespace internal;
     auto float_types = get_float_types();
+    auto int_types = get_int_types();
 
     defaultAttribute(*this, "time")
         .template withSetter<Iteration>(0., &Iteration::setTime)
-        .withReader(float_types, require_scalar)(wor);
+        .withReader(float_types, require_scalar)
+        .withReader(int_types, require_type<double>())(wor);
     defaultAttribute(*this, "dt")
         .template withSetter<Iteration>(1., &Iteration::setDt)
-        .withReader(float_types, require_scalar)(wor);
+        .withReader(float_types, require_scalar)
+        .withReader(int_types, require_type<double>())(wor);
     defaultAttribute(*this, "timeUnitSI")
         .template withSetter<Iteration>(1.0, &Iteration::setTimeUnitSI)
-        .withReader(float_types, require_type<double>())(wor);
+        .withReader(float_types, require_type<double>())
+        .withReader(int_types, require_type<double>())(wor);
 }
 
 void Iterations::visitHierarchy(HierarchyVisitor &v, bool recursive)

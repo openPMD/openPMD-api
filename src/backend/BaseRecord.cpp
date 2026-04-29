@@ -777,7 +777,7 @@ inline void BaseRecord<T_elem>::flush(
 
     if (!this->written() && this->empty() && !this->datasetDefined())
         // Verify upon ScientificDefaults::finalize() that the Record has been
-        // populized. For now, we will assume that data will come later; ignore
+        // populated. For now, we will assume that data will come later; ignore
         // this Record at the moment.
         return;
 

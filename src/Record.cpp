@@ -208,10 +208,12 @@ void Record::scientificDefaults_impl(
 {
     using namespace internal;
     auto float_types = get_float_types();
+    auto int_types = get_int_types();
 
     defaultAttribute(*this, "timeOffset")
         .template withSetter<Record>(0.f, &Record::setTimeOffset)
-        .withReader(float_types, require_scalar)(wor);
+        .withReader(float_types, require_scalar)
+        .withReader(int_types, require_type<double>())(wor);
 
     auto const &keyInParent = writable().ownKeyWithinParent;
     if (keyInParent == "position" || keyInParent == "positionOffset")
@@ -223,10 +225,6 @@ void Record::scientificDefaults_impl(
                 },
                 &Record::setUnitDimension)(wor);
     }
-
-    defaultAttribute(*this, "timeOffset")
-        .template withSetter<Record>(0.f, &Record::setTimeOffset)
-        .withReader(float_types, require_scalar)(wor);
 
     BaseRecord<RecordComponent>::scientificDefaults_impl(wor, standard);
 }

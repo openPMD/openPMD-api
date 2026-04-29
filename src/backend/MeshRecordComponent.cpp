@@ -76,6 +76,7 @@ void MeshRecordComponent::scientificDefaults_impl(
 {
     using namespace internal;
     auto float_types = get_float_types();
+    auto int_types = get_int_types();
 
     auto dimensionality = getDimensionality();
 
@@ -85,7 +86,8 @@ void MeshRecordComponent::scientificDefaults_impl(
                 return auxiliary::createDefaultVector(dimensionality, 0.5);
             },
             &MeshRecordComponent::setPosition)
-        .withReader(float_types, require_vector)(wor);
+        .withReader(float_types, require_vector)
+        .withReader(int_types, require_type<std::vector<double>>())(wor);
 
     RecordComponent::scientificDefaults_impl(wor, standard);
 }

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <map>
-#include <string>
-
 namespace openPMD
 {
 class Iteration;
@@ -31,6 +27,7 @@ public:
     virtual void operator()(ParticlePatches &) = 0;
     virtual void operator()(ParticleSpecies &) = 0;
     virtual void operator()(Particles &) = 0;
+    virtual void operator()(PatchRecord &) = 0;
     virtual void operator()(PatchRecordComponent &) = 0;
     virtual void operator()(Record &) = 0;
     virtual void operator()(RecordComponent &) = 0;

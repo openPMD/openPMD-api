@@ -433,7 +433,7 @@ public:
     void visitHierarchyFromLambda(Lambda &&lambda, bool recursive);
 
     /** Create standard defined attributes with default values now, insofar they
-     *  are still missing.
+     *  are still missing. Does not flush.
      *
      * Refer to
      * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md

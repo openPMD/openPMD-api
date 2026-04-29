@@ -4,6 +4,7 @@
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/ThrowError.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
@@ -62,7 +63,8 @@ void ConfigAttribute::read()
         std::cerr << "Could not read expected attribute '" << this->attrName
                   << "' in '" << this->attributable.myPath().openPMDPath()
                   << ".";
-        if (this->initDefaultAttribute.has_value())
+        if (e.reason == error::Reason::NotFound &&
+            this->initDefaultAttribute.has_value())
         {
             std::cerr << " Will initialize it with a default value.";
             this->initDefaultAttribute.operator*()(this->attributable);
@@ -146,6 +148,33 @@ auto get_float_types() -> std::deque<Datatype>
     for (auto dt : openPMD_Datatypes())
     {
         if (isFloatingPoint(dt))
+        {
+            res.push_back(dt);
+        }
+    }
+    res.push_back(Datatype::ARR_DBL_7);
+    return res;
+}
+
+auto get_int_types() -> std::deque<Datatype>
+{
+    std::deque<Datatype> res;
+    for (auto dt : openPMD_Datatypes())
+    {
+        if (std::get<0>(isInteger(dt)))
+        {
+            res.push_back(dt);
+        }
+    }
+    return res;
+}
+
+auto get_numerical_types() -> std::deque<Datatype>
+{
+    std::deque<Datatype> res;
+    for (auto dt : openPMD_Datatypes())
+    {
+        if (isFloatingPoint(dt) || std::get<0>(isInteger(dt)))
         {
             res.push_back(dt);
         }

@@ -47,6 +47,10 @@ public:
     {
         lambda(obj);
     }
+    void operator()(PatchRecord &obj) override
+    {
+        lambda(obj);
+    }
     void operator()(ParticleSpecies &obj) override
     {
         lambda(obj);
