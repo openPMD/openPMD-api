@@ -163,6 +163,9 @@ using ScalarType_t = typename detail::ScalarType<T>::type;
 template <typename T>
 using VectorType_t = std::vector<ScalarType_t<T>>;
 
+template <bool const_, typename T>
+using dependent_const = std::conditional_t<const_, T const, T>;
+
 /** Emulate in the C++ concept ContiguousContainer
  *
  * Users can implement this trait for a type to signal it can be used as

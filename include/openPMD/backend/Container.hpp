@@ -121,6 +121,59 @@ protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
     using InternalContainer = T_container;
 
+    using stringify_t = std::conditional_t<
+        std::is_same_v<T_key, std::string>,
+        std::string const &,
+        std::string>;
+    static auto key_as_string(T_key const &key) -> stringify_t
+    {
+        if constexpr (std::is_same_v<T_key, std::string>)
+        {
+            return key;
+        }
+        else
+        {
+            return std::to_string(key);
+        }
+    }
+
+    template <bool const_>
+    struct SynchronizedContainers
+    {
+        using front_t = auxiliary::dependent_const<const_, T_container>;
+        using back_t = auxiliary::dependent_const<
+            const_,
+            std::map<
+                std::string,
+                std::shared_ptr<internal::SharedAttributableData>>>;
+
+        front_t *front;
+        back_t *back;
+
+        template <typename Functor>
+        inline auto for_both(Functor &&f)
+        {
+            f(*this->front);
+            return f(*this->back);
+        }
+
+        template <typename Functor>
+        inline auto for_both_to_string(Functor &&f)
+        {
+            f(*this->front, [](auto key) { return key; });
+            if constexpr (std::is_same_v<T_key, std::string>)
+            {
+                return f(*this->back, [](auto key) { return key; });
+            }
+            else
+            {
+                return f(
+                    *this->back,
+                    static_cast<std::string (*)(T_key)>(&std::to_string));
+            }
+        }
+    };
+
     std::shared_ptr<ContainerData> m_containerData;
 
     inline void setData(std::shared_ptr<ContainerData> containerData)
@@ -129,14 +182,60 @@ protected:
         Attributable::setData(m_containerData);
     }
 
-    inline InternalContainer const &container() const
+    inline SynchronizedContainers<true> container() const
+    {
+#ifndef NDEBUG
+        auto size_front = container_front().size();
+        auto size_back = container_back().size();
+        if (size_front > size_back)
+        {
+            throw std::runtime_error(
+                "Invalid container state: " + std::to_string(size_front) +
+                " != " + std::to_string(size_back) + ".");
+        }
+#endif
+        return {&container_front(), &container_back()};
+    }
+
+    inline SynchronizedContainers<false> container()
+    {
+#ifndef NDEBUG
+        auto size_front = container_front().size();
+        auto size_back = container_back().size();
+        if (size_front > size_back)
+        {
+            throw std::runtime_error(
+                "Invalid container state: " + std::to_string(size_front) +
+                " != " + std::to_string(size_back) + ".");
+        }
+#endif
+        return {&container_front(), &container_back()};
+    }
+
+    inline auto container_front() const ->
+        typename SynchronizedContainers<true>::front_t &
     {
         return m_containerData->m_container;
     }
 
-    inline InternalContainer &container()
+    inline auto container_front() ->
+        typename SynchronizedContainers<false>::front_t &
     {
         return m_containerData->m_container;
+    }
+
+    inline auto container_back() const ->
+        typename SynchronizedContainers<true>::back_t &
+    {
+        traits::DeferredInitPolicy<Self_t>::call(*this);
+        return Attributable::get().m_children;
+    }
+
+    inline auto container_back() ->
+        typename SynchronizedContainers<false>::back_t &
+    {
+        traits::DeferredInitPolicy<Self_t>::call(*this);
+        return Attributable::get().m_children;
     }
 
 public:
@@ -260,7 +359,8 @@ public:
     auto emplace(Args &&...args)
         -> decltype(InternalContainer().emplace(std::forward<Args>(args)...))
     {
-        return container().emplace(std::forward<Args>(args)...);
+        return syncInsertResult(
+            container_front().emplace(std::forward<Args>(args)...));
     }
 
     template <typename ChildClass>
@@ -288,6 +388,22 @@ OPENPMD_protected
     Container();
 
     Container(NoInit);
+
+    auto syncInsertResult(std::pair<iterator, bool> res)
+        -> std::pair<iterator, bool>
+    {
+        if (res.second)
+        {
+            syncInsertResult(res.first);
+        }
+        return res;
+    }
+    auto syncInsertResult(iterator res) -> iterator
+    {
+        container_back().emplace(
+            key_as_string(res->first), *res->second.m_attri);
+        return res;
+    }
 
 public:
     /*

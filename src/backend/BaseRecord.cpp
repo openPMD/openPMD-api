@@ -282,7 +282,7 @@ auto BaseRecord<T_elem>::rbegin() -> reverse_iterator
     }
     else
     {
-        return makeReverseIterator(this->container().rbegin());
+        return makeReverseIterator(this->container_front().rbegin());
     }
 }
 
@@ -295,7 +295,7 @@ auto BaseRecord<T_elem>::rbegin() const -> const_reverse_iterator
     }
     else
     {
-        return makeReverseIterator(this->container().rbegin());
+        return makeReverseIterator(this->container_front().rbegin());
     }
 }
 
@@ -308,7 +308,7 @@ auto BaseRecord<T_elem>::crbegin() const -> const_reverse_iterator
     }
     else
     {
-        return makeReverseIterator(this->container().crbegin());
+        return makeReverseIterator(this->container_front().crbegin());
     }
 }
 
@@ -321,7 +321,7 @@ auto BaseRecord<T_elem>::rend() -> reverse_iterator
     }
     else
     {
-        return makeReverseIterator(this->container().rend());
+        return makeReverseIterator(this->container_front().rend());
     }
 }
 
@@ -334,7 +334,7 @@ auto BaseRecord<T_elem>::rend() const -> const_reverse_iterator
     }
     else
     {
-        return makeReverseIterator(this->container().rend());
+        return makeReverseIterator(this->container_front().rend());
     }
 }
 
@@ -347,7 +347,7 @@ auto BaseRecord<T_elem>::crend() const -> const_reverse_iterator
     }
     else
     {
-        return makeReverseIterator(this->container().crend());
+        return makeReverseIterator(this->container_front().crend());
     }
 }
 
@@ -527,7 +527,7 @@ auto BaseRecord<T_elem>::find(key_type const &key) -> iterator
     }
     else
     {
-        return makeIterator(r.m_container.find(key));
+        return makeIterator(this->container_front().find(key));
     }
 }
 
@@ -552,7 +552,7 @@ auto BaseRecord<T_elem>::find(key_type const &key) const -> const_iterator
     }
     else
     {
-        return makeIterator(r.m_container.find(key));
+        return makeIterator(this->container_front().find(key));
     }
 }
 
@@ -626,10 +626,12 @@ auto BaseRecord<T_elem>::insert(value_type const &value)
     -> std::pair<iterator, bool>
 {
     detail::verifyNonscalar(this);
-    auto res = this->container().insert(value);
+    auto res = this->syncInsertResult(this->container_front().insert(value));
     if (res.first->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res.first);
+        // this->container().erase(res.first);
+        this->container_front().erase(res.first);
+        this->container_back().erase(res.first->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
@@ -639,10 +641,12 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::insert(value_type &&value) -> std::pair<iterator, bool>
 {
     detail::verifyNonscalar(this);
-    auto res = this->container().insert(std::move(value));
+    auto res = this->syncInsertResult(
+        this->container_front().insert(std::move(value)));
     if (res.first->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res.first);
+        this->container_front().erase(res.first);
+        this->container_back().erase(res.first->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
@@ -659,13 +663,15 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type const &value)
             [this](typename const_iterator::Right) {
                 return static_cast<BaseRecord<T_elem> const *>(this)
                     ->container()
-                    .begin();
+                    .front->begin();
             }},
         hint.m_iterator);
-    auto res = this->container().insert(base_hint, value);
+    auto res = this->syncInsertResult(
+        this->container_front().insert(base_hint, value));
     if (res->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res);
+        this->container_front().erase(res);
+        this->container_back().erase(res->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return makeIterator(res);
@@ -682,13 +688,15 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type &&value)
             [this](typename const_iterator::Right) {
                 return static_cast<BaseRecord<T_elem> const *>(this)
                     ->container()
-                    .begin();
+                    .front->begin();
             }},
         hint.m_iterator);
-    auto res = this->container().insert(base_hint, std::move(value));
+    auto res = this->syncInsertResult(
+        this->container_front().insert(base_hint, std::move(value)));
     if (res->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res);
+        this->container_front().erase(res);
+        this->container_back().erase(res->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return makeIterator(res);
@@ -718,7 +726,16 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
 {
     detail::verifyNonscalar(this);
-    this->container().insert(std::move(ilist));
+    std::vector<internal::SharedAttributableData::children_map_t::value_type>
+        internal_insert_list;
+    internal_insert_list.reserve(ilist.size());
+    for (auto &v : ilist)
+    {
+        internal_insert_list.emplace_back(v.first, *v.second.m_attri);
+    }
+    this->container_front().insert(std::move(ilist));
+    this->container_back().insert(
+        internal_insert_list.begin(), internal_insert_list.end());
     /*
      * We skip this check as it changes the runtime of this call from
      * O(last-first) to O(container().size()).
@@ -738,7 +755,8 @@ auto BaseRecord<T_elem>::swap(BaseRecord &other) noexcept -> void
 {
     detail::verifyNonscalar(this);
     detail::verifyNonscalar(&other);
-    this->container().swap(other.container());
+    this->container_front().swap(other.container_front());
+    this->container_back().swap(other.container_back());
 }
 
 template <typename T_elem>

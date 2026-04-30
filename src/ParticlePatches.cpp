@@ -61,7 +61,8 @@ void ParticlePatches::read()
             std::cerr << "Cannot read patch record '" << record_name
                       << "' due to read error and will skip it:" << err.what()
                       << std::endl;
-            this->container().erase(record_name);
+            this->container().for_both(
+                [&record_name](auto &map) { map.erase(record_name); });
         }
     }
 
@@ -113,7 +114,8 @@ void ParticlePatches::read()
                 << "Cannot read record component '" << component_name
                 << "' in particle patch and will skip it due to read error:\n"
                 << err.what() << std::endl;
-            Container<PatchRecord>::container().erase(component_name);
+            Container<PatchRecord>::container().for_both(
+                [&component_name](auto &map) { map.erase(component_name); });
         }
     }
     setDirty(false);

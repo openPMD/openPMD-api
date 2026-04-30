@@ -60,6 +60,7 @@ namespace internal
     struct HomogenizeExtents;
     struct ConfigAttribute;
     class ScientificDefaults;
+    class AttributableData;
 
     class SharedAttributableData
     {
@@ -87,6 +88,15 @@ namespace internal
          * The attributes defined by this Attributable.
          */
         A_MAP m_attributes;
+
+        // Using shared_ptr<SharedAttributableData> in here because
+        // AttributableData is non-copyable and non-movable, but we need
+        // movability for map handling
+        // Disallowing move in AttributableData is only a measure for code
+        // discipline anyway.
+        using children_map_t =
+            std::map<std::string, std::shared_ptr<SharedAttributableData>>;
+        children_map_t m_children;
     };
 
     /*
@@ -112,6 +122,7 @@ namespace internal
 
         using SharedData_t = std::shared_ptr<SharedAttributableData>;
         using A_MAP = SharedData_t::element_type::A_MAP;
+        using parent_t = std::shared_ptr<SharedAttributableData>;
 
     public:
         AttributableData();
@@ -125,7 +136,7 @@ namespace internal
 
         // Make copies explicit, only to be used under the conditions described
         // above
-        void cloneFrom(AttributableData const &other);
+        void cloneFrom(parent_t const &other);
 
         template <typename T>
         T asInternalCopyOf()
@@ -765,6 +776,6 @@ Attributable::readVectorFloatingpoint(std::string const &key) const
         std::is_floating_point<T>::value,
         "Type of attribute must be floating point");
 
-    return getAttribute(key).get<std::vector<T> >();
+    return getAttribute(key).get<std::vector<T>>();
 }
 } // namespace openPMD

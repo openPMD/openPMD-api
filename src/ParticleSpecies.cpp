@@ -113,9 +113,11 @@ void ParticleSpecies::read()
 
     if (!hasParticlePatches)
     {
-        auto &container = particlePatches.container();
-        container.erase("numParticles");
-        container.erase("numParticlesOffset");
+        auto container = particlePatches.container();
+        container.for_both([](auto &map_) {
+            map_.erase("numParticles");
+            map_.erase("numParticlesOffset");
+        });
         particlePatches.setDirty(false);
     }
 

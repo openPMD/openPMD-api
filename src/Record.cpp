@@ -161,7 +161,8 @@ auto Record::read() -> internal::HomogenizeExtents
                 std::cerr << "Cannot read record component '" << component
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
-                this->container().erase(component);
+                this->container().for_both(
+                    [&component](auto &map) { map.erase(component); });
                 continue;
             }
             check_extent(rc);
@@ -190,7 +191,8 @@ auto Record::read() -> internal::HomogenizeExtents
                 std::cerr << "Cannot read record component '" << component
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
-                this->container().erase(component);
+                this->container().for_both(
+                    [&component](auto &map) { map.erase(component); });
                 continue;
             }
             check_extent(rc);
