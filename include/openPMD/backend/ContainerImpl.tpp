@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 
 /*
@@ -33,101 +34,101 @@ namespace openPMD
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::begin() noexcept -> iterator
 {
-    return container().begin();
+    return container_front().begin();
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::begin() const noexcept -> const_iterator
 {
-    return container().begin();
+    return container_front().begin();
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::cbegin() const noexcept -> const_iterator
 {
-    return container().cbegin();
+    return container_front().cbegin();
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::end() noexcept -> iterator
 {
-    return container().end();
+    return container_front().end();
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::end() const noexcept -> const_iterator
 {
-    return container().end();
+    return container_front().end();
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::cend() const noexcept -> const_iterator
 {
-    return container().cend();
+    return container_front().cend();
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::rbegin() noexcept -> reverse_iterator
 {
-    return container().rbegin();
+    return container_front().rbegin();
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::rbegin() const noexcept
     -> const_reverse_iterator
 {
-    return container().rbegin();
+    return container_front().rbegin();
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::crbegin() const noexcept
     -> const_reverse_iterator
 {
-    return container().crbegin();
+    return container_front().crbegin();
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::rend() noexcept -> reverse_iterator
 {
-    return container().rend();
+    return container_front().rend();
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::rend() const noexcept
     -> const_reverse_iterator
 {
-    return container().rend();
+    return container_front().rend();
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::crend() const noexcept
     -> const_reverse_iterator
 {
-    return container().crend();
+    return container_front().crend();
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::empty() const noexcept -> bool
 {
-    return container().empty();
+    return container_front().empty();
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::size() const noexcept -> size_type
 {
-    return container().size();
+    return container_front().size();
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::at(key_type const &key) -> mapped_type &
 {
-    return container().at(key);
+    return container_front().at(key);
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::at(key_type const &key) const
     -> mapped_type const &
 {
-    return container().at(key);
+    return container_front().at(key);
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::operator[](key_type const &key)
     -> mapped_type &
 {
-    auto it = container().find(key);
-    if (it != container().end())
+    auto it = container_front().find(key);
+    if (it != container_front().end())
         return it->second;
     else
     {
@@ -140,7 +141,9 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
 
         T t = T();
         t.linkHierarchy(writable());
-        auto inserted_iterator = container().insert({key, std::move(t)}).first;
+        auto inserted_iterator =
+            syncInsertResult(container_front().insert({key, std::move(t)}))
+                .first;
         auto &ret = inserted_iterator->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
@@ -159,8 +162,8 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::operator[](key_type &&key)
     -> mapped_type &
 {
-    auto it = container().find(key);
-    if (it != container().end())
+    auto it = container_front().find(key);
+    if (it != container_front().end())
         return it->second;
     else
     {
@@ -173,7 +176,9 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
 
         T t = T();
         t.linkHierarchy(writable());
-        auto inserted_iterator = container().insert({key, std::move(t)}).first;
+        auto inserted_iterator =
+            syncInsertResult(container_front().insert({key, std::move(t)}))
+                .first;
         auto &ret = inserted_iterator->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
@@ -203,49 +208,60 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(value_type const &value)
     -> std::pair<iterator, bool>
 {
-    return container().insert(value);
+    return syncInsertResult(container_front().insert(value));
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(value_type &&value)
     -> std::pair<iterator, bool>
 {
-    return container().insert(value);
+    return syncInsertResult(container_front().insert(value));
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(
     const_iterator hint, value_type const &value) -> iterator
 {
-    return container().insert(hint, value);
+    return syncInsertResult(container_front().insert(hint, value));
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(
     const_iterator hint, value_type &&value) -> iterator
 {
-    return container().insert(hint, value);
+    return syncInsertResult(container_front().insert(hint, value));
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(
     std::initializer_list<value_type> ilist) -> void
 {
-    container().insert(ilist);
+    std::vector<internal::SharedAttributableData::children_map_t::value_type>
+        internal_insert_list;
+    internal_insert_list.reserve(ilist.size());
+    for (auto &v : ilist)
+    {
+        internal_insert_list.emplace_back(
+            key_as_string(v.first), *v.second.m_attri);
+    }
+    container_front().insert(std::move(ilist));
+    container_back().insert(
+        internal_insert_list.begin(), internal_insert_list.end());
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::swap(Container &other) -> void
 {
-    container().swap(other.container());
+    container_front().swap(other.container_front());
+    container_back().swap(other.container_back());
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::find(key_type const &key) -> iterator
 {
-    return container().find(key);
+    return container_front().find(key);
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::find(key_type const &key) const
     -> const_iterator
 {
-    return container().find(key);
+    return container_front().find(key);
 }
 
 /** This returns either 1 if the key is found in the container of 0 if not.
@@ -257,7 +273,7 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::count(key_type const &key) const
     -> size_type
 {
-    return container().count(key);
+    return container_front().count(key);
 }
 
 /** Checks if there is an element with a key equivalent to an exiting key in
@@ -270,7 +286,7 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::contains(key_type const &key) const
     -> bool
 {
-    return container().find(key) != container().end();
+    return container_front().find(key) != container_front().end();
 }
 
 template <typename T, typename T_key, typename T_container>
@@ -280,15 +296,17 @@ auto Container<T, T_key, T_container>::erase(key_type const &key) -> size_type
         throw std::runtime_error(
             "Can not erase from a container in a read-only Series.");
 
-    auto res = container().find(key);
-    if (res != container().end() && res->second.written())
+    auto res = container_front().find(key);
+    if (res != container_front().end() && res->second.written())
     {
         Parameter<Operation::DELETE_PATH> pDelete;
         pDelete.path = ".";
         IOHandler()->enqueue(IOTask(&res->second, pDelete));
         IOHandler()->flush(internal::defaultFlushParams);
     }
-    return container().erase(key);
+    return container().for_both_to_string([&key](auto &map, auto &&to_string) {
+        return map.erase(to_string(key));
+    });
 }
 
 template <typename T, typename T_key, typename T_container>
@@ -298,14 +316,15 @@ auto Container<T, T_key, T_container>::erase(iterator res) -> iterator
         throw std::runtime_error(
             "Can not erase from a container in a read-only Series.");
 
-    if (res != container().end() && res->second.written())
+    if (res != container_front().end() && res->second.written())
     {
         Parameter<Operation::DELETE_PATH> pDelete;
         pDelete.path = ".";
         IOHandler()->enqueue(IOTask(&res->second, pDelete));
         IOHandler()->flush(internal::defaultFlushParams);
     }
-    return container().erase(res);
+    container_back().erase(key_as_string(res->first));
+    return container_front().erase(res);
 }
 
 template <typename T, typename T_key, typename T_container>
@@ -315,7 +334,7 @@ auto Container<T, T_key, T_container>::clear_unchecked() -> void
         throw std::runtime_error(
             "Clearing a written container not (yet) implemented.");
 
-    container().clear();
+    container().for_both([](auto &map) { map.clear(); });
 }
 
 template <typename T, typename T_key, typename T_container>
@@ -421,12 +440,12 @@ namespace internal
     template <typename Container_t>
     EraseStaleEntries<Container_t>::~EraseStaleEntries()
     {
-        auto &map = m_originalContainer.container();
+        auto map = m_originalContainer.container();
         using iterator_t =
             typename Container_t::InternalContainer::const_iterator;
         std::vector<iterator_t> deleteMe;
-        deleteMe.reserve(map.size() - m_accessedKeys.size());
-        for (iterator_t it = map.begin(); it != map.end(); ++it)
+        deleteMe.reserve(map.front->size() - m_accessedKeys.size());
+        for (iterator_t it = map.front->begin(); it != map.front->end(); ++it)
         {
             auto lookup = m_accessedKeys.find(it->first);
             if (lookup == m_accessedKeys.end())
@@ -436,7 +455,8 @@ namespace internal
         }
         for (auto &it : deleteMe)
         {
-            map.erase(it);
+            map.back->erase(it->first);
+            map.front->erase(it);
         }
     }
 } // namespace internal
