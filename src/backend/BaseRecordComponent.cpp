@@ -46,6 +46,7 @@ BaseRecordComponent &BaseRecordComponent::resetDatatype(Datatype d)
     {
         rc.m_dataset = Dataset{d, {1}};
     }
+    setDirty(true);
     return *this;
 }
 

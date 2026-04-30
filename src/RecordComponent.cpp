@@ -251,11 +251,13 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         }
         else if (d.dtype != Datatype::UNDEFINED)
         {
+            setDirty(true);
             return makeEmpty(std::move(d));
         }
         else
         {
             rc.m_dataset = std::move(d);
+            setDirty(true);
             return *this;
         }
     }

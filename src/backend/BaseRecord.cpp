@@ -776,11 +776,16 @@ inline void BaseRecord<T_elem>::flush(
     }
 
     if (!this->written() && this->empty() && !this->datasetDefined())
+    {
         // Verify upon ScientificDefaults::finalize() that the Record has been
         // populated. For now, we will assume that data will come later; ignore
         // this Record at the moment.
+        //
+        // If any of the properties above will change, the Record will become
+        // dirty through it.
+        this->setDirty(false);
         return;
-
+    }
     /*
      * Defensive programming. Normally, this error should yield as soon as
      * possible.
