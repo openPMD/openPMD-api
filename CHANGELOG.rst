@@ -16,6 +16,7 @@ Bug Fixes
   - Keep written flag consistent across MPI ranks for rankTable (#1869)
   - Fix parallel deletion (#1858)
   - Do not flush if the backend does not support Span API (#1863)
+  - Enable stats by default, starting ADIOS2 v2.12.0 (#1877)
 - HDF5:
 
   - Execute close operations also upon failure (#1866 #1870 #1872)
@@ -32,6 +33,7 @@ Other
 
   - Fix keep_alive specifications, add tests for keep_alive (#1851)
   - Remove duplicate Python test (#1867)
+  - Reacquire GIL for deallocation operations (#1878)
 - Dependencies:
 
   - Version bump toml11 to recent main branch (b32a2fff0d27e1f7522f26a125101500ddb47156), nlohmann_json to 3.12.0 (#1842 #1874)
@@ -39,6 +41,9 @@ Other
 - CI/Infrastructure:
 
   - Fix AppVeyor 64bit build (#1832)
+- Tests:
+
+  - Migrate C++ tests to Catch2 v3 (#1823 #1875)
 
 0.17.0
 ------
