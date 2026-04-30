@@ -717,16 +717,30 @@ void ADIOS2File::configure_IO()
                 std::to_string((uint64_t)MaxShmMB * (uint64_t)1048576));
     }
 #endif
+
+#if openPMD_HAS_ADIOS_2_12_1
+    constexpr int default_stats_level = 1;
+#else
+    constexpr int default_stats_level = 0;
+#endif
+
     if (notYetConfigured("StatsLevel"))
     {
         /*
+         * Up until and including ADIOS2 v2.12.0:
+         *
          * Switch those off by default since they are expensive to compute
          * and to enable it, set the JSON option "StatsLevel" or the
          * environment variable "OPENPMD_ADIOS2_STATS_LEVEL" be positive.
          * The ADIOS2 default was "1" (on).
+         *
+         * Beginning ADIOS2 v2.12.1:
+         *
+         * Performance for Stats computation has been improved through
+         * vectorization, so we switch it on by default.
          */
-        auto stats_level =
-            auxiliary::getEnvNum("OPENPMD_ADIOS2_STATS_LEVEL", 0);
+        auto stats_level = auxiliary::getEnvNum(
+            "OPENPMD_ADIOS2_STATS_LEVEL", default_stats_level);
         m_IO.SetParameter("StatsLevel", std::to_string(stats_level));
     }
     if (m_impl->realEngineType() == "sst" && notYetConfigured("QueueLimit"))
