@@ -402,6 +402,7 @@ include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 set(CORE_SOURCE
         src/config.cpp
         src/ChunkInfo.cpp
+        src/CustomHierarchy.cpp
         src/Dataset.cpp
         src/Datatype.cpp
         src/Error.cpp
