@@ -99,6 +99,44 @@ void CustomHierarchy::linkHierarchy(Writable &w)
 {
     Attributable::linkHierarchy(w);
 }
+
+void CustomHierarchy::printRecursively()
+{
+    if (empty())
+    {
+        std::cout << "<EMPTY>\n";
+        return;
+    }
+    else
+    {
+        std::cout << writable().ownKeyWithinParent << '\n';
+        printRecursively("");
+        std::cout.flush();
+    }
+}
+
+void CustomHierarchy::printRecursively(std::string indent)
+{
+    auto print_indent = [&indent]() { std::cout << indent; };
+    auto it = begin();
+    auto end_ = end();
+    if (it == end_)
+    {
+        return;
+    }
+    auto prev = it;
+    ++it;
+    auto next_indent = indent + "│ ";
+    for (; it != end_; prev = it, ++it)
+    {
+        print_indent();
+        std::cout << "├─" << prev->first << '\n';
+        prev->second.printRecursively(next_indent);
+    }
+    print_indent();
+    std::cout << "└─" << prev->first << '\n';
+    prev->second.printRecursively(indent + "  ");
+}
 } // namespace openPMD
 
 #if 0

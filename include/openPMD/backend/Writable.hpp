@@ -111,6 +111,7 @@ class Writable final
     friend struct Parameter<Operation::CREATE_DATASET>;
     friend struct Parameter<Operation::OPEN_DATASET>;
     friend class internal::ScientificDefaults;
+    friend class CustomHierarchy;
 
 private:
     Writable(internal::AttributableData *);
