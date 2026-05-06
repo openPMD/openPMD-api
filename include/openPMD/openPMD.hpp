@@ -26,6 +26,7 @@ namespace openPMD
 {}
 
 // IWYU pragma: begin_exports
+#include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
