@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Iteration.hpp"
@@ -344,6 +345,11 @@ OpenpmdStandard Attributable::openPMDStandard() const
 uintptr_t Attributable::memoryID() const
 {
     return reinterpret_cast<uintptr_t>(&retrieveSeries().Attributable::get());
+}
+
+auto Attributable::customHierarchies() -> CustomHierarchy
+{
+    return CustomHierarchy{*this};
 }
 
 template <bool flush_entire_series>

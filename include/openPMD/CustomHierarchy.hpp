@@ -24,6 +24,7 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 
 #include <stdexcept>
@@ -50,6 +51,7 @@ class ConvertibleContainer : public Container<MappedType>
 {
     template <typename>
     friend class ConversibleContainer;
+    friend class CustomHierarchy;
 
 protected:
     using Container_t = Container<MappedType>;
@@ -88,6 +90,16 @@ public:
     }
 };
 
+namespace traits
+{
+    template <>
+    struct DeferredInitPolicy<Container<CustomHierarchy>>
+    {
+        template <typename Container_const_or_not>
+        static void call(Container_const_or_not &);
+    };
+} // namespace traits
+
 // TODO: Use Container<Attributable> internally, but otherwise override members
 // such that we have:
 //
@@ -98,6 +110,8 @@ class CustomHierarchy : public ConvertibleContainer<CustomHierarchy>
 {
     friend class Iteration;
     friend class Container<CustomHierarchy>;
+    friend class Attributable;
+    friend struct traits::DeferredInitPolicy<Container<CustomHierarchy>>;
 
 private:
     using Parent_t = ConvertibleContainer<CustomHierarchy>;
@@ -107,6 +121,8 @@ private:
 protected:
     CustomHierarchy();
     CustomHierarchy(NoInit);
+    CustomHierarchy(std::shared_ptr<internal::SharedAttributableData> other);
+    CustomHierarchy(Attributable const &other);
 
     void read();
     void read(std::vector<std::string> &currentPath);

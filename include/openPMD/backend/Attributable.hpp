@@ -52,6 +52,7 @@ class AbstractFilePosition;
 class Attributable;
 class Iteration;
 class Series;
+class CustomHierarchy;
 
 namespace internal
 {
@@ -123,6 +124,7 @@ namespace internal
         using SharedData_t = std::shared_ptr<SharedAttributableData>;
         using A_MAP = SharedData_t::element_type::A_MAP;
         using parent_t = std::shared_ptr<SharedAttributableData>;
+        friend class openPMD::CustomHierarchy;
 
     public:
         AttributableData();
@@ -130,6 +132,18 @@ namespace internal
         AttributableData(AttributableData const &) = delete;
         AttributableData(AttributableData &&) = delete;
         virtual ~AttributableData() = default;
+
+        inline auto asSharedPtrOfAttributable()
+            -> std::shared_ptr<SharedAttributableData> &
+        {
+            return *this;
+        }
+
+        [[nodiscard]] inline auto asSharedPtrOfAttributable() const
+            -> std::shared_ptr<SharedAttributableData> const &
+        {
+            return *this;
+        }
 
         AttributableData &operator=(AttributableData const &) = delete;
         AttributableData &operator=(AttributableData &&) = delete;
@@ -260,6 +274,7 @@ class Attributable
     friend struct internal::HomogenizeExtents;
     friend struct internal::ConfigAttribute;
     friend class internal::ScientificDefaults;
+    friend class CustomHierarchy;
 
 protected:
     // tag for internal constructor
@@ -474,6 +489,11 @@ public:
      * instance.
      */
     [[nodiscard]] uintptr_t memoryID() const;
+
+    // TODO: Add parse? parameter, dont parse, parse this object, parse
+    // recursively
+    // Alternatively, parse upon deferred initialization?
+    auto customHierarchies() -> CustomHierarchy;
 
     // clang-format off
 OPENPMD_protected
