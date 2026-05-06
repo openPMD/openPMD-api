@@ -144,5 +144,10 @@ public:
 
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
+
+    void printRecursively();
+
+private:
+    void printRecursively(std::string indent);
 };
 } // namespace openPMD
