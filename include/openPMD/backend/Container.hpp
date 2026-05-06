@@ -220,6 +220,7 @@ protected:
                 " != " + std::to_string(size_back) + ".");
         }
 #endif
+        traits::DeferredInitPolicy<Self_t>::call(*this);
         return {&container_front(), &container_back()};
     }
 
@@ -235,6 +236,7 @@ protected:
                 " != " + std::to_string(size_back) + ".");
         }
 #endif
+        traits::DeferredInitPolicy<Self_t>::call(*this);
         return {&container_front(), &container_back()};
     }
 

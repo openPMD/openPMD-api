@@ -21,6 +21,86 @@
 
 #include "openPMD/CustomHierarchy.hpp"
 
+namespace openPMD
+{
+namespace traits
+{
+    template <typename Container_const_or_not>
+    void DeferredInitPolicy<Container<CustomHierarchy>>::call(
+        Container_const_or_not &container)
+    {
+        auto &container_front = container.m_containerData->m_container;
+        auto &container_back = container.Attributable::get().m_children;
+
+        auto size_front = container_front.size();
+        auto size_back = container_back.size();
+
+        if (size_front == size_back)
+        {
+            return;
+        }
+        else if (size_front > size_back)
+        {
+            throw error::Internal("CustomHierarchy went into illegal state?");
+        }
+        // Need to sync backend objects into the CustomHierarchy instance
+        // Need to be a bit sneaky, we must modify my_container&, but this
+        // method might be called as const. shared_ptr<>s implement interior
+        // mutability, so use that here.
+
+        // auto &my_container = container.container_front();
+        auto it = container_front.begin();
+        auto end = container_front.end();
+        for (auto const &[key, attributable] : container_back)
+        {
+            if (it == end || it->first != key)
+            {
+                // under the invariant that the front container contains no
+                // elements that are not present in the back container, it now
+                // points to an entry past the to-be-inserted key
+                it = container_front.emplace_hint(
+                    it, key, CustomHierarchy(attributable));
+            }
+        }
+    }
+    template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
+        Container<CustomHierarchy> &);
+    template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
+        Container<CustomHierarchy> const &);
+} // namespace traits
+CustomHierarchy::CustomHierarchy() : ConvertibleContainer(NoInit{})
+{
+    setData(std::make_shared<Data_t>());
+}
+
+CustomHierarchy::CustomHierarchy(NoInit) : ConvertibleContainer(NoInit{})
+{}
+
+CustomHierarchy::CustomHierarchy(
+    std::shared_ptr<internal::SharedAttributableData> other)
+    : ConvertibleContainer(NoInit{})
+{
+    auto data = std::make_shared<Data_t>();
+    data->asSharedPtrOfAttributable() = std::move(other);
+    setData(std::move(data));
+}
+
+CustomHierarchy::CustomHierarchy(Attributable const &other)
+    : CustomHierarchy(other.m_attri->asSharedPtrOfAttributable())
+{}
+
+void CustomHierarchy::flush(
+    std::string const & /* path */, internal::FlushParams const &)
+{
+    throw std::runtime_error("Unimplemented!");
+}
+
+void CustomHierarchy::linkHierarchy(Writable &w)
+{
+    Attributable::linkHierarchy(w);
+}
+} // namespace openPMD
+
 #if 0
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Error.hpp"

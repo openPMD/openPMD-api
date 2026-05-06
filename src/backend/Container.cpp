@@ -21,6 +21,7 @@
 
 #include "openPMD/backend/ContainerImpl.tpp"
 
+#include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticlePatches.hpp"
@@ -42,6 +43,7 @@ OPENPMD_INSTANTIATE(PatchRecord)
 OPENPMD_INSTANTIATE(PatchRecordComponent)
 OPENPMD_INSTANTIATE(Record)
 OPENPMD_INSTANTIATE(RecordComponent)
+OPENPMD_INSTANTIATE(CustomHierarchy)
 OPENPMD_INSTANTIATE(Iteration OPENPMD_COMMA Iteration::IterationIndex_t)
 #undef OPENPMD_INSTANTIATE
 #undef OPENPMD_COMMA
