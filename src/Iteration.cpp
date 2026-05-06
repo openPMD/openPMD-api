@@ -69,6 +69,9 @@ Iteration::Iteration() : Attributable(NoInit())
     setData(std::make_shared<Data_t>());
     meshes.writable().ownKeyWithinParent = "meshes";
     particles.writable().ownKeyWithinParent = "particles";
+    auto &container_back = Attributable::get().m_children;
+    container_back["meshes"] = *meshes.m_attri;
+    container_back["particles"] = *particles.m_attri;
 }
 
 uint64_t Iteration::getCachedIterationIndex() const
