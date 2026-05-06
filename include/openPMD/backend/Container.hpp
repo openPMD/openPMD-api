@@ -57,6 +57,15 @@ namespace traits
         void operator()(T &)
         {}
     };
+
+    template <typename Container_t>
+    struct DeferredInitPolicy
+    {
+        static void call(Container_t &)
+        {}
+        static void call(Container_t const &)
+        {}
+    };
 } // namespace traits
 
 namespace internal
@@ -116,6 +125,9 @@ class Container : virtual public Attributable
     template <typename>
     friend class internal::EraseStaleEntries;
     friend class StatefulIterator;
+
+    using Self_t = Container<T, T_key, T_container>;
+    friend class traits::DeferredInitPolicy<Self_t>;
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
@@ -215,12 +227,14 @@ protected:
     inline auto container_front() const ->
         typename SynchronizedContainers<true>::front_t &
     {
+        traits::DeferredInitPolicy<Self_t>::call(*this);
         return m_containerData->m_container;
     }
 
     inline auto container_front() ->
         typename SynchronizedContainers<false>::front_t &
     {
+        traits::DeferredInitPolicy<Self_t>::call(*this);
         return m_containerData->m_container;
     }
 
