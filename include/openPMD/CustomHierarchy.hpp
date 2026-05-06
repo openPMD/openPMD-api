@@ -39,6 +39,8 @@ namespace internal
     using CustomHierarchyData = ContainerData<Attributable>;
 } // namespace internal
 
+class CustomHierarchy;
+
 /*
  * This is its own class, so the return value of asContainerOf() is also
  * convsersible again.
@@ -56,6 +58,9 @@ protected:
         std::is_base_of_v<typename Container_t::ContainerData, Data_t>);
 
     using Container_t::Container_t;
+
+private:
+    explicit ConvertibleContainer() = default;
 
 public:
     template <typename TargetType>
@@ -89,13 +94,13 @@ public:
 // operator[](key) -> CustomHierarchy
 //
 // Or find a better solution for having this automatically..
-class CustomHierarchy : public ConversibleContainer<Attributable>
+class CustomHierarchy : public ConvertibleContainer<CustomHierarchy>
 {
     friend class Iteration;
     friend class Container<CustomHierarchy>;
 
 private:
-    using Parent_t = ConversibleContainer<Attributable>;
+    using Parent_t = ConvertibleContainer<CustomHierarchy>;
     using Container_t = typename Parent_t::Container_t;
     using Data_t = typename Parent_t::Data_t;
 
