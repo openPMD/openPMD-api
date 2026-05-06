@@ -39,6 +39,7 @@ void ParticleSpecies::visitHierarchy(HierarchyVisitor &v, bool recursive)
 ParticleSpecies::ParticleSpecies()
 {
     particlePatches.writable().ownKeyWithinParent = "particlePatches";
+    container_back()["particlePatches"] = *particlePatches.m_attri;
 }
 
 void ParticleSpecies::read()
