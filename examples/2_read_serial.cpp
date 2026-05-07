@@ -99,7 +99,10 @@ int main()
 
     auto all_data = E_x.loadChunk<double>();
 
-    series.customHierarchies().printRecursively();
+    auto ch = series.customHierarchies();
+    ch.printRecursively();
+    ch["data"]["200"]["meshes"].read();
+    ch.printRecursively();
 
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
