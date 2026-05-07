@@ -430,7 +430,9 @@ OPENPMD_protected
     }
     auto syncInsertResult(iterator res) -> iterator
     {
-        container_back().emplace(
+        // container_back() expects the invariant that we are currently about to
+        // fulfill so we cannot use it just yet
+        Attributable::get().m_children.emplace(
             key_as_string(res->first), *res->second.m_attri);
         return res;
     }
