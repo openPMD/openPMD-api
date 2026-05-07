@@ -124,7 +124,6 @@ protected:
     CustomHierarchy(std::shared_ptr<internal::SharedAttributableData> other);
     CustomHierarchy(Attributable const &other);
 
-    void read();
     void read(std::vector<std::string> &currentPath);
 
     void flush_internal(
@@ -144,6 +143,9 @@ public:
 
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
+
+    // TODO maybe make this automatic somehow
+    void read();
 
     void printRecursively();
 

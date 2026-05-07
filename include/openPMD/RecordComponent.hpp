@@ -134,6 +134,7 @@ class RecordComponent
     friend T &internal::makeOwning(T &self, Series_type);
     friend class internal::ScientificDefaults;
     friend class Attributable;
+    friend class CustomHierarchy;
 
 public:
     enum class Allocation
