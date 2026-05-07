@@ -69,9 +69,6 @@ Iteration::Iteration() : Attributable(NoInit())
     setData(std::make_shared<Data_t>());
     meshes.writable().ownKeyWithinParent = "meshes";
     particles.writable().ownKeyWithinParent = "particles";
-    auto &container_back = Attributable::get().m_children;
-    container_back["meshes"] = *meshes.m_attri;
-    container_back["particles"] = *particles.m_attri;
 }
 
 uint64_t Iteration::getCachedIterationIndex() const
@@ -914,6 +911,13 @@ void Iteration::linkHierarchy(Writable &w)
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
     get().m_perIterationData.m_rankTableAttributable.linkHierarchy(*w.parent);
+
+    auto &container_back = Attributable::get().m_children;
+    auto s = retrieveSeries();
+    container_back[auxiliary::replace_all_nonrecursively(
+        s.meshesPath(), "/", "")] = *meshes.m_attri;
+    container_back[auxiliary::replace_all_nonrecursively(
+        s.particlesPath(), "/", "")] = *particles.m_attri;
 }
 
 void Iteration::runDeferredParseAccess()

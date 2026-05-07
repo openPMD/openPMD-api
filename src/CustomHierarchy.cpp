@@ -20,6 +20,7 @@
  */
 
 #include "openPMD/CustomHierarchy.hpp"
+#include "openPMD/auxiliary/Defer.hpp"
 
 namespace openPMD
 {
@@ -41,7 +42,32 @@ namespace traits
         }
         else if (size_front > size_back)
         {
-            throw error::Internal("CustomHierarchy went into illegal state?");
+            std::stringstream error;
+            auto print = [&error](auto const &map) -> std::stringstream & {
+                if (map.empty())
+                {
+                    error << "[]";
+                }
+                else
+                {
+                    error << '[';
+                    auto it = map.begin();
+                    error << (it++)->first;
+                    auto end = map.end();
+                    for (; it != end; ++it)
+                    {
+                        error << ", " << it->first;
+                    }
+                    error << ']';
+                }
+                return error;
+            };
+            error << "CustomHierarchy went into illegal state at '"
+                  << container.myPath().openPMDPath()
+                  << "':\nfront container: ";
+            print(container_front) << "\nback container:  ";
+            print(container_back) << '\n';
+            throw error::Internal(error.str());
         }
         // Need to sync backend objects into the CustomHierarchy instance
         // Need to be a bit sneaky, we must modify my_container&, but this
@@ -91,14 +117,39 @@ CustomHierarchy::CustomHierarchy(Attributable const &other)
 
 void CustomHierarchy::read()
 {
+    auxiliary::opaque_defer_type reset_parsing_status;
+    if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
+    {
+        IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
+        reset_parsing_status = auxiliary::defer([&]() {
+            IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
+        });
+    }
     if (!writable().written)
     {
-        throw error::WrongAPIUsage(
-            "Cannot read contents of CustomHierarchy path '" +
-            myPath().openPMDPath() +
-            "', since the backend does not yet / no longer know about this "
-            "object. Ensure that the object is open (e.g. by opening its "
-            "containing Iteration or by reading parent paths first)");
+        auto do_throw = [&]() {
+            throw error::WrongAPIUsage(
+                "Cannot read contents of CustomHierarchy path '" +
+                myPath().openPMDPath() +
+                "', since the backend does not yet / no longer know about this "
+                "object. Ensure that the object is open (e.g. by opening its "
+                "containing Iteration or by reading parent paths first)");
+        };
+        auto parent = writable().parent;
+        if (!parent)
+        {
+            do_throw();
+        }
+        Attributable parent_attributable(NoInit{});
+        parent_attributable.setData(
+            std::shared_ptr<internal::AttributableData>{
+                parent->attributable, [](auto const *) {}});
+        CustomHierarchy parent_(parent_attributable);
+        parent_.read();
+        if (!writable() /* still not */.written)
+        {
+            do_throw();
+        }
     }
     /*
      * Convention for CustomHierarchy::flush and CustomHierarchy::read:
@@ -118,7 +169,8 @@ void CustomHierarchy::read()
     auto &container_back_ = container_back();
     for (auto const &path : *pList.paths)
     {
-        if (container_back_.find(path) != container_back_.end())
+        if (auto it = container_back_.find(path);
+            it != container_back_.end() && it->second->m_writable.written)
         {
             // Is already known
             continue;
@@ -132,7 +184,8 @@ void CustomHierarchy::read()
 
     for (auto const &path : *dList.datasets)
     {
-        if (container_back_.find(path) != container_back_.end())
+        if (auto it = container_back_.find(path);
+            it != container_back_.end() && it->second->m_writable.written)
         {
             // Is already known
             continue;
@@ -155,6 +208,7 @@ void CustomHierarchy::read()
     }
 
     setDirty(false);
+    IOHandler()->flush(internal::defaultFlushParams);
 }
 
 void CustomHierarchy::flush(

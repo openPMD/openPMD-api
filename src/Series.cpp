@@ -285,12 +285,7 @@ Series &Series::setMeshesPath(std::string const &mp)
             "A files meshesPath can not (yet) be changed after it has been "
             "written.");
 
-    if (auxiliary::ends_with(mp, '/'))
-        setAttribute("meshesPath", mp);
-    else
-        setAttribute("meshesPath", mp + "/");
-    setDirty(true);
-    return *this;
+    return setMeshesPath_internal(mp);
 }
 
 std::vector<std::string> Series::availableDatasets()
@@ -623,12 +618,7 @@ Series &Series::setParticlesPath(std::string const &pp)
             "A files particlesPath can not (yet) be changed after it has been "
             "written.");
 
-    if (auxiliary::ends_with(pp, '/'))
-        setAttribute("particlesPath", pp);
-    else
-        setAttribute("particlesPath", pp + "/");
-    setDirty(true);
-    return *this;
+    return setParticlesPath_internal(pp);
 }
 
 std::string Series::author() const
@@ -2448,7 +2438,6 @@ creating new iterations.
 
 void Series::readBase()
 {
-    auto &series = get();
     Parameter<Operation::READ_ATT> aRead;
 
     aRead.name = "openPMD";
@@ -2534,16 +2523,9 @@ void Series::readBase()
                            .getOptional<std::string>();
             val.has_value())
         {
-            /* allow setting the meshes path after completed IO */
-            for (auto &it : series.iterations)
-                it.second.meshes.setWritten(
-                    false, Attributable::EnqueueAsynchronously::No);
-
-            setMeshesPath(val.value());
-
-            for (auto &it : series.iterations)
-                it.second.meshes.setWritten(
-                    true, Attributable::EnqueueAsynchronously::No);
+            /* use internal api to allow setting the meshes path after completed
+             * IO */
+            setMeshesPath_internal(val.value());
         }
         else
             throw error::ReadError(
@@ -2576,16 +2558,9 @@ void Series::readBase()
                            .getOptional<std::string>();
             val.has_value())
         {
-            /* allow setting the meshes path after completed IO */
-            for (auto &it : series.iterations)
-                it.second.particles.setWritten(
-                    false, Attributable::EnqueueAsynchronously::No);
-
-            setParticlesPath(val.value());
-
-            for (auto &it : series.iterations)
-                it.second.particles.setWritten(
-                    true, Attributable::EnqueueAsynchronously::No);
+            /* use internal api to allow setting the meshes path after completed
+             * IO */
+            setParticlesPath_internal(val.value());
         }
         else
             throw error::ReadError(
@@ -2949,6 +2924,25 @@ Series &Series::setIterationEncoding_internal(
     return *this;
 }
 
+Series &Series::setParticlesPath_internal(std::string const &pp)
+{
+    if (auxiliary::ends_with(pp, '/'))
+        setAttribute("particlesPath", pp);
+    else
+        setAttribute("particlesPath", pp + "/");
+    setDirty(true);
+    return *this;
+}
+
+Series &Series::setMeshesPath_internal(std::string const &mp)
+{
+    if (auxiliary::ends_with(mp, '/'))
+        setAttribute("meshesPath", mp);
+    else
+        setAttribute("meshesPath", mp + "/");
+    setDirty(true);
+    return *this;
+}
 auto Series::openIterationIfDirty(IterationIndex_t index, Iteration &iteration)
     -> IterationOpened
 {

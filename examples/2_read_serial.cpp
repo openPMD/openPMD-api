@@ -101,7 +101,7 @@ int main()
 
     auto ch = series.customHierarchies();
     ch.printRecursively();
-    ch["data"]["200"]["meshes"].read();
+    ch["data"]["200"]["fields"].read();
     ch.printRecursively();
 
     // The iteration can be closed in order to help free up resources.
