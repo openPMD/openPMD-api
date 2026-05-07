@@ -1010,6 +1010,9 @@ OPENPMD_private
     Series &setIterationEncoding_internal(
         IterationEncoding iterationEncoding, internal::default_or_explicit);
 
+    Series &setParticlesPath_internal(std::string const &particlesPath);
+    Series &setMeshesPath_internal(std::string const &meshesPath);
+
     /*
      * Returns the current content of the /data/snapshot attribute.
      * (We could also add this to the public API some time)
