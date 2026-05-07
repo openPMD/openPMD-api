@@ -89,6 +89,74 @@ CustomHierarchy::CustomHierarchy(Attributable const &other)
     : CustomHierarchy(other.m_attri->asSharedPtrOfAttributable())
 {}
 
+void CustomHierarchy::read()
+{
+    if (!writable().written)
+    {
+        throw error::WrongAPIUsage(
+            "Cannot read contents of CustomHierarchy path '" +
+            myPath().openPMDPath() +
+            "', since the backend does not yet / no longer know about this "
+            "object. Ensure that the object is open (e.g. by opening its "
+            "containing Iteration or by reading parent paths first)");
+    }
+    /*
+     * Convention for CustomHierarchy::flush and CustomHierarchy::read:
+     * Path is created/opened already at entry point of method, method needs
+     * to create/open path for contained subpaths.
+     */
+
+    Parameter<Operation::LIST_PATHS> pList;
+    IOHandler()->enqueue(IOTask(this, pList));
+
+    Attributable::readAttributes(ReadMode::FullyReread);
+    Parameter<Operation::LIST_DATASETS> dList;
+    IOHandler()->enqueue(IOTask(this, dList));
+    IOHandler()->flush(internal::defaultFlushParams);
+
+    std::deque<std::string> constantComponentsPushback;
+    auto &container_back_ = container_back();
+    for (auto const &path : *pList.paths)
+    {
+        if (container_back_.find(path) != container_back_.end())
+        {
+            // Is already known
+            continue;
+        }
+        Parameter<Operation::OPEN_PATH> pOpen;
+        pOpen.path = path;
+        auto &subpath = this->operator[](path);
+        subpath.linkHierarchy(this->writable());
+        IOHandler()->enqueue(IOTask(&subpath, pOpen));
+    }
+
+    for (auto const &path : *dList.datasets)
+    {
+        if (container_back_.find(path) != container_back_.end())
+        {
+            // Is already known
+            continue;
+        }
+        Parameter<Operation::OPEN_DATASET> dOpen;
+        dOpen.name = path;
+
+        // TODO uhhm i think this wont work, but lets see when we get there
+        RecordComponent rc;
+        auto [it, emplaced] = this->emplace(
+            path, CustomHierarchy(static_cast<Attributable &>(rc)));
+        if (!emplaced)
+        {
+            throw error::Internal(
+                "Control flow error / internal container state error.");
+        }
+        auto &subpath = it->second;
+        subpath.linkHierarchy(this->writable());
+        IOHandler()->enqueue(IOTask(&subpath, dOpen));
+    }
+
+    setDirty(false);
+}
+
 void CustomHierarchy::flush(
     std::string const & /* path */, internal::FlushParams const &)
 {
