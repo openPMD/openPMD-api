@@ -166,7 +166,7 @@ void CustomHierarchy::read()
     IOHandler()->flush(internal::defaultFlushParams);
 
     std::deque<std::string> constantComponentsPushback;
-    auto &container_back_ = container_back();
+    auto &container_back_ = container_back(/* verify = */ true);
     for (auto const &path : *pList.paths)
     {
         if (auto it = container_back_.find(path);
@@ -224,6 +224,7 @@ void CustomHierarchy::linkHierarchy(Writable &w)
 
 void CustomHierarchy::printRecursively()
 {
+    std::cout << &writable() << "  ";
     if (empty())
     {
         std::cout << "<EMPTY>\n";
@@ -251,10 +252,12 @@ void CustomHierarchy::printRecursively(std::string indent)
     auto next_indent = indent + "│ ";
     for (; it != end_; prev = it, ++it)
     {
+        std::cout << &prev->second.writable() << "  ";
         print_indent();
         std::cout << "├─" << prev->first << '\n';
         prev->second.printRecursively(next_indent);
     }
+    std::cout << &prev->second.writable() << "  ";
     print_indent();
     std::cout << "└─" << prev->first << '\n';
     prev->second.printRecursively(indent + "  ");

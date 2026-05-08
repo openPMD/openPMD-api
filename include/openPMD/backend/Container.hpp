@@ -212,7 +212,7 @@ protected:
     {
 #ifndef NDEBUG
         auto size_front = container_front().size();
-        auto size_back = container_back().size();
+        auto size_back = container_back(/* verify = */ true).size();
         if (size_front > size_back)
         {
             throw std::runtime_error(
@@ -221,14 +221,14 @@ protected:
         }
 #endif
         traits::DeferredInitPolicy<Self_t>::call(*this);
-        return {&container_front(), &container_back()};
+        return {&container_front(), &container_back(/* verify = */ true)};
     }
 
     inline SynchronizedContainers<false> container()
     {
 #ifndef NDEBUG
         auto size_front = container_front().size();
-        auto size_back = container_back().size();
+        auto size_back = container_back(/* verify = */ true).size();
         if (size_front > size_back)
         {
             throw std::runtime_error(
@@ -237,7 +237,7 @@ protected:
         }
 #endif
         traits::DeferredInitPolicy<Self_t>::call(*this);
-        return {&container_front(), &container_back()};
+        return {&container_front(), &container_back(/* verify = */ true)};
     }
 
     inline auto container_front() const ->
@@ -254,17 +254,23 @@ protected:
         return m_containerData->m_container;
     }
 
-    inline auto container_back() const ->
+    inline auto container_back(bool verify) const ->
         typename SynchronizedContainers<true>::back_t &
     {
-        traits::DeferredInitPolicy<Self_t>::call(*this);
+        if (verify)
+        {
+            traits::DeferredInitPolicy<Self_t>::call(*this);
+        }
         return Attributable::get().m_children;
     }
 
-    inline auto container_back() ->
+    inline auto container_back(bool verify) ->
         typename SynchronizedContainers<false>::back_t &
     {
-        traits::DeferredInitPolicy<Self_t>::call(*this);
+        if (verify)
+        {
+            traits::DeferredInitPolicy<Self_t>::call(*this);
+        }
         return Attributable::get().m_children;
     }
 
@@ -430,10 +436,20 @@ OPENPMD_protected
     }
     auto syncInsertResult(iterator res) -> iterator
     {
-        // container_back() expects the invariant that we are currently about to
-        // fulfill so we cannot use it just yet
-        Attributable::get().m_children.emplace(
-            key_as_string(res->first), *res->second.m_attri);
+        auto &cont = container_back(/* verify = */ false);
+        decltype(auto) key = key_as_string(res->first);
+        auto it = cont.find(key);
+        if (it == cont.end())
+        {
+            cont.emplace(key_as_string(res->first), *res->second.m_attri);
+        }
+        else
+        {
+            // uhhm this might cause edge cases
+            // backend value is older, so it gets seniority
+            res->second.m_attri->asSharedPtrOfAttributable() = it->second;
+            res->second.preferCurrentBackpointer();
+        }
         return res;
     }
 

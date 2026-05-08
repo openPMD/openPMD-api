@@ -235,21 +235,32 @@ auto Container<T, T_key, T_container>::insert(
     std::vector<internal::SharedAttributableData::children_map_t::value_type>
         internal_insert_list;
     internal_insert_list.reserve(ilist.size());
+    auto &cont = container_back(/* verify = */ false);
     for (auto &v : ilist)
     {
-        internal_insert_list.emplace_back(
-            key_as_string(v.first), *v.second.m_attri);
+        decltype(auto) key = key_as_string(v.first);
+        auto it = cont.find(key);
+        if (it == cont.end())
+        {
+            internal_insert_list.emplace_back(key, *v.second.m_attri);
+        }
+        else
+        {
+            // backend value is older, so it gets seniority
+            v.second.m_attri->asSharedPtrOfAttributable() = it->second;
+            v.second.preferCurrentBackpointer();
+        }
     }
     container_front().insert(std::move(ilist));
-    container_back().insert(
-        internal_insert_list.begin(), internal_insert_list.end());
+    cont.insert(internal_insert_list.begin(), internal_insert_list.end());
 }
 
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::swap(Container &other) -> void
 {
     container_front().swap(other.container_front());
-    container_back().swap(other.container_back());
+    container_back(/* verify = */ true)
+        .swap(other.container_back(/* verify = */ true));
 }
 
 template <typename T, typename T_key, typename T_container>
@@ -323,7 +334,7 @@ auto Container<T, T_key, T_container>::erase(iterator res) -> iterator
         IOHandler()->enqueue(IOTask(&res->second, pDelete));
         IOHandler()->flush(internal::defaultFlushParams);
     }
-    container_back().erase(key_as_string(res->first));
+    container_back(/* verify = */ true).erase(key_as_string(res->first));
     return container_front().erase(res);
 }
 
