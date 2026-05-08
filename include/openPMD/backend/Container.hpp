@@ -169,9 +169,7 @@ protected:
         using front_t = auxiliary::dependent_const<const_, T_container>;
         using back_t = auxiliary::dependent_const<
             const_,
-            std::map<
-                std::string,
-                std::shared_ptr<internal::SharedAttributableData>>>;
+            internal::SharedAttributableData::children_map_t>;
 
         front_t *front;
         back_t *back;
