@@ -631,7 +631,7 @@ auto BaseRecord<T_elem>::insert(value_type const &value)
     {
         // this->container().erase(res.first);
         this->container_front().erase(res.first);
-        this->container_back().erase(res.first->first);
+        this->container_back(/* verify = */ true).erase(res.first->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
@@ -646,7 +646,7 @@ auto BaseRecord<T_elem>::insert(value_type &&value) -> std::pair<iterator, bool>
     if (res.first->first == RecordComponent::SCALAR)
     {
         this->container_front().erase(res.first);
-        this->container_back().erase(res.first->first);
+        this->container_back(/* verify = */ true).erase(res.first->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
@@ -671,7 +671,7 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type const &value)
     if (res->first == RecordComponent::SCALAR)
     {
         this->container_front().erase(res);
-        this->container_back().erase(res->first);
+        this->container_back(/* verify = */ true).erase(res->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return makeIterator(res);
@@ -696,7 +696,7 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type &&value)
     if (res->first == RecordComponent::SCALAR)
     {
         this->container_front().erase(res);
-        this->container_back().erase(res->first);
+        this->container_back(/* verify = */ true).erase(res->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return makeIterator(res);
@@ -729,13 +729,24 @@ auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
     std::vector<internal::SharedAttributableData::children_map_t::value_type>
         internal_insert_list;
     internal_insert_list.reserve(ilist.size());
+    auto &cont = this->container_back(/* verify = */ false);
     for (auto &v : ilist)
     {
-        internal_insert_list.emplace_back(v.first, *v.second.m_attri);
+        decltype(auto) key = this->key_as_string(v.first);
+        auto it = cont.find(key);
+        if (it == cont.end())
+        {
+            internal_insert_list.emplace_back(key, *v.second.m_attri);
+        }
+        else
+        {
+            // backend value is older, so it gets seniority
+            v.second.m_attri->asSharedPtrOfAttributable() = it->second;
+            v.second.preferCurrentBackpointer();
+        }
     }
     this->container_front().insert(std::move(ilist));
-    this->container_back().insert(
-        internal_insert_list.begin(), internal_insert_list.end());
+    cont.insert(internal_insert_list.begin(), internal_insert_list.end());
     /*
      * We skip this check as it changes the runtime of this call from
      * O(last-first) to O(container().size()).
@@ -756,7 +767,8 @@ auto BaseRecord<T_elem>::swap(BaseRecord &other) noexcept -> void
     detail::verifyNonscalar(this);
     detail::verifyNonscalar(&other);
     this->container_front().swap(other.container_front());
-    this->container_back().swap(other.container_back());
+    this->container_back(/* verify = */ true)
+        .swap(other.container_back(/* verify = */ true));
 }
 
 template <typename T_elem>
