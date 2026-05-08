@@ -145,7 +145,11 @@ public:
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
 
     // TODO maybe make this automatic somehow
-    void read();
+    // set max_recursion_depth = 0 for infinite cycling
+    // recursion depth includes the current object
+    // recursion will not continue expanding into regions that are already known
+    // (hence not transitively expand into unknown subregions of known regions)
+    void read(size_t max_recursion_depth = 1);
 
     void printRecursively();
 

@@ -63,6 +63,14 @@ namespace debug
     void printDirty(Series const &);
 }
 
+enum class ObjectType : std::uint8_t
+{
+    Group,
+    Dataset
+    // Attributes do not get their own objects but are attached to their
+    // respective group or dataset
+};
+
 /** @brief Layer to mirror structure of logical data and persistent data in
  * file.
  *
@@ -156,6 +164,7 @@ OPENPMD_private
      * If multiple Attributables share the same Writable, then the creating one.
      * (See SharedAttributableData)
      */
+    // TODO turn this into a weak pointer
     internal::AttributableData *attributable = nullptr;
     Writable *parent = nullptr;
 
@@ -198,5 +207,7 @@ OPENPMD_private
      *
      */
     bool written = false;
+
+    ObjectType objectType = ObjectType::Group;
 };
 } // namespace openPMD

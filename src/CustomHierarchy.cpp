@@ -115,7 +115,7 @@ CustomHierarchy::CustomHierarchy(Attributable const &other)
     : CustomHierarchy(other.m_attri->asSharedPtrOfAttributable())
 {}
 
-void CustomHierarchy::read()
+void CustomHierarchy::read(size_t const max_recursion_depth)
 {
     auxiliary::opaque_defer_type reset_parsing_status;
     if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
@@ -145,7 +145,7 @@ void CustomHierarchy::read()
             std::shared_ptr<internal::AttributableData>{
                 parent->attributable, [](auto const *) {}});
         CustomHierarchy parent_(parent_attributable);
-        parent_.read();
+        parent_.read(1);
         if (!writable() /* still not */.written)
         {
             do_throw();
@@ -157,15 +157,40 @@ void CustomHierarchy::read()
      * to create/open path for contained subpaths.
      */
 
+    Attributable::readAttributes(ReadMode::FullyReread);
+
+    switch (writable().objectType)
+    {
+    case ObjectType::Group:
+        break;
+    case ObjectType::Dataset:
+        return;
+    }
+
+    auto do_recurse = [this, max_recursion_depth](CustomHierarchy &child) {
+        switch (max_recursion_depth)
+        {
+        case 0:
+            IOHandler()->flush(internal::defaultFlushParams);
+            child.read(0);
+            break;
+        case 1:
+            break;
+        default:
+            IOHandler()->flush(internal::defaultFlushParams);
+            child.read(max_recursion_depth - 1);
+            break;
+        }
+    };
+
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(this, pList));
 
-    Attributable::readAttributes(ReadMode::FullyReread);
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));
+
     IOHandler()->flush(internal::defaultFlushParams);
 
-    std::deque<std::string> constantComponentsPushback;
     auto &container_back_ = container_back(/* verify = */ true);
     for (auto const &path : *pList.paths)
     {
@@ -180,6 +205,7 @@ void CustomHierarchy::read()
         auto &subpath = this->operator[](path);
         subpath.linkHierarchy(this->writable());
         IOHandler()->enqueue(IOTask(&subpath, pOpen));
+        do_recurse(subpath);
     }
 
     for (auto const &path : *dList.datasets)
@@ -193,18 +219,10 @@ void CustomHierarchy::read()
         Parameter<Operation::OPEN_DATASET> dOpen;
         dOpen.name = path;
 
-        // TODO uhhm i think this wont work, but lets see when we get there
-        RecordComponent rc;
-        auto [it, emplaced] = this->emplace(
-            path, CustomHierarchy(static_cast<Attributable &>(rc)));
-        if (!emplaced)
-        {
-            throw error::Internal(
-                "Control flow error / internal container state error.");
-        }
-        auto &subpath = it->second;
+        auto &subpath = this->operator[](path);
         subpath.linkHierarchy(this->writable());
         IOHandler()->enqueue(IOTask(&subpath, dOpen));
+        do_recurse(subpath);
     }
 
     setDirty(false);
