@@ -493,6 +493,18 @@ public:
     // TODO: Add parse? parameter, dont parse, parse this object, parse
     // recursively
     // Alternatively, parse upon deferred initialization?
+    // TODO CustomHierarchy is ephemeral, and i dont even know what that word
+    // means. but i want to say that things are created on the spot. if we go to
+    // the same place in the openPMD file using different paths, the objects
+    // will be different, except for the backend data stored in
+    // sharedattributabledata and writable classes. even when later turning a
+    // customhierarchy object into a recordcomponent, this will not be same
+    // recordcomponent object as in the usual openpmd hierarchy.
+    // TODO if objects are *created* by customhierarchies, the pointer
+    // writable.attributable will point to that object as the first instance. so
+    // i guess we will still need to store the objects somewhere and cannot keep
+    // them fully ephemeral. likely a resource container in the parent (to break
+    // reference cycles).
     auto customHierarchies() -> CustomHierarchy;
 
     // clang-format off
