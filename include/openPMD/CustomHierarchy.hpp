@@ -98,6 +98,23 @@ namespace traits
         template <typename Container_const_or_not>
         static void call(Container_const_or_not &);
     };
+
+    template <>
+    struct GenerationPolicy<CustomHierarchy>
+    {
+        template <typename Iterator>
+        void operator()(Iterator &it)
+        {
+            if (it->second.writable().attributable == it->second.m_attri.get())
+            {
+                // throw std::runtime_error(
+                //     "Unimplemented: CustomHierarchy must not (yet) be the "
+                //     "first instance of an object in the openPMD hierarchy.");
+                it->second.Attributable::get()
+                    .m_children_object_storage[it->first] = it->second;
+            }
+        }
+    };
 } // namespace traits
 
 // TODO: Use Container<Attributable> internally, but otherwise override members
@@ -119,7 +136,6 @@ private:
     using Data_t = typename Parent_t::Data_t;
 
 protected:
-    CustomHierarchy();
     CustomHierarchy(NoInit);
     CustomHierarchy(std::shared_ptr<internal::SharedAttributableData> other);
     CustomHierarchy(Attributable const &other);
@@ -138,6 +154,8 @@ protected:
     void linkHierarchy(Writable &w) override;
 
 public:
+    CustomHierarchy();
+
     CustomHierarchy(CustomHierarchy const &other) = default;
     CustomHierarchy(CustomHierarchy &&other) = default;
 

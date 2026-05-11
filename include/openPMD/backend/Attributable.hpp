@@ -98,6 +98,16 @@ namespace internal
         using children_map_t =
             std::map<std::string, std::shared_ptr<SharedAttributableData>>;
         children_map_t m_children;
+
+        // Attributable::customHierarchies() creates objects of type
+        // CustomHierarchy ephemerally on the spot. If that object is the first
+        // object for its associated SharedAttributableData instance, it must be
+        // stored somewhere still, because the first instance is back-referenced
+        // by Writable class (TODO: turn that back-reference into a weak_ptr?).
+        // Store these objects in the parent to avoid reference cycles.
+        using children_object_storage_t =
+            std::map<std::string, CustomHierarchy>;
+        children_object_storage_t m_children_object_storage;
     };
 
     /*
