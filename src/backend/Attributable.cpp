@@ -179,6 +179,55 @@ void Attributable::iterationFlush(std::string backendConfig)
         std::move(backendConfig));
 }
 
+void Attributable::customHierarchyFlush(
+    internal::FlushParams const &flushParams)
+{
+    if (!dirtyRecursive())
+    {
+        return;
+    }
+
+    /*
+     * Convention for CustomHierarchy::flush and CustomHierarchy::read:
+     * Path is created/opened already at entry point of method, method needs
+     * to create/open path for contained subpaths.
+     */
+
+    // No need to do anything in access::readOnly since meshes and particles
+    // are initialized as aliases for subgroups at parsing time
+    auto &data = get();
+    if (access::write(IOHandler()->m_frontendAccess))
+    {
+        flushAttributes(flushParams);
+    }
+
+    Parameter<Operation::CREATE_PATH> pCreate;
+    for (auto &[name, subpath] : data.m_children_object_storage)
+    {
+        auto backpointer = subpath.writable().attributable;
+        auto casted_backpointer =
+            dynamic_cast<CustomHierarchy::Data_t *>(backpointer);
+        if (!casted_backpointer)
+        {
+            throw error::Internal(
+                "SharedAttributableData::m_children_object_storage contained "
+                "an object that should be flushed conventionally.");
+        }
+        if (!subpath.written())
+        {
+            pCreate.path = name;
+            IOHandler()->enqueue(IOTask(&subpath, pCreate));
+        }
+        subpath.flush(name, flushParams);
+    }
+
+    if (flushParams.flushLevel != FlushLevel::SkeletonOnly &&
+        flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
+    {
+        setDirty(false);
+    }
+}
+
 Series Attributable::retrieveSeries() const
 {
     Writable const *findSeries = &writable();
@@ -350,6 +399,11 @@ uintptr_t Attributable::memoryID() const
 
 auto Attributable::customHierarchies() -> CustomHierarchy
 {
+    // No need to emplace this in
+    // SharedAttributableData::m_children_object_storage. Only those instances
+    // of CustomHierarchy need to be emplaced that do not have a counter-object
+    // inside the openPMD hierarchy keeping it alive, e.g. children created or
+    // read by the returned instance outside the openPMD hierarchy.
     return CustomHierarchy{*this};
 }
 
