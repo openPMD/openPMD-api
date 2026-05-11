@@ -30,6 +30,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/HierarchyVisitorImpl.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 #include <algorithm>
 #include <complex>
@@ -591,6 +592,45 @@ void Attributable::readAttributes(ReadMode mode)
     }
 
     setDirty(false);
+}
+
+void Attributable::preferCurrentBackpointer() const
+{
+    auto this_as_custom_hierarchy = dynamic_cast<CustomHierarchy const *>(this);
+    if (this_as_custom_hierarchy)
+    {
+        return;
+    }
+
+    auto &shareddata = **m_attri;
+    auto &w = shareddata.m_writable;
+
+    auto backpointer_as_custom_hierarchy =
+        dynamic_cast<CustomHierarchy::Data_t *>(w.attributable);
+    if (!backpointer_as_custom_hierarchy)
+    {
+        return;
+    }
+
+    w.attributable = m_attri.get();
+
+    if (!w.parent)
+    {
+        throw error::Internal(
+            "CustomHierarchy object was created without parent. Why?");
+    }
+    auto count_of_erased_elements =
+        (*w.parent->attributable)
+            ->m_children_object_storage.erase(w.ownKeyWithinParent);
+    if (count_of_erased_elements != 1)
+    {
+        throw error::Internal(
+            "Unexpected state: Expected to erase 1 element from internal "
+            "object storage, found " +
+            std::to_string(count_of_erased_elements) + " instead.");
+    }
+
+    // std::cout << "REWIRED '" << myPath().openPMDPath() << "'." << std::endl;
 }
 
 void Attributable::setWritten(bool val, EnqueueAsynchronously ea)
