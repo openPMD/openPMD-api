@@ -642,6 +642,8 @@ OPENPMD_protected
         return (*m_attri)->m_writable;
     }
 
+    void preferCurrentBackpointer() const;
+
     inline void setData(std::shared_ptr<internal::AttributableData> attri)
     {
         m_attri = std::move(attri);
