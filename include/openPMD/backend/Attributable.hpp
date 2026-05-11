@@ -399,6 +399,8 @@ public:
      */
     void iterationFlush(std::string backendConfig = "{}");
 
+    void customHierarchyFlush(internal::FlushParams const &);
+
     /** String serialization to describe an Attributable
      *
      * This object contains the Series data path as well as the openPMD object

@@ -437,6 +437,9 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 
         flushAttributes(flushParams);
     }
+
+    customHierarchyFlush(flushParams);
+
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
         determineUnsetDirty(flushParams.flushLevel);
