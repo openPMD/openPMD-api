@@ -154,7 +154,7 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
             ret.writable().ownKeyWithinParent = std::to_string(key);
         }
         traits::GenerationPolicy<T> gen;
-        gen(inserted_iterator);
+        gen(*this, inserted_iterator);
         return ret;
     }
 }
@@ -189,7 +189,7 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
             ret.writable().ownKeyWithinParent = std::to_string(std::move(key));
         }
         traits::GenerationPolicy<T> gen;
-        gen(inserted_iterator);
+        gen(*this, inserted_iterator);
         return ret;
     }
 }

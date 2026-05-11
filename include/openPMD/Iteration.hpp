@@ -486,8 +486,8 @@ namespace traits
     struct GenerationPolicy<Iteration>
     {
         constexpr static bool is_noop = false;
-        template <typename Iterator>
-        void operator()(Iterator &it)
+        template <typename Container, typename Iterator>
+        void operator()(Container &, Iterator &it)
         {
             it->second.get().m_iterationIndex = it->first;
         }
