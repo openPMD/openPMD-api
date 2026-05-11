@@ -235,7 +235,7 @@ void CustomHierarchy::read(size_t const max_recursion_depth)
 void CustomHierarchy::flush(
     std::string const & /* path */, internal::FlushParams const &)
 {
-    throw std::runtime_error("Unimplemented!");
+    throw std::runtime_error("Use Attributable::customHierarchyFlush instead!");
 }
 
 void CustomHierarchy::linkHierarchy(Writable &w)
