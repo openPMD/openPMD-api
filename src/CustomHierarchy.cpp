@@ -21,6 +21,7 @@
 
 #include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/auxiliary/Defer.hpp"
+#include "openPMD/backend/Container.hpp"
 
 namespace openPMD
 {
@@ -74,7 +75,8 @@ namespace traits
         // method might be called as const. shared_ptr<>s implement interior
         // mutability, so use that here.
 
-        // auto &my_container = container.container_front();
+        GenerationPolicy<CustomHierarchy> gen;
+
         auto it = container_front.begin();
         auto end = container_front.end();
         for (auto const &[key, attributable] : container_back)
@@ -86,6 +88,7 @@ namespace traits
                 // points to an entry past the to-be-inserted key
                 it = container_front.emplace_hint(
                     it, key, CustomHierarchy(attributable));
+                gen(it);
             }
         }
     }
