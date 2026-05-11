@@ -47,6 +47,12 @@ template <typename>
 class Span;
 class Series;
 
+namespace traits
+{
+    template <typename T>
+    struct GenerationPolicy;
+} // namespace traits
+
 namespace internal
 {
     class SharedAttributableData;
@@ -120,6 +126,8 @@ class Writable final
     friend struct Parameter<Operation::OPEN_DATASET>;
     friend class internal::ScientificDefaults;
     friend class CustomHierarchy;
+    template <typename T>
+    friend struct traits::GenerationPolicy;
 
 private:
     Writable(internal::AttributableData *);
