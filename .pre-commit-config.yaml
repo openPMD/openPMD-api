@@ -66,7 +66,7 @@ repos:
 # clang-format v13
 #   to run manually, use .github/workflows/clang-format/clang-format.sh
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v22.1.0
+  rev: v22.1.5
   hooks:
   - id: clang-format
     # By default, the clang-format hook configures:
@@ -88,7 +88,7 @@ repos:
 # Sorts Python imports according to PEP8
 # https://www.python.org/dev/peps/pep-0008/#imports
 - repo: https://github.com/pycqa/isort
-  rev: 8.0.1
+  rev: 9.0.0a3
   hooks:
   - id: isort
     name: isort (python)
