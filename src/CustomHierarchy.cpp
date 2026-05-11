@@ -88,7 +88,7 @@ namespace traits
                 // points to an entry past the to-be-inserted key
                 it = container_front.emplace_hint(
                     it, key, CustomHierarchy(attributable));
-                gen(it);
+                gen(container, it);
             }
         }
     }

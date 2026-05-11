@@ -74,8 +74,8 @@ namespace traits
     struct GenerationPolicy<ParticleSpecies>
     {
         constexpr static bool is_noop = false;
-        template <typename T>
-        void operator()(T &it)
+        template <typename Container, typename T>
+        void operator()(Container &, T &it)
         {
             it->second.particlePatches.linkHierarchy(it->second.writable());
         }

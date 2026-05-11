@@ -102,16 +102,44 @@ namespace traits
     template <>
     struct GenerationPolicy<CustomHierarchy>
     {
-        template <typename Iterator>
-        void operator()(Iterator &it)
+        constexpr static bool is_noop = false;
+        template <typename Container, typename Iterator>
+        void operator()(Container &cont, Iterator &it)
         {
-            if (it->second.writable().attributable == it->second.m_attri.get())
+            auto &writable = it->second.writable();
+
+            // These should be different
+            auto child_shared_data = &it->second.Attributable::get();
+            auto parent_shared_data = &cont.Attributable::get();
+            if (child_shared_data == parent_shared_data)
             {
-                // throw std::runtime_error(
-                //     "Unimplemented: CustomHierarchy must not (yet) be the "
-                //     "first instance of an object in the openPMD hierarchy.");
-                it->second.Attributable::get()
-                    .m_children_object_storage[it->first] = it->second;
+                throw std::runtime_error(
+                    "Trying to emplace object as its own child");
+            }
+
+            // These might be different, but might also be the same
+            //
+            // For an explanation, ref. the documentation of
+            // Writable::attributable: This is a pointer back to the first
+            // created Attributable instance linking this Writable. There might
+            // be multiple Attributable objects linking the same backend
+            // Writable object when opening multiple "views" on the same backend
+            // object, e.g. when a scalar Record is at the same time a
+            // RecordComponent, or when reopening an object as a
+            // CustomHierarchy.
+            //
+            // Since CustomHierarchy performs no memory management by default,
+            // we must ensure that the backpointer in Writable::attributable
+            // remains valid when the frontend instance pointed by
+            // Writable::attributable *is* the CustomHierarchy instance (happens
+            // when it is the first frontend object created for that backend
+            // object).
+            auto backpointer = writable.attributable;
+            auto emplaced_pointer = it->second.m_attri.get();
+            if (backpointer == emplaced_pointer)
+            {
+                (**cont.m_attri).m_children_object_storage[it->first] =
+                    it->second;
             }
         }
     };
