@@ -34,6 +34,7 @@ Other
   - Fix keep_alive specifications, add tests for keep_alive (#1851)
   - Remove duplicate Python test (#1867)
   - Reacquire GIL for deallocation operations (#1878)
+  - Remove stray reference count leading to potential resource leaks (#1879)
 - Dependencies:
 
   - Version bump toml11 to recent main branch (b32a2fff0d27e1f7522f26a125101500ddb47156), nlohmann_json to 3.12.0 (#1842 #1874)
