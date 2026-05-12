@@ -36,6 +36,7 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/MonadicOperations.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
@@ -270,6 +271,13 @@ Series &Series::setBasePath(std::string const &bp)
 std::string Series::meshesPath() const
 {
     return getAttribute("meshesPath").get<std::string>();
+}
+
+std::optional<std::string> Series::meshesPathOptional() const
+{
+    return auxiliary::optional_and_then(
+        getAttributeOptional("meshesPath"),
+        [](Attribute const &attr) { return attr.getOptional<std::string>(); });
 }
 
 Series &Series::setMeshesPath(std::string const &mp)
@@ -603,6 +611,13 @@ void Series::flushRankTable(FlushLevel l, Attributable &attributable)
 std::string Series::particlesPath() const
 {
     return getAttribute("particlesPath").get<std::string>();
+}
+
+std::optional<std::string> Series::particlesPathOptional() const
+{
+    return auxiliary::optional_and_then(
+        getAttributeOptional("particlesPath"),
+        [](Attribute const &attr) { return attr.getOptional<std::string>(); });
 }
 
 Series &Series::setParticlesPath(std::string const &pp)

@@ -917,10 +917,21 @@ void Iteration::linkHierarchy(Writable &w)
 
     auto &container_back = Attributable::get().m_children;
     auto s = retrieveSeries();
-    container_back[auxiliary::replace_all_nonrecursively(
-        s.meshesPath(), "/", "")] = *meshes.m_attri;
-    container_back[auxiliary::replace_all_nonrecursively(
-        s.particlesPath(), "/", "")] = *particles.m_attri;
+    auto link_mp = [&](auto &meshes_or_particles,
+                       std::optional<std::string> const &mp_path,
+                       char const *default_) {
+        if (mp_path)
+        {
+            container_back[auxiliary::replace_all_nonrecursively(
+                *mp_path, "/", "")] = *meshes_or_particles.m_attri;
+        }
+        else
+        {
+            container_back[default_] = *meshes_or_particles.m_attri;
+        }
+    };
+    link_mp(meshes, s.meshesPathOptional(), "meshes");
+    link_mp(particles, s.particlesPathOptional(), "particles");
 }
 
 void Iteration::runDeferredParseAccess()
