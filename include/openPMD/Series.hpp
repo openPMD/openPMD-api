@@ -453,6 +453,11 @@ public:
      * <CODE>basePath</CODE>.
      */
     std::string meshesPath() const;
+    /**
+     * @return  String representing the path to mesh records, relative(!) to
+     * <CODE>basePath</CODE>.
+     */
+    std::optional<std::string> meshesPathOptional() const;
     /** Set the path to <A
      * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records">mesh
      * records</A>, relative(!) to <CODE>basePath</CODE>.
@@ -508,6 +513,11 @@ public:
      * <CODE>basePath</CODE>.
      */
     std::string particlesPath() const;
+    /**
+     * @return  String representing the path to particle species, relative(!) to
+     * <CODE>basePath</CODE>.
+     */
+    std::optional<std::string> particlesPathOptional() const;
     /** Set the path to groups for each <A
      * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#particle-records">particle
      * species</A>, relative(!) to <CODE>basePath</CODE>.
