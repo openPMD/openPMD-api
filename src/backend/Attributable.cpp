@@ -106,12 +106,24 @@ bool Attributable::setAttribute(std::string const &key, Attribute attribute)
 
 Attribute Attributable::getAttribute(std::string const &key) const
 {
+    auto attribute = getAttributeOptional(key);
+    if (attribute.has_value())
+    {
+        return *attribute;
+    }
+
+    throw no_such_attribute_error(key);
+}
+
+std::optional<Attribute>
+Attributable::getAttributeOptional(std::string const &key) const
+{
     auto &attri = get();
     auto it = attri.m_attributes.find(key);
     if (it != attri.m_attributes.cend())
         return it->second;
 
-    throw no_such_attribute_error(key);
+    return std::nullopt;
 }
 
 bool Attributable::deleteAttribute(std::string const &key)
