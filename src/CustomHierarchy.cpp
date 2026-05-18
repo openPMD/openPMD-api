@@ -31,8 +31,14 @@ namespace traits
     void DeferredInitPolicy<Container<CustomHierarchy>>::call(
         Container_const_or_not &container)
     {
+        // Need to sync backend objects into the CustomHierarchy instance
+        // Need to be a bit sneaky, we must modify my_container&, but this
+        // method might be called as const. shared_ptr<>s implement interior
+        // mutability, so use that here.
+
+        // auto &container_front = container.container_front();
         auto &container_front = container.m_containerData->m_container;
-        auto &container_back = container.Attributable::get().m_children;
+        auto &container_back = container.container_back(/* verify = */ false);
 
         auto size_front = container_front.size();
         auto size_back = container_back.size();
@@ -70,10 +76,6 @@ namespace traits
             print(container_back) << '\n';
             throw error::Internal(error.str());
         }
-        // Need to sync backend objects into the CustomHierarchy instance
-        // Need to be a bit sneaky, we must modify my_container&, but this
-        // method might be called as const. shared_ptr<>s implement interior
-        // mutability, so use that here.
 
         GenerationPolicy<CustomHierarchy> gen;
 
