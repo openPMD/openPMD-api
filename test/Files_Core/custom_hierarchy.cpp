@@ -36,9 +36,10 @@ namespace custom_hierarchy
 using namespace openPMD;
 
 void write(
-    char const *filename, std::string const &json_params, IterationEncoding ie)
+    std::string const &filename,
+    std::string const &json_params,
+    IterationEncoding)
 {
-    std::cout << json_params << std::endl;
     Series series(filename, Access::CREATE_LINEAR, json_params);
     auto add_custom_hierarchy = [](Attributable &attr) {
         attr.customHierarchies()["rabimmel"].setAttribute("rabammel", "rabumm");
@@ -47,6 +48,27 @@ void write(
 
     add_custom_hierarchy(series);
     add_custom_hierarchy(iteration);
+    iteration.close();
+}
+
+void read(
+    std::string const &filename,
+    std::string const &json_params,
+    IterationEncoding)
+{
+    Series series(filename, Access::READ_LINEAR, json_params);
+    auto require_custom_hierarchy = [](Attributable &attr) {
+        auto ch = attr.customHierarchies();
+        REQUIRE(ch.find("rabimmel") == ch.end());
+        ch.read(0);
+        REQUIRE(
+            ch["rabimmel"].getAttribute("rabammel").get<std::string>() ==
+            "rabumm");
+    };
+    auto iteration = series.snapshots()[0];
+
+    require_custom_hierarchy(series);
+    require_custom_hierarchy(iteration);
     iteration.close();
 }
 
@@ -60,13 +82,13 @@ struct test_config
 void custom_hierarchy()
 {
     test_config configs[] = {
-        {"../samples/custom_hierarchy/groupbased.%E",
+        {"groupbased.%E",
          R"({"iteration_encoding": "group_based"})",
          IterationEncoding::groupBased},
-        {"../samples/custom_hierarchy/filebased_%T.%E",
+        {"filebased_%T.%E",
          R"({"iteration_encoding": "file_based"})",
          IterationEncoding::fileBased},
-        {"../samples/custom_hierarchy/variablebased.%E",
+        {"variablebased.%E",
          R"({"iteration_encoding": "variable_based"})",
          IterationEncoding::variableBased}};
 
@@ -77,9 +99,19 @@ void custom_hierarchy()
             auto json_params_ = json::merge(
                 json_params,
                 std::string(
-                    R"({"adios2": {"engine": {"type": "file"}}, "backend": ")") +
+                    R"(
+                    {
+                      "adios2": {
+                        "engine": {
+                          "type": "file"
+                        }
+                      },
+                      "backend": ")") +
                     backend + R"("})");
-            write(filename, json_params_, encoding);
+            auto filename_ = std::string("../samples/custom_hierarchy/") +
+                backend + "/" + filename;
+            write(filename_, json_params_, encoding);
+            read(filename_, json_params_, encoding);
         }
     }
 }
