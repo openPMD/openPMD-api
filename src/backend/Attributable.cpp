@@ -22,6 +22,7 @@
 #include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
@@ -197,6 +198,11 @@ void Attributable::customHierarchyFlush(
     // customHierarchies().printRecursively();
     if (!dirtyRecursive())
     {
+        if (!unset_dirty)
+        {
+            throw std::runtime_error(
+                "Control flow error: Should be called upon a dirty object.");
+        }
         return;
     }
 
@@ -436,6 +442,10 @@ template void Attributable::seriesFlush_impl<false>(
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)
 {
+    if (access::readOnly(IOHandler()->m_frontendAccess))
+    {
+        throw std::runtime_error("Control flow error");
+    }
     if (!flush_level::write_attributes(flushParams.flushLevel))
     {
         return;

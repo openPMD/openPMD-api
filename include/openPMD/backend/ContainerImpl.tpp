@@ -359,7 +359,11 @@ auto Container<T, T_key, T_container>::flush(
         IOHandler()->enqueue(IOTask(this, pCreate));
     }
 
-    flushAttributes(flushParams);
+    customHierarchyFlush(flushParams, /* unset_dirty = */ false);
+    if (access::write(IOHandler()->m_frontendAccess))
+    {
+        flushAttributes(flushParams);
+    }
 }
 
 template <typename T, typename T_key, typename T_container>
