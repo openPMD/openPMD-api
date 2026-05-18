@@ -215,7 +215,7 @@ void Attributable::customHierarchyFlush(
     }
 
     Parameter<Operation::CREATE_PATH> pCreate;
-    for (auto &[name, subpath] : data.m_children_object_storage)
+    for (auto &[name, subpath] : data.m_children_managed_as_custom_hierarchy)
     {
         auto backpointer = subpath.writable().attributable;
         auto casted_backpointer =
@@ -223,7 +223,8 @@ void Attributable::customHierarchyFlush(
         if (!casted_backpointer)
         {
             throw error::Internal(
-                "SharedAttributableData::m_children_object_storage contained "
+                "SharedAttributableData::m_children_managed_as_custom_"
+                "hierarchy contained "
                 "an object that should be flushed conventionally.");
         }
         if (!subpath.written())
@@ -414,10 +415,11 @@ uintptr_t Attributable::memoryID() const
 auto Attributable::customHierarchies() -> CustomHierarchy
 {
     // No need to emplace this in
-    // SharedAttributableData::m_children_object_storage. Only those instances
-    // of CustomHierarchy need to be emplaced that do not have a counter-object
-    // inside the openPMD hierarchy keeping it alive, e.g. children created or
-    // read by the returned instance outside the openPMD hierarchy.
+    // SharedAttributableData::m_children_managed_as_custom_hierarchy. Only
+    // those instances of CustomHierarchy need to be emplaced that do not have a
+    // counter-object inside the openPMD hierarchy keeping it alive, e.g.
+    // children created or read by the returned instance outside the openPMD
+    // hierarchy.
     return CustomHierarchy{*this};
 }
 
@@ -689,7 +691,8 @@ void Attributable::preferCurrentBackpointer() const
     }
     auto count_of_erased_elements =
         (*w.parent->attributable)
-            ->m_children_object_storage.erase(w.ownKeyWithinParent);
+            ->m_children_managed_as_custom_hierarchy.erase(
+                w.ownKeyWithinParent);
     if (count_of_erased_elements != 1)
     {
         throw error::Internal(
