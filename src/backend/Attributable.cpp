@@ -192,8 +192,9 @@ void Attributable::iterationFlush(std::string backendConfig)
 }
 
 void Attributable::customHierarchyFlush(
-    internal::FlushParams const &flushParams)
+    internal::FlushParams const &flushParams, bool unset_dirty)
 {
+    // customHierarchies().printRecursively();
     if (!dirtyRecursive())
     {
         return;
@@ -230,14 +231,15 @@ void Attributable::customHierarchyFlush(
             pCreate.path = name;
             IOHandler()->enqueue(IOTask(&subpath, pCreate));
         }
-        subpath.flush(name, flushParams);
+        subpath.customHierarchyFlush(flushParams, true);
     }
 
-    if (flushParams.flushLevel != FlushLevel::SkeletonOnly &&
+    if (unset_dirty && flushParams.flushLevel != FlushLevel::SkeletonOnly &&
         flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
     {
         setDirty(false);
     }
+    // customHierarchies().printRecursively();
 }
 
 Series Attributable::retrieveSeries() const

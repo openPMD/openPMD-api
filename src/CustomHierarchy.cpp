@@ -245,7 +245,8 @@ void CustomHierarchy::linkHierarchy(Writable &w)
 
 void CustomHierarchy::printRecursively()
 {
-    std::cout << &writable() << "  ";
+    std::cout << &writable() << " [" << dirty() << "," << dirtyRecursive()
+              << "]  ";
     if (empty())
     {
         std::cout << "<EMPTY>\n";
@@ -273,12 +274,14 @@ void CustomHierarchy::printRecursively(std::string indent)
     auto next_indent = indent + "│ ";
     for (; it != end_; prev = it, ++it)
     {
-        std::cout << &prev->second.writable() << "  ";
+        std::cout << &prev->second.writable() << " [" << prev->second.dirty()
+                  << "," << prev->second.dirtyRecursive() << "]  ";
         print_indent();
         std::cout << "├─" << prev->first << '\n';
         prev->second.printRecursively(next_indent);
     }
-    std::cout << &prev->second.writable() << "  ";
+    std::cout << &prev->second.writable() << " [" << prev->second.dirty() << ","
+              << prev->second.dirtyRecursive() << "]  ";
     print_indent();
     std::cout << "└─" << prev->first << '\n';
     prev->second.printRecursively(indent + "  ");

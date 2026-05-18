@@ -370,6 +370,9 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 {
     Parameter<Operation::TOUCH> touch;
     IOHandler()->enqueue(IOTask(&writable(), touch));
+
+    customHierarchyFlush(flushParams, /* unset_dirty = */ false);
+
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         for (auto &m : meshes)
@@ -437,8 +440,6 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 
         flushAttributes(flushParams);
     }
-
-    customHierarchyFlush(flushParams);
 
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
