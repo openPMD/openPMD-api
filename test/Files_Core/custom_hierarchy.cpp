@@ -41,12 +41,13 @@ void write(
     IterationEncoding)
 {
     Series series(filename, Access::CREATE_LINEAR, json_params);
-    auto add_custom_hierarchy = [](Attributable &attr) {
+    auto add_custom_hierarchy = [](auto &&attr) {
         attr.customHierarchies()["rabimmel"].setAttribute("rabammel", "rabumm");
     };
     auto iteration = series.snapshots()[0];
 
     add_custom_hierarchy(series);
+    add_custom_hierarchy(series.snapshots());
     add_custom_hierarchy(iteration);
     iteration.close();
 }
@@ -57,8 +58,8 @@ void read(
     IterationEncoding)
 {
     Series series(filename, Access::READ_LINEAR, json_params);
-    auto require_custom_hierarchy = [](Attributable &attr) {
-        auto ch = attr.customHierarchies();
+    auto require_custom_hierarchy = [](auto &&attr) {
+        CustomHierarchy ch = attr.customHierarchies();
         REQUIRE(ch.find("rabimmel") == ch.end());
         ch.read(0);
         REQUIRE(
@@ -68,6 +69,7 @@ void read(
     auto iteration = series.snapshots()[0];
 
     require_custom_hierarchy(series);
+    require_custom_hierarchy(series.snapshots());
     require_custom_hierarchy(iteration);
     iteration.close();
 }

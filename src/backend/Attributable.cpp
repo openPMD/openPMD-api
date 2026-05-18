@@ -198,11 +198,6 @@ void Attributable::customHierarchyFlush(
     // customHierarchies().printRecursively();
     if (!dirtyRecursive())
     {
-        if (!unset_dirty)
-        {
-            throw std::runtime_error(
-                "Control flow error: Should be called upon a dirty object.");
-        }
         return;
     }
 
