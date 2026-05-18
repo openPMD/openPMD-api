@@ -870,6 +870,7 @@ if(openPMD_BUILD_TESTING)
             list(APPEND ${out_list}
                 test/Files_Core/automatic_variable_encoding.cpp
                 test/Files_Core/read_nonexistent_attribute.cpp
+                test/Files_Core/custom_hierarchy.cpp
             )
         elseif(${test_name} STREQUAL "Auxiliary")
             list(APPEND ${out_list}
