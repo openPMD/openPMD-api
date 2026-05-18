@@ -138,7 +138,8 @@ namespace traits
             auto emplaced_pointer = it->second.m_attri.get();
             if (backpointer == emplaced_pointer)
             {
-                (**cont.m_attri).m_children_object_storage[it->first] =
+                (**cont.m_attri)
+                    .m_children_managed_as_custom_hierarchy[it->first] =
                     it->second;
             }
         }

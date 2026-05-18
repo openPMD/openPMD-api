@@ -107,7 +107,7 @@ namespace internal
         // Store these objects in the parent to avoid reference cycles.
         using children_object_storage_t =
             std::map<std::string, CustomHierarchy>;
-        children_object_storage_t m_children_object_storage;
+        children_object_storage_t m_children_managed_as_custom_hierarchy;
     };
 
     /*
