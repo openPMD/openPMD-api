@@ -452,9 +452,11 @@ void Mesh::flush_impl(
         }
         else
         {
+            customHierarchyFlush(flushParams, /* unset_dirty = */ false);
             for (auto &comp : *this)
                 comp.second.flush(comp.first, flushParams);
         }
+        // TODO why is there no unsetDirty operation here?
     }
     else
     {
@@ -470,6 +472,8 @@ void Mesh::flush_impl(
                 Parameter<Operation::CREATE_PATH> pCreate;
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
+
+                customHierarchyFlush(flushParams, /* unset_dirty = */ false);
                 for (auto &comp : *this)
                 {
                     comp.second.parent() = &this->writable();
@@ -485,6 +489,7 @@ void Mesh::flush_impl(
             }
             else
             {
+                customHierarchyFlush(flushParams, /* unset_dirty = */ false);
                 for (auto &comp : *this)
                     comp.second.flush(comp.first, flushParams);
             }
