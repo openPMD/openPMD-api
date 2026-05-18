@@ -2358,7 +2358,17 @@ creating new iterations.
         readableIterations.reserve(pList.paths->size());
         for (auto const &it : *pList.paths)
         {
-            IterationIndex_t index = std::stoull(it);
+            IterationIndex_t index;
+            try
+            {
+                index = std::stoull(it);
+            }
+            catch (std::exception const &e)
+            {
+                std::cerr << "[Warning] Could not parse '" << it
+                          << "' as an Iteration index. Will skip." << std::endl;
+                continue;
+            }
             if (read_only_this_single_iteration.has_value() &&
                 index != *read_only_this_single_iteration)
             {
