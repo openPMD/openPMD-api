@@ -1769,6 +1769,11 @@ TEST_CASE("read_nonexistent_attribute", "[core]")
     read_nonexistent_attribute::read_nonexistent_attribute();
 }
 
+TEST_CASE("custom_hierarchy", "[core]")
+{
+    custom_hierarchy::custom_hierarchy();
+}
+
 TEST_CASE("unique_ptr", "[core]")
 {
     auto stdptr = std::make_unique<int>(5);
