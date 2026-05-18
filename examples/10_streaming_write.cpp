@@ -82,6 +82,8 @@ int main()
             pos.resetDataset(dataset);
             pos.storeChunk(local_data, Offset{0}, global_extent);
         }
+        auto ch = iteration.customHierarchies();
+        ch["rabimmel"].setAttribute("rabammel", "rabumm");
         iteration.close();
     }
 

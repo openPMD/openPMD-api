@@ -408,7 +408,7 @@ public:
      */
     void iterationFlush(std::string backendConfig = "{}");
 
-    void customHierarchyFlush(internal::FlushParams const &);
+    void customHierarchyFlush(internal::FlushParams const &, bool unset_dirty);
 
     /** String serialization to describe an Attributable
      *
