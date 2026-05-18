@@ -61,10 +61,10 @@ void PatchRecord::flush_impl(
     }
     if (!this->scalar())
     {
-        if (IOHandler()->m_frontendAccess != Access::READ_ONLY)
-            Container<PatchRecordComponent>::flush(
-                path, flushParams); // warning (clang-tidy-10):
-                                    // bugprone-parent-virtual-call
+        Container<PatchRecordComponent>::flush(
+            path, flushParams); // warning (clang-tidy-10):
+                                // bugprone-parent-virtual-call
+
         for (auto &comp : *this)
             comp.second.flush(comp.first, flushParams);
     }
