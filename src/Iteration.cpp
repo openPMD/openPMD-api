@@ -272,10 +272,6 @@ void Iteration::flushFileBased(
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
     Series s = retrieveSeries();
-    auto &series = s.get();
-
-    bool do_flush_rank_table =
-        !series.m_rankTable.m_attributable.written() || !this->written();
 
     if (!written())
     {
@@ -300,16 +296,11 @@ void Iteration::flushFileBased(
         s.openIteration(i, *this);
     }
 
-    if (do_flush_rank_table)
+    auto &rankTableAttributable =
+        get().m_perIterationData.m_rankTableAttributable;
+    if (!rankTableAttributable.written())
     {
-        /*
-         * If it was written before, then in the context of another iteration.
-         */
-        auto &attr = series.m_rankTable.m_attributable;
-        attr.setWritten(false, Attributable::EnqueueAsynchronously::Both);
-        attr.get().m_writable.abstractFilePosition.reset();
-
-        s.flushRankTable(flushParams.flushLevel);
+        s.flushRankTable(flushParams.flushLevel, rankTableAttributable);
     }
 
     if (flush_level::flush_hierarchy(flushParams.flushLevel))
@@ -784,7 +775,7 @@ auto Iteration::beginStep(
     }
     else
     {
-        series.get().m_stepStatus = StepStatus::DuringStep;
+        series.get().m_perIterationData.m_stepStatus = StepStatus::DuringStep;
         status = series.advance(AdvanceMode::BEGINSTEP);
     }
 
@@ -887,10 +878,10 @@ StepStatus Iteration::getStepStatus()
     {
         using IE = IterationEncoding;
     case IE::fileBased:
-        return get().m_stepStatus;
+        return get().m_perIterationData.m_stepStatus;
     case IE::groupBased:
     case IE::variableBased:
-        return s.get().m_stepStatus;
+        return s.get().m_perIterationData.m_stepStatus;
     default:
         throw std::runtime_error("[Iteration] unreachable");
     }
@@ -903,11 +894,11 @@ void Iteration::setStepStatus(StepStatus status)
     {
         using IE = IterationEncoding;
     case IE::fileBased:
-        get().m_stepStatus = status;
+        get().m_perIterationData.m_stepStatus = status;
         break;
     case IE::groupBased:
     case IE::variableBased:
-        s.get().m_stepStatus = status;
+        s.get().m_perIterationData.m_stepStatus = status;
         break;
     default:
         throw std::runtime_error("[Iteration] unreachable");
@@ -919,6 +910,7 @@ void Iteration::linkHierarchy(Writable &w)
     Attributable::linkHierarchy(w);
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
+    get().m_perIterationData.m_rankTableAttributable.linkHierarchy(*w.parent);
 }
 
 void Iteration::runDeferredParseAccess()

@@ -33,6 +33,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/ParsePreference.hpp"
+#include "openPMD/backend/PerIterationData.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/version.hpp"
@@ -205,14 +206,9 @@ namespace internal
          * Detected IO format (backend).
          */
         Format m_format;
-        /**
-         *  Whether a step is currently active for this iteration.
-         * Used for group-based iteration layout, see SeriesData.hpp for
-         * iteration-based layout.
-         * Access via stepStatus() method to automatically select the correct
-         * one among both flags.
-         */
-        StepStatus m_stepStatus = StepStatus::NoStep;
+
+        PerIterationData m_perIterationData;
+
         /**
          * True if a user opts into lazy parsing.
          */
@@ -261,7 +257,6 @@ namespace internal
 
         struct RankTableData
         {
-            Attributable m_attributable;
             std::variant<
                 NoSourceSpecified,
                 SourceSpecifiedViaJSON,
@@ -909,7 +904,7 @@ OPENPMD_private
         iterations_iterator end,
         internal::FlushParams const &flushParams,
         bool flushIOHandler = true);
-    void flushRankTable(FlushLevel);
+    void flushRankTable(FlushLevel, Attributable &attributable);
     /* Parameter `read_only_this_single_iteration` used for reopening an
      * Iteration after closing it.
      */

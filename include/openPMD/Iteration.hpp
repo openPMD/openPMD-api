@@ -28,6 +28,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
+#include "openPMD/backend/PerIterationData.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 #include <cstdint>
@@ -122,14 +123,7 @@ namespace internal
          */
         bool allow_reopening_implicitly = false;
 
-        /**
-         * Whether a step is currently active for this iteration.
-         * Used for file-based iteration layout, see Series.hpp for
-         * group-based layout.
-         * Access via stepStatus() method to automatically select the correct
-         * one among both flags.
-         */
-        StepStatus m_stepStatus = StepStatus::NoStep;
+        PerIterationData m_perIterationData;
 
         /**
          * Cached copy of the key under which this Iteration lives in

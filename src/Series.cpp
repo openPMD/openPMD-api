@@ -355,6 +355,12 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
         IOHandler()->enqueue(IOTask(this, openFile));
 #endif
     }
+    Attributable &attributable =
+        iterationEncoding() == IterationEncoding::fileBased
+        ? iterations.begin()
+              ->second.get()
+              .m_perIterationData.m_rankTableAttributable
+        : series.m_perIterationData.m_rankTableAttributable;
     auto datasets = availableDatasets();
     if (std::find(datasets.begin(), datasets.end(), "rankTable") ==
         datasets.end())
@@ -364,7 +370,7 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
     }
     Parameter<Operation::OPEN_DATASET> openDataset;
     openDataset.name = "rankTable";
-    IOHandler()->enqueue(IOTask(&rankTable.m_attributable, openDataset));
+    IOHandler()->enqueue(IOTask(&attributable, openDataset));
 
     IOHandler()->flush(internal::defaultFlushParams);
     if (openDataset.extent->size() != 2)
@@ -394,19 +400,20 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
         new char[writerRanks * lineWidth],
         [](char const *ptr) { delete[] ptr; }};
 
-    auto doReadDataset = [&openDataset, this, &get, &rankTable]() {
-        Parameter<Operation::READ_DATASET> readDataset;
-        // read the whole thing
-        readDataset.offset.resize(2);
-        readDataset.extent = *openDataset.extent;
-        // @todo better cross-platform support by switching over
-        // *openDataset.dtype
-        readDataset.dtype = Datatype::CHAR;
-        readDataset.data = get;
+    auto doReadDataset =
+        [&openDataset, this, &get, &rankTable, &attributable]() {
+            Parameter<Operation::READ_DATASET> readDataset;
+            // read the whole thing
+            readDataset.offset.resize(2);
+            readDataset.extent = *openDataset.extent;
+            // @todo better cross-platform support by switching over
+            // *openDataset.dtype
+            readDataset.dtype = Datatype::CHAR;
+            readDataset.data = get;
 
-        IOHandler()->enqueue(IOTask(&rankTable.m_attributable, readDataset));
-        IOHandler()->flush(internal::publicFlush);
-    };
+            IOHandler()->enqueue(IOTask(&attributable, readDataset));
+            IOHandler()->flush(internal::publicFlush);
+        };
 
 #if openPMD_HAVE_MPI
     if (collective && series.m_communicator.has_value())
@@ -464,7 +471,7 @@ Series &Series::setRankTable(const std::string &myRankInfo)
     return *this;
 }
 
-void Series::flushRankTable(FlushLevel l)
+void Series::flushRankTable(FlushLevel l, Attributable &attributable)
 {
     if (!flush_level::global_flushpoint(l))
     {
@@ -512,29 +519,28 @@ void Series::flushRankTable(FlushLevel l)
     int rank{0}, size{1};
     unsigned long long maxSize = mySize;
 
-    auto createRankTable = [&size, &maxSize, &rankTable, this]() {
-        if (rankTable.m_attributable.written())
-        {
-            return;
-        }
-        Parameter<Operation::CREATE_DATASET> param(
-            AbstractParameter::I_dont_want_to_use_joined_dimensions);
-        param.name = "rankTable";
-        param.dtype = Datatype::CHAR;
-        param.extent = {uint64_t(size), uint64_t(maxSize)};
-        IOHandler()->enqueue(
-            IOTask(&rankTable.m_attributable, std::move(param)));
-    };
+    auto createRankTable =
+        [&size, &maxSize, &rankTable, this, &attributable]() {
+            if (attributable.written())
+            {
+                return;
+            }
+            Parameter<Operation::CREATE_DATASET> param(
+                AbstractParameter::I_dont_want_to_use_joined_dimensions);
+            param.name = "rankTable";
+            param.dtype = Datatype::CHAR;
+            param.extent = {uint64_t(size), uint64_t(maxSize)};
+            IOHandler()->enqueue(IOTask(&attributable, std::move(param)));
+        };
 
-    auto writeDataset = [&rank, &maxSize, this, &rankTable](
+    auto writeDataset = [&rank, &maxSize, this, &rankTable, &attributable](
                             std::shared_ptr<char> put, size_t num_lines = 1) {
         Parameter<Operation::WRITE_DATASET> chunk;
         chunk.dtype = Datatype::CHAR;
         chunk.offset = {uint64_t(rank), 0};
         chunk.extent = {num_lines, maxSize};
         chunk.data = std::move(put);
-        IOHandler()->enqueue(
-            IOTask(&rankTable.m_attributable, std::move(chunk)));
+        IOHandler()->enqueue(IOTask(&attributable, std::move(chunk)));
     };
 
 #if openPMD_HAVE_MPI
@@ -578,8 +584,7 @@ void Series::flushRankTable(FlushLevel l)
 
         // Must ensure that the Writable is consistently set to written on all
         // ranks
-        series.m_rankTable.m_attributable.setWritten(
-            true, EnqueueAsynchronously::OnlyAsync);
+        attributable.setWritten(true, EnqueueAsynchronously::OnlyAsync);
         return;
     }
 #endif
@@ -985,7 +990,8 @@ void Series::init(
                 std::make_unique<DummyIOHandler>(parsed_directory, at));
         auto &series = get();
         series.iterations.linkHierarchy(writable());
-        series.m_rankTable.m_attributable.linkHierarchy(writable());
+        series.m_perIterationData.m_rankTableAttributable.linkHierarchy(
+            writable());
         series.m_deferred_initialization =
             [called_this_already = false,
              filepath,
@@ -1211,7 +1217,7 @@ void Series::initSeries(
 
     series.iterations.linkHierarchy(writable);
     series.iterations.writable().ownKeyWithinParent = "data";
-    series.m_rankTable.m_attributable.linkHierarchy(writable);
+    series.m_perIterationData.m_rankTableAttributable.linkHierarchy(writable);
 
     series.m_name = input->name;
 
@@ -1663,9 +1669,11 @@ void Series::flushGorVBased(
             IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
-        if (!series.m_rankTable.m_attributable.written())
+        if (!series.m_perIterationData.m_rankTableAttributable.written())
         {
-            flushRankTable(flushParams.flushLevel);
+            flushRankTable(
+                flushParams.flushLevel,
+                series.m_perIterationData.m_rankTableAttributable);
         }
 
         series.iterations.flush(
