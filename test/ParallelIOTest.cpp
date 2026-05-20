@@ -36,6 +36,16 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#if !openPMD_HAVE_MPI
+#define PARALLEL_TEST_CASE(name, tags) TEST_CASE(#name, tags)
+
+PARALLEL_TEST_CASE(none, "[parallel]")
+{}
+
+#else
+
+#include <mpi.h>
+
 #define PARALLEL_TEST_CASE(name, tags)                                         \
     static void openPMD_parallel_##name();                                     \
     TEST_CASE(#name, tags)                                                     \
@@ -52,14 +62,6 @@
         MPI_Barrier(MPI_COMM_WORLD);                                           \
     }                                                                          \
     static void openPMD_parallel_##name()
-
-#if !openPMD_HAVE_MPI
-TEST_CASE("none", "[parallel]")
-{}
-
-#else
-
-#include <mpi.h>
 
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
