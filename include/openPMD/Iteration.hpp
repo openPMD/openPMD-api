@@ -123,6 +123,15 @@ namespace internal
          */
         bool allow_reopening_implicitly = false;
 
+        /*
+         * This stores data items that are:
+         *
+         * 1. global in group and variable encodings
+         * 2. per-iteration in file encoding
+         *
+         * The struct is stored as part of the Series and as part of each
+         * Iteration. Access must be distinguished by iteration encoding.
+         */
         PerIterationData m_perIterationData;
 
         /**

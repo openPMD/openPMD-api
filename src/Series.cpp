@@ -339,10 +339,11 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
     }
     if (iterationEncoding() == IterationEncoding::fileBased)
     {
-        std::cerr << "[Series] Use rank table in file-based iteration encoding "
-                     "at your own risk. Make sure to have an iteration open "
-                     "before calling this."
-                  << std::endl;
+        std::cerr
+            << "[Series] Use rank table in file-based iteration encoding "
+               "at your own risk. Make sure to have the first iteration open "
+               "before calling this."
+            << std::endl;
         if (iterations.empty())
         {
             return {};
@@ -357,6 +358,12 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
     }
     Attributable &attributable =
         iterationEncoding() == IterationEncoding::fileBased
+        /*
+         * Only second class support for file encoding. We indiscriminately use
+         * the first Iteration for this operation. It is on the user to ensure
+         * that this Iteration is actually open. The warning printed above
+         * informs about this.
+         */
         ? iterations.begin()
               ->second.get()
               .m_perIterationData.m_rankTableAttributable
@@ -400,20 +407,19 @@ chunk_assignment::RankMeta Series::rankTable([[maybe_unused]] bool collective)
         new char[writerRanks * lineWidth],
         [](char const *ptr) { delete[] ptr; }};
 
-    auto doReadDataset =
-        [&openDataset, this, &get, &rankTable, &attributable]() {
-            Parameter<Operation::READ_DATASET> readDataset;
-            // read the whole thing
-            readDataset.offset.resize(2);
-            readDataset.extent = *openDataset.extent;
-            // @todo better cross-platform support by switching over
-            // *openDataset.dtype
-            readDataset.dtype = Datatype::CHAR;
-            readDataset.data = get;
+    auto doReadDataset = [&openDataset, this, &get, &attributable]() {
+        Parameter<Operation::READ_DATASET> readDataset;
+        // read the whole thing
+        readDataset.offset.resize(2);
+        readDataset.extent = *openDataset.extent;
+        // @todo better cross-platform support by switching over
+        // *openDataset.dtype
+        readDataset.dtype = Datatype::CHAR;
+        readDataset.data = get;
 
-            IOHandler()->enqueue(IOTask(&attributable, readDataset));
-            IOHandler()->flush(internal::publicFlush);
-        };
+        IOHandler()->enqueue(IOTask(&attributable, readDataset));
+        IOHandler()->flush(internal::publicFlush);
+    };
 
 #if openPMD_HAVE_MPI
     if (collective && series.m_communicator.has_value())
@@ -519,21 +525,20 @@ void Series::flushRankTable(FlushLevel l, Attributable &attributable)
     int rank{0}, size{1};
     unsigned long long maxSize = mySize;
 
-    auto createRankTable =
-        [&size, &maxSize, &rankTable, this, &attributable]() {
-            if (attributable.written())
-            {
-                return;
-            }
-            Parameter<Operation::CREATE_DATASET> param(
-                AbstractParameter::I_dont_want_to_use_joined_dimensions);
-            param.name = "rankTable";
-            param.dtype = Datatype::CHAR;
-            param.extent = {uint64_t(size), uint64_t(maxSize)};
-            IOHandler()->enqueue(IOTask(&attributable, std::move(param)));
-        };
+    auto createRankTable = [&size, &maxSize, this, &attributable]() {
+        if (attributable.written())
+        {
+            return;
+        }
+        Parameter<Operation::CREATE_DATASET> param(
+            AbstractParameter::I_dont_want_to_use_joined_dimensions);
+        param.name = "rankTable";
+        param.dtype = Datatype::CHAR;
+        param.extent = {uint64_t(size), uint64_t(maxSize)};
+        IOHandler()->enqueue(IOTask(&attributable, std::move(param)));
+    };
 
-    auto writeDataset = [&rank, &maxSize, this, &rankTable, &attributable](
+    auto writeDataset = [&rank, &maxSize, this, &attributable](
                             std::shared_ptr<char> put, size_t num_lines = 1) {
         Parameter<Operation::WRITE_DATASET> chunk;
         chunk.dtype = Datatype::CHAR;

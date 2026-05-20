@@ -207,6 +207,15 @@ namespace internal
          */
         Format m_format;
 
+        /*
+         * This stores data items that are:
+         *
+         * 1. global in group and variable encodings
+         * 2. per-iteration in file encoding
+         *
+         * The struct is stored as part of the Series and as part of each
+         * Iteration. Access must be distinguished by iteration encoding.
+         */
         PerIterationData m_perIterationData;
 
         /**
@@ -987,6 +996,7 @@ OPENPMD_private
      *        least one step was written.
      *
      * @param doFlush If true, flush the IO handler.
+     * @param l This operation must only run at flush level write_datasets
      */
     void flushStep(bool doFlush, FlushLevel l);
 
