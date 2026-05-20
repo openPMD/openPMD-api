@@ -671,6 +671,12 @@ void Attributable::readAttributes(ReadMode mode)
 
 void Attributable::preferCurrentBackpointer() const
 {
+    /*
+     * This is called when reopening some object as a specific type (e.g.
+     * RecordComponent) that had originally been opened generically as
+     * CustomHierarchy already. In this case, the specific type's pointer should
+     * be preferred for Writable::attributable as it has more information.
+     */
     auto this_as_custom_hierarchy = dynamic_cast<CustomHierarchy const *>(this);
     if (this_as_custom_hierarchy)
     {
@@ -687,13 +693,21 @@ void Attributable::preferCurrentBackpointer() const
         return;
     }
 
+    // Now:
+    // !this_as_custom_hierarchy && backpointer_as_custom_hierarchy
+
     w.attributable = m_attri.get();
+
+    // Now:
+    // !this_as_custom_hierarchy && !backpointer_as_custom_hierarchy
 
     if (!w.parent)
     {
         throw error::Internal(
             "CustomHierarchy object was created without parent. Why?");
     }
+
+    // dont manage this as a customhierarchy instance
     auto count_of_erased_elements =
         (*w.parent->attributable)
             ->m_children_managed_as_custom_hierarchy.erase(
