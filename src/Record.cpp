@@ -62,12 +62,14 @@ void Record::flush_impl(
     {
         if (scalar())
         {
-            T_RecordComponent::flush(SCALAR, flushParams);
+            T_RecordComponent::flush(
+                SCALAR, flushParams, /* set_defaults = */ true);
         }
         else
         {
             for (auto &comp : *this)
-                comp.second.flush(comp.first, flushParams);
+                comp.second.flush(
+                    comp.first, flushParams, /* set_defaults = */ true);
         }
     }
     else
@@ -77,7 +79,7 @@ void Record::flush_impl(
             if (scalar())
             {
                 RecordComponent &rc = *this;
-                rc.flush(name, flushParams);
+                rc.flush(name, flushParams, /* set_defaults = */ true);
             }
             else
             {
@@ -87,7 +89,8 @@ void Record::flush_impl(
                 for (auto &comp : *this)
                 {
                     comp.second.parent() = getWritable(this);
-                    comp.second.flush(comp.first, flushParams);
+                    comp.second.flush(
+                        comp.first, flushParams, /* set_defaults = */ true);
                 }
             }
         }
@@ -96,12 +99,14 @@ void Record::flush_impl(
 
             if (scalar())
             {
-                T_RecordComponent::flush(name, flushParams);
+                T_RecordComponent::flush(
+                    name, flushParams, /* set_defaults = */ true);
             }
             else
             {
                 for (auto &comp : *this)
-                    comp.second.flush(comp.first, flushParams);
+                    comp.second.flush(
+                        comp.first, flushParams, /* set_defaults = */ true);
             }
         }
 
@@ -121,7 +126,7 @@ auto Record::read() -> internal::HomogenizeExtents
             /* using operator[] will incorrectly update parent */
             try
             {
-                T_RecordComponent::read(/* require_unit_si = */ true);
+                T_RecordComponent::read(/* read_defaults = */ true);
             }
             catch (error::ReadError const &err)
             {
@@ -149,7 +154,7 @@ auto Record::read() -> internal::HomogenizeExtents
             rc.get().m_isConstant = true;
             try
             {
-                rc.read(/* require_unit_si = */ true);
+                rc.read(/* read_defaults = */ true);
             }
             catch (error::ReadError const &err)
             {
@@ -178,7 +183,7 @@ auto Record::read() -> internal::HomogenizeExtents
             rc.setWritten(true, Attributable::EnqueueAsynchronously::No);
             try
             {
-                rc.read(/* require_unit_si = */ true);
+                rc.read(/* read_defaults = */ true);
             }
             catch (error::ReadError const &err)
             {

@@ -394,6 +394,7 @@ include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 set(CORE_SOURCE
         src/config.cpp
         src/ChunkInfo.cpp
+        src/CustomHierarchy.cpp
         src/Dataset.cpp
         src/Datatype.cpp
         src/Error.cpp
@@ -581,6 +582,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Attributable.cpp
         src/binding/python/BaseRecordComponent.cpp
         src/binding/python/ChunkInfo.cpp
+        src/binding/python/CustomHierarchy.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
         src/binding/python/Error.cpp
@@ -749,6 +751,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     11_particle_dataframe
     12_span_write
     13_write_dynamic_configuration
+    14_custom_hierarchy
     15_compression
 )
 

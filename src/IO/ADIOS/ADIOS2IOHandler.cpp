@@ -629,13 +629,24 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
         }
     }
 
+    std::vector<InvalidatableFile const *> sorted;
+    sorted.reserve(m_dirty.size());
     for (auto const &file : m_dirty)
     {
-        auto file_data = m_fileData.find(file);
+        sorted.emplace_back(&file);
+    }
+    std::sort(
+        sorted.begin(), sorted.end(), [](auto const &left, auto const &right) {
+            return **left <= **right;
+        });
+
+    for (auto file : sorted)
+    {
+        auto file_data = m_fileData.find(*file);
         if (file_data == m_fileData.end())
         {
             throw error::Internal(
-                "[ADIOS2 backend] No associated data found for file'" + *file +
+                "[ADIOS2 backend] No associated data found for file'" + **file +
                 "'.");
         }
         file_data->second->flush(

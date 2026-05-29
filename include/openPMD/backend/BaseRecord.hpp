@@ -186,6 +186,7 @@ public:
 
 private:
     using T_Self = BaseRecord<T_elem>;
+    friend class CustomHierarchy;
     friend class Iteration;
     friend class ParticleSpecies;
     friend class PatchRecord;

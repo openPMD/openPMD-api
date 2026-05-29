@@ -51,6 +51,7 @@ class AbstractFilePosition;
 class Attributable;
 class Iteration;
 class Series;
+class CustomHierarchy;
 
 namespace internal
 {
@@ -61,6 +62,7 @@ namespace internal
     class SharedAttributableData
     {
         friend class openPMD::Attributable;
+        friend class openPMD::CustomHierarchy;
 
     public:
         SharedAttributableData(AttributableData *);
@@ -106,6 +108,7 @@ namespace internal
     class AttributableData : public std::shared_ptr<SharedAttributableData>
     {
         friend class openPMD::Attributable;
+        friend class openPMD::CustomHierarchy;
 
         using SharedData_t = std::shared_ptr<SharedAttributableData>;
         using A_MAP = SharedData_t::element_type::A_MAP;
@@ -116,6 +119,17 @@ namespace internal
         AttributableData(AttributableData const &) = delete;
         AttributableData(AttributableData &&) = delete;
         virtual ~AttributableData() = default;
+
+        inline std::shared_ptr<SharedAttributableData> &
+        asSharedPtrOfAttributable()
+        {
+            return *this;
+        }
+        inline std::shared_ptr<SharedAttributableData> const &
+        asSharedPtrOfAttributable() const
+        {
+            return *this;
+        }
 
         AttributableData &operator=(AttributableData const &) = delete;
         AttributableData &operator=(AttributableData &&) = delete;
@@ -191,6 +205,7 @@ namespace internal
     class BaseRecordData;
 
     class RecordComponentData;
+    struct CustomHierarchyData;
 
     /*
      * Internal function to turn a handle into an owning handle that will keep
@@ -244,6 +259,8 @@ class Attributable
     friend class internal::AttributableData;
     friend class Snapshots;
     friend struct internal::HomogenizeExtents;
+    friend class CustomHierarchy;
+    friend struct internal::CustomHierarchyData;
 
 protected:
     // tag for internal constructor

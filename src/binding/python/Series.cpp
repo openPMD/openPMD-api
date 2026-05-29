@@ -24,6 +24,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Container.H"
@@ -38,6 +39,7 @@
 #include <pybind11/gil.h>
 #include <stdexcept>
 #include <tuple>
+#include <variant>
 
 #if openPMD_USE_FILESYSTEM_HEADER
 #include <filesystem>
@@ -425,13 +427,61 @@ this method.
             &Series::openPMDextension,
             &Series::setOpenPMDextension)
         .def_property("base_path", &Series::basePath, &Series::setBasePath)
-        .def_property(
-            "meshes_path", &Series::meshesPath, &Series::setMeshesPath)
         .def_property_readonly("has_rank_table_read", &Series::hasRankTableRead)
         .def("get_rank_table", &Series::rankTable, py::arg("collective"))
         .def("set_rank_table", &Series::setRankTable, py::arg("my_rank_info"))
         .def_property(
-            "particles_path", &Series::particlesPath, &Series::setParticlesPath)
+            "meshes_path",
+            [](Series &self)
+                -> std::variant<std::string, std::vector<std::string>> {
+                using res_t =
+                    std::variant<std::string, std::vector<std::string>>;
+                auto res = self.meshesPaths();
+                if (res.size() == 1)
+                {
+                    return res_t{std::move(res[0])};
+                }
+                else
+                {
+                    return res_t{std::move(res)};
+                }
+            },
+            [](Series &self,
+               std::variant<std::string, std::vector<std::string>> const &arg)
+                -> Series & {
+                std::visit(
+                    [&](auto const &arg_resolved) {
+                        self.setMeshesPath(arg_resolved);
+                    },
+                    arg);
+                return self;
+            })
+        .def_property(
+            "particles_path",
+            [](Series &self)
+                -> std::variant<std::string, std::vector<std::string>> {
+                using res_t =
+                    std::variant<std::string, std::vector<std::string>>;
+                auto res = self.particlesPaths();
+                if (res.size() == 1)
+                {
+                    return res_t{std::move(res[0])};
+                }
+                else
+                {
+                    return res_t{std::move(res)};
+                }
+            },
+            [](Series &self,
+               std::variant<std::string, std::vector<std::string>> const &arg)
+                -> Series & {
+                std::visit(
+                    [&](auto const &arg_resolved) {
+                        self.setParticlesPath(arg_resolved);
+                    },
+                    arg);
+                return self;
+            })
         .def_property("author", &Series::author, &Series::setAuthor)
         .def_property(
             "machine",
@@ -480,8 +530,20 @@ this method.
         .def("set_openPMD", &Series::setOpenPMD)
         .def("set_openPMD_extension", &Series::setOpenPMDextension)
         .def("set_base_path", &Series::setBasePath)
-        .def("set_meshes_path", &Series::setMeshesPath)
-        .def("set_particles_path", &Series::setParticlesPath)
+        .def(
+            "set_meshes_path",
+            py::overload_cast<std::string const &>(&Series::setMeshesPath))
+        .def(
+            "set_meshes_path",
+            py::overload_cast<std::vector<std::string> const &>(
+                &Series::setMeshesPath))
+        .def(
+            "set_particles_path",
+            py::overload_cast<std::vector<std::string> const &>(
+                &Series::setParticlesPath))
+        .def(
+            "set_particles_path",
+            py::overload_cast<std::string const &>(&Series::setParticlesPath))
         .def("set_author", &Series::setAuthor)
         .def("set_date", &Series::setDate)
         .def("set_iteration_encoding", &Series::setIterationEncoding)

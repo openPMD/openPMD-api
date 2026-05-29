@@ -9,6 +9,7 @@
 #pragma once
 
 #include "openPMD/ChunkInfo.hpp"
+#include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticlePatches.hpp"
@@ -60,6 +61,7 @@ using PyPatchRecordComponentContainer = Container<PatchRecordComponent>;
 using PyBaseRecordRecordComponent = BaseRecord<RecordComponent>;
 using PyBaseRecordMeshRecordComponent = BaseRecord<MeshRecordComponent>;
 using PyBaseRecordPatchRecordComponent = BaseRecord<PatchRecordComponent>;
+using PyCustomHierarchyContainer = Container<CustomHierarchy>;
 PYBIND11_MAKE_OPAQUE(PyIterationContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshContainer)
 PYBIND11_MAKE_OPAQUE(PyPartContainer)
@@ -71,3 +73,4 @@ PYBIND11_MAKE_OPAQUE(PyMeshRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyPatchRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyBaseRecordRecordComponent)
 PYBIND11_MAKE_OPAQUE(PyBaseRecordPatchRecordComponent)
+PYBIND11_MAKE_OPAQUE(PyCustomHierarchyContainer)

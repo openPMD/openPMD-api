@@ -66,7 +66,7 @@ void MeshRecordComponent::read()
                     Attribute(Attribute::from_any, *aRead.m_resource).dtype) +
                 ")");
 
-    readBase(/* require_unit_si = */ true);
+    readBase(/* read_defaults = */ true);
 }
 
 void MeshRecordComponent::flush(
@@ -81,7 +81,7 @@ void MeshRecordComponent::flush(
     {
         setPosition(std::vector<double>{0});
     }
-    RecordComponent::flush(name, params);
+    RecordComponent::flush(name, params, /* set_defaults = */ true);
 }
 
 template <typename T>
