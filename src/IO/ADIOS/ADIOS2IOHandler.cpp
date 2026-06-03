@@ -848,6 +848,14 @@ void ADIOS2IOHandlerImpl::createDataset(
     {
         /* Sanitize name */
         std::string name = auxiliary::removeSlashes(parameters.name);
+        if (auxiliary::contains(name, '/'))
+        {
+            throw error::OperationUnsupportedInBackend(
+                "ADIOS2",
+                "Slashes `/` are reserved characters in the ADIOS2 backend and "
+                "forbidden in dataset names (name: '" +
+                    name + "')");
+        }
 
         auto const file =
             refreshFileFromParent(writable, /* preferParentFile = */ true);
@@ -2306,6 +2314,15 @@ namespace detail
         auto pos = impl->setAndGetFilePosition(writable);
         auto file = impl->refreshFileFromParent(
             writable, /* preferParentFile = */ false);
+        auto name = auxiliary::removeSlashes(parameters.name);
+        if (auxiliary::contains(name, '/'))
+        {
+            throw error::OperationUnsupportedInBackend(
+                "ADIOS2",
+                "Slashes `/` are reserved characters in the ADIOS2 backend and "
+                "forbidden in attribute names (name: '" +
+                    name + "')");
+        }
         auto fullName = impl->nameOfAttribute(writable, parameters.name);
 
         auto &filedata = impl->getFileData(
