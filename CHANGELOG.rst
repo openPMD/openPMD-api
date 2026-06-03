@@ -46,6 +46,10 @@ Other
 
   - Migrate C++ tests to Catch2 v3 (#1823 #1875)
 
+- Documentation:
+
+  - Fix official spelling of CASUS in acknowledgements (#1883)
+
 0.17.0
 ------
 **Date:** 2025-01-17
