@@ -17,6 +17,7 @@ Bug Fixes
   - Fix parallel deletion (#1858)
   - Do not flush if the backend does not support Span API (#1863)
   - Enable stats by default, starting ADIOS2 v2.12.0 (#1877)
+  - Forbid slashes in attribute and variable names (#1884)
 - HDF5:
 
   - Execute close operations also upon failure (#1866 #1870 #1872)
