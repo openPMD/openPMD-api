@@ -303,7 +303,7 @@ inline void check_buffer_is_contiguous(py::array &a)
         delete view;
         throw py::error_already_set();
     }
-    bool isContiguous = (PyBuffer_IsContiguous(view, 'A') != 0);
+    bool isContiguous = (PyBuffer_IsContiguous(view, 'C') != 0);
     PyBuffer_Release(view);
     delete view;
 
