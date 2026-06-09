@@ -36,6 +36,7 @@ Other
   - Remove duplicate Python test (#1867)
   - Reacquire GIL for deallocation operations (#1878)
   - Remove stray reference count leading to potential resource leaks (#1879)
+  - Accept only C-contiguous arrays, not Fortran contiguous (#1886)
 - Dependencies:
 
   - Version bump toml11 to recent main branch (b32a2fff0d27e1f7522f26a125101500ddb47156), nlohmann_json to 3.12.0 (#1842 #1874)
