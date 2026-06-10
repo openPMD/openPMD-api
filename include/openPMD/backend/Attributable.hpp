@@ -249,7 +249,6 @@ class Attributable
     friend struct internal::HomogenizeExtents;
     friend struct internal::ConfigAttribute;
     friend class internal::ScientificDefaults;
-    friend class core::ConfigureLoadStore;
     friend class ConfigureLoadStore;
 
 protected:
