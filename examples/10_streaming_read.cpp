@@ -18,8 +18,8 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <openPMD/openPMD.hpp>
 #include <openPMD/auxiliary/StringManip.hpp>
+#include <openPMD/openPMD.hpp>
 
 #include <algorithm>
 #include <array>
