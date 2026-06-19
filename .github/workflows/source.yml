@@ -10,7 +10,7 @@ jobs:
   style:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Non-ASCII Characters
       run: .github/workflows/source/hasNonASCII
     - name: TABs
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: pyflakes
       run: |
         python3 -m pip install -U pyflakes
@@ -35,7 +35,7 @@ jobs:
   documentation:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - uses: conda-incubator/setup-miniconda@v4
       name: Setup conda
       with:
@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: urls-checker
       uses: urlstechie/urlchecker-action@master
       with:
@@ -75,7 +75,7 @@ jobs:
   rodare:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Validate Zenodo Metadata
         uses: ax3l/zenodo-validator@custom-extra-prop
         with:

@@ -23,7 +23,7 @@ jobs:
         large-packages: false  # apt takes ~1:30min
         docker-images: true
         swap-storage: false
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Dependencies
       run: .github/workflows/dependencies/install_nvcc12.sh
     - name: Build & Install
@@ -59,7 +59,7 @@ jobs:
         large-packages: false  # apt takes ~1:30min
         docker-images: true
         swap-storage: false
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Dependencies
       run: .github/workflows/dependencies/install_nvhpc25-11.sh
     - name: Build & Install
