@@ -1,4 +1,4 @@
-/* Copyright 2025 Axel Huebl
+/* Copyright 2026 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -18,5 +18,8 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+
+#pragma once
+
+#define TOML11_DISABLE_SOURCE_LOCATION
+#include <toml.hpp>

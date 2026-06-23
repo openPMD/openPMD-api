@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -65,6 +66,19 @@ namespace auxiliary
      * @return  Vector of all contained files and directories.
      */
     std::vector<std::string> list_directory(std::string const &path);
+
+    /** List all contents of a directory at a given absolute or relative path.
+     *
+     * @note    The equivalent of `ls path`
+     * @note    Both contained files and directories are listed.
+     *          `.` and `..` are not returned.
+     * @param   path    Absolute or relative path of directory to examine.
+     * @return  Vector of all contained files and directories,
+     *          or an empty option in case of an IO error, in which case the
+     *          specific error will be stored in errno.
+     */
+    std::optional<std::vector<std::string>>
+    list_directory_nothrow(std::string const &path);
 
     /** Create all required directories to have a reachable given absolute or
      * relative path.

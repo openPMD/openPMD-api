@@ -304,7 +304,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 Use the following lines in your project's `CMakeLists.txt`:
 ```cmake
 # supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS2
-find_package(openPMD 0.17.0 CONFIG)
+find_package(openPMD 0.17.1 CONFIG)
 
 if(openPMD_FOUND)
     target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
@@ -332,7 +332,7 @@ set(openPMD_INSTALL OFF)            # or instead use:
 set(openPMD_USE_PYTHON OFF)
 FetchContent_Declare(openPMD
   GIT_REPOSITORY "https://github.com/openPMD/openPMD-api.git"
-  GIT_TAG        "0.17.0")
+  GIT_TAG        "0.17.1")
 FetchContent_MakeAvailable(openPMD)
 ```
 
@@ -431,7 +431,7 @@ Supported by the CAMPA collaboration, a project of the U.S. Department of Energy
 Previously supported by the Consortium for Advanced Modeling of Particles Accelerators (CAMPA), funded by the U.S. DOE Office of Science under Contract No. DE-AC02-05CH11231.
 Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration).
 This project has received funding from the European Unions Horizon 2020 research and innovation programme under grant agreement No 654220.
-This work was partially funded by the Center of Advanced Systems Understanding (CASUS), which is financed by Germany's Federal Ministry of Education and Research (BMBF) and by the Saxon Ministry for Science, Culture and Tourism (SMWK) with tax funds on the basis of the budget approved by the Saxon State Parliament.
+This work was partially funded by the Center for Advanced Systems Understanding (CASUS), which is financed by Germany's Federal Ministry of Education and Research (BMBF) and by the Saxon Ministry for Science, Culture and Tourism (SMWK) with tax funds on the basis of the budget approved by the Saxon State Parliament.
 Supported by the HElmholtz Laser Plasma Metadata Initiative (HELPMI) project (ZT-I-PF-3-066), funded by the "Initiative and Networking Fund" of the Helmholtz Association in the framework of the "Helmholtz Metadata Collaboration" project call 2022.
 
 ### Transitive Contributions

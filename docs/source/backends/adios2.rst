@@ -84,7 +84,7 @@ environment variable                    default    description
 ``OPENPMD_ADIOS2_ENGINE``               ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
 ``OPENPMD_ADIOS2_PRETEND_ENGINE``       *empty*    Pretend that an (unknown) ADIOS2 engine is in fact another one (also see the ``adios2.pretend_engine`` :ref:`parameter <backendconfig-adios2>`).
 ``OPENPMD2_ADIOS2_USE_GROUP_TABLE``     ``0``      Use group table (see below)
-``OPENPMD_ADIOS2_STATS_LEVEL``          ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
+``OPENPMD_ADIOS2_STATS_LEVEL``          see below  Whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no)
 ``OPENPMD_ADIOS2_ASYNC_WRITE``          ``0``      ADIOS2 BP5 engine: 1 means setting "AsyncWrite" in ADIOS2 to "on". Flushes will go to the buffer by default (see ``preferred_flush_target``).
 ``OPENPMD_ADIOS2_BP5_BufferChunkMB``    ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
 ``OPENPMD_ADIOS2_BP5_MaxShmMB``         ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
@@ -98,7 +98,7 @@ Please refer to the `ADIOS2 documentation <https://adios2.readthedocs.io/en/late
 
 Notice that the ADIOS2 backend is alternatively configurable via :ref:`JSON parameters <backendconfig>`.
 
-Due to performance considerations, the ADIOS2 backend configures ADIOS2 not to compute any dataset statistics (Min/Max) by default.
+Due to performance considerations, the ADIOS2 backend configures ADIOS2 not to compute any dataset statistics (Min/Max) by default for ADIOS2 versions up until v2.12.0. Starting with `v2.12.1 <https://github.com/ornladios/ADIOS2/releases/tag/v2.12.1>`_, the performance of statistics computation has been improved, so it is turned on by default.
 Statistics may be activated by setting the :ref:`JSON parameter <backendconfig>` ``adios2.engine.parameters.StatsLevel = "1"``.
 
 The ADIOS2 backend overrides the default unlimited queueing behavior of the SST engine with a more cautious limit of 2 steps that may be held in the queue at one time.

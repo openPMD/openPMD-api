@@ -35,6 +35,7 @@
 
 #include <optional>
 #include <pybind11/attr.h>
+#include <pybind11/gil.h>
 #include <stdexcept>
 #include <tuple>
 
@@ -283,25 +284,12 @@ not possible once it has been closed.
             .def(
                 "__getitem__",
                 [](Snapshots &s, Series::IterationIndex_t key) {
-                    switch (s.snapshotWorkflow())
-                    {
-                    case openPMD::SnapshotWorkflow::RandomAccess:
-                        return s[key];
-                    case openPMD::SnapshotWorkflow::Synchronous:
-                        auto lastIteration = s.currentIteration();
-                        if (lastIteration.has_value() &&
-                            lastIteration.value()->first != key)
-                        {
-                            // this must happen under the GIL
-                            lastIteration.value()->second.close();
-                        }
-                        py::gil_scoped_release release;
-                        return s[key];
-                    }
-                    throw std::runtime_error("Unreachable");
+                    py::gil_scoped_release release;
+                    return s[key];
                 },
                 // copy + keepalive
-                py::return_value_policy::copy)
+                py::return_value_policy::copy,
+                py::keep_alive<0, 1>())
             .def(
                 "current_iteration",
                 [](Snapshots &s) -> std::optional<IndexedIteration> {
@@ -315,6 +303,7 @@ not possible once it has been closed.
                         return std::nullopt;
                     }
                 },
+                py::keep_alive<0, 1>(),
                 "Return the iteration that is currently being written to, if "
                 "it "
                 "exists.");
@@ -334,10 +323,6 @@ not possible once it has been closed.
                  */
                 if (!iterator.first_iteration)
                 {
-                    if (!(*iterator).closed())
-                    {
-                        (*iterator).close();
-                    }
                     py::gil_scoped_release release;
                     ++iterator;
                 }
@@ -480,7 +465,13 @@ this method.
             &Series::iterationFormat,
             &Series::setIterationFormat)
         .def_property("name", &Series::name, &Series::setName)
-        .def("flush", &Series::flush, py::arg("backend_config") = "{}")
+        .def(
+            "flush",
+            [](Series &s, std::string const &backend_config) {
+                py::gil_scoped_release release_gil;
+                s.flush(backend_config);
+            },
+            py::arg("backend_config") = "{}")
 
         .def_property_readonly(
             "backend", static_cast<std::string (Series::*)()>(&Series::backend))
@@ -497,12 +488,13 @@ this method.
         .def("set_iteration_format", &Series::setIterationFormat)
         .def("set_name", &Series::setName)
 
-        .def_readwrite(
+        .def_property_readonly(
             "iterations",
-            &Series::iterations,
-            py::return_value_policy::copy,
-            // garbage collection: return value must be freed before Series
-            py::keep_alive<1, 0>())
+            py::cpp_function(
+                [](Series &s) { return s.iterations; },
+                py::return_value_policy::copy,
+                // garbage collection: return value must be freed before Series
+                py::keep_alive<0, 1>()))
         .def(
             "read_iterations",
             [](Series &s) {
@@ -644,5 +636,18 @@ Parameters:
             py::arg("comm"),
             docs_merge_json)
 #endif
-        ;
+        .def("__del__", [](Series &s) {
+            try
+            {
+                s.close();
+            }
+            catch (std::exception const &e)
+            {
+                std::cerr << "Error during close: " << e.what() << std::endl;
+            }
+            catch (...)
+            {
+                std::cerr << "Unknown error during close." << std::endl;
+            }
+        });
 }

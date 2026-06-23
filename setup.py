@@ -181,7 +181,7 @@ with open('./requirements.txt') as f:
 setup(
     name='openPMD-api',
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
-    version='0.17.0',
+    version='0.17.1',
     author='Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu',
     author_email='axelhuebl@lbl.gov, f.poeschel@hzdr.de',
     maintainer='Axel Huebl',
@@ -237,7 +237,8 @@ setup(
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: 3.14',
-        ('License :: OSI Approved :: '
-         'GNU Lesser General Public License v3 or later (LGPLv3+)'),
     ],
+    # new PEP 639 format
+    license="LGPL-3.0-or-later",
+    license_files=["COPYING.LESSER", "COPYING"],
 )

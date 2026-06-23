@@ -31,12 +31,12 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
+#include "openPMD/auxiliary/toml11_wrapper.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <iomanip>
 #include <sstream>
-#include <toml.hpp>
 
 #include <algorithm>
 #include <exception>
@@ -2332,7 +2332,7 @@ auto JSONIOHandlerImpl::verifyDataset(
         }
         Datatype dt = stringToDatatype(j["datatype"].get<std::string>());
         VERIFY_ALWAYS(
-            dt == parameters.dtype,
+            isSame(dt, parameters.dtype),
             "[JSON] Read/Write request does not fit the dataset's type");
     }
     catch (json::basic_json::type_error &)

@@ -25,7 +25,7 @@
 
 #include <numeric>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <optional>
 
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
@@ -64,7 +64,7 @@ static void create_file_in_serial(bool use_group_table)
             IO.DefineAttribute("/openPMD", std::string("1.1.0"));
             IO.DefineAttribute("/openPMDextension", uint32_t(0));
             IO.DefineAttribute("/software", std::string("openPMD-api"));
-            IO.DefineAttribute("/softwareVersion", std::string("0.17.0-dev"));
+            IO.DefineAttribute("/softwareVersion", std::string("0.17.1"));
 
             std::vector<size_t> current_snapshots(10);
             std::iota(

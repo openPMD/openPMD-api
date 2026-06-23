@@ -20,6 +20,7 @@
  */
 #include <limits>
 #include <pybind11/detail/common.h>
+#include <pybind11/gil.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -302,7 +303,7 @@ inline void check_buffer_is_contiguous(py::array &a)
         delete view;
         throw py::error_already_set();
     }
-    bool isContiguous = (PyBuffer_IsContiguous(view, 'A') != 0);
+    bool isContiguous = (PyBuffer_IsContiguous(view, 'C') != 0);
     PyBuffer_Release(view);
     delete view;
 
@@ -324,15 +325,17 @@ struct StoreChunkFromPythonArray
         Offset const &offset,
         Extent const &extent)
     {
-        a.inc_ref();
         void *data = a.mutable_data();
         // here, we store an owning handle in the lambda capture so that
         // temporary and lost-scope variables stay alive until we flush
         // note: this does not yet prevent the user, as in C++, to build
         // a race condition by manipulating the data that was passed
         std::shared_ptr<T> shared(
-            (T *)data, [owning_handle = a.cast<py::object>()](T *) {
-                // no-op
+            (T *)data,
+            [owning_handle =
+                 std::make_optional(a.cast<py::object>())](T *) mutable {
+                py::gil_scoped_acquire need_the_gil_for_this;
+                owning_handle.reset();
             });
         r.storeChunk(std::move(shared), offset, extent);
     }
@@ -354,8 +357,11 @@ struct LoadChunkIntoPythonArray
         // note: this does not yet prevent the user, as in C++, to build
         // a race condition by manipulating the data that was passed
         std::shared_ptr<T> shared(
-            (T *)data, [owning_handle = a.cast<py::object>()](T *) {
-                // no-op
+            (T *)data,
+            [owning_handle =
+                 std::make_optional(a.cast<py::object>())](T *) mutable {
+                py::gil_scoped_acquire need_the_gil_for_this;
+                owning_handle.reset();
             });
         r.loadChunk(std::move(shared), offset, extent);
     }
@@ -378,8 +384,11 @@ struct LoadChunkIntoPythonBuffer
         // note: this does not yet prevent the user, as in C++, to build
         // a race condition by manipulating the data that was passed
         std::shared_ptr<T> shared(
-            (T *)data, [owning_handle = buffer.cast<py::object>()](T *) {
-                // no-op
+            (T *)data,
+            [owning_handle =
+                 std::make_optional(buffer.cast<py::object>())](T *) mutable {
+                py::gil_scoped_acquire need_the_gil_for_this;
+                owning_handle.reset();
             });
         r.loadChunk(std::move(shared), offset, extent);
     }
@@ -489,7 +498,14 @@ inline void store_chunk(
 
     check_buffer_is_contiguous(a);
 
-    // dtype_from_numpy(a.dtype())
+    if (!dtype_to_numpy(r.getDatatype()).is(a.dtype()))
+    {
+        std::stringstream err;
+        err << "Attempting store from Python array of type '"
+            << dtype_from_numpy(a.dtype())
+            << "' into Record Component of type '" << r.getDatatype() << "'.";
+        throw error::WrongAPIUsage(err.str());
+    }
     switchDatasetType<StoreChunkFromPythonArray>(
         r.getDatatype(), r, a, offset, extent);
 }
@@ -769,6 +785,15 @@ inline void load_chunk(
     }
 
     check_buffer_is_contiguous(a);
+
+    if (!dtype_to_numpy(r.getDatatype()).is(a.dtype()))
+    {
+        std::stringstream err;
+        err << "Attempting load into Python array of type '"
+            << dtype_from_numpy(a.dtype())
+            << "' from Record Component of type '" << r.getDatatype() << "'.";
+        throw error::WrongAPIUsage(err.str());
+    }
 
     switchDatasetType<LoadChunkIntoPythonArray>(
         r.getDatatype(), r, a, offset, extent);

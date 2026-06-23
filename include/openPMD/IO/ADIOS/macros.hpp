@@ -34,6 +34,11 @@
          ADIOS2_VERSION_PATCH >=                                               \
      2101)
 
+#define openPMD_HAS_ADIOS_2_12_1                                               \
+    (ADIOS2_VERSION_MAJOR * 1000 + ADIOS2_VERSION_MINOR * 10 +                 \
+         ADIOS2_VERSION_PATCH >=                                               \
+     2121)
+
 #if defined(ADIOS2_HAVE_BP5) || openPMD_HAS_ADIOS_2_10
 // ADIOS2 v2.10 no longer defines this
 #define openPMD_HAVE_ADIOS2_BP5 1

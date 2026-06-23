@@ -558,6 +558,7 @@ struct OPENPMDAPI_EXPORT
     }
 
     // in parameters
+    bool queryOnly = false; // query if the backend supports this
     Offset offset;
     Extent extent;
     Datatype dtype = Datatype::UNDEFINED;

@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Install
       run: |
         sudo .github/workflows/dependencies/install_icx

@@ -32,9 +32,17 @@ namespace openPMD
 {
 inline Datatype dtype_from_numpy(pybind11::dtype const dt)
 {
+    // Use explicit PEP 3118 / struct format character codes for portable
+    // cross-platform behavior. This ensures consistency with
+    // dtype_from_bufferformat() and avoids platform-dependent interpretation
+    // of numpy type name strings.
+    // ref: https://docs.python.org/3/library/struct.html#format-characters
+    // ref: https://numpy.org/doc/stable/reference/arrays.interface.html
     // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
-    // ref: https://github.com/numpy/numpy/issues/10678#issuecomment-369363551
-    if (dt.char_() == pybind11::dtype("b").char_())
+    char const c = dt.char_();
+    switch (c)
+    {
+    case 'b': // signed char
         if constexpr (std::is_signed_v<char>)
         {
             return Datatype::CHAR;
@@ -43,7 +51,7 @@ inline Datatype dtype_from_numpy(pybind11::dtype const dt)
         {
             return Datatype::SCHAR;
         }
-    else if (dt.char_() == pybind11::dtype("B").char_())
+    case 'B': // unsigned char
         if constexpr (std::is_unsigned_v<char>)
         {
             return Datatype::CHAR;
@@ -52,42 +60,41 @@ inline Datatype dtype_from_numpy(pybind11::dtype const dt)
         {
             return Datatype::UCHAR;
         }
-    else if (dt.char_() == pybind11::dtype("short").char_())
+    case 'h': // short
         return Datatype::SHORT;
-    else if (dt.char_() == pybind11::dtype("intc").char_())
-        return Datatype::INT;
-    else if (dt.char_() == pybind11::dtype("int_").char_())
-        return Datatype::LONG;
-    else if (dt.char_() == pybind11::dtype("longlong").char_())
-        return Datatype::LONGLONG;
-    else if (dt.char_() == pybind11::dtype("ushort").char_())
+    case 'H': // unsigned short
         return Datatype::USHORT;
-    else if (dt.char_() == pybind11::dtype("uintc").char_())
+    case 'i': // int
+        return Datatype::INT;
+    case 'I': // unsigned int
         return Datatype::UINT;
-    else if (dt.char_() == pybind11::dtype("uint").char_())
+    case 'l': // long
+        return Datatype::LONG;
+    case 'L': // unsigned long
         return Datatype::ULONG;
-    else if (dt.char_() == pybind11::dtype("ulonglong").char_())
+    case 'q': // long long
+        return Datatype::LONGLONG;
+    case 'Q': // unsigned long long
         return Datatype::ULONGLONG;
-    else if (dt.char_() == pybind11::dtype("clongdouble").char_())
-        return Datatype::CLONG_DOUBLE;
-    else if (dt.char_() == pybind11::dtype("cdouble").char_())
-        return Datatype::CDOUBLE;
-    else if (dt.char_() == pybind11::dtype("csingle").char_())
-        return Datatype::CFLOAT;
-    else if (dt.char_() == pybind11::dtype("longdouble").char_())
-        return Datatype::LONG_DOUBLE;
-    else if (dt.char_() == pybind11::dtype("double").char_())
-        return Datatype::DOUBLE;
-    else if (dt.char_() == pybind11::dtype("single").char_())
+    case 'f': // float
         return Datatype::FLOAT;
-    else if (dt.char_() == pybind11::dtype("bool").char_())
+    case 'd': // double
+        return Datatype::DOUBLE;
+    case 'g': // long double
+        return Datatype::LONG_DOUBLE;
+    case 'F': // complex float
+        return Datatype::CFLOAT;
+    case 'D': // complex double
+        return Datatype::CDOUBLE;
+    case 'G': // complex long double
+        return Datatype::CLONG_DOUBLE;
+    case '?': // bool
         return Datatype::BOOL;
-    else
-    {
+    default:
         pybind11::print(dt);
         throw std::runtime_error(
-            std::string("Datatype '") + dt.char_() +
-            std::string("' not known in 'dtype_from_numpy'!")); // _s.format(dt)
+            std::string("Datatype '") + c +
+            std::string("' not known in 'dtype_from_numpy'!"));
     }
 }
 
@@ -159,6 +166,8 @@ inline Datatype dtype_from_bufferformat(std::string const &fmt)
 
 inline pybind11::dtype dtype_to_numpy(Datatype const dt)
 {
+    // Use explicit PEP 3118 format character codes for portable behavior.
+    // This ensures round-trip consistency with dtype_from_numpy().
     using DT = Datatype;
     switch (dt)
     {
@@ -177,80 +186,57 @@ inline pybind11::dtype dtype_to_numpy(Datatype const dt)
     case DT::SCHAR:
     case DT::VEC_SCHAR:
         return pybind11::dtype("b");
-        break;
     case DT::UCHAR:
     case DT::VEC_UCHAR:
         return pybind11::dtype("B");
-        break;
-    // case DT::SCHAR:
-    // case DT::VEC_SCHAR:
-    //     pybind11::dtype("b");
-    //     break;
     case DT::SHORT:
     case DT::VEC_SHORT:
-        return pybind11::dtype("short");
-        break;
+        return pybind11::dtype("h");
     case DT::INT:
     case DT::VEC_INT:
-        return pybind11::dtype("intc");
-        break;
+        return pybind11::dtype("i");
     case DT::LONG:
     case DT::VEC_LONG:
-        return pybind11::dtype("int_");
-        break;
+        return pybind11::dtype("l");
     case DT::LONGLONG:
     case DT::VEC_LONGLONG:
-        return pybind11::dtype("longlong");
-        break;
+        return pybind11::dtype("q");
     case DT::USHORT:
     case DT::VEC_USHORT:
-        return pybind11::dtype("ushort");
-        break;
+        return pybind11::dtype("H");
     case DT::UINT:
     case DT::VEC_UINT:
-        return pybind11::dtype("uintc");
-        break;
+        return pybind11::dtype("I");
     case DT::ULONG:
     case DT::VEC_ULONG:
-        return pybind11::dtype("uint");
-        break;
+        return pybind11::dtype("L");
     case DT::ULONGLONG:
     case DT::VEC_ULONGLONG:
-        return pybind11::dtype("ulonglong");
-        break;
+        return pybind11::dtype("Q");
     case DT::FLOAT:
     case DT::VEC_FLOAT:
-        return pybind11::dtype("single");
-        break;
+        return pybind11::dtype("f");
     case DT::DOUBLE:
     case DT::VEC_DOUBLE:
     case DT::ARR_DBL_7:
-        return pybind11::dtype("double");
-        break;
+        return pybind11::dtype("d");
     case DT::LONG_DOUBLE:
     case DT::VEC_LONG_DOUBLE:
-        return pybind11::dtype("longdouble");
-        break;
+        return pybind11::dtype("g");
     case DT::CFLOAT:
     case DT::VEC_CFLOAT:
-        return pybind11::dtype("csingle");
-        break;
+        return pybind11::dtype("F");
     case DT::CDOUBLE:
     case DT::VEC_CDOUBLE:
-        return pybind11::dtype("cdouble");
-        break;
+        return pybind11::dtype("D");
     case DT::CLONG_DOUBLE:
     case DT::VEC_CLONG_DOUBLE:
-        return pybind11::dtype("clongdouble");
-        break;
+        return pybind11::dtype("G");
     case DT::BOOL:
-        return pybind11::dtype("bool"); // also "?"
-        break;
+        return pybind11::dtype("?");
     case DT::UNDEFINED:
     default:
-        throw std::runtime_error(
-            "dtype_to_numpy: Invalid Datatype '{...}'!"); // _s.format(dt)
-        break;
+        throw std::runtime_error("dtype_to_numpy: Invalid Datatype!");
     }
 }
 } // namespace openPMD

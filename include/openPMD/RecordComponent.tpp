@@ -85,14 +85,6 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
     verifyChunk<T>(o, e);
 
-    /*
-     * The openPMD backend might not yet know about this dataset.
-     * Flush the openPMD hierarchy to the backend without flushing any actual
-     * data yet.
-     */
-    seriesFlush_impl</* flush_entire_series = */ false>(
-        {FlushLevel::SkeletonOnly});
-
     size_t size = 1;
     for (auto ext : e)
     {
@@ -102,33 +94,61 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
      * Flushing the skeleton does not create datasets,
      * so we might need to do it now.
      */
-    if (!written())
+    auto &rc = get();
+    if (!rc.m_dataset.has_value())
     {
-        auto &rc = get();
-        if (!rc.m_dataset.has_value())
-        {
-            throw error::WrongAPIUsage(
-                "[RecordComponent] Must specify dataset type and extent before "
-                "using storeChunk() (see RecordComponent::resetDataset()).");
-        }
-        Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
-        dCreate.name = Attributable::get().m_writable.ownKeyWithinParent;
-        IOHandler()->enqueue(IOTask(this, dCreate));
+        throw error::WrongAPIUsage(
+            "[RecordComponent] Must specify dataset type and extent before "
+            "using storeChunk() (see RecordComponent::resetDataset()).");
     }
+
+    Parameter<Operation::GET_BUFFER_VIEW> query;
+    query.queryOnly = true;
+    IOHandler()->enqueue(IOTask(this, query));
+    IOHandler()->flush(internal::defaultFlushParams);
 
     Parameter<Operation::GET_BUFFER_VIEW> getBufferView;
     getBufferView.offset = o;
     getBufferView.extent = e;
     getBufferView.dtype = getDatatype();
-    IOHandler()->enqueue(IOTask(this, getBufferView));
-    IOHandler()->flush(internal::defaultFlushParams);
-    auto &out = *getBufferView.out;
-    if (!out.backendManagedBuffer)
+
+    if (query.out->backendManagedBuffer)
+    {
+        // Need to initialize the dataset for the Span API
+        // But this is a non-collective call and initializing the dataset is
+        // collective in HDF5 So we do this only in backends that actually
+        // support the Span API (i.e. ADIOS2) which do not share this
+        // restriction
+        // TODO: Add some form of collective ::commitDefinitions() call to
+        // RecordComponents to be called by users before the Span API
+        if (!written())
+        {
+            /*
+             * The openPMD backend might not yet know about this dataset.
+             * Flush the openPMD hierarchy to the backend without flushing any
+             * actual data yet.
+             */
+            seriesFlush_impl</* flush_entire_series = */ false>(
+                {FlushLevel::SkeletonOnly});
+            Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
+            dCreate.name = Attributable::get().m_writable.ownKeyWithinParent;
+            IOHandler()->enqueue(IOTask(this, dCreate));
+
+            setWritten(true, EnqueueAsynchronously::OnlyAsync);
+        }
+
+        IOHandler()->enqueue(IOTask(this, getBufferView));
+        IOHandler()->flush(internal::defaultFlushParams);
+    }
+
+    // The backend might still refuse the operation even if backend managed
+    // buffers are generally supported, so check again
+    if (!getBufferView.out->backendManagedBuffer)
     {
         // note that data might have either
         // type shared_ptr<T> or shared_ptr<T[]>
         auto data = std::forward<F>(createBuffer)(size);
-        out.ptr = static_cast<void *>(data.get());
+        getBufferView.out->ptr = static_cast<void *>(data.get());
         if (size > 0)
         {
             storeChunk(std::move(data), std::move(o), std::move(e));

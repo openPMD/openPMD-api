@@ -571,6 +571,11 @@ void Series::flushRankTable()
                 [asRawPtr](char *) { delete asRawPtr; }};
             writeDataset(std::move(put), /* num_lines = */ size);
         }
+
+        // Must ensure that the Writable is consistently set to written on all
+        // ranks
+        series.m_rankTable.m_attributable.setWritten(
+            true, EnqueueAsynchronously::OnlyAsync);
         return;
     }
 #endif
@@ -1503,9 +1508,9 @@ void Series::flushFileBased(
                  * current iteration by the backend)
                  */
                 this->setWritten(
-                    false, Attributable::EnqueueAsynchronously::Yes);
+                    false, Attributable::EnqueueAsynchronously::Both);
                 series.iterations.setWritten(
-                    false, Attributable::EnqueueAsynchronously::Yes);
+                    false, Attributable::EnqueueAsynchronously::Both);
 
                 setDirty(dirty() || it->second.dirty());
                 std::string filename = iterationFilename(it->first);
@@ -1950,12 +1955,11 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 
     readBase();
 
-    using DT = Datatype;
     aRead.name = "iterationEncoding";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
     IterationEncoding encoding_out;
-    if (*aRead.dtype == DT::STRING)
+    if (isSame(*aRead.dtype, Datatype::STRING))
     {
         std::string encoding = Attribute(Attribute::from_any, *aRead.m_resource)
                                    .get<std::string>();
@@ -1997,7 +2001,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         setIterationEncoding_internal(
             encoding_out, internal::default_or_explicit::explicit_);
-        setWritten(old_written, Attributable::EnqueueAsynchronously::Yes);
+        setWritten(old_written, Attributable::EnqueueAsynchronously::Both);
     }
     else
         throw std::runtime_error(
@@ -2010,7 +2014,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     aRead.name = "iterationFormat";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush(internal::defaultFlushParams);
-    if (*aRead.dtype == DT::STRING)
+    if (isSame(*aRead.dtype, Datatype::STRING))
     {
         setWritten(false, Attributable::EnqueueAsynchronously::No);
         setIterationFormat(Attribute(Attribute::from_any, *aRead.m_resource)
@@ -2604,16 +2608,25 @@ std::string Series::iterationFilename(IterationIndex_t i)
 Series::iterations_iterator Series::indexOf(Iteration const &iteration)
 {
     auto &series = get();
-    for (auto it = series.iterations.begin(); it != series.iterations.end();
-         ++it)
+    // first try the cached index; if it points to the correct entry return it
+    auto idx = iteration.get().m_iterationIndex;
+    if (!idx.has_value())
     {
-        if (&it->second.Attributable::get() == &iteration.Attributable::get())
-        {
-            return it;
-        }
+        throw error::Internal("Iteration index not known.");
     }
-    throw std::runtime_error(
-        "[Iteration::close] Iteration not found in Series.");
+
+    auto it = series.iterations.find(*idx);
+    if (it != series.iterations.end() &&
+        &it->second.Attributable::get() == &iteration.Attributable::get())
+    {
+        return it;
+    }
+    else
+    {
+        throw error::Internal(
+            "Iteration " + std::to_string(*idx) +
+            " no longer known by the Series?");
+    }
 }
 
 AdvanceStatus Series::advance(

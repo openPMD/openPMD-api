@@ -68,6 +68,20 @@ bool file_exists(std::string const &path)
 
 std::vector<std::string> list_directory(std::string const &path)
 {
+    auto res = list_directory_nothrow(path);
+    if (!res)
+    {
+        throw std::system_error(std::error_code(errno, std::system_category()));
+    }
+    else
+    {
+        return *res;
+    }
+}
+
+std::optional<std::vector<std::string>>
+list_directory_nothrow(std::string const &path)
+{
     std::vector<std::string> ret;
 #ifdef _WIN32
     std::string pattern(path);
@@ -86,7 +100,9 @@ std::vector<std::string> list_directory(std::string const &path)
 #else
     auto directory = opendir(path.c_str());
     if (!directory)
-        throw std::system_error(std::error_code(errno, std::system_category()));
+    {
+        return std::nullopt;
+    }
     dirent *entry;
     while ((entry = readdir(directory)) != nullptr)
         if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
@@ -95,6 +111,46 @@ std::vector<std::string> list_directory(std::string const &path)
 #endif
     return ret;
 }
+
+#ifndef _WIN32
+// Need to manually preserve sticky bit and setgid on Unix systems
+namespace
+{
+    std::string get_parent(std::string const &path)
+    {
+        std::string parent = path;
+        size_t pos = parent.find_last_of(directory_separator);
+        if (pos != std::string::npos)
+        {
+            parent = parent.substr(0, pos);
+            if (parent.empty())
+                parent = "/";
+        }
+        else
+        {
+            parent.clear();
+        }
+        return parent;
+    }
+
+    mode_t get_permissions(std::string const &path)
+    {
+        std::string parent = get_parent(path);
+        if (parent.empty() || !directory_exists(parent))
+        {
+            return 0;
+        }
+
+        struct stat s;
+        if (stat(parent.c_str(), &s) != 0)
+        {
+            return 0;
+        }
+
+        return s.st_mode & 07777;
+    }
+} // namespace
+#endif
 
 bool create_directories(std::string const &path)
 {
@@ -106,10 +162,11 @@ bool create_directories(std::string const &path)
         return CreateDirectory(p.c_str(), nullptr);
     };
 #else
-    mode_t mask = umask(0);
-    umask(mask);
-    auto mk = [mask](std::string const &p) -> bool {
-        return (0 == mkdir(p.c_str(), 0777 & ~mask));
+    auto mk = [](std::string const &p) -> bool {
+        // preserve sticky and setgid from parent
+        mode_t parentPerms =
+            get_permissions(get_parent(p)) & (S_ISVTX | S_ISGID);
+        return (0 == mkdir(p.c_str(), 0777 | parentPerms));
     };
 #endif
     std::istringstream ss(path);
@@ -150,14 +207,20 @@ bool remove_directory(std::string const &path)
         return (0 == remove(p.c_str()));
     };
 #endif
-    for (auto const &entry : list_directory(path))
+    auto entries = list_directory_nothrow(path);
+    // Check if some other process was faster deleting this
+    if (entries)
     {
-        auto partialPath = path;
-        partialPath.append(std::string(1, directory_separator)).append(entry);
-        if (directory_exists(partialPath))
-            success &= remove_directory(partialPath);
-        else if (file_exists(partialPath))
-            success &= remove_file(partialPath);
+        for (auto const &entry : *entries)
+        {
+            auto partialPath = path;
+            partialPath.append(std::string(1, directory_separator))
+                .append(entry);
+            if (directory_exists(partialPath))
+                success &= remove_directory(partialPath);
+            else if (file_exists(partialPath))
+                success &= remove_file(partialPath);
+        }
     }
     success &= del(path);
     return success;

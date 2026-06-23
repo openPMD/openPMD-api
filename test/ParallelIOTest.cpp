@@ -33,7 +33,8 @@
 #include "openPMD/openPMD.hpp"
 // @todo change includes
 #include "openPMD/auxiliary/OneDimensionalBlockSlicer.hpp"
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #if !openPMD_HAVE_MPI
 TEST_CASE("none", "[parallel]")

@@ -1,7 +1,66 @@
 .. _install-changelog:
 
 Changelog
-=========
+==========
+
+0.17.1
+------
+**Date:** 2026-06-22
+
+Performance and Correctness Updates
+
+This patch release improves performance in backends (ADIOS2, HDF5) and addresses
+regressions in the front-end APIs.
+
+Bug Fixes
+"""""""""
+
+- ADIOS2:
+
+  - Flush dirty ADIOS2 files in sorted order (#1868)
+  - Keep written flag consistent across MPI ranks for rankTable (#1869)
+  - Fix parallel deletion (#1858)
+  - Do not flush if the backend does not support Span API (#1863)
+  - Enable stats by default, starting ADIOS2 v2.12.0 (#1877)
+  - Forbid slashes in attribute and variable names (#1884)
+- HDF5:
+
+  - Execute close operations also upon failure (#1866 #1870 #1872)
+- API:
+
+  - Cache Iteration indexes instead of computing them on the spot (#1860 #1873)
+  - Harmonize Datatype equality checks (#1854)
+  - create_directories: preserve sticky and setgid permissions (#1855)
+  - Fix removed C++20 return type in ``InvalidatableFile.hpp`` (#1888)
+
+Other
+"""""
+
+- Python:
+
+  - Fix keep_alive specifications, add tests for keep_alive (#1851)
+  - Remove duplicate Python test (#1867)
+  - Reacquire GIL for deallocation operations (#1878)
+  - Remove stray reference count leading to potential resource leaks (#1879)
+  - Accept only C-contiguous arrays, not Fortran contiguous (#1886)
+  - ``setup.py``: License SPDX warning (#1890)
+- Dependencies:
+
+  - Version bump toml11 to recent main branch (b32a2fff0d27e1f7522f26a125101500ddb47156), nlohmann_json to 3.12.0 (#1842 #1874)
+  - Version bump pybind11 -> 3.0.2 (#1849)
+- CI/Infrastructure:
+
+  - Fix AppVeyor 64bit build (#1832)
+  - Fix Windows MSVC pip build on VS 2026 runner (#1889)
+  - Bump ``actions/checkout`` from 6 to 7 (#1887)
+- Tests:
+
+  - Migrate C++ tests to Catch2 v3 (#1823 #1875)
+
+- Documentation:
+
+  - Fix official spelling of CASUS in acknowledgements (#1883)
+
 
 0.17.0
 ------

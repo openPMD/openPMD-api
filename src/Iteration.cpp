@@ -59,6 +59,16 @@ Iteration::Iteration() : Attributable(NoInit())
     particles.writable().ownKeyWithinParent = "particles";
 }
 
+uint64_t Iteration::getCachedIterationIndex() const
+{
+    auto idx = get().m_iterationIndex;
+    if (!idx.has_value())
+    {
+        throw error::Internal("Iteration index not known.");
+    }
+    return *idx;
+}
+
 template <typename T>
 Iteration &Iteration::setTime(T newTime)
 {
@@ -246,7 +256,7 @@ void Iteration::flushFileBased(
          * If it was written before, then in the context of another iteration.
          */
         auto &attr = s.get().m_rankTable.m_attributable;
-        attr.setWritten(false, Attributable::EnqueueAsynchronously::Yes);
+        attr.setWritten(false, Attributable::EnqueueAsynchronously::Both);
         s.get()
             .m_rankTable.m_attributable.get()
             .m_writable.abstractFilePosition.reset();
@@ -841,7 +851,7 @@ auto Iteration::beginStep(
     {
         bool previous = series.iterations.written();
         series.iterations.setWritten(
-            false, Attributable::EnqueueAsynchronously::Yes);
+            false, Attributable::EnqueueAsynchronously::Both);
         auto oldStatus = IOHandl->m_seriesStatus;
         IOHandl->m_seriesStatus = internal::SeriesStatus::Parsing;
         try
@@ -858,7 +868,7 @@ auto Iteration::beginStep(
         }
         IOHandl->m_seriesStatus = oldStatus;
         series.iterations.setWritten(
-            previous, Attributable::EnqueueAsynchronously::Yes);
+            previous, Attributable::EnqueueAsynchronously::Both);
     }
     else if (thisObject.has_value())
     {

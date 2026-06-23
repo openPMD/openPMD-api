@@ -518,11 +518,17 @@ void init_Attributable(py::module &m)
             })
         .def(
             "series_flush",
-            py::overload_cast<std::string>(&Attributable::seriesFlush),
+            [](Attributable &attr, std::string const &backend_config) {
+                py::gil_scoped_release release_gil;
+                attr.seriesFlush(backend_config);
+            },
             py::arg("backend_config") = "{}")
         .def(
             "iteration_flush",
-            py::overload_cast<std::string>(&Attributable::iterationFlush),
+            [](Attributable &attr, std::string const &backend_config) {
+                py::gil_scoped_release release_gil;
+                attr.iterationFlush(backend_config);
+            },
             py::arg("backend_config") = "{}")
 
         .def_property_readonly(
@@ -618,7 +624,9 @@ void init_Attributable(py::module &m)
             "get_attribute",
             [](Attributable &attr, std::string const &key) {
                 auto v = attr.getAttribute(key);
-                return v.getVariant<attribute_types>();
+                return std::visit(
+                    [](auto const &val) { return py::cast(val); },
+                    v.getVariant<attribute_types>());
                 // TODO instead of returning lists, return all arrays (ndim > 0)
                 // as numpy arrays?
             })

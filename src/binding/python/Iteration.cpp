@@ -82,11 +82,10 @@ void init_Iteration(py::module &m)
             })
         .def(
             "close",
-            /*
-             * Cannot release the GIL here since Python buffers might be
-             * accessed in deferred tasks
-             */
-            &Iteration::close,
+            [](Iteration &iteration, bool flush) {
+                py::gil_scoped_release release_gil;
+                iteration.close(flush);
+            },
             py::arg("flush") = true)
 
         // TODO remove in future versions (deprecated)
@@ -94,18 +93,22 @@ void init_Iteration(py::module &m)
         .def("set_dt", &Iteration::setDt<double>)
         .def("set_time_unit_SI", &Iteration::setTimeUnitSI)
 
-        .def_readwrite(
+        .def_property_readonly(
             "meshes",
-            &Iteration::meshes,
-            py::return_value_policy::copy,
-            // garbage collection: return value must be freed before Iteration
-            py::keep_alive<1, 0>())
-        .def_readwrite(
+            py::cpp_function(
+                [](Iteration &i) { return i.meshes; },
+                py::return_value_policy::copy,
+                // garbage collection: return value must be freed before
+                // Iteration
+                py::keep_alive<0, 1>()))
+        .def_property_readonly(
             "particles",
-            &Iteration::particles,
-            py::return_value_policy::copy,
-            // garbage collection: return value must be freed before Iteration
-            py::keep_alive<1, 0>());
+            py::cpp_function(
+                [](Iteration &i) { return i.particles; },
+                py::return_value_policy::copy,
+                // garbage collection: return value must be freed before
+                // Iteration
+                py::keep_alive<0, 1>()));
 
     add_pickle(
         cl, [](openPMD::Series series, std::vector<std::string> const &group) {
