@@ -297,6 +297,14 @@ endif()
 #         The following configuration files were considered but not accepted:
 #         ../share/cmake/hdf5/hdf5-config.cmake, version: 1.10.7
 #     - thus, we do our own HDF5_VERSION check...
+# external library: ZLIB (work-around for an upstream HDF5 packaging issue)
+#   Static build of HDF5 forget to do `find_dependency(ZLIB) in their
+#   CMake config, but expose them in INTERFACE_LINK_LIBRARIES. Thus,
+#   find_package(HDF5) fails. ZLIB is optional but usually used by HDF5.
+if(HDF5_USE_STATIC_LIBRARIES AND NOT TARGET ZLIB::ZLIB)
+    find_package(ZLIB QUIET)
+endif()
+
 if(openPMD_USE_HDF5 STREQUAL AUTO)
     set(HDF5_PREFER_PARALLEL ${openPMD_HAVE_MPI})
     find_package(HDF5 COMPONENTS C)
