@@ -18,6 +18,9 @@ env:
     - CIBW_ENVIRONMENT="HDF5_USE_STATIC_LIBRARIES='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS1='ON'" openPMD_CMAKE_openPMD_USE_ADIOS2='ON'"
     # Show a bit more output (pip -v)
     - CIBW_BUILD_VERBOSITY="1"
+    # Runtime smoke test (aarch64/ppc64le run natively on Travis hardware)
+    - CIBW_TEST_REQUIRES="numpy"
+    - CIBW_TEST_COMMAND="python -c \"import openpmd_api as io; v=io.variants; assert v['hdf5'] and v['adios2'] and v['json'], v; print(io.__version__, dict(v))\""
 
 jobs:
   include:
