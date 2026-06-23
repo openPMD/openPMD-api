@@ -3,6 +3,7 @@ import platform
 import re
 import subprocess
 import sys
+import sysconfig
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -45,14 +46,28 @@ class CMakeBuild(build_ext):
             extdir += os.path.sep
 
         pyv = sys.version_info
-        cmake_args = [
-            # Python: use the calling interpreter in CMake
-            # https://cmake.org/cmake/help/latest/module/FindPython.html#hints
-            # https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-version-selection
-            '-DPython_ROOT_DIR=' + sys.prefix,
-            f'-DPython_FIND_VERSION={pyv.major}.{pyv.minor}.{pyv.micro}',
-            '-DPython_FIND_VERSION_EXACT=TRUE',
-            '-DPython_FIND_STRATEGY=LOCATION',
+        # cross-compiling (e.g. Pyodide)? host & target Python differ
+        emscripten = sysconfig.get_platform().startswith('emscripten')
+        cmake_args = []
+        # FindPython: pin to the calling interpreter unless the caller
+        # overrides via openPMD_CMAKE_Python_*. Cross builds keep these host
+        # hints (to resolve the interpreter/library for Development.Module),
+        # but override the target headers (below) and relax the exact-version
+        # match. See:
+        #   https://cmake.org/cmake/help/latest/module/FindPython.html#hints
+        if emscripten or not \
+                any(k.startswith('openPMD_CMAKE_Python_') for k in os.environ):
+            cmake_args += [
+                '-DPython_ROOT_DIR=' + sys.prefix,
+                f'-DPython_FIND_VERSION={pyv.major}.{pyv.minor}.{pyv.micro}',
+                '-DPython_FIND_VERSION_EXACT=' + (
+                    'FALSE' if emscripten else 'TRUE'),
+                '-DPython_FIND_STRATEGY=LOCATION',
+            ]
+        if emscripten:
+            cmake_args += ['-DPython_INCLUDE_DIR='
+                           + sysconfig.get_config_var('INCLUDEPY')]
+        cmake_args += [
             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' +
             os.path.join(extdir, "openpmd_api"),
             # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
