@@ -108,9 +108,9 @@ exit /b 0
     -DPIGZ_ENABLE_TESTS=OFF     ^
     -DZLIB_ENABLE_TESTS=OFF     ^
     -DZLIBNG_ENABLE_TESTS=OFF   ^
-    -DDEACTIVATE_AVX512=ON
-::    -DPREFER_EXTERNAL_ZLIB=ON   ^
-::    -DZLIB_USE_STATIC_LIBS=ON
+    -DDEACTIVATE_AVX512=ON       ^
+    -DPREFER_EXTERNAL_ZLIB=ON    ^
+    -DZLIB_USE_STATIC_LIBS=ON
   if errorlevel 1 exit 1
 
   cmake --build build-blosc2 --config Release --parallel %CPU_COUNT%
@@ -248,7 +248,7 @@ exit /b 0
   powershell Expand-Archive zlib-1.3.1.zip -DestinationPath dep-zlib
 
   cmake -S dep-zlib/zlib-1.3.1 -B build-zlib ^
-    -DBUILD_SHARED_LIBS=ON ^
+    -DBUILD_SHARED_LIBS=OFF ^
     -DCMAKE_BUILD_TYPE=Release
   if errorlevel 1 exit 1
 :: Manually-specified variables were not used by the project:
@@ -260,10 +260,15 @@ exit /b 0
   cmake --build build-zlib --target install --config Release
   if errorlevel 1 exit 1
 
-  set "zlib_dll=%BUILD_PREFIX:~1,-1%/zlib/bin/zlib1.dll"
+:: zlib builds shared libs even with BUILD_SHARED_LIBS=OFF
+:: drop dll + import lib to force static libs are picked up
+  set "zlib_dll=%BUILD_PREFIX:~1,-1%/zlib/bin/zlib.dll"
   set "zlib_dll=%zlib_dll:/=\%"
-  del "%zlib_dll%"
-  if errorlevel 1 exit 1
+  if exist "%zlib_dll%" del "%zlib_dll%"
+
+  set "zlib_implib=%BUILD_PREFIX:~1,-1%/zlib/lib/zlib.lib"
+  set "zlib_implib=%zlib_implib:/=\%"
+  if exist "%zlib_implib%" del "%zlib_implib%"
 
   rmdir /s /q build-zlib
   if errorlevel 1 exit 1
