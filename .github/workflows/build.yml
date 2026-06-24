@@ -129,10 +129,6 @@ jobs:
         # (1) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
         CIBW_SKIP: "pp*-manylinux*"
-        # TEMP: cp310 only, fast verification that disabling ADIOS2's OpenSSL
-        # (libssl-3/libcrypto-3 were the unbundled missing DLLs) fixes the
-        # Windows import with no wheel repair. REVERT to the full matrix once green.
-        CIBW_BUILD: "cp310-*"
         CIBW_ARCHS: "${{ matrix.arch }}"
         CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
         # Install dependencies
@@ -161,9 +157,6 @@ jobs:
           print('openPMD', io.__version__, dict(v))"
         # Show a bit more output (pip -v)
         CIBW_BUILD_VERBOSITY: 1
-        # TEMP diagnostic: delvewheel repair was pathologically slow (~45 min);
-        # disabled so the unrepaired wheel uploads quickly for local DLL analysis.
-        CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ""
       run: |
         cd src
         python -m pip install --upgrade pip setuptools wheel
