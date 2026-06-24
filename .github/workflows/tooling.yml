@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Spack Cache
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with: {path: /opt/spack, key: clangtidy19_nopy_ompi_h5_ad2 }
     - name: Install
       run: |
@@ -49,7 +49,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Spack Cache
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with: {path: /opt/spack, key: clang19_nopy_ompi_h5_ad2 }
     - name: Install
       run: |
