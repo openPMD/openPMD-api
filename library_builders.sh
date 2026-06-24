@@ -414,7 +414,6 @@ if [ "${1:-}" = "wasm" ]; then
     export EMCMAKE="emcmake"
     export EMMAKE="emmake"
 
-    install_buildessentials
     install_pyessentials
     build_zlib
     build_hdf5_cmake
