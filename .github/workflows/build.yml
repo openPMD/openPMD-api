@@ -129,6 +129,11 @@ jobs:
         # (1) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
         CIBW_SKIP: "pp*-manylinux*"
+        # TEMP diagnostic: cp310 only (fast) + skip the Windows test so the
+        # unrepaired Windows wheel still uploads as an artifact for local DLL
+        # dependency analysis. REVERT once the DLL issue is understood.
+        CIBW_BUILD: "cp310-*"
+        CIBW_TEST_SKIP: "*-win_amd64 *-win32"
         CIBW_ARCHS: "${{ matrix.arch }}"
         CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
         # Install dependencies
@@ -157,11 +162,9 @@ jobs:
           print('openPMD', io.__version__, dict(v))"
         # Show a bit more output (pip -v)
         CIBW_BUILD_VERBOSITY: 1
-        # Windows has no default wheel-repair step, so non-system runtime DLLs
-        # (e.g. the MSVC C++ runtime the ADIOS2-enabled extension pulls in) are
-        # never bundled -> "DLL load failed" on import. delvewheel vendors them
-        # (it is not auto-installed, so install it inline); -v prints the tree.
-        CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "pip install delvewheel && delvewheel repair -v -w {dest_dir} {wheel}"
+        # TEMP diagnostic: delvewheel repair was pathologically slow (~45 min);
+        # disabled so the unrepaired wheel uploads quickly for local DLL analysis.
+        CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ""
       run: |
         cd src
         python -m pip install --upgrade pip setuptools wheel
