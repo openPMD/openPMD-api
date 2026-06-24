@@ -3,8 +3,6 @@
 
 set -eu -o pipefail
 
-BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
-
 # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
 if [ "$(uname -s)" = "Darwin" ]
 then
@@ -17,12 +15,6 @@ fi
 
 # Common curl options: retry transient network/mirror failures (used everywhere).
 CURL_RETRY="--retry 5 --retry-delay 3"
-
-# CMake cross-compile wrappers: empty for native builds; the WASM/Emscripten
-# path below sets these to emcmake/emmake so shared builders (build_zlib) can
-# cross-compile to wasm32 without a separate copy of the function.
-EMCMAKE=""
-EMMAKE=""
 
 function install_buildessentials {
     if [ -e buildessentials-stamp ]; then return; fi
@@ -75,12 +67,18 @@ function install_buildessentials {
         rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
     fi
 
+    touch buildessentials-stamp
+}
+
+function install_pyessentials {
+    if [ -e pyessentials-stamp ]; then return; fi
+
     python3 -m pip install -U pip setuptools wheel
     python3 -m pip install -U scikit-build
     python3 -m pip install -U cmake
     python3 -m pip install -U "patch==1.*"
 
-    touch buildessentials-stamp
+    touch pyessentials-stamp
 }
 
 function build_adios2 {
@@ -408,51 +406,46 @@ function build_hdf5_cmake {
     touch hdf5-stamp
 }
 
-# ---------------------------------------------------------------------------
-# WASM / Emscripten (Pyodide) cross-compilation path.
-#   Invoked as:  bash library_builders.sh wasm
-# Only HDF5 (+ zlib) is cross-compiled; the JSON/TOML backends are header-only
-# and ADIOS2 is intentionally not built for WASM (yet).
-# ---------------------------------------------------------------------------
 if [ "${1:-}" = "wasm" ]; then
-    # The Emscripten toolchain (emcc/em++/emcmake/emmake/em-config) is provided
-    # by cibuildwheel's pyodide xbuildenv and is expected to be on PATH here.
-    python3 -m pip install -U pip setuptools wheel
-    python3 -m pip install -U cmake
-    python3 -m pip install -U "patch==1.*"
-
-    # Install cross-compiled deps into the Emscripten sysroot so that the
-    # openPMD-api build's find_package(HDF5)/find_package(ZLIB) resolve them.
-    BUILD_PREFIX="$(em-config CACHE)/sysroot"
+    # Install cross-compiled deps into the Emscripten sysroot
+    export BUILD_PREFIX="$(em-config CACHE)/sysroot"
 
     # cross-compile the shared builders (build_zlib) for wasm32
-    EMCMAKE="emcmake"
-    EMMAKE="emmake"
+    export EMCMAKE="emcmake"
+    export EMMAKE="emmake"
 
+    install_buildessentials
+    install_pyessentials
     build_zlib
     build_hdf5_cmake
+else
+    # Installation base path of all deps
+    export BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
 
-    exit 0
+    # CMake cross-compile wrappers for Emscripten are empty for native builds
+    export EMCMAKE=""
+    export EMMAKE=""
+
+    # static libs need relocatable symbols for linking to shared python lib
+    export CFLAGS+=" -fPIC"
+    export CXXFLAGS+=" -fPIC"
+
+    # compiler hints for macOS cross-compiles
+    #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        export CC="/usr/bin/clang"
+        export CXX="/usr/bin/clang++"
+        export CFLAGS+=" -arch arm64"
+        export CPPFLAGS+=" -arch arm64"
+        export CXXFLAGS+=" -arch arm64"
+    fi
+
+    install_buildessentials
+    install_pyessentials
+    build_zlib
+    build_sqlite
+    build_zfp
+    build_blosc2
+    build_hdf5
+    build_adios2
 fi
-
-# static libs need relocatable symbols for linking to shared python lib
-export CFLAGS+=" -fPIC"
-export CXXFLAGS+=" -fPIC"
-
-# compiler hints for macOS cross-compiles
-#   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
-if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
-    export CC="/usr/bin/clang"
-    export CXX="/usr/bin/clang++"
-    export CFLAGS+=" -arch arm64"
-    export CPPFLAGS+=" -arch arm64"
-    export CXXFLAGS+=" -arch arm64"
-fi
-
-install_buildessentials
-build_zlib
-build_sqlite
-build_zfp
-build_blosc2
-build_hdf5
-build_adios2
