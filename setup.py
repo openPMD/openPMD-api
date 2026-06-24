@@ -171,13 +171,23 @@ CMAKE_INTERPROCEDURAL_OPTIMIZATION = os.environ.get(
 
 # extra CMake arguments
 extra_cmake_args = []
+# Pass openPMD_CMAKE_<CMakeVar>=<value> environment variables through as -D
+# flags. Windows environment variable are all CAPS, so also accept the
+# all-caps variant of the prefix, then the openPMD_ CMake option names are case-
+# sensitive, so restore the "openPMD_" prefix that upper-casing would destroy.
+# All suffixes of our options are luckily ..._ALL_CAPS anyway.
+extra_cmake_args_prefix = "openPMD_CMAKE_"
 for k, v in os.environ.items():
-    extra_cmake_args_prefix = "openPMD_CMAKE_"
-    if k.startswith(extra_cmake_args_prefix) and \
-       len(k) > len(extra_cmake_args_prefix):
-        extra_cmake_args.append("-D{0}={1}".format(
-            k[len(extra_cmake_args_prefix):],
-            v))
+    if k.startswith(extra_cmake_args_prefix):
+        cmake_var = k[len(extra_cmake_args_prefix):]
+    elif k.startswith(extra_cmake_args_prefix.upper()):
+        cmake_var = k[len(extra_cmake_args_prefix):]
+        if cmake_var.startswith("OPENPMD_"):
+            cmake_var = "openPMD_" + cmake_var[len("openPMD_"):]
+    else:
+        continue
+    if cmake_var:
+        extra_cmake_args.append("-D{0}={1}".format(cmake_var, v))
 
 # https://cmake.org/cmake/help/v3.0/command/if.html
 if openPMD_USE_MPI.upper() in ['1', 'ON', 'TRUE', 'YES']:
