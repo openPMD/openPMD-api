@@ -129,11 +129,10 @@ jobs:
         # (1) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
         CIBW_SKIP: "pp*-manylinux*"
-        # TEMP diagnostic: cp310 only (fast) + skip the Windows test so the
-        # unrepaired Windows wheel still uploads as an artifact for local DLL
-        # dependency analysis. REVERT once the DLL issue is understood.
+        # TEMP: cp310 only, fast verification that disabling ADIOS2's OpenSSL
+        # (libssl-3/libcrypto-3 were the unbundled missing DLLs) fixes the
+        # Windows import with no wheel repair. REVERT to the full matrix once green.
         CIBW_BUILD: "cp310-*"
-        CIBW_TEST_SKIP: "*-win_amd64 *-win32"
         CIBW_ARCHS: "${{ matrix.arch }}"
         CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
         # Install dependencies
