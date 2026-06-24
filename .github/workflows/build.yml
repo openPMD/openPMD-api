@@ -157,6 +157,11 @@ jobs:
           print('openPMD', io.__version__, dict(v))"
         # Show a bit more output (pip -v)
         CIBW_BUILD_VERBOSITY: 1
+        # Windows has no default wheel-repair step, so non-system runtime DLLs
+        # (e.g. the MSVC C++ runtime the ADIOS2-enabled extension pulls in) are
+        # never bundled -> "DLL load failed" on import. delvewheel vendors them;
+        # -v prints the dependency tree.
+        CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -v -w {dest_dir} {wheel}"
       run: |
         cd src
         python -m pip install --upgrade pip setuptools wheel
