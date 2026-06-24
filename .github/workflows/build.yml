@@ -151,7 +151,11 @@ jobs:
         # cibuildwheel auto-skips this for wheels it cannot run on the host
         # (true cross-compiles); every arch in this matrix runs natively.
         CIBW_TEST_REQUIRES: numpy
+        # Pre-import check: dump the extension's (transitive) shared-library
+        # dependencies and flag non-system/unbundled ones (see check_wheel_libs.py),
+        # then run the import test. Non-fatal by default; the import is the gate.
         CIBW_TEST_COMMAND: >
+          python {project}/.github/check_wheel_libs.py &&
           python -c "import openpmd_api as io; v = io.variants;
           assert v['hdf5'] and v['adios2'] and v['json'], v;
           print('openPMD', io.__version__, dict(v))"
@@ -253,7 +257,11 @@ jobs:
         # venv against the freshly built wheel, so it actually executes the wasm
         # module and asserts the built-in backends (verified locally).
         CIBW_TEST_REQUIRES_PYODIDE: numpy
+        # Pre-import dependency dump (best-effort: the Pyodide/node test sandbox
+        # may not reach the host script path, and the wasm module is statically
+        # linked, so this is non-blocking), then the import test.
         CIBW_TEST_COMMAND_PYODIDE: >
+          python {project}/.github/check_wheel_libs.py || true;
           python -c "import openpmd_api as io; v = io.variants;
           assert v['hdf5'] and v['json'] and not v['adios2'], v;
           print('openPMD-WASM', io.__version__, dict(v))"

@@ -20,7 +20,7 @@ env:
     - CIBW_BUILD_VERBOSITY="1"
     # Runtime smoke test (aarch64/ppc64le run natively on Travis hardware)
     - CIBW_TEST_REQUIRES="numpy"
-    - CIBW_TEST_COMMAND="python -c \"import openpmd_api as io; v=io.variants; assert v['hdf5'] and v['adios2'] and v['json'], v; print(io.__version__, dict(v))\""
+    - CIBW_TEST_COMMAND="python {project}/.github/check_wheel_libs.py && python -c \"import openpmd_api as io; v=io.variants; assert v['hdf5'] and v['adios2'] and v['json'], v; print(io.__version__, dict(v))\""
 
 jobs:
   include:
