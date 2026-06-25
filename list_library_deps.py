@@ -216,6 +216,10 @@ _SYS_PREFIXES = (
 
 
 def is_system(name):
+    # macOS system dylibs live in the dyld shared cache (not on-disk files),
+    # so they cannot be located by stat(); treat the system locations as system.
+    if name.startswith(("/usr/lib/", "/System/Library/")):
+        return True
     base = os.path.basename(name).lower()
     return any(base.startswith(p) for p in _SYS_PREFIXES)
 
