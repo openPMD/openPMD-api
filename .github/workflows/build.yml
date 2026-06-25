@@ -100,7 +100,6 @@ jobs:
     - name: Install cibuildwheel
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        # 4.1.0 ships Pyodide 314.0.0 (CPython 3.14) for the wasm32 build
         python -m pip install cibuildwheel==4.1.0
 
     # Source patches not (yet) in the built release tag. Each is a standalone
@@ -139,14 +138,24 @@ jobs:
         # Pyodide overrides with HDF5 + header-only JSON/TOML only (no ADIOS2/MPI);
         # its static HDF5/zlib live in the Emscripten sysroot and the patched
         # setup.py points FindPython at the cross sysconfig include dir.
-        CIBW_ENVIRONMENT: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
-        CIBW_ENVIRONMENT_WINDOWS: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON' CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/SQLite3;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
+        CIBW_ENVIRONMENT: >
+          HDF5_USE_STATIC_LIBRARIES='ON'
+          ZLIB_USE_STATIC_LIBS='ON'
+          ADIOS_USE_STATIC_LIBS='ON'
+          openPMD_CMAKE_openPMD_USE_HDF5='ON'
+          openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
         CIBW_ENVIRONMENT_PYODIDE: >
           openPMD_CMAKE_openPMD_USE_HDF5='ON'
           openPMD_CMAKE_openPMD_USE_ADIOS2='OFF'
           openPMD_USE_MPI='OFF'
           HDF5_USE_STATIC_LIBRARIES='ON'
           ZLIB_USE_STATIC_LIBS='ON'
+        CIBW_ENVIRONMENT_WINDOWS: >
+          HDF5_USE_STATIC_LIBRARIES='ON'
+          ZLIB_USE_STATIC_LIBS='ON'
+          openPMD_CMAKE_openPMD_USE_HDF5='ON'
+          openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
+          CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/SQLite3;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
         # Fully static link => pyodide needs no wheel-repair step
         CIBW_REPAIR_WHEEL_COMMAND_PYODIDE: ""
         # C++17 on macOS: deployment target per arch (arm64 needs 11.0+)
@@ -157,7 +166,8 @@ jobs:
         CMAKE_GENERATOR_PLATFORM: "${{ matrix.env.CMAKE_GENERATOR_PLATFORM }}"
         # Pre-import smoke test: dump the extension's (transitive) shared-library
         # dependencies + flag non-system/unbundled ones (check_wheel_libs.py),
-        # then import and assert the backends. Non-fatal; the import is the gate.
+        # then import and assert the backends. Non-fatal, the import test is the
+        # actual success/failure test, and the print helps debugging it when needed.
         # Pyodide runs in a node sandbox -> best-effort `|| true`; native uses &&.
         CIBW_TEST_REQUIRES: numpy
         CIBW_TEST_REQUIRES_PYODIDE: numpy
