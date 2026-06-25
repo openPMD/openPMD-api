@@ -9,6 +9,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Per-entry knobs (all optional, sensible native defaults below):
+        #   pyodide      flag: artifact only, no PyPI publish
+        #   host_python  cibuildwheel host interpreter (default 3.11)
+        #   cibw         cibuildwheel version          (default 3.2.1)
+        #   platform     CIBW_PLATFORM                 (default auto)
+        #   build        CIBW_BUILD                    (default *, i.e. all)
+        #   patches      space-separated setup patches (default: Windows one)
         include:
           - os: ubuntu-22.04
             arch: "x86_64"
@@ -16,18 +23,8 @@ jobs:
           - os: ubuntu-22.04
             arch: "i686"
 
-          # builds faster on Travis-CI:
-          #- os: ubuntu-20.04
-          #  arch: "aarch64"
-
-          # builds faster on Travis-CI:
-          #- os: ubuntu-20.04
-          #  arch: "ppc64le"
-
-          # builds faster on Travis-CI:
-          # blocked by https://github.com/GTkorvo/dill/issues/15
-          #- os: ubuntu-20.04
-          #  arch: "s390x"
+          # builds faster on Travis-CI: aarch64, ppc64le, s390x
+          #   (s390x blocked by https://github.com/GTkorvo/dill/issues/15)
 
           # x86-64 (64bit)
           - os: windows-2022
@@ -45,26 +42,32 @@ jobs:
             env:
               MACOSX_DEPLOYMENT_TARGET: 15.0
 
-          # Apple Silicon M1/arm64/aarch64 builds:
+          # Apple Silicon M1/arm64/aarch64:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
-          #   https://github.com/pypa/cibuildwheel/pull/704
           - os: macos-14
             arch: "arm64"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
               MACOSX_DEPLOYMENT_TARGET: 14.0
 
-          # Apple universal builds that contain x86-64 and arm64 binary code
-          #   Needs extra treatment of all librarys that are not CMake
-          #   controlled the dependencies:
-          #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
-          # ADIOS1 tricky to build and HDF5 even with CMake as well (as of 1.12)
-          # We could build them twice and use `lipo` to combine the lib artifacts.
+          # Apple universal2 (x86-64 + arm64): non-CMake deps need lipo treatment
           #- os: macos-15-intel
           #  arch: "universal2"
           #  env:
           #    CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
           #    MACOSX_DEPLOYMENT_TARGET: 14.0
+
+          # Pyodide / WebAssembly (wasm32-emscripten), artifact only (no PyPI yet)
+          #   https://cibuildwheel.pypa.io/en/stable/platforms/#pyodide  (PEP 783)
+          # HDF5 + header-only JSON/TOML backends; ADIOS2 / MPI not built for WASM.
+          - os: ubuntu-24.04
+            arch: "wasm32"
+            pyodide: true
+            host_python: "3.12"   # cibuildwheel 4.x needs Python >= 3.11
+            cibw: "4.1.0"         # ships Pyodide 314.0.0 = CPython 3.14
+            platform: "pyodide"
+            build: "cp314-pyodide_wasm32"
+            patches: ".github/setup-py-crosscompile-python.patch .github/cmakelists-hdf5-zlib-workaround.patch"
 
     steps:
     - uses: actions/checkout@v4
@@ -79,88 +82,81 @@ jobs:
     - uses: actions/setup-python@v5
       name: Install Python
       with:
-        python-version: '3.11'
+        python-version: "${{ matrix.host_python || '3.11' }}"
 
     - name: Install cibuildwheel
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install cibuildwheel==3.2.1
+        python -m pip install cibuildwheel==${{ matrix.cibw || '3.2.1' }}
 
-    # 0.16.1.post1 bump
-#    - name: Download Patch 1/1
-#      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
-#      id: setupversion
-#      with:
-#        url: "https://github.com/openPMD/openPMD-api/commit/f94a1d48eefbc81784a9c25f61c913cf30fe2ece.patch"
-#        target: src/.patch/
-
-#    # Patch: Fix versioning
-#    - name: Download Patch 1/2
-#      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
-#      id: setupversion
-#      with:
-#        url: "https://github.com/openPMD/openPMD-api/pull/1680.patch"
-#        target: src/.patch/
-
-#    # Patch: PYBIND11_FINDPYTHON=ON
-#    - name: Download Patch 2/2
-#      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9  # 1.6.0
-#      id: setupfindpython
-#      with:
-#        url: "https://github.com/openPMD/openPMD-api/pull/1684.patch"
-#        target: src/.patch/
-
-#    - name: Apply Patches
-#      run: |
-#        cd src
-#        git apply .patch/f94a1d48eefbc81784a9c25f61c913cf30fe2ece.patch
-
-    # Honor the openPMD_CMAKE_* backend toggles on Windows, where os.environ
-    # upper-cases env var names (the generic prefix match would otherwise miss
-    # them). --ignore-whitespace tolerates the CRLF line endings the Windows
-    # runner checks out. This file is also a standalone openPMD-api dev PR.
+    # Source patches not (yet) in the built release tag. Each is a standalone
+    # openPMD-api dev-branch PR, except the wheels-only version bump (always
+    # applied last). matrix.patches selects the per-platform set:
+    #   native : setup-py-windows-cmake-options.patch (all-caps env on Windows)
+    #   pyodide: setup-py-crosscompile-python.patch   (cross-compile FindPython)
+    #            cmakelists-hdf5-zlib-workaround.patch (ZLIB::ZLIB for static HDF5)
     - name: Apply patches
+      shell: bash
       run: |
         cd src
-        git apply --ignore-whitespace .github/setup-py-windows-cmake-options.patch
-        # Wheels-only re-release: bump the package version (same source).
-        git apply --ignore-whitespace .github/setup-py-version-post1.patch
+        for p in ${{ matrix.patches || '.github/setup-py-windows-cmake-options.patch' }} .github/setup-py-version-post1.patch; do
+          git apply --ignore-whitespace "$p"
+        done
 
     - name: Build wheel
       env:
+        # platform + selection (native defaults: auto / all archs / all builds)
+        CIBW_PLATFORM: "${{ matrix.platform || 'auto' }}"
+        CIBW_ARCHS: "${{ matrix.arch }}"
+        CIBW_BUILD: "${{ matrix.build || '*' }}"
+        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
         # (1) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
         CIBW_SKIP: "pp*-manylinux*"
-        CIBW_ARCHS: "${{ matrix.arch }}"
-        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
-        # Install dependencies
+        # Install dependencies (per platform). WASM cross-compiles HDF5+zlib in
+        # BEFORE_BUILD (not BEFORE_ALL): the Emscripten toolchain is only on PATH
+        # after the pyodide xbuildenv is set up, and the same emsdk/sysroot is
+        # reused by the wheel build, so CMake's find_package finds the libs.
         CIBW_BEFORE_BUILD_LINUX: bash -x .github/library_builders.sh
         CIBW_BEFORE_BUILD_MACOS: bash -x .github/library_builders.sh
         CIBW_BEFORE_BUILD_WINDOWS: 'cmd /E:ON /V:ON /C .github\library_builders.bat'
-        # for the openPMD-api build, CMake shall search for
-        # static dependencies of HDF5 and ADIOS1 (see setup.py)
+        CIBW_BEFORE_BUILD_PYODIDE: bash -x .github/library_builders.sh wasm
+        # openPMD-api build: search for static HDF5/ADIOS2/zlib (see setup.py).
+        # Pyodide overrides with HDF5 + header-only JSON/TOML only (no ADIOS2/MPI);
+        # its static HDF5/zlib live in the Emscripten sysroot and the patched
+        # setup.py points FindPython at the cross sysconfig include dir.
         CIBW_ENVIRONMENT: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
         CIBW_ENVIRONMENT_WINDOWS: HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON' CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/SQLite3;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
-        # C++17 support in macOS 10.13+ (partial) and 10.14+ (std::visit) and 10.15+ (std::filesystem::path)
+        CIBW_ENVIRONMENT_PYODIDE: >
+          openPMD_CMAKE_openPMD_USE_HDF5='ON'
+          openPMD_CMAKE_openPMD_USE_ADIOS2='OFF'
+          openPMD_USE_MPI='OFF'
+          HDF5_USE_STATIC_LIBRARIES='ON'
+          ZLIB_USE_STATIC_LIBS='ON'
+        # Fully static link => pyodide needs no wheel-repair step
+        CIBW_REPAIR_WHEEL_COMMAND_PYODIDE: ""
+        # C++17 on macOS: deployment target per arch (arm64 needs 11.0+)
         #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
-        # arm64/aarch64 (M1/M2) requires 11.0+
         MACOSX_DEPLOYMENT_TARGET: "${{ matrix.env.MACOSX_DEPLOYMENT_TARGET }}"
         CMAKE_OSX_ARCHITECTURES: "${{ matrix.env.CMAKE_OSX_ARCHITECTURES }}"
-        # Windows cross-compilation
         CMAKE_GENERATOR: "${{ matrix.env.CMAKE_GENERATOR }}"
         CMAKE_GENERATOR_PLATFORM: "${{ matrix.env.CMAKE_GENERATOR_PLATFORM }}"
-        # Runtime smoke test: import the wheel and assert its backends.
-        # cibuildwheel auto-skips this for wheels it cannot run on the host
-        # (true cross-compiles); every arch in this matrix runs natively.
+        # Pre-import smoke test: dump the extension's (transitive) shared-library
+        # dependencies + flag non-system/unbundled ones (check_wheel_libs.py),
+        # then import and assert the backends. Non-fatal; the import is the gate.
+        # Pyodide runs in a node sandbox -> best-effort `|| true`; native uses &&.
         CIBW_TEST_REQUIRES: numpy
-        # Pre-import check: dump the extension's (transitive) shared-library
-        # dependencies and flag non-system/unbundled ones (see check_wheel_libs.py),
-        # then run the import test. Non-fatal by default; the import is the gate.
+        CIBW_TEST_REQUIRES_PYODIDE: numpy
         CIBW_TEST_COMMAND: >
           python {project}/.github/check_wheel_libs.py &&
           python -c "import openpmd_api as io; v = io.variants;
           assert v['hdf5'] and v['adios2'] and v['json'], v;
           print('openPMD', io.__version__, dict(v))"
+        CIBW_TEST_COMMAND_PYODIDE: >
+          python {project}/.github/check_wheel_libs.py || true;
+          python -c "import openpmd_api as io; v = io.variants;
+          assert v['hdf5'] and v['json'] and not v['adios2'], v;
+          print('openPMD-WASM', io.__version__, dict(v))"
         # Show a bit more output (pip -v)
         CIBW_BUILD_VERBOSITY: 1
       run: |
@@ -178,106 +174,10 @@ jobs:
         overwrite: true
 
     - name: Publish on pypi.org
-      if: github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels'
+      if: github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels' && !matrix.pyodide
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.pypa_gh_action_upload }}
       run: |
         python -m pip install -U twine
         python -m twine upload --skip-existing wheelhouse/*
-
-  # Experimental: Pyodide / WebAssembly (wasm32-emscripten) wheel.
-  #   https://cibuildwheel.pypa.io/en/stable/platforms/#pyodide
-  #   PyPI accepts these under the new `pyemscripten` tag (PEP 783).
-  # First test: HDF5 + (header-only) JSON/TOML backends only; ADIOS2 is not
-  # built for WASM yet. Uploaded as a GitHub artifact (no PyPI publish yet).
-  build_wheels_pyodide:
-    name: Build pyodide (WASM) wheel cp314
-    runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        path: 'src'
-        ref: '0.17.1'
-
-    - uses: actions/checkout@v4
-      with:
-        path: 'src/.github/'
-
-    - uses: actions/setup-python@v5
-      name: Install Python
-      with:
-        # host interpreter for cibuildwheel; 4.x needs Python 3.11+
-        python-version: '3.12'
-
-    - name: Install cibuildwheel
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        # 4.1.0 ships Pyodide 314.0.0 (CPython 3.14) by default
-        python -m pip install cibuildwheel==4.1.0
-
-    # Apply source patches that are not (yet) in the built release tag (mirrors
-    # the commented-out patch mechanism in the native job above). Each file is
-    # also the source for a standalone openPMD-api dev-branch PR:
-    #   setup-py-crosscompile-python.patch  - cross-compile-aware FindPython
-    #   cmakelists-hdf5-zlib-workaround.patch - define ZLIB::ZLIB for HDF5's
-    #                                           static CMake config package
-    - name: Apply patches
-      run: |
-        cd src
-        git apply .github/setup-py-crosscompile-python.patch
-        git apply .github/cmakelists-hdf5-zlib-workaround.patch
-        # Wheels-only re-release: bump the package version (same source).
-        git apply .github/setup-py-version-post1.patch
-
-    - name: Build wheel
-      env:
-        # Pyodide 314.0.0 => CPython 3.14 (default in cibuildwheel 4.1)
-        CIBW_PLATFORM: pyodide
-        CIBW_BUILD: "cp314-pyodide_wasm32"
-        # Cross-compile HDF5 (+ zlib) to WebAssembly before the wheel is built.
-        # NOTE: must be BEFORE_BUILD (not BEFORE_ALL): cibuildwheel only puts the
-        # Emscripten toolchain (emcc/emcmake/em-config) on PATH after it sets up
-        # the pyodide xbuildenv, which happens after before_all but before
-        # before_build. The same emsdk (and thus em-config CACHE sysroot) is used
-        # by the wheel build, so the installed HDF5/zlib are found by CMake.
-        CIBW_BEFORE_BUILD_PYODIDE: bash -x .github/library_builders.sh wasm
-        # openPMD-api: enable HDF5 + the header-only JSON/TOML backends; no
-        # ADIOS2, no MPI. Static HDF5/zlib are installed into the Emscripten
-        # sysroot, so CMake's find_package picks them up automatically.
-        #
-        # Python: the patched setup.py (see the "Apply patches" step) is
-        # cross-aware and points FindPython at the target's sysconfig include
-        # dir when building for Emscripten, so no Python env vars are needed.
-        CIBW_ENVIRONMENT_PYODIDE: >
-          openPMD_CMAKE_openPMD_USE_HDF5='ON'
-          openPMD_CMAKE_openPMD_USE_ADIOS2='OFF'
-          openPMD_USE_MPI='OFF'
-          HDF5_USE_STATIC_LIBRARIES='ON'
-          ZLIB_USE_STATIC_LIBS='ON'
-        # Fully static link => no wheel repair step needed
-        CIBW_REPAIR_WHEEL_COMMAND_PYODIDE: ""
-        # Runtime smoke test: cibuildwheel runs this inside a Pyodide (node)
-        # venv against the freshly built wheel, so it actually executes the wasm
-        # module and asserts the built-in backends (verified locally).
-        CIBW_TEST_REQUIRES_PYODIDE: numpy
-        # Pre-import dependency dump (best-effort: the Pyodide/node test sandbox
-        # may not reach the host script path, and the wasm module is statically
-        # linked, so this is non-blocking), then the import test.
-        CIBW_TEST_COMMAND_PYODIDE: >
-          python {project}/.github/check_wheel_libs.py || true;
-          python -c "import openpmd_api as io; v = io.variants;
-          assert v['hdf5'] and v['json'] and not v['adios2'], v;
-          print('openPMD-WASM', io.__version__, dict(v))"
-        # Show a bit more output (pip -v)
-        CIBW_BUILD_VERBOSITY: 1
-      run: |
-        cd src
-        python -m cibuildwheel --output-dir ../wheelhouse
-
-    - uses: actions/upload-artifact@v4
-      name: Publish as GitHub artifact
-      with:
-        name: wheels-pyodide-cp314
-        path: ./wheelhouse
-        overwrite: true
