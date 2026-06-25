@@ -132,7 +132,9 @@ jobs:
 
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
-  - cp library_builders.sh src/.github/
+  - cp library_builders.sh list_library_deps.py check_wheel_libs.py src/.github/
+  # Wheels-only re-release: bump the package version (same source).
+  - (cd src && git apply ../setup-py-version-post1.patch)
   - python -m pip install --upgrade pip setuptools wheel
   - python -m pip install cibuildwheel==3.2.1
   # twine & cryptography: see

@@ -123,6 +123,8 @@ jobs:
       run: |
         cd src
         git apply --ignore-whitespace .github/setup-py-windows-cmake-options.patch
+        # Wheels-only re-release: bump the package version (same source).
+        git apply --ignore-whitespace .github/setup-py-version-post1.patch
 
     - name: Build wheel
       env:
@@ -225,6 +227,8 @@ jobs:
         cd src
         git apply .github/setup-py-crosscompile-python.patch
         git apply .github/cmakelists-hdf5-zlib-workaround.patch
+        # Wheels-only re-release: bump the package version (same source).
+        git apply .github/setup-py-version-post1.patch
 
     - name: Build wheel
       env:
