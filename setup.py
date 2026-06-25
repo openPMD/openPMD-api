@@ -173,7 +173,7 @@ CMAKE_INTERPROCEDURAL_OPTIMIZATION = os.environ.get(
 extra_cmake_args = []
 # Pass openPMD_CMAKE_<CMakeVar>=<value> environment variables through as -D
 # flags. Windows environment variable are all CAPS, so also accept the
-# all-caps variant of the prefix, then the openPMD_ CMake option names are case-
+# all-caps variant of the prefix, then the openPMD_ CMake option names are case
 # sensitive, so restore the "openPMD_" prefix that upper-casing would destroy.
 # All suffixes of our options are luckily ..._ALL_CAPS anyway.
 extra_cmake_args_prefix = "openPMD_CMAKE_"
