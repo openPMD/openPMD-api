@@ -2,6 +2,7 @@ set CURRENTDIR="%cd%"
 
 set BUILD_PREFIX="C:/Program Files (x86)"
 set CPU_COUNT="2"
+set CURL_RETRY=--retry 5 --retry-delay 3
 
 echo "CFLAGS: %CFLAGS%"
 echo "CXXFLAGS: %CXXFLAGS%"
@@ -17,12 +18,12 @@ exit /b 0
 
 :build_adios2
   if exist adios2-stamp exit /b 0
-  curl -sLo adios2-2.11.0.zip ^
+  curl %CURL_RETRY% -sLo adios2-2.11.0.zip ^
     https://github.com/ornladios/ADIOS2/archive/v2.11.0.zip
   powershell Expand-Archive adios2-2.11.0.zip -DestinationPath dep-adios2
 
   :: Patch Win32 on ADIOS 2.11.0 https://github.com/ornladios/ADIOS2/issues/4808
-  curl -sLo dep-adios2/ADIOS2-2.11.0/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/13e9747799e32841b29f166c2bcdfd82ee915f1a.patch
+  curl %CURL_RETRY% -sLo dep-adios2/ADIOS2-2.11.0/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/13e9747799e32841b29f166c2bcdfd82ee915f1a.patch
 
   :: Use git-am for applying the patch,
   :: for some reason, python -m patch just silently does nothing.
@@ -44,6 +45,7 @@ exit /b 0
   cmake -S dep-adios2/ADIOS2-2.11.0 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  ^
+    -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=TRUE  ^
     -DBUILD_SHARED_LIBS=OFF     ^
     -DBUILD_TESTING=OFF         ^
     -DADIOS2_USE_MPI=OFF        ^
@@ -87,7 +89,7 @@ exit /b 0
 :build_blosc2
   if exist blosc2-stamp exit /b 0
 
-  curl -sLo blosc2-2.11.1.zip ^
+  curl %CURL_RETRY% -sLo blosc2-2.11.1.zip ^
     https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.zip
   powershell Expand-Archive blosc2-2.11.1.zip -DestinationPath dep-blosc2
 
@@ -107,9 +109,9 @@ exit /b 0
     -DPIGZ_ENABLE_TESTS=OFF     ^
     -DZLIB_ENABLE_TESTS=OFF     ^
     -DZLIBNG_ENABLE_TESTS=OFF   ^
-    -DDEACTIVATE_AVX512=ON
-::    -DPREFER_EXTERNAL_ZLIB=ON   ^
-::    -DZLIB_USE_STATIC_LIBS=ON
+    -DDEACTIVATE_AVX512=ON       ^
+    -DPREFER_EXTERNAL_ZLIB=ON    ^
+    -DZLIB_USE_STATIC_LIBS=ON
   if errorlevel 1 exit 1
 
   cmake --build build-blosc2 --config Release --parallel %CPU_COUNT%
@@ -128,7 +130,7 @@ exit /b 0
 :build_hdf5
   if exist hdf5-stamp exit /b 0
 
-  curl -sLo hdf5-1.14.1-2.zip ^
+  curl %CURL_RETRY% -sLo hdf5-1.14.1-2.zip ^
     https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.1/src/hdf5-1.14.1-2.zip
   powershell Expand-Archive hdf5-1.14.1-2.zip -DestinationPath dep-hdf5
 
@@ -168,7 +170,7 @@ exit /b 0
 
   set SQLITE_VERSION="3510200"
 
-  curl -sLo sqlite-amalgamation-%SQLITE_VERSION%.zip ^
+  curl %CURL_RETRY% -sLo sqlite-amalgamation-%SQLITE_VERSION%.zip ^
     https://www.sqlite.org/2026/sqlite-amalgamation-%SQLITE_VERSION%.zip
   if errorlevel 1 exit 1
 
@@ -212,7 +214,7 @@ exit /b 0
 :build_zfp
   if exist zfp-stamp exit /b 0
 
-  curl -sLo zfp-1.0.1.tar.gz ^
+  curl %CURL_RETRY% -sLo zfp-1.0.1.tar.gz ^
     https://github.com/LLNL/zfp/releases/download/1.0.1/zfp-1.0.1.tar.gz
   tar -xvzf zfp-1.0.1.tar.gz
   mv zfp-1.0.1 dep-zfp
@@ -242,12 +244,12 @@ exit /b 0
 :build_zlib
   if exist zlib-stamp exit /b 0
 
-  curl -sLo zlib-1.3.1.zip ^
+  curl %CURL_RETRY% -sLo zlib-1.3.1.zip ^
     https://github.com/madler/zlib/archive/v1.3.1.zip
   powershell Expand-Archive zlib-1.3.1.zip -DestinationPath dep-zlib
 
   cmake -S dep-zlib/zlib-1.3.1 -B build-zlib ^
-    -DBUILD_SHARED_LIBS=ON ^
+    -DBUILD_SHARED_LIBS=OFF ^
     -DCMAKE_BUILD_TYPE=Release
   if errorlevel 1 exit 1
 :: Manually-specified variables were not used by the project:
@@ -259,10 +261,15 @@ exit /b 0
   cmake --build build-zlib --target install --config Release
   if errorlevel 1 exit 1
 
-  set "zlib_dll=%BUILD_PREFIX:~1,-1%/zlib/bin/zlib1.dll"
+:: zlib builds shared libs even with BUILD_SHARED_LIBS=OFF
+:: drop dll + import lib to force static libs are picked up
+  set "zlib_dll=%BUILD_PREFIX:~1,-1%/zlib/bin/zlib.dll"
   set "zlib_dll=%zlib_dll:/=\%"
-  del "%zlib_dll%"
-  if errorlevel 1 exit 1
+  if exist "%zlib_dll%" del "%zlib_dll%"
+
+  set "zlib_implib=%BUILD_PREFIX:~1,-1%/zlib/lib/zlib.lib"
+  set "zlib_implib=%zlib_implib:/=\%"
+  if exist "%zlib_implib%" del "%zlib_implib%"
 
   rmdir /s /q build-zlib
   if errorlevel 1 exit 1

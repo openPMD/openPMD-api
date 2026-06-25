@@ -3,8 +3,6 @@
 
 set -eu -o pipefail
 
-BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
-
 # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
 if [ "$(uname -s)" = "Darwin" ]
 then
@@ -14,6 +12,9 @@ else
     CPU_COUNT="${CPU_COUNT:-2}"
     SUDO=""
 fi
+
+# Common curl options: retry transient network/mirror failures (used everywhere).
+CURL_RETRY="--retry 5 --retry-delay 3"
 
 function install_buildessentials {
     if [ -e buildessentials-stamp ]; then return; fi
@@ -46,7 +47,7 @@ function install_buildessentials {
         if [ $CMAKE_FOUND -ne 0 ]
         then
           yum -y install openssl-devel
-          curl -sLo cmake-3.17.1.tar.gz \
+          curl ${CURL_RETRY} -fsSL -o cmake-3.17.1.tar.gz \
               https://github.com/Kitware/CMake/releases/download/v3.17.1/cmake-3.17.1.tar.gz
           tar -xzf cmake-*.gz
           cd cmake-*
@@ -66,12 +67,18 @@ function install_buildessentials {
         rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
     fi
 
+    touch buildessentials-stamp
+}
+
+function install_pyessentials {
+    if [ -e pyessentials-stamp ]; then return; fi
+
     python3 -m pip install -U pip setuptools wheel
     python3 -m pip install -U scikit-build
     python3 -m pip install -U cmake
     python3 -m pip install -U "patch==1.*"
 
-    touch buildessentials-stamp
+    touch pyessentials-stamp
 }
 
 function build_adios2 {
@@ -84,12 +91,12 @@ function build_adios2 {
         git clone https://github.com/ornladios/ADIOS2 ADIOS2-2.11.0
         cd ADIOS2-2.11.0
         git checkout 7a21e4ef2f5def6659e67084b5210a66582d4b1a
-        curl -sLo 4820.diff https://github.com/ornladios/ADIOS2/pull/4820/commits/c7961dd9e12d72b279db75fd184d2b3b4f151560.diff
+        curl ${CURL_RETRY} -fsSL -o 4820.diff https://github.com/ornladios/ADIOS2/pull/4820/commits/c7961dd9e12d72b279db75fd184d2b3b4f151560.diff
         GIT_COMMITTER_NAME="Greg Eisenhauer" GIT_COMMITTER_EMAIL="eisen@cc.gatech.edu" \
           patch -p1 < 4820.diff
         cd ..
     else
-        curl -sLo adios2-2.11.0.tar.gz \
+        curl ${CURL_RETRY} -fsSL -o adios2-2.11.0.tar.gz \
         https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz
         file adios2*.tar.gz
         tar -xzf adios2*.tar.gz
@@ -143,7 +150,7 @@ function build_adios2 {
 function build_blosc2 {
     if [ -e blosc-stamp2 ]; then return; fi
 
-    curl -sLo blosc2-v2.11.1.tar.gz \
+    curl ${CURL_RETRY} -fsSL -o blosc2-v2.11.1.tar.gz \
         https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.tar.gz
     file blosc2*.tar.gz
     tar -xzf blosc2*.tar.gz
@@ -191,7 +198,8 @@ function build_sqlite {
 
     SQLITE_VERSION="3510200"  # "3.51.2"
 
-    curl -sLO https://www.sqlite.org/2026/sqlite-autoconf-${SQLITE_VERSION}.tar.gz
+    curl ${CURL_RETRY} -fsSL -o sqlite-autoconf-${SQLITE_VERSION}.tar.gz \
+        https://www.sqlite.org/2026/sqlite-autoconf-${SQLITE_VERSION}.tar.gz
     file sqlite-autoconf*.tar.gz
     tar xzf sqlite-autoconf-${SQLITE_VERSION}.tar.gz
     rm sqlite-autoconf*.tar.gz
@@ -216,7 +224,7 @@ function build_zfp {
     if [ -e zfp-stamp ]; then return; fi
 
     local version="1.0.1"
-    curl -sLo zfp-$version.tar.gz \
+    curl ${CURL_RETRY} -fsSL -o zfp-$version.tar.gz \
         https://github.com/LLNL/zfp/releases/download/$version/zfp-$version.tar.gz
     file zfp*.tar.gz
     tar -xzf zfp*.tar.gz
@@ -246,23 +254,27 @@ function build_zlib {
 
     ZLIB_VERSION="1.3.1"
 
-    curl -sLO https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
+    # GitHub release mirror (zlib.net/fossils is flaky and serves HTML on error)
+    curl ${CURL_RETRY} -fsSL -o zlib-$ZLIB_VERSION.tar.gz \
+        https://github.com/madler/zlib/releases/download/v$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz
     file zlib*.tar.gz
     tar xzf zlib-$ZLIB_VERSION.tar.gz
     rm zlib*.tar.gz
 
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake \
+    # ${EMCMAKE}/${EMMAKE} are empty for native builds and emcmake/emmake for WASM
+    PATH=${CMAKE_BIN}:${PATH} ${EMCMAKE} cmake \
       -S zlib-*     \
       -B build-zlib \
       -DBUILD_SHARED_LIBS=OFF \
       -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
 
-    PATH=${CMAKE_BIN}:${PATH} cmake --build build-zlib --parallel ${CPU_COUNT}
-    PATH=${CMAKE_BIN}:${PATH} ${SUDO} cmake --build build-zlib --target install
-    ${SUDO} rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so
+    PATH=${CMAKE_BIN}:${PATH} ${EMMAKE} cmake --build build-zlib --parallel ${CPU_COUNT}
+    PATH=${CMAKE_BIN}:${PATH} ${SUDO} ${EMMAKE} cmake --build build-zlib --target install
+    ${SUDO} rm -rf ${BUILD_PREFIX}/lib/libz.*dylib ${BUILD_PREFIX}/lib/libz.*so*
 
     rm -rf build-zlib
 
@@ -272,7 +284,7 @@ function build_zlib {
 function build_hdf5 {
     if [ -e hdf5-stamp ]; then return; fi
 
-    curl -sLo hdf5-1.12.2.tar.gz \
+    curl ${CURL_RETRY} -fsSL -o hdf5-1.12.2.tar.gz \
         https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz
     file hdf5*.tar.gz
     tar -xzf hdf5*.tar.gz
@@ -297,11 +309,11 @@ function build_hdf5 {
 
         HOST_ARG="--host=aarch64-apple-darwin"
 
-        curl -sLo osx_cross_configure.patch \
+        curl ${CURL_RETRY} -fsSL -o osx_cross_configure.patch \
             https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_configure.patch
         python3 -m patch -p 0 -d . osx_cross_configure.patch
 
-        curl -sLo osx_cross_src_makefile.patch \
+        curl ${CURL_RETRY} -fsSL -o osx_cross_src_makefile.patch \
             https://raw.githubusercontent.com/h5py/h5py/fcaca1d1b81d25c0d83b11d5bdf497469b5980e9/ci/osx_cross_src_makefile.patch
         #python3 -m patch -p 0 -d . osx_cross_src_makefile.patch
         patch -p 0 < osx_cross_src_makefile.patch
@@ -339,24 +351,100 @@ function build_hdf5 {
     touch hdf5-stamp
 }
 
-# static libs need relocatable symbols for linking to shared python lib
-export CFLAGS+=" -fPIC"
-export CXXFLAGS+=" -fPIC"
+# WASM/Emscripten: CMake-configured static build of HDF5 for wasm32-emscripten.
+# HDF5 1.14.0+ removed the H5detect/H5make_libsettings native code generators,
+# which makes cross-compilation via CMake straightforward. The Emscripten-
+# specific cache values (no getpwuid/signal, empty exe suffix, PIC) and the
+# FE_INVALID patch are taken from usnistgov/libhdf5-wasm.
+function build_hdf5_cmake {
+    if [ -e hdf5-stamp ]; then return; fi
 
-# compiler hints for macOS cross-compiles
-#   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
-if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
-    export CC="/usr/bin/clang"
-    export CXX="/usr/bin/clang++"
-    export CFLAGS+=" -arch arm64"
-    export CPPFLAGS+=" -arch arm64"
-    export CXXFLAGS+=" -arch arm64"
+    HDF5_VERSION="1.14.6"
+    # pinned libhdf5-wasm revision the FE_INVALID patch is fetched from
+    LIBHDF5_WASM_REF="2069e0a2ab8073a1b7f08a10adae0ce6d73905fe"
+
+    curl ${CURL_RETRY} -fsSL -o hdf5-${HDF5_VERSION}.tar.gz \
+        https://github.com/HDFGroup/hdf5/releases/download/hdf5_${HDF5_VERSION}/hdf5-${HDF5_VERSION}.tar.gz
+    file hdf5*.tar.gz
+    tar -xzf hdf5*.tar.gz
+    rm hdf5*.tar.gz
+
+    # Emscripten's <fenv.h> may not define FE_INVALID; guard feclearexcept().
+    curl ${CURL_RETRY} -fsSL -o hdf5-${HDF5_VERSION}/FE_INVALID.patch \
+        https://raw.githubusercontent.com/usnistgov/libhdf5-wasm/${LIBHDF5_WASM_REF}/patches/${HDF5_VERSION}/FE_INVALID.patch
+    ( cd hdf5-${HDF5_VERSION} && patch -p1 < FE_INVALID.patch )
+
+    emcmake cmake -S hdf5-${HDF5_VERSION} -B build-hdf5 \
+        -DCMAKE_BUILD_TYPE=Release                     \
+        -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}         \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON           \
+        -DCMAKE_EXECUTABLE_SUFFIX_C=                   \
+        -DBUILD_SHARED_LIBS=OFF                        \
+        -DBUILD_STATIC_LIBS=ON                         \
+        -DBUILD_TESTING=OFF                            \
+        -DHDF5_BUILD_TESTS=OFF                         \
+        -DHDF5_BUILD_TOOLS=OFF                         \
+        -DHDF5_BUILD_UTILS=OFF                         \
+        -DHDF5_BUILD_EXAMPLES=OFF                      \
+        -DHDF5_BUILD_CPP_LIB=OFF                       \
+        -DHDF5_BUILD_HL_LIB=OFF                        \
+        -DHDF5_BUILD_FORTRAN=OFF                       \
+        -DHDF5_BUILD_JAVA=OFF                          \
+        -DHDF5_ENABLE_PARALLEL=OFF                     \
+        -DHDF5_ENABLE_THREADSAFE=OFF                   \
+        -DHDF5_ENABLE_Z_LIB_SUPPORT=ON                 \
+        -DHDF5_ENABLE_SZIP_SUPPORT=OFF                 \
+        -DHDF5_USE_ZLIB_STATIC=ON                      \
+        -DZLIB_USE_STATIC_LIBS=ON                      \
+        -DH5_HAVE_GETPWUID=OFF                         \
+        -DH5_HAVE_SIGNAL=OFF
+    emmake cmake --build build-hdf5 --parallel ${CPU_COUNT}
+    emmake cmake --build build-hdf5 --target install
+
+    rm -rf build-hdf5
+
+    touch hdf5-stamp
+}
+
+if [ "${1:-}" = "wasm" ]; then
+    # Install cross-compiled deps into the Emscripten sysroot
+    export BUILD_PREFIX="$(em-config CACHE)/sysroot"
+
+    # cross-compile the shared builders (build_zlib) for wasm32
+    export EMCMAKE="emcmake"
+    export EMMAKE="emmake"
+
+    install_pyessentials
+    build_zlib
+    build_hdf5_cmake
+else
+    # Installation base path of all deps
+    export BUILD_PREFIX="${BUILD_PREFIX:-/usr/local}"
+
+    # CMake cross-compile wrappers for Emscripten are empty for native builds
+    export EMCMAKE=""
+    export EMMAKE=""
+
+    # static libs need relocatable symbols for linking to shared python lib
+    export CFLAGS+=" -fPIC"
+    export CXXFLAGS+=" -fPIC"
+
+    # compiler hints for macOS cross-compiles
+    #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        export CC="/usr/bin/clang"
+        export CXX="/usr/bin/clang++"
+        export CFLAGS+=" -arch arm64"
+        export CPPFLAGS+=" -arch arm64"
+        export CXXFLAGS+=" -arch arm64"
+    fi
+
+    install_buildessentials
+    install_pyessentials
+    build_zlib
+    build_sqlite
+    build_zfp
+    build_blosc2
+    build_hdf5
+    build_adios2
 fi
-
-install_buildessentials
-build_zlib
-build_sqlite
-build_zfp
-build_blosc2
-build_hdf5
-build_adios2

@@ -14,10 +14,13 @@ env:
     # Install dependencies on Linux and OSX
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
     # for the openPMD-api build, CMake shall search for
-    # static dependencies of HDF5 and ADIOS1 (see setup.py)
-    - CIBW_ENVIRONMENT="HDF5_USE_STATIC_LIBRARIES='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS1='ON'" openPMD_CMAKE_openPMD_USE_ADIOS2='ON'"
+    # static dependencies of HDF5 and ADIOS2 (see setup.py)
+    - CIBW_ENVIRONMENT="HDF5_USE_STATIC_LIBRARIES='ON' ZLIB_USE_STATIC_LIBS='ON' ADIOS_USE_STATIC_LIBS='ON' openPMD_CMAKE_openPMD_USE_HDF5='ON' openPMD_CMAKE_openPMD_USE_ADIOS2='ON'"
     # Show a bit more output (pip -v)
     - CIBW_BUILD_VERBOSITY="1"
+    # Runtime smoke test (aarch64/ppc64le run natively on Travis hardware)
+    - CIBW_TEST_REQUIRES="numpy"
+    - CIBW_TEST_COMMAND="python {project}/.github/check_wheel_libs.py && python -c \"import openpmd_api as io; v=io.variants; assert v['hdf5'] and v['adios2'] and v['json'], v; print(io.__version__, dict(v))\""
 
 jobs:
   include:
@@ -129,7 +132,9 @@ jobs:
 
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
-  - cp library_builders.sh src/.github/
+  - cp library_builders.sh list_library_deps.py check_wheel_libs.py src/.github/
+  # Wheels-only re-release: bump the package version (same source).
+  - (cd src && git apply ../setup-py-version-post1.patch)
   - python -m pip install --upgrade pip setuptools wheel
   - python -m pip install cibuildwheel==3.2.1
   # twine & cryptography: see
