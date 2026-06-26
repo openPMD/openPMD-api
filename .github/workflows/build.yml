@@ -7,6 +7,7 @@ env:
   COMMON_PATCHES: >
     .github/setup-py-version-post2.patch
     .github/setup-py-windows-cmake-options.patch
+    .github/python-hide-symbols.patch
 
 jobs:
   build_wheels:

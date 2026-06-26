@@ -135,6 +135,9 @@ install:
   - cp library_builders.sh list_library_deps.py check_wheel_libs.py smoke_roundtrip.py src/.github/
   # Wheels-only re-release: bump the package version (same source).
   - (cd src && git apply ../setup-py-version-post2.patch)
+  # Keep statically-embedded deps (HDF5/ADIOS2/openPMD) private so the wheel can
+  # be co-loaded with another extension that also embeds them (ImpactX/WarpX).
+  - (cd src && git apply ../python-hide-symbols.patch)
   - python -m pip install --upgrade pip setuptools wheel
   - python -m pip install cibuildwheel==3.2.1
   # twine & cryptography: see
