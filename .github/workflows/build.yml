@@ -2,9 +2,15 @@ name: wheels
 
 on: [push, pull_request]
 
+env:
+  SRC_REF: '0.17.1'
+  COMMON_PATCHES: >
+    .github/setup-py-version-post1.patch
+    .github/setup-py-windows-cmake-options.patch
+
 jobs:
   build_wheels:
-    name: Build ${{ matrix.arch }} wheel on ${{ matrix.os }}
+    name: Build ${{ matrix.build || matrix.arch }} wheel on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -14,9 +20,11 @@ jobs:
         #   platform     CIBW_PLATFORM                 (default auto)
         #   build        CIBW_BUILD                    (default *, i.e. all)
         #   patches      space-separated setup patches (default: Windows one)
+        #   sdist        also build + upload the sdist artifact (default: off)
         include:
           - os: ubuntu-22.04
             arch: "x86_64"
+            sdist: true   # this reliable native leg also emits the sdist artifact
 
           - os: ubuntu-22.04
             arch: "i686"
@@ -82,17 +90,30 @@ jobs:
             build: "cp314-pyodide_wasm32"
             patches: ".github/setup-py-crosscompile-python.patch .github/cmakelists-hdf5-zlib-workaround.patch"
 
+          # Pyodide 0.28.x (Python 3.13 / Emscripten 4.0.9): matches the currently
+          # deployed JupyterLite / try-jupyter runtime, so this wheel installs there
+          # today. cibuildwheel 4.1.0's default stable is 314, so building the older
+          # (but still available) 0.28.3 requires the pyodide-eol flag enabled.
+          - os: ubuntu-24.04
+            arch: "wasm32"
+            host_python: "3.12"   # cibuildwheel 4.x needs Python >= 3.11
+            platform: "pyodide"
+            build: "cp313-pyodide_wasm32"
+            pyodide_version: "0.28.3"
+            cibw_enable: "pyodide-eol"
+            patches: ".github/setup-py-crosscompile-python.patch .github/cmakelists-hdf5-zlib-workaround.patch"
+
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         path: 'src'
-        ref: '0.17.1'
+        ref: ${{ env.SRC_REF }}
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         path: 'src/.github/'
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       name: Install Python
       with:
         python-version: "${{ matrix.host_python || '3.11' }}"
@@ -102,19 +123,30 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cibuildwheel==4.1.0
 
-    # Source patches not (yet) in the built release tag. Each is a standalone
-    # openPMD-api dev-branch PR, except the wheels-only version bump (always
-    # applied last). matrix.patches selects the per-platform set:
-    #   native : setup-py-windows-cmake-options.patch (all-caps env on Windows)
-    #   pyodide: setup-py-crosscompile-python.patch   (cross-compile FindPython)
-    #            cmakelists-hdf5-zlib-workaround.patch (ZLIB::ZLIB for static HDF5)
+    # Source patches not (yet) in the built release tag.
+    # Applies all matrix.patches (if any), then the $COMMON_PATCHES.
     - name: Apply patches
       shell: bash
       run: |
         cd src
-        for p in ${{ matrix.patches || '.github/setup-py-windows-cmake-options.patch' }} .github/setup-py-version-post1.patch; do
+        for p in ${{ matrix.patches }} $COMMON_PATCHES; do
           git apply --ignore-whitespace "$p"
         done
+
+    # In a separate directory, we want to upload it to PyPI last
+    - name: Build sdist
+      if: ${{ matrix.sdist }}
+      run: |
+        cd src
+        python setup.py -q sdist --dist-dir ../sdist
+
+    - uses: actions/upload-artifact@v7
+      name: Upload sdist as GitHub artifact
+      if: ${{ matrix.sdist }}
+      with:
+        name: sdist
+        path: ./sdist
+        overwrite: true
 
     - name: Build wheel
       env:
@@ -122,6 +154,8 @@ jobs:
         CIBW_PLATFORM: "${{ matrix.platform || 'auto' }}"
         CIBW_ARCHS: "${{ matrix.arch }}"
         CIBW_BUILD: "${{ matrix.build || '*' }}"
+        CIBW_PYODIDE_VERSION: "${{ matrix.pyodide_version || '' }}"
+        CIBW_ENABLE: "${{ matrix.cibw_enable || '' }}"
         CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
         # (1) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
@@ -187,10 +221,9 @@ jobs:
         cd src
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install --upgrade cmake
-        python setup.py sdist --dist-dir ../wheelhouse
         python -m cibuildwheel --output-dir ../wheelhouse
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       name: Publish as GitHub artifact
       with:
         name: wheels-${{ matrix.os }}-${{ matrix.arch }}
@@ -199,6 +232,32 @@ jobs:
 
     - name: Publish on pypi.org
       if: github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.pypa_gh_action_upload }}
+      run: |
+        python -m pip install -U twine
+        python -m twine upload --skip-existing wheelhouse/*
+
+  # Publish the sdist last, so downstream user's and CI do not race for it
+  # before all binary wheels are published.
+  publish_sdist:
+    name: Publish sdist (last)
+    needs: [build_wheels]
+    runs-on: ubuntu-24.04
+    if: ${{ !cancelled() && github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels' }}
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        name: sdist
+        path: ./wheelhouse
+
+    - uses: actions/setup-python@v6
+      name: Install Python
+      with:
+        python-version: "3.14"
+
+    - name: Publish on pypi.org
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.pypa_gh_action_upload }}
