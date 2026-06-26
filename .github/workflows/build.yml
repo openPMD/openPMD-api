@@ -89,6 +89,19 @@ jobs:
             build: "cp314-pyodide_wasm32"
             patches: ".github/setup-py-crosscompile-python.patch .github/cmakelists-hdf5-zlib-workaround.patch"
 
+          # Pyodide 0.28.x (Python 3.13 / Emscripten 4.0.9): matches the currently
+          # deployed JupyterLite / try-jupyter runtime, so this wheel installs there
+          # today. cibuildwheel 4.1.0's default stable is 314, so building the older
+          # (but still available) 0.28.3 requires the pyodide-eol enable.
+          - os: ubuntu-24.04
+            arch: "wasm32"
+            host_python: "3.12"   # cibuildwheel 4.x needs Python >= 3.11
+            platform: "pyodide"
+            build: "cp313-pyodide_wasm32"
+            pyodide_version: "0.28.3"
+            cibw_enable: "pyodide-eol"
+            patches: ".github/setup-py-crosscompile-python.patch .github/cmakelists-hdf5-zlib-workaround.patch"
+
     steps:
     - uses: actions/checkout@v4
       with:
@@ -129,6 +142,12 @@ jobs:
         CIBW_PLATFORM: "${{ matrix.platform || 'auto' }}"
         CIBW_ARCHS: "${{ matrix.arch }}"
         CIBW_BUILD: "${{ matrix.build || '*' }}"
+        # Pyodide version is pinned per wasm matrix entry so we build for BOTH the
+        # current deployed runtime (0.28.x / Em 4.0.9) and the future one (314 / Em 5.0.3).
+        # Empty => cibuildwheel default (314.x); native legs leave both unset.
+        # pyodide-eol enables building a Pyodide that is no longer cibw's default stable.
+        CIBW_PYODIDE_VERSION: "${{ matrix.pyodide_version || '' }}"
+        CIBW_ENABLE: "${{ matrix.cibw_enable || '' }}"
         CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
         # (1) Disable PyPy (manylinux image: yum repo issues)
         #     https://github.com/pypa/manylinux/issues/899
