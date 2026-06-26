@@ -5,7 +5,7 @@ on: [push, pull_request]
 env:
   SRC_REF: '0.17.1'
   COMMON_PATCHES: >
-    .github/setup-py-version-post1.patch
+    .github/setup-py-version-post2.patch
     .github/setup-py-windows-cmake-options.patch
 
 jobs:
@@ -192,24 +192,39 @@ jobs:
           CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/SQLite3;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
         # Fully static link => pyodide needs no wheel-repair step
         CIBW_REPAIR_WHEEL_COMMAND_PYODIDE: ""
+        # Windows wheel repair (delvewheel is cibuildwheel's default since v4.0).
+        # delvewheel vendors, BY DEFAULT, the MSVC C++ runtime (msvcp140.dll,
+        # ...) into openpmd_api.libs/ under a mangled name. A private, mangled
+        # copy of the C++ runtime collides with the system msvcp140.dll used by
+        # OTHER C++ extensions co-loaded in the same process (ImpactX, WarpX):
+        # objects/buffers crossing that boundary (to_df(), get_attribute())
+        # corrupt the CRT/heap -> segfault. The VC++ redistributable runtime is
+        # a system component (Python depends on it; numpy/scipy/h5py never
+        # bundle it), so exclude it. Genuine third-party deps (blosc2, zfp,
+        # sqlite3, ...) are still vendored; here they are static, so nothing is.
+        CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
+          delvewheel repair -w {dest_dir} -v {wheel}
+          --exclude "msvcp140.dll;msvcp140_1.dll;msvcp140_2.dll;msvcp140_atomic_wait.dll;msvcp140_codecvt_ids.dll;vcruntime140.dll;vcruntime140_1.dll;concrt140.dll;vccorlib140.dll;vcomp140.dll;vcamp140.dll"
         # C++17 on macOS: deployment target per arch (arm64 needs 11.0+)
         #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
         MACOSX_DEPLOYMENT_TARGET: "${{ matrix.env.MACOSX_DEPLOYMENT_TARGET }}"
         CMAKE_OSX_ARCHITECTURES: "${{ matrix.env.CMAKE_OSX_ARCHITECTURES }}"
         CMAKE_GENERATOR: "${{ matrix.env.CMAKE_GENERATOR }}"
         CMAKE_GENERATOR_PLATFORM: "${{ matrix.env.CMAKE_GENERATOR_PLATFORM }}"
-        # Pre-import smoke test: dump the extension's (transitive) shared-library
-        # dependencies + flag non-system/unbundled ones (check_wheel_libs.py),
-        # then import and assert the backends. Non-fatal, the import test is the
-        # actual success/failure test, and the print helps debugging it when needed.
-        # Pyodide runs in a node sandbox -> best-effort `|| true`; native uses &&.
+        # Smoke test: (1) dump the extension's (transitive) shared-library deps
+        # + flag non-system/unbundled ones (check_wheel_libs.py); (2) import and
+        # assert the backends; (3) a write/read ROUND-TRIP (smoke_roundtrip.py)
+        # that exercises the numpy-buffer + attribute boundary crossing
+        # Pyodide runs in a node sandbox (no file I/O) -> keeps the lighter import
+        # test with best-effort `|| true`.
         CIBW_TEST_REQUIRES: numpy
         CIBW_TEST_REQUIRES_PYODIDE: numpy
         CIBW_TEST_COMMAND: >
           python {project}/.github/check_wheel_libs.py &&
           python -c "import openpmd_api as io; v = io.variants;
           assert v['hdf5'] and v['adios2'] and v['json'], v;
-          print('openPMD', io.__version__, dict(v))"
+          print('openPMD', io.__version__, dict(v))" &&
+          python {project}/.github/smoke_roundtrip.py
         CIBW_TEST_COMMAND_PYODIDE: >
           python {project}/.github/check_wheel_libs.py || true;
           python -c "import openpmd_api as io; v = io.variants;
@@ -229,6 +244,17 @@ jobs:
         name: wheels-${{ matrix.os }}-${{ matrix.arch }}
         path: ./wheelhouse
         overwrite: true
+
+    # Guard: a repaired Windows wheel must NOT vendor the VC++ runtime
+    # (see CIBW_REPAIR_WHEEL_COMMAND_WINDOWS). Fails the job before publishing
+    # if delvewheel bundled msvcp140.dll & friends.
+    - name: Check wheels do not vendor the VC++ runtime
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        for whl in wheelhouse/*.whl; do
+          python src/.github/check_no_vendored_runtime.py "$whl"
+        done
 
     - name: Publish on pypi.org
       if: github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels'

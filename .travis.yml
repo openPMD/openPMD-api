@@ -20,7 +20,7 @@ env:
     - CIBW_BUILD_VERBOSITY="1"
     # Runtime smoke test (aarch64/ppc64le run natively on Travis hardware)
     - CIBW_TEST_REQUIRES="numpy"
-    - CIBW_TEST_COMMAND="python {project}/.github/check_wheel_libs.py && python -c \"import openpmd_api as io; v=io.variants; assert v['hdf5'] and v['adios2'] and v['json'], v; print(io.__version__, dict(v))\""
+    - CIBW_TEST_COMMAND="python {project}/.github/check_wheel_libs.py && python -c \"import openpmd_api as io; v=io.variants; assert v['hdf5'] and v['adios2'] and v['json'], v; print(io.__version__, dict(v))\" && python {project}/.github/smoke_roundtrip.py"
 
 jobs:
   include:
@@ -132,9 +132,9 @@ jobs:
 
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
-  - cp library_builders.sh list_library_deps.py check_wheel_libs.py src/.github/
+  - cp library_builders.sh list_library_deps.py check_wheel_libs.py smoke_roundtrip.py src/.github/
   # Wheels-only re-release: bump the package version (same source).
-  - (cd src && git apply ../setup-py-version-post1.patch)
+  - (cd src && git apply ../setup-py-version-post2.patch)
   - python -m pip install --upgrade pip setuptools wheel
   - python -m pip install cibuildwheel==3.2.1
   # twine & cryptography: see
