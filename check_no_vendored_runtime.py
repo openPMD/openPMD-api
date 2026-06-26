@@ -31,10 +31,13 @@ import sys
 import zipfile
 
 # Visual C++ / UCRT runtime DLLs that must come from the system, never bundled.
+# Unversioned wildcards so a future toolset bump (msvcp150, new _N sidecars,
+# ...) is still caught -- these prefixes are MSVC-reserved, nothing else uses
+# them, so over-matching is not a concern.
 _FORBIDDEN = (
-    "msvcp140*.dll", "vcruntime140*.dll", "concrt140*.dll",
-    "vccorlib140*.dll", "vcomp140*.dll", "vcamp140*.dll",
-    "msvcr*.dll", "ucrtbase*.dll", "api-ms-win-*.dll",
+    "msvcp*.dll", "vcruntime*.dll", "concrt*.dll", "vccorlib*.dll",
+    "vcomp*.dll", "vcamp*.dll", "msvcr*.dll", "ucrtbase*.dll",
+    "api-ms-win-*.dll",
 )
 
 

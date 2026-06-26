@@ -202,9 +202,11 @@ jobs:
         # a system component (Python depends on it; numpy/scipy/h5py never
         # bundle it), so exclude it. Genuine third-party deps (blosc2, zfp,
         # sqlite3, ...) are still vendored; here they are static, so nothing is.
+        # --exclude takes glob wildcards (delvewheel docs); unversioned families
+        # stay correct across runtime updates / a future toolset (msvcp150, ...).
         CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
           delvewheel repair -w {dest_dir} -v {wheel}
-          --exclude "msvcp140.dll;msvcp140_1.dll;msvcp140_2.dll;msvcp140_atomic_wait.dll;msvcp140_codecvt_ids.dll;vcruntime140.dll;vcruntime140_1.dll;concrt140.dll;vccorlib140.dll;vcomp140.dll;vcamp140.dll"
+          --exclude "msvcp*.dll;vcruntime*.dll;concrt*.dll;vccorlib*.dll;vcomp*.dll;vcamp*.dll;msvcr*.dll"
         # C++17 on macOS: deployment target per arch (arm64 needs 11.0+)
         #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
         MACOSX_DEPLOYMENT_TARGET: "${{ matrix.env.MACOSX_DEPLOYMENT_TARGET }}"
