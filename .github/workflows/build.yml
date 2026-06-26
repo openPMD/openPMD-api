@@ -2,6 +2,13 @@ name: wheels
 
 on: [push, pull_request]
 
+env:
+  SRC_REF: '0.17.1'
+  # Patches applied to the published sdist. Version bump only: the .post1 sdist
+  # is simply the released 0.17.1 source re-versioned (the binary-packaging
+  # patches only matter for the wheels). Must match the wheels' version.
+  SDIST_PATCHES: '.github/setup-py-version-post1.patch'
+
 jobs:
   build_wheels:
     name: Build ${{ matrix.arch }} wheel on ${{ matrix.os }}
@@ -86,7 +93,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path: 'src'
-        ref: '0.17.1'
+        ref: ${{ env.SRC_REF }}
 
     - uses: actions/checkout@v4
       with:
@@ -187,7 +194,6 @@ jobs:
         cd src
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install --upgrade cmake
-        python setup.py sdist --dist-dir ../wheelhouse
         python -m cibuildwheel --output-dir ../wheelhouse
 
     - uses: actions/upload-artifact@v4
@@ -199,6 +205,64 @@ jobs:
 
     - name: Publish on pypi.org
       if: github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.pypa_gh_action_upload }}
+      run: |
+        python -m pip install -U twine
+        python -m twine upload --skip-existing wheelhouse/*
+
+  # Publish the source distribution (sdist) LAST, after every wheel matrix leg
+  # has finished and streamed its wheels to PyPI. Otherwise the first wheel leg
+  # to finish would race the sdist onto PyPI, and a user's `pip install` could
+  # pick the sdist before a matching wheel exists -> a failing local source build.
+  publish_sdist:
+    name: Publish sdist (last)
+    needs: [build_wheels]
+    runs-on: ubuntu-22.04
+    # needs: waits for ALL wheel matrix legs -> sdist is strictly last.
+    # !cancelled() lets the universal-fallback sdist still ship if an exotic
+    # wheel leg (wasm/i686) failed, so one flaky build can't suppress the
+    # source fallback for everyone. Same push/branch/repo guard as the wheels.
+    if: ${{ !cancelled() && github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels' }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: 'src'
+        ref: ${{ env.SRC_REF }}
+
+    - uses: actions/checkout@v4
+      with:
+        path: 'src/.github/'
+
+    - uses: actions/setup-python@v5
+      name: Install Python
+      with:
+        python-version: "3.11"
+
+    - name: Apply patches
+      shell: bash
+      run: |
+        cd src
+        for p in $SDIST_PATCHES; do
+          git apply --ignore-whitespace "$p"
+        done
+
+    - name: Build sdist
+      run: |
+        cd src
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install --upgrade cmake
+        python setup.py sdist --dist-dir ../wheelhouse
+
+    - uses: actions/upload-artifact@v4
+      name: Publish as GitHub artifact
+      with:
+        name: sdist
+        path: ./wheelhouse
+        overwrite: true
+
+    - name: Publish on pypi.org
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.pypa_gh_action_upload }}
