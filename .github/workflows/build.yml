@@ -104,16 +104,16 @@ jobs:
             patches: ".github/setup-py-crosscompile-python.patch .github/cmakelists-hdf5-zlib-workaround.patch"
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         path: 'src'
         ref: ${{ env.SRC_REF }}
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         path: 'src/.github/'
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       name: Install Python
       with:
         python-version: "${{ matrix.host_python || '3.11' }}"
@@ -140,7 +140,7 @@ jobs:
         cd src
         python setup.py -q sdist --dist-dir ../sdist
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       name: Upload sdist as GitHub artifact
       if: ${{ matrix.sdist }}
       with:
@@ -223,7 +223,7 @@ jobs:
         python -m pip install --upgrade cmake
         python -m cibuildwheel --output-dir ../wheelhouse
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       name: Publish as GitHub artifact
       with:
         name: wheels-${{ matrix.os }}-${{ matrix.arch }}
@@ -247,12 +247,12 @@ jobs:
     runs-on: ubuntu-24.04
     if: ${{ !cancelled() && github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels' }}
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: sdist
         path: ./wheelhouse
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       name: Install Python
       with:
         python-version: "3.14"
