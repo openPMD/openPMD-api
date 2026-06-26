@@ -28,6 +28,11 @@ jobs:
 
           - os: ubuntu-22.04
             arch: "i686"
+            # 32-bit: ADIOS2 has no 32-bit CI and its BP reader segfaults on
+            # i686 (memcpy on a truncated 64-bit offset), so ship HDF5 + JSON
+            # only. See also the win32 (x86) entry.
+            env:
+              ADIOS2: "OFF"
 
           # builds faster on Travis-CI:
           #- os: ubuntu-20.04
@@ -52,6 +57,7 @@ jobs:
             env:
               CMAKE_GENERATOR: "Visual Studio 17 2022"
               CMAKE_GENERATOR_PLATFORM: "Win32"
+              ADIOS2: "OFF"   # 32-bit: no 32-bit ADIOS2 CI; BP read segfaults (see i686)
 
           - os: macos-15-intel
             arch: "x86_64"
@@ -177,7 +183,7 @@ jobs:
           ZLIB_USE_STATIC_LIBS='ON'
           ADIOS_USE_STATIC_LIBS='ON'
           openPMD_CMAKE_openPMD_USE_HDF5='ON'
-          openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
+          openPMD_CMAKE_openPMD_USE_ADIOS2='${{ matrix.env.ADIOS2 || 'ON' }}'
         CIBW_ENVIRONMENT_PYODIDE: >
           openPMD_CMAKE_openPMD_USE_HDF5='ON'
           openPMD_CMAKE_openPMD_USE_ADIOS2='OFF'
@@ -188,7 +194,7 @@ jobs:
           HDF5_USE_STATIC_LIBRARIES='ON'
           ZLIB_USE_STATIC_LIBS='ON'
           openPMD_CMAKE_openPMD_USE_HDF5='ON'
-          openPMD_CMAKE_openPMD_USE_ADIOS2='ON'
+          openPMD_CMAKE_openPMD_USE_ADIOS2='${{ matrix.env.ADIOS2 || 'ON' }}'
           CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/SQLite3;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
         # Fully static link => pyodide needs no wheel-repair step
         CIBW_REPAIR_WHEEL_COMMAND_PYODIDE: ""
@@ -223,8 +229,9 @@ jobs:
         CIBW_TEST_REQUIRES_PYODIDE: numpy
         CIBW_TEST_COMMAND: >
           python {project}/.github/check_wheel_libs.py &&
-          python -c "import openpmd_api as io; v = io.variants;
-          assert v['hdf5'] and v['adios2'] and v['json'], v;
+          python -c "import sys, openpmd_api as io; v = io.variants;
+          need_adios2 = sys.maxsize > 2**32;
+          assert v['hdf5'] and v['json'] and (v['adios2'] or not need_adios2), v;
           print('openPMD', io.__version__, dict(v))" &&
           python {project}/.github/smoke_roundtrip.py
         CIBW_TEST_COMMAND_PYODIDE: >

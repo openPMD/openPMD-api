@@ -62,17 +62,25 @@ def main():
     variants = dict(io.variants)
     print("openPMD", io.__version__, variants)
 
-    # Exercise EVERY compiled-in backend. The ADIOS2 (.bp) round-trip also
+    # Exercise EVERY compiled-in backend. On 32-bit (i686/win32) ADIOS2 is
+    # disabled in the wheel (its BP reader segfaults there, and ADIOS2 has no
+    # 32-bit CI), so only the HDF5 round-trip runs -- which works on 32-bit. The ADIOS2 (.bp) round-trip also
     # proves ADIOS2 still works after we stopped vendoring the C++ runtime:
     # ADIOS2 and its deps are statically linked (no adios2/blosc2/... DLL is
     # bundled), so excluding msvcp140.dll does not affect them.
+    #
+    # The "%T" in the filename selects FILE-BASED encoding (one file per
+    # iteration). Without it the Series defaults to group-based encoding, which
+    # openPMD-api warns against (a single atomic write on close -> a crash loses
+    # all data; with ADIOS2 BP5 the per-step metadata grows quadratically). See
+    # https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html
     targets = []
     if variants.get("hdf5"):
-        targets.append("smoke.h5")
+        targets.append("smoke_%T.h5")
     if variants.get("adios2"):
-        targets.append("smoke.bp")
+        targets.append("smoke_%T.bp")
     if not targets:  # header-only JSON is always available (e.g. WASM)
-        targets.append("smoke.json")
+        targets.append("smoke_%T.json")
 
     tmp = tempfile.mkdtemp(prefix="opmd-smoke-")
     for name in targets:
