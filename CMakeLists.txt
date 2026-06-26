@@ -639,6 +639,23 @@ if(openPMD_HAVE_PYTHON)
     set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
                                                 CUDA_VISIBILITY_PRESET "hidden")
 
+    # Co-load safety: statically-embedded dependencies (HDF5, ADIOS2, blosc2,
+    # and the openPMD core archive) are compiled without hidden visibility, so
+    # their symbols would otherwise be re-exported from this Python extension.
+    # If another extension loaded in the same process also statically embeds
+    # them (ImpactX, WarpX, a second openPMD in pip wheels), the duplicate
+    # exported symbols cross-bind, then two HDF5/openPMD instances are in one
+    # Python process, and usually crash on the first file open. Export only
+    # the module init symbol so each extension keeps its dependencies private.
+    # Windows does not auto-export and Emscripten links a single namespace,
+    # so neither needs this.
+    if(APPLE)
+        target_link_options(openPMD.py PRIVATE
+            "LINKER:-exported_symbol,_PyInit_openpmd_api_cxx")
+    elseif(NOT WIN32 AND NOT EMSCRIPTEN)
+        target_link_options(openPMD.py PRIVATE "LINKER:--exclude-libs,ALL")
+    endif()
+
     # ancient Clang releases
     #   https://github.com/openPMD/openPMD-api/issues/542
     #   https://pybind11.readthedocs.io/en/stable/faq.html#recursive-template-instantiation-exceeded-maximum-depth-of-256
