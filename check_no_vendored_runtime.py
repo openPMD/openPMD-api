@@ -61,13 +61,19 @@ def _dlls_in_dir(path):
 
 
 def check(path):
-    if zipfile.is_zipfile(path):
-        dlls = _dlls_in_wheel(path)
-    elif os.path.isdir(path):
+    if os.path.isdir(path):
         dlls = _dlls_in_dir(path)
+    elif not os.path.exists(path):
+        print("ERROR: %s does not exist." % path)
+        return 2
+    elif not os.path.isfile(path):
+        print("ERROR: %s is not a wheel file or directory." % path)
+        return 2
+    elif zipfile.is_zipfile(path):
+        dlls = _dlls_in_wheel(path)
     else:
-        print("  skip (not a wheel or directory): %s" % path)
-        return 0
+        print("ERROR: %s is not a valid wheel/zip file." % path)
+        return 2
     bad = sorted({d for d in dlls if _is_forbidden(d)})
     print("== %s: %d bundled DLL(s)" % (os.path.basename(path), len(dlls)))
     for d in sorted(dlls):
