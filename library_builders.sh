@@ -414,6 +414,14 @@ if [ "${1:-}" = "wasm" ]; then
     export EMCMAKE="emcmake"
     export EMMAKE="emmake"
 
+    # Build the bundled static deps with hidden visibility (collision avoidance;
+    # see the native-branch comment). On Pyodide every extension is a side module
+    # in ONE global namespace, so this also makes openPMD call its OWN bundled
+    # HDF5/zlib via direct calls instead of GOT-binding across a co-loaded second
+    # copy (e.g. the ImpactX wheel) -- which is what makes HDF5 actually run.
+    export CFLAGS+=" -fvisibility=hidden"
+    export CXXFLAGS+=" -fvisibility=hidden"
+
     install_pyessentials
     build_zlib
     build_hdf5_cmake
@@ -425,7 +433,15 @@ else
     export EMCMAKE=""
     export EMMAKE=""
 
-    # static libs need relocatable symbols for linking to shared python lib
+    # static libs need relocatable symbols for linking to shared python lib.
+    # NOTE: do NOT add -fvisibility=hidden here. Native builds these deps as both
+    # static AND shared (e.g. zlib's libz.so) and build their example/test
+    # programs against the shared lib; hidden visibility then strips the public
+    # API (deflate/inflate/...) and the dep's own examples fail to link. Native
+    # co-load isolation is already handled at link time by --exclude-libs,ALL
+    # (python-hide-symbols.patch), so compile-time hiding is redundant here. It is
+    # applied only on the wasm branch, where deps are static-only and it is needed
+    # for direct (non-GOT) intra-module calls in Pyodide's single namespace.
     export CFLAGS+=" -fPIC"
     export CXXFLAGS+=" -fPIC"
 
