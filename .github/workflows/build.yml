@@ -9,6 +9,7 @@ env:
     .github/setup-py-windows-cmake-options.patch
     .github/python-hide-symbols.patch
     .github/hdf5-dont-atexit-emscripten.patch
+    .github/hdf5-read-h5tequal-tristate.patch
 
 jobs:
   build_wheels:
