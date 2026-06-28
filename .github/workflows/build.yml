@@ -252,7 +252,9 @@ jobs:
     - uses: actions/upload-artifact@v7
       name: Publish as GitHub artifact
       with:
-        name: wheels-${{ matrix.os }}-${{ matrix.arch }}
+        # Include matrix.build so the two wasm legs (cp313 / cp314, which share
+        # os=ubuntu-24.04 + arch=wasm32) get DISTINCT artifact names.
+        name: wheels-${{ matrix.os }}-${{ matrix.build || matrix.arch }}
         path: ./wheelhouse
         overwrite: true
 
