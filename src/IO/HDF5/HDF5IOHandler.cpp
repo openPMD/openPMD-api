@@ -2587,7 +2587,7 @@ void HDF5IOHandlerImpl::readDataset(
                 << std::endl;
         }
     });
-    if (H5Tequal(dataType, H5T_NATIVE_LDOUBLE))
+    if (H5Tequal(dataType, H5T_NATIVE_LDOUBLE) > 0)
     {
         // We have previously determined in openDataset() that this dataset is
         // of type long double.
@@ -2604,12 +2604,12 @@ void HDF5IOHandlerImpl::readDataset(
                           << std::endl;
             }
         });
-        if (!H5Tequal(checkDatasetTypeAgain, H5T_NATIVE_LDOUBLE))
+        if (H5Tequal(checkDatasetTypeAgain, H5T_NATIVE_LDOUBLE) <= 0)
         {
             dataType = m_H5T_LONG_DOUBLE_80_LE;
         }
     }
-    else if (H5Tequal(dataType, m_H5T_CLONG_DOUBLE))
+    else if (H5Tequal(dataType, m_H5T_CLONG_DOUBLE) > 0)
     {
         // Same deal for m_H5T_CLONG_DOUBLE
         hid_t checkDatasetTypeAgain = H5Dget_type(dataset_id);
@@ -2622,7 +2622,7 @@ void HDF5IOHandlerImpl::readDataset(
                           << std::endl;
             }
         });
-        if (!H5Tequal(checkDatasetTypeAgain, m_H5T_CLONG_DOUBLE))
+        if (H5Tequal(checkDatasetTypeAgain, m_H5T_CLONG_DOUBLE) <= 0)
         {
             dataType = m_H5T_CLONG_DOUBLE_80_LE;
         }
@@ -3118,19 +3118,19 @@ void HDF5IOHandlerImpl::readAttribute(
             status = H5Aread(attr_id, attr_type, vld.data());
             a = Attribute(vld);
         }
-        else if (H5Tequal(attr_type, m_H5T_CFLOAT))
+        else if (H5Tequal(attr_type, m_H5T_CFLOAT) > 0)
         {
             std::vector<std::complex<float>> vcf(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vcf.data());
             a = Attribute(vcf);
         }
-        else if (H5Tequal(attr_type, m_H5T_CDOUBLE))
+        else if (H5Tequal(attr_type, m_H5T_CDOUBLE) > 0)
         {
             std::vector<std::complex<double>> vcd(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vcd.data());
             a = Attribute(vcd);
         }
-        else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE))
+        else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE) > 0)
         {
             std::vector<std::complex<long double>> vcld(dims[0], 0);
             status = H5Aread(attr_id, attr_type, vcld.data());
