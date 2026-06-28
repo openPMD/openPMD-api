@@ -5,9 +5,11 @@ on: [push, pull_request]
 env:
   SRC_REF: '0.17.1'
   COMMON_PATCHES: >
-    .github/setup-py-version-post2.patch
+    .github/setup-py-version-post3.patch
     .github/setup-py-windows-cmake-options.patch
     .github/python-hide-symbols.patch
+    .github/hdf5-dont-atexit-emscripten.patch
+    .github/hdf5-read-h5tequal-tristate.patch
 
 jobs:
   build_wheels:
@@ -251,7 +253,9 @@ jobs:
     - uses: actions/upload-artifact@v7
       name: Publish as GitHub artifact
       with:
-        name: wheels-${{ matrix.os }}-${{ matrix.arch }}
+        # Include matrix.build so the two wasm legs (cp313 / cp314, which share
+        # os=ubuntu-24.04 + arch=wasm32) get DISTINCT artifact names.
+        name: wheels-${{ matrix.os }}-${{ matrix.build || matrix.arch }}
         path: ./wheelhouse
         overwrite: true
 

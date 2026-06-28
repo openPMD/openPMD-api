@@ -8,10 +8,20 @@ cannot be executed on the host.
 
 For every dependency it reports HOW it was resolved (RPATH / RUNPATH /
 LD_LIBRARY_PATH / default path / System32 / PATH / @rpath / @loader_path /
-absolute / binary dir), or flags it `[system]` (OS / language runtime, not
-bundled) or `[not found]`. The non-system, not-found libraries are the ones
-that must be bundled into a wheel -- this surfaces them BEFORE the opaque
-"DLL load failed" / "cannot open shared object file" import error.
+absolute / binary dir / wheel-repair bundle dir), or flags it `[system]`
+(OS / language runtime, not bundled) or `[not found]`. The non-system,
+not-found libraries are the ones that must be bundled into a wheel -- this
+surfaces them BEFORE the opaque "DLL load failed" / "cannot open shared object
+file" import error.
+
+A wheel repaired by delvewheel (Windows) / auditwheel (Linux) puts its bundled,
+name-mangled libraries in a sibling `<dist>.libs` directory and delocate
+(macOS) in a `<pkg>/.dylibs` directory; the repaired package `__init__`
+re-adds those to the runtime search path (os.add_dll_directory / RPATH). We
+discover them PORTABLY -- by their conventional names, walking up from the
+binary, with no dependency on the repair tool -- so a bundled library shows as
+resolved (e.g. `[bundled .libs (delvewheel/auditwheel) -> ...]`) instead of a
+misleading `[not found]`.
 
 Usage:
     python list_library_deps.py [--strict] <binary> [<binary> ...]
@@ -21,6 +31,7 @@ Usage:
 import os
 import struct
 import sys
+
 
 # ---------------------------------------------------------------------------
 # Format detection
@@ -227,6 +238,48 @@ def is_system(name):
 # ---------------------------------------------------------------------------
 # resolution: build the ordered (dir, hint) search list, then locate
 # ---------------------------------------------------------------------------
+def _bundled_dirs(origin):
+    """Wheel-repair bundle directories, discovered PORTABLY (no dependency on
+    delvewheel/auditwheel/delocate), by their conventional layout:
+
+      * delvewheel (Windows) / auditwheel (Linux): a sibling `<dist>.libs`
+        directory of the import package, e.g. `site-packages/openpmd_api.libs`
+        -- matched by the `.libs` suffix while walking up from the binary. (The
+        dist name differs from the import package, so we match the suffix, not a
+        derived name.)
+      * delocate (macOS): a `.dylibs` directory inside the package tree, e.g.
+        `openpmd_api/.dylibs`.
+
+    The repaired package `__init__` re-adds these to the runtime search path
+    (os.add_dll_directory / RPATH `$ORIGIN/../<dist>.libs`), so a library that
+    the OS-level search list would call `[not found]` is in fact resolved here.
+    Returns an ordered list of (directory, hint)."""
+    out, seen = [], set()
+    d = os.path.abspath(origin)
+    while True:
+        dylibs = os.path.join(d, ".dylibs")             # delocate, inside pkg
+        if dylibs not in seen and os.path.isdir(dylibs):
+            seen.add(dylibs)
+            out.append((dylibs, "bundled .dylibs (delocate)"))
+        parent = os.path.dirname(d)                     # delvewheel/auditwheel
+        if parent and parent != d:                      # sibling *.libs dirs
+            try:
+                for name in sorted(os.listdir(parent)):
+                    cand = os.path.join(parent, name)
+                    if (name.endswith(".libs") and cand not in seen
+                            and os.path.isdir(cand)):
+                        seen.add(cand)
+                        out.append((cand, "bundled .libs (delvewheel/auditwheel)"))
+            except OSError:
+                pass
+        # stop once we have climbed past the install root
+        if (not parent or parent == d
+                or os.path.basename(d) in ("site-packages", "dist-packages")):
+            break
+        d = parent
+    return out
+
+
 def _search(fmt, origin, rpaths):
     out = []  # ordered list of (directory, hint)
 
@@ -236,6 +289,7 @@ def _search(fmt, origin, rpaths):
 
     for raw, kind in rpaths:                    # binary's own RPATH/RUNPATH/LC_RPATH
         out.append((expand(raw), kind))
+    out += _bundled_dirs(origin)                # delvewheel/auditwheel/delocate
     if fmt == "elf":
         for d in filter(None, os.environ.get("LD_LIBRARY_PATH", "").split(":")):
             out.append((d, "LD_LIBRARY_PATH"))

@@ -1,0 +1,54 @@
+diff --git a/src/IO/HDF5/HDF5IOHandler.cpp b/src/IO/HDF5/HDF5IOHandler.cpp
+index 1f86c9be72..dde83069a7 100644
+--- a/src/IO/HDF5/HDF5IOHandler.cpp
++++ b/src/IO/HDF5/HDF5IOHandler.cpp
+@@ -1618,16 +1618,16 @@ void HDF5IOHandlerImpl::openDataset(
+             else if (H5Tequal(dataset_type, H5T_NATIVE_DOUBLE))
+                 d = DT::DOUBLE;
+             else if (
+-                H5Tequal(dataset_type, H5T_NATIVE_LDOUBLE) ||
+-                H5Tequal(dataset_type, m_H5T_LONG_DOUBLE_80_LE))
++                H5Tequal(dataset_type, H5T_NATIVE_LDOUBLE) > 0 ||
++                H5Tequal(dataset_type, m_H5T_LONG_DOUBLE_80_LE) > 0)
+                 d = DT::LONG_DOUBLE;
+-            else if (H5Tequal(dataset_type, m_H5T_CFLOAT))
++            else if (H5Tequal(dataset_type, m_H5T_CFLOAT) > 0)
+                 d = DT::CFLOAT;
+-            else if (H5Tequal(dataset_type, m_H5T_CDOUBLE))
++            else if (H5Tequal(dataset_type, m_H5T_CDOUBLE) > 0)
+                 d = DT::CDOUBLE;
+             else if (
+-                H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE) ||
+-                H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE_80_LE))
++                H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE) > 0 ||
++                H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE_80_LE) > 0)
+                 d = DT::CLONG_DOUBLE;
+             else if (H5Tequal(dataset_type, H5T_NATIVE_USHORT))
+                 d = DT::USHORT;
+@@ -2854,7 +2854,7 @@ void HDF5IOHandlerImpl::readAttribute(
+             status = H5Aread(attr_id, attr_type, &l);
+             a = Attribute(l);
+         }
+-        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE))
++        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE) > 0)
+         {
+             char bfr[16];
+             status = H5Aread(attr_id, attr_type, bfr);
+@@ -3136,7 +3136,7 @@ void HDF5IOHandlerImpl::readAttribute(
+             status = H5Aread(attr_id, attr_type, vcld.data());
+             a = Attribute(vcld);
+         }
+-        else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE_80_LE))
++        else if (H5Tequal(attr_type, m_H5T_CLONG_DOUBLE_80_LE) > 0)
+         {
+             // worst case:
+             // sizeof(long double) is only 8, but the dataset on disk has
+@@ -3158,7 +3158,7 @@ void HDF5IOHandlerImpl::readAttribute(
+             delete[] tmpBuffer;
+             a = Attribute(std::move(vcld));
+         }
+-        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE))
++        else if (H5Tequal(attr_type, m_H5T_LONG_DOUBLE_80_LE) > 0)
+         {
+             // worst case:
+             // sizeof(long double) is only 8, but the dataset on disk has
