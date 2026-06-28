@@ -99,6 +99,28 @@ constexpr char const *const flush_cfg_mask = &R"(
     "independent_stores": null
 })"[1];
 
+#if defined(__EMSCRIPTEN__)
+// WASM co-load: under Pyodide every extension is a side module sharing ONE
+// global Emscripten namespace, so two wheels that each statically bundle HDF5
+// (e.g. the standalone openpmd_api wheel and the ImpactX wheel, used together)
+// end up with their HDF5 atexit cleanups (H5_term_library) tangled across the
+// two copies, looping forever at process exit ("infinite loop closing library"
+// -> "memory access out of bounds") even after a fully successful run. Symbol
+// hiding cannot prevent this (Pyodide's side-module link exports every symbol
+// regardless of -fvisibility=hidden), so instead tell HDF5 not to install its
+// atexit handler at all -- the OS reclaims the process memory on exit anyway.
+// H5dont_atexit() must run before any other HDF5 call (HDF5 docs) and the HDF5
+// IO handler's own member initializers already create H5 types, so a load-time
+// initializer in this backend translation unit is the earliest safe point. It
+// fires when whichever bundled HDF5 loads first, independent of whether
+// openpmd_api or ImpactX is imported first; the H5_dont_atexit_g flag is
+// interposed across both bundled copies, so this single call covers both.
+namespace
+{
+    [[maybe_unused]] herr_t const openpmd_hdf5_dont_atexit = H5dont_atexit();
+} // namespace
+#endif
+
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     AbstractIOHandler *handler, bool do_warn_unused_params)
     : AbstractIOHandlerImpl(handler)
