@@ -1,0 +1,54 @@
+name: 🧩 WASM
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Cross-compile the Python wheel for Pyodide (openPMD_USE_PYTHON=ON) and run the
+  # FULL Python unittest suite inside the Pyodide runtime -- validates the shipped
+  # Python wheel and its HDF5 read/write path end to end, the way a user loads it.
+  # Catches wasm-specific regressions a wheel smoke test cannot (e.g. the HDF5
+  # 64-bit `long double` read path, #1902).
+  pyodide-python:
+    name: Pyodide / WASM (Python test suite)
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Host Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install cibuildwheel
+      run: python -m pip install "cibuildwheel==4.1.0"
+
+    # cibuildwheel provisions the Emscripten + Pyodide xbuildenv, cross-compiles
+    # the wheel (openPMD_USE_PYTHON defaults ON; wasm_deps.sh builds the static
+    # zlib + HDF5 into the Emscripten sysroot in BEFORE_BUILD), then runs the full
+    # Python unittest suite in the matching-ABI Pyodide test runtime (node) -- so
+    # there is no separate xbuildenv to keep in sync with the wheel.
+    - name: Build wheel + run the Python suite in Pyodide
+      run: python -m cibuildwheel --platform pyodide --output-dir wheelhouse
+      env:
+        CIBW_BUILD: "cp314-pyodide_wasm32"
+        CIBW_BEFORE_BUILD_PYODIDE: "bash .github/ci/wasm_deps.sh"
+        CIBW_ENVIRONMENT_PYODIDE: >
+          openPMD_CMAKE_openPMD_USE_HDF5='ON'
+          openPMD_CMAKE_openPMD_USE_ADIOS2='OFF'
+          openPMD_USE_MPI='OFF'
+          HDF5_USE_STATIC_LIBRARIES='ON'
+          ZLIB_USE_STATIC_LIBS='ON'
+        CIBW_TEST_REQUIRES: numpy
+        # APITest reads sample data as ../samples relative to the unittest dir;
+        # download it there, and run via a wrapper that sets cwd + sys.path.
+        CIBW_BEFORE_TEST: "bash {project}/share/openPMD/download_samples.sh {project}/test/python"
+        CIBW_TEST_COMMAND: "python {project}/.github/ci/run_python_tests.py {project}"
