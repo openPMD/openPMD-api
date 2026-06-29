@@ -722,6 +722,8 @@ if(openPMD_HAVE_PYTHON)
         __init__.py DaskArray.py DaskDataFrame.py DataFrame.py
         ls/__init__.py   ls/__main__.py
         pipe/__init__.py pipe/__main__.py
+        scipp/__init__.py scipp/loader.py scipp/mesh_loader.py scipp/utils.py
+        ScippLazyInit.py
     )
 endif()
 
@@ -780,6 +782,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     12_span_write
     13_write_dynamic_configuration
     15_compression
+    16_scipp_loader
 )
 
 if(openPMD_USE_INVASIVE_TESTS)
