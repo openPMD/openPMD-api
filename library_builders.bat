@@ -4,6 +4,13 @@ set BUILD_PREFIX="C:/Program Files (x86)"
 set CPU_COUNT="2"
 set CURL_RETRY=--retry 5 --retry-delay 3
 
+rem std::mutex ABI portability: build every dependency with the same define as
+rem the central wheel build (CIBW_ENVIRONMENT_WINDOWS). VS 2022 17.10 made
+rem std::mutex's constructor constexpr; because we --exclude msvcp*.dll from the
+rem wheel, a mismatch with an older system msvcp140.dll faults in Mtx_destroy.
+rem Setting it here too keeps the whole dependency toolchain consistent.
+set "CXXFLAGS=%CXXFLAGS% /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"
+
 echo "CFLAGS: %CFLAGS%"
 echo "CXXFLAGS: %CXXFLAGS%"
 echo "LDFLAGS: %LDFLAGS%"
