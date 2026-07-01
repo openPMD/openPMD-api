@@ -645,14 +645,23 @@ if(openPMD_HAVE_PYTHON)
     # If another extension loaded in the same process also statically embeds
     # them (ImpactX, WarpX, a second openPMD in pip wheels), the duplicate
     # exported symbols cross-bind, then two HDF5/openPMD instances are in one
-    # Python process, and usually crash on the first file open. Export only
-    # the module init symbol so each extension keeps its dependencies private.
-    # Windows does not auto-export and Emscripten links a single namespace,
-    # so neither needs this.
+    # Python process, and usually crash on the first file open or at teardown.
+    # Export only the module init symbol so each extension keeps its
+    # dependencies private. Windows does not auto-export, so it needs nothing;
+    # Emscripten DOES need this -- Pyodide's single namespace is exactly the
+    # problem, and -sSIDE_MODULE=1 (its default) whole-archives and force-exports
+    # every symbol, so -fvisibility=hidden alone cannot hide HDF5 there.
     if(APPLE)
         target_link_options(openPMD.py PRIVATE
             "LINKER:-exported_symbol,_PyInit_openpmd_api_cxx")
-    elseif(NOT WIN32 AND NOT EMSCRIPTEN)
+    elseif(EMSCRIPTEN)
+        # -sSIDE_MODULE=2 exports only the symbols listed in EXPORTED_FUNCTIONS
+        # (here just the module init), keeping the bundled HDF5 private so a
+        # co-loaded second HDF5 (h5py, ImpactX) cannot cross-bind into it.
+        target_link_options(openPMD.py PRIVATE
+            "SHELL:-sSIDE_MODULE=2"
+            "SHELL:-sEXPORTED_FUNCTIONS=_PyInit_openpmd_api_cxx")
+    elseif(NOT WIN32)
         target_link_options(openPMD.py PRIVATE "LINKER:--exclude-libs,ALL")
     endif()
 
