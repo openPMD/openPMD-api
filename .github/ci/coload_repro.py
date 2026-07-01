@@ -13,9 +13,9 @@
 #
 # Exits 0 on a clean teardown; a nonzero exit / "memory access out of bounds"
 # means the fault is still present.
+import h5py  # a second, independently bundled HDF5
 import numpy as np
 import openpmd_api as io
-import h5py  # a second, independently bundled HDF5
 
 # exercise openpmd_api's HDF5 (its handler builds the custom types that fault)
 series = io.Series("op.h5", io.Access.create)
