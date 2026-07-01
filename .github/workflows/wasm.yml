@@ -53,14 +53,11 @@ jobs:
         # APITest reads sample data as ../samples relative to the unittest dir;
         # download it there, and run via a wrapper that sets cwd + sys.path.
         CIBW_BEFORE_TEST: "bash {project}/share/openPMD/download_samples.sh {project}/test/python"
-        # Step-1 diagnosis: run the co-load probe FIRST, as its own process, so
-        # openpmd_api is the primary HDF5 (the ImpactX order) and its phase
-        # markers localize any fault; then the full suite. Both are guarded with
-        # `|| echo` and separated by `;` so both run and the job stays green --
-        # we read the phase markers / versions from the log. Once the teardown
-        # fix lands, drop the guards to make them enforced regression tests.
+        # Co-load regression + full suite, both enforced. coload_repro.py imports
+        # openpmd_api then h5py (a second, independently bundled HDF5) and runs a
+        # round-trip; it crashed with a wasm OOB before the -sSIDE_MODULE=2 +
+        # hidden-visibility deps fix. Then the full Python unittest suite runs
+        # with h5py co-loaded (exercises the h5py-interop tests too).
         CIBW_TEST_COMMAND: >
-          ( python {project}/.github/ci/coload_repro.py ||
-            echo "=== [coload] nonzero exit (see phase markers above) ===" ) ;
-          ( python {project}/.github/ci/run_python_tests.py {project} ||
-            echo "=== [suite] nonzero exit ===" )
+          python {project}/.github/ci/coload_repro.py &&
+          python {project}/.github/ci/run_python_tests.py {project}
