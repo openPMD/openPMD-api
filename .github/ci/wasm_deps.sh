@@ -9,8 +9,10 @@
 # later find_package() locates them: Emscripten restricts find_package to
 # CMAKE_FIND_ROOT_PATH (= the sysroot), so a custom prefix is silently ignored.
 # Flags mirror the Pyodide wheel builder (library_builders.sh) so the test build
-# matches the shipped wheel; the co-load-only -fvisibility=hidden is omitted here
-# (the test executables are standalone, not side modules).
+# matches the shipped wheel, plus -fvisibility=hidden (set below): these static
+# deps are linked into the wheel (a side module), so making their symbols
+# DSO-local -- together with -sSIDE_MODULE=2 on the extension -- keeps HDF5
+# private and stops a co-loaded second HDF5 (h5py, ImpactX) from cross-binding.
 #
 # Requires an active Emscripten SDK on PATH (emcmake/emcc/em-config).
 
@@ -19,6 +21,12 @@ set -eu -o pipefail
 PREFIX="$(em-config CACHE)/sysroot"
 ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}"
 HDF5_VERSION="${HDF5_VERSION:-1.14.6}"
+
+# Build the static deps with hidden-visibility definitions so they are DSO-local
+# in the wheel; combined with -sSIDE_MODULE=2 (extension link options) this lets
+# wasm-ld bind our HDF5 calls to our own copy rather than a co-loaded one.
+export CFLAGS="${CFLAGS:-} -fvisibility=hidden"
+export CXXFLAGS="${CXXFLAGS:-} -fvisibility=hidden"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
