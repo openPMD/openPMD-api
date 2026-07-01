@@ -47,8 +47,17 @@ jobs:
           openPMD_USE_MPI='OFF'
           HDF5_USE_STATIC_LIBRARIES='ON'
           ZLIB_USE_STATIC_LIBS='ON'
-        CIBW_TEST_REQUIRES: numpy
+        # h5py is a SECOND, independently bundled HDF5 -- co-loading it with
+        # openpmd_api reproduces the ImpactX WASM teardown fault (coload_repro.py).
+        CIBW_TEST_REQUIRES: numpy h5py
         # APITest reads sample data as ../samples relative to the unittest dir;
         # download it there, and run via a wrapper that sets cwd + sys.path.
         CIBW_BEFORE_TEST: "bash {project}/share/openPMD/download_samples.sh {project}/test/python"
-        CIBW_TEST_COMMAND: "python {project}/.github/ci/run_python_tests.py {project}"
+        # First the full suite; then the co-load teardown probe. The probe is
+        # guarded with `|| echo` while we are still reproducing (step 1): a crash
+        # is logged but does not fail the job. Drop the guard once the openPMD
+        # teardown fix lands so the probe becomes an enforced regression test.
+        CIBW_TEST_COMMAND: >
+          python {project}/.github/ci/run_python_tests.py {project} &&
+          ( python {project}/.github/ci/coload_repro.py ||
+            echo "=== CO-LOAD REPRO CRASHED: teardown fault reproduced (step 1) ===" )
