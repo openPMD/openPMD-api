@@ -650,8 +650,8 @@ if(openPMD_HAVE_PYTHON)
     # Windows does not auto-export, so it needs nothing. Emscripten needs BOTH
     # halves: -sSIDE_MODULE=2 stops Pyodide's default -sSIDE_MODULE=1 from
     # whole-archiving and re-exporting every symbol, and the statically linked
-    # deps must additionally be built -fvisibility=hidden (.github/ci/wasm_deps.sh)
-    # so their definitions are DSO-local -- only then can wasm-ld relax our GOT
+    # deps must additionally be built -fvisibility=hidden
+    # so their definitions are DSO-local. Only then can wasm-ld relax our GOT
     # references to HDF5 into direct calls into our own copy, instead of binding
     # to a co-loaded second HDF5 (h5py, ImpactX).
     if(APPLE)
