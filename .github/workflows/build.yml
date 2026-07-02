@@ -5,7 +5,7 @@ on: [push, pull_request]
 env:
   SRC_REF: '0.17.1'
   COMMON_PATCHES: >
-    .github/setup-py-version-post3.patch
+    .github/setup-py-version-post4.patch
     .github/setup-py-windows-cmake-options.patch
     .github/python-hide-symbols.patch
     .github/python-wasm-side-module.patch
