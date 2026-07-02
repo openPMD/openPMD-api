@@ -5,13 +5,14 @@
 # License: LGPLv3+
 #
 # Reproduce/diagnose the co-load HDF5 fault seen in the ImpactX WASM wheel:
-# openpmd_api and h5py each bundle their own static HDF5. Under Pyodide's single
-# global namespace the two HDF5 copies interpose. Import ORDER matters (the
-# first-loaded HDF5 becomes the primary), so we import openpmd_api first, run it,
-# and only THEN load h5py -- mirroring ImpactX (impactx runs, then openpmd_api
-# loads). Phase markers localize any fatal "memory access out of bounds" to a
-# phase (mid-operation vs. teardown); the printed HDF5 versions tell an ABI
-# mismatch (h5py bundling a different HDF5) from the same-version teardown fault.
+# openpmd_api and h5py each bundle their own static HDF5. Under Pyodide's
+# single global namespace the two HDF5 copies interpose. Import ORDER matters
+# (the first-loaded HDF5 becomes the primary), so we import openpmd_api first,
+# run it, and only THEN load h5py -- mirroring ImpactX (impactx runs, then
+# openpmd_api loads). Phase markers localize any fatal "memory access out of
+# bounds" to a phase (mid-operation vs. teardown); the printed HDF5 versions
+# tell an ABI mismatch (h5py bundling a different HDF5) from the same-version
+# teardown fault.
 #
 # isort: skip_file  -- the openpmd_api-before-h5py import order is deliberate.
 import numpy as np

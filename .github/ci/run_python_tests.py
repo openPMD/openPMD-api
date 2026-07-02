@@ -11,9 +11,9 @@
 # Usage: python run_python_tests.py <project-root>
 #
 # APITest resolves sample data as "../samples/..." relative to the working
-# directory, and Test.py does `from API.APITest import APITest`, so we chdir into
-# the unittest tree and put it on sys.path. CIBW_BEFORE_TEST downloads the
-# samples to <project>/test/python/samples (i.e. ../samples from here).
+# directory, and Test.py does `from API.APITest import APITest`, so we chdir
+# into the unittest tree and put it on sys.path. CIBW_BEFORE_TEST downloads
+# the samples to <project>/test/python/samples (i.e. ../samples from here).
 import os
 import runpy
 import sys
