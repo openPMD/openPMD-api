@@ -1,10 +1,15 @@
-# Disable RTD on the wheels branch
+# Skip Read the Docs on the wheels branch: exit 183 cancels the build (RTD then
+# reports the PR check as success). The sphinx key only satisfies the config
+# schema; the build is cancelled in post_checkout before sphinx is read.
 version: 2
 
+sphinx:
+  configuration: docs/source/conf.py
+
 build:
-  os: ubuntu-24.04
+  os: ubuntu-22.04
   tools:
-    python: "3.14"
+    python: "3.11"
   jobs:
     post_checkout:
       - exit 183

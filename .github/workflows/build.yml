@@ -5,9 +5,10 @@ on: [push, pull_request]
 env:
   SRC_REF: '0.17.1'
   COMMON_PATCHES: >
-    .github/setup-py-version-post3.patch
+    .github/setup-py-version-post4.patch
     .github/setup-py-windows-cmake-options.patch
     .github/python-hide-symbols.patch
+    .github/python-wasm-side-module.patch
     .github/hdf5-dont-atexit-emscripten.patch
     .github/hdf5-read-h5tequal-tristate.patch
 
@@ -193,11 +194,13 @@ jobs:
           openPMD_USE_MPI='OFF'
           HDF5_USE_STATIC_LIBRARIES='ON'
           ZLIB_USE_STATIC_LIBS='ON'
+        # _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR for portability to older runtimes
         CIBW_ENVIRONMENT_WINDOWS: >
           HDF5_USE_STATIC_LIBRARIES='ON'
           ZLIB_USE_STATIC_LIBS='ON'
           openPMD_CMAKE_openPMD_USE_HDF5='ON'
           openPMD_CMAKE_openPMD_USE_ADIOS2='${{ matrix.env.ADIOS2 || 'ON' }}'
+          CXXFLAGS='/D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR'
           CMAKE_PREFIX_PATH='C:/Program Files (x86)/ADIOS2;C:/Program Files (x86)/blosc2;C:/Program Files (x86)/HDF5;C:/Program Files (x86)/SQLite3;C:/Program Files (x86)/ZFP;C:/Program Files (x86)/zlib'
         # Fully static link => pyodide needs no wheel-repair step
         CIBW_REPAIR_WHEEL_COMMAND_PYODIDE: ""
