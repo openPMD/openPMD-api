@@ -32,7 +32,7 @@ jobs:
       run: python -m pip install "cibuildwheel==4.1.0"
 
     # cibuildwheel provisions the Emscripten + Pyodide xbuildenv, cross-compiles
-    # the wheel (openPMD_USE_PYTHON defaults ON; wasm_deps.sh builds the static
+    # the wheel (openPMD_USE_PYTHON defaults ON; install_wasm.sh builds the static
     # zlib + HDF5 into the Emscripten sysroot in BEFORE_BUILD), then runs the full
     # Python unittest suite in the matching-ABI Pyodide test runtime (node) -- so
     # there is no separate xbuildenv to keep in sync with the wheel.
@@ -40,7 +40,7 @@ jobs:
       run: python -m cibuildwheel --platform pyodide --output-dir wheelhouse
       env:
         CIBW_BUILD: "cp314-pyodide_wasm32"
-        CIBW_BEFORE_BUILD_PYODIDE: "bash .github/ci/wasm_deps.sh"
+        CIBW_BEFORE_BUILD_PYODIDE: "bash .github/workflows/dependencies/install_wasm.sh"
         CIBW_ENVIRONMENT_PYODIDE: >
           openPMD_CMAKE_openPMD_USE_HDF5='ON'
           openPMD_CMAKE_openPMD_USE_ADIOS2='OFF'
@@ -50,14 +50,15 @@ jobs:
         # h5py is a SECOND, independently bundled HDF5 -- co-loading it with
         # openpmd_api reproduces the ImpactX WASM teardown fault (coload_repro.py).
         CIBW_TEST_REQUIRES: numpy h5py
-        # APITest reads sample data as ../samples relative to the unittest dir;
-        # download it there, and run via a wrapper that sets cwd + sys.path.
+        # APITest uses ../samples paths, so download the samples under test/python
+        # and run Test.py from test/python/unittest -- mirroring the native ctest,
+        # which runs `Test.py -v` from that WORKING_DIRECTORY (see CMakeLists.txt).
         CIBW_BEFORE_TEST: "bash {project}/share/openPMD/download_samples.sh {project}/test/python"
         # Co-load regression + full suite, both enforced. coload_repro.py imports
         # openpmd_api then h5py (a second, independently bundled HDF5) and runs a
         # round-trip; it crashed with a wasm OOB before the -sSIDE_MODULE=2 +
-        # hidden-visibility deps fix. Then the full Python unittest suite runs
-        # with h5py co-loaded (exercises the h5py-interop tests too).
+        # hidden-visibility deps fix. Then the full unittest suite runs with h5py
+        # co-loaded (its own h5py-interop tests exercise the co-load too).
         CIBW_TEST_COMMAND: >
-          python {project}/.github/ci/coload_repro.py &&
-          python {project}/.github/ci/run_python_tests.py {project}
+          python {project}/test/python/coload_repro.py &&
+          cd {project}/test/python/unittest && python Test.py -v
