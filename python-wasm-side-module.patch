@@ -1,0 +1,29 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e4eacf7..126e9e5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -633,12 +633,21 @@ if(openPMD_HAVE_PYTHON)
+     # them (ImpactX, WarpX, a second openPMD), the duplicate exported symbols
+     # cross-bind -> two HDF5/openPMD instances in one process -> crash on the
+     # first file open. Export only the module init symbol so each extension
+-    # keeps its dependencies private. (Windows PE does not auto-export and
+-    # Emscripten links a single namespace, so neither needs this.)
++    # keeps its dependencies private. Windows PE does not auto-export, so it
++    # needs nothing; Emscripten needs -sSIDE_MODULE=2 (see below).
+     if(APPLE)
+         target_link_options(openPMD.py PRIVATE
+             "LINKER:-exported_symbol,_PyInit_openpmd_api_cxx")
+-    elseif(NOT WIN32 AND NOT EMSCRIPTEN)
++    elseif(EMSCRIPTEN)
++        # wasm co-load fix (openPMD-api#1903): Pyodide's default -sSIDE_MODULE=1
++        # whole-archives and force-exports every symbol; -sSIDE_MODULE=2 exports
++        # only the module init, and the static deps are built -fvisibility=hidden
++        # (library_builders.sh) so wasm-ld binds our HDF5 calls to our own copy,
++        # not a co-loaded second HDF5 (h5py, ImpactX).
++        target_link_options(openPMD.py PRIVATE
++            "SHELL:-sSIDE_MODULE=2"
++            "SHELL:-sEXPORTED_FUNCTIONS=_PyInit_openpmd_api_cxx")
++    elseif(NOT WIN32)
+         target_link_options(openPMD.py PRIVATE "LINKER:--exclude-libs,ALL")
+     endif()
+ 
