@@ -7,6 +7,7 @@ env:
   COMMON_PATCHES: >
     .github/setup-py-version-post4.patch
     .github/setup-py-windows-cmake-options.patch
+    .github/setup-py-windows-arm64-platform.patch
     .github/python-hide-symbols.patch
     .github/python-wasm-side-module.patch
     .github/hdf5-dont-atexit-emscripten.patch
@@ -68,6 +69,7 @@ jobs:
             build: "cp311-* cp312-* cp313-* cp314-*"
             env:
               ADIOS2: "OFF"
+              CMAKE_GENERATOR_PLATFORM: "ARM64"
 
           - os: macos-15-intel
             arch: "x86_64"
