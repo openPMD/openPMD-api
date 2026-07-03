@@ -38,10 +38,6 @@ jobs:
             env:
               ADIOS2: "OFF"
 
-          # Linux ARM64 (aarch64): native GitHub-hosted runner, free for public
-          # repos (cibuildwheel builds aarch64 natively, no QEMU). Full parity with
-          # the x86_64 leg above: cp310-cp314, many + musl, ADIOS2 ON.
-          # (Formerly built on Travis-CI, which is retired.)
           - os: ubuntu-24.04-arm
             arch: "aarch64"
 
@@ -67,11 +63,6 @@ jobs:
               CMAKE_GENERATOR_PLATFORM: "Win32"
               ADIOS2: "OFF"   # 32-bit: no 32-bit ADIOS2 CI; BP read segfaults (see i686)
 
-          # Windows ARM64: native GitHub-hosted runner, free for public repos
-          # (cibuildwheel ARM64 support is still experimental). CPython win_arm64
-          # exists only from 3.11+, so no cp310 and no PyPy here. First cut ships
-          # HDF5 + JSON only (ADIOS2 OFF) to avoid an unproven ADIOS2-on-ARM64 build;
-          # library_builders.bat then compiles only zlib + HDF5. See i686/win32.
           - os: windows-11-arm
             arch: "ARM64"
             build: "cp311-* cp312-* cp313-* cp314-*"
