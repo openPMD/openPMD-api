@@ -38,11 +38,15 @@ jobs:
             env:
               ADIOS2: "OFF"
 
-          # builds faster on Travis-CI:
-          #- os: ubuntu-20.04
-          #  arch: "aarch64"
+          # Linux ARM64 (aarch64): native GitHub-hosted runner, free for public
+          # repos (cibuildwheel builds aarch64 natively, no QEMU). Full parity with
+          # the x86_64 leg above: cp310-cp314, many + musl, ADIOS2 ON.
+          # (Formerly built on Travis-CI, which is retired.)
+          - os: ubuntu-24.04-arm
+            arch: "aarch64"
 
-          # builds faster on Travis-CI:
+          # ppc64le was only ever built on the (now retired) Travis-CI; there is no
+          # free GitHub-hosted ppc64le runner, so these wheels are no longer produced.
           #- os: ubuntu-20.04
           #  arch: "ppc64le"
 
@@ -62,6 +66,17 @@ jobs:
               CMAKE_GENERATOR: "Visual Studio 17 2022"
               CMAKE_GENERATOR_PLATFORM: "Win32"
               ADIOS2: "OFF"   # 32-bit: no 32-bit ADIOS2 CI; BP read segfaults (see i686)
+
+          # Windows ARM64: native GitHub-hosted runner, free for public repos
+          # (cibuildwheel ARM64 support is still experimental). CPython win_arm64
+          # exists only from 3.11+, so no cp310 and no PyPy here. First cut ships
+          # HDF5 + JSON only (ADIOS2 OFF) to avoid an unproven ADIOS2-on-ARM64 build;
+          # library_builders.bat then compiles only zlib + HDF5. See i686/win32.
+          - os: windows-11-arm
+            arch: "ARM64"
+            build: "cp311-* cp312-* cp313-* cp314-*"
+            env:
+              ADIOS2: "OFF"
 
           - os: macos-15-intel
             arch: "x86_64"
@@ -235,8 +250,8 @@ jobs:
         CIBW_TEST_REQUIRES_PYODIDE: numpy
         CIBW_TEST_COMMAND: >
           python {project}/.github/check_wheel_libs.py &&
-          python -c "import sys, openpmd_api as io; v = io.variants;
-          need_adios2 = sys.maxsize > 2**32;
+          python -c "import openpmd_api as io; v = io.variants;
+          need_adios2 = '${{ matrix.env.ADIOS2 || 'ON' }}' == 'ON';
           assert v['hdf5'] and v['json'] and (v['adios2'] or not need_adios2), v;
           print('openPMD', io.__version__, dict(v))" &&
           python {project}/.github/smoke_roundtrip.py

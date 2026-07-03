@@ -288,10 +288,20 @@ exit /b 0
 :main
 call :install_buildessentials
 call :build_zlib
-call :build_sqlite
-:: build_bzip2
-:: build_szip
-call :build_zfp
-call :build_blosc2
 call :build_hdf5
-call :build_adios2
+
+rem ADIOS2 and its exclusive dependencies (SQLite3, ZFP, C-Blosc2) are only built
+rem when openPMD is configured with ADIOS2 (openPMD_CMAKE_openPMD_USE_ADIOS2=ON, set
+rem via CIBW_ENVIRONMENT_WINDOWS and visible here in the before-build step). Targets
+rem that ship HDF5 + JSON only -- Windows ARM64 and win32 (x86) -- skip this whole
+rem chain, which avoids an unproven ADIOS2-on-ARM64 build and trims the required
+rem tooling to curl + PowerShell + CMake. HDF5 depends only on zlib, so it stays
+rem unconditional above.
+if /I "%openPMD_CMAKE_openPMD_USE_ADIOS2%"=="ON" (
+  call :build_sqlite
+  rem build_bzip2
+  rem build_szip
+  call :build_zfp
+  call :build_blosc2
+  call :build_adios2
+)
