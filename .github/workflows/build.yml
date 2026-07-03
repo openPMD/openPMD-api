@@ -25,6 +25,7 @@ jobs:
         #   platform     CIBW_PLATFORM                 (default auto)
         #   build        CIBW_BUILD                    (default *, i.e. all)
         #   patches      space-separated setup patches (default: Windows one)
+        #   artifact     artifact-name suffix override (default: build || arch)
         #   sdist        also build + upload the sdist artifact (default: off)
         include:
           - os: ubuntu-22.04
@@ -67,6 +68,7 @@ jobs:
           - os: windows-11-arm
             arch: "ARM64"
             build: "cp311-* cp312-* cp313-* cp314-*"
+            artifact: "ARM64"   # build has '*'/spaces; not a valid artifact name
             env:
               ADIOS2: "OFF"
               CMAKE_GENERATOR_PLATFORM: "ARM64"
@@ -265,8 +267,9 @@ jobs:
       name: Publish as GitHub artifact
       with:
         # Include matrix.build so the two wasm legs (cp313 / cp314, which share
-        # os=ubuntu-24.04 + arch=wasm32) get DISTINCT artifact names.
-        name: wheels-${{ matrix.os }}-${{ matrix.build || matrix.arch }}
+        # os=ubuntu-24.04 + arch=wasm32) get DISTINCT artifact names. matrix.artifact
+        # overrides it where build holds glob chars invalid in a name (Windows ARM64).
+        name: wheels-${{ matrix.os }}-${{ matrix.artifact || matrix.build || matrix.arch }}
         path: ./wheelhouse
         overwrite: true
 
