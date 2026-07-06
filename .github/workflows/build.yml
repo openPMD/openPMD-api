@@ -68,7 +68,7 @@ jobs:
           - os: windows-11-arm
             arch: "ARM64"
             build: "cp311-* cp312-* cp313-* cp314-*"
-            artifact: "ARM64"   # build has '*'/spaces; not a valid artifact name
+            artifact: "WinArm64"
             env:
               ADIOS2: "OFF"
               CMAKE_GENERATOR_PLATFORM: "ARM64"
