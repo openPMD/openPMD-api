@@ -7,6 +7,7 @@ env:
   COMMON_PATCHES: >
     .github/setup-py-version-post4.patch
     .github/setup-py-windows-cmake-options.patch
+    .github/setup-py-windows-arm64-platform.patch
     .github/python-hide-symbols.patch
     .github/python-wasm-side-module.patch
     .github/hdf5-dont-atexit-emscripten.patch
@@ -24,6 +25,7 @@ jobs:
         #   platform     CIBW_PLATFORM                 (default auto)
         #   build        CIBW_BUILD                    (default *, i.e. all)
         #   patches      space-separated setup patches (default: Windows one)
+        #   artifact     artifact-name suffix override (default: build || arch)
         #   sdist        also build + upload the sdist artifact (default: off)
         include:
           - os: ubuntu-22.04
@@ -38,11 +40,11 @@ jobs:
             env:
               ADIOS2: "OFF"
 
-          # builds faster on Travis-CI:
-          #- os: ubuntu-20.04
-          #  arch: "aarch64"
+          - os: ubuntu-24.04-arm
+            arch: "aarch64"
 
-          # builds faster on Travis-CI:
+          # ppc64le was only ever built on the (now retired) Travis-CI; there is no
+          # free GitHub-hosted ppc64le runner, so these wheels are no longer produced.
           #- os: ubuntu-20.04
           #  arch: "ppc64le"
 
@@ -62,6 +64,14 @@ jobs:
               CMAKE_GENERATOR: "Visual Studio 17 2022"
               CMAKE_GENERATOR_PLATFORM: "Win32"
               ADIOS2: "OFF"   # 32-bit: no 32-bit ADIOS2 CI; BP read segfaults (see i686)
+
+          - os: windows-11-arm
+            arch: "ARM64"
+            build: "cp311-* cp312-* cp313-* cp314-*"
+            artifact: "WinArm64"
+            env:
+              ADIOS2: "OFF"
+              CMAKE_GENERATOR_PLATFORM: "ARM64"
 
           - os: macos-15-intel
             arch: "x86_64"
@@ -235,8 +245,8 @@ jobs:
         CIBW_TEST_REQUIRES_PYODIDE: numpy
         CIBW_TEST_COMMAND: >
           python {project}/.github/check_wheel_libs.py &&
-          python -c "import sys, openpmd_api as io; v = io.variants;
-          need_adios2 = sys.maxsize > 2**32;
+          python -c "import openpmd_api as io; v = io.variants;
+          need_adios2 = '${{ matrix.env.ADIOS2 || 'ON' }}' == 'ON';
           assert v['hdf5'] and v['json'] and (v['adios2'] or not need_adios2), v;
           print('openPMD', io.__version__, dict(v))" &&
           python {project}/.github/smoke_roundtrip.py
@@ -257,8 +267,9 @@ jobs:
       name: Publish as GitHub artifact
       with:
         # Include matrix.build so the two wasm legs (cp313 / cp314, which share
-        # os=ubuntu-24.04 + arch=wasm32) get DISTINCT artifact names.
-        name: wheels-${{ matrix.os }}-${{ matrix.build || matrix.arch }}
+        # os=ubuntu-24.04 + arch=wasm32) get DISTINCT artifact names. matrix.artifact
+        # overrides it where build holds glob chars invalid in a name (Windows ARM64).
+        name: wheels-${{ matrix.os }}-${{ matrix.artifact || matrix.build || matrix.arch }}
         path: ./wheelhouse
         overwrite: true
 

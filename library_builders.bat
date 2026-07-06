@@ -288,10 +288,14 @@ exit /b 0
 :main
 call :install_buildessentials
 call :build_zlib
-call :build_sqlite
-:: build_bzip2
-:: build_szip
-call :build_zfp
-call :build_blosc2
 call :build_hdf5
-call :build_adios2
+
+rem ADIOS2 and its exclusive dependencies
+if /I "%openPMD_CMAKE_openPMD_USE_ADIOS2%"=="ON" (
+  call :build_sqlite
+  rem build_bzip2
+  rem build_szip
+  call :build_zfp
+  call :build_blosc2
+  call :build_adios2
+)
