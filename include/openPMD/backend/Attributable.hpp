@@ -627,6 +627,11 @@ OPENPMD_protected
                 throw error::Internal(
                     "Parsing procedures should directly unset dirty.");
             }
+            else
+            {
+                throw error::Internal(
+                    "Internal flushes should not unset dirty flags.");
+            }
             break;
         case FlushLevel::SkeletonOnly:
         case FlushLevel::CreateOrOpenFiles:
