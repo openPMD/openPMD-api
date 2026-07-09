@@ -109,7 +109,7 @@ void ConfigAttribute::read()
                 write_to_stderr(attribute) << "'. Expected one of ";
                 auxiliary::write_vec_to_stream(
                     std::cerr, type_unmatched.expectedDatatypes)
-                    << " or convertible to such a type." << std::endl;
+                    << "." << std::endl;
             },
             [&](error::ReadError const &err) {
                 std::cerr << "Unexpected error while trying to read "

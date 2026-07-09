@@ -279,7 +279,8 @@ void Mesh::scientificDefaults_impl(
                     return auxiliary::createDefaultVector(dimensionality, 1.);
                 },
                 &Mesh::setGridUnitSIPerDimension)
-            .withReader(int_types, require_type<std::vector<double>>())(wor);
+            .withReader(numerical_types, require_type<std::vector<double>>())(
+                wor);
     }
     else
     {
