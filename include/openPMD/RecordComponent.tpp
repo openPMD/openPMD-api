@@ -113,7 +113,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     getBufferView.extent = e;
     getBufferView.dtype = getDatatype();
 
-#define OPENPMD_ENFORCE_FLUSH_UPON_RESET_DATASET true
+#define OPENPMD_ENFORCE_FLUSH_UPON_RESET_DATASET false
 
 #if !OPENPMD_ENFORCE_FLUSH_UPON_RESET_DATASET
     if (query.out->backendManagedBuffer)
