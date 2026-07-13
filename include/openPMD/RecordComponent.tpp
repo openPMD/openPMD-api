@@ -113,11 +113,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
     getBufferView.extent = e;
     getBufferView.dtype = getDatatype();
 
-#define OPENPMD_ENFORCE_FLUSH_UPON_RESET_DATASET false
-
-#if !OPENPMD_ENFORCE_FLUSH_UPON_RESET_DATASET
     if (query.out->backendManagedBuffer)
-#endif
     {
         // Need to initialize the dataset for the Span API
         // But this is a non-collective call and initializing the dataset is
@@ -128,12 +124,6 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         // RecordComponents to be called by users before the Span API
         if (!writable().parent || !writable().parent->written)
         {
-#if OPENPMD_ENFORCE_FLUSH_UPON_RESET_DATASET
-            // This error might be too strict in case we throw out the implicit
-            // flush from resetDataset() again.
-            throw error::WrongAPIUsage(
-                "Must flush the structure before using Span API");
-#else
             /*
              * The openPMD backend might not yet know about this dataset.
              * Flush the openPMD hierarchy to the backend without flushing any
@@ -141,7 +131,6 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
              */
             seriesFlush_impl</* flush_entire_series = */ false>(
                 {FlushLevel::SkeletonOnly}, /*flush_io_handler=*/false);
-#endif
         }
         if (!this->written())
         {
