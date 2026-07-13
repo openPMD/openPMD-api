@@ -216,37 +216,9 @@ RecordComponent &RecordComponent::setUnitSI(double usi)
     return *this;
 }
 
-namespace
-{
-    template <typename F>
-    struct defer_type
-    {
-        F functor;
-        ~defer_type()
-        {
-            std::move(functor)();
-        }
-    };
-
-    template <typename F>
-    auto defer(F &&functor) -> defer_type<std::remove_reference_t<F>>
-    {
-        return defer_type<std::remove_reference_t<F>>{std::forward<F>(functor)};
-    }
-} // namespace
-
 RecordComponent &RecordComponent::resetDataset(Dataset d)
 {
     auto &rc = get();
-    auto cleanup = defer([&rc, this]() {
-        if (rc.m_dataset.has_value() &&
-            rc.m_dataset->dtype != Datatype::UNDEFINED &&
-            IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
-        {
-            seriesFlush_impl</* flush_entire_series = */ false>(
-                {FlushLevel::SkeletonOnly}, /* flush_io_handler = */ true);
-        }
-    });
     if (written())
     {
         if (!rc.m_dataset.has_value())
