@@ -2473,7 +2473,6 @@ class APITest(unittest.TestCase):
             dset = io.Dataset(np.dtype("uint64"), [2])
             num_particles_comp = particles.particle_patches["numParticles"]
             num_particles_comp.reset_dataset(dset)
-            num_particles_comp.store(0, np.uint64(10))
             num_particles_comp.store(1, np.uint64(20))
 
             iteration.populate_missing_metadata(recursive=True)
@@ -2499,8 +2498,8 @@ class APITest(unittest.TestCase):
             .particles["electrons"].particle_patches["numParticles"].load()
         read.flush()
         np.testing.assert_array_equal(
-            loaded[0],
-            np.uint64(50)
+            loaded,
+            np.array([50, 20], dtype=np.uint64)
         )
 
 
