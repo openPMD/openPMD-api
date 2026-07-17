@@ -134,6 +134,8 @@ class RecordComponent
     friend T &internal::makeOwning(T &self, Series_type);
     friend class internal::ScientificDefaults;
     friend class Attributable;
+    template <typename>
+    friend class ConvertibleContainer;
     friend class CustomHierarchy;
 
 public:

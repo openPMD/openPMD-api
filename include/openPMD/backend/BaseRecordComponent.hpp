@@ -39,25 +39,6 @@ namespace internal
     class BaseRecordComponentData : virtual public AttributableData
     {
     public:
-        /**
-         * The type and extent of the dataset defined by this component.
-         */
-        std::optional<Dataset> m_dataset;
-        /**
-         * True if this is defined as a constant record component as specified
-         * in the openPMD standard.
-         * If yes, then no heavy-weight dataset is created and the dataset is
-         * instead defined via light-weight attributes.
-         */
-        bool m_isConstant = false;
-        /**
-         * Tracks if there was any write access to the record component.
-         * Necessary in BaseRecord<T> to track if the scalar component has been
-         * used and is used by BaseRecord<T> to determine the return value of
-         * the BaseRecord<T>::scalar() method.
-         */
-        bool m_datasetDefined = false;
-
         BaseRecordComponentData(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData(BaseRecordComponentData &&) = delete;
         BaseRecordComponentData &
@@ -66,11 +47,38 @@ namespace internal
 
         BaseRecordComponentData() = default;
 
+        [[nodiscard]] inline auto dataset() const -> auto const &
+        {
+            return (**this).m_dataset_metadata.m_dataset;
+        }
+        inline auto dataset() -> auto &
+        {
+            return (**this).m_dataset_metadata.m_dataset;
+        }
+
+        [[nodiscard]] inline auto isConstant() const -> auto const &
+        {
+            return (**this).m_dataset_metadata.m_isConstant;
+        }
+        inline auto isConstant() -> auto &
+        {
+            return (**this).m_dataset_metadata.m_isConstant;
+        }
+
+        [[nodiscard]] inline auto datasetDefined() const -> auto const &
+        {
+            return (**this).m_dataset_metadata.m_datasetDefined;
+        }
+        inline auto datasetDefined() -> auto &
+        {
+            return (**this).m_dataset_metadata.m_datasetDefined;
+        }
+
         virtual void reset()
         {
-            m_dataset = std::nullopt;
-            m_isConstant = false;
-            m_datasetDefined = false;
+            (**this).m_dataset_metadata.m_dataset = std::nullopt;
+            (**this).m_dataset_metadata.m_isConstant = false;
+            (**this).m_dataset_metadata.m_datasetDefined = false;
         }
     };
 } // namespace internal

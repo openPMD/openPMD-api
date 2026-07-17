@@ -63,6 +63,28 @@ namespace internal
     class ScientificDefaults;
     class AttributableData;
 
+    struct DatasetMetaData
+    {
+        /**
+         * The type and extent of the dataset defined by this component.
+         */
+        std::optional<Dataset> m_dataset;
+        /**
+         * True if this is defined as a constant record component as specified
+         * in the openPMD standard.
+         * If yes, then no heavy-weight dataset is created and the dataset is
+         * instead defined via light-weight attributes.
+         */
+        bool m_isConstant = false;
+        /**
+         * Tracks if there was any write access to the record component.
+         * Necessary in BaseRecord<T> to track if the scalar component has been
+         * used and is used by BaseRecord<T> to determine the return value of
+         * the BaseRecord<T>::scalar() method.
+         */
+        bool m_datasetDefined = false;
+    };
+
     class SharedAttributableData
     {
         friend class openPMD::Attributable;
@@ -90,6 +112,11 @@ namespace internal
          */
         A_MAP m_attributes;
 
+        // TODO group the below three members somehow with Writable::objectType
+        // Note that objectType is backend info, and the below is frontend info.
+        // This implies a divergence between both infos for constant components.
+        // So, a simple GADT prolly wont do.
+
         // Using shared_ptr<SharedAttributableData> in here because
         // AttributableData is non-copyable and non-movable, but we need
         // movability for map handling
@@ -108,6 +135,8 @@ namespace internal
         using children_object_storage_t =
             std::map<std::string, CustomHierarchy>;
         children_object_storage_t m_children_managed_as_custom_hierarchy;
+
+        DatasetMetaData m_dataset_metadata;
     };
 
     /*
