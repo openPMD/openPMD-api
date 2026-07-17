@@ -83,6 +83,24 @@ namespace internal
          * the BaseRecord<T>::scalar() method.
          */
         bool m_datasetDefined = false;
+
+        /**
+         * Stores the value for constant record components.
+         * Ignored otherwise.
+         */
+        Attribute m_constantValue{-1};
+        /**
+         * True if this component is an empty dataset, i.e. its extent is zero
+         * in at least one dimension.
+         * Treated by the openPMD-api as a special case of constant record
+         * components.
+         */
+        bool m_isEmpty = false;
+        /**
+         * User has extended the dataset, but the EXTEND task must yet be
+         * flushed to the backend
+         */
+        bool m_hasBeenExtended = false;
     };
 
     class SharedAttributableData
