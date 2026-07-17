@@ -93,7 +93,7 @@ void ParticleSpecies::read()
                 RecordComponent &rc = r;
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
                 IOHandler()->flush(internal::defaultFlushParams);
-                rc.get().m_isConstant = true;
+                rc.get().isConstant() = true;
             }
             internal::HomogenizeExtents recordExtents;
             try

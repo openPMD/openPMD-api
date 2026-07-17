@@ -49,6 +49,20 @@ void write(
     add_custom_hierarchy(series);
     add_custom_hierarchy(series.snapshots());
     add_custom_hierarchy(iteration);
+
+    auto Ex = iteration.meshes["E"]["x"];
+    Ex.resetDataset({Datatype::INT, {3}});
+    std::vector<int> Exdata{1, 2, 3};
+    Ex.storeChunk(Exdata, {0}, {3});
+
+    auto Ex_ =
+        iteration.customHierarchies()["meshes"]["E"]["x"].as<RecordComponent>();
+    REQUIRE(Ex_.getDatatype() == Ex.getDatatype());
+    REQUIRE(Ex_.getExtent() == Ex.getExtent());
+
+    // Test resizing
+    // Ex_.resetDataset({{6}});
+    // Ex.storeChunk(Exdata, {3}, {3});
     iteration.close();
 }
 

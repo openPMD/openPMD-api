@@ -20,12 +20,14 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 #include <stdexcept>
 #include <string>
@@ -65,14 +67,49 @@ private:
     explicit ConvertibleContainer() = default;
 
 public:
+    // TODO also: asContainerOf()
     template <typename TargetType>
-    auto asContainerOf() -> ConvertibleContainer<TargetType>
+    auto as() -> TargetType
     {
-        if constexpr (
+        if constexpr (std::is_same_v<TargetType, RecordComponent>)
+        {
+            if (this->written())
+            {
+                switch (this->writable().objectType)
+                {
+                case ObjectType::Group:
+                    throw error::WrongAPIUsage(
+                        "Can't cast a group object into a dataset.");
+                case ObjectType::Dataset:
+                    break;
+                }
+                RecordComponent res;
+                res.get().cloneFrom(*this->m_attri);
+                return res;
+            }
+            else
+            {
+                if (access::write(this->IOHandler()->m_frontendAccess))
+                {
+                    // this is now a dataset.
+                    this->writable().objectType = ObjectType::Dataset;
+                    RecordComponent res;
+                    res.get().cloneFrom(*this->m_attri);
+                    return res;
+                }
+                else
+                {
+                    // TODO check if this has valid uses
+                    throw error::WrongAPIUsage(
+                        "Read only: Trying to access a non-written object as a "
+                        "RecordComponent.");
+                }
+            }
+        }
+        else if constexpr (
             std::is_same_v<TargetType, CustomHierarchy> ||
             std::is_same_v<TargetType, Mesh> ||
-            std::is_same_v<TargetType, ParticleSpecies> ||
-            std::is_same_v<TargetType, RecordComponent>)
+            std::is_same_v<TargetType, ParticleSpecies>)
         {
             // TODO: If Mesh or ParticleSpecies, create Container on the fly by
             // evaluating the meshes/particles path. If RecordComponent, maybe

@@ -228,12 +228,20 @@ void Attributable::customHierarchyFlush(
                 "hierarchy contained "
                 "an object that should be flushed conventionally.");
         }
-        if (!subpath.written())
+        switch (subpath.writable().objectType)
         {
-            pCreate.path = name;
-            IOHandler()->enqueue(IOTask(&subpath, pCreate));
+        case ObjectType::Group:
+            if (!subpath.written())
+            {
+                pCreate.path = name;
+                IOHandler()->enqueue(IOTask(&subpath, pCreate));
+            }
+            subpath.customHierarchyFlush(flushParams, true);
+            break;
+        case ObjectType::Dataset:
+            subpath.as<RecordComponent>().flush(name, flushParams);
+            break;
         }
-        subpath.customHierarchyFlush(flushParams, true);
     }
 
     if (unset_dirty && flushParams.flushLevel != FlushLevel::SkeletonOnly &&
