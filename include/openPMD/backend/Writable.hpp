@@ -122,6 +122,8 @@ class Writable final
     friend struct Parameter<Operation::CREATE_DATASET>;
     friend struct Parameter<Operation::OPEN_DATASET>;
     friend class internal::ScientificDefaults;
+    template <typename>
+    friend class ConvertibleContainer;
     friend class CustomHierarchy;
     template <typename T>
     friend struct traits::GenerationPolicy;

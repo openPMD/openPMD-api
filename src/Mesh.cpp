@@ -446,7 +446,7 @@ void Mesh::flush_impl(
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         auto &m = get();
-        if (m.m_datasetDefined)
+        if (m.datasetDefined())
         {
             T_RecordComponent::flush(SCALAR, flushParams);
         }
@@ -521,7 +521,7 @@ void Mesh::read()
             MeshRecordComponent &rc = map[component];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
-            rc.get().m_isConstant = true;
+            rc.get().isConstant() = true;
             try
             {
                 rc.read();

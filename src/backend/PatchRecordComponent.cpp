@@ -44,9 +44,9 @@ uint8_t PatchRecordComponent::getDimensionality() const
 Extent PatchRecordComponent::getExtent() const
 {
     auto &rc = get();
-    if (rc.m_dataset.has_value())
+    if (rc.dataset().has_value())
     {
-        return rc.m_dataset.value().extent;
+        return rc.dataset().value().extent;
     }
     else
     {

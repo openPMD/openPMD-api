@@ -155,7 +155,7 @@ auto Record::read() -> internal::HomogenizeExtents
             RecordComponent &rc = (*this)[component];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
-            rc.get().m_isConstant = true;
+            rc.get().isConstant() = true;
             try
             {
                 rc.read();

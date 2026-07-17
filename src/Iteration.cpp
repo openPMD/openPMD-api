@@ -649,7 +649,7 @@ void Iteration::readMeshes(std::string const &meshesPath)
             MeshRecordComponent &mrc = m;
             IOHandler()->enqueue(IOTask(&mrc, pOpen));
             IOHandler()->flush(internal::defaultFlushParams);
-            mrc.get().m_isConstant = true;
+            mrc.get().isConstant() = true;
         }
         try
         {

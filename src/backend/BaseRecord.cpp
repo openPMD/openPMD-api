@@ -198,7 +198,7 @@ namespace internal
 template <typename T_elem>
 auto BaseRecord<T_elem>::begin() -> iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ false);
     }
@@ -211,7 +211,7 @@ auto BaseRecord<T_elem>::begin() -> iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::begin() const -> const_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ false);
     }
@@ -224,7 +224,7 @@ auto BaseRecord<T_elem>::begin() const -> const_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::cbegin() const -> const_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ false);
     }
@@ -237,7 +237,7 @@ auto BaseRecord<T_elem>::cbegin() const -> const_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::end() -> iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ true);
     }
@@ -250,7 +250,7 @@ auto BaseRecord<T_elem>::end() -> iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::end() const -> const_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ true);
     }
@@ -263,7 +263,7 @@ auto BaseRecord<T_elem>::end() const -> const_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::cend() const -> const_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ true);
     }
@@ -276,7 +276,7 @@ auto BaseRecord<T_elem>::cend() const -> const_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::rbegin() -> reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ false);
     }
@@ -289,7 +289,7 @@ auto BaseRecord<T_elem>::rbegin() -> reverse_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::rbegin() const -> const_reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ false);
     }
@@ -302,7 +302,7 @@ auto BaseRecord<T_elem>::rbegin() const -> const_reverse_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::crbegin() const -> const_reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ false);
     }
@@ -315,7 +315,7 @@ auto BaseRecord<T_elem>::crbegin() const -> const_reverse_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::rend() -> reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ true);
     }
@@ -328,7 +328,7 @@ auto BaseRecord<T_elem>::rend() -> reverse_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::rend() const -> const_reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ true);
     }
@@ -341,7 +341,7 @@ auto BaseRecord<T_elem>::rend() const -> const_reverse_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::crend() const -> const_reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ true);
     }
@@ -456,7 +456,7 @@ auto BaseRecord<T_elem>::at(key_type const &key) const -> mapped_type const &
     bool const keyScalar = (key == RecordComponent::SCALAR);
     if (keyScalar)
     {
-        if (!get().m_datasetDefined)
+        if (!get().datasetDefined())
         {
             throw std::out_of_range(
                 "[at()] Requested scalar entry from non-scalar record.");
@@ -510,7 +510,7 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::find(key_type const &key) -> iterator
 {
     auto &r = get();
-    if (r.m_datasetDefined)
+    if (r.datasetDefined())
     {
         if (key == RecordComponent::SCALAR)
         {
@@ -535,7 +535,7 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::find(key_type const &key) const -> const_iterator
 {
     auto &r = get();
-    if (r.m_datasetDefined)
+    if (r.datasetDefined())
     {
         if (key == RecordComponent::SCALAR)
         {
@@ -561,7 +561,7 @@ auto BaseRecord<T_elem>::count(key_type const &key) const -> size_type
 {
     if (key == RecordComponent::SCALAR)
     {
-        return get().m_datasetDefined ? 1 : 0;
+        return get().datasetDefined() ? 1 : 0;
     }
     else
     {
