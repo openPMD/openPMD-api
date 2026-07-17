@@ -51,7 +51,9 @@ void write(
     add_custom_hierarchy(iteration);
 
     auto Ex = iteration.meshes["E"]["x"];
-    Ex.resetDataset({Datatype::INT, {3}});
+    Ex.resetDataset({Datatype::INT, {3}, R"(
+                    resizable = true
+                    hdf5.dataset.chunks = "auto")"});
     std::vector<int> Exdata{1, 2, 3};
     Ex.storeChunk(Exdata, {0}, {3});
 
@@ -59,10 +61,11 @@ void write(
         iteration.customHierarchies()["meshes"]["E"]["x"].as<RecordComponent>();
     REQUIRE(Ex_.getDatatype() == Ex.getDatatype());
     REQUIRE(Ex_.getExtent() == Ex.getExtent());
+    iteration.seriesFlush();
 
     // Test resizing
-    // Ex_.resetDataset({{6}});
-    // Ex.storeChunk(Exdata, {3}, {3});
+    Ex_.resetDataset({{6}});
+    Ex.storeChunk(Exdata, {3}, {3});
     iteration.close();
 }
 

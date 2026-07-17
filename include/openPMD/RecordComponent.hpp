@@ -72,37 +72,47 @@ namespace internal
         RecordComponentData &operator=(RecordComponentData const &) = delete;
         RecordComponentData &operator=(RecordComponentData &&) = delete;
 
+        [[nodiscard]] auto constantValue() const -> auto const &
+        {
+            return (**this).m_dataset_metadata.m_constantValue;
+        }
+        auto constantValue() -> auto &
+        {
+            return (**this).m_dataset_metadata.m_constantValue;
+        }
+        [[nodiscard]] auto isEmpty() const -> auto const &
+        {
+            return (**this).m_dataset_metadata.m_isEmpty;
+        }
+        auto isEmpty() -> auto &
+        {
+            return (**this).m_dataset_metadata.m_isEmpty;
+        }
+        [[nodiscard]] auto hasBeenExtended() const -> auto const &
+        {
+            return (**this).m_dataset_metadata.m_hasBeenExtended;
+        }
+        auto hasBeenExtended() -> auto &
+        {
+            return (**this).m_dataset_metadata.m_hasBeenExtended;
+        }
+
         /**
          * Chunk reading/writing requests on the contained dataset.
+         * Note: We may also put this centrally into DatasetMetaData in
+         * Attributable.hpp
          */
         std::queue<IOTask> m_chunks;
 
         void push_chunk(IOTask &&task);
-        /**
-         * Stores the value for constant record components.
-         * Ignored otherwise.
-         */
-        Attribute m_constantValue{-1};
-        /**
-         * True if this component is an empty dataset, i.e. its extent is zero
-         * in at least one dimension.
-         * Treated by the openPMD-api as a special case of constant record
-         * components.
-         */
-        bool m_isEmpty = false;
-        /**
-         * User has extended the dataset, but the EXTEND task must yet be
-         * flushed to the backend
-         */
-        bool m_hasBeenExtended = false;
 
         void reset() override
         {
             BaseRecordComponentData::reset();
             m_chunks = std::queue<IOTask>();
-            m_constantValue = -1;
-            m_isEmpty = false;
-            m_hasBeenExtended = false;
+            constantValue() = -1;
+            isEmpty() = false;
+            hasBeenExtended() = false;
         }
     };
     template <typename, typename>
