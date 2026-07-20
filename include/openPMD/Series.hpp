@@ -996,7 +996,8 @@ OPENPMD_private
      *        least one step was written.
      *
      * @param doFlush If true, flush the IO handler.
-     * @param l This operation must only run at flush level write_datasets
+     * @param l This operation must only run at flush level write_datasets,
+     *          Noop otherwise.
      */
     void flushStep(bool doFlush, FlushLevel l);
 

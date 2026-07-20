@@ -620,6 +620,8 @@ OPENPMD_protected
         case FlushLevel::UserFlush:
             setDirty(false);
             break;
+        // FlushLevel::InternalFlush is only used for directly calling the IO
+        // handler and should not bother with middle-end state manipulations
         case FlushLevel::InternalFlush:
             // Used for parsing
             if (IOHandler()->m_seriesStatus == internal::SeriesStatus::Parsing)
