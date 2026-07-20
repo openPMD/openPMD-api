@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 // expose private and protected members for invasive testing
@@ -58,6 +59,98 @@ namespace internal
     class AttributableData;
     class SeriesData;
     class ScientificDefaults;
+    class BaseRecordComponentData;
+    class RecordComponentData;
+} // namespace internal
+
+namespace internal::object_type
+{
+    struct DatasetMetaData
+    {
+        /**
+         * Chunk reading/writing requests on the contained dataset.
+         */
+        std::queue<IOTask> m_chunks;
+        /**
+         * The type and extent of the dataset defined by this component.
+         */
+        std::optional<Dataset> m_dataset;
+        /**
+         * Stores the value for constant record components.
+         * Ignored otherwise.
+         */
+        Attribute m_constantValue{-1};
+        /**
+         * True if this is defined as a constant record component as specified
+         * in the openPMD standard.
+         * If yes, then no heavy-weight dataset is created and the dataset is
+         * instead defined via light-weight attributes.
+         */
+        bool m_isConstant = false;
+        /**
+         * Tracks if there was any write access to the record component.
+         * Necessary in BaseRecord<T> to track if the scalar component has been
+         * used and is used by BaseRecord<T> to determine the return value of
+         * the BaseRecord<T>::scalar() method.
+         */
+        bool m_datasetDefined = false;
+
+        /**
+         * True if this component is an empty dataset, i.e. its extent is zero
+         * in at least one dimension.
+         * Treated by the openPMD-api as a special case of constant record
+         * components.
+         */
+        bool m_isEmpty = false;
+        /**
+         * User has extended the dataset, but the EXTEND task must yet be
+         * flushed to the backend
+         */
+        bool m_hasBeenExtended = false;
+    };
+
+    struct GroupMetaData
+    {};
+} // namespace internal::object_type
+
+namespace internal
+{
+    struct ObjectType
+        : std::variant<object_type::DatasetMetaData, object_type::GroupMetaData>
+    {
+        using variant_t = std::
+            variant<object_type::DatasetMetaData, object_type::GroupMetaData>;
+        using variant_t::variant;
+
+        [[nodiscard]] auto as_base() const -> variant_t const &
+        {
+            return *this;
+        }
+        auto as_base() -> variant_t &
+        {
+            return *this;
+        }
+        [[nodiscard]] auto isDataset() const -> bool
+        {
+            return std::holds_alternative<object_type::DatasetMetaData>(
+                as_base());
+        }
+        [[nodiscard]] auto isGroup() const -> bool
+        {
+            return std::holds_alternative<object_type::GroupMetaData>(
+                as_base());
+        }
+        auto initDataset() -> object_type::DatasetMetaData *
+        {
+            if (auto res =
+                    std::get_if<object_type::DatasetMetaData>(&as_base());
+                res)
+            {
+                return res;
+            }
+            return &as_base().emplace<object_type::DatasetMetaData>();
+        }
+    };
 } // namespace internal
 namespace detail
 {
@@ -68,14 +161,6 @@ namespace debug
 {
     void printDirty(Series const &);
 }
-
-enum class ObjectType : std::uint8_t
-{
-    Group,
-    Dataset
-    // Attributes do not get their own objects but are attached to their
-    // respective group or dataset
-};
 
 /** @brief Layer to mirror structure of logical data and persistent data in
  * file.
@@ -127,6 +212,8 @@ class Writable final
     friend class CustomHierarchy;
     template <typename T>
     friend struct traits::GenerationPolicy;
+    friend class internal::BaseRecordComponentData;
+    friend class internal::RecordComponentData;
 
 private:
     Writable(internal::AttributableData *);
@@ -218,6 +305,6 @@ OPENPMD_private
      */
     bool written = false;
 
-    ObjectType objectType = ObjectType::Group;
+    internal::ObjectType objectType = internal::object_type::GroupMetaData{};
 };
 } // namespace openPMD
