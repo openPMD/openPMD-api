@@ -45,40 +45,50 @@ namespace internal
         operator=(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData &operator=(BaseRecordComponentData &&) = delete;
 
-        BaseRecordComponentData() = default;
+        std::optional<Dataset> *m_dataset;
+        bool *m_isConstant;
+        bool *m_datasetDefined;
+
+        BaseRecordComponentData()
+        {
+            auto *metadata = (**this).m_writable.objectType.initDataset();
+            m_dataset = &metadata->m_dataset;
+            m_isConstant = &metadata->m_isConstant;
+            m_datasetDefined = &metadata->m_datasetDefined;
+        }
 
         [[nodiscard]] inline auto dataset() const -> auto const &
         {
-            return (**this).m_dataset_metadata.m_dataset;
+            return *m_dataset;
         }
         inline auto dataset() -> auto &
         {
-            return (**this).m_dataset_metadata.m_dataset;
+            return *m_dataset;
         }
 
         [[nodiscard]] inline auto isConstant() const -> auto const &
         {
-            return (**this).m_dataset_metadata.m_isConstant;
+            return *m_isConstant;
         }
         inline auto isConstant() -> auto &
         {
-            return (**this).m_dataset_metadata.m_isConstant;
+            return *m_isConstant;
         }
 
         [[nodiscard]] inline auto datasetDefined() const -> auto const &
         {
-            return (**this).m_dataset_metadata.m_datasetDefined;
+            return *m_datasetDefined;
         }
         inline auto datasetDefined() -> auto &
         {
-            return (**this).m_dataset_metadata.m_datasetDefined;
+            return *m_datasetDefined;
         }
 
         virtual void reset()
         {
-            (**this).m_dataset_metadata.m_dataset = std::nullopt;
-            (**this).m_dataset_metadata.m_isConstant = false;
-            (**this).m_dataset_metadata.m_datasetDefined = false;
+            *m_dataset = std::nullopt;
+            *m_isConstant = false;
+            *m_datasetDefined = false;
         }
     };
 } // namespace internal

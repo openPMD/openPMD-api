@@ -229,19 +229,22 @@ void Attributable::customHierarchyFlush(
                 "hierarchy contained "
                 "an object that should be flushed conventionally.");
         }
-        switch (subpath.writable().objectType)
+        if (subpath.writable().objectType.isGroup())
         {
-        case ObjectType::Group:
             if (!subpath.written())
             {
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(&subpath, pCreate));
             }
             subpath.customHierarchyFlush(flushParams, true);
-            break;
-        case ObjectType::Dataset:
+        }
+        else if (subpath.writable().objectType.isDataset())
+        {
             subpath.asDataset().flush(name, flushParams);
-            break;
+        }
+        else
+        {
+            throw std::runtime_error("Unreachable!");
         }
     }
 
