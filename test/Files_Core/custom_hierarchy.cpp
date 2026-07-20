@@ -66,6 +66,14 @@ void write(
     // Test resizing
     Ex_.resetDataset({{6}});
     Ex.storeChunk(Exdata, {3}, {3});
+
+    auto fully_custom_dataset =
+        iteration.customHierarchies()["fully"]["custom"]["dataset"]
+            .as<RecordComponent>();
+    fully_custom_dataset.resetDataset({Datatype::INT, {3}});
+    // fully_custom_dataset.setComment(
+    //     "ALS PRIMA BALLERINA ALS WEIB ALS FEMME FATALE");
+    fully_custom_dataset.storeChunk(Exdata, {0}, {3});
     iteration.close();
 }
 
