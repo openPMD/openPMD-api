@@ -71,7 +71,8 @@ void Record::flush_impl(
         }
         else
         {
-            customHierarchyFlush(flushParams, /* unset_dirty = */ false);
+            customHierarchyFlush(
+                flushParams, /* managed_as_custom_object = */ false);
             for (auto &comp : *this)
                 comp.second.flush(comp.first, flushParams);
         }
@@ -92,7 +93,8 @@ void Record::flush_impl(
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
 
-                customHierarchyFlush(flushParams, /* unset_dirty = */ false);
+                customHierarchyFlush(
+                    flushParams, /* managed_as_custom_object = */ false);
                 for (auto &comp : *this)
                 {
                     comp.second.parent() = getWritable(this);
@@ -108,7 +110,8 @@ void Record::flush_impl(
             }
             else
             {
-                customHierarchyFlush(flushParams, /* unset_dirty = */ false);
+                customHierarchyFlush(
+                    flushParams, /* managed_as_custom_object = */ false);
                 for (auto &comp : *this)
                     comp.second.flush(comp.first, flushParams);
             }

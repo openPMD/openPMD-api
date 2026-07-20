@@ -46,7 +46,7 @@ class CustomHierarchy;
 
 /*
  * This is its own class, so the return value of asContainerOf() is also
- * convsersible again.
+ * convsertible again.
  */
 template <typename MappedType>
 class ConvertibleContainer : public Container<MappedType>
@@ -67,67 +67,8 @@ private:
     explicit ConvertibleContainer() = default;
 
 public:
+    auto asDataset() -> RecordComponent;
     // TODO also: asContainerOf()
-    template <typename TargetType>
-    auto as() -> TargetType
-    {
-        if constexpr (std::is_same_v<TargetType, RecordComponent>)
-        {
-            if (this->written())
-            {
-                switch (this->writable().objectType)
-                {
-                case ObjectType::Group:
-                    throw error::WrongAPIUsage(
-                        "Can't cast a group object into a dataset.");
-                case ObjectType::Dataset:
-                    break;
-                }
-                RecordComponent res;
-                res.get().cloneFrom(*this->m_attri);
-                return res;
-            }
-            else
-            {
-                if (access::write(this->IOHandler()->m_frontendAccess) ||
-                    this->IOHandler()->m_seriesStatus ==
-                        internal::SeriesStatus::Parsing)
-                {
-                    // this is now a dataset.
-                    // TODO: verify no subgroups
-                    this->writable().objectType = ObjectType::Dataset;
-                    RecordComponent res;
-                    res.get().cloneFrom(*this->m_attri);
-                    return res;
-                }
-                else
-                {
-                    // TODO check if this has valid uses
-                    throw error::WrongAPIUsage(
-                        "Read only: Trying to access a non-written object as a "
-                        "RecordComponent.");
-                }
-            }
-        }
-        else if constexpr (
-            std::is_same_v<TargetType, CustomHierarchy> ||
-            std::is_same_v<TargetType, Mesh> ||
-            std::is_same_v<TargetType, ParticleSpecies>)
-        {
-            // TODO: If Mesh or ParticleSpecies, create Container on the fly by
-            // evaluating the meshes/particles path. If RecordComponent, maybe
-            // use dynamic casting to check if children are datasets?
-            throw std::runtime_error("UNIMPLEMENTED");
-        }
-        else
-        {
-            static_assert(
-                auxiliary::dependent_false_v<TargetType>,
-                "[CustomHierarchy::asContainerOf] Type parameter must be "
-                "one of: CustomHierarchy, RecordComponent, Mesh, "
-                "ParticleSpecies.");
-        }
-    }
 };
 
 namespace traits

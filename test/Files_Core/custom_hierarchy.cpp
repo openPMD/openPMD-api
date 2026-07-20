@@ -58,8 +58,7 @@ void write(
     std::vector<int> Exdata{1, 2, 3};
     Ex.storeChunk(Exdata, {0}, {3});
 
-    auto Ex_ =
-        iteration.customHierarchies()["meshes"]["E"]["x"].as<RecordComponent>();
+    auto Ex_ = iteration.customHierarchies()["meshes"]["E"]["x"].asDataset();
     REQUIRE(Ex_.getDatatype() == Ex.getDatatype());
     REQUIRE(Ex_.getExtent() == Ex.getExtent());
     iteration.seriesFlush();
@@ -69,8 +68,7 @@ void write(
     Ex.storeChunk(Exdata, {3}, {3});
 
     auto fully_custom_dataset =
-        iteration.customHierarchies()["fully"]["custom"]["dataset"]
-            .as<RecordComponent>();
+        iteration.customHierarchies()["fully"]["custom"]["dataset"].asDataset();
     fully_custom_dataset.resetDataset({Datatype::INT, {3}});
     // fully_custom_dataset.setComment(
     //     "ALS PRIMA BALLERINA ALS WEIB ALS FEMME FATALE");
@@ -99,7 +97,7 @@ void read(
     require_custom_hierarchy(iteration);
 
     auto Ex_data = iteration.customHierarchies()["meshes"]["E"]["x"]
-                       .as<RecordComponent>()
+                       .asDataset()
                        .loadChunk<int>();
     iteration.seriesFlush();
     for (size_t i = 0; i < 3; ++i)
@@ -110,7 +108,7 @@ void read(
 
     auto custom_data =
         iteration.customHierarchies()["fully"]["custom"]["dataset"]
-            .as<RecordComponent>()
+            .asDataset()
             .loadChunk<int>();
     iteration.seriesFlush();
     for (size_t i = 0; i < 3; ++i)
