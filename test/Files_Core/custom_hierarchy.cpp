@@ -96,6 +96,26 @@ void read(
     require_custom_hierarchy(series);
     require_custom_hierarchy(series.snapshots());
     require_custom_hierarchy(iteration);
+
+    auto Ex_data = iteration.customHierarchies()["meshes"]["E"]["x"]
+                       .as<RecordComponent>()
+                       .loadChunk<int>();
+    iteration.seriesFlush();
+    for (size_t i = 0; i < 3; ++i)
+    {
+        REQUIRE(Ex_data.get()[i] == (int)i + 1);
+        REQUIRE(Ex_data.get()[i + 3] == (int)i + 1);
+    }
+
+    auto custom_data =
+        iteration.customHierarchies()["fully"]["custom"]["dataset"]
+            .as<RecordComponent>()
+            .loadChunk<int>();
+    iteration.seriesFlush();
+    for (size_t i = 0; i < 3; ++i)
+    {
+        REQUIRE(custom_data.get()[i] == (int)i + 1);
+    }
     iteration.close();
 }
 

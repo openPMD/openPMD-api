@@ -89,7 +89,9 @@ public:
             }
             else
             {
-                if (access::write(this->IOHandler()->m_frontendAccess))
+                if (access::write(this->IOHandler()->m_frontendAccess) ||
+                    this->IOHandler()->m_seriesStatus ==
+                        internal::SeriesStatus::Parsing)
                 {
                     // this is now a dataset.
                     // TODO: verify no subgroups

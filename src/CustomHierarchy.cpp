@@ -228,6 +228,12 @@ void CustomHierarchy::read(size_t const max_recursion_depth)
         auto &subpath = this->operator[](path);
         subpath.linkHierarchy(this->writable());
         IOHandler()->enqueue(IOTask(&subpath, dOpen));
+        IOHandler()->flush(internal::defaultFlushParams);
+
+        subpath.setWritten(false, Attributable::EnqueueAsynchronously::No);
+        subpath.as<RecordComponent>().resetDataset(
+            Dataset(*dOpen.dtype, *dOpen.extent));
+        subpath.setWritten(true, Attributable::EnqueueAsynchronously::No);
         do_recurse(subpath);
     }
 
