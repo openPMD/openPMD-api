@@ -66,9 +66,18 @@ namespace internal
     struct DatasetMetaData
     {
         /**
+         * Chunk reading/writing requests on the contained dataset.
+         */
+        std::queue<IOTask> m_chunks;
+        /**
          * The type and extent of the dataset defined by this component.
          */
         std::optional<Dataset> m_dataset;
+        /**
+         * Stores the value for constant record components.
+         * Ignored otherwise.
+         */
+        Attribute m_constantValue{-1};
         /**
          * True if this is defined as a constant record component as specified
          * in the openPMD standard.
@@ -84,11 +93,6 @@ namespace internal
          */
         bool m_datasetDefined = false;
 
-        /**
-         * Stores the value for constant record components.
-         * Ignored otherwise.
-         */
-        Attribute m_constantValue{-1};
         /**
          * True if this component is an empty dataset, i.e. its extent is zero
          * in at least one dimension.

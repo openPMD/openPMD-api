@@ -1151,8 +1151,8 @@ TEST_CASE("wrapper_test", "[core]")
     o.flush();
     REQUIRE(all_data.get()[0] == value);
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[4].meshes["E"]["y"].get().m_chunks.empty());
-    REQUIRE(mrc2.get().m_chunks.empty());
+    REQUIRE(o.iterations[4].meshes["E"]["y"].get().chunks().empty());
+    REQUIRE(mrc2.get().chunks().empty());
 #endif
 
     MeshRecordComponent mrc3 = o.iterations[5].meshes["E"]["y"];
@@ -1167,13 +1167,13 @@ TEST_CASE("wrapper_test", "[core]")
     std::shared_ptr<double> storeData = std::make_shared<double>(44);
     o.iterations[5].meshes["E"]["y"].storeChunk(storeData, {0}, {1});
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.size() == 1);
-    REQUIRE(mrc3.get().m_chunks.size() == 1);
+    REQUIRE(o.iterations[5].meshes["E"]["y"].get().chunks().size() == 1);
+    REQUIRE(mrc3.get().chunks().size() == 1);
 #endif
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.empty());
-    REQUIRE(mrc3.get().m_chunks.empty());
+    REQUIRE(o.iterations[5].meshes["E"]["y"].get().chunks().empty());
+    REQUIRE(mrc3.get().chunks().empty());
 #endif
 
     o.iterations[6]
@@ -1211,8 +1211,9 @@ TEST_CASE("wrapper_test", "[core]")
                 .particles["electrons"]
                 .particlePatches["numParticles"][RecordComponent::SCALAR]
                 .get()
-                .m_chunks.empty());
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
+                .chunks()
+                .empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().chunks().empty());
 #endif
     pp["numParticles"][RecordComponent::SCALAR].store(idx, val);
 #if openPMD_USE_INVASIVE_TESTS
@@ -1221,9 +1222,10 @@ TEST_CASE("wrapper_test", "[core]")
             .particles["electrons"]
             .particlePatches["numParticles"][RecordComponent::SCALAR]
             .get()
-            .m_chunks.size() == 1);
+            .chunks()
+            .size() == 1);
     REQUIRE(
-        pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 1);
+        pp["numParticles"][RecordComponent::SCALAR].get().chunks().size() == 1);
 #endif
     std::stringstream u64str;
     u64str << determineDatatype<uint64_t>();
@@ -1245,9 +1247,10 @@ TEST_CASE("wrapper_test", "[core]")
             .particles["electrons"]
             .particlePatches["numParticles"][RecordComponent::SCALAR]
             .get()
-            .m_chunks.size() == 2);
+            .chunks()
+            .size() == 2);
     REQUIRE(
-        pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 2);
+        pp["numParticles"][RecordComponent::SCALAR].get().chunks().size() == 2);
 #endif
     /*
      * Fill the remaining standard particle patch components. The openPMD
@@ -1279,8 +1282,9 @@ TEST_CASE("wrapper_test", "[core]")
                 .particles["electrons"]
                 .particlePatches["numParticles"][RecordComponent::SCALAR]
                 .get()
-                .m_chunks.empty());
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
+                .chunks()
+                .empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().chunks().empty());
 #endif
 }
 
@@ -1335,7 +1339,7 @@ TEST_CASE("use_count_test", "[core]")
     REQUIRE(
         std::get<std::shared_ptr<void const>>(
             static_cast<Parameter<Operation::WRITE_DATASET> *>(
-                pprc.get().m_chunks.front().parameter.get())
+                pprc.get().chunks().front().parameter.get())
                 ->data.as_variant<auxiliary::WriteBufferTypes>())
             .use_count() == 1);
     /*
