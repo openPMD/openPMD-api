@@ -182,7 +182,8 @@ void ParticleSpecies::flush(
     }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-        customHierarchyFlush(flushParams, /* unset_dirty = */ false);
+        customHierarchyFlush(
+            flushParams, /* managed_as_custom_object = */ false);
         for (auto &record : *this)
             record.second.flush(record.first, flushParams);
         for (auto &patch : particlePatches)
