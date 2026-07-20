@@ -72,7 +72,7 @@ namespace internal
         }
 #endif
         a.setDirtyRecursive(true);
-        m_chunks.push(std::move(task));
+        chunks().push(std::move(task));
     }
 
     static constexpr char const *note_on_deactivating_this_check = R"(
@@ -426,10 +426,10 @@ void RecordComponent::flush(
         // TODO maybe guard against custom hierarchies on datasets?
         // they can be created upon constant components however..
         customHierarchyFlush(flushParams, /* unset_dirty = */ false);
-        while (!rc.m_chunks.empty())
+        while (!rc.chunks().empty())
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
+            IOHandler()->enqueue(rc.chunks().front());
+            rc.chunks().pop();
         }
     }
     else
@@ -441,7 +441,7 @@ void RecordComponent::flush(
         {
             // The check for !written() is technically not needed, just
             // defensive programming against internal bugs that go on us.
-            if (!written() && rc.m_chunks.empty() && !rc.isConstant())
+            if (!written() && rc.chunks().empty() && !rc.isConstant())
             {
                 // No data written yet, just accessed the object so far without
                 // doing anything
@@ -539,10 +539,10 @@ void RecordComponent::flush(
             }
         }
 
-        while (!rc.m_chunks.empty())
+        while (!rc.chunks().empty())
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
+            IOHandler()->enqueue(rc.chunks().front());
+            rc.chunks().pop();
         }
 
         // TODO maybe guard against custom hierarchies on datasets?

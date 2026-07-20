@@ -92,6 +92,7 @@ public:
                 if (access::write(this->IOHandler()->m_frontendAccess))
                 {
                     // this is now a dataset.
+                    // TODO: verify no subgroups
                     this->writable().objectType = ObjectType::Dataset;
                     RecordComponent res;
                     res.get().cloneFrom(*this->m_attri);

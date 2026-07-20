@@ -97,19 +97,21 @@ namespace internal
             return (**this).m_dataset_metadata.m_hasBeenExtended;
         }
 
-        /**
-         * Chunk reading/writing requests on the contained dataset.
-         * Note: We may also put this centrally into DatasetMetaData in
-         * Attributable.hpp
-         */
-        std::queue<IOTask> m_chunks;
+        [[nodiscard]] auto chunks() const -> auto const &
+        {
+            return (**this).m_dataset_metadata.m_chunks;
+        }
+        auto chunks() -> auto &
+        {
+            return (**this).m_dataset_metadata.m_chunks;
+        }
 
         void push_chunk(IOTask &&task);
 
         void reset() override
         {
             BaseRecordComponentData::reset();
-            m_chunks = std::queue<IOTask>();
+            chunks() = std::queue<IOTask>();
             constantValue() = -1;
             isEmpty() = false;
             hasBeenExtended() = false;
