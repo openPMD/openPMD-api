@@ -99,6 +99,53 @@ namespace traits
     template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
         Container<CustomHierarchy> const &);
 } // namespace traits
+
+template <>
+auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
+{
+    if (!(**this->m_attri).m_children.empty())
+    {
+        throw std::runtime_error(
+            "Trying to access object as a dataset, but it has children "
+            "and is hence a group.");
+    }
+    if (this->written())
+    {
+        switch (this->writable().objectType)
+        {
+        case ObjectType::Group:
+            throw error::WrongAPIUsage(
+                "Can't cast a group object into a dataset.");
+        case ObjectType::Dataset:
+            break;
+        }
+        RecordComponent res;
+        res.get().cloneFrom(*this->m_attri);
+        return res;
+    }
+    else
+    {
+        if (this->writable().objectType == ObjectType::Dataset ||
+            access::write(this->IOHandler()->m_frontendAccess) ||
+            this->IOHandler()->m_seriesStatus ==
+                internal::SeriesStatus::Parsing)
+        {
+            // this is now a dataset.
+            this->writable().objectType = ObjectType::Dataset;
+            RecordComponent res;
+            res.get().cloneFrom(*this->m_attri);
+            return res;
+        }
+        else
+        {
+            // TODO check if this has valid uses
+            throw error::WrongAPIUsage(
+                "Read only: Trying to access a non-written object as a "
+                "RecordComponent.");
+        }
+    }
+}
+
 CustomHierarchy::CustomHierarchy() : ConvertibleContainer(NoInit{})
 {
     setData(std::make_shared<Data_t>());
@@ -231,8 +278,7 @@ void CustomHierarchy::read(size_t const max_recursion_depth)
         IOHandler()->flush(internal::defaultFlushParams);
 
         subpath.setWritten(false, Attributable::EnqueueAsynchronously::No);
-        subpath.as<RecordComponent>().resetDataset(
-            Dataset(*dOpen.dtype, *dOpen.extent));
+        subpath.asDataset().resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
         subpath.setWritten(true, Attributable::EnqueueAsynchronously::No);
         do_recurse(subpath);
     }

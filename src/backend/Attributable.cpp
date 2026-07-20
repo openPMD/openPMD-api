@@ -193,7 +193,7 @@ void Attributable::iterationFlush(std::string backendConfig)
 }
 
 void Attributable::customHierarchyFlush(
-    internal::FlushParams const &flushParams, bool unset_dirty)
+    internal::FlushParams const &flushParams, bool managed_as_custom_object)
 {
     // customHierarchies().printRecursively();
     if (!dirtyRecursive())
@@ -209,12 +209,13 @@ void Attributable::customHierarchyFlush(
 
     // No need to do anything in access::readOnly since meshes and particles
     // are initialized as aliases for subgroups at parsing time
-    auto &data = get();
-    if (access::write(IOHandler()->m_frontendAccess))
+    if (managed_as_custom_object &&
+        access::write(IOHandler()->m_frontendAccess))
     {
         flushAttributes(flushParams);
     }
 
+    auto &data = get();
     Parameter<Operation::CREATE_PATH> pCreate;
     for (auto &[name, subpath] : data.m_children_managed_as_custom_hierarchy)
     {
@@ -239,12 +240,13 @@ void Attributable::customHierarchyFlush(
             subpath.customHierarchyFlush(flushParams, true);
             break;
         case ObjectType::Dataset:
-            subpath.as<RecordComponent>().flush(name, flushParams);
+            subpath.asDataset().flush(name, flushParams);
             break;
         }
     }
 
-    if (unset_dirty && flushParams.flushLevel != FlushLevel::SkeletonOnly &&
+    if (managed_as_custom_object &&
+        flushParams.flushLevel != FlushLevel::SkeletonOnly &&
         flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
     {
         setDirty(false);

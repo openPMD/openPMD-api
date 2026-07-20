@@ -371,7 +371,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
     Parameter<Operation::TOUCH> touch;
     IOHandler()->enqueue(IOTask(&writable(), touch));
 
-    customHierarchyFlush(flushParams, /* unset_dirty = */ false);
+    customHierarchyFlush(flushParams, /* managed_as_custom_object = */ false);
 
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {

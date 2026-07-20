@@ -359,7 +359,7 @@ auto Container<T, T_key, T_container>::flush(
         IOHandler()->enqueue(IOTask(this, pCreate));
     }
 
-    customHierarchyFlush(flushParams, /* unset_dirty = */ false);
+    customHierarchyFlush(flushParams, /* managed_as_custom_object = */ false);
     if (access::write(IOHandler()->m_frontendAccess))
     {
         flushAttributes(flushParams);
