@@ -63,50 +63,6 @@ namespace internal
     class ScientificDefaults;
     class AttributableData;
 
-    struct DatasetMetaData
-    {
-        /**
-         * Chunk reading/writing requests on the contained dataset.
-         */
-        std::queue<IOTask> m_chunks;
-        /**
-         * The type and extent of the dataset defined by this component.
-         */
-        std::optional<Dataset> m_dataset;
-        /**
-         * Stores the value for constant record components.
-         * Ignored otherwise.
-         */
-        Attribute m_constantValue{-1};
-        /**
-         * True if this is defined as a constant record component as specified
-         * in the openPMD standard.
-         * If yes, then no heavy-weight dataset is created and the dataset is
-         * instead defined via light-weight attributes.
-         */
-        bool m_isConstant = false;
-        /**
-         * Tracks if there was any write access to the record component.
-         * Necessary in BaseRecord<T> to track if the scalar component has been
-         * used and is used by BaseRecord<T> to determine the return value of
-         * the BaseRecord<T>::scalar() method.
-         */
-        bool m_datasetDefined = false;
-
-        /**
-         * True if this component is an empty dataset, i.e. its extent is zero
-         * in at least one dimension.
-         * Treated by the openPMD-api as a special case of constant record
-         * components.
-         */
-        bool m_isEmpty = false;
-        /**
-         * User has extended the dataset, but the EXTEND task must yet be
-         * flushed to the backend
-         */
-        bool m_hasBeenExtended = false;
-    };
-
     class SharedAttributableData
     {
         friend class openPMD::Attributable;
@@ -157,8 +113,6 @@ namespace internal
         using children_object_storage_t =
             std::map<std::string, CustomHierarchy>;
         children_object_storage_t m_children_managed_as_custom_hierarchy;
-
-        DatasetMetaData m_dataset_metadata;
     };
 
     /*

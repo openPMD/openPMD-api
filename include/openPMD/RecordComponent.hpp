@@ -72,38 +72,44 @@ namespace internal
         RecordComponentData &operator=(RecordComponentData const &) = delete;
         RecordComponentData &operator=(RecordComponentData &&) = delete;
 
+        Attribute *m_constantValue;
+        bool *m_isConstant;
+        bool *m_isEmpty;
+        bool *m_hasBeenExtended;
+        std::queue<IOTask> *m_chunks;
+
         [[nodiscard]] auto constantValue() const -> auto const &
         {
-            return (**this).m_dataset_metadata.m_constantValue;
+            return *m_constantValue;
         }
         auto constantValue() -> auto &
         {
-            return (**this).m_dataset_metadata.m_constantValue;
+            return *m_constantValue;
         }
         [[nodiscard]] auto isEmpty() const -> auto const &
         {
-            return (**this).m_dataset_metadata.m_isEmpty;
+            return *m_isEmpty;
         }
         auto isEmpty() -> auto &
         {
-            return (**this).m_dataset_metadata.m_isEmpty;
+            return *m_isEmpty;
         }
         [[nodiscard]] auto hasBeenExtended() const -> auto const &
         {
-            return (**this).m_dataset_metadata.m_hasBeenExtended;
+            return *m_hasBeenExtended;
         }
         auto hasBeenExtended() -> auto &
         {
-            return (**this).m_dataset_metadata.m_hasBeenExtended;
+            return *m_hasBeenExtended;
         }
 
         [[nodiscard]] auto chunks() const -> auto const &
         {
-            return (**this).m_dataset_metadata.m_chunks;
+            return *m_chunks;
         }
         auto chunks() -> auto &
         {
-            return (**this).m_dataset_metadata.m_chunks;
+            return *m_chunks;
         }
 
         void push_chunk(IOTask &&task);

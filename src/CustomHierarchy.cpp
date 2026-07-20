@@ -111,13 +111,10 @@ auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
     }
     if (this->written())
     {
-        switch (this->writable().objectType)
+        if (this->writable().objectType.isGroup())
         {
-        case ObjectType::Group:
             throw error::WrongAPIUsage(
                 "Can't cast a group object into a dataset.");
-        case ObjectType::Dataset:
-            break;
         }
         RecordComponent res;
         res.get().cloneFrom(*this->m_attri);
@@ -125,13 +122,13 @@ auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
     }
     else
     {
-        if (this->writable().objectType == ObjectType::Dataset ||
+        if (this->writable().objectType.isDataset() ||
             access::write(this->IOHandler()->m_frontendAccess) ||
             this->IOHandler()->m_seriesStatus ==
                 internal::SeriesStatus::Parsing)
         {
             // this is now a dataset.
-            this->writable().objectType = ObjectType::Dataset;
+            this->writable().objectType.initDataset();
             RecordComponent res;
             res.get().cloneFrom(*this->m_attri);
             return res;
@@ -211,11 +208,8 @@ void CustomHierarchy::read(size_t const max_recursion_depth)
 
     Attributable::readAttributes(ReadMode::FullyReread);
 
-    switch (writable().objectType)
+    if (writable().objectType.isDataset())
     {
-    case ObjectType::Group:
-        break;
-    case ObjectType::Dataset:
         return;
     }
 
