@@ -31,8 +31,7 @@ using namespace openPMD;
 int main()
 {
     Series series = Series(
-        // "../samples/git-sample/data%T.h5",
-        "data.h5",
+        "../samples/git-sample/data%T.h5",
         Access::READ_ONLY,
         R"({"defer_iteration_parsing": true})");
     cout << "Read a Series with openPMD standard version " << series.openPMD()
@@ -100,24 +99,9 @@ int main()
 
     auto all_data = E_x.loadChunk<double>();
 
-    auto ch = series.customHierarchies();
-    ch.printRecursively();
-    std::cout << "READING 200/fields" << std::endl;
-    ch["data"]["200"]["fields"].read();
-    std::cout << "READING 200/particles" << std::endl;
-    ch["data"]["200"]["particles"].read();
-    std::cout << "READING 300" << std::endl;
-    ch["data"]["300"].read(0);
-    ch.printRecursively();
-
     // The iteration can be closed in order to help free up resources.
     // The iteration's content will be flushed automatically.
     i.close();
-    std::cout << "OPENING 200" << std::endl;
-    i = series.snapshots()[200].open();
-    ch.printRecursively();
-    series.snapshots()[300].open();
-
     cout << "Full E/x starts with:\n\t{";
     for (size_t col = 0; col < extent[1] && col < 5; ++col)
         cout << all_data.get()[col] << ", ";

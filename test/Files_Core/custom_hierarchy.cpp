@@ -21,6 +21,7 @@
  */
 
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/version.hpp"
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
 
@@ -139,8 +140,13 @@ void custom_hierarchy()
          R"({"iteration_encoding": "variable_based"})",
          IterationEncoding::variableBased}};
 
+    auto const &variants = getVariants();
     for (auto const &backend : {"adios2", "hdf5", "json", "toml"})
     {
+        if (!variants.at(backend))
+        {
+            continue;
+        }
         for (auto const &[filename, json_params, encoding] : configs)
         {
             auto json_params_ = json::merge(
