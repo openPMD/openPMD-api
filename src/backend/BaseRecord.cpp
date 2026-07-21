@@ -726,7 +726,8 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
 {
     detail::verifyNonscalar(this);
-    std::vector<internal::SharedAttributableData::children_map_t::value_type>
+    std::vector<
+        internal::object_type::GroupMetaData::children_map_t::value_type>
         internal_insert_list;
     internal_insert_list.reserve(ilist.size());
     auto &cont = this->container_back(/* verify = */ false);

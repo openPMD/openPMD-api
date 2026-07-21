@@ -52,7 +52,6 @@ class AbstractFilePosition;
 class Attributable;
 class Iteration;
 class Series;
-class CustomHierarchy;
 
 namespace internal
 {
@@ -89,30 +88,6 @@ namespace internal
          * The attributes defined by this Attributable.
          */
         A_MAP m_attributes;
-
-        // TODO group the below three members somehow with Writable::objectType
-        // Note that objectType is backend info, and the below is frontend info.
-        // This implies a divergence between both infos for constant components.
-        // So, a simple GADT prolly wont do.
-
-        // Using shared_ptr<SharedAttributableData> in here because
-        // AttributableData is non-copyable and non-movable, but we need
-        // movability for map handling
-        // Disallowing move in AttributableData is only a measure for code
-        // discipline anyway.
-        using children_map_t =
-            std::map<std::string, std::shared_ptr<SharedAttributableData>>;
-        children_map_t m_children;
-
-        // Attributable::customHierarchies() creates objects of type
-        // CustomHierarchy ephemerally on the spot. If that object is the first
-        // object for its associated SharedAttributableData instance, it must be
-        // stored somewhere still, because the first instance is back-referenced
-        // by Writable class (TODO: turn that back-reference into a weak_ptr?).
-        // Store these objects in the parent to avoid reference cycles.
-        using children_object_storage_t =
-            std::map<std::string, CustomHierarchy>;
-        children_object_storage_t m_children_managed_as_custom_hierarchy;
     };
 
     /*

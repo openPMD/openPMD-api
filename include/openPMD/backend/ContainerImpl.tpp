@@ -21,6 +21,7 @@
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 /*
  * Instantiations in src/backend/Container.cpp
@@ -232,7 +233,8 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(
     std::initializer_list<value_type> ilist) -> void
 {
-    std::vector<internal::SharedAttributableData::children_map_t::value_type>
+    std::vector<
+        internal::object_type::GroupMetaData::children_map_t::value_type>
         internal_insert_list;
     internal_insert_list.reserve(ilist.size());
     auto &cont = container_back(/* verify = */ false);
