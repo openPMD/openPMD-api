@@ -107,15 +107,6 @@ namespace internal
         }
 
         void push_chunk(IOTask &&task);
-
-        void reset() override
-        {
-            BaseRecordComponentData::reset();
-            chunks() = std::queue<IOTask>();
-            constantValue() = -1;
-            isEmpty() = false;
-            hasBeenExtended() = false;
-        }
     };
     template <typename, typename>
     class BaseRecordData;
