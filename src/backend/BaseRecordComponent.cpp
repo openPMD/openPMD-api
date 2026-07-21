@@ -122,7 +122,7 @@ BaseRecordComponent::BaseRecordComponent(NoInit) : Attributable(NoInit())
 void BaseRecordComponent::setDatasetDefined(
     internal::BaseRecordComponentData &data)
 {
-    data.datasetDefined() = true;
+    data.setDatasetDefined();
 }
 
 bool BaseRecordComponent::datasetDefined() const

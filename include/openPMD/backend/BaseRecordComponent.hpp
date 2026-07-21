@@ -24,6 +24,7 @@
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 #include <optional>
 
@@ -45,50 +46,54 @@ namespace internal
         operator=(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData &operator=(BaseRecordComponentData &&) = delete;
 
-        std::optional<Dataset> *m_dataset;
-        bool *m_isConstant;
-        bool *m_datasetDefined;
+        internal::object_type::DatasetMetaData *m_dataset_meta = nullptr;
 
-        BaseRecordComponentData()
+        void setDatasetDefined()
         {
-            auto *metadata = (**this).m_writable.objectType.initDataset();
-            m_dataset = &metadata->m_dataset;
-            m_isConstant = &metadata->m_isConstant;
-            m_datasetDefined = &metadata->m_datasetDefined;
+            m_dataset_meta = (**this).m_writable.objectType.initDataset();
         }
+
+        BaseRecordComponentData() = default;
 
         [[nodiscard]] inline auto dataset() const -> auto const &
         {
-            return *m_dataset;
+            return m_dataset_meta->m_dataset;
         }
         inline auto dataset() -> auto &
         {
-            return *m_dataset;
+            return m_dataset_meta->m_dataset;
         }
 
         [[nodiscard]] inline auto isConstant() const -> auto const &
         {
-            return *m_isConstant;
+            return m_dataset_meta->m_isConstant;
         }
         inline auto isConstant() -> auto &
         {
-            return *m_isConstant;
+            return m_dataset_meta->m_isConstant;
         }
 
-        [[nodiscard]] inline auto datasetDefined() const -> auto const &
+        [[nodiscard]] inline auto datasetDefined() const -> bool
         {
-            return *m_datasetDefined;
-        }
-        inline auto datasetDefined() -> auto &
-        {
-            return *m_datasetDefined;
+            return (**this).m_writable.objectType.isDataset();
         }
 
         virtual void reset()
         {
-            *m_dataset = std::nullopt;
-            *m_isConstant = false;
-            *m_datasetDefined = false;
+            dataset() = std::nullopt;
+            isConstant() = false;
+            (**this).m_writable.objectType.initGroup();
+            m_dataset_meta = nullptr;
+        }
+
+        template <typename Arg>
+        void cloneFrom(Arg &&arg)
+        {
+            AttributableData::cloneFrom(std::forward<Arg>(arg));
+            if (datasetDefined())
+            {
+                setDatasetDefined();
+            }
         }
     };
 } // namespace internal
