@@ -117,11 +117,14 @@ namespace traits
             // object).
             auto backpointer = writable.attributable;
             auto emplaced_pointer = it->second.m_attri.get();
+            auto *group_metadata =
+                (**cont.m_attri).m_writable.objectType.requireGroup();
             if (backpointer == emplaced_pointer)
             {
-                (**cont.m_attri)
-                    .m_children_managed_as_custom_hierarchy[it->first] =
-                    it->second;
+                group_metadata
+                    ->m_children_managed_as_custom_hierarchy[it->first] =
+                    // NO move!! The iterator must stay alive
+                    std::make_shared<CustomHierarchy>(it->second);
             }
         }
     };

@@ -916,7 +916,8 @@ void Iteration::linkHierarchy(Writable &w)
     particles.linkHierarchy(this->writable());
     get().m_perIterationData.m_rankTableAttributable.linkHierarchy(*w.parent);
 
-    auto &container_back = Attributable::get().m_children;
+    auto &container_back =
+        this->writable().objectType.requireGroup()->m_children;
     auto s = retrieveSeries();
     auto link_mp = [&](auto &meshes_or_particles,
                        std::optional<std::string> const &mp_path,
