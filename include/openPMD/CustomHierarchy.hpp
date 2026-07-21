@@ -130,12 +130,9 @@ namespace traits
     };
 } // namespace traits
 
-// TODO: Use Container<Attributable> internally, but otherwise override members
-// such that we have:
-//
-// operator[](key) -> CustomHierarchy
-//
-// Or find a better solution for having this automatically..
+// If we want to break the DeferredInitPolicy logic, we may alternatively derive
+// this privately from ConvertibleContainer<Attributable>, and then overload
+// access operators to return CustomHierarchy instances
 class CustomHierarchy : public ConvertibleContainer<CustomHierarchy>
 {
     friend class Iteration;
@@ -175,12 +172,15 @@ public:
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
 
-    // TODO maybe make this automatic somehow
+    // TODO should we automatically read upon returning / instantiating a
+    // CustomHierarchy object? i.e. upon Attributable::customHierarchy() and
+    // CustomHierarchy::operator[]().
+    //
     // set max_recursion_depth = 0 for infinite cycling
     // recursion depth includes the current object
     // recursion will not continue expanding into regions that are already known
     // (hence not transitively expand into unknown subregions of known regions)
-    void read(size_t max_recursion_depth = 1);
+    auto read(size_t max_recursion_depth = 1) -> CustomHierarchy;
 
     void printRecursively();
 
