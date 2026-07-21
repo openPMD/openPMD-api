@@ -87,13 +87,6 @@ namespace internal::object_type
          * instead defined via light-weight attributes.
          */
         bool m_isConstant = false;
-        /**
-         * Tracks if there was any write access to the record component.
-         * Necessary in BaseRecord<T> to track if the scalar component has been
-         * used and is used by BaseRecord<T> to determine the return value of
-         * the BaseRecord<T>::scalar() method.
-         */
-        bool m_datasetDefined = false;
 
         /**
          * True if this component is an empty dataset, i.e. its extent is zero
@@ -149,6 +142,15 @@ namespace internal
                 return res;
             }
             return &as_base().emplace<object_type::DatasetMetaData>();
+        }
+        auto initGroup() -> object_type::GroupMetaData *
+        {
+            if (auto res = std::get_if<object_type::GroupMetaData>(&as_base());
+                res)
+            {
+                return res;
+            }
+            return &as_base().emplace<object_type::GroupMetaData>();
         }
     };
 } // namespace internal
