@@ -48,16 +48,7 @@ namespace openPMD
 {
 namespace internal
 {
-    RecordComponentData::RecordComponentData()
-    {
-        auto *metadata = (**this).m_writable.objectType.initDataset();
-        m_constantValue = &metadata->m_constantValue;
-        m_isConstant = &metadata->m_isConstant;
-        m_isEmpty = &metadata->m_isEmpty;
-        m_hasBeenExtended = &metadata->m_hasBeenExtended;
-        m_chunks = &metadata->m_chunks;
-    }
-
+    RecordComponentData::RecordComponentData() = default;
     auto RecordComponentData::push_chunk(IOTask &&task) -> void
     {
         Attributable a;
