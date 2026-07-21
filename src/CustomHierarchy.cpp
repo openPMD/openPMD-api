@@ -103,12 +103,6 @@ namespace traits
 template <>
 auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
 {
-    if (!(**this->m_attri).m_children.empty())
-    {
-        throw std::runtime_error(
-            "Trying to access object as a dataset, but it has children "
-            "and is hence a group.");
-    }
     if (this->written())
     {
         if (this->writable().objectType.isGroup())

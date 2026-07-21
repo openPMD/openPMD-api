@@ -1228,7 +1228,8 @@ void Series::initSeries(
     series.iterations.linkHierarchy(writable);
     series.iterations.writable().ownKeyWithinParent = "data";
     series->m_writable.ownKeyWithinParent = "ROOT";
-    auto &container_back = series->m_children;
+    auto &container_back =
+        series->m_writable.objectType.requireGroup()->m_children;
     container_back["data"] = *series.iterations.m_attri;
     series.m_perIterationData.m_rankTableAttributable.linkHierarchy(writable);
 

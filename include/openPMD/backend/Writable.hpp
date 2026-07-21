@@ -20,9 +20,11 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
@@ -46,6 +48,7 @@ class AbstractIOHandlerImplCommon;
 template <typename>
 class Span;
 class Series;
+class CustomHierarchy;
 
 namespace traits
 {
@@ -103,7 +106,28 @@ namespace internal::object_type
     };
 
     struct GroupMetaData
-    {};
+    {
+        // Using shared_ptr<SharedAttributableData> in here because
+        // AttributableData is non-copyable and non-movable, but we need
+        // movability for map handling
+        // Disallowing move in AttributableData is only a measure for code
+        // discipline anyway.
+        using children_map_t =
+            std::map<std::string, std::shared_ptr<SharedAttributableData>>;
+        children_map_t m_children;
+
+        // Attributable::customHierarchies() creates objects of type
+        // CustomHierarchy ephemerally on the spot. If that object is the first
+        // object for its associated SharedAttributableData instance, it must be
+        // stored somewhere still, because the first instance is back-referenced
+        // by Writable class (TODO: turn that back-reference into a weak_ptr?).
+        // Store these objects in the parent to avoid reference cycles.
+        // Need shared_ptr because size is not yet known and unique_ptr cannot
+        // be managed by std::map.
+        using children_object_storage_t =
+            std::map<std::string, std::shared_ptr<CustomHierarchy>>;
+        children_object_storage_t m_children_managed_as_custom_hierarchy;
+    };
 } // namespace internal::object_type
 
 namespace internal
@@ -151,6 +175,29 @@ namespace internal
                 return res;
             }
             return &as_base().emplace<object_type::GroupMetaData>();
+        }
+
+        auto requireGroup() -> object_type::GroupMetaData *
+        {
+            if (auto res = std::get_if<object_type::GroupMetaData>(&as_base());
+                res)
+            {
+                return res;
+            }
+            throw error::Internal(
+                "Internal object status: Group type required.");
+        }
+
+        template <typename Functor>
+        void ifGroup(Functor &&f)
+        {
+            std::visit(
+                auxiliary::overloaded{
+                    [&f](object_type::GroupMetaData &object_metadata) {
+                        std::forward<Functor>(f)(object_metadata);
+                    },
+                    [](object_type::DatasetMetaData &) {}},
+                as_base());
         }
     };
 } // namespace internal

@@ -505,7 +505,6 @@ void Mesh::read()
 {
     internal::HomogenizeExtents homogenizeExtents(
         IOHandler()->m_verify_homogeneous_extents);
-    internal::EraseStaleEntries<Mesh> map{*this};
 
     if (scalar())
     {
@@ -514,6 +513,7 @@ void Mesh::read()
     }
     else
     {
+        internal::EraseStaleEntries<Mesh> map{*this};
         Parameter<Operation::LIST_PATHS> pList;
         IOHandler()->enqueue(IOTask(this, pList));
         IOHandler()->flush(internal::defaultFlushParams);

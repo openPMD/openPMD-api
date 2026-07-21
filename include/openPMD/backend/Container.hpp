@@ -25,6 +25,7 @@
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 #include <initializer_list>
 #include <map>
@@ -169,7 +170,7 @@ protected:
         using front_t = auxiliary::dependent_const<const_, T_container>;
         using back_t = auxiliary::dependent_const<
             const_,
-            internal::SharedAttributableData::children_map_t>;
+            internal::object_type::GroupMetaData::children_map_t>;
 
         front_t *front;
         back_t *back;
@@ -259,7 +260,7 @@ protected:
         {
             traits::DeferredInitPolicy<Self_t>::call(*this);
         }
-        return Attributable::get().m_children;
+        return (**m_attri).m_writable.objectType.requireGroup()->m_children;
     }
 
     inline auto container_back(bool verify) ->
@@ -269,7 +270,7 @@ protected:
         {
             traits::DeferredInitPolicy<Self_t>::call(*this);
         }
-        return Attributable::get().m_children;
+        return this->writable().objectType.requireGroup()->m_children;
     }
 
 public:

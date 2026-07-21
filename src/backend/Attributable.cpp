@@ -217,36 +217,41 @@ void Attributable::customHierarchyFlush(
 
     auto &data = get();
     Parameter<Operation::CREATE_PATH> pCreate;
-    for (auto &[name, subpath] : data.m_children_managed_as_custom_hierarchy)
-    {
-        auto backpointer = subpath.writable().attributable;
-        auto casted_backpointer =
-            dynamic_cast<CustomHierarchy::Data_t *>(backpointer);
-        if (!casted_backpointer)
+
+    data.m_writable.objectType.ifGroup([&](auto &group_metadata) {
+        for (auto &[name, subpath_pointer] :
+             group_metadata.m_children_managed_as_custom_hierarchy)
         {
-            throw error::Internal(
-                "SharedAttributableData::m_children_managed_as_custom_"
-                "hierarchy contained "
-                "an object that should be flushed conventionally.");
-        }
-        if (subpath.writable().objectType.isGroup())
-        {
-            if (!subpath.written())
+            auto &subpath = *subpath_pointer;
+            auto backpointer = subpath.writable().attributable;
+            auto casted_backpointer =
+                dynamic_cast<CustomHierarchy::Data_t *>(backpointer);
+            if (!casted_backpointer)
             {
-                pCreate.path = name;
-                IOHandler()->enqueue(IOTask(&subpath, pCreate));
+                throw error::Internal(
+                    "SharedAttributableData::m_children_managed_as_custom_"
+                    "hierarchy contained "
+                    "an object that should be flushed conventionally.");
             }
-            subpath.customHierarchyFlush(flushParams, true);
+            if (subpath.writable().objectType.isGroup())
+            {
+                if (!subpath.written())
+                {
+                    pCreate.path = name;
+                    IOHandler()->enqueue(IOTask(&subpath, pCreate));
+                }
+                subpath.customHierarchyFlush(flushParams, true);
+            }
+            else if (subpath.writable().objectType.isDataset())
+            {
+                subpath.asDataset().flush(name, flushParams);
+            }
+            else
+            {
+                throw std::runtime_error("Unreachable!");
+            }
         }
-        else if (subpath.writable().objectType.isDataset())
-        {
-            subpath.asDataset().flush(name, flushParams);
-        }
-        else
-        {
-            throw std::runtime_error("Unreachable!");
-        }
-    }
+    });
 
     if (managed_as_custom_object &&
         flushParams.flushLevel != FlushLevel::SkeletonOnly &&
@@ -723,6 +728,7 @@ void Attributable::preferCurrentBackpointer() const
     // dont manage this as a customhierarchy instance
     auto count_of_erased_elements =
         (*w.parent->attributable)
+            ->m_writable.objectType.requireGroup()
             ->m_children_managed_as_custom_hierarchy.erase(
                 w.ownKeyWithinParent);
     if (count_of_erased_elements != 1)
