@@ -65,7 +65,8 @@ Datatype BaseRecordComponent::getDatatype() const
 
 bool BaseRecordComponent::constant() const
 {
-    return get().isConstant();
+    auto &data = get();
+    return data.datasetDefined() && data.isConstant();
 }
 
 std::optional<size_t> BaseRecordComponent::joinedDimension() const

@@ -80,8 +80,6 @@ namespace internal
 
         virtual void reset()
         {
-            dataset() = std::nullopt;
-            isConstant() = false;
             (**this).m_writable.objectType.initGroup();
             m_dataset_meta = nullptr;
         }
@@ -195,11 +193,14 @@ protected:
 
     inline Data_t const &get() const
     {
+        // cannot call this in the const overload
+        // setDatasetDefined(*m_baseRecordComponentData);
         return *m_baseRecordComponentData;
     }
 
     inline Data_t &get()
     {
+        setDatasetDefined(*m_baseRecordComponentData);
         return *m_baseRecordComponentData;
     }
 
