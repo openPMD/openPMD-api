@@ -423,10 +423,8 @@ void RecordComponent::flush(
     }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-        // TODO maybe guard against custom hierarchies on datasets?
-        // they can be created upon constant components however..
-        customHierarchyFlush(
-            flushParams, /* managed_as_custom_object = */ false);
+        // TODO: if we are going to allow custom hierarchies on constant
+        // components (technically possible), the flush would go here
         while (!rc.chunks().empty())
         {
             IOHandler()->enqueue(rc.chunks().front());

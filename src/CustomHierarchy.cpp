@@ -92,6 +92,7 @@ namespace traits
                     it, key, CustomHierarchy(attributable));
                 gen(container, it);
             }
+            ++it;
         }
     }
     template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
@@ -158,7 +159,7 @@ CustomHierarchy::CustomHierarchy(Attributable const &other)
     : CustomHierarchy(other.m_attri->asSharedPtrOfAttributable())
 {}
 
-void CustomHierarchy::read(size_t const max_recursion_depth)
+auto CustomHierarchy::read(size_t const max_recursion_depth) -> CustomHierarchy
 {
     auxiliary::opaque_defer_type reset_parsing_status;
     if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
@@ -204,7 +205,7 @@ void CustomHierarchy::read(size_t const max_recursion_depth)
 
     if (writable().objectType.isDataset())
     {
-        return;
+        return *this;
     }
 
     auto do_recurse = [this, max_recursion_depth](CustomHierarchy &child) {
@@ -248,7 +249,6 @@ void CustomHierarchy::read(size_t const max_recursion_depth)
         do_recurse(subpath);
     }
 
-    // TODO update this
     for (auto const &path : *dList.datasets)
     {
         if (auto it = container_back_.find(path);
@@ -273,6 +273,8 @@ void CustomHierarchy::read(size_t const max_recursion_depth)
 
     setDirty(false);
     IOHandler()->flush(internal::defaultFlushParams);
+
+    return *this;
 }
 
 void CustomHierarchy::flush(
