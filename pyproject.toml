@@ -7,3 +7,9 @@ requires = [
     "pybind11>=2.13.0,<3.0.0"
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["openpmd_api", "openpmd_api_cxx"]
