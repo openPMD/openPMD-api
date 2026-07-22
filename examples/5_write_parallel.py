@@ -6,6 +6,7 @@ Copyright 2019-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
+
 # IMPORTANT: include mpi4py FIRST
 # https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
 # on import: calls MPI_Init_thread()
@@ -17,8 +18,8 @@ import openpmd_api as io
 try:
     import adios2
     from packaging import version
-    USE_JOINED_DIMENSION = \
-        version.parse(adios2.__version__) >= version.parse('2.9.0')
+
+    USE_JOINED_DIMENSION = version.parse(adios2.__version__) >= version.parse("2.9.0")
 except ImportError:
     USE_JOINED_DIMENSION = False
 
@@ -29,11 +30,12 @@ if __name__ == "__main__":
     # global data set to write: [MPI_Size * 10, 300]
     # each rank writes a 10x300 slice with its MPI rank as values
     local_value = comm.rank
-    local_data = np.ones(10 * 300,
-                         dtype=np.double).reshape(10, 300) * local_value
+    local_data = np.ones(10 * 300, dtype=np.double).reshape(10, 300) * local_value
     if 0 == comm.rank:
-        print("Set up a 2D array with 10x300 elements per MPI rank ({}x) "
-              "that will be written to disk".format(comm.size))
+        print(
+            "Set up a 2D array with 10x300 elements per MPI rank ({}x) "
+            "that will be written to disk".format(comm.size)
+        )
 
     # open file for writing
     series = io.Series(
@@ -41,11 +43,10 @@ if __name__ == "__main__":
         if USE_JOINED_DIMENSION
         else "../samples/5_parallel_write_py.h5",
         io.Access.create_linear,
-        comm
+        comm,
     )
     if 0 == comm.rank:
-        print("Created an empty series in parallel with {} MPI ranks".format(
-              comm.size))
+        print("Created an empty series in parallel with {} MPI ranks".format(comm.size))
 
     # In parallel contexts, it's important to explicitly open iterations.
     # However, we use Access mode CREATE_LINEAR, so the Series creates
@@ -54,19 +55,27 @@ if __name__ == "__main__":
     mymesh = series.snapshots()[1].meshes["mymesh"]
 
     # example 1D domain decomposition in first index
-    global_extent = [io.Dataset.JOINED_DIMENSION, 300] \
-        if USE_JOINED_DIMENSION else [comm.size * 10, 300]
+    global_extent = (
+        [io.Dataset.JOINED_DIMENSION, 300]
+        if USE_JOINED_DIMENSION
+        else [comm.size * 10, 300]
+    )
 
     dataset = io.Dataset(local_data.dtype, global_extent)
 
     if 0 == comm.rank:
-        print("Prepared a Dataset of size {} and Datatype {}".format(
-              dataset.extent, dataset.dtype))
+        print(
+            "Prepared a Dataset of size {} and Datatype {}".format(
+                dataset.extent, dataset.dtype
+            )
+        )
 
     mymesh.reset_dataset(dataset)
     if 0 == comm.rank:
-        print("Set the global Dataset properties for the scalar field "
-              "mymesh in iteration 1")
+        print(
+            "Set the global Dataset properties for the scalar field "
+            "mymesh in iteration 1"
+        )
 
     # example shows a 1D domain decomposition in first index
 
@@ -77,10 +86,12 @@ if __name__ == "__main__":
         # or short:
         # mymesh[()] = local_data
     else:
-        mymesh[comm.rank*10:(comm.rank+1)*10, :] = local_data
+        mymesh[comm.rank * 10 : (comm.rank + 1) * 10, :] = local_data
     if 0 == comm.rank:
-        print("Registered a single chunk per MPI rank containing its "
-              "contribution, ready to write content to disk")
+        print(
+            "Registered a single chunk per MPI rank containing its "
+            "contribution, ready to write content to disk"
+        )
 
     # The iteration can be closed in order to help free up resources.
     # The iteration's content will be flushed automatically.

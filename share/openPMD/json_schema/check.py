@@ -37,19 +37,19 @@ script which can be directly applied to generate the JSON schema.
 Examples:
     {0} --help
     {0} --schema_root={1} <path/to/simData_000100.json>
-""".format(os.path.basename(program_name), script_path / "series.json"))
+""".format(os.path.basename(program_name), script_path / "series.json"),
+    )
 
     parser.add_argument(
-        '--schema_root',
+        "--schema_root",
         default=script_path,
         help="""\
 Directory where to resolve JSON schema files to validate against.
-"""
+""",
     )
-    parser.add_argument('openpmd_file',
-                        metavar='file',
-                        nargs=1,
-                        help="The file which to validate.")
+    parser.add_argument(
+        "openpmd_file", metavar="file", nargs=1, help="The file which to validate."
+    )
 
     return parser.parse_args()
 
@@ -63,8 +63,7 @@ def retrieve_from_filesystem(uri):
     filepath = args.schema_root / uri
     with open(filepath, "r") as referred:
         loaded_json = json.load(referred)
-        return Resource.from_contents(
-            loaded_json, default_specification=DRAFT202012)
+        return Resource.from_contents(loaded_json, default_specification=DRAFT202012)
 
 
 registry = Registry(retrieve=retrieve_from_filesystem)
@@ -76,5 +75,8 @@ with open(args.openpmd_file[0], "r") as instance:
         schema={"$ref": "./series.json"},
         registry=registry,
     )
-    print("File {} was validated successfully against schema {}.".format(
-        instance.name, args.schema_root))
+    print(
+        "File {} was validated successfully against schema {}.".format(
+            instance.name, args.schema_root
+        )
+    )

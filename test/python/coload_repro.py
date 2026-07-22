@@ -18,8 +18,9 @@
 import numpy as np
 import openpmd_api as io
 
-print(f"[versions] openpmd_api {io.__version__}  variants={dict(io.variants)}",
-      flush=True)
+print(
+    f"[versions] openpmd_api {io.__version__}  variants={dict(io.variants)}", flush=True
+)
 
 data = np.arange(8, dtype=np.float64)
 
@@ -43,8 +44,9 @@ assert np.array_equal(back, data), back
 # load the SECOND, independently bundled HDF5 only now (openpmd_api is primary)
 import h5py  # noqa: E402
 
-print(f"[versions] h5py {h5py.__version__}  HDF5 {h5py.version.hdf5_version}",
-      flush=True)
+print(
+    f"[versions] h5py {h5py.__version__}  HDF5 {h5py.version.hdf5_version}", flush=True
+)
 
 print("[3] h5py write ...", flush=True)
 with h5py.File("h5py.h5", "w") as f:

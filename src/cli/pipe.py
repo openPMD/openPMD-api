@@ -9,6 +9,7 @@ Copyright 2021 openPMD contributors
 Authors: Franz Poeschel
 License: LGPLv3+
 """
+
 import sys
 
 import openpmd_api.pipe.__main__ as pipe

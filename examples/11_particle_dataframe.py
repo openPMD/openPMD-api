@@ -6,6 +6,7 @@ Copyright 2021 openPMD contributors
 Authors: Axel Huebl, Dmitry Ganyushin
 License: LGPLv3+
 """
+
 import sys
 
 import numpy as np
@@ -20,6 +21,7 @@ except ImportError:
 found_cudf = False
 try:
     import cudf
+
     found_cudf = True
 except ImportError:
     print("cudf NOT found. Install RAPIDS for CUDA DataFrame example.")
@@ -29,6 +31,7 @@ try:
     import dask
     import dask.array as da
     from dask.delayed import delayed
+
     found_dask = True
 except ImportError:
     print("dask NOT found. Install dask to run the 2nd example.")
@@ -66,7 +69,7 @@ if __name__ == "__main__":
         # the default schedulers are local/threaded, not requiring much.
         # But multi-node, "distributed" and local "processes" need object
         # pickle capabilities, so we test this here:
-        dask.config.set(scheduler='processes')
+        dask.config.set(scheduler="processes")
 
         df = electrons.to_dask(attributes=["particleShape"])
         print(df)
@@ -79,9 +82,12 @@ if __name__ == "__main__":
         print("<momentum_z>={}".format(df["momentum_z"].mean().compute()))
 
         #   example2: momentum histogram
-        h, bins = da.histogram(df["momentum_z"].to_dask_array(), bins=50,
-                               range=[-8.0e-23, 8.0e-23],
-                               weights=df["weighting"].to_dask_array())
+        h, bins = da.histogram(
+            df["momentum_z"].to_dask_array(),
+            bins=50,
+            range=[-8.0e-23, 8.0e-23],
+            weights=df["weighting"].to_dask_array(),
+        )
         print(h.compute())
 
         #   example3: longitudinal phase space (dask 2021.04.0+)
@@ -89,10 +95,10 @@ if __name__ == "__main__":
         z_max = df["position_z"].max().compute()
 
         z_pz, z_pz_bins = da.histogramdd(
-            df[['position_z', 'momentum_z']].to_dask_array(),
+            df[["position_z", "momentum_z"]].to_dask_array(),
             bins=[80, 80],
             range=[[z_min, z_max], [-8.0e-23, 8.0e-23]],
-            weights=df["weighting"].to_dask_array()
+            weights=df["weighting"].to_dask_array(),
         )
         print(z_pz.compute())
 
@@ -114,9 +120,13 @@ if __name__ == "__main__":
         Intensity = darr_x * darr_x + darr_y * darr_y + darr_z * darr_z
         Intensity_max = Intensity.max().compute()
         idx_max = da.argwhere(Intensity == Intensity_max).compute()[0]
-        pos_max = E.grid_unit_SI * 1.0e6 * (
-            idx_max * E.grid_spacing + E.grid_global_offset)
-        print("maximum intensity I={} at index={} z={}mu".format(
-            Intensity_max, idx_max, pos_max[2]))
+        pos_max = (
+            E.grid_unit_SI * 1.0e6 * (idx_max * E.grid_spacing + E.grid_global_offset)
+        )
+        print(
+            "maximum intensity I={} at index={} z={}mu".format(
+                Intensity_max, idx_max, pos_max[2]
+            )
+        )
 
     s.close()

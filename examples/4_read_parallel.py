@@ -6,6 +6,7 @@ Copyright 2019-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
+
 # IMPORTANT: include mpi4py FIRST
 # https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
 # on import: calls MPI_Init_thread()
@@ -20,13 +21,11 @@ if __name__ == "__main__":
     series = io.Series(
         "../samples/git-sample/data%T.h5",
         io.Access.read_only,
-        comm, {
-            "defer_iteration_parsing": True
-        }
+        comm,
+        {"defer_iteration_parsing": True},
     )
     if 0 == comm.rank:
-        print("Read a series in parallel with {} MPI ranks".format(
-              comm.size))
+        print("Read a series in parallel with {} MPI ranks".format(comm.size))
 
     # with defer_iteration_parsing, open() must be called explicitly
     # explicit use of open() is recommended for parallel applications
@@ -38,8 +37,10 @@ if __name__ == "__main__":
     chunk_data = E_x.load_chunk(chunk_offset, chunk_extent)
 
     if 0 == comm.rank:
-        print("Queued the loading of a single chunk per MPI rank from disk, "
-              "ready to execute")
+        print(
+            "Queued the loading of a single chunk per MPI rank from disk, "
+            "ready to execute"
+        )
 
     # The iteration can be closed in order to help free up resources.
     # The iteration's content will be flushed automatically.
@@ -53,11 +54,14 @@ if __name__ == "__main__":
             print("Rank {} - Read chunk contains:".format(i))
             for row in range(chunk_extent[0]):
                 for col in range(chunk_extent[1]):
-                    print("\t({}|{}|1)\t{:e}".format(
-                        row + chunk_offset[0],
-                        col + chunk_offset[1],
-                        chunk_data[row, col, 0]
-                    ), end='')
+                    print(
+                        "\t({}|{}|1)\t{:e}".format(
+                            row + chunk_offset[0],
+                            col + chunk_offset[1],
+                            chunk_data[row, col, 0],
+                        ),
+                        end="",
+                    )
                 print("")
 
         # this barrier is not necessary but structures the example output

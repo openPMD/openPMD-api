@@ -5,6 +5,7 @@ Copyright 2021-2023 openPMD contributors
 Authors: Axel Huebl, Pawel Ordyna
 License: LGPLv3+
 """
+
 import math
 
 import numpy as np
@@ -81,13 +82,13 @@ def record_component_to_daskarray(record_component, chunks=None):
     # Import dask here for a lazy import
     try:
         from dask.array import from_array
+
         found_dask = True
     except ImportError:
         found_dask = False
 
     if not found_dask:
-        raise ImportError("dask NOT found. Install dask for Dask DataFrame "
-                          "support.")
+        raise ImportError("dask NOT found. Install dask for Dask DataFrame support.")
     if chunks is None:
         # get optimal chunks
         chunks = record_component.available_chunks()
@@ -96,10 +97,8 @@ def record_component_to_daskarray(record_component, chunks=None):
         #   https://docs.dask.org/en/latest/array-chunks.html
         #   https://docs.dask.org/en/latest/array-api.html?highlight=from_array#other-functions
         # sorted and unique
-        offsets_per_dim = list(
-            map(list, zip(*[chunk.offset for chunk in chunks])))
-        offsets_sorted_unique_per_dim = [
-            sorted(set(o)) for o in offsets_per_dim]
+        offsets_per_dim = list(map(list, zip(*[chunk.offset for chunk in chunks])))
+        offsets_sorted_unique_per_dim = [sorted(set(o)) for o in offsets_per_dim]
 
         # print("offsets_sorted_unique_per_dim=",
         #       list(offsets_sorted_unique_per_dim))

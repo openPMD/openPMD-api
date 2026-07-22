@@ -51,14 +51,15 @@ chunks = "auto"
 
 
 def main():
-    if not io.variants['adios2']:
+    if not io.variants["adios2"]:
         # Example configuration below selects the ADIOS2 backend
         return
 
     # create a series and specify some global metadata
     # change the file extension to .json, .h5 or .bp for regular file writing
-    series = io.Series("../samples/dynamicConfig.bp",
-                       io.Access_Type.create_linear, defaults)
+    series = io.Series(
+        "../samples/dynamicConfig.bp", io.Access_Type.create_linear, defaults
+    )
 
     # now, write a number of iterations (or: snapshots, time steps)
     for i in range(10):
@@ -81,8 +82,7 @@ def main():
         electronPositions.set_attribute("comment", "I'm a comment")
 
         length = 10
-        local_data = np.arange(i * length, (i + 1) * length,
-                               dtype=np.dtype("double"))
+        local_data = np.arange(i * length, (i + 1) * length, dtype=np.dtype("double"))
         for dim in ["x", "y", "z"]:
             pos = electronPositions[dim]
             pos.reset_dataset(io.Dataset(local_data.dtype, [length]))
@@ -98,27 +98,15 @@ def main():
         # we want different compression settings here,
         # so we override the defaults
         # let's use JSON this time
-        config = {
-            'resizable': True,
-            'adios2': {
-                'dataset': {
-                    'operators': []
-                }
-            }
-        }
-        config['adios2']['dataset'] = {
-            'operators': {
-                'type': 'zlib',
-                'parameters': {
-                    'clevel': 9
-                }
-            }
+        config = {"resizable": True, "adios2": {"dataset": {"operators": []}}}
+        config["adios2"]["dataset"] = {
+            "operators": {"type": "zlib", "parameters": {"clevel": 9}}
         }
 
         temperature = iteration.meshes["temperature"]
         temperature.unit_dimension = {io.Unit_Dimension.theta: 1.0}
         temperature.axis_labels = ["x", "y"]
-        temperature.grid_spacing = [1., 1.]
+        temperature.grid_spacing = [1.0, 1.0]
         # temperature has no x,y,z components, so skip the last layer:
         temperature_dataset = temperature
         # let's say we are in a 3x3 mesh

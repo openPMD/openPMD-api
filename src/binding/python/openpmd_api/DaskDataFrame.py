@@ -5,11 +5,12 @@ Copyright 2021 openPMD contributors
 Authors: Axel Huebl, Dmitry Ganyushin, John Kirkham
 License: LGPLv3+
 """
+
 import numpy as np
 
 
 def read_chunk_to_df(species, chunk, attributes=None):
-    stride = np.s_[chunk.offset[0]:chunk.offset[0]+chunk.extent[0]]
+    stride = np.s_[chunk.offset[0] : chunk.offset[0] + chunk.extent[0]]
     return species.to_df(attributes=attributes, slice=stride)
 
 
@@ -46,21 +47,21 @@ def particles_to_daskdataframe(particle_species, attributes=None):
     try:
         import dask.dataframe as dd
         from dask.delayed import delayed
+
         found_dask = True
     except ImportError:
         found_dask = False
     try:
         import pandas  # noqa
+
         found_pandas = True
     except ImportError:
         found_pandas = False
 
     if not found_dask:
-        raise ImportError("dask NOT found. Install dask for Dask DataFrame "
-                          "support.")
+        raise ImportError("dask NOT found. Install dask for Dask DataFrame support.")
     if not found_pandas:  # catch this early: before delayed functions
-        raise ImportError("pandas NOT found. Install pandas for DataFrame "
-                          "support.")
+        raise ImportError("pandas NOT found. Install pandas for DataFrame support.")
 
     # get optimal chunks: query first non-constant record component and
     #                     assume the same chunking applies for all of them
@@ -86,9 +87,8 @@ def particles_to_daskdataframe(particle_species, attributes=None):
 
     # merge DataFrames
     dfs = [
-        delayed(read_chunk_to_df)(
-            particle_species, chunk=chunk, attributes=attributes
-        ) for chunk in chunks
+        delayed(read_chunk_to_df)(particle_species, chunk=chunk, attributes=attributes)
+        for chunk in chunks
     ]
     df = dd.from_delayed(dfs)
 

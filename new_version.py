@@ -61,8 +61,7 @@ with open(str(REPO_DIR.joinpath("CMakeLists.txt")), encoding="utf-8") as f:
             break
 
 OLD_VERSION_TAG = ""
-with open(str(REPO_DIR.joinpath("include/openPMD/version.hpp")),
-          encoding="utf-8") as f:
+with open(str(REPO_DIR.joinpath("include/openPMD/version.hpp")), encoding="utf-8") as f:
     for line in f:
         match = re.search(r'#define OPENPMDAPI_VERSION_LABEL "([^"]+)"', line)
         if match:
@@ -72,9 +71,10 @@ with open(str(REPO_DIR.joinpath("include/openPMD/version.hpp")),
 OLD_VERSION_SUFFIX = f"(-{OLD_VERSION_TAG})?" if OLD_VERSION_TAG else ""
 # The order of the alternatives is important, since the Regex parser
 # should greedily include the old version suffix
-OLD_VERSION_STR = \
-    f"({re.escape(OLD_VERSION_STR_CMAKE)}{OLD_VERSION_SUFFIX})" + \
-    f"|({re.escape(OLD_VERSION_STR_README)})"
+OLD_VERSION_STR = (
+    f"({re.escape(OLD_VERSION_STR_CMAKE)}{OLD_VERSION_SUFFIX})"
+    + f"|({re.escape(OLD_VERSION_STR_README)})"
+)
 
 print(f"The old version is: {OLD_VERSION_STR}")
 print()
@@ -117,8 +117,8 @@ def generic_replace(filename, previous, after):
 
 
 for file in [
-        "docs/source/dev/linking.rst",
-        "README.md",
+    "docs/source/dev/linking.rst",
+    "README.md",
 ]:
     generic_replace(file, previous=OLD_VERSION_STR, after=VERSION_STR)
 
@@ -137,14 +137,15 @@ with open(setup_py_path, encoding="utf-8") as f:
         if match:
             PREVIOUS_PIP_VERSION = match.group(1)
             break
-generic_replace("setup.py",
-                previous=PREVIOUS_PIP_VERSION,
-                after=VERSION_STR_SUFFIX_WITH_DOT)
+generic_replace(
+    "setup.py", previous=PREVIOUS_PIP_VERSION, after=VERSION_STR_SUFFIX_WITH_DOT
+)
 generic_replace(
     ".github/workflows/windows.yml",
     previous=f"{PREVIOUS_PIP_VERSION}0?",
-    after=(f"{VERSION_STR_SUFFIX_WITH_DOT}0"
-           if SUFFIX else VERSION_STR_SUFFIX_WITH_DOT),
+    after=(
+        f"{VERSION_STR_SUFFIX_WITH_DOT}0" if SUFFIX else VERSION_STR_SUFFIX_WITH_DOT
+    ),
 )
 generic_replace(
     "docs/source/conf.py",

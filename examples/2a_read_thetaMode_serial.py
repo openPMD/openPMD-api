@@ -6,15 +6,17 @@ Copyright 2020-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
+
 import openpmd_api as io
 
 if __name__ == "__main__":
     # The pattern %E instructs the openPMD-api to determine the file ending
     # automatically. It can also be given explicitly, e.g. `data%T.h5`.
-    series = io.Series("../samples/git-sample/thetaMode/data%T.h5",
-                       io.Access.read_only, {
-                           "defer_iteration_parsing": True
-                       })
+    series = io.Series(
+        "../samples/git-sample/thetaMode/data%T.h5",
+        io.Access.read_only,
+        {"defer_iteration_parsing": True},
+    )
 
     # with defer_iteration_parsing, open() must be called explicitly
     i = series.snapshots()[500].open()
@@ -24,9 +26,9 @@ if __name__ == "__main__":
     # read E_z in all modes
     E_z_raw = E_z_modes[:, :, :]
     # read E_z in mode_0 (one scalar field)
-    E_z_m0 = E_z_modes[0:1, 0:shape[1], 0:shape[2]]
+    E_z_m0 = E_z_modes[0:1, 0 : shape[1], 0 : shape[2]]
     # read E_z in mode_1 (two fields; skip mode_0 with one scalar field)
-    E_z_m1 = E_z_modes[1:3, 0:shape[1], 0:shape[2]]
+    E_z_m1 = E_z_modes[1:3, 0 : shape[1], 0 : shape[2]]
     series.flush()
 
     print(E_z_raw)  # still mode-decomposed data, not too useful for users

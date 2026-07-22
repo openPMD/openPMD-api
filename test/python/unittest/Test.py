@@ -18,6 +18,7 @@ def suite():
     test_loader = unittest.TestLoader()
     env_name = "OPENPMD_PYTHON_TEST_PREFIX"
     from os import environ
+
     if env_name in environ:
         test_loader.testMethodPrefix = environ[env_name]
     suites = [
@@ -30,11 +31,10 @@ def suite():
 # Run the top level suite and return a success status code.
 # This enables running an automated git-bisect.
 if __name__ == "__main__":
-
     result = unittest.TextTestRunner(verbosity=2).run(suite())
 
     if result.wasSuccessful():
-        print('---> OK <---')
+        print("---> OK <---")
         sys.exit(0)
 
     sys.exit(1)

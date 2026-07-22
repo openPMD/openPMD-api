@@ -6,6 +6,7 @@ Copyright 2019-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
+
 from pathlib import Path
 
 import numpy as np
@@ -29,23 +30,23 @@ if __name__ == "__main__":
     # particles
     electrons = cur_it.particles["electrons"]
     electrons.set_attribute(
-        "Electrons... the necessary evil for ion acceleration! ",
-        "Just kidding.")
+        "Electrons... the necessary evil for ion acceleration! ", "Just kidding."
+    )
 
     n_particles = 234
 
     # let's set a weird user-defined record this time
     electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
-    electrons["displacement"].unit_SI = 1.e-6
+    electrons["displacement"].unit_SI = 1.0e-6
     dset = Dataset(np.dtype("float64"), extent=[n_particles])
     electrons["displacement"].reset_dataset(dset)
     electrons["displacement"].make_constant(42.43)
     # don't like it anymore? remove it with:
     # del electrons["displacement"]
 
-    electrons["weighting"] \
-        .reset_dataset(Dataset(np.dtype("float32"), extent=[n_particles])) \
-        .make_constant(1.e-5)
+    electrons["weighting"].reset_dataset(
+        Dataset(np.dtype("float32"), extent=[n_particles])
+    ).make_constant(1.0e-5)
 
     particlePos_x = np.random.rand(n_particles).astype(np.float32)
     particlePos_y = np.random.rand(n_particles).astype(np.float32)

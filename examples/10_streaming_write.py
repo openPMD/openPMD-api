@@ -6,10 +6,9 @@ import openpmd_api as io
 
 # pass-through for ADIOS2 engine parameters
 # https://adios2.readthedocs.io/en/latest/engines/engines.html
-config = {'adios2': {'engine': {}, 'dataset': {}}}
-config['adios2']['engine'] = {'parameters':
-                              {'Threads': '4', 'DataTransport': 'WAN'}}
-config['adios2']['dataset'] = {'operators': [{'type': 'bzip2'}]}
+config = {"adios2": {"engine": {}, "dataset": {}}}
+config["adios2"]["engine"] = {"parameters": {"Threads": "4", "DataTransport": "WAN"}}
+config["adios2"]["dataset"] = {"operators": [{"type": "bzip2"}]}
 
 if __name__ == "__main__":
     # this block is for our CI, SST engine is not present on all systems
@@ -41,8 +40,7 @@ if __name__ == "__main__":
         electronPositions.set_attribute("comment", "I'm a comment")
 
         length = 10
-        local_data = np.arange(i * length, (i + 1) * length,
-                               dtype=np.dtype("double"))
+        local_data = np.arange(i * length, (i + 1) * length, dtype=np.dtype("double"))
         for dim in ["x", "y", "z"]:
             pos = electronPositions[dim]
             pos.reset_dataset(io.Dataset(local_data.dtype, [length]))
@@ -58,12 +56,11 @@ if __name__ == "__main__":
         temperature = iteration.meshes["temperature"]
         temperature.unit_dimension = {io.Unit_Dimension.theta: 1.0}
         temperature.axis_labels = ["x", "y"]
-        temperature.grid_spacing = [1., 1.]
+        temperature.grid_spacing = [1.0, 1.0]
         # temperature has no x,y,z components, so skip the last layer:
         temperature_dataset = temperature
         # let's say we are in a 3x3 mesh
-        temperature_dataset.reset_dataset(
-            io.Dataset(np.dtype("double"), [3, 3]))
+        temperature_dataset.reset_dataset(io.Dataset(np.dtype("double"), [3, 3]))
         # temperature is constant
         temperature_dataset.make_constant(273.15)
 

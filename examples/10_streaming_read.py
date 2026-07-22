@@ -5,10 +5,9 @@ import openpmd_api as io
 
 # pass-through for ADIOS2 engine parameters
 # https://adios2.readthedocs.io/en/latest/engines/engines.html
-config = {'adios2': {'engine': {}, 'dataset': {}}}
-config['adios2']['engine'] = {'parameters':
-                              {'Threads': '4', 'DataTransport': 'WAN'}}
-config['adios2']['dataset'] = {'operators': [{'type': 'bzip2'}]}
+config = {"adios2": {"engine": {}, "dataset": {}}}
+config["adios2"]["engine"] = {"parameters": {"Threads": "4", "DataTransport": "WAN"}}
+config["adios2"]["dataset"] = {"operators": [{"type": "bzip2"}]}
 
 if __name__ == "__main__":
     # this block is for our CI, SST engine is not present on all systems

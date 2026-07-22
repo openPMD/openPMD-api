@@ -8,13 +8,14 @@ Copyright 2020-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
+
 import sys
 
 from ..openpmd_api_cxx import _ls_run
 
 
 def main():
-    """ for usage documentation, call this with a --help argument """
+    """for usage documentation, call this with a --help argument"""
     return _ls_run(sys.argv)
 
 

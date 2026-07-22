@@ -8,6 +8,7 @@ Copyright 2021 openPMD contributors
 Authors: Franz Poeschel
 License: LGPLv3+
 """
+
 import argparse
 import os  # os.path.basename
 import re
@@ -55,24 +56,23 @@ Examples:
         --outfile simData_%T.bp
     {0} --infile uncompressed.bp \\
         --outfile compressed.bp --outconfig @compressionConfig.json
-""".format(os.path.basename(program_name)))
+""".format(os.path.basename(program_name)),
+    )
 
-    parser.add_argument('--infile', type=str, help='In file')
-    parser.add_argument('--outfile', type=str, help='Out file')
-    parser.add_argument('--inconfig',
-                        type=str,
-                        default='{}',
-                        help='JSON config for the in file')
-    parser.add_argument('--outconfig',
-                        type=str,
-                        default='{}',
-                        help='JSON config for the out file')
+    parser.add_argument("--infile", type=str, help="In file")
+    parser.add_argument("--outfile", type=str, help="Out file")
+    parser.add_argument(
+        "--inconfig", type=str, default="{}", help="JSON config for the in file"
+    )
+    parser.add_argument(
+        "--outconfig", type=str, default="{}", help="JSON config for the out file"
+    )
     # MPI, default: Import mpi4py if available and openPMD is parallel,
     # but don't use if MPI size is 1 (this makes it easier to interact with
     # JSON, since that backend is unavailable in parallel)
-    if io.variants['mpi']:
-        parser.add_argument('--mpi', action='store_true')
-        parser.add_argument('--no-mpi', dest='mpi', action='store_false')
+    if io.variants["mpi"]:
+        parser.add_argument("--mpi", action="store_true")
+        parser.add_argument("--no-mpi", dest="mpi", action="store_false")
         parser.set_defaults(mpi=None)
 
     return parser.parse_args()
@@ -80,19 +80,22 @@ Examples:
 
 args = parse_args(sys.argv[0])
 # MPI is an optional dependency
-if io.variants['mpi'] and (args.mpi is None or args.mpi):
+if io.variants["mpi"] and (args.mpi is None or args.mpi):
     try:
         from mpi4py import MPI
+
         HAVE_MPI = True
     except (ImportError, ModuleNotFoundError):
         if args.mpi:
             raise
         else:
-            print("""
+            print(
+                """
     openPMD-api was built with support for MPI,
     but mpi4py Python package was not found.
     Will continue in serial mode.""",
-                  file=sys.stderr)
+                file=sys.stderr,
+            )
             HAVE_MPI = False
 else:
     HAVE_MPI = False
@@ -112,6 +115,7 @@ class deferred_load:
         self.dynamicView = dynamicView
         self.offset = offset
         self.extent = extent
+
 
 # Find below a couple of examples on how to define chunk distribution
 # strategies in Python by extending classes PartialStrategy or Strategy.
@@ -136,7 +140,6 @@ class LoadOne(io.PartialStrategy):
 
 # Example how to implement a simple strategy in Python
 class LoadAll(io.Strategy):
-
     def __init__(self):
         super().__init__()
 
@@ -176,7 +179,7 @@ class IncreaseGranularity(io.PartialStrategy):
         def hosts_in_order(rank_assignment):
             already_seen = set()
             res = []
-            for (_, hostname) in rank_assignment.items():
+            for _, hostname in rank_assignment.items():
                 if hostname not in already_seen:
                     already_seen.add(hostname)
                     res.append(hostname)
@@ -208,23 +211,19 @@ class IncreaseGranularity(io.PartialStrategy):
 
         # Creates `in_ranks` and `out_ranks` for the inner call, based on the
         # meta hosts created above
-        def inner_rank_assignment(
-                outer_rank_assignment, hostname_to_hostgroup):
+        def inner_rank_assignment(outer_rank_assignment, hostname_to_hostgroup):
             res = {}
-            for (rank, hostname) in outer_rank_assignment.items():
+            for rank, hostname in outer_rank_assignment.items():
                 res[rank] = hostname_to_hostgroup[hostname]
             return res
 
-        self.in_ranks_inner = \
-            inner_rank_assignment(in_ranks, in_hostname_to_hostgroup)
+        self.in_ranks_inner = inner_rank_assignment(in_ranks, in_hostname_to_hostgroup)
         self.out_ranks_inner = inner_rank_assignment(
             out_ranks, out_hostname_to_hostgroup
         )
 
         return self.inner_distribution.assign(
-            assignment,
-            self.in_ranks_inner, self.out_ranks_inner,
-            my_rank, num_ranks
+            assignment, self.in_ranks_inner, self.out_ranks_inner, my_rank, num_ranks
         )
 
 
@@ -237,65 +236,67 @@ class MergingStrategy(io.Strategy):
 
     def assign(self, assignment, in_ranks, out_ranks, my_rank, num_ranks):
         res = self.inner_strategy.assign(
-            assignment, in_ranks, out_ranks, my_rank, num_ranks)
+            assignment, in_ranks, out_ranks, my_rank, num_ranks
+        )
         for out_rank, assignment in res.items():
             merged = assignment.merge_chunks_from_same_sourceID()
             assignment.clear()
             for in_rank, chunks in merged.items():
                 for chunk in chunks:
                     assignment.append(
-                        io.WrittenChunkInfo(
-                            chunk.offset, chunk.extent, in_rank)
+                        io.WrittenChunkInfo(chunk.offset, chunk.extent, in_rank)
                     )
         return res
 
 
-def distribution_strategy(dataset_extent,
-                          strategy_identifier=None):
+def distribution_strategy(dataset_extent, strategy_identifier=None):
     if strategy_identifier is None or not strategy_identifier:
-        if 'OPENPMD_CHUNK_DISTRIBUTION' in os.environ:
-            strategy_identifier = os.environ[
-                'OPENPMD_CHUNK_DISTRIBUTION'].lower()
+        if "OPENPMD_CHUNK_DISTRIBUTION" in os.environ:
+            strategy_identifier = os.environ["OPENPMD_CHUNK_DISTRIBUTION"].lower()
         else:
-            strategy_identifier = 'hostname_binpacking_slicedataset'  # default
-    match = re.search('hostname_(.*)_(.*)', strategy_identifier)
+            strategy_identifier = "hostname_binpacking_slicedataset"  # default
+    match = re.search("hostname_(.*)_(.*)", strategy_identifier)
     if match is not None:
         inside_node = distribution_strategy(
-            dataset_extent, strategy_identifier=match.group(1))
+            dataset_extent, strategy_identifier=match.group(1)
+        )
         second_phase = distribution_strategy(
-            dataset_extent,
-            strategy_identifier=match.group(2))
+            dataset_extent, strategy_identifier=match.group(2)
+        )
         return io.FromPartialStrategy(io.ByHostname(inside_node), second_phase)
-    elif strategy_identifier == 'fan_in':
-        granularity = os.environ['OPENPMD_FAN_IN']
+    elif strategy_identifier == "fan_in":
+        granularity = os.environ["OPENPMD_FAN_IN"]
         granularity = int(granularity)
         return IncreaseGranularity(
-            granularity, 1,
-            io.FromPartialStrategy(io.ByHostname(io.RoundRobin()),
-                                   io.DiscardingStrategy()))
-    elif strategy_identifier == 'all':
+            granularity,
+            1,
+            io.FromPartialStrategy(
+                io.ByHostname(io.RoundRobin()), io.DiscardingStrategy()
+            ),
+        )
+    elif strategy_identifier == "all":
         return io.FromPartialStrategy(IncreaseGranularity(5), LoadAll())
-    elif strategy_identifier == 'roundrobin':
+    elif strategy_identifier == "roundrobin":
         return io.RoundRobin()
-    elif strategy_identifier == 'binpacking':
+    elif strategy_identifier == "binpacking":
         return io.BinPacking()
-    elif strategy_identifier == 'slicedataset':
+    elif strategy_identifier == "slicedataset":
         return io.ByCuboidSlice(io.OneDimensionalBlockSlicer(), dataset_extent)
-    elif strategy_identifier == 'fail':
+    elif strategy_identifier == "fail":
         return io.FailingStrategy()
-    elif strategy_identifier == 'discard':
+    elif strategy_identifier == "discard":
         return io.DiscardingStrategy()
-    elif strategy_identifier == 'blocksofsourceranks':
+    elif strategy_identifier == "blocksofsourceranks":
         return io.BlocksOfSourceRanks()
     else:
-        raise RuntimeError("Unknown distribution strategy: " +
-                           strategy_identifier)
+        raise RuntimeError("Unknown distribution strategy: " + strategy_identifier)
 
 
 class pipe:
     """
     Represents the configuration of one "pipe" pass.
     """
+
     def __init__(self, infile, outfile, inconfig, outconfig, comm):
         self.infile = infile
         self.outfile = outfile
@@ -313,23 +314,23 @@ class pipe:
         if not HAVE_MPI or (args.mpi is None and self.comm.size == 1):
             print("Opening data source")
             sys.stdout.flush()
-            inseries = io.Series(self.infile, io.Access.read_linear,
-                                 self.inconfig)
+            inseries = io.Series(self.infile, io.Access.read_linear, self.inconfig)
             print("Opening data sink")
             sys.stdout.flush()
-            outseries = io.Series(self.outfile, io.Access.create,
-                                  self.outconfig)
+            outseries = io.Series(self.outfile, io.Access.create, self.outconfig)
             print("Opened input and output")
             sys.stdout.flush()
         else:
             print("Opening data source on rank {}.".format(self.comm.rank))
             sys.stdout.flush()
-            inseries = io.Series(self.infile, io.Access.read_linear, self.comm,
-                                 self.inconfig)
+            inseries = io.Series(
+                self.infile, io.Access.read_linear, self.comm, self.inconfig
+            )
             print("Opening data sink on rank {}.".format(self.comm.rank))
             sys.stdout.flush()
-            outseries = io.Series(self.outfile, io.Access.create, self.comm,
-                                  self.outconfig)
+            outseries = io.Series(
+                self.outfile, io.Access.create, self.comm, self.outconfig
+            )
             print("Opened input and output on rank {}.".format(self.comm.rank))
             sys.stdout.flush()
         # In Linear read mode, global attributes are only present after calling
@@ -343,25 +344,32 @@ class pipe:
         Copies data from src to dest. May represent any point in the openPMD
         hierarchy, but src and dest must both represent the same layer.
         """
-        if (type(src) is not type(dest)
-                and not isinstance(src, io.IndexedIteration)
-                and not isinstance(dest, io.Iteration)):
-            raise RuntimeError(
-                "Internal error: Trying to copy mismatching types")
+        if (
+            type(src) is not type(dest)
+            and not isinstance(src, io.IndexedIteration)
+            and not isinstance(dest, io.Iteration)
+        ):
+            raise RuntimeError("Internal error: Trying to copy mismatching types")
         attribute_dtypes = src.attribute_dtypes
         # The following attributes are written automatically by openPMD-api
         # and should not be manually overwritten here
         ignored_attributes = {
-            io.Series:
-            ["basePath", "iterationEncoding", "iterationFormat", "openPMD"],
+            io.Series: ["basePath", "iterationEncoding", "iterationFormat", "openPMD"],
             io.Iteration: ["snapshot"],
-            io.Record_Component: ["value", "shape"] if isinstance(
-                src, io.Record_Component) and src.constant else []
+            io.Record_Component: ["value", "shape"]
+            if isinstance(src, io.Record_Component) and src.constant
+            else [],
         }
         # filter the map for relevant openpmd object model types
         from itertools import chain
-        ignored_attributes = set(chain.from_iterable(value for (
-            key, value) in ignored_attributes.items() if isinstance(src, key)))
+
+        ignored_attributes = set(
+            chain.from_iterable(
+                value
+                for (key, value) in ignored_attributes.items()
+                if isinstance(src, key)
+            )
+        )
 
         for key in src.attributes:
             ignore_this_attribute = key in ignored_attributes
@@ -371,29 +379,36 @@ class pipe:
                 dest.set_attribute(key, attr, attr_type)
 
         container_types = [
-            io.Mesh_Container, io.Particle_Container, io.ParticleSpecies,
-            io.Record, io.Mesh, io.Particle_Patches, io.Patch_Record
+            io.Mesh_Container,
+            io.Particle_Container,
+            io.ParticleSpecies,
+            io.Record,
+            io.Mesh,
+            io.Particle_Patches,
+            io.Patch_Record,
         ]
-        is_container = any([
-            isinstance(src, container_type)
-            for container_type in container_types
-        ])
+        is_container = any(
+            [isinstance(src, container_type) for container_type in container_types]
+        )
 
         if isinstance(src, io.Series):
             # main loop: read iterations of src, write to dest
             write_iterations = dest.write_iterations()
             for in_iteration in src.read_iterations():
                 if self.comm.rank == 0:
-                    print("Iteration {0} contains {1} meshes:".format(
-                        in_iteration.iteration_index,
-                        len(in_iteration.meshes)))
+                    print(
+                        "Iteration {0} contains {1} meshes:".format(
+                            in_iteration.iteration_index, len(in_iteration.meshes)
+                        )
+                    )
                     for m in in_iteration.meshes:
                         print("\t {0}".format(m))
                     print("")
                     print(
                         "Iteration {0} contains {1} particle species:".format(
-                            in_iteration.iteration_index,
-                            len(in_iteration.particles)))
+                            in_iteration.iteration_index, len(in_iteration.particles)
+                        )
+                    )
                     for ps in in_iteration.particles:
                         print("\t {0}".format(ps))
                         print("With records:")
@@ -408,18 +423,21 @@ class pipe:
                 out_iteration = write_iterations[in_iteration.iteration_index]
                 sys.stdout.flush()
                 self.__copy(
-                    in_iteration, out_iteration,
-                    current_path + str(in_iteration.iteration_index) + "/")
+                    in_iteration,
+                    out_iteration,
+                    current_path + str(in_iteration.iteration_index) + "/",
+                )
                 for deferred in self.loads:
                     deferred.source.load_chunk(
-                        deferred.dynamicView.current_buffer(), deferred.offset,
-                        deferred.extent)
+                        deferred.dynamicView.current_buffer(),
+                        deferred.offset,
+                        deferred.extent,
+                    )
                 in_iteration.close()
                 out_iteration.close()
                 self.loads.clear()
                 sys.stdout.flush()
-        elif isinstance(src, io.Record_Component) and (not is_container
-                                                       or src.scalar):
+        elif isinstance(src, io.Record_Component) and (not is_container or src.scalar):
             shape = src.shape
             dtype = src.dtype
             dest.reset_dataset(io.Dataset(dtype, shape))
@@ -433,25 +451,36 @@ class pipe:
                 chunk_table = src.available_chunks()
                 # todo buffer the strategy
                 strategy = distribution_strategy(shape)
-                my_chunks = strategy.assign(chunk_table, self.inranks,
-                                            self.outranks,
-                                            self.comm.rank, self.comm.size)
-                for chunk in my_chunks[
-                        self.comm.rank] if self.comm.rank in my_chunks else []:
+                my_chunks = strategy.assign(
+                    chunk_table,
+                    self.inranks,
+                    self.outranks,
+                    self.comm.rank,
+                    self.comm.size,
+                )
+                for chunk in (
+                    my_chunks[self.comm.rank] if self.comm.rank in my_chunks else []
+                ):
                     if debug:
                         end = chunk.offset.copy()
                         for i in range(len(end)):
                             end[i] += chunk.extent[i]
-                        print("{}\t{}/{}:\t{} -- {}".format(
-                            current_path, self.comm.rank, self.comm.size,
-                            chunk.offset, end))
+                        print(
+                            "{}\t{}/{}:\t{} -- {}".format(
+                                current_path,
+                                self.comm.rank,
+                                self.comm.size,
+                                chunk.offset,
+                                end,
+                            )
+                        )
                     span = dest.store_chunk(chunk.offset, chunk.extent)
                     self.loads.append(
-                        deferred_load(src, span, chunk.offset, chunk.extent))
+                        deferred_load(src, span, chunk.offset, chunk.extent)
+                    )
         elif isinstance(src, io.Iteration):
             self.__copy(src.meshes, dest.meshes, current_path + "meshes/")
-            self.__copy(src.particles, dest.particles,
-                        current_path + "particles/")
+            self.__copy(src.particles, dest.particles, current_path + "particles/")
         elif is_container:
             for key in src:
                 self.__copy(src[key], dest[key], current_path + key + "/")
@@ -469,8 +498,9 @@ def main():
         communicator = MPI.COMM_WORLD
     else:
         communicator = FallbackMPICommunicator()
-    run_pipe = pipe(args.infile, args.outfile, args.inconfig, args.outconfig,
-                    communicator)
+    run_pipe = pipe(
+        args.infile, args.outfile, args.inconfig, args.outconfig, communicator
+    )
 
     run_pipe.run()
 

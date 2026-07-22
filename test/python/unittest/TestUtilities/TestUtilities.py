@@ -17,7 +17,7 @@ def generateTestFilePath(file_name):
     @return : The absolute path to ../TestFiles/<file_name> .
     """
 
-    test_files_dir = path.join('..', 'samples', file_name)
+    test_files_dir = path.join("..", "samples", file_name)
     return test_files_dir
 
     # this_path = path.abspath(path.dirname(__file__))

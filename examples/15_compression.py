@@ -62,9 +62,7 @@ def write(filename, config):
 
             position = e["position"][dim]
             position.reset_dataset(opmd.Dataset(np.dtype("float"), [100]))
-            position[:] = np.arange(
-                i * 100, (i + 1) * 100, dtype=np.dtype("float")
-            )
+            position[:] = np.arange(i * 100, (i + 1) * 100, dtype=np.dtype("float"))
 
 
 def main():
@@ -200,7 +198,7 @@ def main():
                     "permanent_filters": {
                         "type": "zlib",  # mandatory parameter
                         "aggression": 5,  # optional, defaults to 1
-                    }
+                    },
                 }
             },
         }
@@ -225,7 +223,7 @@ def main():
                         # optional parameter for filters identified by ID,
                         # mandatory only for zlib (see above)
                         "type": "by_id",
-                    }
+                    },
                 }
             },
         }
@@ -242,7 +240,7 @@ def main():
                     "permanent_filters": [
                         {"aggression": 5, "type": "zlib"},
                         {"flags": "mandatory", "id": "shuffle"},
-                    ]
+                    ],
                 }
             },
         }
@@ -263,7 +261,7 @@ def main():
                             "permanent_filters": {
                                 "type": "zlib",
                                 "aggression": 5,
-                            }
+                            },
                         },
                     },
                     {
@@ -273,7 +271,7 @@ def main():
                             "permanent_filters": {
                                 "id": "fletcher32",
                                 "flags": "mandatory",
-                            }
+                            },
                         },
                     },
                 ]
