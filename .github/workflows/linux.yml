@@ -308,6 +308,9 @@ jobs:
             ./check.py "$i"
         done
 
+        export OPENPMD_FLUSH_IMMEDIATELY=1
+        ctest --test-dir build --output-on-failure
+
   musllinux_py10:
     runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false

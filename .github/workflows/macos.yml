@@ -44,6 +44,9 @@ jobs:
         cmake --build build --parallel 3
         ctest --test-dir build --verbose
 
+        export OPENPMD_FLUSH_IMMEDIATELY=1
+        ctest --test-dir build --verbose
+
   appleclang15_py:
     runs-on: macos-14
     if: github.event.pull_request.draft == false
