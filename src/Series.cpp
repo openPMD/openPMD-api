@@ -3573,6 +3573,11 @@ void Series::visitHierarchy(HierarchyVisitor &v, bool recursive)
     v(*this);
 }
 
+uintptr_t Series::memoryID() const
+{
+    return reinterpret_cast<uintptr_t>(&Attributable::get());
+}
+
 auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>
 {
     using vec_t = std::vector<IterationIndex_t>;

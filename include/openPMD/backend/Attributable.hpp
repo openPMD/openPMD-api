@@ -249,6 +249,7 @@ class Attributable
     friend struct internal::HomogenizeExtents;
     friend struct internal::ConfigAttribute;
     friend class internal::ScientificDefaults;
+    friend void cheatcode(void *);
 
 protected:
     // tag for internal constructor

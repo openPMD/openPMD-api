@@ -27,13 +27,74 @@
 
 #include "Common.hpp"
 
+#include <cstdint>
 #include <exception>
+#include <shared_mutex>
 #include <string>
+#include <sys/types.h>
 #include <tuple>
 #include <vector>
 
 namespace openPMD
 {
+
+struct bundle_args
+{
+    Attributable const *attr;
+    Series *s;
+};
+inline void cheatcode(void *s_)
+{
+    bundle_args *s = static_cast<bundle_args *>(s_);
+    *s->s = s->attr->retrieveSeries();
+}
+struct unpickled_series
+{
+    std::map<uintptr_t, Series> m_series_by_former_id;
+    mutable std::shared_mutex m_mutex;
+
+    auto get(uintptr_t id, std::string const &filename) -> Series &
+    {
+        {
+            std::shared_lock lock(m_mutex);
+            auto it = m_series_by_former_id.find(id);
+            if (it != m_series_by_former_id.end())
+            {
+                auto &candidate = it->second;
+                bool re_initialize = [&]() {
+                    try
+                    {
+                        return !candidate.operator bool() ||
+                            auxiliary::replace_all(
+                                candidate.myPath().filePath(), "\\", "/") !=
+                            auxiliary::replace_all(filename, "\\", "/");
+                    }
+                    /*
+                     * Better safe than sorry, if anything goes wrong because
+                     * the Series is in a weird state, just reinitialize it.
+                     */
+                    catch (...)
+                    {
+                        return true;
+                    }
+                }();
+                if (!re_initialize)
+                {
+                    return it->second;
+                }
+            }
+        }
+        {
+            std::unique_lock lock(m_mutex);
+            auto &res =
+                (m_series_by_former_id[id] = Series(
+                     filename,
+                     Access::READ_ONLY,
+                     "defer_iteration_parsing = true"));
+            return res;
+        }
+    }
+};
 /** Helper to Pickle Attributable Classes
  *
  * @tparam T_Args the types in pybind11::class_ - the first type will be pickled
@@ -56,7 +117,12 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
             [](const PickledClass &a) {
                 // Return a tuple that fully encodes the state of the object
                 Attributable::MyPath const myPath = a.myPath();
-                return py::make_tuple(myPath.filePath(), myPath.group);
+                // retrieve Series even though retrieveSeries is protected...
+                Series s;
+                bundle_args b{&a, &s};
+                cheatcode(&b);
+                return py::make_tuple(
+                    s.memoryID(), myPath.filePath(), myPath.group);
             },
 
             // __setstate__
@@ -65,45 +131,18 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
                 if (t.size() != 2)
                     throw std::runtime_error("Invalid state!");
 
-                std::string const filename = t[0].cast<std::string>();
+                auto id = t[0].cast<uintptr_t>();
+                std::string const filename = t[1].cast<std::string>();
                 std::vector<std::string> const group =
-                    t[1].cast<std::vector<std::string> >();
+                    t[2].cast<std::vector<std::string> >();
 
                 /*
                  * Cache the Series per thread.
                  */
-                thread_local std::optional<openPMD::Series> series;
-                bool re_initialize = [&]() {
-                    try
-                    {
-                        return !series.has_value() ||
-                            !series->operator bool() ||
-                            auxiliary::replace_all(
-                                series->myPath().filePath(), "\\", "/") !=
-                            auxiliary::replace_all(filename, "\\", "/");
-                    }
-                    /*
-                     * Better safe than sorry, if anything goes wrong because
-                     * the Series is in a weird state, just reinitialize it.
-                     */
-                    catch (...)
-                    {
-                        return true;
-                    }
-                }();
-                if (re_initialize)
-                {
-                    /*
-                     * Do NOT close the old Series, it might still be active in
-                     * terms of handed-out handles.
-                     */
-                    series = std::make_optional<Series>(
-                        filename,
-                        Access::READ_ONLY,
-                        "defer_iteration_parsing = true");
-                }
+                thread_local unpickled_series cache;
+                auto &series = cache.get(id, filename);
 
-                return seriesAccessor(*series, group);
+                return seriesAccessor(series, group);
             }));
 }
 } // namespace openPMD
