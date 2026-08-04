@@ -2523,6 +2523,48 @@ class APITest(unittest.TestCase):
         read.flush()
         np.testing.assert_array_equal(loaded, np.array([50, 20], dtype=np.uint64))
 
+    class ReadMesh:
+        def __init__(self, series):
+            self.mesh_name = "rho"
+            self.series = series
+            self.it = self.series.iterations[400]
+            self.mesh = self.it.meshes[self.mesh_name]
+
+        def __call__(self, use_stored_mesh=False) -> np.ndarray:
+            if use_stored_mesh:
+                dens = self.mesh[:]
+            else:
+                self.series.iterations[400].open()
+                mesh = self.series.iterations[400].meshes[self.mesh_name]
+                dens = mesh[:]
+            self.series.flush()
+            return dens
+
+    def testPickleSeriesIdentity(self):
+        # This tests the bug reported in
+        # https://github.com/openPMD/openPMD-api/issues/1919
+        # The code is adapted from the reproducer in there.
+        try:
+            from tqdm.contrib.concurrent import process_map
+        except ImportError:
+            return
+
+        try:
+            series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
+        except io.ReadError:
+            return
+
+        reader = self.ReadMesh(series)
+        assert np.array_equal(
+            reader(use_stored_mesh=False), reader(use_stored_mesh=True)
+        )
+
+        params = [[False, False], [True, True], [True, False]]
+        for param in params:
+            results = process_map(reader, param, max_workers=1)
+            # print(f"{param} :", np.array_equal(results[0], results[1]))
+            self.assertTrue(np.array_equal(results[0], results[1]))
+
 
 if __name__ == "__main__":
     unittest.main()
