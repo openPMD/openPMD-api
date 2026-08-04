@@ -171,7 +171,10 @@ void char_roundtrip(std::string const &extension)
     ::detail::writeChar<char>(write, "char");
     ::detail::writeChar<unsigned char>(write, "uchar");
     ::detail::writeChar<signed char>(write, "schar");
+    auto copy = write;
     write.close();
+    REQUIRE(copy.closed());
+    REQUIRE(write.closed());
 
     Series read("../samples/char_rountrip." + extension, Access::READ_ONLY);
     ::detail::readChar<char>(read, "char");

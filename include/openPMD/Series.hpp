@@ -778,6 +778,8 @@ public:
      */
     void close();
 
+    [[nodiscard]] bool closed() const;
+
     void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
     /**

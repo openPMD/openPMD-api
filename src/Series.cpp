@@ -3564,6 +3564,20 @@ void Series::close()
     m_attri.reset();
 }
 
+bool Series::closed() const
+{
+    if (!operator bool())
+    {
+        return true;
+    }
+    auto &w = writable();
+    if (!w.IOHandler)
+    {
+        throw error::Internal("Series went into illegal state");
+    }
+    return !w.IOHandler->has_value();
+}
+
 void Series::visitHierarchy(HierarchyVisitor &v, bool recursive)
 {
     if (recursive)
