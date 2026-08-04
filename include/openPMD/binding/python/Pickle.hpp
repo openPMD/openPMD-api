@@ -42,65 +42,7 @@ struct unpickled_series
     std::map<uintptr_t, Series> m_series_by_former_id;
     std::shared_mutex m_mutex;
 
-    auto get(uintptr_t id, std::string const &filename) -> Series &
-    {
-        {
-            std::shared_lock lock(m_mutex);
-            auto it = m_series_by_former_id.find(id);
-            if (it != m_series_by_former_id.end())
-            {
-                auto &candidate = it->second;
-                bool re_initialize = [&]() {
-                    try
-                    {
-                        return !candidate.operator bool() ||
-                            auxiliary::replace_all(
-                                candidate.myPath().filePath(), "\\", "/") !=
-                            auxiliary::replace_all(filename, "\\", "/");
-                    }
-                    /*
-                     * Better safe than sorry, if anything goes wrong because
-                     * the Series is in a weird state, just reinitialize it.
-                     */
-                    catch (...)
-                    {
-                        return true;
-                    }
-                }();
-                if (!re_initialize)
-                {
-                    return it->second;
-                }
-            }
-        }
-        {
-            std::unique_lock lock(m_mutex);
-
-            // use the chance to do some cleanup
-            std::deque<decltype(m_series_by_former_id)::iterator> delete_me;
-            for (auto it = m_series_by_former_id.begin();
-                 it != m_series_by_former_id.end();
-                 ++it)
-            {
-                if (it->second.closed())
-                {
-                    delete_me.push_back(it);
-                }
-            }
-            for (auto it : delete_me)
-            {
-                // References and iterators to the erased elements are
-                // invalidated. Other references and iterators are not affected.
-                m_series_by_former_id.erase(it);
-            }
-            auto &res =
-                (m_series_by_former_id[id] = Series(
-                     filename,
-                     Access::READ_ONLY,
-                     "defer_iteration_parsing = true"));
-            return res;
-        }
-    }
+    auto get(uintptr_t id, std::string const &filename) -> Series &;
 };
 
 /*
