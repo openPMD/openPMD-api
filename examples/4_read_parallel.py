@@ -34,7 +34,8 @@ if __name__ == "__main__":
     chunk_offset = [comm.rank + 1, 1, 1]
     chunk_extent = [2, 2, 1]
 
-    chunk_data = E_x.load_chunk(chunk_offset, chunk_extent)
+    if comm.rank < 13:
+        chunk_data = E_x.load_chunk(chunk_offset, chunk_extent)
 
     if 0 == comm.rank:
         print(
@@ -50,7 +51,7 @@ if __name__ == "__main__":
         print("Chunks have been read from disk")
 
     for i in range(comm.size):
-        if i == comm.rank:
+        if i == comm.rank and comm.rank < 13:
             print("Rank {} - Read chunk contains:".format(i))
             for row in range(chunk_extent[0]):
                 for col in range(chunk_extent[1]):
