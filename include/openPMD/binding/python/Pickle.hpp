@@ -75,6 +75,24 @@ struct unpickled_series
         }
         {
             std::unique_lock lock(m_mutex);
+
+            // use the chance to do some cleanup
+            std::deque<decltype(m_series_by_former_id)::iterator> delete_me;
+            for (auto it = m_series_by_former_id.begin();
+                 it != m_series_by_former_id.end();
+                 ++it)
+            {
+                if (it->second.closed())
+                {
+                    delete_me.push_back(it);
+                }
+            }
+            for (auto it : delete_me)
+            {
+                // References and iterators to the erased elements are
+                // invalidated. Other references and iterators are not affected.
+                m_series_by_former_id.erase(it);
+            }
             auto &res =
                 (m_series_by_former_id[id] = Series(
                      filename,
