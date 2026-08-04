@@ -343,6 +343,11 @@ OpenpmdStandard Attributable::openPMDStandard() const
     return IOHandler()->m_standard;
 }
 
+uintptr_t Attributable::memoryID() const
+{
+    return reinterpret_cast<uintptr_t>(&retrieveSeries().Attributable::get());
+}
+
 template <bool flush_entire_series>
 void Attributable::seriesFlush_impl(internal::FlushParams const &flushParams)
 {

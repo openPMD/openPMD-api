@@ -780,8 +780,6 @@ public:
 
     void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
-    [[nodiscard]] uintptr_t memoryID() const;
-
     /**
      * This overrides Attributable::iterationFlush() which will fail on Series.
      */

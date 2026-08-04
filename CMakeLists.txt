@@ -605,6 +605,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/ParticleSpecies.cpp
         src/binding/python/PatchRecord.cpp
         src/binding/python/PatchRecordComponent.cpp
+        src/binding/python/Pickle.cpp
         src/binding/python/Record.cpp
         src/binding/python/RecordComponent.cpp
         src/binding/python/MeshRecordComponent.cpp

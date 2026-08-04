@@ -249,7 +249,6 @@ class Attributable
     friend struct internal::HomogenizeExtents;
     friend struct internal::ConfigAttribute;
     friend class internal::ScientificDefaults;
-    friend void cheatcode(void *);
 
 protected:
     // tag for internal constructor
@@ -457,6 +456,8 @@ public:
     void populateMissingMetadata(bool recursive);
 
     [[nodiscard]] OpenpmdStandard openPMDStandard() const;
+
+    [[nodiscard]] uintptr_t memoryID() const;
 
     // clang-format off
 OPENPMD_protected

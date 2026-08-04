@@ -37,21 +37,10 @@
 
 namespace openPMD
 {
-
-struct bundle_args
-{
-    Attributable const *attr;
-    Series *s;
-};
-inline void cheatcode(void *s_)
-{
-    bundle_args *s = static_cast<bundle_args *>(s_);
-    *s->s = s->attr->retrieveSeries();
-}
 struct unpickled_series
 {
     std::map<uintptr_t, Series> m_series_by_former_id;
-    mutable std::shared_mutex m_mutex;
+    std::shared_mutex m_mutex;
 
     auto get(uintptr_t id, std::string const &filename) -> Series &
     {
@@ -95,6 +84,12 @@ struct unpickled_series
         }
     }
 };
+
+/*
+ * Cache the Series per thread.
+ */
+extern thread_local unpickled_series cache;
+
 /** Helper to Pickle Attributable Classes
  *
  * @tparam T_Args the types in pybind11::class_ - the first type will be pickled
@@ -118,11 +113,8 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
                 // Return a tuple that fully encodes the state of the object
                 Attributable::MyPath const myPath = a.myPath();
                 // retrieve Series even though retrieveSeries is protected...
-                Series s;
-                bundle_args b{&a, &s};
-                cheatcode(&b);
                 return py::make_tuple(
-                    s.memoryID(), myPath.filePath(), myPath.group);
+                    a.memoryID(), myPath.filePath(), myPath.group);
             },
 
             // __setstate__
@@ -136,12 +128,7 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
                 std::vector<std::string> const group =
                     t[2].cast<std::vector<std::string> >();
 
-                /*
-                 * Cache the Series per thread.
-                 */
-                thread_local unpickled_series cache;
                 auto &series = cache.get(id, filename);
-
                 return seriesAccessor(series, group);
             }));
 }
