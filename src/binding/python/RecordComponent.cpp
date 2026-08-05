@@ -1159,9 +1159,11 @@ void init_RecordComponent(py::module &m)
         .def("set_unit_SI", &RecordComponent::setUnitSI) // deprecated
         ;
     add_pickle(
-        cl, [](openPMD::Series series, std::vector<std::string> const &group) {
+        cl,
+        [](std::shared_ptr<openPMD::Series> series,
+           std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
-            auto res = series.iterations[n_it]
+            auto res = series->iterations[n_it]
                            .open()
                            .particles[group.at(3)][group.at(4)]
                                      [group.size() < 6 ? RecordComponent::SCALAR

@@ -174,8 +174,8 @@ class Iteration
     friend class Container;
     friend class Series;
     friend class internal::AttributableData;
-    template <typename T>
-    friend T &internal::makeOwning(T &self, Series);
+    template <typename T, typename Series_type>
+    friend T &internal::makeOwning(T &self, Series_type);
     friend class Writable;
     friend class StatefulIterator;
     friend class StatefulSnapshotsContainer;

@@ -29,6 +29,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <memory>
 #include <shared_mutex>
 #include <string>
 #include <sys/types.h>
@@ -39,10 +40,11 @@ namespace openPMD
 {
 struct unpickled_series
 {
-    std::map<uintptr_t, Series> m_series_by_former_id;
+    std::map<uintptr_t, std::weak_ptr<Series>> m_series_by_former_id;
     std::shared_mutex m_mutex;
 
-    auto get(uintptr_t id, std::string const &filename) -> Series &;
+    auto get(uintptr_t id, std::string const &filename)
+        -> std::shared_ptr<Series>;
 };
 
 /*
@@ -64,7 +66,7 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
 {
     // helper: get first class in py::class_ - that's the type we pickle
     using PickledClass =
-        typename std::tuple_element<0, std::tuple<T_Args...> >::type;
+        typename std::tuple_element<0, std::tuple<T_Args...>>::type;
 
     cl.def(
         py::pickle(
@@ -86,10 +88,10 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
                 auto id = t[0].cast<uintptr_t>();
                 std::string const filename = t[1].cast<std::string>();
                 std::vector<std::string> const group =
-                    t[2].cast<std::vector<std::string> >();
+                    t[2].cast<std::vector<std::string>>();
 
-                auto &series = cache.get(id, filename);
-                return seriesAccessor(series, group);
+                auto series = cache.get(id, filename);
+                return seriesAccessor(std::move(series), group);
             }));
 }
 } // namespace openPMD

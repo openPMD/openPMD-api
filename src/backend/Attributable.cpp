@@ -630,8 +630,8 @@ void Attributable::linkHierarchy(Writable &w)
 
 namespace internal
 {
-    template <typename T>
-    T &makeOwning(T &self, Series s)
+    template <typename T, typename Series_type>
+    T &makeOwning(T &self, Series_type s)
     {
         /*
          * `self` is a handle object such as RecordComponent or Mesh (see
@@ -670,11 +670,15 @@ namespace internal
         return self;
     }
 
-    template RecordComponent &makeOwning(RecordComponent &, Series);
-    template MeshRecordComponent &makeOwning(MeshRecordComponent &, Series);
-    template Mesh &makeOwning(Mesh &, Series);
-    template Record &makeOwning(Record &, Series);
-    template ParticleSpecies &makeOwning(ParticleSpecies &, Series);
-    template Iteration &makeOwning(Iteration &, Series);
+    template Series &makeOwning(Series &, std::shared_ptr<Series>);
+    template RecordComponent &
+    makeOwning(RecordComponent &, std::shared_ptr<Series>);
+    template MeshRecordComponent &
+    makeOwning(MeshRecordComponent &, std::shared_ptr<Series>);
+    template Mesh &makeOwning(Mesh &, std::shared_ptr<Series>);
+    template Record &makeOwning(Record &, std::shared_ptr<Series>);
+    template ParticleSpecies &
+    makeOwning(ParticleSpecies &, std::shared_ptr<Series>);
+    template Iteration &makeOwning(Iteration &, std::shared_ptr<Series>);
 } // namespace internal
 } // namespace openPMD

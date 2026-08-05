@@ -568,8 +568,15 @@ Look for the WriteIterations class for further documentation.
             "TODO FILL IN DOCUMENTATION");
 
     add_pickle(
-        cl, [](openPMD::Series series, std::vector<std::string> const &) {
-            return series;
+        cl,
+        [](std::shared_ptr<openPMD::Series> series,
+           std::vector<std::string> const &) {
+            // Need to work on a copy since makeOwning will change the internal
+            // change pointer to capture also the cached Series. For this, the
+            // Series must be a different object than the cached Series,
+            // otherwise the cat will bite its own tail here.
+            Series copy = *series;
+            return openPMD::internal::makeOwning(copy, std::move(series));
         });
 
     constexpr char const *docs_merge_json = &R"END(

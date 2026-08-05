@@ -207,8 +207,8 @@ namespace internal
      * Instantiations for T exist for types RecordComponent,
      * MeshRecordComponent, Mesh, Record, ParticleSpecies, Iteration.
      */
-    template <typename T>
-    T &makeOwning(T &self, Series);
+    template <typename T, typename Series_type>
+    T &makeOwning(T &self, Series_type);
 } // namespace internal
 
 namespace debug
@@ -241,8 +241,8 @@ class Attributable
     friend class Writable;
     friend class internal::RecordComponentData;
     friend void debug::printDirty(Series const &);
-    template <typename T>
-    friend T &internal::makeOwning(T &self, Series);
+    template <typename T, typename Series_type>
+    friend T &internal::makeOwning(T &self, Series_type);
     friend class StatefulSnapshotsContainer;
     friend class internal::AttributableData;
     friend class Snapshots;

@@ -22,42 +22,64 @@
 #include "openPMD/binding/python/Pickle.hpp"
 #include "openPMD/binding/python/Common.hpp"
 
+#include <optional>
+
 namespace openPMD
 {
 unpickled_series cache;
 
 auto unpickled_series::get(uintptr_t id, std::string const &filename)
-    -> Series &
+    -> std::shared_ptr<Series>
 {
-    {
+    auto check_for_cached_series =
+        [&]() -> std::optional<std::shared_ptr<Series>> {
         std::shared_lock lock(m_mutex);
         auto it = m_series_by_former_id.find(id);
-        if (it != m_series_by_former_id.end())
+        if (it == m_series_by_former_id.end())
         {
-            auto &candidate = it->second;
-            bool re_initialize = [&]() {
-                try
-                {
-                    return !candidate.operator bool() ||
-                        auxiliary::replace_all(
-                            candidate.myPath().filePath(), "\\", "/") !=
-                        auxiliary::replace_all(filename, "\\", "/");
-                }
-                /*
-                 * Better safe than sorry, if anything goes wrong because
-                 * the Series is in a weird state, just reinitialize it.
-                 */
-                catch (...)
-                {
-                    return true;
-                }
-            }();
-            if (!re_initialize)
-            {
-                return it->second;
-            }
+            return std::nullopt;
         }
+
+        auto candidate = it->second.lock();
+        if (!candidate)
+        {
+            return std::nullopt;
+        }
+
+        if (!candidate->operator bool())
+        {
+            return std::nullopt;
+        }
+
+        if (auxiliary::replace_all(candidate->myPath().filePath(), "\\", "/") !=
+            auxiliary::replace_all(filename, "\\", "/"))
+        {
+            return std::nullopt;
+        }
+
+        return candidate;
+    };
+    auto maybe_series = [&]() -> std::optional<std::shared_ptr<Series>> {
+        try
+        {
+            return check_for_cached_series();
+        }
+        catch (...)
+        {
+            /*
+             * Better safe than sorry, if anything goes wrong because
+             * the Series is in a weird state, just reinitialize it.
+             */
+            return std::nullopt;
+        }
+    }();
+
+    if (maybe_series)
+    {
+        return std::move(*maybe_series);
     }
+
+    // else reinitialize
     {
         std::unique_lock lock(m_mutex);
 
@@ -67,22 +89,30 @@ auto unpickled_series::get(uintptr_t id, std::string const &filename)
              it != m_series_by_former_id.end();
              ++it)
         {
-            if (it->second.closed())
+            if (auto locked = it->second.lock(); !locked || locked->closed())
             {
                 delete_me.push_back(it);
             }
         }
+
         for (auto it : delete_me)
         {
             // References and iterators to the erased elements are
             // invalidated. Other references and iterators are not affected.
             m_series_by_former_id.erase(it);
         }
-        auto &res =
-            (m_series_by_former_id[id] = Series(
-                 filename,
-                 Access::READ_ONLY,
-                 "defer_iteration_parsing = true"));
+
+        auto res = std::shared_ptr<Series>{
+            new Series(
+                filename, Access::READ_ONLY, "defer_iteration_parsing = true"),
+            [this, id](Series const *s) {
+                {
+                    std::unique_lock lock_lambda(this->m_mutex);
+                    this->m_series_by_former_id.erase(id);
+                }
+                delete s;
+            }};
+        m_series_by_former_id[id] = res;
         return res;
     }
 }

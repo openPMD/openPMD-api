@@ -294,6 +294,8 @@ class Series : public Attributable
     friend class internal::SeriesData;
     friend class internal::AttributableData;
     friend class StatefulSnapshotsContainer;
+    template <typename T, typename Series_type>
+    friend T &internal::makeOwning(T &self, Series_type);
 
 public:
     explicit Series();
@@ -805,6 +807,11 @@ OPENPMD_private
 
     using Data_t = internal::SeriesData;
     std::shared_ptr<Data_t> m_series = nullptr;
+
+    inline std::shared_ptr<Data_t> getShared()
+    {
+        return m_series;
+    }
 
     inline Data_t &get()
     {

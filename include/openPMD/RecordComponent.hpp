@@ -130,8 +130,8 @@ class RecordComponent
     friend class DynamicMemoryView;
     friend class internal::RecordComponentData;
     friend class MeshRecordComponent;
-    template <typename T>
-    friend T &internal::makeOwning(T &self, Series);
+    template <typename T, typename Series_type>
+    friend T &internal::makeOwning(T &self, Series_type);
     friend class internal::ScientificDefaults;
     friend class Attributable;
 

@@ -199,8 +199,8 @@ private:
     friend class internal::BaseRecordData;
     template <typename, typename, typename>
     friend class internal::ScalarIterator;
-    template <typename T>
-    friend T &internal::makeOwning(T &self, Series);
+    template <typename T, typename Series_type>
+    friend T &internal::makeOwning(T &self, Series_type);
     friend class internal::ScientificDefaults;
 
     using Data_t =
