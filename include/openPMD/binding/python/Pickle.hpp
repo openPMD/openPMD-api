@@ -48,7 +48,7 @@ struct unpickled_series
 /*
  * Cache the Series per thread.
  */
-extern thread_local unpickled_series cache;
+extern unpickled_series cache;
 
 /** Helper to Pickle Attributable Classes
  *

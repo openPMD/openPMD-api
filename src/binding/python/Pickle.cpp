@@ -24,7 +24,7 @@
 
 namespace openPMD
 {
-thread_local unpickled_series cache;
+unpickled_series cache;
 
 auto unpickled_series::get(uintptr_t id, std::string const &filename)
     -> Series &
