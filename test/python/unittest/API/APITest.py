@@ -2544,7 +2544,10 @@ class APITest(unittest.TestCase):
         # This tests the bug reported in
         # https://github.com/openPMD/openPMD-api/issues/1919
         # The code is adapted from the reproducer in there.
-        from multiprocessing import Pool
+        try:
+            from multiprocessing import Pool
+        except ImportError:
+            return
 
         try:
             series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
