@@ -2544,10 +2544,7 @@ class APITest(unittest.TestCase):
         # This tests the bug reported in
         # https://github.com/openPMD/openPMD-api/issues/1919
         # The code is adapted from the reproducer in there.
-        try:
-            from tqdm.contrib.concurrent import process_map
-        except ImportError:
-            return
+        from multiprocessing import Pool
 
         try:
             series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
@@ -2561,8 +2558,8 @@ class APITest(unittest.TestCase):
 
         params = [[False, False], [True, True], [True, False]]
         for param in params:
-            results = process_map(reader, param, max_workers=1)
-            # print(f"{param} :", np.array_equal(results[0], results[1]))
+            with Pool(processes=1) as pool:
+                results = pool.map(reader, param)
             self.assertTrue(np.array_equal(results[0], results[1]))
 
 
