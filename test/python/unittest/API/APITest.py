@@ -2545,7 +2545,7 @@ class APITest(unittest.TestCase):
         # https://github.com/openPMD/openPMD-api/issues/1919
         # The code is adapted from the reproducer in there.
         try:
-            from multiprocessing import Pool
+            import multiprocessing
         except ImportError:
             return
 
@@ -2561,7 +2561,7 @@ class APITest(unittest.TestCase):
 
         params = [[False, False], [True, True], [True, False]]
         for param in params:
-            with Pool(processes=1) as pool:
+            with multiprocessing.Pool(processes=1) as pool:
                 results = pool.map(reader, param)
             self.assertTrue(np.array_equal(results[0], results[1]))
 
