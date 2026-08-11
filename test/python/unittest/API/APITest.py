@@ -2586,7 +2586,6 @@ class APITest(unittest.TestCase):
     def testPickleMultipleSeriesMultipleReferences(self):
         # Test that the unpickle cache correctly handles multiple Series objects,
         # each with multiple handles referencing it.
-        # Tests both GC-based cleanup and explicit Series.close() cleanup.
         try:
             import pickle
             import multiprocessing
@@ -2649,11 +2648,15 @@ class APITest(unittest.TestCase):
         s1_momentum = pickle.loads(pickled_s1_momentum)
         s1_mom_x = pickle.loads(pickled_s1_mom_x)
 
+        del s1_it, s1_electrons
+
         series2 = pickle.loads(pickled_s2)
         s2_it = pickle.loads(pickled_s2_it)
         s2_electrons = pickle.loads(pickled_s2_electrons)
         s2_momentum = pickle.loads(pickled_s2_momentum)
         s2_mom_x = pickle.loads(pickled_s2_mom_x)
+
+        del s2_it, s2_electrons
 
         # Verify all unpickled references still work correctly
         data_s1_mom_unpickled = s1_momentum["y"][()]
@@ -2690,7 +2693,7 @@ class APITest(unittest.TestCase):
         for i, (r1, r2) in enumerate(zip(results1, results2)):
             np.testing.assert_array_equal(r1, r2)
 
-    def testPickleCleanupWithClose(self):
+    def workerTestPickleCleanup(self, do_close):
         # Test that Series.close() triggers cleanup properly
         # (cleanup happens on next unpickle of a previously not opened Series)
         try:
@@ -2700,6 +2703,7 @@ class APITest(unittest.TestCase):
 
         try:
             series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
+            series_2 = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
         except io.ReadError:
             return
 
@@ -2713,12 +2717,26 @@ class APITest(unittest.TestCase):
         pickled_series = pickle.dumps(series)
         pickled_momentum = pickle.dumps(momentum)
         pickled_mom_x = pickle.dumps(mom_x)
+
+        # Create multiple references
+        it_2 = series.iterations[400]
+        electrons_2 = it.particles["electrons"]
+        momentum_2 = electrons["momentum"]
+        mom_x_2 = momentum["x"]
+
+        # Pickle everything
+        pickled_series_2 = pickle.dumps(series)
+        pickled_momentum_2 = pickle.dumps(momentum)
+        pickled_mom_x_2 = pickle.dumps(mom_x)
 
         # Close the series explicitly
         series.close()
         del series, it, electrons, momentum, mom_x
 
-        # Unpickle - this should work even after close()
+        series_2.close()
+        del series_2, it_2, electrons_2, momentum_2, mom_x_2
+
+        # Unpickle
         series = pickle.loads(pickled_series)
         momentum = pickle.loads(pickled_momentum)
         mom_x = pickle.loads(pickled_mom_x)
@@ -2732,49 +2750,36 @@ class APITest(unittest.TestCase):
         # Basic sanity check that we got data
         self.assertIsNotNone(data_momentum)
         self.assertIsNotNone(data_mom_x)
+
+        # Remove information unpickled so far from cache again, either through API call or through GC
+        if do_close:
+            # print("EXPLICITLY CLOSING")
+            series.close()
+        else:
+            # print("EXPLICITLY DELETING")
+            del series, momentum, mom_x
+        # print("DONE")
+
+        # Unpickle the second Series
+        series_2 = pickle.loads(pickled_series_2)
+        momentum_2 = pickle.loads(pickled_momentum_2)
+        mom_x_2 = pickle.loads(pickled_mom_x_2)
+
+        # Verify data is still accessible
+        data_momentum_2 = momentum_2["y"][()]
+        series_2.flush()
+        data_mom_x_2 = mom_x_2[()]
+        series_2.flush()
+
+        # Basic sanity check that we got data
+        self.assertIsNotNone(data_momentum_2)
+        self.assertIsNotNone(data_mom_x_2)
+
+    def testPickleCleanupWithClose(self):
+        self.workerTestPickleCleanup(do_close=True)
 
     def testPickleCleanupWithGC(self):
-        # Test that Python GC triggers cleanup properly
-        try:
-            import pickle
-            import gc
-        except ImportError:
-            return
-
-        try:
-            series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
-        except io.ReadError:
-            return
-
-        # Create multiple references
-        it = series.iterations[400]
-        electrons = it.particles["electrons"]
-        momentum = electrons["momentum"]
-        mom_x = momentum["x"]
-
-        # Pickle everything
-        pickled_series = pickle.dumps(series)
-        pickled_momentum = pickle.dumps(momentum)
-        pickled_mom_x = pickle.dumps(mom_x)
-
-        # Delete all references and force GC
-        del series, it, electrons, momentum, mom_x
-        gc.collect()
-
-        # Unpickle - this should work after GC
-        series = pickle.loads(pickled_series)
-        momentum = pickle.loads(pickled_momentum)
-        mom_x = pickle.loads(pickled_mom_x)
-
-        # Verify data is still accessible
-        data_momentum = momentum["y"][()]
-        series.flush()
-        data_mom_x = mom_x[()]
-        series.flush()
-
-        # Basic sanity check that we got data
-        self.assertIsNotNone(data_momentum)
-        self.assertIsNotNone(data_mom_x)
+        self.workerTestPickleCleanup(do_close=False)
 
 
 if __name__ == "__main__":

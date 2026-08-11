@@ -48,7 +48,7 @@ auto unpickled_series::get(uintptr_t id, std::string const &filename)
             return std::nullopt;
         }
 
-        if (!candidate->operator bool())
+        if (candidate->closed())
         {
             return std::nullopt;
         }
