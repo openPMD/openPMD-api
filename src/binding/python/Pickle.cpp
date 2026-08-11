@@ -31,6 +31,8 @@ unpickled_series cache;
 auto unpickled_series::get(uintptr_t id, std::string const &filename)
     -> std::shared_ptr<Series>
 {
+    // Check if a Series object with the given id is already in cache, still
+    // valid and points to the specified filename.
     auto check_for_cached_series =
         [&]() -> std::optional<std::shared_ptr<Series>> {
         std::shared_lock lock(m_mutex);
@@ -59,6 +61,8 @@ auto unpickled_series::get(uintptr_t id, std::string const &filename)
 
         return candidate;
     };
+    // There is a chance that the cached Series state is weird from previous
+    // usage, so catch any error and reinitialize in doubt.
     auto maybe_series = [&]() -> std::optional<std::shared_ptr<Series>> {
         try
         {
@@ -79,7 +83,7 @@ auto unpickled_series::get(uintptr_t id, std::string const &filename)
         return std::move(*maybe_series);
     }
 
-    // else reinitialize
+    // Else reinitialize.
     {
         std::unique_lock lock(m_mutex);
 

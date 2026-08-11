@@ -38,8 +38,30 @@
 
 namespace openPMD
 {
+/*
+ * unpickled_series, as in "plural series"; this is a cache structure for series
+ * objects that have been unpickled. This cache structure fixes the issue
+ * described in https://github.com/openPMD/openPMD-api/issues/1919.
+ * Idea: One single Series instance may have multiple handles referencing it.
+ * When pickling and unpickling these references, the underlying Series must be
+ * restored once only, in order to keep the reference structure. Otherwise
+ * something like `data = E_x[:]; series.flush();` will not work, because `E_x`
+ * no longer references the same Series instance as `series`.
+ *
+ * For this, the pickle structure contains as first entry the internal
+ * (immutable) SharedAttributable pointer address of the `Series` object
+ * referenced by any handle. When unpickling, this is used to restore shared
+ * handles in accordance with their original reference structure.
+ */
 struct unpickled_series
 {
+    // Cache restored object by original Series ID (i.e. internal immutable
+    // pointer address). IDs are not restored equivalently, but this does not
+    // matter. They are necessary only for figuring out which handles point to
+    // the same objects.
+    // The cached Series objects are stored as weak_ptr, since they are memory
+    // managed by the Python side. The C++ side just needs to check if the
+    // weak_ptr is still valid when handing out a new reference. If not, reopen.
     std::map<uintptr_t, std::weak_ptr<Series>> m_series_by_former_id;
     std::shared_mutex m_mutex;
 
@@ -81,7 +103,10 @@ add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
 
             // __setstate__
             [&seriesAccessor](py::tuple const &t) {
-                // our tuple has exactly two elements: filePath & group
+                // Our tuple has exactly three elements: Series ID, filePath &
+                // group.
+                //  Check the documentation of unpickled_series above for
+                // the reasoning behind Series ID.
                 if (t.size() != 3)
                     throw std::runtime_error("Invalid state!");
 
