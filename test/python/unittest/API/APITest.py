@@ -2540,6 +2540,24 @@ class APITest(unittest.TestCase):
             self.series.flush()
             return dens
 
+    class ReadMomentum:
+        """Helper for multiprocessing pickle test - must be a class to be picklable"""
+
+        def __init__(self, pickled_series):
+            self.pickled_series = pickled_series
+
+        def __call__(self, use_stored=False) -> np.ndarray:
+            import pickle
+
+            series = pickle.loads(self.pickled_series)
+            it = series.iterations[400]
+            it.open()
+            electrons = it.particles["electrons"]
+            momentum = electrons["momentum"]
+            data = momentum["y"][()]
+            series.flush()
+            return data
+
     def testPickleSeriesIdentity(self):
         # This tests the bug reported in
         # https://github.com/openPMD/openPMD-api/issues/1919
@@ -2564,6 +2582,199 @@ class APITest(unittest.TestCase):
             with multiprocessing.Pool(processes=1) as pool:
                 results = pool.map(reader, param)
             self.assertTrue(np.array_equal(results[0], results[1]))
+
+    def testPickleMultipleSeriesMultipleReferences(self):
+        # Test that the unpickle cache correctly handles multiple Series objects,
+        # each with multiple handles referencing it.
+        # Tests both GC-based cleanup and explicit Series.close() cleanup.
+        try:
+            import pickle
+            import multiprocessing
+        except ImportError:
+            return
+
+        try:
+            series1 = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
+            series2 = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
+        except io.ReadError:
+            return
+
+        # Create multiple references to each series
+        # Series 1 references (using particle records with components)
+        s1_it = series1.iterations[400]
+        s1_electrons = s1_it.particles["electrons"]
+        s1_momentum = s1_electrons["momentum"]
+        s1_mom_x = s1_momentum["x"]
+
+        # Series 2 references
+        s2_it = series2.iterations[400]
+        s2_electrons = s2_it.particles["electrons"]
+        s2_momentum = s2_electrons["momentum"]
+        s2_mom_x = s2_momentum["x"]
+
+        # Verify all references work and return same data
+        data_s1_mom = s1_momentum["y"][()]
+        series1.flush()
+        data_s1_mom_x = s1_mom_x[()]
+        series1.flush()
+        data_s2_mom = s2_momentum["y"][()]
+        series2.flush()
+        data_s2_mom_x = s2_mom_x[()]
+        series2.flush()
+
+        np.testing.assert_array_equal(data_s1_mom, data_s2_mom)
+        np.testing.assert_array_equal(data_s1_mom_x, data_s2_mom_x)
+
+        # Pickle all references
+        pickled_s1 = pickle.dumps(series1)
+        pickled_s1_it = pickle.dumps(s1_it)
+        pickled_s1_electrons = pickle.dumps(s1_electrons)
+        pickled_s1_momentum = pickle.dumps(s1_momentum)
+        pickled_s1_mom_x = pickle.dumps(s1_mom_x)
+
+        pickled_s2 = pickle.dumps(series2)
+        pickled_s2_it = pickle.dumps(s2_it)
+        pickled_s2_electrons = pickle.dumps(s2_electrons)
+        pickled_s2_momentum = pickle.dumps(s2_momentum)
+        pickled_s2_mom_x = pickle.dumps(s2_mom_x)
+
+        # Explicitly delete all objects to simulate GC
+        del s1_it, s1_electrons, s1_momentum, s1_mom_x, series1
+        del s2_it, s2_electrons, s2_momentum, s2_mom_x, series2
+
+        # Unpickle - this should restore the cache properly
+        series1 = pickle.loads(pickled_s1)
+        s1_it = pickle.loads(pickled_s1_it)
+        s1_electrons = pickle.loads(pickled_s1_electrons)
+        s1_momentum = pickle.loads(pickled_s1_momentum)
+        s1_mom_x = pickle.loads(pickled_s1_mom_x)
+
+        series2 = pickle.loads(pickled_s2)
+        s2_it = pickle.loads(pickled_s2_it)
+        s2_electrons = pickle.loads(pickled_s2_electrons)
+        s2_momentum = pickle.loads(pickled_s2_momentum)
+        s2_mom_x = pickle.loads(pickled_s2_mom_x)
+
+        # Verify all unpickled references still work correctly
+        data_s1_mom_unpickled = s1_momentum["y"][()]
+        series1.flush()
+        data_s1_mom_x_unpickled = s1_mom_x[()]
+        series1.flush()
+        data_s2_mom_unpickled = s2_momentum["y"][()]
+        series2.flush()
+        data_s2_mom_x_unpickled = s2_mom_x[()]
+        series2.flush()
+
+        np.testing.assert_array_equal(data_s1_mom, data_s1_mom_unpickled)
+        np.testing.assert_array_equal(data_s1_mom_x, data_s1_mom_x_unpickled)
+        np.testing.assert_array_equal(data_s2_mom, data_s2_mom_unpickled)
+        np.testing.assert_array_equal(data_s2_mom_x, data_s2_mom_x_unpickled)
+
+        # Test multiprocessing with multiple series
+        pickled_for_mp1 = pickle.dumps(series1)
+        pickled_for_mp2 = pickle.dumps(series2)
+
+        reader1 = self.ReadMomentum(pickled_for_mp1)
+        reader2 = self.ReadMomentum(pickled_for_mp2)
+
+        params = [
+            [False],
+            [True],
+        ]
+
+        with multiprocessing.Pool(processes=2) as pool:
+            results1 = pool.map(reader1, params)
+            results2 = pool.map(reader2, params)
+
+        # All results should be equal (both series point to same file)
+        for i, (r1, r2) in enumerate(zip(results1, results2)):
+            np.testing.assert_array_equal(r1, r2)
+
+    def testPickleCleanupWithClose(self):
+        # Test that Series.close() triggers cleanup properly
+        # (cleanup happens on next unpickle of a previously not opened Series)
+        try:
+            import pickle
+        except ImportError:
+            return
+
+        try:
+            series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
+        except io.ReadError:
+            return
+
+        # Create multiple references
+        it = series.iterations[400]
+        electrons = it.particles["electrons"]
+        momentum = electrons["momentum"]
+        mom_x = momentum["x"]
+
+        # Pickle everything
+        pickled_series = pickle.dumps(series)
+        pickled_momentum = pickle.dumps(momentum)
+        pickled_mom_x = pickle.dumps(mom_x)
+
+        # Close the series explicitly
+        series.close()
+        del series, it, electrons, momentum, mom_x
+
+        # Unpickle - this should work even after close()
+        series = pickle.loads(pickled_series)
+        momentum = pickle.loads(pickled_momentum)
+        mom_x = pickle.loads(pickled_mom_x)
+
+        # Verify data is still accessible
+        data_momentum = momentum["y"][()]
+        series.flush()
+        data_mom_x = mom_x[()]
+        series.flush()
+
+        # Basic sanity check that we got data
+        self.assertIsNotNone(data_momentum)
+        self.assertIsNotNone(data_mom_x)
+
+    def testPickleCleanupWithGC(self):
+        # Test that Python GC triggers cleanup properly
+        try:
+            import pickle
+            import gc
+        except ImportError:
+            return
+
+        try:
+            series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
+        except io.ReadError:
+            return
+
+        # Create multiple references
+        it = series.iterations[400]
+        electrons = it.particles["electrons"]
+        momentum = electrons["momentum"]
+        mom_x = momentum["x"]
+
+        # Pickle everything
+        pickled_series = pickle.dumps(series)
+        pickled_momentum = pickle.dumps(momentum)
+        pickled_mom_x = pickle.dumps(mom_x)
+
+        # Delete all references and force GC
+        del series, it, electrons, momentum, mom_x
+        gc.collect()
+
+        # Unpickle - this should work after GC
+        series = pickle.loads(pickled_series)
+        momentum = pickle.loads(pickled_momentum)
+        mom_x = pickle.loads(pickled_mom_x)
+
+        # Verify data is still accessible
+        data_momentum = momentum["y"][()]
+        series.flush()
+        data_mom_x = mom_x[()]
+        series.flush()
+
+        # Basic sanity check that we got data
+        self.assertIsNotNone(data_momentum)
+        self.assertIsNotNone(data_mom_x)
 
 
 if __name__ == "__main__":
