@@ -457,6 +457,11 @@ public:
 
     [[nodiscard]] OpenpmdStandard openPMDStandard() const;
 
+    /** Returns the persistent immutable memory ID of the underlying Series.
+     *
+     * Useful when trying to determine which API handles refer to the same IO
+     * instance.
+     */
     [[nodiscard]] uintptr_t memoryID() const;
 
     // clang-format off

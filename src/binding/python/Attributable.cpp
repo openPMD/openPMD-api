@@ -658,7 +658,7 @@ void init_Attributable(py::module &m)
             "populate_missing_metadata",
             &Attributable::populateMissingMetadata,
             py::arg("recursive"))
-        .def("memory_id", [](Attributable const &attr) {
+        .def_property_readonly("memory_id", [](Attributable const &attr) {
             return attr.memoryID();
         });
 

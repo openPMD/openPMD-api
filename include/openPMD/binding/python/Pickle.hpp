@@ -51,7 +51,9 @@ namespace openPMD
  * For this, the pickle structure contains as first entry the internal
  * (immutable) SharedAttributable pointer address of the `Series` object
  * referenced by any handle. When unpickling, this is used to restore shared
- * handles in accordance with their original reference structure.
+ * handles in accordance with their original reference structure. The pointers
+ * themselves are not restored (this would not be possible), but they are used
+ * as equivalence classes.
  */
 struct unpickled_series
 {
