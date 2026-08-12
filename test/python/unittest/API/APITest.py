@@ -2578,10 +2578,14 @@ class APITest(unittest.TestCase):
         )
 
         params = [[False, False], [True, True], [True, False]]
-        for param in params:
-            with multiprocessing.Pool(processes=1) as pool:
-                results = pool.map(reader, param)
-            self.assertTrue(np.array_equal(results[0], results[1]))
+        try:
+            for param in params:
+                with multiprocessing.Pool(processes=1) as pool:
+                    results = pool.map(reader, param)
+                self.assertTrue(np.array_equal(results[0], results[1]))
+        except ModuleNotFoundError:
+            # happens on pyodide run. ignore.
+            pass
 
     def testPickleMultipleSeriesMultipleReferences(self):
         # Test that the unpickle cache correctly handles multiple Series objects,
