@@ -2564,7 +2564,7 @@ class APITest(unittest.TestCase):
         # The code is adapted from the reproducer in there.
         try:
             import multiprocessing
-        except ImportError:
+        except (ImportError, ModuleNotFoundError):
             return
 
         try:
