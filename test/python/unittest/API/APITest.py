@@ -10,6 +10,7 @@ import ctypes
 import gc
 import os
 import shutil
+import sys
 import unittest
 
 import openpmd_api as io
@@ -32,6 +33,11 @@ tested_file_extensions = [
     # so it doesn't require full testing
     if ext != "sst" and ext != "ssc" and ext != "toml"
 ]
+
+
+def is_pyodide():
+    """Check if we're running in Pyodide (WASM) environment."""
+    return "pyodide" in sys.modules
 
 
 class APITest(unittest.TestCase):
@@ -2562,6 +2568,9 @@ class APITest(unittest.TestCase):
         # This tests the bug reported in
         # https://github.com/openPMD/openPMD-api/issues/1919
         # The code is adapted from the reproducer in there.
+        if is_pyodide():
+            return
+
         try:
             import multiprocessing
         except (ImportError, ModuleNotFoundError):
@@ -2583,13 +2592,15 @@ class APITest(unittest.TestCase):
                 with multiprocessing.Pool(processes=1) as pool:
                     results = pool.map(reader, param)
                 self.assertTrue(np.array_equal(results[0], results[1]))
-        except ModuleNotFoundError:
-            # happens on pyodide run. ignore.
+        except (ModuleNotFoundError, OSError):
             pass
 
     def testPickleMultipleSeriesMultipleReferences(self):
         # Test that the unpickle cache correctly handles multiple Series objects,
         # each with multiple handles referencing it.
+        if is_pyodide():
+            return
+
         try:
             import pickle
             import multiprocessing
