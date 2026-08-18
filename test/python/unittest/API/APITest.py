@@ -2571,10 +2571,7 @@ class APITest(unittest.TestCase):
         if is_pyodide():
             return
 
-        try:
-            import multiprocessing
-        except (ImportError, ModuleNotFoundError):
-            return
+        import multiprocessing
 
         try:
             series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
@@ -2587,13 +2584,10 @@ class APITest(unittest.TestCase):
         )
 
         params = [[False, False], [True, True], [True, False]]
-        try:
-            for param in params:
-                with multiprocessing.Pool(processes=1) as pool:
-                    results = pool.map(reader, param)
-                self.assertTrue(np.array_equal(results[0], results[1]))
-        except (ModuleNotFoundError, OSError):
-            pass
+        for param in params:
+            with multiprocessing.Pool(processes=1) as pool:
+                results = pool.map(reader, param)
+            self.assertTrue(np.array_equal(results[0], results[1]))
 
     def testPickleMultipleSeriesMultipleReferences(self):
         # Test that the unpickle cache correctly handles multiple Series objects,
