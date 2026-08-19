@@ -108,6 +108,9 @@ auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
     {
         if (this->writable().objectType.isGroup())
         {
+            // Maybe allow casting to a constant component if shape and value
+            // are defined
+            // Also, what about shape elision in SoA structures?
             throw error::WrongAPIUsage(
                 "Can't cast a group object into a dataset.");
         }
