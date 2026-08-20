@@ -36,6 +36,10 @@ namespace traits
         // method might be called as const. shared_ptr<>s implement interior
         // mutability, so use that here.
 
+        if (!container.writable().objectType.isGroup())
+        {
+            return;
+        }
         // auto &container_front = container.container_front();
         auto &container_front = container.m_containerData->m_container;
         auto &container_back = container.container_back(/* verify = */ false);
