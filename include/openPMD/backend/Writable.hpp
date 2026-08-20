@@ -54,6 +54,8 @@ namespace traits
 {
     template <typename T>
     struct GenerationPolicy;
+    template <typename>
+    struct DeferredInitPolicy;
 } // namespace traits
 
 namespace internal
@@ -263,6 +265,8 @@ class Writable final
     friend struct traits::GenerationPolicy;
     friend class internal::BaseRecordComponentData;
     friend class internal::RecordComponentData;
+    template <typename>
+    friend struct traits::DeferredInitPolicy;
 
 private:
     Writable(internal::AttributableData *);
