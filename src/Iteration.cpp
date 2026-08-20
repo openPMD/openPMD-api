@@ -54,14 +54,14 @@ namespace openPMD
 using internal::CloseStatus;
 using internal::DeferredParseAccess;
 
-void Meshes::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Meshes::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Meshes>(v, recursive);
+    visitHierarchyContainer<Meshes>(v, recursive);
 }
 
-void Particles::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Particles::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Particles>(v, recursive);
+    visitHierarchyContainer<Particles>(v, recursive);
 }
 
 Iteration::Iteration() : Attributable(NoInit())
@@ -254,7 +254,7 @@ bool Iteration::closedByWriter() const
     }
 }
 
-void Iteration::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Iteration::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
     if (recursive)
     {
@@ -1003,9 +1003,9 @@ void Iteration::scientificDefaults_impl(
         .withReader(int_types, require_type<double>())(wor);
 }
 
-void Iterations::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Iterations::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Iterations>(v, recursive);
+    visitHierarchyContainer<Iterations>(v, recursive);
 }
 
 template float Iteration::time<float>() const;

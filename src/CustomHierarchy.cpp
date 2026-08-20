@@ -105,6 +105,15 @@ namespace traits
         Container<CustomHierarchy> const &);
 } // namespace traits
 
+// TODO: Add visitor over real type, using HierarchyVisitor class
+//       Then, maybe even implement HierarchyVisitor in terms of CustomHierarchy
+
+template <>
+auto ConvertibleContainer<CustomHierarchy>::isDataset() -> bool
+{
+    return this->writable().objectType.isDataset();
+}
+
 template <>
 auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
 {
@@ -352,6 +361,11 @@ void CustomHierarchy::printRecursively(std::string indent)
     print_indent();
     std::cout << "└─" << prev->first << '\n';
     prev->second.printRecursively(indent + "  ");
+}
+
+void CustomHierarchy::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
+{
+    visitHierarchyContainer<CustomHierarchy>(v, recursive);
 }
 } // namespace openPMD
 

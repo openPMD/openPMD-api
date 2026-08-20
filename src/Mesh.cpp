@@ -37,9 +37,9 @@
 
 namespace openPMD
 {
-void Mesh::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Mesh::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Mesh>(v, recursive);
+    visitHierarchyContainer<Mesh>(v, recursive);
 }
 
 Mesh::Mesh() = default;

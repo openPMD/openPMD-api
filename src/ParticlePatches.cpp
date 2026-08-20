@@ -35,9 +35,9 @@ size_t ParticlePatches::numPatches() const
     return this->at("numParticles").getExtent()[0];
 }
 
-void ParticlePatches::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void ParticlePatches::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<ParticlePatches>(v, recursive);
+    visitHierarchyContainer<ParticlePatches>(v, recursive);
 }
 
 void ParticlePatches::read()

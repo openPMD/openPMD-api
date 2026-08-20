@@ -796,8 +796,6 @@ public:
 
     [[nodiscard]] bool closed() const;
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
     /**
      * This overrides Attributable::iterationFlush() which will fail on Series.
      */
@@ -1051,6 +1049,8 @@ OPENPMD_private
     [[nodiscard]] bool randomAccessSteps() const;
 
     std::vector<std::string> availableDatasets();
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // Series
 
 namespace debug

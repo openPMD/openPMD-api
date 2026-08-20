@@ -399,7 +399,7 @@ public:
     }
 
     template <typename ChildClass>
-    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
+    void visitHierarchyContainer(HierarchyVisitor &v, bool recursive)
     {
         if (recursive)
         {
