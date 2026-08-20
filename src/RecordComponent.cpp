@@ -630,6 +630,7 @@ void RecordComponent::readBase()
         setWritten(true, Attributable::EnqueueAsynchronously::No);
     };
 
+    // why !empty() ??
     if (constant() && !empty())
     {
         read_constant();
