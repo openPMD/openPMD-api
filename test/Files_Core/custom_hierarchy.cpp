@@ -73,6 +73,12 @@ void write(
     // fully_custom_dataset.setComment(
     //     "ALS PRIMA BALLERINA ALS WEIB ALS FEMME FATALE");
     fully_custom_dataset.storeChunk(Exdata, {0}, {3});
+
+    auto fully_custom_constant_dataset =
+        iteration.customHierarchies()["fully"]["custom"]["constant_dataset"]
+            .asDataset();
+    fully_custom_constant_dataset.makeConstant(67);
+    fully_custom_constant_dataset.resetDataset({{10, 10}});
     iteration.close();
 }
 
@@ -116,6 +122,15 @@ void read(
         REQUIRE(custom_data.get()[i] == (int)i + 1);
     }
     iteration.customHierarchies().printRecursively();
+    auto constant_dataset =
+        iteration.customHierarchies()["fully"]["custom"]["constant_dataset"]
+            .asDataset();
+    auto custom_constant_data = constant_dataset.loadChunk<int>();
+    iteration.seriesFlush();
+    for (size_t i = 0; i < 100; ++i)
+    {
+        REQUIRE(custom_data.get()[i] == 67);
+    }
     iteration.close();
 }
 
