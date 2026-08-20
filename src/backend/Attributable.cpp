@@ -380,10 +380,23 @@ void Attributable::touch()
     setDirtyRecursive(true);
 }
 
-void Attributable::visitHierarchy(HierarchyVisitor &, bool)
+void Attributable::visitHierarchy(HierarchyVisitor &visitor, bool recursive)
 {
-    throw error::Internal(
-        "[Attributable::visitHierarchy] Cannot call this on base class.");
+    this->visitHierarchyImpl(visitor, recursive);
+    writable().objectType.ifGroup([&, recursive](auto &group_info) {
+        for (auto &pair : group_info.m_children_managed_as_custom_hierarchy)
+        {
+            auto &obj = *pair.second;
+            if (obj.isDataset())
+            {
+                obj.asDataset().visitHierarchy(visitor, recursive);
+            }
+            else
+            {
+                pair.second->visitHierarchy(visitor, recursive);
+            }
+        }
+    });
 }
 
 void Attributable::populateMissingMetadata(bool recursive)
@@ -763,6 +776,12 @@ void Attributable::setWritten(bool val, EnqueueAsynchronously ea)
         break;
     }
     writable().written = val;
+}
+
+void Attributable::visitHierarchyImpl(HierarchyVisitor &, bool)
+{
+    throw error::Internal(
+        "[Attributable::visitHierarchy] Cannot call this on base class.");
 }
 
 void Attributable::linkHierarchy(Writable &w)

@@ -67,6 +67,7 @@ private:
     explicit ConvertibleContainer() = default;
 
 public:
+    auto isDataset() -> bool;
     auto asDataset() -> RecordComponent;
     // TODO also: asContainerOf()
 };
@@ -186,5 +187,8 @@ public:
 
 private:
     void printRecursively(std::string indent);
+
+protected:
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
 } // namespace openPMD

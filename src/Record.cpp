@@ -31,9 +31,9 @@
 
 namespace openPMD
 {
-void Record::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Record::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Record>(v, recursive);
+    visitHierarchyContainer<Record>(v, recursive);
 }
 Record::Record() = default;
 
