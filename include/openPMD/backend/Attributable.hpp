@@ -446,7 +446,7 @@ public:
      * @param visitor Operations to run for each object.
      * @param recursive Extend the operation recursively to children.
      */
-    virtual void visitHierarchy(HierarchyVisitor &visitor, bool recursive);
+    void visitHierarchy(HierarchyVisitor &visitor, bool recursive);
 
     /**
      * Visitor pattern for the openPMD object hierarchy in postfix traversal,
@@ -747,6 +747,8 @@ OPENPMD_protected
      * happen as an asynchronous IO task.
      */
     void setWritten(bool val, EnqueueAsynchronously);
+
+    virtual void visitHierarchyImpl(HierarchyVisitor &visitor, bool recursive);
 
 private:
     /**

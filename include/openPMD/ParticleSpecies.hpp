@@ -48,8 +48,6 @@ class ParticleSpecies
 public:
     ParticlePatches particlePatches;
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
 private:
     ParticleSpecies();
 
@@ -66,6 +64,8 @@ private:
 protected:
     void scientificDefaults_impl(
         internal::WriteOrRead, OpenpmdStandard) override;
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
 
 namespace traits

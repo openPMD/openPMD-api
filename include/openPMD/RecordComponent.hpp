@@ -494,13 +494,13 @@ public:
     auto visit(Args &&...args) -> decltype(Visitor::template call<char>(
         std::declval<RecordComponent &>(), std::forward<Args>(args)...));
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
     static constexpr char const *const SCALAR = "\vScalar";
 
 protected:
     void flush(std::string const &, internal::FlushParams const &);
     void read();
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 
 private:
     /**

@@ -27,13 +27,13 @@
 
 namespace openPMD
 {
-void ParticleSpecies::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void ParticleSpecies::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
     if (recursive)
     {
         particlePatches.visitHierarchy(v, recursive);
     }
-    visitHierarchyImpl<ParticleSpecies>(v, recursive);
+    visitHierarchyContainer<ParticleSpecies>(v, recursive);
 }
 
 ParticleSpecies::ParticleSpecies()
