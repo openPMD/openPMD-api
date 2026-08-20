@@ -115,6 +115,7 @@ void read(
     {
         REQUIRE(custom_data.get()[i] == (int)i + 1);
     }
+    iteration.customHierarchies().printRecursively();
     iteration.close();
 }
 
