@@ -108,19 +108,36 @@ namespace traits
 template <>
 auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
 {
+    auto castableToConstantDataset = [&]() {
+        return this->containsAttribute("value") &&
+            this->containsAttribute("shape") && this->empty();
+    };
+    auto initDataset = [&]() { this->writable().objectType.initDataset(); };
+    auto makeResult = [&]() {
+        RecordComponent res;
+        res.get().cloneFrom(*this->m_attri);
+        return res;
+    };
     if (this->written())
     {
         if (this->writable().objectType.isGroup())
         {
-            // Maybe allow casting to a constant component if shape and value
-            // are defined
-            // Also, what about shape elision in SoA structures?
-            throw error::WrongAPIUsage(
-                "Can't cast a group object into a dataset.");
+            if (!castableToConstantDataset())
+            {
+                throw error::WrongAPIUsage(
+                    "Can't cast a group object into a dataset.");
+            }
+            else
+            { // Also, what about shape elision in SoA structures?
+                // Probably does not make sense outside of Meshes / Particles
+                initDataset();
+                auto res = makeResult();
+                res.get().isConstant() = true;
+                res.read();
+                return res;
+            }
         }
-        RecordComponent res;
-        res.get().cloneFrom(*this->m_attri);
-        return res;
+        return makeResult();
     }
     else
     {
@@ -130,10 +147,8 @@ auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
                 internal::SeriesStatus::Parsing)
         {
             // this is now a dataset.
-            this->writable().objectType.initDataset();
-            RecordComponent res;
-            res.get().cloneFrom(*this->m_attri);
-            return res;
+            initDataset();
+            return makeResult();
         }
         else
         {
