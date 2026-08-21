@@ -129,6 +129,8 @@ namespace internal::object_type
         using children_object_storage_t =
             std::map<std::string, std::shared_ptr<CustomHierarchy>>;
         children_object_storage_t m_children_managed_as_custom_hierarchy;
+
+        bool phantom = false;
     };
 } // namespace internal::object_type
 

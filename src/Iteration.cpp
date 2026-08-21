@@ -406,6 +406,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         {
             auto meshesPath = set_and_get_mp_path(
                 "meshesPath", "meshes/", &Series::setMeshesPath);
+            meshes.writable().objectType.requireGroup()->phantom = false;
             if (meshes.dirtyRecursive())
             {
                 meshes.flush(meshesPath, flushParams);
@@ -424,6 +425,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         {
             auto particlesPath = set_and_get_mp_path(
                 "particlesPath", "particles/", &Series::setParticlesPath);
+            particles.writable().objectType.requireGroup()->phantom = false;
             if (particles.dirtyRecursive())
             {
                 particles.flush(particlesPath, flushParams);
@@ -565,6 +567,7 @@ void Iteration::read_impl(std::string const &groupPath)
         try
         {
             readMeshes(s.meshesPath());
+            meshes.writable().objectType.requireGroup()->phantom = false;
         }
         catch (error::ReadError const &err)
         {
@@ -581,6 +584,7 @@ void Iteration::read_impl(std::string const &groupPath)
         try
         {
             readParticles(s.particlesPath());
+            particles.writable().objectType.requireGroup()->phantom = false;
         }
         catch (error::ReadError const &err)
         {
@@ -922,6 +926,8 @@ void Iteration::linkHierarchy(Writable &w)
     auto link_mp = [&](auto &meshes_or_particles,
                        std::optional<std::string> const &mp_path,
                        char const *default_) {
+        meshes_or_particles.writable().objectType.requireGroup()->phantom =
+            true;
         if (mp_path)
         {
             container_back[auxiliary::replace_all_nonrecursively(
