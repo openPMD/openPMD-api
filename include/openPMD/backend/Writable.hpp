@@ -201,6 +201,18 @@ namespace internal
                     [](object_type::DatasetMetaData &) {}},
                 as_base());
         }
+
+        template <typename Functor>
+        void ifGroup(Functor &&f) const
+        {
+            std::visit(
+                auxiliary::overloaded{
+                    [&f](object_type::GroupMetaData const &object_metadata) {
+                        std::forward<Functor>(f)(object_metadata);
+                    },
+                    [](object_type::DatasetMetaData const &) {}},
+                as_base());
+        }
     };
 } // namespace internal
 namespace detail

@@ -79,6 +79,12 @@ namespace traits
     {
         template <typename Container_const_or_not>
         static void call(Container_const_or_not &);
+
+    private:
+        template <typename Container_const_or_not>
+        static void syncContainers(
+            Container_const_or_not &,
+            internal::object_type::GroupMetaData const &);
     };
 
     template <>

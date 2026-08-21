@@ -31,18 +31,27 @@ namespace traits
     void DeferredInitPolicy<Container<CustomHierarchy>>::call(
         Container_const_or_not &container)
     {
+        container.writable().objectType.ifGroup(
+            [&](auto &group_data) { syncContainers(container, group_data); });
+    }
+    template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
+        Container<CustomHierarchy> &);
+    template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
+        Container<CustomHierarchy> const &);
+
+    template <typename Container_const_or_not>
+    void DeferredInitPolicy<Container<CustomHierarchy>>::syncContainers(
+        Container_const_or_not &container,
+        internal::object_type::GroupMetaData const &group_data)
+    {
         // Need to sync backend objects into the CustomHierarchy instance
         // Need to be a bit sneaky, we must modify my_container&, but this
         // method might be called as const. shared_ptr<>s implement interior
         // mutability, so use that here.
 
-        if (!container.writable().objectType.isGroup())
-        {
-            return;
-        }
         // auto &container_front = container.container_front();
         auto &container_front = container.m_containerData->m_container;
-        auto &container_back = container.container_back(/* verify = */ false);
+        auto &container_back = group_data.m_children;
 
         auto size_front = container_front.size();
         auto size_back = container_back.size();
@@ -90,8 +99,8 @@ namespace traits
             if (it == end || it->first != key)
             {
                 // under the invariant that the front container contains no
-                // elements that are not present in the back container, it now
-                // points to an entry past the to-be-inserted key
+                // elements that are not present in the back container, it
+                // now points to an entry past the to-be-inserted key
                 it = container_front.emplace_hint(
                     it, key, CustomHierarchy(attributable));
                 gen(container, it);
@@ -99,10 +108,6 @@ namespace traits
             ++it;
         }
     }
-    template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
-        Container<CustomHierarchy> &);
-    template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
-        Container<CustomHierarchy> const &);
 } // namespace traits
 
 // TODO: Add visitor over real type, using HierarchyVisitor class
