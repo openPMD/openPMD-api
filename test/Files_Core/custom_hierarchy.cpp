@@ -129,7 +129,7 @@ void read(
     iteration.seriesFlush();
     for (size_t i = 0; i < 100; ++i)
     {
-        REQUIRE(custom_data.get()[i] == 67);
+        REQUIRE(custom_constant_data.get()[i] == 67);
     }
     iteration.close();
 }
