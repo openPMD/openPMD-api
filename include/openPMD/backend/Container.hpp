@@ -67,6 +67,24 @@ namespace traits
         static void call(Container_t const &)
         {}
     };
+
+    template <typename Element_t>
+    struct ElementAccessPolicy
+    {
+        static void call(Element_t &)
+        {}
+        static void call(Element_t const &)
+        {}
+    };
+
+    template <typename Element_t>
+    struct ElementAccessPolicy<Element_t const>
+    {
+        static void call(Element_t const &el)
+        {
+            ElementAccessPolicy<Element_t>::call(el);
+        }
+    };
 } // namespace traits
 
 class CustomHierarchy;
@@ -110,6 +128,62 @@ namespace internal
 
         ContainerData &operator=(ContainerData const &) = delete;
         ContainerData &operator=(ContainerData &&) = delete;
+    };
+
+    template <typename base_iterator>
+    struct access_policy_iterator : base_iterator
+    {
+        using self_t = access_policy_iterator<base_iterator>;
+        using value_t =
+            std::remove_reference_t<decltype(*std::declval<base_iterator>())>;
+
+        struct from_base_tag_t
+        {};
+        static constexpr from_base_tag_t from_base_tag = {};
+
+        template <typename... Args>
+        access_policy_iterator(from_base_tag_t, Args &&...args)
+            : base_iterator(std::forward<Args>(args)...)
+        {}
+
+        access_policy_iterator(base_iterator it) : base_iterator(std::move(it))
+        {}
+
+        auto operator++() -> self_t &
+        {
+            base_iterator::operator++();
+            return *this;
+        }
+        auto operator++(int) -> self_t &
+        {
+            base_iterator::operator++(0);
+            return *this;
+        }
+
+        auto operator--() -> self_t &
+        {
+            base_iterator::operator--();
+            return *this;
+        }
+        auto operator--(int) -> self_t &
+        {
+            base_iterator::operator--(0);
+            return *this;
+        }
+
+        auto operator->() const -> value_t *
+        {
+            auto res = base_iterator::operator->();
+            traits::ElementAccessPolicy<value_t>::call(*res);
+            return res;
+        }
+
+        auto operator*() const -> value_t &
+        {
+            auto &res = base_iterator::operator*();
+            traits::ElementAccessPolicy<value_t>::call(res);
+            return res;
+        }
     };
 } // namespace internal
 
@@ -284,11 +358,14 @@ public:
     using const_reference = typename InternalContainer::const_reference;
     using pointer = typename InternalContainer::pointer;
     using const_pointer = typename InternalContainer::const_pointer;
-    using iterator = typename InternalContainer::iterator;
-    using const_iterator = typename InternalContainer::const_iterator;
-    using reverse_iterator = typename InternalContainer::reverse_iterator;
-    using const_reverse_iterator =
-        typename InternalContainer::const_reverse_iterator;
+    using iterator =
+        internal::access_policy_iterator<typename InternalContainer::iterator>;
+    using const_iterator = internal::access_policy_iterator<
+        typename InternalContainer::const_iterator>;
+    using reverse_iterator = internal::access_policy_iterator<
+        typename InternalContainer::reverse_iterator>;
+    using const_reverse_iterator = internal::access_policy_iterator<
+        typename InternalContainer::const_reverse_iterator>;
 
     iterator begin() noexcept;
     const_iterator begin() const noexcept;

@@ -33,20 +33,20 @@ namespace traits
     {
         container.writable().objectType.ifGroup(
             [&](auto &group_data) { syncContainers(container, group_data); });
-        if constexpr (!std::is_const_v<Container_const_or_not>)
-        {
-            if (!container.written() &&
-                access::read(container.IOHandler()->m_backendAccess))
-            {
-                container.writable().objectType.ifGroup([&](auto &group_data) {
-                    if (group_data.phantom)
-                    {
-                        return;
-                    }
-                    dynamic_cast<CustomHierarchy *>(&container)->read(1);
-                });
-            }
-        }
+        // if constexpr (!std::is_const_v<Container_const_or_not>)
+        // {
+        //     if (!access::read(container.IOHandler()->m_backendAccess))
+        //     {
+        //         container.writable().objectType.ifGroup([&](auto &group_data)
+        //         {
+        //             if (group_data.phantom || group_data.is_read)
+        //             {
+        //                 return;
+        //             }
+        //             dynamic_cast<CustomHierarchy *>(&container)->read(1);
+        //         });
+        //     }
+        // }
     }
     template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
         Container<CustomHierarchy> &);
