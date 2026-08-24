@@ -276,7 +276,7 @@ auto Container<T, T_key, T_container>::insert(
         internal::object_type::GroupMetaData::children_map_t::value_type>
         internal_insert_list;
     internal_insert_list.reserve(ilist.size());
-    auto &cont = container_back(/* verify = */ false);
+    auto &cont = container_back();
     for (auto &v : ilist)
     {
         decltype(auto) key = key_as_string(v.first);
@@ -300,8 +300,7 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::swap(Container &other) -> void
 {
     container_front().swap(other.container_front());
-    container_back(/* verify = */ true)
-        .swap(other.container_back(/* verify = */ true));
+    container_back().swap(other.container_back());
 }
 
 template <typename T, typename T_key, typename T_container>
@@ -375,7 +374,7 @@ auto Container<T, T_key, T_container>::erase(iterator res) -> iterator
         IOHandler()->enqueue(IOTask(&res->second, pDelete));
         IOHandler()->flush(internal::defaultFlushParams);
     }
-    container_back(/* verify = */ true).erase(key_as_string(res->first));
+    container_back().erase(key_as_string(res->first));
     return container_front().erase(res);
 }
 

@@ -413,7 +413,7 @@ auto BaseRecord<T_elem>::emplace(Args &&...args) -> std::pair<iterator, bool>
         this->container_front().emplace(std::forward<Args>(args)...));
     if (res.first->first == RecordComponent::SCALAR)
     {
-        this->container_back(/* verify = */ true).erase(res.first->first);
+        this->container_back().erase(res.first->first);
         this->container_front().erase(res.first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
