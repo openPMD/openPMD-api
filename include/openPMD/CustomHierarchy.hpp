@@ -75,25 +75,15 @@ public:
 namespace traits
 {
     template <>
-    struct DeferredInitPolicy<Container<CustomHierarchy>>
-    {
-        template <typename Container_const_or_not>
-        static void call(Container_const_or_not &);
-
-    private:
-        template <typename Container_const_or_not>
-        static void syncContainers(
-            Container_const_or_not &,
-            internal::object_type::GroupMetaData const &);
-    };
-
-    template <>
     struct ElementAccessPolicy<CustomHierarchy>
     {
         static void call(CustomHierarchy &);
+        static void call(CustomHierarchy const &);
 
-        static void call(CustomHierarchy const &)
-        {}
+    private:
+        static void syncContainers(
+            CustomHierarchy const &,
+            internal::object_type::GroupMetaData const &);
     };
 
     template <>
@@ -146,15 +136,12 @@ namespace traits
     };
 } // namespace traits
 
-// If we want to break the DeferredInitPolicy logic, we may alternatively derive
-// this privately from ConvertibleContainer<Attributable>, and then overload
-// access operators to return CustomHierarchy instances
 class CustomHierarchy : public ConvertibleContainer<CustomHierarchy>
 {
     friend class Iteration;
     friend class Container<CustomHierarchy>;
     friend class Attributable;
-    friend struct traits::DeferredInitPolicy<Container<CustomHierarchy>>;
+    friend struct traits::ElementAccessPolicy<CustomHierarchy>;
 
 private:
     using Parent_t = ConvertibleContainer<CustomHierarchy>;
@@ -194,7 +181,7 @@ public:
     // recursion depth includes the current object
     // recursion will not continue expanding into regions that are already known
     // (hence not transitively expand into unknown subregions of known regions)
-    auto read(size_t max_recursion_depth = 1) -> CustomHierarchy;
+    auto read(size_t max_recursion_depth = 1) -> CustomHierarchy &;
 
     void printRecursively();
 

@@ -59,15 +59,6 @@ namespace traits
         {}
     };
 
-    template <typename Container_t>
-    struct DeferredInitPolicy
-    {
-        static void call(Container_t &)
-        {}
-        static void call(Container_t const &)
-        {}
-    };
-
     template <typename Element_t>
     struct ElementAccessPolicy
     {
@@ -136,6 +127,8 @@ namespace internal
         using self_t = access_policy_iterator<base_iterator>;
         using value_t =
             std::remove_reference_t<decltype(*std::declval<base_iterator>())>;
+        using mapped_t = typename value_t::second_type;
+        using base_t = base_iterator;
 
         struct from_base_tag_t
         {};
@@ -174,15 +167,24 @@ namespace internal
         auto operator->() const -> value_t *
         {
             auto res = base_iterator::operator->();
-            traits::ElementAccessPolicy<value_t>::call(*res);
+            traits::ElementAccessPolicy<mapped_t>::call(res->second);
             return res;
         }
 
         auto operator*() const -> value_t &
         {
             auto &res = base_iterator::operator*();
-            traits::ElementAccessPolicy<value_t>::call(res);
+            traits::ElementAccessPolicy<mapped_t>::call(res.second);
             return res;
+        }
+
+        auto as_base() -> base_t &
+        {
+            return *this;
+        }
+        auto as_base() const -> base_t const &
+        {
+            return *this;
         }
     };
 } // namespace internal
@@ -216,7 +218,6 @@ class Container : virtual public Attributable
     friend class StatefulIterator;
 
     using Self_t = Container<T, T_key, T_container>;
-    friend struct traits::DeferredInitPolicy<Self_t>;
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
@@ -285,7 +286,7 @@ protected:
     {
 #ifndef NDEBUG
         auto size_front = container_front().size();
-        auto size_back = container_back(/* verify = */ true).size();
+        auto size_back = container_back().size();
         if (size_front > size_back)
         {
             throw std::runtime_error(
@@ -293,15 +294,14 @@ protected:
                 " != " + std::to_string(size_back) + ".");
         }
 #endif
-        traits::DeferredInitPolicy<Self_t>::call(*this);
-        return {&container_front(), &container_back(/* verify = */ true)};
+        return {&container_front(), &container_back()};
     }
 
     inline SynchronizedContainers<false> container()
     {
 #ifndef NDEBUG
         auto size_front = container_front().size();
-        auto size_back = container_back(/* verify = */ true).size();
+        auto size_back = container_back().size();
         if (size_front > size_back)
         {
             throw std::runtime_error(
@@ -309,41 +309,30 @@ protected:
                 " != " + std::to_string(size_back) + ".");
         }
 #endif
-        traits::DeferredInitPolicy<Self_t>::call(*this);
-        return {&container_front(), &container_back(/* verify = */ true)};
+        return {&container_front(), &container_back()};
     }
 
     inline auto container_front() const ->
         typename SynchronizedContainers<true>::front_t &
     {
-        traits::DeferredInitPolicy<Self_t>::call(*this);
         return m_containerData->m_container;
     }
 
     inline auto container_front() ->
         typename SynchronizedContainers<false>::front_t &
     {
-        traits::DeferredInitPolicy<Self_t>::call(*this);
         return m_containerData->m_container;
     }
 
-    inline auto container_back(bool verify) const ->
+    inline auto container_back() const ->
         typename SynchronizedContainers<true>::back_t &
     {
-        if (verify)
-        {
-            traits::DeferredInitPolicy<Self_t>::call(*this);
-        }
         return (**m_attri).m_writable.objectType.requireGroup()->m_children;
     }
 
-    inline auto container_back(bool verify) ->
+    inline auto container_back() ->
         typename SynchronizedContainers<false>::back_t &
     {
-        if (verify)
-        {
-            traits::DeferredInitPolicy<Self_t>::call(*this);
-        }
         return this->writable().objectType.requireGroup()->m_children;
     }
 
@@ -501,8 +490,9 @@ OPENPMD_protected
 
     Container(NoInit);
 
-    auto syncInsertResult(std::pair<iterator, bool> res)
-        -> std::pair<iterator, bool>
+    template <typename iterator_t>
+    auto syncInsertResult(std::pair<iterator_t, bool> res)
+        -> std::pair<iterator_t, bool>
     {
         if (res.second)
         {
@@ -510,9 +500,10 @@ OPENPMD_protected
         }
         return res;
     }
-    auto syncInsertResult(iterator res) -> iterator
+    template <typename iterator_t>
+    auto syncInsertResult(iterator_t res) -> iterator_t
     {
-        auto &cont = container_back(/* verify = */ false);
+        auto &cont = container_back();
         decltype(auto) key = key_as_string(res->first);
         auto it = cont.find(key);
         if (it == cont.end())
