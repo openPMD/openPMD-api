@@ -115,13 +115,17 @@ auto Container<T, T_key, T_container>::size() const noexcept -> size_type
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::at(key_type const &key) -> mapped_type &
 {
-    return container_front().at(key);
+    auto &ret = container_front().at(key);
+    traits::ElementAccessPolicy<mapped_type>::call(ret);
+    return ret;
 }
 template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::at(key_type const &key) const
     -> mapped_type const &
 {
-    return container_front().at(key);
+    auto &ret = container_front().at(key);
+    traits::ElementAccessPolicy<mapped_type>::call(ret);
+    return ret;
 }
 
 template <typename T, typename T_key, typename T_container>
@@ -130,7 +134,11 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
 {
     auto it = container_front().find(key);
     if (it != container_front().end())
-        return it->second;
+    {
+        auto &ret = it->second;
+        traits::ElementAccessPolicy<mapped_type>::call(ret);
+        return ret;
+    }
     else
     {
         if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing &&
@@ -156,6 +164,7 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
         }
         traits::GenerationPolicy<T> gen;
         gen(*this, inserted_iterator);
+        traits::ElementAccessPolicy<mapped_type>::call(ret);
         return ret;
     }
 }
@@ -165,7 +174,11 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
 {
     auto it = container_front().find(key);
     if (it != container_front().end())
-        return it->second;
+    {
+        auto &ret = it->second;
+        traits::ElementAccessPolicy<mapped_type>::call(ret);
+        return ret;
+    }
     else
     {
         if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing &&
@@ -191,6 +204,7 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
         }
         traits::GenerationPolicy<T> gen;
         gen(*this, inserted_iterator);
+        traits::ElementAccessPolicy<mapped_type>::call(ret);
         return ret;
     }
 }
