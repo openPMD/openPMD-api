@@ -452,7 +452,12 @@ auto Attributable::customHierarchies() -> CustomHierarchy
     // counter-object inside the openPMD hierarchy keeping it alive, e.g.
     // children created or read by the returned instance outside the openPMD
     // hierarchy.
-    return CustomHierarchy{*this};
+    auto res = CustomHierarchy{*this};
+    if (access::read(IOHandler()->m_frontendAccess))
+    {
+        res.read(1);
+    }
+    return res;
 }
 
 template <bool flush_entire_series>
