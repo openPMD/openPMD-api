@@ -32,10 +32,11 @@ namespace traits
     {
         ElementAccessPolicy::call(static_cast<CustomHierarchy const &>(cont));
 
-        if (access::read(cont.IOHandler()->m_backendAccess))
+        if (!cont.get().has_been_read &&
+            access::read(cont.IOHandler()->m_backendAccess))
         {
             cont.writable().objectType.ifGroup([&](auto &group_data) {
-                if (group_data.phantom || group_data.is_read)
+                if (group_data.phantom)
                 {
                     return;
                 }
@@ -271,59 +272,85 @@ auto CustomHierarchy::read(size_t const max_recursion_depth)
         }
     };
 
-    Parameter<Operation::LIST_PATHS> pList;
-    IOHandler()->enqueue(IOTask(this, pList));
-
-    Parameter<Operation::LIST_DATASETS> dList;
-    IOHandler()->enqueue(IOTask(this, dList));
-
-    IOHandler()->flush(internal::defaultFlushParams);
-
-    auto &container_back_ = container_back();
-    for (auto const &path : *pList.paths)
+    auto &data = get();
+    if (!data.has_been_read)
     {
-        if (auto it = container_back_.find(path);
-            it != container_back_.end() && it->second->m_writable.written)
-        {
-            // Is already known
-            continue;
-        }
-        Parameter<Operation::OPEN_PATH> pOpen;
-        pOpen.path = path;
-        auto &subpath =
-            this->bracket_operator_impl(path, /* access_policy = */ false);
-        subpath.linkHierarchy(this->writable());
-        IOHandler()->enqueue(IOTask(&subpath, pOpen));
-        do_recurse(subpath);
-    }
+        Parameter<Operation::LIST_PATHS> pList;
+        IOHandler()->enqueue(IOTask(this, pList));
 
-    for (auto const &path : *dList.datasets)
-    {
-        if (auto it = container_back_.find(path);
-            it != container_back_.end() && it->second->m_writable.written)
-        {
-            // Is already known
-            continue;
-        }
-        Parameter<Operation::OPEN_DATASET> dOpen;
-        dOpen.name = path;
+        Parameter<Operation::LIST_DATASETS> dList;
+        IOHandler()->enqueue(IOTask(this, dList));
 
-        auto &subpath =
-            this->bracket_operator_impl(path, /* access_policy = */ false);
-        subpath.linkHierarchy(this->writable());
-        IOHandler()->enqueue(IOTask(&subpath, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
 
-        subpath.setWritten(false, Attributable::EnqueueAsynchronously::No);
-        subpath.asDataset().resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        subpath.setWritten(true, Attributable::EnqueueAsynchronously::No);
-        do_recurse(subpath);
+        for (auto const &path : *pList.paths)
+        {
+            auto &subpath =
+                this->bracket_operator_impl(path, /* access_policy = */ false);
+            subpath.linkHierarchy(this->writable());
+        }
+
+        for (auto const &path : *dList.datasets)
+        {
+            auto &subpath =
+                this->bracket_operator_impl(path, /* access_policy = */ false);
+            subpath.linkHierarchy(this->writable());
+
+            subpath.asDataset();
+            do_recurse(subpath);
+        }
+    }
+
+    auto &container_front_ = container_front();
+
+    for (auto &pair : container_front_)
+    {
+        auto &path = pair.first;
+        auto &subpath = pair.second;
+        if (subpath.get().has_been_read)
+        {
+            continue;
+        }
+
+        std::visit(
+            auxiliary::overloaded{
+                [&](internal::object_type::GroupMetaData &group_data) {
+                    if (group_data.phantom)
+                    {
+                        return;
+                    }
+                    if (!subpath.written())
+                    {
+                        Parameter<Operation::OPEN_PATH> pOpen;
+                        pOpen.path = path;
+                        subpath.linkHierarchy(this->writable());
+                        IOHandler()->enqueue(IOTask(&subpath, pOpen));
+                    }
+                    do_recurse(subpath);
+                },
+                [&](internal::object_type::DatasetMetaData &) {
+                    if (!subpath.written())
+                    {
+                        Parameter<Operation::OPEN_DATASET> dOpen;
+                        dOpen.name = path;
+
+                        IOHandler()->enqueue(IOTask(&subpath, dOpen));
+                        IOHandler()->flush(internal::defaultFlushParams);
+
+                        subpath.setWritten(
+                            false, Attributable::EnqueueAsynchronously::No);
+                        subpath.asDataset().resetDataset(
+                            Dataset(*dOpen.dtype, *dOpen.extent));
+                        subpath.setWritten(
+                            true, Attributable::EnqueueAsynchronously::No);
+                    }
+                    do_recurse(subpath);
+                }},
+            subpath.writable().objectType.as_base());
     }
 
     setDirty(false);
-    IOHandler()->flush(internal::defaultFlushParams);
-
-    writable().objectType.requireGroup()->is_read = true;
+    data.has_been_read = true;
 
     return *this;
 }
