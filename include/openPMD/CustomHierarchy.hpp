@@ -39,7 +39,10 @@ namespace openPMD
 class CustomHierarchy;
 namespace internal
 {
-    using CustomHierarchyData = ContainerData<Attributable>;
+    struct CustomHierarchyData : ContainerData<CustomHierarchy>
+    {
+        bool has_been_read = false;
+    };
 } // namespace internal
 
 class CustomHierarchy;
@@ -146,7 +149,25 @@ class CustomHierarchy : public ConvertibleContainer<CustomHierarchy>
 private:
     using Parent_t = ConvertibleContainer<CustomHierarchy>;
     using Container_t = typename Parent_t::Container_t;
-    using Data_t = typename Parent_t::Data_t;
+    using Data_t = internal::CustomHierarchyData;
+
+    std::shared_ptr<Data_t> m_customHierarchyData;
+
+    inline void setData(std::shared_ptr<Data_t> customHierarchyData)
+    {
+        m_customHierarchyData = std::move(customHierarchyData);
+        ConvertibleContainer<CustomHierarchy>::setData(m_customHierarchyData);
+    }
+
+    inline auto get() -> Data_t &
+    {
+        return *m_customHierarchyData;
+    }
+
+    [[nodiscard]] inline auto get() const -> Data_t const &
+    {
+        return *m_customHierarchyData;
+    }
 
 protected:
     CustomHierarchy(NoInit);

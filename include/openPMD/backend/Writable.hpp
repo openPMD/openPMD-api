@@ -132,7 +132,6 @@ namespace internal::object_type
         children_object_storage_t m_children_managed_as_custom_hierarchy;
 
         bool phantom = false;
-        bool is_read = false;
     };
 } // namespace internal::object_type
 
