@@ -132,11 +132,27 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::operator[](key_type const &key)
     -> mapped_type &
 {
+    return bracket_operator_impl(key, /* access_policy = */ true);
+}
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::operator[](key_type &&key)
+    -> mapped_type &
+{
+    return bracket_operator_impl(std::move(key), /* access_policy = */ true);
+}
+
+template <typename T, typename T_key, typename T_container>
+auto Container<T, T_key, T_container>::bracket_operator_impl(
+    key_type const &key, bool access_policy) -> mapped_type &
+{
     auto it = container_front().find(key);
     if (it != container_front().end())
     {
         auto &ret = it->second;
-        traits::ElementAccessPolicy<mapped_type>::call(ret);
+        if (access_policy)
+        {
+            traits::ElementAccessPolicy<mapped_type>::call(ret);
+        }
         return ret;
     }
     else
@@ -164,19 +180,25 @@ auto Container<T, T_key, T_container>::operator[](key_type const &key)
         }
         traits::GenerationPolicy<T> gen;
         gen(*this, inserted_iterator);
-        traits::ElementAccessPolicy<mapped_type>::call(ret);
+        if (access_policy)
+        {
+            traits::ElementAccessPolicy<mapped_type>::call(ret);
+        }
         return ret;
     }
 }
 template <typename T, typename T_key, typename T_container>
-auto Container<T, T_key, T_container>::operator[](key_type &&key)
-    -> mapped_type &
+auto Container<T, T_key, T_container>::bracket_operator_impl(
+    key_type &&key, bool access_policy) -> mapped_type &
 {
     auto it = container_front().find(key);
     if (it != container_front().end())
     {
         auto &ret = it->second;
-        traits::ElementAccessPolicy<mapped_type>::call(ret);
+        if (access_policy)
+        {
+            traits::ElementAccessPolicy<mapped_type>::call(ret);
+        }
         return ret;
     }
     else
@@ -204,7 +226,10 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
         }
         traits::GenerationPolicy<T> gen;
         gen(*this, inserted_iterator);
-        traits::ElementAccessPolicy<mapped_type>::call(ret);
+        if (access_policy)
+        {
+            traits::ElementAccessPolicy<mapped_type>::call(ret);
+        }
         return ret;
     }
 }

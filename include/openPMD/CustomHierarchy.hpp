@@ -88,6 +88,15 @@ namespace traits
     };
 
     template <>
+    struct ElementAccessPolicy<CustomHierarchy>
+    {
+        static void call(CustomHierarchy &);
+
+        static void call(CustomHierarchy const &)
+        {}
+    };
+
+    template <>
     struct GenerationPolicy<CustomHierarchy>
     {
         constexpr static bool is_noop = false;
@@ -156,8 +165,6 @@ protected:
     CustomHierarchy(NoInit);
     CustomHierarchy(std::shared_ptr<internal::SharedAttributableData> other);
     CustomHierarchy(Attributable const &other);
-
-    void read(std::vector<std::string> &currentPath);
 
     void flush_internal(
         internal::FlushParams const &, std::vector<std::string> currentPath);

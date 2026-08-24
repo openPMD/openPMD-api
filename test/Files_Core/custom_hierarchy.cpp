@@ -90,8 +90,6 @@ void read(
     Series series(filename, Access::READ_LINEAR, json_params);
     auto require_custom_hierarchy = [](auto &&attr) {
         CustomHierarchy ch = attr.customHierarchies();
-        REQUIRE(ch.find("rabimmel") == ch.end());
-        ch.read(0);
         REQUIRE(
             ch["rabimmel"].getAttribute("rabammel").get<std::string>() ==
             "rabumm");

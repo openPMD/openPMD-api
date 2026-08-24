@@ -47,6 +47,8 @@ namespace traits
 {
     template <typename T>
     struct GenerationPolicy;
+    template <typename>
+    struct ElementAccessPolicy;
 } // namespace traits
 class AbstractFilePosition;
 class Attributable;
@@ -265,6 +267,8 @@ class Attributable
     friend struct internal::ConfigAttribute;
     friend class internal::ScientificDefaults;
     friend class CustomHierarchy;
+    template <typename>
+    friend struct traits::ElementAccessPolicy;
 
 protected:
     // tag for internal constructor

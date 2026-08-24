@@ -529,6 +529,9 @@ OPENPMD_protected
         return res;
     }
 
+    mapped_type &bracket_operator_impl(key_type const &key, bool access_policy);
+    mapped_type &bracket_operator_impl(key_type &&key, bool access_policy);
+
 public:
     /*
      * Need to define these manually due to the virtual inheritance from
