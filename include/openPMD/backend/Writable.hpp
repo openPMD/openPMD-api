@@ -56,6 +56,8 @@ namespace traits
     struct GenerationPolicy;
     template <typename>
     struct DeferredInitPolicy;
+    template <typename>
+    struct ElementAccessPolicy;
 } // namespace traits
 
 namespace internal
@@ -131,6 +133,7 @@ namespace internal::object_type
         children_object_storage_t m_children_managed_as_custom_hierarchy;
 
         bool phantom = false;
+        bool is_read = false;
     };
 } // namespace internal::object_type
 
@@ -281,6 +284,8 @@ class Writable final
     friend class internal::RecordComponentData;
     template <typename>
     friend struct traits::DeferredInitPolicy;
+    template <typename>
+    friend struct traits::ElementAccessPolicy;
 
 private:
     Writable(internal::AttributableData *);

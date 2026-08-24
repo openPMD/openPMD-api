@@ -122,6 +122,21 @@ namespace traits
             ++it;
         }
     }
+
+    void ElementAccessPolicy<CustomHierarchy>::call(CustomHierarchy &cont)
+    {
+        if (!access::read(cont.IOHandler()->m_backendAccess))
+        {
+            return;
+        }
+        cont.writable().objectType.ifGroup([&](auto &group_data) {
+            if (group_data.phantom || group_data.is_read)
+            {
+                return;
+            }
+            dynamic_cast<CustomHierarchy *>(&cont)->read(1);
+        });
+    }
 } // namespace traits
 
 // TODO: Add visitor over real type, using HierarchyVisitor class
@@ -293,7 +308,8 @@ auto CustomHierarchy::read(size_t const max_recursion_depth) -> CustomHierarchy
         }
         Parameter<Operation::OPEN_PATH> pOpen;
         pOpen.path = path;
-        auto &subpath = this->operator[](path);
+        auto &subpath =
+            this->bracket_operator_impl(path, /* access_policy = */ false);
         subpath.linkHierarchy(this->writable());
         IOHandler()->enqueue(IOTask(&subpath, pOpen));
         do_recurse(subpath);
@@ -310,7 +326,8 @@ auto CustomHierarchy::read(size_t const max_recursion_depth) -> CustomHierarchy
         Parameter<Operation::OPEN_DATASET> dOpen;
         dOpen.name = path;
 
-        auto &subpath = this->operator[](path);
+        auto &subpath =
+            this->bracket_operator_impl(path, /* access_policy = */ false);
         subpath.linkHierarchy(this->writable());
         IOHandler()->enqueue(IOTask(&subpath, dOpen));
         IOHandler()->flush(internal::defaultFlushParams);
@@ -323,6 +340,8 @@ auto CustomHierarchy::read(size_t const max_recursion_depth) -> CustomHierarchy
 
     setDirty(false);
     IOHandler()->flush(internal::defaultFlushParams);
+
+    writable().objectType.requireGroup()->is_read = true;
 
     return *this;
 }
