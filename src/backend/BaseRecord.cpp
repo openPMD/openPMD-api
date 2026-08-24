@@ -631,7 +631,7 @@ auto BaseRecord<T_elem>::insert(value_type const &value)
     {
         // this->container().erase(res.first);
         this->container_front().erase(res.first);
-        this->container_back(/* verify = */ true).erase(res.first->first);
+        this->container_back().erase(res.first->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
@@ -646,7 +646,7 @@ auto BaseRecord<T_elem>::insert(value_type &&value) -> std::pair<iterator, bool>
     if (res.first->first == RecordComponent::SCALAR)
     {
         this->container_front().erase(res.first);
-        this->container_back(/* verify = */ true).erase(res.first->first);
+        this->container_back().erase(res.first->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
@@ -671,7 +671,7 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type const &value)
     if (res->first == RecordComponent::SCALAR)
     {
         this->container_front().erase(res);
-        this->container_back(/* verify = */ true).erase(res->first);
+        this->container_back().erase(res->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return makeIterator(res);
@@ -696,7 +696,7 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type &&value)
     if (res->first == RecordComponent::SCALAR)
     {
         this->container_front().erase(res);
-        this->container_back(/* verify = */ true).erase(res->first);
+        this->container_back().erase(res->first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return makeIterator(res);
@@ -730,7 +730,7 @@ auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
         internal::object_type::GroupMetaData::children_map_t::value_type>
         internal_insert_list;
     internal_insert_list.reserve(ilist.size());
-    auto &cont = this->container_back(/* verify = */ false);
+    auto &cont = this->container_back();
     for (auto &v : ilist)
     {
         decltype(auto) key = this->key_as_string(v.first);
@@ -768,8 +768,7 @@ auto BaseRecord<T_elem>::swap(BaseRecord &other) noexcept -> void
     detail::verifyNonscalar(this);
     detail::verifyNonscalar(&other);
     this->container_front().swap(other.container_front());
-    this->container_back(/* verify = */ true)
-        .swap(other.container_back(/* verify = */ true));
+    this->container_back().swap(other.container_back());
 }
 
 template <typename T_elem>

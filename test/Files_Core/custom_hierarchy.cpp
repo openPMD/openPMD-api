@@ -119,7 +119,9 @@ void read(
     {
         REQUIRE(custom_data.get()[i] == (int)i + 1);
     }
-    iteration.customHierarchies().printRecursively();
+    // TODO the read(0) should be enough even without access policy, but it isnt
+    // fix
+    iteration.customHierarchies().read(0).printRecursively();
     auto constant_dataset =
         iteration.customHierarchies()["fully"]["custom"]["constant_dataset"]
             .asDataset();

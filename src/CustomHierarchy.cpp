@@ -27,35 +27,31 @@ namespace openPMD
 {
 namespace traits
 {
-    template <typename Container_const_or_not>
-    void DeferredInitPolicy<Container<CustomHierarchy>>::call(
-        Container_const_or_not &container)
-    {
-        container.writable().objectType.ifGroup(
-            [&](auto &group_data) { syncContainers(container, group_data); });
-        // if constexpr (!std::is_const_v<Container_const_or_not>)
-        // {
-        //     if (!access::read(container.IOHandler()->m_backendAccess))
-        //     {
-        //         container.writable().objectType.ifGroup([&](auto &group_data)
-        //         {
-        //             if (group_data.phantom || group_data.is_read)
-        //             {
-        //                 return;
-        //             }
-        //             dynamic_cast<CustomHierarchy *>(&container)->read(1);
-        //         });
-        //     }
-        // }
-    }
-    template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
-        Container<CustomHierarchy> &);
-    template void DeferredInitPolicy<Container<CustomHierarchy>>::call(
-        Container<CustomHierarchy> const &);
 
-    template <typename Container_const_or_not>
-    void DeferredInitPolicy<Container<CustomHierarchy>>::syncContainers(
-        Container_const_or_not &container,
+    void ElementAccessPolicy<CustomHierarchy>::call(CustomHierarchy &cont)
+    {
+        ElementAccessPolicy::call(static_cast<CustomHierarchy const &>(cont));
+
+        if (access::read(cont.IOHandler()->m_backendAccess))
+        {
+            cont.writable().objectType.ifGroup([&](auto &group_data) {
+                if (group_data.phantom || group_data.is_read)
+                {
+                    return;
+                }
+                dynamic_cast<CustomHierarchy *>(&cont)->read(1);
+            });
+        }
+    }
+
+    void ElementAccessPolicy<CustomHierarchy>::call(CustomHierarchy const &cont)
+    {
+        cont.writable().objectType.ifGroup(
+            [&](auto &group_data) { syncContainers(cont, group_data); });
+    }
+
+    void ElementAccessPolicy<CustomHierarchy>::syncContainers(
+        CustomHierarchy const &container,
         internal::object_type::GroupMetaData const &group_data)
     {
         // Need to sync backend objects into the CustomHierarchy instance
@@ -121,21 +117,6 @@ namespace traits
             }
             ++it;
         }
-    }
-
-    void ElementAccessPolicy<CustomHierarchy>::call(CustomHierarchy &cont)
-    {
-        if (!access::read(cont.IOHandler()->m_backendAccess))
-        {
-            return;
-        }
-        cont.writable().objectType.ifGroup([&](auto &group_data) {
-            if (group_data.phantom || group_data.is_read)
-            {
-                return;
-            }
-            dynamic_cast<CustomHierarchy *>(&cont)->read(1);
-        });
     }
 } // namespace traits
 
@@ -224,7 +205,8 @@ CustomHierarchy::CustomHierarchy(Attributable const &other)
     : CustomHierarchy(other.m_attri->asSharedPtrOfAttributable())
 {}
 
-auto CustomHierarchy::read(size_t const max_recursion_depth) -> CustomHierarchy
+auto CustomHierarchy::read(size_t const max_recursion_depth)
+    -> CustomHierarchy &
 {
     auxiliary::opaque_defer_type reset_parsing_status;
     if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
@@ -297,7 +279,7 @@ auto CustomHierarchy::read(size_t const max_recursion_depth) -> CustomHierarchy
 
     IOHandler()->flush(internal::defaultFlushParams);
 
-    auto &container_back_ = container_back(/* verify = */ false);
+    auto &container_back_ = container_back();
     for (auto const &path : *pList.paths)
     {
         if (auto it = container_back_.find(path);

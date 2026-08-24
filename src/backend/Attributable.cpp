@@ -453,10 +453,7 @@ auto Attributable::customHierarchies() -> CustomHierarchy
     // children created or read by the returned instance outside the openPMD
     // hierarchy.
     auto res = CustomHierarchy{*this};
-    if (access::read(IOHandler()->m_frontendAccess))
-    {
-        res.read(1);
-    }
+    traits::ElementAccessPolicy<CustomHierarchy>::call(res);
     return res;
 }
 
