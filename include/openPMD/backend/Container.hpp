@@ -520,8 +520,9 @@ OPENPMD_protected
         return res;
     }
 
-    mapped_type &bracket_operator_impl(key_type const &key, bool access_policy);
-    mapped_type &bracket_operator_impl(key_type &&key, bool access_policy);
+    template <typename key_template_t>
+    mapped_type &
+    bracket_operator_impl(key_template_t &&key, bool access_policy);
 
 public:
     /*
