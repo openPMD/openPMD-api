@@ -142,8 +142,9 @@ auto Container<T, T_key, T_container>::operator[](key_type &&key)
 }
 
 template <typename T, typename T_key, typename T_container>
+template <typename key_template_t>
 auto Container<T, T_key, T_container>::bracket_operator_impl(
-    key_type const &key, bool access_policy) -> mapped_type &
+    key_template_t &&key, bool access_policy) -> mapped_type &
 {
     auto it = container_front().find(key);
     if (it != container_front().end())
@@ -172,57 +173,12 @@ auto Container<T, T_key, T_container>::bracket_operator_impl(
         auto &ret = inserted_iterator->second;
         if constexpr (std::is_same_v<T_key, std::string>)
         {
-            ret.writable().ownKeyWithinParent = key;
+            ret.writable().ownKeyWithinParent =
+                std::forward<key_template_t>(key);
         }
         else
         {
             ret.writable().ownKeyWithinParent = std::to_string(key);
-        }
-        traits::GenerationPolicy<T> gen;
-        gen(*this, inserted_iterator);
-        if (access_policy)
-        {
-            traits::ElementAccessPolicy<mapped_type>::call(ret);
-        }
-        return ret;
-    }
-}
-template <typename T, typename T_key, typename T_container>
-auto Container<T, T_key, T_container>::bracket_operator_impl(
-    key_type &&key, bool access_policy) -> mapped_type &
-{
-    auto it = container_front().find(key);
-    if (it != container_front().end())
-    {
-        auto &ret = it->second;
-        if (access_policy)
-        {
-            traits::ElementAccessPolicy<mapped_type>::call(ret);
-        }
-        return ret;
-    }
-    else
-    {
-        if (IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing &&
-            access::readOnly(IOHandler()->m_frontendAccess))
-        {
-            auxiliary::OutOfRangeMsg out_of_range_msg;
-            throw std::out_of_range(out_of_range_msg(key));
-        }
-
-        T t = T();
-        t.linkHierarchy(writable());
-        auto inserted_iterator =
-            syncInsertResult(container_front().insert({key, std::move(t)}))
-                .first;
-        auto &ret = inserted_iterator->second;
-        if constexpr (std::is_same_v<T_key, std::string>)
-        {
-            ret.writable().ownKeyWithinParent = std::move(key);
-        }
-        else
-        {
-            ret.writable().ownKeyWithinParent = std::to_string(std::move(key));
         }
         traits::GenerationPolicy<T> gen;
         gen(*this, inserted_iterator);
