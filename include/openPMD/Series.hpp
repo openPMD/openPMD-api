@@ -27,6 +27,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
@@ -1050,7 +1051,8 @@ OPENPMD_private
 
     std::vector<std::string> availableDatasets();
 
-    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
+    OPENPMDAPI_EXPORT void
+    visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // Series
 
 namespace debug
