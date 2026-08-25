@@ -32,19 +32,20 @@ double BaseRecordComponent::unitSI() const
 
 BaseRecordComponent &BaseRecordComponent::resetDatatype(Datatype d)
 {
+    auto &rc = get();
+    auto &dataset = rc.dataset();
     if (written())
         throw std::runtime_error(
             "A Records Datatype can not (yet) be changed after it has been "
             "written.");
 
-    auto &rc = get();
-    if (rc.dataset().has_value())
+    if (dataset.has_value())
     {
-        rc.dataset().value().dtype = d;
+        dataset.value().dtype = d;
     }
     else
     {
-        rc.dataset() = Dataset{d, {1}};
+        dataset = Dataset{d, {1}};
     }
     setDirty(true);
     return *this;
@@ -53,9 +54,10 @@ BaseRecordComponent &BaseRecordComponent::resetDatatype(Datatype d)
 Datatype BaseRecordComponent::getDatatype() const
 {
     auto &rc = get();
-    if (rc.dataset().has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.dataset().value().dtype;
+        return dataset.value().dtype;
     }
     else
     {
