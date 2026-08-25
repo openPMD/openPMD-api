@@ -305,9 +305,10 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
 uint8_t RecordComponent::getDimensionality() const
 {
     auto &rc = get();
-    if (rc.dataset().has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.dataset().value().rank;
+        return dataset.value().rank;
     }
     else
     {
@@ -318,9 +319,10 @@ uint8_t RecordComponent::getDimensionality() const
 Extent RecordComponent::getExtent() const
 {
     auto &rc = get();
-    if (rc.dataset().has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.dataset().value().extent;
+        return dataset.value().extent;
     }
     else
     {
