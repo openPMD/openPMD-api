@@ -25,6 +25,7 @@
 #include "openPMD/binding/python/auxiliary.hpp"
 
 #include <string>
+#include <utility>
 
 void init_Dataset(py::module &m)
 {
@@ -37,11 +38,10 @@ void init_Dataset(py::module &m)
                 py::arg("extent"),
                 py::arg("options") = "{}")
             .def(
-                py::init(
-                    [](py::object const &dt, Extent e, std::string options) {
-                        auto const d = dtype_from_numpy(dt);
-                        return new Dataset{d, std::move(e), std::move(options)};
-                    }),
+                py::init([](py::object dt, Extent e, std::string options) {
+                    auto const d = dtype_from_numpy(std::move(dt));
+                    return new Dataset{d, std::move(e), std::move(options)};
+                }),
                 py::arg("dtype"),
                 py::arg("extent"),
                 py::arg("options") = "{}")

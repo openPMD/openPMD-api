@@ -51,6 +51,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 /** Convert a py::tuple of py::slices to Offset & Extent
@@ -1020,9 +1021,10 @@ void init_RecordComponent(py::module &m)
         .def(
             "make_empty",
             [](RecordComponent &rc,
-               pybind11::object const &dt,
+               pybind11::object dt,
                uint8_t dimensionality) {
-                return rc.makeEmpty(dtype_from_numpy(dt), dimensionality);
+                return rc.makeEmpty(
+                    dtype_from_numpy(std::move(dt)), dimensionality);
             })
 
         // deprecated: pass-through C++ API
