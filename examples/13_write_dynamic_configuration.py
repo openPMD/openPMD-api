@@ -110,7 +110,7 @@ def main():
         # temperature has no x,y,z components, so skip the last layer:
         temperature_dataset = temperature
         # let's say we are in a 3x3 mesh
-        dataset = io.Dataset("double", [3, 3], config)
+        dataset = io.Dataset(local_data.dtype, [3, 3], config)
         temperature_dataset.reset_dataset(dataset)
         # temperature is constant
         local_data = np.arange(i * 9, (i + 1) * 9, dtype="double")
