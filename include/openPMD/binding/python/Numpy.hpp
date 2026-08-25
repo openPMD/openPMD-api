@@ -98,6 +98,20 @@ inline Datatype dtype_from_numpy(pybind11::dtype const dt)
     }
 }
 
+inline Datatype dtype_from_numpy(pybind11::object const &dt)
+{
+    if (py::isinstance<pybind11::dtype>(dt))
+    {
+        return dtype_from_numpy(py::cast<pybind11::dtype>(dt));
+    }
+    else
+    {
+        auto numpy = pybind11::module_::import("numpy");
+        auto create_dtype = numpy.attr("dtype");
+        return dtype_from_numpy(py::cast<pybind11::dtype>(create_dtype(dt)));
+    }
+}
+
 /** Return openPMD::Datatype from py::buffer_info::format
  */
 inline Datatype dtype_from_bufferformat(std::string const &fmt)
@@ -239,4 +253,5 @@ inline pybind11::dtype dtype_to_numpy(Datatype const dt)
         throw std::runtime_error("dtype_to_numpy: Invalid Datatype!");
     }
 }
+
 } // namespace openPMD

@@ -37,10 +37,11 @@ void init_Dataset(py::module &m)
                 py::arg("extent"),
                 py::arg("options") = "{}")
             .def(
-                py::init([](py::dtype dt, Extent e, std::string options) {
-                    auto const d = dtype_from_numpy(std::move(dt));
-                    return new Dataset{d, std::move(e), std::move(options)};
-                }),
+                py::init(
+                    [](py::object const &dt, Extent e, std::string options) {
+                        auto const d = dtype_from_numpy(dt);
+                        return new Dataset{d, std::move(e), std::move(options)};
+                    }),
                 py::arg("dtype"),
                 py::arg("extent"),
                 py::arg("options") = "{}")
@@ -54,8 +55,10 @@ void init_Dataset(py::module &m)
                 py::arg("extent"),
                 py::arg("options"))
             .def(
-                py::init([](py::dtype dt, Extent e, py::object const &options) {
-                    auto const d = dtype_from_numpy(std::move(dt));
+                py::init([](py::object const &dt,
+                            Extent e,
+                            py::object const &options) {
+                    auto const d = dtype_from_numpy(dt);
                     auto resolved_options = ::auxiliary::json_dumps(options);
                     return new Dataset{
                         d, std::move(e), std::move(resolved_options)};
