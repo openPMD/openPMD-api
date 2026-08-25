@@ -74,9 +74,10 @@ bool BaseRecordComponent::constant() const
 std::optional<size_t> BaseRecordComponent::joinedDimension() const
 {
     auto &rc = get();
-    if (rc.dataset().has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.dataset().value().joinedDimension();
+        return dataset.value().joinedDimension();
     }
     else
     {
@@ -87,14 +88,15 @@ std::optional<size_t> BaseRecordComponent::joinedDimension() const
 ChunkTable BaseRecordComponent::availableChunks()
 {
     auto &rc = get();
+    auto &dataset = rc.dataset();
     if (rc.isConstant())
     {
-        if (!rc.dataset().has_value())
+        if (!dataset.has_value())
         {
             return ChunkTable{};
         }
-        Offset offset(rc.dataset().value().extent.size(), 0);
-        return ChunkTable{{std::move(offset), rc.dataset().value().extent}};
+        Offset offset(dataset.value().extent.size(), 0);
+        return ChunkTable{{std::move(offset), dataset.value().extent}};
     }
     if (auto iteration_data = containingIteration().first;
         iteration_data.has_value())
