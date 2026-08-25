@@ -107,9 +107,9 @@ class APITest(unittest.TestCase):
             E.axis_labels = ["x", "y"]
             for dim in ["x", "y"]:
                 component = E[dim]
-                component.reset_dataset(io.Dataset(np.dtype("float"), [10, 10]))
+                component.reset_dataset(io.Dataset("float", [10, 10]))
                 component[:, :] = np.reshape(
-                    np.arange(i * 100, (i + 1) * 100, dtype=np.dtype("float")),
+                    np.arange(i * 100, (i + 1) * 100, dtype="float"),
                     [10, 10],
                 )
 
@@ -118,12 +118,12 @@ class APITest(unittest.TestCase):
             for dim in ["x", "y"]:
                 # Do not bother with a positionOffset
                 position_offset = e["positionOffset"][dim]
-                position_offset.reset_dataset(io.Dataset(np.dtype("int"), [100]))
+                position_offset.reset_dataset(io.Dataset("int", [100]))
                 position_offset.make_constant(0)
 
                 position = e["position"][dim]
-                position.reset_dataset(io.Dataset(np.dtype("float"), [100]))
-                position[:] = np.arange(i * 100, (i + 1) * 100, dtype=np.dtype("float"))
+                position.reset_dataset(io.Dataset("float", [100]))
+                position[:] = np.arange(i * 100, (i + 1) * 100, dtype="float")
 
     def testRefCounting(self):
         self.refcountingCreateData()
@@ -133,7 +133,7 @@ class APITest(unittest.TestCase):
         pos_x = iteration.particles["e"]["position"]["x"]
         loaded = pos_x[:]
         read.flush()
-        self.assertTrue(np.allclose(loaded, np.arange(0, 100, dtype=np.dtype("float"))))
+        self.assertTrue(np.allclose(loaded, np.arange(0, 100, dtype="float")))
 
     def testFieldData(self):
         """Testing serial IO on a pure field dataset."""
@@ -693,35 +693,33 @@ class APITest(unittest.TestCase):
         self.assertTrue(ms["pybool"][SCALAR].constant)
 
         if found_numpy:
-            ms["int16"][SCALAR].reset_dataset(DS(np.dtype("int16"), extent))
+            ms["int16"][SCALAR].reset_dataset(DS("int16", extent))
             ms["int16"][SCALAR].make_constant(np.int16(234))
-            ms["int32"][SCALAR].reset_dataset(DS(np.dtype("int32"), extent))
+            ms["int32"][SCALAR].reset_dataset(DS("int32", extent))
             ms["int32"][SCALAR].make_constant(np.int32(43))
-            ms["int64"][SCALAR].reset_dataset(DS(np.dtype("int64"), extent))
+            ms["int64"][SCALAR].reset_dataset(DS("int64", extent))
             ms["int64"][SCALAR].make_constant(np.int64(987654321))
 
-            ms["uint16"][SCALAR].reset_dataset(DS(np.dtype("uint16"), extent))
+            ms["uint16"][SCALAR].reset_dataset(DS("uint16", extent))
             ms["uint16"][SCALAR].make_constant(np.uint16(134))
-            ms["uint32"][SCALAR].reset_dataset(DS(np.dtype("uint32"), extent))
+            ms["uint32"][SCALAR].reset_dataset(DS("uint32", extent))
             ms["uint32"][SCALAR].make_constant(np.uint32(32))
-            ms["uint64"][SCALAR].reset_dataset(DS(np.dtype("uint64"), extent))
+            ms["uint64"][SCALAR].reset_dataset(DS("uint64", extent))
             ms["uint64"][SCALAR].make_constant(np.uint64(9876543210))
 
-            ms["single"][SCALAR].reset_dataset(DS(np.dtype("single"), extent))
+            ms["single"][SCALAR].reset_dataset(DS("single", extent))
             ms["single"][SCALAR].make_constant(np.single(1.234))
-            ms["double"][SCALAR].reset_dataset(DS(np.dtype("double"), extent))
+            ms["double"][SCALAR].reset_dataset(DS("double", extent))
             ms["double"][SCALAR].make_constant(np.double(1.234567))
-            ms["longdouble"][SCALAR].reset_dataset(DS(np.dtype("longdouble"), extent))
+            ms["longdouble"][SCALAR].reset_dataset(DS("longdouble", extent))
             ms["longdouble"][SCALAR].make_constant(np.longdouble(1.23456789))
 
-            ms["complex64"][SCALAR].reset_dataset(DS(np.dtype("complex64"), extent))
+            ms["complex64"][SCALAR].reset_dataset(DS("complex64", extent))
             ms["complex64"][SCALAR].make_constant(np.complex64(1.234 + 2.345j))
-            ms["complex128"][SCALAR].reset_dataset(DS(np.dtype("complex128"), extent))
+            ms["complex128"][SCALAR].reset_dataset(DS("complex128", extent))
             ms["complex128"][SCALAR].make_constant(np.complex128(1.234567 + 2.345678j))
             if file_ending not in ["bp", "bp4", "bp5"]:
-                ms["clongdouble"][SCALAR].reset_dataset(
-                    DS(np.dtype("clongdouble"), extent)
-                )
+                ms["clongdouble"][SCALAR].reset_dataset(DS("clongdouble", extent))
                 ms["clongdouble"][SCALAR].make_constant(
                     np.clongdouble(1.23456789 + 2.34567890j)
                 )
@@ -778,45 +776,26 @@ class APITest(unittest.TestCase):
             self.assertTrue(ms["uint64"][SCALAR].constant)
             self.assertTrue(ms["double"][SCALAR].constant)
 
+            self.assertTrue(ms["int16"][SCALAR].load_chunk(o, e).dtype == "int16")
+            self.assertTrue(ms["int32"][SCALAR].load_chunk(o, e).dtype == "int32")
+            self.assertTrue(ms["int64"][SCALAR].load_chunk(o, e).dtype == "int64")
+            self.assertTrue(ms["uint16"][SCALAR].load_chunk(o, e).dtype == "uint16")
+            self.assertTrue(ms["uint32"][SCALAR].load_chunk(o, e).dtype == "uint32")
+            self.assertTrue(ms["uint64"][SCALAR].load_chunk(o, e).dtype == "uint64")
+            self.assertTrue(ms["single"][SCALAR].load_chunk(o, e).dtype == "single")
+            self.assertTrue(ms["double"][SCALAR].load_chunk(o, e).dtype == "double")
             self.assertTrue(
-                ms["int16"][SCALAR].load_chunk(o, e).dtype == np.dtype("int16")
+                ms["longdouble"][SCALAR].load_chunk(o, e).dtype == "longdouble"
             )
             self.assertTrue(
-                ms["int32"][SCALAR].load_chunk(o, e).dtype == np.dtype("int32")
+                ms["complex64"][SCALAR].load_chunk(o, e).dtype == "complex64"
             )
             self.assertTrue(
-                ms["int64"][SCALAR].load_chunk(o, e).dtype == np.dtype("int64")
-            )
-            self.assertTrue(
-                ms["uint16"][SCALAR].load_chunk(o, e).dtype == np.dtype("uint16")
-            )
-            self.assertTrue(
-                ms["uint32"][SCALAR].load_chunk(o, e).dtype == np.dtype("uint32")
-            )
-            self.assertTrue(
-                ms["uint64"][SCALAR].load_chunk(o, e).dtype == np.dtype("uint64")
-            )
-            self.assertTrue(
-                ms["single"][SCALAR].load_chunk(o, e).dtype == np.dtype("single")
-            )
-            self.assertTrue(
-                ms["double"][SCALAR].load_chunk(o, e).dtype == np.dtype("double")
-            )
-            self.assertTrue(
-                ms["longdouble"][SCALAR].load_chunk(o, e).dtype
-                == np.dtype("longdouble")
-            )
-            self.assertTrue(
-                ms["complex64"][SCALAR].load_chunk(o, e).dtype == np.dtype("complex64")
-            )
-            self.assertTrue(
-                ms["complex128"][SCALAR].load_chunk(o, e).dtype
-                == np.dtype("complex128")
+                ms["complex128"][SCALAR].load_chunk(o, e).dtype == "complex128"
             )
             if file_ending not in ["bp", "bp4", "bp5"]:
                 self.assertTrue(
-                    ms["clongdouble"][SCALAR].load_chunk(o, e).dtype
-                    == np.dtype("clongdouble")
+                    ms["clongdouble"][SCALAR].load_chunk(o, e).dtype == "clongdouble"
                 )
 
             # FIXME: why does this even work w/o a flush() ?
@@ -868,16 +847,16 @@ class APITest(unittest.TestCase):
 
         extent = [42, 24, 11]
 
-        ms["complex64"][SCALAR].reset_dataset(DS(np.dtype("complex64"), extent))
+        ms["complex64"][SCALAR].reset_dataset(DS("complex64", extent))
         ms["complex64"][SCALAR].store_chunk(
             np.ones(extent, dtype=np.complex64) * np.complex64(1.234 + 2.345j)
         )
-        ms["complex128"][SCALAR].reset_dataset(DS(np.dtype("complex128"), extent))
+        ms["complex128"][SCALAR].reset_dataset(DS("complex128", extent))
         ms["complex128"][SCALAR].store_chunk(
             np.ones(extent, dtype=np.complex128) * np.complex128(1.234567 + 2.345678j)
         )
         if file_ending not in ["bp", "bp4", "bp5"]:
-            ms["clongdouble"][SCALAR].reset_dataset(DS(np.dtype("clongdouble"), extent))
+            ms["clongdouble"][SCALAR].reset_dataset(DS("clongdouble", extent))
             ms["clongdouble"][SCALAR].store_chunk(
                 np.ones(extent, dtype=np.clongdouble)
                 * np.clongdouble(1.23456789 + 2.34567890j)
@@ -896,8 +875,8 @@ class APITest(unittest.TestCase):
         np.testing.assert_almost_equal(it.time, 1.23)
         np.testing.assert_almost_equal(it.dt, 1.2)
         # TODO
-        # self.assertTrue(it.time.dtype == np.dtype('single'))
-        # self.assertTrue(it.dt.dtype == np.dtype('longdouble'))
+        # self.assertTrue(it.time.dtype == 'single')
+        # self.assertTrue(it.dt.dtype == 'longdouble')
 
         ms = it.meshes
         o = [1, 2, 3]
@@ -908,10 +887,10 @@ class APITest(unittest.TestCase):
         if file_ending not in ["bp", "bp4", "bp5"]:
             dc256 = ms["clongdouble"][SCALAR].load_chunk(o, e)
 
-        self.assertTrue(dc64.dtype == np.dtype("complex64"))
-        self.assertTrue(dc128.dtype == np.dtype("complex128"))
+        self.assertTrue(dc64.dtype == "complex64")
+        self.assertTrue(dc128.dtype == "complex128")
         if file_ending not in ["bp", "bp4", "bp5"]:
-            self.assertTrue(dc256.dtype == np.dtype("clongdouble"))
+            self.assertTrue(dc256.dtype == "clongdouble")
 
         series.flush()
 
@@ -949,14 +928,14 @@ class APITest(unittest.TestCase):
         ms["LONG_DOUBLE"][SCALAR].make_empty(DT.LONG_DOUBLE, 13)
 
         if found_numpy:
-            ms["int16"][SCALAR].make_empty(np.dtype("int16"), 14)
-            ms["int32"][SCALAR].make_empty(np.dtype("int32"), 15)
-            ms["int64"][SCALAR].make_empty(np.dtype("int64"), 16)
-            ms["uint16"][SCALAR].make_empty(np.dtype("uint16"), 17)
-            ms["uint32"][SCALAR].make_empty(np.dtype("uint32"), 18)
-            ms["uint64"][SCALAR].make_empty(np.dtype("uint64"), 19)
-            ms["single"][SCALAR].make_empty(np.dtype("single"), 20)
-            ms["np_double"][SCALAR].make_empty(np.dtype("double"), 21)
+            ms["int16"][SCALAR].make_empty("int16", 14)
+            ms["int32"][SCALAR].make_empty("int32", 15)
+            ms["int64"][SCALAR].make_empty("int64", 16)
+            ms["uint16"][SCALAR].make_empty("uint16", 17)
+            ms["uint32"][SCALAR].make_empty("uint32", 18)
+            ms["uint64"][SCALAR].make_empty("uint64", 19)
+            ms["single"][SCALAR].make_empty("single", 20)
+            ms["np_double"][SCALAR].make_empty("double", 21)
 
         # flush and close file
         self.assertTrue(series)
@@ -996,14 +975,14 @@ class APITest(unittest.TestCase):
 
         # test datatypes for fixed-sized types only
         if found_numpy:
-            self.assertTrue(ms["int16"][SCALAR].dtype == np.dtype("int16"))
-            self.assertTrue(ms["int32"][SCALAR].dtype == np.dtype("int32"))
-            self.assertTrue(ms["int64"][SCALAR].dtype == np.dtype("int64"))
-            self.assertTrue(ms["uint16"][SCALAR].dtype == np.dtype("uint16"))
-            self.assertTrue(ms["uint32"][SCALAR].dtype == np.dtype("uint32"))
-            self.assertTrue(ms["uint64"][SCALAR].dtype == np.dtype("uint64"))
-            self.assertTrue(ms["single"][SCALAR].dtype == np.dtype("single"))
-            self.assertTrue(ms["np_double"][SCALAR].dtype == np.dtype("double"))
+            self.assertTrue(ms["int16"][SCALAR].dtype == "int16")
+            self.assertTrue(ms["int32"][SCALAR].dtype == "int32")
+            self.assertTrue(ms["int64"][SCALAR].dtype == "int64")
+            self.assertTrue(ms["uint16"][SCALAR].dtype == "uint16")
+            self.assertTrue(ms["uint32"][SCALAR].dtype == "uint32")
+            self.assertTrue(ms["uint64"][SCALAR].dtype == "uint64")
+            self.assertTrue(ms["single"][SCALAR].dtype == "single")
+            self.assertTrue(ms["np_double"][SCALAR].dtype == "double")
 
     def testEmptyRecords(self):
         backend_filesupport = {"json": "json", "hdf5": "h5", "adios2": "bp"}
@@ -1808,11 +1787,11 @@ class APITest(unittest.TestCase):
 
         for r in ["x", "y"]:
             x = e["position"][r]
-            x.reset_dataset(DS(np.dtype("single"), extent))
+            x.reset_dataset(DS("single", extent))
             # implicit:                                        , [0, ], extent
             x.store_chunk(np.arange(extent[0], dtype=np.single))
             o = e["positionOffset"][r]
-            o.reset_dataset(DS(np.dtype("uint64"), extent))
+            o.reset_dataset(DS("uint64", extent))
             o.store_chunk(
                 np.arange(extent[0], dtype=np.uint64),
                 [
@@ -1822,7 +1801,7 @@ class APITest(unittest.TestCase):
             )
 
         dset = DS(
-            np.dtype("uint64"),
+            "uint64",
             [
                 num_patches,
             ],
@@ -1831,7 +1810,7 @@ class APITest(unittest.TestCase):
         e.particle_patches["numParticlesOffset"][SCALAR].reset_dataset(dset)
 
         dset = DS(
-            np.dtype("single"),
+            "single",
             [
                 num_patches,
             ],
@@ -1936,12 +1915,12 @@ class APITest(unittest.TestCase):
             io.Access_Type.create,
         )
         DS = io.Dataset
-        data = np.array([2, 4, 6, 8], dtype=np.dtype("int"))
+        data = np.array([2, 4, 6, 8], dtype="int")
         extent = [4]
 
         it0 = series.iterations[0]
         E_x = it0.meshes["E"]["x"]
-        E_x.reset_dataset(DS(np.dtype("int"), extent))
+        E_x.reset_dataset(DS("int", extent))
         E_x.store_chunk(data, [0], extent)
         it0.close(flush=True)
 
@@ -1962,7 +1941,7 @@ class APITest(unittest.TestCase):
 
         it1 = series.iterations[1]
         E_x = it1.meshes["E"]["x"]
-        E_x.reset_dataset(DS(np.dtype("int"), extent))
+        E_x.reset_dataset(DS("int", extent))
         E_x.store_chunk(data, [0], extent)
         it1.close(flush=False)
         series.flush()
@@ -1999,17 +1978,17 @@ class APITest(unittest.TestCase):
             jsonConfig,
         )
         DS = io.Dataset
-        data = np.array([2, 4, 6, 8], dtype=np.dtype("int"))
+        data = np.array([2, 4, 6, 8], dtype="int")
         extent = [4]
 
         for i in range(10):
             it = series.write_iterations()[i]
             E_x = it.meshes["E"]["x"]
-            E_x.reset_dataset(DS(np.dtype("int"), extent))
+            E_x.reset_dataset(DS("int", extent))
             E_x.store_chunk(data, [0], extent)
 
             B_y = it.meshes["B"]["y"]
-            B_y.reset_dataset(DS(np.dtype("int"), [2, 2]))
+            B_y.reset_dataset(DS("int", [2, 2]))
             span = B_y.store_chunk().current_buffer()
             span[0, 0] = 0
             span[0, 1] = 1
@@ -2062,12 +2041,12 @@ class APITest(unittest.TestCase):
 
         DS = io.Dataset
         E_x = write.iterations[0].meshes["E"]["x"]
-        E_x.reset_dataset(DS(np.dtype("int"), [10, 4]))
-        data = np.array([[2, 4, 6, 8], [10, 12, 14, 16]], dtype=np.dtype("int"))
+        E_x.reset_dataset(DS("int", [10, 4]))
+        data = np.array([[2, 4, 6, 8], [10, 12, 14, 16]], dtype="int")
         E_x.store_chunk(data, [1, 0], [2, 4])
-        data2 = np.array([[2, 4], [6, 8], [10, 12]], dtype=np.dtype("int"))
+        data2 = np.array([[2, 4], [6, 8], [10, 12]], dtype="int")
         E_x.store_chunk(data2, [4, 2], [3, 2])
-        data3 = np.array([[2], [4], [6], [8]], dtype=np.dtype("int"))
+        data3 = np.array([[2], [4], [6], [8]], dtype="int")
         E_x.store_chunk(data3, [6, 0], [4, 1])
 
         # Cleaner: write.close()
@@ -2104,12 +2083,12 @@ class APITest(unittest.TestCase):
 
     def writeFromTemporaryStore(self, E_x):
         if found_numpy:
-            E_x.store_chunk(np.array([[4, 5, 6]], dtype=np.dtype("int")), [1, 0])
+            E_x.store_chunk(np.array([[4, 5, 6]], dtype="int"), [1, 0])
 
-            data = np.array([[1, 2, 3]], dtype=np.dtype("int"))
+            data = np.array([[1, 2, 3]], dtype="int")
             E_x.store_chunk(data)
 
-            data2 = np.array([[7, 8, 9]], dtype=np.dtype("int"))
+            data2 = np.array([[7, 8, 9]], dtype="int")
             E_x.store_chunk(np.repeat(data2, 198, axis=0), [2, 0])
 
     def loadToTemporaryStore(self, r_E_x):
@@ -2126,7 +2105,7 @@ class APITest(unittest.TestCase):
 
         DS = io.Dataset
         E_x = write.iterations[0].meshes["E"]["x"]
-        E_x.reset_dataset(DS(np.dtype("int"), [200, 3]))
+        E_x.reset_dataset(DS("int", [200, 3]))
         self.writeFromTemporaryStore(E_x)
         gc.collect()  # trigger removal of temporary data to check its copied
 
@@ -2149,8 +2128,7 @@ class APITest(unittest.TestCase):
 
         if found_numpy:
             np.testing.assert_allclose(
-                r_d[:3, :],
-                np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=np.dtype("int")),
+                r_d[:3, :], np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype="int")
             )
 
     def testWriteFromTemporary(self):
@@ -2207,14 +2185,14 @@ class APITest(unittest.TestCase):
         )
 
         DS = io.Dataset
-        data = np.array(range(1000), dtype=np.dtype("double"))
+        data = np.array(range(1000), dtype="double")
 
         E_x = series.iterations[0].meshes["E"]["x"]
-        E_x.reset_dataset(DS(np.dtype("double"), [1000]))
+        E_x.reset_dataset(DS("double", [1000]))
         E_x.store_chunk(data, [0], [1000])
 
         E_y = series.iterations[0].meshes["E"]["y"]
-        E_y.reset_dataset(DS(np.dtype("double"), [1000], local_config))
+        E_y.reset_dataset(DS("double", [1000], local_config))
         E_y.store_chunk(data, [0], [1000])
 
         self.assertTrue(series)
@@ -2346,7 +2324,7 @@ class APITest(unittest.TestCase):
         file = "../samples/scalar_hdf5.h5"
         series_write = io.Series(file, io.Access.create)
         E_x = series_write.write_iterations()[0].meshes["E"]["x"]
-        E_x.reset_dataset(io.Dataset(np.dtype(np.int_), [1]))
+        E_x.reset_dataset(io.Dataset(np.int_, [1]))
         E_x[:] = np.array([43])
         series_write.close()
 
