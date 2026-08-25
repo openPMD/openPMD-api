@@ -483,7 +483,7 @@ OPENPMD_protected
 
     void clear_unchecked();
 
-    virtual void
+    void
     flush(std::string const &path, internal::FlushParams const &flushParams);
 
     Container();
