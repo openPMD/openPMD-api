@@ -1020,7 +1020,7 @@ void init_RecordComponent(py::module &m)
         .def(
             "make_empty",
             [](RecordComponent &rc,
-               pybind11::dtype const &dt,
+               pybind11::object const &dt,
                uint8_t dimensionality) {
                 return rc.makeEmpty(dtype_from_numpy(dt), dimensionality);
             })
