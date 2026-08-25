@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
@@ -752,7 +753,8 @@ OPENPMD_protected
      */
     void setWritten(bool val, EnqueueAsynchronously);
 
-    virtual void visitHierarchyImpl(HierarchyVisitor &visitor, bool recursive);
+    virtual OPENPMDAPI_EXPORT void
+    visitHierarchyImpl(HierarchyVisitor &visitor, bool recursive);
 
 private:
     /**

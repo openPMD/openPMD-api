@@ -52,7 +52,7 @@ private:
     ParticleSpecies();
 
     void read();
-    void flush(std::string const &, internal::FlushParams const &) override;
+    void flush(std::string const &, internal::FlushParams const &);
 
     using Data_t = Container<Record>::ContainerData;
 

@@ -368,7 +368,7 @@ public:
     bool scalar() const;
 
 private:
-    void flush(std::string const &, internal::FlushParams const &) final;
+    void flush(std::string const &, internal::FlushParams const &);
     virtual void
     flush_impl(std::string const &, internal::FlushParams const &) = 0;
 
