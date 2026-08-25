@@ -887,8 +887,8 @@ class APITest(unittest.TestCase):
         if file_ending not in ["bp", "bp4", "bp5"]:
             dc256 = ms["clongdouble"][SCALAR].load_chunk(o, e)
 
-        self.assertTrue(dc64.dtype == "complex64")
-        self.assertTrue(dc128.dtype == "complex128")
+        self.assertEqual(dc64.dtype, "complex64")
+        self.assertEqual(dc128.dtype, "complex128")
         if file_ending not in ["bp", "bp4", "bp5"]:
             self.assertTrue(dc256.dtype == "clongdouble")
 
@@ -975,14 +975,14 @@ class APITest(unittest.TestCase):
 
         # test datatypes for fixed-sized types only
         if found_numpy:
-            self.assertTrue(ms["int16"][SCALAR].dtype == "int16")
-            self.assertTrue(ms["int32"][SCALAR].dtype == "int32")
-            self.assertTrue(ms["int64"][SCALAR].dtype == "int64")
-            self.assertTrue(ms["uint16"][SCALAR].dtype == "uint16")
-            self.assertTrue(ms["uint32"][SCALAR].dtype == "uint32")
-            self.assertTrue(ms["uint64"][SCALAR].dtype == "uint64")
-            self.assertTrue(ms["single"][SCALAR].dtype == "single")
-            self.assertTrue(ms["np_double"][SCALAR].dtype == "double")
+            self.assertEqual(ms["int16"][SCALAR].dtype, "int16")
+            self.assertEqual(ms["int32"][SCALAR].dtype, "int32")
+            self.assertEqual(ms["int64"][SCALAR].dtype, "int64")
+            self.assertEqual(ms["uint16"][SCALAR].dtype, "uint16")
+            self.assertEqual(ms["uint32"][SCALAR].dtype, "uint32")
+            self.assertEqual(ms["uint64"][SCALAR].dtype, "uint64")
+            self.assertEqual(ms["single"][SCALAR].dtype, "single")
+            self.assertEqual(ms["np_double"][SCALAR].dtype, "double")
 
     def testEmptyRecords(self):
         backend_filesupport = {"json": "json", "hdf5": "h5", "adios2": "bp"}
