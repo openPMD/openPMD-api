@@ -40,7 +40,7 @@ if __name__ == "__main__":
         electronPositions.set_attribute("comment", "I'm a comment")
 
         length = 10
-        local_data = np.arange(i * length, (i + 1) * length, dtype=np.dtype("double"))
+        local_data = np.arange(i * length, (i + 1) * length, dtype="double")
         for dim in ["x", "y", "z"]:
             pos = electronPositions[dim]
             pos.reset_dataset(io.Dataset(local_data.dtype, [length]))
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         # temperature has no x,y,z components, so skip the last layer:
         temperature_dataset = temperature
         # let's say we are in a 3x3 mesh
-        temperature_dataset.reset_dataset(io.Dataset(np.dtype("double"), [3, 3]))
+        temperature_dataset.reset_dataset(io.Dataset("double", [3, 3]))
         # temperature is constant
         temperature_dataset.make_constant(273.15)
 

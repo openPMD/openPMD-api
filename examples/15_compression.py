@@ -46,9 +46,9 @@ def write(filename, config):
         E.axis_labels = ["x", "y"]
         for dim in ["x", "y"]:
             component = E[dim]
-            component.reset_dataset(opmd.Dataset(np.dtype("float"), [10, 10]))
+            component.reset_dataset(opmd.Dataset("float", [10, 10]))
             component[:, :] = np.reshape(
-                np.arange(i * 100, (i + 1) * 100, dtype=np.dtype("float")),
+                np.arange(i * 100, (i + 1) * 100, dtype="float"),
                 [10, 10],
             )
 
@@ -57,12 +57,12 @@ def write(filename, config):
         for dim in ["x", "y"]:
             # Do not bother with a positionOffset
             position_offset = e["positionOffset"][dim]
-            position_offset.reset_dataset(opmd.Dataset(np.dtype("int"), [100]))
+            position_offset.reset_dataset(opmd.Dataset("int", [100]))
             position_offset.make_constant(0)
 
             position = e["position"][dim]
-            position.reset_dataset(opmd.Dataset(np.dtype("float"), [100]))
-            position[:] = np.arange(i * 100, (i + 1) * 100, dtype=np.dtype("float"))
+            position.reset_dataset(opmd.Dataset("float", [100]))
+            position[:] = np.arange(i * 100, (i + 1) * 100, dtype="float")
 
 
 def main():

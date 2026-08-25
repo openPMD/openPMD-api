@@ -82,7 +82,7 @@ def main():
         electronPositions.set_attribute("comment", "I'm a comment")
 
         length = 10
-        local_data = np.arange(i * length, (i + 1) * length, dtype=np.dtype("double"))
+        local_data = np.arange(i * length, (i + 1) * length, dtype="double")
         for dim in ["x", "y", "z"]:
             pos = electronPositions[dim]
             pos.reset_dataset(io.Dataset(local_data.dtype, [length]))
@@ -110,10 +110,10 @@ def main():
         # temperature has no x,y,z components, so skip the last layer:
         temperature_dataset = temperature
         # let's say we are in a 3x3 mesh
-        dataset = io.Dataset(np.dtype("double"), [3, 3], config)
+        dataset = io.Dataset("double", [3, 3], config)
         temperature_dataset.reset_dataset(dataset)
         # temperature is constant
-        local_data = np.arange(i * 9, (i + 1) * 9, dtype=np.dtype("double"))
+        local_data = np.arange(i * 9, (i + 1) * 9, dtype="double")
         local_data = local_data.reshape([3, 3])
         temperature_dataset[()] = local_data
 

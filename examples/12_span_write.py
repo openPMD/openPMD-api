@@ -5,7 +5,7 @@ import openpmd_api as io
 def span_write(filename):
     series = io.Series(filename, io.Access_Type.create_linear)
 
-    datatype = np.dtype("double")
+    datatype = "double"
     length = 10
     extent = [length]
     dataset = io.Dataset(datatype, extent)

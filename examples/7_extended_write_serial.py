@@ -89,9 +89,9 @@ if __name__ == "__main__":
     electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
     electrons["displacement"]["x"].unit_SI = 1.0e-6
     del electrons["displacement"]
-    electrons["weighting"].reset_dataset(
-        Dataset(np.dtype("float32"), extent=[1])
-    ).make_constant(1.0e-5)
+    electrons["weighting"].reset_dataset(Dataset("float32", extent=[1])).make_constant(
+        1.0e-5
+    )
 
     mesh = cur_it.meshes["lowRez_2D_field"]
     mesh.axis_labels = ["x", "y"]
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     d = Dataset(partial_particleOff.dtype, mpiDims)
     electrons["positionOffset"]["x"].reset_dataset(d)
 
-    dset = Dataset(np.dtype("uint64"), extent=[2])
+    dset = Dataset("uint64", extent=[2])
     electrons.particle_patches["numParticles"].reset_dataset(dset)
     electrons.particle_patches["numParticlesOffset"].reset_dataset(dset)
 
