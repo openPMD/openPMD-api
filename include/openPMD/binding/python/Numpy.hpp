@@ -106,9 +106,53 @@ inline Datatype dtype_from_numpy(pybind11::object const &dt)
     }
     else
     {
-        auto numpy = pybind11::module_::import("numpy");
-        auto create_dtype = numpy.attr("dtype");
-        return dtype_from_numpy(py::cast<pybind11::dtype>(create_dtype(dt)));
+        pybind11::module_ numpy;
+        try
+        {
+            numpy = pybind11::module_::import("numpy");
+        }
+        catch (std::exception const &e)
+        {
+            throw std::runtime_error(
+                std::string(
+                    "dtype_from_numpy: Cannot convert from object type to "
+                    "datatype without numpy, failed importing: ") +
+                e.what());
+        }
+        pybind11::object create_dtype;
+        try
+        {
+            create_dtype = numpy.attr("dtype");
+        }
+        catch (std::exception const &e)
+        {
+            throw std::runtime_error(
+                std::string(
+                    "dtype_from_numpy: Failed to access numpy.dtype: ") +
+                e.what());
+        }
+        pybind11::object dtype_obj;
+        try
+        {
+            dtype_obj = create_dtype(dt);
+        }
+        catch (std::exception const &e)
+        {
+            throw std::runtime_error(
+                std::string("dtype_from_numpy: Failed to create dtype from: ") +
+                pybind11::str(dt).cast<std::string>() +
+                std::string(", error: ") + e.what());
+        }
+        try
+        {
+            return dtype_from_numpy(py::cast<pybind11::dtype>(dtype_obj));
+        }
+        catch (std::exception const &e)
+        {
+            throw std::runtime_error(
+                std::string("dtype_from_numpy: Failed to cast to dtype: ") +
+                e.what());
+        }
     }
 }
 
