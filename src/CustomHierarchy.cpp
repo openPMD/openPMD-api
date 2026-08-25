@@ -35,13 +35,17 @@ namespace traits
         if (!cont.get().has_been_read &&
             access::read(cont.IOHandler()->m_backendAccess))
         {
+            bool skip = false;
             cont.writable().objectType.ifGroup([&](auto &group_data) {
                 if (group_data.phantom)
                 {
-                    return;
+                    skip = true;
                 }
-                dynamic_cast<CustomHierarchy *>(&cont)->read(1);
             });
+            if (!skip)
+            {
+                cont.read(1);
+            }
         }
     }
 
@@ -162,7 +166,10 @@ auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
                 return res;
             }
         }
-        return makeResult();
+        else
+        {
+            return makeResult();
+        }
     }
     else
     {
@@ -217,7 +224,8 @@ auto CustomHierarchy::read(size_t const max_recursion_depth)
             IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
         });
     }
-    if (!writable().written)
+    auto was_written = writable().written;
+    if (!was_written)
     {
         auto do_throw = [&]() {
             throw error::WrongAPIUsage(
@@ -251,8 +259,19 @@ auto CustomHierarchy::read(size_t const max_recursion_depth)
 
     Attributable::readAttributes(ReadMode::FullyReread);
 
+    auto &data = get();
+    auto defer_bookkeeping = auxiliary::defer([&]() {
+        data.has_been_read = true;
+        setDirty(false);
+    });
+
     if (writable().objectType.isDataset())
     {
+        // TODO should we maybe just do this indiscriminately?
+        if (!was_written)
+        {
+            asDataset().read();
+        }
         return *this;
     }
 
@@ -272,7 +291,6 @@ auto CustomHierarchy::read(size_t const max_recursion_depth)
         }
     };
 
-    auto &data = get();
     if (!data.has_been_read)
     {
         Parameter<Operation::LIST_PATHS> pList;
@@ -348,9 +366,6 @@ auto CustomHierarchy::read(size_t const max_recursion_depth)
                 }},
             subpath.writable().objectType.as_base());
     }
-
-    setDirty(false);
-    data.has_been_read = true;
 
     return *this;
 }
