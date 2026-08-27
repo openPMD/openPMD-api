@@ -776,26 +776,26 @@ class APITest(unittest.TestCase):
             self.assertTrue(ms["uint64"][SCALAR].constant)
             self.assertTrue(ms["double"][SCALAR].constant)
 
-            self.assertTrue(ms["int16"][SCALAR].load_chunk(o, e).dtype == "int16")
-            self.assertTrue(ms["int32"][SCALAR].load_chunk(o, e).dtype == "int32")
-            self.assertTrue(ms["int64"][SCALAR].load_chunk(o, e).dtype == "int64")
-            self.assertTrue(ms["uint16"][SCALAR].load_chunk(o, e).dtype == "uint16")
-            self.assertTrue(ms["uint32"][SCALAR].load_chunk(o, e).dtype == "uint32")
-            self.assertTrue(ms["uint64"][SCALAR].load_chunk(o, e).dtype == "uint64")
-            self.assertTrue(ms["single"][SCALAR].load_chunk(o, e).dtype == "single")
-            self.assertTrue(ms["double"][SCALAR].load_chunk(o, e).dtype == "double")
-            self.assertTrue(
-                ms["longdouble"][SCALAR].load_chunk(o, e).dtype == "longdouble"
+            self.assertEqual(ms["int16"][SCALAR].load_chunk(o, e).dtype, "int16")
+            self.assertEqual(ms["int32"][SCALAR].load_chunk(o, e).dtype, "int32")
+            self.assertEqual(ms["int64"][SCALAR].load_chunk(o, e).dtype, "int64")
+            self.assertEqual(ms["uint16"][SCALAR].load_chunk(o, e).dtype, "uint16")
+            self.assertEqual(ms["uint32"][SCALAR].load_chunk(o, e).dtype, "uint32")
+            self.assertEqual(ms["uint64"][SCALAR].load_chunk(o, e).dtype, "uint64")
+            self.assertEqual(ms["single"][SCALAR].load_chunk(o, e).dtype, "single")
+            self.assertEqual(ms["double"][SCALAR].load_chunk(o, e).dtype, "double")
+            self.assertEqual(
+                ms["longdouble"][SCALAR].load_chunk(o, e).dtype, "longdouble"
             )
-            self.assertTrue(
-                ms["complex64"][SCALAR].load_chunk(o, e).dtype == "complex64"
+            self.assertEqual(
+                ms["complex64"][SCALAR].load_chunk(o, e).dtype, "complex64"
             )
-            self.assertTrue(
-                ms["complex128"][SCALAR].load_chunk(o, e).dtype == "complex128"
+            self.assertEqual(
+                ms["complex128"][SCALAR].load_chunk(o, e).dtype, "complex128"
             )
             if file_ending not in ["bp", "bp4", "bp5"]:
-                self.assertTrue(
-                    ms["clongdouble"][SCALAR].load_chunk(o, e).dtype == "clongdouble"
+                self.assertEqual(
+                    ms["clongdouble"][SCALAR].load_chunk(o, e).dtype, "clongdouble"
                 )
 
             # FIXME: why does this even work w/o a flush() ?
@@ -886,11 +886,13 @@ class APITest(unittest.TestCase):
         dc128 = ms["complex128"][SCALAR].load_chunk(o, e)
         if file_ending not in ["bp", "bp4", "bp5"]:
             dc256 = ms["clongdouble"][SCALAR].load_chunk(o, e)
+        else:
+            dc256 = None
 
         self.assertEqual(dc64.dtype, "complex64")
         self.assertEqual(dc128.dtype, "complex128")
         if file_ending not in ["bp", "bp4", "bp5"]:
-            self.assertTrue(dc256.dtype == "clongdouble")
+            self.assertEqual(dc256.dtype, "clongdouble")
 
         series.flush()
 
