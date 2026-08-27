@@ -277,5 +277,4 @@ inline pybind11::dtype dtype_to_numpy(Datatype const dt)
         throw std::runtime_error("dtype_to_numpy: Invalid Datatype!");
     }
 }
-
 } // namespace openPMD

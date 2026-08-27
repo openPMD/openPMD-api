@@ -25,7 +25,6 @@
 #include "openPMD/binding/python/auxiliary.hpp"
 
 #include <string>
-#include <utility>
 
 void init_Dataset(py::module &m)
 {

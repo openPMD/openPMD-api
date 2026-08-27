@@ -51,7 +51,6 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
-#include <utility>
 #include <vector>
 
 /** Convert a py::tuple of py::slices to Offset & Extent
