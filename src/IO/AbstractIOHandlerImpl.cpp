@@ -160,6 +160,7 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
         IOTask &i = (*m_handler).m_work.front();
         try
         {
+            verifyFlushType(i.operation, l);
             switch (i.operation)
             {
                 using O = Operation;
@@ -531,7 +532,6 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
                 break;
             }
             }
-            verifyFlushType(i.operation, l);
         }
         catch (...)
         {
