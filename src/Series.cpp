@@ -1512,9 +1512,10 @@ void Series::flushFileBased(
         // In flush level SkeletonOnly, we might need to set some attributes
         // (especially: particlesPath, meshesPath), but cannot flush them yet
         // (as writing attributes is only permissible at higher flush levels).
-        // This flag records if the Series became dirty during this flush. If
-        // yes, we set the Series back to dirty at the end of flushing.
-        bool hasBecomeDirty = false;
+        // This flag records if the Series stayed or  became dirty during this
+        // flush. If yes, we set the Series back to dirty at the end of
+        // flushing.
+        bool skeletonFlushDirty = false;
         for (auto it = begin; it != end; ++it)
         {
             // Phase 1
@@ -1562,11 +1563,6 @@ void Series::flushFileBased(
                 IOHandler()->enqueue(IOTask(&it->second, std::move(fClose)));
                 it->second.get().m_closed = internal::CloseStatus::Closed;
             }
-            /* reset the dirty bit for every iteration (i.e. file)
-             * otherwise only the first iteration will have updates attributes
-             * TODO: Ideally, we would skip this in SkeletonOnly flush mode, but
-             * for some reason, this leads to hanging parallel tests..?
-             */
             if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
             {
                 if (allDirty && !dirty())
@@ -1574,19 +1570,21 @@ void Series::flushFileBased(
                     throw error::Internal(
                         "Flush mode SkeletonOnly must not unset dirty flags.");
                 }
-                hasBecomeDirty |=
-                    flushParams.flushLevel == FlushLevel::SkeletonOnly &&
-                    !allDirty && dirty();
+                skeletonFlushDirty |= dirty();
             }
+
+            /* reset the dirty bit for every iteration (i.e. file)
+             * otherwise only the first iteration will have updated attributes
+             */
             setDirty(allDirty);
         }
-        if (!hasBecomeDirty)
+        if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
         {
-            determineUnsetDirty(flushParams.flushLevel);
+            setDirty(skeletonFlushDirty);
         }
         else
         {
-            setDirty(true);
+            determineUnsetDirty(flushParams.flushLevel);
         }
         // Phase 3
         if (flushIOHandler)
