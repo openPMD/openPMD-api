@@ -219,6 +219,24 @@ RecordComponent &RecordComponent::setUnitSI(double usi)
 RecordComponent &RecordComponent::resetDataset(Dataset d)
 {
     auto &rc = get();
+
+    /*
+     * For backwards-compatibility reasons, we do not actually run the below
+     * flush. But the API should be written in such a way that the entire test
+     * suite passes when enabling the below code block.
+     */
+#if 0
+    auto cleanup = auxiliary::defer([&rc, this]() {
+        if (rc.m_dataset.has_value() &&
+            rc.m_dataset->dtype != Datatype::UNDEFINED &&
+            IOHandler()->m_seriesStatus != internal::SeriesStatus::Parsing)
+        {
+            seriesFlush_impl</* flush_entire_series = */ false>(
+                {FlushLevel::SkeletonOnly}, /* flush_io_handler = */ true);
+        }
+    });
+#endif
+
     if (written())
     {
         if (!rc.m_dataset.has_value())
