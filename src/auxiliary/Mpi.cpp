@@ -49,7 +49,7 @@ StringMatrix collectStringsAsMatrixTo(
         1,
         MPI_INT,
         destRank,
-        MPI_COMM_WORLD);
+        communicator);
     int maxLength = std::accumulate(
         recvcounts.begin(), recvcounts.end(), 0, [](int a, int b) {
             return std::max(a, b);
@@ -78,7 +78,7 @@ StringMatrix collectStringsAsMatrixTo(
         displs.data(),
         MPI_CHAR,
         destRank,
-        MPI_COMM_WORLD);
+        communicator);
 
     return res;
 }
@@ -95,7 +95,7 @@ std::vector<std::string> distributeStringsToAllRanks(
     int *displs = new int[size];
 
     MPI_Allgather(
-        &sendLength, 1, MPI_INT, sizesBuffer, 1, MPI_INT, MPI_COMM_WORLD);
+        &sendLength, 1, MPI_INT, sizesBuffer, 1, MPI_INT, communicator);
 
     char *namesBuffer;
     {
@@ -116,7 +116,7 @@ std::vector<std::string> distributeStringsToAllRanks(
         sizesBuffer,
         displs,
         MPI_CHAR,
-        MPI_COMM_WORLD);
+        communicator);
 
     std::vector<std::string> hostnames(size);
     for (int i = 0; i < size; ++i)
