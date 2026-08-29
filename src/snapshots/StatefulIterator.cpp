@@ -360,7 +360,7 @@ auto StatefulIterator::peekCurrentlyOpenIteration() const
         return std::nullopt;
     }
     auto &s = optional.value();
-    auto const &maybeCurrentIteration = s.currentIteration();
+    auto const &maybeCurrentIteration = currentIterationIndex();
     if (!maybeCurrentIteration.has_value())
     {
         return std::nullopt;
@@ -391,6 +391,21 @@ auto StatefulIterator::peekCurrentlyOpenIteration()
     }
 }
 
+auto StatefulIterator::currentIterationIndex() const
+    -> std::optional<iteration_index_t>
+{
+    if (!m_data)
+    {
+        return std::nullopt;
+    }
+    auto &optional = *m_data;
+    if (!optional.has_value())
+    {
+        return std::nullopt;
+    }
+    auto &s = optional.value();
+    return s.currentIteration();
+}
 auto StatefulIterator::reparse_possibly_deleted_iteration(iteration_index_t idx)
     -> void
 {

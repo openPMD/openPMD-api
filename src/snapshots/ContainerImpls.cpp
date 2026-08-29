@@ -266,6 +266,12 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
         }
     }
 
+    if (auto currentIteration = base_iterator->currentIterationIndex();
+        currentIteration.has_value() && *currentIteration != key)
+    {
+        s.series.iterations.container().erase(*currentIteration);
+    }
+
     // create new
     auto &res = s.series.iterations[key];
     Iteration::BeginStepStatus status = [&]() {
