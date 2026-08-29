@@ -2494,6 +2494,100 @@ TEST_CASE("bool_test", "[serial]")
     }
 }
 
+void attributes_only_over_iterations_test(
+    std::string const &file_ending, IterationEncoding const it_encoding)
+{
+    std::string name = "../samples/attributes_only_over_iterations_";
+    if (it_encoding == IterationEncoding::fileBased)
+        name.append("f_%T");
+    else if (it_encoding == IterationEncoding::groupBased)
+        name.append("g");
+    else if (it_encoding == IterationEncoding::variableBased)
+        name.append("v");
+    name.append(".").append(file_ending);
+    std::cout << name << std::endl;
+
+    constexpr uint64_t numberOfIterations = 3;
+
+    /*
+     * Write iterations that contain ONLY attributes: no meshes, no particles,
+     * no datasets. A Series-level attribute stays constant, while a
+     * per-iteration attribute varies over the iterations.
+     */
+    {
+        Series write(name, Access::CREATE);
+        write.setIterationEncoding(it_encoding);
+
+        write.setAttribute(
+            "constantSeriesAttribute", std::string("attributes-only"));
+
+        auto iterations = write.writeIterations();
+        for (uint64_t i = 0; i < numberOfIterations; ++i)
+        {
+            auto it = iterations[i];
+            it.setAttribute("varyingIterationAttribute", i * 10);
+            it.close();
+        }
+        write.close();
+    }
+
+    /*
+     * Read the attributes back and verify that the per-iteration attribute
+     * carries the value written for its iteration.
+     */
+    {
+        Series read(name, Access::READ_ONLY);
+
+        REQUIRE(
+            read.getAttribute("constantSeriesAttribute").get<std::string>() ==
+            "attributes-only");
+
+        uint64_t iterationsRead = 0;
+        for (auto const &iteration : read.readIterations())
+        {
+            uint64_t const idx = iteration.iterationIndex;
+            REQUIRE(
+                iteration.getAttribute("varyingIterationAttribute")
+                    .get<uint64_t>() == idx * 10);
+            ++iterationsRead;
+        }
+        REQUIRE(iterationsRead == numberOfIterations);
+        read.close();
+    }
+}
+
+TEST_CASE("attributes_only_over_iterations_test", "[serial]")
+{
+    for (auto const &t : testedFileExtensions())
+    {
+        // ADIOS2 file endings all start with "bp" (bp, bp4, ...)
+        bool const isADIOS2 = t.size() >= 2 && t.substr(0, 2) == "bp";
+
+        // fileBased encoding: all backends
+        attributes_only_over_iterations_test(t, IterationEncoding::fileBased);
+
+        if (isADIOS2)
+        {
+            // ADIOS2 encodings: variableBased (groupBased skipped as
+            // requested). variableBased maps each iteration to one ADIOS2
+            // step. An iteration that holds only attributes is an
+            // attribute-only step, which only BP5 records as a distinct step;
+            // BP4 materializes a step only when variable data is written and
+            // therefore collapses attribute-only steps, so it is skipped here.
+            if (t != "bp4")
+                attributes_only_over_iterations_test(
+                    t, IterationEncoding::variableBased);
+        }
+        else
+        {
+            // Non-ADIOS2 backends support groupBased. Multi-iteration
+            // variableBased encoding requires IO steps and is ADIOS2-only.
+            attributes_only_over_iterations_test(
+                t, IterationEncoding::groupBased);
+        }
+    }
+}
+
 inline void patch_test(const std::string &backend)
 {
     Series o =
