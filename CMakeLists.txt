@@ -773,6 +773,7 @@ set(openPMD_EXAMPLE_NAMES
     13_write_dynamic_configuration
     14_toml_template
     15_compression
+    16_btd_write_parallel
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
