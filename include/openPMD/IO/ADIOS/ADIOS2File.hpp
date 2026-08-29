@@ -229,6 +229,10 @@ public:
      * on chosen ADIOS2 engine and can not be explicitly overridden by user.
      */
     bool optimizeAttributesStreaming = false;
+    /*
+     * Used for a number of BP5-specific optimizations. Written in getEngine().
+     */
+    bool m_is_bp5 = false;
 
     using ParsePreference = Parameter<Operation::OPEN_FILE>::ParsePreference;
     ParsePreference parsePreference = ParsePreference::UpFront;
