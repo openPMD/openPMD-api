@@ -738,7 +738,7 @@ void JSONIOHandlerImpl::extendDataset(
                 "[JSON] Cannot shrink the extent of a dataset")
         }
     }
-    catch (json::basic_json::type_error &)
+    catch (json::type_error &)
     {
         throw std::runtime_error(
             "[JSON] The specified location contains no valid dataset");
@@ -1260,7 +1260,7 @@ void JSONIOHandlerImpl::readDataset(
         {
             switchType<DatasetReader>(parameters.dtype, j["data"], parameters);
         }
-        catch (json::basic_json::type_error &)
+        catch (json::type_error &)
         {
             throw error::ReadError(
                 error::AffectedObject::Dataset,
@@ -2345,7 +2345,7 @@ auto JSONIOHandlerImpl::verifyDataset(
             isSame(dt, parameters.dtype),
             "[JSON] Read/Write request does not fit the dataset's type");
     }
-    catch (json::basic_json::type_error &)
+    catch (json::type_error &)
     {
         throw std::runtime_error(
             "[JSON] The given path does not contain a valid dataset.");
