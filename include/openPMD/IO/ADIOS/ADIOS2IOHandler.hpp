@@ -40,7 +40,6 @@
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
-#include <stdexcept>
 
 #if openPMD_HAVE_ADIOS2
 #include <adios2.h>
@@ -306,9 +305,12 @@ private:
         adios2::Params params;
     };
 
-    std::vector<ParameterizedOperator> defaultOperators;
+    // read operators can (currently) not be specified per dataset, so parse
+    // them once and then buffer them
+    std::vector<ParameterizedOperator> readOperators;
 
     json::TracingJSON m_config;
+    std::optional<nlohmann::json> m_buffered_dataset_config;
     static json::TracingJSON nullvalue;
 
     template <typename Callback>
@@ -347,9 +349,19 @@ private:
     // use m_config
     std::optional<std::vector<ParameterizedOperator>> getOperators();
 
+    enum class Shape
+    {
+        GlobalArray,
+        LocalValue
+    };
+
     template <typename Parameter>
-    std::vector<ParameterizedOperator> getDatasetOperators(
-        Parameter const &, Writable *, std::string const &varName);
+    auto parseDatasetConfig(
+        Parameter const &,
+        Writable *,
+        std::string const &varName,
+        std::vector<ParameterizedOperator> default_operators = {})
+        -> std::tuple<std::vector<ParameterizedOperator>, Shape>;
 
     std::string fileSuffix(bool verbose = true) const;
 
@@ -548,6 +560,10 @@ private:
         }
         // TODO leave this check to ADIOS?
         adios2::Dims shape = var.Shape();
+        if (shape == adios2::Dims{adios2::LocalValueDim})
+        {
+            return var;
+        }
         auto actualDim = shape.size();
         {
             auto requiredDim = extent.size();

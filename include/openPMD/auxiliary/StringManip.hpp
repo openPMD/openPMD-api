@@ -243,6 +243,14 @@ namespace auxiliary
         return std::forward<S>(s);
     }
 
+    /** Write a string representation of a vector or another iterable
+     *  container to a stream.
+     *
+     * @param s The stream to write to.
+     * @param vec The vector or other iterable container.
+     * @return The modified stream. Each item is
+     *         formatted using the default definition for operator<<().
+     */
     template <typename Stream, typename Vec>
     auto write_vec_to_stream(Stream &&s, Vec const &vec) -> Stream &&
     {
@@ -265,6 +273,13 @@ namespace auxiliary
         return std::forward<Stream>(s);
     }
 
+    /** Create a string representation of a vector or another iterable
+     *  container.
+     *
+     * @param vec The vector or other iterable container.
+     * @return A string that shows the items of the container. Each item is
+     *         formatted using the default definition for operator<<().
+     */
     template <typename Vec>
     auto vec_as_string(Vec const &vec) -> std::string
     {
