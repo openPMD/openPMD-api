@@ -39,7 +39,7 @@ DummyIOHandler::DummyIOHandler(std::string path, Access at)
 void DummyIOHandler::enqueue(IOTask const &)
 {}
 
-std::future<void> DummyIOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> DummyIOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

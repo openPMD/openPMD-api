@@ -58,7 +58,7 @@ namespace auxiliary
 
     OPENPMD_FOREACH_DATASET_DATATYPE(
         OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
-    OPENPMD_INSTANTIATE(void)
+    OPENPMD_INSTANTIATE(void) OPENPMD_INSTANTIATE(void const)
 #undef OPENPMD_INSTANTIATE
 #undef OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT
 
@@ -99,12 +99,16 @@ UniquePtrWithLambda<T>::UniquePtrWithLambda(
         std::unique_ptr<type>);
 
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
-    OPENPMD_INSTANTIATE(type) OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type))
+    OPENPMD_INSTANTIATE(type)                                                  \
+    OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type))                                   \
+    OPENPMD_INSTANTIATE(type const)                                            \
+    OPENPMD_INSTANTIATE(OPENPMD_ARRAY(type const))
 
-OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
+OPENPMD_FOREACH_NONVECTOR_DATATYPE(OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT)
 // Instantiate this directly, do not instantiate the
 // `std::unique_ptr<void>`-based constructor.
 template class UniquePtrWithLambda<void>;
+template class UniquePtrWithLambda<void const>;
 #undef OPENPMD_INSTANTIATE
 #undef OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT
 #undef OPENPMD_ARRAY

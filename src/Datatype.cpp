@@ -29,13 +29,6 @@
 
 namespace openPMD
 {
-void warnWrongDtype(std::string const &key, Datatype store, Datatype request)
-{
-    std::cerr << "Warning: Attribute '" << key << "' stored as " << store
-              << ", requested as " << request
-              << ". Casting unconditionally with possible loss of precision.\n";
-}
-
 std::ostream &operator<<(std::ostream &os, openPMD::Datatype const &d)
 {
     using DT = openPMD::Datatype;

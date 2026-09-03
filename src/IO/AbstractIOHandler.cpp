@@ -145,6 +145,26 @@ std::future<void> AbstractIOHandler::flush(internal::FlushParams const &params)
     return future;
 }
 
+std::future<void> AbstractIOHandler::flush(internal::ParsedFlushParams &params)
+{
+    // The flush counter indicates the number of times that m_work has been
+    // emptied. Only increment it if m_work was full before operation and is
+    // empty after operation.
+    // Enqueuers can use this counter to check if the enqueued operation has
+    // been flushed already.
+    bool increase_flush_counter = !m_work.empty();
+    auto res = this->flush_impl(params);
+    if (!m_work.empty())
+    {
+        throw error::Internal("flush() did not clear all work!");
+    }
+    if (increase_flush_counter)
+    {
+        ++*m_flushCounter;
+    }
+    return res;
+}
+
 bool AbstractIOHandler::fullSupportForVariableBasedEncoding() const
 {
     return false;

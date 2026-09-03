@@ -22,6 +22,7 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
@@ -29,9 +30,6 @@
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
-
-// comment to prevent this include from being moved by clang-format
-#include "openPMD/DatatypeMacros.hpp"
 
 #include <array>
 #include <cmath>
@@ -134,6 +132,12 @@ class RecordComponent
     friend T &internal::makeOwning(T &self, Series_type);
     friend class internal::ScientificDefaults;
     friend class Attributable;
+    friend class ConfigureLoadStore;
+    friend class ConfigureLoadStoreFromBuffer;
+    friend class ConfigureStoreChunkFromBuffer;
+    friend struct VisitorEnqueueLoadVariantWithoutFlush;
+    friend struct VisitorEnqueueLoadVariantWithFlush;
+    friend struct VisitorLoadVariant;
 
 public:
     enum class Allocation
@@ -220,6 +224,16 @@ public:
      */
     bool empty() const;
 
+    /** Prepare a load/store chunk configuration object
+     *
+     * This is the entry point for the experimental new API for loading and
+     * storing chunks. It returns a ConfigureLoadStore object that can be used
+     * to specify offset, extent, and buffer for the operation.
+     *
+     * @return ConfigureLoadStore object for configuring the operation
+     */
+    ConfigureLoadStore prepareLoadStore();
+
     /** Load and allocate a chunk of data
      *
      * Set offset to {0u} and extent to {-1u} for full selection.
@@ -230,11 +244,8 @@ public:
     template <typename T>
     std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
 
-#define OPENPMD_ENUMERATE_TYPES(type) , std::shared_ptr<type>
-    using shared_ptr_dataset_types = auxiliary::detail::variant_tail_t<
-        auxiliary::detail::bottom OPENPMD_FOREACH_DATASET_DATATYPE(
-            OPENPMD_ENUMERATE_TYPES)>;
-#undef OPENPMD_ENUMERATE_TYPES
+    using shared_ptr_dataset_types =
+        auxiliary::detail::shared_ptr_dataset_types;
 
     /** std::variant-based version of allocating loadChunk<T>(Offset, Extent)
      *
@@ -271,25 +282,6 @@ public:
      */
     template <typename T>
     void loadChunk(std::shared_ptr<T> data, Offset offset, Extent extent);
-
-    /** Load a chunk of data into pre-allocated memory, array version.
-     *
-     * @param data   Preallocated, contiguous buffer, large enough to load the
-     *               the requested data into it.
-     *               The shared pointer must own and manage the buffer.
-     *               Optimizations might be implemented based on this
-     *               assumption (e.g. skipping the operation if the backend
-     *               is the unique owner).
-     *               The array-based overload helps avoid having to manually
-     *               specify the delete[] destructor (C++17 feature).
-     * @param offset Offset within the dataset. Set to {0u} for full selection.
-     * @param extent Extent within the dataset, counted from the offset.
-     *               Set to {-1u} for full selection.
-     *               If offset is non-zero and extent is {-1u} the leftover
-     *               extent in the record component will be selected.
-     */
-    template <typename T>
-    void loadChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
 
     /** Load a chunk of data into pre-allocated memory, raw pointer version.
      *
@@ -329,18 +321,6 @@ public:
      */
     template <typename T>
     void storeChunk(std::shared_ptr<T> data, Offset offset, Extent extent);
-
-    /** Store a chunk of data from a chunk of memory, array version.
-     *
-     * @param data   Preallocated, contiguous buffer, large enough to read the
-     *               the specified data from it.
-     *               The array-based overload helps avoid having to manually
-     *               specify the delete[] destructor (C++17 feature).
-     * @param offset Offset within the dataset.
-     * @param extent Extent within the dataset, counted from the offset.
-     */
-    template <typename T>
-    void storeChunk(std::shared_ptr<T[]> data, Offset offset, Extent extent);
 
     /** Store a chunk of data from a chunk of memory, unique pointer version.
      *
@@ -505,8 +485,28 @@ private:
      */
     RecordComponent &makeEmpty(Dataset d);
 
-    void storeChunk(
-        auxiliary::WriteBuffer buffer, Datatype datatype, Offset o, Extent e);
+    void storeChunk_impl(
+        auxiliary::WriteBuffer buffer,
+        Datatype datatype,
+        internal::LoadStoreConfigWithBuffer);
+
+    template <typename T>
+    DynamicMemoryView<T> storeChunkSpan_impl(internal::LoadStoreConfig);
+    template <typename T, typename F>
+    DynamicMemoryView<T> storeChunkSpanCreateBuffer_impl(
+        internal::LoadStoreConfig, F &&createBuffer);
+
+    template <typename T>
+    void loadChunk_impl(
+        std::shared_ptr<T> const &, internal::LoadStoreConfigWithBuffer);
+    void loadChunk_impl(
+        std::shared_ptr<void> const &,
+        Datatype,
+        internal::LoadStoreConfigWithBuffer);
+    template <typename T>
+    std::shared_ptr<T> loadChunkAllocate_impl(internal::LoadStoreConfig);
+    std::shared_ptr<void> loadChunkAllocate_impl(
+        Datatype, size_t dtype_size, internal::LoadStoreConfig);
 
     // clang-format off
 OPENPMD_protected
@@ -576,6 +576,4 @@ namespace internal
 
 } // namespace openPMD
 
-#include "openPMD/UndefDatatypeMacros.hpp"
-// comment to prevent these includes from being moved by clang-format
 #include "RecordComponent.tpp"

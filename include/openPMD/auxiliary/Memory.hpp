@@ -65,6 +65,7 @@ namespace auxiliary
             [[nodiscard]] auto release() -> UniquePtrWithLambda<void>;
         };
         using SharedPtr = std::shared_ptr<void const>;
+        using ReadSharedPtr = std::shared_ptr<void>;
         /*
          * Use std::any publically since some compilers have trouble with
          * certain uses of std::variant, so hide it from them.
@@ -73,17 +74,21 @@ namespace auxiliary
          */
         std::any m_buffer;
 
-        WriteBuffer();
-        WriteBuffer(std::shared_ptr<void const> ptr);
-        WriteBuffer(UniquePtrWithLambda<void> ptr);
+        explicit WriteBuffer();
+        // @todo implementation must distinguish const types
+        template <typename T>
+        explicit WriteBuffer(std::shared_ptr<T> ptr);
+        explicit WriteBuffer(UniquePtrWithLambda<void> ptr);
 
         WriteBuffer(WriteBuffer &&) noexcept;
         WriteBuffer(WriteBuffer const &) = delete;
         WriteBuffer &operator=(WriteBuffer &&) noexcept;
         WriteBuffer &operator=(WriteBuffer const &) = delete;
 
-        WriteBuffer const &operator=(std::shared_ptr<void const> ptr);
-        WriteBuffer const &operator=(UniquePtrWithLambda<void> ptr);
+        // @todo implementation must distinguish const types
+        template <typename T>
+        WriteBuffer &operator=(std::shared_ptr<T> const &ptr);
+        WriteBuffer &operator=(UniquePtrWithLambda<void> ptr);
 
         void const *get() const;
 

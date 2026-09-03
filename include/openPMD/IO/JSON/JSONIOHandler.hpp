@@ -59,7 +59,7 @@ public:
         return "JSON";
     }
 
-    std::future<void> flush(internal::ParsedFlushParams &) override;
+    std::future<void> flush_impl(internal::ParsedFlushParams &) override;
 
 private:
     JSONIOHandlerImpl m_impl;

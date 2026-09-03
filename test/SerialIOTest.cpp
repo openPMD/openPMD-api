@@ -945,7 +945,11 @@ inline void constant_scalar(std::string const &file_ending)
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
-        E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
+        // check that const-type unique pointers work in the builder pattern
+        E_y.prepareLoadStore()
+            .extent({1, 2, 3})
+            .withUniquePtr(std::move(E).static_cast_<unsigned int const>())
+            .store();
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.snapshots()[1].meshes["E"];
@@ -1756,13 +1760,17 @@ inline void write_test(
     auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
 
     auto variantTypeDataset = rc.loadChunkVariant();
+    auto variantTypeDataset2 = rc.prepareLoadStore().loadVariant().get();
     rc.seriesFlush();
-    std::visit(
-        [](auto &&shared_ptr) {
-            std::cout << "First value in loaded chunk: '" << shared_ptr.get()[0]
-                      << '\'' << std::endl;
-        },
-        variantTypeDataset);
+    for (auto ptr : {&variantTypeDataset, &variantTypeDataset2})
+    {
+        std::visit(
+            [](auto &&shared_ptr) {
+                std::cout << "First value in loaded chunk: '"
+                          << shared_ptr.get()[0] << '\'' << std::endl;
+            },
+            *ptr);
+    }
 
 #ifndef _WIN32
     if (test_rank_table)

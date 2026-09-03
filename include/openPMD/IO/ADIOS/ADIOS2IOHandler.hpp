@@ -21,6 +21,7 @@
  */
 #pragma once
 
+#include "openPMD/Dataset.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
@@ -509,6 +510,7 @@ private:
     adios2::Variable<T> verifyDataset(
         Offset const &offset,
         Extent const &extent,
+        std::optional<MemorySelection> const &memorySelection,
         adios2::IO &IO,
         adios2::Engine &engine,
         std::string const &varName,
@@ -622,6 +624,18 @@ private:
         var.SetSelection(
             {adios2::Dims(offset.begin(), offset.end()),
              adios2::Dims(extent.begin(), extent.end())});
+
+        if (memorySelection.has_value())
+        {
+            var.SetMemorySelection(
+                {adios2::Dims(
+                     memorySelection->offset.begin(),
+                     memorySelection->offset.end()),
+                 adios2::Dims(
+                     memorySelection->extent.begin(),
+                     memorySelection->extent.end())});
+        }
+
         return var;
     }
 
@@ -629,6 +643,7 @@ private:
     {
         bool noGroupBased = false;
         bool blosc2bp5 = false;
+        bool memorySelection = false;
     } printedWarningsAlready;
 }; // ADIOS2IOHandlerImpl
 
@@ -942,7 +957,7 @@ public:
         try
         {
             auto params = internal::defaultParsedFlushParams;
-            this->flush(params);
+            this->flush_impl(params);
         }
         catch (std::exception const &ex)
         {
@@ -990,6 +1005,6 @@ public:
         return true;
     }
 
-    std::future<void> flush(internal::ParsedFlushParams &) override;
+    std::future<void> flush_impl(internal::ParsedFlushParams &) override;
 }; // ADIOS2IOHandler
 } // namespace openPMD
