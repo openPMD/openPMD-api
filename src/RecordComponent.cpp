@@ -90,7 +90,8 @@ namespace internal
         if (immediate_flush_resolved)
         {
             a.seriesFlush_impl<false>(
-                internal::FlushParams{FlushLevel::ImmediateFlush});
+                internal::FlushParams{FlushLevel::ImmediateFlush},
+                /*flush_io_handler=*/false);
             auto IOHandler = a.IOHandler();
             IOHandler->enqueue(task);
             IOHandler->flush(FlushLevel::UserFlush);
