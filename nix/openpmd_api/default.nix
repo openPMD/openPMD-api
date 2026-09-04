@@ -56,12 +56,11 @@ builder (builder_params // rec {
   propagatedBuildInputs =
     builtins.filter
       (el: el != null)
-      [
+      ([
         hdf5
         adios2
         mpi
-        mpi.dev
-      ]
+      ] ++ lib.optional (mpi != null) mpi.dev)
     ++
     (if python != null
     then [
