@@ -9,7 +9,7 @@ concurrency:
 jobs:
   flake-check:
     name: nix flake check
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
     - name: Install Nix
