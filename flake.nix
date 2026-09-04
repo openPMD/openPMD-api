@@ -8,21 +8,27 @@
     { self, nixpkgs }:
     let
 
-      # Derive a user-friendly version number from the CMake project version.
+      # Derive the version number from include/openPMD/version.hpp.
       version =
         let
-          cmakeLists = builtins.readFile ./CMakeLists.txt;
-          versionLine = builtins.head (
-            builtins.filter (
-              line:
-              builtins.isString line && builtins.match ".*project\\(openPMD VERSION ([0-9.]+)\\).*" line != null
-            ) (builtins.split "\n" cmakeLists)
-          );
-          versionString = builtins.head (
-            builtins.match ".*project\\(openPMD VERSION ([0-9.]+)\\).*" versionLine
-          );
+          versionHeader = builtins.readFile ./include/openPMD/version.hpp;
+          lines = builtins.filter builtins.isString (builtins.split "\n" versionHeader);
+
+          # Extract the value of a '#define NAME value' macro from version.hpp.
+          macroValue =
+            name:
+            let
+              line = builtins.head (builtins.filter (l: builtins.match ".*#define ${name} .*" l != null) lines);
+            in
+            builtins.head (builtins.match ".*#define ${name} (.*)" line);
+
+          major = macroValue "OPENPMDAPI_VERSION_MAJOR";
+          minor = macroValue "OPENPMDAPI_VERSION_MINOR";
+          patch = macroValue "OPENPMDAPI_VERSION_PATCH";
+          # The version label macro is a quoted string, e.g. OPENPMDAPI_VERSION_LABEL "dev".
+          label = builtins.replaceStrings [ "\"" ] [ "" ] (macroValue "OPENPMDAPI_VERSION_LABEL");
         in
-        "${versionString}-dev";
+        if label == "" then "${major}.${minor}.${patch}" else "${major}.${minor}.${patch}-${label}";
 
       # System types to support.
       supportedSystems = [
@@ -65,42 +71,17 @@
       # Command line tools provided by the packages.
       apps = forAllSystems (
         system:
-        let
-          openpmd = nixpkgsFor.${system}.openpmd_api;
-        in
-        {
-          ls = {
-            type = "app";
-            program = "${openpmd}/bin/openpmd-ls";
-          };
-          pipe = {
-            type = "app";
-            program = "${openpmd}/bin/openpmd-pipe";
-          };
-          default = {
-            type = "app";
-            program = "${openpmd}/bin/openpmd-ls";
-          };
+        import ./nix/apps.nix {
+          openpmd_api = nixpkgsFor.${system}.openpmd_api;
         }
       );
 
       # Development shell for working on openPMD-api.
       devShells = forAllSystems (
         system:
-        let
+        import ./nix/devShells.nix {
           pkgs = nixpkgsFor.${system};
-        in
-        {
-          default = pkgs.mkShell {
-            packages = with pkgs; [
-              clang-tools
-              ninja
-              nixfmt
-              pre-commit
-              ruff
-            ];
-            inputsFrom = [ pkgs.openpmd_api ];
-          };
+          openpmd_api = nixpkgsFor.${system}.openpmd_api;
         }
       );
 
