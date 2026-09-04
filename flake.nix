@@ -8,8 +8,21 @@
     { self, nixpkgs }:
     let
 
-      # Generate a user-friendly version number.
-      version = "0.18.0-dev";
+      # Derive a user-friendly version number from the CMake project version.
+      version =
+        let
+          cmakeLists = builtins.readFile ./CMakeLists.txt;
+          versionLine = builtins.head (
+            builtins.filter (
+              line:
+              builtins.isString line && builtins.match ".*project\\(openPMD VERSION ([0-9.]+)\\).*" line != null
+            ) (builtins.split "\n" cmakeLists)
+          );
+          versionString = builtins.head (
+            builtins.match ".*project\\(openPMD VERSION ([0-9.]+)\\).*" versionLine
+          );
+        in
+        "${versionString}-dev";
 
       # System types to support.
       supportedSystems = [
@@ -49,16 +62,50 @@
 
       legacyPackages = nixpkgsFor;
 
-      # # A NixOS module, if applicable (e.g. if the package provides a system service).
-      # nixosModules.hello =
-      #   { pkgs, ... }:
-      #   {
-      #     nixpkgs.overlays = [ self.overlays.default ];
+      # Command line tools provided by the packages.
+      apps = forAllSystems (
+        system:
+        let
+          openpmd = nixpkgsFor.${system}.openpmd_api;
+        in
+        {
+          ls = {
+            type = "app";
+            program = "${openpmd}/bin/openpmd-ls";
+          };
+          pipe = {
+            type = "app";
+            program = "${openpmd}/bin/openpmd-pipe";
+          };
+          default = {
+            type = "app";
+            program = "${openpmd}/bin/openpmd-ls";
+          };
+        }
+      );
 
-      #     environment.systemPackages = [ pkgs.hello ];
+      # Development shell for working on openPMD-api.
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgsFor.${system};
+        in
+        {
+          default = pkgs.mkShell {
+            packages = with pkgs; [
+              clang-tools
+              ninja
+              nixfmt
+              pre-commit
+              ruff
+            ];
+            inputsFrom = [ pkgs.openpmd_api ];
+          };
+        }
+      );
 
-      #     #systemd.services = { ... };
-      #   };
+      # The formatter used by 'nix fmt'.
+      formatter = forAllSystems (system: nixpkgsFor.${system}.nixfmt-tree);
 
       # Tests run by 'nix flake check' and by Hydra.
       checks = forAllSystems (
