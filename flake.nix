@@ -2,13 +2,10 @@
   description = "openPMD-api";
 
   # Nixpkgs / NixOS version to use.
-  inputs.nixpkgs.url = "nixpkgs/nixos-25.05";
+  inputs.nixpkgs.url = "nixpkgs/nixos-26.05";
 
   outputs = { self, nixpkgs }:
     let
-
-      # to work with older version of flakes
-      lastModifiedDate = self.lastModifiedDate or self.lastModified or "19700101";
 
       # Generate a user-friendly version number.
       version = "0.18.0-dev";
