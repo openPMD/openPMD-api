@@ -81,7 +81,6 @@
         system:
         import ./nix/devShells.nix {
           pkgs = nixpkgsFor.${system};
-          openpmd_api = nixpkgsFor.${system}.openpmd_api;
         }
       );
 
