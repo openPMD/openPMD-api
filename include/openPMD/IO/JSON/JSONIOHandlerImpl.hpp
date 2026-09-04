@@ -29,9 +29,11 @@
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/backend/Variant_internal.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
 #include <istream>
 #include <nlohmann/json.hpp>
+#include <variant>
 #if openPMD_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -153,8 +155,72 @@ void from_json(const nlohmann::json &j, std::complex<T> &p)
 }
 } // namespace std
 
+namespace openPMD::internal
+{
+auto jsonDatatypeToString(Datatype dt) -> std::string;
+
+struct JsonDatatypeHandling
+{
+    template <typename T>
+    static auto encodeDatatype(nlohmann::json &j) -> bool
+    {
+        auto const &needed_datatype =
+            jsonDatatypeToString(determineDatatype<T>());
+        if (auto it = j.find("datatype"); it != j.end())
+        {
+            return it.value().get<std::string>() == needed_datatype;
+        }
+        else
+        {
+            j["datatype"] = needed_datatype;
+            return true;
+        }
+    }
+
+    template <typename T_required>
+    static auto checkDatatype(nlohmann::json const &j) -> bool
+    {
+        auto const &needed_datatype =
+            jsonDatatypeToString(determineDatatype<T_required>());
+        if (auto it = j.find("datatype"); it != j.end())
+        {
+            return it.value().get<std::string>() == needed_datatype;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    template <typename Functor, typename... Args>
+    static auto decodeDatatype(nlohmann::json const &j, Args &&...args) -> bool
+    {
+        if (auto it = j.find("datatype"); it != j.end())
+        {
+            switchDatasetType<Functor>(
+                stringToDatatype(it.value().get<std::string>()),
+                std::forward<Args>(args)...);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+};
+} // namespace openPMD::internal
+
 namespace openPMD
 {
+namespace dataset_mode_types
+{
+    struct Dataset_t
+    {};
+    struct Template_t
+    {};
+    using External_t = std::shared_ptr<ExternalBlockStorage>;
+} // namespace dataset_mode_types
+
 class JSONIOHandlerImpl : public AbstractIOHandlerImpl
 {
     using json = nlohmann::json;
@@ -241,7 +307,99 @@ public:
 
     void touch(Writable *, Parameter<Operation::TOUCH> const &) override;
 
+    void advance(Writable *, Parameter<Operation::ADVANCE> &) override;
+
     std::future<void> flush(internal::ParsedFlushParams &params);
+
+    /*
+     * Was the config value explicitly user-chosen, or are we still working with
+     * defaults?
+     */
+    enum class SpecificationVia
+    {
+        DefaultValue,
+        Manually
+    };
+
+    /////////////////////
+    // Dataset IO mode //
+    /////////////////////
+
+    struct DatasetMode
+        : std::variant<
+              dataset_mode_types::Dataset_t,
+              dataset_mode_types::Template_t,
+              dataset_mode_types::External_t>
+    {
+        using Dataset_t = dataset_mode_types::Dataset_t;
+        using Template_t = dataset_mode_types::Template_t;
+        using External_t = dataset_mode_types::External_t;
+        constexpr static Dataset_t Dataset{};
+        constexpr static Template_t Template{};
+
+        using variant_t = std::variant<
+            dataset_mode_types::Dataset_t,
+            dataset_mode_types::Template_t,
+            External_t>;
+        using variant_t ::operator=;
+
+        // casts needed because of
+        // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90943
+        inline auto as_base() const -> variant_t const &
+        {
+            return *this;
+        }
+        inline auto as_base() -> variant_t &
+        {
+            return *this;
+        }
+    };
+
+    struct DatasetMode_s
+    {
+        // Initialized in init()
+        DatasetMode m_mode{};
+        SpecificationVia m_specificationVia = SpecificationVia::DefaultValue;
+        bool m_skipWarnings = false;
+
+        template <typename A, typename B, typename C>
+        operator std::tuple<A, B, C>()
+        {
+            return std::tuple<A, B, C>{
+                m_mode, m_specificationVia, m_skipWarnings};
+        }
+
+        template <typename F>
+        auto mapExternalStorage(F &&functor)
+        {
+            std::visit(
+                auxiliary::overloaded{
+                    [&functor](DatasetMode::External_t &externalStorage) {
+                        return static_cast<decltype(functor)>(functor)(
+                            externalStorage);
+                    },
+                    [](auto &&) {}},
+                m_mode.as_base());
+        }
+    };
+
+    ///////////////////////
+    // Attribute IO mode //
+    ///////////////////////
+
+    enum class AttributeMode
+    {
+        Short,
+        Long
+    };
+
+    struct AttributeMode_s
+    {
+        // Will be modified in init() based on the openPMD version and the
+        // active file format (JSON/TOML)
+        AttributeMode m_mode{};
+        SpecificationVia m_specificationVia = SpecificationVia::DefaultValue;
+    };
 
 private:
 #if openPMD_HAVE_MPI
@@ -276,70 +434,24 @@ private:
      */
     std::pair<std::string, std::optional<openPMD::json::TracingJSON>>
     getBackendConfig(openPMD::json::TracingJSON &) const;
+    static std::pair<std::string, std::optional<openPMD::json::TracingJSON>>
+    getBackendConfig(
+        openPMD::json::TracingJSON &, std::string const &configLocation);
 
     std::string m_originalExtension;
 
     /*
-     * Was the config value explicitly user-chosen, or are we still working with
-     * defaults?
+     * In read mode, we can only open the external block storage backend upon
+     * opening the JSON file, because it contains meta information relevant
+     * for configuring the backend.
      */
-    enum class SpecificationVia
-    {
-        DefaultValue,
-        Manually
-    };
-
-    /////////////////////
-    // Dataset IO mode //
-    /////////////////////
-
-    enum class DatasetMode
-    {
-        Dataset,
-        Template
-    };
-
-    // IOMode m_mode{};
-    // SpecificationVia m_IOModeSpecificationVia =
-    // SpecificationVia::DefaultValue; bool m_printedSkippedWriteWarningAlready
-    // = false;
-
-    struct DatasetMode_s
-    {
-        // Initialized in init()
-        DatasetMode m_mode{};
-        SpecificationVia m_specificationVia = SpecificationVia::DefaultValue;
-        bool m_skipWarnings = false;
-
-        template <typename A, typename B, typename C>
-        operator std::tuple<A, B, C>()
-        {
-            return std::tuple<A, B, C>{
-                m_mode, m_specificationVia, m_skipWarnings};
-        }
-    };
+    std::optional<openPMD::json::TracingJSON>
+        m_deferredExternalBlockstorageConfig;
     DatasetMode_s m_datasetMode;
-    DatasetMode_s retrieveDatasetMode(openPMD::json::TracingJSON &config) const;
+    DatasetMode_s
+    retrieveDatasetMode(openPMD::json::TracingJSON &config, bool do_init);
 
-    ///////////////////////
-    // Attribute IO mode //
-    ///////////////////////
-
-    enum class AttributeMode
-    {
-        Short,
-        Long
-    };
-
-    struct AttributeMode_s
-    {
-        // Will be modified in init() based on the openPMD version and the
-        // active file format (JSON/TOML)
-        AttributeMode m_mode{};
-        SpecificationVia m_specificationVia = SpecificationVia::DefaultValue;
-    };
     AttributeMode_s m_attributeMode;
-
     AttributeMode_s
     retrieveAttributeMode(openPMD::json::TracingJSON &config) const;
 
@@ -389,7 +501,8 @@ private:
     // essentially: m_i = \prod_{j=0}^{i-1} extent_j
     static Extent getMultiplicators(Extent const &extent);
 
-    static std::pair<Extent, DatasetMode> getExtent(nlohmann::json &j);
+    static std::pair<Extent, DatasetMode>
+    getExtent(nlohmann::json &j, DatasetMode const &baseMode);
 
     // remove single '/' in the beginning and end of a string
     static std::string removeSlashes(std::string);

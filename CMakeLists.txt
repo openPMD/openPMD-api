@@ -137,6 +137,7 @@ openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
+openpmd_option(AWS            "Enable AWS/S3 storage"                     AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
@@ -393,9 +394,22 @@ else()
 endif()
 unset(openPMD_REQUIRED_ADIOS2_COMPONENTS)
 
-# external library: pybind11 (optional)
-include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
+if(openPMD_USE_AWS STREQUAL AUTO)
+    find_package(AWSSDK COMPONENTS s3)
+    if(AWSSDK_FOUND)
+        set(openPMD_HAVE_AWS TRUE)
+    else()
+        set(openPMD_HAVE_AWS FALSE)
+    endif()
+elseif(openPMD_USE_AWS)
+    find_package(AWSSDK REQUIRED COMPONENTS s3)
+    set(openPMD_HAVE_AWS TRUE)
+else()
+    set(openPMD_HAVE_AWS FALSE)
+endif()
 
+#external library : pybind11(optional)
+include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 
 # Targets #####################################################################
 #
@@ -447,7 +461,12 @@ set(CORE_SOURCE
         src/snapshots/IteratorTraits.cpp
         src/snapshots/RandomAccessIterator.cpp
         src/snapshots/Snapshots.cpp
-        src/snapshots/StatefulIterator.cpp)
+        src/snapshots/StatefulIterator.cpp
+        src/toolkit/ExternalBlockStorage.cpp
+        src/toolkit/AwsBuilder.cpp
+        src/toolkit/Aws.cpp
+        src/toolkit/StdioBuilder.cpp
+        src/toolkit/Stdio.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
@@ -578,7 +597,11 @@ if(openPMD_HAVE_ADIOS2)
     endif()
 endif()
 
-# Runtime parameter and API status checks ("asserts")
+if(openPMD_HAVE_AWS)
+    target_link_libraries(openPMD PUBLIC ${AWSSDK_LIBRARIES})
+endif()
+
+#Runtime parameter and API status checks("asserts")
 if(openPMD_USE_VERIFY)
     target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=1)
 else()
@@ -747,6 +770,7 @@ set(openPMD_TEST_NAMES
 set(openPMD_CLI_TOOL_NAMES
     ls
     convert-toml-json
+    merge-json
 )
 set(openPMD_PYTHON_CLI_TOOL_NAMES
     pipe

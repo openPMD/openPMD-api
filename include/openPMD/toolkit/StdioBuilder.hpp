@@ -1,4 +1,4 @@
-/* Copyright 2019-2026 Axel Huebl, Franz Poeschel, Junmin Gu
+/* Copyright 2026 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -20,32 +20,25 @@
  */
 #pragma once
 
-#ifndef openPMD_HAS_CXX17
-#cmakedefine01 openPMD_HAS_CXX17
-#endif
+#include <optional>
+#include <string>
 
-#ifndef openPMD_HAVE_MPI
-#cmakedefine01 openPMD_HAVE_MPI
-#endif
+namespace openPMD
+{
+class ExternalBlockStorage;
+}
 
-#define openPMD_HAVE_JSON 1
+namespace openPMD::internal
+{
+struct StdioBuilder
+{
+    std::string m_directory;
+    std::optional<std::string> m_openMode = std::nullopt;
 
-#ifndef openPMD_HAVE_HDF5
-#cmakedefine01 openPMD_HAVE_HDF5
-#endif
+    auto setDirectory(std::string directory) -> StdioBuilder &;
+    auto setOpenMode(std::string openMode) -> StdioBuilder &;
 
-#ifndef openPMD_HAVE_ADIOS1
-#define openPMD_HAVE_ADIOS1 0
-#endif
-
-#ifndef openPMD_HAVE_ADIOS2
-#cmakedefine01 openPMD_HAVE_ADIOS2
-#endif
-
-#ifndef openPMD_HAVE_CUDA_EXAMPLES
-#cmakedefine01 openPMD_HAVE_CUDA_EXAMPLES
-#endif
-
-#ifndef openPMD_HAVE_AWS
-#cmakedefine01 openPMD_HAVE_AWS
-#endif
+    operator ::openPMD::ExternalBlockStorage();
+    auto build() -> ::openPMD::ExternalBlockStorage;
+};
+} // namespace openPMD::internal

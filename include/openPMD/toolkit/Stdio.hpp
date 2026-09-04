@@ -1,4 +1,4 @@
-/* Copyright 2019-2026 Axel Huebl, Franz Poeschel, Junmin Gu
+/* Copyright 2026 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -20,32 +20,27 @@
  */
 #pragma once
 
-#ifndef openPMD_HAS_CXX17
-#cmakedefine01 openPMD_HAS_CXX17
-#endif
+#include "openPMD/toolkit/ExternalBlockStorage.hpp"
 
-#ifndef openPMD_HAVE_MPI
-#cmakedefine01 openPMD_HAVE_MPI
-#endif
+namespace openPMD::internal
+{
+struct ExternalBlockStorageStdio : ExternalBlockStorageBackend
+{
+private:
+    std::string m_directory;
+    std::string m_openMode;
 
-#define openPMD_HAVE_JSON 1
-
-#ifndef openPMD_HAVE_HDF5
-#cmakedefine01 openPMD_HAVE_HDF5
-#endif
-
-#ifndef openPMD_HAVE_ADIOS1
-#define openPMD_HAVE_ADIOS1 0
-#endif
-
-#ifndef openPMD_HAVE_ADIOS2
-#cmakedefine01 openPMD_HAVE_ADIOS2
-#endif
-
-#ifndef openPMD_HAVE_CUDA_EXAMPLES
-#cmakedefine01 openPMD_HAVE_CUDA_EXAMPLES
-#endif
-
-#ifndef openPMD_HAVE_AWS
-#cmakedefine01 openPMD_HAVE_AWS
-#endif
+public:
+    ExternalBlockStorageStdio(std::string directory, std::string openMode);
+    auto
+    put(std::string const &identifier, auxiliary::WriteBuffer data, size_t len)
+        -> std::string override;
+    void
+    get(std::string const &external_ref,
+        std::shared_ptr<void> data,
+        size_t len) override;
+    [[nodiscard]] auto externalStorageLocation() const
+        -> nlohmann::json override;
+    ~ExternalBlockStorageStdio() override;
+};
+} // namespace openPMD::internal

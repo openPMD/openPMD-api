@@ -1,4 +1,4 @@
-/* Copyright 2025 Franz Poeschel
+/* Copyright 2026 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -22,22 +22,26 @@
 
 void print_help_message(char const *program_name)
 {
-    std::cout << "Usage: " << std::string(program_name) << R"( [json_or_toml]
+    std::cout << "Merge multiple JSON/TOML files into one.\nUsage: "
+              << std::string(program_name) << R"( [json_or_toml]+
 'json_or_toml' can be a JSON or TOML dataset specified inline or a reference
 to a file prepended by an '@'.
 Inline datasets will be interpreted as JSON if they start with an '{', as TOML
 otherwise. Datasets from a file will be interpreted as JSON or TOML depending
 on the file ending '.json' or '.toml' respectively.
-Inline dataset specifications can be replaced by input read from stdin.
 
-If the input is JSON, then it will be converted to TOML and written to stdout,
-equivalently from TOML to JSON.
+In order to support large numbers of files to be merged, the paths to those
+files can also be specified line-by-line per stdin, replacing the limitations
+of command line arguments.
+
+If the JSON/TOML files are mixed, then the output type (JSON or TOML) will be
+determined by the type of the first file.
 )";
 }
 
 int main(int argc, char const **argv)
 {
-    using convert = convert_json_toml<from_format_to_format::switch_>;
+    using convert = convert_json_toml<from_format_to_format::ID>;
     convert::run_application(
-        argc, argv, convert::UseStdinAs::InlineJson, print_help_message);
+        argc, argv, convert::UseStdinAs::ListOfJson, print_help_message);
 }

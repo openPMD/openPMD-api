@@ -1,4 +1,4 @@
-/* Copyright 2019-2026 Axel Huebl, Franz Poeschel, Junmin Gu
+/* Copyright 2026 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -18,34 +18,34 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include "openPMD/toolkit/StdioBuilder.hpp"
 
-#ifndef openPMD_HAS_CXX17
-#cmakedefine01 openPMD_HAS_CXX17
-#endif
+#include "openPMD/toolkit/ExternalBlockStorage.hpp"
+#include "openPMD/toolkit/Stdio.hpp"
 
-#ifndef openPMD_HAVE_MPI
-#cmakedefine01 openPMD_HAVE_MPI
-#endif
+#include <memory>
 
-#define openPMD_HAVE_JSON 1
+namespace openPMD::internal
+{
+auto StdioBuilder::setDirectory(std::string directory) -> StdioBuilder &
+{
+    m_directory = std::move(directory);
+    return *this;
+}
+auto StdioBuilder::setOpenMode(std::string openMode) -> StdioBuilder &
+{
+    m_openMode = std::move(openMode);
+    return *this;
+}
 
-#ifndef openPMD_HAVE_HDF5
-#cmakedefine01 openPMD_HAVE_HDF5
-#endif
+StdioBuilder::operator ExternalBlockStorage()
+{
+    return ExternalBlockStorage{std::make_unique<ExternalBlockStorageStdio>(
+        std::move(m_directory), std::move(m_openMode).value_or("wb"))};
+}
 
-#ifndef openPMD_HAVE_ADIOS1
-#define openPMD_HAVE_ADIOS1 0
-#endif
-
-#ifndef openPMD_HAVE_ADIOS2
-#cmakedefine01 openPMD_HAVE_ADIOS2
-#endif
-
-#ifndef openPMD_HAVE_CUDA_EXAMPLES
-#cmakedefine01 openPMD_HAVE_CUDA_EXAMPLES
-#endif
-
-#ifndef openPMD_HAVE_AWS
-#cmakedefine01 openPMD_HAVE_AWS
-#endif
+auto StdioBuilder::build() -> ExternalBlockStorage
+{
+    return *this;
+}
+} // namespace openPMD::internal
