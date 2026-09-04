@@ -36,50 +36,7 @@
     {
 
       # A Nixpkgs overlay.
-      overlays.default =
-        final: prev:
-        let
-          callPackage = final.callPackage;
-        in
-        {
-          adios2 = callPackage ./nix/adios2 {
-            python = final.python3;
-          };
-          openpmd_api = callPackage ./nix/openpmd_api {
-            inherit version;
-            python = final.python3;
-            hdf5 = final.hdf5-mpi;
-            catch2 = final.catch2_3;
-          };
-          # python overlay as in
-          # https://discourse.nixos.org/t/add-python-package-via-overlay/19783/3
-          pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
-            (python-final: python-prev: {
-              pybind11 = python-prev.pybind11.overrideAttrs (_: rec {
-                version = "v3.1.0";
-                name = "pybind11";
-
-                src = final.fetchFromGitHub {
-                  owner = "pybind";
-                  repo = "pybind11";
-                  rev = version;
-                  sha256 = "sha256-rzpe7CrgIa5Df2OrB/9mxIJd3X5DA7FX0C+w7TcmAoQ=";
-                };
-              });
-            })
-          ];
-
-          python3 =
-            let
-              self = prev.python3.override {
-                inherit self;
-                packageOverrides = prev.lib.composeManyExtensions final.pythonPackagesOverlays;
-              };
-            in
-            self;
-
-          python3Packages = final.python3.pkgs;
-        };
+      overlays.default = import ./nix/overlay.nix { inherit version; };
 
       # Provide some binary packages for selected system types.
       packages = forAllSystems (system: rec {
