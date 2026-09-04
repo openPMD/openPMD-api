@@ -38,7 +38,7 @@ auto json_dumps(py::object const &obj) -> std::string;
  *
  * The variadic parameter pack (Types) specifies types which to supply for T.
  *
- * ForEachTypeNested<Functor, T1, T2, ...>::call(...args...) will then
+ * ForEachType<Functor, T1, T2, ...>::call(...args...) will then
  * call Functor::template call<T>() for each type T in T1, T2, ...
  * one after another.
  */

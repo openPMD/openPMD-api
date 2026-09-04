@@ -40,7 +40,7 @@ struct DefineDatasetConstructor
         return dtype_from_numpy(std::move(dt));
     }
 
-    static auto resolve_datatype(py::object const& dt) -> Datatype
+    static auto resolve_datatype(py::object const &dt) -> Datatype
     {
         return dtype_from_numpy(dt);
     }
@@ -59,16 +59,27 @@ struct DefineDatasetConstructor
     template <typename Datatype_t, typename Options_t>
     static auto call(py::class_<Dataset> &ds) -> py::class_<Dataset> &
     {
+        auto options_arg = []() {
+            if constexpr (std::is_same_v<Options_t, std::string>)
+            {
+                return (py::arg("options") = "{}");
+            }
+            else
+            {
+                return py::arg("options");
+            }
+        }();
         return ds.def(
             py::init([](Datatype_t dt, Extent e, Options_t const &options) {
-                auto resolved_dtype = resolve_datatype(dt);
+                auto resolved_dtype =
+                    resolve_datatype(std::forward<Datatype_t>(dt));
                 decltype(auto) resolved_options = resolve_options(options);
                 return new Dataset{
                     resolved_dtype, std::move(e), resolved_options};
             }),
             py::arg("dtype"),
             py::arg("extent"),
-            py::arg("options") = "{}");
+            options_arg);
     }
 };
 } // namespace internal
@@ -114,7 +125,7 @@ void init_Dataset(py::module &m)
     ::auxiliary::ForEachTypeNested<
         ::internal::DefineDatasetConstructor,
         // types for Datatype param
-        std::tuple<Datatype, py::dtype, py::object const&>,
+        std::tuple<Datatype, py::dtype, py::object const &>,
         // types for options param
         std::tuple<std::string, py::object>>::call(pyDataset);
     pyDataset.attr("JOINED_DIMENSION") =
