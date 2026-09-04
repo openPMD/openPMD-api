@@ -1,0 +1,20 @@
+name: ❄️ Nix
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-nix
+  cancel-in-progress: true
+
+jobs:
+  flake-check:
+    name: nix flake check
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v22
+    - name: Cache Nix store
+      uses: DeterminateSystems/magic-nix-cache-action@v14
+    - name: Flake check
+      run: nix flake check
