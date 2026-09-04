@@ -11,6 +11,7 @@
   mpi ? null,
   python ? null,
   doCheck ? false,
+  samples ? null,
 }:
 
 let
@@ -36,22 +37,38 @@ builder (
       export CMAKE_PREFIX_PATH="${maybe_path catch2}${maybe_path toml11}${maybe_path nlohmann_json}${maybe_path pybind11}$CMAKE_PREFIX_PATH"
       ${
         if doCheck then
-          ''
-            # TODO: download samples
-          ''
+          if samples != null then
+            ''
+              # make the example datasets available to the test suite
+              # nixpkgs configures CMake out-of-source into cmakeBuildDir
+              mkdir -p "''${cmakeBuildDir:-build}/samples"
+              cp -R ${samples}/. "''${cmakeBuildDir:-build}/samples/"
+            ''
+          else
+            ""
         else
           ""
       }
     '';
 
-    postBuild =
-      if doCheck then
-        ''
-          ctest --output-on-failure
-          false
-        ''
-      else
-        "";
+    # the test suite is driven by CTest; example data is expected to be
+    # present when running the checks
+    #
+    # several tests launch MPI internally (via mpiexec or by importing the
+    # MPI-enabled Python binding) and are order-, timing- and
+    # resource-sensitive inside the restricted, single-node Nix sandbox:
+    #   - the C++ parallel tests read back append-mode iterations whose
+    #     on-disk order depends on the MPI write scheduling,
+    #   - MPI/UCX/PmiX thread and process creation is limited in the sandbox
+    #     (cgroup pids.max), so running many such tests at once is flaky.
+    # They are skipped here and meant to be run in a proper MPI environment.
+    # CTest is forced to run the remaining tests serially (-j 1) since
+    # CMake 4 defaults to parallel execution, which exhausts the sandbox
+    # process limit.
+    doInstallCheck = doCheck;
+    installCheckPhase = ''
+      ctest --output-on-failure -j 1 -E 'MPI\.|CLI\.pipe\.py|Example\.py\..*_parallel'
+    '';
 
     postInstall = ''
       sed -Ei 's|=.*}/'"$out"'|='"$out"'|' $out/lib/pkgconfig/openPMD.pc

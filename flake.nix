@@ -93,9 +93,14 @@
         system:
         with self.packages.${system};
 
+        let
+          pkgs = nixpkgsFor.${system};
+        in
         {
-          # Additional tests, if applicable.
-          test = openpmd_api.override { doCheck = true; };
+          test = openpmd_api.override {
+            doCheck = true;
+            samples = pkgs.openpmd_example_datasets;
+          };
         }
       );
 
