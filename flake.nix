@@ -50,6 +50,34 @@
             python = final.python3;
             hdf5 = final.hdf5-mpi;
           };
+          # python overlay as in
+          # https://discourse.nixos.org/t/add-python-package-via-overlay/19783/3
+          pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+            (python-final: python-prev: {
+              pybind11 = python-prev.pybind11.overrideAttrs (_: rec {
+                version = "v3.1.0";
+                name = "pybind11";
+
+                src = final.fetchFromGitHub {
+                  owner = "pybind";
+                  repo = "pybind11";
+                  rev = version;
+                  sha256 = "sha256-rzpe7CrgIa5Df2OrB/9mxIJd3X5DA7FX0C+w7TcmAoQ=";
+                };
+              });
+            })
+          ];
+
+          python3 =
+            let
+              self = prev.python3.override {
+                inherit self;
+                packageOverrides = prev.lib.composeManyExtensions final.pythonPackagesOverlays;
+              };
+            in
+            self;
+
+          python3Packages = final.python3.pkgs;
         };
 
       # Provide some binary packages for selected system types.
@@ -60,6 +88,8 @@
         # package.
         default = openpmd_api;
       });
+
+      legacyPackages = nixpkgsFor;
 
       # # A NixOS module, if applicable (e.g. if the package provides a system service).
       # nixosModules.hello =
