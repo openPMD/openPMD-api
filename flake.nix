@@ -49,6 +49,7 @@
             inherit version;
             python = final.python3;
             hdf5 = final.hdf5-mpi;
+            catch2 = final.catch2_3;
           };
           # python overlay as in
           # https://discourse.nixos.org/t/add-python-package-via-overlay/19783/3
