@@ -26,3 +26,15 @@ namespace openPMD::internal
 FileState::FileState(std::string name_in) : name(std::move(name_in))
 {}
 } // namespace openPMD::internal
+
+auto std::less<openPMD::internal::SharedFileState>::operator()(
+    first_argument_type const &first, second_argument_type const &second) const
+    -> result_type
+{
+    if (!first || !second || !*first || !*second)
+    {
+        return std::less<>()(first.get(), second.get());
+    }
+    // If possible, compare by name
+    return less<>()((**first).name, (**second).name);
+}
