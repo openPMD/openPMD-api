@@ -43,3 +43,15 @@ struct FileState
 };
 using SharedFileState = std::shared_ptr<std::optional<FileState>>;
 } // namespace openPMD::internal
+
+template <>
+struct std::less<openPMD::internal::SharedFileState>
+{
+    using first_argument_type = openPMD::internal::SharedFileState;
+    using second_argument_type = first_argument_type;
+    using result_type = bool;
+
+    auto
+    operator()(first_argument_type const &, second_argument_type const &) const
+        -> result_type;
+};
