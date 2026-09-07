@@ -46,12 +46,10 @@ class APITest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Setting up the test class."""
-        pass
 
     @classmethod
     def tearDownClass(cls):
         """Tearing down the test class."""
-        pass
 
     def setUp(self):
         """Setting up a test."""
@@ -206,7 +204,7 @@ class APITest(unittest.TestCase):
         series.set_attribute("pyint", 13)
         series.set_attribute("pyfloat", 3.1416)
         series.set_attribute("pystring", "howdy!")
-        series.set_attribute("pystring2", str("howdy, too!"))
+        series.set_attribute("pystring2", "howdy, too!")
         series.set_attribute("pystring3", b"howdy, again!")
         series.set_attribute("pybool", False)
 
@@ -2099,7 +2097,6 @@ class APITest(unittest.TestCase):
         # we keep a reference on the data until we are done flush()ing
         d = r_E_x[()]
         del d
-        return
 
     def writeFromTemporary(self, ext):
         name = "../samples/write_from_temporary_python." + ext
@@ -2576,8 +2573,8 @@ class APITest(unittest.TestCase):
             return
 
         try:
-            import pickle
             import multiprocessing
+            import pickle
         except ImportError:
             return
 
