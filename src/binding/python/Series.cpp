@@ -113,12 +113,9 @@ struct DefineSeriesConstructorPerPathType
     }
 #endif
 
-    template <typename TupleType>
+    template <typename PathType, typename JsonCfgType>
     static void call(py::class_<Series, Attributable> &py_class)
     {
-        using PathType = typename std::tuple_element<0, TupleType>::type;
-        using JsonCfgType = typename std::tuple_element<1, TupleType>::type;
-
         py_class
             .def(
                 py::init([](PathType const &filepath,
@@ -379,23 +376,19 @@ not possible once it has been closed.
     (void)iterations;
 
     py::class_<Series, Attributable> cl(m, "Series");
-    ::auxiliary::ForEachType<
+
+    ::auxiliary::ForEachTypeNested<
         ::internal::DefineSeriesConstructorPerPathType,
-    // First tuple components are eligible types for the path argument
-    // second component for the config argument
-    // py::object needs to always come last, as a catch-all pattern
 #if openPMD_USE_FILESYSTEM_HEADER
-        std::tuple<std::string, std::string>,
+        // path argument types
         std::tuple<std::string, std::filesystem::path>,
-        std::tuple<std::string, py::object>,
-        std::tuple<std::filesystem::path, std::string>,
-        std::tuple<std::filesystem::path, std::filesystem::path>,
-        std::tuple<std::filesystem::path, py::object>
+        // config argument types
+        std::tuple<std::string, std::filesystem::path, py::object>
 #else
-        std::tuple<std::string, std::string>,
+        // path argument types
         std::tuple<std::string, py::object>,
-        std::tuple<py::object, std::string>,
-        std::tuple<py::object, py::object>
+        // config argument types
+        std::tuple<std::string, py::object>
 #endif
         >::template call<py::class_<Series, Attributable> &>(cl);
     //                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
