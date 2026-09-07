@@ -66,7 +66,7 @@ repos:
 # clang-format v13
 #   to run manually, use .github/workflows/clang-format/clang-format.sh
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v22.1.5
+  rev: v23.1.0
   hooks:
   - id: clang-format
     # By default, the clang-format hook configures:
@@ -86,7 +86,7 @@ repos:
     name: pycln (python)
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.1
+  rev: v0.16.6
 
   hooks:
   - id: ruff-check
