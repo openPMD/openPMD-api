@@ -17,6 +17,10 @@
 let
   pybind11 = python.pkgs.pybind11 or null;
 
+  # The caller's `doCheck` flag also names a derivation attribute below, so
+  # capture its value here to avoid a self-referential `rec` binding.
+  runChecks = doCheck;
+
   # for key `format`
   # pkgs/development/interpreters/python/mk-python-derivation.nix
   builder = if python != null then python.pkgs.buildPythonPackage else stdenv.mkDerivation;
@@ -27,7 +31,7 @@ in
 builder (
   builder_params
   // rec {
-    inherit version doCheck;
+    inherit version;
     pname = "openpmd-api";
 
     src = ../..;
@@ -36,7 +40,7 @@ builder (
       # wont find these three otherwise
       export CMAKE_PREFIX_PATH="${maybe_path catch2}${maybe_path toml11}${maybe_path nlohmann_json}${maybe_path pybind11}$CMAKE_PREFIX_PATH"
       ${
-        if doCheck then
+        if runChecks then
           if samples != null then
             ''
               # make the example datasets available to the test suite
@@ -65,7 +69,13 @@ builder (
     # CTest is forced to run the remaining tests serially (-j 1) since
     # CMake 4 defaults to parallel execution, which exhausts the sandbox
     # process limit.
-    doInstallCheck = doCheck;
+    # Testing is driven by CTest, but only from installCheckPhase (see below)
+    # so it runs exactly once. buildPythonPackage has no checkPhase and
+    # internally remaps doCheck → doInstallCheck (mk-python-derivation.nix);
+    # for the plain stdenv path we must not run the generic checkPhase either,
+    # otherwise ctest would run twice when doCheck = true.
+    doCheck = if python != null then runChecks else false;
+    doInstallCheck = runChecks;
     installCheckPhase = ''
       ctest --output-on-failure -j 1 -E 'MPI\.|CLI\.pipe\.py|Example\.py\..*_parallel'
     '';
@@ -101,8 +111,8 @@ builder (
     );
 
     cmakeFlags = [
-      (lib.cmakeBool "openPMD_BUILD_TESTING" doCheck)
-      (lib.cmakeBool "openPMD_BUILD_EXAMPLES" doCheck)
+      (lib.cmakeBool "openPMD_BUILD_TESTING" runChecks)
+      (lib.cmakeBool "openPMD_BUILD_EXAMPLES" runChecks)
       (lib.cmakeBool "openPMD_USE_ADIOS2" (adios2 != null))
       (lib.cmakeBool "openPMD_USE_HDF5" (hdf5 != null))
       (lib.cmakeBool "openPMD_USE_MPI" (mpi != null))
@@ -123,7 +133,7 @@ builder (
         [ ]
     )
     ++ (
-      if mpi != null && doCheck then
+      if mpi != null && runChecks then
         [
           "-DMPIEXEC_EXECUTABLE=${mpi}/bin/mpiexec"
         ]
