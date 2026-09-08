@@ -134,8 +134,8 @@ auto ConvertibleContainer<CustomHierarchy>::isDataset() -> bool
     return this->writable().objectType.isDataset();
 }
 
-template <>
-auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
+template <typename MappedType>
+auto ConvertibleContainer<MappedType>::asDataset() -> RecordComponent
 {
     auto castableToConstantDataset = [&]() {
         return this->containsAttribute("value") &&
@@ -191,6 +191,40 @@ auto ConvertibleContainer<CustomHierarchy>::asDataset() -> RecordComponent
         }
     }
 }
+
+template <>
+auto ConvertibleContainer<CustomHierarchy>::datasets()
+    -> ConvertibleContainer<RecordComponent>
+{
+    ConvertibleContainer<RecordComponent> res;
+    res.m_attri->cloneFrom(*this->m_attri);
+    auto &container = res.container_front();
+    for (auto &[key, subgroup] : *this)
+    {
+        if (!subgroup.isDataset())
+        {
+            continue;
+        }
+        container.emplace(key, subgroup.asDataset());
+    }
+    return res;
+}
+
+template <>
+auto ConvertibleContainer<RecordComponent>::datasets()
+    -> ConvertibleContainer<RecordComponent>
+{
+    return *this;
+}
+
+template <typename MappedType>
+auto ConvertibleContainer<MappedType>::subgroups() -> CustomHierarchy
+{
+    return this->customHierarchies();
+}
+
+template class ConvertibleContainer<CustomHierarchy>;
+template class ConvertibleContainer<RecordComponent>;
 
 CustomHierarchy::CustomHierarchy() : ConvertibleContainer(NoInit{})
 {

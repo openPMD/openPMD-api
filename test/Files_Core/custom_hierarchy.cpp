@@ -74,6 +74,13 @@ void write(
     //     "ALS PRIMA BALLERINA ALS WEIB ALS FEMME FATALE");
     fully_custom_dataset.storeChunk(Exdata, {0}, {3});
 
+    auto fully_custom_dataset_2 =
+        iteration.customHierarchies()["fully"]["custom"].datasets()["dataset2"];
+    fully_custom_dataset_2.resetDataset({Datatype::INT, {3}});
+    fully_custom_dataset.setComment(
+        "ALS PRIMA BALLERINA ALS WEIB ALS FEMME FATALE");
+    fully_custom_dataset_2.storeChunk(Exdata, {0}, {3});
+
     auto fully_custom_constant_dataset =
         iteration.customHierarchies()["fully"]["custom"]["constant_dataset"]
             .asDataset();
@@ -110,17 +117,26 @@ void read(
         REQUIRE(Ex_data.get()[i + 3] == (int)i + 1);
     }
 
-    auto custom_data =
-        iteration.customHierarchies()["fully"]["custom"]["dataset"]
-            .asDataset()
-            .loadChunk<int>();
+    auto custom_data = iteration.customHierarchies()["fully"]["custom"]
+                           .datasets()["dataset"]
+                           .loadChunk<int>();
     iteration.seriesFlush();
     for (size_t i = 0; i < 3; ++i)
     {
         REQUIRE(custom_data.get()[i] == (int)i + 1);
     }
-    // TODO the read(0) should be enough even without access policy, but it isnt
-    // fix
+
+    auto custom_data_2 = iteration.customHierarchies()["fully"]
+                             .datasets()
+                             .subgroups()["custom"]["dataset2"]
+                             .asDataset()
+                             .loadChunk<int>();
+    iteration.seriesFlush();
+    for (size_t i = 0; i < 3; ++i)
+    {
+        REQUIRE(custom_data_2.get()[i] == (int)i + 1);
+    }
+
     iteration.customHierarchies().read(0).printRecursively();
     auto constant_dataset =
         iteration.customHierarchies()["fully"]["custom"]["constant_dataset"]
