@@ -10,7 +10,7 @@ import sys
 import unittest
 
 # Import suites to run.
-from API.APITest import APITest
+from api.api_test import api_test
 
 
 # Define the test suite.
@@ -22,7 +22,7 @@ def suite():
     if env_name in environ:
         test_loader.testMethodPrefix = environ[env_name]
     suites = [
-        test_loader.loadTestsFromTestCase(testCaseClass=APITest),
+        test_loader.loadTestsFromTestCase(testCaseClass=api_test),
     ]
 
     return unittest.TestSuite(suites)

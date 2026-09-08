@@ -1,7 +1,7 @@
 from . import openpmd_api_cxx as cxx
-from .DaskArray import record_component_to_daskarray
-from .DaskDataFrame import particles_to_daskdataframe
-from .DataFrame import (
+from .dask_array import record_component_to_daskarray
+from .dask_data_frame import particles_to_daskdataframe
+from .data_frame import (
     iterations_to_cudf,
     iterations_to_dataframe,
     particles_to_dataframe,

@@ -51,8 +51,8 @@ jobs:
         # openpmd_api reproduces the ImpactX WASM teardown fault (coload_repro.py).
         CIBW_TEST_REQUIRES: numpy h5py
         # APITest uses ../samples paths, so download the samples under test/python
-        # and run Test.py from test/python/unittest -- mirroring the native ctest,
-        # which runs `Test.py -v` from that WORKING_DIRECTORY (see CMakeLists.txt).
+        # and run test.py from test/python/unittest -- mirroring the native ctest,
+        # which runs `test.py -v` from that WORKING_DIRECTORY (see CMakeLists.txt).
         CIBW_BEFORE_TEST: "bash {project}/share/openPMD/download_samples.sh {project}/test/python"
         # Co-load regression + full suite, both enforced. coload_repro.py imports
         # openpmd_api then h5py (a second, independently bundled HDF5) and runs a
@@ -61,4 +61,4 @@ jobs:
         # co-loaded (its own h5py-interop tests exercise the co-load too).
         CIBW_TEST_COMMAND: >
           python {project}/test/python/coload_repro.py &&
-          cd {project}/test/python/unittest && python Test.py -v
+          cd {project}/test/python/unittest && python test.py -v

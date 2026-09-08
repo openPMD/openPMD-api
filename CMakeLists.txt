@@ -729,7 +729,7 @@ if(openPMD_HAVE_PYTHON)
         endforeach()
     endfunction()
     copy_aux_py(
-        __init__.py DaskArray.py DaskDataFrame.py DataFrame.py
+        __init__.py dask_array.py dask_data_frame.py data_frame.py
         ls/__init__.py   ls/__main__.py
         pipe/__init__.py pipe/__main__.py
     )
@@ -1291,7 +1291,7 @@ if(openPMD_BUILD_TESTING)
             if(EXAMPLE_DATA_FOUND)
                 add_test(NAME Unittest.py
                     COMMAND ${Python_EXECUTABLE}
-                        ${openPMD_SOURCE_DIR}/test/python/unittest/Test.py -v
+                        ${openPMD_SOURCE_DIR}/test/python/unittest/test.py -v
                     WORKING_DIRECTORY
                         ${openPMD_RUNTIME_OUTPUT_DIRECTORY}
                 )

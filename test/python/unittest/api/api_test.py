@@ -24,7 +24,7 @@ except ImportError:
     print("numpy NOT found. Skipping most N-dim data and load tests.")
     found_numpy = False
 
-from TestUtilities.TestUtilities import generateTestFilePath
+from test_utilities.test_utilities import generateTestFilePath
 
 tested_file_extensions = [
     ext
@@ -40,7 +40,7 @@ def is_pyodide():
     return "pyodide" in sys.modules
 
 
-class APITest(unittest.TestCase):
+class api_test(unittest.TestCase):
     """Test class testing the openPMD python API (plus some IO)."""
 
     @classmethod

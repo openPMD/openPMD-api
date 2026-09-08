@@ -13,12 +13,3 @@ docstring-code-format = true
 
 [tool.ruff.lint.isort]
 known-first-party = ["openpmd_api", "openpmd_api_cxx"]
-
-[tool.ruff.lint.per-file-ignores]
-# PascalCase module names are used on purpose (public API / test entries)
-"src/binding/python/openpmd_api/DaskArray.py" = ["N999"]
-"src/binding/python/openpmd_api/DaskDataFrame.py" = ["N999"]
-"src/binding/python/openpmd_api/DataFrame.py" = ["N999"]
-"test/python/unittest/API/APITest.py" = ["N999"]
-"test/python/unittest/Test.py" = ["N999"]
-"test/python/unittest/TestUtilities/TestUtilities.py" = ["N999"]
