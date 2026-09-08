@@ -56,7 +56,7 @@ template <typename MappedType>
 class ConvertibleContainer : public Container<MappedType>
 {
     template <typename>
-    friend class ConversibleContainer;
+    friend class ConvertibleContainer;
     friend class CustomHierarchy;
 
 protected:
@@ -69,10 +69,16 @@ protected:
 
 private:
     explicit ConvertibleContainer() = default;
+    ConvertibleContainer(Attributable::NoInit)
+        : Container_t(Attributable::NoInit{})
+    {}
 
 public:
     auto isDataset() -> bool;
     auto asDataset() -> RecordComponent;
+
+    auto datasets() -> ConvertibleContainer<RecordComponent>;
+    auto subgroups() -> CustomHierarchy;
     // TODO also: asContainerOf()
 };
 
