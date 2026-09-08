@@ -28,7 +28,6 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
-#include <bits/types/FILE.h>
 #include <memory>
 #include <set>
 #include <stdexcept>
