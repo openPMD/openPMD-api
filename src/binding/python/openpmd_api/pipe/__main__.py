@@ -179,7 +179,7 @@ class IncreaseGranularity(io.PartialStrategy):
         def hosts_in_order(rank_assignment):
             already_seen = set()
             res = []
-            for _, hostname in rank_assignment.items():
+            for hostname in rank_assignment.values():
                 if hostname not in already_seen:
                     already_seen.add(hostname)
                     res.append(hostname)
@@ -238,12 +238,12 @@ class MergingStrategy(io.Strategy):
         res = self.inner_strategy.assign(
             assignment, in_ranks, out_ranks, my_rank, num_ranks
         )
-        for out_rank, assignment in res.items():
-            merged = assignment.merge_chunks_from_same_sourceID()
-            assignment.clear()
+        for out_assignment in res.values():
+            merged = out_assignment.merge_chunks_from_same_sourceID()
+            out_assignment.clear()
             for in_rank, chunks in merged.items():
                 for chunk in chunks:
-                    assignment.append(
+                    out_assignment.append(
                         io.WrittenChunkInfo(chunk.offset, chunk.extent, in_rank)
                     )
         return res
@@ -388,7 +388,7 @@ class pipe:
             io.Patch_Record,
         ]
         is_container = any(
-            [isinstance(src, container_type) for container_type in container_types]
+            isinstance(src, container_type) for container_type in container_types
         )
 
         if isinstance(src, io.Series):
@@ -454,9 +454,7 @@ class pipe:
                     self.comm.rank,
                     self.comm.size,
                 )
-                for chunk in (
-                    my_chunks[self.comm.rank] if self.comm.rank in my_chunks else []
-                ):
+                for chunk in my_chunks.get(self.comm.rank, []):
                     if debug:
                         end = chunk.offset.copy()
                         for i in range(len(end)):

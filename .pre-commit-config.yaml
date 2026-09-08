@@ -84,6 +84,10 @@ repos:
   hooks:
   - id: pycln
     name: pycln (python)
+    # The package __init__ re-exports `*` from the compiled openpmd_api_cxx
+    # module, which pycln cannot expand. The `# noqa` comments needed to
+    # silence pycln would otherwise be flagged/removed by ruff's RUF100.
+    exclude: ^src/binding/python/openpmd_api/__init__.py$
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.16.6

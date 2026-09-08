@@ -217,7 +217,7 @@ setup(
         "Tracker": "https://github.com/openPMD/openPMD-api/issues",
     },
     ext_modules=[CMakeExtension("openpmd_api_cxx")],
-    cmdclass=dict(build_ext=CMakeBuild),
+    cmdclass={"build_ext": CMakeBuild},
     # scripts=['openpmd-ls'],
     zip_safe=False,
     python_requires=">=3.10",

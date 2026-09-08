@@ -15,7 +15,7 @@ if __name__ == "__main__":
         io.Access.read_only,
         {"defer_iteration_parsing": True},
     )
-    print("Read a Series with openPMD standard version %s" % series.openPMD)
+    print(f"Read a Series with openPMD standard version {series.openPMD}")
 
     print(f"The Series contains {len(series.snapshots())} iterations:")
     for i in series.snapshots():
