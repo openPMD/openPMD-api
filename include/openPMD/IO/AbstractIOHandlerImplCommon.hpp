@@ -217,6 +217,11 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::
         search = writable->parent;
         while (!search->fileState->has_value())
         {
+            if (!search->parent)
+            {
+                throw std::runtime_error(
+                    "[refreshFileFromParent] No active file in the ancestors.");
+            }
             search->fileState = file;
             search = search->parent;
         }
