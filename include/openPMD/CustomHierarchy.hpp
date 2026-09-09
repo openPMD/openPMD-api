@@ -26,6 +26,7 @@
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/auxiliary/Export.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/Writable.hpp"
@@ -109,6 +110,18 @@ namespace traits
         template <typename Container, typename Iterator>
         void emplace_object_as_customely_managed(Container &cont, Iterator &it)
         {
+            auto cast_to_custom_hierarchy = [&it]() {
+                using MappedType = std::remove_cv_t<
+                    std::remove_reference_t<decltype(it->second)>>;
+                if constexpr (std::is_same_v<MappedType, CustomHierarchy>)
+                {
+                    return it->second;
+                }
+                else
+                {
+                    return it->second.customHierarchies();
+                }
+            };
             auto &writable = it->second.writable();
 
             // These should be different
@@ -146,13 +159,25 @@ namespace traits
                 group_metadata
                     ->m_children_managed_as_custom_hierarchy[it->first] =
                     // NO move!! The iterator must stay alive
-                    std::make_shared<CustomHierarchy>(it->second);
+                    std::make_shared<CustomHierarchy>(cast_to_custom_hierarchy());
             }
         }
     } // namespace detail
 
     template <>
     struct GenerationPolicy<CustomHierarchy>
+    {
+        constexpr static bool is_noop = false;
+        template <typename Container, typename Iterator>
+        void operator()(Container &cont, Iterator &it)
+        {
+            detail::emplace_object_as_customely_managed<Container, Iterator>(
+                cont, it);
+        }
+    };
+
+    template <>
+    struct GenerationPolicy<CustomDataset>
     {
         constexpr static bool is_noop = false;
         template <typename Container, typename Iterator>
