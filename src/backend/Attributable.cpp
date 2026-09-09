@@ -226,7 +226,9 @@ void Attributable::customHierarchyFlush(
             auto backpointer = subpath.writable().attributable;
             auto casted_backpointer =
                 dynamic_cast<CustomHierarchy::Data_t *>(backpointer);
-            if (!casted_backpointer)
+            auto casted_backpointer2 =
+                dynamic_cast<CustomDataset::Data_t *>(backpointer);
+            if (!casted_backpointer && !casted_backpointer2)
             {
                 throw error::Internal(
                     "SharedAttributableData::m_children_managed_as_custom_"
