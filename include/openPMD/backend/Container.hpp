@@ -216,6 +216,7 @@ class Container : virtual public Attributable
     template <typename>
     friend class internal::EraseStaleEntries;
     friend class StatefulIterator;
+    friend struct traits::ElementAccessPolicy<CustomHierarchy>;
 
     using Self_t = Container<T, T_key, T_container>;
 
@@ -335,6 +336,9 @@ protected:
     {
         return this->writable().objectType.requireGroup()->m_children;
     }
+
+    void syncContainers(
+        internal::object_type::GroupMetaData const &group_data) const;
 
 public:
     using key_type = typename InternalContainer::key_type;
