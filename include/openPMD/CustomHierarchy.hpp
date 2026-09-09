@@ -48,6 +48,14 @@ namespace internal
 
 class CustomHierarchy;
 
+class CustomDataset : public RecordComponent
+{
+    template <typename>
+    friend class ConvertibleContainer;
+    friend class CustomHierarchy;
+    friend class Attributable;
+};
+
 /*
  * This is its own class, so the return value of asContainerOf() is also
  * convsertible again.
@@ -75,9 +83,9 @@ private:
 
 public:
     auto isDataset() -> bool;
-    auto asDataset() -> RecordComponent;
+    auto asDataset() -> CustomDataset;
 
-    auto datasets() -> ConvertibleContainer<RecordComponent>;
+    auto datasets() -> ConvertibleContainer<CustomDataset>;
     auto subgroups() -> CustomHierarchy;
     // TODO also: asContainerOf()
 };
@@ -96,12 +104,10 @@ namespace traits
             internal::object_type::GroupMetaData const &);
     };
 
-    template <>
-    struct GenerationPolicy<CustomHierarchy>
+    namespace detail
     {
-        constexpr static bool is_noop = false;
         template <typename Container, typename Iterator>
-        void operator()(Container &cont, Iterator &it)
+        void emplace_object_as_customely_managed(Container &cont, Iterator &it)
         {
             auto &writable = it->second.writable();
 
@@ -142,6 +148,18 @@ namespace traits
                     // NO move!! The iterator must stay alive
                     std::make_shared<CustomHierarchy>(it->second);
             }
+        }
+    } // namespace detail
+
+    template <>
+    struct GenerationPolicy<CustomHierarchy>
+    {
+        constexpr static bool is_noop = false;
+        template <typename Container, typename Iterator>
+        void operator()(Container &cont, Iterator &it)
+        {
+            detail::emplace_object_as_customely_managed<Container, Iterator>(
+                cont, it);
         }
     };
 } // namespace traits

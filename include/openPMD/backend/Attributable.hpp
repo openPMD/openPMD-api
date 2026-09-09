@@ -50,6 +50,11 @@ namespace traits
     struct GenerationPolicy;
     template <typename>
     struct ElementAccessPolicy;
+    namespace detail
+    {
+        template <typename Container, typename Iterator>
+        void emplace_object_as_customely_managed(Container &cont, Iterator &it);
+    }
 } // namespace traits
 class AbstractFilePosition;
 class Attributable;
@@ -270,6 +275,9 @@ class Attributable
     friend class CustomHierarchy;
     template <typename>
     friend struct traits::ElementAccessPolicy;
+    template <typename Container, typename Iterator>
+    friend void traits::detail::emplace_object_as_customely_managed(
+        Container &cont, Iterator &it);
 
 protected:
     // tag for internal constructor
