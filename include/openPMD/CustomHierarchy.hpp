@@ -159,7 +159,8 @@ namespace traits
                 group_metadata
                     ->m_children_managed_as_custom_hierarchy[it->first] =
                     // NO move!! The iterator must stay alive
-                    std::make_shared<CustomHierarchy>(cast_to_custom_hierarchy());
+                    std::make_shared<CustomHierarchy>(
+                        cast_to_custom_hierarchy());
             }
         }
     } // namespace detail
