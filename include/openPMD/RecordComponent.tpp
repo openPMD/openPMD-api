@@ -96,7 +96,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
      * so we might need to do it now.
      */
     auto &rc = get();
-    if (!rc.m_dataset.has_value())
+    if (!rc.dataset().has_value())
     {
         throw error::WrongAPIUsage(
             "[RecordComponent] Must specify dataset type and extent before "
@@ -134,7 +134,7 @@ RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
         }
         if (!this->written())
         {
-            Parameter<Operation::CREATE_DATASET> dCreate(rc.m_dataset.value());
+            Parameter<Operation::CREATE_DATASET> dCreate(rc.dataset().value());
             dCreate.name = Attributable::get().m_writable.ownKeyWithinParent;
             IOHandler()->enqueue(IOTask(this, dCreate));
 

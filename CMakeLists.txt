@@ -402,6 +402,7 @@ include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 set(CORE_SOURCE
         src/config.cpp
         src/ChunkInfo.cpp
+        src/CustomHierarchy.cpp
         src/Dataset.cpp
         src/Datatype.cpp
         src/Error.cpp
@@ -430,6 +431,7 @@ set(CORE_SOURCE
         src/backend/BaseRecord.cpp
         src/backend/BaseRecordComponent.cpp
         src/backend/Container.cpp
+        src/backend/HierarchyVisitor.cpp
         src/backend/MeshRecordComponent.cpp
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
@@ -867,6 +869,7 @@ if(openPMD_BUILD_TESTING)
             list(APPEND ${out_list}
                 test/Files_Core/automatic_variable_encoding.cpp
                 test/Files_Core/read_nonexistent_attribute.cpp
+                test/Files_Core/custom_hierarchy.cpp
             )
         endif()
     endmacro()

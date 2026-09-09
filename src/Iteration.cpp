@@ -54,14 +54,14 @@ namespace openPMD
 using internal::CloseStatus;
 using internal::DeferredParseAccess;
 
-void Meshes::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Meshes::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Meshes>(v, recursive);
+    visitHierarchyContainer<Meshes>(v, recursive);
 }
 
-void Particles::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Particles::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Particles>(v, recursive);
+    visitHierarchyContainer<Particles>(v, recursive);
 }
 
 Iteration::Iteration() : Attributable(NoInit())
@@ -254,7 +254,7 @@ bool Iteration::closedByWriter() const
     }
 }
 
-void Iteration::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Iteration::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
     if (recursive)
     {
@@ -370,6 +370,9 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 {
     Parameter<Operation::TOUCH> touch;
     IOHandler()->enqueue(IOTask(&writable(), touch));
+
+    customHierarchyFlush(flushParams, /* managed_as_custom_object = */ false);
+
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         for (auto &m : meshes)
@@ -403,6 +406,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         {
             auto meshesPath = set_and_get_mp_path(
                 "meshesPath", "meshes/", &Series::setMeshesPath);
+            meshes.writable().objectType.requireGroup()->phantom = false;
             if (meshes.dirtyRecursive())
             {
                 meshes.flush(meshesPath, flushParams);
@@ -421,6 +425,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
         {
             auto particlesPath = set_and_get_mp_path(
                 "particlesPath", "particles/", &Series::setParticlesPath);
+            particles.writable().objectType.requireGroup()->phantom = false;
             if (particles.dirtyRecursive())
             {
                 particles.flush(particlesPath, flushParams);
@@ -437,6 +442,7 @@ void Iteration::flush(internal::FlushParams const &flushParams)
 
         flushAttributes(flushParams);
     }
+
     if (flushParams.flushLevel != FlushLevel::SkeletonOnly)
     {
         determineUnsetDirty(flushParams.flushLevel);
@@ -561,13 +567,14 @@ void Iteration::read_impl(std::string const &groupPath)
         try
         {
             readMeshes(s.meshesPath());
+            meshes.writable().objectType.requireGroup()->phantom = false;
         }
         catch (error::ReadError const &err)
         {
             std::cerr << "Cannot read meshes in iteration " << groupPath
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
-            meshes.container().clear();
+            meshes.container().for_both([](auto &map) { map.clear(); });
         }
     }
     meshes.setDirty(false);
@@ -577,13 +584,14 @@ void Iteration::read_impl(std::string const &groupPath)
         try
         {
             readParticles(s.particlesPath());
+            particles.writable().objectType.requireGroup()->phantom = false;
         }
         catch (error::ReadError const &err)
         {
             std::cerr << "Cannot read particles in iteration " << groupPath
                       << " and will skip them due to read error:\n"
                       << err.what() << std::endl;
-            particles.container().clear();
+            particles.container().for_both([](auto &map) { map.clear(); });
         }
     }
     particles.setDirty(false);
@@ -645,7 +653,7 @@ void Iteration::readMeshes(std::string const &meshesPath)
             MeshRecordComponent &mrc = m;
             IOHandler()->enqueue(IOTask(&mrc, pOpen));
             IOHandler()->flush(internal::defaultFlushParams);
-            mrc.get().m_isConstant = true;
+            mrc.get().isConstant() = true;
         }
         try
         {
@@ -911,6 +919,27 @@ void Iteration::linkHierarchy(Writable &w)
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
     get().m_perIterationData.m_rankTableAttributable.linkHierarchy(*w.parent);
+
+    auto &container_back =
+        this->writable().objectType.requireGroup()->m_children;
+    auto s = retrieveSeries();
+    auto link_mp = [&](auto &meshes_or_particles,
+                       std::optional<std::string> const &mp_path,
+                       char const *default_) {
+        meshes_or_particles.writable().objectType.requireGroup()->phantom =
+            true;
+        if (mp_path)
+        {
+            container_back[auxiliary::replace_all_nonrecursively(
+                *mp_path, "/", "")] = *meshes_or_particles.m_attri;
+        }
+        else
+        {
+            container_back[default_] = *meshes_or_particles.m_attri;
+        }
+    };
+    link_mp(meshes, s.meshesPathOptional(), "meshes");
+    link_mp(particles, s.particlesPathOptional(), "particles");
 }
 
 void Iteration::runDeferredParseAccess()
@@ -980,9 +1009,9 @@ void Iteration::scientificDefaults_impl(
         .withReader(int_types, require_type<double>())(wor);
 }
 
-void Iterations::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Iterations::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Iterations>(v, recursive);
+    visitHierarchyContainer<Iterations>(v, recursive);
 }
 
 template float Iteration::time<float>() const;

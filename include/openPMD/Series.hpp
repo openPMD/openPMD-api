@@ -27,6 +27,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
@@ -453,6 +454,11 @@ public:
      * <CODE>basePath</CODE>.
      */
     std::string meshesPath() const;
+    /**
+     * @return  String representing the path to mesh records, relative(!) to
+     * <CODE>basePath</CODE>.
+     */
+    std::optional<std::string> meshesPathOptional() const;
     /** Set the path to <A
      * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records">mesh
      * records</A>, relative(!) to <CODE>basePath</CODE>.
@@ -508,6 +514,11 @@ public:
      * <CODE>basePath</CODE>.
      */
     std::string particlesPath() const;
+    /**
+     * @return  String representing the path to particle species, relative(!) to
+     * <CODE>basePath</CODE>.
+     */
+    std::optional<std::string> particlesPathOptional() const;
     /** Set the path to groups for each <A
      * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#particle-records">particle
      * species</A>, relative(!) to <CODE>basePath</CODE>.
@@ -786,8 +797,6 @@ public:
 
     [[nodiscard]] bool closed() const;
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
     /**
      * This overrides Attributable::iterationFlush() which will fail on Series.
      */
@@ -1010,6 +1019,9 @@ OPENPMD_private
     Series &setIterationEncoding_internal(
         IterationEncoding iterationEncoding, internal::default_or_explicit);
 
+    Series &setParticlesPath_internal(std::string const &particlesPath);
+    Series &setMeshesPath_internal(std::string const &meshesPath);
+
     /*
      * Returns the current content of the /data/snapshot attribute.
      * (We could also add this to the public API some time)
@@ -1038,6 +1050,9 @@ OPENPMD_private
     [[nodiscard]] bool randomAccessSteps() const;
 
     std::vector<std::string> availableDatasets();
+
+    OPENPMDAPI_EXPORT void
+    visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // Series
 
 namespace debug

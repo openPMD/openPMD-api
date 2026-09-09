@@ -44,9 +44,10 @@ uint8_t PatchRecordComponent::getDimensionality() const
 Extent PatchRecordComponent::getExtent() const
 {
     auto &rc = get();
-    if (rc.m_dataset.has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.m_dataset.value().extent;
+        return dataset.value().extent;
     }
     else
     {
@@ -54,7 +55,7 @@ Extent PatchRecordComponent::getExtent() const
     }
 }
 
-void PatchRecordComponent::visitHierarchy(HierarchyVisitor &v, bool)
+void PatchRecordComponent::visitHierarchyImpl(HierarchyVisitor &v, bool)
 {
     v(*this);
 }

@@ -25,6 +25,7 @@
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 #include <initializer_list>
 #include <map>
@@ -53,17 +54,49 @@ namespace traits
     struct GenerationPolicy
     {
         constexpr static bool is_noop = true;
-        template <typename T>
-        void operator()(T &)
+        template <typename Container, typename T>
+        void operator()(Container &, T &)
         {}
     };
+
+    template <typename Element_t>
+    struct ElementAccessPolicy
+    {
+        static void call(Element_t &)
+        {}
+        static void call(Element_t const &)
+        {}
+    };
+
+    template <typename Element_t>
+    struct ElementAccessPolicy<Element_t const>
+    {
+        static void call(Element_t const &el)
+        {
+            ElementAccessPolicy<Element_t>::call(el);
+        }
+    };
 } // namespace traits
+
+class CustomHierarchy;
 
 namespace internal
 {
     class SeriesData;
     template <typename>
     class EraseStaleEntries;
+
+    template <typename T>
+    constexpr inline bool isDerivedFromAttributable =
+        std::is_base_of_v<Attributable, T>;
+
+    /*
+     * Opt out from this check due to the recursive definition of
+     * class CustomHierarchy : public Container<CustomHierarchy>{ ... };
+     * Cannot check this while CustomHierarchy is still an incomplete type.
+     */
+    template <>
+    constexpr inline bool isDerivedFromAttributable<CustomHierarchy> = true;
 
     template <
         typename T,
@@ -87,6 +120,73 @@ namespace internal
         ContainerData &operator=(ContainerData const &) = delete;
         ContainerData &operator=(ContainerData &&) = delete;
     };
+
+    template <typename base_iterator>
+    struct access_policy_iterator : base_iterator
+    {
+        using self_t = access_policy_iterator<base_iterator>;
+        using value_t =
+            std::remove_reference_t<decltype(*std::declval<base_iterator>())>;
+        using mapped_t = typename value_t::second_type;
+        using base_t = base_iterator;
+
+        struct from_base_tag_t
+        {};
+        static constexpr from_base_tag_t from_base_tag = {};
+
+        template <typename... Args>
+        access_policy_iterator(from_base_tag_t, Args &&...args)
+            : base_iterator(std::forward<Args>(args)...)
+        {}
+
+        access_policy_iterator(base_iterator it) : base_iterator(std::move(it))
+        {}
+
+        auto operator++() -> self_t &
+        {
+            base_iterator::operator++();
+            return *this;
+        }
+        auto operator++(int) -> self_t &
+        {
+            base_iterator::operator++(0);
+            return *this;
+        }
+
+        auto operator--() -> self_t &
+        {
+            base_iterator::operator--();
+            return *this;
+        }
+        auto operator--(int) -> self_t &
+        {
+            base_iterator::operator--(0);
+            return *this;
+        }
+
+        auto operator->() const -> value_t *
+        {
+            auto res = base_iterator::operator->();
+            traits::ElementAccessPolicy<mapped_t>::call(res->second);
+            return res;
+        }
+
+        auto operator*() const -> value_t &
+        {
+            auto &res = base_iterator::operator*();
+            traits::ElementAccessPolicy<mapped_t>::call(res.second);
+            return res;
+        }
+
+        auto as_base() -> base_t &
+        {
+            return *this;
+        }
+        auto as_base() const -> base_t const &
+        {
+            return *this;
+        }
+    };
 } // namespace internal
 
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
@@ -105,7 +205,7 @@ template <
 class Container : virtual public Attributable
 {
     static_assert(
-        std::is_base_of<Attributable, T>::value,
+        internal::isDerivedFromAttributable<T>,
         "Type of container element must be derived from Writable");
 
     friend class Iteration;
@@ -116,10 +216,64 @@ class Container : virtual public Attributable
     template <typename>
     friend class internal::EraseStaleEntries;
     friend class StatefulIterator;
+    friend struct traits::ElementAccessPolicy<CustomHierarchy>;
+
+    using Self_t = Container<T, T_key, T_container>;
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
     using InternalContainer = T_container;
+
+    using stringify_t = std::conditional_t<
+        std::is_same_v<T_key, std::string>,
+        std::string const &,
+        std::string>;
+    static auto key_as_string(T_key const &key) -> stringify_t
+    {
+        if constexpr (std::is_same_v<T_key, std::string>)
+        {
+            return key;
+        }
+        else
+        {
+            return std::to_string(key);
+        }
+    }
+
+    template <bool const_>
+    struct SynchronizedContainers
+    {
+        using front_t = auxiliary::dependent_const<const_, T_container>;
+        using back_t = auxiliary::dependent_const<
+            const_,
+            internal::object_type::GroupMetaData::children_map_t>;
+
+        front_t *front;
+        back_t *back;
+
+        template <typename Functor>
+        inline auto for_both(Functor &&f)
+        {
+            f(*this->front);
+            return f(*this->back);
+        }
+
+        template <typename Functor>
+        inline auto for_both_to_string(Functor &&f)
+        {
+            f(*this->front, [](auto key) { return key; });
+            if constexpr (std::is_same_v<T_key, std::string>)
+            {
+                return f(*this->back, [](auto key) { return key; });
+            }
+            else
+            {
+                return f(
+                    *this->back,
+                    static_cast<std::string (*)(T_key)>(&std::to_string));
+            }
+        }
+    };
 
     std::shared_ptr<ContainerData> m_containerData;
 
@@ -129,15 +283,62 @@ protected:
         Attributable::setData(m_containerData);
     }
 
-    inline InternalContainer const &container() const
+    inline SynchronizedContainers<true> container() const
+    {
+#ifndef NDEBUG
+        auto size_front = container_front().size();
+        auto size_back = container_back().size();
+        if (size_front > size_back)
+        {
+            throw std::runtime_error(
+                "Invalid container state: " + std::to_string(size_front) +
+                " != " + std::to_string(size_back) + ".");
+        }
+#endif
+        return {&container_front(), &container_back()};
+    }
+
+    inline SynchronizedContainers<false> container()
+    {
+#ifndef NDEBUG
+        auto size_front = container_front().size();
+        auto size_back = container_back().size();
+        if (size_front > size_back)
+        {
+            throw std::runtime_error(
+                "Invalid container state: " + std::to_string(size_front) +
+                " != " + std::to_string(size_back) + ".");
+        }
+#endif
+        return {&container_front(), &container_back()};
+    }
+
+    inline auto container_front() const ->
+        typename SynchronizedContainers<true>::front_t &
     {
         return m_containerData->m_container;
     }
 
-    inline InternalContainer &container()
+    inline auto container_front() ->
+        typename SynchronizedContainers<false>::front_t &
     {
         return m_containerData->m_container;
     }
+
+    inline auto container_back() const ->
+        typename SynchronizedContainers<true>::back_t &
+    {
+        return (**m_attri).m_writable.objectType.requireGroup()->m_children;
+    }
+
+    inline auto container_back() ->
+        typename SynchronizedContainers<false>::back_t &
+    {
+        return this->writable().objectType.requireGroup()->m_children;
+    }
+
+    void syncContainers(
+        internal::object_type::GroupMetaData const &group_data) const;
 
 public:
     using key_type = typename InternalContainer::key_type;
@@ -150,11 +351,14 @@ public:
     using const_reference = typename InternalContainer::const_reference;
     using pointer = typename InternalContainer::pointer;
     using const_pointer = typename InternalContainer::const_pointer;
-    using iterator = typename InternalContainer::iterator;
-    using const_iterator = typename InternalContainer::const_iterator;
-    using reverse_iterator = typename InternalContainer::reverse_iterator;
-    using const_reverse_iterator =
-        typename InternalContainer::const_reverse_iterator;
+    using iterator =
+        internal::access_policy_iterator<typename InternalContainer::iterator>;
+    using const_iterator = internal::access_policy_iterator<
+        typename InternalContainer::const_iterator>;
+    using reverse_iterator = internal::access_policy_iterator<
+        typename InternalContainer::reverse_iterator>;
+    using const_reverse_iterator = internal::access_policy_iterator<
+        typename InternalContainer::const_reverse_iterator>;
 
     iterator begin() noexcept;
     const_iterator begin() const noexcept;
@@ -260,11 +464,12 @@ public:
     auto emplace(Args &&...args)
         -> decltype(InternalContainer().emplace(std::forward<Args>(args)...))
     {
-        return container().emplace(std::forward<Args>(args)...);
+        return syncInsertResult(
+            container_front().emplace(std::forward<Args>(args)...));
     }
 
     template <typename ChildClass>
-    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
+    void visitHierarchyContainer(HierarchyVisitor &v, bool recursive)
     {
         if (recursive)
         {
@@ -282,12 +487,46 @@ OPENPMD_protected
 
     void clear_unchecked();
 
-    virtual void
+    void
     flush(std::string const &path, internal::FlushParams const &flushParams);
 
     Container();
 
     Container(NoInit);
+
+    template <typename iterator_t>
+    auto syncInsertResult(std::pair<iterator_t, bool> res)
+        -> std::pair<iterator_t, bool>
+    {
+        if (res.second)
+        {
+            syncInsertResult(res.first);
+        }
+        return res;
+    }
+    template <typename iterator_t>
+    auto syncInsertResult(iterator_t res) -> iterator_t
+    {
+        auto &cont = container_back();
+        decltype(auto) key = key_as_string(res->first);
+        auto it = cont.find(key);
+        if (it == cont.end())
+        {
+            cont.emplace(key_as_string(res->first), *res->second.m_attri);
+        }
+        else
+        {
+            // uhhm this might cause edge cases
+            // backend value is older, so it gets seniority
+            res->second.m_attri->asSharedPtrOfAttributable() = it->second;
+            res->second.preferCurrentBackpointer();
+        }
+        return res;
+    }
+
+    template <typename key_template_t>
+    mapped_type &
+    bracket_operator_impl(key_template_t &&key, bool access_policy);
 
 public:
     /*

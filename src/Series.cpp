@@ -36,6 +36,7 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/MonadicOperations.hpp"
 #include "openPMD/auxiliary/Mpi.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
@@ -272,6 +273,13 @@ std::string Series::meshesPath() const
     return getAttribute("meshesPath").get<std::string>();
 }
 
+std::optional<std::string> Series::meshesPathOptional() const
+{
+    return auxiliary::optional_and_then(
+        getAttributeOptional("meshesPath"),
+        [](Attribute const &attr) { return attr.getOptional<std::string>(); });
+}
+
 Series &Series::setMeshesPath(std::string const &mp)
 {
     auto &series = get();
@@ -285,12 +293,7 @@ Series &Series::setMeshesPath(std::string const &mp)
             "A files meshesPath can not (yet) be changed after it has been "
             "written.");
 
-    if (auxiliary::ends_with(mp, '/'))
-        setAttribute("meshesPath", mp);
-    else
-        setAttribute("meshesPath", mp + "/");
-    setDirty(true);
-    return *this;
+    return setMeshesPath_internal(mp);
 }
 
 std::vector<std::string> Series::availableDatasets()
@@ -610,6 +613,13 @@ std::string Series::particlesPath() const
     return getAttribute("particlesPath").get<std::string>();
 }
 
+std::optional<std::string> Series::particlesPathOptional() const
+{
+    return auxiliary::optional_and_then(
+        getAttributeOptional("particlesPath"),
+        [](Attribute const &attr) { return attr.getOptional<std::string>(); });
+}
+
 Series &Series::setParticlesPath(std::string const &pp)
 {
     auto &series = get();
@@ -623,12 +633,7 @@ Series &Series::setParticlesPath(std::string const &pp)
             "A files particlesPath can not (yet) be changed after it has been "
             "written.");
 
-    if (auxiliary::ends_with(pp, '/'))
-        setAttribute("particlesPath", pp);
-    else
-        setAttribute("particlesPath", pp + "/");
-    setDirty(true);
-    return *this;
+    return setParticlesPath_internal(pp);
 }
 
 std::string Series::author() const
@@ -1222,6 +1227,10 @@ void Series::initSeries(
 
     series.iterations.linkHierarchy(writable);
     series.iterations.writable().ownKeyWithinParent = "data";
+    series->m_writable.ownKeyWithinParent = "ROOT";
+    auto &container_back =
+        series->m_writable.objectType.requireGroup()->m_children;
+    container_back["data"] = *series.iterations.m_attri;
     series.m_perIterationData.m_rankTableAttributable.linkHierarchy(writable);
 
     series.m_name = input->name;
@@ -1484,6 +1493,12 @@ void Series::flushFileBased(
             case IO::HasBeenOpened:
                 // continue below
                 it->second.flush(flushParams);
+
+                if (it == begin)
+                {
+                    customHierarchyFlush(
+                        flushParams, /* managed_as_custom_object = */ false);
+                }
                 break;
             }
 
@@ -1543,6 +1558,12 @@ void Series::flushFileBased(
                 }
 
                 it->second.flushFileBased(filename, it->first, flushParams);
+
+                if (it == begin)
+                {
+                    customHierarchyFlush(
+                        flushParams, /* managed_as_custom_object = */ false);
+                }
 
                 series.iterations.flush(
                     auxiliary::replace_first(basePath(), "%T/", ""),
@@ -1625,7 +1646,14 @@ void Series::flushGorVBased(
                         series.m_snapshotToStep.at(it->first)};
                     IOHandler()->enqueue(IOTask(this, std::move(param)));
                 }
+
                 it->second.flush(flushParams);
+
+                if (it == begin)
+                {
+                    customHierarchyFlush(
+                        flushParams, /* managed_as_custom_object = */ false);
+                }
                 break;
             }
 
@@ -1636,6 +1664,12 @@ void Series::flushGorVBased(
                 // the iteration has no dedicated file in group-based mode
                 it->second.get().m_closed = internal::CloseStatus::Closed;
             }
+        }
+
+        if (begin == end)
+        {
+            customHierarchyFlush(
+                flushParams, /* managed_as_custom_object = */ false);
         }
 
         // Phase 3
@@ -1707,6 +1741,13 @@ void Series::flushGorVBased(
                     throw std::runtime_error(
                         "[Series] Internal control flow error");
                 }
+
+                if (it == begin)
+                {
+                    customHierarchyFlush(
+                        flushParams, /* managed_as_custom_object = */ false);
+                }
+
                 break;
             case IO::RemainsClosed:
                 break;
@@ -1719,6 +1760,12 @@ void Series::flushGorVBased(
                 // the iteration has no dedicated file in group-based mode
                 it->second.get().m_closed = internal::CloseStatus::Closed;
             }
+        }
+
+        if (begin == end)
+        {
+            customHierarchyFlush(
+                flushParams, /* managed_as_custom_object = */ false);
         }
 
         flushAttributes(flushParams);
@@ -1941,7 +1988,10 @@ void Series::readFileBased(
 
     for (auto index : unparseableIterations)
     {
-        series.iterations.container().erase(index);
+        series.iterations.container().for_both_to_string(
+            [index](auto &map, auto &&to_string) {
+                map.erase(to_string(index));
+            });
     }
 
     if (padding > 0)
@@ -2277,7 +2327,10 @@ creating new iterations.
                     std::cerr << "Cannot read iteration '" << index
                               << "' and will skip it due to read error:\n"
                               << err.what() << std::endl;
-                    series.iterations.container().erase(index);
+                    series.iterations.container().for_both_to_string(
+                        [index](auto &map, auto &&to_string) {
+                            map.erase(to_string(index));
+                        });
                     return {err};
                 }
                 i.get().m_closed = internal::CloseStatus::Open;
@@ -2308,7 +2361,17 @@ creating new iterations.
         readableIterations.reserve(pList.paths->size());
         for (auto const &it : *pList.paths)
         {
-            IterationIndex_t index = std::stoull(it);
+            IterationIndex_t index;
+            try
+            {
+                index = std::stoull(it);
+            }
+            catch (std::exception const &e)
+            {
+                std::cerr << "[Warning] Could not parse '" << it
+                          << "' as an Iteration index. Will skip." << std::endl;
+                continue;
+            }
             if (read_only_this_single_iteration.has_value() &&
                 index != *read_only_this_single_iteration)
             {
@@ -2439,7 +2502,6 @@ creating new iterations.
 
 void Series::readBase()
 {
-    auto &series = get();
     Parameter<Operation::READ_ATT> aRead;
 
     aRead.name = "openPMD";
@@ -2525,16 +2587,9 @@ void Series::readBase()
                            .getOptional<std::string>();
             val.has_value())
         {
-            /* allow setting the meshes path after completed IO */
-            for (auto &it : series.iterations)
-                it.second.meshes.setWritten(
-                    false, Attributable::EnqueueAsynchronously::No);
-
-            setMeshesPath(val.value());
-
-            for (auto &it : series.iterations)
-                it.second.meshes.setWritten(
-                    true, Attributable::EnqueueAsynchronously::No);
+            /* use internal api to allow setting the meshes path after completed
+             * IO */
+            setMeshesPath_internal(val.value());
         }
         else
             throw error::ReadError(
@@ -2567,16 +2622,9 @@ void Series::readBase()
                            .getOptional<std::string>();
             val.has_value())
         {
-            /* allow setting the meshes path after completed IO */
-            for (auto &it : series.iterations)
-                it.second.particles.setWritten(
-                    false, Attributable::EnqueueAsynchronously::No);
-
-            setParticlesPath(val.value());
-
-            for (auto &it : series.iterations)
-                it.second.particles.setWritten(
-                    true, Attributable::EnqueueAsynchronously::No);
+            /* use internal api to allow setting the meshes path after completed
+             * IO */
+            setParticlesPath_internal(val.value());
         }
         else
             throw error::ReadError(
@@ -2940,6 +2988,25 @@ Series &Series::setIterationEncoding_internal(
     return *this;
 }
 
+Series &Series::setParticlesPath_internal(std::string const &pp)
+{
+    if (auxiliary::ends_with(pp, '/'))
+        setAttribute("particlesPath", pp);
+    else
+        setAttribute("particlesPath", pp + "/");
+    setDirty(true);
+    return *this;
+}
+
+Series &Series::setMeshesPath_internal(std::string const &mp)
+{
+    if (auxiliary::ends_with(mp, '/'))
+        setAttribute("meshesPath", mp);
+    else
+        setAttribute("meshesPath", mp + "/");
+    setDirty(true);
+    return *this;
+}
 auto Series::openIterationIfDirty(IterationIndex_t index, Iteration &iteration)
     -> IterationOpened
 {
@@ -3366,7 +3433,7 @@ namespace internal
         }
         // Not strictly necessary, but clear the map of iterations
         // This releases the openPMD hierarchy
-        iterations.container().clear();
+        iterations.container().for_both([](auto &map) { map.clear(); });
         // Release the IO Handler
         if (IOHandler)
         {
@@ -3605,7 +3672,7 @@ bool Series::closed() const
     return !w.IOHandler->has_value();
 }
 
-void Series::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Series::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
     if (recursive)
     {
