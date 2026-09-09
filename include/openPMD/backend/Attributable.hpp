@@ -53,7 +53,7 @@ namespace traits
     namespace detail
     {
         template <typename Container, typename Iterator>
-        void emplace_object_as_customely_managed(Container &cont, Iterator &it);
+        void emplace_object_as_customly_managed(Container &cont, Iterator &it);
     }
 } // namespace traits
 class AbstractFilePosition;
@@ -276,7 +276,7 @@ class Attributable
     template <typename>
     friend struct traits::ElementAccessPolicy;
     template <typename Container, typename Iterator>
-    friend void traits::detail::emplace_object_as_customely_managed(
+    friend void traits::detail::emplace_object_as_customly_managed(
         Container &cont, Iterator &it);
 
 protected:
