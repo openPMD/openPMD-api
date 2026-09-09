@@ -77,6 +77,9 @@ void write(
     auto custom_groups = iteration.customHierarchies()["fully"]["custom"];
     auto custom_datasets = custom_groups.datasets();
     auto fully_custom_dataset_2 = custom_datasets["dataset2"];
+    REQUIRE(!custom_groups.contains("dataset2"));
+    custom_groups.refresh();
+    REQUIRE(custom_groups.contains("dataset2"));
     fully_custom_dataset_2.resetDataset({Datatype::INT, {3}});
     fully_custom_dataset.setComment(
         "ALS PRIMA BALLERINA ALS WEIB ALS FEMME FATALE");

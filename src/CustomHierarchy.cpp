@@ -49,79 +49,11 @@ namespace traits
         }
     }
 
-    void ElementAccessPolicy<CustomHierarchy>::call(CustomHierarchy const &cont)
+    void ElementAccessPolicy<CustomHierarchy>::call(
+        Container<CustomHierarchy> const &cont)
     {
         cont.writable().objectType.ifGroup(
-            [&](auto &group_data) { syncContainers(cont, group_data); });
-    }
-
-    void ElementAccessPolicy<CustomHierarchy>::syncContainers(
-        CustomHierarchy const &container,
-        internal::object_type::GroupMetaData const &group_data)
-    {
-        // Need to sync backend objects into the CustomHierarchy instance
-        // Need to be a bit sneaky, we must modify my_container&, but this
-        // method might be called as const. shared_ptr<>s implement interior
-        // mutability, so use that here.
-
-        // auto &container_front = container.container_front();
-        auto &container_front = container.m_containerData->m_container;
-        auto &container_back = group_data.m_children;
-
-        auto size_front = container_front.size();
-        auto size_back = container_back.size();
-
-        if (size_front == size_back)
-        {
-            return;
-        }
-        else if (size_front > size_back)
-        {
-            std::stringstream error;
-            auto print = [&error](auto const &map) -> std::stringstream & {
-                if (map.empty())
-                {
-                    error << "[]";
-                }
-                else
-                {
-                    error << '[';
-                    auto it = map.begin();
-                    error << (it++)->first;
-                    auto end = map.end();
-                    for (; it != end; ++it)
-                    {
-                        error << ", " << it->first;
-                    }
-                    error << ']';
-                }
-                return error;
-            };
-            error << "CustomHierarchy went into illegal state at '"
-                  << container.myPath().openPMDPath()
-                  << "':\nfront container: ";
-            print(container_front) << "\nback container:  ";
-            print(container_back) << '\n';
-            throw error::Internal(error.str());
-        }
-
-        GenerationPolicy<CustomHierarchy> gen;
-
-        auto it = container_front.begin();
-        auto end = container_front.end();
-        for (auto const &[key, attributable] : container_back)
-        {
-            if (it == end || it->first != key)
-            {
-                // under the invariant that the front container contains no
-                // elements that are not present in the back container, it
-                // now points to an entry past the to-be-inserted key
-                it = container_front.emplace_hint(
-                    it, key, CustomHierarchy(attributable));
-                gen(container, it);
-            }
-            ++it;
-        }
+            [&](auto &group_data) { cont.syncContainers(group_data); });
     }
 } // namespace traits
 
@@ -201,11 +133,10 @@ auto ConvertibleContainer<CustomHierarchy>::datasets()
     auto &container = res.container_front();
     for (auto &[key, subgroup] : *this)
     {
-        if (!subgroup.isDataset())
+        if (subgroup.isDataset())
         {
-            continue;
+            container.emplace(key, subgroup.asDataset());
         }
-        container.emplace(key, subgroup.asDataset());
     }
     return res;
 }
@@ -221,6 +152,13 @@ template <typename MappedType>
 auto ConvertibleContainer<MappedType>::subgroups() -> CustomHierarchy
 {
     return this->customHierarchies();
+}
+
+template <typename MappedType>
+void ConvertibleContainer<MappedType>::refresh()
+{
+    this->writable().objectType.ifGroup(
+        [&](auto &group_data) { this->syncContainers(group_data); });
 }
 
 template class ConvertibleContainer<CustomHierarchy>;

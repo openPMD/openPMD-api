@@ -47,8 +47,6 @@ namespace internal
     };
 } // namespace internal
 
-class CustomHierarchy;
-
 class CustomDataset : public RecordComponent
 {
     template <typename>
@@ -88,7 +86,8 @@ public:
 
     auto datasets() -> ConvertibleContainer<CustomDataset>;
     auto subgroups() -> CustomHierarchy;
-    // TODO also: asContainerOf()
+
+    void refresh();
 };
 
 namespace traits
@@ -97,18 +96,13 @@ namespace traits
     struct ElementAccessPolicy<CustomHierarchy>
     {
         static void call(CustomHierarchy &);
-        static void call(CustomHierarchy const &);
-
-    private:
-        static void syncContainers(
-            CustomHierarchy const &,
-            internal::object_type::GroupMetaData const &);
+        static void call(Container<CustomHierarchy> const &);
     };
 
     namespace detail
     {
         template <typename Container, typename Iterator>
-        void emplace_object_as_customely_managed(Container &cont, Iterator &it)
+        void emplace_object_as_customly_managed(Container &cont, Iterator &it)
         {
             auto cast_to_custom_hierarchy = [&it]() {
                 using MappedType = std::remove_cv_t<
@@ -172,7 +166,7 @@ namespace traits
         template <typename Container, typename Iterator>
         void operator()(Container &cont, Iterator &it)
         {
-            detail::emplace_object_as_customely_managed<Container, Iterator>(
+            detail::emplace_object_as_customly_managed<Container, Iterator>(
                 cont, it);
         }
     };
@@ -184,7 +178,7 @@ namespace traits
         template <typename Container, typename Iterator>
         void operator()(Container &cont, Iterator &it)
         {
-            detail::emplace_object_as_customely_managed<Container, Iterator>(
+            detail::emplace_object_as_customly_managed<Container, Iterator>(
                 cont, it);
         }
     };
@@ -196,6 +190,8 @@ class CustomHierarchy : public ConvertibleContainer<CustomHierarchy>
     friend class Container<CustomHierarchy>;
     friend class Attributable;
     friend struct traits::ElementAccessPolicy<CustomHierarchy>;
+    template <typename, typename, typename>
+    friend class Container;
 
 private:
     using Parent_t = ConvertibleContainer<CustomHierarchy>;
@@ -244,6 +240,11 @@ public:
 
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
+
+    inline operator CustomDataset()
+    {
+        return asDataset();
+    }
 
     // TODO should we automatically read upon returning / instantiating a
     // CustomHierarchy object? i.e. upon Attributable::customHierarchy() and
