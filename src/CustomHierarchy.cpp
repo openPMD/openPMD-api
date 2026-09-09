@@ -135,7 +135,7 @@ auto ConvertibleContainer<CustomHierarchy>::isDataset() -> bool
 }
 
 template <typename MappedType>
-auto ConvertibleContainer<MappedType>::asDataset() -> RecordComponent
+auto ConvertibleContainer<MappedType>::asDataset() -> CustomDataset
 {
     auto castableToConstantDataset = [&]() {
         return this->containsAttribute("value") &&
@@ -143,7 +143,7 @@ auto ConvertibleContainer<MappedType>::asDataset() -> RecordComponent
     };
     auto initDataset = [&]() { this->writable().objectType.initDataset(); };
     auto makeResult = [&]() {
-        RecordComponent res;
+        CustomDataset res;
         res.get().cloneFrom(*this->m_attri);
         return res;
     };
@@ -194,9 +194,9 @@ auto ConvertibleContainer<MappedType>::asDataset() -> RecordComponent
 
 template <>
 auto ConvertibleContainer<CustomHierarchy>::datasets()
-    -> ConvertibleContainer<RecordComponent>
+    -> ConvertibleContainer<CustomDataset>
 {
-    ConvertibleContainer<RecordComponent> res;
+    ConvertibleContainer<CustomDataset> res;
     res.m_attri->cloneFrom(*this->m_attri);
     auto &container = res.container_front();
     for (auto &[key, subgroup] : *this)
@@ -211,8 +211,8 @@ auto ConvertibleContainer<CustomHierarchy>::datasets()
 }
 
 template <>
-auto ConvertibleContainer<RecordComponent>::datasets()
-    -> ConvertibleContainer<RecordComponent>
+auto ConvertibleContainer<CustomDataset>::datasets()
+    -> ConvertibleContainer<CustomDataset>
 {
     return *this;
 }
@@ -224,7 +224,7 @@ auto ConvertibleContainer<MappedType>::subgroups() -> CustomHierarchy
 }
 
 template class ConvertibleContainer<CustomHierarchy>;
-template class ConvertibleContainer<RecordComponent>;
+template class ConvertibleContainer<CustomDataset>;
 
 CustomHierarchy::CustomHierarchy() : ConvertibleContainer(NoInit{})
 {
