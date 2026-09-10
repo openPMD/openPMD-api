@@ -4,9 +4,10 @@
 
 namespace openPMD::internal
 {
-enum class API : std::uint8_t
+// Load Store API
+enum class LS_API : std::uint8_t
 {
     legacy,
     chaining
 };
-}
+} // namespace openPMD::internal
