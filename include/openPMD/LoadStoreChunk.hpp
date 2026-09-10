@@ -1,6 +1,7 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/LoadStoreAPI.hpp"
 #include "openPMD/auxiliary/Future.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
@@ -29,6 +30,7 @@ namespace internal
     {
         Offset offset;
         Extent extent;
+        API api = API::chaining;
     };
     /** Internal configuration for load/store operations with buffer. Default
      * values for optionally specified parameters (offset, extent) must be
@@ -39,6 +41,7 @@ namespace internal
         Offset offset;
         Extent extent;
         std::optional<MemorySelection> memorySelection;
+        API api = API::chaining;
     };
 
 } // namespace internal
@@ -69,6 +72,7 @@ protected:
 
     std::optional<Offset> m_offset;
     std::optional<Extent> m_extent;
+    internal::API api = internal::API::chaining;
 
     bool m_unsafeNoAutomaticFlush = false;
 

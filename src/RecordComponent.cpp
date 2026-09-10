@@ -54,7 +54,7 @@ namespace internal
 {
     RecordComponentData::RecordComponentData() = default;
     void RecordComponentData::push_chunk(
-        IOTask &&task, std::optional<bool> immediate_flush)
+        IOTask &&task, API api, std::optional<bool> immediate_flush)
     {
         Attributable a;
         a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
@@ -77,6 +77,15 @@ namespace internal
         }
 #endif
         bool immediate_flush_resolved = [&]() {
+            switch (api)
+            {
+            case API::chaining:
+                // the chaining API is safe, so we do not need to flush
+                // immediately
+                return false;
+            case API::legacy:
+                break;
+            }
             if (immediate_flush.has_value())
             {
                 return *immediate_flush;
@@ -219,9 +228,11 @@ auto resource(T &t) -> attribute_types &
     return t.template resource<attribute_types>();
 }
 
-ConfigureLoadStore RecordComponent::prepareLoadStore()
+ConfigureLoadStore RecordComponent::prepareLoadStore(internal::API api)
 {
-    return ConfigureLoadStore{*this};
+    ConfigureLoadStore res{*this};
+    res.api = api;
+    return res;
 }
 
 namespace
@@ -264,7 +275,7 @@ RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
 std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
     Datatype dtype, size_t dtype_size, internal::LoadStoreConfig cfg)
 {
-    auto [o, e] = std::move(cfg);
+    auto [o, e, api] = std::move(cfg);
 
     size_t numPoints = 1;
     for (auto val : e)
@@ -276,7 +287,7 @@ std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
         std::shared_ptr<void>(new char[numPoints * dtype_size], [](void *p) {
             delete[] (static_cast<char *>(p));
         });
-    prepareLoadStore()
+    prepareLoadStore(api)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr_impl_mut(newData, dtype)
@@ -733,7 +744,7 @@ void RecordComponent::storeChunk_impl(
     internal::LoadStoreConfigWithBuffer cfg,
     std::optional<bool> flush_immediately)
 {
-    auto [o, e, memorySelection] = std::move(cfg);
+    auto [o, e, memorySelection, api] = std::move(cfg);
     verifyChunk(dtype, o, e);
 
     Parameter<Operation::WRITE_DATASET> dWrite;
@@ -744,7 +755,7 @@ void RecordComponent::storeChunk_impl(
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::move(buffer);
     auto &rc = get();
-    rc.push_chunk(IOTask(this, std::move(dWrite)), flush_immediately);
+    rc.push_chunk(IOTask(this, std::move(dWrite)), api, flush_immediately);
 }
 
 void RecordComponent::verifyChunk(
@@ -873,7 +884,7 @@ template <typename T>
 std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
-    auto operation = prepareLoadStore();
+    auto operation = prepareLoadStore(internal::API::legacy);
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
@@ -968,7 +979,7 @@ void RecordComponent::loadChunk_impl(
     }
 
     auto dim = getDimensionality();
-    auto [offset, extent, memorySelection] = std::move(cfg);
+    auto [offset, extent, memorySelection, api] = std::move(cfg);
 
     if (extent.size() != dim || offset.size() != dim)
     {
@@ -1005,7 +1016,7 @@ void RecordComponent::loadChunk_impl(
         dRead.extent = extent;
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast<void>(data);
-        rc.push_chunk(IOTask(this, dRead));
+        rc.push_chunk(IOTask(this, dRead), api);
     }
 }
 
@@ -1014,7 +1025,7 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     // static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
     uint8_t dim = getDimensionality();
-    auto operation = prepareLoadStore();
+    auto operation = prepareLoadStore(internal::API::legacy);
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
@@ -1035,7 +1046,7 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 template <typename T>
 void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    prepareLoadStore()
+    prepareLoadStore(internal::API::legacy)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
@@ -1046,7 +1057,7 @@ void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 template <typename T>
 void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    prepareLoadStore()
+    prepareLoadStore(internal::API::legacy)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr(std::move(data))
@@ -1058,7 +1069,7 @@ template <typename T>
 void RecordComponent::storeChunk(
     UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    prepareLoadStore()
+    prepareLoadStore(internal::API::legacy)
         .offset(std::move(o))
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
@@ -1069,7 +1080,7 @@ void RecordComponent::storeChunk(
 template <typename T>
 void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 {
-    prepareLoadStore()
+    prepareLoadStore(internal::API::legacy)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
@@ -1080,7 +1091,7 @@ void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 template <typename T>
 DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
 {
-    return prepareLoadStore()
+    return prepareLoadStore(internal::API::legacy)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .storeSpan<T>();

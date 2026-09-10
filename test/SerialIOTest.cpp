@@ -946,7 +946,7 @@ inline void constant_scalar(std::string const &file_ending)
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
         // check that const-type unique pointers work in the builder pattern
-        E_y.prepareLoadStore()
+        E_y.prepareLoadStore(internal::API::chaining)
             .extent({1, 2, 3})
             .withUniquePtr(std::move(E).static_cast_<unsigned int const>())
             .store();
@@ -1760,7 +1760,8 @@ inline void write_test(
     auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
 
     auto variantTypeDataset = rc.loadChunkVariant();
-    auto variantTypeDataset2 = rc.prepareLoadStore().loadVariant().get();
+    auto variantTypeDataset2 =
+        rc.prepareLoadStore(internal::API::chaining).loadVariant().get();
     rc.seriesFlush();
     for (auto ptr : {&variantTypeDataset, &variantTypeDataset2})
     {
