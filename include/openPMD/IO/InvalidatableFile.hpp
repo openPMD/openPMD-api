@@ -20,76 +20,59 @@
  */
 #pragma once
 
+#include <any>
 #include <memory>
+#include <optional>
 #include <string>
 
-namespace openPMD
+namespace openPMD::internal
 {
-/**
- *  Wrapper around a shared pointer to:
- *  * a filename
- *  * and a boolean indicating whether the file still exists
- *  The wrapper adds no extra information, but some commodity functions.
- *  Invariant for any context within which this class shall be used:
- *  For any valid filename, there is at any time at most one
- *  such shared pointer (wrapper) known in said context's data structures
- *  (counting by pointer equality)
- *  This means, that a file can be invalidated (i.e. deleted or overwritten)
- *  by simply searching for one instance of the file among all known files and
- *  invalidating this instance
- *  A new instance may hence only be created after making sure that there are
- *  no valid instances in the data structures.
- */
-struct InvalidatableFile
+
+struct FileState
 {
-    explicit InvalidatableFile(std::string s);
+    std::string name;
+    std::any backendSpecificState;
 
-    InvalidatableFile() = default;
+    FileState(std::string name);
 
-    struct FileState
-    {
-        explicit FileState(std::string s);
+    FileState(FileState const &other) = delete;
+    FileState(FileState &&other) = delete;
 
-        std::string name;
-        bool valid = true;
-    };
-
-    std::shared_ptr<FileState> fileState;
-
-    void invalidate();
-
-    bool valid() const;
-
-    InvalidatableFile &operator=(std::string s);
-
-    bool operator==(InvalidatableFile const &f) const;
-
-    std::string &operator*() const;
-
-    std::string *operator->() const;
-
-    explicit operator bool() const;
-};
-} // namespace openPMD
-
-namespace std
-{
-template <>
-struct hash<openPMD::InvalidatableFile>
-{
-    using argument_type = openPMD::InvalidatableFile;
-    using result_type = std::size_t;
-
-    result_type operator()(argument_type const &s) const noexcept;
+    FileState &operator=(FileState const &other) = delete;
+    FileState &operator=(FileState &&other) = delete;
 };
 
-template <>
-struct less<openPMD::InvalidatableFile>
+// A file state is generally shared between multiple Writable instances, hence
+// the shared_ptr. A Writable does not initially have an associated state, hence
+// optional.
+class SharedFileState : std::shared_ptr<std::optional<FileState>>
 {
-    using first_argument_type = openPMD::InvalidatableFile;
+    using ptr_type = std::shared_ptr<std::optional<FileState>>;
+
+public:
+    [[nodiscard]] auto has_value() const -> bool;
+    operator bool() const;
+    auto operator*() -> FileState &;
+    auto operator->() -> FileState *;
+    auto operator*() const -> FileState const &;
+    auto operator->() const -> FileState const *;
+
+    void reset_optional();
+
+    using ptr_type::get;
+    using ptr_type::shared_ptr;
+    using ptr_type::operator=;
+};
+} // namespace openPMD::internal
+
+template <>
+struct std::less<openPMD::internal::SharedFileState>
+{
+    using first_argument_type = openPMD::internal::SharedFileState;
     using second_argument_type = first_argument_type;
     using result_type = bool;
-    result_type
-    operator()(first_argument_type const &, second_argument_type const &) const;
+
+    auto
+    operator()(first_argument_type const &, second_argument_type const &) const
+        -> result_type;
 };
-} // namespace std

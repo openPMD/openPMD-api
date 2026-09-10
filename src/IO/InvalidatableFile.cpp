@@ -21,68 +21,52 @@
 
 #include "openPMD/IO/InvalidatableFile.hpp"
 
-openPMD::InvalidatableFile::InvalidatableFile(std::string s)
-    : fileState{std::make_shared<FileState>(std::move(s))}
+namespace openPMD::internal
+{
+FileState::FileState(std::string name_in) : name(std::move(name_in))
 {}
-
-void openPMD::InvalidatableFile::invalidate()
+auto SharedFileState::has_value() const -> bool
 {
-    fileState->valid = false;
+    return ptr_type::operator bool() && ptr_type::operator*().has_value();
 }
-
-bool openPMD::InvalidatableFile::valid() const
+SharedFileState::operator bool() const
 {
-    return fileState->valid;
+    return has_value();
 }
-
-openPMD::InvalidatableFile &openPMD::InvalidatableFile::operator=(std::string s)
+auto SharedFileState::operator*() -> FileState &
 {
-    if (fileState)
-    {
-        fileState->name = std::move(s);
-    }
-    else
-    {
-        fileState = std::make_shared<FileState>(std::move(s));
-    }
-    return *this;
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    return *ptr_type::operator*();
 }
-
-bool openPMD::InvalidatableFile::operator==(
-    const openPMD::InvalidatableFile &f) const
+auto SharedFileState::operator->() -> FileState *
 {
-    return this->fileState == f.fileState;
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    return &*ptr_type::operator*();
 }
-
-std::string &openPMD::InvalidatableFile::operator*() const
+auto SharedFileState::operator*() const -> FileState const &
 {
-    return fileState->name;
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    return *ptr_type::operator*();
 }
-
-std::string *openPMD::InvalidatableFile::operator->() const
+auto SharedFileState::operator->() const -> FileState const *
 {
-    return &fileState->name;
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    return &*ptr_type::operator*();
 }
-
-openPMD::InvalidatableFile::operator bool() const
+void SharedFileState::reset_optional()
 {
-    return fileState.operator bool();
+    ptr_type::operator*().reset();
 }
+} // namespace openPMD::internal
 
-openPMD::InvalidatableFile::FileState::FileState(std::string s)
-    : name{std::move(s)}
-{}
-
-std::hash<openPMD::InvalidatableFile>::result_type
-std::hash<openPMD::InvalidatableFile>::operator()(
-    const openPMD::InvalidatableFile &s) const noexcept
-{
-    return std::hash<shared_ptr<openPMD::InvalidatableFile::FileState>>{}(
-        s.fileState);
-}
-auto std::less<openPMD::InvalidatableFile>::operator()(
+auto std::less<openPMD::internal::SharedFileState>::operator()(
     first_argument_type const &first, second_argument_type const &second) const
     -> result_type
 {
-    return less<>()(*first, *second);
+    if (!first || !second)
+    {
+        return std::less<>()(first.get(), second.get());
+    }
+    // If possible, compare by name
+    return less<>()((*first).name, (*second).name);
 }
