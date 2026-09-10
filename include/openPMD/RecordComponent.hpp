@@ -78,7 +78,7 @@ namespace internal
 
         void push_chunk(
             IOTask &&task,
-            API,
+            LS_API,
             std::optional<bool> immediate_flush = std::nullopt);
         /**
          * Stores the value for constant record components.
@@ -513,7 +513,7 @@ private:
     std::shared_ptr<void> loadChunkAllocate_impl(
         Datatype, size_t dtype_size, internal::LoadStoreConfig);
 
-    ConfigureLoadStore prepareLoadStore_impl(internal::API);
+    ConfigureLoadStore prepareLoadStore_impl(internal::LS_API);
 
     // clang-format off
 OPENPMD_protected
