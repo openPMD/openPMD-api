@@ -144,7 +144,7 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::makeFile(
     if (consider_open_files)
     {
         if (auto it = m_files.find(file);
-            it != m_files.end() && it->second->has_value())
+            it != m_files.end() && it->second.has_value())
         {
             writable->fileState = it->second;
         }
@@ -204,7 +204,7 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::
             throw std::runtime_error(
                 "[refreshFileFromParent] No parent found.");
         }
-        while (!search->fileState->has_value())
+        while (!search->fileState.has_value())
         {
             if (!search->parent)
             {
@@ -215,7 +215,7 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::
         }
         auto &file = search->fileState;
         search = writable->parent;
-        while (!search->fileState->has_value())
+        while (!search->fileState.has_value())
         {
             if (!search->parent)
             {
@@ -226,7 +226,7 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::
             search = search->parent;
         }
         associateWithFile(writable, file);
-        return **file;
+        return *file;
     };
     if (preferParentFile && writable->parent)
     {
@@ -234,9 +234,9 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::
     }
     else
     {
-        if (writable->fileState && writable->fileState->has_value())
+        if (writable->fileState && writable->fileState.has_value())
         {
-            return **writable->fileState;
+            return *writable->fileState;
         }
         else if (writable->parent)
         {

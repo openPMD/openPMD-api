@@ -35,6 +35,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/auxiliary/DrainSet.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSONMatcher.hpp"
@@ -188,8 +189,8 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
     sorted.reserve(m_files.size());
     for (auto &file : m_files)
     {
-        if (!file.second->has_value() ||
-            !(*file.second)->backendSpecificState.has_value())
+        if (!file.second.has_value() ||
+            !file.second->backendSpecificState.has_value())
         {
             std::cerr << "File '" << file.first
                       << "' was marked dirty, but has no associated ADIOS2 "
@@ -199,8 +200,7 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
             continue;
         }
         sorted.emplace_back(
-            std::make_pair(
-                (*file.second)->name, &(*file.second)->backendSpecificState));
+            file.second->name, &file.second->backendSpecificState);
     }
     /*
      * Technically, std::sort() is sufficient here, since file names are unique.
@@ -648,24 +648,23 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
         }
     }
 
-    for (auto &p : m_dirty)
+    for (auto &p : auxiliary::drain(m_dirty))
     {
-        if (p->has_value() && (*p)->backendSpecificState.has_value())
+        if (p.has_value() && p->backendSpecificState.has_value())
         {
             auto &adios2_file = std::any_cast<BackendSpecificFileState &>(
-                (*p)->backendSpecificState);
+                p->backendSpecificState);
             adios2_file->flush(adios2FlushParams, /* writeLatePuts = */ false);
         }
         else
         {
             throw error::Internal(
                 "File '" +
-                (p->has_value() ? (*p)->name
-                                : std::string("Unknown file name")) +
+                (p.has_value() ? p->name : std::string("Unknown file name")) +
                 "' was dirty, but has no associated ADIOS2 data?");
         }
     }
-    m_dirty.clear();
+    assert(m_dirty.empty());
     return res;
 }
 
@@ -716,7 +715,7 @@ void ADIOS2IOHandlerImpl::createFile(
 
         auto &file =
             makeFile(writable, name, /* consider_open_files = */ false);
-        auto &file_state = **file;
+        auto &file_state = *file;
         if (access::read(m_handler->m_backendAccess) &&
             (auxiliary::file_exists(fullPath(file_state)) ||
              auxiliary::directory_exists(fullPath(file_state))))
@@ -1089,7 +1088,7 @@ void ADIOS2IOHandlerImpl::openFile(
 
     // enforce opening the file
     // lazy opening is deathly in parallel situations
-    auto &fileData = getFileData(**file, how_to_open);
+    auto &fileData = getFileData(*file, how_to_open);
 
     // the following calls present the new file to the IO handler's data
     // structures. do this only after the file has been successfully open, to
@@ -1108,11 +1107,11 @@ void ADIOS2IOHandlerImpl::closeFile(
     Writable *writable, Parameter<Operation::CLOSE_FILE> const &)
 {
     auto &maybe_file = writable->fileState;
-    if (!maybe_file || !maybe_file->has_value())
+    if (!maybe_file.has_value())
     {
         return;
     }
-    auto &file = **maybe_file;
+    auto &file = *maybe_file;
 
     m_files.erase(file.name);
     m_dirty.erase(maybe_file);
@@ -1134,7 +1133,7 @@ void ADIOS2IOHandlerImpl::closeFile(
         /* writeLatePuts = */ true,
         /* flushUnconditionally = */ false);
     file.backendSpecificState.reset();
-    *maybe_file = std::nullopt;
+    maybe_file.reset_optional();
 }
 
 void ADIOS2IOHandlerImpl::openPath(

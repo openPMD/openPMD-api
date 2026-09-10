@@ -22,7 +22,6 @@
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
-#include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
@@ -30,6 +29,7 @@
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IO/JSON/JSONFilePosition.hpp"
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/auxiliary/DrainSet.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSONMatcher.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -475,12 +475,12 @@ std::future<void> JSONIOHandlerImpl::flush(internal::ParsedFlushParams &params)
         throw error::Internal(
             "JSON backend: Cannot have dirty files in read-only modes.");
     }
-    for (auto const &file : m_dirty)
+    for (internal::SharedFileState &file : auxiliary::drain(m_dirty))
     {
-        if (file->has_value())
-            putJsonContents(**file);
+        if (file.has_value())
+            putJsonContents(*file);
     }
-    m_dirty.clear();
+    assert(m_dirty.empty());
     return std::future<void>();
 }
 
@@ -515,7 +515,7 @@ void JSONIOHandlerImpl::createFile(
         std::string name = parameters.name + m_originalExtension;
 
         auto file = makeFile(writable, name, /* consider_open_files = */ false);
-        auto &file_state = **file;
+        auto &file_state = *file;
         auto file_exists = auxiliary::file_exists(fullPath(file_state));
 
         if (access::read(m_handler->m_backendAccess) && file_exists)
@@ -922,15 +922,15 @@ void JSONIOHandlerImpl::closeFile(
     {
         return;
     }
-    else if (!maybe_file->has_value())
+    else if (!maybe_file.has_value())
     {
-        *maybe_file = std::nullopt;
+        maybe_file.reset_optional();
     }
-    auto &file = **maybe_file;
+    auto &file = *maybe_file;
     putJsonContents(file);
     m_dirty.erase(maybe_file);
     m_files.erase(file.name);
-    *maybe_file = std::nullopt;
+    maybe_file.reset_optional();
 }
 
 void JSONIOHandlerImpl::openPath(
