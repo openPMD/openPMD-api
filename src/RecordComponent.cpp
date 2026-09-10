@@ -56,7 +56,7 @@ namespace internal
 {
     RecordComponentData::RecordComponentData() = default;
     void RecordComponentData::push_chunk(
-        IOTask &&task, API api, std::optional<bool> immediate_flush)
+        IOTask &&task, LS_API api, std::optional<bool> immediate_flush)
     {
         Attributable a;
         a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
@@ -81,11 +81,11 @@ namespace internal
         bool immediate_flush_resolved = [&]() {
             switch (api)
             {
-            case API::chaining:
+            case LS_API::chaining:
                 // the chaining API is safe, so we do not need to flush
                 // immediately
                 return false;
-            case API::legacy:
+            case LS_API::legacy:
                 break;
             }
             if (immediate_flush.has_value())
@@ -297,7 +297,7 @@ std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
     return newData;
 }
 
-ConfigureLoadStore RecordComponent::prepareLoadStore_impl(internal::API api)
+ConfigureLoadStore RecordComponent::prepareLoadStore_impl(internal::LS_API api)
 {
     ConfigureLoadStore res{*this};
     res.api = api;
@@ -940,7 +940,7 @@ RecordComponent &RecordComponent::makeEmpty(uint8_t dimensions)
 template <typename T>
 std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
-    auto operation = prepareLoadStore_impl(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
 
     // default arguments
     // we will take care of joined dimension handling later in computeOffset /
@@ -1090,7 +1090,7 @@ template <typename T>
 void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     // static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
-    auto operation = prepareLoadStore_impl(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
 
     // default arguments
     // we will take care of joined dimension handling later in computeOffset /
@@ -1122,7 +1122,7 @@ void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 template <typename T>
 void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    auto operation = prepareLoadStore_impl(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
     // default arguments
     // we will take care of joined dimension handling later in computeOffset /
     // computeExtent
@@ -1144,7 +1144,7 @@ template <typename T>
 void RecordComponent::storeChunk(
     UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    auto operation = prepareLoadStore_impl(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
     if (o.size() != 1u || o.at(0) != 0u)
     {
         operation.offset(std::move(o));
@@ -1162,7 +1162,7 @@ void RecordComponent::storeChunk(
 template <typename T>
 void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 {
-    auto operation = prepareLoadStore_impl(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
     if (offset.size() != 1u || offset.at(0) != 0u)
     {
         operation.offset(std::move(offset));
@@ -1177,7 +1177,7 @@ void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 template <typename T>
 DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
 {
-    auto operation = prepareLoadStore_impl(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
     if (offset.size() != 1u || offset.at(0) != 0u)
     {
         operation.offset(std::move(offset));
