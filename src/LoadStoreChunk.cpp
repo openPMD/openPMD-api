@@ -78,7 +78,7 @@ auto ConfigureLoadStore::dim() const -> uint8_t
 
 auto ConfigureLoadStore::storeChunkConfig() -> internal::LoadStoreConfig
 {
-    return internal::LoadStoreConfig{currentOffset(), currentExtent()};
+    return internal::LoadStoreConfig{currentOffset(), currentExtent(), api};
 }
 
 auto ConfigureLoadStore::deferFlush(RecordComponent &attr)
@@ -375,7 +375,7 @@ auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
     -> internal::LoadStoreConfigWithBuffer
 {
     return internal::LoadStoreConfigWithBuffer{
-        this->currentOffset(), this->currentExtent(), m_mem_select};
+        this->currentOffset(), this->currentExtent(), m_mem_select, api};
 }
 
 void ConfigureStoreChunkFromBuffer::bufferSize_impl(size_t size)
