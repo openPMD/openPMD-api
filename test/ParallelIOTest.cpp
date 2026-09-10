@@ -494,12 +494,12 @@ void available_chunks_test(std::string const &file_ending)
         E_x.storeChunk(xdata, {mpi_rank, 0}, {1, 4});
         auto E_y = it0.meshes["E"]["y"];
         E_y.resetDataset({Datatype::INT, {5, 3ul * mpi_size}});
-        E_y.prepareLoadStore(internal::API::chaining)
+        E_y.prepareLoadStore()
             .withContiguousContainer(ydata_firstandlastrow)
             .offset({0, 3ul * mpi_rank})
             .extent({1, 3})
             .store();
-        E_y.prepareLoadStore(internal::API::chaining)
+        E_y.prepareLoadStore()
             .offset({1, 3ul * mpi_rank})
             .extent({3, 3})
             .withContiguousContainer(ydata)
@@ -509,7 +509,7 @@ void available_chunks_test(std::string const &file_ending)
         // https://github.com/ornladios/ADIOS2/pull/4169
         if constexpr (CanTheMemorySelectionBeReset)
         {
-            E_y.prepareLoadStore(internal::API::chaining)
+            E_y.prepareLoadStore()
                 .withContiguousContainer(ydata_firstandlastrow)
                 .offset({4, 3ul * mpi_rank})
                 .extent({1, 3})
@@ -553,19 +553,14 @@ void available_chunks_test(std::string const &file_ending)
 
         auto E_y = it0.meshes["E"]["y"];
         auto width = E_y.getExtent()[1];
-        auto first_row = E_y.prepareLoadStore(internal::API::chaining)
-                             .extent({1, width})
-                             .load<int>()
-                             .get();
-        auto middle_rows = E_y.prepareLoadStore(internal::API::chaining)
+        auto first_row =
+            E_y.prepareLoadStore().extent({1, width}).load<int>().get();
+        auto middle_rows = E_y.prepareLoadStore()
                                .offset({1, 0})
                                .extent({3, width})
                                .load<int>()
                                .get();
-        auto last_row = E_y.prepareLoadStore(internal::API::chaining)
-                            .offset({4, 0})
-                            .load<int>()
-                            .get();
+        auto last_row = E_y.prepareLoadStore().offset({4, 0}).load<int>().get();
         read.flush();
 
         for (auto row : [&]() -> std::vector<std::shared_ptr<int> *> {

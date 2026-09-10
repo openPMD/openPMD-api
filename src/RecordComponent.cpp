@@ -24,6 +24,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/LoadStoreAPI.hpp"
 #include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -228,11 +229,9 @@ auto resource(T &t) -> attribute_types &
     return t.template resource<attribute_types>();
 }
 
-ConfigureLoadStore RecordComponent::prepareLoadStore(internal::API api)
+ConfigureLoadStore RecordComponent::prepareLoadStore()
 {
-    ConfigureLoadStore res{*this};
-    res.api = api;
-    return res;
+    return ConfigureLoadStore{*this};
 }
 
 namespace
@@ -287,13 +286,20 @@ std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
         std::shared_ptr<void>(new char[numPoints * dtype_size], [](void *p) {
             delete[] (static_cast<char *>(p));
         });
-    prepareLoadStore(api)
+    prepareLoadStore_impl(api)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr_impl_mut(newData, dtype)
         .unsafeNoAutomaticFlush()
         .load();
     return newData;
+}
+
+ConfigureLoadStore RecordComponent::prepareLoadStore_impl(internal::API api)
+{
+    ConfigureLoadStore res{*this};
+    res.api = api;
+    return res;
 }
 
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
@@ -884,7 +890,7 @@ template <typename T>
 std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
-    auto operation = prepareLoadStore(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::API::legacy);
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
@@ -1025,7 +1031,7 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     // static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
     uint8_t dim = getDimensionality();
-    auto operation = prepareLoadStore(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::API::legacy);
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
@@ -1046,7 +1052,7 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 template <typename T>
 void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    prepareLoadStore(internal::API::legacy)
+    prepareLoadStore_impl(internal::API::legacy)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
@@ -1057,7 +1063,7 @@ void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 template <typename T>
 void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    prepareLoadStore(internal::API::legacy)
+    prepareLoadStore_impl(internal::API::legacy)
         .offset(std::move(o))
         .extent(std::move(e))
         .withSharedPtr(std::move(data))
@@ -1069,7 +1075,7 @@ template <typename T>
 void RecordComponent::storeChunk(
     UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    prepareLoadStore(internal::API::legacy)
+    prepareLoadStore_impl(internal::API::legacy)
         .offset(std::move(o))
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
@@ -1080,7 +1086,7 @@ void RecordComponent::storeChunk(
 template <typename T>
 void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 {
-    prepareLoadStore(internal::API::legacy)
+    prepareLoadStore_impl(internal::API::legacy)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .withRawPtr(ptr)
@@ -1091,7 +1097,7 @@ void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 template <typename T>
 DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
 {
-    return prepareLoadStore(internal::API::legacy)
+    return prepareLoadStore_impl(internal::API::legacy)
         .offset(std::move(offset))
         .extent(std::move(extent))
         .storeSpan<T>();

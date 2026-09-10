@@ -236,7 +236,7 @@ public:
      *
      * @return ConfigureLoadStore object for configuring the operation
      */
-    ConfigureLoadStore prepareLoadStore(internal::API);
+    ConfigureLoadStore prepareLoadStore();
 
     /** Load and allocate a chunk of data
      *
@@ -512,6 +512,8 @@ private:
     std::shared_ptr<T> loadChunkAllocate_impl(internal::LoadStoreConfig);
     std::shared_ptr<void> loadChunkAllocate_impl(
         Datatype, size_t dtype_size, internal::LoadStoreConfig);
+
+    ConfigureLoadStore prepareLoadStore_impl(internal::API);
 
     // clang-format off
 OPENPMD_protected
