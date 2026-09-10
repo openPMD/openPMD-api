@@ -35,18 +35,22 @@ SharedFileState::operator bool() const
 }
 auto SharedFileState::operator*() -> FileState &
 {
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     return *ptr_type::operator*();
 }
 auto SharedFileState::operator->() -> FileState *
 {
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     return &*ptr_type::operator*();
 }
 auto SharedFileState::operator*() const -> FileState const &
 {
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     return *ptr_type::operator*();
 }
 auto SharedFileState::operator->() const -> FileState const *
 {
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     return &*ptr_type::operator*();
 }
 void SharedFileState::reset_optional()
