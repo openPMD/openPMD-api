@@ -31,7 +31,7 @@ namespace internal
     {
         Offset offset;
         Extent extent;
-        API api = API::chaining;
+        LS_API api = LS_API::chaining;
     };
     /** Internal configuration for load/store operations with buffer. Default
      * values for optionally specified parameters (offset, extent) must be
@@ -42,7 +42,7 @@ namespace internal
         Offset offset;
         Extent extent;
         std::optional<MemorySelection> memorySelection;
-        API api = API::chaining;
+        LS_API api = LS_API::chaining;
     };
 
 } // namespace internal
@@ -73,7 +73,7 @@ protected:
 
     std::optional<Offset> m_offset;
     std::optional<Extent> m_extent;
-    internal::API api = internal::API::chaining;
+    internal::LS_API api = internal::LS_API::chaining;
 
     bool m_unsafeNoAutomaticFlush = false;
 
