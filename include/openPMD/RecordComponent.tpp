@@ -43,7 +43,7 @@ template <typename T, typename Del>
 inline void
 RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
 {
-    auto operation = prepareLoadStore_impl(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
     if (o.size() != 1u || o.at(0) != 0u)
     {
         operation.offset(std::move(o));
@@ -63,7 +63,7 @@ inline typename std::enable_if_t<
     auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>
 RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
-    auto storeChunkConfig = prepareLoadStore_impl(internal::API::legacy);
+    auto storeChunkConfig = prepareLoadStore_impl(internal::LS_API::legacy);
 
     // guard against default arguments
     // we will take care of joined dimension handling later in computeOffset /
@@ -88,7 +88,7 @@ template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
-    auto operation = prepareLoadStore_impl(internal::API::legacy);
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
     if (o.size() != 1u || o.at(0) != 0u)
     {
         operation.offset(std::move(o));
