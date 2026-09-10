@@ -45,7 +45,24 @@ struct FileState
 // A file state is generally shared between multiple Writable instances, hence
 // the shared_ptr. A Writable does not initially have an associated state, hence
 // optional.
-using SharedFileState = std::shared_ptr<std::optional<FileState>>;
+class SharedFileState : std::shared_ptr<std::optional<FileState>>
+{
+    using ptr_type = std::shared_ptr<std::optional<FileState>>;
+
+public:
+    [[nodiscard]] auto has_value() const -> bool;
+    operator bool() const;
+    auto operator*() -> FileState &;
+    auto operator->() -> FileState *;
+    auto operator*() const -> FileState const &;
+    auto operator->() const -> FileState const *;
+
+    void reset_optional();
+
+    using ptr_type::get;
+    using ptr_type::shared_ptr;
+    using ptr_type::operator=;
+};
 } // namespace openPMD::internal
 
 template <>
