@@ -22,6 +22,7 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/LoadStoreAPI.hpp"
 #include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
@@ -76,7 +77,9 @@ namespace internal
         std::queue<IOTask> m_chunks;
 
         void push_chunk(
-            IOTask &&task, std::optional<bool> immediate_flush = std::nullopt);
+            IOTask &&task,
+            API,
+            std::optional<bool> immediate_flush = std::nullopt);
         /**
          * Stores the value for constant record components.
          * Ignored otherwise.
@@ -509,6 +512,8 @@ private:
     std::shared_ptr<T> loadChunkAllocate_impl(internal::LoadStoreConfig);
     std::shared_ptr<void> loadChunkAllocate_impl(
         Datatype, size_t dtype_size, internal::LoadStoreConfig);
+
+    ConfigureLoadStore prepareLoadStore_impl(internal::API);
 
     // clang-format off
 OPENPMD_protected
