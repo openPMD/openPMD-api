@@ -25,16 +25,44 @@ namespace openPMD::internal
 {
 FileState::FileState(std::string name_in) : name(std::move(name_in))
 {}
+auto SharedFileState::has_value() const -> bool
+{
+    return ptr_type::operator bool() && ptr_type::operator*().has_value();
+}
+SharedFileState::operator bool() const
+{
+    return has_value();
+}
+auto SharedFileState::operator*() -> FileState &
+{
+    return *ptr_type::operator*();
+}
+auto SharedFileState::operator->() -> FileState *
+{
+    return &*ptr_type::operator*();
+}
+auto SharedFileState::operator*() const -> FileState const &
+{
+    return *ptr_type::operator*();
+}
+auto SharedFileState::operator->() const -> FileState const *
+{
+    return &*ptr_type::operator*();
+}
+void SharedFileState::reset_optional()
+{
+    ptr_type::operator*().reset();
+}
 } // namespace openPMD::internal
 
 auto std::less<openPMD::internal::SharedFileState>::operator()(
     first_argument_type const &first, second_argument_type const &second) const
     -> result_type
 {
-    if (!first || !second || !*first || !*second)
+    if (!first || !second)
     {
         return std::less<>()(first.get(), second.get());
     }
     // If possible, compare by name
-    return less<>()((**first).name, (**second).name);
+    return less<>()((*first).name, (*second).name);
 }
