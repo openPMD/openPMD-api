@@ -67,8 +67,8 @@ def particles_to_daskdataframe(particle_species, attributes=None):
     #                     assume the same chunking applies for all of them
     #                     in a particle species
     chunks = None
-    for k_r, r in particle_species.items():
-        for k_rc, rc in r.items():
+    for r in particle_species.values():
+        for rc in r.values():
             if not rc.constant:
                 chunks = rc.available_chunks()
                 break
@@ -78,8 +78,8 @@ def particles_to_daskdataframe(particle_species, attributes=None):
     # only constant record components:
     # fall back to a single, big chunk here
     if chunks is None:
-        for k_r, r in particle_species.items():
-            for k_rc, rc in r.items():
+        for r in particle_species.values():
+            for rc in r.values():
                 chunks = rc.available_chunks()
                 break
             if chunks:

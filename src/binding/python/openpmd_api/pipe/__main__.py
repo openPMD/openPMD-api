@@ -179,7 +179,7 @@ class IncreaseGranularity(io.PartialStrategy):
         def hosts_in_order(rank_assignment):
             already_seen = set()
             res = []
-            for _, hostname in rank_assignment.items():
+            for hostname in rank_assignment.values():
                 if hostname not in already_seen:
                     already_seen.add(hostname)
                     res.append(hostname)
@@ -238,12 +238,12 @@ class MergingStrategy(io.Strategy):
         res = self.inner_strategy.assign(
             assignment, in_ranks, out_ranks, my_rank, num_ranks
         )
-        for out_rank, assignment in res.items():
-            merged = assignment.merge_chunks_from_same_sourceID()
-            assignment.clear()
+        for out_assignment in res.values():
+            merged = out_assignment.merge_chunks_from_same_sourceID()
+            out_assignment.clear()
             for in_rank, chunks in merged.items():
                 for chunk in chunks:
-                    assignment.append(
+                    out_assignment.append(
                         io.WrittenChunkInfo(chunk.offset, chunk.extent, in_rank)
                     )
         return res
@@ -321,17 +321,17 @@ class pipe:
             print("Opened input and output")
             sys.stdout.flush()
         else:
-            print("Opening data source on rank {}.".format(self.comm.rank))
+            print(f"Opening data source on rank {self.comm.rank}.")
             sys.stdout.flush()
             inseries = io.Series(
                 self.infile, io.Access.read_linear, self.comm, self.inconfig
             )
-            print("Opening data sink on rank {}.".format(self.comm.rank))
+            print(f"Opening data sink on rank {self.comm.rank}.")
             sys.stdout.flush()
             outseries = io.Series(
                 self.outfile, io.Access.create, self.comm, self.outconfig
             )
-            print("Opened input and output on rank {}.".format(self.comm.rank))
+            print(f"Opened input and output on rank {self.comm.rank}.")
             sys.stdout.flush()
         # In Linear read mode, global attributes are only present after calling
         # this method to access the first iteration
@@ -388,7 +388,7 @@ class pipe:
             io.Patch_Record,
         ]
         is_container = any(
-            [isinstance(src, container_type) for container_type in container_types]
+            isinstance(src, container_type) for container_type in container_types
         )
 
         if isinstance(src, io.Series):
@@ -397,23 +397,19 @@ class pipe:
             for in_iteration in src.read_iterations():
                 if self.comm.rank == 0:
                     print(
-                        "Iteration {0} contains {1} meshes:".format(
-                            in_iteration.iteration_index, len(in_iteration.meshes)
-                        )
+                        f"Iteration {in_iteration.iteration_index} contains {len(in_iteration.meshes)} meshes:"
                     )
                     for m in in_iteration.meshes:
-                        print("\t {0}".format(m))
-                    print("")
+                        print(f"\t {m}")
+                    print()
                     print(
-                        "Iteration {0} contains {1} particle species:".format(
-                            in_iteration.iteration_index, len(in_iteration.particles)
-                        )
+                        f"Iteration {in_iteration.iteration_index} contains {len(in_iteration.particles)} particle species:"
                     )
                     for ps in in_iteration.particles:
-                        print("\t {0}".format(ps))
+                        print(f"\t {ps}")
                         print("With records:")
                         for r in in_iteration.particles[ps]:
-                            print("\t {0}".format(r))
+                            print(f"\t {r}")
                 # With linear read mode, we can only load the source rank table
                 # inside `read_iterations()` since it's a dataset.
                 if src.has_rank_table_read:
@@ -458,21 +454,13 @@ class pipe:
                     self.comm.rank,
                     self.comm.size,
                 )
-                for chunk in (
-                    my_chunks[self.comm.rank] if self.comm.rank in my_chunks else []
-                ):
+                for chunk in my_chunks.get(self.comm.rank, []):
                     if debug:
                         end = chunk.offset.copy()
                         for i in range(len(end)):
                             end[i] += chunk.extent[i]
                         print(
-                            "{}\t{}/{}:\t{} -- {}".format(
-                                current_path,
-                                self.comm.rank,
-                                self.comm.size,
-                                chunk.offset,
-                                end,
-                            )
+                            f"{current_path}\t{self.comm.rank}/{self.comm.size}:\t{chunk.offset} -- {end}"
                         )
                     span = dest.store_chunk(chunk.offset, chunk.extent)
                     self.loads.append(

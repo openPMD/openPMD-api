@@ -14,8 +14,7 @@ def span_write(filename):
         iteration = iterations[i]
         electronPositions = iteration.particles["e"]["position"]
 
-        j = 0
-        for dim in ["x", "y", "z"]:
+        for j, dim in enumerate(["x", "y", "z"]):
             pos = electronPositions[dim]
             pos.reset_dataset(dataset)
             # The Python span API does not expose the extended version that
@@ -23,7 +22,6 @@ def span_write(filename):
             span = pos.store_chunk([0], extent).current_buffer()
             for k in range(len(span)):
                 span[k] = 3 * i * length + j * length + k
-            j += 1
         iteration.close()
 
     # The files in 'series' are still open until the object is destroyed, on

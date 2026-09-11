@@ -11,8 +11,9 @@ License: LGPLv3+
 # https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
 # on import: calls MPI_Init_thread()
 # exit hook: calls MPI_Finalize()
-from mpi4py import MPI
 import numpy as np
+from mpi4py import MPI
+
 import openpmd_api as io
 
 try:
@@ -33,8 +34,8 @@ if __name__ == "__main__":
     local_data = np.ones(10 * 300, dtype=np.double).reshape(10, 300) * local_value
     if 0 == comm.rank:
         print(
-            "Set up a 2D array with 10x300 elements per MPI rank ({}x) "
-            "that will be written to disk".format(comm.size)
+            f"Set up a 2D array with 10x300 elements per MPI rank ({comm.size}x) "
+            "that will be written to disk"
         )
 
     # open file for writing
@@ -46,7 +47,7 @@ if __name__ == "__main__":
         comm,
     )
     if 0 == comm.rank:
-        print("Created an empty series in parallel with {} MPI ranks".format(comm.size))
+        print(f"Created an empty series in parallel with {comm.size} MPI ranks")
 
     # In parallel contexts, it's important to explicitly open iterations.
     # However, we use Access mode CREATE_LINEAR, so the Series creates
@@ -65,9 +66,7 @@ if __name__ == "__main__":
 
     if 0 == comm.rank:
         print(
-            "Prepared a Dataset of size {} and Datatype {}".format(
-                dataset.extent, dataset.dtype
-            )
+            f"Prepared a Dataset of size {dataset.extent} and Datatype {dataset.dtype}"
         )
 
     mymesh.reset_dataset(dataset)

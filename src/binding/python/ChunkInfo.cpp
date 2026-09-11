@@ -233,14 +233,14 @@ void init_Chunk(py::module &m)
 
     using namespace chunk_assignment;
 
-    py::bind_map<Assignment>(m, "Assignment");
+    openPMD::bind_python_map<Assignment>(m, "Assignment");
 
     py::class_<PartialAssignment>(m, "PartialAssignment")
         .def(py::init<>())
         .def_readwrite("not_assigned", &PartialAssignment::notAssigned)
         .def_readwrite("assigned", &PartialAssignment::assigned);
 
-    py::bind_map<RankMeta>(m, "RankMeta");
+    openPMD::bind_python_map<RankMeta>(m, "RankMeta");
 
     py::class_<PartialStrategy>(m, "PartialStrategyCpp")
         .def(

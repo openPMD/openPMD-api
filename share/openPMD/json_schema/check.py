@@ -3,8 +3,8 @@
 import argparse
 import json
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import jsonschema.validators
 from referencing import Registry, Resource
@@ -76,7 +76,5 @@ with open(args.openpmd_file[0], "r") as instance:
         registry=registry,
     )
     print(
-        "File {} was validated successfully against schema {}.".format(
-            instance.name, args.schema_root
-        )
+        f"File {instance.name} was validated successfully against schema {args.schema_root}."
     )

@@ -116,7 +116,7 @@ def record_component_to_daskarray(record_component, chunks=None):
         #                by forcing into case 1
         #                (this can lead to larger blocks than using
         # the gcd of the extents aka AMReX block size)
-        common_chunk_widths_per_dim = list()
+        common_chunk_widths_per_dim = []
         for d, offsets_in_dim in enumerate(offsets_sorted_unique_per_dim):
             # print("d=", d, offsets_in_dim, record_component.shape[d])
             offsets_in_dim_arr = np.array(offsets_in_dim)

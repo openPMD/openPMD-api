@@ -25,6 +25,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
@@ -71,3 +72,51 @@ PYBIND11_MAKE_OPAQUE(PyMeshRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyPatchRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyBaseRecordRecordComponent)
 PYBIND11_MAKE_OPAQUE(PyBaseRecordPatchRecordComponent)
+
+namespace openPMD
+{
+template <typename Map, typename... Args>
+auto bind_python_map(Args &&...args)
+{
+    using KeyType = typename Map::key_type;
+    using MappedType = typename Map::mapped_type;
+    auto res = py::bind_map<Map>(std::forward<Args>(args)...);
+    if (!py::hasattr(res, "get"))
+    {
+        res.def(
+               "get",
+               [](Map &m,
+                  KeyType const &key,
+                  MappedType &default_val) -> MappedType & {
+                   if (auto it = m.find(key); it != m.end())
+                   {
+                       return it->second;
+                   }
+                   else
+                   {
+                       return default_val;
+                   }
+               },
+               py::return_value_policy::reference_internal // ref + keepalive
+               )
+            // .get() without default argument just added for completeness.
+            // implementation is copied from pybind's __getitem__
+            .def(
+                "get",
+                [](Map &m, const KeyType &k) -> MappedType & {
+                    auto it = m.find(k);
+                    if (it == m.end())
+                    {
+                        set_error(
+                            PyExc_KeyError,
+                            py::detail::format_message_key_error(k));
+                        throw py::error_already_set();
+                    }
+                    return it->second;
+                },
+                py::return_value_policy::reference_internal // ref + keepalive
+            );
+    }
+    return res;
+}
+} // namespace openPMD

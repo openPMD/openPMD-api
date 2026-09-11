@@ -15,37 +15,37 @@ if __name__ == "__main__":
         io.Access.read_only,
         {"defer_iteration_parsing": True},
     )
-    print("Read a Series with openPMD standard version %s" % series.openPMD)
+    print(f"Read a Series with openPMD standard version {series.openPMD}")
 
-    print("The Series contains {0} iterations:".format(len(series.snapshots())))
+    print(f"The Series contains {len(series.snapshots())} iterations:")
     for i in series.snapshots():
-        print("\t {0}".format(i))
-    print("")
+        print(f"\t {i}")
+    print()
 
     # with defer_iteration_parsing, open() must be called explicitly
     i = series.snapshots()[100].open()
-    print("Iteration 100 contains {0} meshes:".format(len(i.meshes)))
+    print(f"Iteration 100 contains {len(i.meshes)} meshes:")
     for m in i.meshes:
-        print("\t {0}".format(m))
-    print("")
-    print("Iteration 100 contains {0} particle species:".format(len(i.particles)))
+        print(f"\t {m}")
+    print()
+    print(f"Iteration 100 contains {len(i.particles)} particle species:")
     for ps in i.particles:
-        print("\t {0}".format(ps))
+        print(f"\t {ps}")
         print("With records:")
         for r in i.particles[ps]:
-            print("\t {0}".format(r))
+            print(f"\t {r}")
 
     # printing a scalar value
     electrons = i.particles["electrons"]
     charge = electrons["charge"]
     series.flush()
-    print("And the first electron particle has a charge {}".format(charge[0]))
-    print("")
+    print(f"And the first electron particle has a charge {charge[0]}")
+    print()
 
     E_x = i.meshes["E"]["x"]
     shape = E_x.shape
 
-    print("Field E.x has shape {0} and datatype {1}".format(shape, E_x.dtype))
+    print(f"Field E.x has shape {shape} and datatype {E_x.dtype}")
 
     chunk_data = E_x[1:3, 1:3, 1:2]
     # print("Queued the loading of a single chunk from disk, "
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # The iteration can be closed in order to help free up resources.
     # The iteration's content will be flushed automatically.
     i.close()
-    print("Full E/x is of shape {0} and starts with:".format(all_data.shape))
+    print(f"Full E/x is of shape {all_data.shape} and starts with:")
     print(all_data[0, 0, :5])
 
     # The files in 'series' are still open until the series is closed, at which
