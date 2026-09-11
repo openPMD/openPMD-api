@@ -310,6 +310,7 @@ not possible once it has been closed.
     finalize_container<Snapshots>(snapshots, /* skip_getitem = */ true);
 
     py::class_<StatefulIteratorPythonAdaptor>(m, "StatefulIterator")
+        .def("__iter__", [](py::object self) { return self; })
         .def(
             "__next__",
             [](StatefulIteratorPythonAdaptor &iterator) {
