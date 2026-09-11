@@ -22,10 +22,12 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/auxiliary/JSONMatcher.hpp"
 
 #include <utility>
+#include <variant>
 
 namespace openPMD
 {
@@ -44,6 +46,9 @@ std::ostream &operator<<(std::ostream &os, FlushLevel l)
         break;
     case FlushLevel::CreateOrOpenFiles:
         os << "CreateOrOpenFiles";
+        break;
+    case FlushLevel::ImmediateFlush:
+        os << "ImmediateFlush";
         break;
     }
     return os;
@@ -85,6 +90,14 @@ auto formatStandard(OpenpmdStandard std) -> char const *
         "[auxiliary::formatStandard] Match should be exhaustive.");
 }
 } // namespace openPMD::auxiliary
+
+namespace openPMD::internal
+{
+GlobalParameters::GlobalParameters(Access at)
+    : m_backendAccess(at), m_frontendAccess(at)
+{}
+GlobalParameters::GlobalParameters() = default;
+} // namespace openPMD::internal
 
 namespace openPMD
 {
@@ -145,49 +158,65 @@ std::future<void> AbstractIOHandler::flush(internal::FlushParams const &params)
     return future;
 }
 
+std::future<void> AbstractIOHandler::flush(internal::ParsedFlushParams &params)
+{
+    // The flush counter indicates the number of times that m_work has been
+    // emptied. Only increment it if m_work was full before operation and is
+    // empty after operation.
+    // Enqueuers can use this counter to check if the enqueued operation has
+    // been flushed already.
+    bool increase_flush_counter = !m_work.empty();
+    auto res = this->flush_impl(params);
+    if (!m_work.empty())
+    {
+        throw error::Internal("flush() did not clear all work!");
+    }
+    if (increase_flush_counter)
+    {
+        ++*m_flushCounter;
+    }
+    return res;
+}
+
 bool AbstractIOHandler::fullSupportForVariableBasedEncoding() const
 {
     return false;
 }
 
+template <>
+AbstractIOHandler::AbstractIOHandler(
+    detail::InitFrom_Tag, internal::AbstractIOHandlerInitFrom &&initialize_from)
+{
+    using IF = internal::AbstractIOHandlerInitFrom;
+    std::visit(
+        auxiliary::overloaded{
+            [this](IF::Left &&l) {
+                static_cast<internal::GlobalParameters *>(this)->operator=(
+                    std::move(l));
+            },
+            [this](IF::Right &&r) { this->operator=(std::move(*r)); }},
+        std::move(initialize_from.as_parent()));
+}
+
 #if openPMD_HAVE_MPI
 template <>
 AbstractIOHandler::AbstractIOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     json::TracingJSON &&jsonConfig,
     MPI_Comm)
-    : AbstractIOHandler(std::move(initialize_from))
+    : AbstractIOHandler(detail::InitFrom_Tag_v, std::move(initialize_from))
 {
     jsonMatcher = std::make_unique<json::JsonMatcher>(std::move(jsonConfig));
-    directory = std::move(path);
-    m_backendAccess = at;
-    m_frontendAccess = at;
 }
 #endif
 
 template <>
 AbstractIOHandler::AbstractIOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     json::TracingJSON &&jsonConfig)
-    : AbstractIOHandler(std::move(initialize_from))
+    : AbstractIOHandler(detail::InitFrom_Tag_v, std::move(initialize_from))
 {
     jsonMatcher = std::make_unique<json::JsonMatcher>(std::move(jsonConfig));
-    directory = std::move(path);
-    m_backendAccess = at;
-    m_frontendAccess = at;
-}
-
-AbstractIOHandler::AbstractIOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from)
-{
-    if (initialize_from.has_value() && *initialize_from)
-    {
-        this->operator=(std::move(**initialize_from));
-    }
 }
 
 AbstractIOHandler::~AbstractIOHandler() = default;
@@ -198,3 +227,29 @@ AbstractIOHandler::AbstractIOHandler(AbstractIOHandler &&) = default;
 AbstractIOHandler &
 AbstractIOHandler::operator=(AbstractIOHandler &&) noexcept = default;
 } // namespace openPMD
+
+namespace openPMD::internal
+{
+auto AbstractIOHandlerInitFrom::asGlobalParameters() const
+    -> GlobalParameters const &
+{
+    return std::visit(
+        auxiliary::overloaded{
+            [](Left const &params) -> GlobalParameters const & {
+                // ?? why
+                // NOLINTNEXTLINE(bugprone-return-const-ref-from-parameter)
+                return params;
+            },
+            [](Right const &ioHandler) -> GlobalParameters const & {
+                return *ioHandler;
+            }},
+        this->as_parent());
+}
+
+auto AbstractIOHandlerInitFrom::asGlobalParameters() -> GlobalParameters &
+{
+    return const_cast<GlobalParameters &>(
+        static_cast<AbstractIOHandlerInitFrom const *>(this)
+            ->asGlobalParameters());
+}
+} // namespace openPMD::internal

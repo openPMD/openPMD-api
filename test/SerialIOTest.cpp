@@ -945,7 +945,11 @@ inline void constant_scalar(std::string const &file_ending)
             new unsigned int[6], [](unsigned int const *p) { delete[] p; });
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e] { return e++; });
-        E_y.storeChunk(std::move(E), {0, 0, 0}, {1, 2, 3});
+        // check that const-type unique pointers work in the builder pattern
+        E_y.prepareLoadStore()
+            .extent({1, 2, 3})
+            .withUniquePtr(std::move(E).static_cast_<unsigned int const>())
+            .store();
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.snapshots()[1].meshes["E"];
@@ -1756,13 +1760,17 @@ inline void write_test(
     auto opaqueTypeDataset = rc.visit<ReadFromAnyType>();
 
     auto variantTypeDataset = rc.loadChunkVariant();
+    auto variantTypeDataset2 = rc.prepareLoadStore().loadVariant().get();
     rc.seriesFlush();
-    std::visit(
-        [](auto &&shared_ptr) {
-            std::cout << "First value in loaded chunk: '" << shared_ptr.get()[0]
-                      << '\'' << std::endl;
-        },
-        variantTypeDataset);
+    for (auto ptr : {&variantTypeDataset, &variantTypeDataset2})
+    {
+        std::visit(
+            [](auto &&shared_ptr) {
+                std::cout << "First value in loaded chunk: '"
+                          << shared_ptr.get()[0] << '\'' << std::endl;
+            },
+            *ptr);
+    }
 
 #ifndef _WIN32
     if (test_rank_table)
@@ -4346,6 +4354,7 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
     Datatype dtype = determineDatatype<int32_t>();
     {
         Series write("../samples/bp5_flush.bp", Access::CREATE_LINEAR, cfg);
+        bool flushImmediately = write.flushImmediately();
 
         {
             auto component =
@@ -4382,8 +4391,16 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         if (flushDuringStep == FlushDuringStep::Default_Yes ||
             flushDuringStep == FlushDuringStep::Always)
         {
-            // should still be roughly within 1% of 4Mb
-            REQUIRE(std::abs(1 - double(currentSize) / (4 * size)) <= 0.01);
+            if (flushImmediately)
+            {
+                // should still be roughly within 1% of 8Mb
+                REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
+            }
+            else
+            {
+                // should still be roughly within 1% of 4Mb
+                REQUIRE(std::abs(1 - double(currentSize) / (4 * size)) <= 0.01);
+            }
         }
         else
         {
@@ -4423,8 +4440,17 @@ void adios2_bp5_flush(std::string const &cfg, FlushDuringStep flushDuringStep)
         }
         else if (flushDuringStep == FlushDuringStep::Default_Yes)
         {
-            // should now be roughly within 1% of 8Mb
-            REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
+            if (flushImmediately)
+            {
+                // should now be roughly within 1% of 12Mb
+                REQUIRE(
+                    std::abs(1 - double(currentSize) / (12 * size)) <= 0.01);
+            }
+            else
+            {
+                // should now be roughly within 1% of 8Mb
+                REQUIRE(std::abs(1 - double(currentSize) / (8 * size)) <= 0.01);
+            }
         }
         else
         {

@@ -19,6 +19,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 // expose private and protected members for invasive testing
+#include "openPMD/Error.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
+#include "openPMD/auxiliary/Future.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -49,6 +52,12 @@
 
 using namespace openPMD;
 
+auto wrapAccess(openPMD::Access at)
+    -> openPMD::internal::AbstractIOHandlerInitFrom
+{
+    return openPMD::internal::GlobalParameters{at};
+}
+
 namespace openPMD::test
 {
 struct TestHelper : public Attributable
@@ -58,7 +67,7 @@ struct TestHelper : public Attributable
         writable().IOHandler =
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
                 createIOHandler(
-                    std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
+                    wrapAccess(Access::CREATE), Format::JSON, ".json"));
     }
 };
 } // namespace openPMD::test
@@ -173,8 +182,7 @@ TEST_CASE("container_default_test", "[auxiliary]")
     Container<openPMD::test::S> c = Container<openPMD::test::S>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(
-                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(wrapAccess(Access::CREATE), Format::JSON, ".json"));
 
     REQUIRE(c.empty());
     REQUIRE(c.erase("nonExistentKey") == false);
@@ -214,8 +222,7 @@ TEST_CASE("container_retrieve_test", "[auxiliary]")
     Container<structure> c = Container<structure>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(
-                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(wrapAccess(Access::CREATE), Format::JSON, ".json"));
 
     structure s;
     std::string text =
@@ -289,8 +296,7 @@ TEST_CASE("container_access_test", "[auxiliary]")
     Container<Widget> c = Container<Widget>();
     c.writable().IOHandler =
         std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-            createIOHandler(
-                std::nullopt, ".", Access::CREATE, Format::JSON, ".json"));
+            createIOHandler(wrapAccess(Access::CREATE), Format::JSON, ".json"));
 
     c["1firstWidget"] = Widget(0);
     REQUIRE(c.size() == 1);
@@ -537,4 +543,32 @@ TEST_CASE("filesystem_test", "[auxiliary]")
 
     REQUIRE(!remove_file("./nonexistent_file_in_cmake_bin_directory"));
 #endif
+}
+
+TEST_CASE("future_test", "[auxiliary]")
+{
+    using task_type = auxiliary::DeferredComputation<std::string>;
+    size_t counter = 0;
+
+    auto make_task = [&counter]() {
+        counter = 0;
+        return task_type{[&counter]() {
+            ++counter;
+            return "success";
+        }};
+    };
+
+    auto move_construct = make_task();
+    task_type move_constructed(std::move(move_construct));
+    REQUIRE(counter == 0);
+    REQUIRE(move_constructed() == "success");
+    REQUIRE(counter == 1);
+    REQUIRE_THROWS_AS(move_constructed(), error::WrongAPIUsage);
+
+    auto move_assign = make_task();
+    task_type move_assigned = std::move(move_assign);
+    REQUIRE(counter == 0);
+    REQUIRE(move_assigned() == "success");
+    REQUIRE(counter == 1);
+    REQUIRE_THROWS_AS(move_assigned(), error::WrongAPIUsage);
 }

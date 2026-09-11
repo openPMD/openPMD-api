@@ -88,6 +88,9 @@ The key ``defer_iteration_parsing`` can be used to optimize the process of openi
 By default, a Series is parsed eagerly, i.e. opening a Series implies reading all available iterations.
 Especially when a Series has many iterations, this can be a costly operation and users may wish to defer parsing of iterations to a later point adding ``{"defer_iteration_parsing": true}`` to their JSON/TOML configuration.
 
+The openPMD-api can be configured to treat load/store operations as *deferred* or as *immediate*, using either the boolean JSON option ``{"flush_immediately": true}`` or the environment variable ``OPENPMD_FLUSH_IMMEDIATELY=1``.
+Load/store operations are deferred by default in the C++ API and immediate by default in the Python API.
+
 When parsing non-eagerly, each iteration needs to be explicitly opened with ``Iteration::open()`` before accessing.
 (Notice that ``Iteration::open()`` is generally recommended to be used in parallel contexts to avoid parallel file accessing hazards).
 Using the Streaming API (i.e. ``SeriesInterface::readIteration()``) will do this automatically.

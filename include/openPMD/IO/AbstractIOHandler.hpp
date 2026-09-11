@@ -61,6 +61,11 @@ enum class FlushLevel
      */
     UserFlush,
     /**
+     * Flush triggered by storeChunk in immediate flush mode.
+     * Must not perform operations enqueued in m_chunks.
+     */
+    ImmediateFlush,
+    /**
      * Default mode, used when flushes are triggered internally, e.g. during
      * parsing to read attributes. Does not trigger a flush point.
      * All operations must be performed by a backend, except for those that
@@ -92,6 +97,7 @@ namespace flush_level
         {
         case FlushLevel::UserFlush:
             return true;
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
         case FlushLevel::CreateOrOpenFiles:
@@ -99,13 +105,13 @@ namespace flush_level
         }
         return false; // unreachable
     }
-    // same as global_flushpoint for now, but we will soon introduce
-    // immediate_flush
+
     inline constexpr auto write_datasets(FlushLevel fl)
     {
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
             return true;
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
@@ -119,6 +125,7 @@ namespace flush_level
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
             return true;
         case FlushLevel::SkeletonOnly:
@@ -132,6 +139,7 @@ namespace flush_level
         switch (fl)
         {
         case FlushLevel::UserFlush:
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
             return true;
@@ -249,12 +257,64 @@ namespace internal
             return res;
         }
     }
+
+    /**************************************************************************
+     * Since the AbstractIOHandler is linked to every object of the
+     * frontend, it stores a number of members that are needed by methods
+     * traversing the object hierarchy. Those members are found in this struct
+     * from which AbstractIOHandler derives.
+     **************************************************************************/
+    struct GlobalParameters
+    {
+        GlobalParameters(Access at);
+
+        std::string directory;
+        /*
+         * Originally, the reason for distinguishing these two was that during
+         * parsing in reading access modes, the access type would be temporarily
+         * const_cast'ed to an access type that would support modifying
+         * the openPMD object model. Then, it would be const_cast'ed back to
+         * READ_ONLY, to disable further modifications.
+         * Due to this approach's tendency to cause subtle bugs, and due to its
+         * difficult debugging properties, this was replaced by the SeriesStatus
+         * enum, defined in this file.
+         * The distinction of backendAccess and frontendAccess stays relevant,
+         * since the frontend can use it in order to pretend to the backend that
+         * another access type is being used. This is used by the file-based
+         * append mode, which is entirely implemented by the frontend, which
+         * internally uses the backend in CREATE mode.
+         */
+        Access m_backendAccess;
+        Access m_frontendAccess;
+
+        /**
+         * This is to avoid that the destructor tries flushing again if an error
+         * happened. Otherwise, this would lead to confusing error messages.
+         * Initialized as false, set to true after successful construction.
+         * If flushing results in an error, set this back to false.
+         * The destructor will only attempt flushing again if this is true.
+         */
+        bool m_lastFlushSuccessful = false;
+        internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
+        IterationEncoding m_encoding = IterationEncoding::groupBased;
+        OpenpmdStandard m_standard =
+            auxiliary::parseStandard(getStandardDefault());
+        bool m_verify_homogeneous_extents = true;
+        // If true, then flush directly upon storeChunk
+        bool m_flush_immediately = false;
+
+    protected:
+        explicit GlobalParameters();
+    };
 } // namespace internal
 
 namespace detail
 {
     class ADIOS2File;
-}
+    struct InitFrom_Tag
+    {};
+    constexpr InitFrom_Tag InitFrom_Tag_v;
+} // namespace detail
 
 /** Interface for communicating between logical and physically persistent data.
  *
@@ -264,7 +324,7 @@ namespace detail
  * scenarios it is therefore necessary to manually execute all operations
  * by calling AbstractIOHandler::flush().
  */
-class AbstractIOHandler
+class AbstractIOHandler : public internal::GlobalParameters
 {
     friend class Series;
     friend class ADIOS2IOHandlerImpl;
@@ -283,23 +343,16 @@ protected:
 
 public:
 #if openPMD_HAVE_MPI
-    template <typename TracingJSON>
+    template <typename InitFrom, typename TracingJSON>
     AbstractIOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access at,
-        TracingJSON &&jsonConfig,
-        MPI_Comm);
+        InitFrom &&initialize_from, TracingJSON &&jsonConfig, MPI_Comm);
 #endif
 
-    template <typename TracingJSON>
-    AbstractIOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access at,
-        TracingJSON &&jsonConfig);
+    template <typename InitFrom, typename TracingJSON>
+    AbstractIOHandler(InitFrom &&initialize_from, TracingJSON &&jsonConfig);
 
-    AbstractIOHandler(std::optional<std::unique_ptr<AbstractIOHandler>>);
+    template <typename InitFrom>
+    AbstractIOHandler(detail::InitFrom_Tag, InitFrom &&);
 
     virtual ~AbstractIOHandler();
 
@@ -327,56 +380,37 @@ public:
      * backends that decide to implement this operation asynchronously.
      */
     std::future<void> flush(internal::FlushParams const &);
+    std::queue<IOTask> m_work;
+    /** Counter tracking the number of flush operations. This is later used to
+     * avoid repeated flushing in the DeferredComputation objects returned by
+     * the loadStoreChunk() API. (The counter is copied as a weak reference to
+     * the shared pointer, and the value is compared to the value upon enqueuing
+     * the operation. If the flush counter has proceeded past the old value, our
+     * operation has already been run.) */
+    std::shared_ptr<unsigned long long> m_flushCounter =
+        std::make_shared<unsigned long long>(0);
 
     /** Process operations in queue according to FIFO.
      *
      * @return  Future indicating the completion state of the operation for
      * backends that decide to implement this operation asynchronously.
      */
-    virtual std::future<void> flush(internal::ParsedFlushParams &) = 0;
+    std::future<void> flush(internal::ParsedFlushParams &);
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;
     virtual bool fullSupportForVariableBasedEncoding() const;
 
-    std::string directory;
-    /*
-     * Originally, the reason for distinguishing these two was that during
-     * parsing in reading access modes, the access type would be temporarily
-     * const_cast'ed to an access type that would support modifying
-     * the openPMD object model. Then, it would be const_cast'ed back to
-     * READ_ONLY, to disable further modifications.
-     * Due to this approach's tendency to cause subtle bugs, and due to its
-     * difficult debugging properties, this was replaced by the SeriesStatus
-     * enum, defined in this file.
-     * The distinction of backendAccess and frontendAccess stays relevant, since
-     * the frontend can use it in order to pretend to the backend that another
-     * access type is being used. This is used by the file-based append mode,
-     * which is entirely implemented by the frontend, which internally uses
-     * the backend in CREATE mode.
+protected:
+    /** Implementation of flush operation for subclasses
+     *
+     * Do not call directly, use flush() wrapper instead.
+     *
+     * @param params Parsed flush parameters
+     * @return Future indicating completion state
      */
-    Access m_backendAccess;
-    Access m_frontendAccess;
-    std::queue<IOTask> m_work;
-
-    /**************************************************************************
-     * Since the AbstractIOHandler is linked to every object of the frontend, *
-     * it stores a number of members that are needed by methods traversing    *
-     * the object hierarchy. Those members are found below.                   *
-     **************************************************************************/
-
-    /**
-     * This is to avoid that the destructor tries flushing again if an error
-     * happened. Otherwise, this would lead to confusing error messages.
-     * Initialized as false, set to true after successful construction.
-     * If flushing results in an error, set this back to false.
-     * The destructor will only attempt flushing again if this is true.
-     */
-    bool m_lastFlushSuccessful = false;
-    internal::SeriesStatus m_seriesStatus = internal::SeriesStatus::Default;
-    IterationEncoding m_encoding = IterationEncoding::groupBased;
-    OpenpmdStandard m_standard = auxiliary::parseStandard(getStandardDefault());
-    bool m_verify_homogeneous_extents = true;
+    virtual std::future<void>
+    flush_impl(internal::ParsedFlushParams &params) = 0;
 }; // AbstractIOHandler
 
 } // namespace openPMD

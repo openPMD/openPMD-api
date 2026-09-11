@@ -46,6 +46,34 @@
 #define openPMD_HAVE_ADIOS2_BP5 0
 #endif
 
+namespace openPMD
+{
+namespace detail
+{
+    /** Trait to check if a variable supports SetMemorySelection
+     *
+     * @tparam Variable ADIOS2 variable type
+     */
+    template <typename Variable, typename SFINAE = void>
+    struct CanTheMemorySelectionBeReset
+    {
+        static constexpr bool value = false;
+    };
+
+    template <typename Variable>
+    struct CanTheMemorySelectionBeReset<
+        Variable,
+        decltype(std::declval<Variable>().SetMemorySelection())>
+    {
+        static constexpr bool value = true;
+    };
+} // namespace detail
+
+/** Whether ADIOS2 Variable supports SetMemorySelection */
+constexpr bool CanTheMemorySelectionBeReset =
+    detail::CanTheMemorySelectionBeReset<adios2::Variable<int>>::value;
+} // namespace openPMD
+
 #else
 
 #define openPMD_HAS_ADIOS_2_8 0

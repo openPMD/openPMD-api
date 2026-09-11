@@ -291,9 +291,10 @@ jobs:
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_BUILD_TYPE=Debug
         cmake --build build --parallel 4
+        export OPENPMD_FLUSH_IMMEDIATELY=0
         ctest --test-dir build --output-on-failure
 
-        cd share/openPMD/json_schema
+        pushd share/openPMD/json_schema
         PATH="../../../build/bin:$PATH" make -j 2
         # We need to exclude the thetaMode example since that has a different
         # meshesPath and the JSON schema needs to hardcode that.
@@ -307,6 +308,10 @@ jobs:
             echo "Checking $i"
             ./check.py "$i"
         done
+        popd
+
+        export OPENPMD_FLUSH_IMMEDIATELY=1
+        ctest --test-dir build --output-on-failure
 
   musllinux_py10:
     runs-on: ubuntu-24.04

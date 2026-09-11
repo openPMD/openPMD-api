@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/config.hpp"
 
@@ -37,16 +38,12 @@ class ParallelHDF5IOHandler : public AbstractIOHandler
 public:
 #if openPMD_HAVE_MPI
     ParallelHDF5IOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         MPI_Comm,
         json::TracingJSON config);
 #else
     ParallelHDF5IOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string const &path,
-        Access,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         json::TracingJSON config);
 #endif
     ~ParallelHDF5IOHandler() override;
@@ -56,7 +53,7 @@ public:
         return "MPI_HDF5";
     }
 
-    std::future<void> flush(internal::ParsedFlushParams &) override;
+    std::future<void> flush_impl(internal::ParsedFlushParams &) override;
 
 private:
     std::unique_ptr<ParallelHDF5IOHandlerImpl> m_impl;

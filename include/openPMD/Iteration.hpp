@@ -482,6 +482,12 @@ protected:
 
 namespace traits
 {
+    /** Generation policy for Iteration objects.
+     *
+     * This policy populates the cached iteration index when an Iteration
+     * is created or inserted into a Series, enabling constant-time lookup
+     * of the owning map entry.
+     */
     template <>
     struct GenerationPolicy<Iteration>
     {

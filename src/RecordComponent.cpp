@@ -24,6 +24,8 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/LoadStoreAPI.hpp"
+#include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -35,6 +37,9 @@
 #include "openPMD/backend/scientific_defaults/ScientificDefaults.hpp"
 
 // comment so clang-format does not move this
+#include "openPMD/DatatypeMacros.hpp"
+
+// comment
 #include "openPMD/DatatypeMacros.hpp"
 
 #include <algorithm>
@@ -49,7 +54,8 @@ namespace openPMD
 namespace internal
 {
     RecordComponentData::RecordComponentData() = default;
-    auto RecordComponentData::push_chunk(IOTask &&task) -> void
+    void RecordComponentData::push_chunk(
+        IOTask &&task, LS_API api, std::optional<bool> immediate_flush)
     {
         Attributable a;
         a.setData(std::shared_ptr<AttributableData>{this, [](auto const &) {}});
@@ -71,8 +77,39 @@ namespace internal
                 "Cannot write/read chunks to/from closed Iterations.");
         }
 #endif
+        bool immediate_flush_resolved = [&]() {
+            switch (api)
+            {
+            case LS_API::chaining:
+                // the chaining API is safe, so we do not need to flush
+                // immediately
+                return false;
+            case LS_API::legacy:
+                break;
+            }
+            if (immediate_flush.has_value())
+            {
+                return *immediate_flush;
+            }
+            else
+            {
+                return a.IOHandler()->m_flush_immediately;
+            }
+        }();
         a.setDirtyRecursive(true);
-        m_chunks.push(std::move(task));
+        if (immediate_flush_resolved)
+        {
+            a.seriesFlush_impl<false>(
+                internal::FlushParams{FlushLevel::ImmediateFlush},
+                /*flush_io_handler=*/false);
+            auto IOHandler = a.IOHandler();
+            IOHandler->enqueue(task);
+            IOHandler->flush(FlushLevel::UserFlush);
+        }
+        else
+        {
+            m_chunks.push(std::move(task));
+        }
     }
 
     static constexpr char const *note_on_deactivating_this_check = R"(
@@ -190,6 +227,79 @@ template <typename T>
 auto resource(T &t) -> attribute_types &
 {
     return t.template resource<attribute_types>();
+}
+
+ConfigureLoadStore RecordComponent::prepareLoadStore()
+{
+    return ConfigureLoadStore{*this};
+}
+
+namespace
+{
+#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
+    (defined(__apple_build_version__) && __clang_major__ < 14)
+    template <typename T>
+    auto createSpanBufferFallback(size_t size) -> UniquePtrWithLambda<T>
+    {
+        return UniquePtrWithLambda<T>{
+            new T[size], [](auto *ptr) { delete[] ptr; }};
+    }
+#else
+    template <typename T>
+    auto createSpanBufferFallback(size_t size) -> std::unique_ptr<T[]>
+    {
+        return std::unique_ptr<T[]>{new T[size]};
+    }
+#endif
+} // namespace
+
+template <typename T>
+DynamicMemoryView<T>
+RecordComponent::storeChunkSpan_impl(internal::LoadStoreConfig cfg)
+{
+    return storeChunkSpanCreateBuffer_impl<T>(
+        std::move(cfg), &createSpanBufferFallback<T>);
+}
+
+template <typename T_with_extent>
+std::shared_ptr<T_with_extent>
+RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
+{
+    using T = std::remove_cv_t<std::remove_extent_t<T_with_extent>>;
+    auto res = loadChunkAllocate_impl(
+        determineDatatype<T>(), sizeof(T), std::move(cfg));
+    return std::static_pointer_cast<T_with_extent>(res);
+}
+
+std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
+    Datatype dtype, size_t dtype_size, internal::LoadStoreConfig cfg)
+{
+    auto [o, e, api] = std::move(cfg);
+
+    size_t numPoints = 1;
+    for (auto val : e)
+    {
+        numPoints *= val;
+    }
+
+    auto newData =
+        std::shared_ptr<void>(new char[numPoints * dtype_size], [](void *p) {
+            delete[] (static_cast<char *>(p));
+        });
+    prepareLoadStore_impl(api)
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withSharedPtr_impl_mut(newData, dtype)
+        .unsafeNoAutomaticFlush()
+        .load();
+    return newData;
+}
+
+ConfigureLoadStore RecordComponent::prepareLoadStore_impl(internal::LS_API api)
+{
+    ConfigureLoadStore res{*this};
+    res.api = api;
+    return res;
 }
 
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
@@ -423,10 +533,15 @@ void RecordComponent::flush(
     }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-        while (!rc.m_chunks.empty())
+        // sic! this needs to be a separate if term, otherwise flushes may
+        // wrongly jump into the write branch below
+        if (flush_level::global_flushpoint(flushParams.flushLevel))
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
+            while (!rc.m_chunks.empty())
+            {
+                IOHandler()->enqueue(rc.m_chunks.front());
+                rc.m_chunks.pop();
+            }
         }
     }
     else
@@ -536,12 +651,14 @@ void RecordComponent::flush(
             }
         }
 
-        while (!rc.m_chunks.empty())
+        if (flush_level::global_flushpoint(flushParams.flushLevel))
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
+            while (!rc.m_chunks.empty())
+            {
+                IOHandler()->enqueue(rc.m_chunks.front());
+                rc.m_chunks.pop();
+            }
         }
-
         flushAttributes(flushParams);
     }
     determineUnsetDirty(flushParams.flushLevel);
@@ -629,19 +746,24 @@ void RecordComponent::readBase()
     }
 }
 
-void RecordComponent::storeChunk(
-    auxiliary::WriteBuffer buffer, Datatype dtype, Offset o, Extent e)
+void RecordComponent::storeChunk_impl(
+    auxiliary::WriteBuffer buffer,
+    Datatype dtype,
+    internal::LoadStoreConfigWithBuffer cfg,
+    std::optional<bool> flush_immediately)
 {
+    auto [o, e, memorySelection, api] = std::move(cfg);
     verifyChunk(dtype, o, e);
 
     Parameter<Operation::WRITE_DATASET> dWrite;
     dWrite.offset = std::move(o);
     dWrite.extent = std::move(e);
+    dWrite.memorySelection = memorySelection;
     dWrite.dtype = dtype;
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::move(buffer);
     auto &rc = get();
-    rc.push_chunk(IOTask(this, std::move(dWrite)));
+    rc.push_chunk(IOTask(this, std::move(dWrite)), api, flush_immediately);
 }
 
 void RecordComponent::verifyChunk(
@@ -770,68 +892,80 @@ template <typename T>
 std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
 
     // default arguments
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
+    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    {
+        operation.offset(std::move(o));
+    }
 
     //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if (e.size() == 1u && e.at(0) == -1u)
+    if (e.size() != 1u || e.at(0) != -1u)
     {
-        extent = getExtent();
-        for (uint8_t i = 0u; i < dim; ++i)
-            extent[i] -= offset[i];
+        operation.extent(std::move(e));
     }
-    else
-        extent = e;
 
-    uint64_t numPoints = 1u;
-    for (auto const &dimensionSize : extent)
-        numPoints *= dimensionSize;
-
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
-    (defined(__apple_build_version__) && __clang_major__ < 14)
-    auto newData =
-        std::shared_ptr<T>(new T[numPoints], [](T *p) { delete[] p; });
-    loadChunk(newData, offset, extent);
-    return newData;
-#else
-    auto newData = std::shared_ptr<std::remove_extent_t<T>[]>(
-        new std::remove_extent_t<T>[numPoints]);
-    loadChunk(newData, offset, extent);
-    return std::static_pointer_cast<T>(std::move(newData));
-#endif
+    return operation.unsafeNoAutomaticFlush().load<T>().get();
 }
 
 namespace detail
 {
-    template <typename To>
-    struct do_convert
+    struct FillBuffer
     {
-        template <typename From>
-        static std::optional<To> call(Attribute &attr)
+        template <typename T>
+        static void call(
+            void *target,
+            size_t numPoints,
+            RecordComponent const &component,
+            internal::RecordComponentData const &rc)
         {
-            if constexpr (std::is_convertible_v<From, To>)
+            std::optional<T> val = rc.m_constantValue.getOptional<T>();
+
+            if (val.has_value())
             {
-                return std::make_optional<To>(attr.get<From>());
+                auto raw_ptr = static_cast<T *>(target);
+                std::fill(raw_ptr, raw_ptr + numPoints, *val);
             }
             else
             {
-                return std::nullopt;
+                std::string const data_type_str =
+                    datatypeToString(component.getDatatype());
+                std::string const requ_type_str =
+                    datatypeToString(determineDatatype<T>());
+                std::string err_msg =
+                    "Type conversion during chunk loading not possible! ";
+                err_msg +=
+                    "Data: " + data_type_str + "; Load as: " + requ_type_str;
+                throw error::WrongAPIUsage(err_msg);
             }
         }
 
-        static constexpr char const *errorMsg = "is_conversible";
+        static constexpr char const *errorMsg = "FillBuffer";
     };
 } // namespace detail
 
 template <typename T>
-void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
+void RecordComponent::loadChunk_impl(
+    std::shared_ptr<T> const &data, internal::LoadStoreConfigWithBuffer cfg)
 {
-    Datatype dtype = determineDatatype(data);
+    loadChunk_impl(
+        std::static_pointer_cast<void>(data),
+        determineDatatype<std::remove_cv_t<std::remove_extent_t<T>>>(),
+        std::move(cfg));
+}
+
+void RecordComponent::loadChunk_impl(
+    std::shared_ptr<void> const &data,
+    Datatype dtype_requested,
+    internal::LoadStoreConfigWithBuffer cfg)
+{
+    if (cfg.memorySelection.has_value())
+    {
+        throw error::WrongAPIUsage(
+            "Unsupported: Memory selections in chunk loading.");
+    }
     /*
      * For constant components, we implement type conversion, so there is
      * a separate check further below.
@@ -842,35 +976,18 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
      *
      * Attention: Do NOT use operator==(), doesnt work properly on Windows!
      */
-    if (!isSame(dtype, getDatatype()) && !constant())
+    if (!isSame(dtype_requested, getDatatype()) && !constant())
     {
         std::string const data_type_str = datatypeToString(getDatatype());
-        std::string const requ_type_str =
-            datatypeToString(determineDatatype<T>());
+        std::string const requ_type_str = datatypeToString(dtype_requested);
         std::string err_msg =
             "Type conversion during chunk loading not yet implemented! ";
         err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
         throw std::runtime_error(err_msg);
     }
 
-    uint8_t dim = getDimensionality();
-
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if (o.size() == 1u && o.at(0) == 0u && dim > 1u)
-        offset = Offset(dim, 0u);
-
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if (e.size() == 1u && e.at(0) == -1u)
-    {
-        extent = getExtent();
-        for (uint8_t i = 0u; i < dim; ++i)
-            extent[i] -= offset[i];
-    }
-    else
-        extent = e;
+    auto dim = getDimensionality();
+    auto [offset, extent, memorySelection, api] = std::move(cfg);
 
     if (extent.size() != dim || offset.size() != dim)
     {
@@ -889,9 +1006,6 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
                 "Chunk does not reside inside dataset (Dimension on index " +
                 std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
                 " - Chunk: " + std::to_string(offset[i] + extent[i]) + ")");
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk loading.");
 
     auto &rc = get();
     if (constant())
@@ -900,25 +1014,8 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         for (auto const &dimensionSize : extent)
             numPoints *= dimensionSize;
 
-        std::optional<T> val =
-            switchNonVectorType<detail::do_convert</* To = */ T>>(
-                /* dt = */ getDatatype(), rc.m_constantValue);
-
-        if (val.has_value())
-        {
-            T *raw_ptr = data.get();
-            std::fill(raw_ptr, raw_ptr + numPoints, *val);
-        }
-        else
-        {
-            std::string const data_type_str = datatypeToString(getDatatype());
-            std::string const requ_type_str =
-                datatypeToString(determineDatatype<T>());
-            std::string err_msg =
-                "Type conversion during chunk loading not possible! ";
-            err_msg += "Data: " + data_type_str + "; Load as: " + requ_type_str;
-            throw error::WrongAPIUsage(err_msg);
-        }
+        switchDatasetType<detail::FillBuffer>(
+            dtype_requested, data.get(), numPoints, *this, rc);
     }
     else
     {
@@ -927,85 +1024,85 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         dRead.extent = extent;
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast<void>(data);
-        rc.push_chunk(IOTask(this, dRead));
+        rc.push_chunk(IOTask(this, dRead), api);
     }
 }
 
 template <typename T>
-void RecordComponent::loadChunk(
-    std::shared_ptr<T[]> ptr, Offset offset, Extent extent)
+void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    loadChunk(
-        std::static_pointer_cast<T>(std::move(ptr)),
-        std::move(offset),
-        std::move(extent));
+    // static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
+    uint8_t dim = getDimensionality();
+    auto operation = prepareLoadStore_impl(internal::LS_API::legacy);
+
+    // default arguments
+    //   offset = {0u}: expand to right dim {0u, 0u, ...}
+    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    {
+        operation.offset(std::move(o));
+    }
+
+    //   extent = {-1u}: take full size
+    if (e.size() != 1u || e.at(0) != -1u)
+    {
+        operation.extent(std::move(e));
+    }
+
+    operation.withSharedPtr(std::move(data)).unsafeNoAutomaticFlush().load();
 }
 
 template <typename T>
 void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    loadChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
+    prepareLoadStore_impl(internal::LS_API::legacy)
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .withRawPtr(ptr)
+        .unsafeNoAutomaticFlush()
+        .load();
 }
 
 template <typename T>
 void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype(data);
-
-    /* std::static_pointer_cast correctly reference-counts the pointer */
-    storeChunk(
-        auxiliary::WriteBuffer(std::static_pointer_cast<void const>(data)),
-        dtype,
-        std::move(o),
-        std::move(e));
+    prepareLoadStore_impl(internal::LS_API::legacy)
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withSharedPtr(std::move(data))
+        .unsafeNoAutomaticFlush()
+        .store();
 }
 
 template <typename T>
 void RecordComponent::storeChunk(
     UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    if (!data)
-        throw std::runtime_error(
-            "Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype<>(data);
-
-    storeChunk(
-        auxiliary::WriteBuffer{std::move(data).template static_cast_<void>()},
-        dtype,
-        std::move(o),
-        std::move(e));
-}
-
-template <typename T>
-void RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
-{
-    storeChunk(
-        std::static_pointer_cast<T const>(std::move(data)),
-        std::move(o),
-        std::move(e));
+    prepareLoadStore_impl(internal::LS_API::legacy)
+        .offset(std::move(o))
+        .extent(std::move(e))
+        .withUniquePtr(std::move(data))
+        .unsafeNoAutomaticFlush()
+        .store();
 }
 
 template <typename T>
 void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 {
-    storeChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
+    prepareLoadStore_impl(internal::LS_API::legacy)
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .withRawPtr(ptr)
+        .unsafeNoAutomaticFlush()
+        .store();
 }
 
 template <typename T>
 DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
 {
-    return storeChunk<T>(std::move(offset), std::move(extent), [](size_t size) {
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
-    (defined(__apple_build_version__) && __clang_major__ < 14)
-        return UniquePtrWithLambda<T>{
-            new T[size], [](auto *ptr) { delete[] ptr; }};
-#else
-        return std::unique_ptr<T[]>{new T[size]};
-#endif
-    });
+    return prepareLoadStore_impl(internal::LS_API::legacy)
+        .offset(std::move(offset))
+        .extent(std::move(extent))
+        .storeSpan<T>();
 }
 
 template <typename T>
@@ -1019,10 +1116,6 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
 #define OPENPMD_ARRAY(type) type[]
 
 #define OPENPMD_INSTANTIATE_BASIC(type)                                        \
-    template void RecordComponent::loadChunk<type>(                            \
-        std::shared_ptr<type> data, Offset o, Extent e);                       \
-    template void RecordComponent::loadChunk<type>(                            \
-        std::shared_ptr<OPENPMD_ARRAY(type)> data, Offset o, Extent e);        \
     template void RecordComponent::loadChunkRaw<type>(                         \
         OPENPMD_PTR(type) ptr, Offset offset, Extent extent);                  \
     template void RecordComponent::verifyChunk<type>(                          \
@@ -1030,21 +1123,28 @@ void RecordComponent::verifyChunk(Offset const &o, Extent const &e) const
     template DynamicMemoryView<type> RecordComponent::storeChunk<type>(        \
         Offset offset, Extent extent);                                         \
     template void RecordComponent::storeChunkRaw<type>(                        \
-        OPENPMD_PTR(type const) ptr, Offset offset, Extent extent);
+        OPENPMD_PTR(type const) ptr, Offset offset, Extent extent);            \
+    template DynamicMemoryView<type> RecordComponent::storeChunkSpan_impl(     \
+        internal::LoadStoreConfig cfg);
 
-#define OPENPMD_INSTANTIATE_CONST_AND_NONCONST(type)                           \
-    template void RecordComponent::storeChunk<type>(                           \
-        std::shared_ptr<type> data, Offset o, Extent e);                       \
-    template void RecordComponent::storeChunk<type>(                           \
-        std::shared_ptr<OPENPMD_ARRAY(type)> data, Offset o, Extent e);
+#define OPENPMD_INSTANTIATE_CONST_AND_NONCONST(type)
 
 #define OPENPMD_INSTANTIATE_WITH_AND_WITHOUT_EXTENT(type)                      \
+    template void RecordComponent::loadChunk<type>(                            \
+        std::shared_ptr<type> data, Offset o, Extent e);                       \
     template std::shared_ptr<type> RecordComponent::loadChunk<type>(           \
         Offset o, Extent e);                                                   \
     template void RecordComponent::storeChunk<type>(                           \
-        UniquePtrWithLambda<type> data, Offset o, Extent e);
+        UniquePtrWithLambda<type> data, Offset o, Extent e);                   \
+    template void RecordComponent::loadChunk_impl(                             \
+        std::shared_ptr<type> const &data,                                     \
+        internal::LoadStoreConfigWithBuffer cfg);                              \
+    template std::shared_ptr<type> RecordComponent::loadChunkAllocate_impl(    \
+        internal::LoadStoreConfig cfg);
 
 #define OPENPMD_INSTANTIATE_FULLMATRIX(type)                                   \
+    template void RecordComponent::storeChunk<type>(                           \
+        std::shared_ptr<type> data, Offset o, Extent e);                       \
     template RecordComponent &RecordComponent::makeConstant<type>(type);       \
     template RecordComponent &RecordComponent::makeEmpty<type>(                \
         uint8_t dimensions);

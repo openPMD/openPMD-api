@@ -25,6 +25,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/Format.hpp"
@@ -214,8 +215,6 @@ struct Series::ParsedInput
     std::string filenamePostfix;
     std::optional<std::string> filenameExtension;
     int filenamePadding = -1;
-    // optional fields
-    bool verify_homogeneous_extents = true;
 }; // ParsedInput
 
 std::string Series::openPMD() const
@@ -539,12 +538,13 @@ void Series::flushRankTable(FlushLevel l, Attributable &attributable)
     };
 
     auto writeDataset = [&rank, &maxSize, this, &attributable](
-                            std::shared_ptr<char> put, size_t num_lines = 1) {
+                            std::shared_ptr<char> const &put,
+                            size_t num_lines = 1) {
         Parameter<Operation::WRITE_DATASET> chunk;
         chunk.dtype = Datatype::CHAR;
         chunk.offset = {uint64_t(rank), 0};
         chunk.extent = {num_lines, maxSize};
-        chunk.data = std::move(put);
+        chunk.data = put;
         IOHandler()->enqueue(IOTask(&attributable, std::move(chunk)));
     };
 
@@ -584,7 +584,7 @@ void Series::flushRankTable(FlushLevel l, Attributable &attributable)
                  * > }
                  */
                 [asRawPtr](char *) { delete asRawPtr; }};
-            writeDataset(std::move(put), /* num_lines = */ size);
+            writeDataset(put, /* num_lines = */ size);
         }
 
         // Must ensure that the Writable is consistently set to written on all
@@ -602,7 +602,7 @@ void Series::flushRankTable(FlushLevel l, Attributable &attributable)
         new char[maxSize]{}, [](char const *ptr) { delete[] ptr; }};
     std::copy_n(myRankInfo.c_str(), mySize, put.get());
 
-    writeDataset(std::move(put));
+    writeDataset(put);
 }
 
 std::string Series::particlesPath() const
@@ -805,7 +805,8 @@ void Series::flush(std::string backendConfig)
         {FlushLevel::UserFlush, std::move(backendConfig)});
 }
 
-std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
+std::unique_ptr<Series::ParsedInput>
+Series::parseInput(std::string filepath) const
 {
     std::unique_ptr<Series::ParsedInput> input{new Series::ParsedInput};
 
@@ -955,105 +956,91 @@ void Series::init(
     // Either an MPI_Comm or none, the template works for both options
     MPI_Communicator &&...comm)
 {
-    auto emplace_parse_config_options_into_iohandler =
-        [](AbstractIOHandler &ioHandler, ParsedInput &input) {
-            ioHandler.m_verify_homogeneous_extents =
-                input.verify_homogeneous_extents;
-        };
-
-    auto init_directly = [this,
-                          &comm...,
-                          at,
-                          &filepath,
-                          &emplace_parse_config_options_into_iohandler](
+    auto init_directly = [this, &comm..., &filepath](
                              std::unique_ptr<ParsedInput> parsed_input,
-                             json::TracingJSON tracing_json) {
+                             json::TracingJSON tracing_json,
+                             internal::GlobalParameters global_parameters) {
         auto io_handler = createIOHandler(
-            std::nullopt,
-            parsed_input->path,
-            at,
+            internal::AbstractIOHandlerInitFrom(std::move(global_parameters)),
             parsed_input->format,
             parsed_input->filenameExtension.value_or(std::string()),
             comm...,
             tracing_json,
             filepath);
-        emplace_parse_config_options_into_iohandler(*io_handler, *parsed_input);
         initSeries(std::move(io_handler), std::move(parsed_input));
         json::warnGlobalUnusedOptions(tracing_json);
     };
 
-    auto init_deferred = [this,
-                          at,
-                          &filepath,
-                          &options,
-                          &emplace_parse_config_options_into_iohandler,
-                          &comm...](std::string const &parsed_directory) {
+    auto init_deferred = [this, &filepath, &options, &comm...](
+                             internal::GlobalParameters gp) {
         // Set a temporary IOHandler so that API calls which require a present
         // IOHandler don't fail
         writable().IOHandler =
             std::make_shared<std::optional<std::unique_ptr<AbstractIOHandler>>>(
-                std::make_unique<DummyIOHandler>(parsed_directory, at));
+                std::make_unique<DummyIOHandler>(std::move(gp)));
         auto &series = get();
         series.iterations.linkHierarchy(writable());
         series.m_perIterationData.m_rankTableAttributable.linkHierarchy(
             writable());
-        series.m_deferred_initialization =
-            [called_this_already = false,
-             filepath,
-             options,
-             at,
-             emplace_parse_config_options_into_iohandler,
-             comm...](Series &s) mutable {
-                if (called_this_already)
-                {
-                    throw std::runtime_error("Must be called one time only");
-                }
-                else
-                {
-                    called_this_already = true;
-                }
+        series.m_deferred_initialization = [called_this_already = false,
+                                            filepath,
+                                            options,
+                                            comm...](Series &s) mutable {
+            if (called_this_already)
+            {
+                throw std::runtime_error("Must be called one time only");
+            }
+            else
+            {
+                called_this_already = true;
+            }
 
-                auto [parsed_input, tracing_json] =
-                    s.initIOHandler<json::TracingJSON>(
-                        filepath,
-                        options,
-                        at,
-                        true,
-                        std::forward<MPI_Communicator>(comm)...);
+            auto &writable = s.get()->m_writable;
+            if (!writable.IOHandler)
+            {
+                throw error::Internal(
+                    "Temporary IOHandler should be present at this point.");
+            }
+            auto [parsed_input, tracing_json] =
+                s.prepareIOHandlerArguments<json::TracingJSON>(
+                    ***writable.IOHandler,
+                    filepath,
+                    options,
+                    true,
+                    std::forward<MPI_Communicator>(comm)...);
 
-                auto &writable = s.get()->m_writable;
-
-                auto io_handler = createIOHandler(
-                    writable.IOHandler ? std::move(*writable.IOHandler)
-                                       : std::nullopt,
-                    parsed_input->path,
-                    at,
-                    parsed_input->format,
-                    parsed_input->filenameExtension.value_or(std::string()),
-                    comm...,
-                    tracing_json,
-                    filepath);
-                emplace_parse_config_options_into_iohandler(
-                    *io_handler, *parsed_input);
-                auto res = io_handler.get();
-                s.initSeries(std::move(io_handler), std::move(parsed_input));
-                json::warnGlobalUnusedOptions(tracing_json);
-                return res;
-            };
+            auto io_handler = createIOHandler(
+                internal::AbstractIOHandlerInitFrom(
+                    (**writable.IOHandler).get()),
+                parsed_input->format,
+                parsed_input->filenameExtension.value_or(std::string()),
+                comm...,
+                tracing_json,
+                filepath);
+            auto res = io_handler.get();
+            s.initSeries(std::move(io_handler), std::move(parsed_input));
+            json::warnGlobalUnusedOptions(tracing_json);
+            return res;
+        };
     };
 
+    internal::GlobalParameters global_parameters{at};
     switch (at)
     {
     case Access::CREATE_RANDOM_ACCESS:
     case Access::READ_WRITE:
     case Access::READ_ONLY: {
-        auto [parsed_input, tracing_json] = initIOHandler<json::TracingJSON>(
-            filepath,
-            options,
-            at,
-            true,
-            std::forward<MPI_Communicator>(comm)...);
-        init_directly(std::move(parsed_input), std::move(tracing_json));
+        auto [parsed_input, tracing_json] =
+            prepareIOHandlerArguments<json::TracingJSON>(
+                global_parameters,
+                filepath,
+                options,
+                true,
+                std::forward<MPI_Communicator>(comm)...);
+        init_directly(
+            std::move(parsed_input),
+            std::move(tracing_json),
+            std::move(global_parameters));
     }
     break;
     case Access::CREATE_LINEAR:
@@ -1061,16 +1048,18 @@ void Series::init(
     case Access::APPEND_RANDOM_ACCESS:
     case Access::APPEND_LINEAR: {
         auto [first_parsed_input, first_tracing_json] =
-            initIOHandler<json::TracingJSON>(
+            prepareIOHandlerArguments<json::TracingJSON>(
+                global_parameters,
                 filepath,
                 options,
-                at,
                 false,
                 std::forward<MPI_Communicator>(comm)...);
         if (first_parsed_input->filenameExtension.has_value())
         {
             init_directly(
-                std::move(first_parsed_input), std::move(first_tracing_json));
+                std::move(first_parsed_input),
+                std::move(first_tracing_json),
+                std::move(global_parameters));
         }
         else
         {
@@ -1080,7 +1069,7 @@ void Series::init(
              * -> Defer the proper initialization of the IO handler up to the
              * point when we actually need it.
              */
-            init_deferred(first_parsed_input->path);
+            init_deferred(std::move(global_parameters));
         }
     }
     break;
@@ -1088,21 +1077,25 @@ void Series::init(
 }
 
 template <typename TracingJSON, typename... MPI_Communicator>
-auto Series::initIOHandler(
+auto Series::prepareIOHandlerArguments(
+    internal::GlobalParameters &gp,
     std::string const &filepath,
     std::string const &options,
-    Access at,
     bool resolve_generic_extension,
     MPI_Communicator &&...comm)
     -> std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
 {
     auto &series = get();
+    auto at = gp.m_frontendAccess;
 
+    // This resolves the JSON config from string/file, but does not evaluate it
+    // yet
     json::TracingJSON optionsJson = json::parseOptions(
         options,
         std::forward<MPI_Communicator>(comm)...,
         /* considerFiles = */ true);
     auto input = parseInput(filepath);
+    gp.directory = input->path;
     if (resolve_generic_extension && input->format == Format::GENERIC &&
         !access::create(at))
     {
@@ -1168,7 +1161,8 @@ auto Series::initIOHandler(
     series.m_parseLazily = at == Access::READ_LINEAR;
 
     // now check for user-specified options
-    parseJsonOptions(optionsJson, *input);
+    // this actually parses the JSON contents resolved previously
+    parseJsonOptions(optionsJson, *input, gp);
 
     if (resolve_generic_extension && !input->filenameExtension.has_value())
     {
@@ -3193,7 +3187,8 @@ namespace
 } // namespace
 
 template <typename TracingJSON>
-void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
+void Series::parseJsonOptions(
+    TracingJSON &options, ParsedInput &input, internal::GlobalParameters &gp)
 {
     auto &series = get();
     getJsonOption<bool>(
@@ -3209,8 +3204,13 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
     getJsonOption<bool>(
         options,
         "verify_homogeneous_extents",
-        input.verify_homogeneous_extents,
+        gp.m_verify_homogeneous_extents,
         "OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS");
+    getJsonOption<bool>(
+        options,
+        "flush_immediately",
+        gp.m_flush_immediately,
+        "OPENPMD_FLUSH_IMMEDIATELY");
     internal::SeriesData::SourceSpecifiedViaJSON rankTableSource;
     if (getJsonOptionLowerCase(options, "rank_table", rankTableSource.value))
     {
@@ -3612,6 +3612,16 @@ void Series::visitHierarchy(HierarchyVisitor &v, bool recursive)
         get().iterations.visitHierarchy(v, recursive);
     }
     v(*this);
+}
+
+bool Series::flushImmediately() const
+{
+    auto ioHandler = IOHandler();
+    if (!ioHandler)
+    {
+        return false;
+    }
+    return ioHandler->m_flush_immediately;
 }
 
 auto Series::currentSnapshot() -> std::optional<std::vector<IterationIndex_t>>

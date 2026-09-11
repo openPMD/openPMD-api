@@ -83,12 +83,19 @@ struct hash<openPMD::InvalidatableFile>
     result_type operator()(argument_type const &s) const noexcept;
 };
 
+/** Specialization of std::less for InvalidatableFile
+ *
+ * Enables using InvalidatableFile in ordered containers like std::set
+ * for consistent ordering across parallel processes.
+ */
 template <>
 struct less<openPMD::InvalidatableFile>
 {
     using first_argument_type = openPMD::InvalidatableFile;
     using second_argument_type = first_argument_type;
-    using result_type = bool;
+    using result_type = decltype(std::less<>()(
+        *std::declval<first_argument_type const &>(),
+        *std::declval<second_argument_type const &>()));
     result_type
     operator()(first_argument_type const &, second_argument_type const &) const;
 };

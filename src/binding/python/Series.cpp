@@ -55,6 +55,12 @@
 
 namespace internal
 {
+char const *python_defaults = R"(
+    {
+      "flush_immediately": true
+    }
+    )";
+
 struct DefineSeriesConstructorPerPathType
 {
     static constexpr auto json_cfg_as_string(std::string const &str)
@@ -127,7 +133,8 @@ struct DefineSeriesConstructorPerPathType
                     decltype(auto) filepath_ = filepath_as_string(filepath);
                     decltype(auto) options_ = json_cfg_as_string(options);
                     py::gil_scoped_release release;
-                    return new Series(filepath_, at, options_);
+                    return new Series(
+                        filepath_, at, json::merge(python_defaults, options_));
                 }),
                 py::arg("filepath"),
                 py::arg("access"),
@@ -218,11 +225,12 @@ It will be replaced with an automatically determined file name extension:
                     else
                     {
                         py::gil_scoped_release release;
+                        auto mpi_comm = std::get<MPI_Comm>(variant);
                         return new Series(
                             filepath_,
                             at,
-                            std::get<MPI_Comm>(variant),
-                            options_);
+                            mpi_comm,
+                            json::merge(python_defaults, options_, mpi_comm));
                     }
                 }),
                 py::arg("filepath"),

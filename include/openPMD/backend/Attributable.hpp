@@ -249,6 +249,7 @@ class Attributable
     friend struct internal::HomogenizeExtents;
     friend struct internal::ConfigAttribute;
     friend class internal::ScientificDefaults;
+    friend class ConfigureLoadStore;
 
 protected:
     // tag for internal constructor
@@ -635,6 +636,7 @@ OPENPMD_protected
                     "Internal flushes should not unset dirty flags.");
             }
             break;
+        case FlushLevel::ImmediateFlush:
         case FlushLevel::SkeletonOnly:
         case FlushLevel::CreateOrOpenFiles:
             // noop

@@ -408,6 +408,7 @@ set(CORE_SOURCE
         src/Format.cpp
         src/Iteration.cpp
         src/IterationEncoding.cpp
+        src/LoadStoreChunk.cpp
         src/Mesh.cpp
         src/ParticlePatches.cpp
         src/ParticleSpecies.cpp
@@ -419,6 +420,7 @@ set(CORE_SOURCE
         src/version.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
+        src/auxiliary/Future.cpp
         src/auxiliary/JSON.cpp
         src/auxiliary/JSONMatcher.cpp
         src/auxiliary/Memory.cpp
