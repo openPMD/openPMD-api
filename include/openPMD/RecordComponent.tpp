@@ -203,6 +203,8 @@ inline DynamicMemoryView<T> RecordComponent::storeChunkSpanCreateBuffer_impl(
                 auxiliary::WriteBuffer(
                     detail::pointer_as_void<ptr_type>::call(std::move(data))),
                 getBufferView.dtype,
+                // legacy vs. chaining API is indifferent here, since we do not
+                // flush immediately anyway
                 std::move(ls_cfg),
                 /*flush_immediately=*/false);
         }

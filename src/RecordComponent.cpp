@@ -651,12 +651,14 @@ void RecordComponent::flush(
             }
         }
 
-        while (!rc.m_chunks.empty())
+        if (flush_level::global_flushpoint(flushParams.flushLevel))
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
+            while (!rc.m_chunks.empty())
+            {
+                IOHandler()->enqueue(rc.m_chunks.front());
+                rc.m_chunks.pop();
+            }
         }
-
         flushAttributes(flushParams);
     }
     determineUnsetDirty(flushParams.flushLevel);
