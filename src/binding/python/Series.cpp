@@ -310,6 +310,12 @@ not possible once it has been closed.
     finalize_container<Snapshots>(snapshots, /* skip_getitem = */ true);
 
     py::class_<StatefulIteratorPythonAdaptor>(m, "StatefulIterator")
+        /*
+         * Note: This does NOT copy at C++ level, but at Python level (note the
+         * parameter type py::object) and is hence a shallow copy. The returned
+         * iterator is the same instance as the provided. This is the correct
+         * choice for stateful shared iterators.
+         */
         .def("__iter__", [](py::object self) { return self; })
         .def(
             "__next__",
