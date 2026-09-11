@@ -225,11 +225,12 @@ It will be replaced with an automatically determined file name extension:
                     else
                     {
                         py::gil_scoped_release release;
+                        auto mpi_comm = std::get<MPI_Comm>(variant);
                         return new Series(
                             filepath_,
                             at,
-                            std::get<MPI_Comm>(variant),
-                            json::merge(python_defaults, options_));
+                            mpi_comm,
+                            json::merge(python_defaults, options_, mpi_comm));
                     }
                 }),
                 py::arg("filepath"),
