@@ -2010,7 +2010,9 @@ class APITest(unittest.TestCase):
             io.Access_Type.read_only,
             jsonConfig,
         )
-        for it in read.read_iterations():
+        iterator = iter(read.read_iterations())
+        self.assertIs(iter(iterator), iterator)  # Protocol: __next__ and __iter__.
+        for it in iterator:
             lastIterationIndex = it.iteration_index
             E_x = it.meshes["E"]["x"]
             chunk = E_x.load_chunk([0], extent)
