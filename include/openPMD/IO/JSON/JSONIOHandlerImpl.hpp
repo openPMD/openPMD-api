@@ -21,9 +21,12 @@
 
 #pragma once
 
+#include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
 #include "openPMD/IO/Access.hpp"
+#include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IO/JSON/JSONFilePosition.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -47,96 +50,6 @@
 
 namespace openPMD
 {
-// Wrapper around a shared pointer to:
-// * a filename
-// * and a boolean indicating whether the file still exists
-// The wrapper adds no extra information, but some commodity functions.
-// Invariant for JSONIOHandlerImpl:
-// For any valid filename, there is at any time at most one
-// such shared pointer (wrapper) in the HandlerImpl's data structures
-// (counting by pointer equality)
-// This means, that a file can be invalidated (i.e. deleted or overwritten)
-// by simply searching for one instance of the file e.g. in m_files and
-// invalidating this instance
-// A new instance may hence only be created after making sure that there are
-// no valid instances in the data structures.
-struct File
-{
-    explicit File(std::string s) : fileState{std::make_shared<FileState>(s)}
-    {}
-
-    File() = default;
-
-    struct FileState
-    {
-        explicit FileState(std::string s) : name{std::move(s)}
-        {}
-
-        std::string name;
-        bool valid = true;
-        bool printedReadmeWarningAlready = false;
-    };
-
-    std::shared_ptr<FileState> fileState;
-
-    void invalidate()
-    {
-        fileState->valid = false;
-    }
-
-    bool valid() const
-    {
-        return fileState->valid;
-    }
-
-    File &operator=(std::string const &s)
-    {
-        if (fileState)
-        {
-            fileState->name = s;
-        }
-        else
-        {
-            fileState = std::make_shared<FileState>(s);
-        }
-        return *this;
-    }
-
-    bool operator==(File const &f) const
-    {
-        return this->fileState == f.fileState;
-    }
-
-    std::string &operator*() const
-    {
-        return fileState->name;
-    }
-
-    std::string *operator->() const
-    {
-        return &fileState->name;
-    }
-
-    explicit operator bool() const
-    {
-        return fileState.operator bool();
-    }
-};
-} // namespace openPMD
-
-namespace std
-{
-template <>
-struct hash<openPMD::File>
-{
-    typedef openPMD::File argument_type;
-    typedef std::size_t result_type;
-
-    result_type operator()(argument_type const &s) const noexcept
-    {
-        return std::hash<shared_ptr<openPMD::File::FileState>>{}(s.fileState);
-    }
-};
 
 // std::complex handling
 template <class T>
@@ -151,15 +64,32 @@ void from_json(const nlohmann::json &j, std::complex<T> &p)
     p.real(j.at(0));
     p.imag(j.at(1));
 }
-} // namespace std
+} // namespace openPMD
 
 namespace openPMD
 {
-class JSONIOHandlerImpl : public AbstractIOHandlerImpl
+
+class JSONIOHandlerImpl
+    : public AbstractIOHandlerImplCommon<JSONIOHandlerImpl, JSONFilePosition>
 {
     using json = nlohmann::json;
+    template <typename, typename>
+    friend class AbstractIOHandlerImplCommon;
 
 public:
+    struct BackendSpecificFileState
+    {
+        nlohmann::json data;
+        bool printedReadmeWarningAlready = false;
+
+        BackendSpecificFileState(nlohmann::json);
+
+        operator nlohmann::json &();
+        operator nlohmann::json const &() const;
+    };
+
+    using FilePositionType = JSONFilePosition;
+
     enum class FileFormat
     {
         Json,
@@ -249,15 +179,6 @@ private:
 #endif
 
     using FILEHANDLE = std::fstream;
-
-    // map each Writable to its associated file
-    // contains only the filename, without the OS path
-    std::unordered_map<Writable *, File> m_files;
-
-    std::unordered_map<File, std::shared_ptr<nlohmann::json>> m_jsonVals;
-
-    // files that have logically, but not physically been written to
-    std::unordered_set<File> m_dirty;
 
     /*
      * Is set by constructor.
@@ -354,10 +275,10 @@ private:
     // else null. first tuple element needs to be a pointer, since the casted
     // streams are references only.
     std::tuple<std::unique_ptr<FILEHANDLE>, std::istream *, std::ostream *>
-    getFilehandle(File const &, Access access);
+    getFilehandle(internal::FileState const &, Access access);
 
     // full operating system path of the given file
-    std::string fullPath(File const &);
+    std::string fullPath(internal::FileState const &);
 
     std::string fullPath(std::string const &);
 
@@ -367,7 +288,10 @@ private:
 
     // Fileposition is assumed to have already been set,
     // get it in string form
-    static std::string filepositionOf(Writable *w);
+    std::string filePositionToString(JSONFilePosition const &);
+
+    std::shared_ptr<JSONFilePosition>
+    extendFilePosition(JSONFilePosition const &, std::string);
 
     // Execute visitor on each pair of positions in the json value
     // and the flattened multidimensional array.
@@ -401,44 +325,16 @@ private:
     // the passed json value
     static void ensurePath(nlohmann::json *json, std::string const &path);
 
-    // In order not to insert the same file name into the data structures
-    // with a new pointer (e.g. when reopening), search for a possibly
-    // existing old pointer. Construct a new pointer only upon failure.
-    // The bool is true iff the pointer has been newly-created.
-    // The iterator is an iterator for m_files
-    std::tuple<File, std::unordered_map<Writable *, File>::iterator, bool>
-    getPossiblyExisting(std::string const &file);
-
     // get the json value representing the whole file, possibly reading
     // from disk
-    std::shared_ptr<nlohmann::json> obtainJsonContents(File const &);
+    nlohmann::json &obtainJsonContents(internal::FileState &);
 
     // get the json value at the writable's fileposition
     nlohmann::json &obtainJsonContents(Writable *writable);
 
     // write to disk the json contents associated with the file
     // remove from m_dirty if unsetDirty == true
-    auto putJsonContents(File const &, bool unsetDirty = true)
-        -> decltype(m_jsonVals)::iterator;
-
-    // figure out the file position of the writable
-    // (preferring the parent's file position) and extend it
-    // by extend. return the modified file position.
-    std::shared_ptr<JSONFilePosition>
-    setAndGetFilePosition(Writable *, std::string const &extend);
-
-    // figure out the file position of the writable
-    // (preferring the parent's file position)
-    // only modify the writable's fileposition when specified
-    std::shared_ptr<JSONFilePosition>
-    setAndGetFilePosition(Writable *, bool write = true);
-
-    // get the writable's containing file
-    // if the parent is associated with another file,
-    // associate the writable with that file and return it
-    File refreshFileFromParent(Writable *writable);
-
-    void associateWithFile(Writable *writable, File);
+    void putJsonContents(internal::FileState &);
 
     // need to check the name too in order to exclude "attributes" key
     static bool isGroup(nlohmann::json::const_iterator const &it);
@@ -495,6 +391,12 @@ private:
     };
 
     template <typename T>
+    struct CppToJSON<std::complex<T>>
+    {
+        nlohmann::json operator()(std::complex<T> const &);
+    };
+
+    template <typename T>
     struct CppToJSON<std::vector<T>>
     {
         nlohmann::json operator()(std::vector<T> const &);
@@ -510,6 +412,12 @@ private:
     struct JsonToCpp
     {
         T operator()(nlohmann::json const &);
+    };
+
+    template <typename T>
+    struct JsonToCpp<std::complex<T>>
+    {
+        std::complex<T> operator()(nlohmann::json const &);
     };
 
     template <typename T>
