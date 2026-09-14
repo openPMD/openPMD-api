@@ -70,7 +70,7 @@ struct InvalidatableFile
 
     explicit operator bool() const;
 
-    auto operator<=>(InvalidatableFile const&) const = default;
+    auto operator<=>(InvalidatableFile const &) const = default;
 };
 } // namespace openPMD
 
