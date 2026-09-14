@@ -431,7 +431,7 @@ void ConfigureLoadStore::unsafeNoAutomaticFlush_impl()
      * `unsafeNoAutomaticFlush()` opts out of the automatic flushing that the
      * chaining API would otherwise perform. It should therefore fall back to
      * the same flushing semantics as the legacy API, in particular honoring
-     * the immediate-flush setting (OPENPMD_FLUSH_IMMEDIATELY / Series option
+     * the sync-flush option (OPENPMD_FLUSH_IMMEDIATELY / Series option
      * "flush_immediately"). Without this, the chaining API would silently
      * bypass that setting.
      */

@@ -55,6 +55,31 @@ namespace openPMD
 namespace internal
 {
     RecordComponentData::RecordComponentData() = default;
+    /**
+     * Enqueue a chunk load/store operation on this record component.
+     *
+     * Whether the operation is performed immediately (potentially
+     * introducing a flush point on the spot) or deferred to an explicit flush
+     * point depends on:
+     *
+     * 1. The API the operation originates from (`api`):
+     *    Operations of the legacy API
+     *    (`RecordComponent::storeChunk()` / `loadChunk()` etc.) honor the
+     *    sync-flush option, while operations of the chaining API
+     *    (`prepareLoadStore()`) always flush through their own
+     *    `DeferredComputation` objects and thus never flush immediately here.
+     * 2. An optional per-operation override (`immediate_flush`), e.g.
+     *    disabled for the span-based API which must not flush immediately.
+     * 3. The sync-flush option (`AbstractIOHandler::GlobalParameters::
+     *    m_flush_immediately`, configurable via the Series option
+     *    "flush_immediately" or the environment variable
+     *    OPENPMD_FLUSH_IMMEDIATELY).
+     *
+     * @param task The I/O operation to perform.
+     * @param api The API that the operation originates from.
+     * @param immediate_flush Optional per-operation override of the
+     *        sync-flush option.
+     */
     void RecordComponentData::push_chunk(
         IOTask &&task, LS_API api, std::optional<bool> immediate_flush)
     {
@@ -82,10 +107,19 @@ namespace internal
             switch (api)
             {
             case LS_API::chaining:
-                // the chaining API is safe, so we do not need to flush
-                // immediately
+                // The chaining API (RecordComponent::prepareLoadStore()) is
+                // safe to run without an explicit flush(): it flushes
+                // automatically upon evaluation of the returned
+                // DeferredComputation object. Hence we do not need to (and
+                // must not) flush immediately here, since that would also
+                // bypass the sync-flush option for operations that already
+                // flush on their own.
                 return false;
             case LS_API::legacy:
+                // The legacy API only enqueues operations which are performed
+                // at flush points. If the sync-flush option is set, the
+                // operation itself becomes its own flush point, i.e. it is
+                // flushed immediately.
                 break;
             }
             if (immediate_flush.has_value())
