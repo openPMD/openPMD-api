@@ -61,8 +61,11 @@ enum class FlushLevel
      */
     UserFlush,
     /**
-     * Flush triggered by storeChunk in immediate flush mode.
-     * Must not perform operations enqueued in m_chunks.
+     * Flush triggered by a load/store operation in sync-flush mode
+     * (Series option "flush_immediately" / OPENPMD_FLUSH_IMMEDIATELY).
+     * Used to flush the hierarchy that the operation depends on without
+     * performing other operations enqueued in m_chunks; the triggering
+     * operation is enqueued and flushed separately.
      */
     ImmediateFlush,
     /**
@@ -300,7 +303,18 @@ namespace internal
         OpenpmdStandard m_standard =
             auxiliary::parseStandard(getStandardDefault());
         bool m_verify_homogeneous_extents = true;
-        // If true, then flush directly upon storeChunk
+        /**
+         * Sync-flush option ("flush_immediately"): if true, operations of the
+         * legacy chunk API (RecordComponent::storeChunk() / loadChunk()) are
+         * flushed immediately upon being called instead of being deferred to
+         * an explicit flush point. See also the documentation in
+         * docs/source/usage/workflow.rst.
+         * Configurable via the Series option "flush_immediately" or the
+         * environment variable OPENPMD_FLUSH_IMMEDIATELY.
+         * Note: operations of the chaining API
+         * (RecordComponent::prepareLoadStore()) are unaffected unless
+         * unsafeNoAutomaticFlush() is used.
+         */
         bool m_flush_immediately = false;
 
     protected:
