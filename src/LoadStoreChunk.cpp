@@ -83,7 +83,7 @@ auto ConfigureLoadStore::deferFlush(Attributable &attr)
             old_index = *index,
             current_index = std::weak_ptr(index)]() mutable {
         auto lock_current_index = current_index.lock();
-        if (!lock_current_index || *lock_current_index >= old_index)
+        if (!lock_current_index || *lock_current_index > old_index)
         {
             return;
         }
