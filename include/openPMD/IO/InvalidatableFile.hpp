@@ -69,6 +69,8 @@ struct InvalidatableFile
     std::string *operator->() const;
 
     explicit operator bool() const;
+
+    auto operator<=>(InvalidatableFile const&) const = default;
 };
 } // namespace openPMD
 
