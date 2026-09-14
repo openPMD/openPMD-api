@@ -234,6 +234,15 @@ public:
      * storing chunks. It returns a ConfigureLoadStore object that can be used
      * to specify offset, extent, and buffer for the operation.
      *
+     * In contrast to the legacy chunk API (storeChunk() / loadChunk() and
+     * friends), the operations configured through this object flush
+     * automatically upon evaluation of the returned DeferredComputation
+     * object. Hence they neither require an explicit flush() nor are they
+     * affected by the sync-flush option (Series option "flush_immediately" /
+     * OPENPMD_FLUSH_IMMEDIATELY). Raising unsafeNoAutomaticFlush() on the
+     * returned object disables the automatic flushing and thereby falls back
+     * to the flushing semantics (and sync-flush option) of the legacy API.
+     *
      * @return ConfigureLoadStore object for configuring the operation
      */
     [[nodiscard]] ConfigureLoadStore prepareLoadStore();
