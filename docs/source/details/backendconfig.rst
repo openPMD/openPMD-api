@@ -91,6 +91,11 @@ Especially when a Series has many iterations, this can be a costly operation and
 The openPMD-api can be configured to treat load/store operations as *deferred* or as *immediate*, using either the boolean JSON option ``{"flush_immediately": true}`` or the environment variable ``OPENPMD_FLUSH_IMMEDIATELY=1``.
 Load/store operations are deferred by default in the C++ API and immediate by default in the Python API.
 
+When this option is enabled, each load/store operation of the **legacy** API (``RecordComponent::storeChunk()`` / ``loadChunk()`` and friends) is performed immediately instead of being deferred to an explicit flush point, i.e. each such call introduces its own flush point.
+The **chaining** API (``RecordComponent::prepareLoadStore()``) is unaffected: it already flushes automatically upon evaluation of its ``DeferredComputation`` object, and the sync-flush option has no effect on it, unless ``unsafeNoAutomaticFlush()`` is used (which falls back to the legacy flushing semantics).
+The span-based legacy API (``RecordComponent::storeChunk(Offset, Extent)`` returning a ``DynamicMemoryView``) is an exception and never flushes synchronously, since its buffers must stay valid until the next flush point.
+See the :ref:`Deferred Data API Contract <workflow>` in the workflow documentation for the interplay with the two APIs.
+
 When parsing non-eagerly, each iteration needs to be explicitly opened with ``Iteration::open()`` before accessing.
 (Notice that ``Iteration::open()`` is generally recommended to be used in parallel contexts to avoid parallel file accessing hazards).
 Using the Streaming API (i.e. ``SeriesInterface::readIteration()``) will do this automatically.

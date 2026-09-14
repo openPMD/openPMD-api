@@ -120,10 +120,30 @@ A flush point is a point within an application's sequential control flow where t
 
 In short: operations requested by ``storeChunk()`` and ``loadChunk()`` must happen exactly at flush points.
 
+This section describes two distinct chunk load/store APIs which differ in how they build flush points:
+
+*   The **legacy API** (``RecordComponent::storeChunk()``, ``loadChunk()``, ``loadChunkRaw()``, the span-based ``storeChunk()`` etc.) only enqueues operations which are then performed at a flush point.
+    This is the API described by the flush-point guarantees listed above, and it is the API used under the hood by the Python bindings.
+*   The **chaining API** (``RecordComponent::prepareLoadStore()``) is the experimental new API for loading and storing chunks.
+    It returns a ``ConfigureLoadStore`` object whose terminal method (``store()``, ``load()``, ``storeSpan()``, ``loadVariant()``) returns a ``DeferredComputation`` object.
+    Upon evaluation of that object (i.e. calling ``get()`` or ``operator()()``), the operation is performed *and* the series is flushed automatically.
+    Using the chaining API, an explicit ``Series::flush()`` is hence not required in order to obtain the data, and the operation is effectively flushed as soon as its result is requested.
+
+Synchronous flushing
+^^^^^^^^^^^^^^^^^^^^
+
 The openPMD-api may be configured to flush immediately upon calling a load/store operation, using either the JSON key ``{"flush_immediately": true}`` or the environment variable ``OPENPMD_FLUSH_IMMEDIATELY=1``, in order to introduce implicit flush points at each such method call.
 Refer also to the :ref:`documentation page <backend_independent_config>` on JSON/TOML configuration.
 This mode helps avoiding typical pitfalls in a deferred load/store API for performance-noncritical operations.
 Immediate flushing is the default in the Python API.
+
+The synchronous flushing option only affects operations of the *legacy* API.
+Operations of the *chaining* API flush automatically upon evaluation of their ``DeferredComputation`` object and are hence not additionally flushed immediately; the option simply has no effect on them.
+The only exception is when ``unsafeNoAutomaticFlush()`` is called on the configuration object: this disables the chaining API's automatic flushing and makes the operation fall back to the flushing semantics of the legacy API, in particular the synchronous flushing option becomes active again.
+The span-based legacy API (``RecordComponent::storeChunk(Offset, Extent)`` returning a ``DynamicMemoryView``) is always deferred: its buffers are expected to stay valid until the next flush point, so it never flushes synchronously.
+
+In parallel, enabling synchronous flushing makes every load/store operation an individual (collective) synchronization point and hence has a strong impact on performance and on the interpretation of collective vs. non-collective operations.
+See the section on :ref:`parallel I/O <details-mpi>` for details.
 
 Flush points are triggered by:
 
@@ -133,6 +153,7 @@ Flush points are triggered by:
 *   Calling ``Writable::seriesFlush()`` or ``Attributable::seriesFlush()``.
 *   The streaming API (i.e. ``Series.readIterations()`` and ``Series.writeIteration()``) automatically before accessing the next iteration.
 *   Invoking a handle returned by the experimental deferred I/O API (``RecordComponent::prepareLoadStore()`` followed by ``store()`` / ``load()``) via ``get()`` / ``operator()()``, unless automatic flushing was disabled via ``unsafeNoAutomaticFlush()``.
+*   Calling a load/store operation of the **legacy API** in synchronous flushing mode (see above).
 
 .. note::
 

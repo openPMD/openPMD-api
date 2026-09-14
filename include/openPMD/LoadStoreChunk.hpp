@@ -169,6 +169,10 @@ public:
      * order; the user is then responsible for calling Series::flush()
      * collectively at a suitable point.
      *
+     * This entails a fallback to the flushing semantics of the legacy API,
+     * i.e. the sync-flush option (Series option "flush_immediately" /
+     * OPENPMD_FLUSH_IMMEDIATELY) becomes active again for the operation.
+     *
      * @return Reference to this object for chaining
      */
     auto unsafeNoAutomaticFlush() -> this_t &
@@ -341,6 +345,10 @@ public:
      * order; the user is then responsible for calling Series::flush()
      * collectively at a suitable point.
      *
+     * This entails a fallback to the flushing semantics of the legacy API,
+     * i.e. the sync-flush option (Series option "flush_immediately" /
+     * OPENPMD_FLUSH_IMMEDIATELY) becomes active again for the operation.
+     *
      * @return Reference to this object for chaining
      */
     auto unsafeNoAutomaticFlush() -> this_t &
@@ -474,6 +482,10 @@ public:
      * removes the need for all ranks to invoke their handles in a consistent
      * order; the user is then responsible for calling Series::flush()
      * collectively at a suitable point.
+     *
+     * This entails a fallback to the flushing semantics of the legacy API,
+     * i.e. the sync-flush option (Series option "flush_immediately" /
+     * OPENPMD_FLUSH_IMMEDIATELY) becomes active again for the operation.
      *
      * @return Reference to this object for chaining
      */
