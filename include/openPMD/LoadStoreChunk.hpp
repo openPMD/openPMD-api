@@ -98,7 +98,7 @@ protected:
 
     void offset_impl(Offset);
     void extent_impl(Extent);
-    void unsafeNoAutomaticFlush_impl();
+    void unsafeNoAutomaticFlush_impl(bool consider_immediate_flush_setting);
 
     virtual auto getBufferSize() -> std::optional<size_t>;
 
@@ -169,15 +169,19 @@ public:
      * order; the user is then responsible for calling Series::flush()
      * collectively at a suitable point.
      *
-     * This entails a fallback to the flushing semantics of the legacy API,
-     * i.e. the sync-flush option (Series option "flush_immediately" /
-     * OPENPMD_FLUSH_IMMEDIATELY) becomes active again for the operation.
+     * @param consider_immediate_flush_setting Fall back to the flushing
+     * semantics of the legacy API, i.e. the sync-flush option (Series option
+     * "flush_immediately" / OPENPMD_FLUSH_IMMEDIATELY) becomes active again for
+     * the operation.
+     *
+     * TODO make parameter optional
      *
      * @return Reference to this object for chaining
      */
-    auto unsafeNoAutomaticFlush() -> this_t &
+    auto unsafeNoAutomaticFlush(bool consider_immediate_flush_setting)
+        -> this_t &
     {
-        unsafeNoAutomaticFlush_impl();
+        unsafeNoAutomaticFlush_impl(consider_immediate_flush_setting);
         return *this;
     }
 
@@ -345,15 +349,19 @@ public:
      * order; the user is then responsible for calling Series::flush()
      * collectively at a suitable point.
      *
-     * This entails a fallback to the flushing semantics of the legacy API,
-     * i.e. the sync-flush option (Series option "flush_immediately" /
-     * OPENPMD_FLUSH_IMMEDIATELY) becomes active again for the operation.
+     * @param consider_immediate_flush_setting Fall back to the flushing
+     * semantics of the legacy API, i.e. the sync-flush option (Series option
+     * "flush_immediately" / OPENPMD_FLUSH_IMMEDIATELY) becomes active again for
+     * the operation.
+     *
+     * TODO make parameter optional
      *
      * @return Reference to this object for chaining
      */
-    auto unsafeNoAutomaticFlush() -> this_t &
+    auto unsafeNoAutomaticFlush(bool consider_immediate_flush_setting)
+        -> this_t &
     {
-        unsafeNoAutomaticFlush_impl();
+        unsafeNoAutomaticFlush_impl(consider_immediate_flush_setting);
         return *this;
     }
 
@@ -472,7 +480,7 @@ public:
         return *this;
     }
 
-    /** Disable automatic flush after operation
+    /** Disable automatic flush after store operation
      *
      * The returned objects of type DeferredComputation will still return a
      * buffer upon get() / operator()(), but these buffers are not guaranteed to
@@ -483,15 +491,19 @@ public:
      * order; the user is then responsible for calling Series::flush()
      * collectively at a suitable point.
      *
-     * This entails a fallback to the flushing semantics of the legacy API,
-     * i.e. the sync-flush option (Series option "flush_immediately" /
-     * OPENPMD_FLUSH_IMMEDIATELY) becomes active again for the operation.
+     * @param consider_immediate_flush_setting Fall back to the flushing
+     * semantics of the legacy API, i.e. the sync-flush option (Series option
+     * "flush_immediately" / OPENPMD_FLUSH_IMMEDIATELY) becomes active again for
+     * the operation.
+     *
+     * TODO make parameter optional
      *
      * @return Reference to this object for chaining
      */
-    auto unsafeNoAutomaticFlush() -> this_t &
+    auto unsafeNoAutomaticFlush(bool consider_immediate_flush_setting)
+        -> this_t &
     {
-        unsafeNoAutomaticFlush_impl();
+        unsafeNoAutomaticFlush_impl(consider_immediate_flush_setting);
         return *this;
     }
 

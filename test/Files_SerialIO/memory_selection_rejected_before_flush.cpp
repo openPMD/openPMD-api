@@ -107,7 +107,7 @@ WriteResult write_and_reject(std::string const &name)
             .offset({0, 0})
             .extent({2, 2})
             .memorySelection({{1, 1}, {N, N}})
-            .unsafeNoAutomaticFlush()
+            .unsafeNoAutomaticFlush(true)
             .store()
             .get();
     }
