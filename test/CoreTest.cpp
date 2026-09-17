@@ -1392,7 +1392,7 @@ TEST_CASE("unsafe_no_automatic_flush_immediate_flush_test", "[core]")
         .offset(Offset{0})
         .extent(Extent{1})
         .withSharedPtr(storeData)
-        .unsafeNoAutomaticFlush()
+        .unsafeNoAutomaticFlush(true)
         .store()
         .get();
     REQUIRE(mrc.get().m_chunks.empty());
@@ -1404,7 +1404,7 @@ TEST_CASE("unsafe_no_automatic_flush_immediate_flush_test", "[core]")
         .offset(Offset{0})
         .extent(Extent{1})
         .withSharedPtr(storeData)
-        .unsafeNoAutomaticFlush()
+        .unsafeNoAutomaticFlush(true)
         .store()
         .get();
     REQUIRE(mrc.get().m_chunks.size() == 1);
