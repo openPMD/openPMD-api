@@ -949,7 +949,9 @@ inline void constant_scalar(std::string const &file_ending)
         E_y.prepareLoadStore()
             .extent({1, 2, 3})
             .withUniquePtr(std::move(E).static_cast_<unsigned int const>())
-            .store();
+            .unsafeNoAutomaticFlush()
+            .store()
+            .get();
 
         // store a number of predefined attributes in E
         Mesh &E_mesh = s.snapshots()[1].meshes["E"];
