@@ -501,7 +501,7 @@ void available_chunks_test(std::string const &file_ending)
             .withContiguousContainer(ydata_firstandlastrow)
             .offset({0, 3ul * mpi_rank})
             .extent({1, 3})
-            .unsafeNoAutomaticFlush()
+            .unsafeNoAutomaticFlush(true)
             .store()
             .get();
         // Memory selections can only be reset in ADIOS2 >= 2.10.1
@@ -516,7 +516,7 @@ void available_chunks_test(std::string const &file_ending)
                 .extent({3, 3})
                 .withContiguousContainer(ydata)
                 .memorySelection({{1, 1}, {5, 5}})
-                .unsafeNoAutomaticFlush()
+                .unsafeNoAutomaticFlush(true)
                 .store()
                 .get();
         }
@@ -526,7 +526,7 @@ void available_chunks_test(std::string const &file_ending)
                 .withContiguousContainer(ydata_block)
                 .offset({1, 3ul * mpi_rank})
                 .extent({3, 3})
-                .unsafeNoAutomaticFlush()
+                .unsafeNoAutomaticFlush(true)
                 .store()
                 .get();
         }
@@ -534,7 +534,7 @@ void available_chunks_test(std::string const &file_ending)
             .withContiguousContainer(ydata_firstandlastrow)
             .offset({4, 3ul * mpi_rank})
             .extent({1, 3})
-            .unsafeNoAutomaticFlush()
+            .unsafeNoAutomaticFlush(true)
             .store()
             .get();
         it0.close();

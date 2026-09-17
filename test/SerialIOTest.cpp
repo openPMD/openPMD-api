@@ -958,7 +958,7 @@ inline void constant_scalar(std::string const &file_ending)
         E_y.prepareLoadStore()
             .extent({1, 2, 3})
             .withUniquePtr(std::move(E).static_cast_<unsigned int const>())
-            .unsafeNoAutomaticFlush()
+            .unsafeNoAutomaticFlush(true)
             .store()
             .get();
 
