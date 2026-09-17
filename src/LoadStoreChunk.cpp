@@ -424,18 +424,22 @@ void ConfigureLoadStore::offset_impl(Offset offset)
     m_offset = std::make_optional<Offset>(std::move(offset));
 }
 
-void ConfigureLoadStore::unsafeNoAutomaticFlush_impl()
+void ConfigureLoadStore::unsafeNoAutomaticFlush_impl(
+    bool consider_immediate_flush_setting)
 {
     m_unsafeNoAutomaticFlush = true;
-    /*
-     * `unsafeNoAutomaticFlush()` opts out of the automatic flushing that the
-     * chaining API would otherwise perform. It should therefore fall back to
-     * the same flushing semantics as the legacy API, in particular honoring
-     * the sync-flush option (OPENPMD_FLUSH_IMMEDIATELY / Series option
-     * "flush_immediately"). Without this, the chaining API would silently
-     * bypass that setting.
-     */
-    api = internal::LS_API::legacy;
+    if (consider_immediate_flush_setting)
+    {
+        /*
+         * `unsafeNoAutomaticFlush()` opts out of the automatic flushing that
+         * the chaining API would otherwise perform. It can therefore fall back
+         * to the same flushing semantics as the legacy API, in particular
+         * honoring the sync-flush option (OPENPMD_FLUSH_IMMEDIATELY / Series
+         * option "flush_immediately"). Without this, the chaining API would
+         * silently bypass that setting.
+         */
+        api = internal::LS_API::legacy;
+    }
 }
 
 auto ConfigureLoadStore::getBufferSize() -> std::optional<size_t>
