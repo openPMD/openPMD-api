@@ -77,9 +77,6 @@ protected:
 
     auto deferFlush(Attributable &);
 
-    auto getOffset() -> Offset const &;
-    auto getExtent() -> Extent const &;
-
     // The below methods return void.
     // For chaining calls, they should return *this, but this class right
     // here is going to be somewhere in the inheritance chain, and the final
@@ -108,6 +105,17 @@ private:
 
 public:
     using this_t = ConfigureLoadStore;
+
+    /** Retrieve the configured offset. If no offset has been specified, compute
+     *  and store it now (default: full dataset selection). May be overwritten
+     *  at a later point using offset().
+     */
+    auto computeOffset() -> Offset const &;
+    /** Retrieve the configured extent. If no extent has been specified, compute
+     *  and store it now (default: full dataset selection). May be overwritten
+     *  at a later point using extent().
+     */
+    auto computeExtent() -> Extent const &;
 
     // Configuration methods (always available)
 
@@ -204,6 +212,8 @@ public:
 
     [[nodiscard]] auto loadVariant() -> auxiliary::DeferredComputation<
         auxiliary::detail::shared_ptr_dataset_types>;
+
+    [[nodiscard]] auto getComponentHandle() const -> RecordComponent;
 };
 
 /** Configuration for storing chunks from a buffer.
