@@ -174,15 +174,18 @@ public:
 
     // Buffer specification methods (return specialized configurations)
     template <typename T>
-    auto withSharedPtr(std::shared_ptr<T>) -> shared_ptr_return_type<T>;
+    [[nodiscard]] auto withSharedPtr(std::shared_ptr<T>)
+        -> shared_ptr_return_type<T>;
     template <typename T>
-    auto withUniquePtr(UniquePtrWithLambda<T>) -> unique_ptr_return_type<T>;
+    [[nodiscard]] auto withUniquePtr(UniquePtrWithLambda<T>)
+        -> unique_ptr_return_type<T>;
     template <typename T, typename Del>
-    auto withUniquePtr(std::unique_ptr<T, Del>) -> unique_ptr_return_type<T>;
+    [[nodiscard]] auto withUniquePtr(std::unique_ptr<T, Del>)
+        -> unique_ptr_return_type<T>;
     template <typename T>
-    auto withRawPtr(T *data) -> shared_ptr_return_type<T>;
+    [[nodiscard]] auto withRawPtr(T *data) -> shared_ptr_return_type<T>;
     template <typename T_ContiguousContainer>
-    auto withContiguousContainer(T_ContiguousContainer &data)
+    [[nodiscard]] auto withContiguousContainer(T_ContiguousContainer &data)
         -> std::enable_if_t<
             auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
             shared_ptr_return_type<typename T_ContiguousContainer::value_type>>;
@@ -299,7 +302,7 @@ public:
      *
      * @return Deferred computation that performs the store when invoked
      */
-    auto store() -> auxiliary::DeferredComputation<void>;
+    [[nodiscard]] auto store() -> auxiliary::DeferredComputation<void>;
 
     /** This intentionally shadows the parent class's enqueueLoad methods in
      * order to show a compile error when using load() on an object
@@ -392,7 +395,7 @@ public:
      *
      * @return Deferred computation that performs the load when invoked
      */
-    auto load() -> auxiliary::DeferredComputation<void>;
+    [[nodiscard]] auto load() -> auxiliary::DeferredComputation<void>;
 };
 
 } // namespace openPMD
