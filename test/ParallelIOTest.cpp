@@ -492,13 +492,17 @@ void available_chunks_test(std::string const &file_ending)
             .withContiguousContainer(ydata_firstandlastrow)
             .offset({0, 3ul * mpi_rank})
             .extent({1, 3})
-            .store();
+            .unsafeNoAutomaticFlush()
+            .store()
+            .get();
         E_y.prepareLoadStore()
             .offset({1, 3ul * mpi_rank})
             .extent({3, 3})
             .withContiguousContainer(ydata)
             .memorySelection({{1, 1}, {5, 5}})
-            .store();
+            .unsafeNoAutomaticFlush()
+            .store()
+            .get();
         // if condition checks if this PR is available in ADIOS2:
         // https://github.com/ornladios/ADIOS2/pull/4169
         if constexpr (CanTheMemorySelectionBeReset)
@@ -507,7 +511,9 @@ void available_chunks_test(std::string const &file_ending)
                 .withContiguousContainer(ydata_firstandlastrow)
                 .offset({4, 3ul * mpi_rank})
                 .extent({1, 3})
-                .store();
+                .unsafeNoAutomaticFlush()
+                .store()
+                .get();
         }
         it0.close();
     }

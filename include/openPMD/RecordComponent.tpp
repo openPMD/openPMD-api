@@ -48,7 +48,8 @@ RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
         .unsafeNoAutomaticFlush()
-        .store();
+        .store()
+        .get();
 }
 
 template <typename T_ContiguousContainer>
@@ -71,7 +72,8 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
     std::move(storeChunkConfig)
         .withContiguousContainer(data)
         .unsafeNoAutomaticFlush()
-        .store();
+        .store()
+        .get();
 }
 
 template <typename T, typename F>

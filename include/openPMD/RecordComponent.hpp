@@ -232,7 +232,7 @@ public:
      *
      * @return ConfigureLoadStore object for configuring the operation
      */
-    ConfigureLoadStore prepareLoadStore();
+    [[nodiscard]] ConfigureLoadStore prepareLoadStore();
 
     /** Load and allocate a chunk of data
      *

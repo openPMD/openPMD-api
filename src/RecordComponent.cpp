@@ -258,7 +258,8 @@ std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
         .extent(std::move(e))
         .withSharedPtr_impl_mut(newData, dtype)
         .unsafeNoAutomaticFlush()
-        .load();
+        .load()
+        .get();
     return newData;
 }
 
@@ -1000,7 +1001,10 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
         operation.extent(std::move(e));
     }
 
-    operation.withSharedPtr(std::move(data)).unsafeNoAutomaticFlush().load();
+    operation.withSharedPtr(std::move(data))
+        .unsafeNoAutomaticFlush()
+        .load()
+        .get();
 }
 
 template <typename T>
@@ -1011,7 +1015,8 @@ void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
         .extent(std::move(extent))
         .withRawPtr(ptr)
         .unsafeNoAutomaticFlush()
-        .load();
+        .load()
+        .get();
 }
 
 template <typename T>
@@ -1022,7 +1027,8 @@ void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
         .extent(std::move(e))
         .withSharedPtr(std::move(data))
         .unsafeNoAutomaticFlush()
-        .store();
+        .store()
+        .get();
 }
 
 template <typename T>
@@ -1034,7 +1040,8 @@ void RecordComponent::storeChunk(
         .extent(std::move(e))
         .withUniquePtr(std::move(data))
         .unsafeNoAutomaticFlush()
-        .store();
+        .store()
+        .get();
 }
 
 template <typename T>
@@ -1045,7 +1052,8 @@ void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
         .extent(std::move(extent))
         .withRawPtr(ptr)
         .unsafeNoAutomaticFlush()
-        .store();
+        .store()
+        .get();
 }
 
 template <typename T>
