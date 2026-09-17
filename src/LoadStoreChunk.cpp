@@ -67,7 +67,7 @@ auto ConfigureLoadStore::dim() const -> uint8_t
 
 auto ConfigureLoadStore::storeChunkConfig() -> internal::LoadStoreConfig
 {
-    return internal::LoadStoreConfig{getOffset(), getExtent()};
+    return internal::LoadStoreConfig{computeOffset(), computeExtent()};
 }
 
 auto ConfigureLoadStore::deferFlush(Attributable &attr)
@@ -78,7 +78,14 @@ auto ConfigureLoadStore::deferFlush(Attributable &attr)
             "Configuring an automatic flush operating after configuring that "
             "those should be switched off.");
     }
-    auto index = attr.IOHandler()->m_flushCounter;
+    auto ioHandler = attr.IOHandler();
+    if (!ioHandler)
+    {
+        throw error::Internal(
+            "Cannot configure automatic flush: the underlying Series is "
+            "already closed.");
+    }
+    auto index = ioHandler->m_flushCounter;
     return [attr,
             old_index = *index,
             current_index = std::weak_ptr(index)]() mutable {
@@ -91,7 +98,7 @@ auto ConfigureLoadStore::deferFlush(Attributable &attr)
     };
 }
 
-auto ConfigureLoadStore::getOffset() -> Offset const &
+auto ConfigureLoadStore::computeOffset() -> Offset const &
 {
     if (!m_offset.has_value())
     {
@@ -107,7 +114,7 @@ auto ConfigureLoadStore::getOffset() -> Offset const &
     return *m_offset;
 }
 
-auto ConfigureLoadStore::getExtent() -> Extent const &
+auto ConfigureLoadStore::computeExtent() -> Extent const &
 {
     if (!m_extent.has_value())
     {
@@ -288,6 +295,11 @@ auto ConfigureLoadStore::loadVariant() -> auxiliary::DeferredComputation<
     }
 }
 
+auto ConfigureLoadStore::getComponentHandle() const -> RecordComponent
+{
+    return m_rc;
+}
+
 struct VisitorLoadVariant
 {
     template <typename T>
@@ -309,7 +321,7 @@ auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
     -> internal::LoadStoreConfigWithBuffer
 {
     return internal::LoadStoreConfigWithBuffer{
-        this->getOffset(), this->getExtent(), m_mem_select};
+        this->computeOffset(), this->computeExtent(), m_mem_select};
 }
 
 auto ConfigureStoreChunkFromBuffer::store()
