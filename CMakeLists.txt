@@ -116,7 +116,7 @@ if(NOT openPMD_INSTALL_CMAKEDIR)
         if(WIN32)
             set(openPMD_INSTALL_CMAKEDIR "cmake")
         else()
-            set(openPMD_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/openPMD")
+            set(openPMD_INSTALL_CMAKEDIR "${openPMD_INSTALL_LIBDIR}/cmake/openPMD")
         endif()
     endif()
 endif()
@@ -682,10 +682,10 @@ if(openPMD_HAVE_PYTHON)
 
     if(WIN32)
         set(openPMD_INSTALL_PYTHONDIR_DEFAULT
-            "${CMAKE_INSTALL_LIBDIR}/site-packages")
+            "${openPMD_INSTALL_LIBDIR}/site-packages")
     else()
         set(openPMD_INSTALL_PYTHONDIR_DEFAULT
-            "${CMAKE_INSTALL_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
+            "${openPMD_INSTALL_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
         )
     endif()
     set(openPMD_INSTALL_PYTHONDIR "${openPMD_INSTALL_PYTHONDIR_DEFAULT}"
@@ -1055,11 +1055,14 @@ configure_file(
 function(openpmdreclibs tgtname outname)
     get_target_property(PC_PRIVATE_LIBS_TGT ${tgtname} INTERFACE_LINK_LIBRARIES)
     foreach(PC_LIB IN LISTS PC_PRIVATE_LIBS_TGT)
-       if(TARGET ${PC_LIB})
+       if(PC_LIB IN_LIST openPMD_MPI_TARGETS)
+           # public: added to Libs
+           continue()
+       elseif(TARGET ${PC_LIB})
            openpmdreclibs(${PC_LIB} ${outname})
        else()
            if(PC_LIB)
-               string(APPEND ${outname} " ${PC_LIB}")
+               openpmd_pc_link_items(${outname} "${PC_LIB}")
            endif()
        endif()
     endforeach()
@@ -1073,9 +1076,94 @@ if(openPMD_HAVE_PKGCONFIG)
     else()
         set(openPMD_PC_STATIC true)
     endif()
+    # same install directories as in install(): relative paths are relative
+    # to the install prefix, absolute paths (e.g., Nix) are used as they are
+    # (escaped, since they are used in Libs and Cflags; quoting instead
+    #  would break with pkg-config's define-prefix, which escapes the prefix)
+    foreach(dir IN ITEMS BINDIR INCLUDEDIR LIBDIR)
+        cmake_path(SET openPMD_PC_DIR "${openPMD_INSTALL_${dir}}")
+        if(IS_ABSOLUTE "${openPMD_PC_DIR}")
+            openpmd_pc_escape_arg(openPMD_PC_${dir} "${openPMD_PC_DIR}")
+        else()
+            openpmd_pc_escape_arg(openPMD_PC_DIR "${openPMD_PC_DIR}")
+            if(dir STREQUAL INCLUDEDIR)
+                set(openPMD_PC_${dir} "\${prefix}/${openPMD_PC_DIR}")
+            else()
+                set(openPMD_PC_${dir} "\${exec_prefix}/${openPMD_PC_DIR}")
+            endif()
+        endif()
+    endforeach()
+    unset(openPMD_PC_DIR)
+    # C++ standard flag (see openpmd_cxx_required) as a variable, not in
+    # Cflags: it would override newer standards requested by consumers, e.g.,
+    # via CMake's pkg_check_modules(IMPORTED_TARGET), and break C sources
+    set(openPMD_PC_CXXSTD "${CMAKE_CXX17_STANDARD_COMPILE_OPTION}")
+    # public usage requirements of the openPMD target
+    set(openPMD_PC_PUBLIC_CFLAGS "")
+    set(openPMD_PC_PUBLIC_LIBS "")
+    #   MPI: public headers include mpi.h and call MPI functions; the
+    #   MPI::MPI_<lang> target properties contain generator expressions,
+    #   thus we use the (plain) FindMPI result variables
+    if(openPMD_HAVE_MPI)
+        set(openPMD_PC_MPI_OPTIONS "")
+        set(openPMD_PC_MPI_DEFINES "")
+        set(openPMD_PC_MPI_INCLUDES "")
+        set(openPMD_PC_MPI_LINK_FLAGS "")
+        set(openPMD_PC_MPI_LIBS "")
+        set(openPMD_PC_MPI_PREV_OPTIONS "")
+        set(openPMD_PC_MPI_PREV_LINK_FLAGS "")
+        foreach(lang IN LISTS openPMD_MPI_NEED_COMPONENTS)
+            # compile options and link flags can span multiple arguments:
+            # only skip them if equal to those of the previous language
+            if(NOT "${MPI_${lang}_COMPILE_OPTIONS}" STREQUAL
+                   "${openPMD_PC_MPI_PREV_OPTIONS}")
+                list(APPEND openPMD_PC_MPI_OPTIONS
+                    ${MPI_${lang}_COMPILE_OPTIONS})
+            endif()
+            set(openPMD_PC_MPI_PREV_OPTIONS "${MPI_${lang}_COMPILE_OPTIONS}")
+            if(NOT "${MPI_${lang}_LINK_FLAGS}" STREQUAL
+                   "${openPMD_PC_MPI_PREV_LINK_FLAGS}")
+                separate_arguments(openPMD_PC_MPI_LANG_LINK_FLAGS
+                    NATIVE_COMMAND "${MPI_${lang}_LINK_FLAGS}")
+                list(APPEND openPMD_PC_MPI_LINK_FLAGS
+                    ${openPMD_PC_MPI_LANG_LINK_FLAGS})
+            endif()
+            set(openPMD_PC_MPI_PREV_LINK_FLAGS "${MPI_${lang}_LINK_FLAGS}")
+            list(APPEND openPMD_PC_MPI_DEFINES
+                ${MPI_${lang}_COMPILE_DEFINITIONS})
+            list(APPEND openPMD_PC_MPI_INCLUDES ${MPI_${lang}_INCLUDE_DIRS})
+            list(APPEND openPMD_PC_MPI_LIBS ${MPI_${lang}_LIBRARIES})
+        endforeach()
+        # only openPMD itself is built with MPI_CXX_SKIP_MPICXX (see above):
+        # consumers may use the MPI-2 C++ bindings, as with openPMDConfig.cmake
+        list(FILTER openPMD_PC_MPI_DEFINES EXCLUDE REGEX
+            "^(-D)?(MPICH_SKIP_MPICXX|OMPI_SKIP_MPICXX|_MPICC_H)(=.*)?$")
+        list(REMOVE_DUPLICATES openPMD_PC_MPI_DEFINES)
+        list(TRANSFORM openPMD_PC_MPI_DEFINES REPLACE "^(-D)?(.+)$" "-D\\2")
+        list(REMOVE_DUPLICATES openPMD_PC_MPI_INCLUDES)
+        list(TRANSFORM openPMD_PC_MPI_INCLUDES PREPEND "-I")
+        # keep the last occurrence of a library, for the link order
+        list(REVERSE openPMD_PC_MPI_LIBS)
+        list(REMOVE_DUPLICATES openPMD_PC_MPI_LIBS)
+        list(REVERSE openPMD_PC_MPI_LIBS)
+        openpmd_pc_escape(openPMD_PC_PUBLIC_CFLAGS
+            ${openPMD_PC_MPI_OPTIONS}
+            ${openPMD_PC_MPI_DEFINES}
+            ${openPMD_PC_MPI_INCLUDES}
+        )
+        openpmd_pc_escape(openPMD_PC_PUBLIC_LIBS ${openPMD_PC_MPI_LINK_FLAGS})
+        openpmd_pc_link_items(openPMD_PC_PUBLIC_LIBS ${openPMD_PC_MPI_LIBS})
+        foreach(var IN ITEMS OPTIONS DEFINES INCLUDES LINK_FLAGS LANG_LINK_FLAGS
+                             LIBS PREV_OPTIONS PREV_LINK_FLAGS)
+            unset(openPMD_PC_MPI_${var})
+        endforeach()
+    endif()
+    # the install prefix is only final at install time, e.g., it can be
+    # changed via `cmake --install --prefix`: keep a placeholder for now
+    set(openPMD_PC_PREFIX "@openPMD_PC_PREFIX@")
     configure_file(
         ${openPMD_SOURCE_DIR}/openPMD.pc.in
-        ${openPMD_BINARY_DIR}/openPMD.pc
+        ${openPMD_BINARY_DIR}/openPMD.pc.noprefix
         @ONLY
     )
 endif()
@@ -1181,6 +1269,32 @@ if(openPMD_INSTALL)
     #   because they compile manually on the command line or write their
     #   Makefiles by hand.
     if(openPMD_HAVE_PKGCONFIG)
+        # substitute the install prefix as used at install time
+        # (plain string replacement: the paths of dependencies must not be
+        #  scanned again for @VAR@ patterns; the policies are set, because
+        #  install scripts run with them unset, e.g., CMP0053 would evaluate
+        #  @VAR@ as a variable reference)
+        install(CODE "
+            cmake_policy(PUSH)
+            cmake_policy(VERSION 3.22)
+            include([==[${openPMD_SOURCE_DIR}/cmake/openPMDFunctions.cmake]==])
+            # absolute, e.g., for: cmake --install <dir> --prefix <relative>
+            cmake_path(SET openPMD_PC_PREFIX NORMALIZE \"\${CMAKE_INSTALL_PREFIX}\")
+            cmake_path(ABSOLUTE_PATH openPMD_PC_PREFIX NORMALIZE)
+            if(openPMD_PC_PREFIX MATCHES \"[^/:]/+$\")
+                string(REGEX REPLACE \"/+$\" \"\" openPMD_PC_PREFIX \"\${openPMD_PC_PREFIX}\")
+            endif()
+            openpmd_pc_escape_arg(openPMD_PC_PREFIX \"\${openPMD_PC_PREFIX}\")
+            file(READ [==[${openPMD_BINARY_DIR}/openPMD.pc.noprefix]==] openPMD_PC)
+            string(REPLACE [==[@openPMD_PC_PREFIX@]==] \"\${openPMD_PC_PREFIX}\" openPMD_PC \"\${openPMD_PC}\")
+            file(WRITE [==[${openPMD_BINARY_DIR}/openPMD.pc.tmp]==] \"\${openPMD_PC}\")
+            configure_file(
+                [==[${openPMD_BINARY_DIR}/openPMD.pc.tmp]==]
+                [==[${openPMD_BINARY_DIR}/openPMD.pc]==]
+                COPYONLY
+            )
+            cmake_policy(POP)
+        ")
         install(
             FILES       ${openPMD_BINARY_DIR}/openPMD.pc
             DESTINATION ${openPMD_INSTALL_LIBDIR}/pkgconfig
