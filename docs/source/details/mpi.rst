@@ -11,28 +11,29 @@ The latter is implemented through the `Message Passing Interface (MPI) <https://
 
 A **collective** operation needs to be executed by *all* MPI ranks of the MPI communicator that was passed to ``openPMD::Series``.
 Contrarily, **independent** operations can also be called by a subset of these MPI ranks.
+A **synchronizing** operation will synchronize the MPI ranks that participate in it.
 For more information, please see the `MPI standard documents <https://www.mpi-forum.org/docs/>`_, for example MPI-3.1 in `"Section 2.4 - Semantic Terms" <https://www.mpi-forum.org/docs/mpi-3.1/mpi31-report.pdf>`_.
 
-============================ ================== ================================
-Functionality                Behavior           Description
-============================ ================== ================================
-``Series``                   **collective**     open and close
-``::flush()``                **collective**     read and write
-``::setRankTable()``         **collective**     write, performed at flush
-``::rankTable()``            **coll**/indep.    behavior specified by bool param
-``Iteration`` [1]_           independent        declare and open
-``::open()`` [4]_            **collective**     explicit open
-``Mesh`` [1]_                independent        declare, open, write
-``ParticleSpecies`` [1]_     independent        declare, open, write
-``::setAttribute`` [3]_      *backend-specific* declare, write
-``::getAttribute``           independent        open, reading
-``RecordComponent`` [1]_     independent        declare, open, write
-``::resetDataset`` [1]_ [2]_ *backend-specific* declare, write
-``::makeConstant`` [3]_      *backend-specific* declare, write
-``::storeChunk`` [1]_        independent        write
-``::loadChunk``              independent        read
-``::availableChunks`` [4]_   collective         read, immediate result
-============================ ================== ================================
+============================ ================== ============= ================================
+Functionality                Behavior           Synchronizing Description
+============================ ================== ============= ================================
+``Series``                   **collective**     yes           open and close
+``::flush()``                **collective**     yes           read and write
+``::setRankTable()``         **collective**     no            write, performed at flush
+``::rankTable()``            **coll**/indep.    **yes**/no    behavior specified by bool param
+``Iteration`` [1]_           independent        no            declare and open
+``::open()`` [4]_            **collective**     yes           explicit open
+``Mesh`` [1]_                independent        no            declare, open, write
+``ParticleSpecies`` [1]_     independent        no            declare, open, write
+``::setAttribute`` [3]_      *backend-specific* no            declare, write
+``::getAttribute``           independent        no            open, reading
+``RecordComponent`` [1]_     independent        no            declare, open, write
+``::resetDataset`` [1]_ [2]_ *backend-specific* no            declare, write
+``::makeConstant`` [3]_      *backend-specific* no            declare, write
+``::storeChunk`` [1]_        independent        no            write
+``::loadChunk``              independent        no            read
+``::availableChunks`` [4]_   independent        no            read, immediate result
+============================ ================== ============= ================================
 
 .. [1] Individual backends, i.e. :ref:`parallel HDF5 <backends-hdf5>`, will only support independent operations if the default, non-collective (aka independent) behavior is kept.
        Otherwise these operations are collective.
