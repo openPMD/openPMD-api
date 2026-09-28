@@ -75,7 +75,7 @@ protected:
     [[nodiscard]] auto dim() const -> uint8_t;
     auto storeChunkConfig() -> internal::LoadStoreConfig;
 
-    auto deferFlush(Attributable &);
+    auto deferFlush(RecordComponent &);
 
     // The below methods return void.
     // For chaining calls, they should return *this, but this class right
