@@ -48,13 +48,11 @@ class ParticleSpecies
 public:
     ParticlePatches particlePatches;
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
 private:
     ParticleSpecies();
 
     void read();
-    void flush(std::string const &, internal::FlushParams const &) override;
+    void flush(std::string const &, internal::FlushParams const &);
 
     using Data_t = Container<Record>::ContainerData;
 
@@ -66,6 +64,8 @@ private:
 protected:
     void scientificDefaults_impl(
         internal::WriteOrRead, OpenpmdStandard) override;
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
 
 namespace traits
@@ -74,8 +74,8 @@ namespace traits
     struct GenerationPolicy<ParticleSpecies>
     {
         constexpr static bool is_noop = false;
-        template <typename T>
-        void operator()(T &it)
+        template <typename Container, typename T>
+        void operator()(Container &, T &it)
         {
             it->second.particlePatches.linkHierarchy(it->second.writable());
         }

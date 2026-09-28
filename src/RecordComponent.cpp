@@ -72,7 +72,7 @@ namespace internal
         }
 #endif
         a.setDirtyRecursive(true);
-        m_chunks.push(std::move(task));
+        chunks().push(std::move(task));
     }
 
     static constexpr char const *note_on_deactivating_this_check = R"(
@@ -219,6 +219,7 @@ RecordComponent &RecordComponent::setUnitSI(double usi)
 RecordComponent &RecordComponent::resetDataset(Dataset d)
 {
     auto &rc = get();
+    auto &dataset = rc.dataset();
 
     /*
      * For backwards-compatibility reasons, we do not actually run the below
@@ -239,7 +240,7 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
 
     if (written())
     {
-        if (!rc.m_dataset.has_value())
+        if (!dataset.has_value())
         {
             throw error::Internal(
                 "Internal control flow error: Written record component must "
@@ -247,14 +248,14 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         }
         if (d.dtype == Datatype::UNDEFINED)
         {
-            d.dtype = rc.m_dataset.value().dtype;
+            d.dtype = dataset.value().dtype;
         }
-        else if (d.dtype != rc.m_dataset.value().dtype)
+        else if (d.dtype != dataset.value().dtype)
         {
             throw std::runtime_error(
                 "Cannot change the datatype of a dataset.");
         }
-        rc.m_hasBeenExtended = true;
+        rc.hasBeenExtended() = true;
     }
 
     if (d.extent.empty())
@@ -275,26 +276,26 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
         }
         else
         {
-            rc.m_dataset = std::move(d);
+            dataset = std::move(d);
             setDirty(true);
             return *this;
         }
     }
 
-    rc.m_isEmpty = false;
+    rc.isEmpty() = false;
     if (written())
     {
-        if (!rc.m_dataset.has_value())
+        if (!dataset.has_value())
         {
             throw error::Internal(
                 "Internal control flow error: Written record component must "
                 "have defined datatype and extent.");
         }
-        rc.m_dataset.value().extend(std::move(d.extent));
+        dataset.value().extend(std::move(d.extent));
     }
     else
     {
-        rc.m_dataset = std::move(d);
+        dataset = std::move(d);
     }
 
     setDirty(true);
@@ -304,9 +305,10 @@ RecordComponent &RecordComponent::resetDataset(Dataset d)
 uint8_t RecordComponent::getDimensionality() const
 {
     auto &rc = get();
-    if (rc.m_dataset.has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.m_dataset.value().rank;
+        return dataset.value().rank;
     }
     else
     {
@@ -317,9 +319,10 @@ uint8_t RecordComponent::getDimensionality() const
 Extent RecordComponent::getExtent() const
 {
     auto &rc = get();
-    if (rc.m_dataset.has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.m_dataset.value().extent;
+        return dataset.value().extent;
     }
     else
     {
@@ -354,9 +357,10 @@ RecordComponent &RecordComponent::makeEmpty(Datatype dt, uint8_t dimensions)
 RecordComponent &RecordComponent::makeEmpty(Dataset d)
 {
     auto &rc = get();
+    auto &dataset = rc.dataset();
     if (written())
     {
-        if (!rc.m_dataset.has_value())
+        if (!dataset.has_value())
         {
             throw error::Internal(
                 "Internal control flow error: Written record component must "
@@ -371,40 +375,40 @@ RecordComponent &RecordComponent::makeEmpty(Dataset d)
         }
         if (d.dtype == Datatype::UNDEFINED)
         {
-            d.dtype = rc.m_dataset.value().dtype;
+            d.dtype = dataset.value().dtype;
         }
-        else if (d.dtype != rc.m_dataset.value().dtype)
+        else if (d.dtype != dataset.value().dtype)
         {
             throw std::runtime_error(
                 "Cannot change the datatype of a dataset.");
         }
-        rc.m_dataset.value().extend(std::move(d.extent));
-        rc.m_hasBeenExtended = true;
+        dataset.value().extend(std::move(d.extent));
+        rc.hasBeenExtended() = true;
     }
     else
     {
-        rc.m_dataset = std::move(d);
+        dataset = std::move(d);
     }
 
-    if (rc.m_dataset.value().extent.size() == 0)
+    if (dataset.value().extent.size() == 0)
         throw std::runtime_error("Dataset extent must be at least 1D.");
 
-    rc.m_isEmpty = true;
+    rc.isEmpty() = true;
     setDirty(true);
     if (!written())
     {
         switchType<detail::DefaultValue<RecordComponent>>(
-            rc.m_dataset.value().dtype, *this);
+            dataset.value().dtype, *this);
     }
     return *this;
 }
 
 bool RecordComponent::empty() const
 {
-    return get().m_isEmpty;
+    return get().isEmpty();
 }
 
-void RecordComponent::visitHierarchy(HierarchyVisitor &v, bool)
+void RecordComponent::visitHierarchyImpl(HierarchyVisitor &v, bool)
 {
     v(*this);
 }
@@ -423,10 +427,12 @@ void RecordComponent::flush(
     }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
-        while (!rc.m_chunks.empty())
+        // TODO: if we are going to allow custom hierarchies on constant
+        // components (technically possible), the flush would go here
+        while (!rc.chunks().empty())
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
+            IOHandler()->enqueue(rc.chunks().front());
+            rc.chunks().pop();
         }
     }
     else
@@ -434,11 +440,11 @@ void RecordComponent::flush(
         /*
          * This catches when a user forgets to use resetDataset.
          */
-        if (!rc.m_dataset.has_value())
+        if (!rc.dataset().has_value())
         {
             // The check for !written() is technically not needed, just
             // defensive programming against internal bugs that go on us.
-            if (!written() && rc.m_chunks.empty() && !rc.m_isConstant)
+            if (!written() && rc.chunks().empty() && !rc.isConstant())
             {
                 // No data written yet, just accessed the object so far without
                 // doing anything
@@ -471,8 +477,8 @@ void RecordComponent::flush(
                 IOHandler()->enqueue(IOTask(this, pCreate));
                 Parameter<Operation::WRITE_ATT> aWrite;
                 aWrite.name = "value";
-                aWrite.dtype = rc.m_constantValue.dtype;
-                aWrite.m_resource = rc.m_constantValue.getAny();
+                aWrite.dtype = rc.constantValue().dtype;
+                aWrite.m_resource = rc.constantValue().getAny();
                 if (isVBased)
                 {
                     aWrite.changesOverSteps = Parameter<
@@ -496,13 +502,13 @@ void RecordComponent::flush(
             else
             {
                 Parameter<Operation::CREATE_DATASET> dCreate(
-                    rc.m_dataset.value());
+                    rc.dataset().value());
                 dCreate.name = name;
                 IOHandler()->enqueue(IOTask(this, dCreate));
             }
         }
 
-        if (rc.m_hasBeenExtended)
+        if (rc.hasBeenExtended())
         {
             if (constant())
             {
@@ -530,17 +536,22 @@ void RecordComponent::flush(
             else
             {
                 Parameter<Operation::EXTEND_DATASET> pExtend(
-                    rc.m_dataset.value().extent);
+                    rc.dataset().value().extent);
                 IOHandler()->enqueue(IOTask(this, std::move(pExtend)));
-                rc.m_hasBeenExtended = false;
+                rc.hasBeenExtended() = false;
             }
         }
 
-        while (!rc.m_chunks.empty())
+        while (!rc.chunks().empty())
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
-            rc.m_chunks.pop();
+            IOHandler()->enqueue(rc.chunks().front());
+            rc.chunks().pop();
         }
+
+        // TODO maybe guard against custom hierarchies on datasets?
+        // they can be created upon constant components however..
+        customHierarchyFlush(
+            flushParams, /* managed_as_custom_object = */ false);
 
         flushAttributes(flushParams);
     }
@@ -623,6 +634,7 @@ void RecordComponent::readBase()
         setWritten(true, Attributable::EnqueueAsynchronously::No);
     };
 
+    // why !empty() ??
     if (constant() && !empty())
     {
         read_constant();
@@ -755,8 +767,8 @@ RecordComponent &RecordComponent::makeConstant(T value)
 
     auto &rc = get();
 
-    rc.m_constantValue = Attribute(value);
-    rc.m_isConstant = true;
+    rc.constantValue() = Attribute(value);
+    rc.isConstant() = true;
     return *this;
 }
 
@@ -902,7 +914,7 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 
         std::optional<T> val =
             switchNonVectorType<detail::do_convert</* To = */ T>>(
-                /* dt = */ getDatatype(), rc.m_constantValue);
+                /* dt = */ getDatatype(), rc.constantValue());
 
         if (val.has_value())
         {

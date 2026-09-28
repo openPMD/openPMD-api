@@ -95,11 +95,11 @@ public:
     template <typename T>
     MeshRecordComponent &makeConstant(T);
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
 protected:
     void scientificDefaults_impl(
         internal::WriteOrRead, OpenpmdStandard) override;
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
 
 template <typename T>

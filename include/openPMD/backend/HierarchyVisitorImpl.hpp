@@ -75,6 +75,10 @@ public:
     {
         lambda(obj);
     }
+    void operator()(CustomHierarchy &obj) override
+    {
+        lambda(obj);
+    }
 };
 
 template <typename Lambda>

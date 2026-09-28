@@ -29,3 +29,8 @@ namespace read_nonexistent_attribute
 {
 auto read_nonexistent_attribute() -> void;
 }
+
+namespace custom_hierarchy
+{
+auto custom_hierarchy() -> void;
+}
