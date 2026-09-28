@@ -194,6 +194,16 @@ public:
         -> unique_ptr_return_type<T>;
     template <typename T>
     [[nodiscard]] auto withRawPtr(T *data) -> shared_ptr_return_type<T>;
+    /** Specify a contiguous container (std::vector, std::array, ...) as the
+     * buffer for the operation.
+     *
+     * The buffer size is inferred from the container and set automatically, so
+     * that the operation's extent is adjusted to the container when no explicit
+     * extent is given.
+     *
+     * @param data Contiguous container large enough for the selected data
+     * @return A buffer-specific configuration for the operation
+     */
     template <typename T_ContiguousContainer>
     [[nodiscard]] auto withContiguousContainer(T_ContiguousContainer &data)
         -> std::enable_if_t<
@@ -313,6 +323,20 @@ public:
         return *this;
     }
 
+    /** Set the number of elements the buffer can hold
+     *
+     * Optional. This tells the openPMD API the size of the buffer in elements.
+     * It is used to bound the operation's extent to the buffer when the extent
+     * is not set explicitly: for one-dimensional datasets, an otherwise full
+     * selection is shortened to the buffer size so that the buffer is not read
+     * from or written to beyond its bounds.
+     * It is set automatically when passing a contiguous container (see
+     * withContiguousContainer()) and can be set explicitly for raw pointers
+     * (see withRawPtr()), where the buffer size cannot be inferred.
+     *
+     * @param size Number of elements in the buffer
+     * @return Reference to this object for chaining
+     */
     auto bufferSize(size_t size) -> this_t &
     {
         bufferSize_impl(size);
@@ -412,6 +436,20 @@ public:
         return *this;
     }
 
+    /** Set the number of elements the buffer can hold
+     *
+     * Optional. This tells the openPMD API the size of the buffer in elements.
+     * It is used to bound the operation's extent to the buffer when the extent
+     * is not set explicitly: for one-dimensional datasets, an otherwise full
+     * selection is shortened to the buffer size so that data is not loaded
+     * beyond the buffer's bounds.
+     * It is set automatically when passing a contiguous container (see
+     * withContiguousContainer()) and can be set explicitly for raw pointers
+     * (see withRawPtr()), where the buffer size cannot be inferred.
+     *
+     * @param size Number of elements in the buffer
+     * @return Reference to this object for chaining
+     */
     auto bufferSize(size_t size) -> this_t &
     {
         bufferSize_impl(size);
