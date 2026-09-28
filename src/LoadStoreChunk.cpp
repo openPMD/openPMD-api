@@ -70,7 +70,7 @@ auto ConfigureLoadStore::storeChunkConfig() -> internal::LoadStoreConfig
     return internal::LoadStoreConfig{computeOffset(), computeExtent()};
 }
 
-auto ConfigureLoadStore::deferFlush(Attributable &attr)
+auto ConfigureLoadStore::deferFlush(RecordComponent &attr)
 {
     if (m_unsafeNoAutomaticFlush)
     {
@@ -85,7 +85,7 @@ auto ConfigureLoadStore::deferFlush(Attributable &attr)
             "Cannot configure automatic flush: the underlying Series is "
             "already closed.");
     }
-    auto index = ioHandler->m_flushCounter;
+    auto index = attr.get().m_flushCounter;
     return [attr,
             old_index = *index,
             current_index = std::weak_ptr(index)]() mutable {

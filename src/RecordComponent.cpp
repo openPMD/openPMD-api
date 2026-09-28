@@ -492,11 +492,15 @@ void RecordComponent::flush(
     {
         return;
     }
-    if (access::readOnly(IOHandler()->m_frontendAccess))
+    auto ioHandler = IOHandler();
+    Parameter<Operation::INCREASE_FLUSH_COUNTER> increaseFlushCounter;
+    increaseFlushCounter.flush_counter = rc.m_flushCounter;
+    if (access::readOnly(ioHandler->m_frontendAccess))
     {
+        ioHandler->enqueue(IOTask(this, increaseFlushCounter));
         while (!rc.m_chunks.empty())
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
+            ioHandler->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
     }
@@ -531,6 +535,8 @@ void RecordComponent::flush(
                     return val == Dataset::JOINED_DIMENSION;
                 });
         };
+        ioHandler->enqueue(IOTask(this, increaseFlushCounter));
+
         if (!written())
         {
             if (constant())
@@ -539,7 +545,7 @@ void RecordComponent::flush(
                     IterationEncoding::variableBased;
                 Parameter<Operation::CREATE_PATH> pCreate;
                 pCreate.path = name;
-                IOHandler()->enqueue(IOTask(this, pCreate));
+                ioHandler->enqueue(IOTask(this, pCreate));
                 Parameter<Operation::WRITE_ATT> aWrite;
                 aWrite.name = "value";
                 aWrite.dtype = rc.m_constantValue.dtype;
@@ -549,7 +555,7 @@ void RecordComponent::flush(
                     aWrite.changesOverSteps = Parameter<
                         Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
                 }
-                IOHandler()->enqueue(IOTask(this, aWrite));
+                ioHandler->enqueue(IOTask(this, aWrite));
                 if (constant_component_write_shape())
                 {
                     aWrite.name = "shape";
@@ -561,7 +567,7 @@ void RecordComponent::flush(
                         aWrite.changesOverSteps = Parameter<
                             Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
                     }
-                    IOHandler()->enqueue(IOTask(this, aWrite));
+                    ioHandler->enqueue(IOTask(this, aWrite));
                 }
             }
             else
@@ -569,7 +575,7 @@ void RecordComponent::flush(
                 Parameter<Operation::CREATE_DATASET> dCreate(
                     rc.m_dataset.value());
                 dCreate.name = name;
-                IOHandler()->enqueue(IOTask(this, dCreate));
+                ioHandler->enqueue(IOTask(this, dCreate));
             }
         }
 
@@ -596,20 +602,20 @@ void RecordComponent::flush(
                     aWrite.changesOverSteps = Parameter<
                         Operation::WRITE_ATT>::ChangesOverSteps::IfPossible;
                 }
-                IOHandler()->enqueue(IOTask(this, aWrite));
+                ioHandler->enqueue(IOTask(this, aWrite));
             }
             else
             {
                 Parameter<Operation::EXTEND_DATASET> pExtend(
                     rc.m_dataset.value().extent);
-                IOHandler()->enqueue(IOTask(this, std::move(pExtend)));
+                ioHandler->enqueue(IOTask(this, std::move(pExtend)));
                 rc.m_hasBeenExtended = false;
             }
         }
 
         while (!rc.m_chunks.empty())
         {
-            IOHandler()->enqueue(rc.m_chunks.front());
+            ioHandler->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
 

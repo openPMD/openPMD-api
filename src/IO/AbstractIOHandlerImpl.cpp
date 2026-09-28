@@ -113,6 +113,7 @@ namespace
         case Operation::LIST_PATHS:
         case Operation::OPEN_PATH:
         case Operation::SET_WRITTEN:
+        case Operation::INCREASE_FLUSH_COUNTER:
         case Operation::CREATE_PATH:
             break;
         case Operation::CLOSE_PATH:
@@ -547,6 +548,19 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
                 setWritten(i.writable, parameter);
                 break;
             }
+            case O::INCREASE_FLUSH_COUNTER: {
+                auto &parameter =
+                    deref_dynamic_cast<Parameter<O::INCREASE_FLUSH_COUNTER>>(
+                        i.parameter.get());
+                writeToStderr(
+                    "[",
+                    i.writable->parent,
+                    "->",
+                    i.writable,
+                    "] INCREASE_FLUSH_COUNTER ");
+                increaseFlushCounter(i.writable, parameter);
+                break;
+            }
             }
         }
         catch (...)
@@ -615,5 +629,11 @@ void AbstractIOHandlerImpl::setWritten(
     Writable *w, Parameter<Operation::SET_WRITTEN> const &param)
 {
     w->written = param.target_status;
+}
+
+void AbstractIOHandlerImpl::increaseFlushCounter(
+    Writable *, Parameter<Operation::INCREASE_FLUSH_COUNTER> const &param)
+{
+    ++*param.flush_counter;
 }
 } // namespace openPMD
