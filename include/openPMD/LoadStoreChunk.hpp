@@ -89,6 +89,8 @@ protected:
     void extent_impl(Extent);
     void unsafeNoAutomaticFlush_impl();
 
+    virtual auto getBufferSize() -> std::optional<size_t>;
+
 private:
     auto withSharedPtr_impl_mut(std::shared_ptr<void> data, Datatype)
         -> openPMD::ConfigureLoadStoreFromBuffer;
@@ -232,6 +234,7 @@ protected:
     auxiliary::WriteBuffer m_buffer;
     Datatype m_datatype;
     std::optional<MemorySelection> m_mem_select;
+    std::optional<size_t> m_buffer_size;
 
     ConfigureStoreChunkFromBuffer(
         auxiliary::WriteBuffer buffer, Datatype, ConfigureLoadStore &&);
@@ -247,6 +250,10 @@ protected:
     void memorySelection_impl(MemorySelection);
 
     auto storeChunkConfig() -> internal::LoadStoreConfigWithBuffer;
+
+    void bufferSize_impl(size_t);
+
+    auto getBufferSize() -> std::optional<size_t> override;
 
 public:
     using this_t = ConfigureStoreChunkFromBuffer;
@@ -303,6 +310,12 @@ public:
     auto memorySelection(MemorySelection memorySelection) -> this_t &
     {
         memorySelection_impl(std::move(memorySelection));
+        return *this;
+    }
+
+    auto bufferSize(size_t size) -> this_t &
+    {
+        bufferSize_impl(size);
         return *this;
     }
 
@@ -396,6 +409,12 @@ public:
     auto memorySelection(MemorySelection memorySelection) -> this_t &
     {
         memorySelection_impl(std::move(memorySelection));
+        return *this;
+    }
+
+    auto bufferSize(size_t size) -> this_t &
+    {
+        bufferSize_impl(size);
         return *this;
     }
 

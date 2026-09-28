@@ -9,6 +9,7 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/ShareRawInternal.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 // comment to keep clang-format from reordering
@@ -16,6 +17,7 @@
 #include "openPMD/backend/Attributable.hpp"
 
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <stdexcept>
 
@@ -116,6 +118,7 @@ auto ConfigureLoadStore::computeOffset() -> Offset const &
 
 auto ConfigureLoadStore::computeExtent() -> Extent const &
 {
+    bool allow_downsizing = false;
     if (!m_extent.has_value())
     {
         m_extent = std::make_optional<Extent>(m_rc.getExtent());
@@ -128,6 +131,31 @@ auto ConfigureLoadStore::computeExtent() -> Extent const &
             for (; it_o != end_o && it_e != end_e; ++it_e, ++it_o)
             {
                 *it_e -= *it_o;
+            }
+        }
+        allow_downsizing = true;
+    }
+    if (auto buffer_size = getBufferSize(); buffer_size.has_value())
+    {
+        size_t requestedExtent = std::accumulate(
+            m_extent->begin(),
+            m_extent->end(),
+            1,
+            [](size_t l, size_t r) -> size_t { return r * l; });
+        if (requestedExtent > *buffer_size)
+        {
+            if (m_extent->size() == 1 && allow_downsizing)
+            {
+                (*m_extent)[0] = *buffer_size;
+            }
+            else
+            {
+                std::stringstream error;
+                error << "Requesting to load a chunk of size "
+                      << requestedExtent << " (n-dimensional extent is ";
+                auxiliary::write_vec_to_stream(error, *m_extent)
+                    << ") to a buffer of size " << *buffer_size << ".";
+                throw error::WrongAPIUsage(error.str());
             }
         }
     }
@@ -324,6 +352,16 @@ auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
         this->computeOffset(), this->computeExtent(), m_mem_select};
 }
 
+void ConfigureStoreChunkFromBuffer::bufferSize_impl(size_t size)
+{
+    m_buffer_size = size;
+}
+
+auto ConfigureStoreChunkFromBuffer::getBufferSize() -> std::optional<size_t>
+{
+    return m_buffer_size;
+}
+
 auto ConfigureStoreChunkFromBuffer::store()
     -> auxiliary::DeferredComputation<void>
 {
@@ -375,6 +413,11 @@ void ConfigureLoadStore::offset_impl(Offset offset)
 void ConfigureLoadStore::unsafeNoAutomaticFlush_impl()
 {
     m_unsafeNoAutomaticFlush = true;
+}
+
+auto ConfigureLoadStore::getBufferSize() -> std::optional<size_t>
+{
+    return std::nullopt;
 }
 
 void ConfigureStoreChunkFromBuffer::memorySelection_impl(MemorySelection sel)
