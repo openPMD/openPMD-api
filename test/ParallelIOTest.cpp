@@ -553,15 +553,18 @@ void available_chunks_test(std::string const &file_ending)
 
         auto E_y = it0.meshes["E"]["y"];
         auto width = E_y.getExtent()[1];
-        auto first_row =
-            E_y.prepareLoadStore().extent({1, width}).load<int>().get();
-        auto middle_rows = E_y.prepareLoadStore()
-                               .offset({1, 0})
-                               .extent({3, width})
-                               .load<int>()
-                               .get();
-        auto last_row = E_y.prepareLoadStore().offset({4, 0}).load<int>().get();
-        read.flush();
+        auto first_row_deferred =
+            E_y.prepareLoadStore().extent({1, width}).load<int>();
+        auto middle_rows_deferred = E_y.prepareLoadStore()
+                                        .offset({1, 0})
+                                        .extent({3, width})
+                                        .load<int>();
+        auto last_row_deferred =
+            E_y.prepareLoadStore().offset({4, 0}).load<int>();
+
+        auto first_row = first_row_deferred.get();
+        auto middle_rows = middle_rows_deferred.get();
+        auto last_row = last_row_deferred.get();
 
         for (auto row : [&]() -> std::vector<std::shared_ptr<int> *> {
                  if constexpr (CanTheMemorySelectionBeReset)

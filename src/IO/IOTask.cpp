@@ -123,6 +123,9 @@ std::ostream &operator<<(std::ostream &os, Operation op)
     case Operation::SET_WRITTEN:
         os << "SET_WRITTEN";
         break;
+    case Operation::INCREASE_FLUSH_COUNTER:
+        os << "INCREASE_FLUSH_COUNTER";
+        break;
     }
     return os;
 }
@@ -308,6 +311,9 @@ namespace internal
             break;
         case Operation::SET_WRITTEN:
             return "SET_WRITTEN";
+            break;
+        case Operation::INCREASE_FLUSH_COUNTER:
+            return "INCREASE_FLUSH_COUNTER";
             break;
         }
         return "unknown";
