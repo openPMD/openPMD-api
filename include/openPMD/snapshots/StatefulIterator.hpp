@@ -280,7 +280,7 @@ class StatefulIterator
 public:
     using value_type =
         typename Container<Iteration, Iteration::IterationIndex_t>::value_type;
-    using typename parent_t ::difference_type;
+    using typename parent_t::difference_type;
     using Seek = detail::Seek;
 
     //! construct the end() iterator

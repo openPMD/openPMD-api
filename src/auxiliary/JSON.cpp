@@ -795,7 +795,7 @@ constexpr int toml_precision = std::numeric_limits<double>::digits10 + 1;
 
 #if TOML11_VERSION_MAJOR < 4
 template <typename toml_t>
-std ::string format_toml(toml_t &&val)
+std::string format_toml(toml_t &&val)
 {
     std::stringstream res;
     res << std::setprecision(toml_precision) << std::forward<toml_t>(val);
