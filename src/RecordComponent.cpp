@@ -28,6 +28,7 @@
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
@@ -1016,13 +1017,7 @@ void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 template <typename T>
 void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
-    prepareLoadStore()
-        .offset(std::move(offset))
-        .extent(std::move(extent))
-        .withRawPtr(ptr)
-        .unsafeNoAutomaticFlush()
-        .load()
-        .get();
+    loadChunk(auxiliary::shareRaw(ptr), std::move(offset), std::move(extent));
 }
 
 template <typename T>
