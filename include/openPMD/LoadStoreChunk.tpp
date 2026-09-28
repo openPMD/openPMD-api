@@ -67,10 +67,8 @@ auto ConfigureLoadStore::withContiguousContainer(T_ContiguousContainer &data)
         auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
         shared_ptr_return_type<typename T_ContiguousContainer::value_type>>
 {
-    if (!m_extent.has_value() && dim() == 1)
-    {
-        m_extent = Extent{data.size()};
-    }
-    return withRawPtr(data.data());
+    auto res = withRawPtr(data.data());
+    res.bufferSize(data.size());
+    return res;
 }
 } // namespace openPMD
