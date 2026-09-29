@@ -59,8 +59,10 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
     auto storeChunkConfig = prepareLoadStore();
 
-    auto joined_dim = joinedDimension();
-    if (!joined_dim.has_value() && (o.size() != 1 || o.at(0) != 0u))
+    // guard against default arguments
+    // we will take care of joined dimension handling later in computeOffset /
+    // computeExtent
+    if (o.size() != 1 || o.at(0) != 0u)
     {
         storeChunkConfig.offset(std::move(o));
     }
