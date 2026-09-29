@@ -43,10 +43,16 @@ template <typename T, typename Del>
 inline void
 RecordComponent::storeChunk(std::unique_ptr<T, Del> data, Offset o, Extent e)
 {
-    prepareLoadStore()
-        .offset(std::move(o))
-        .extent(std::move(e))
-        .withUniquePtr(std::move(data))
+    auto operation = prepareLoadStore();
+    if (o.size() != 1u || o.at(0) != 0u)
+    {
+        operation.offset(std::move(o));
+    }
+    if (e.size() != 1u || e.at(0) != -1u)
+    {
+        operation.extent(std::move(e));
+    }
+    operation.withUniquePtr(std::move(data))
         .unsafeNoAutomaticFlush()
         .store()
         .get();
@@ -82,10 +88,16 @@ template <typename T, typename F>
 inline DynamicMemoryView<T>
 RecordComponent::storeChunk(Offset o, Extent e, F &&createBuffer)
 {
-    return prepareLoadStore()
-        .offset(std::move(o))
-        .extent(std::move(e))
-        .storeSpan<T>(std::forward<F>(createBuffer));
+    auto operation = prepareLoadStore();
+    if (o.size() != 1u || o.at(0) != 0u)
+    {
+        operation.offset(std::move(o));
+    }
+    if (e.size() != 1u || e.at(0) != -1u)
+    {
+        operation.extent(std::move(e));
+    }
+    return operation.storeSpan<T>(std::forward<F>(createBuffer));
 }
 
 template <typename T, typename F>
