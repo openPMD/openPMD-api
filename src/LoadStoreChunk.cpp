@@ -59,12 +59,13 @@ namespace
     }
 } // namespace
 
-ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc) : m_rc(rc)
+ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc)
+    : m_rc(std::make_unique<RecordComponent>(rc))
 {}
 
 auto ConfigureLoadStore::dim() const -> uint8_t
 {
-    return m_rc.getDimensionality();
+    return m_rc->getDimensionality();
 }
 
 auto ConfigureLoadStore::storeChunkConfig() -> internal::LoadStoreConfig
@@ -102,7 +103,7 @@ auto ConfigureLoadStore::deferFlush(RecordComponent &attr)
 
 auto ConfigureLoadStore::computeOffset() -> Offset const &
 {
-    auto joined_dim = m_rc.joinedDimension();
+    auto joined_dim = m_rc->joinedDimension();
     if (!m_offset.has_value())
     {
         if (joined_dim.has_value())
@@ -127,7 +128,7 @@ auto ConfigureLoadStore::computeExtent() -> Extent const &
     bool allow_downsizing = false;
     if (!m_extent.has_value())
     {
-        m_extent = std::make_optional<Extent>(m_rc.getExtent());
+        m_extent = std::make_optional<Extent>(m_rc->getExtent());
         if (m_offset.has_value())
         {
             auto it_o = m_offset->begin();
@@ -262,21 +263,21 @@ auto ConfigureLoadStore::withRawPtr_impl_const(void const *data, Datatype dtype)
 template <typename T>
 auto ConfigureLoadStore::storeSpan() -> DynamicMemoryView<T>
 {
-    return m_rc.storeChunkSpan_impl<T>(storeChunkConfig());
+    return m_rc->storeChunkSpan_impl<T>(storeChunkConfig());
 }
 
 template <typename T>
 auto ConfigureLoadStore::load()
     -> auxiliary::DeferredComputation<std::shared_ptr<T>>
 {
-    auto res = m_rc.loadChunkAllocate_impl<T>(storeChunkConfig());
+    auto res = m_rc->loadChunkAllocate_impl<T>(storeChunkConfig());
     if (m_unsafeNoAutomaticFlush)
     {
         return auxiliary::DeferredComputation<std::shared_ptr<T>>(
             std::move(res));
     }
     return auxiliary::DeferredComputation<std::shared_ptr<T>>(
-        [res_lambda = std::move(res), dflush = deferFlush(m_rc)]() mutable {
+        [res_lambda = std::move(res), dflush = deferFlush(*m_rc)]() mutable {
             dflush();
             return res_lambda;
         });
@@ -319,19 +320,19 @@ auto ConfigureLoadStore::loadVariant() -> auxiliary::DeferredComputation<
 {
     if (m_unsafeNoAutomaticFlush)
     {
-        return m_rc.visit<VisitorEnqueueLoadVariantWithoutFlush>(
+        return m_rc->visit<VisitorEnqueueLoadVariantWithoutFlush>(
             this->storeChunkConfig());
     }
     else
     {
-        return m_rc.visit<VisitorEnqueueLoadVariantWithFlush>(
-            this->storeChunkConfig(), deferFlush(m_rc));
+        return m_rc->visit<VisitorEnqueueLoadVariantWithFlush>(
+            this->storeChunkConfig(), deferFlush(*m_rc));
     }
 }
 
 auto ConfigureLoadStore::getComponentHandle() const -> RecordComponent
 {
-    return m_rc;
+    return *m_rc;
 }
 
 struct VisitorLoadVariant
@@ -371,7 +372,7 @@ auto ConfigureStoreChunkFromBuffer::getBufferSize() -> std::optional<size_t>
 auto ConfigureStoreChunkFromBuffer::store()
     -> auxiliary::DeferredComputation<void>
 {
-    this->m_rc.storeChunk_impl(
+    this->m_rc->storeChunk_impl(
         std::move(m_buffer), m_datatype, storeChunkConfig());
     if (m_unsafeNoAutomaticFlush)
     {
@@ -379,7 +380,7 @@ auto ConfigureStoreChunkFromBuffer::store()
             auxiliary::detail::CachedValue<void>());
     }
     return auxiliary::DeferredComputation<void>(
-        [dflush = deferFlush(m_rc)]() mutable -> void { dflush(); });
+        [dflush = deferFlush(*m_rc)]() mutable -> void { dflush(); });
 }
 
 auto ConfigureLoadStoreFromBuffer::load()
@@ -393,7 +394,7 @@ auto ConfigureLoadStoreFromBuffer::load()
             "ConfigureLoadStoreFromBuffer must be instantiated with a "
             "non-const shared_ptr type.");
     }
-    this->m_rc.loadChunk_impl(
+    this->m_rc->loadChunk_impl(
         *shared_ptr, m_datatype, this->storeChunkConfig());
     if (m_unsafeNoAutomaticFlush)
     {
@@ -401,7 +402,7 @@ auto ConfigureLoadStoreFromBuffer::load()
             auxiliary::detail::CachedValue<void>());
     }
     return auxiliary::DeferredComputation<void>(
-        [dflush = this->deferFlush(this->m_rc)]() mutable -> void {
+        [dflush = this->deferFlush(*this->m_rc)]() mutable -> void {
             dflush();
         });
 }
