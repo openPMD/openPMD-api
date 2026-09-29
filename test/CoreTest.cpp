@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 // expose private and protected members for invasive testing
+#include <stdexcept>
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -1785,6 +1786,24 @@ TEST_CASE("unique_ptr", "[core]")
     UniquePtrWithLambda<int[]> arrptrFilled{new int[5]{}};
     UniquePtrWithLambda<int[]> arrptrFilledCustom{
         new int[5]{}, [](int const *p) { delete[] p; }};
+
+    auto ptr3 = UniquePtrWithLambda<int>(new int{5}).static_cast_<void>();
+    auto ptr4 = UniquePtrWithLambda<int>(new int{6}).static_cast_<void>();
+    auto ptr5 = new int{7};
+    ptr3.swap(ptr4);
+    REQUIRE(*reinterpret_cast<int *>(ptr3.get()) == 6);
+    REQUIRE(*reinterpret_cast<int *>(ptr4.get()) == 5);
+    // cannot hand a new pointer to a casted UniquePtrWithLambda
+    // so let's check that it throws
+    ptr3.reset(ptr5);
+    // (we could theoretically reinterpret_cast the new pointer back to the
+    // original type and apply the deleter, but let's not.)
+    REQUIRE_THROWS_AS(ptr3.get_deleter()(ptr3.get()), std::runtime_error);
+    // The pointer is now broken, so we need to replace the deleter
+    ptr3.get_deleter() =
+        auxiliary::CustomDelete<void>([](void const *ptr_in_lambda) {
+            delete reinterpret_cast<int const *>(ptr_in_lambda);
+        });
 }
 
 TEST_CASE("scalar_and_vector", "[core]")
