@@ -955,23 +955,58 @@ void RecordComponent::loadChunk_impl(
     auto dim = getDimensionality();
     auto [offset, extent, memorySelection] = std::move(cfg);
 
-    if (extent.size() != dim || offset.size() != dim)
-    {
-        std::ostringstream oss;
-        oss << "Dimensionality of chunk ("
-            << "offset=" << offset.size() << "D, "
-            << "extent=" << extent.size() << "D) "
-            << "and record component (" << int(dim) << "D) "
-            << "do not match.";
-        throw std::runtime_error(oss.str());
-    }
     Extent dse = getExtent();
-    for (uint8_t i = 0; i < dim; ++i)
-        if (dse[i] < offset[i] + extent[i])
-            throw std::runtime_error(
-                "Chunk does not reside inside dataset (Dimension on index " +
-                std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
-                " - Chunk: " + std::to_string(offset[i] + extent[i]) + ")");
+    if (auto jd = joinedDimension(); jd.has_value())
+    {
+        if (offset.size() != 0)
+        {
+            std::ostringstream oss;
+            oss << "Joined array: Must specify an empty offset (given: "
+                << "offset=" << offset.size() << "D, "
+                << "extent=" << extent.size() << "D).";
+            throw std::runtime_error(oss.str());
+        }
+        if (extent.size() != dim)
+        {
+            std::ostringstream oss;
+            oss << "Joined array: Dimensionalities of chunk extent and dataset "
+                   "extent must be equivalent (given: "
+                << "offset=" << offset.size() << "D, "
+                << "extent=" << extent.size() << "D).";
+            throw std::runtime_error(oss.str());
+        }
+        for (size_t i = 0; i < dim; ++i)
+        {
+            if (i != jd.value() && extent[i] != dse[i])
+            {
+                throw std::runtime_error(
+                    "Joined array: Chunk extent on non-joined dimensions must "
+                    "be equivalent to dataset extents (Dimension on index " +
+                    std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                    " - Chunk: " + std::to_string(extent[i]) + ")");
+            }
+        }
+    }
+    else
+    {
+        if (extent.size() != dim || offset.size() != dim)
+        {
+            std::ostringstream oss;
+            oss << "Dimensionality of chunk ("
+                << "offset=" << offset.size() << "D, "
+                << "extent=" << extent.size() << "D) "
+                << "and record component (" << int(dim) << "D) "
+                << "do not match.";
+            throw std::runtime_error(oss.str());
+        }
+        for (uint8_t i = 0; i < dim; ++i)
+            if (dse[i] < offset[i] + extent[i])
+                throw std::runtime_error(
+                    "Chunk does not reside inside dataset (Dimension on index " +
+                    std::to_string(i) + ". DS: " + std::to_string(dse[i]) +
+                    " - Chunk: " + std::to_string(offset[i] + extent[i]) +
+                    ")");
+    }
 
     auto &rc = get();
     if (constant())
@@ -998,12 +1033,13 @@ template <typename T>
 void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     // static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
-    uint8_t dim = getDimensionality();
     auto operation = prepareLoadStore();
 
     // default arguments
+    // we will take care of joined dimension handling later in computeOffset /
+    // computeExtent
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    if (o.size() != 1u || o.at(0) != 0u)
     {
         operation.offset(std::move(o));
     }
@@ -1029,10 +1065,19 @@ void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 template <typename T>
 void RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    prepareLoadStore()
-        .offset(std::move(o))
-        .extent(std::move(e))
-        .withSharedPtr(std::move(data))
+    auto operation = prepareLoadStore();
+    // default arguments
+    // we will take care of joined dimension handling later in computeOffset /
+    // computeExtent
+    if (o.size() != 1u || o.at(0) != 0u)
+    {
+        operation.offset(std::move(o));
+    }
+    if (e.size() != 1u || e.at(0) != -1u)
+    {
+        operation.extent(std::move(e));
+    }
+    operation.withSharedPtr(std::move(data))
         .unsafeNoAutomaticFlush()
         .store()
         .get();
@@ -1042,10 +1087,16 @@ template <typename T>
 void RecordComponent::storeChunk(
     UniquePtrWithLambda<T> data, Offset o, Extent e)
 {
-    prepareLoadStore()
-        .offset(std::move(o))
-        .extent(std::move(e))
-        .withUniquePtr(std::move(data))
+    auto operation = prepareLoadStore();
+    if (o.size() != 1u || o.at(0) != 0u)
+    {
+        operation.offset(std::move(o));
+    }
+    if (e.size() != 1u || e.at(0) != -1u)
+    {
+        operation.extent(std::move(e));
+    }
+    operation.withUniquePtr(std::move(data))
         .unsafeNoAutomaticFlush()
         .store()
         .get();
@@ -1054,10 +1105,16 @@ void RecordComponent::storeChunk(
 template <typename T>
 void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 {
-    prepareLoadStore()
-        .offset(std::move(offset))
-        .extent(std::move(extent))
-        .withRawPtr(ptr)
+    auto operation = prepareLoadStore();
+    if (offset.size() != 1u || offset.at(0) != 0u)
+    {
+        operation.offset(std::move(offset));
+    }
+    if (extent.size() != 1u || extent.at(0) != -1u)
+    {
+        operation.extent(std::move(extent));
+    }
+    operation.withRawPtr(ptr)
         .unsafeNoAutomaticFlush()
         .store()
         .get();
@@ -1066,10 +1123,16 @@ void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
 template <typename T>
 DynamicMemoryView<T> RecordComponent::storeChunk(Offset offset, Extent extent)
 {
-    return prepareLoadStore()
-        .offset(std::move(offset))
-        .extent(std::move(extent))
-        .storeSpan<T>();
+    auto operation = prepareLoadStore();
+    if (offset.size() != 1u || offset.at(0) != 0u)
+    {
+        operation.offset(std::move(offset));
+    }
+    if (extent.size() != 1u || extent.at(0) != -1u)
+    {
+        operation.extent(std::move(extent));
+    }
+    return operation.storeSpan<T>();
 }
 
 template <typename T>
