@@ -208,7 +208,7 @@ inline auto RecordComponent::visit(Args &&...args)
 template <typename T, typename F>
 auto ConfigureLoadStore::storeSpan(F &&createBuffer) -> DynamicMemoryView<T>
 {
-    return m_rc.storeChunkSpanCreateBuffer_impl<T>(
+    return m_rc->storeChunkSpanCreateBuffer_impl<T>(
         storeChunkConfig(), std::forward<F>(createBuffer));
 }
 } // namespace openPMD
