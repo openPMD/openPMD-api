@@ -127,6 +127,15 @@ Flush points are triggered by:
     Flush point guarantees affect only the corresponding iteration.
 *   Calling ``Writable::seriesFlush()`` or ``Attributable::seriesFlush()``.
 *   The streaming API (i.e. ``Series.readIterations()`` and ``Series.writeIteration()``) automatically before accessing the next iteration.
+*   Invoking a handle returned by the experimental deferred I/O API (``RecordComponent::prepareLoadStore()`` followed by ``store()`` / ``load()``) via ``get()`` / ``operator()()``, unless automatic flushing was disabled via ``unsafeNoAutomaticFlush()``.
+
+.. note::
+
+    The automatic flush performed by the deferred I/O handles is MPI-collective (see :ref:`details-mpi`).
+    Each rank must invoke such a handle the same number of times and in the same order, *even if* the number of ``store()`` / ``load()`` calls differs per rank.
+    The flush is skipped if the pertaining ``RecordComponent`` has already been flushed by another component in the meantime (tracked via per-component flush counters), so a given invocation does not necessarily flush.
+    To avoid this coupling, disable the automatic flush with ``unsafeNoAutomaticFlush()`` and call ``Series::flush()`` explicitly at a collective point.
+    The handles are returned with the ``[[nodiscard]]`` attribute and the flush is only triggered by explicitly invoking them (or by destroying a still-valid handle), so it cannot be triggered accidentally.
 
 Attributes are (currently) unaffected by this:
 
@@ -142,8 +151,8 @@ Attributes are (currently) unaffected by this:
     For user-guided selection of such implementations, ``Series::flush`` and ``Attributable::seriesFlush()`` take an optional JSON/TOML string as a parameter.
     See the section on :ref:`backend-specific configuration <backendconfig>` for details.
 
-Deferred Data API Contract
---------------------------
+Verbose Logging
+---------------
 
 A verbose debug log can optionally be printed to the standard error output by specifying the environment variable ``OPENPMD_VERBOSE=1``.
 Note that this functionality is at the current time still relatively basic.

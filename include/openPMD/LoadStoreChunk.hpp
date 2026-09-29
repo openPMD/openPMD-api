@@ -152,6 +152,11 @@ public:
      * The returned objects of type DeferredComputation will still return a
      * buffer upon get() / operator()(), but these buffers are not guaranteed to
      * be filled until explicitly flushing.
+     * By default, invoking get() / operator()() would also flush the underlying
+     * Series, an MPI-collective operation. Disabling that automatic flush
+     * removes the need for all ranks to invoke their handles in a consistent
+     * order; the user is then responsible for calling Series::flush()
+     * collectively at a suitable point.
      *
      * @return Reference to this object for chaining
      */
@@ -218,10 +223,25 @@ public:
     template <typename T, typename F>
     [[nodiscard]] auto storeSpan(F &&createBuffer) -> DynamicMemoryView<T>;
 
+    /** Load the chunk data, allocating a buffer
+     *
+     * The returned handle performs the load, and the automatic flush of the
+     * underlying Series, when invoked via get() / operator()(). That flush is
+     * an MPI-collective operation, so in parallel codes every rank must invoke
+     * (or explicitly destroy) its handles in a consistent order. Invoking the
+     * handle is an explicit, user-controlled action and the return value is
+     * marked [[nodiscard]], so handles cannot be dropped unnoticed. Use
+     * unsafeNoAutomaticFlush() to defer flushing to a later explicit
+     * Series::flush() instead.
+     *
+     * @return Deferred computation that performs the load when invoked
+     */
     template <typename T>
     [[nodiscard]] auto load()
         -> auxiliary::DeferredComputation<std::shared_ptr<T>>;
 
+    /** Type-erased version of load(). See load() for the collective semantics
+     * of the automatic flush. */
     [[nodiscard]] auto loadVariant() -> auxiliary::DeferredComputation<
         auxiliary::detail::shared_ptr_dataset_types>;
 
@@ -303,6 +323,11 @@ public:
      * The returned objects of type DeferredComputation will still return a
      * buffer upon get() / operator()(), but these buffers are not guaranteed to
      * be filled until explicitly flushing.
+     * By default, invoking get() / operator()() would also flush the underlying
+     * Series, an MPI-collective operation. Disabling that automatic flush
+     * removes the need for all ranks to invoke their handles in a consistent
+     * order; the user is then responsible for calling Series::flush()
+     * collectively at a suitable point.
      *
      * @return Reference to this object for chaining
      */
@@ -346,6 +371,15 @@ public:
     // Enqueue method (deferred execution)
 
     /** Store the chunk data
+     *
+     * The returned handle performs the store, and the automatic flush of the
+     * underlying Series, when invoked via get() / operator()(). That flush is
+     * an MPI-collective operation, so in parallel codes every rank must invoke
+     * (or explicitly destroy) its handles in a consistent order. Invoking the
+     * handle is an explicit, user-controlled action and the return value is
+     * marked [[nodiscard]], so handles cannot be dropped unnoticed. Use
+     * unsafeNoAutomaticFlush() to defer flushing to a later explicit
+     * Series::flush() instead.
      *
      * @return Deferred computation that performs the store when invoked
      */
@@ -416,6 +450,11 @@ public:
      * The returned objects of type DeferredComputation will still return a
      * buffer upon get() / operator()(), but these buffers are not guaranteed to
      * be filled until explicitly flushing.
+     * By default, invoking get() / operator()() would also flush the underlying
+     * Series, an MPI-collective operation. Disabling that automatic flush
+     * removes the need for all ranks to invoke their handles in a consistent
+     * order; the user is then responsible for calling Series::flush()
+     * collectively at a suitable point.
      *
      * @return Reference to this object for chaining
      */
@@ -459,6 +498,15 @@ public:
     // Enqueue method (deferred execution)
 
     /** Load the chunk data into the buffer
+     *
+     * The returned handle performs the load, and the automatic flush of the
+     * underlying Series, when invoked via get() / operator()(). That flush is
+     * an MPI-collective operation, so in parallel codes every rank must invoke
+     * (or explicitly destroy) its handles in a consistent order. Invoking the
+     * handle is an explicit, user-controlled action and the return value is
+     * marked [[nodiscard]], so handles cannot be dropped unnoticed. Use
+     * unsafeNoAutomaticFlush() to defer flushing to a later explicit
+     * Series::flush() instead.
      *
      * @return Deferred computation that performs the load when invoked
      */

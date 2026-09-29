@@ -104,16 +104,42 @@ public:
     auto operator=(DeferredComputation const &)
         -> DeferredComputation & = delete;
 
+    /** Destroy the computation, executing it if it has not been invoked yet.
+     *
+     * Computations returned by openPMD's data operations (see
+     * ConfigureLoadStore::store() and ConfigureLoadStore::load()) carry out
+     * the operation and, unless disabled via
+     * ConfigureLoadStore::unsafeNoAutomaticFlush(), the automatic flush of the
+     * underlying Series. That flush is an MPI-collective operation, hence
+     * destroying a still-valid handle without invoking it has the same
+     * collective semantics as calling get().
+     * Exceptions thrown here cannot escape the destructor and are logged to
+     * standard error instead.
+     */
     ~DeferredComputation();
 
     /** Get the result of the computation
+     *
+     * Invoking the computation executes the deferred data operation and, if
+     * automatic flushing was not disabled via
+     * ConfigureLoadStore::unsafeNoAutomaticFlush(), the automatic flush of the
+     * underlying Series. Since Series::flush() is MPI-collective, all ranks of
+     * a parallel Series must invoke (or explicitly destroy) their deferred
+     * computations in a consistent order. The handles returned by openPMD's
+     * store() / load() operations are marked [[nodiscard]] so that they cannot
+     * be dropped unnoticed. The flush itself is skipped if the pertaining
+     * RecordComponent has already been flushed by another component in the
+     * meantime (tracked via per-component flush counters), so a given
+     * invocation does not necessarily flush.
      *
      * @return The result of the computation
      */
     auto get() -> T;
     /** Invoke the computation
      *
-     * Alias for get()
+     * Alias for get(). See get() for the collective semantics of the automatic
+     * flush.
+     *
      * @return The result of the computation
      */
     auto operator()() -> T;
