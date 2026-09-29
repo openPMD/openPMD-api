@@ -739,10 +739,27 @@ void RecordComponent::storeChunk_impl(
     Parameter<Operation::WRITE_DATASET> dWrite;
     dWrite.offset = std::move(o);
     dWrite.extent = std::move(e);
-    if (memorySelection.has_value() && joinedDimension().has_value())
+    if (memorySelection.has_value())
     {
-        throw error::WrongAPIUsage(
-            "Memory selections are not supported for joined arrays.");
+        if (joinedDimension().has_value())
+        {
+            throw error::WrongAPIUsage(
+                "Memory selections are not supported for joined arrays.");
+        }
+        /*
+         * Reject unsupported memory selections here, while enqueueing the
+         * chunk, rather than letting the backend throw at flush time: an
+         * exception raised inside an IO task makes AbstractIOHandlerImpl::flush
+         * clear the entire IO queue, losing all other pending chunks and
+         * attributes and leaving an unreadable file behind.
+         */
+        auto *ioHandler = IOHandler();
+        if (ioHandler != nullptr && !ioHandler->supportsMemorySelection())
+        {
+            throw error::OperationUnsupportedInBackend(
+                ioHandler->backendName(),
+                "Non-contiguous memory selections are not supported.");
+        }
     }
     dWrite.memorySelection = memorySelection;
     dWrite.dtype = dtype;

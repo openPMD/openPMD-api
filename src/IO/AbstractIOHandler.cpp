@@ -160,6 +160,11 @@ bool AbstractIOHandler::fullSupportForVariableBasedEncoding() const
     return false;
 }
 
+bool AbstractIOHandler::supportsMemorySelection() const
+{
+    return false;
+}
+
 #if openPMD_HAVE_MPI
 template <>
 AbstractIOHandler::AbstractIOHandler(
