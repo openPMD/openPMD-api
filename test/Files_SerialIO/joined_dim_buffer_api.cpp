@@ -20,22 +20,23 @@
  */
 
 /*
- * Buffer-based loadChunk / storeChunk on a joined dimension must accept the
- * full-selection offset: a {0} offset is treated as the default (expanded to
- * the empty joined-dimension offset) and {} is the explicit empty offset.
+ * Buffer-based storeChunk / loadChunk on a joined dimension.
  *
- * This exercises the frontend offset/extent validation, which is backend
- * agnostic. A joined dimension can only be read back on backends that support
- * it (ADIOS2), so the argument handling is validated on the JSON backend,
- * where a joined dataset cannot be flushed: every store/load call below must
- * pass the frontend checks (only the deferred backend operation is
- * unsupported, which is reported at flush time and not fatal).
+ * A joined dimension's extent is only known once all writers have flushed and
+ * the data is read back (i.e. after a close + reopen). During the write
+ * session it is Dataset::JOINED_DIMENSION (max), so:
  *
- * Regression: loadChunk_impl() previously rejected the empty offset with a
- * dimensionality error, and loadChunk(shared_ptr) / the buffer storeChunk
- * overloads forwarded a {0} offset that computeOffset() then rejected, so a
- * joined dimension could not be loaded (and {0} not stored) through the
- * buffer-based overloads at all.
+ *  - storing a chunk is meaningful (an empty offset {} means "append"; a {0}
+ *    offset is treated as the default) and must pass the frontend checks;
+ *  - loading a chunk is NOT meaningful (the total size is unknown, and the
+ *    streaming engine cannot read it back mid-write) and must be rejected
+ *    with a clear error.
+ *
+ * The argument handling is frontend validation, backend agnostic. A joined
+ * dataset can only be flushed on backends that support it (ADIOS2), so this is
+ * exercised on the JSON backend, where the deferred store is unsupported and
+ * only reported at flush time (not fatal). The load must throw before any
+ * backend operation is queued.
  */
 #include "SerialIOTests.hpp"
 
@@ -64,18 +65,21 @@ TEST_CASE("joined_dim_buffer_api", "[serial][json]")
     REQUIRE(epx.joinedDimension().has_value());
 
     // store: empty offset {} (canonical) and {0} offset (treated as default)
+    // must pass the frontend checks.
     epx.storeChunkRaw(data.data(), {}, {N});
     epx.storeChunkRaw(data.data(), {0}, {N});
 
-    // load: {0} offset (treated as default) and {} offset (empty)
+    // load: a joined array cannot be loaded during the write session (its
+    // extent is not known), so every buffer-based load overload must reject it.
     std::vector<type> buf(N, -1.f);
-    epx.loadChunkRaw(buf.data(), {0}, {-1u});
-    epx.loadChunkRaw(buf.data(), {}, {-1u});
-
-    // shared_ptr overload must behave the same (and owns its buffer)
+    REQUIRE_THROWS_AS(
+        epx.loadChunkRaw(buf.data(), {0}, {-1u}), error::WrongAPIUsage);
+    REQUIRE_THROWS_AS(
+        epx.loadChunkRaw(buf.data(), {}, {-1u}), error::WrongAPIUsage);
     {
         std::shared_ptr<type> sptr(new type[N], [](type *p) { delete[] p; });
         std::fill(sptr.get(), sptr.get() + N, -1.f);
-        epx.loadChunk(sptr, {0}, {-1u});
+        REQUIRE_THROWS_AS(
+            epx.loadChunk(sptr, {0}, {-1u}), error::WrongAPIUsage);
     }
 }
